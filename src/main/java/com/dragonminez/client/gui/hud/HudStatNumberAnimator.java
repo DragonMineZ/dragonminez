@@ -1,5 +1,7 @@
 package com.dragonminez.client.gui.hud;
 
+import net.minecraft.util.Mth;
+
 public class HudStatNumberAnimator {
 	public static final int WHITE_RGB = 0xFFFFFF;
 
@@ -63,7 +65,10 @@ public class HudStatNumberAnimator {
 			}
 		}
 
-		float targetAlpha = tickTime - lastChangeTick <= VISIBLE_HOLD_TICKS ? 1.0f : 0.0f;
+		float targetAlpha = 1.0f;
+		if (statKind != StatKind.KISENSE_HEALTH) {
+			targetAlpha = tickTime - lastChangeTick <= VISIBLE_HOLD_TICKS ? 1.0f : 0.0f;
+		}
 		float rate = targetAlpha > alpha ? elapsed / FADE_IN_TICKS : elapsed / FADE_OUT_TICKS;
 		alpha = approach(alpha, targetAlpha, rate);
 
@@ -71,7 +76,7 @@ public class HudStatNumberAnimator {
 	}
 
 	private boolean shouldPulseDamage(ChangeDirection direction) {
-		return statKind == StatKind.HEALTH && direction == ChangeDirection.DOWN;
+		return (statKind == StatKind.HEALTH || statKind == StatKind.KISENSE_HEALTH) && direction == ChangeDirection.DOWN;
 	}
 
 	private ChangeDirection getChangeDirection(String text, float value) {
@@ -137,7 +142,8 @@ public class HudStatNumberAnimator {
 	public enum StatKind {
 		HEALTH,
 		KI,
-		STAMINA
+		STAMINA,
+		KISENSE_HEALTH
 	}
 
 	private enum ChangeDirection {

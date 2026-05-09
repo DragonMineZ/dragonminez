@@ -19,11 +19,8 @@ docs/.jekyll-cache/
 docs/.bundle/
 docs/superpowers/
 
-# Ignore everything in .idea except code styles
-.idea/*
-!.idea/codeStyles/
-!.idea/codeStyles/*.xml
-
+# Ignore everything in .idea (codestyles are now included because that's personal preference)
+.idea
 
 # gradle
 build

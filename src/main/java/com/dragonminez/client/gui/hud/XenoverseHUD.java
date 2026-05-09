@@ -2,6 +2,7 @@ package com.dragonminez.client.gui.hud;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.*;
@@ -11,9 +12,6 @@ import com.dragonminez.common.stats.character.Status;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -26,7 +24,6 @@ import java.util.Locale;
 public class XenoverseHUD {
 	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
 	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;
@@ -160,7 +157,7 @@ public class XenoverseHUD {
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(x, y, 0);
 		guiGraphics.pose().scale(scale, scale, 1.0f);
-		drawStringWithBorder(guiGraphics, text, 0, 0, color);
+		TextUtil.drawCenteredStringWithBorder(guiGraphics, Minecraft.getInstance().font, text, 0, 0, color);
 		guiGraphics.pose().popPose();
 	}
 
@@ -171,7 +168,7 @@ public class XenoverseHUD {
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(x + state.offsetX(), y + state.offsetY(), 0);
 		guiGraphics.pose().scale(scale, scale, 1.0f);
-		drawStringWithBorder(guiGraphics, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()));
+		TextUtil.drawCenteredStringWithBorder(guiGraphics, Minecraft.getInstance().font, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()));
 		guiGraphics.pose().popPose();
 	}
 
@@ -182,21 +179,5 @@ public class XenoverseHUD {
 	private static int withAlpha(int rgb, float alpha) {
 		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f);
 		return (alphaChannel << 24) | (rgb & 0xFFFFFF);
-	}
-
-	private static void drawStringWithBorder(GuiGraphics guiGraphics, String text, int x, int y, int color) {
-		MutableComponent dmzText = Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
-		int borderColor = borderColor(color);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x - 1, y, borderColor);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x + 1, y, borderColor);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y - 1, borderColor);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y + 1, borderColor);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y, color);
-	}
-
-	private static int borderColor(int color) {
-		int alpha = (color >>> 24) & 0xFF;
-		if (alpha == 0) alpha = 0xFF;
-		return alpha << 24;
 	}
 }

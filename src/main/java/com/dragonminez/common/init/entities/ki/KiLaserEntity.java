@@ -7,13 +7,14 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.particles.KiLightningParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -143,6 +144,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setCastTime(20);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
         updatePositionRelativeToOwner(owner);
+        
     }
 
     public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
@@ -160,6 +162,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setCastTime(40);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
         updatePositionRelativeToOwner(owner);
+        
     }
 
     public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed){
@@ -177,6 +180,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setCastTime(20);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
         updatePositionRelativeToOwner(owner);
+        
     }
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed) {
@@ -191,6 +195,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
             updatePositionRelativeToOwner(livingOwner);
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 0.4F, 1.0F + (this.random.nextFloat() * 0.2F));
         }
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
 
@@ -463,7 +469,6 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     private void explodeAndDie(Vec3 pos) {
-        boolean shouldDestroyBlocks = true;
         float radius = this.getSize();
         AABB area = new AABB(pos, pos).inflate(radius);
         List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
@@ -480,7 +485,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
         this.level().addParticle(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
         this.level().playSound(null, pos.x, pos.y, pos.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0F, 0.7F);
-        Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
+        Level.ExplosionInteraction interaction = this.getKiExplosionInteraction(BlockPos.containing(pos));
         this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, pos.x, pos.y, pos.z, radius, false, interaction, false);
         this.discard();
     }

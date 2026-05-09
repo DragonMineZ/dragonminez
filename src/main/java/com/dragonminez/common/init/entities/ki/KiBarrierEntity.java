@@ -12,6 +12,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -73,6 +74,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         this.setFireTick(-1);
         this.setMaxLife(99999);
         this.setCastTime(40);
+        
     }
 
     public void setupBarrierPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
@@ -88,6 +90,8 @@ public class KiBarrierEntity extends AbstractKiProjectile {
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                     MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.2F);
         }
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
     @Override

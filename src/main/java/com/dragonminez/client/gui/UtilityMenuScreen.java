@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.utilitymenu.ButtonInfo;
 import com.dragonminez.client.gui.utilitymenu.IUtilityMenuSlot;
 import com.dragonminez.client.gui.utilitymenu.menuslots.*;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -132,7 +133,7 @@ public class UtilityMenuScreen extends Screen {
 					int titleY = y + 10;
 
 					for (FormattedCharSequence line : titleLines) {
-						this.drawCenteredStringWithBorder(graphics, line, x + BUTTON_WIDTH / 2, titleY, 0xFFFFFF, 0x000000);
+						TextUtil.drawCenteredStringWithBorder(graphics, this.font, line, x + BUTTON_WIDTH / 2, titleY, 0xFFFFFF, 0x000000);
 						titleY += font.lineHeight;
 					}
 
@@ -238,19 +239,6 @@ public class UtilityMenuScreen extends Screen {
 
 	public static boolean isUtilityMenuReopenBlocked() {
 		return System.currentTimeMillis() < utilityMenuReopenBlockedUntilMs;
-	}
-
-	public void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int color, int borderColor) {
-		drawCenteredStringWithBorder(graphics, text.getVisualOrderText(), x, y, color, borderColor);
-	}
-
-	public void drawCenteredStringWithBorder(GuiGraphics graphics, FormattedCharSequence text, int x, int y, int color, int borderColor) {
-		int width = font.width(text);
-		graphics.drawString(font, text, x - width / 2 - 1, y, borderColor, false);
-		graphics.drawString(font, text, x - width / 2 + 1, y, borderColor, false);
-		graphics.drawString(font, text, x - width / 2, y - 1, borderColor, false);
-		graphics.drawString(font, text, x - width / 2, y + 1, borderColor, false);
-		graphics.drawString(font, text, x - width / 2, y, color, false);
 	}
 
 	public static void initMenuSlots() {

@@ -1,6 +1,7 @@
 package com.dragonminez.server.events.players.combat;
 
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
@@ -123,7 +124,7 @@ public class MomentumImpactHandler {
 
 		if (living.level() instanceof ServerLevel serverLevel) {
 			spawnRockImpactCircle(serverLevel, living.position(), impact.type() == CollisionImpactType.GROUND ? 2.75 : 1.9);
-			createCrater(serverLevel, living.blockPosition(), 1.5);
+			createCrater(serverLevel, living.blockPosition(), 1.5, living);
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6f, 0.05f, 2, true), living);
 		}
 
@@ -162,7 +163,7 @@ public class MomentumImpactHandler {
 			}
 
 			if (player.level() instanceof ServerLevel serverLevel) {
-				createCrater(serverLevel, player.blockPosition(), 2.0);
+				createCrater(serverLevel, player.blockPosition(), 2.0, player);
 				spawnRockImpactCircle(serverLevel, player.position(), 3.5);
 				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.5f, 0.05f, 2, true), player);
 				serverLevel.playSound(null, player.blockPosition(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 1.5f, 0.8f);
@@ -170,7 +171,7 @@ public class MomentumImpactHandler {
 		});
 	}
 
-	private static void createCrater(ServerLevel level, BlockPos center, double radius) {
+	private static void createCrater(ServerLevel level, BlockPos center, double radius, LivingEntity source) {
 		int r = (int) Math.ceil(radius);
 		for (int x = -r; x <= r; x++) {
 			for (int y = -r; y <= r; y++) {
@@ -178,7 +179,10 @@ public class MomentumImpactHandler {
 					if (x * x + y * y + z * z <= radius * radius) {
 						BlockPos pos = center.offset(x, y, z);
 						BlockState state = level.getBlockState(pos);
-						if (!state.isAir() && state.getDestroySpeed(level, pos) >= 0.0F && state.getDestroySpeed(level, pos) < 50.0F) {
+						if (!state.isAir()
+								&& state.getDestroySpeed(level, pos) >= 0.0F
+								&& state.getDestroySpeed(level, pos) < 50.0F
+								&& MainGameRules.canKiGrief(level, pos, source)) {
 							level.destroyBlock(pos, true);
 						}
 					}

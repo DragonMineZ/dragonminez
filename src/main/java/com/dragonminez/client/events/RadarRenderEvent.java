@@ -33,21 +33,12 @@ public class RadarRenderEvent {
 	private static List<BlockPos> clientNamekPositions = new ArrayList<>();
 	private static Map<String, List<BlockPos>> clientPositionsBySet = new HashMap<>();
 
-	public static void updateRadarData(List<BlockPos> earth, List<BlockPos> namek) {
-		clientEarthPositions = earth;
-		clientNamekPositions = namek;
-		clientPositionsBySet = new HashMap<>();
-		clientPositionsBySet.put("earth", earth);
-		clientPositionsBySet.put("namek", namek);
-	}
 
 	public static void updateRadarData(List<BlockPos> earth, List<BlockPos> namek, Map<String, List<BlockPos>> positionsBySet) {
 		clientEarthPositions = earth;
 		clientNamekPositions = namek;
 		clientPositionsBySet = new HashMap<>();
-		if (positionsBySet != null) {
-			positionsBySet.forEach((setId, positions) -> clientPositionsBySet.put(setId, new ArrayList<>(positions)));
-		}
+		if (positionsBySet != null) positionsBySet.forEach((setId, positions) -> clientPositionsBySet.put(setId, new ArrayList<>(positions)));
 		clientPositionsBySet.put("earth", earth);
 		clientPositionsBySet.put("namek", namek);
 	}

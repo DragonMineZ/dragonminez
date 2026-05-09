@@ -3,12 +3,19 @@ package com.dragonminez.common.init.entities.ki;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainGameRules;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
@@ -16,6 +23,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -58,6 +66,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.setSize(size);
         this.setKiSpeed(speed);
         this.setColors(colorMain, colorBorder, colorOutline);
+        
     }
 
     public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder) {
@@ -111,6 +120,29 @@ public abstract class AbstractKiProjectile extends Projectile {
             }
         }
         return false;
+    }
+
+    protected Entity getKiGriefingSource() {
+        Entity owner = this.getOwner();
+        return owner != null ? owner : this;
+    }
+
+    protected boolean canKiDestroyBlock(BlockPos pos) {
+        return MainGameRules.canKiGrief(this.level(), pos, this.getKiGriefingSource());
+    }
+
+    protected boolean destroyKiBlock(BlockPos pos, boolean dropBlock) {
+        if (!this.canKiDestroyBlock(pos)) return false;
+        return this.level().destroyBlock(pos, dropBlock);
+    }
+
+    protected boolean setKiBlockToAir(BlockPos pos, int flags) {
+        if (!this.canKiDestroyBlock(pos)) return false;
+        return this.level().setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
+    }
+
+    protected Level.ExplosionInteraction getKiExplosionInteraction(BlockPos pos) {
+        return this.canKiDestroyBlock(pos) ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
     }
 
     public void onSuccessfulHit(Entity target) {
@@ -221,7 +253,15 @@ public abstract class AbstractKiProjectile extends Projectile {
     public void setKiRenderType(int type) { this.entityData.set(KI_BALL_RENDER_TYPE, type); }
     public int getKiRenderType() { return this.entityData.get(KI_BALL_RENDER_TYPE); }
     public String getTechniqueId() { return this.entityData.get(TECHNIQUE_ID); }
-    public void setTechniqueId(String id) { this.entityData.set(TECHNIQUE_ID, id); }
+    public void setTechniqueId(String id) {
+        this.setTechniqueIdInternal(id, true);
+    }
+
+    private void setTechniqueIdInternal(String id, boolean triggerAnimation) {
+        this.entityData.set(TECHNIQUE_ID, id);
+        if (!triggerAnimation || id.isEmpty() || this.level().isClientSide || this.isFiring()) return;
+        this.triggerAnimationPacket("_cast");
+    }
     public int getArmorPenetration() { return this.entityData.get(ARMOR_PENETRATION); }
     public void setArmorPenetration(int pen) { this.entityData.set(ARMOR_PENETRATION, pen); }
     public boolean isHeal() { return this.entityData.get(IS_HEAL); }
@@ -260,7 +300,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (pCompound.contains("Damage")) setKiDamage(pCompound.getFloat("Damage"));
         if (pCompound.contains("Size")) setSize(pCompound.getFloat("Size"));
         if (pCompound.contains("Speed")) setKiSpeed(pCompound.getFloat("Speed"));
-        if (pCompound.contains("TechniqueId")) setTechniqueId(pCompound.getString("TechniqueId"));
+        if (pCompound.contains("TechniqueId")) setTechniqueIdInternal(pCompound.getString("TechniqueId"), false);
         if (pCompound.contains("ArmorPenetration")) setArmorPenetration(pCompound.getInt("ArmorPenetration"));
         if (pCompound.contains("IsHeal")) setHeal(pCompound.getBoolean("IsHeal"));
         if (pCompound.contains("IsFiring")) setFiring(pCompound.getBoolean("IsFiring"));
@@ -278,5 +318,20 @@ public abstract class AbstractKiProjectile extends Projectile {
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
         return super.getDimensions(pPose).scale(this.getSize());
+    }
+
+    public void triggerAnimationPacket(String suffix) {
+        if (!this.level().isClientSide && this.getOwner() instanceof ServerPlayer sp) {
+            String techId = this.getTechniqueId();
+            if (techId != null && !techId.isEmpty()) {
+                StatsProvider.get(StatsCapability.INSTANCE, sp).ifPresent(data -> {
+                    TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techId);
+                    if (tech instanceof KiAttackData kiData) {
+                        String fullAnim = kiData.getAnimationPrefix() + suffix;
+                        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, fullAnim), sp);
+                    }
+                });
+            }
+        }
     }
 }

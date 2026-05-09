@@ -13,6 +13,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.extras.ActionMode;
@@ -33,6 +34,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
@@ -155,6 +157,31 @@ public class TickHandler {
 				playerTickCounters.put(playerId, tickCounter);
 			}
 
+			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data);
+			boolean isFiring = TechniqueDispatcher.isFiringKiAttack(serverPlayer);
+			boolean wasExecuting = serverPlayer.getPersistentData().getBoolean("dmz_was_executing_ki");
+
+			if (isMovementRestricted) {
+				serverPlayer.setDeltaMovement(0, serverPlayer.getDeltaMovement().y < 0 ? serverPlayer.getDeltaMovement().y : 0, 0);
+				serverPlayer.hasImpulse = true;
+				serverPlayer.setJumping(false);
+				serverPlayer.setSprinting(false);
+
+				if (serverPlayer.getPose() != Pose.STANDING) serverPlayer.setPose(Pose.STANDING);
+
+				if (isFiring) {
+					serverPlayer.setYRot(serverPlayer.yRotO);
+					serverPlayer.setXRot(serverPlayer.xRotO);
+					serverPlayer.yHeadRot = serverPlayer.yHeadRotO;
+					serverPlayer.yBodyRot = serverPlayer.yBodyRotO;
+				}
+
+				serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", true);
+			} else if (wasExecuting) {
+				serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
+			}
+
 			if (isChargingKi && tickCounter % 20 == 0) {
 				int currentRelease = data.getResources().getPowerRelease();
 
@@ -249,8 +276,21 @@ public class TickHandler {
 	}
 
 	@SubscribeEvent
+	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) return;
+		serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+		CHARGING_CACHE.remove(serverPlayer.getUUID());
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
+	}
+
+	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		UUID playerId = event.getEntity().getUUID();
+		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+			serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
+		}
+		CHARGING_CACHE.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
@@ -682,7 +722,7 @@ public class TickHandler {
 	}
 
 	private static float getMaxAllowedChargePercent(KiAttackData kiAttack, StatsData data) {
-		double baseCost = Math.max(1.0, kiAttack.getCalculatedCost());
+		double baseCost = Math.max(1.0, kiAttack.getCalculatedCost(data));
 		double currentKi = Math.max(0.0, data.getResources().getCurrentEnergy());
 		return (float) Math.max(0.0, Math.min(200.0, (currentKi / baseCost) * 100.0));
 	}

@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainItems;
@@ -385,13 +386,13 @@ public class MasterTextScreen extends Screen {
 
 		RenderSystem.disableBlend();
 
-		drawStringWithBorder(graphics, tr("gui.dragonminez.lines." + masterName + ".name").withStyle(ChatFormatting.BOLD), centerX - 120, centerY - 87, 0xFFFFFF);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.lines." + masterName + ".name").withStyle(ChatFormatting.BOLD), centerX - 120, centerY - 87, 0xFFFFFF);
 
 		int maxTextWidth = 230;
 		int textY = centerY - 74;
 		var splitLines = this.font.split(currentDialogue, maxTextWidth);
 		for (var line : splitLines) {
-			drawStringWithBorder(graphics, line, centerX - 120, textY, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, line, centerX - 120, textY, 0xFFFFFF);
 			textY += this.font.lineHeight + 2;
 		}
 		super.render(graphics, mouseX, mouseY, partialTick);
@@ -405,24 +406,6 @@ public class MasterTextScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, FormattedCharSequence text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
 	}
 
 	public MutableComponent tr(String key, Object... args) {

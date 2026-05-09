@@ -12,6 +12,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.util.ComboManager;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,6 +22,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 
@@ -103,7 +105,8 @@ public class DashHandler {
 				}
 			}
 
-			boolean canDoubleDash = isDoubleDash && data.getCooldowns().hasCooldown(Cooldowns.DASH_ACTIVE) && !data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD);
+			boolean isFlyingSkillActive = data.getSkills().isSkillActive("fly");
+			boolean canDoubleDash = !isFlyingSkillActive && isDoubleDash && data.getCooldowns().hasCooldown(Cooldowns.DASH_ACTIVE) && !data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD);
 			boolean canNormalDash = !isDoubleDash && !data.getCooldowns().hasCooldown(Cooldowns.DASH_CD);
 
 			if (!canDoubleDash && !canNormalDash) return;
@@ -142,10 +145,22 @@ public class DashHandler {
 			Vec3 right = forward.cross(new Vec3(0, 1, 0)).normalize();
 			Vec3 direction = forward.scale(zInput).add(right.scale(xInput)).normalize();
 
-			double yVel = player.onGround() ? 0.35 : 0.2;
-
-			Vec3 velocity = direction.scale(distance * 0.3);
-			player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, yVel, velocity.z));
+			Vec3 currentMotion = player.getDeltaMovement();
+			Vec3 velocity;
+			if (isFlyingSkillActive) {
+				double trackedFlightSpeed = player.getPersistentData().getDouble("dmz_server_speed");
+				double sampledSpeed = Math.max(currentMotion.length(), trackedFlightSpeed);
+				double flightImpulse = Math.min(3.8, Math.max(0.55, (distance * 0.30) + (sampledSpeed * 2.5)));
+				velocity = direction.scale(flightImpulse);
+				Vec3 horizontalBoost = new Vec3(currentMotion.x + velocity.x, 0.0, currentMotion.z + velocity.z);
+				player.setDeltaMovement(horizontalBoost.x, 0.0, horizontalBoost.z);
+				player.fallDistance = 0.0F;
+			} else {
+				double yVel = player.onGround() ? 0.35 : 0.2;
+				velocity = direction.scale(distance * 0.3);
+				player.setDeltaMovement(currentMotion.add(velocity.x, yVel, velocity.z));
+				tryStepUpDuringDash(player, direction, canDoubleDash ? 2 : 1);
+			}
 			player.hurtMarked = true;
 
 			if (player.level() instanceof ServerLevel serverLevel) {
@@ -171,9 +186,11 @@ public class DashHandler {
 
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5F, 1.5F + player.getRandom().nextFloat() * 0.3F);
 
-			int dashDirection = getDashDirectionFromInput(xInput, zInput);
-			if (canDoubleDash) dashDirection += 4;
-			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.DASH, dashDirection, player.getId()), player);
+			if (!isFlyingSkillActive) {
+				int dashDirection = getDashDirectionFromInput(xInput, zInput);
+				if (canDoubleDash) dashDirection += 4;
+				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.DASH, dashDirection, player.getId()), player);
+			}
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
 	}
@@ -186,5 +203,34 @@ public class DashHandler {
 		if (zInput > 0) return 1;
 		if (zInput < 0) return 2;
 		return 1;
+	}
+
+	private static void tryStepUpDuringDash(ServerPlayer player, Vec3 direction, int maxStepHeight) {
+		if (maxStepHeight <= 0 || direction.lengthSqr() < 1.0E-6) return;
+
+		Level level = player.level();
+		Vec3 dir = new Vec3(direction.x, 0.0, direction.z).normalize();
+		double probeDistance = 0.9;
+		double targetX = player.getX() + (dir.x * probeDistance);
+		double targetZ = player.getZ() + (dir.z * probeDistance);
+		BlockPos frontBase = BlockPos.containing(targetX, player.getY(), targetZ);
+
+		if (level.getBlockState(frontBase).getCollisionShape(level, frontBase).isEmpty()) return;
+
+		for (int step = 1; step <= maxStepHeight; step++) {
+			BlockPos feetPos = frontBase.above(step);
+			BlockPos headPos = feetPos.above();
+			BlockPos belowPos = feetPos.below();
+
+			boolean feetFree = level.getBlockState(feetPos).getCollisionShape(level, feetPos).isEmpty();
+			boolean headFree = level.getBlockState(headPos).getCollisionShape(level, headPos).isEmpty();
+			boolean support = !level.getBlockState(belowPos).getCollisionShape(level, belowPos).isEmpty();
+
+			if (feetFree && headFree && support) {
+				player.teleportTo(targetX, feetPos.getY(), targetZ);
+				player.hurtMarked = true;
+				return;
+			}
+		}
 	}
 }

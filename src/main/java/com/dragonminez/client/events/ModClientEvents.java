@@ -7,6 +7,7 @@ import com.dragonminez.client.dragonball.DragonBallPackResources;
 import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.hud.*;
+import com.dragonminez.client.gui.tooltip.*;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.EnergyCableBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.FuelGeneratorBlockRenderer;
@@ -68,7 +69,6 @@ import java.util.List;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ModClientEvents {
-
 	@SubscribeEvent
 	public static void registerGuiOverlays(RegisterGuiOverlaysEvent e) {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "xenoversehud", XenoverseHUD.HUD_XENOVERSE);
@@ -78,35 +78,34 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "tracked_quest_hud", TrackedQuestHUD.HUD_TRACKED_QUEST);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "techniquehud", TechniqueHotbarHUD.HUD_TECHNIQUES);
 	}
+	@SubscribeEvent
+	public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
+		event.registerReloadListener(new SimplePreparableReloadListener<Void>() {
+			@Override
+			protected Void prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+				return null;
+			}
 
-  @SubscribeEvent
-  public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
-    event.registerReloadListener(new SimplePreparableReloadListener<Void>() {
-      @Override
-      protected Void prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {
-        return null;
-      }
+			@Override
+			protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+				TextureCounter.clearCache();
+				CombatAnimationResolver.reload(resourceManager);
+			}
+		});
+	}
 
-      @Override
-      protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
-        TextureCounter.clearCache();
-        CombatAnimationResolver.reload(resourceManager);
-      }
-    });
-  }
-
-    @SubscribeEvent
+	@SubscribeEvent
     public static void onKeyRegister(RegisterKeyMappingsEvent event) {
         KeyBinds.registerAll(event);
     }
 
-		@SubscribeEvent
+	@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {
 		if (event.getPackType() == PackType.CLIENT_RESOURCES) {
-      if (CrowdinManager.isLiveTranslationsEnabled()) {
-        String currentLang = Minecraft.getInstance().options.languageCode;
-        CrowdinManager.fetchLanguage(currentLang);
-      }
+			if (CrowdinManager.isLiveTranslationsEnabled()) {
+				String currentLang = Minecraft.getInstance().options.languageCode;
+				CrowdinManager.fetchLanguage(currentLang);
+			}
 
 			event.addRepositorySource((packConsumer) -> {
 				Pack crowdinPack = Pack.readMetaAndCreate("dmz_crowdin_ota", Component.literal("DMZ Live Translations"), true,
@@ -377,5 +376,12 @@ public class ModClientEvents {
 			buffersToFree.forEach(MemoryUtil::memFree);
 			loadedImages.forEach(NativeImage::close);
 		}
+	}
+
+	@SubscribeEvent
+	public static void registerTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {
+		event.register(CustomTooltipNodes.HeaderNode.class, CustomTooltipRenderers.HeaderRenderer::new);
+		event.register(CustomTooltipNodes.PaddingNode.class, CustomTooltipRenderers.PaddingRenderer::new);
+		event.register(CustomTooltipNodes.SeparatorNode.class, CustomTooltipRenderers.SeparatorRenderer::new);
 	}
 }

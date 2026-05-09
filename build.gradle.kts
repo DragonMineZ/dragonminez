@@ -164,7 +164,7 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
 
     // Vulnerability corrections
-    implementation("com.google.guava:guava:33.5.0-jre") { because("Security/compat override requested.") }
+    implementation("com.google.guava:guava:33.6.0-jre") { because("Security/compat override requested.") }
     implementation("io.netty:netty-codec:4.2.7.Final") { because("Security/compat override requested.") }
     implementation("io.netty:netty-handler:4.2.7.Final") { because("Security/compat override requested.") }
     implementation("org.apache.commons:commons-compress:1.27.1") { because("Security/compat override requested.") }
@@ -175,18 +175,18 @@ dependencies {
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
 
     // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
-    compileOnly("org.projectlombok:lombok:1.18.42")
-    annotationProcessor("org.projectlombok:lombok:1.18.42")
+    compileOnly("org.projectlombok:lombok:1.18.46")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
 
     // Database libraries
-    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.7,)") {
+    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.8,)") {
         jarJar.ranged(
             this,
             "[3.5.7,)"
         )
     }
     jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }
-    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.7")
+    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.8")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
@@ -205,9 +205,9 @@ dependencies {
         runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
 
         // For extra tooltip info, like rarity
-        runtimeOnly(fg.deobf("curse.maven:prism-lib-638111:4650325"))
-        runtimeOnly(fg.deobf("curse.maven:iceberg-520110:5838149"))
-        runtimeOnly(fg.deobf("curse.maven:legendary-tooltips-532127:4662781"))
+        //runtimeOnly(fg.deobf("curse.maven:prism-lib-638111:4650325"))
+        //runtimeOnly(fg.deobf("curse.maven:iceberg-520110:5838149"))
+        //runtimeOnly(fg.deobf("curse.maven:legendary-tooltips-532127:4662781"))
     }
 
     // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)

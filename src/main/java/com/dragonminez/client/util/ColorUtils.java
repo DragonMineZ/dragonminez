@@ -34,6 +34,10 @@ public class ColorUtils {
         return (r << 16) | (g << 8) | b;
     }
 
+    public static int rgbToInt(float r, float g, float b) {
+        return rgbToInt((int)(r * 255), (int)(g * 255), (int)(b * 255));
+    }
+
     public static int[] intToRgb(int color) {
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;

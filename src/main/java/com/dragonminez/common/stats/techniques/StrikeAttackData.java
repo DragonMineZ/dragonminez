@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats.techniques;
 
+import com.dragonminez.common.stats.StatsData;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -40,5 +41,10 @@ public class StrikeAttackData extends TechniqueData {
 		this.damageMultiplier = tag.getFloat("DamageMultiplier");
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
+	}
+
+	@Override
+	public double getCalculatedCost(StatsData statsData) {
+		return baseCost;
 	}
 }

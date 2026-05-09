@@ -17,10 +17,10 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -123,6 +123,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(0);
         this.setCastOffsets(0.4F, 0.6F, 0.0F);
         updatePositionRelativeToOwner(owner, false);
+        
     }
 
     public void setupKiWavePlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
@@ -163,6 +164,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(0);
         this.setCastOffsets(0.4F, -0.6F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
+        
     }
 
     public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size) {
@@ -203,6 +205,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(0);
         this.setCastOffsets(0.4F, 0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
+        
     }
 
     public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size) {
@@ -243,6 +246,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(40);
         this.setCastOffsets(0.0F, -0.3F, 0.4F);
         updatePositionRelativeToOwner(owner, false);
+        
     }
 
     public void setupFinalFlashPlayer(LivingEntity owner, float damage, float speed, float size) {
@@ -320,6 +324,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (this.getOwner() instanceof LivingEntity livingOwner) {
             updatePositionRelativeToOwner(livingOwner, false);
         }
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
     private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {
@@ -536,10 +542,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private boolean destroyBlocksAtTip(Vec3 tipPos) {
-        if (!MainGameRules.canKiGrief(this.level(), BlockPos.containing(tipPos), this.getOwner())) {
-            return false;
-        }
-
         boolean hitSomething = false;
         float eatRadius = this.getSize() * 1.5F;
         int bRad = Math.round(eatRadius);
@@ -551,8 +553,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 for (int z = -bRad; z <= bRad; z++) {
                     if (x * x + y * y + z * z <= eatRadius * eatRadius) {
                         BlockPos targetPos = center.offset(x, y, z);
-                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000) {
-                            level.destroyBlock(targetPos, false);
+                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000 && this.destroyKiBlock(targetPos, false)) {
                             hitSomething = true;
                             if (level instanceof ServerLevel serverLevel) {
                                 if (this.random.nextFloat() < 0.25F) {
@@ -690,16 +691,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             BlockPos center = BlockPos.containing(pos);
 
-            if (MainGameRules.canKiGrief(this.level(), center, this.getOwner())) {
-                int blockRadius = Math.round(explosionRadius);
-                for (int x = -blockRadius; x <= blockRadius; x++) {
-                    for (int y = -blockRadius; y <= blockRadius; y++) {
-                        for (int z = -blockRadius; z <= blockRadius; z++) {
-                            if (x * x + y * y + z * z <= explosionRadius * explosionRadius) {
-                                BlockPos targetPos = center.offset(x, y, z);
-                                if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
-                                    this.level().setBlock(targetPos, Blocks.AIR.defaultBlockState(), 2);
-                                }
+            int blockRadius = Math.round(explosionRadius);
+            for (int x = -blockRadius; x <= blockRadius; x++) {
+                for (int y = -blockRadius; y <= blockRadius; y++) {
+                    for (int z = -blockRadius; z <= blockRadius; z++) {
+                        if (x * x + y * y + z * z <= explosionRadius * explosionRadius) {
+                            BlockPos targetPos = center.offset(x, y, z);
+                            if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
+                                this.setKiBlockToAir(targetPos, 2);
                             }
                         }
                     }

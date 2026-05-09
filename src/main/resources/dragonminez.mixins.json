@@ -16,11 +16,17 @@
     "common.SweepingEdgeEnchantmentMixin"
   ],
   "client": [
+    "client.BundleTooltipComponentAccessor",
+    "client.ClientTextTooltipAccessor",
     "client.ColliderDebugRenderer",
+    "client.EntityMouseHandlerMixin",
     "client.EntityRenderDispatcherMixin",
     "client.FlightCameraMixin",
-    "client.FlightGameRendererMixin",
+    "client.GameRendererMixin",
+    "client.GuiGraphicsInvoker",
+    "client.GuiGraphicsMixin",
     "client.HeldItemRendererMixin",
+    "client.HoveredTooltipPositionerMixin",
     "client.InGameHudMixin",
     "client.LivingEntityRendererAccessor",
     "client.LocalPlayerMixin",

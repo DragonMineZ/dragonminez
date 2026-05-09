@@ -11,6 +11,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -81,6 +82,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
         this.setCastTime(40);
         this.setCastOffsets(0.4F, 0.7F, 0.2F);
         updatePositionRelativeToOwner(owner);
+        
     }
 
     public void setupKiDiskPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
@@ -102,6 +104,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_DISK_CHARGE.get(), SoundSource.PLAYERS, 0.7F, 1.5F);
         }
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
     @Override

@@ -13,6 +13,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -26,6 +28,7 @@ public class TrackedQuestHUD {
 
 	private static final int PANEL_WIDTH = 180;
 	private static final int MAX_TEXT_WIDTH = PANEL_WIDTH - 16;
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	public static final IGuiOverlay HUD_TRACKED_QUEST = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
@@ -47,7 +50,7 @@ public class TrackedQuestHUD {
 	private static void renderPanel(GuiGraphics guiGraphics, Font font, PlayerQuestData pqd, String questId, Quest quest, int screenWidth) {
 		List<FormattedCharSequence> objectiveLines = buildObjectiveLines(font, pqd, questId, quest);
 		List<FormattedCharSequence> wrappedTitle = font.split(toComponent(quest.getTitle()), MAX_TEXT_WIDTH);
-		if (wrappedTitle.isEmpty()) wrappedTitle = List.of(FormattedCharSequence.forward(questId, net.minecraft.network.chat.Style.EMPTY));
+		if (wrappedTitle.isEmpty()) wrappedTitle = List.of(FormattedCharSequence.forward(questId, net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT)));
 
 		int lineHeight = 10;
 		int lineCount = 1 + wrappedTitle.size() + objectiveLines.size();
@@ -60,7 +63,7 @@ public class TrackedQuestHUD {
 		guiGraphics.fill(x, y + panelHeight - 1, x + PANEL_WIDTH, y + panelHeight, 0x66000000);
 
 		int drawY = y + 5;
-		guiGraphics.drawString(font, Component.translatable("gui.dragonminez.story.hud.tracked"), x + 6, drawY, 0xE8F0FF, false);
+		guiGraphics.drawString(font, Component.translatable("gui.dragonminez.story.hud.tracked").withStyle(Style.EMPTY.withFont(DMZ_FONT)), x + 6, drawY, 0xE8F0FF, false);
 		drawY += lineHeight;
 
 		for (FormattedCharSequence titleLine : wrappedTitle) {
@@ -78,7 +81,7 @@ public class TrackedQuestHUD {
 		List<FormattedCharSequence> lines = new ArrayList<>();
 		List<QuestObjective> objectives = quest.getObjectives();
 		if (objectives.isEmpty()) {
-			lines.add(FormattedCharSequence.forward(Component.translatable("gui.dragonminez.story.hud.no_objectives").getString(), net.minecraft.network.chat.Style.EMPTY));
+			lines.add(FormattedCharSequence.forward(Component.translatable("gui.dragonminez.story.hud.no_objectives").withStyle(Style.EMPTY.withFont(DMZ_FONT)).getString(), net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT)));
 			return lines;
 		}
 
@@ -98,7 +101,7 @@ public class TrackedQuestHUD {
 		}
 
 		if (lines.isEmpty()) {
-			lines.add(FormattedCharSequence.forward(Component.translatable("gui.dragonminez.quests.status.complete").getString(), net.minecraft.network.chat.Style.EMPTY));
+			lines.add(FormattedCharSequence.forward(Component.translatable("gui.dragonminez.quests.status.complete").withStyle(Style.EMPTY.withFont(DMZ_FONT)).getString(), net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT)));
 		}
 
 		return lines;
@@ -107,13 +110,12 @@ public class TrackedQuestHUD {
 	private static List<FormattedCharSequence> splitObjectiveLine(Font font, QuestObjective objective, int progress, int required) {
 		Component text = Component.literal("- ")
 				.append(QuestTextFormatter.describeObjective(objective))
-				.append(Component.literal(" (" + progress + "/" + required + ")"));
+				.append(Component.literal(" (" + progress + "/" + required + ")"))
+				.withStyle(Style.EMPTY.withFont(DMZ_FONT));
 		return font.split(text, MAX_TEXT_WIDTH);
 	}
 
 	private static Component toComponent(String raw) {
-		return LocalizationUtil.localizedOrReadable(raw);
+		return LocalizationUtil.localizedOrReadable(raw).copy().withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }
-
-

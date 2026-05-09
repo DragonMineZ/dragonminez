@@ -85,16 +85,12 @@ public class ClientPacketHandler {
 		}
 	}
 
-	public static void handleRadarSyncPacket(List<BlockPos> earthPositions, List<BlockPos> namekPositions) {
-		RadarRenderEvent.updateRadarData(earthPositions, namekPositions);
-	}
-
 	public static void handleRadarSyncPacket(List<BlockPos> earthPositions, List<BlockPos> namekPositions, Map<String, List<BlockPos>> positionsBySet) {
 		RadarRenderEvent.updateRadarData(earthPositions, namekPositions, positionsBySet);
 	}
 
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,
-			int variant, int entityId) {
+			int variant, int entityId, String stringPayload) {
 		var clientLevel = Minecraft.getInstance().level;
 		if (clientLevel == null) return;
 
@@ -104,6 +100,8 @@ public class ClientPacketHandler {
 				case EVASION -> animatable.dragonminez$triggerEvasion();
 				case DASH -> animatable.dragonminez$triggerDash(variant);
 				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
+				case KI_ANIMATION -> animatable.dragonminez$playKiAnimation(stringPayload);
+				case KI_ANIMATION_STOP -> animatable.dragonminez$stopKiAnimation();
 			}
 		}
 	}

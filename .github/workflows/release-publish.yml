@@ -1,0 +1,210 @@
+name: DragonMineZ Release Publish
+
+on:
+  repository_dispatch:
+    types:
+      - dragonminez_release_approved
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable DragonMineZ version to publish.
+        required: true
+        type: string
+      commit_sha:
+        description: Exact commit SHA approved for publishing.
+        required: true
+        type: string
+      artifact_sha256:
+        description: SHA-256 from the prepared release manifest.
+        required: true
+        type: string
+      approved_by:
+        description: Discord or GitHub user who approved the release.
+        required: true
+        type: string
+      changelog:
+        description: Markdown changelog to publish to Modrinth and CurseForge.
+        required: false
+        type: string
+      update_description:
+        description: Short Forge update.json description. Defaults to the first changelog line.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    name: Publish approved release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout approved commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.client_payload.commit_sha || inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Resolve approval payload
+        id: payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8"))
+          payload = event.get("client_payload") or event.get("inputs") or {}
+          required = ["version", "commit_sha", "artifact_sha256", "approved_by"]
+          missing = [name for name in required if not payload.get(name)]
+          if missing:
+              raise SystemExit(f"Missing release approval payload field(s): {', '.join(missing)}")
+
+          changelog = payload.get("changelog") or ""
+          update_description = payload.get("update_description") or ""
+          if not update_description:
+              update_description = next(
+                  (line.strip() for line in changelog.splitlines() if line.strip()),
+                  f"DragonMineZ {payload['version']}",
+              )
+
+          Path("release-changelog.md").write_text(changelog, encoding="utf-8")
+          Path("release-update-description.txt").write_text(update_description, encoding="utf-8")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for key in required:
+                  output.write(f"{key}={payload[key]}\n")
+          PY
+
+      - name: Ensure approved commit is current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          current_main="$(git rev-parse origin/main)"
+          if [[ "$current_main" != "${{ steps.payload.outputs.commit_sha }}" ]]; then
+            echo "::error::Approved commit ${{ steps.payload.outputs.commit_sha }} is no longer origin/main ($current_main). Re-run release preparation for the current main branch."
+            exit 1
+          fi
+
+      - name: Set up JDK 17 Temurin
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          dependency-graph: generate-and-submit
+          artifact-retention-days: 2
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build release jar
+        run: ./gradlew build
+
+      - name: Verify approved artifact
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(grep '^mod_version=' gradle.properties | cut -d= -f2-)"
+          minecraft_version="$(grep '^minecraft_version=' gradle.properties | cut -d= -f2-)"
+          lower_version="$(printf '%s' "$version" | tr '[:upper:]' '[:lower:]')"
+          if [[ "$version" != "${{ steps.payload.outputs.version }}" ]]; then
+            echo "::error::Approved version '${{ steps.payload.outputs.version }}' does not match gradle.properties version '$version'."
+            exit 1
+          fi
+          if [[ "$lower_version" == *alpha* || "$lower_version" == *beta* ]]; then
+            echo "::error::Publishing from main is limited to stable releases; '$version' is not stable."
+            exit 1
+          fi
+
+          artifact="build/libs/dragonminez-${version}.jar"
+          if [[ ! -f "$artifact" ]]; then
+            echo "::error::Expected release artifact does not exist: $artifact"
+            exit 1
+          fi
+
+          actual_sha="$(sha256sum "$artifact" | cut -d ' ' -f1)"
+          if [[ "$actual_sha" != "${{ steps.payload.outputs.artifact_sha256 }}" ]]; then
+            echo "::error::Artifact checksum mismatch. Expected '${{ steps.payload.outputs.artifact_sha256 }}', got '$actual_sha'."
+            exit 1
+          fi
+
+          echo "path=${artifact}" >> "$GITHUB_OUTPUT"
+          echo "name=dragonminez-${version}.jar" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "minecraft_version=${minecraft_version}" >> "$GITHUB_OUTPUT"
+
+      - name: Read changelog
+        id: changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo 'text<<DMZ_CHANGELOG_EOF'
+            cat release-changelog.md
+            echo 'DMZ_CHANGELOG_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish to Modrinth
+        uses: cloudnode-pro/modrinth-publish@v2.3.4
+        with:
+          token: ${{ secrets.MODRINTH_TOKEN }}
+          project: ${{ vars.MODRINTH_PROJECT_ID }}
+          name: DragonMineZ ${{ steps.artifact.outputs.version }}
+          version: ${{ steps.artifact.outputs.version }}
+          channel: release
+          loaders: forge
+          game-versions: ${{ steps.artifact.outputs.minecraft_version }}
+          files: ${{ steps.artifact.outputs.path }}
+          changelog: ${{ steps.changelog.outputs.text }}
+          dependencies: ${{ vars.MODRINTH_DEPENDENCIES_JSON || '[]' }}
+
+      - name: Publish to CurseForge
+        uses: itsmeow/curseforge-upload@v3.1.2
+        with:
+          token: ${{ secrets.CURSEFORGE_TOKEN }}
+          project_id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          game_endpoint: minecraft
+          file_path: ${{ steps.artifact.outputs.path }}
+          display_name: DragonMineZ ${{ steps.artifact.outputs.version }}
+          game_versions: ${{ vars.CURSEFORGE_GAME_VERSION_IDS }}
+          release_type: release
+          changelog: ${{ steps.changelog.outputs.text }}
+          changelog_type: markdown
+          relations: ${{ vars.CURSEFORGE_RELATIONS }}
+
+      - name: Update Forge update.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          description="$(cat release-update-description.txt)"
+          python3 -m scripts.release.update_forge_update_json \
+            --file update.json \
+            --minecraft-version "${{ steps.artifact.outputs.minecraft_version }}" \
+            --version "${{ steps.artifact.outputs.version }}" \
+            --description "$description"
+
+      - name: Commit update.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- update.json; then
+            echo "::notice::update.json already matches ${{ steps.artifact.outputs.version }}."
+            exit 0
+          fi
+
+          git config user.name "dragonminez-release-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add update.json
+          git commit -m "chore: update Forge metadata for ${{ steps.artifact.outputs.version }}"
+          git push origin HEAD:main

@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
@@ -275,7 +276,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
 		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
 				leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
 
 		renderConfigsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
@@ -302,7 +303,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 			String displayName = tr("gui.dragonminez." + option.key).getString();
 
-			drawStringWithBorder(graphics, txt(displayName),
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(displayName),
 					(int) ((panelX + 15) / 0.75f), (int) (itemY / 0.75f) + 6, 0xFFFFFFFF);
 		}
 
@@ -310,7 +311,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.disableScissor();
 
 		if (maxScroll > 0) {
-			int scrollBarX = panelX + 140;
+			int scrollBarX = panelX + 128;
 			int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
 			int totalItems = configOptions.size();
 
@@ -334,7 +335,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
 		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
 				rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
 
 		renderConfigValues(graphics, rightPanelX, rightPanelY);
@@ -359,7 +360,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 				graphics.pose().pushPose();
 				graphics.pose().scale(0.75f, 0.75f, 0.75f);
-				drawCenteredStringWithBorder(graphics, txt(valueText),
+				TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(valueText),
 						(int) ((panelX + 69) / 0.75f), (int) ((itemY + 5) / 0.75f), 0xFFFFFFFF);
 				graphics.pose().popPose();
 			}
@@ -504,21 +505,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		player.setXRot(xRotO);
 		player.yHeadRotO = yHeadRotO;
 		player.yHeadRot = yHeadRot;
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - (textWidth / 2);
-		drawStringWithBorder(graphics, text, x, y, textColor);
 	}
 
 	@Override

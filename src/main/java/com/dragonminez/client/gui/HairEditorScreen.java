@@ -6,8 +6,10 @@ import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.ScaledScreen;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairManager;
@@ -803,8 +805,8 @@ public class HairEditorScreen extends ScaledScreen {
 
 	private void drawTopRightLabels(GuiGraphics graphics) {
 		int rightEdge = getUiWidth() - 12;
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.mirror"), rightEdge - 30 - font.width(tr("gui.dragonminez.hair_editor.mirror")) - 5, 17, 0xFFFFFF);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.physics"), rightEdge - 90 - font.width(tr("gui.dragonminez.hair_editor.physics")) - 5, 17, 0xFFFFFF);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.mirror"), rightEdge - 30 - font.width(tr("gui.dragonminez.hair_editor.mirror")) - 5, 17, 0xFFFFFF);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.physics"), rightEdge - 90 - font.width(tr("gui.dragonminez.hair_editor.physics")) - 5, 17, 0xFFFFFF);
 	}
 
 	private void renderOverviewContent(GuiGraphics graphics) {
@@ -812,10 +814,10 @@ public class HairEditorScreen extends ScaledScreen {
 		int centerY = getUiHeight() / 2;
 		int panelY = centerY - 105;
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.styles").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.fullcode"), leftPanelX + 15, panelY + 138, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.styles").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.fullcode"), leftPanelX + 15, panelY + 138, 0xFFFFFF);
 
-		if (actionStatusTimer > 0) drawCenteredStringWithBorder(graphics, actionStatusText, leftPanelX + 70, panelY + 195, actionStatusColor);
+		if (actionStatusTimer > 0) TextUtil.drawCenteredStringWithBorder(graphics, this.font, actionStatusText, leftPanelX + 70, panelY + 195, actionStatusColor);
     }
 
 	private void renderStyleContent(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -823,11 +825,11 @@ public class HairEditorScreen extends ScaledScreen {
 		int centerY = getUiHeight() / 2;
 		int panelY = centerY - 105;
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.hair_strands").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.hair_strands").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
 		renderFaceSelector(graphics, leftPanelX, panelY, mouseX, mouseY);
 		renderStrandsGrid(graphics, leftPanelX, panelY, mouseX, mouseY);
 
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.stylecode"), leftPanelX + 15, panelY + 162, 0xFFFFFF);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.stylecode"), leftPanelX + 15, panelY + 162, 0xFFFFFF);
 	}
 
 	private void renderStrandContent(GuiGraphics graphics) {
@@ -835,31 +837,31 @@ public class HairEditorScreen extends ScaledScreen {
 		int centerY = getUiHeight() / 2;
 		int panelY = centerY - 105;
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.edit_values").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.edit_values").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
 
 		if (lengthSlider != null) {
-			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.length"), lengthSlider.getX(), lengthSlider.getY() - 10, 0xFFFFFF);
-			drawStringWithBorder(graphics, txt(String.format("%.1f", lengthSlider.getValue())), lengthSlider.getX() + lengthSlider.getWidth() + 2, lengthSlider.getY() + 2, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.length"), lengthSlider.getX(), lengthSlider.getY() - 10, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(String.format("%.1f", lengthSlider.getValue())), lengthSlider.getX() + lengthSlider.getWidth() + 2, lengthSlider.getY() + 2, 0xFFFFFF);
 		}
 		if (widthSlider != null) {
-			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.width"), widthSlider.getX(), widthSlider.getY() - 10, 0xFFFFFF);
-			drawStringWithBorder(graphics, txt(String.format("%.1f", widthSlider.getValue())), widthSlider.getX() + widthSlider.getWidth() + 2, widthSlider.getY() + 2, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.width"), widthSlider.getX(), widthSlider.getY() - 10, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(String.format("%.1f", widthSlider.getValue())), widthSlider.getX() + widthSlider.getWidth() + 2, widthSlider.getY() + 2, 0xFFFFFF);
 		}
 		if (xAxisSlider != null) {
-			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.x_axis"), xAxisSlider.getX(), xAxisSlider.getY() - 10, 0xFFFFFF);
-			drawStringWithBorder(graphics, txt(String.format("%.1f", xAxisSlider.getValue())), xAxisSlider.getX() + xAxisSlider.getWidth() + 2, xAxisSlider.getY() + 2, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.x_axis"), xAxisSlider.getX(), xAxisSlider.getY() - 10, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(String.format("%.1f", xAxisSlider.getValue())), xAxisSlider.getX() + xAxisSlider.getWidth() + 2, xAxisSlider.getY() + 2, 0xFFFFFF);
 		}
 		if (zAxisSlider != null) {
-			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.z_axis"), zAxisSlider.getX(), zAxisSlider.getY() - 10, 0xFFFFFF);
-			drawStringWithBorder(graphics, txt(String.format("%.1f", zAxisSlider.getValue())), zAxisSlider.getX() + zAxisSlider.getWidth() + 2, zAxisSlider.getY() + 2, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.z_axis"), zAxisSlider.getX(), zAxisSlider.getY() - 10, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(String.format("%.1f", zAxisSlider.getValue())), zAxisSlider.getX() + zAxisSlider.getWidth() + 2, zAxisSlider.getY() + 2, 0xFFFFFF);
 		}
 		if (xBendSlider != null) {
-			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.x_bend"), xBendSlider.getX(), xBendSlider.getY() - 10, 0xFFFFFF);
-			drawStringWithBorder(graphics, txt(String.format("%.1f", xBendSlider.getValue())), xBendSlider.getX() + xBendSlider.getWidth() + 2, xBendSlider.getY() + 2, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.x_bend"), xBendSlider.getX(), xBendSlider.getY() - 10, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(String.format("%.1f", xBendSlider.getValue())), xBendSlider.getX() + xBendSlider.getWidth() + 2, xBendSlider.getY() + 2, 0xFFFFFF);
 		}
 		if (zBendSlider != null) {
-			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.z_bend"), zBendSlider.getX(), zBendSlider.getY() - 10, 0xFFFFFF);
-			drawStringWithBorder(graphics, txt(String.format("%.1f", zBendSlider.getValue())), zBendSlider.getX() + zBendSlider.getWidth() + 2, zBendSlider.getY() + 2, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.z_bend"), zBendSlider.getX(), zBendSlider.getY() - 10, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(String.format("%.1f", zBendSlider.getValue())), zBendSlider.getX() + zBendSlider.getWidth() + 2, zBendSlider.getY() + 2, 0xFFFFFF);
 		}
 	}
 
@@ -1091,19 +1093,6 @@ public class HairEditorScreen extends ScaledScreen {
 	@Override
 	public void onClose() {
 		navigateBack();
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		graphics.drawString(font, text, x + 1, y, 0xFF000000, false);
-		graphics.drawString(font, text, x - 1, y, 0xFF000000, false);
-		graphics.drawString(font, text, x, y + 1, 0xFF000000, false);
-		graphics.drawString(font, text, x, y - 1, 0xFF000000, false);
-		graphics.drawString(font, text, x, y, textColor, false);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = font.width(text);
-		drawStringWithBorder(graphics, text, centerX - (textWidth / 2), y, textColor);
 	}
 
 	public MutableComponent tr(String key, Object... args) {
