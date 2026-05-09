@@ -98,6 +98,7 @@ jobs:
         if: steps.metadata.outputs.stable == 'true'
         env:
           DMZ_RELEASE_BOT_WEBHOOK_URL: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_URL }}
+          RELEASE_WEBHOOK_SECRET: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_SECRET }}
         shell: bash
         run: |
           set -euo pipefail
@@ -105,9 +106,14 @@ jobs:
             echo "::notice::DMZ_RELEASE_BOT_WEBHOOK_URL is not configured; use the uploaded release-bot-payload.json artifact for Discord approval."
             exit 0
           fi
+          if [[ -z "${RELEASE_WEBHOOK_SECRET}" ]]; then
+            echo "::error::DMZ_RELEASE_BOT_WEBHOOK_SECRET must be configured when DMZ_RELEASE_BOT_WEBHOOK_URL is set."
+            exit 1
+          fi
 
           curl --fail-with-body \
             --request POST \
             --header 'Content-Type: application/json' \
+            --header "X-DMZ-Release-Bot-Secret: ${RELEASE_WEBHOOK_SECRET}" \
             --data @release-bot-payload.json \
             "$DMZ_RELEASE_BOT_WEBHOOK_URL"
