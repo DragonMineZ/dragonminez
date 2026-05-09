@@ -157,11 +157,11 @@ public class TickHandler {
 				playerTickCounters.put(playerId, tickCounter);
 			}
 
-			boolean isExecuting = TechniqueDispatcher.isExecutingKiAttack(serverPlayer, data);
+			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data);
 			boolean isFiring = TechniqueDispatcher.isFiringKiAttack(serverPlayer);
 			boolean wasExecuting = serverPlayer.getPersistentData().getBoolean("dmz_was_executing_ki");
 
-			if (isExecuting) {
+			if (isMovementRestricted) {
 				serverPlayer.setDeltaMovement(0, serverPlayer.getDeltaMovement().y < 0 ? serverPlayer.getDeltaMovement().y : 0, 0);
 				serverPlayer.hasImpulse = true;
 				serverPlayer.setJumping(false);

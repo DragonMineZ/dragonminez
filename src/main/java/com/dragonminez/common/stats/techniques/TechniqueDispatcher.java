@@ -276,18 +276,56 @@ public class TechniqueDispatcher {
 		return Math.max(20, (int) (base * chargeMultiplier));
 	}
 
-	public static boolean isExecutingKiAttack(Player player, StatsData data) {
-		if (data != null && (data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive())) return true;
-
-		List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
-		for (AbstractKiProjectile ki : projectiles) if (ki.getOwner() != null && ki.getOwner().getUUID().equals(player.getUUID())) return true;
-
-		return false;
-	}
-
 	public static boolean isFiringKiAttack(Player player) {
 		List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
 		for (AbstractKiProjectile ki : projectiles) if (ki.getOwner() != null && ki.getOwner().getUUID().equals(player.getUUID())) if (ki.isFiring()) return true;
 		return false;
+	}
+
+	public static boolean isMovementRestrictedKiAttack(Player player, StatsData data) {
+		if (isChargingRestrictedTechniqueType(getCurrentChargingKiType(data), true)) return true;
+		return hasOwnedProjectileWithRestriction(player, true);
+	}
+
+	public static boolean isActionRestrictedKiAttack(Player player, StatsData data) {
+		if (isChargingRestrictedTechniqueType(getCurrentChargingKiType(data), false)) return true;
+		return hasOwnedProjectileWithRestriction(player, false);
+	}
+
+	private static KiAttackData.KiType getCurrentChargingKiType(StatsData data) {
+		if (data == null) return null;
+		String chargingTechniqueId = data.getTechniques().getChargingTechniqueId();
+		if (chargingTechniqueId == null || chargingTechniqueId.isEmpty()) return null;
+
+		TechniqueData chargingTechnique = data.getTechniques().getUnlockedTechniques().get(chargingTechniqueId);
+		if (chargingTechnique instanceof KiAttackData kiAttackData) return kiAttackData.getKiType();
+
+		return null;
+	}
+
+	private static boolean hasOwnedProjectileWithRestriction(Player player, boolean movementRestriction) {
+		List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
+		for (AbstractKiProjectile ki : projectiles) {
+			if (ki.getOwner() == null || !ki.getOwner().getUUID().equals(player.getUUID())) continue;
+			if (isProjectileRestrictedType(ki.getKiType(), movementRestriction)) return true;
+		}
+		return false;
+	}
+
+	private static boolean isChargingRestrictedTechniqueType(KiAttackData.KiType kiType, boolean movementRestriction) {
+		if (kiType == null) return false;
+		return switch (kiType) {
+			case GIANT_BALL, WAVE, LASER, BEAM, EXPLOSION, BARRAGE -> true;
+			case SHIELD, AREA -> !movementRestriction;
+			case SMALL_BALL, MEDIUM_BALL, DISK -> false;
+		};
+	}
+
+	private static boolean isProjectileRestrictedType(AbstractKiProjectile.KiType kiType, boolean movementRestriction) {
+		return switch (kiType) {
+			case GIANT_BALL, WAVE, LASER, BEAM, EXPLOSION, BARRAGE -> true;
+			case SHIELD, AREA -> !movementRestriction;
+			case SMALL_BALL, MEDIUM_BALL, DISK -> false;
+		};
 	}
 }

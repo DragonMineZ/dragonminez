@@ -107,7 +107,6 @@ public enum WeaponGripProfile {
 		}
 	},
 
-	// Bloque / ItemBlock
 	BLOCK {
 		@Override
 		public void applyRight(PoseStack ps) {
@@ -121,7 +120,6 @@ public enum WeaponGripProfile {
 		}
 	},
 
-	// Todo lo demás (comida, tótem, objetos planos, items de mods sin clase conocida)
 	DEFAULT {
 		@Override
 		public void applyRight(PoseStack ps) {

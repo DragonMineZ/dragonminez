@@ -203,12 +203,15 @@ public class ClientStatsEvents {
 			boolean isRightClickDown = mc.options.keyUse.isDown() && !isStunned;
 			boolean isBlockKeyDown = KeyBinds.BLOCK_KEY.isDown() && !isStunned;
 
-			if (TechniqueDispatcher.isExecutingKiAttack(localPlayer, data)) {
+			boolean isActionRestricted = TechniqueDispatcher.isActionRestrictedKiAttack(localPlayer, data);
+			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(localPlayer, data);
+
+			if (isActionRestricted) {
 				isKiChargeKeyPressed = false;
 				isActionKeyPressed = false;
 				isBlockKeyDown = false;
 
-				if (TechniqueDispatcher.isFiringKiAttack(localPlayer)) {
+				if (isMovementRestricted && TechniqueDispatcher.isFiringKiAttack(localPlayer)) {
 					localPlayer.setYRot(localPlayer.yRotO);
 					localPlayer.setXRot(localPlayer.xRotO);
 					localPlayer.yHeadRot = localPlayer.yHeadRotO;
@@ -344,7 +347,7 @@ public class ClientStatsEvents {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 			boolean isStunned = data.getStatus().isStunned();
-			if (TechniqueDispatcher.isExecutingKiAttack(player, data)) return;
+			if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data)) return;
 
 			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();
 			if (isDashKeyDown && !wasDashKeyDown && !isStunned) {
@@ -429,7 +432,7 @@ public class ClientStatsEvents {
 	@SubscribeEvent
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
-			if (TechniqueDispatcher.isExecutingKiAttack(event.getEntity(), data)) {
+			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data)) {
 				event.getInput().forwardImpulse = 0;
 				event.getInput().leftImpulse = 0;
 				event.getInput().jumping = false;

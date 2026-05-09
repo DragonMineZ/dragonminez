@@ -85,10 +85,6 @@ public class ClientPacketHandler {
 		}
 	}
 
-	public static void handleRadarSyncPacket(List<BlockPos> earthPositions, List<BlockPos> namekPositions) {
-		RadarRenderEvent.updateRadarData(earthPositions, namekPositions);
-	}
-
 	public static void handleRadarSyncPacket(List<BlockPos> earthPositions, List<BlockPos> namekPositions, Map<String, List<BlockPos>> positionsBySet) {
 		RadarRenderEvent.updateRadarData(earthPositions, namekPositions, positionsBySet);
 	}
