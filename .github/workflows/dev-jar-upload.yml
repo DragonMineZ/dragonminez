@@ -7,6 +7,14 @@ on:
     paths:
       - '**.java'
       - 'src/main/resources/**'
+      - 'src/generated/resources/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/dev-jar-upload.yml'
   workflow_dispatch: {}
 
 permissions:
@@ -66,7 +74,7 @@ jobs:
             branch_slug="branch"
           fi
           short_sha="${GITHUB_SHA::12}"
-          remote_name="dragonminez-${version}-${branch_slug}-${short_sha}.jar"
+          remote_name="dragonminez-${version}__${branch_slug}__${short_sha}.jar"
           sha256="$(sha256sum "$artifact" | cut -d ' ' -f1)"
 
           echo "path=${artifact}" >> "$GITHUB_OUTPUT"
@@ -85,7 +93,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          : "${DMZ_VPS_HOST:?DMZ_VPS_HOST secret is required}"
+          : "${DMZ_VPS_HOST:?DMZ_VPS_HOST repository variable is required}"
           : "${DMZ_VPS_USER:?DMZ_VPS_USER secret is required}"
           : "${DMZ_VPS_SSH_KEY:?DMZ_VPS_SSH_KEY secret is required}"
           : "${DMZ_VPS_KNOWN_HOSTS:?DMZ_VPS_KNOWN_HOSTS secret is required}"
