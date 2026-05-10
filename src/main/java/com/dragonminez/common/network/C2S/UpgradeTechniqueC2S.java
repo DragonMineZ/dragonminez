@@ -5,7 +5,6 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.techniques.KiAttackData;
-import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import net.minecraft.network.FriendlyByteBuf;
@@ -39,20 +38,43 @@ public class UpgradeTechniqueC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techniqueId);
-					if (tech != null && !PredefinedTechniques.isPredefinedTechnique(tech)) {
-						int cost = 100;
+					if (tech != null) {
+						int cost = tech instanceof KiAttackData ki ? ki.getUpgradeXpCost(statType) : 100;
 						if (tech.getExperience() >= cost) {
+							if (tech instanceof KiAttackData ki && !ki.canUpgradeStat(statType)) return;
+
 							tech.setExperience(tech.getExperience() - cost);
 							switch (statType) {
 								case "damage" -> {
-									if (tech instanceof KiAttackData ki) ki.setDamageMultiplier(ki.getDamageMultiplier() + 0.1f);
-									else if (tech instanceof StrikeAttackData st) st.setDamageMultiplier(st.getDamageMultiplier() + 0.1f);
+									if (tech instanceof KiAttackData ki) {
+										ki.setDamageMultiplier(ki.getDamageMultiplier() + 0.1f);
+										ki.setDamageLevel(ki.getDamageLevel() + 1);
+									} else if (tech instanceof StrikeAttackData st) st.setDamageMultiplier(st.getDamageMultiplier() + 0.1f);
 								}
-								case "size" -> { if (tech instanceof KiAttackData ki) ki.setSize(ki.getSize() + 0.1f); }
-								case "speed" -> { if (tech instanceof KiAttackData ki) ki.setSpeed(ki.getSpeed() + 0.1f); }
-								case "armor_pen" -> { if (tech instanceof KiAttackData ki) ki.setArmorPenetration(ki.getArmorPenetration() + 1); }
-								case "cooldown" -> tech.setCooldown(Math.max(0, tech.getCooldown() - 2));
-								case "cast" -> tech.setCastTime(Math.max(0, tech.getCastTime() - 1));
+								case "size" -> {
+									if (tech instanceof KiAttackData ki) {
+										ki.setSize(ki.getSize() + 0.1f);
+										ki.setSizeLevel(ki.getSizeLevel() + 1);
+									}
+								}
+								case "speed" -> {
+									if (tech instanceof KiAttackData ki) {
+										ki.setSpeed(ki.getSpeed() + 0.1f);
+										ki.setSpeedLevel(ki.getSpeedLevel() + 1);
+									}
+								}
+								case "armor_pen" -> {
+									if (tech instanceof KiAttackData ki) {
+										ki.setArmorPenetration(ki.getArmorPenetration() + 1);
+										ki.setArmorPenLevel(ki.getArmorPenLevel() + 1);
+									}
+								}
+								case "cooldown" -> {
+									if (tech instanceof KiAttackData ki) ki.setCooldownLevel(ki.getCooldownLevel() + 1);
+								}
+								case "cast" -> {
+									if (tech instanceof KiAttackData ki) ki.setCastTimeLevel(ki.getCastTimeLevel() + 1);
+								}
 							}
 							if (tech instanceof KiAttackData ki) ki.calculateDerivedValues();
 							NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);

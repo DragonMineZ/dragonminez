@@ -100,10 +100,11 @@ public class CreateTechniqueC2S {
 				if (!allowsUtilityForType(parsedType)) parsedUtility = KiAttackData.Utility.DAMAGE;
 				technique.setUtility(parsedUtility);
 
-				technique.setDamageMultiplier(Mth.clamp(damage, 0.1f, 20.0f));
-				technique.setSpeed(Mth.clamp(speed, 0.1f, 20.0f));
-				technique.setSize(Mth.clamp(size, 0.1f, 20.0f));
-				technique.setArmorPenetration(Mth.clamp(armorPen, 0, 100));
+				float[] normalized = KiAttackData.normalizeStatsForType(parsedType, damage, size, speed, armorPen);
+				technique.setDamageMultiplier(normalized[0]);
+				technique.setSize(normalized[1]);
+				technique.setSpeed(normalized[2]);
+				technique.setArmorPenetration(Math.round(normalized[3]));
 				technique.setCastTime(Mth.clamp(cast, 0, 200));
 				technique.setCooldown(Mth.clamp(cooldown, 0, 400));
 				technique.setColorInterior(colorInterior & 0xFFFFFF);

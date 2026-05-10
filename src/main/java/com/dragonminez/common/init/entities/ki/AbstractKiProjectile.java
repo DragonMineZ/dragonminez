@@ -150,7 +150,12 @@ public abstract class AbstractKiProjectile extends Projectile {
             String techId = this.getTechniqueId();
             if (techId != null && !techId.isEmpty()) {
                 StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-                    stats.getTechniques().addExperienceToTechnique(techId, 1);
+                    TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
+                    if (tech instanceof KiAttackData kiAttackData) {
+                        stats.getTechniques().addExperienceToTechnique(techId, kiAttackData.getXpGainPerHit());
+                    } else if (tech != null) {
+                        stats.getTechniques().addExperienceToTechnique(techId, 1);
+                    }
                 });
             }
         }

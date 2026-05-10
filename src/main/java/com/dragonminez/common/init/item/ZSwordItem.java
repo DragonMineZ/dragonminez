@@ -15,7 +15,7 @@ public class ZSwordItem extends WeaponItem implements GeoItem {
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
 	public ZSwordItem() {
-		super(240, -2.4f, 0, 25, "z_sword");
+		super(300, -2.8f, 0, 25, "z_sword");
 	}
 
 

@@ -15,7 +15,7 @@ public class YajirobeKatanaItem extends WeaponItem implements GeoItem {
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
 	public YajirobeKatanaItem() {
-		super(7, -2.4f, 500, 15, "yajirobe_katana");
+		super(12, -2.6f, 500, 15, "yajirobe_katana");
 	}
 
 	@Override

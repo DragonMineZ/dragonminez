@@ -15,7 +15,7 @@ public class PowerPoleItem extends WeaponItem implements GeoItem {
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
 	public PowerPoleItem() {
-		super(48, -3f, 0, 18, "power_pole");
+		super(64, -3.2f, 0, 18, "power_pole");
 	}
 
 	@Override

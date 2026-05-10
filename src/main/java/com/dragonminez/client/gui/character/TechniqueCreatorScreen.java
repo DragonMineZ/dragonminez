@@ -34,8 +34,10 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	private CustomTextureButton interiorColorButton;
 	private CustomTextureButton exteriorColorButton;
 	private CustomTextureButton outlineColorButton;
-	private CustomTextureButton utilityLeftArrow;
-	private CustomTextureButton utilityRightArrow;
+	private CustomTextureButton utilityLeft, utilityRight;
+	private CustomTextureButton sizeLeft, sizeRight;
+	private CustomTextureButton speedLeft, speedRight;
+	private CustomTextureButton armorLeft, armorRight;
 	private ColorSlider hueSlider;
 	private ColorSlider saturationSlider;
 	private ColorSlider valueSlider;
@@ -82,16 +84,28 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 
 		addRenderableWidget(createArrowButton(x + 8, y + 41, true, btn -> setCreatorType(prevEnum(creatorType, KiAttackData.KiType.values()))));
 		addRenderableWidget(createArrowButton(x + 122, y + 41, false, btn -> setCreatorType(nextEnum(creatorType, KiAttackData.KiType.values()))));
-		utilityLeftArrow = createArrowButton(x + 8, y + 56, true, btn -> toggleUtility());
-		utilityRightArrow = createArrowButton(x + 122, y + 56, false, btn -> toggleUtility());
-		addRenderableWidget(utilityLeftArrow);
-		addRenderableWidget(utilityRightArrow);
+		utilityLeft = createArrowButton(x + 8, y + 56, true, btn -> toggleUtility());
+		utilityRight = createArrowButton(x + 122, y + 56, false, btn -> toggleUtility());
+		addRenderableWidget(utilityLeft);
+		addRenderableWidget(utilityRight);
 		updateUtilityArrowsVisibility();
 
 		addAdjusters(x, y + 76, () -> creatorDamage = Mth.clamp(creatorDamage - 0.1f, 0.1f, 20.0f), () -> creatorDamage = Mth.clamp(creatorDamage + 0.1f, 0.1f, 20.0f));
-		addAdjusters(x, y + 91, () -> creatorSize = Mth.clamp(creatorSize - 0.1f, 0.1f, 20.0f), () -> creatorSize = Mth.clamp(creatorSize + 0.1f, 0.1f, 20.0f));
-		addAdjusters(x, y + 106, () -> creatorSpeed = Mth.clamp(creatorSpeed - 0.1f, 0.1f, 20.0f), () -> creatorSpeed = Mth.clamp(creatorSpeed + 0.1f, 0.1f, 20.0f));
-		addAdjusters(x, y + 121, () -> creatorArmorPen = Mth.clamp(creatorArmorPen - 1, 0, 100), () -> creatorArmorPen = Mth.clamp(creatorArmorPen + 1, 0, 100));
+
+		CustomTextureButton[] sizeBtns = addAdjusters(x, y + 91,
+				() -> { if (KiAttackData.usesCustomSize(creatorType)) creatorSize = Mth.clamp(creatorSize - 0.1f, 0.1f, 20.0f); },
+				() -> { if (KiAttackData.usesCustomSize(creatorType)) creatorSize = Mth.clamp(creatorSize + 0.1f, 0.1f, 20.0f); });
+		sizeLeft = sizeBtns[0]; sizeRight = sizeBtns[1];
+
+		CustomTextureButton[] speedBtns = addAdjusters(x, y + 106,
+				() -> { if (KiAttackData.usesCustomSpeed(creatorType)) creatorSpeed = Mth.clamp(creatorSpeed - 0.1f, 0.1f, 20.0f); },
+				() -> { if (KiAttackData.usesCustomSpeed(creatorType)) creatorSpeed = Mth.clamp(creatorSpeed + 0.1f, 0.1f, 20.0f); });
+		speedLeft = speedBtns[0]; speedRight = speedBtns[1];
+
+		CustomTextureButton[] armorBtns = addAdjusters(x, y + 121,
+				() -> { if (KiAttackData.usesCustomArmorPen(creatorType)) creatorArmorPen = Mth.clamp(creatorArmorPen - 1, 0, 100); },
+				() -> { if (KiAttackData.usesCustomArmorPen(creatorType)) creatorArmorPen = Mth.clamp(creatorArmorPen + 1, 0, 100); });
+		armorLeft = armorBtns[0]; armorRight = armorBtns[1];
 
 		interiorColorButton = new CustomTextureButton.Builder()
 				.position(x + 14, y + 160)
@@ -198,15 +212,18 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		setSlidersVisible();
 	}
 
-	private void addAdjusters(int x, int y, Runnable dec, Runnable inc) {
-		addRenderableWidget(createArrowButton(x + 8, y - 5, true, btn -> {
+	private CustomTextureButton[] addAdjusters(int x, int y, Runnable dec, Runnable inc) {
+		CustomTextureButton left = createArrowButton(x + 8, y - 5, true, btn -> {
 			dec.run();
 			recomputeDerivedValues();
-		}));
-		addRenderableWidget(createArrowButton(x + 122, y - 5, false, btn -> {
+		});
+		CustomTextureButton right = createArrowButton(x + 122, y - 5, false, btn -> {
 			inc.run();
 			recomputeDerivedValues();
-		}));
+		});
+		addRenderableWidget(left);
+		addRenderableWidget(right);
+		return new CustomTextureButton[]{left, right};
 	}
 
 	private CustomTextureButton createArrowButton(int x, int y, boolean left, CustomTextureButton.OnPress onPress) {
@@ -241,18 +258,41 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		return type == KiAttackData.KiType.SHIELD || type == KiAttackData.KiType.AREA;
 	}
 
+	private void updateAdjusterVisibility() {
+		boolean useSize = KiAttackData.usesCustomSize(creatorType);
+		if (sizeLeft != null) sizeLeft.visible = useSize;
+		if (sizeRight != null) sizeRight.visible = useSize;
+
+		boolean useSpeed = KiAttackData.usesCustomSpeed(creatorType);
+		if (speedLeft != null) speedLeft.visible = useSpeed;
+		if (speedRight != null) speedRight.visible = useSpeed;
+
+		boolean useArmor = KiAttackData.usesCustomArmorPen(creatorType);
+		if (armorLeft != null) armorLeft.visible = useArmor;
+		if (armorRight != null) armorRight.visible = useArmor;
+	}
+
 	private void setCreatorType(KiAttackData.KiType newType) {
 		creatorType = newType;
 		creatorUtility = KiAttackData.Utility.DAMAGE;
+		creatorSize = KiAttackData.getDefaultSizeForType(creatorType);
+		creatorSpeed = KiAttackData.getDefaultSpeedForType(creatorType);
+		creatorArmorPen = KiAttackData.getDefaultArmorPenForType(creatorType);
 		updateUtilityArrowsVisibility();
+		updateAdjusterVisibility();
 		recomputeDerivedValues();
 	}
 
 	private void recomputeDerivedValues() {
+		float[] normalized = KiAttackData.normalizeStatsForType(creatorType, creatorDamage, creatorSize, creatorSpeed, creatorArmorPen);
 		float[] values = KiAttackData.previewDerivedValues(
 				creatorType, creatorUtility,
-				creatorDamage, creatorSize, creatorSpeed, creatorArmorPen
+				normalized[0], normalized[1], normalized[2], Math.round(normalized[3])
 		);
+		creatorDamage = normalized[0];
+		creatorSize = normalized[1];
+		creatorSpeed = normalized[2];
+		creatorArmorPen = Math.round(normalized[3]);
 		kiCost = values[0];
 		tpCost = values[1];
 		creatorCast = (int) values[2];
@@ -261,13 +301,13 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 
 	private void updateUtilityArrowsVisibility() {
 		boolean canUseUtility = allowsUtility(creatorType);
-		if (utilityLeftArrow != null) {
-			utilityLeftArrow.visible = canUseUtility;
-			utilityLeftArrow.active = canUseUtility;
+		if (utilityLeft != null) {
+			utilityLeft.visible = canUseUtility;
+			utilityLeft.active = canUseUtility;
 		}
-		if (utilityRightArrow != null) {
-			utilityRightArrow.visible = canUseUtility;
-			utilityRightArrow.active = canUseUtility;
+		if (utilityRight != null) {
+			utilityRight.visible = canUseUtility;
+			utilityRight.active = canUseUtility;
 		}
 	}
 
@@ -376,6 +416,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 
 	private void createSkill() {
 		if (!allowsUtility(creatorType)) creatorUtility = KiAttackData.Utility.DAMAGE;
+		float[] normalized = KiAttackData.normalizeStatsForType(creatorType, creatorDamage, creatorSize, creatorSpeed, creatorArmorPen);
 		String defaultName = tr("gui.dragonminez.skills.new_skill").getString();
 		String finalName = creatorName == null ? defaultName : creatorName.trim();
 		if (finalName.isEmpty()) finalName = defaultName;
@@ -383,10 +424,10 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				finalName,
 				creatorType.name(),
 				creatorUtility.name(),
-				creatorDamage,
-				creatorSpeed,
-				creatorSize,
-				creatorArmorPen,
+				normalized[0],
+				normalized[2],
+				normalized[1],
+				Math.round(normalized[3]),
 				creatorCast,
 				creatorCooldown,
 				creatorColorInterior,
@@ -415,11 +456,14 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		rowY += 15;
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(getDamageHealingExpression())), x + 70, rowY, 0xFFFFFFFF);
 		rowY += 15;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSize))), x + 70, rowY, 0xFFFFFFFF);
+		int sizeColor = KiAttackData.usesCustomSize(creatorType) ? 0xFFFFFFFF : 0xFF777777;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSize))), x + 70, rowY, sizeColor);
 		rowY += 15;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSpeed))), x + 70, rowY, 0xFFFFFFFF);
+		int speedColor = KiAttackData.usesCustomSpeed(creatorType) ? 0xFFFFFFFF : 0xFF777777;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSpeed))), x + 70, rowY, speedColor);
 		rowY += 15;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(creatorArmorPen))), x + 70, rowY, 0xFFFFFFFF);
+		int armorColor = KiAttackData.usesCustomArmorPen(creatorType) ? 0xFFFFFFFF : 0xFF777777;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(creatorArmorPen))), x + 70, rowY, armorColor);
 		rowY += 15;
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.valueOf(creatorCast))), x + 70, rowY, 0xFFFFFFFF);
 		rowY += 15;

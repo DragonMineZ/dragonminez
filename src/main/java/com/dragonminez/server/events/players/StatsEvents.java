@@ -8,6 +8,7 @@ import com.dragonminez.common.config.GeneralServerConfig.FoodConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -18,6 +19,8 @@ import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
@@ -135,7 +138,8 @@ public class StatsEvents {
 	@SubscribeEvent
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
+		Player attacker = resolveAttackerPlayer(event.getSource().getEntity(), event.getSource().getDirectEntity());
+		if (attacker == null) return;
 		boolean[] addAlignment = new boolean[]{false};
 		boolean[] removeAlignment = new boolean[]{false};
 
@@ -169,7 +173,28 @@ public class StatsEvents {
 				data.getResources().addAlignment(2);
 				addAlignment[0] = false;
 			}
+
+			grantTechniqueKillXp(data, event.getSource().getDirectEntity());
 		});
+	}
+
+	private static Player resolveAttackerPlayer(Entity sourceEntity, Entity directEntity) {
+		if (sourceEntity instanceof Player player) return player;
+		if (directEntity instanceof AbstractKiProjectile projectile && projectile.getOwner() instanceof Player player) return player;
+		return null;
+	}
+
+	private static void grantTechniqueKillXp(com.dragonminez.common.stats.StatsData data, Entity directEntity) {
+		if (!(directEntity instanceof AbstractKiProjectile projectile)) return;
+
+		String techniqueId = projectile.getTechniqueId();
+		if (techniqueId == null || techniqueId.isEmpty()) return;
+
+		TechniqueData techniqueData = data.getTechniques().getUnlockedTechniques().get(techniqueId);
+		if (!(techniqueData instanceof KiAttackData kiAttackData)) return;
+
+		int xpGain = kiAttackData.getXpGainPerKill();
+		if (xpGain > 0) data.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOW)

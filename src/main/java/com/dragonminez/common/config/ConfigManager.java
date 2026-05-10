@@ -44,6 +44,7 @@ public class ConfigManager {
 
 	private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
 	private static SkillsConfig SERVER_SYNCED_SKILLS;
+	private static TechniqueConfig SERVER_SYNCED_TECHNIQUES;
 	private static CombatConfig SERVER_SYNCED_COMBAT;
 	private static Map<String, Map<String, FormConfig>> SERVER_SYNCED_FORMS;
 	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
@@ -54,6 +55,7 @@ public class ConfigManager {
 	private static GeneralServerConfig serverConfig;
 	private static CombatConfig combatConfig;
 	private static SkillsConfig skillsConfig;
+	private static TechniqueConfig techniqueConfig;
 	@Getter
 	private static EntitiesConfig entitiesConfig;
 
@@ -158,6 +160,7 @@ public class ConfigManager {
 		serverConfig = loadAndValidate(CONFIG_DIR.resolve("general-server.json"), GeneralServerConfig.class, GeneralServerConfig::new, GeneralServerConfig::getConfigVersion, GeneralServerConfig::setConfigVersion, GeneralServerConfig.CURRENT_VERSION, "general-server.json");
 		combatConfig = loadAndValidate(CONFIG_DIR.resolve("combat.json"), CombatConfig.class, CombatConfig::new, CombatConfig::getConfigVersion, CombatConfig::setConfigVersion, CombatConfig.CURRENT_VERSION, null);
 		skillsConfig = loadAndValidate(CONFIG_DIR.resolve("skills.json"), SkillsConfig.class, SkillsConfig::new, SkillsConfig::getConfigVersion, SkillsConfig::setConfigVersion, SkillsConfig.CURRENT_VERSION, "skills.json");
+		techniqueConfig = loadAndValidate(CONFIG_DIR.resolve("techniques.json"), TechniqueConfig.class, TechniqueConfig::new, TechniqueConfig::getConfigVersion, TechniqueConfig::setConfigVersion, TechniqueConfig.CURRENT_VERSION, null);
 		entitiesConfig = loadAndValidate(CONFIG_DIR.resolve("entities.json"), EntitiesConfig.class, ConfigManager::createDefaultEntitiesConfig, EntitiesConfig::getConfigVersion, EntitiesConfig::setConfigVersion, EntitiesConfig.CURRENT_VERSION, null);
 	}
 
@@ -679,6 +682,8 @@ public class ConfigManager {
 			combatConfig = LOADER.loadConfig(path, CombatConfig.class);
 		} else if (configFilePath.equals("skills")) {
 			skillsConfig = LOADER.loadConfig(path, SkillsConfig.class);
+		} else if (configFilePath.equals("techniques")) {
+			techniqueConfig = LOADER.loadConfig(path, TechniqueConfig.class);
 		} else if (configFilePath.equals("entities")) {
 			entitiesConfig = LOADER.loadConfig(path, EntitiesConfig.class);
 		} else if (configFilePath.startsWith("races/")) {
@@ -710,6 +715,7 @@ public class ConfigManager {
 			if (configFilePath.equals("general-server")) SERVER_SYNCED_GENERAL_SERVER = GSON.fromJson(json, GeneralServerConfig.class);
 			else if (configFilePath.equals("combat")) SERVER_SYNCED_COMBAT = GSON.fromJson(json, CombatConfig.class);
 			else if (configFilePath.equals("skills")) SERVER_SYNCED_SKILLS = GSON.fromJson(json, SkillsConfig.class);
+			else if (configFilePath.equals("techniques")) SERVER_SYNCED_TECHNIQUES = GSON.fromJson(json, TechniqueConfig.class);
 			else if (configFilePath.startsWith("races/")) {
 				String[] parts = configFilePath.split("/");
 				String raceName = parts[1];
@@ -745,6 +751,7 @@ public class ConfigManager {
 		SERVER_SYNCED_GENERAL_SERVER = null;
 		SERVER_SYNCED_COMBAT = null;
 		SERVER_SYNCED_SKILLS = null;
+		SERVER_SYNCED_TECHNIQUES = null;
 		SERVER_SYNCED_FORMS = null;
 		SERVER_SYNCED_STATS = null;
 		SERVER_SYNCED_CHARACTER = null;
@@ -773,5 +780,6 @@ public class ConfigManager {
 		return group != null ? group.getForm(formName) : null;
 	}
 	public static SkillsConfig getSkillsConfig() { return SERVER_SYNCED_SKILLS != null ? SERVER_SYNCED_SKILLS : (skillsConfig != null ? skillsConfig : new SkillsConfig()); }
+	public static TechniqueConfig getTechniqueConfig() { return SERVER_SYNCED_TECHNIQUES != null ? SERVER_SYNCED_TECHNIQUES : (techniqueConfig != null ? techniqueConfig : new TechniqueConfig()); }
 	public static EntitiesConfig.EntityStats getEntityStats(String registryName) { return entitiesConfig != null && entitiesConfig.getDefaultEntityStats() != null ? entitiesConfig.getDefaultEntityStats().get(registryName) : null; }
 }

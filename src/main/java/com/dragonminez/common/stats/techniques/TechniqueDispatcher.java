@@ -25,7 +25,7 @@ public class TechniqueDispatcher {
 			statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - cost));
 		}
 
-		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * clampedCharge);
+		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * clampedCharge);
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		boolean isHeal = (data.getUtility() == KiAttackData.Utility.HEAL);
 

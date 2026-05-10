@@ -8,6 +8,7 @@ import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.network.C2S.EquipTechniqueC2S;
+import com.dragonminez.common.network.C2S.ImportTechniqueC2S;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.C2S.UpgradeTechniqueC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -15,13 +16,13 @@ import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.KiAttackData;
-import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -71,11 +72,19 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private boolean isDraggingMainScroll = false;
 	private boolean isDraggingDescScroll = false;
 	private boolean isBinding = false;
+	private boolean isImportingTechnique = false;
 
 	private ClippableTextureButton skillsButton, kiButton, formsButton, stacksButton;
 	private CustomTextureButton btnDmg, btnSize, btnSpeed, btnPen, btnCast, btnCd;
 	private int animTick = 0;
 	private boolean isHotZoneHovered = false;
+	private EditBox techniqueImportBox;
+	private Component actionStatusText = Component.empty();
+	private int actionStatusTimer = 0;
+	private int actionStatusColor = 0xFFFFFF;
+
+	private static Component pendingImportStatusText = null;
+	private static int pendingImportStatusColor = 0xFFFFFF;
 
 	private TexturedTextButton upgradeButton;
 
@@ -94,18 +103,17 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	public void tick() {
 		super.tick();
 		tickCount++;
+		if (actionStatusTimer > 0) actionStatusTimer--;
+		consumePendingImportStatus();
 
 		if (tickCount >= 10) {
 			tickCount = 0;
 			updateStatsData();
-			if (!isBinding) refreshButtons();
+			if (!isBinding && !isImportingTechnique) refreshButtons();
 		}
 
-		if (isHotZoneHovered) {
-			if (animTick < BUTTON_ANIM_TIME) animTick++;
-		} else {
-			if (animTick > 0) animTick--;
-		}
+		if (isHotZoneHovered) if (animTick < BUTTON_ANIM_TIME) animTick++;
+		else if (animTick > 0) animTick--;
 	}
 
 	private void updateStatsData() {
@@ -255,6 +263,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (btnCd != null) this.removeWidget(btnCd);
 
 		this.isBinding = false;
+		this.techniqueImportBox = null;
 		this.upgradeButton = null;
 		this.btnDmg = null; this.btnSize = null; this.btnSpeed = null;
 		this.btnPen = null; this.btnCast = null; this.btnCd = null;
@@ -272,7 +281,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
 
 		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
-		if (tech == null || PredefinedTechniques.isPredefinedTechnique(tech)) return;
+		if (tech == null) return;
 
 		int rightPanelX = getUiWidth() - 158;
 		int centerY = getUiHeight() / 2;
@@ -281,20 +290,48 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int btnX = rightPanelX + 115;
 		int yOffset = rightPanelY + (tech instanceof KiAttackData ? 92 : 80);
 
-		int xpReq = 100;
-		boolean canAfford = tech.getExperience() >= xpReq;
-
 		if (tech instanceof KiAttackData) {
-			btnDmg = createUpgradeBtn(btnX, yOffset, "damage", canAfford); this.addRenderableWidget(btnDmg); yOffset += 12;
-			btnSize = createUpgradeBtn(btnX, yOffset, "size", canAfford); this.addRenderableWidget(btnSize); yOffset += 12;
-			btnSpeed = createUpgradeBtn(btnX, yOffset, "speed", canAfford); this.addRenderableWidget(btnSpeed); yOffset += 12;
-			btnPen = createUpgradeBtn(btnX, yOffset, "armor_pen", canAfford); this.addRenderableWidget(btnPen); yOffset += 12;
+			if (shouldShowTechniqueUpgradeButton(tech, "damage")) {
+				btnDmg = createUpgradeBtn(btnX, yOffset, "damage", true);
+				this.addRenderableWidget(btnDmg);
+			}
+			yOffset += 12;
+
+			if (shouldShowTechniqueUpgradeButton(tech, "size")) {
+				btnSize = createUpgradeBtn(btnX, yOffset, "size", true);
+				this.addRenderableWidget(btnSize);
+			}
+			yOffset += 12;
+
+			if (shouldShowTechniqueUpgradeButton(tech, "speed")) {
+				btnSpeed = createUpgradeBtn(btnX, yOffset, "speed", true);
+				this.addRenderableWidget(btnSpeed);
+			}
+			yOffset += 12;
+
+			if (shouldShowTechniqueUpgradeButton(tech, "armor_pen")) {
+				btnPen = createUpgradeBtn(btnX, yOffset, "armor_pen", true);
+				this.addRenderableWidget(btnPen);
+			}
+			yOffset += 12;
 		} else {
-			btnDmg = createUpgradeBtn(btnX, yOffset, "damage", canAfford); this.addRenderableWidget(btnDmg); yOffset += 12;
+			if (shouldShowTechniqueUpgradeButton(tech, "damage")) {
+				btnDmg = createUpgradeBtn(btnX, yOffset, "damage", true);
+				this.addRenderableWidget(btnDmg);
+			}
+			yOffset += 12;
 		}
 
-		btnCast = createUpgradeBtn(btnX, yOffset, "cast", canAfford); this.addRenderableWidget(btnCast); yOffset += 12;
-		btnCd = createUpgradeBtn(btnX, yOffset, "cooldown", canAfford); this.addRenderableWidget(btnCd);
+		if (shouldShowTechniqueUpgradeButton(tech, "cast")) {
+			btnCast = createUpgradeBtn(btnX, yOffset, "cast", true);
+			this.addRenderableWidget(btnCast);
+		}
+		yOffset += 12;
+
+		if (shouldShowTechniqueUpgradeButton(tech, "cooldown")) {
+			btnCd = createUpgradeBtn(btnX, yOffset, "cooldown", true);
+			this.addRenderableWidget(btnCd);
+		}
 	}
 
 	private CustomTextureButton createUpgradeBtn(int x, int y, String statName, boolean active) {
@@ -312,6 +349,21 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		return btn;
 	}
 
+	private boolean shouldShowTechniqueUpgradeButton(TechniqueData tech, String statName) {
+		if (!hasEnoughTechniqueXpForUpgrade(tech, statName)) return false;
+		if (tech instanceof KiAttackData kiAttackData) return kiAttackData.canUpgradeStat(statName);
+		return "damage".equals(statName) || "cast".equals(statName) || "cooldown".equals(statName);
+	}
+
+	private boolean hasEnoughTechniqueXpForUpgrade(TechniqueData tech, String statName) {
+		return tech.getExperience() >= getTechniqueUpgradeXpCost(tech, statName);
+	}
+
+	private int getTechniqueUpgradeXpCost(TechniqueData tech, String statName) {
+		if (tech instanceof KiAttackData kiAttackData) return kiAttackData.getUpgradeXpCost(statName);
+		return 100;
+	}
+
 	private void initBindButtons() {
 		if (selectedSkill == null || statsData == null || (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE)) return;
 		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
@@ -319,15 +371,40 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int rightPanelX = getUiWidth() - 158;
 		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
+		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
+		boolean isKi = tech instanceof KiAttackData;
 
 		if (!isBinding) {
+			int yPos = rightPanelY + 185;
+
+			if (isKi) {
+				var importButton = new CustomTextureButton.Builder()
+						.position(rightPanelX + 7, yPos)
+						.size(20, 20)
+						.texture(BUTTONS_TEXTURE)
+						.textureCoords(162, 0, 162, 20)
+						.textureSize(20, 20)
+						.message(Component.empty())
+						.onPress(btn -> {
+							if (!isImportingTechnique) {
+								isImportingTechnique = true;
+								refreshButtons();
+							} else {
+								attemptTechniqueImport();
+							}
+						})
+						.build();
+				this.addRenderableWidget(importButton);
+			}
+
+			int bindX = isKi ? rightPanelX + 31 : rightPanelX + 35;
 			var bindButton = new TexturedTextButton.Builder()
-					.position(rightPanelX + 35, rightPanelY + 183)
+					.position(bindX, yPos)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.literal("Bind to Slot"))
+					.message(tr("gui.dragonminez.skills.bind_to_slot"))
 					.onPress(btn -> {
 						isBinding = true;
 						this.clearWidgets();
@@ -338,10 +415,33 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					})
 					.build();
 			this.addRenderableWidget(bindButton);
+
+			if (isKi) {
+				var exportButton = new CustomTextureButton.Builder()
+						.position(rightPanelX + 110, yPos)
+						.size(20, 20)
+						.texture(BUTTONS_TEXTURE)
+						.textureCoords(182, 0, 182, 20)
+						.textureSize(20, 20)
+						.message(Component.empty())
+						.onPress(btn -> {
+							if (tech instanceof KiAttackData kiAttackData) {
+								Minecraft.getInstance().keyboardHandler.setClipboard(kiAttackData.generateExportCode());
+								setActionStatus(tr("gui.dragonminez.skills.status.copied"), 0x55FF55);
+							}
+						})
+						.build();
+				this.addRenderableWidget(exportButton);
+			}
+
+			if (isKi && isImportingTechnique) {
+				techniqueImportBox = new EditBox(this.font, rightPanelX + 7, yPos + 22, 123, 12, Component.empty());
+				techniqueImportBox.setMaxLength(65536);
+				this.addRenderableWidget(techniqueImportBox);
+			}
 		} else {
 			for (int i = 0; i < TECHNIQUE_BIND_SLOT_COUNT; i++) {
 				final int slotIndex = i;
-
 				var slotBtn = new TexturedTextButton.Builder()
 						.position(rightPanelX + 40 + (i * 12), rightPanelY + 185)
 						.size(10, 10)
@@ -352,6 +452,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 						.onPress(btn -> {
 							NetworkHandler.INSTANCE.sendToServer(new EquipTechniqueC2S(slotIndex, selectedSkill));
 							isBinding = false;
+							isImportingTechnique = false;
 							refreshButtons();
 						})
 						.build();
@@ -628,33 +729,86 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (tech == null) return;
 
 		int yOffset = panelY + 40;
-		boolean isCustom = !PredefinedTechniques.isPredefinedTechnique(tech);
 		int xpReq = 100;
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF); yOffset += 12;
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.xp", tech.getExperience()), panelX + 70, yOffset, 0xFF55FF55); yOffset += 16;
 
 		if (tech instanceof KiAttackData ki) {
+			xpReq = ki.getUpgradeXpCost("damage");
 			int scaledKiDamage = (int) (statsData.getKiDamage() * ki.getDamageMultiplier());
+
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + ki.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.utility").append(": ").append(tr("technique.utility." + ki.getUtility().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+
+			String utilKey = ki.getUtility() == KiAttackData.Utility.HEAL ? "gui.dragonminez.technique.heal" : "gui.dragonminez.technique.damage";
+			TextUtil.drawStringWithBorder(graphics, this.font, tr(utilKey).append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", ki.getSize()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", ki.getSpeed()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(ki.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(tech.getCastTime() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getCastTime() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		} else if (tech instanceof StrikeAttackData st) {
 			int scaledStrikeDamage =  (int) (statsData.getStrikeDamage() * st.getDamageMultiplier());
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		}
 
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(tech.getCooldown() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
 
-		if (isCustom) {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.req_xp", xpReq), panelX + 70, yOffset, 0xFFAAAAAA);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.req_xp", xpReq), panelX + 70, yOffset, 0xFFAAAAAA);
+		renderActionStatus(graphics, panelX, panelY);
+	}
+
+	private void attemptTechniqueImport() {
+		if (statsData == null || techniqueImportBox == null) return;
+		String code = techniqueImportBox.getValue() != null ? techniqueImportBox.getValue().trim() : "";
+		if (code.isEmpty()) {
+			setActionStatus(tr("gui.dragonminez.skills.status.invalid_code"), 0xFF5555);
+			return;
+		}
+		NetworkHandler.INSTANCE.sendToServer(new ImportTechniqueC2S(code));
+	}
+
+	private void setActionStatus(Component text, int color) {
+		actionStatusText = text;
+		actionStatusColor = color;
+		actionStatusTimer = 60;
+	}
+
+	private void renderActionStatus(GuiGraphics graphics, int panelX, int panelY) {
+		if (actionStatusTimer <= 0) return;
+		int alpha = (int) Math.max(0, Math.min(255, (actionStatusTimer / 60.0f) * 255.0f));
+		if (alpha <= 0) return;
+		int colorWithAlpha = (alpha << 24) | (actionStatusColor & 0x00FFFFFF);
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		int yPos = panelY + 208;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, actionStatusText, panelX + 70, yPos, colorWithAlpha);
+		RenderSystem.disableBlend();
+	}
+
+	private void consumePendingImportStatus() {
+		if (pendingImportStatusText == null) return;
+		setActionStatus(pendingImportStatusText, pendingImportStatusColor);
+		pendingImportStatusText = null;
+	}
+
+	public static void handleTechniqueImportResult(com.dragonminez.common.network.S2C.TechniqueImportResultS2C.Status status, int value) {
+		switch (status) {
+			case INVALID -> {
+				pendingImportStatusText = Component.translatable("gui.dragonminez.skills.status.invalid_code");
+				pendingImportStatusColor = 0xFF5555;
+			}
+			case NOT_ENOUGH_TP -> {
+				pendingImportStatusText = Component.translatable("gui.dragonminez.skills.status.not_enough_tp", value);
+				pendingImportStatusColor = 0xFF5555;
+			}
+			case IMPORTED -> {
+				pendingImportStatusText = Component.translatable("gui.dragonminez.skills.status.imported_used_tp", value);
+				pendingImportStatusColor = 0x55FF55;
+			}
 		}
 	}
 

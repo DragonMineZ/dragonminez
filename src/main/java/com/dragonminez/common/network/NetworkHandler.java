@@ -213,6 +213,12 @@ public class NetworkHandler {
 				.consumerMainThread(UpgradeTechniqueC2S::handle)
 				.add();
 
+		net.messageBuilder(ImportTechniqueC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ImportTechniqueC2S::new)
+				.encoder(ImportTechniqueC2S::toBytes)
+				.consumerMainThread(ImportTechniqueC2S::handle)
+				.add();
+
 		net.messageBuilder(SelectTechniqueSlotC2S.class,  id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(SelectTechniqueSlotC2S::new)
 				.encoder(SelectTechniqueSlotC2S::toBytes)
@@ -340,6 +346,12 @@ public class NetworkHandler {
 				.decoder(SyncSpacePodDestinationsS2C::new)
 				.encoder(SyncSpacePodDestinationsS2C::encode)
 				.consumerMainThread(SyncSpacePodDestinationsS2C::handle)
+				.add();
+
+		net.messageBuilder(TechniqueImportResultS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TechniqueImportResultS2C::new)
+				.encoder(TechniqueImportResultS2C::encode)
+				.consumerMainThread(TechniqueImportResultS2C::handle)
 				.add();
 	}
 

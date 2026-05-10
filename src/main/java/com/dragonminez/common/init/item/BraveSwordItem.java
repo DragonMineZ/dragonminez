@@ -15,7 +15,7 @@ public class BraveSwordItem extends WeaponItem implements GeoItem {
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
 	public BraveSwordItem() {
-		super(100, -2.4f, 2600, 20, "brave_sword");
+		super(75, -2.4f, 2600, 20, "brave_sword");
 	}
 
 	@Override
