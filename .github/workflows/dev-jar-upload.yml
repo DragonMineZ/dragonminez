@@ -187,22 +187,15 @@ jobs:
       - name: Notify Discord bot
         shell: bash
         env:
-          DMZ_DEV_JAR_WEBHOOK_URL: ${{ secrets.DMZ_DEV_JAR_WEBHOOK_URL }}
-          DMZ_RELEASE_BOT_WEBHOOK_URL: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_URL }}
-          DMZ_DEV_JAR_WEBHOOK_SECRET: ${{ secrets.DMZ_DEV_JAR_WEBHOOK_SECRET }}
+          RELEASE_WEBHOOK_SECRET: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_SECRET }}
           REMOTE_NAME: ${{ steps.artifact.outputs.remote_name }}
           SHA256: ${{ steps.artifact.outputs.sha256 }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
 
-          webhook_url="${DMZ_DEV_JAR_WEBHOOK_URL:-}"
-          if [[ -z "$webhook_url" && -n "${DMZ_RELEASE_BOT_WEBHOOK_URL:-}" ]]; then
-            webhook_url="${DMZ_RELEASE_BOT_WEBHOOK_URL%/dmz-release}/dmz-dev-jar"
-          fi
-
-          : "${webhook_url:?DMZ_DEV_JAR_WEBHOOK_URL or DMZ_RELEASE_BOT_WEBHOOK_URL secret is required}"
-          : "${DMZ_DEV_JAR_WEBHOOK_SECRET:?DMZ_DEV_JAR_WEBHOOK_SECRET secret is required}"
+          webhook_url="https://release-bot.dragonminez.com/dmz-dev-jar"
+          : "${RELEASE_WEBHOOK_SECRET:?DMZ_RELEASE_BOT_WEBHOOK_SECRET secret is required}"
 
           payload="$(python3 - <<'PY'
           import json
@@ -219,6 +212,6 @@ jobs:
           curl --fail-with-body --show-error --silent \
             -X POST \
             -H "Content-Type: application/json" \
-            -H "X-DMZ-Dev-Jar-Secret: ${DMZ_DEV_JAR_WEBHOOK_SECRET}" \
+            -H "X-DMZ-Release-Bot-Secret: ${RELEASE_WEBHOOK_SECRET}" \
             --data "$payload" \
             "$webhook_url"

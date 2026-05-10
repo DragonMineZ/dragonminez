@@ -318,7 +318,7 @@ Development jar uploads:
 
 Stable release automation is split into two GitHub Actions workflows:
 
-- `.github/workflows/release-prepare.yml` validates stable release candidates on `main`, builds the jar, writes release manifest artifacts, and optionally posts a release candidate payload to the Discord bot webhook secret `DMZ_RELEASE_BOT_WEBHOOK_URL`.
+- `.github/workflows/release-prepare.yml` validates stable release candidates on `main`, builds the jar, writes release manifest artifacts, and posts a release candidate payload to the Discord bot at the constant URL `https://release-bot.dragonminez.com/dmz-release`.
 - `.github/workflows/release-publish.yml` is triggered by Discord bot approval through `repository_dispatch` event `dragonminez_release_approved`; it rebuilds the approved `main` commit, verifies the jar checksum, publishes to Modrinth and CurseForge, updates `update.json`, and commits that file back to `main`.
 
 Important release workflow rules:
@@ -326,3 +326,4 @@ Important release workflow rules:
 - Do not publish GitHub Release jar assets from these workflows.
 - Stable `main` releases only: versions containing `alpha` or `beta` are skipped or rejected.
 - The Discord bot must not hold Modrinth or CurseForge tokens; those stay in GitHub Actions secrets.
+- Dev jar and release bot webhooks use the same Discord bot tunnel host, `release-bot.dragonminez.com`, and the same GitHub secret name `DMZ_RELEASE_BOT_WEBHOOK_SECRET`. Do not re-add URL secrets for these fixed webhook endpoints unless the deployment hostname intentionally changes.
