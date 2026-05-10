@@ -133,6 +133,11 @@ jobs:
             exit 1
           fi
 
+          echo "Resolved SSH upload host addresses:"
+          getent ahosts "$DMZ_VPS_HOST" || true
+          echo "Checking TCP connectivity to ${DMZ_VPS_HOST}:${port}..."
+          nc -4 -zvw 10 "$DMZ_VPS_HOST" "$port"
+
       - name: Upload dev jar to VPS
         shell: bash
         env:
@@ -150,6 +155,7 @@ jobs:
           remote_tmp="${DMZ_VPS_UPLOAD_DIR}/.${REMOTE_NAME}.${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.tmp"
           remote_final="${DMZ_VPS_UPLOAD_DIR}/${REMOTE_NAME}"
           ssh_opts=(
+            -4
             -i "$HOME/.ssh/dmz_deploy_key"
             -p "$port"
             -o IdentitiesOnly=yes
@@ -157,6 +163,7 @@ jobs:
             -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
           )
           scp_opts=(
+            -4
             -i "$HOME/.ssh/dmz_deploy_key"
             -P "$port"
             -o IdentitiesOnly=yes
