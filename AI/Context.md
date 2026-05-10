@@ -306,7 +306,17 @@ Before changing behavior:
 
 ## Release Automation
 
-Release automation is split into two GitHub Actions workflows:
+Release automation is split between dev distribution and stable release publishing.
+
+Development jar uploads:
+
+- `.github/workflows/dev-jar-upload.yml` runs on pushes to non-`main` branches when Java, resource, Gradle, or workflow inputs change.
+- It runs `./gradlew build` and uploads only the no-classifier jar, `build/libs/dragonminez-<mod_version>.jar`; it must not upload the `-slim.jar`.
+- Upload uses SSH/SCP to the VPS with pinned host key checking. Required GitHub repository variables are `DMZ_VPS_HOST` and `DMZ_VPS_PORT`; required GitHub secrets are `DMZ_VPS_USER`, `DMZ_VPS_SSH_KEY`, `DMZ_VPS_KNOWN_HOSTS`, and `DMZ_VPS_UPLOAD_DIR`.
+- The jar is uploaded to a temporary remote filename, moved into place atomically, chmodded `0644`, and verified by SHA-256 after upload.
+- The Discord bot owns download authorization, key rotation, and any future public domain routing around the uploaded jar.
+
+Stable release automation is split into two GitHub Actions workflows:
 
 - `.github/workflows/release-prepare.yml` validates stable release candidates on `main`, builds the jar, writes release manifest artifacts, and optionally posts a release candidate payload to the Discord bot webhook secret `DMZ_RELEASE_BOT_WEBHOOK_URL`.
 - `.github/workflows/release-publish.yml` is triggered by Discord bot approval through `repository_dispatch` event `dragonminez_release_approved`; it rebuilds the approved `main` commit, verifies the jar checksum, publishes to Modrinth and CurseForge, updates `update.json`, and commits that file back to `main`.

@@ -1,0 +1,170 @@
+name: DragonMineZ Dev Jar Upload
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - '**.java'
+      - 'src/main/resources/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-jar-upload-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-upload:
+    name: Build and upload dev jar
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up JDK 17 Temurin
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build dev jar
+        run: ./gradlew build
+
+      - name: Resolve dev jar
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(grep '^mod_version=' gradle.properties | cut -d= -f2-)"
+          artifact="build/libs/dragonminez-${version}.jar"
+          if [[ ! -f "$artifact" ]]; then
+            echo "::error::Expected dev jar does not exist: $artifact"
+            exit 1
+          fi
+          if [[ "$artifact" == *-slim.jar ]]; then
+            echo "::error::Refusing to upload slim jar: $artifact"
+            exit 1
+          fi
+
+          branch_slug="$(printf '%s' "${GITHUB_REF_NAME}" | tr '/[:upper:]' '-[:lower:]' | tr -cd 'a-z0-9._-')"
+          if [[ -z "$branch_slug" ]]; then
+            branch_slug="branch"
+          fi
+          short_sha="${GITHUB_SHA::12}"
+          remote_name="dragonminez-${version}-${branch_slug}-${short_sha}.jar"
+          sha256="$(sha256sum "$artifact" | cut -d ' ' -f1)"
+
+          echo "path=${artifact}" >> "$GITHUB_OUTPUT"
+          echo "remote_name=${remote_name}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${sha256}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate deploy configuration
+        shell: bash
+        env:
+          DMZ_VPS_HOST: ${{ vars.DMZ_VPS_HOST }}
+          DMZ_VPS_PORT: ${{ vars.DMZ_VPS_PORT }}
+          DMZ_VPS_USER: ${{ secrets.DMZ_VPS_USER }}
+          DMZ_VPS_SSH_KEY: ${{ secrets.DMZ_VPS_SSH_KEY }}
+          DMZ_VPS_KNOWN_HOSTS: ${{ secrets.DMZ_VPS_KNOWN_HOSTS }}
+          DMZ_VPS_UPLOAD_DIR: ${{ secrets.DMZ_VPS_UPLOAD_DIR }}
+        run: |
+          set -euo pipefail
+
+          : "${DMZ_VPS_HOST:?DMZ_VPS_HOST secret is required}"
+          : "${DMZ_VPS_USER:?DMZ_VPS_USER secret is required}"
+          : "${DMZ_VPS_SSH_KEY:?DMZ_VPS_SSH_KEY secret is required}"
+          : "${DMZ_VPS_KNOWN_HOSTS:?DMZ_VPS_KNOWN_HOSTS secret is required}"
+          : "${DMZ_VPS_UPLOAD_DIR:?DMZ_VPS_UPLOAD_DIR secret is required}"
+
+          port="${DMZ_VPS_PORT:-22}"
+          if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+            echo "::error::DMZ_VPS_PORT must be numeric."
+            exit 1
+          fi
+          if [[ ! "$DMZ_VPS_HOST" =~ ^[A-Za-z0-9.-]+$ ]]; then
+            echo "::error::DMZ_VPS_HOST must be a DNS name or IPv4 address without a protocol."
+            exit 1
+          fi
+          if [[ ! "$DMZ_VPS_USER" =~ ^[A-Za-z_][A-Za-z0-9_.-]*[$]?$ ]]; then
+            echo "::error::DMZ_VPS_USER contains unsupported characters."
+            exit 1
+          fi
+          if [[ ! "$DMZ_VPS_UPLOAD_DIR" =~ ^/[A-Za-z0-9._+/@=-]+$ ]]; then
+            echo "::error::DMZ_VPS_UPLOAD_DIR must be an absolute path without spaces or shell metacharacters."
+            exit 1
+          fi
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DMZ_VPS_SSH_KEY" > ~/.ssh/dmz_deploy_key
+          chmod 600 ~/.ssh/dmz_deploy_key
+          printf '%s\n' "$DMZ_VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh-keygen -l -f ~/.ssh/known_hosts >/dev/null
+
+          lookup_host="$DMZ_VPS_HOST"
+          if [[ "$port" != "22" ]]; then
+            lookup_host="[$DMZ_VPS_HOST]:$port"
+          fi
+          if ! ssh-keygen -F "$lookup_host" -f ~/.ssh/known_hosts >/dev/null; then
+            echo "::error::DMZ_VPS_KNOWN_HOSTS does not contain an entry for ${lookup_host}."
+            exit 1
+          fi
+
+      - name: Upload dev jar to VPS
+        shell: bash
+        env:
+          DMZ_VPS_HOST: ${{ vars.DMZ_VPS_HOST }}
+          DMZ_VPS_PORT: ${{ vars.DMZ_VPS_PORT }}
+          DMZ_VPS_USER: ${{ secrets.DMZ_VPS_USER }}
+          DMZ_VPS_UPLOAD_DIR: ${{ secrets.DMZ_VPS_UPLOAD_DIR }}
+          ARTIFACT_PATH: ${{ steps.artifact.outputs.path }}
+          REMOTE_NAME: ${{ steps.artifact.outputs.remote_name }}
+          EXPECTED_SHA256: ${{ steps.artifact.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+
+          port="${DMZ_VPS_PORT:-22}"
+          remote_tmp="${DMZ_VPS_UPLOAD_DIR}/.${REMOTE_NAME}.${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.tmp"
+          remote_final="${DMZ_VPS_UPLOAD_DIR}/${REMOTE_NAME}"
+          ssh_opts=(
+            -i "$HOME/.ssh/dmz_deploy_key"
+            -p "$port"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+          scp_opts=(
+            -i "$HOME/.ssh/dmz_deploy_key"
+            -P "$port"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+          remote="${DMZ_VPS_USER}@${DMZ_VPS_HOST}"
+
+          ssh "${ssh_opts[@]}" "$remote" "mkdir -p -- '$DMZ_VPS_UPLOAD_DIR'"
+          scp "${scp_opts[@]}" "$ARTIFACT_PATH" "${remote}:${remote_tmp}"
+          ssh "${ssh_opts[@]}" "$remote" "mv -f -- '$remote_tmp' '$remote_final' && chmod 0644 -- '$remote_final'"
+
+          remote_sha256="$(ssh "${ssh_opts[@]}" "$remote" "sha256sum -- '$remote_final' | cut -d ' ' -f1")"
+          if [[ "$remote_sha256" != "$EXPECTED_SHA256" ]]; then
+            echo "::error::Uploaded jar checksum mismatch."
+            exit 1
+          fi
+
+          echo "Uploaded ${REMOTE_NAME} to ${DMZ_VPS_UPLOAD_DIR}."
