@@ -187,6 +187,9 @@ jobs:
       - name: Notify Discord bot
         shell: bash
         env:
+          DMZ_VPS_HOST: ${{ vars.DMZ_VPS_HOST }}
+          DMZ_VPS_PORT: ${{ vars.DMZ_VPS_PORT }}
+          DMZ_VPS_USER: ${{ secrets.DMZ_VPS_USER }}
           RELEASE_WEBHOOK_SECRET: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_SECRET }}
           REMOTE_NAME: ${{ steps.artifact.outputs.remote_name }}
           SHA256: ${{ steps.artifact.outputs.sha256 }}
@@ -194,7 +197,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          webhook_url="https://release-bot.dragonminez.com/dmz-dev-jar"
+          : "${DMZ_VPS_HOST:?DMZ_VPS_HOST repository variable is required}"
+          : "${DMZ_VPS_USER:?DMZ_VPS_USER secret is required}"
           : "${RELEASE_WEBHOOK_SECRET:?DMZ_RELEASE_BOT_WEBHOOK_SECRET secret is required}"
 
           payload="$(python3 - <<'PY'
@@ -209,9 +213,23 @@ jobs:
           PY
           )"
 
-          curl --fail-with-body --show-error --silent \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -H "X-DMZ-Release-Bot-Secret: ${RELEASE_WEBHOOK_SECRET}" \
-            --data "$payload" \
-            "$webhook_url"
+          port="${DMZ_VPS_PORT:-22}"
+          ssh_opts=(
+            -4
+            -i "$HOME/.ssh/dmz_deploy_key"
+            -p "$port"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+          remote="${DMZ_VPS_USER}@${DMZ_VPS_HOST}"
+          secret_b64="$(printf '%s' "$RELEASE_WEBHOOK_SECRET" | base64 -w0)"
+
+          printf '%s' "$payload" | ssh "${ssh_opts[@]}" "$remote" \
+            "secret=\$(printf '%s' '$secret_b64' | base64 -d); \
+             curl --fail-with-body --show-error --silent \
+               -X POST \
+               -H 'Content-Type: application/json' \
+               -H \"X-DMZ-Release-Bot-Secret: \${secret}\" \
+               --data-binary @- \
+               http://127.0.0.1:8088/dmz-dev-jar"

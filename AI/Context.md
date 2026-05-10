@@ -326,4 +326,4 @@ Important release workflow rules:
 - Do not publish GitHub Release jar assets from these workflows.
 - Stable `main` releases only: versions containing `alpha` or `beta` are skipped or rejected.
 - The Discord bot must not hold Modrinth or CurseForge tokens; those stay in GitHub Actions secrets.
-- Dev jar and release bot webhooks use the same Discord bot tunnel host, `release-bot.dragonminez.com`, and the same GitHub secret name `DMZ_RELEASE_BOT_WEBHOOK_SECRET`. Do not re-add URL secrets for these fixed webhook endpoints unless the deployment hostname intentionally changes.
+- Release candidate webhooks use the Discord bot tunnel host `release-bot.dragonminez.com` and GitHub secret `DMZ_RELEASE_BOT_WEBHOOK_SECRET`. Dev jar upload notifications intentionally bypass Cloudflare: after the jar upload, `.github/workflows/dev-jar-upload.yml` SSHes to the VPS and posts to the bot locally at `http://127.0.0.1:8088/dmz-dev-jar` using the same `DMZ_RELEASE_BOT_WEBHOOK_SECRET`.
