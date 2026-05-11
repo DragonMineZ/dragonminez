@@ -46,6 +46,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private boolean dragonminez$isEvading = false;
 	@Unique private int dragonminez$evasionVariant = 0;
 	@Unique private int dragonminez$attackAnimTicks = 0;
+	@Unique private int dragonminez$combatGraceFrames = 0;
 	@Unique private int dragonminez$miningAnimTicks = 0;
 	@Unique private int dragonminez$lastMiningTickRun = -1;
 	@Unique private boolean dragonminez$isShootingKi = false;
@@ -102,6 +103,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
 		registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
 		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
+		registrar.add(new AnimationController<>(this, "pose_controller", 4, this::posePredicate));
 	}
 
 	@Unique
@@ -176,15 +178,31 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 				if (isOozaru) return state.setAndContinue(WALK_OOZARU);
 				return state.setAndContinue(WALK);
 			} else {
-				if (dragonminez$currentPoseAnim != null && !dragonminez$currentPoseAnim.isEmpty()) {
-					return state.setAndContinue(RawAnimation.begin().thenLoop(dragonminez$currentPoseAnim));
-				}
 				if (isOozaru) return state.setAndContinue(IDLE_OOZARU);
 				return state.setAndContinue(IDLE);
 			}
 		}
 
 		return state.setAndContinue(JUMP);
+	}
+
+	@Unique
+	private <T extends GeoAnimatable> PlayState posePredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+
+		if (dragonminez$attackAnimTicks > 0) return PlayState.STOP;
+		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
+		if (dragonminez$isShootingKi) return PlayState.STOP;
+		if (dragonminez$currentKiAnim != null) return PlayState.STOP;
+
+		if (player.isSwimming() || player.isVisuallyCrawling() || player.isPassenger()) return PlayState.STOP;
+
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi())) return PlayState.STOP;
+
+		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
+
+		return state.setAndContinue(RawAnimation.begin().thenLoop(dragonminez$currentPoseAnim));
 	}
 
 	@Unique
@@ -478,7 +496,15 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Override
 	public boolean dragonminez$isPlayingCombatAnimation() {
-		return dragonminez$attackAnimTicks > 0;
+		if (dragonminez$attackAnimTicks > 0) {
+			dragonminez$combatGraceFrames = 4;
+			return true;
+		}
+		if (dragonminez$combatGraceFrames > 0) {
+			dragonminez$combatGraceFrames--;
+			return true;
+		}
+		return false;
 	}
 
 	@Override

@@ -237,6 +237,20 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             }
         }
 
+        boolean isInCombat = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$isPlayingCombatAnimation();
+
+        if (!isInCombat) {
+            float walkSpeed = animatable.walkAnimation.speed(partialTick);
+            float walkPos   = animatable.walkAnimation.position(partialTick);
+
+            if (walkSpeed > 0.01f) {
+                float amplitude = Mth.clamp(walkSpeed, 0f, 3f) * 0.15f;
+
+                if (rightArm != null) rightArm.setRotX(rightArm.getRotX() + Mth.sin(walkPos + Mth.PI) * amplitude);
+                if (leftArm != null) leftArm.setRotX(leftArm.getRotX() + Mth.sin(walkPos) * amplitude);
+            }
+        }
+
         float ageInTicks = (float) animatable.getTick(animatable);
 
         try {
