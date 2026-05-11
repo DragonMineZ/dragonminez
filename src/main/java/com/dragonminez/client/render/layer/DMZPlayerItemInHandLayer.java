@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.WeaponGripProfile;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
@@ -65,11 +66,14 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 
 		poseStack.pushPose();
 
-		boolean isUsing = animatable.isUsingItem() && animatable.getUseItem() == stack;
-		String weaponType = resolveWeaponType(animatable);
+		boolean isCombatAnim = animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isPlayingCombatAnimation();
 
-		WeaponGripProfile profile = WeaponGripProfile.resolve(stack.getItem(), isUsing, weaponType);
-		profile.apply(poseStack, isLeft);
+		if (!isCombatAnim) {
+			boolean isUsing = animatable.isUsingItem() && animatable.getUseItem() == stack;
+			String weaponType = resolveWeaponType(animatable);
+			WeaponGripProfile profile = WeaponGripProfile.resolve(stack.getItem(), isUsing, weaponType);
+			profile.apply(poseStack, isLeft);
+		}
 
 		super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 		poseStack.popPose();

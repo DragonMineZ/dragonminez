@@ -477,6 +477,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Override
+	public boolean dragonminez$isPlayingCombatAnimation() {
+		return dragonminez$attackAnimTicks > 0;
+	}
+
+	@Override
 	public void dragonminez$playKiAnimation(String animationName) {
 		this.dragonminez$currentKiAnim = animationName;
 	}

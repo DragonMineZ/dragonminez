@@ -2,7 +2,7 @@
   "attributes": {
     "attack_range": 2.75,
     "two_handed": true,
-    "pose": "pose_two_handed_sword",
+    "pose": "pose_two_handed_heavy",
     "category": "claymore",
     "attacks": [
       {
