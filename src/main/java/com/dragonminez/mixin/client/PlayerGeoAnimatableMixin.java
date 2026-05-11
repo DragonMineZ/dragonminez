@@ -497,14 +497,14 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Override
 	public boolean dragonminez$isPlayingCombatAnimation() {
 		if (dragonminez$attackAnimTicks > 0) {
-			dragonminez$combatGraceFrames = 4;
+			dragonminez$combatGraceFrames = 8;
 			return true;
 		}
 		if (dragonminez$combatGraceFrames > 0) {
 			dragonminez$combatGraceFrames--;
 			return true;
 		}
-		return false;
+		return dragonminez$currentPoseAnim != null && !dragonminez$currentPoseAnim.isEmpty();
 	}
 
 	@Override
