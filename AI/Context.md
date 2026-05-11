@@ -314,6 +314,7 @@ Development jar uploads:
 - It runs `./gradlew build` and uploads only the no-classifier jar, `build/libs/dragonminez-<mod_version>.jar`; it must not upload the `-slim.jar`.
 - Upload uses SSH/SCP to the VPS with pinned host key checking. Required GitHub repository variables are `DMZ_VPS_HOST` and `DMZ_VPS_PORT`; required GitHub secrets are `DMZ_VPS_USER`, `DMZ_VPS_SSH_KEY`, `DMZ_VPS_KNOWN_HOSTS`, and `DMZ_VPS_UPLOAD_DIR`.
 - The jar is uploaded to a temporary remote filename, moved into place atomically, chmodded `0644`, and verified by SHA-256 after upload.
+- After a verified upload, the workflow prunes old dev artifacts in `DMZ_VPS_UPLOAD_DIR`, keeping only the two newest files matching `dragonminez-*__*__*.jar`.
 - The Discord bot owns download authorization, key rotation, and any future public domain routing around the uploaded jar.
 
 Stable release automation is split into two GitHub Actions workflows:

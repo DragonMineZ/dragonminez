@@ -182,7 +182,34 @@ jobs:
             exit 1
           fi
 
+          cleanup_report="$(
+            ssh "${ssh_opts[@]}" "$remote" "python3 - '$DMZ_VPS_UPLOAD_DIR'" <<'PY'
+          from pathlib import Path
+          import sys
+
+          upload_dir = Path(sys.argv[1])
+          artifacts = sorted(
+              (
+                  path
+                  for path in upload_dir.glob("dragonminez-*__*__*.jar")
+                  if path.is_file()
+              ),
+              key=lambda path: (path.stat().st_mtime, path.name),
+              reverse=True,
+          )
+          removed = []
+          for path in artifacts[2:]:
+              path.unlink()
+              removed.append(path.name)
+
+          print(f"Kept {min(len(artifacts), 2)} dev jar artifact(s); removed {len(removed)} old artifact(s).")
+          for name in removed:
+              print(f"Removed old dev jar artifact: {name}")
+          PY
+          )"
+
           echo "Uploaded ${REMOTE_NAME} to ${DMZ_VPS_UPLOAD_DIR}."
+          echo "$cleanup_report"
 
       - name: Notify Discord bot
         shell: bash
