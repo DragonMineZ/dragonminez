@@ -176,7 +176,396 @@
   "menu_music": {
     "subtitle": "sounds.dragonminez.menu_music",
     "sounds": [
-      "dragonminez:menu_music"
+      {
+        "name": "dragonminez:menu_music-1",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-2",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-3",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-4",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-5",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-6",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-7",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-8",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-9",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-10",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-11",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-12",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-13",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-14",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-15",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-16",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-17",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-18",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-19",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-20",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-21",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-22",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-23",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-24",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-25",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-26",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-27",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-28",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-29",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-30",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_1": {
+    "subtitle": "sounds.dragonminez.menu_music_1",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-1",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_2": {
+    "subtitle": "sounds.dragonminez.menu_music_2",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-2",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_3": {
+    "subtitle": "sounds.dragonminez.menu_music_3",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-3",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_4": {
+    "subtitle": "sounds.dragonminez.menu_music_4",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-4",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_5": {
+    "subtitle": "sounds.dragonminez.menu_music_5",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-5",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_6": {
+    "subtitle": "sounds.dragonminez.menu_music_6",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-6",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_7": {
+    "subtitle": "sounds.dragonminez.menu_music_7",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-7",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_8": {
+    "subtitle": "sounds.dragonminez.menu_music_8",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-8",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_9": {
+    "subtitle": "sounds.dragonminez.menu_music_9",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-9",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_10": {
+    "subtitle": "sounds.dragonminez.menu_music_10",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-10",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_11": {
+    "subtitle": "sounds.dragonminez.menu_music_11",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-11",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_12": {
+    "subtitle": "sounds.dragonminez.menu_music_12",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-12",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_13": {
+    "subtitle": "sounds.dragonminez.menu_music_13",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-13",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_14": {
+    "subtitle": "sounds.dragonminez.menu_music_14",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-14",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_15": {
+    "subtitle": "sounds.dragonminez.menu_music_15",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-15",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_16": {
+    "subtitle": "sounds.dragonminez.menu_music_16",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-16",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_17": {
+    "subtitle": "sounds.dragonminez.menu_music_17",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-17",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_18": {
+    "subtitle": "sounds.dragonminez.menu_music_18",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-18",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_19": {
+    "subtitle": "sounds.dragonminez.menu_music_19",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-19",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_20": {
+    "subtitle": "sounds.dragonminez.menu_music_20",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-20",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_21": {
+    "subtitle": "sounds.dragonminez.menu_music_21",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-21",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_22": {
+    "subtitle": "sounds.dragonminez.menu_music_22",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-22",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_23": {
+    "subtitle": "sounds.dragonminez.menu_music_23",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-23",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_24": {
+    "subtitle": "sounds.dragonminez.menu_music_24",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-24",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_25": {
+    "subtitle": "sounds.dragonminez.menu_music_25",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-25",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_26": {
+    "subtitle": "sounds.dragonminez.menu_music_26",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-26",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_27": {
+    "subtitle": "sounds.dragonminez.menu_music_27",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-27",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_28": {
+    "subtitle": "sounds.dragonminez.menu_music_28",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-28",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_29": {
+    "subtitle": "sounds.dragonminez.menu_music_29",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-29",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_30": {
+    "subtitle": "sounds.dragonminez.menu_music_30",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-30",
+        "stream": true
+      }
     ]
   },
   "aura_start": {

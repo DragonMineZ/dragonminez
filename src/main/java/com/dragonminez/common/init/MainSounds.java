@@ -73,6 +73,36 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> FROG_LAUGH = registerSoundEvent("froglaugh");
 
 	public static final RegistryObject<SoundEvent> MENU_MUSIC = registerSoundEvent("menu_music");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_1 = registerSoundEvent("menu_music_1");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_2 = registerSoundEvent("menu_music_2");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_3 = registerSoundEvent("menu_music_3");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_4 = registerSoundEvent("menu_music_4");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_5 = registerSoundEvent("menu_music_5");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_6 = registerSoundEvent("menu_music_6");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_7 = registerSoundEvent("menu_music_7");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_8 = registerSoundEvent("menu_music_8");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_9 = registerSoundEvent("menu_music_9");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_10 = registerSoundEvent("menu_music_10");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_11 = registerSoundEvent("menu_music_11");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_12 = registerSoundEvent("menu_music_12");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_13 = registerSoundEvent("menu_music_13");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_14 = registerSoundEvent("menu_music_14");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_15 = registerSoundEvent("menu_music_15");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_16 = registerSoundEvent("menu_music_16");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_17 = registerSoundEvent("menu_music_17");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_18 = registerSoundEvent("menu_music_18");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_19 = registerSoundEvent("menu_music_19");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_20 = registerSoundEvent("menu_music_20");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_21 = registerSoundEvent("menu_music_21");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_22 = registerSoundEvent("menu_music_22");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_23 = registerSoundEvent("menu_music_23");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_24 = registerSoundEvent("menu_music_24");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_25 = registerSoundEvent("menu_music_25");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_26 = registerSoundEvent("menu_music_26");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_27 = registerSoundEvent("menu_music_27");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_28 = registerSoundEvent("menu_music_28");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_29 = registerSoundEvent("menu_music_29");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_30 = registerSoundEvent("menu_music_30");
 
 	public static final RegistryObject<SoundEvent> AURA_START = registerSoundEvent("aura_start");
 	public static final RegistryObject<SoundEvent> KI_CHARGE_LOOP = registerSoundEvent("ki_charge_loop");

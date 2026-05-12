@@ -249,6 +249,11 @@ tasks.named<Jar>("jarJar").configure {
     dependsOn(copyGeneratedResourcesToOutput)
 }
 
+//Helps with some AI Run Tests
+tasks.named<JavaCompile>("compileTestJava").configure {
+    mustRunAfter(copyGeneratedResourcesToOutput)
+}
+
 val minecraftVersionRange = requiredProp("minecraft_version_range")
 val forgeVersionRange = requiredProp("forge_version_range")
 val loaderVersionRange = requiredProp("loader_version_range")

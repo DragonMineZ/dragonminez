@@ -24,8 +24,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(TitleScreen.class)
 public abstract class TitleScreenMixin extends Screen {
 	@Unique
-	private static boolean dragonminez$hasPlayedMusic = false;
-	@Unique
 	private static final String dragonminez$DISCORD_URL = "https://discord.dragonminez.com";
 
 	protected TitleScreenMixin(Component title) {
@@ -34,12 +32,9 @@ public abstract class TitleScreenMixin extends Screen {
 
 	@Inject(method = "init", at = @At("HEAD"))
 	private void dragonminez$playMenuMusic(CallbackInfo info) {
-		if (!dragonminez$hasPlayedMusic) {
-			SoundManager soundManager = Minecraft.getInstance().getSoundManager();
-			soundManager.stop(null, SoundSource.MUSIC);
-			dragonminez$hasPlayedMusic = true;
-			soundManager.play(SimpleSoundInstance.forMusic(MainSounds.MENU_MUSIC.get()));
-		}
+		SoundManager soundManager = Minecraft.getInstance().getSoundManager();
+		soundManager.stop(null, SoundSource.MUSIC);
+		soundManager.play(SimpleSoundInstance.forMusic(MainSounds.MENU_MUSIC.get()));
 	}
 
 	@Inject(method = "init", at = @At("TAIL"))

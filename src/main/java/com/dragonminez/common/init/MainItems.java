@@ -8,6 +8,7 @@ import com.dragonminez.common.init.item.*;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.dragonball.DragonRadarDefinition;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.*;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -226,6 +227,38 @@ public final class MainItems {
 	public static final RegistryObject<Item> NAVE_SAIYAN_ITEM = ITEM_REGISTER.register("saiyan_ship", SaiyanShipItem::new);
 	public static final RegistryObject<Item> PUNCH_MACHINE_ITEM = ITEM_REGISTER.register("punch_machine_item", PunchMachineItem::new);
 
+	//MUSIC DISCS
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_1 = regMusicDisc("music_disc_menu_music_1", MainSounds.MENU_MUSIC_1, 788);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_2 = regMusicDisc("music_disc_menu_music_2", MainSounds.MENU_MUSIC_2, 1212);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_3 = regMusicDisc("music_disc_menu_music_3", MainSounds.MENU_MUSIC_3, 920);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_4 = regMusicDisc("music_disc_menu_music_4", MainSounds.MENU_MUSIC_4, 820);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_5 = regMusicDisc("music_disc_menu_music_5", MainSounds.MENU_MUSIC_5, 640);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_6 = regMusicDisc("music_disc_menu_music_6", MainSounds.MENU_MUSIC_6, 1920);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_7 = regMusicDisc("music_disc_menu_music_7", MainSounds.MENU_MUSIC_7, 800);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_8 = regMusicDisc("music_disc_menu_music_8", MainSounds.MENU_MUSIC_8, 780);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_9 = regMusicDisc("music_disc_menu_music_9", MainSounds.MENU_MUSIC_9, 1104);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_10 = regMusicDisc("music_disc_menu_music_10", MainSounds.MENU_MUSIC_10, 1320);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_11 = regMusicDisc("music_disc_menu_music_11", MainSounds.MENU_MUSIC_11, 1440);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_12 = regMusicDisc("music_disc_menu_music_12", MainSounds.MENU_MUSIC_12, 880);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_13 = regMusicDisc("music_disc_menu_music_13", MainSounds.MENU_MUSIC_13, 3240);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_14 = regMusicDisc("music_disc_menu_music_14", MainSounds.MENU_MUSIC_14, 1860);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_15 = regMusicDisc("music_disc_menu_music_15", MainSounds.MENU_MUSIC_15, 1780);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_16 = regMusicDisc("music_disc_menu_music_16", MainSounds.MENU_MUSIC_16, 880);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_17 = regMusicDisc("music_disc_menu_music_17", MainSounds.MENU_MUSIC_17, 1606);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_18 = regMusicDisc("music_disc_menu_music_18", MainSounds.MENU_MUSIC_18, 1358);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_19 = regMusicDisc("music_disc_menu_music_19", MainSounds.MENU_MUSIC_19, 1264);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_20 = regMusicDisc("music_disc_menu_music_20", MainSounds.MENU_MUSIC_20, 2020);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_21 = regMusicDisc("music_disc_menu_music_21", MainSounds.MENU_MUSIC_21, 1092);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_22 = regMusicDisc("music_disc_menu_music_22", MainSounds.MENU_MUSIC_22, 3286);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_23 = regMusicDisc("music_disc_menu_music_23", MainSounds.MENU_MUSIC_23, 1670);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_24 = regMusicDisc("music_disc_menu_music_24", MainSounds.MENU_MUSIC_24, 1936);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_25 = regMusicDisc("music_disc_menu_music_25", MainSounds.MENU_MUSIC_25, 2674);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_26 = regMusicDisc("music_disc_menu_music_26", MainSounds.MENU_MUSIC_26, 1944);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_27 = regMusicDisc("music_disc_menu_music_27", MainSounds.MENU_MUSIC_27, 2288);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_28 = regMusicDisc("music_disc_menu_music_28", MainSounds.MENU_MUSIC_28, 1316);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_29 = regMusicDisc("music_disc_menu_music_29", MainSounds.MENU_MUSIC_29, 2238);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_30 = regMusicDisc("music_disc_menu_music_30", MainSounds.MENU_MUSIC_30, 2218);
+
 	//KIKONO STATION/ARMOR CRAFTING PATTERNS
 	public static final RegistryObject<Item> ARMOR_CRAFTING_KIT = ITEM_REGISTER.register("armor_crafting_kit",
 			() -> new ArmorCraftingKitItem(properties.stacksTo(1)));
@@ -337,6 +370,10 @@ public final class MainItems {
 
 	public static RegistryObject<Item> regItem(String name) {
 		return ITEM_REGISTER.register(name, () -> new Item(properties.stacksTo(64)));
+	}
+
+	private static RegistryObject<Item> regMusicDisc(String name, RegistryObject<SoundEvent> sound, int lengthInTicks) {
+		return ITEM_REGISTER.register(name, () -> new RecordItem(15, sound, new Item.Properties().stacksTo(1).rarity(Rarity.RARE), lengthInTicks));
 	}
 
 	private static Map<ArmorItem.Type, RegistryObject<Item>> registerArmorSet(String name, String texture, boolean hasHelmet, boolean isDamageOn) {
