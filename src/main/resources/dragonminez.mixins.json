@@ -17,6 +17,7 @@
   ],
   "client": [
     "client.BundleTooltipComponentAccessor",
+    "client.BrandingControlMixin",
     "client.ClientTextTooltipAccessor",
     "client.ColliderDebugRenderer",
     "client.EntityMouseHandlerMixin",

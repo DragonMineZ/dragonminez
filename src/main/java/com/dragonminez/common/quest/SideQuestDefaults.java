@@ -237,13 +237,6 @@ final class SideQuestDefaults {
 		return requirements;
 	}
 
-	/*
-	 * Start requirement format for sidequests:
-	 * sidequest(..., prereqs("AND", ...), requirements("AND", condBiome("minecraft:plains"), condStructure("dragonminez:roshi_house"),
-	 *     condDimension("minecraft:overworld"), condQuest("other_sidequest"), condSaga("saiyan_saga", 3),
-	 *     condLevel(10), condStat("STRENGTH", 25), condGameTimeMinutes(10), condRealTimeMinutes(5)), objectives, rewards)
-	 */
-
 	// ========================================================================================
 	// Training Side-Quests
 	// ========================================================================================
