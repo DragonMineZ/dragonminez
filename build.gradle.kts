@@ -232,6 +232,23 @@ sourceSets.main {
     resources.srcDir("src/generated/resources/")
 }
 
+val generatedResourcesDir = layout.projectDirectory.dir("src/generated/resources")
+val copyGeneratedResourcesToOutput by tasks.registering(Copy::class) {
+    dependsOn("runData")
+    from(generatedResourcesDir) {
+        exclude(".cache/**")
+    }
+    into(layout.buildDirectory.dir("resources/main"))
+}
+
+tasks.named<Jar>("jar").configure {
+    dependsOn(copyGeneratedResourcesToOutput)
+}
+
+tasks.named<Jar>("jarJar").configure {
+    dependsOn(copyGeneratedResourcesToOutput)
+}
+
 val minecraftVersionRange = requiredProp("minecraft_version_range")
 val forgeVersionRange = requiredProp("forge_version_range")
 val loaderVersionRange = requiredProp("loader_version_range")
