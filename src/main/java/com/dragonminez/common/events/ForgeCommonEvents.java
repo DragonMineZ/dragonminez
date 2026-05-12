@@ -86,7 +86,14 @@ public class ForgeCommonEvents {
 			if (!BetaWhitelist.isAllowed(username)) {
 				LogUtil.error(Env.SERVER, "User {} tried to join but is not in the beta whitelist.", username);
 				if (player instanceof ServerPlayer serverPlayer) {
-					serverPlayer.connection.disconnect(Component.literal("§c[DragonMine Z]\n\n§7You are not allowed to play this Beta/Alpha version.\n§fPlease contact the developers if this is an error."));
+					serverPlayer.connection.disconnect(Component.literal("""
+							§c[DragonMine Z]
+							
+							§7You are not allowed to play this Beta/Alpha version.
+							§fAre you a §cPatreon§f? Check that you have whitelisted yourself with our Discord Bot.
+							
+							§7If you have been recently waitlisted, restart Minecraft to apply the changes!
+							§7Your Minecraft nickname is: §f""" + username));
 				} else {
 					throw new IllegalStateException("DMZ: User not allowed.");
 				}
