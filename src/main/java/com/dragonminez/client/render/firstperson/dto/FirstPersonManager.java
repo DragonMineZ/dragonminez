@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.firstperson.dto;
 
+import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsCapability;
@@ -17,13 +18,14 @@ public class FirstPersonManager {
 		if (!ConfigManager.getUserConfig().getFirstPersonAnimated()) return false;
 		if (player.getMainHandItem().getItem() instanceof MapItem || player.getOffhandItem().getItem() instanceof MapItem) return false;
 		if (Minecraft.getInstance().screen instanceof ChatScreen) return Minecraft.getInstance().options.getCameraType().isFirstPerson();
+		if (Minecraft.getInstance().screen instanceof UtilityMenuScreen) return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 		if (Minecraft.getInstance().screen != null) return false;
 		return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 	}
 
 	public static Vector3f offsetFirstPersonView(Player player) {
 		final float BASE_OFFSET_Y = 0.1F;
-		final float[] BASE_OFFSET_Z = {0.5F};
+		final float[] BASE_OFFSET_Z = {0.3F};
 		final float BASE_SCALE = 0.9375f;
 
 		final float[][] scaling = {{BASE_SCALE, BASE_SCALE, BASE_SCALE}};
@@ -46,7 +48,7 @@ public class FirstPersonManager {
 					}
 				}
 
-				if (activeForm != null && activeForm.getName().contains("ozaru")) BASE_OFFSET_Z[0] = 1.5F;
+				if (activeForm != null && activeForm.getName().contains("ozaru")) BASE_OFFSET_Z[0] = 1.3F;
 			}
 		});
 

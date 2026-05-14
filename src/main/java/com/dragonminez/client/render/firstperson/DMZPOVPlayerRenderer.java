@@ -1,10 +1,13 @@
 package com.dragonminez.client.render.firstperson;
 
 import com.dragonminez.client.render.DMZPlayerRenderer;
+import com.dragonminez.client.render.firstperson.dto.DMZCameraBuffer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
@@ -28,8 +31,7 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
     @Override
     protected void applyRotations(T animatable, PoseStack poseStack, float ageInTicks, float rotationYaw, float partialTick) {
         final LocalPlayer localPlayer = Minecraft.getInstance().player;
-
-        if (localPlayer == null || animatable != localPlayer) {
+        if (localPlayer == null || animatable != localPlayer || !FirstPersonManager.shouldRenderFirstPerson(animatable)) {
             super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
             return;
         }
@@ -38,13 +40,9 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
         final Vec3 playerPos = localPlayer.getPosition(partialTick);
         final Vector3f offset = FirstPersonManager.offsetFirstPersonView(localPlayer);
 
+        poseStack.translate(playerPos.x - cameraPos.x, playerPos.y - cameraPos.y, playerPos.z - cameraPos.z);
         super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
-
-        poseStack.translate(
-                (playerPos.x + offset.x) - cameraPos.x,
-                (playerPos.y + offset.y) - cameraPos.y,
-                (playerPos.z + offset.z) - cameraPos.z
-        );
+        poseStack.translate(offset.x(), 0.0D, offset.z());
     }
 
     @Override
@@ -59,20 +57,14 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
         boolean originallyHidden = bone.isHidden();
         boolean isLocalPlayer = (animatable == Minecraft.getInstance().player);
 
-        if (isLocalPlayer && bone.getName().equals("head") && FirstPersonManager.shouldRenderFirstPerson(animatable)) {
-            bone.setHidden(true);
-        }
-
+        if (isLocalPlayer && bone.getName().equals("head") && FirstPersonManager.shouldRenderFirstPerson(animatable)) bone.setHidden(true);
         super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
-
         bone.setHidden(originallyHidden);
     }
 
     @Override
     public boolean shouldRender(@NonNull T pLivingEntity, @NonNull Frustum pCamera, double pCamX, double pCamY, double pCamZ) {
-        if (pLivingEntity == Minecraft.getInstance().player) {
-            return !pLivingEntity.isSleeping();
-        }
+        if (pLivingEntity == Minecraft.getInstance().player) return !pLivingEntity.isSleeping();
         return super.shouldRender(pLivingEntity, pCamera, pCamX, pCamY, pCamZ) && !pLivingEntity.isSleeping();
     }
 }
