@@ -46,3 +46,11 @@ config="dragonminez.mixins.json"
     ordering="AFTER"
     side="BOTH"
 
+[[dependencies.dragonminez]]
+    modId="legendarytooltips"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+    type="incompatible"
+

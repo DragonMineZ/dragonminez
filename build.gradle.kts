@@ -203,20 +203,11 @@ dependencies {
         runtimeOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge:$jeiVersion"))
         runtimeOnly(fg.deobf("curse.maven:xenon-564239:5752040"))
         runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
-
-        // For extra tooltip info, like rarity
-        //runtimeOnly(fg.deobf("curse.maven:prism-lib-638111:4650325"))
-        //runtimeOnly(fg.deobf("curse.maven:iceberg-520110:5838149"))
-        //runtimeOnly(fg.deobf("curse.maven:legendary-tooltips-532127:4662781"))
     }
 
     // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)
     //runtimeOnly(fg.deobf("curse.maven:explorerscompass-491794:4712194"))
     //runtimeOnly(fg.deobf("curse.maven:naturecompass-252848:4712189"))
-
-    // Armors mods for testing armor layer on Oozaru/Majin models, we may delete this once fully finished
-    //runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
-    //runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
 
     // "Layers" mods for testing compatibility
     //runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))

@@ -90,7 +90,7 @@ public class TextUtil {
         int allowedMaxWidth = Math.max(screenWidth / 3, 200);
 
         if (title != null) {
-            components.add(ClientTooltipComponent.create(title.getVisualOrderText()));
+            components.add(new CenteredTextComponent(title.getVisualOrderText()));
             components.add(new CustomTooltipRenderers.PaddingRenderer(new CustomTooltipNodes.PaddingNode(8)));
             components.add(new CustomTooltipRenderers.SeparatorRenderer(new CustomTooltipNodes.SeparatorNode()));
             components.add(new CustomTooltipRenderers.PaddingRenderer(new CustomTooltipNodes.PaddingNode(0)));
@@ -102,12 +102,12 @@ public class TextUtil {
                 if (raw.contains("\n")) {
                     for (String part : raw.split("\n")) {
                         for (FormattedCharSequence wrapped : font.split(Component.literal(part).setStyle(c.getStyle()), allowedMaxWidth)) {
-                            components.add(ClientTooltipComponent.create(wrapped));
+                            components.add(new CenteredTextComponent(wrapped));
                         }
                     }
                 } else {
                     for (FormattedCharSequence wrapped : font.split(c, allowedMaxWidth)) {
-                        components.add(ClientTooltipComponent.create(wrapped));
+                        components.add(new CenteredTextComponent(wrapped));
                     }
                 }
             }
@@ -123,12 +123,12 @@ public class TextUtil {
                 if (raw.contains("\n")) {
                     for (String part : raw.split("\n")) {
                         for (FormattedCharSequence wrapped : font.split(Component.literal(part).setStyle(c.getStyle()), allowedMaxWidth)) {
-                            components.add(ClientTooltipComponent.create(wrapped));
+                            components.add(new CenteredTextComponent(wrapped));
                         }
                     }
                 } else {
                     for (FormattedCharSequence wrapped : font.split(c, allowedMaxWidth)) {
-                        components.add(ClientTooltipComponent.create(wrapped));
+                        components.add(new CenteredTextComponent(wrapped));
                     }
                 }
             }

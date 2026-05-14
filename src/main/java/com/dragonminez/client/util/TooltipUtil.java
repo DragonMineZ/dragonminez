@@ -35,7 +35,7 @@ public class TooltipUtil {
 
                 List<FormattedCharSequence> splitLines = font.split(text, maxWidth);
                 for (FormattedCharSequence splitLine : splitLines) {
-                    wrapped.add(ClientTooltipComponent.create(splitLine));
+                    wrapped.add(new CenteredTextComponent(splitLine));
                 }
             } else {
                 wrapped.add(component);

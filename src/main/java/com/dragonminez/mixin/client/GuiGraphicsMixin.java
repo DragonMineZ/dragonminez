@@ -62,18 +62,6 @@ public abstract class GuiGraphicsMixin {
         return currentPosition;
     }
 
-    @Redirect(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderText(Lnet/minecraft/client/gui/Font;IILorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;)V"))
-    private void dragonminez$centerAndSpaceComponents(ClientTooltipComponent instance, Font font, int renderX, int renderY, org.joml.Matrix4f matrix, net.minecraft.client.renderer.MultiBufferSource.BufferSource bufferSource) {
-        int finalX = renderX;
-
-        if (TooltipDecor.hasSpecialBorder && !TooltipDecor.hasItemBox && renderY <= TooltipDecor.lastTooltipY + 12) {
-            int textW = instance.getWidth(font);
-            finalX = TooltipDecor.lastTooltipX + (TooltipDecor.lastTooltipW / 2) - (textW / 2);
-        }
-
-        instance.renderText(font, finalX, renderY, matrix, bufferSource);
-    }
-
     @Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;popPose()V", ordinal = 0))
     private void dragonminez$closeCustomMatrices(Font textRenderer, List<ClientTooltipComponent> tooltip, int x, int y, ClientTooltipPositioner positioner, CallbackInfo ci) {
         pose().popPose();
