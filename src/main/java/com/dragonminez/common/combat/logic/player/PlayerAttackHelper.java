@@ -5,12 +5,19 @@ import com.dragonminez.common.combat.weapon.WeaponAttributes;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.combat.player.ComboState;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.util.Mth;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
+import net.minecraftforge.common.ForgeMod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import static net.minecraft.world.entity.EquipmentSlot.MAINHAND;
 
@@ -33,15 +40,16 @@ public class PlayerAttackHelper {
 
     public static boolean isTwoHandedWielding(Player player) {
         var mainAttributes = WeaponRegistry.getAttributes(player.getMainHandItem());
-        if (mainAttributes != null) {
-            return mainAttributes.isTwoHanded();
-        }
+        if (mainAttributes != null) return mainAttributes.isTwoHanded();
         return false;
     }
 
     public static float getAttackCooldownTicksCapped(Player player) {
         float intervalCap = ConfigManager.getCombatConfig().getAttackIntervalCap();
-        return Math.max(player.getCurrentItemAttackStrengthDelay(), intervalCap);
+        float rawDelay = player.getCurrentItemAttackStrengthDelay();
+        if (!Float.isFinite(rawDelay) || rawDelay <= 0.0F) rawDelay = intervalCap;
+        float capped = Math.max(rawDelay, intervalCap);
+        return Mth.clamp(capped, intervalCap, 200.0F);
     }
 
     public static AttackHand getCurrentAttack(Player player, int comboCount) {
@@ -55,21 +63,21 @@ public class PlayerAttackHelper {
             if (attributes != null && attributes.attacks() != null) {
                 int handSpecificComboCount = ((isOffHand && comboCount > 0) ? (comboCount - 1) : (comboCount)) / 2;
                 var attackSelection = selectAttack(handSpecificComboCount, attributes, player, isOffHand);
-                if (attackSelection == null) {
-                    return null;
-                }
+                if (attackSelection == null) return null;
                 var attack = attackSelection.attack;
                 var combo = attackSelection.comboState;
                 return new AttackHand(attack, combo, isOffHand, attributes, itemStack);
             }
         } else {
             var itemStack = player.getMainHandItem();
-            WeaponAttributes attributes = WeaponRegistry.getAttributes(itemStack);
+            WeaponAttributes attributes;
+            if (itemStack.isEmpty()) {
+                attributes = getActiveFormComboAttributes(player);
+                if (attributes == null || attributes.attacks() == null) attributes = WeaponRegistry.getAttributes(itemStack);
+            } else attributes = WeaponRegistry.getAttributes(itemStack);
             if (attributes != null && attributes.attacks() != null) {
                 var attackSelection = selectAttack(comboCount, attributes, player, false);
-                if (attackSelection == null) {
-                    return null;
-                }
+                if (attackSelection == null) return null;
                 var attack = attackSelection.attack;
                 var combo = attackSelection.comboState;
                 return new AttackHand(attack, combo, false, attributes, itemStack);
@@ -85,13 +93,8 @@ public class PlayerAttackHelper {
         var attacks = attributes.attacks();
 
         attacks = Arrays.stream(attacks)
-                .filter(attack ->
-                        attack.conditions() == null
-                                || attack.conditions().length == 0
-                                || evaluateConditions(attack.conditions(), player, isOffHandAttack)
-                )
+                .filter(attack -> attack.conditions() == null || attack.conditions().length == 0 || evaluateConditions(attack.conditions(), player, isOffHandAttack))
                 .toArray(WeaponAttributes.Attack[]::new);
-
 
         if (comboCount < 0) comboCount = 0;
 
@@ -105,9 +108,8 @@ public class PlayerAttackHelper {
     }
 
     private static boolean evaluateCondition(WeaponAttributes.Condition condition, Player player, boolean isOffHandAttack) {
-        if (condition == null) {
-            return true;
-        }
+        if (condition == null) return true;
+
         switch (condition) {
             case NOT_DUAL_WIELDING -> {
                 return !isDualWielding(player);
@@ -116,8 +118,7 @@ public class PlayerAttackHelper {
                 return isDualWielding(player);
             }
             case DUAL_WIELDING_SAME -> {
-                return isDualWielding(player) &&
-                        (player.getMainHandItem().getItem() == player.getOffhandItem().getItem());
+                return isDualWielding(player) && (player.getMainHandItem().getItem() == player.getOffhandItem().getItem());
             }
             case DUAL_WIELDING_SAME_CATEGORY -> {
                 if (!isDualWielding(player)) return false;
@@ -155,6 +156,52 @@ public class PlayerAttackHelper {
 
     public static boolean canAttack(Player player) {
         return true;
+    }
+
+    public static double getEffectiveAttackRange(Player player, double weaponAttackRange) {
+        var entityReachAttr = player.getAttribute(ForgeMod.ENTITY_REACH.get());
+        if (entityReachAttr == null) return Math.max(0.0D, weaponAttackRange);
+        double defaultEntityReach = ForgeMod.ENTITY_REACH.get().getDefaultValue();
+        double currentEntityReach = entityReachAttr.getValue();
+        double effectiveRange = weaponAttackRange + (currentEntityReach - defaultEntityReach);
+        return Math.max(0.0D, effectiveRange);
+    }
+
+    @Nullable
+    private static WeaponAttributes getActiveFormComboAttributes(Player player) {
+        var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, player);
+        if (!statsOpt.isPresent()) return null;
+
+        var stats = statsOpt.resolve().orElse(null);
+        if (stats == null) return null;
+
+        var character = stats.getCharacter();
+        if (character == null) return null;
+
+        var formData = character.getActiveFormData();
+        if (formData == null) formData = character.getActiveStackFormData();
+        if (formData == null) return null;
+
+        String formCombo = formData.getFormCombo();
+        if (formCombo == null || formCombo.isBlank()) return null;
+
+        String comboRaw = formCombo.trim().toLowerCase();
+        Set<ResourceLocation> candidates = new LinkedHashSet<>();
+
+        ResourceLocation parsed = ResourceLocation.tryParse(comboRaw);
+        if (parsed != null) candidates.add(parsed);
+
+        if (!comboRaw.contains(":")) {
+            candidates.add(ResourceLocation.fromNamespaceAndPath("dragonminez", comboRaw));
+            candidates.add(ResourceLocation.fromNamespaceAndPath("minecraft", comboRaw));
+        }
+
+        for (ResourceLocation candidate : candidates) {
+            WeaponAttributes attributes = WeaponRegistry.getAttributes(candidate);
+            if (attributes != null && attributes.attacks() != null) return attributes;
+        }
+
+        return null;
     }
 
     private static final Object attributesLock = new Object();

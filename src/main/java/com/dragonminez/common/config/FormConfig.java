@@ -37,6 +37,7 @@ public class FormConfig {
 	public static class FormData {
 		private String name = "";
 		private Integer unlockOnSkillLevel = 0;
+		private String formCombo = "";
 		private String customModel = "";
 		private boolean keepBaseFormHeadBones = false;
 		private String bodyColor1 = "";

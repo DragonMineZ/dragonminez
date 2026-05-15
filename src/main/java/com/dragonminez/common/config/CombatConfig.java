@@ -20,7 +20,6 @@ public class CombatConfig {
 	@Setter
 	private int configVersion;
 
-	private Boolean respectAttackCooldown = true;
 	private Double staminaConsumptionRatio = 0.5;
 	private Integer baselineFormDrain = 200;
 	private Boolean killPlayersOnCombatLogout = true;

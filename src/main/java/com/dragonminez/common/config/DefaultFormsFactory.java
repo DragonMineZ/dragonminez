@@ -401,6 +401,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData oozaru = new FormConfig.FormData();
 		oozaru.setName(SaiyanForms.OOZARU);
 		oozaru.setUnlockOnSkillLevel(0);
+		oozaru.setFormCombo("dragonminez:giant");
 		oozaru.setCustomModel("oozaru");
 		oozaru.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
 		oozaru.setStrMultiplier(1.2);
@@ -410,6 +411,7 @@ public class DefaultFormsFactory {
 		oozaru.setSpeedMultiplier(0.8);
 		oozaru.setEnergyDrain(0.05);
 		oozaru.setStaminaDrainMultiplier(1.2);
+		oozaru.setAttackSpeed(0.25);
 		oozaru.setAttackSpeed(0.9);
 		oozaru.setHairType("base");
 		setDefaultMasteryValues(oozaru);
@@ -419,6 +421,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData goldenOozaru = new FormConfig.FormData();
 		goldenOozaru.setName(SaiyanForms.GOLDEN_OOZARU);
 		goldenOozaru.setUnlockOnSkillLevel(7);
+		goldenOozaru.setFormCombo("dragonminez:giant");
 		goldenOozaru.setCustomModel("oozaru");
 		goldenOozaru.setHairColor("#FFD700");
 		goldenOozaru.setAuraColor("#FFD700");
@@ -431,6 +434,7 @@ public class DefaultFormsFactory {
 		goldenOozaru.setSpeedMultiplier(0.85);
 		goldenOozaru.setEnergyDrain(0.24);
 		goldenOozaru.setStaminaDrainMultiplier(1.3);
+		goldenOozaru.setAttackSpeed(0.25);
 		goldenOozaru.setHairType("base");
 		setDefaultMasteryValues(goldenOozaru);
 		goldenOozaru.setStackDrainMultiplier(2.0);
@@ -618,6 +622,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData giantForm = new FormConfig.FormData();
 		giantForm.setName(NamekianForms.GIANT);
 		giantForm.setUnlockOnSkillLevel(1);
+		giantForm.setFormCombo("dragonminez:giant");
 		giantForm.setKeepBaseFormHeadBones(true);
 		giantForm.setModelScaling(new Float[]{3.6f, 3.6f, 3.6f});
 		giantForm.setStrMultiplier(1.5);
@@ -625,6 +630,7 @@ public class DefaultFormsFactory {
 		giantForm.setDefMultiplier(1.4);
 		giantForm.setPwrMultiplier(1.5);
 		giantForm.setEnergyDrain(0.09);
+		giantForm.setAttackSpeed(0.25);
 		giantForm.setHairType("base");
 		setDefaultMasteryValues(giantForm);
 		giantForm.setStackDrainMultiplier(2.0);
@@ -682,6 +688,7 @@ public class DefaultFormsFactory {
 		second.setName(FrostDemonForms.SECOND_FORM);
 		second.setUnlockOnSkillLevel(1);
 		second.setCustomModel("");
+		second.setKeepBaseFormHeadBones(true);
 		second.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 		second.setStrMultiplier(1.5);
 		second.setSkpMultiplier(1.5);

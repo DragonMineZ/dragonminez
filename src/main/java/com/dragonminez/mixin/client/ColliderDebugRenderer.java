@@ -39,7 +39,7 @@ public class ColliderDebugRenderer {
 
 		var attack = hand.attack();
 		var attributes = hand.attributes();
-		double attackRange = attributes.attackRange();
+		double attackRange = PlayerAttackHelper.getEffectiveAttackRange(player, attributes.attackRange());
 		var cursorTarget = mcDMZ.getCursorTarget();
 
 		TargetFinder.TargetResult targetResult = TargetFinder.findAttackTargetResult(player, cursorTarget, attack, attackRange);

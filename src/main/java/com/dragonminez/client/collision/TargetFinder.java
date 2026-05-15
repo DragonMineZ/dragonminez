@@ -55,7 +55,16 @@ public class TargetFinder {
     }
 
     private static Vec3 getInitialTracingPoint(Player player) {
-        return player.position().add(0, player.getBbHeight() * 0.8, 0);
+        Vec3 horizontalLook = new Vec3(player.getLookAngle().x, 0.0, player.getLookAngle().z);
+        if (horizontalLook.lengthSqr() < 1.0E-6) {
+            horizontalLook = player.getLookAngle();
+        }
+        horizontalLook = horizontalLook.normalize();
+
+        double forwardOffset = player.getBbWidth() * 0.5;
+        return player.position()
+                .add(0, player.getBbHeight() * 0.8, 0)
+                .add(horizontalLook.scale(forwardOffset));
     }
 
     private static List<Entity> getInitialTargets(Player player, Entity cursorTarget, double attackRange) {

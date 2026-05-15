@@ -55,14 +55,10 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		if (hand == null || !PlayerAttackHelper.canAttack(player)) return;
 		if (!shouldUseCombatAttack(hand)) return;
 
-
 		cir.cancel();
 		cir.setReturnValue(false);
 
 		if (itemUseCooldown > 0 || isAttacking || isAwaitingUpswing) return;
-
-		float cooldownProgress = player.getAttackStrengthScale(0.5F);
-		if (ConfigManager.getCombatConfig().getRespectAttackCooldown() && cooldownProgress < 1.0F) return;
 
 		isAttacking = true;
 		isAwaitingUpswing = true;
@@ -89,14 +85,10 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		boolean canUseCombat = hand != null && PlayerAttackHelper.canAttack(player) && shouldUseCombatAttack(hand);
 
 		if (!canUseCombat) return;
-
-		// In combat context, fully suppress vanilla continueAttack to avoid mining swing spam.
 		ci.cancel();
 
 		float cooldownProgress = player.getAttackStrengthScale(0.5F);
-		if (cooldownProgress >= 1.0F && !isAttacking && !isAwaitingUpswing) {
-			this.startAttack();
-		}
+		if (cooldownProgress >= 1.0F && !isAttacking && !isAwaitingUpswing) this.startAttack();
 	}
 
 	@Inject(method = "tick", at = @At("HEAD"))
@@ -136,7 +128,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	private void executeAttack() {
 		var mcDMZ = (Minecraft_DMZ) this;
 		var cursorTarget = mcDMZ.getCursorTarget();
-		var attackRange = upswingStack.attributes().attackRange();
+		var attackRange = PlayerAttackHelper.getEffectiveAttackRange(player, upswingStack.attributes().attackRange());
 
 		TargetFinder.TargetResult targetResult = TargetFinder.findAttackTargetResult(player, cursorTarget, upswingStack.attack(), attackRange);
 
@@ -168,7 +160,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 			return;
 		}
 		var cursorTarget = mcDMZ.getCursorTarget();
-		var attackRange = hand.attributes().attackRange();
+		var attackRange = PlayerAttackHelper.getEffectiveAttackRange(player, hand.attributes().attackRange());
 		TargetFinder.TargetResult targetResult = TargetFinder.findAttackTargetResult(player, cursorTarget, hand.attack(), attackRange);
 		targetsInReach = targetResult.entities;
 	}
@@ -183,7 +175,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		if (hasTargetsInReach()) return true;
 		var mcDMZ = (Minecraft_DMZ) this;
 		var cursorTarget = mcDMZ.getCursorTarget();
-		var attackRange = hand.attributes().attackRange();
+		var attackRange = PlayerAttackHelper.getEffectiveAttackRange(player, hand.attributes().attackRange());
 		TargetFinder.TargetResult targetResult = TargetFinder.findAttackTargetResult(player, cursorTarget, hand.attack(), attackRange);
 		return !targetResult.entities.isEmpty();
 	}

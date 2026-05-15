@@ -60,6 +60,7 @@ public class StatsEvents {
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
 	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
+	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
 
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -496,6 +497,7 @@ public class StatsEvents {
 				if (!data.getStatus().isHasCreatedCharacter()) return;
 
 				AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
+				AttributeInstance attackSpeedAttr = serverPlayer.getAttribute(Attributes.ATTACK_SPEED);
 				if (speedAttr != null) {
 					double expectedBonus = 0.0;
 					if (data.getCharacter().hasActiveForm()) {
@@ -513,6 +515,34 @@ public class StatsEvents {
 						speedAttr.removeModifier(FORM_SPEED_UUID);
 						if (expectedBonus > 0) {
 							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+						}
+					}
+				}
+
+				if (attackSpeedAttr != null) {
+					double expectedMultiplier = 1.0;
+					if (data.getCharacter().hasActiveForm()) {
+						FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
+						if (activeForm != null) expectedMultiplier *= activeForm.getAttackSpeed();
+					}
+					if (data.getCharacter().hasActiveStackForm()) {
+						FormConfig.FormData activeStackForm = data.getCharacter().getActiveStackFormData();
+						if (activeStackForm != null) expectedMultiplier *= activeStackForm.getAttackSpeed();
+					}
+
+					double expectedBonus = expectedMultiplier - 1.0;
+					AttributeModifier existingAttackSpeed = attackSpeedAttr.getModifier(FORM_ATTACK_SPEED_UUID);
+					double currentBonus = existingAttackSpeed != null ? existingAttackSpeed.getAmount() : 0.0;
+
+					if (expectedBonus != currentBonus) {
+						attackSpeedAttr.removeModifier(FORM_ATTACK_SPEED_UUID);
+						if (expectedBonus != 0.0) {
+							attackSpeedAttr.addTransientModifier(new AttributeModifier(
+									FORM_ATTACK_SPEED_UUID,
+									"Form Attack Speed Bonus",
+									expectedBonus,
+									AttributeModifier.Operation.MULTIPLY_TOTAL
+							));
 						}
 					}
 				}

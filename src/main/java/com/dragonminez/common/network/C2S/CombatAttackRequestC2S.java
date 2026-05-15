@@ -147,7 +147,7 @@ public class CombatAttackRequestC2S {
 
 				if (!TargetHelper.isAttackableMount(entity) && player.getVehicle() == entity) continue;
 
-				double maxRange = hand.attributes().attackRange();
+				double maxRange = PlayerAttackHelper.getEffectiveAttackRange(player, hand.attributes().attackRange());
 				TargetHelper.Relation relation = TargetHelper.getRelation(player, entity);
 				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0D)) continue;
 
@@ -172,12 +172,8 @@ public class CombatAttackRequestC2S {
 			player.getPersistentData().remove("dmz_first_hit");
 			player.resetLastActionTime();
 
-			if (comboAttributes != null) {
-				player.getAttributes().removeAttributeModifiers(comboAttributes);
-				if (hand.isOffHand()) {
-					PlayerAttackHelper.setAttributesForOffHandAttack(player, false);
-				}
-			}
+			if (comboAttributes != null) player.getAttributes().removeAttributeModifiers(comboAttributes);
+			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, false);
 			if (!sweepingModifiers.isEmpty()) {
 				player.getAttributes().removeAttributeModifiers(sweepingModifiers);
 			}
