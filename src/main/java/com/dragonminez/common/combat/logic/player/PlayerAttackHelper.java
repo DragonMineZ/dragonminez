@@ -10,8 +10,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.util.Mth;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ShieldItem;
+import net.minecraft.world.item.*;
 import net.minecraftforge.common.ForgeMod;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,10 +31,16 @@ public class PlayerAttackHelper {
     }
 
     public static boolean isDualWielding(Player player) {
+        boolean mainEmpty = player.getMainHandItem().isEmpty();
+        boolean offEmpty = player.getOffhandItem().isEmpty();
+
+        if (mainEmpty && offEmpty) return true;
+        if (mainEmpty || offEmpty) return false;
+        if (player.getOffhandItem().getItem() instanceof ShieldItem) return false;
+
         var mainAttributes = WeaponRegistry.getAttributes(player.getMainHandItem());
         var offAttributes = WeaponRegistry.getAttributes(player.getOffhandItem());
-        return mainAttributes != null && !mainAttributes.isTwoHanded()
-                && offAttributes != null && !offAttributes.isTwoHanded();
+        return mainAttributes != null && !mainAttributes.isTwoHanded() && offAttributes != null && !offAttributes.isTwoHanded();
     }
 
     public static boolean isTwoHandedWielding(Player player) {
@@ -55,10 +60,13 @@ public class PlayerAttackHelper {
     public static AttackHand getCurrentAttack(Player player, int comboCount) {
         if (isDualWielding(player)) {
             boolean isOffHand = shouldAttackWithOffHand(player, comboCount);
-            var itemStack = isOffHand
-                    ? player.getOffhandItem()
-                    : player.getMainHandItem();
-            var attributes = WeaponRegistry.getAttributes(itemStack);
+            var itemStack = isOffHand ? player.getOffhandItem() : player.getMainHandItem();
+            WeaponAttributes attributes;
+
+            if (itemStack.isEmpty()) {
+                attributes = getActiveFormComboAttributes(player);
+                if (attributes == null || attributes.attacks() == null) attributes = WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
+            } else attributes = WeaponRegistry.getAttributes(itemStack);
 
             if (attributes != null && attributes.attacks() != null) {
                 int handSpecificComboCount = ((isOffHand && comboCount > 0) ? (comboCount - 1) : (comboCount)) / 2;
@@ -71,10 +79,12 @@ public class PlayerAttackHelper {
         } else {
             var itemStack = player.getMainHandItem();
             WeaponAttributes attributes;
+
             if (itemStack.isEmpty()) {
                 attributes = getActiveFormComboAttributes(player);
-                if (attributes == null || attributes.attacks() == null) attributes = WeaponRegistry.getAttributes(itemStack);
+                if (attributes == null || attributes.attacks() == null) attributes = WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
             } else attributes = WeaponRegistry.getAttributes(itemStack);
+
             if (attributes != null && attributes.attacks() != null) {
                 var attackSelection = selectAttack(comboCount, attributes, player, false);
                 if (attackSelection == null) return null;
@@ -149,6 +159,12 @@ public class PlayerAttackHelper {
             }
             case NOT_MOUNTED -> {
                 return player.getVehicle() == null;
+            }
+            case SNEAKING -> {
+                return player.isCrouching();
+            }
+            case NOT_SNEAKING -> {
+                return !player.isCrouching();
             }
         }
         return true;

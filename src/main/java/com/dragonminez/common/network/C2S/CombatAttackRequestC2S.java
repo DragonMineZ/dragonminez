@@ -107,10 +107,7 @@ public class CombatAttackRequestC2S {
 			var animPacket = new MeleeAnimationS2C(player.getId(), animName, isOffhand, animSpeedMultiplier);
 			NetworkHandler.sendToTrackingEntityAndSelf(animPacket, player);
 
-
-			if (hand.isOffHand()) {
-				PlayerAttackHelper.setAttributesForOffHandAttack(player, true);
-			}
+			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, true);
 
 			Multimap<Attribute, AttributeModifier> comboAttributes = null;
 

@@ -73,7 +73,6 @@ public class WeaponRegistry {
 
     public static WeaponAttributes getAttributes(ResourceLocation itemId) {
         if (itemId == null) return null;
-        //System.out.println("Getting attributes for: " + itemId + ", registry contains: " + registrations.keySet());
         return registrations.get(itemId);
     }
 
