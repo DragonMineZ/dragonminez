@@ -28,7 +28,7 @@
         "damage_multiplier": 1,
         "angle": 0,
         "upswing": 0.5,
-        "animation": "combat.one_handed_stab",
+        "animation": "combat.one_handed_stab_right",
         "swing_sound": {
           "id": "dragonminez:sword_slash",
           "pitch": 1.2
