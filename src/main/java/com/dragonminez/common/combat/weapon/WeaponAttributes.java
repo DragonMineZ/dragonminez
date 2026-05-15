@@ -166,7 +166,15 @@ public final class WeaponAttributes {
         /**
          * Fulfilled if the player is not riding any entity
          */
-        NOT_MOUNTED
+        NOT_MOUNTED,
+        /**
+         * Fulfilled if the player is sneaking
+         */
+        SNEAKING,
+        /**
+         * Fulfilled if the player is not sneaking
+         */
+        NOT_SNEAKING
     }
 
     public static final class Sound {

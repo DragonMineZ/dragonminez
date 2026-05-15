@@ -25,6 +25,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -256,9 +257,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
 		else baseReduction = baseDefense / (k_factor - baseDefense);
 
-
 		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
-		baseReduction = Math.min(baseReduction, baseCap);
+		baseReduction = Mth.clamp(baseReduction, 0.0, baseCap);
 
 		int totalProtection = 0;
 		if (Minecraft.getInstance().player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, Minecraft.getInstance().player);
@@ -271,10 +271,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			double totalCap = ConfigManager.getCombatConfig().getEnchantmentDamageReductionCap();
 			double maxEnchReductionAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
 
-			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
+			enchReduction = Mth.clamp(enchReduction, 0.0, Math.max(0, maxEnchReductionAllowed));
 		}
 
-		return new double[]{baseReduction * 100.0, resTotalMult, enchReduction * 100.0};
+		double mitigationReduction = 1.0 - ((1.0 - baseReduction) * (1.0 - enchReduction));
+		double mitigationReductionPct = Mth.clamp(mitigationReduction * 100.0, 0.0, 100.0);
+
+		return new double[]{mitigationReductionPct, resTotalMult, enchReduction * 100.0};
 	}
 
 	private void renderTPCost(GuiGraphics graphics) {
@@ -638,7 +641,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 						double[] pcts = getDamageReductionPercentages();
 						extras.add(tr("gui.dragonminez.character_stats.defense").append(": ")
-								.append(txt(formatUpToTwoDecimals((pcts[0] + pcts[2]) * 100.0) + "% "))
+								.append(txt(formatUpToTwoDecimals(pcts[0]) + "% "))
 								.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 								.withStyle(ChatFormatting.AQUA));
 

@@ -14,6 +14,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.common.MinecraftForge;
 import org.spongepowered.asm.mixin.Mixin;
@@ -138,7 +139,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		int[] entityIds = targetResult.entities.stream().mapToInt(Entity::getId).toArray();
 
 		int comboCount = mcDMZ.getComboCount();
-		boolean sneaking = player.isShiftKeyDown();
+		boolean sneaking = player.hasPose(Pose.CROUCHING);
 		int slot = player.getInventory().selected;
 
 		NetworkHandler.sendToServer(new CombatAttackRequestC2S(comboCount, sneaking, slot, entityIds));

@@ -297,7 +297,6 @@ public class StatsData {
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
 		else baseReduction = baseDefense / (k_factor - baseDefense);
 
-
 		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
 		baseReduction = Math.min(baseReduction, baseCap);
 
