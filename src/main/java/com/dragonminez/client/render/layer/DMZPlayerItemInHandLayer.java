@@ -78,10 +78,21 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 
 		poseStack.pushPose();
 
-		boolean isCombatAnim = animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isPlayingCombatAnimation();
-		if (!isCombatAnim) {
+		boolean boneIsOffhand = (isRight && animatable.getMainArm() == HumanoidArm.LEFT) || (isLeft && animatable.getMainArm() == HumanoidArm.RIGHT);
+
+		boolean isCombatAnim = false;
+		boolean isOffhandAttack = false;
+
+		if (animatable instanceof IPlayerAnimatable playerAnim) {
+			isCombatAnim = playerAnim.dragonminez$isPlayingCombatAnimation();
+			isOffhandAttack = playerAnim.dragonminez$isAttackingWithOffhand();
+		}
+
+		boolean cancelGripForThisBone = isCombatAnim && (boneIsOffhand == isOffhandAttack);
+
+		if (!cancelGripForThisBone) {
 			boolean isUsing = animatable.isUsingItem() && animatable.getUseItem() == stack;
-			String weaponType = resolveWeaponType(animatable);
+			String weaponType = resolveWeaponType(stack);
 			WeaponGripProfile profile = WeaponGripProfile.resolve(stack.getItem(), isUsing, weaponType);
 			profile.apply(poseStack, isLeft);
 		}
@@ -93,8 +104,8 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 		poseStack.popPose();
 	}
 
-	private String resolveWeaponType(T animatable) {
-		var attrs = WeaponRegistry.getAttributes(animatable.getMainHandItem());
+	private String resolveWeaponType(ItemStack stack) {
+		var attrs = WeaponRegistry.getAttributes(stack);
 		return attrs != null ? attrs.category() : null;
 	}
 

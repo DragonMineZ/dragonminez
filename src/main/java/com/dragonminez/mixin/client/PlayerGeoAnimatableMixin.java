@@ -47,6 +47,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$evasionVariant = 0;
 	@Unique private int dragonminez$attackAnimTicks = 0;
 	@Unique private int dragonminez$combatGraceFrames = 0;
+	@Unique private boolean dragonminez$isOffhandAttack = false;
 	@Unique private int dragonminez$miningAnimTicks = 0;
 	@Unique private int dragonminez$lastMiningTickRun = -1;
 	@Unique private boolean dragonminez$isShootingKi = false;
@@ -492,6 +493,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		String resolved = CombatAnimationResolver.resolveAttack(animationName, isOffhand);
 		this.dragonminez$currentMeleeAnim = resolved.isEmpty() ? "fallback" : resolved;
 		this.dragonminez$currentMeleeSpeed = Math.max(0.15F, speedMultiplier);
+		this.dragonminez$isOffhandAttack = isOffhand;
 	}
 
 	@Override
@@ -505,6 +507,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return true;
 		}
 		return dragonminez$currentPoseAnim != null && !dragonminez$currentPoseAnim.isEmpty();
+	}
+
+	@Override
+	public boolean dragonminez$isAttackingWithOffhand() {
+		return this.dragonminez$isOffhandAttack;
 	}
 
 	@Override

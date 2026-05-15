@@ -1,6 +1,7 @@
 package com.dragonminez.client.animation;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.client.Minecraft;
@@ -18,8 +19,7 @@ public final class CombatAnimationResolver {
 
     private static final Set<String> AVAILABLE_RAW = new HashSet<>();
 
-    private CombatAnimationResolver() {
-    }
+    private CombatAnimationResolver() {}
 
     public static void reload(ResourceManager resourceManager) {
         AVAILABLE_RAW.clear();
@@ -34,8 +34,7 @@ public final class CombatAnimationResolver {
                 if (animations == null) return;
                 for (String key : animations.keySet()) AVAILABLE_RAW.add(key);
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
     }
 
     private static void ensureLoaded() {
@@ -45,31 +44,20 @@ public final class CombatAnimationResolver {
     }
 
     public static String sanitizeAnimationId(String animationId) {
-        if (animationId == null) {
-            return "";
-        }
+        if (animationId == null) return "";
+
         String id = animationId.trim();
-        if (id.startsWith(Reference.MOD_ID + ":")) {
-            id = id.substring((Reference.MOD_ID + ":").length());
-        }
-        if (id.startsWith("animation.base.")) {
-            id = id.substring("animation.base.".length());
-        }
-        if (id.startsWith("combat.")) {
-            id = id.substring("combat.".length());
-        }
+        if (id.startsWith(Reference.MOD_ID + ":")) id = id.substring((Reference.MOD_ID + ":").length());
+        if (id.startsWith("animation.base.")) id = id.substring("animation.base.".length());
+        if (id.startsWith("combat.")) id = id.substring("combat.".length());
+
         return id;
     }
 
     public static String resolveAttack(String animationId, boolean isOffhand) {
         ensureLoaded();
-
         String resolved = sanitizeAnimationId(animationId);
-
-        if (isOffhand && resolved.contains("right")) {
-            resolved = resolved.replace("right", "left");
-        }
-
+        if (isOffhand && resolved.contains("right")) resolved = resolved.replace("right", "left");
         return toPlayableKey(resolved);
     }
 
@@ -80,7 +68,7 @@ public final class CombatAnimationResolver {
     }
 
     public static String resolvePlayerPose(Player player) {
-        var main = com.dragonminez.common.combat.logic.weapon.WeaponRegistry.getAttributes(player.getMainHandItem());
+        var main = WeaponRegistry.getAttributes(player.getMainHandItem());
         if (main == null) return "";
         return resolvePose(main.pose());
     }
