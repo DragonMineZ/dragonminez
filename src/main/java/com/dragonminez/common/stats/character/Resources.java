@@ -47,8 +47,8 @@ public class Resources {
 
     public int getPowerRelease() { return release; }
 
-
     public void setCurrentEnergy(float energy) {
+        if (energy <= 1) setPowerRelease(0);
         this.currentEnergy = roundToQuarter(clampMax(Math.max(0, energy), Float.MAX_VALUE - 1));
     }
 

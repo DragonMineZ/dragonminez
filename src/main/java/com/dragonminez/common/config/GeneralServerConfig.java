@@ -179,20 +179,6 @@ public class GeneralServerConfig {
 		public List<String> getHelmetsThatKeepHair() {
 			return helmetsThatKeepHair;
 		}
-
-		private static Map<String, Float[]> createDefaultFoodRegenerations() {
-			Map<String, Float[]> defaults = new HashMap<>();
-			defaults.put("dragonminez:raw_dino_meat", new Float[]{0.10f, 0.10f, 0.10f});
-			defaults.put("dragonminez:cooked_dino_meat", new Float[]{0.15f, 0.15f, 0.15f});
-			defaults.put("dragonminez:dino_tail_raw", new Float[]{0.15f, 0.15f, 0.15f});
-			defaults.put("dragonminez:dino_tail_cooked", new Float[]{0.20f, 0.20f, 0.20f});
-			defaults.put("dragonminez:frog_legs_raw", new Float[]{0.05f, 0.05f, 0.05f});
-			defaults.put("dragonminez:frog_legs_cooked", new Float[]{0.10f, 0.10f, 0.10f});
-			defaults.put("dragonminez:senzu_bean", new Float[]{1.0f, 1.0f, 1.0f});
-			defaults.put("dragonminez:heart_medicine", new Float[]{1.0f, 1.0f, 1.0f});
-			defaults.put("dragonminez:might_tree_fruit", new Float[]{0.035f, 0.35f, 0.35f});
-			return defaults;
-		}
 	}
 
 	@Getter
@@ -234,22 +220,19 @@ public class GeneralServerConfig {
 	@Getter
 	@NoArgsConstructor
 	public static class FoodConfig {
-		private Integer minHungerPoints = 4;
+		private Integer minHungerPoints = 2;
 		private Integer maxHungerPoints = 20;
 
 		private Float minSaturationPoints = 0.4f;
 		private Float maxSaturationPoints = 2.0f;
 
-		private Float healthPercentageRecoveredPerHungerPoint = 1.0f;
-		private Float kiPercentageRecoveredPerHungerPoint = 1.0f;
-		private Float staminaPercentageRecoveredPerHungerPoint = 1.0f;
+		private Float healthPercentageRecoveredPerHungerPoint = 0.01f;
+		private Float kiPercentageRecoveredPerHungerPoint = 0.01f;
+		private Float staminaPercentageRecoveredPerHungerPoint = 0.02f;
 
-		private Float healthPercentageRecoveredPerSaturationPoint = 1.0f;
-		private Float kiPercentageRecoveredPerSaturationPoint = 1.0f;
-		private Float staminaPercentageRecoveredPerSaturationPoint = 1.0f;
-
-		private List<String> whitelistedNamespaces = new ArrayList<>();
-		private List<String> whitelistedItems = new ArrayList<>();
+		private Float healthPercentageRecoveredPerSaturationPoint = 0.001f;
+		private Float kiPercentageRecoveredPerSaturationPoint = 0.001f;
+		private Float staminaPercentageRecoveredPerSaturationPoint = 0.004f;
 
 		private List<String> blacklistedNamespaces = new ArrayList<>();
 		private List<String> blacklistedItems = new ArrayList<>();

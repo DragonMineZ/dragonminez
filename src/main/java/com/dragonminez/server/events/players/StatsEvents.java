@@ -53,6 +53,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StatsEvents {
@@ -61,6 +62,23 @@ public class StatsEvents {
 	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
+
+	private static final Map<UUID, List<FoodRegenTask>> FOOD_REGEN_QUEUE = new ConcurrentHashMap<>();
+
+	public static class FoodRegenTask {
+		public int ticksPassed = 0;
+		public final int totalSeconds;
+		public final float hpPerSecond;
+		public final float kiPerSecond;
+		public final float staminaPerSecond;
+
+		public FoodRegenTask(int durationSeconds, float totalHp, float totalKi, float totalStam) {
+			this.totalSeconds = durationSeconds;
+			this.hpPerSecond = totalHp / (float) durationSeconds;
+			this.kiPerSecond = totalKi / (float) durationSeconds;
+			this.staminaPerSecond = totalStam / (float) durationSeconds;
+		}
+	}
 
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -73,11 +91,51 @@ public class StatsEvents {
 
 			applyHealthBonus(serverPlayer);
 
+			UUID playerId = serverPlayer.getUUID();
+			List<FoodRegenTask> tasks = FOOD_REGEN_QUEUE.get(playerId);
+
+			if (tasks != null && !tasks.isEmpty()) {
+				float totalHpPulse = 0f;
+				float totalKiPulse = 0f;
+				float totalStamPulse = 0f;
+
+				Iterator<FoodRegenTask> iterator = tasks.iterator();
+				while (iterator.hasNext()) {
+					FoodRegenTask task = iterator.next();
+					task.ticksPassed++;
+
+					if (task.ticksPassed % 20 == 0) {
+						totalHpPulse += task.hpPerSecond;
+						totalKiPulse += task.kiPerSecond;
+						totalStamPulse += task.staminaPerSecond;
+					}
+
+					if (task.ticksPassed >= task.totalSeconds * 20) iterator.remove();
+				}
+
+				if (totalHpPulse > 0) serverPlayer.heal(totalHpPulse);
+
+				if (totalKiPulse > 0 || totalStamPulse > 0) {
+					float maxEnergy = data.getMaxEnergy();
+					float maxStamina = data.getMaxStamina();
+					float currentEnergy = data.getResources().getCurrentEnergy();
+					float currentStamina = data.getResources().getCurrentStamina();
+
+					data.getResources().setCurrentEnergy(Math.min(maxEnergy, currentEnergy + totalKiPulse));
+					data.getResources().setCurrentStamina(Math.min(maxStamina, currentStamina + totalStamPulse));
+				}
+			}
+
 			if (data.getResources().getCurrentEnergy() > data.getMaxEnergy())
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
 			if (data.getResources().getCurrentStamina() > data.getMaxStamina())
 				data.getResources().setCurrentStamina(data.getMaxStamina());
 		});
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+		FOOD_REGEN_QUEUE.remove(event.getEntity().getUUID());
 	}
 
 	public static void applyHealthBonus(ServerPlayer serverPlayer) {
@@ -135,7 +193,6 @@ public class StatsEvents {
 		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity;
 	}
 
-
 	@SubscribeEvent
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
@@ -155,6 +212,7 @@ public class StatsEvents {
 					victimData.getStatus().setActionCharging(false);
 					victimData.getCharacter().setActiveForm(null, null);
 					victimData.getCharacter().setActiveStackForm(null, null);
+					FOOD_REGEN_QUEUE.remove(victim.getUUID());
 				}
 			});
 		}
@@ -329,13 +387,10 @@ public class StatsEvents {
 		String namespace = itemKey.getNamespace();
 
 		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
-		boolean isModWhitelisted = foodConfig.getWhitelistedNamespaces().isEmpty() || foodConfig.getWhitelistedNamespaces().contains(namespace);
-		boolean isItemWhitelisted = foodConfig.getWhitelistedItems().isEmpty() || foodConfig.getWhitelistedItems().contains(itemId);
-
 		boolean isModBlacklisted = !foodConfig.getBlacklistedNamespaces().isEmpty() && foodConfig.getBlacklistedNamespaces().contains(namespace);
 		boolean isItemBlacklisted = !foodConfig.getBlacklistedItems().isEmpty() && foodConfig.getBlacklistedItems().contains(itemId);
 
-		if ((isModWhitelisted || isItemWhitelisted) && !isModBlacklisted && !isItemBlacklisted) {
+		if (!isModBlacklisted && !isItemBlacklisted) {
 			player.startUsingItem(event.getHand());
 			event.setCancellationResult(InteractionResult.CONSUME);
 		}
@@ -352,13 +407,11 @@ public class StatsEvents {
 		String namespace = itemKey.getNamespace();
 
 		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
-		boolean isModWhitelisted = foodConfig.getWhitelistedNamespaces().isEmpty() || foodConfig.getWhitelistedNamespaces().contains(namespace);
-		boolean isItemWhitelisted = foodConfig.getWhitelistedItems().isEmpty() || foodConfig.getWhitelistedItems().contains(itemId);
 
 		boolean isModBlacklisted = !foodConfig.getBlacklistedNamespaces().isEmpty() && foodConfig.getBlacklistedNamespaces().contains(namespace);
 		boolean isItemBlacklisted = !foodConfig.getBlacklistedItems().isEmpty() && foodConfig.getBlacklistedItems().contains(itemId);
 
-		if ((isModWhitelisted || isItemWhitelisted) && !isModBlacklisted && !isItemBlacklisted) {
+		if (!isModBlacklisted && !isItemBlacklisted) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
 				boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
@@ -368,12 +421,9 @@ public class StatsEvents {
 				FoodProperties foodProperties = stack.getFoodProperties(player);
 				if (foodProperties == null) return;
 
-				// Retrieve food item hunger points and saturation points
 				int foodGain = foodProperties.getNutrition();
 				float saturationGain = foodProperties.getSaturationModifier();
 
-
-				// Calculate recovery percentages based on hunger points
 				float healthFoodRecoveryPercentage = foodGain >= foodConfig.getMinHungerPoints()
 						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getHealthPercentageRecoveredPerHungerPoint()
 						: 0;
@@ -384,7 +434,6 @@ public class StatsEvents {
 						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getStaminaPercentageRecoveredPerHungerPoint()
 						: 0;
 
-				// Calculate recovery percentages based on saturation points
 				float healthSaturationRecoveryPercentage = saturationGain >= foodConfig.getMinSaturationPoints()
 						? Math.min(saturationGain, foodConfig.getMaxSaturationPoints()) * foodConfig.getHealthPercentageRecoveredPerSaturationPoint()
 						: 0;
@@ -395,7 +444,6 @@ public class StatsEvents {
 						? Math.min(saturationGain, foodConfig.getMaxSaturationPoints()) * foodConfig.getStaminaPercentageRecoveredPerSaturationPoint()
 						: 0;
 
-				// Calculate total recovery percentages
 				float healthTotalRecoveryPercentage = healthFoodRecoveryPercentage + healthSaturationRecoveryPercentage;
 				float kiTotalRecoveryPercentage = kiFoodRecoveryPercentage + kiSaturationRecoveryPercentage;
 				float staminaTotalRecoveryPercentage = staminaFoodRecoveryPercentage + staminaSaturationRecoveryPercentage;
@@ -404,24 +452,24 @@ public class StatsEvents {
 				int maxEnergy = data.getMaxEnergy();
 				int maxStamina = data.getMaxStamina();
 
-				float currentEnergy = data.getResources().getCurrentEnergy();
-				float currentStamina = data.getResources().getCurrentStamina();
-
 				float healAmount = (maxHealth * healthTotalRecoveryPercentage);
-				int energyAmount = (int) (maxEnergy * kiTotalRecoveryPercentage);
-				int staminaAmount = (int) (maxStamina * staminaTotalRecoveryPercentage);
-
-				player.heal(healAmount);
-
-				float newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
-				float newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
-
-				data.getResources().setCurrentEnergy(newEnergy);
-				data.getResources().setCurrentStamina(newStamina);
+				float energyAmount = (maxEnergy * kiTotalRecoveryPercentage);
+				float staminaAmount = (maxStamina * staminaTotalRecoveryPercentage);
 
 				if (isSenzu || isHeartMedicine) {
+					float currentEnergy = data.getResources().getCurrentEnergy();
+					float currentStamina = data.getResources().getCurrentStamina();
+
+					player.heal(healAmount);
+					data.getResources().setCurrentEnergy(Math.min(maxEnergy, currentEnergy + energyAmount));
+					data.getResources().setCurrentStamina(Math.min(maxStamina, currentStamina + staminaAmount));
+
 					int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
 					player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+				} else {
+					int durationSeconds = 6;
+					FOOD_REGEN_QUEUE.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
+							.add(new FoodRegenTask(durationSeconds, healAmount, energyAmount, staminaAmount));
 				}
 			});
 		}
@@ -711,8 +759,6 @@ public class StatsEvents {
 				scalingX = configScaleX;
 				scalingY = configScaleY;
 			}
-
-			// scalingX = Math.min(configScaleX, 5.0f);
 
 			float rawWidth = 0.6F * scalingX;
 			float rawHeight = 1.9F * scalingY;
