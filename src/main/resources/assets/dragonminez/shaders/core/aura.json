@@ -23,7 +23,7 @@
   "blend": {
     "func": "add",
     "srcrgb": "srcalpha",
-    "dstrgb": "one"
+    "dstrgb": "oneminussrcalpha"
   },
   "cull": false
 }
