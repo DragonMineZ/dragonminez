@@ -372,7 +372,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
 		if (accModel == null) return;
 
-		RenderType accRenderType = RenderType.entityTranslucent(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
+		RenderType accRenderType = RenderType.entityTranslucentCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
 
 		accModel.getBone("radar").ifPresent(bone -> {
 			syncTargetBoneAndParents(bone, playerModel);
