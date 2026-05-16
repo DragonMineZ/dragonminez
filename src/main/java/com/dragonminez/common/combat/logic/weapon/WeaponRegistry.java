@@ -58,16 +58,12 @@ public class WeaponRegistry {
                     }
                 }
             } else {
-                if (inStackAttributes.parent() != null) {
-                    return getAttributes(ResourceLocation.parse(inStackAttributes.parent()));
-                }
+                if (inStackAttributes.parent() != null) return getAttributes(ResourceLocation.parse(inStackAttributes.parent()));
             }
         }
 
         var itemId = ForgeRegistries.ITEMS.getKey(itemStack.getItem());
-        if (itemId != null) {
-            return getAttributes(itemId);
-        }
+        if (itemId != null) return getAttributes(itemId);
         return null;
     }
 

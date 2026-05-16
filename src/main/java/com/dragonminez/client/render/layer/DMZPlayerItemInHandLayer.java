@@ -3,6 +3,8 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.WeaponGripProfile;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
+import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
+import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -32,6 +34,10 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 	protected ItemStack getStackForBone(GeoBone bone, T animatable) {
 		String name = bone.getName();
 		boolean isCombatAnim = animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isPlayingCombatAnimation();
+		if (isCombatAnim && animatable instanceof PlayerAttackProperties props) {
+			AttackHand hand = PlayerAttackHelper.getCurrentAttack(animatable, props.getComboCount());
+			if (hand == null) isCombatAnim = false;
+		}
 		boolean isTwoHanded = PlayerAttackHelper.isTwoHandedWielding(animatable);
 
 		boolean rightIsOffhand = name.equals(RIGHT_GRIP) && animatable.getMainArm() != HumanoidArm.RIGHT;
@@ -53,6 +59,10 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 	protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, T animatable) {
 		String name = bone.getName();
 		boolean isCombatAnim = animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isPlayingCombatAnimation();
+		if (isCombatAnim && animatable instanceof PlayerAttackProperties props) {
+			AttackHand hand = PlayerAttackHelper.getCurrentAttack(animatable, props.getComboCount());
+			if (hand == null) isCombatAnim = false;
+		}
 		if (isCombatAnim) {
 			if (name.equals(RIGHT_GRIP)) return ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
 			if (name.equals(LEFT_GRIP)) return ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
@@ -86,6 +96,10 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 		if (animatable instanceof IPlayerAnimatable playerAnim) {
 			isCombatAnim = playerAnim.dragonminez$isPlayingCombatAnimation();
 			isOffhandAttack = playerAnim.dragonminez$isAttackingWithOffhand();
+		}
+		if (isCombatAnim && animatable instanceof PlayerAttackProperties props) {
+			AttackHand hand = PlayerAttackHelper.getCurrentAttack(animatable, props.getComboCount());
+			if (hand == null) isCombatAnim = false;
 		}
 
 		boolean cancelGripForThisBone = isCombatAnim && (boneIsOffhand == isOffhandAttack);

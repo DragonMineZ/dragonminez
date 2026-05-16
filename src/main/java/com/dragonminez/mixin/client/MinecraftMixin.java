@@ -6,13 +6,11 @@ import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.CombatAttackRequestC2S;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.HitResult;
@@ -63,6 +61,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 		isAttacking = true;
 		isAwaitingUpswing = true;
+		System.out.println("Setting upswing stack: " + hand.itemStack());
 		upswingStack = hand;
 
 		int attackCooldownTicks = (int) Math.round(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
@@ -127,6 +126,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 	@Unique
 	private void executeAttack() {
+		System.out.println("Execute attack iniciado");
 		var mcDMZ = (Minecraft_DMZ) this;
 		var cursorTarget = mcDMZ.getCursorTarget();
 		var attackRange = PlayerAttackHelper.getEffectiveAttackRange(player, upswingStack.attributes().attackRange());

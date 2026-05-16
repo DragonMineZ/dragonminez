@@ -3,6 +3,9 @@ package com.dragonminez.mixin.client;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.events.FlySkillEvent;
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
+import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
+import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -54,7 +57,6 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private String dragonminez$currentMeleeAnim = null;
 	@Unique private String dragonminez$currentPoseAnim = null;
 	@Unique private float dragonminez$currentMeleeSpeed = 1.0F;
-	@Unique private boolean dragonminez$unarmedAttackToggle = false;
 	@Unique private boolean dragonminez$unarmedSwingLatch = false;
 
 	@Unique private String dragonminez$currentKiAnim = null;
@@ -249,9 +251,17 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		}
 
 		if (dragonminez$attackAnimTicks <= 0 && !dragonminez$unarmedSwingLatch && hasSwingFrame && shouldPlayUnarmedAttack(player)) {
-			dragonminez$unarmedAttackToggle = !dragonminez$unarmedAttackToggle;
 			ctl.setAnimationSpeed(1.0D);
-			ctl.setAnimation(dragonminez$unarmedAttackToggle ? ATTACK : ATTACK2);
+			ctl.setAnimation(ATTACK);
+			ctl.forceAnimationReset();
+			dragonminez$unarmedSwingLatch = true;
+			dragonminez$attackAnimTicks = 8;
+			return PlayState.CONTINUE;
+		}
+
+		if (dragonminez$attackAnimTicks <= 0 && !dragonminez$unarmedSwingLatch && hasSwingFrame && shouldPlayGenericAttack(player)) {
+			ctl.setAnimationSpeed(1.0D);
+			ctl.setAnimation(ATTACK);
 			ctl.forceAnimationReset();
 			dragonminez$unarmedSwingLatch = true;
 			dragonminez$attackAnimTicks = 8;
@@ -450,6 +460,17 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 				&& !isBlocking(player)
 				&& !isPlacingBlock(player)
 				&& !isUsingTool(player);
+	}
+
+	@Unique
+	private static boolean shouldPlayGenericAttack(AbstractClientPlayer player) {
+		if (player.isUsingItem()) return false;
+		if (isBlocking(player) || isPlacingBlock(player) || isUsingTool(player)) return false;
+		if (player instanceof PlayerAttackProperties props) {
+			AttackHand hand = PlayerAttackHelper.getCurrentAttack(player, props.getComboCount());
+			if (hand != null) return false;
+		}
+		return true;
 	}
 
 	@Override
