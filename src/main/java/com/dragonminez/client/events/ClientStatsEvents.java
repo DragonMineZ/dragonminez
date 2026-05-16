@@ -27,6 +27,7 @@ import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -220,8 +221,13 @@ public class ClientStatsEvents {
 			}
 
 			if (isBlockKeyDown != data.getStatus().isBlocking()) {
-				data.getStatus().setBlocking(isBlockKeyDown);
-				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
+				if (isBlockKeyDown && localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty()) {
+					data.getStatus().setBlocking(isBlockKeyDown);
+					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
+				} else if (!isBlockKeyDown) {
+					data.getStatus().setBlocking(isBlockKeyDown);
+					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
+				}
 			}
 
 

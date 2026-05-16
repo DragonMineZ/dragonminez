@@ -61,7 +61,6 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 		isAttacking = true;
 		isAwaitingUpswing = true;
-		System.out.println("Setting upswing stack: " + hand.itemStack());
 		upswingStack = hand;
 
 		int attackCooldownTicks = (int) Math.round(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
@@ -126,7 +125,6 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 	@Unique
 	private void executeAttack() {
-		System.out.println("Execute attack iniciado");
 		var mcDMZ = (Minecraft_DMZ) this;
 		var cursorTarget = mcDMZ.getCursorTarget();
 		var attackRange = PlayerAttackHelper.getEffectiveAttackRange(player, upswingStack.attributes().attackRange());

@@ -239,7 +239,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         boolean isInCombat = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$isPlayingCombatAnimation();
 
-        if (!isInCombat) {
+        if (isInCombat) {
             float walkSpeed = animatable.walkAnimation.speed(partialTick);
             float walkPos   = animatable.walkAnimation.position(partialTick);
 
@@ -256,8 +256,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         try {
             if (rightArm != null) RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
             if (leftArm != null) RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
     }
 
 

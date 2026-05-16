@@ -6,7 +6,7 @@ import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.EntityAttributes;
-import com.dragonminez.common.init.MainAttributes;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.FlyToggleC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.skills.Skill;
@@ -18,6 +18,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
@@ -34,25 +36,33 @@ public class FlySkillEvent {
 	private static int verticalHover = 0;
 	private static float hovering = 0F;
 
-	private static final float NORMAL_MAX_SPEED = 0.75F;
+	private static final float NORMAL_MAX_SPEED = 0.85F;
 	private static final float SPRINT_MAX_SPEED = 1.5F;
-	private static final float ACCELERATION = 0.06F;
+	private static final float ACCELERATION = 0.055F;
 	private static final float DECELERATION = 0.035F;
 	private static final float EXIT_DECELERATION = 0.08F;
-	private static final float BURST_DECELERATION_MULTIPLIER = 0.2F;
 	private static final float SLOW_DESCENT_RATE = -0.02F;
-	private static final float TURN_SPEED = 0.15F;
+	private static final float TURN_SPEED_NORMAL = 0.15F;
+	private static final float TURN_SPEED_FAST = 0.3F;
 	private static final float BASE_ATTRIBUTE_FLY_SPEED = 0.35F;
+	private static final float FAST_FLYING_THRESHOLD = 0.65F;
+	private static final double MIN_GROUND_CLEARANCE = 0.25D;
 
 	private static int kiConsumptionTicks = 0;
 	private static final int KI_CONSUMPTION_INTERVAL = 20;
 
 	private static long lastFlyKeyPressTime = 0;
+	private static long pendingGroundActivationStartTime = 0;
+	private static boolean pendingGroundActivation = false;
+
 	private static boolean decelerationImmunity = false;
 	private static long immunityEndTime = 0;
-	private static final long BURST_DECELERATION_DURATION_MS = 6000;
+	private static final long BURST_DECELERATION_DURATION_MS = 1500;
+	private static final long DOUBLE_TAP_WINDOW_MS = 250;
+
 	private static boolean wasFlyingSkillActive = false;
 	private static boolean pendingFlightDisable = false;
+	private static boolean wasSprintingInAir = false;
 
 	public static FlySkillEvent getInstance() {
 		return INSTANCE;
@@ -66,7 +76,7 @@ public class FlySkillEvent {
 
 			if (player != null && mc.screen == null) {
 				long currentTime = System.currentTimeMillis();
-				boolean isDoubleTap = (currentTime - lastFlyKeyPressTime) <= 500;
+				boolean isDoubleTap = (currentTime - lastFlyKeyPressTime) <= DOUBLE_TAP_WINDOW_MS;
 				lastFlyKeyPressTime = currentTime;
 
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -76,21 +86,31 @@ public class FlySkillEvent {
 					if (flySkill == null || flySkill.getLevel() <= 0) return;
 
 					int flyLevel = flySkill.getLevel();
-					double energyCostPercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
+					double energyCostPercent = getActivationEnergyPercent(flyLevel);
 					int energyCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * energyCostPercent);
 
 					if (!flySkill.isActive()) {
 						if (player.onGround() && isDoubleTap && flyLevel >= 5) {
 							int burstCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * 0.75);
 							if (data.getResources().getCurrentEnergy() >= energyCost + burstCost) {
+								pendingGroundActivation = false;
+								pendingFlightActivation = false;
 								decelerationImmunity = true;
 								immunityEndTime = currentTime + BURST_DECELERATION_DURATION_MS;
 
+								float flySpeedScale = getFlySpeedScale(player);
 								float levelMultiplier = 1.0F + (0.20F * flyLevel);
+								float maxSprint = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale;
+
 								player.jumpFromGround();
-								Vec3 motion = player.getDeltaMovement();
-								player.setDeltaMovement(motion.x, 0.42D, motion.z);
-								flightVector = player.getLookAngle().scale(SPRINT_MAX_SPEED * levelMultiplier);
+								Vec3 look = player.getLookAngle();
+								double safeY = look.y < 0.2 ? 0.2 : look.y;
+
+								flightVector = new Vec3(look.x, safeY, look.z).normalize().scale(maxSprint * 3.5F);
+								player.setDeltaMovement(flightVector);
+
+								player.playSound(MainSounds.TRANSFORM.get(), 1.0F, 1.0F);
+
 								NetworkHandler.sendToServer(new FlyToggleC2S(true, true));
 								return;
 							}
@@ -99,10 +119,9 @@ public class FlySkillEvent {
 						if (data.getResources().getCurrentEnergy() < energyCost) return;
 
 						if (player.onGround()) {
-							player.jumpFromGround();
-							Vec3 motion = player.getDeltaMovement();
-							player.setDeltaMovement(motion.x, 0.42D, motion.z);
-							pendingFlightActivation = true;
+							pendingGroundActivation = true;
+							pendingGroundActivationStartTime = currentTime;
+							return;
 						} else NetworkHandler.sendToServer(new FlyToggleC2S(true, false));
 					} else pendingFlightDisable = !pendingFlightDisable;
 				});
@@ -119,11 +138,28 @@ public class FlySkillEvent {
 
 		if (player == null) return;
 
-		if (pendingFlightActivation) {
-			if (player.getDeltaMovement().y < 0 && !player.onGround()) {
+		boolean burstDecelActive = decelerationImmunity && System.currentTimeMillis() < immunityEndTime;
+
+		boolean startedGroundActivation = false;
+		if (pendingGroundActivation && !burstDecelActive) {
+			long elapsed = System.currentTimeMillis() - pendingGroundActivationStartTime;
+			if (elapsed >= DOUBLE_TAP_WINDOW_MS) {
+				player.jumpFromGround();
+				Vec3 motion = player.getDeltaMovement();
+				player.setDeltaMovement(motion.x, 0.42D, motion.z);
+				pendingFlightActivation = true;
+				pendingGroundActivation = false;
+				startedGroundActivation = true;
+			} else if (!player.onGround()) pendingGroundActivation = false;
+		}
+
+		if (pendingFlightActivation && !burstDecelActive) {
+			if (!startedGroundActivation && player.getDeltaMovement().y < 0 && !player.onGround()) {
 				NetworkHandler.sendToServer(new FlyToggleC2S(true, false));
 				pendingFlightActivation = false;
-			} else if (player.onGround()) pendingFlightActivation = false;
+			} else if (!startedGroundActivation && player.onGround()) {
+				pendingFlightActivation = false;
+			}
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -132,10 +168,10 @@ public class FlySkillEvent {
 			Skill flySkill = data.getSkills().getSkill("fly");
 			if (flySkill == null) return;
 
-			boolean isFlying = flySkill.isActive();
+			boolean isFlying = flySkill.isActive() || burstDecelActive;
 
 			if (isFlying && !wasFlyingSkillActive) {
-				initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"));
+				if (!burstDecelActive) initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"));
 			}
 
 			if (isFlying) {
@@ -160,13 +196,20 @@ public class FlySkillEvent {
 		boolean isRight = mc.options.keyRight.isDown();
 		boolean isJump = mc.options.keyJump.isDown();
 		boolean isCrouch = mc.options.keyShift.isDown();
-		boolean isSprinting = player.isSprinting();
+		boolean isSprintingInput = player.isSprinting();
 
 		boolean hasInput = isForward || isBack || isLeft || isRight;
-		float currentMaxSpeed = isSprinting ? maxSprintSpeed : maxNormalSpeed;
-		float currentAccel = (isSprinting ? ACCELERATION * 1.5F : ACCELERATION) * flySpeedScale;
 
 		boolean isFastFlight = INSTANCE.isFlyingFast(player);
+		boolean canSprint = isSprintingInput && isFastFlight;
+		float currentMaxSpeed = canSprint ? maxSprintSpeed : maxNormalSpeed;
+		float currentAccel = ACCELERATION * flySpeedScale;
+
+		if (canSprint && !wasSprintingInAir) {
+			player.playSound(MainSounds.TRANSFORM.get(), 0.7F, 1.2F);
+		}
+		wasSprintingInAir = canSprint;
+
 		if (!isFastFlight) FlightOrientationHandler.reset();
 
 		Vec3 lookDir = isFastFlight ? FlightOrientationHandler.getForwardVector(player) : player.getLookAngle();
@@ -188,10 +231,9 @@ public class FlySkillEvent {
 
 		double currentSpeed = flightVector.length();
 		boolean burstDecelActive = decelerationImmunity && System.currentTimeMillis() < immunityEndTime;
-		float decelMultiplier = burstDecelActive ? BURST_DECELERATION_MULTIPLIER : 1.0F;
 
 		if (pendingFlightDisable) {
-			double newSpeed = Math.max(0.0, currentSpeed - (EXIT_DECELERATION * flySpeedScale * decelMultiplier));
+			double newSpeed = Math.max(0.0, currentSpeed - (EXIT_DECELERATION * flySpeedScale));
 			Vec3 normalized = currentSpeed > 0.0001 ? flightVector.normalize() : Vec3.ZERO;
 			double slowDescent = Math.max(flightVector.y, SLOW_DESCENT_RATE);
 			double descentY = currentSpeed > 0.05 ? slowDescent : flightVector.y;
@@ -203,17 +245,37 @@ public class FlySkillEvent {
 				resetFlightState();
 				return;
 			}
-		}
+		} else if (burstDecelActive) {
+			double newSpeed = currentSpeed - (DECELERATION * 8.0);
+			if (newSpeed <= maxSprintSpeed) {
+				newSpeed = maxSprintSpeed;
+				decelerationImmunity = false;
+			}
 
-		if (!pendingFlightDisable && hasInput && targetDirection.length() > 0.001) {
+			if (hasInput && targetDirection.length() > 0.001) {
+				targetDirection = targetDirection.normalize();
+				Vec3 currentDir = flightVector.normalize();
+				Vec3 mixedDir = new Vec3(Mth.lerp(0.15F, currentDir.x, targetDirection.x), Mth.lerp(0.15F, currentDir.y, targetDirection.y), Mth.lerp(0.15F, currentDir.z, targetDirection.z)).normalize();
+				flightVector = mixedDir.scale(newSpeed);
+				hovering = Math.min(1F, hovering + 0.1F);
+			} else {
+				flightVector = flightVector.normalize().scale(Math.max(newSpeed, 0.01));
+			}
+		} else if (hasInput && targetDirection.length() > 0.001) {
 			targetDirection = targetDirection.normalize();
-			double targetSpeed = Math.min(currentSpeed + currentAccel, currentMaxSpeed);
-			Vec3 targetVelocity = targetDirection.scale(targetSpeed);
-			flightVector = new Vec3(Mth.lerp(TURN_SPEED, flightVector.x, targetVelocity.x), Mth.lerp(TURN_SPEED, flightVector.y, targetVelocity.y), Mth.lerp(TURN_SPEED, flightVector.z, targetVelocity.z));
+			if (canSprint) {
+				Vec3 targetVelocity = targetDirection.scale(maxSprintSpeed);
+				flightVector = targetVelocity;
+			} else {
+				double targetSpeed = Math.min(currentSpeed + currentAccel, currentMaxSpeed);
+				Vec3 targetVelocity = targetDirection.scale(targetSpeed);
+				float turnSpeed = isFastFlight ? TURN_SPEED_FAST : TURN_SPEED_NORMAL;
+				flightVector = new Vec3(Mth.lerp(turnSpeed, flightVector.x, targetVelocity.x), Mth.lerp(turnSpeed, flightVector.y, targetVelocity.y), Mth.lerp(turnSpeed, flightVector.z, targetVelocity.z));
+			}
 			hovering = Math.min(1F, hovering + 0.1F);
-		} else if (!pendingFlightDisable) {
+		} else {
 			if (currentSpeed > 0.01) {
-				double newSpeed = Math.max(0, currentSpeed - (DECELERATION * decelMultiplier));
+				double newSpeed = Math.max(0, currentSpeed - DECELERATION);
 				if (currentSpeed > 0.001) flightVector = flightVector.normalize().scale(newSpeed);
 				else flightVector = Vec3.ZERO;
 			} else flightVector = Vec3.ZERO;
@@ -236,7 +298,7 @@ public class FlySkillEvent {
 			verticalHover = 0;
 		} else handleHovering(player, isJump, isCrouch);
 
-		if (player.onGround()) {
+		if (player.onGround() && !burstDecelActive && !pendingFlightActivation) {
 			pendingFlightDisable = false;
 			NetworkHandler.sendToServer(new FlyToggleC2S(false, false));
 			resetFlightState();
@@ -282,6 +344,10 @@ public class FlySkillEvent {
 		else if (verticalHover == 0) yMovement = Math.sin(player.tickCount / 10F) / 100F;
 		else yMovement = verticalHover / 60D;
 
+		if (!isJump && !isCrouch && getGroundDistance(player) <= MIN_GROUND_CLEARANCE) {
+			yMovement = Math.max(0.0D, yMovement);
+		}
+
 		player.setDeltaMovement(new Vec3(
 				player.getDeltaMovement().x * 0.9,
 				yMovement,
@@ -300,8 +366,12 @@ public class FlySkillEvent {
 			int flyLevel = flySkill.getLevel();
 			int maxEnergy = data.getMaxEnergy();
 
-			double basePercent = player.isSprinting() ? 0.08 : 0.04;
-			double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.001));
+			boolean isFastFlight = INSTANCE.isFlyingFast(player);
+			boolean isSprintFlight = player.isSprinting() && isFastFlight;
+			double basePercent = 0.03;
+			double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.005));
+			energyCostPercent *= getFlyCostMultiplier(flyLevel);
+			if (isSprintFlight) energyCostPercent *= 2.0;
 			int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
 			if (data.getResources().getCurrentEnergy() <= energyCost) {
@@ -320,12 +390,13 @@ public class FlySkillEvent {
 		wasFlyingSkillActive = false;
 		decelerationImmunity = false;
 		immunityEndTime = 0;
+		wasSprintingInAir = false;
 		FlightRollHandler.reset();
 		FlightOrientationHandler.reset();
 	}
 
 	private boolean isFlyingFast() {
-		return flightVector.length() > NORMAL_MAX_SPEED;
+		return flightVector.length() > FAST_FLYING_THRESHOLD;
 	}
 
 	public boolean isFlyingFast(AbstractClientPlayer player) {
@@ -334,6 +405,25 @@ public class FlySkillEvent {
 		LocalPlayer localPlayer = Minecraft.getInstance().player;
 		if (localPlayer != null && player == localPlayer) return isFlyingFast();
 
-		return player.getDeltaMovement().lengthSqr() > (NORMAL_MAX_SPEED * NORMAL_MAX_SPEED);
+		return player.getDeltaMovement().lengthSqr() > (FAST_FLYING_THRESHOLD * FAST_FLYING_THRESHOLD);
+	}
+
+	private static double getActivationEnergyPercent(int flyLevel) {
+		double basePercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
+		return basePercent * getFlyCostMultiplier(flyLevel);
+	}
+
+	private static float getFlyCostMultiplier(int flyLevel) {
+		int clampedLevel = Mth.clamp(flyLevel, 1, 10);
+		float t = (clampedLevel - 1) / (float) (10 - 1);
+		return Mth.lerp(t, 4.0F, 1.0F);
+	}
+
+	private static double getGroundDistance(LocalPlayer player) {
+		Vec3 start = new Vec3(player.getX(), player.getBoundingBox().minY, player.getZ());
+		Vec3 end = start.add(0.0D, -1.5D, 0.0D);
+		HitResult hit = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+		if (hit.getType() == HitResult.Type.MISS) return Double.MAX_VALUE;
+		return start.y - hit.getLocation().y;
 	}
 }

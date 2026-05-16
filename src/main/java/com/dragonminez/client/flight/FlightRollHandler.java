@@ -15,6 +15,7 @@ public class FlightRollHandler {
 	private static final float ROLL_FRICTION = 0.9F;
 	private static final float STABILIZE_SPEED = 0.5F;
 	private static final float MOUSE_SENSITIVITY = 0.05F;
+	private static final float ROLL_FORCE_MULTIPLIER = 0.5F;
 
 	private static float currentRoll = 0F;
 	private static float prevRoll = 0F;
@@ -45,7 +46,7 @@ public class FlightRollHandler {
 
 			float keyForce = input * ROLL_ACCELERATION;
 			float mouseForce = deltaYaw * MOUSE_SENSITIVITY;
-			float totalForce = keyForce - mouseForce;
+			float totalForce = (keyForce - mouseForce) * ROLL_FORCE_MULTIPLIER;
 
 			if (Math.abs(totalForce) > 0.01F) {
 				rollVelocity += totalForce;

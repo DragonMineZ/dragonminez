@@ -12,7 +12,22 @@
           "id": "dragonminez:fist_punch"
         }
       },
-
+      {
+        "hitbox": "FORWARD_BOX",
+        "upswing": 0.5,
+        "animation": "combat.one_handed_punch_right",
+        "swing_sound": {
+          "id": "dragonminez:fist_punch"
+        }
+      },
+      {
+        "hitbox": "FORWARD_BOX",
+        "upswing": 0.5,
+        "animation": "combat.one_handed_punch_right",
+        "swing_sound": {
+          "id": "dragonminez:fist_punch"
+        }
+      },
       {
         "hitbox": "HORIZONTAL_PLANE",
         "upswing": 0.5,
@@ -21,7 +36,6 @@
           "id": "dragonminez:fist_punch"
         }
       },
-
       {
         "hitbox": "VERTICAL_PLANE",
         "upswing": 0.5,
@@ -30,7 +44,6 @@
           "id": "dragonminez:fist_punch"
         }
       },
-
       {
         "hitbox": "VERTICAL_PLANE",
         "upswing": 0.5,

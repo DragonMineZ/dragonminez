@@ -56,11 +56,13 @@ public class FlyStatusHandler implements IStatusEffectHandler {
         if (player.isCreative() || player.isSpectator()) return;
 
         int flyLevel = data.getSkills().getSkillLevel("fly");
-        if (flyLevel >= data.getSkills().getMaxSkillLevel("fly")) return;
         int maxEnergy = data.getMaxEnergy();
 
-        double basePercent = player.isSprinting() ? 0.08 : 0.03;
+        double basePercent = 0.03;
         double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.005));
+        energyCostPercent *= getFlyCostMultiplier(flyLevel);
+        boolean isSprintFlight = player.isSprinting() && player.getDeltaMovement().length() > 0.65F;
+        if (isSprintFlight) energyCostPercent *= 2.0;
         int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
         float currentEnergy = data.getResources().getCurrentEnergy();
@@ -76,5 +78,11 @@ public class FlyStatusHandler implements IStatusEffectHandler {
             }
             NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
         }
+    }
+
+    private static float getFlyCostMultiplier(int flyLevel) {
+        int clampedLevel = Mth.clamp(flyLevel, 1, 10);
+        float t = (clampedLevel - 1) / (float) (10 - 1);
+        return Mth.lerp(t, 4.0F, 1.0F);
     }
 }
