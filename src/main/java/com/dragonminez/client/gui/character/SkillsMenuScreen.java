@@ -147,8 +147,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.onPress(btn -> {
 					currentCategory = SkillCategory.SKILLS;
 					selectedSkill = null;
-					targetScroll = 0; currentScroll = 0;
-					targetDescScroll = 0; currentDescScroll = 0;
+					targetScroll = 0;
+					currentScroll = 0;
+					targetDescScroll = 0;
+					currentDescScroll = 0;
 					refreshButtons();
 				})
 				.build();
@@ -162,8 +164,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.onPress(btn -> {
 					currentCategory = SkillCategory.KI;
 					selectedSkill = null;
-					targetScroll = 0; currentScroll = 0;
-					targetDescScroll = 0; currentDescScroll = 0;
+					targetScroll = 0;
+					currentScroll = 0;
+					targetDescScroll = 0;
+					currentDescScroll = 0;
 					refreshButtons();
 				})
 				.build();
@@ -177,8 +181,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.onPress(btn -> {
 					currentCategory = SkillCategory.FORMS;
 					selectedSkill = null;
-					targetScroll = 0; currentScroll = 0;
-					targetDescScroll = 0; currentDescScroll = 0;
+					targetScroll = 0;
+					currentScroll = 0;
+					targetDescScroll = 0;
+					currentDescScroll = 0;
 					refreshButtons();
 				})
 				.build();
@@ -192,8 +198,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.onPress(btn -> {
 					currentCategory = SkillCategory.STRIKE;
 					selectedSkill = null;
-					targetScroll = 0; currentScroll = 0;
-					targetDescScroll = 0; currentDescScroll = 0;
+					targetScroll = 0;
+					currentScroll = 0;
+					targetDescScroll = 0;
+					currentDescScroll = 0;
 					refreshButtons();
 				})
 				.build();
@@ -265,8 +273,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		this.isBinding = false;
 		this.techniqueImportBox = null;
 		this.upgradeButton = null;
-		this.btnDmg = null; this.btnSize = null; this.btnSpeed = null;
-		this.btnPen = null; this.btnCast = null; this.btnCd = null;
+		this.btnDmg = null;
+		this.btnSize = null;
+		this.btnSpeed = null;
+		this.btnPen = null;
+		this.btnCast = null;
+		this.btnCd = null;
 
 		initDynamicButtons();
 		initNavigationButtons();
@@ -277,7 +289,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private void initTechniqueUpgradeButtons() {
-		if (selectedSkill == null || statsData == null || (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE)) return;
+		if (selectedSkill == null || statsData == null || (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE))
+			return;
 		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
 
 		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
@@ -543,7 +556,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -646,7 +659,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 				Skill skill = statsData.getSkills().getSkill(skillName);
 				String displayName;
-				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) displayName = getDisplayNameForEntry(skillName);
+				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE)
+					displayName = getDisplayNameForEntry(skillName);
 				else displayName = tr("skill.dragonminez." + skillName).getString();
 
 				TextUtil.drawStringWithBorder(graphics, this.font, txt(displayName), panelX + 15, itemY + 5, color);
@@ -714,8 +728,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
 		if (selectedSkill != null && statsData != null) {
-			if (currentCategory == SkillCategory.KI && NEW_SKILL_ENTRY.equals(selectedSkill)) renderNewSkillPlaceholder(graphics, rightPanelX, rightPanelY);
-			else if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) renderTechniqueDetails(graphics, rightPanelX, rightPanelY, mouseX, mouseY);
+			if (currentCategory == SkillCategory.KI && NEW_SKILL_ENTRY.equals(selectedSkill))
+				renderNewSkillPlaceholder(graphics, rightPanelX, rightPanelY);
+			else if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE)
+				renderTechniqueDetails(graphics, rightPanelX, rightPanelY, mouseX, mouseY);
 			else renderSkillDetails(graphics, rightPanelX, rightPanelY);
 		}
 	}
@@ -731,31 +747,43 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int yOffset = panelY + 40;
 		int xpReq = 100;
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF); yOffset += 12;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.xp", tech.getExperience()), panelX + 70, yOffset, 0xFF55FF55); yOffset += 16;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF);
+		yOffset += 12;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.xp", tech.getExperience()), panelX + 70, yOffset, 0xFF55FF55);
+		yOffset += 16;
 
 		if (tech instanceof KiAttackData ki) {
 			xpReq = ki.getUpgradeXpCost("damage");
 			int scaledKiDamage = (int) (statsData.getKiDamage() * ki.getDamageMultiplier());
 
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + ki.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + ki.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD);
+			yOffset += 12;
 
 			String utilKey = ki.getUtility() == KiAttackData.Utility.HEAL ? "gui.dragonminez.technique.heal" : "gui.dragonminez.technique.damage";
-			TextUtil.drawStringWithBorder(graphics, this.font, tr(utilKey).append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr(utilKey).append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF);
+			yOffset += 12;
 
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", ki.getSize()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", ki.getSpeed()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(ki.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getCastTime() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", ki.getSize()))), panelX + 15, yOffset, 0xFFFFFF);
+			yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", ki.getSpeed()))), panelX + 15, yOffset, 0xFFFFFF);
+			yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(ki.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF);
+			yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getCastTime() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
+			yOffset += 12;
 		} else if (tech instanceof StrikeAttackData st) {
-			int scaledStrikeDamage =  (int) (statsData.getStrikeDamage() * st.getDamageMultiplier());
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+			int scaledStrikeDamage = (int) (statsData.getStrikeDamage() * st.getDamageMultiplier());
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD);
+			yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF);
+			yOffset += 12;
 		}
 
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
+		yOffset += 16;
 
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA);
+		yOffset += 16;
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.req_xp", xpReq), panelX + 70, yOffset, 0xFFAAAAAA);
 		renderActionStatus(graphics, panelX, panelY);
@@ -943,7 +971,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private float calculateScrollPercent(double uiMouseY, int startY, int scrollBarHeight) {
-		float percent = (float)(uiMouseY - startY) / scrollBarHeight;
+		float percent = (float) (uiMouseY - startY) / scrollBarHeight;
 		return Mth.clamp(percent, 0.0f, 1.0f);
 	}
 

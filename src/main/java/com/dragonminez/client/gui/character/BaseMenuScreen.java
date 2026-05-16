@@ -34,6 +34,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 
 	private long animationStartTime;
 	private TransitionState transitionState = TransitionState.NONE;
+	private boolean suppressOpenAnimationOnce = false;
 
 	private enum PanelSwitchState { NONE, ENTERING, EXITING }
 
@@ -55,7 +56,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 			GLOBAL_SWITCHING = false;
 			transitionState = TransitionState.NONE;
 			startPanelEnterTransition();
-		} else startOpenTransition();
+		} else if (!suppressOpenAnimationOnce) startOpenTransition();
 
 		initNavigationButtons();
 	}
@@ -341,5 +342,11 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		});
 
 		return (int) (baseScale * inverseScale[0]);
+	}
+
+	protected void rebuildWidgetsWithoutTransition() {
+		suppressOpenAnimationOnce = true;
+		rebuildWidgets();
+		suppressOpenAnimationOnce = false;
 	}
 }

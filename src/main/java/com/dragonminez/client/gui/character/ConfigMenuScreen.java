@@ -225,7 +225,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
@@ -392,7 +392,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		option.setter.accept(option.value);
 
 		if ("config.menuScaleMultiplier".equals(option.key)) {
-			rebuildWidgets();
+			rebuildWidgetsWithoutTransition();
 		}
 
 		if ("config.liveCrowdinTranslations".equals(option.key) && this.minecraft != null) {
