@@ -81,10 +81,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
             String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
             if (logicKey.isEmpty()) logicKey = race;
-
-            if (logicKey.equals("candy")) {
-                return null;
-            }
+            if (logicKey.equals("candy")) return null;
 
             if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
                 boolean isArmored = character.getArmored();
