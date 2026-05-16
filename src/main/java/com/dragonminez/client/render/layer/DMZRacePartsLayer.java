@@ -86,9 +86,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		String anchor = playerBone.getName();
-		if (!"head".equals(anchor) && !"body".equals(anchor)) {
-			return;
-		}
+		if (!"head".equals(anchor) && !"body".equals(anchor)) return;
 
 		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
 
@@ -116,12 +114,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		renderRacePartsForAnchor(poseStack, animatable, playerModel, bufferSource, stats, anchor, partialTick, packedLight, alpha, tintProgress);
 
 		if (!animatable.isSpectator()) {
-			if ("head".equals(anchor)) {
+			if ("head".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
 				renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
 				renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-			} else if ("body".equals(anchor)) {
-				renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
-			}
+			} else renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
 		}
 
 		bufferSource.getBuffer(renderType);
