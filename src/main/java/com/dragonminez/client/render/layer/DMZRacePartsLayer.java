@@ -208,6 +208,24 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				}
 			}
+
+            if (extraHeadBonesEnabled && race.equals("majin")) {
+                GeoBone earsBone = partsModel.getBone("ears3").orElse(null);
+                boolean earsFromPlayerModel = false;
+
+                if (earsBone == null) {
+                    earsBone = playerModel.getBone("ears3").orElse(null);
+                    earsFromPlayerModel = true;
+                }
+
+                if (earsBone != null) {
+                    if (!earsFromPlayerModel) {
+                        syncTargetBoneAndParents(earsBone, playerModel);
+                    }
+                    float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
+                    renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+                }
+            }
 		}
 
 		if (anchor.equals("body")) {
