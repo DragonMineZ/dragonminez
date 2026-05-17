@@ -390,14 +390,18 @@ public class TickHandler {
 		return config.getClassStats(characterClass);
 	}
 
-	private static void regenerateHealth(ServerPlayer player, StatsData data,
-	                                     RaceStatsConfig.ClassStats classStats) {
+	private static void regenerateHealth(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats) {
 		float currentHealth = player.getHealth();
 		float maxHealth = player.getMaxHealth();
 
 		if (currentHealth < maxHealth) {
-			double vit = data.getStats().getVitality() + data.getBonusStats().calculateBonus("VIT", data.getStats().getVitality());
-			double hp5 = classStats.getBaseHp5() + (vit * classStats.getHp5VitScaling());
+			int baseVit = data.getStats().getVitality();
+			double flatBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, false);
+			double multBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, true);
+			double vitMult = data.getFormMultiplier("VIT");
+
+			double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
+			double hp5 = classStats.getBaseHp5() + (effectiveVit * classStats.getHp5VitScaling());
 
 			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), data.getPlayer());
 			double enchMult = getRecoveryMultiplier(totalEnchLvl);
@@ -411,8 +415,7 @@ public class TickHandler {
 		}
 	}
 
-	private static void regenerateEnergy(ServerPlayer player, StatsData data,
-	                                     RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
+	private static void regenerateEnergy(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
 		float currentEnergy = data.getResources().getCurrentEnergy();
 		int maxEnergy = data.getMaxEnergy();
 
@@ -422,8 +425,14 @@ public class TickHandler {
 		FormConfig.FormData activeStackForm = hasActiveStackForm ? data.getCharacter().getActiveStackFormData() : null;
 
 		double energyChange = 0;
-		double ene = data.getStats().getEnergy() + data.getBonusStats().calculateBonus("ENE", data.getStats().getEnergy());
-		double ep5 = classStats.getBaseEp5() + (ene * classStats.getEp5EneScaling());
+
+		int baseEne = data.getStats().getEnergy();
+		double flatBonusEne = data.getBonusStats().calculateBonus("ENE", baseEne, false);
+		double multBonusEne = data.getBonusStats().calculateBonus("ENE", baseEne, true);
+		double eneMult = data.getFormMultiplier("ENE");
+
+		double effectiveEne = ((baseEne + multBonusEne) * eneMult) + flatBonusEne;
+		double ep5 = classStats.getBaseEp5() + (effectiveEne * classStats.getEp5EneScaling());
 
 		int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), data.getPlayer());
 		double enchMult = getRecoveryMultiplier(totalEnchLvl);
@@ -522,14 +531,18 @@ public class TickHandler {
 		}
 	}
 
-	private static void regenerateStamina(ServerPlayer player, StatsData data,
-	                                      RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+	private static void regenerateStamina(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus) {
 		float currentStamina = data.getResources().getCurrentStamina();
 		int maxStamina = data.getMaxStamina();
 
 		if (currentStamina < maxStamina) {
-			double vit = data.getStats().getVitality() + data.getBonusStats().calculateBonus("VIT", data.getStats().getVitality());
-			double sp5 = classStats.getBaseSp5() + (vit * classStats.getSp5VitScaling());
+			int baseVit = data.getStats().getVitality();
+			double flatBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, false);
+			double multBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, true);
+			double vitMult = data.getFormMultiplier("VIT");
+
+			double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
+			double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5VitScaling());
 
 			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
 			double enchMult = getRecoveryMultiplier(totalEnchLvl);

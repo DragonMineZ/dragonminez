@@ -61,7 +61,7 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
             for (String statKey : statsToBoost) {
                 int currentStat = getStatValue(data, statKey);
                 int bonus = (int) Math.max(1, currentStat * boostMult);
-                data.getBonusStats().addBonus(statKey, "Zenkai_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
+                data.getBonusStats().addBonus(statKey, "Zenkai_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
             }
 
             player.displayClientMessage(Component.translatable("message.dragonminez.racial.zenkai.used"), true);

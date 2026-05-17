@@ -26,16 +26,18 @@ public class BonusStats {
     }
 
     public void addBonus(String stat, String bonusName, String operation, double value) {
+        addBonus(stat, bonusName, operation, value, false);
+    }
+
+    public void addBonus(String stat, String bonusName, String operation, double value, boolean applyMultipliers) {
         stat = stat.toUpperCase();
         if (!bonuses.containsKey(stat)) {
             return;
         }
 
         List<StatBonus> statBonuses = bonuses.get(stat);
-
         statBonuses.removeIf(bonus -> bonus.name.equals(bonusName));
-
-        statBonuses.add(new StatBonus(bonusName, operation, value));
+        statBonuses.add(new StatBonus(bonusName, operation, value, applyMultipliers));
     }
 
     public void removeBonus(String stat, String bonusName) {
@@ -48,11 +50,11 @@ public class BonusStats {
         statBonuses.removeIf(bonus -> bonus.name.equals(bonusName));
     }
 
-	public void removeAllBonuses(String bonusName) {
-		for (List<StatBonus> statBonuses : bonuses.values()) {
-			statBonuses.removeIf(bonus -> bonus.name.equals(bonusName));
-		}
-	}
+    public void removeAllBonuses(String bonusName) {
+        for (List<StatBonus> statBonuses : bonuses.values()) {
+            statBonuses.removeIf(bonus -> bonus.name.equals(bonusName));
+        }
+    }
 
     public void clearBonus(String stat, String bonusName) {
         stat = stat.toUpperCase();
@@ -72,7 +74,7 @@ public class BonusStats {
         for (List<StatBonus> bonusList : bonuses.values()) bonusList.clear();
     }
 
-    public double calculateBonus(String stat, int baseStat) {
+    public double calculateBonus(String stat, int baseStat, boolean getMultiplicable) {
         stat = stat.toUpperCase();
         if (!bonuses.containsKey(stat)) {
             return 0;
@@ -82,10 +84,12 @@ public class BonusStats {
         List<StatBonus> statBonuses = bonuses.get(stat);
 
         for (StatBonus bonus : statBonuses) {
-            switch (bonus.operation) {
-                case "+" -> result += bonus.value;
-                case "-" -> result -= bonus.value;
-                case "*" -> result += (baseStat * bonus.value) - baseStat;
+            if (bonus.applyMultipliers == getMultiplicable) {
+                switch (bonus.operation) {
+                    case "+" -> result += bonus.value;
+                    case "-" -> result -= bonus.value;
+                    case "*" -> result += (baseStat * bonus.value) - baseStat;
+                }
             }
         }
 
@@ -118,6 +122,7 @@ public class BonusStats {
                 bonusTag.putString("Name", bonus.name);
                 bonusTag.putString("Operation", bonus.operation);
                 bonusTag.putDouble("Value", bonus.value);
+                bonusTag.putBoolean("ApplyMultipliers", bonus.applyMultipliers);
                 bonusList.add(bonusTag);
             }
             tag.put(entry.getKey(), bonusList);
@@ -138,7 +143,8 @@ public class BonusStats {
                     String name = bonusTag.getString("Name");
                     String operation = bonusTag.getString("Operation");
                     double value = bonusTag.getDouble("Value");
-                    statBonuses.add(new StatBonus(name, operation, value));
+                    boolean applyMultipliers = bonusTag.getBoolean("ApplyMultipliers");
+                    statBonuses.add(new StatBonus(name, operation, value, applyMultipliers));
                 }
             }
         }
@@ -149,7 +155,7 @@ public class BonusStats {
             List<StatBonus> thisList = this.bonuses.get(entry.getKey());
             thisList.clear();
             for (StatBonus bonus : entry.getValue()) {
-                thisList.add(new StatBonus(bonus.name, bonus.operation, bonus.value));
+                thisList.add(new StatBonus(bonus.name, bonus.operation, bonus.value, bonus.applyMultipliers));
             }
         }
     }
@@ -158,12 +164,13 @@ public class BonusStats {
         public final String name;
         public final String operation;
         public final double value;
+        public final boolean applyMultipliers;
 
-        public StatBonus(String name, String operation, double value) {
+        public StatBonus(String name, String operation, double value, boolean applyMultipliers) {
             this.name = name;
             this.operation = operation;
             this.value = value;
+            this.applyMultipliers = applyMultipliers;
         }
     }
 }
-

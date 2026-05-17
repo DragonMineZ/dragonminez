@@ -85,7 +85,7 @@ public class RacialSkillLogic {
 		for (String statKey : statsToBoost) {
 			int currentStat = getStatValue(data, statKey);
 			int bonus = (int) Math.max(1, currentStat * boostMult);
-			data.getBonusStats().addBonus(statKey, "Assimilation_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
+			data.getBonusStats().addBonus(statKey, "Assimilation_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 		}
 
 		finalizeKill(player, data, target, config.getNamekianAssimilationHealthRegen());
@@ -112,7 +112,7 @@ public class RacialSkillLogic {
 				for (String stat : stats) {
 					int targetStatVal = getStatValue(targetData, stat);
 					int bonus = (int) Math.max(1, targetStatVal * ratio);
-					data.getBonusStats().addBonus(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
+					data.getBonusStats().addBonus(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 				}
 			});
 			success = true;
@@ -122,7 +122,7 @@ public class RacialSkillLogic {
 			String[] mobBonuses = config.getMajinAbsorptionBoosts();
 
 			for (String stat : mobBonuses) {
-				data.getBonusStats().addBonus(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
+				data.getBonusStats().addBonus(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 			}
 			success = true;
 		}
