@@ -187,7 +187,11 @@ public class CombatEvent {
 
 			double finalDefensePenetration;
 			if (source.getEntity() instanceof LivingEntity sourceLiving) {
-				int enchLevel = EnchantmentHelper.getEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving);
+
+				int mainHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getMainHandItem());
+				int offHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getOffhandItem());
+
+				int enchLevel = Math.max(mainHandLvl, offHandLvl);
 				double enchPen = enchLevel * 0.025;
 
 				double skillPen = 0.0;
@@ -197,9 +201,8 @@ public class CombatEvent {
 				}
 
 				finalDefensePenetration = Math.min(0.50, enchPen + skillPen);
-			} else {
-				finalDefensePenetration = 0.0;
-			}
+			} else finalDefensePenetration = 0.0;
+
 
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (victimData.getStatus().isHasCreatedCharacter()) {

@@ -34,7 +34,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
@@ -397,8 +399,8 @@ public class TickHandler {
 			double vit = data.getStats().getVitality() + data.getBonusStats().calculateBonus("VIT", data.getStats().getVitality());
 			double hp5 = classStats.getBaseHp5() + (vit * classStats.getHp5VitScaling());
 
-			int enchLvl = EnchantmentHelper.getEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), player);
-			double enchMult = 1.0 + (enchLvl * 0.0625);
+			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), data.getPlayer());
+			double enchMult = getRecoveryMultiplier(totalEnchLvl);
 
 			double regenPerSecond = (hp5 / 5.0) * enchMult;
 
@@ -423,8 +425,8 @@ public class TickHandler {
 		double ene = data.getStats().getEnergy() + data.getBonusStats().calculateBonus("ENE", data.getStats().getEnergy());
 		double ep5 = classStats.getBaseEp5() + (ene * classStats.getEp5EneScaling());
 
-		int enchLvl = EnchantmentHelper.getEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), player);
-		double enchMult = 1.0 + (enchLvl * 0.0625);
+		int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), data.getPlayer());
+		double enchMult = getRecoveryMultiplier(totalEnchLvl);
 
 		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult;
 
@@ -529,8 +531,8 @@ public class TickHandler {
 			double vit = data.getStats().getVitality() + data.getBonusStats().calculateBonus("VIT", data.getStats().getVitality());
 			double sp5 = classStats.getBaseSp5() + (vit * classStats.getSp5VitScaling());
 
-			int enchLvl = EnchantmentHelper.getEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), player);
-			double enchMult = 1.0 + (enchLvl * 0.0625);
+			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
+			double enchMult = getRecoveryMultiplier(totalEnchLvl);
 
 			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult;
 
@@ -552,13 +554,31 @@ public class TickHandler {
 		if (currentPoise < maxPoise) {
 			double baseRegen = 0.1;
 
-			int enchLvl = EnchantmentHelper.getEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
-			double enchMult = 1.0 + (enchLvl * 0.0625);
+			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
+			double enchMult = getRecoveryMultiplier(totalEnchLvl);
 
 			double regenAmount = maxPoise * baseRegen * meditationBonus * enchMult;
 			if (regenAmount < 1.0) regenAmount = 1.0;
 			data.getResources().addPoise((float) regenAmount);
 		}
+	}
+
+	public static int getTotalArmorEnchantmentLevel(Enchantment enchantment, LivingEntity entity) {
+		int totalLevel = 0;
+		for (ItemStack stack : entity.getArmorSlots()) {
+			totalLevel += EnchantmentHelper.getItemEnchantmentLevel(enchantment, stack);
+		}
+		return totalLevel;
+	}
+
+	public static double getRecoveryMultiplier(int totalLevel) {
+		double bonus = 0.0;
+		if (totalLevel > 0) bonus += Math.min(totalLevel, 4) * 0.0625;
+		if (totalLevel > 4) bonus += Math.min(totalLevel - 4, 4) * 0.03125;
+		if (totalLevel > 8) bonus += Math.min(totalLevel - 8, 4) * 0.015625;
+		if (totalLevel > 12) bonus += Math.min(totalLevel - 12, 4) * 0.0078125;
+
+		return 1.0 + bonus;
 	}
 
 	private static void handleActionCharge(ServerPlayer player, StatsData data) {

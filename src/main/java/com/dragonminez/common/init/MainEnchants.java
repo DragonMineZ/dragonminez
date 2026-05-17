@@ -1,7 +1,11 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.item.WeaponItem;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -12,17 +16,21 @@ import net.minecraftforge.registries.RegistryObject;
 public class MainEnchants {
 	public static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, Reference.MOD_ID);
 
+	private static final EquipmentSlot[] ARMOR_SLOTS = new EquipmentSlot[] {
+			EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
+	};
+
 	public static final RegistryObject<Enchantment> VITALITY_RECOVERY = ENCHANTMENTS.register("vitality_recovery",
-			() -> new RecoveryEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.values(), "vitality"));
+			() -> new RecoveryEnchantment(Enchantment.Rarity.UNCOMMON, ARMOR_SLOTS, "vitality"));
 
 	public static final RegistryObject<Enchantment> RESISTANCE_RECOVERY = ENCHANTMENTS.register("resistance_recovery",
-			() -> new RecoveryEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.values(), "resistance"));
+			() -> new RecoveryEnchantment(Enchantment.Rarity.UNCOMMON, ARMOR_SLOTS, "resistance"));
 
 	public static final RegistryObject<Enchantment> ENERGY_RECOVERY = ENCHANTMENTS.register("energy_recovery",
-			() -> new RecoveryEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.values(), "energy"));
+			() -> new RecoveryEnchantment(Enchantment.Rarity.UNCOMMON, ARMOR_SLOTS, "energy"));
 
 	public static final RegistryObject<Enchantment> DEFENSE_PENETRATION = ENCHANTMENTS.register("defense_penetration",
-			() -> new WeaponPenetrationEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.MAINHAND));
+			() -> new WeaponPenetrationEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND));
 
 	public static class WeaponPenetrationEnchantment extends Enchantment {
 		protected WeaponPenetrationEnchantment(Rarity rarity, EquipmentSlot... slots) {
@@ -32,6 +40,11 @@ public class MainEnchants {
 		@Override
 		public int getMaxLevel() {
 			return 5;
+		}
+
+		@Override
+		public boolean canEnchant(ItemStack stack) {
+			return stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem || stack.getItem() instanceof WeaponItem || super.canEnchant(stack);
 		}
 	}
 
