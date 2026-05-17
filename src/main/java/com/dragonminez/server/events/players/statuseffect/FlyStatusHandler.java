@@ -1,5 +1,6 @@
 package com.dragonminez.server.events.players.statuseffect;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
@@ -56,14 +57,14 @@ public class FlyStatusHandler implements IStatusEffectHandler {
         if (player.isCreative() || player.isSpectator()) return;
 
         int flyLevel = data.getSkills().getSkillLevel("fly");
-        int maxEnergy = data.getMaxEnergy();
+        float baseCost  = (float) ConfigManager.getCombatConfig().getBaselineFormDrain() / 4;
 
         double basePercent = 0.03;
         double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.005));
         energyCostPercent *= getFlyCostMultiplier(flyLevel);
         boolean isSprintFlight = player.isSprinting() && player.getDeltaMovement().length() > 0.65F;
         if (isSprintFlight) energyCostPercent *= 2.0;
-        int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
+        int energyCost = (int) Math.ceil(baseCost * energyCostPercent);
 
         float currentEnergy = data.getResources().getCurrentEnergy();
 

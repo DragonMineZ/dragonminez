@@ -9,17 +9,16 @@ import java.util.Map;
 public class FormMasteries {
     private final Map<String, Double> masteries = new HashMap<>();
 
-    public FormMasteries() {
-    }
+    public FormMasteries() {}
 
     public double getMastery(String formGroup, String formName) {
         String key = getKey(formGroup, formName);
         return masteries.getOrDefault(key, 0.0);
     }
 
-    public void setMastery(String formGroup, String formName, double mastery) {
+    public void setMastery(String formGroup, String formName, double mastery, double maxMastery) {
         String key = getKey(formGroup, formName);
-        masteries.put(key, Math.max(0.0, mastery));
+        masteries.put(key, Math.max(0.0, Math.min(maxMastery, mastery)));
     }
 
     public void addMastery(String formGroup, String formName, double amount, double maxMastery) {

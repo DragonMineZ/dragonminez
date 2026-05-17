@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
@@ -68,14 +69,10 @@ public class MasteryCommand {
 			String groupName = StringArgumentType.getString(context, "group");
 
 			if (groupName != null) {
-				String race = StatsProvider.get(StatsCapability.INSTANCE, player)
-						.map(data -> data.getCharacter().getRaceName())
-						.orElse("human");
+				String race = StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> data.getCharacter().getRaceName()).orElse("human");
 
 				FormConfig groupConfig = ConfigManager.getFormGroup(race, groupName);
-				if (groupConfig != null) {
-					return SharedSuggestionProvider.suggest(groupConfig.getForms().keySet(), builder);
-				}
+				if (groupConfig != null) return SharedSuggestionProvider.suggest(groupConfig.getForms().keySet(), builder);
 			}
 		} catch (Exception ignored) {}
 		return SharedSuggestionProvider.suggest(new ArrayList<>(), builder);
@@ -101,12 +98,10 @@ public class MasteryCommand {
 			FormConfig.FormData formData = ConfigManager.getForm(data.getCharacter().getRaceName(), group, form);
 			if (formData != null) maxMastery = formData.getMaxMastery();
 
-			if (add) {
-				masteries.addMastery(group, form, value, maxMastery);
-			} else {
-				masteries.setMastery(group, form, value);
-			}
-			NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(target), target);
+			if (add) masteries.addMastery(group, form, value, maxMastery);
+			else masteries.setMastery(group, form, value, maxMastery);
+
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
 		});
 
 		String modeKey = add ? "add" : "set";

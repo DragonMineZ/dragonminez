@@ -52,6 +52,7 @@ public class StatsData {
 		this.character = new Character();
 		this.resources = new Resources();
 		this.resources.setPlayer(player);
+		this.resources.setStatsData(this);
 		this.skills = new Skills();
 		this.effects = new Effects();
 		this.playerQuestData = new PlayerQuestData();
@@ -172,29 +173,29 @@ public class StatsData {
 		return (float) getSecondaryAttributeValue(Attributes.MAX_HEALTH, 20.0);
 	}
 
-	public int getMaxEnergy() {
+	public float getMaxEnergy() {
 		double energy = stats.getEnergy();
 		double eneScaling = getStatScaling("ENE");
 		double eneMult = getFormMultiplier("ENE");
 		double flatBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), true);
 		double secondaryMaxEnergy = getSecondaryAttributeValue(MainAttributes.MAX_ENERGY.get(), 20.0);
-		return (int) (secondaryMaxEnergy + ((energy + multBonusEne) * eneScaling * eneMult) + (flatBonusEne * eneScaling));
+		return Math.min((float) (secondaryMaxEnergy + ((energy + multBonusEne) * eneScaling * eneMult) + (flatBonusEne * eneScaling)), Float.MAX_VALUE - 1);
 	}
 
-	public int getMaxStamina() {
+	public float getMaxStamina() {
 		double resistance = stats.getResistance();
 		double stmScaling = getStatScaling("STM");
 		double resMult = getTotalMultiplier("RES");
 		double flatBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), false);
 		double multBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), true);
 		double secondaryMaxStamina = getSecondaryAttributeValue(MainAttributes.MAX_STAMINA.get(), 20.0);
-		return (int) (secondaryMaxStamina + ((resistance + multBonusRes) * stmScaling * resMult) + (flatBonusRes * stmScaling));
+		return Math.min((float) (secondaryMaxStamina + ((resistance + multBonusRes) * stmScaling * resMult) + (flatBonusRes * stmScaling)), Float.MAX_VALUE - 1);
 	}
 
-	public int getMaxPoise() {
+	public float getMaxPoise() {
 		double secondaryMaxPoise = getSecondaryAttributeValue(MainAttributes.MAX_POISE.get(), 25.0);
-		return (int) (secondaryMaxPoise + getDefense());
+		return Math.min((float) (secondaryMaxPoise + getDefense()), Float.MAX_VALUE - 1);
 	}
 
 	public double getMaxMeleeDamage() {

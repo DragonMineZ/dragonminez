@@ -260,22 +260,22 @@ public class Character {
 		return new Float[]{0.9375f, 0.9375f, 0.9375f};
 	}
 
-    public CompoundTag save() {
-        CompoundTag tag = new CompoundTag();
+	public CompoundTag save() {
+		CompoundTag tag = new CompoundTag();
 		tag.putString("Race", safeString(race));
 		tag.putString("Gender", safeString(gender));
 		tag.putString("Class", safeString(characterClass));
-        tag.putInt("HairId", hairId);
+		tag.putInt("HairId", hairId);
 		tag.put("HairBase", hairBase.save());
 		tag.put("HairSSJ", hairSSJ.save());
 		tag.put("HairSSJ2", hairSSJ2.save());
 		tag.put("HairSSJ3", hairSSJ3.save());
 		tag.putString("ActiveHeadBone", activeHeadBone != null ? activeHeadBone : "");
-        tag.putInt("BodyType", bodyType);
-        tag.putInt("EyesType", eyesType);
-        tag.putInt("NoseType", noseType);
-        tag.putInt("MouthType", mouthType);
-        tag.putInt("TattooType", tattooType);
+		tag.putInt("BodyType", bodyType);
+		tag.putInt("EyesType", eyesType);
+		tag.putInt("NoseType", noseType);
+		tag.putInt("MouthType", mouthType);
+		tag.putInt("TattooType", tattooType);
 		saveAppearance(tag);
 		tag.putString("SelectedMaster",  safeString(selectedMaster));
 		tag.putString("SelectedFormGroup", safeString(selectedFormGroup));
@@ -283,17 +283,19 @@ public class Character {
 		tag.putString("SelectedForm", safeString(selectedForm));
 		tag.putString("CurrentForm", safeString(activeForm));
 		tag.putInt("ActiveFormItemDurationTicks", activeFormItemDurationTicks);
+		tag.put("FormMasteries", formMasteries.save());
 		tag.putString("SelectedStackFormGroup", safeString(selectedStackFormGroup));
 		tag.putString("CurrentStackFormGroup", safeString(activeStackFormGroup));
 		tag.putString("SelectedStackForm", safeString(selectedStackForm));
 		tag.putString("CurrentStackForm", safeString(activeStackForm));
 		tag.putInt("ActiveStackFormItemDurationTicks", activeStackFormItemDurationTicks);
+		tag.put("StackFormMasteries", stackFormMasteries.save());
 		tag.put("FormsUsedBefore", (formsUsedBefore != null ? formsUsedBefore : new UsedForms()).save());
 		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
-        tag.putBoolean("isArmored", armored);
-        return tag;
-    }
+		tag.putBoolean("isArmored", armored);
+		return tag;
+	}
 
 	public void load(CompoundTag tag) {
 		if (tag.contains("Race", 8)) {

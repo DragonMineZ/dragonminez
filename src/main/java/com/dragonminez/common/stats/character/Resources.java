@@ -1,6 +1,7 @@
 package com.dragonminez.common.stats.character;
 
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.stats.StatsData;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -18,7 +19,8 @@ public class Resources {
     private int alignment;
     private float trainingPoints;
     private int racialSkillCount;
-	private Player player;
+    private Player player;
+    private transient StatsData statsData;
 
     public Resources() {
         this.currentEnergy = 0;
@@ -31,7 +33,6 @@ public class Resources {
         this.racialSkillCount = 0;
     }
 
-
     private static float roundToQuarter(float value) {
         return Math.round(value * 4.0f) / 4.0f;
     }
@@ -40,24 +41,19 @@ public class Resources {
         return (float) Math.floor(value);
     }
 
-    private static float clampMax(float value, float max) {
-        if (value >= max) return max - 1;
-        return value;
-    }
-
     public int getPowerRelease() { return release; }
 
     public void setCurrentEnergy(float energy) {
         if (energy <= 1) setPowerRelease(0);
-        this.currentEnergy = roundToQuarter(clampMax(Math.max(0, energy), Float.MAX_VALUE - 1));
+        this.currentEnergy = roundToQuarter(Math.min(Math.max(0, energy), statsData.getMaxEnergy()));
     }
 
     public void setCurrentStamina(float stamina) {
-        this.currentStamina = roundToQuarter(clampMax(Math.max(0, stamina), Float.MAX_VALUE - 1));
+        this.currentStamina = roundToQuarter(Math.min(Math.max(0, stamina), statsData.getMaxStamina()));
     }
 
     public void setCurrentPoise(float poise) {
-        this.currentPoise = roundToQuarter(clampMax(Math.max(0, poise), Float.MAX_VALUE - 1));
+        this.currentPoise = roundToQuarter(Math.min(Math.max(0, poise), statsData.getMaxPoise()));
     }
 
     public void setPowerRelease(int release) {
@@ -152,4 +148,3 @@ public class Resources {
         this.racialSkillCount = other.racialSkillCount;
     }
 }
-

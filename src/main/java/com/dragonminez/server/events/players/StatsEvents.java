@@ -17,6 +17,9 @@ import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
@@ -260,7 +263,7 @@ public class StatsEvents {
 	public static void onEntityHit(LivingHurtEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		if (event.getSource().getEntity() instanceof Player attacker) {
+		if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
@@ -285,10 +288,11 @@ public class StatsEvents {
 						}
 					}
 				}
+				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(attacker), attacker);
 			});
 		}
 
-		if (event.getEntity() instanceof Player victim) {
+		if (event.getEntity() instanceof ServerPlayer victim) {
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (victimData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
@@ -313,6 +317,7 @@ public class StatsEvents {
 						}
 					}
 				}
+				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(victim), victim);
 			});
 		}
 	}
@@ -345,11 +350,11 @@ public class StatsEvents {
 		if (player instanceof ServerPlayer serverPlayer) {
 			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 				float maxHp = player.getMaxHealth();
-				float healHp = (int) (maxHp * HEAL_PERCENTAGE);
-				int maxKi = data.getMaxEnergy();
-				int healKi = (int) (maxKi * HEAL_PERCENTAGE);
-				int maxStamina = data.getMaxStamina();
-				int healStamina = (int) (maxStamina * HEAL_PERCENTAGE);
+				float healHp = (float) (maxHp * HEAL_PERCENTAGE);
+				float maxKi = data.getMaxEnergy();
+				float healKi = (float) (maxKi * HEAL_PERCENTAGE);
+				float maxStamina = data.getMaxStamina();
+				float healStamina = (float) (maxStamina * HEAL_PERCENTAGE);
 				boolean hasCreatedChar = data.getStatus().isHasCreatedCharacter();
 
 				if (healHp > maxHp) healHp = maxHp;
@@ -449,8 +454,8 @@ public class StatsEvents {
 				float staminaTotalRecoveryPercentage = staminaFoodRecoveryPercentage + staminaSaturationRecoveryPercentage;
 
 				float maxHealth = player.getMaxHealth();
-				int maxEnergy = data.getMaxEnergy();
-				int maxStamina = data.getMaxStamina();
+				float maxEnergy = data.getMaxEnergy();
+				float maxStamina = data.getMaxStamina();
 
 				float healAmount = (maxHealth * healthTotalRecoveryPercentage);
 				float energyAmount = (maxEnergy * kiTotalRecoveryPercentage);

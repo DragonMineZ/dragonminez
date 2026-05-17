@@ -579,13 +579,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double maxMeleeDamage = statsData.getMaxMeleeDamage();
 		double strikeDamage = statsData.getStrikeDamage();
 		double maxStrikeDamage = statsData.getMaxStrikeDamage();
-		int stamina = statsData.getMaxStamina();
+		float stamina = statsData.getMaxStamina();
 		double defense = statsData.getDefense();
 		double maxDefense = statsData.getMaxDefense();
 		double health = Minecraft.getInstance().player.getMaxHealth();
 		double kiDamage = statsData.getKiDamage();
 		double maxKiDamage = statsData.getMaxKiDamage();
-		int energy = statsData.getMaxEnergy();
+		float energy = statsData.getMaxEnergy();
 
 		double strScaling = statsData.getStatScaling("STR");
 		double skpScaling = statsData.getStatScaling("SKP");
@@ -769,13 +769,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double maxMeleeDamage = statsData.getMaxMeleeDamage();
 		double strikeDamage = statsData.getStrikeDamage();
 		double maxStrikeDamage = statsData.getMaxStrikeDamage();
-		int stamina = statsData.getMaxStamina();
+		float stamina = statsData.getMaxStamina();
 		double defense = statsData.getDefense();
 		double maxDefense = statsData.getMaxDefense();
 		float health = statsData.getMaxHealth();
 		double kiDamage = statsData.getKiDamage();
 		double maxKiDamage = statsData.getMaxKiDamage();
-		int energy = statsData.getMaxEnergy();
+		float energy = statsData.getMaxEnergy();
 
 		double strScaling = statsData.getStatScaling("STR");
 		double skpScaling = statsData.getStatScaling("SKP");

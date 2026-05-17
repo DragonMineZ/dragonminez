@@ -12,6 +12,7 @@ import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.*;
@@ -272,9 +273,7 @@ public class TickHandler {
 				}
 			}
 
-			if (shouldSync) {
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-			}
+			if (shouldSync) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 		});
 
 	}
@@ -417,7 +416,7 @@ public class TickHandler {
 
 	private static void regenerateEnergy(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
 		float currentEnergy = data.getResources().getCurrentEnergy();
-		int maxEnergy = data.getMaxEnergy();
+		float maxEnergy = data.getMaxEnergy();
 
 		boolean hasActiveForm = data.getCharacter().hasActiveForm();
 		FormConfig.FormData activeForm = hasActiveForm ? data.getCharacter().getActiveFormData() : null;
@@ -498,6 +497,7 @@ public class TickHandler {
 					double masteryGain = formData != null ? formData.getPassiveMasteryGainEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
 					data.getCharacter().getFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
+					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
 				}
 			}
 
@@ -513,6 +513,7 @@ public class TickHandler {
 					double masteryGain = formData != null ? formData.getPassiveMasteryGainEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
 					data.getCharacter().getStackFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
+					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
 				}
 			}
 		}
@@ -533,7 +534,7 @@ public class TickHandler {
 
 	private static void regenerateStamina(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus) {
 		float currentStamina = data.getResources().getCurrentStamina();
-		int maxStamina = data.getMaxStamina();
+		float maxStamina = data.getMaxStamina();
 
 		if (currentStamina < maxStamina) {
 			int baseVit = data.getStats().getVitality();
@@ -562,7 +563,7 @@ public class TickHandler {
 			return;
 
 		float currentPoise = data.getResources().getCurrentPoise();
-		int maxPoise = data.getMaxPoise();
+		float maxPoise = data.getMaxPoise();
 
 		if (currentPoise < maxPoise) {
 			double baseRegen = 0.1;

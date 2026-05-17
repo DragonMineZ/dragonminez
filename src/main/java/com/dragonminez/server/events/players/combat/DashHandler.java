@@ -63,8 +63,8 @@ public class DashHandler {
 			boolean isVanish = recentAttacker != null && (currentTime - lastHurtTime) <= vanishWindow;
 
 			if (isEvasion && evasionActive) {
-				int maxEnergy = data.getMaxEnergy();
-				int kiCost = (int) Math.ceil(maxEnergy * 0.08);
+				float baseDrain = ConfigManager.getCombatConfig().getBaselineFormDrain();
+				int kiCost = (int) Math.ceil(baseDrain * 0.65);
 
 				DMZEvent.PlayerEvasionEvent evasionEvent = new DMZEvent.PlayerEvasionEvent(player, recentAttacker, 0, kiCost);
 				MinecraftForge.EVENT_BUS.post(evasionEvent);

@@ -4,8 +4,11 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.StatsEvents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -85,35 +88,32 @@ public class IncreaseStatC2S {
 			case "STR" -> data.getStats().addStrength(amount);
 			case "SKP" -> data.getStats().addStrikePower(amount);
 			case "RES" -> {
-				int oldMaxStamina = data.getMaxStamina();
-
+				float oldMaxStamina = data.getMaxStamina();
 				data.getStats().addResistance(amount);
-
-				int newMaxStamina = data.getMaxStamina();
-				if (newMaxStamina > oldMaxStamina) {
-					data.getResources().addStamina(newMaxStamina - oldMaxStamina);
-				}
+				float newMaxStamina = data.getMaxStamina();
+				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
 			}
 			case "VIT" -> {
-				float oldMaxHealth = data.getMaxHealth();
-
+				float oldHealthBonus = data.getHealthBonus();
 				data.getStats().addVitality(amount);
+				float newHealthBonus = data.getHealthBonus();
+				float healthDiff = newHealthBonus - oldHealthBonus;
 
-				float newMaxHealth = data.getMaxHealth();
-				if (newMaxHealth > oldMaxHealth) {
-					player.heal(newMaxHealth - oldMaxHealth);
+				if (healthDiff > 0) {
+					var attribute = player.getAttribute(Attributes.MAX_HEALTH);
+					if (attribute != null) {
+						attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+						attribute.addPermanentModifier(new AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADDITION));
+					}
+					player.heal(healthDiff);
 				}
 			}
 			case "PWR" -> data.getStats().addKiPower(amount);
 			case "ENE" -> {
-				int oldMaxEnergy = data.getMaxEnergy();
-
+				float oldMaxEnergy = data.getMaxEnergy();
 				data.getStats().addEnergy(amount);
-
-				int newMaxEnergy = data.getMaxEnergy();
-				if (newMaxEnergy > oldMaxEnergy) {
-					data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
-				}
+				float newMaxEnergy = data.getMaxEnergy();
+				if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
 			}
 		}
 	}

@@ -18,6 +18,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.Collection;
@@ -29,7 +30,7 @@ public class StatsCommand {
 			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE", "ALL"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> VALUE_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(List.of("max", "100", "500", "1000", "5000", "10000"), builder);
+			SharedSuggestionProvider.suggest(List.of("100", "500", "1000", "5000", "10000", "min"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> PERCENTAGE_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(List.of("10", "25", "50", "75"), builder);
@@ -96,8 +97,7 @@ public class StatsCommand {
 		int value;
 		int maxValue = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		try {
-			if (amountStr.equalsIgnoreCase("max")) value = maxValue;
-			else if (amountStr.equalsIgnoreCase("min")) value = 5;
+			if (amountStr.equalsIgnoreCase("min")) value = 5;
 			else value = Integer.parseInt(amountStr);
 		} catch (NumberFormatException e) {
 			source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_number", amountStr));
@@ -107,23 +107,30 @@ public class StatsCommand {
 		int successCount = 0;
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				float oldMaxHealth = data.getMaxHealth();
-				int oldMaxEnergy = data.getMaxEnergy();
-				int oldMaxStamina = data.getMaxStamina();
+				float oldHealthBonus = data.getHealthBonus();
+				float oldMaxEnergy = data.getMaxEnergy();
+				float oldMaxStamina = data.getMaxStamina();
 
 				if (finalStat.equals("ALL")) {
-					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) {
-						applyModification(data, s, value, mode);
+					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) applyModification(data, s, value, mode);
+				} else applyModification(data, finalStat, value, mode);
+
+
+				float newHealthBonus = data.getHealthBonus();
+				float healthDiff = newHealthBonus - oldHealthBonus;
+
+				if (healthDiff > 0) {
+					var attribute = player.getAttribute(Attributes.MAX_HEALTH);
+					if (attribute != null) {
+						attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+						attribute.addPermanentModifier(new AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADDITION));
 					}
-				} else {
-					applyModification(data, finalStat, value, mode);
+					player.heal(healthDiff);
 				}
 
-				float newMaxHealth = data.getMaxHealth();
-				if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
-				int newMaxEnergy = data.getMaxEnergy();
+				float newMaxEnergy = data.getMaxEnergy();
 				if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
-				int newMaxStamina = data.getMaxStamina();
+				float newMaxStamina = data.getMaxStamina();
 				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

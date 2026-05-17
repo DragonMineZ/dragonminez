@@ -33,8 +33,8 @@ public class AlternativeHUD {
 	private static volatile float currentKiBarWidth = 0;
 	private static volatile float currentStmBarWidth = 0;
 	private static volatile float lastSeenMaxHP = -1.0f;
-	private static volatile int lastSeenMaxKi = -1;
-	private static volatile int lastSeenMaxStm = -1;
+	private static volatile float lastSeenMaxKi = -1;
+	private static volatile float lastSeenMaxStm = -1;
 	private static final float LERP_SPEED = 0.25f;
 	private static final float BAR_MAX_WIDTH = 76.0f;
 	private static final HudStatNumberAnimator HP_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.HEALTH);
@@ -55,8 +55,8 @@ public class AlternativeHUD {
 
 			if (status.isHasCreatedCharacter()) {
 				float maxHP = Math.max(1.0f, (float) mc.player.getAttributeValue(Attributes.MAX_HEALTH));
-				int maxKi = Math.max(1, data.getMaxEnergy());
-				int maxStm = Math.max(1, data.getMaxStamina());
+				float maxKi = Math.max(1, data.getMaxEnergy());
+				float maxStm = Math.max(1, data.getMaxStamina());
 
 				int powerRelease = resources.getPowerRelease();
 				int formRelease = resources.getActionCharge() < 10 ? 10 + resources.getActionCharge() : resources.getActionCharge();

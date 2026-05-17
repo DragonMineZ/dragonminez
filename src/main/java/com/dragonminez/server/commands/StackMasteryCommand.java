@@ -91,12 +91,9 @@ public class StackMasteryCommand {
             FormConfig.FormData formData = ConfigManager.getForm(data.getCharacter().getRaceName(), group, form);
             if (formData != null) maxMastery = formData.getMaxMastery();
 
-            if (add) {
-                masteries.addMastery(group, form, value, maxMastery);
-            } else {
-                masteries.setMastery(group, form, value);
-            }
-                  NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(target), target);
+            if (add) masteries.addMastery(group, form, value, maxMastery);
+            else masteries.setMastery(group, form, value, maxMastery);
+            NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(target), target);
         });
 
         String modeKey = add ? "add" : "set";

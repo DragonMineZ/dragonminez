@@ -364,7 +364,7 @@ public class FlySkillEvent {
 			kiConsumptionTicks = 0;
 
 			int flyLevel = flySkill.getLevel();
-			int maxEnergy = data.getMaxEnergy();
+			float maxEnergy = data.getMaxEnergy();
 
 			boolean isFastFlight = INSTANCE.isFlyingFast(player);
 			boolean isSprintFlight = player.isSprinting() && isFastFlight;
