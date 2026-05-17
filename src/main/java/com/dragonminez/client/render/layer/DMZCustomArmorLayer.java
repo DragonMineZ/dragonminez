@@ -44,75 +44,81 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		super(entityRendererIn);
 	}
 
-	@Override
-	public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-		if (animatable.isSpectator() || !"body".equals(playerBone.getName())) return;
+    @Override
+    public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+        if (animatable.isSpectator() || !"body".equals(playerBone.getName())) return;
 
-		ItemStack stack = resolveChestArmorStack(animatable);
-		if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem)) return;
+        ItemStack stack = resolveChestArmorStack(animatable);
+        if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem)) return;
 
-		StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
-		if (stats.getCharacter().getArmored()) return;
+        StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
+        if (stats.getCharacter().getArmored()) return;
 
-		ArmorRenderContext ctx = resolveArmorContext(stats, stack);
-		if (!ctx.shouldRender()) return;
+        ArmorRenderContext ctx = resolveArmorContext(stats, stack);
+        if (!ctx.shouldRender()) return;
 
-		if (ctx.isDbzArmor()) {
-			ResourceLocation texture = getDbzArmorTexture((DbzArmorItem) stack.getItem(), stack);
-			float translateY = resolveCustomArmorTranslateY(ctx);
-			float inflation = ctx.isOozaruTarget() ? 1.021f : 1.035f;
+        if (ctx.isDbzArmor()) {
+            ResourceLocation texture = getDbzArmorTexture((DbzArmorItem) stack.getItem(), stack);
+            float translateY = resolveCustomArmorTranslateY(ctx);
+            float inflation = ctx.isOozaruTarget() ? 1.021f : 1.035f;
 
-			poseStack.pushPose();
-			poseStack.translate(0, translateY, 0);
+            poseStack.pushPose();
+            poseStack.translate(0, translateY, 0);
 
-			GeoBone armorBody = getChild(playerBone, "armorBody");
-			GeoBone armorLeggingsBody = getChild(playerBone, "armorLeggingsBody");
-			GeoBone bodyLayer = getChild(playerBone, "body_layer");
+            GeoBone armorBody = getChild(playerBone, "armorBody");
+            GeoBone armorLeggingsBody = getChild(playerBone, "armorLeggingsBody");
+            GeoBone bodyLayer = getChild(playerBone, "body_layer");
 
-			boolean ob1 = armorBody != null && armorBody.isHidden();
-			boolean ob2 = armorLeggingsBody != null && armorLeggingsBody.isHidden();
-			boolean ob3 = bodyLayer != null && bodyLayer.isHidden();
+            boolean ob1 = armorBody != null && armorBody.isHidden();
+            boolean ob2 = armorLeggingsBody != null && armorLeggingsBody.isHidden();
+            boolean ob3 = bodyLayer != null && bodyLayer.isHidden();
 
-			if (armorBody != null) armorBody.setHidden(true);
-			if (armorLeggingsBody != null) armorLeggingsBody.setHidden(true);
-			if (bodyLayer != null) bodyLayer.setHidden(true);
+            if (armorBody != null) armorBody.setHidden(true);
+            if (armorLeggingsBody != null) armorLeggingsBody.setHidden(true);
+            if (bodyLayer != null) bodyLayer.setHidden(true);
 
-			renderRootBoneInflated(playerBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight, inflation);
+            renderRootBoneInflated(playerBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight, inflation);
 
-			if (armorBody != null) armorBody.setHidden(ob1);
-			if (armorLeggingsBody != null) armorLeggingsBody.setHidden(ob2);
-			if (bodyLayer != null) bodyLayer.setHidden(ob3);
+            if (armorBody != null) armorBody.setHidden(ob1);
+            if (armorLeggingsBody != null) armorLeggingsBody.setHidden(ob2);
+            if (bodyLayer != null) bodyLayer.setHidden(ob3);
 
-			poseStack.popPose();
-			return;
-		}
+            poseStack.popPose();
+            return;
+        }
 
-		ResourceLocation targetModelLoc = ctx.isOozaruTarget() ? OOZARU_ARMOR_MODEL : (ctx.isSlimTarget() ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL);
-		BakedGeoModel vanillaArmorModel = getGeoModel().getBakedModel(targetModelLoc);
-		if (vanillaArmorModel == null) return;
+        ResourceLocation targetModelLoc = ctx.isOozaruTarget() ? OOZARU_ARMOR_MODEL : (ctx.isSlimTarget() ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL);
+        BakedGeoModel vanillaArmorModel = getGeoModel().getBakedModel(targetModelLoc);
+        if (vanillaArmorModel == null) return;
 
-		GeoBone armorBodyBone = vanillaArmorModel.getBone("body").orElse(null);
-		if (armorBodyBone == null) return;
+        GeoBone armorBodyBone = vanillaArmorModel.getBone("body").orElse(null);
+        if (armorBodyBone == null) return;
 
-		ResourceLocation texture = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, null);
-		renderBaseArmorBodyFromPlayerBone(playerBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight);
+        ResourceLocation texture = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, null);
 
-		float translateY = resolveCustomArmorTranslateY(ctx);
-		poseStack.pushPose();
-		poseStack.translate(0, translateY, 0);
-		renderRootBoneInflated(armorBodyBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight, 1.05f);
-		poseStack.popPose();
+        if (!ctx.isOozaruTarget() && !ctx.isMajinGordoTarget()) {
+            renderBaseArmorBodyFromPlayerBone(playerBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight);
+        }
 
-		if (stack.getItem() instanceof DyeableArmorItem) {
-			ResourceLocation overlayTex = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, "overlay");
-			renderBaseArmorBodyFromPlayerBone(playerBone, poseStack, bufferSource, animatable, overlayTex, partialTick, packedLight);
+        float translateY = resolveCustomArmorTranslateY(ctx);
+        poseStack.pushPose();
+        poseStack.translate(0, translateY, 0);
+        renderRootBoneInflated(armorBodyBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight, 1.05f);
+        poseStack.popPose();
 
-			poseStack.pushPose();
-			poseStack.translate(0, translateY, 0);
-			renderRootBoneInflated(armorBodyBone, poseStack, bufferSource, animatable, overlayTex, partialTick, packedLight, 1.05f);
-			poseStack.popPose();
-		}
-	}
+        if (stack.getItem() instanceof DyeableArmorItem) {
+            ResourceLocation overlayTex = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, "overlay");
+
+            if (!ctx.isOozaruTarget() && !ctx.isMajinGordoTarget()) {
+                renderBaseArmorBodyFromPlayerBone(playerBone, poseStack, bufferSource, animatable, overlayTex, partialTick, packedLight);
+            }
+
+            poseStack.pushPose();
+            poseStack.translate(0, translateY, 0);
+            renderRootBoneInflated(armorBodyBone, poseStack, bufferSource, animatable, overlayTex, partialTick, packedLight, 1.05f);
+            poseStack.popPose();
+        }
+    }
 
 	private ItemStack resolveChestArmorStack(T animatable) {
 		ItemStack stack = animatable.getItemBySlot(EquipmentSlot.CHEST);
@@ -175,7 +181,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 	}
 
 	private float resolveCustomArmorTranslateY(ArmorRenderContext ctx) {
-		if (ctx.isOozaruTarget() || ctx.isMajinGordoTarget()) return 0.015f;
+		if (ctx.isOozaruTarget() || ctx.isMajinGordoTarget()) return 0.03f;
 		return 0.001f;
 	}
 

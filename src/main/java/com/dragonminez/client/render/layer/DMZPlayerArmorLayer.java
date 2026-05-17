@@ -87,7 +87,9 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                 boolean isArmored = character.getArmored();
                 boolean isMajin = race.equals("majin") || logicKey.startsWith("majin");
                 boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
-                boolean isOozaru = character.isOozaruCached() || logicKey.startsWith("oozaru");
+
+                boolean isOozaru = character.isOozaruCached() || logicKey.contains("oozaru");
+
                 boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
                         || logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra");
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
