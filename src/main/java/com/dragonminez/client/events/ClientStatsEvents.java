@@ -388,31 +388,6 @@ public class ClientStatsEvents {
 	@SubscribeEvent
 	public static void onComputeFovModifier(ComputeFovModifierEvent event) {
 		if (event.getPlayer() instanceof LocalPlayer player) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				var character = data.getCharacter();
-				var activeForm = character.getActiveFormData();
-				String currentForm = character.getActiveForm();
-				String race = character.getRaceName().toLowerCase();
-
-				var raceConfig = ConfigManager.getRaceCharacter(race);
-				String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-				String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-						? activeForm.getCustomModel().toLowerCase() : "";
-
-				String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-				if (logicKey.isEmpty()) {
-					logicKey = race;
-				}
-
-				boolean isOozaru = logicKey.startsWith("oozaru") ||
-						(race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
-
-				if (isOozaru) {
-					float newFov = event.getFovModifier() * 1.5f;
-					event.setNewFovModifier(newFov);
-				}
-			});
-
 			AttributeInstance speedAttr = player.getAttribute(Attributes.MOVEMENT_SPEED);
 			if (speedAttr != null) {
 				AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
