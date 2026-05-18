@@ -27,6 +27,7 @@ import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -390,20 +391,29 @@ public class ClientStatsEvents {
 		if (event.getPlayer() instanceof LocalPlayer player) {
 			AttributeInstance speedAttr = player.getAttribute(Attributes.MOVEMENT_SPEED);
 			if (speedAttr != null) {
+				double totalModFactor = 1.0;
+
 				AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
-				if (formMod != null) {
-					double factor = 1.0 + formMod.getAmount();
-					if (factor > 1.0) {
-						float newFov = (float) (event.getFovModifier() / factor);
-						event.setNewFovModifier(newFov);
-					}
-				}
+				if (formMod != null) totalModFactor *= (1.0 + formMod.getAmount());
 				AttributeModifier gravityMod = speedAttr.getModifier(GravityLogic.GRAVITY_SPEED_UUID);
-				if (gravityMod != null) {
-					double factor = 1.0 + Math.abs(gravityMod.getAmount());
-					if (factor > 1.0) {
-						float newFov = (float) (event.getFovModifier() * factor);
-						event.setNewFovModifier(newFov);
+				if (gravityMod != null) totalModFactor *= (1.0 + gravityMod.getAmount());
+
+				if (totalModFactor != 1.0 && totalModFactor > 0.0) {
+					float walkSpeed = player.getAbilities().getWalkingSpeed();
+					double currentSpeed = speedAttr.getValue();
+
+					double currentSpeedRatio = currentSpeed / walkSpeed;
+					double currentVanillaFovFactor = (currentSpeedRatio + 1.0) / 2.0;
+
+					double cleanSpeedRatio = (currentSpeed / totalModFactor) / walkSpeed;
+					double cleanVanillaFovFactor = (cleanSpeedRatio + 1.0) / 2.0;
+
+					if (currentVanillaFovFactor > 0) {
+						float rawFov = event.getFovModifier();
+						float cleanRawFov = (float) (rawFov / currentVanillaFovFactor * cleanVanillaFovFactor);
+						float fovScale = Minecraft.getInstance().options.fovEffectScale().get().floatValue();
+						float finalFov = Mth.lerp(fovScale, 1.0F, cleanRawFov);
+						event.setNewFovModifier(finalFov);
 					}
 				}
 			}
