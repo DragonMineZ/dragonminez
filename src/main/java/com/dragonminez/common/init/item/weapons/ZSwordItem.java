@@ -1,6 +1,6 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.weapons;
 
-import com.dragonminez.common.init.item.weapons.render.PowerPoleRenderer;
+import com.dragonminez.common.init.item.weapons.render.ZSwordRenderer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -10,13 +10,14 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Consumer;
 
-public class PowerPoleItem extends WeaponItem implements GeoItem {
+public class ZSwordItem extends WeaponItem implements GeoItem {
 
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-	public PowerPoleItem() {
-		super(64, -3.2f, 0, 18, "power_pole");
+	public ZSwordItem() {
+		super(300, -2.8f, 0, 25, "z_sword");
 	}
+
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
@@ -26,12 +27,12 @@ public class PowerPoleItem extends WeaponItem implements GeoItem {
 	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
 		consumer.accept(new IClientItemExtensions() {
 
-			private PowerPoleRenderer renderer;
+			private ZSwordRenderer renderer;
 
 			@Override
 			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
 				if (this.renderer == null)
-					this.renderer = new PowerPoleRenderer();
+					this.renderer = new ZSwordRenderer();
 
 				return this.renderer;
 

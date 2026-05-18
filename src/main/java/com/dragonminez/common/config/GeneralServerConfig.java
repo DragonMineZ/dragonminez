@@ -1,6 +1,6 @@
 package com.dragonminez.common.config;
 
-import com.dragonminez.common.init.item.CapsuleType;
+import com.dragonminez.common.init.item.consumables.CapsuleType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

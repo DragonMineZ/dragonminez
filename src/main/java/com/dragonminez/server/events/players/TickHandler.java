@@ -50,6 +50,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.*;
 
@@ -230,19 +231,23 @@ public class TickHandler {
 						data.getStatus().setBackWeapon(backItem.getDescriptionId());
 				} else data.getStatus().setBackWeapon("");
 
-				boolean hasScouter = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
+				ItemStack headTechStack = CuriosApi.getCuriosInventory(serverPlayer)
+						.map(inv -> inv.getCurios().get("head_tech"))
+						.map(stacksHandler -> stacksHandler.getStacks().getStackInSlot(0))
+						.orElse(ItemStack.EMPTY);
+				String itemId = headTechStack.getDescriptionId();
+
+				boolean hasScouter = itemId.contains("scouter");
 				if (hasScouter) {
-					String scouterItem = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId();
-					if (!data.getStatus().getScouterItem().equals(scouterItem))
-						data.getStatus().setScouterItem(scouterItem);
+					if (!data.getStatus().getScouterItem().equals(itemId)) data.getStatus().setScouterItem(itemId);
 				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
 
-				boolean hasPothala = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("pothala");
+
+				boolean hasPothala = itemId.contains("pothala");
 				if (hasPothala) {
-					boolean isGreenPothala = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("green");
+					boolean isGreenPothala = itemId.contains("green");
 					data.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
 				} else if (!data.getStatus().getPothalaColor().isEmpty()) data.getStatus().setPothalaColor("");
-
 			}
 
 			for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {

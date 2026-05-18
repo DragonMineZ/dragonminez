@@ -1,5 +1,6 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.weapons;
 
+import com.dragonminez.common.init.item.tools.ToolTiers;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;

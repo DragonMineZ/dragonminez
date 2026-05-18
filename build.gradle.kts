@@ -102,6 +102,10 @@ repositories {
         url = uri("https://repo.lucko.me/")
         content { includeModule("me.lucko", "spark-api") }
     }
+    maven {
+        name = "Illusive Soulworks maven"
+        url = uri("https://maven.theillusivec4.top/")
+    }
     mavenCentral()
 }
 
@@ -169,10 +173,12 @@ dependencies {
     implementation("io.netty:netty-handler:4.2.7.Final") { because("Security/compat override requested.") }
     implementation("org.apache.commons:commons-compress:1.27.1") { because("Security/compat override requested.") }
 
-    // GeckoLib & Terrablender
+    // GeckoLib, Terrablender & Curios
     implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.3"))
     implementation("com.eliotlash.mclib:mclib:20")
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
+    compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api"))
+    runtimeOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1"))
 
     // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
     compileOnly("org.projectlombok:lombok:1.18.46")
@@ -211,8 +217,7 @@ dependencies {
 
     // "Layers" mods for testing compatibility
     //runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))
-    //runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
-    //runtimeOnly(fg.deobf("curse.maven:curios-api-309927:6418456"))
+    runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
     //runtimeOnly(fg.deobf("curse.maven:artifacts-312353:6399828"))
     //runtimeOnly(fg.deobf("curse.maven:cloth-config-api-348521:5729105"))
     //runtimeOnly(fg.deobf("curse.maven:architectury-api-419699:5137938"))
@@ -255,6 +260,7 @@ val modCredits = requiredProp("mod_credits")
 val modDescription = requiredProp("mod_description")
 val geckolibVersionRange = requiredProp("geckolib_version_range")
 val terrablenderVersionRange = requiredProp("terrablender_version_range")
+val curiosVersionRange = requiredProp("curios_version_range")
 
 tasks.named<ProcessResources>("processResources").configure {
     filteringCharset = "UTF-8"
@@ -274,7 +280,8 @@ tasks.named<ProcessResources>("processResources").configure {
         "mod_credits" to modCredits,
         "mod_description" to modDescription,
         "geckolib_version_range" to geckolibVersionRange,
-        "terrablender_version_range" to terrablenderVersionRange
+        "terrablender_version_range" to terrablenderVersionRange,
+        "curios_version_range" to curiosVersionRange
     )
 
     inputs.properties(replaceProperties)

@@ -1,8 +1,7 @@
 package com.dragonminez.common.init.item.weapons.model;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.item.PowerPoleItem;
-import com.dragonminez.common.init.item.ZSwordItem;
+import com.dragonminez.common.init.item.weapons.PowerPoleItem;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.model.GeoModel;
 

@@ -1,7 +1,7 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.entities;
 
 import com.dragonminez.common.init.MainEntities;
-import com.dragonminez.common.init.entities.FlyingNimbusEntity;
+import com.dragonminez.common.init.entities.SpacePodEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,8 +18,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class FlyingNimbusItem extends Item {
-	public FlyingNimbusItem( ) {
+public class SaiyanShipItem extends Item {
+	public SaiyanShipItem( ) {
 		super(new Properties().stacksTo(1));
 	}
 
@@ -33,21 +33,43 @@ public class FlyingNimbusItem extends Item {
 		BlockPos spawnPos = pos.above();
 
 		if (player != null && level != null) {
-			FlyingNimbusEntity nube = new FlyingNimbusEntity(MainEntities.FLYING_NIMBUS.get(), level);
-			nube.setPos(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+			SpacePodEntity nave = new SpacePodEntity(MainEntities.SPACE_POD.get(), level);
+			nave.setPos(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
 
-			level.addFreshEntity(nube);
+			level.addFreshEntity(nave);
 
 			pContext.getItemInHand().shrink(1);
 
 			return InteractionResult.sidedSuccess(level.isClientSide);
 		}
 
+
 		return super.useOn(pContext);
 	}
 
+//    @Override
+//    public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
+//        ItemStack itemstack = pPlayer.getItemInHand(pHand);
+//
+//        if (!pLevel.isClientSide) {
+//
+//            KiBarrierEntity disc = new KiBarrierEntity(pLevel, pPlayer);
+//
+//            disc.setColors(0x36C26E, 0x36C26E);
+//
+//            pLevel.addFreshEntity(disc);
+//        }
+//
+//        pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(),
+//                SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 0.5F);
+//
+//        pPlayer.getCooldowns().addCooldown(this, 20);
+//
+//        return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
+//    }
+
 	@Override
 	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-		pTooltipComponents.add(Component.translatable("item.dragonminez.flying_nimbus.tooltip").withStyle(ChatFormatting.GRAY));
+		pTooltipComponents.add(Component.translatable("item.dragonminez.saiyan_ship.tooltip").withStyle(ChatFormatting.GRAY));
 	}
 }

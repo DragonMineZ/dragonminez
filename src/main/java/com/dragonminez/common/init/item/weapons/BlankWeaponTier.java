@@ -1,4 +1,4 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.weapons;
 
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.crafting.Ingredient;

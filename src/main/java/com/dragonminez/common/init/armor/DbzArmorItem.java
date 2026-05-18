@@ -31,7 +31,6 @@ public class DbzArmorItem extends ArmorItem {
     public @Nullable String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
 
         String texturePath = Reference.MOD_ID + ":textures/armor/" + itemId;
-		if (texturePath.contains("pothala") || texturePath.contains("scouter")) return Reference.MOD_ID + ":textures/armor/blank.png";
 
         if(isDamageOn()){
             int maxDamage = stack.getMaxDamage();

@@ -1,6 +1,6 @@
 package com.dragonminez.common.init.item.weapons.render;
 
-import com.dragonminez.common.init.item.PowerPoleItem;
+import com.dragonminez.common.init.item.weapons.PowerPoleItem;
 import com.dragonminez.common.init.item.weapons.model.PowerPoleModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

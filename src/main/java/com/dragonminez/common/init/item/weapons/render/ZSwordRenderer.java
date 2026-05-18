@@ -1,8 +1,6 @@
 package com.dragonminez.common.init.item.weapons.render;
 
-import com.dragonminez.common.init.item.YajirobeKatanaItem;
-import com.dragonminez.common.init.item.ZSwordItem;
-import com.dragonminez.common.init.item.weapons.model.YajirobeKatanaModel;
+import com.dragonminez.common.init.item.weapons.ZSwordItem;
 import com.dragonminez.common.init.item.weapons.model.ZSwordModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;

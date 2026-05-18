@@ -6,17 +6,20 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.network.C2S.DamageCurioC2S;
+import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -25,6 +28,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.List;
 
@@ -44,15 +48,26 @@ public class ScouterHUD {
 	private static final double SCAN_RANGE = 50.0;
 	private static final int BP_LIMIT = 150000000;
 
+	private static ItemStack getScouterStack(Player player) {
+		return CuriosApi.getCuriosInventory(player)
+				.map(inv -> inv.getCurios().get("head_tech"))
+				.map(handler -> handler.getStacks().getStackInSlot(0))
+				.orElse(ItemStack.EMPTY);
+	}
+
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null) return;
 
-		if (!mc.player.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter")) return;
+		ItemStack scouterStack = getScouterStack(mc.player);
+		if (scouterStack.isEmpty() || !scouterStack.getDescriptionId().contains("scouter")) {
+			isRenderingInfo = false; // Apagado automático si nos quitamos el scouter
+			return;
+		}
 
-		if (scanTimer++ >= 20) {
+		if (isRenderingInfo && scanTimer++ >= 20) {
 			scanTimer = 0;
 			performSmartScan(mc.player);
 		}
@@ -72,6 +87,13 @@ public class ScouterHUD {
 
 		for (LivingEntity entity : entities) {
 			int bp = getEntityBP(entity);
+
+			// Lógica de explosión por sobrecarga
+			if (bp > BP_LIMIT) {
+				damageScouter(player);
+				return; // Detenemos el escaneo inmediatamente
+			}
+
 			if (bp > maxFoundBP) {
 				maxFoundBP = bp;
 				newStrongest = entity;
@@ -105,11 +127,14 @@ public class ScouterHUD {
 		if (mc.options.renderDebug || mc.player == null) return;
 		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
 
-		if (!mc.player.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("scouter")) return;
+		ItemStack scouterStack = getScouterStack(mc.player);
+		if (scouterStack.isEmpty() || !scouterStack.getItem().getDescriptionId().contains("scouter")) return;
 
-		ResourceLocation currentTexture = scouterColor == MainItems.BLUE_SCOUTER.get() ? SCOUTER_BLUE :
-				scouterColor == MainItems.RED_SCOUTER.get() ? SCOUTER_RED :
-				scouterColor == MainItems.PURPLE_SCOUTER.get() ? SCOUTER_PURPLE : SCOUTER_GREEN;
+		// Leemos el color directamente del ítem equipado en vez de la variable estática propensa a desincronizarse
+		Item currentItem = scouterStack.getItem();
+		ResourceLocation currentTexture = currentItem == MainItems.BLUE_SCOUTER.get() ? SCOUTER_BLUE :
+				currentItem == MainItems.RED_SCOUTER.get() ? SCOUTER_RED :
+				currentItem == MainItems.PURPLE_SCOUTER.get() ? SCOUTER_PURPLE : SCOUTER_GREEN;
 
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(0, height / 2.0f, 0);
@@ -129,10 +154,16 @@ public class ScouterHUD {
 
 			if (focusedEntity != null && distToFocus <= 20) {
 				int bp = getEntityBP(focusedEntity);
-				if (bp <= BP_LIMIT) {
-					renderCustomNumbers(guiGraphics, SCOUTER_PURPLE, formatBP(bp));
-					renderEntityInfo(guiGraphics, currentTexture, true, focusedEntity instanceof Player);
+
+				if (bp > BP_LIMIT) {
+					damageScouter(mc.player);
+					guiGraphics.pose().popPose();
+					return; // Cortamos el renderizado inmediatamente tras explotar
 				}
+
+				renderCustomNumbers(guiGraphics, currentTexture, formatBP(bp));
+				renderEntityInfo(guiGraphics, currentTexture, true, focusedEntity instanceof Player);
+
 			} else if (focusedEntity != null && distToFocus > 20 && distToFocus <= 50) {
 				renderDirectionIcon(guiGraphics, currentTexture, mc.player, focusedEntity, true);
 				renderEntityInfo(guiGraphics, currentTexture, false, focusedEntity instanceof Player);
@@ -147,6 +178,26 @@ public class ScouterHUD {
 		}
 		guiGraphics.pose().popPose();
 	};
+
+	private static void damageScouter(Player player) {
+		setRenderingInfo(false);
+		NetworkHandler.sendToServer(new DamageCurioC2S("head_tech", 0, 1));
+		CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
+			var handler = inv.getCurios().get("head_tech");
+			if (handler != null) {
+				ItemStack stack = handler.getStacks().getStackInSlot(0);
+				if (!stack.isEmpty() && stack.getDescriptionId().contains("scouter")) {
+					stack.setDamageValue(stack.getDamageValue() + 1);
+					if (stack.getDamageValue() >= stack.getMaxDamage()) {
+						player.playSound(SoundEvents.GLASS_BREAK, 1.0F, 1.0F);
+						handler.getStacks().setStackInSlot(0, ItemStack.EMPTY);
+					} else {
+						player.playSound(SoundEvents.GLASS_HIT, 0.5F, 1.0F);
+					}
+				}
+			}
+		});
+	}
 
 	private static void renderScouterFrame(GuiGraphics gui, ResourceLocation texture) {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);

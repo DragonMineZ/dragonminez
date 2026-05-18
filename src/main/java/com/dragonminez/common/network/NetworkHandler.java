@@ -237,6 +237,12 @@ public class NetworkHandler {
 				.consumerMainThread(CombatAttackRequestC2S::handle)
 				.add();
 
+		net.messageBuilder(DamageCurioC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DamageCurioC2S::new)
+				.encoder(DamageCurioC2S::toBytes)
+				.consumerMainThread(DamageCurioC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */

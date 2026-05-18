@@ -1,7 +1,7 @@
 package com.dragonminez.common.init.item.weapons.model;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.item.BraveSwordItem;
+import com.dragonminez.common.init.item.weapons.BraveSwordItem;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.model.GeoModel;
 

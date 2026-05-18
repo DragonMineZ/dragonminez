@@ -8,6 +8,15 @@ import com.dragonminez.common.init.item.*;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.dragonball.DragonRadarDefinition;
+import com.dragonminez.common.init.item.consumables.CapsuleItem;
+import com.dragonminez.common.init.item.consumables.CapsuleType;
+import com.dragonminez.common.init.item.consumables.FoodItem;
+import com.dragonminez.common.init.item.consumables.MightTreeFruitItem;
+import com.dragonminez.common.init.item.entities.BlackNimbusItem;
+import com.dragonminez.common.init.item.entities.FlyingNimbusItem;
+import com.dragonminez.common.init.item.entities.PunchMachineItem;
+import com.dragonminez.common.init.item.entities.SaiyanShipItem;
+import com.dragonminez.common.init.item.weapons.*;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.*;
 import net.minecraftforge.common.ForgeSpawnEggItem;
@@ -54,26 +63,23 @@ public final class MainItems {
 
 	//POTHALAS
 	public static final RegistryObject<Item> POTHALA_LEFT =
-			ITEM_REGISTER.register("pothala_left", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "pothala_left", false));
+			ITEM_REGISTER.register("pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> POTHALA_RIGHT =
-			ITEM_REGISTER.register("pothala_right", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "pothala_right", false));
+			ITEM_REGISTER.register("pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> GREEN_POTHALA_LEFT =
-			ITEM_REGISTER.register("green_pothala_left", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_left", false));
+			ITEM_REGISTER.register("green_pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> GREEN_POTHALA_RIGHT =
-			ITEM_REGISTER.register("green_pothala_right", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_right", false));
+			ITEM_REGISTER.register("green_pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
 
 	public static final RegistryObject<Item> RED_SCOUTER =
-			ITEM_REGISTER.register("red_scouter", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "red_scouter", false));
+			ITEM_REGISTER.register("red_scouter", () -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().defaultDurability(15), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> BLUE_SCOUTER =
-			ITEM_REGISTER.register("blue_scouter", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "blue_scouter", false));
+			ITEM_REGISTER.register("blue_scouter", () -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().defaultDurability(15), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> GREEN_SCOUTER =
-			ITEM_REGISTER.register("green_scouter", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "green_scouter", false));
+			ITEM_REGISTER.register("green_scouter", () -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().defaultDurability(15), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> PURPLE_SCOUTER =
-			ITEM_REGISTER.register("purple_scouter", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "purple_scouter", false));
-	public static final RegistryObject<Item> MERUS_LASER =
-			ITEM_REGISTER.register("laser_merus", () -> new MerusLaserItem());
-	public static final RegistryObject<Item> BLASTER_CANNON =
-			ITEM_REGISTER.register("blaster_cannon", () -> new BlasterCannonItem());
+			ITEM_REGISTER.register("purple_scouter", () -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().defaultDurability(15), DMZCuriosItem.CurioType.HEAD_TECH));
+
 	//ARMAS
 	// 0 + X = Daño | 4 +/- X = Velocidad de ataque | 0 + X = Durabilidad (0 = Irrompible)
 	public static final RegistryObject<SwordItem> KATANA_YAJIROBE =
@@ -84,6 +90,12 @@ public final class MainItems {
 			ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem());
 	public static final RegistryObject<SwordItem> POWER_POLE =
 			ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
+
+	//ARMAS A RANGO/PISTOLAS
+	public static final RegistryObject<Item> MERUS_LASER =
+			ITEM_REGISTER.register("laser_merus", () -> new MerusLaserItem());
+	public static final RegistryObject<Item> BLASTER_CANNON =
+			ITEM_REGISTER.register("blaster_cannon", () -> new BlasterCannonItem());
 
 	//ARMADURAS
 	// GOKU NIÑO

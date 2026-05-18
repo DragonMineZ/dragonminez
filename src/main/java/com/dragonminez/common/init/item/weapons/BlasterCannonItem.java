@@ -1,4 +1,4 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.weapons;
 
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.sounds.SoundEvents;

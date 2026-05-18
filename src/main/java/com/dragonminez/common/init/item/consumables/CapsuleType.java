@@ -1,4 +1,4 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.consumables;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

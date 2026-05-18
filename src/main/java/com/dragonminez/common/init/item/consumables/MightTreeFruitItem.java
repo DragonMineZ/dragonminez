@@ -1,4 +1,4 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.consumables;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;

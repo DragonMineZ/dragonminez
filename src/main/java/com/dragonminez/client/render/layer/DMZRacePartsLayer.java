@@ -28,6 +28,7 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -340,8 +341,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		boolean hasPothalaRight = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_right");
-		boolean hasPothalaLeft = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_left");
+		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
+
+		boolean hasPothalaRight = headTechStack.getItem().getDescriptionId().contains("pothala_right");
+		boolean hasPothalaLeft = headTechStack.getItem().getDescriptionId().contains("pothala_left");
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
@@ -372,14 +375,16 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		ItemStack headStack = animatable.getItemBySlot(EquipmentSlot.HEAD);
-		Item headItem = headStack.getItem();
+		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
+		if (headTechStack.isEmpty()) return;
 
+		Item item = headTechStack.getItem();
 		String color = null;
-		if (headItem == MainItems.GREEN_SCOUTER.get()) color = "green";
-		else if (headItem == MainItems.RED_SCOUTER.get()) color = "red";
-		else if (headItem == MainItems.BLUE_SCOUTER.get()) color = "blue";
-		else if (headItem == MainItems.PURPLE_SCOUTER.get()) color = "purple";
+
+		if (item == MainItems.GREEN_SCOUTER.get()) color = "green";
+		else if (item == MainItems.RED_SCOUTER.get()) color = "red";
+		else if (item == MainItems.BLUE_SCOUTER.get()) color = "blue";
+		else if (item == MainItems.PURPLE_SCOUTER.get()) color = "purple";
 
 		if (color == null) return;
 
@@ -469,5 +474,17 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 
 		poseStack.popPose();
+	}
+
+	private ItemStack getRenderableCurio(T animatable, String slotId, int index) {
+		var inventory = CuriosApi.getCuriosInventory(animatable).orElse(null);
+		if (inventory == null) return ItemStack.EMPTY;
+
+		var stacksHandler = inventory.getCurios().get(slotId);
+		if (stacksHandler == null) return ItemStack.EMPTY;
+
+		if (!stacksHandler.getRenders().get(index)) return ItemStack.EMPTY;
+
+		return stacksHandler.getStacks().getStackInSlot(index);
 	}
 }

@@ -1,6 +1,6 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.weapons;
 
-import com.dragonminez.common.init.item.weapons.render.YajirobeKatanaRenderer;
+import com.dragonminez.common.init.item.weapons.render.BraveSwordRenderer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -10,12 +10,12 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Consumer;
 
-public class YajirobeKatanaItem extends WeaponItem implements GeoItem {
+public class BraveSwordItem extends WeaponItem implements GeoItem {
 
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-	public YajirobeKatanaItem() {
-		super(12, -2.6f, 500, 15, "yajirobe_katana");
+	public BraveSwordItem() {
+		super(75, -2.4f, 2600, 20, "brave_sword");
 	}
 
 	@Override
@@ -26,12 +26,12 @@ public class YajirobeKatanaItem extends WeaponItem implements GeoItem {
 	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
 		consumer.accept(new IClientItemExtensions() {
 
-			private YajirobeKatanaRenderer renderer;
+			private BraveSwordRenderer renderer;
 
 			@Override
 			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
 				if (this.renderer == null)
-					this.renderer = new YajirobeKatanaRenderer();
+					this.renderer = new BraveSwordRenderer();
 
 				return this.renderer;
 

@@ -54,6 +54,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -694,25 +695,33 @@ public class StatsEvents {
 		});
 	}
 
+	private static ItemStack getHeadTechStack(ServerPlayer player) {
+		return CuriosApi.getCuriosInventory(player)
+				.map(inv -> inv.getCurios().get("head_tech"))
+				.map(handler -> handler.getStacks().getStackInSlot(0))
+				.orElse(ItemStack.EMPTY);
+	}
+
 	private static boolean hasPothala(ServerPlayer player, String side) {
-		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (side.equals("left") && (head.getItem() == MainItems.POTHALA_LEFT.get() || head.getItem() == MainItems.GREEN_POTHALA_LEFT.get()))
+		ItemStack headTech = getHeadTechStack(player);
+		if (headTech.isEmpty()) return false;
+
+		if (side.equals("left") && (headTech.getItem() == MainItems.POTHALA_LEFT.get() || headTech.getItem() == MainItems.GREEN_POTHALA_LEFT.get())) {
 			return true;
-		else
-			return side.equals("right") && (head.getItem() == MainItems.POTHALA_RIGHT.get() || head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
+		}
+		return side.equals("right") && (headTech.getItem() == MainItems.POTHALA_RIGHT.get() || headTech.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
 	}
 
 	private static boolean checkPothalaColorMatch(ServerPlayer p1, ServerPlayer p2) {
-		if (hasPothala(p1, "right") && hasPothala(p2, "left")) {
-			ItemStack p1Head = p1.getItemBySlot(EquipmentSlot.HEAD);
-			ItemStack p2Head = p2.getItemBySlot(EquipmentSlot.HEAD);
+		ItemStack p1Tech = getHeadTechStack(p1);
+		ItemStack p2Tech = getHeadTechStack(p2);
 
-			boolean p1IsGreen = (p1Head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
-			boolean p2IsGreen = (p2Head.getItem() == MainItems.GREEN_POTHALA_LEFT.get());
+		if (p1Tech.isEmpty() || p2Tech.isEmpty()) return false;
 
-			return p1IsGreen == p2IsGreen;
-		}
-		return false;
+		boolean p1IsGreen = p1Tech.getItem().getDescriptionId().contains("green");
+		boolean p2IsGreen = p2Tech.getItem().getDescriptionId().contains("green");
+
+		return p1IsGreen == p2IsGreen;
 	}
 
 	@SubscribeEvent

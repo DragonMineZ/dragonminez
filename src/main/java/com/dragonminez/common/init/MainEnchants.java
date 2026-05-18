@@ -1,7 +1,7 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.item.WeaponItem;
+import com.dragonminez.common.init.item.weapons.WeaponItem;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;

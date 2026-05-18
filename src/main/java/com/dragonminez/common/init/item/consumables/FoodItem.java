@@ -1,4 +1,4 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.consumables;
 
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;

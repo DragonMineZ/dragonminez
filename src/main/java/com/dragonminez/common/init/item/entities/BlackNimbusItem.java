@@ -1,4 +1,4 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.entities;
 
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.BlackNimbusEntity;

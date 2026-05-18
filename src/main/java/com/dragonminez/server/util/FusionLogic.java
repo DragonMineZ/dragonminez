@@ -13,11 +13,14 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.awt.*;
 import java.util.UUID;
@@ -103,8 +106,8 @@ public class FusionLogic {
 		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
 		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
 		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
-		removeEarring(leader);
-		removeEarring(partner);
+		damageEarring(leader);
+		damageEarring(partner);
 	}
 
 	private static void applyFusion(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData, String type, int lvl1, int lvl2) {
@@ -243,8 +246,18 @@ public class FusionLogic {
 		} catch (Exception e) { return c1; }
 	}
 
-	private static void removeEarring(ServerPlayer player) {
-		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (head.getItem().getDescriptionId().contains("pothala")) player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+	private static void damageEarring(ServerPlayer player) {
+		CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
+			var handler = inv.getCurios().get("head_tech");
+			if (handler != null) {
+				ItemStack stack = handler.getStacks().getStackInSlot(0);
+
+				if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {
+					stack.hurtAndBreak(1, player, (entity) -> {});
+
+					if (stack.isEmpty()) handler.getStacks().setStackInSlot(0, ItemStack.EMPTY);
+				}
+			}
+		});
 	}
 }

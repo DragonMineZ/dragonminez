@@ -130,8 +130,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		int hairId = character.getHairId();
 
 		if (!HairManager.canUseHair(character)) return;
-		if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)))
-			return;
+		if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
 		if (hairId == 5) return;
 		if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
 

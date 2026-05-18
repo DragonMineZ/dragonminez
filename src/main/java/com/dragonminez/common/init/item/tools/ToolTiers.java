@@ -1,5 +1,6 @@
-package com.dragonminez.common.init.item;
+package com.dragonminez.common.init.item.tools;
 
+import com.dragonminez.common.init.item.weapons.BlankWeaponTier;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.crafting.Ingredient;
 

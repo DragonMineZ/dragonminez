@@ -279,7 +279,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.RED_SCOUTER.get(), 1)
+		ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, MainItems.RED_SCOUTER.get(), 1)
 				.pattern("  R")
 				.pattern("PPT")
 				.pattern(" B ")
@@ -290,7 +290,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.T1_RADAR_CPU.get()), has(MainItems.T1_RADAR_CPU.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.BLUE_SCOUTER.get(), 1)
+		ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, MainItems.BLUE_SCOUTER.get(), 1)
 				.pattern("  R")
 				.pattern("PPT")
 				.pattern(" B ")
@@ -301,7 +301,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.T1_RADAR_CPU.get()), has(MainItems.T1_RADAR_CPU.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.GREEN_SCOUTER.get(), 1)
+		ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, MainItems.GREEN_SCOUTER.get(), 1)
 				.pattern("  R")
 				.pattern("PPT")
 				.pattern(" B ")
@@ -312,7 +312,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.T1_RADAR_CPU.get()), has(MainItems.T1_RADAR_CPU.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.PURPLE_SCOUTER.get(), 1)
+		ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, MainItems.PURPLE_SCOUTER.get(), 1)
 				.pattern("  R")
 				.pattern("PPT")
 				.pattern(" B ")
