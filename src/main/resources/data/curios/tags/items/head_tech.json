@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "dragonminez:pothala_left",
+    "dragonminez:pothala_right",
+    "dragonminez:green_pothala_left",
+    "dragonminez:green_pothala_right",
+    "dragonminez:red_scouter",
+    "dragonminez:blue_scouter",
+    "dragonminez:green_scouter",
+    "dragonminez:purple_scouter"
+  ]
+}
