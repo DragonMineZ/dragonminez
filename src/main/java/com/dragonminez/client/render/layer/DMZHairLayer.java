@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -71,7 +73,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (animatable.isInvisible() && !animatable.isSpectator()) return;
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
 
-		var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
+		ItemStack headItem = resolveHeadArmorStack(animatable);
 		if (!headItem.isEmpty()) {
 			ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(headItem.getItem());
 			if (itemId != null) {
@@ -196,6 +198,15 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		poseStack.pushPose();
 		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, partialTick, packedLight, packedOverlay, alpha, physicsLodMultiplier);
 		poseStack.popPose();
+	}
+
+	private ItemStack resolveHeadArmorStack(T animatable) {
+		ItemStack stack = animatable.getItemBySlot(EquipmentSlot.HEAD);
+		if (CosmeticArmorCompat.isLoaded()) {
+			ItemStack cosmeticStack = CosmeticArmorCompat.getCosmeticStack(animatable, EquipmentSlot.HEAD);
+			if (cosmeticStack != null) return cosmeticStack;
+		}
+		return stack;
 	}
 
 	private float getPhysicsLodMultiplier(AbstractClientPlayer animatable) {
