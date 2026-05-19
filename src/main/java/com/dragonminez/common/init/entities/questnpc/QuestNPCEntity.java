@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.questnpc;
 
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.alignment.NpcDispositionService;
@@ -15,6 +16,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
@@ -41,6 +44,18 @@ public class QuestNPCEntity extends MastersEntity {
 	public QuestNPCEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);
 		this.setPersistenceRequired();
+	}
+
+	@Override
+	public boolean hurt(DamageSource source, float amount) {
+		if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC) || source.is(DamageTypes.GENERIC_KILL)) {
+			return super.hurt(source, amount);
+		}
+		if (source.getEntity() instanceof Player player && TargetHelper.getRelation(player, this) == TargetHelper.Relation.HOSTILE) {
+			return super.hurt(source, amount);
+		}
+
+		return false;
 	}
 
 	@Override
