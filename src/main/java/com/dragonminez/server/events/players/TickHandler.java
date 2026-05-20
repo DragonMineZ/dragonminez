@@ -410,8 +410,13 @@ public class TickHandler {
 			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), data.getPlayer());
 			double enchMult = getRecoveryMultiplier(totalEnchLvl);
 
-			double regenPerSecond = (hp5 / 5.0) * enchMult;
+			double adjustedHealthDrain = data.getAdjustedHealthDrain();
+			double regenMultiplier = 1.0;
 
+			if (adjustedHealthDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedHealthDrain / 10.0));
+			else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
+
+			double regenPerSecond = (hp5 / 5.0) * enchMult * regenMultiplier;
 			if (regenPerSecond <= 0.0) return;
 
 			float newHealth = (float) Math.min(maxHealth, currentHealth + regenPerSecond);
@@ -468,7 +473,17 @@ public class TickHandler {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
 
-			if (regenAmount < 0.5) regenAmount = 0.5;
+			double formRawDrain = 0.0;
+			if (hasActiveForm && activeForm != null) formRawDrain = activeForm.getEnergyDrain();
+			else if (hasActiveStackForm && activeStackForm != null) formRawDrain = activeStackForm.getEnergyDrain();
+
+			double regenMultiplier = 1.0;
+			if (formRawDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (formRawDrain * 2.5));
+			else if (formRawDrain < 0.0) regenMultiplier = 1.0 + Math.abs(formRawDrain);
+
+
+			regenAmount *= regenMultiplier;
+
 			energyChange += regenAmount;
 		}
 
@@ -553,10 +568,14 @@ public class TickHandler {
 			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
 			double enchMult = getRecoveryMultiplier(totalEnchLvl);
 
-			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult;
+			double adjustedStaminaDrain = data.getAdjustedStaminaDrain();
+			double regenMultiplier = 1.0;
 
+			if (adjustedStaminaDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedStaminaDrain / 50.0));
+			else if (adjustedStaminaDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedStaminaDrain);
+
+			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier;
 			regenPerSecond = PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
-			if (regenPerSecond < 0.5) regenPerSecond = 0.5;
 
 			float newStamina = (float) Math.min(maxStamina, currentStamina + Math.ceil(regenPerSecond));
 			data.getResources().setCurrentStamina(newStamina);
@@ -777,6 +796,7 @@ public class TickHandler {
 	private static void handleActiveFormDrains(ServerPlayer player, StatsData data) {
 		boolean hasActiveForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
+
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()) {
 			data.getCharacter().clearActiveForm();
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
@@ -796,27 +816,61 @@ public class TickHandler {
 		}
 
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
-			int energyDrain = (int) Math.round(data.getAdjustedEnergyDrain());
-			int staminaDrain = (int) Math.round(data.getAdjustedStaminaDrain());
-			double healthDrain = Math.round(data.getAdjustedHealthDrain());
+
+			double totalOffense = data.getMeleeDamage() + data.getStrikeDamage() + data.getKiDamage();
+			double ratioTolerance = 1.5;
+
+			double maxEnergy = data.getMaxEnergy();
+			double baseEnergyDrain = data.getAdjustedEnergyDrain();
+			double finalEnergyDrain = 0.0;
+
+			if (baseEnergyDrain > 0.0) {
+				double energyRatio = Math.max(1.0, totalOffense / Math.max(1.0, maxEnergy * ratioTolerance));
+
+				double formRawEneDrain = 0.0;
+				if (hasActiveForm && data.getCharacter().getActiveFormData() != null) {
+					formRawEneDrain += Math.max(0.0, data.getCharacter().getActiveFormData().getEnergyDrain());
+				}
+				if (hasActiveStackForm && data.getCharacter().getActiveStackFormData() != null) {
+					formRawEneDrain += Math.max(0.0, data.getCharacter().getActiveStackFormData().getEnergyDrain());
+				}
+
+				double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01);
+				finalEnergyDrain = (baseEnergyDrain * energyRatio) + percentageEnergy;
+			}
+
+			double maxStamina = data.getMaxStamina();
+			double baseStaminaDrain = data.getAdjustedStaminaDrain();
+			double finalStaminaDrain = 0.0;
+
+			if (baseStaminaDrain > 0.0) {
+				double staminaRatio = Math.max(1.0, totalOffense / Math.max(1.0, maxStamina * ratioTolerance));
+				double percentageStamina = maxStamina * 0.005;
+				finalStaminaDrain = (baseStaminaDrain * staminaRatio) + percentageStamina;
+			}
+
+			double maxHealth = player.getMaxHealth();
+			double baseHealthDrain = data.getAdjustedHealthDrain();
+			double finalHealthDrain = 0.0;
+
+			if (baseHealthDrain > 0.0) {
+				double healthRatio = Math.max(1.0, totalOffense / Math.max(1.0, maxHealth * ratioTolerance));
+				double percentageHealth = maxHealth * 0.005;
+				finalHealthDrain = (baseHealthDrain * healthRatio) + percentageHealth;
+			}
+
+			int energyDrain = (int) Math.round(finalEnergyDrain);
+			int staminaDrain = (int) Math.round(finalStaminaDrain);
+			double healthDrain = Math.round(finalHealthDrain);
 
 			boolean hasEnoughEnergy = data.getResources().getCurrentEnergy() >= energyDrain;
 			boolean hasEnoughStamina = data.getResources().getCurrentStamina() >= staminaDrain;
-			boolean hasEnoughHealth = data.getPlayer().getHealth() >= healthDrain;
+			boolean hasEnoughHealth = player.getHealth() > healthDrain;
 
 			if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
-				data.getResources().removeEnergy(energyDrain);
-				data.getResources().removeStamina(staminaDrain);
-				if ((player.getHealth() - healthDrain) >= 1.0) {
-					player.setHealth((float) (player.getHealth() - healthDrain));
-				} else {
-					player.setHealth(1.0f);
-					data.getCharacter().clearActiveForm();
-					TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
-					data.getCharacter().clearActiveStackForm();
-					TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
-					player.refreshDimensions();
-				}
+				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain);
+				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
+				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
 			} else {
 				data.getCharacter().clearActiveStackForm();
 				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);

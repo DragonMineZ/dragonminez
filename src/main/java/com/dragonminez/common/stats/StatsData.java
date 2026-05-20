@@ -466,8 +466,10 @@ public class StatsData {
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			}
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-			double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-			adjustedBaseDrain = (baseDrain / divisor) * powerRelease;
+			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+
+			if (baseDrain < 0) adjustedBaseDrain = (baseDrain * masteryFactor) * powerRelease;
+			else adjustedBaseDrain = (baseDrain / masteryFactor) * powerRelease;
 		}
 
 		double adjustedStackDrain = 0;
@@ -477,12 +479,17 @@ public class StatsData {
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			}
 			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-			double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-			adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
+			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+
+			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
+			else adjustedStackDrain = (stackDrain / stackMasteryFactor) * powerRelease;
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
+		if (drainAmount == 0) return 0.0;
+		if (drainAmount < 0) return drainAmount;
+
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
 	}
 
 	public double getAdjustedStaminaDrain() {
@@ -500,8 +507,10 @@ public class StatsData {
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			}
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-			double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-			adjustedBaseDrain = (baseDrain / divisor) * powerRelease;
+			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+
+			if (baseDrain < 0) adjustedBaseDrain = (baseDrain * masteryFactor) * powerRelease;
+			else adjustedBaseDrain = (baseDrain / masteryFactor) * powerRelease;
 		}
 
 		double adjustedStackDrain = 0;
@@ -511,25 +520,26 @@ public class StatsData {
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			}
 			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-			double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-			adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
+			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+
+			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
+			else adjustedStackDrain = (stackDrain / stackMasteryFactor) * powerRelease;
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
+		if (drainAmount == 0) return 0.0;
+		if (drainAmount < 0) return drainAmount;
+
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
 	}
 
 	public double getAdjustedHealthDrain() {
-		if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
-			return 0.0;
-		}
+		if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 0.0;
 
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
 		var powerRelease = resources.getPowerRelease() / 100.0;
-		if (formData == null && stackFormData == null) {
-			return 0.0;
-		}
+		if (formData == null && stackFormData == null) return 0.0;
 
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
@@ -538,8 +548,10 @@ public class StatsData {
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			}
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-			double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-			adjustedBaseDrain = (baseDrain / divisor) * powerRelease;
+			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+
+			if (baseDrain < 0) adjustedBaseDrain = (baseDrain * masteryFactor) * powerRelease;
+			else adjustedBaseDrain = (baseDrain / masteryFactor) * powerRelease;
 		}
 
 		double adjustedStackDrain = 0;
@@ -549,14 +561,18 @@ public class StatsData {
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			}
 			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-			double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-			adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
+			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+
+			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
+			else adjustedStackDrain = (stackDrain / stackMasteryFactor) * powerRelease;
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
-	}
+		if (drainAmount == 0) return 0.0;
+		if (drainAmount < 0) return drainAmount;
 
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
+	}
 
 	public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
 										   int hairId, com.dragonminez.common.hair.CustomHair customHair,
