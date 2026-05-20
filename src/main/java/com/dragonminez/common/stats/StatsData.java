@@ -429,9 +429,9 @@ public class StatsData {
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
 			double baseDrain = formData.getStaminaDrainMultiplier();
-			if (character.hasActiveStackForm() && stackFormData != null) {
+			if (character.hasActiveStackForm() && stackFormData != null)
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			}
+
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
 			double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
 			adjustedBaseDrain = baseDrain / divisor;
@@ -440,9 +440,9 @@ public class StatsData {
 		double adjustedStackDrain = 0;
 		if (character.hasActiveStackForm() && stackFormData != null) {
 			double stackDrain = stackFormData.getStackDrainMultiplier();
-			if (character.hasActiveForm() && formData != null) {
+			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			}
+
 			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
 			adjustedStackDrain = stackDrain / stackDivisor;
@@ -462,9 +462,9 @@ public class StatsData {
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
 			double baseDrain = formData.getEnergyDrain();
-			if (character.hasActiveStackForm() && stackFormData != null) {
+			if (character.hasActiveStackForm() && stackFormData != null)
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			}
+
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
 			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
 
@@ -475,9 +475,9 @@ public class StatsData {
 		double adjustedStackDrain = 0;
 		if (character.hasActiveStackForm() && stackFormData != null) {
 			double stackDrain = stackFormData.getEnergyDrain();
-			if (character.hasActiveForm() && formData != null) {
+			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			}
+
 			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
 
@@ -503,9 +503,9 @@ public class StatsData {
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
 			double baseDrain = formData.getStaminaDrain();
-			if (character.hasActiveStackForm() && stackFormData != null) {
+			if (character.hasActiveStackForm() && stackFormData != null)
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			}
+
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
 			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
 
@@ -516,9 +516,9 @@ public class StatsData {
 		double adjustedStackDrain = 0;
 		if (character.hasActiveStackForm() && stackFormData != null) {
 			double stackDrain = stackFormData.getStaminaDrain();
-			if (character.hasActiveForm() && formData != null) {
+			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			}
+
 			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
 
@@ -544,9 +544,9 @@ public class StatsData {
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
 			double baseDrain = formData.getHealthDrain();
-			if (character.hasActiveStackForm() && stackFormData != null) {
+			if (character.hasActiveStackForm() && stackFormData != null)
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			}
+
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
 			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
 
@@ -557,9 +557,9 @@ public class StatsData {
 		double adjustedStackDrain = 0;
 		if (character.hasActiveStackForm() && stackFormData != null) {
 			double stackDrain = stackFormData.getHealthDrain();
-			if (character.hasActiveForm() && formData != null) {
+			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			}
+
 			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
 

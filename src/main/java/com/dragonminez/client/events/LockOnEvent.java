@@ -245,4 +245,8 @@ public class LockOnEvent {
 		if (f < -180.0F) f += 360.0F;
 		return start + amount * f;
 	}
+
+	public static LivingEntity getLockedTarget() {
+		return lockedTarget;
+	}
 }

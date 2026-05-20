@@ -243,6 +243,18 @@ public class NetworkHandler {
 				.consumerMainThread(DamageCurioC2S::handle)
 				.add();
 
+		net.messageBuilder(InstantTransmissionTapC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(InstantTransmissionTapC2S::new)
+				.encoder(InstantTransmissionTapC2S::toBytes)
+				.consumerMainThread(InstantTransmissionTapC2S::handle)
+				.add();
+
+		net.messageBuilder(InstantTransmissionTravelC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(InstantTransmissionTravelC2S::new)
+				.encoder(InstantTransmissionTravelC2S::toBytes)
+				.consumerMainThread(InstantTransmissionTravelC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */

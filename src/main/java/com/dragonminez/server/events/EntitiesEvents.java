@@ -4,6 +4,11 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -12,6 +17,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -19,7 +25,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class EntityStatsHandler {
+public class EntitiesEvents {
 
 	@SubscribeEvent
 	public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
@@ -120,6 +126,17 @@ public class EntityStatsHandler {
 					if (ownerUUID.equals(uuidStr)) entity.discard();
 				}
 			}
+		}
+	}
+	@SubscribeEvent
+	public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+		if (!event.getLevel().isClientSide && event.getTarget() instanceof MastersEntity master) {
+			ServerPlayer player = (ServerPlayer) event.getEntity();
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				String dimId = player.level().dimension().location().toString();
+				data.getCharacter().addInteractedMaster(master.getStringUUID(), master.getName().getString(), dimId, master.blockPosition());
+				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
+			});
 		}
 	}
 }

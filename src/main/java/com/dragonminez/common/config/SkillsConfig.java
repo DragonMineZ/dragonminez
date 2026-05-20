@@ -167,6 +167,19 @@ public class SkillsConfig {
 		kiManipulationCosts.add(3300);
 		skills.put("kimanipulation", new SkillCosts(kiManipulationCosts));
 
+		List<Integer> instantTranmission = new ArrayList<>();
+		instantTranmission.add(3600);
+		instantTranmission.add(600);
+		instantTranmission.add(900);
+		instantTranmission.add(1200);
+		instantTranmission.add(1500);
+		instantTranmission.add(1800);
+		instantTranmission.add(2100);
+		instantTranmission.add(2400);
+		instantTranmission.add(2700);
+		instantTranmission.add(3300);
+		skills.put("instant_transmission", new SkillCosts(instantTranmission));
+
 
 		List<Integer> defensePenetration = new ArrayList<>();
 		defensePenetration.add(3600);

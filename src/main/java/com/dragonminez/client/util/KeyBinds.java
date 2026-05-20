@@ -17,6 +17,7 @@ public class KeyBinds {
     public static final KeyMapping KI_CHARGE = registerKey("ki_charge", GLFW.GLFW_KEY_C);
     public static final KeyMapping SECOND_FUNCTION_KEY = registerKey("second_function_key", GLFW.GLFW_KEY_LEFT_ALT);
 	public static final KeyMapping ACTION_KEY = registerKey("action_key", GLFW.GLFW_KEY_G);
+	public static final KeyMapping INSTANT_TRANSMISSION = registerKey("instant_transmission", GLFW.GLFW_KEY_H);
 	public static final KeyMapping SPACEPOD_MENU = registerKey("spacepod_menu", GLFW.GLFW_KEY_H);
 	public static final KeyMapping UTILITY_MENU = registerKey("utility_menu", GLFW.GLFW_KEY_X);
 	public static final KeyMapping LOCK_ON = registerKey("lock_on", GLFW.GLFW_KEY_Z);

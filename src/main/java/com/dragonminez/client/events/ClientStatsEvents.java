@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.flight.FlightSoundInstance;
+import com.dragonminez.client.gui.InstantTransmissionScreen;
 import com.dragonminez.client.gui.TrainingScreen;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.util.ColorUtils;
@@ -60,6 +61,9 @@ public class ClientStatsEvents {
 	private static long lastDashTime = 0;
 	private static boolean wasDashKeyDown = false;
 	private static boolean wasDescendActionDown = false;
+	private static long itKeyDownTime = 0;
+	private static boolean wasITKeyDown = false;
+	private static boolean itMenuOpened = false;
 	private static boolean wasTechniqueChargeDown = false;
 	private static boolean wasRightClickDown = false;
 	private static int lockedVanillaHotbarSlot = -1;
@@ -204,6 +208,7 @@ public class ClientStatsEvents {
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
 			boolean isRightClickDown = mc.options.keyUse.isDown() && !isStunned;
 			boolean isBlockKeyDown = KeyBinds.BLOCK_KEY.isDown() && !isStunned;
+			boolean isITKeyDown = KeyBinds.INSTANT_TRANSMISSION.isDown() && !isStunned;
 
 			boolean isActionRestricted = TechniqueDispatcher.isActionRestrictedKiAttack(localPlayer, data);
 			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(localPlayer, data);
@@ -291,6 +296,25 @@ public class ClientStatsEvents {
 				}
 			}
 			wasKiChargeKeyDown = isKiChargeKeyPressed;
+
+			if (isITKeyDown && !wasITKeyDown) {
+				itKeyDownTime = currentTime;
+				itMenuOpened = false;
+			} else if (!isITKeyDown && wasITKeyDown) {
+				long duration = currentTime - itKeyDownTime;
+				if (duration < 500 && !itMenuOpened) {
+					var lockedTarget = LockOnEvent.getLockedTarget();
+					java.util.UUID targetId = lockedTarget != null ? lockedTarget.getUUID() : null;
+					NetworkHandler.sendToServer(new InstantTransmissionTapC2S(targetId));
+				}
+			} else if (isITKeyDown && (currentTime - itKeyDownTime) >= 500 && !itMenuOpened) {
+				itMenuOpened = true;
+				Skill itSkill = data.getSkills().getSkill("instant_transmission");
+				if (itSkill != null && itSkill.getLevel() >= 5) {
+					mc.setScreen(new InstantTransmissionScreen(data.getCharacter().getInteractedMasters(), itSkill.getLevel()));
+				}
+			}
+			wasITKeyDown = isITKeyDown;
 
 			if (isKiChargeKeyPressed != data.getStatus().isChargingKi()) {
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.CHARGE_KI, isKiChargeKeyPressed));
