@@ -11,14 +11,11 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.server.events.players.StatsEvents;
-import com.dragonminez.server.util.FusionLogic;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
@@ -110,34 +107,7 @@ public class NPCActionC2S {
 			data.getResources().setCurrentEnergy(data.getMaxEnergy());
 			data.getResources().setCurrentStamina(data.getMaxStamina());
 		} else if (action == 2) {
-			var stats = data.getStats();
-			stats.setStrength(5);
-			stats.setStrikePower(5);
-			stats.setResistance(5);
-			stats.setVitality(5);
-			stats.setKiPower(5);
-			stats.setEnergy(5);
-			if (data.getStatus().isFused()) FusionLogic.endFusion(player, data, false);
-			data.getResources().setTrainingPoints(0);
-			data.getResources().setRacialSkillCount(0);
-			data.getResources().setPowerRelease(0);
-			data.getStatus().setAndroidUpgraded(false);
-			data.getStatus().setInKaioPlanet(false);
-			data.getTechniques().clearAllTechniques();
-			data.getPlayerQuestData().resetAll();
-			data.getSkills().removeAllSkills();
-			data.getEffects().removeAllEffects();
-			data.getCooldowns().clearCooldowns();
-			data.getBonusStats().clearAllStats();
-			data.getCharacter().clearActiveForm();
-			data.getCharacter().clearActiveStackForm();
-			data.getCharacter().setHasSaiyanTail(true);
-			data.getStatus().setHasCreatedCharacter(false);
-
-			player.refreshDimensions();
-			player.setHealth(20.0F);
-			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
-			player.setHealth(20.0F);
+			data.resetPlayerProgress(player, null, false, true);
 		} else if (action == 3) {
 			data.getCharacter().setHasSaiyanTail(!data.getCharacter().isHasSaiyanTail());
 		}

@@ -36,50 +36,50 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class RaceSelectionScreen extends ScaledScreen {
 
-    private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/buttons/characterbuttons.png");
-    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/menu/menubig.png");
+	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"textures/gui/menu/menubig.png");
 
-    private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
-    private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
-    private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
-    private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
-    private static final ResourceLocation PANORAMA_FROST = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
-    private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
+	private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
+	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
+	private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
+	private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
+	private static final ResourceLocation PANORAMA_FROST = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
+	private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
 
-    private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
-    private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
-    private final PanoramaRenderer panoramaNamek = new PanoramaRenderer(new CubeMap(PANORAMA_NAMEK));
-    private final PanoramaRenderer panoramaBio = new PanoramaRenderer(new CubeMap(PANORAMA_BIO));
-    private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
-    private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
+	private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
+	private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
+	private final PanoramaRenderer panoramaNamek = new PanoramaRenderer(new CubeMap(PANORAMA_NAMEK));
+	private final PanoramaRenderer panoramaBio = new PanoramaRenderer(new CubeMap(PANORAMA_BIO));
+	private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
+	private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
 
-    protected static boolean GLOBAL_SWITCHING = false;
+	protected static boolean GLOBAL_SWITCHING = false;
 
-    private final Character character;
-    private int selectedRaceIndex = 0;
+	private final Character character;
+	private int selectedRaceIndex = 0;
 	private boolean isSwitchingMenu = false;
 
-    private float playerRotation = 180.0f;
-    private boolean isDraggingModel = false;
-    private double lastMouseX = 0;
+	private float playerRotation = 180.0f;
+	private boolean isDraggingModel = false;
+	private double lastMouseX = 0;
 
-    private CustomTextureButton leftButton;
-    private CustomTextureButton rightButton;
-    private TexturedTextButton selectButton;
+	private CustomTextureButton leftButton;
+	private CustomTextureButton rightButton;
+	private TexturedTextButton selectButton;
 
-  private enum TransitionState { NONE, OPENING, CLOSING }
-  private static final long OPEN_ANIMATION_DURATION = 200;
-  private static final long CLOSE_ANIMATION_DURATION = 120;
-  private long animationStartTime;
-  private TransitionState transitionState = TransitionState.NONE;
-  private Screen pendingScreen;
-  private boolean closeCommitted;
+	private enum TransitionState { NONE, OPENING, CLOSING }
+	private static final long OPEN_ANIMATION_DURATION = 200;
+	private static final long CLOSE_ANIMATION_DURATION = 120;
+	private long animationStartTime;
+	private TransitionState transitionState = TransitionState.NONE;
+	private Screen pendingScreen;
+	private boolean closeCommitted;
 
-    public RaceSelectionScreen(Character character) {
-        super(Component.translatable("gui.dragonminez.character_creation.title"));
-        this.character = character;
+	public RaceSelectionScreen(Character character) {
+		super(Component.translatable("gui.dragonminez.character_creation.title"));
+		this.character = character;
 		List<String> races = getAvailableRaces();
 		for (int i = 0; i < races.size(); i++) {
 			if (races.get(i).equals(character.getRace())) {
@@ -87,166 +87,171 @@ public class RaceSelectionScreen extends ScaledScreen {
 				break;
 			}
 		}
-    }
+	}
 
 	private List<String> getAvailableRaces() {
 		return ConfigManager.getLoadedRaces();
 	}
 
-    @Override
-    protected void init() {
-        super.init();
+	@Override
+	protected void init() {
+		super.init();
 		startOpenTransition();
 
-        int centerX = getUiWidth() / 2;
-        int centerY = getUiHeight() / 2;
+		int centerX = getUiWidth() / 2;
+		int centerY = getUiHeight() / 2;
 
-        leftButton = new CustomTextureButton.Builder()
-                .position(centerX - 60 - 25, centerY + 88)
-                .size(20, 20)
-                .texture(BUTTONS_TEXTURE)
-                .textureCoords(32, 0, 32, 14)
-                .textureSize(8, 14)
-                .message(txt("<"))
-                .onPress(btn -> {
+		leftButton = new CustomTextureButton.Builder()
+				.position(centerX - 60 - 25, centerY + 88)
+				.size(20, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(32, 0, 32, 14)
+				.textureSize(8, 14)
+				.message(txt("<"))
+				.onPress(btn -> {
 					previousRace();
 					clearWidgets();
 					init();
 				})
-                .build();
+				.build();
 
-        rightButton = new CustomTextureButton.Builder()
-                .position(centerX - 60 + 145, centerY + 88)
-                .size(20, 20)
-                .texture(BUTTONS_TEXTURE)
-                .textureCoords(20, 0, 20, 14)
-                .textureSize(8, 14)
-                .message(txt(">"))
-                .onPress(btn -> {
+		rightButton = new CustomTextureButton.Builder()
+				.position(centerX - 60 + 145, centerY + 88)
+				.size(20, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(20, 0, 20, 14)
+				.textureSize(8, 14)
+				.message(txt(">"))
+				.onPress(btn -> {
 					nextRace();
 					clearWidgets();
 					init();
 				})
-                .build();
+				.build();
 
-        selectButton = new TexturedTextButton.Builder()
-                .position(getUiWidth() - 85, getUiHeight() - 25)
-                .size(74, 20)
-                .texture(BUTTONS_TEXTURE)
-                .textureCoords(0, 28, 0, 48)
-                .textureSize(74, 20)
-                .message(tr("gui.dragonminez.customization.select"))
-                .onPress(btn -> selectRace())
-                .build();
+		selectButton = new TexturedTextButton.Builder()
+				.position(getUiWidth() - 85, getUiHeight() - 25)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.customization.select"))
+				.onPress(btn -> selectRace())
+				.build();
 
-        addRenderableWidget(leftButton);
-        addRenderableWidget(rightButton);
-        addRenderableWidget(selectButton);
-    }
+		addRenderableWidget(leftButton);
+		addRenderableWidget(rightButton);
+		addRenderableWidget(selectButton);
+	}
 
-  @Override
-  public void tick() {
-    super.tick();
-    if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) transitionState = TransitionState.NONE;
-    if (transitionState != TransitionState.CLOSING || closeCommitted) return;
-    if (getTransitionProgress() >= 1.0f) {
-      closeCommitted = true;
-      if (this.minecraft != null) this.minecraft.setScreen(pendingScreen);
-    }
-  }
+	@Override
+	public void tick() {
+		super.tick();
+		if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) transitionState = TransitionState.NONE;
+		if (transitionState != TransitionState.CLOSING || closeCommitted) return;
+		if (getTransitionProgress() >= 1.0f) {
+			closeCommitted = true;
+			if (this.minecraft != null) this.minecraft.setScreen(pendingScreen);
+		}
+	}
 
-    @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderPanorama(graphics, partialTick);
-        this.renderCinematicBars(graphics);
+	@Override
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		renderPanorama(graphics, partialTick);
+		this.renderCinematicBars(graphics);
 
-        int uiMouseX = (int) Math.round(toUiX(mouseX));
-        int uiMouseY = (int) Math.round(toUiY(mouseY));
+		int uiMouseX = (int) Math.round(toUiX(mouseX));
+		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-        beginUiScale(graphics);
+		beginUiScale(graphics);
 
-        RenderSystem.enableBlend();
-        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		RenderSystem.enableBlend();
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        graphics.blit(MENU_BIG, (getUiWidth() / 2) - 70, (getUiHeight() / 2) + 85, 0, 215, 149, 21);
+		graphics.blit(MENU_BIG, (getUiWidth() / 2) - 70, (getUiHeight() / 2) + 85, 0, 215, 149, 21);
 		RenderSystem.disableBlend();
 
-        renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
+		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
-        super.render(graphics, uiMouseX, uiMouseY, partialTick);
+		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
-        renderRaceInfo(graphics);
+		renderRaceInfo(graphics);
 		renderRacialInfo(graphics);
 
-        endUiScale(graphics);
-    }
+		endUiScale(graphics);
+	}
 
-    private void renderCinematicBars(GuiGraphics guiGraphics) {
-        int totalBarHeight = (int) (this.height * 0.12);
+	private void renderCinematicBars(GuiGraphics guiGraphics) {
+		int totalBarHeight = (int) (this.height * 0.12);
 
-        int fadeSize = 60;
+		int fadeSize = 60;
 
-        if (totalBarHeight <= fadeSize) {
-            totalBarHeight = fadeSize + 1;
-        }
+		if (totalBarHeight <= fadeSize) {
+			totalBarHeight = fadeSize + 1;
+		}
 
-        int solidHeight = totalBarHeight - fadeSize;
+		int solidHeight = totalBarHeight - fadeSize;
 
-        int colorSolid = 0xFF000000;
-        int colorTransparent = 0x00000000;
+		int colorSolid = 0xFF000000;
+		int colorTransparent = 0x00000000;
 
-        guiGraphics.fill(0, 0, this.width, solidHeight, colorSolid);
+		guiGraphics.fill(0, 0, this.width, solidHeight, colorSolid);
 
-        guiGraphics.fillGradient(0, solidHeight, this.width, solidHeight + fadeSize, colorSolid, colorTransparent);
+		guiGraphics.fillGradient(0, solidHeight, this.width, solidHeight + fadeSize, colorSolid, colorTransparent);
 
-        int bottomBarStartY = this.height - totalBarHeight;
+		int bottomBarStartY = this.height - totalBarHeight;
 
-        guiGraphics.fillGradient(0, bottomBarStartY, this.width, bottomBarStartY + fadeSize, colorTransparent, colorSolid);
+		guiGraphics.fillGradient(0, bottomBarStartY, this.width, bottomBarStartY + fadeSize, colorTransparent, colorSolid);
 
-        guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
-    }
+		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
+	}
 
-    private void renderPanorama(GuiGraphics graphics, float partialTick) {
+	private void renderPanorama(GuiGraphics graphics, float partialTick) {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
 		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
 		String currentRace = races.get(selectedRaceIndex);
 
-        PanoramaRenderer panorama = switch (currentRace) {
-            case "saiyan" -> panoramaSaiyan;
-            case "namekian" -> panoramaNamek;
-            case "bioandroid" -> panoramaBio;
-            case "frostdemon" -> panoramaFrost;
-            case "majin" -> panoramaMajin;
-            default -> panoramaHuman;
-        };
+		PanoramaRenderer panorama = switch (currentRace) {
+			case "saiyan" -> panoramaSaiyan;
+			case "namekian" -> panoramaNamek;
+			case "bioandroid" -> panoramaBio;
+			case "frostdemon" -> panoramaFrost;
+			case "majin" -> panoramaMajin;
+			default -> panoramaHuman;
+		};
 
-        panorama.render(partialTick, 1.0F);
-    }
+		panorama.render(partialTick, 1.0F);
+	}
 
-    private void renderRaceInfo(GuiGraphics graphics) {
+	private void renderRaceInfo(GuiGraphics graphics) {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
 		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
 		String currentRace = races.get(selectedRaceIndex);
-        int centerX = getUiWidth() / 2;
-        int centerY = getUiHeight() / 2;
 
-        Component raceName = tr("race." + Reference.MOD_ID + "." + currentRace);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, raceName, centerX + 3, centerY + 92, 0x7CFDD6);
+		int uiHeight = getUiHeight();
 
-        Component description = tr("race." + Reference.MOD_ID + "." + currentRace + ".desc");
+		int panelWidth = 130;
+		int marginFromEdge = 10;
+		int boxStartX = marginFromEdge;
+		int centerX = boxStartX + (panelWidth / 2);
+		int startY = (uiHeight / 2) - 50;
 
-        int descX = 68;
-        int descStartY = centerY - 50;
-        int maxWidth = 130;
+		String rawName = Component.translatable("race." + Reference.MOD_ID + "." + currentRace).getString();
+		String boldAndColoredName = "\u00A7l" + rawName.replaceAll("(?i)(\u00A7[0-9a-fr])", "$1\u00A7l");
+		Component raceName = txt(boldAndColoredName);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, raceName, centerX, startY - 12, 0xFF7CFDD6);
 
-        List<String> wrappedLines = wrapText(description.getString(), maxWidth);
-        for (String line : wrappedLines) {
-            TextUtil.drawStringWithBorder(graphics, this.font, line, descX, descStartY, 0xFFFFFF);
-            descStartY += 10;
-        }
-    }
+		Component description = tr("race." + Reference.MOD_ID + "." + currentRace + ".desc");
+		List<String> wrappedDesc = wrapText(description.getString(), panelWidth);
+
+		int textY = startY;
+		for (String line : wrappedDesc) {
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX, textY, 0xFFCCCCCC);
+			textY += 12;
+		}
+	}
 
 	private void renderRacialInfo(GuiGraphics graphics) {
 		List<String> races = getAvailableRaces();
@@ -262,40 +267,40 @@ public class RaceSelectionScreen extends ScaledScreen {
 		String titleKey = "skill.dragonminez.racial_" + racialSkill;
 		String descKey = "skill.dragonminez.racial_" + racialSkill + ".desc";
 
-    Component titleComp = tr(titleKey);
+		Component titleComp = tr(titleKey);
 		String description = "";
 
 		switch (racialSkill) {
 			case "human" -> {
 				int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-        description = tr(descKey, regen).getString();
+				description = tr(descKey, regen).getString();
 			}
 			case "saiyan" -> {
 				int zenkaiHealth = (int) Math.round(config.getSaiyanZenkaiHealthRegen() * 100);
 				int zenkaiStat = (int) Math.round(config.getSaiyanZenkaiStatBoost() * 100);
 				int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-        description = tr(descKey, zenkaiHealth, zenkaiStat, cooldown).getString();
+				description = tr(descKey, zenkaiHealth, zenkaiStat, cooldown).getString();
 			}
 			case "namekian" -> {
 				int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
 				int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-        description = tr(descKey, assimHealth, assimStat).getString();
+				description = tr(descKey, assimHealth, assimStat).getString();
 			}
 			case "frostdemon" -> {
 				int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-        description = tr(descKey, tpBoost).getString();
+				description = tr(descKey, tpBoost).getString();
 			}
 			case "bioandroid" -> {
 				int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
 				int cooldown = config.getBioAndroidCooldownSeconds();
-        description = tr(descKey, drainRatio, cooldown).getString();
+				description = tr(descKey, drainRatio, cooldown).getString();
 			}
 			case "majin" -> {
 				int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
 				int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-        description = tr(descKey, absHealth, absStat).getString();
+				description = tr(descKey, absHealth, absStat).getString();
 			}
-      default -> description = tr(descKey).getString();
+			default -> description = tr(descKey).getString();
 		}
 
 		int uiWidth = getUiWidth();
@@ -311,42 +316,42 @@ public class RaceSelectionScreen extends ScaledScreen {
 		int textY = startY;
 
 		for (String line : wrappedDesc) {
-      TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX + 60, textY, 0xFFCCCCCC);
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX + 60, textY, 0xFFCCCCCC);
 			textY += 12;
 		}
 	}
 
-    private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
-        LivingEntity player = Minecraft.getInstance().player;
-        if (player == null) return;
+	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
+		LivingEntity player = Minecraft.getInstance().player;
+		if (player == null) return;
 		int adjustedScale = getAdjustedModelScale(scale);
-        Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
-        Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
-        pose.mul(cameraOrientation);
+		Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
+		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
+		pose.mul(cameraOrientation);
 
-        float yBodyRotO = player.yBodyRot;
-        float yRotO = player.getYRot();
-        float xRotO = player.getXRot();
-        float yHeadRotO = player.yHeadRotO;
-        float yHeadRot = player.yHeadRot;
+		float yBodyRotO = player.yBodyRot;
+		float yRotO = player.getYRot();
+		float xRotO = player.getXRot();
+		float yHeadRotO = player.yHeadRotO;
+		float yHeadRot = player.yHeadRot;
 
-        player.yBodyRot = playerRotation;
-        player.setYRot(playerRotation);
-        player.setXRot(0);
-        player.yHeadRot = playerRotation;
-        player.yHeadRotO = playerRotation;
+		player.yBodyRot = playerRotation;
+		player.setYRot(playerRotation);
+		player.setXRot(0);
+		player.yHeadRot = playerRotation;
+		player.yHeadRotO = playerRotation;
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0D, 0.0D, 150.0D);
-        InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
-        graphics.pose().popPose();
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 150.0D);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		graphics.pose().popPose();
 
-        player.yBodyRot = yBodyRotO;
-        player.setYRot(yRotO);
-        player.setXRot(xRotO);
-        player.yHeadRotO = yHeadRotO;
-        player.yHeadRot = yHeadRot;
-    }
+		player.yBodyRot = yBodyRotO;
+		player.setYRot(yRotO);
+		player.setXRot(xRotO);
+		player.yHeadRotO = yHeadRotO;
+		player.yHeadRot = yHeadRot;
+	}
 
 	protected int getAdjustedModelScale(int baseScale) {
 		var player = Minecraft.getInstance().player;
@@ -373,30 +378,30 @@ public class RaceSelectionScreen extends ScaledScreen {
 		return (int)(baseScale * inverseScale[0]);
 	}
 
-    private List<String> wrapText(String text, int maxWidth) {
-        List<String> lines = new ArrayList<>();
-        String[] words = text.split(" ");
-        StringBuilder currentLine = new StringBuilder();
+	private List<String> wrapText(String text, int maxWidth) {
+		List<String> lines = new ArrayList<>();
+		String[] words = text.split(" ");
+		StringBuilder currentLine = new StringBuilder();
 
-        for (String word : words) {
-            String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
-            if (this.font.width(testLine) <= maxWidth) {
-                if (!currentLine.isEmpty()) currentLine.append(" ");
-                currentLine.append(word);
-            } else {
-                if (!currentLine.isEmpty()) {
-                    lines.add(currentLine.toString());
-                }
-                currentLine = new StringBuilder(word);
-            }
-        }
+		for (String word : words) {
+			String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
+			if (this.font.width(testLine) <= maxWidth) {
+				if (!currentLine.isEmpty()) currentLine.append(" ");
+				currentLine.append(word);
+			} else {
+				if (!currentLine.isEmpty()) {
+					lines.add(currentLine.toString());
+				}
+				currentLine = new StringBuilder(word);
+			}
+		}
 
-        if (!currentLine.isEmpty()) {
-            lines.add(currentLine.toString());
-        }
+		if (!currentLine.isEmpty()) {
+			lines.add(currentLine.toString());
+		}
 
-        return lines;
-    }
+		return lines;
+	}
 
 	private void previousRace() {
 		List<String> races = getAvailableRaces();
@@ -416,154 +421,154 @@ public class RaceSelectionScreen extends ScaledScreen {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
 		String selectedRace = races.get(selectedRaceIndex);
-        character.setRace(selectedRace);
+		character.setRace(selectedRace);
 
-        RaceCharacterConfig config = ConfigManager.getRaceCharacter(selectedRace);
-        if (config != null) {
-            character.setBodyColor(config.getDefaultBodyColor());
-            character.setBodyColor2(config.getDefaultBodyColor2());
-            character.setBodyColor3(config.getDefaultBodyColor3());
-            character.setHairColor(config.getDefaultHairColor());
-            character.setEye1Color(config.getDefaultEye1Color());
-            character.setEye2Color(config.getDefaultEye2Color());
-            character.setAuraColor(config.getDefaultAuraColor());
-            character.setBodyType(config.getDefaultBodyType());
-            character.setHairId(config.getDefaultHairType());
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(selectedRace);
+		if (config != null) {
+			character.setBodyColor(config.getDefaultBodyColor());
+			character.setBodyColor2(config.getDefaultBodyColor2());
+			character.setBodyColor3(config.getDefaultBodyColor3());
+			character.setHairColor(config.getDefaultHairColor());
+			character.setEye1Color(config.getDefaultEye1Color());
+			character.setEye2Color(config.getDefaultEye2Color());
+			character.setAuraColor(config.getDefaultAuraColor());
+			character.setBodyType(config.getDefaultBodyType());
+			character.setHairId(config.getDefaultHairType());
 			if (HairManager.canUseHair(character)) character.setActiveHeadBone("hair");
-                  else if (config.getHeadBones() != null && config.getHeadBones().length > 0) {
-                    String firstExtraBone = "";
-                    if (character.areExtraHeadBonesEnabled()) {
-                      for (String bone : config.getHeadBones()) {
-                        if (bone != null && !bone.isEmpty() && !bone.equals("hair")) {
-                          firstExtraBone = bone;
-                          break;
-                        }
-                      }
-                    }
-                    character.setActiveHeadBone(firstExtraBone);
-                  } else character.setActiveHeadBone("");
-            character.setEyesType(config.getDefaultEyesType());
-            character.setNoseType(config.getDefaultNoseType());
-            character.setMouthType(config.getDefaultMouthType());
+			else if (config.getHeadBones() != null && config.getHeadBones().length > 0) {
+				String firstExtraBone = "";
+				if (character.areExtraHeadBonesEnabled()) {
+					for (String bone : config.getHeadBones()) {
+						if (bone != null && !bone.isEmpty() && !bone.equals("hair")) {
+							firstExtraBone = bone;
+							break;
+						}
+					}
+				}
+				character.setActiveHeadBone(firstExtraBone);
+			} else character.setActiveHeadBone("");
+			character.setEyesType(config.getDefaultEyesType());
+			character.setNoseType(config.getDefaultNoseType());
+			character.setMouthType(config.getDefaultMouthType());
 			character.setTattooType(config.getDefaultTattooType());
-        }
+		}
 
 		NetworkHandler.sendToServer(new StatsSyncC2S(character));
-    }
+	}
 
-    private void selectRace() {
+	private void selectRace() {
 		List<String> races = getAvailableRaces();
 		if (races.isEmpty()) return;
 		String selectedRace = races.get(selectedRaceIndex);
-        character.setRace(selectedRace);
+		character.setRace(selectedRace);
 
-        if (this.minecraft != null) {
-            isSwitchingMenu = true;
-            GLOBAL_SWITCHING = true;
+		if (this.minecraft != null) {
+			isSwitchingMenu = true;
+			GLOBAL_SWITCHING = true;
 			Screen nextScreen = hasShiftDown()
 					? new CharacterCustomizationScreen(this, character)
 					: new CharacterCustomizationScreen(this, character);
 			startCloseTransition(nextScreen);
-        }
+		}
 
 		NetworkHandler.sendToServer(new StatsSyncC2S(character));
-    }
+	}
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (transitionState == TransitionState.CLOSING) return true;
-        double uiMouseX = toUiX(mouseX);
-        double uiMouseY = toUiY(mouseY);
-        int centerX = getUiWidth() / 2 + 5;
-        int centerY = getUiHeight() / 2 + 70;
-        int modelRadius = 60;
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
+		int centerX = getUiWidth() / 2 + 5;
+		int centerY = getUiHeight() / 2 + 70;
+		int modelRadius = 60;
 
-        if (uiMouseX >= centerX - modelRadius && uiMouseX <= centerX + modelRadius &&
-            uiMouseY >= centerY - 100 && uiMouseY <= centerY + 20) {
-            isDraggingModel = true;
-            lastMouseX = uiMouseX;
-            return true;
-        }
+		if (uiMouseX >= centerX - modelRadius && uiMouseX <= centerX + modelRadius &&
+				uiMouseY >= centerY - 100 && uiMouseY <= centerY + 20) {
+			isDraggingModel = true;
+			lastMouseX = uiMouseX;
+			return true;
+		}
 
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
+		return super.mouseClicked(mouseX, mouseY, button);
+	}
 
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if (transitionState == TransitionState.CLOSING) return true;
-        isDraggingModel = false;
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
+		isDraggingModel = false;
+		return super.mouseReleased(mouseX, mouseY, button);
+	}
 
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (transitionState == TransitionState.CLOSING) return true;
-        if (isDraggingModel) {
-            double uiMouseX = toUiX(mouseX);
-            double deltaX = uiMouseX - lastMouseX;
-            playerRotation += (float)(deltaX * 0.8);
-            lastMouseX = uiMouseX;
-            return true;
-        }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-    }
+		if (isDraggingModel) {
+			double uiMouseX = toUiX(mouseX);
+			double deltaX = uiMouseX - lastMouseX;
+			playerRotation += (float)(deltaX * 0.8);
+			lastMouseX = uiMouseX;
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
 
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (transitionState == TransitionState.CLOSING) return true;
-        if (keyCode == 256 && this.minecraft != null) {
-      if (ConfigManager.getServerConfig().getGameplay().getForceCharacterCreation()) {
-        ForgeClientEvents.requestCharacterCreationReopen();
-        this.minecraft.setScreen(new PauseScreen(true));
-      } else {
-        startCloseTransition(null);
-      }
-            return true;
-        }
+		if (keyCode == 256 && this.minecraft != null) {
+			if (ConfigManager.getServerConfig().getGameplay().getForceCharacterCreation()) {
+				ForgeClientEvents.requestCharacterCreationReopen();
+				this.minecraft.setScreen(new PauseScreen(true));
+			} else {
+				startCloseTransition(null);
+			}
+			return true;
+		}
 
-        if (keyCode == 263) {
-            previousRace();
-            return true;
-        }
-        if (keyCode == 262) {
-            nextRace();
-            return true;
-        }
+		if (keyCode == 263) {
+			previousRace();
+			return true;
+		}
+		if (keyCode == 262) {
+			nextRace();
+			return true;
+		}
 
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
+		return super.keyPressed(keyCode, scanCode, modifiers);
+	}
 
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
+	@Override
+	public boolean isPauseScreen() {
+		return false;
+	}
 
-  @Override
-  public void onClose() {
-    startCloseTransition(null);
-  }
+	@Override
+	public void onClose() {
+		startCloseTransition(null);
+	}
 
-  private void startOpenTransition() {
-    transitionState = TransitionState.OPENING;
-    animationStartTime = System.currentTimeMillis();
-    pendingScreen = null;
-    closeCommitted = false;
-  }
+	private void startOpenTransition() {
+		transitionState = TransitionState.OPENING;
+		animationStartTime = System.currentTimeMillis();
+		pendingScreen = null;
+		closeCommitted = false;
+	}
 
-  private void startCloseTransition(Screen nextScreen) {
-    if (transitionState == TransitionState.CLOSING) return;
-    pendingScreen = nextScreen;
-    transitionState = TransitionState.CLOSING;
-    animationStartTime = System.currentTimeMillis();
-    closeCommitted = false;
-  }
+	private void startCloseTransition(Screen nextScreen) {
+		if (transitionState == TransitionState.CLOSING) return;
+		pendingScreen = nextScreen;
+		transitionState = TransitionState.CLOSING;
+		animationStartTime = System.currentTimeMillis();
+		closeCommitted = false;
+	}
 
-  private float getTransitionProgress() {
-    long duration = transitionState == TransitionState.CLOSING ? CLOSE_ANIMATION_DURATION : OPEN_ANIMATION_DURATION;
-    if (duration <= 0L) return 1.0f;
-    long elapsed = System.currentTimeMillis() - animationStartTime;
-    return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
-  }
+	private float getTransitionProgress() {
+		long duration = transitionState == TransitionState.CLOSING ? CLOSE_ANIMATION_DURATION : OPEN_ANIMATION_DURATION;
+		if (duration <= 0L) return 1.0f;
+		long elapsed = System.currentTimeMillis() - animationStartTime;
+		return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
+	}
 
 
 }

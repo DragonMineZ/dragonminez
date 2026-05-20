@@ -7,7 +7,6 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
-import com.dragonminez.server.util.FusionLogic;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -189,59 +188,7 @@ public class StatsCommand {
 
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				var stats = data.getStats();
-
-				if (finalKeepPercentage != null) {
-					int newStr = (stats.getStrength() * finalKeepPercentage) / 100;
-					int newSkp = (stats.getStrikePower() * finalKeepPercentage) / 100;
-					int newRes = (stats.getResistance() * finalKeepPercentage) / 100;
-					int newVit = (stats.getVitality() * finalKeepPercentage) / 100;
-					int newPwr = (stats.getKiPower() * finalKeepPercentage) / 100;
-					int newEne = (stats.getEnergy() * finalKeepPercentage) / 100;
-					float currentTPs = data.getResources().getTrainingPoints();
-					float newTPs = (currentTPs * finalKeepPercentage) / 100;
-
-					stats.setStrength(Math.max(5, newStr));
-					stats.setStrikePower(Math.max(5, newSkp));
-					stats.setResistance(Math.max(5, newRes));
-					stats.setVitality(Math.max(5, newVit));
-					stats.setKiPower(Math.max(5, newPwr));
-					stats.setEnergy(Math.max(5, newEne));
-
-					data.getResources().setTrainingPoints(newTPs);
-				} else {
-					stats.setStrength(5);
-					stats.setStrikePower(5);
-					stats.setResistance(5);
-					stats.setVitality(5);
-					stats.setKiPower(5);
-					stats.setEnergy(5);
-					data.getResources().setTrainingPoints(0);
-				}
-
-				if (data.getStatus().isFused()) FusionLogic.endFusion(player, data, false);
-				data.getResources().setRacialSkillCount(0);
-				data.getResources().setPowerRelease(0);
-				data.getStatus().setAndroidUpgraded(false);
-				data.getStatus().setInKaioPlanet(false);
-				data.getPlayerQuestData().resetAll();
-
-				if (!keepSkills) {
-					data.getSkills().removeAllSkills();
-					data.getEffects().removeAllEffects();
-					data.getTechniques().clearAllTechniques();
-				}
-
-				data.getCooldowns().clearCooldowns();
-				data.getBonusStats().clearAllStats();
-				data.getCharacter().clearActiveForm();
-				data.getCharacter().clearActiveStackForm();
-				data.getStatus().setHasCreatedCharacter(false);
-
-				player.refreshDimensions();
-				player.setHealth(20.0F);
-				player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
-				player.setHealth(20.0F);
+				data.resetPlayerProgress(player, finalKeepPercentage, keepSkills, false);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		}

@@ -47,6 +47,10 @@ public class Character {
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
+	public void clearInteractedMasters() {
+		interactedMasters.clear();
+	}
+
 	public static final String GENDER_MALE = "male";
 	public static final String GENDER_FEMALE = "female";
 

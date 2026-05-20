@@ -15,8 +15,11 @@ import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.HTCDimension;
+import com.dragonminez.server.events.players.StatsEvents;
+import com.dragonminez.server.util.FusionLogic;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -825,6 +828,64 @@ public class StatsData {
 		}
 
 		return statsIncreased;
+	}
+
+	public void resetPlayerProgress(ServerPlayer player, Integer keepPercentage, boolean keepSkills, boolean forceSaiyanTail) {
+		var currentStats = getStats();
+		if (keepPercentage != null) {
+			int newStr = (currentStats.getStrength() * keepPercentage) / 100;
+			int newSkp = (currentStats.getStrikePower() * keepPercentage) / 100;
+			int newRes = (currentStats.getResistance() * keepPercentage) / 100;
+			int newVit = (currentStats.getVitality() * keepPercentage) / 100;
+			int newPwr = (currentStats.getKiPower() * keepPercentage) / 100;
+			int newEne = (currentStats.getEnergy() * keepPercentage) / 100;
+			float currentTPs = getResources().getTrainingPoints();
+			float newTPs = (currentTPs * keepPercentage) / 100;
+
+			currentStats.setStrength(Math.max(5, newStr));
+			currentStats.setStrikePower(Math.max(5, newSkp));
+			currentStats.setResistance(Math.max(5, newRes));
+			currentStats.setVitality(Math.max(5, newVit));
+			currentStats.setKiPower(Math.max(5, newPwr));
+			currentStats.setEnergy(Math.max(5, newEne));
+
+			getResources().setTrainingPoints(newTPs);
+		} else {
+			currentStats.setStrength(5);
+			currentStats.setStrikePower(5);
+			currentStats.setResistance(5);
+			currentStats.setVitality(5);
+			currentStats.setKiPower(5);
+			currentStats.setEnergy(5);
+			getResources().setTrainingPoints(0);
+		}
+
+		if (getStatus().isFused()) FusionLogic.endFusion(player, this, false);
+		getResources().setRacialSkillCount(0);
+		getResources().setPowerRelease(0);
+		getStatus().setAndroidUpgraded(false);
+		getStatus().setInKaioPlanet(false);
+		getPlayerQuestData().resetAll();
+		getCharacter().clearInteractedMasters();
+
+		if (!keepSkills) {
+			getSkills().removeAllSkills();
+			getEffects().removeAllEffects();
+			getTechniques().clearAllTechniques();
+		}
+
+		getCooldowns().clearCooldowns();
+		getBonusStats().clearAllStats();
+		getCharacter().clearActiveForm();
+		getCharacter().clearActiveStackForm();
+		getStatus().setHasCreatedCharacter(false);
+		if (forceSaiyanTail) getCharacter().setHasSaiyanTail(true);
+
+		player.refreshDimensions();
+		player.setHealth(20.0F);
+		var attribute = player.getAttribute(Attributes.MAX_HEALTH);
+		if (attribute != null) attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+		player.setHealth(20.0F);
 	}
 
 	public void tick() {
