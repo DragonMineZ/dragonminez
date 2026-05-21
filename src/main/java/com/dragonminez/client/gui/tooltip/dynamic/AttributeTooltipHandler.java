@@ -1,5 +1,7 @@
 package com.dragonminez.client.gui.tooltip.dynamic;
 
+import com.dragonminez.common.init.MainAttributes;
+import com.dragonminez.common.init.MainEnchants;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
@@ -39,6 +41,12 @@ public class AttributeTooltipHandler {
 	public static final Comparator<AttributeModifier> ATTRIBUTE_MODIFIER_COMPARATOR =
 			Comparator.comparing(AttributeModifier::getOperation).thenComparing((AttributeModifier a) -> -Math.abs(a.getAmount())).thenComparing(AttributeModifier::getId);
 
+	public static boolean isPercentAttribute(Attribute attribute) {
+		return PERCENT_ATTRIBUTES.contains(attribute) ||
+				attribute.equals(MainAttributes.CRIT_CHANCE.get()) ||
+				attribute.equals(MainAttributes.CRIT_DAMAGE.get());
+	}
+
 	public static boolean processVanillaAttributes(ItemStack stack, Consumer<Component> tooltip, @Nullable Player player) {
 		boolean needsShiftPrompt = false;
 
@@ -49,12 +57,26 @@ public class AttributeTooltipHandler {
 			Multimap<Attribute, AttributeModifier> defaultModifiers = stack.getItem().getDefaultAttributeModifiers(slot);
 
 			float enchantDamage = 0;
-			if (slot == EquipmentSlot.MAINHAND) enchantDamage = EnchantmentHelper.getDamageBonus(stack, MobType.UNDEFINED);
-			if (actualModifiers.isEmpty() && enchantDamage <= 0) continue;
+			double critChanceBonus = 0;
+			double critDamageBonus = 0;
+
+			if (slot == EquipmentSlot.MAINHAND) {
+				enchantDamage = EnchantmentHelper.getDamageBonus(stack, MobType.UNDEFINED);
+
+				int chanceLevel = stack.getEnchantmentLevel(MainEnchants.CRIT_CHANCE.get());
+				if (chanceLevel > 0) critChanceBonus = chanceLevel * 0.05D;
+
+				int damageLevel = stack.getEnchantmentLevel(MainEnchants.CRIT_DAMAGE.get());
+				if (damageLevel > 0) critDamageBonus = damageLevel * 0.05D;
+			}
+
+			if (actualModifiers.isEmpty() && enchantDamage <= 0 && critChanceBonus <= 0 && critDamageBonus <= 0) continue;
 			tooltip.accept(Component.translatable("item.modifiers." + slot.getName()).withStyle(ChatFormatting.GRAY));
 
 			Set<Attribute> allAttributes = new LinkedHashSet<>(actualModifiers.keySet());
 			if (enchantDamage > 0) allAttributes.add(Attributes.ATTACK_DAMAGE);
+			if (critChanceBonus > 0) allAttributes.add(MainAttributes.CRIT_CHANCE.get());
+			if (critDamageBonus > 0) allAttributes.add(MainAttributes.CRIT_DAMAGE.get());
 
 			for (Attribute attr : allAttributes) {
 				if (attr.equals(ForgeMod.BLOCK_REACH.get()) || attr.equals(ForgeMod.ENTITY_REACH.get())) continue;
@@ -70,10 +92,18 @@ public class AttributeTooltipHandler {
 				if (attr.equals(Attributes.ATTACK_DAMAGE) && enchantDamage > 0) {
 					extraMods.add(new AttributeModifier(UUID.randomUUID(), "Enchantment Damage", enchantDamage, AttributeModifier.Operation.ADDITION));
 				}
+				if (attr.equals(MainAttributes.CRIT_CHANCE.get()) && critChanceBonus > 0) {
+					extraMods.add(new AttributeModifier(UUID.randomUUID(), "Enchantment Crit Chance", critChanceBonus, AttributeModifier.Operation.ADDITION));
+				}
+				if (attr.equals(MainAttributes.CRIT_DAMAGE.get()) && critDamageBonus > 0) {
+					extraMods.add(new AttributeModifier(UUID.randomUUID(), "Enchantment Crit Damage", critDamageBonus, AttributeModifier.Operation.ADDITION));
+				}
 
 				double playerBase = player != null ? player.getAttributeBaseValue(attr) : 0.0;
 				if (attr.equals(Attributes.ATTACK_DAMAGE)) playerBase = 1.0;
 				if (attr.equals(Attributes.ATTACK_SPEED)) playerBase = 4.0;
+				if (attr.equals(MainAttributes.CRIT_CHANCE.get())) playerBase = 0.05;
+				if (attr.equals(MainAttributes.CRIT_DAMAGE.get())) playerBase = 1.5;
 
 				double trueBase = playerBase;
 				for (AttributeModifier mod : baseMods) {
@@ -113,8 +143,9 @@ public class AttributeTooltipHandler {
 	}
 
 	public static MutableComponent createTotalComponent(Attribute attribute, double value) {
-		String suffix = PERCENT_ATTRIBUTES.contains(attribute) ? "%" : "";
-		double displayValue = PERCENT_ATTRIBUTES.contains(attribute) ? value * 100 : value;
+		boolean percent = isPercentAttribute(attribute);
+		String suffix = percent ? "%" : "";
+		double displayValue = percent ? value * 100 : value;
 
 		Component rawAttrDesc = Component.translatable(attribute.getDescriptionId());
 		Component attrDescNoIcon = IconUtil.getAttributeNameWithoutIcon(rawAttrDesc);
@@ -128,9 +159,10 @@ public class AttributeTooltipHandler {
 	public static MutableComponent createModifierComponent(Attribute attribute, AttributeModifier modifier) {
 		double value = modifier.getAmount();
 		boolean isPositive = value > 0;
+		boolean percent = isPercentAttribute(attribute);
 
-		String suffix = PERCENT_ATTRIBUTES.contains(attribute) ? "%" : "";
-		double displayValue = (PERCENT_ATTRIBUTES.contains(attribute) || modifier.getOperation() != AttributeModifier.Operation.ADDITION) ? value * 100 : value;
+		String suffix = percent ? "%" : "";
+		double displayValue = (percent || modifier.getOperation() != AttributeModifier.Operation.ADDITION) ? value * 100 : value;
 
 		String key = isPositive ? "attribute.modifier.plus." + modifier.getOperation().toValue() : "attribute.modifier.take." + modifier.getOperation().toValue();
 		String formattedValue = FORMAT.format(Math.abs(displayValue)) + suffix;

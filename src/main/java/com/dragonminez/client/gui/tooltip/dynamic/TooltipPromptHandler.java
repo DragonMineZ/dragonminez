@@ -17,21 +17,14 @@ public class TooltipPromptHandler {
 		for (int i = 0; i < tooltip.size(); i++) {
 			Component line = tooltip.get(i);
 
-			// Verificamos si el componente tiene una clave de traducción base
 			if (line.getContents() instanceof TranslatableContents t && t.getKey().startsWith("item.modifiers.")) {
-				// Si la línea anterior está vacía, insertamos justo ahí
-				if (i > 0 && tooltip.get(i - 1).getString().isEmpty()) {
-					return i - 1;
-				}
+				if (i > 0 && tooltip.get(i - 1).getString().isEmpty()) return i - 1;
 				return i;
 			}
 
-			// Si el componente base no es translatable, buscamos en sus "hermanos" (siblings)
 			for (Component sibling : line.getSiblings()) {
 				if (sibling.getContents() instanceof TranslatableContents tSibling && tSibling.getKey().startsWith("item.modifiers.")) {
-					if (i > 0 && tooltip.get(i - 1).getString().isEmpty()) {
-						return i - 1;
-					}
+					if (i > 0 && tooltip.get(i - 1).getString().isEmpty()) return i - 1;
 					return i;
 				}
 			}

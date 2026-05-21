@@ -255,6 +255,12 @@ public class NetworkHandler {
 				.consumerMainThread(InstantTransmissionTravelC2S::handle)
 				.add();
 
+		net.messageBuilder(DeleteTechniqueC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DeleteTechniqueC2S::new)
+				.encoder(DeleteTechniqueC2S::toBytes)
+				.consumerMainThread(DeleteTechniqueC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */

@@ -4,6 +4,7 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.animal.DinoGlobalEntity;
 import com.dragonminez.common.init.entities.goals.SagasUseSkillGoal;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.sagas.helper.ComboManager;
@@ -37,6 +38,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
@@ -1191,13 +1193,19 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     }
 
     @Override
-    public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {return true;}
+    public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
+        return pLevel.getDifficulty() != Difficulty.PEACEFUL && this.checkSpawnObstruction(pLevel);
+    }
 
     public static boolean canSpawnHere(EntityType<? extends DBSagasEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
         if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
-        if (random.nextFloat() < 0.95f) return false;
+        if (random.nextFloat() < 0.65f) return false;
+
+        if (world.getBrightness(LightLayer.BLOCK, pos) > 7) return false;
+
         boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
         boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
+
         return solidGround && noCollision;
     }
 

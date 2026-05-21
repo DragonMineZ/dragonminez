@@ -16,6 +16,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -115,24 +116,22 @@ public class RedRibbonEntity extends Monster implements GeoEntity {
         return geoCache;
     }
 
-	@Override
-	public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
-		return true;
-	}
+    @Override
+    public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
+        return pLevel.getDifficulty() != Difficulty.PEACEFUL && this.checkSpawnObstruction(pLevel);
+    }
 
     public static boolean canSpawnHere(EntityType<? extends RedRibbonEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
         if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
 
+        if (world.getBrightness(LightLayer.BLOCK, pos) > 7) return false;
+
         BlockState stateAtPos = world.getBlockState(pos);
-        if (!stateAtPos.isAir() && !stateAtPos.canBeReplaced()) {
-            return false;
-        }
+        if (!stateAtPos.isAir() && !stateAtPos.canBeReplaced()) return false;
 
         BlockState ground = world.getBlockState(pos.below());
-        if (!ground.isFaceSturdy(world, pos.below(), Direction.UP)) {
-            return false;
-        }
+        if (!ground.isFaceSturdy(world, pos.below(), Direction.UP)) return false;
+
         return world.noCollision(entity.getDimensions().makeBoundingBox(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
     }
-
 }

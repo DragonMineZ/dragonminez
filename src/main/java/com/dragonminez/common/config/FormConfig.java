@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Setter
@@ -20,9 +21,7 @@ public class FormConfig {
 
 	public FormData getForm(String formName) {
 		for (FormData formData : forms.values()) {
-			if (formData.getName().equalsIgnoreCase(formName)) {
-				return formData;
-			}
+			if (formData.getName().equalsIgnoreCase(formName)) return formData;
 		}
 		return null;
 	}
@@ -77,11 +76,12 @@ public class FormConfig {
 		private Double stackDrainMultiplier = 2.0;
 		private Boolean canAlwaysTransform = false;
 		private Boolean directTransformation = false;
+		private Boolean excemptFromUltimate = false;
 		private TransformationPostShaderConfig transformationPostShader = new TransformationPostShaderConfig();
 
-		private java.util.List<TriggerItemCost> triggerItemCosts = new java.util.ArrayList<>();
-		private java.util.List<DurationItemCost> durationItemCosts = new java.util.ArrayList<>();
-		private java.util.List<MobEffectConfig> mobEffects = new java.util.ArrayList<>();
+		private List<TriggerItemCost> triggerItemCosts = new java.util.ArrayList<>();
+		private List<DurationItemCost> durationItemCosts = new java.util.ArrayList<>();
+		private List<MobEffectConfig> mobEffects = new java.util.ArrayList<>();
 
 		private transient float[] rgbBodyColor1;
 		private transient float[] rgbBodyColor2;

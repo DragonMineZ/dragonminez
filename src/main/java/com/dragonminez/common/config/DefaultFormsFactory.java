@@ -16,7 +16,7 @@ public class DefaultFormsFactory {
 		form.setMaxMastery(100.0);
 		form.setMasteryPerHit(0.025);
 		form.setMasteryPerDamageReceived(0.025);
-		form.setStatMultPerMasteryPoint(0.01);
+		form.setStatMultPerMasteryPoint(0.0075);
 		form.setCostDecreasePerMasteryPoint(0.025);
 		form.setPassiveMasteryGainEveryFiveSeconds(0.01);
 		form.setAuraType("kakarot");
@@ -36,6 +36,7 @@ public class DefaultFormsFactory {
 
 	public void createDefaultStackForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		createDefaultKaiokenForms(formsPath, forms);
+ 		createDefaultUltimateForms(formsPath, forms);
 //        createDefaultUltraInstinctForms(formsPath, forms);
 //        createDefaultUltraEgoForms(formsPath, forms);
 	}
@@ -155,6 +156,42 @@ public class DefaultFormsFactory {
 
 		forms.put(StackForms.GROUP_KAIOKEN, kaiokenForms);
 		LogUtil.info(Env.COMMON, "Default Kaioken forms created");
+	}
+
+	public void createDefaultUltimateForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
+		FormConfig ultimateForms = new FormConfig();
+		ultimateForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		ultimateForms.setGroupName(StackForms.GROUP_ULTIMATE);
+		ultimateForms.setFormType(StackForms.GROUP_ULTIMATE);
+
+		FormConfig.FormData ultimate = new FormConfig.FormData();
+		ultimate.setName(StackForms.ULTIMATE);
+		ultimate.setUnlockOnSkillLevel(1);
+		ultimate.setCustomModel("");
+		ultimate.setStrMultiplier(1.25);
+		ultimate.setSkpMultiplier(1.25);
+		ultimate.setDefMultiplier(1.15);
+		ultimate.setPwrMultiplier(1.25);
+		ultimate.setEnergyDrain(0.0);
+		ultimate.setStaminaDrain(0.0);
+		ultimate.setHealthDrain(0.0);
+		ultimate.setAttackSpeed(1.0);
+		ultimate.setHairType("base");
+		ultimate.setMaxMastery(0.0);
+		ultimate.setMasteryPerHit(0.0);
+		ultimate.setMasteryPerDamageReceived(0.0);
+		ultimate.setStatMultPerMasteryPoint(0.0);
+		ultimate.setPassiveMasteryGainEveryFiveSeconds(0.0);
+		ultimate.setFormStackable(false);
+		ultimate.setStackDrainMultiplier(1.0);
+		ultimate.setCanAlwaysTransform(true);
+
+		Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
+		stackFormData.put(StackForms.ULTIMATE, ultimate);
+		ultimateForms.setForms(stackFormData);
+
+		forms.put(StackForms.GROUP_ULTIMATE, ultimateForms);
+		LogUtil.info(Env.COMMON, "Default Ultimate stack form created");
 	}
 
 	public void createDefaultUltraInstinctForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -326,6 +363,44 @@ public class DefaultFormsFactory {
 		forms.put(HumanForms.GROUP_SUPERFORMS, humanForms);
 		LogUtil.info(Env.COMMON, "Default Human forms created");
 
+		FormConfig humanLegendaryForms = new FormConfig();
+		humanLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		humanLegendaryForms.setGroupName(HumanForms.GROUP_LEGENDARYFORMS);
+		humanLegendaryForms.setFormType("legendary");
+
+		FormConfig.FormData shiyoken = new FormConfig.FormData();
+		shiyoken.setName(HumanForms.SHIYOKEN);
+		shiyoken.setUnlockOnSkillLevel(1);
+		shiyoken.setCustomModel("");
+		shiyoken.setStrMultiplier(4.25);
+		shiyoken.setSkpMultiplier(4.25);
+		shiyoken.setDefMultiplier(4.25);
+		shiyoken.setPwrMultiplier(4.25);
+		shiyoken.setHairType("base");
+		setDefaultMasteryValues(shiyoken);
+		shiyoken.setStackDrainMultiplier(2.0);
+		shiyoken.setCanAlwaysTransform(true);
+
+		FormConfig.FormData lunaris = new FormConfig.FormData();
+		lunaris.setName(HumanForms.LUNARIS);
+		lunaris.setUnlockOnSkillLevel(2);
+		lunaris.setCustomModel("");
+		lunaris.setStrMultiplier(5.5);
+		lunaris.setSkpMultiplier(5.5);
+		lunaris.setDefMultiplier(5.5);
+		lunaris.setPwrMultiplier(5.5);
+		lunaris.setHairType("base");
+		setDefaultMasteryValues(lunaris);
+		lunaris.setStackDrainMultiplier(2.0);
+
+		Map<String, FormConfig.FormData> humanLegendaryData = new LinkedHashMap<>();
+		humanLegendaryData.put(HumanForms.SHIYOKEN, shiyoken);
+		humanLegendaryData.put(HumanForms.LUNARIS, lunaris);
+		humanLegendaryForms.setForms(humanLegendaryData);
+
+		forms.put(HumanForms.GROUP_LEGENDARYFORMS, humanLegendaryForms);
+		LogUtil.info(Env.COMMON, "Default Human legendary forms created");
+
 		createAndroidForms(formsPath, forms);
 	}
 
@@ -427,10 +502,10 @@ public class DefaultFormsFactory {
 		goldenOozaru.setAuraColor("#FFD700");
 		goldenOozaru.setBodyColor2("#FFD700");
 		goldenOozaru.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
-		goldenOozaru.setStrMultiplier(3.0);
-		goldenOozaru.setSkpMultiplier(3.0);
+		goldenOozaru.setStrMultiplier(2.0);
+		goldenOozaru.setSkpMultiplier(2.0);
 		goldenOozaru.setDefMultiplier(1.9);
-		goldenOozaru.setPwrMultiplier(3.0);
+		goldenOozaru.setPwrMultiplier(2.0);
 		goldenOozaru.setSpeedMultiplier(0.85);
 		goldenOozaru.setEnergyDrain(0.24);
 		goldenOozaru.setStaminaDrainMultiplier(1.3);
@@ -439,29 +514,31 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(goldenOozaru);
 		goldenOozaru.setStackDrainMultiplier(2.0);
 
-		FormConfig.FormData ssj4 = new FormConfig.FormData();
-		ssj4.setName(SaiyanForms.SUPER_SAIYAN_4);
-		ssj4.setUnlockOnSkillLevel(7);
-		ssj4.setHairColor("#000000");
-		ssj4.setBodyColor2("#C21E56");
-		ssj4.setEye1Color("#FFD700");
-		ssj4.setEye2Color("#FFD700");
-		ssj4.setAuraColor("#FF0000");
-		ssj4.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
-		ssj4.setStrMultiplier(4.5);
-		ssj4.setSkpMultiplier(4.5);
-		ssj4.setDefMultiplier(2.5);
-		ssj4.setPwrMultiplier(4.5);
-		ssj4.setEnergyDrain(0.22);
-		ssj4.setHairType("base");
-		setDefaultMasteryValues(ssj4);
-		ssj4.setStackDrainMultiplier(2.0);
-		ssj4.setDirectTransformation(true);
+		FormConfig.FormData ssj4gt = new FormConfig.FormData();
+		ssj4gt.setName(SaiyanForms.SUPER_SAIYAN_4);
+		ssj4gt.setCustomModel("");
+		ssj4gt.setUnlockOnSkillLevel(8);
+		ssj4gt.setHairColor("#000000");
+		ssj4gt.setBodyColor2("#B22E4D");
+		ssj4gt.setEye1Color("#FFD700");
+		ssj4gt.setEye2Color("#FFD700");
+		ssj4gt.setAuraColor("#FFD700");
+		ssj4gt.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
+		ssj4gt.setStrMultiplier(3.75);
+		ssj4gt.setSkpMultiplier(3.75);
+		ssj4gt.setDefMultiplier(2.5);
+		ssj4gt.setPwrMultiplier(3.75);
+		ssj4gt.setEnergyDrain(0.24);
+		ssj4gt.setHairType("base");
+		ssj4gt.setForcedHairCode("");
+		setDefaultMasteryValues(ssj4gt);
+		ssj4gt.setStackDrainMultiplier(2.0);
+		ssj4gt.setDirectTransformation(true);
 
 		Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
 		oozaruFormData.put(SaiyanForms.OOZARU, oozaru);
 		oozaruFormData.put(SaiyanForms.GOLDEN_OOZARU, goldenOozaru);
-		//oozaruFormData.put(SaiyanForms.SUPER_SAIYAN_4, ssj4);
+		oozaruFormData.put(SaiyanForms.SUPER_SAIYAN_4, ssj4gt);
 		oozaruForms.setForms(oozaruFormData);
 
 		FormConfig ssGrades = new FormConfig();
@@ -601,16 +678,89 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(ssj3);
 		ssj3.setStackDrainMultiplier(2.0);
 
+		FormConfig.FormData ssj4d = new FormConfig.FormData();
+		ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
+		ssj4d.setCustomModel("");
+		ssj4d.setUnlockOnSkillLevel(8);
+		ssj4d.setHairColor("#83073F");
+		ssj4d.setBodyColor2("#83073F");
+		ssj4d.setEye1Color("#83073F");
+		ssj4d.setEye2Color("#83073F");
+		ssj4d.setAuraColor("#83073F");
+		ssj4d.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
+		ssj4d.setStrMultiplier(3.75);
+		ssj4d.setSkpMultiplier(3.75);
+		ssj4d.setDefMultiplier(2.5);
+		ssj4d.setPwrMultiplier(3.75);
+		ssj4d.setEnergyDrain(0.24);
+		ssj4d.setHairType("base");
+		ssj4d.setForcedHairCode("");
+		setDefaultMasteryValues(ssj4d);
+		ssj4d.setStackDrainMultiplier(2.0);
+		ssj4d.setDirectTransformation(true);
+
 		Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_2, ssj2);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
+		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_4, ssj4d);
 		superSaiyan.setForms(superSaiyanForms);
 
 		forms.put(SaiyanForms.OOZARU, oozaruForms);
 		forms.put(SaiyanForms.GROUP_SSGRADES, ssGrades);
 		forms.put(SaiyanForms.SUPER_SAIYAN, superSaiyan);
 		LogUtil.info(Env.COMMON, "Default Super Saiyan forms created");
+
+		FormConfig saiyanLegendaryForms = new FormConfig();
+		saiyanLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		saiyanLegendaryForms.setGroupName(SaiyanForms.GROUP_LEGENDARYFORMS);
+		saiyanLegendaryForms.setFormType("legendary");
+
+		FormConfig.FormData ikari = new FormConfig.FormData();
+		ikari.setName(SaiyanForms.IKARI);
+		ikari.setUnlockOnSkillLevel(1);
+		ikari.setCustomModel("");
+		ikari.setStrMultiplier(4.25);
+		ikari.setSkpMultiplier(4.25);
+		ikari.setDefMultiplier(4.25);
+		ikari.setPwrMultiplier(4.25);
+		ikari.setHairType("base");
+		setDefaultMasteryValues(ikari);
+		ikari.setStackDrainMultiplier(2.0);
+		ikari.setCanAlwaysTransform(true);
+
+		FormConfig.FormData ssjHybrid = new FormConfig.FormData();
+		ssjHybrid.setName(SaiyanForms.SSJ_HYBRID);
+		ssjHybrid.setUnlockOnSkillLevel(2);
+		ssjHybrid.setCustomModel("");
+		ssjHybrid.setStrMultiplier(4.75);
+		ssjHybrid.setSkpMultiplier(4.75);
+		ssjHybrid.setDefMultiplier(4.75);
+		ssjHybrid.setPwrMultiplier(4.75);
+		ssjHybrid.setHairType("base");
+		setDefaultMasteryValues(ssjHybrid);
+		ssjHybrid.setStackDrainMultiplier(2.0);
+
+		FormConfig.FormData ssjFullPower = new FormConfig.FormData();
+		ssjFullPower.setName(SaiyanForms.SSJ_FULL_POWER);
+		ssjFullPower.setUnlockOnSkillLevel(3);
+		ssjFullPower.setCustomModel("");
+		ssjFullPower.setStrMultiplier(5.5);
+		ssjFullPower.setSkpMultiplier(5.5);
+		ssjFullPower.setDefMultiplier(5.5);
+		ssjFullPower.setPwrMultiplier(5.5);
+		ssjFullPower.setHairType("base");
+		setDefaultMasteryValues(ssjFullPower);
+		ssjFullPower.setStackDrainMultiplier(2.0);
+
+		Map<String, FormConfig.FormData> saiyanLegendaryData = new LinkedHashMap<>();
+		saiyanLegendaryData.put(SaiyanForms.IKARI, ikari);
+		saiyanLegendaryData.put(SaiyanForms.SSJ_HYBRID, ssjHybrid);
+		saiyanLegendaryData.put(SaiyanForms.SSJ_FULL_POWER, ssjFullPower);
+		saiyanLegendaryForms.setForms(saiyanLegendaryData);
+
+		forms.put(SaiyanForms.GROUP_LEGENDARYFORMS, saiyanLegendaryForms);
+		LogUtil.info(Env.COMMON, "Default Saiyan legendary forms created");
 	}
 
 	private void createNamekianForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -676,6 +826,61 @@ public class DefaultFormsFactory {
 
 		forms.put(NamekianForms.GROUP_SUPERFORMS, namekianForms);
 		LogUtil.info(Env.COMMON, "Default Namekian forms created");
+
+		FormConfig namekianLegendaryForms = new FormConfig();
+		namekianLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		namekianLegendaryForms.setGroupName(NamekianForms.GROUP_LEGENDARYFORMS);
+		namekianLegendaryForms.setFormType("legendary");
+
+		FormConfig.FormData evilNamek = new FormConfig.FormData();
+		evilNamek.setName(NamekianForms.EVIL_NAMEK);
+		evilNamek.setUnlockOnSkillLevel(1);
+		evilNamek.setCustomModel("");
+		evilNamek.setStrMultiplier(4.25);
+		evilNamek.setSkpMultiplier(4.25);
+		evilNamek.setDefMultiplier(4.25);
+		evilNamek.setPwrMultiplier(4.25);
+		evilNamek.setHairType("base");
+		setDefaultMasteryValues(evilNamek);
+		evilNamek.setStackDrainMultiplier(2.0);
+		evilNamek.setCanAlwaysTransform(true);
+
+		FormConfig.FormData evilGiant = new FormConfig.FormData();
+		evilGiant.setName(NamekianForms.EVIL_GIANT_NAMEK);
+		evilGiant.setUnlockOnSkillLevel(2);
+		evilGiant.setCustomModel("");
+		evilGiant.setStrMultiplier(4.875);
+		evilGiant.setSkpMultiplier(4.875);
+		evilGiant.setDefMultiplier(4.875);
+		evilGiant.setPwrMultiplier(4.875);
+		evilGiant.setSpeedMultiplier(0.75);
+		evilGiant.setAttackSpeed(0.85);
+		evilGiant.setEnergyDrain(0.25);
+		evilGiant.setStaminaDrainMultiplier(1.5);
+		evilGiant.setHairType("base");
+		setDefaultMasteryValues(evilGiant);
+		evilGiant.setStackDrainMultiplier(2.0);
+
+		FormConfig.FormData buffedNamek = new FormConfig.FormData();
+		buffedNamek.setName(NamekianForms.BUFFED_NAMEK);
+		buffedNamek.setUnlockOnSkillLevel(3);
+		buffedNamek.setCustomModel("");
+		buffedNamek.setStrMultiplier(5.5);
+		buffedNamek.setSkpMultiplier(5.5);
+		buffedNamek.setDefMultiplier(5.5);
+		buffedNamek.setPwrMultiplier(5.5);
+		buffedNamek.setHairType("base");
+		setDefaultMasteryValues(buffedNamek);
+		buffedNamek.setStackDrainMultiplier(2.0);
+
+		Map<String, FormConfig.FormData> namekianLegendaryData = new LinkedHashMap<>();
+		namekianLegendaryData.put(NamekianForms.EVIL_NAMEK, evilNamek);
+		namekianLegendaryData.put(NamekianForms.EVIL_GIANT_NAMEK, evilGiant);
+		namekianLegendaryData.put(NamekianForms.BUFFED_NAMEK, buffedNamek);
+		namekianLegendaryForms.setForms(namekianLegendaryData);
+
+		forms.put(NamekianForms.GROUP_LEGENDARYFORMS, namekianLegendaryForms);
+		LogUtil.info(Env.COMMON, "Default Namekian legendary forms created");
 	}
 
 	private void createFrostDemonForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -769,6 +974,57 @@ public class DefaultFormsFactory {
 
 		forms.put(FrostDemonForms.GROUP_EVOLUTIONFORMS, frostForms);
 		LogUtil.info(Env.COMMON, "Default Frost Demon forms created");
+
+		FormConfig frostLegendaryForms = new FormConfig();
+		frostLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		frostLegendaryForms.setGroupName(FrostDemonForms.GROUP_LEGENDARYFORMS);
+		frostLegendaryForms.setFormType("legendary");
+
+		FormConfig.FormData mecha = new FormConfig.FormData();
+		mecha.setName(FrostDemonForms.MECHA);
+		mecha.setUnlockOnSkillLevel(1);
+		mecha.setCustomModel("");
+		mecha.setStrMultiplier(4.25);
+		mecha.setSkpMultiplier(4.25);
+		mecha.setDefMultiplier(4.25);
+		mecha.setPwrMultiplier(4.25);
+		mecha.setHairType("base");
+		setDefaultMasteryValues(mecha);
+		mecha.setStackDrainMultiplier(2.0);
+		mecha.setCanAlwaysTransform(true);
+
+		FormConfig.FormData metal = new FormConfig.FormData();
+		metal.setName(FrostDemonForms.METAL);
+		metal.setUnlockOnSkillLevel(2);
+		metal.setCustomModel("");
+		metal.setStrMultiplier(4.875);
+		metal.setSkpMultiplier(4.875);
+		metal.setDefMultiplier(4.875);
+		metal.setPwrMultiplier(4.875);
+		metal.setHairType("base");
+		setDefaultMasteryValues(metal);
+		metal.setStackDrainMultiplier(2.0);
+
+		FormConfig.FormData metalCore = new FormConfig.FormData();
+		metalCore.setName(FrostDemonForms.METAL_CORE);
+		metalCore.setUnlockOnSkillLevel(3);
+		metalCore.setCustomModel("");
+		metalCore.setStrMultiplier(5.5);
+		metalCore.setSkpMultiplier(5.5);
+		metalCore.setDefMultiplier(5.5);
+		metalCore.setPwrMultiplier(5.5);
+		metalCore.setHairType("base");
+		setDefaultMasteryValues(metalCore);
+		metalCore.setStackDrainMultiplier(2.0);
+
+		Map<String, FormConfig.FormData> frostLegendaryData = new LinkedHashMap<>();
+		frostLegendaryData.put(FrostDemonForms.MECHA, mecha);
+		frostLegendaryData.put(FrostDemonForms.METAL, metal);
+		frostLegendaryData.put(FrostDemonForms.METAL_CORE, metalCore);
+		frostLegendaryForms.setForms(frostLegendaryData);
+
+		forms.put(FrostDemonForms.GROUP_LEGENDARYFORMS, frostLegendaryForms);
+		LogUtil.info(Env.COMMON, "Default Frost Demon legendary forms created");
 	}
 
 	private void createMajinForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -852,6 +1108,44 @@ public class DefaultFormsFactory {
 
 		forms.put(MajinForms.GROUP_PUREFORMS, majinForms);
 		LogUtil.info(Env.COMMON, "Default Majin forms created");
+
+		FormConfig majinLegendaryForms = new FormConfig();
+		majinLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		majinLegendaryForms.setGroupName(MajinForms.GROUP_LEGENDARYFORMS);
+		majinLegendaryForms.setFormType("legendary");
+
+		FormConfig.FormData innocence = new FormConfig.FormData();
+		innocence.setName(MajinForms.INNOCENCE_DEMON);
+		innocence.setUnlockOnSkillLevel(1);
+		innocence.setCustomModel("");
+		innocence.setStrMultiplier(4.25);
+		innocence.setSkpMultiplier(4.25);
+		innocence.setDefMultiplier(4.25);
+		innocence.setPwrMultiplier(4.25);
+		innocence.setHairType("base");
+		setDefaultMasteryValues(innocence);
+		innocence.setStackDrainMultiplier(2.0);
+		innocence.setCanAlwaysTransform(true);
+
+		FormConfig.FormData superDemon = new FormConfig.FormData();
+		superDemon.setName(MajinForms.SUPER_DEMON);
+		superDemon.setUnlockOnSkillLevel(2);
+		superDemon.setCustomModel("");
+		superDemon.setStrMultiplier(5.5);
+		superDemon.setSkpMultiplier(5.5);
+		superDemon.setDefMultiplier(5.5);
+		superDemon.setPwrMultiplier(5.5);
+		superDemon.setHairType("base");
+		setDefaultMasteryValues(superDemon);
+		superDemon.setStackDrainMultiplier(2.0);
+
+		Map<String, FormConfig.FormData> majinLegendaryData = new LinkedHashMap<>();
+		majinLegendaryData.put(MajinForms.INNOCENCE_DEMON, innocence);
+		majinLegendaryData.put(MajinForms.SUPER_DEMON, superDemon);
+		majinLegendaryForms.setForms(majinLegendaryData);
+
+		forms.put(MajinForms.GROUP_LEGENDARYFORMS, majinLegendaryForms);
+		LogUtil.info(Env.COMMON, "Default Majin legendary forms created");
 	}
 
 	private void createBioAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -955,5 +1249,72 @@ public class DefaultFormsFactory {
 
 		forms.put(BioAndroidForms.GROUP_BIOEVOLUTION, bioForms);
 		LogUtil.info(Env.COMMON, "Default Bio Android forms created");
+
+		FormConfig bioLegendaryForms = new FormConfig();
+		bioLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		bioLegendaryForms.setGroupName(BioAndroidForms.GROUP_LEGENDARYFORMS);
+		bioLegendaryForms.setFormType("legendary");
+
+		FormConfig.FormData imperfectMax = new FormConfig.FormData();
+		imperfectMax.setName(BioAndroidForms.IMPERFECT_MAX);
+		imperfectMax.setUnlockOnSkillLevel(1);
+		imperfectMax.setCustomModel("");
+		imperfectMax.setStrMultiplier(4.25);
+		imperfectMax.setSkpMultiplier(4.25);
+		imperfectMax.setDefMultiplier(4.25);
+		imperfectMax.setPwrMultiplier(4.25);
+		imperfectMax.setHairType("base");
+		setDefaultMasteryValues(imperfectMax);
+		imperfectMax.setStackDrainMultiplier(2.0);
+		imperfectMax.setCanAlwaysTransform(true);
+
+		FormConfig.FormData semiPerfectMax = new FormConfig.FormData();
+		semiPerfectMax.setName(BioAndroidForms.SEMI_PERFECT_MAX);
+		semiPerfectMax.setUnlockOnSkillLevel(2);
+		semiPerfectMax.setCustomModel("");
+		semiPerfectMax.setStrMultiplier(4.67);
+		semiPerfectMax.setSkpMultiplier(4.67);
+		semiPerfectMax.setDefMultiplier(4.67);
+		semiPerfectMax.setPwrMultiplier(4.67);
+		semiPerfectMax.setHairType("base");
+		setDefaultMasteryValues(semiPerfectMax);
+		semiPerfectMax.setStackDrainMultiplier(2.0);
+
+		FormConfig.FormData giantMax = new FormConfig.FormData();
+		giantMax.setName(BioAndroidForms.GIANT_MAX);
+		giantMax.setUnlockOnSkillLevel(3);
+		giantMax.setCustomModel("");
+		giantMax.setStrMultiplier(5.08);
+		giantMax.setSkpMultiplier(5.08);
+		giantMax.setDefMultiplier(5.08);
+		giantMax.setPwrMultiplier(5.08);
+		giantMax.setSpeedMultiplier(0.7);
+		giantMax.setAttackSpeed(0.85);
+		giantMax.setEnergyDrain(0.25);
+		giantMax.setHairType("base");
+		setDefaultMasteryValues(giantMax);
+		giantMax.setStackDrainMultiplier(2.0);
+
+		FormConfig.FormData perfectMax = new FormConfig.FormData();
+		perfectMax.setName(BioAndroidForms.PERFECT_MAX);
+		perfectMax.setUnlockOnSkillLevel(4);
+		perfectMax.setCustomModel("");
+		perfectMax.setStrMultiplier(5.5);
+		perfectMax.setSkpMultiplier(5.5);
+		perfectMax.setDefMultiplier(5.5);
+		perfectMax.setPwrMultiplier(5.5);
+		perfectMax.setHairType("base");
+		setDefaultMasteryValues(perfectMax);
+		perfectMax.setStackDrainMultiplier(2.0);
+
+		Map<String, FormConfig.FormData> bioLegendaryData = new LinkedHashMap<>();
+		bioLegendaryData.put(BioAndroidForms.IMPERFECT_MAX, imperfectMax);
+		bioLegendaryData.put(BioAndroidForms.SEMI_PERFECT_MAX, semiPerfectMax);
+		bioLegendaryData.put(BioAndroidForms.GIANT_MAX, giantMax);
+		bioLegendaryData.put(BioAndroidForms.PERFECT_MAX, perfectMax);
+		bioLegendaryForms.setForms(bioLegendaryData);
+
+		forms.put(BioAndroidForms.GROUP_LEGENDARYFORMS, bioLegendaryForms);
+		LogUtil.info(Env.COMMON, "Default Bio Android legendary forms created");
 	}
 }

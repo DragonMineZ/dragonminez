@@ -9,19 +9,26 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin implements Player_DMZ, PlayerAttackProperties {
 	@Unique
 	private int comboCount = 0;
 	private AttackHand lastAttack = null;
+	@Unique
+	private int dragonminez$critTick = -1;
+	@Unique
+	private boolean dragonminez$critActive = false;
 
 	@Override
 	public int getComboCount() {
@@ -70,5 +77,27 @@ public abstract class PlayerMixin implements Player_DMZ, PlayerAttackProperties 
 	public AttackHand getCurrentAttack() {
 		if (this.comboCount < 0) return null;
 		return PlayerAttackHelper.getCurrentAttack((Player)(Object)this, this.comboCount);
+	}
+
+	@Override
+	public boolean rollAndGetCriticalStatus(double chance) {
+		Player player = (Player) (Object) this;
+		int currentTick = player.tickCount;
+
+		if (this.dragonminez$critTick != currentTick) {
+			this.dragonminez$critActive = player.getRandom().nextFloat() < chance;
+			this.dragonminez$critTick = currentTick;
+		}
+		return this.dragonminez$critActive;
+	}
+
+	@Inject(method = "crit", at = @At("HEAD"), cancellable = true)
+	private void dragonminez$suppressVanillaCrit(Entity entityHit, CallbackInfo ci) {
+		ci.cancel();
+	}
+
+	@Inject(method = "magicCrit", at = @At("HEAD"), cancellable = true)
+	private void dragonminez$suppressVanillaMagicCrit(Entity entityHit, CallbackInfo ci) {
+		ci.cancel();
 	}
 }

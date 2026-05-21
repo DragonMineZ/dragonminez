@@ -18,6 +18,9 @@ public class WeaponAttributesHelper {
         var isTwoHanded = b.two_handed() != null ? b.two_handed() : a.two_handed();
         var category = b.category() != null ? b.category() : a.category();
 
+        Double critChance = b.crit_chance() != null ? b.crit_chance() : a.crit_chance();
+        Double critDamage = b.crit_damage() != null ? b.crit_damage() : a.crit_damage();
+
         var attacks = a.attacks();
         if (b.attacks() != null && b.attacks().length > 0) {
             var overrideAttacks = new ArrayList<WeaponAttributes.Attack>();
@@ -40,7 +43,7 @@ public class WeaponAttributesHelper {
             attacks = overrideAttacks.toArray(new WeaponAttributes.Attack[0]);
         }
 
-        return new WeaponAttributes(attackRange, pose, off_hand_pose, isTwoHanded, category, attacks);
+        return new WeaponAttributes(attackRange, pose, off_hand_pose, isTwoHanded, category, attacks, critChance, critDamage);
     }
 
     private static final String nbtTag = "dragonminez_weapon_attributes";
@@ -77,9 +80,7 @@ public class WeaponAttributesHelper {
     }
 
     private static AttributesContainer normalizeContainer(AttributesContainer container) {
-        if (container == null || container.attributes() == null) {
-            return container;
-        }
+        if (container == null || container.attributes() == null) return container;
 
         var attributes = container.attributes();
         var pose = sanitizeAnimationId(attributes.pose());
@@ -113,7 +114,9 @@ public class WeaponAttributesHelper {
                 offHandPose.isBlank() ? null : offHandPose,
                 attributes.two_handed(),
                 attributes.category(),
-                attacks
+                attacks,
+                attributes.crit_chance(),
+                attributes.crit_damage()
         );
         return new AttributesContainer(container.parent(), normalized);
     }

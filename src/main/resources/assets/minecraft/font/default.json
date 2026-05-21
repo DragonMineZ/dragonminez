@@ -125,6 +125,20 @@
       "chars": ["\uE011"],
       "file": "minecraft:attribute_icon/player.entity_interaction_range.png",
       "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE012"],
+      "file": "dragonminez:attribute_icon/critical_chance.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE013"],
+      "file": "dragonminez:attribute_icon/critical_damage.png",
+      "height": 9
     }
   ]
 }

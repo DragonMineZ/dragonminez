@@ -37,6 +37,7 @@ tasks.withType<AbstractArchiveTask>().configureEach {
 
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal"))
+    options.compilerArgs.add("-AoutRefMapFile=${layout.buildDirectory.dir("classes/java/main/dragonminez.refmap.json").get().asFile.absolutePath}")
     options.encoding = "UTF-8"
     options.release.set(17)
 }
@@ -308,15 +309,16 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-tasks.named<Jar>("jar").configure {
-    doFirst {
+tasks.withType<Jar>().configureEach {
+    manifest {
         val attrs = linkedMapOf<String, Any>(
             "Specification-Title" to modId,
             "Specification-Vendor" to modAuthors,
             "Specification-Version" to modVersion,
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version.toString(),
-            "Implementation-Vendor" to modAuthors
+            "Implementation-Vendor" to modAuthors,
+            "MixinConfigs" to "dragonminez.mixins.json"
         )
 
         if (includeTimestamp.get()) {
@@ -324,8 +326,10 @@ tasks.named<Jar>("jar").configure {
                 OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         }
 
-        manifest.attributes(attrs)
+        attributes(attrs)
     }
+}
 
+tasks.named<Jar>("jar").configure {
     finalizedBy("reobfJar")
 }

@@ -21,4 +21,10 @@ public class SaiyanForms {
 	public static final String SUPER_SAIYAN_MASTERED = "supersaiyanmastered";
 	public static final String SUPER_SAIYAN_2 = "supersaiyan2";
 	public static final String SUPER_SAIYAN_3 = "supersaiyan3";
+
+	// Legendary Forms group
+	public static final String GROUP_LEGENDARYFORMS = "legendaryforms";
+	public static final String IKARI = "ikari";
+	public static final String SSJ_HYBRID = "ssjhybrid";
+	public static final String SSJ_FULL_POWER = "ssjfullpower";
 }

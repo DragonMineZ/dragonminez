@@ -7,10 +7,7 @@ import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
-import com.dragonminez.common.network.C2S.EquipTechniqueC2S;
-import com.dragonminez.common.network.C2S.ImportTechniqueC2S;
-import com.dragonminez.common.network.C2S.UpdateSkillC2S;
-import com.dragonminez.common.network.C2S.UpgradeTechniqueC2S;
+import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.skills.Skill;
@@ -39,6 +36,7 @@ import java.util.Locale;
 @OnlyIn(Dist.CLIENT)
 public class SkillsMenuScreen extends BaseMenuScreen {
 
+	private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
 	private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
@@ -48,7 +46,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
-	private static final int BUTTON_ANIM_TIME = 5;
 	private static final int TECHNIQUE_BIND_SLOT_COUNT = 5;
 	private static final String NEW_SKILL_ENTRY = "__new_skill__";
 
@@ -76,8 +73,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private ClippableTextureButton skillsButton, kiButton, formsButton, stacksButton;
 	private CustomTextureButton btnDmg, btnSize, btnSpeed, btnPen, btnCast, btnCd;
-	private int animTick = 0;
-	private boolean isHotZoneHovered = false;
+	private float buttonRevealProgress = 0.0f;
 	private EditBox techniqueImportBox;
 	private Component actionStatusText = Component.empty();
 	private int actionStatusTimer = 0;
@@ -112,8 +108,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			if (!isBinding && !isImportingTechnique) refreshButtons();
 		}
 
-		if (isHotZoneHovered) if (animTick < BUTTON_ANIM_TIME) animTick++;
-		else if (animTick > 0) animTick--;
 	}
 
 	private void updateStatsData() {
@@ -392,7 +386,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			if (isKi) {
 				var importButton = new CustomTextureButton.Builder()
-						.position(rightPanelX + 7, yPos)
+						.position(rightPanelX + 11, yPos)
 						.size(20, 20)
 						.texture(BUTTONS_TEXTURE)
 						.textureCoords(162, 0, 162, 20)
@@ -410,9 +404,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				this.addRenderableWidget(importButton);
 			}
 
-			int bindX = isKi ? rightPanelX + 31 : rightPanelX + 35;
 			var bindButton = new TexturedTextButton.Builder()
-					.position(bindX, yPos)
+					.position(rightPanelX + 35, yPos)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -431,7 +424,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			if (isKi) {
 				var exportButton = new CustomTextureButton.Builder()
-						.position(rightPanelX + 110, yPos)
+						.position(rightPanelX + 114, yPos)
 						.size(20, 20)
 						.texture(BUTTONS_TEXTURE)
 						.textureCoords(182, 0, 182, 20)
@@ -452,6 +445,18 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				techniqueImportBox.setMaxLength(65536);
 				this.addRenderableWidget(techniqueImportBox);
 			}
+
+			addRenderableWidget(new CustomTextureButton.Builder()
+					.position(rightPanelX + 119, yPos - 14)
+					.size(14, 11)
+					.texture(STAT_BUTTONS)
+					.textureCoords(10, 0, 10, 10)
+					.textureSize(10, 10)
+					.onPress(btn -> {
+						NetworkHandler.sendToServer(new DeleteTechniqueC2S(selectedSkill));
+						selectedSkill = null;
+					})
+					.build());
 		} else {
 			for (int i = 0; i < TECHNIQUE_BIND_SLOT_COUNT; i++) {
 				final int slotIndex = i;
@@ -482,7 +487,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int rightPanelY = centerY - 105;
 
 		var createButton = new TexturedTextButton.Builder()
-				.position(rightPanelX + 35, rightPanelY + 183)
+				.position(rightPanelX + 35, rightPanelY + 185)
 				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -565,7 +570,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		applyZoom(graphics);
 
 		int leftOffset = getLeftPanelSwitchOffset();
-		updateButtonAnimations(uiMouseX - leftOffset, uiMouseY, partialTick, leftOffset);
+		updateButtonAnimations(uiMouseX, uiMouseY, partialTick, leftOffset);
 
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
@@ -591,25 +596,54 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int leftPanelY = centerY - 105;
 		int panelX = leftPanelX + leftOffset;
 
-		int hotZoneX = panelX + 122;
-		int hotZoneY = leftPanelY + 6;
-		int hotZoneWidth = 48;
-		int hotZoneHeight = 133;
-
-		isHotZoneHovered = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
-				mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
-
-		float animProgress = (animTick + (isHotZoneHovered ? partialTick : -partialTick)) / BUTTON_ANIM_TIME;
-		animProgress = Mth.clamp(animProgress, 0.0f, 1.0f);
-
 		int hiddenX = panelX + 122;
 		int visibleX = panelX + 141;
+		int buttonWidth = 26;
+		int panelWidth = 141;
+		int panelHeight = 213;
+
+		int hotZoneX = hiddenX;
+		int hotZoneY = leftPanelY + 6;
+		int hotZoneWidth = (visibleX - hiddenX) + buttonWidth;
+		int hotZoneHeight = 133;
+
+		boolean overPanel = mouseX >= panelX && mouseX < panelX + panelWidth &&
+				mouseY >= leftPanelY && mouseY < leftPanelY + panelHeight;
+		boolean overHotZone = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
+				mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
+		boolean shouldReveal = overPanel || overHotZone;
+
+		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
+		buttonRevealProgress = approach01(buttonRevealProgress, shouldReveal ? 1.0f : 0.0f, step);
+		float animProgress = easeInOutCubic(buttonRevealProgress);
 
 		int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
 		skillsButton.setX(newX);
 		kiButton.setX(newX);
 		formsButton.setX(newX);
 		stacksButton.setX(newX);
+
+		int scissorX = panelX + 141;
+		int scissorXScreen = toScreenCoord(scissorX);
+		int scissorYScreen = toScreenCoord(0);
+		int scissorRight = toScreenCoord(getUiWidth());
+		int scissorBottom = toScreenCoord(getUiHeight());
+		skillsButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+		kiButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+		formsButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+		stacksButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+	}
+
+	private float approach01(float current, float target, float step) {
+		if (current < target) return Math.min(target, current + step);
+		if (current > target) return Math.max(target, current - step);
+		return current;
+	}
+
+	private float easeInOutCubic(float t) {
+		if (t <= 0.0f) return 0.0f;
+		if (t >= 1.0f) return 1.0f;
+		return t < 0.5f ? 4.0f * t * t * t : 1.0f - (float) Math.pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
 	}
 
 	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -785,7 +819,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA);
 		yOffset += 16;
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.req_xp", xpReq), panelX + 70, yOffset, 0xFFAAAAAA);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.req_xp", xpReq), panelX + 15, yOffset, 0xFFAAAAAA);
 		renderActionStatus(graphics, panelX, panelY);
 	}
 

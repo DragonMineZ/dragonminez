@@ -26,9 +26,7 @@ public class WeaponRangeTooltipHandler {
 			tooltip.accept(Component.empty().append(finalStat));
 		}
 
-		if (attributes != null && attributes.isTwoHanded()) {
-			tooltip.accept(Component.translatable("tooltip.dragonminez.two_handed").withStyle(ChatFormatting.DARK_GRAY));
-		}
+		if (attributes != null && attributes.isTwoHanded()) tooltip.accept(Component.translatable("tooltip.dragonminez.two_handed").withStyle(ChatFormatting.DARK_GRAY));
 
 		return false;
 	}

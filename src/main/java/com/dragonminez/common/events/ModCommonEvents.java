@@ -169,6 +169,8 @@ public class ModCommonEvents {
         event.add(EntityType.PLAYER, MainAttributes.MELEE_DAMAGE.get());
         event.add(EntityType.PLAYER, MainAttributes.STRIKE_DAMAGE.get());
         event.add(EntityType.PLAYER, MainAttributes.DEFENSE.get());
+		event.add(EntityType.PLAYER, MainAttributes.CRIT_CHANCE.get());
+		event.add(EntityType.PLAYER, MainAttributes.CRIT_DAMAGE.get());
     }
 
 	@SubscribeEvent

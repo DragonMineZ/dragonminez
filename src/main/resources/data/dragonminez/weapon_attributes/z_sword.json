@@ -1,4 +1,8 @@
 {
-  "parent": "dragonminez:claymore"
+  "parent": "dragonminez:claymore",
+  "attributes": {
+    "crit_chance": 0.15,
+    "crit_damage": 0.25
+  }
 }
 

@@ -48,7 +48,6 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
-	private static final int BUTTON_ANIM_TIME = 5;
 
 	private enum SkillCategory {SKILLS, KI}
 
@@ -63,8 +62,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private float maxScroll = 0;
 
 	private ClippableTextureButton skillsButton, kiButton;
-	private int animTick = 0;
-	private boolean isHotZoneHovered = false;
+	private float buttonRevealProgress = 0.0f;
 
 	private TexturedTextButton purchaseButton;
 	private boolean isDraggingScroll = false;
@@ -99,12 +97,6 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			updateStatsData();
 			refreshButtons();
 		}
-
-		if (isHotZoneHovered) {
-			if (animTick < BUTTON_ANIM_TIME) animTick++;
-		} else {
-			if (animTick > 0) animTick--;
-		}
 	}
 
 	private void updateStatsData() {
@@ -121,6 +113,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		int buttonY = leftPanelY + 6;
 		int hiddenX = leftPanelX + 122;
+
 		int scissorX = leftPanelX + 141;
 		int scissorXScreen = toScreenCoord(scissorX);
 		int scissorYScreen = toScreenCoord(0);
@@ -156,7 +149,6 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 					refreshButtons();
 				})
 				.build();
-
 
 		this.addRenderableWidget(skillsButton);
 		this.addRenderableWidget(kiButton);
@@ -289,23 +281,50 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
-		int hotZoneX = leftPanelX + 122;
-		int hotZoneY = leftPanelY + 6;
-		int hotZoneWidth = 48;
-		int hotZoneHeight = 100;
-
-		isHotZoneHovered = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
-				mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
-
-		float animProgress = (animTick + (isHotZoneHovered ? partialTick : -partialTick)) / BUTTON_ANIM_TIME;
-		animProgress = Mth.clamp(animProgress, 0.0f, 1.0f);
-
 		int hiddenX = leftPanelX + 122;
 		int visibleX = leftPanelX + 141;
+		int buttonWidth = 26;
+		int panelWidth = 141;
+		int panelHeight = 213;
+
+		int hotZoneX = hiddenX;
+		int hotZoneY = leftPanelY + 6;
+		int hotZoneWidth = (visibleX - hiddenX) + buttonWidth;
+		int hotZoneHeight = 100;
+
+		boolean overPanel = mouseX >= leftPanelX && mouseX < leftPanelX + panelWidth &&
+				mouseY >= leftPanelY && mouseY < leftPanelY + panelHeight;
+		boolean overHotZone = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
+				mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
+		boolean shouldReveal = overPanel || overHotZone;
+
+		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
+		buttonRevealProgress = approach01(buttonRevealProgress, shouldReveal ? 1.0f : 0.0f, step);
+		float animProgress = easeInOutCubic(buttonRevealProgress);
 
 		int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
 		skillsButton.setX(newX);
 		if (kiButton != null) kiButton.setX(newX);
+
+		int scissorX = leftPanelX + 141;
+		int scissorXScreen = toScreenCoord(scissorX);
+		int scissorYScreen = toScreenCoord(0);
+		int scissorRight = toScreenCoord(getUiWidth());
+		int scissorBottom = toScreenCoord(getUiHeight());
+		skillsButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+		if (kiButton != null) kiButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+	}
+
+	private float approach01(float current, float target, float step) {
+		if (current < target) return Math.min(target, current + step);
+		if (current > target) return Math.max(target, current - step);
+		return current;
+	}
+
+	private float easeInOutCubic(float t) {
+		if (t <= 0.0f) return 0.0f;
+		if (t >= 1.0f) return 1.0f;
+		return t < 0.5f ? 4.0f * t * t * t : 1.0f - (float) Math.pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
 	}
 
 	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {

@@ -52,6 +52,7 @@ public class CombatEvent {
 		final double[] currentDamage = {event.getAmount()};
 		final boolean[] wasBlocked = {false};
 		final boolean[] wasParry = {false};
+		final boolean[] canceledByBlocking = {false};
 
 		if (source.getEntity() instanceof LivingEntity livingAttacker && livingAttacker.hasEffect(MainEffects.STUN.get())) {
 			event.setCanceled(true);
@@ -80,6 +81,11 @@ public class CombatEvent {
 
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (!attackerData.getStatus().isHasCreatedCharacter()) return;
+				if (attackerData.getStatus().isBlocking()) {
+					event.setCanceled(true);
+					canceledByBlocking[0] = true;
+					return;
+				}
 
 				double baseDamage = currentDamage[0];
 				double dmzDamage = attackerData.getMeleeDamage();
@@ -182,6 +188,8 @@ public class CombatEvent {
 				}
 			});
 		}
+
+		if (canceledByBlocking[0]) return;
 
 		if (event.getEntity() instanceof Player victim) {
 

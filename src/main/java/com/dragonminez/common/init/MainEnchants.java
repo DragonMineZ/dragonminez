@@ -32,6 +32,12 @@ public class MainEnchants {
 	public static final RegistryObject<Enchantment> DEFENSE_PENETRATION = ENCHANTMENTS.register("defense_penetration",
 			() -> new WeaponPenetrationEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND));
 
+	public static final RegistryObject<Enchantment> CRIT_CHANCE = ENCHANTMENTS.register("critical_chance",
+			() -> new CriticalStatEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND));
+
+	public static final RegistryObject<Enchantment> CRIT_DAMAGE = ENCHANTMENTS.register("critical_damage",
+			() -> new CriticalStatEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND));
+
 	public static class WeaponPenetrationEnchantment extends Enchantment {
 		protected WeaponPenetrationEnchantment(Rarity rarity, EquipmentSlot... slots) {
 			super(rarity, EnchantmentCategory.WEAPON, slots);
@@ -45,6 +51,27 @@ public class MainEnchants {
 		@Override
 		public boolean canEnchant(ItemStack stack) {
 			return stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem || stack.getItem() instanceof WeaponItem || super.canEnchant(stack);
+		}
+	}
+
+	public static class CriticalStatEnchantment extends Enchantment {
+		public CriticalStatEnchantment(Rarity rarity, EquipmentSlot... slots) {
+			super(rarity, EnchantmentCategory.WEAPON, slots);
+		}
+
+		@Override
+		public int getMaxLevel() {
+			return 5;
+		}
+
+		@Override
+		public boolean canEnchant(ItemStack stack) {
+			return stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem || stack.getItem() instanceof WeaponItem || super.canEnchant(stack);
+		}
+
+		@Override
+		protected boolean checkCompatibility(Enchantment other) {
+			return super.checkCompatibility(other) && !(other instanceof CriticalStatEnchantment);
 		}
 	}
 

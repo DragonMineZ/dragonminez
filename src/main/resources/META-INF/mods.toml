@@ -61,3 +61,19 @@ config="dragonminez.mixins.json"
     side="BOTH"
     type="incompatible"
 
+[[dependencies.dragonminez]]
+    modId="epicfight"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+    type="incompatible"
+
+[[dependencies.dragonminez]]
+    modId="bettercombat"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+    type="incompatible"
+

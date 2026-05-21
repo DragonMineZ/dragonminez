@@ -14,6 +14,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -108,16 +109,20 @@ public class DinoGlobalEntity extends Monster implements GeoEntity {
         return geoCache;
     }
 
-	@Override
-	public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
-		return true;
-	}
+    @Override
+    public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
+        return pLevel.getDifficulty() != Difficulty.PEACEFUL && this.checkSpawnObstruction(pLevel);
+    }
 
-	public static boolean canSpawnHere(EntityType<? extends DinoGlobalEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
-		if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
-		if (random.nextFloat() < 0.65f) return false;
-		boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
-		boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
-		return solidGround && noCollision;
-	}
+    public static boolean canSpawnHere(EntityType<? extends DinoGlobalEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
+        if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
+        if (random.nextFloat() < 0.65f) return false;
+
+        if (world.getBrightness(LightLayer.BLOCK, pos) > 7) return false;
+
+        boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
+        boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
+
+        return solidGround && noCollision;
+    }
 }
