@@ -101,9 +101,9 @@ public class ForgeCommonEvents {
 							§c[DragonMine Z]
 							
 							§7You are not allowed to play this Beta/Alpha version.
-							§fAre you a §cPatreon§f? Check that you have whitelisted yourself with our Discord Bot.
+							§fAre you a §cPatreon§f? Use the §cVerify here§f button to connect Discord and request access automatically.
 							
-							§7If you have been recently waitlisted, restart Minecraft to apply the changes!
+							§7If you have been recently whitelisted, restart Minecraft to apply the changes!
 							§7Your Minecraft nickname is: §f""" + username));
 				} else {
 					throw new IllegalStateException("DMZ: User not allowed.");

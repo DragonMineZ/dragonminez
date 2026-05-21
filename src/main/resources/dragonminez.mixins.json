@@ -19,6 +19,7 @@
     "client.BundleTooltipComponentAccessor",
     "client.BrandingControlMixin",
     "client.ClientTextTooltipAccessor",
+    "client.DisconnectedScreenMixin",
     "client.ColliderDebugRenderer",
     "client.EntityMouseHandlerMixin",
     "client.EntityRenderDispatcherMixin",

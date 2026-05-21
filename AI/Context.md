@@ -308,6 +308,14 @@ Before changing behavior:
 
 Release automation is split between dev distribution and stable release publishing.
 
+## Beta Access Verification
+
+Beta/alpha builds reject non-whitelisted players during `ForgeCommonEvents.onPlayerLogin`. The disconnect reason is detected client-side by `DisconnectedScreenMixin`, which adds a `Verify here` button for DragonMineZ beta-access disconnects only.
+
+The button opens `BetaAccessVerificationScreen`, which launches the browser to `https://downloads.dragonminez.com/beta-access/start?username=<minecraft_username>` by default. The URL can be overridden for local/dev testing with the JVM system property `dragonminez.betaAccessUrl`.
+
+The matching `dragonminez-ai` bot flow is intentionally narrow: a GET start route redirects through Discord OAuth, resolves the Discord guild member, checks the configured Patreon beta access roles, and then reuses the existing Patreon OAuth/link plus whitelist PR auto-approval logic. This should stay a small verification bridge, not a general public API.
+
 Development jar uploads:
 
 - `.github/workflows/dev-jar-upload.yml` runs on pushes to non-`main` branches when Java, resource, Gradle, or workflow inputs change.
