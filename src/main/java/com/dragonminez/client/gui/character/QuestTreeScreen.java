@@ -222,6 +222,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			new SagaCatalogEntry("saiyan_saga", "Saiyan Saga", false),
 			new SagaCatalogEntry("frieza_saga", "Frieza Saga", false),
 			new SagaCatalogEntry("android_saga", "Cell Saga", false),
+			new SagaCatalogEntry("future_saga", "Future Saga", false),
 			new SagaCatalogEntry("buu_saga", "Buu Saga", false),
 			new SagaCatalogEntry("movies_saga", "Movies Saga", false),
 			new SagaCatalogEntry("daima_saga", "Daima Saga", true),
@@ -237,14 +238,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			Map.entry("frieza_saga", 1),
 			Map.entry("android_saga", 2),
 			Map.entry("cell_saga", 2),
-			Map.entry("buu_saga", 3),
-			Map.entry("movies_saga", 4),
-			Map.entry("daima_saga", 5),
-			Map.entry("gt_saga", 6),
-			Map.entry("dball_saga", 7),
-			Map.entry("beerus_saga", 8),
-			Map.entry("rof_saga", 9),
-			Map.entry("u7vsu6_saga", 10)
+			Map.entry("future_saga", 3),
+			Map.entry("buu_saga", 4),
+			Map.entry("movies_saga", 5),
+			Map.entry("daima_saga", 6),
+			Map.entry("gt_saga", 7),
+			Map.entry("dball_saga", 8),
+			Map.entry("beerus_saga", 9),
+			Map.entry("rof_saga", 10),
+			Map.entry("u7vsu6_saga", 11)
 	);
 
 	private void loadAvailableSagas() {
@@ -1438,7 +1440,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private String getObjectiveText(PlayerQuestData pqd, String questKey, QuestObjective objective, int objectiveIndex, int currentProgress) {
 		String description = QuestTextFormatter.describeObjective(objective).getString();
 		int required = selectedQuest != null ? selectedQuest.getObjectiveRequired(pqd, questKey, objectiveIndex) : objective.getRequired();
-		if (objective.getType() == QuestObjective.ObjectiveType.KILL || objective.getType() == QuestObjective.ObjectiveType.ITEM) {
+		if (objective.getType() == QuestObjective.ObjectiveType.KILL
+				|| objective.getType() == QuestObjective.ObjectiveType.ITEM
+				|| objective.getType() == QuestObjective.ObjectiveType.SKILL) {
 			return description + " (" + currentProgress + "/" + required + ")";
 		}
 		return description;

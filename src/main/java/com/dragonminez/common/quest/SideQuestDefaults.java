@@ -155,6 +155,14 @@ final class SideQuestDefaults {
 		return o;
 	}
 
+	private static JsonObject objSkill(String skill, int level) {
+		JsonObject o = new JsonObject();
+		o.addProperty("type", "SKILL");
+		o.addProperty("skill", skill);
+		o.addProperty("level", level);
+		return o;
+	}
+
 	// ---- Reward helpers ----
 
 	private static JsonObject rewTPS(int amount) {
@@ -163,6 +171,10 @@ final class SideQuestDefaults {
 
 	private static JsonObject rewItem(String itemId, int count) {
 		JsonObject r = new JsonObject(); r.addProperty("type", "ITEM"); r.addProperty("item", itemId); r.addProperty("count", count); return r;
+	}
+
+	private static JsonObject rewSkill(String skill, int level) {
+		JsonObject r = new JsonObject(); r.addProperty("type", "SKILL"); r.addProperty("skill", skill); r.addProperty("level", level); return r;
 	}
 
 	// ---- Prerequisite helpers ----
@@ -187,6 +199,10 @@ final class SideQuestDefaults {
 
 	private static JsonObject condLevel(int minLevel) {
 		JsonObject c = new JsonObject(); c.addProperty("type", "LEVEL"); c.addProperty("minLevel", minLevel); return c;
+	}
+
+	private static JsonObject condSkill(String skill, int minLevel) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "SKILL"); c.addProperty("skill", skill); c.addProperty("minLevel", minLevel); return c;
 	}
 
 	private static JsonObject condAlignmentMin(int minAlignment) {
@@ -360,6 +376,28 @@ final class SideQuestDefaults {
 						objTalkTo("gohan")
 				},
 				new JsonObject[]{ rewTPS(18000) }));
+
+		// --- Buu Saga: Training ---
+
+		writeQuestFile(dir, "kaiosama_buu_warning.json", sidequest(
+				"kaiosama_buu_warning", "dmz.sidequest.kaiosama_buu.name", "dmz.sidequest.kaiosama_buu.desc",
+				"training", false, "kingkai", "kingkai",
+				prereqs("AND", condSaga("buu_saga", 1)),
+				new JsonObject[]{
+						objTalkTo("kingkai")
+				},
+				new JsonObject[]{ rewTPS(18000) }));
+
+		writeQuestFile(dir, "old_kai_ritual.json", sidequest(
+				"old_kai_ritual", "dmz.sidequest.old_kai_ritual.name", "dmz.sidequest.old_kai_ritual.desc",
+				"training", false, "kingkai", "kingkai",
+				prereqs("AND", condSaga("buu_saga", 23)),
+				requirements("AND", condStructure("dragonminez:village_sacred"), condSkill("potentialunlock", 20)),
+				new JsonObject[]{
+						objItem("dragonminez:z_sword", 1),
+						objTalkTo("kingkai")
+				},
+				new JsonObject[]{ rewTPS(70000), rewSkill("potentialunlock", 30) }));
 	}
 
 	// ========================================================================================
@@ -652,6 +690,19 @@ final class SideQuestDefaults {
 						objTalkTo("goku")
 				},
 				new JsonObject[]{ rewTPS(25000) }));
+
+		// --- Future Saga: Story ---
+
+		writeQuestFile(dir, "future_gohan_cure.json", sidequest(
+				"future_gohan_cure", "dmz.sidequest.future_gohan_cure.name", "dmz.sidequest.future_gohan_cure.desc",
+				"story", false, "trunks", "trunks",
+				prereqs("AND", condSaga("future_saga", 3)),
+				new JsonObject[]{
+						objItem("minecraft:golden_apple", 8),
+						objItem("dragonminez:senzu_bean", 1),
+						objTalkTo("trunks")
+				},
+				new JsonObject[]{ rewTPS(28000) }));
 	}
 
 	// ========================================================================================
@@ -743,6 +794,18 @@ final class SideQuestDefaults {
 						objTalkTo("bulma")
 				},
 				new JsonObject[]{ rewTPS(14000) }));
+
+		// --- Buu Saga: Collection ---
+
+		writeQuestFile(dir, "buu_saga_dragon_balls.json", sidequest(
+				"buu_saga_dragon_balls", "dmz.sidequest.buu_dragon_balls.name", "dmz.sidequest.buu_dragon_balls.desc",
+				"collection", false, "bulma", "bulma",
+				prereqs("AND", condSaga("buu_saga", 18)),
+				new JsonObject[]{
+						objDragonSummon("shenron", "earth"),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(50000), rewItem("dragonminez:senzu_bean", 3) }));
 	}
 }
 

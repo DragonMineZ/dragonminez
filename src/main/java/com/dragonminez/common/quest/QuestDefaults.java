@@ -52,6 +52,7 @@ final class QuestDefaults {
 		createSaiyanSagaQuests(questsDir);
 		createFriezaSagaQuests(questsDir);
 		createAndroidSagaQuests(questsDir);
+		createFutureSagaQuests(questsDir);
 		createBuuSagaQuests(questsDir);
 		createMoviesSagaQuests(questsDir);
 	}
@@ -156,6 +157,14 @@ final class QuestDefaults {
 		return o;
 	}
 
+	private static JsonObject objSkill(String skill, int level) {
+		JsonObject o = new JsonObject();
+		o.addProperty("type", "SKILL");
+		o.addProperty("skill", skill);
+		o.addProperty("level", level);
+		return o;
+	}
+
 	// ---- Reward helpers ----
 
 	private static JsonObject rewTPS(int amount) {
@@ -170,6 +179,14 @@ final class QuestDefaults {
 		r.addProperty("type", "ITEM");
 		r.addProperty("item", itemId);
 		r.addProperty("count", count);
+		return r;
+	}
+
+	private static JsonObject rewSkill(String skill, int level) {
+		JsonObject r = new JsonObject();
+		r.addProperty("type", "SKILL");
+		r.addProperty("skill", skill);
+		r.addProperty("level", level);
 		return r;
 	}
 
@@ -209,6 +226,14 @@ final class QuestDefaults {
 	private static JsonObject condLevel(int minLevel) {
 		JsonObject c = new JsonObject();
 		c.addProperty("type", "LEVEL");
+		c.addProperty("minLevel", minLevel);
+		return c;
+	}
+
+	private static JsonObject condSkill(String skill, int minLevel) {
+		JsonObject c = new JsonObject();
+		c.addProperty("type", "SKILL");
+		c.addProperty("skill", skill);
 		c.addProperty("minLevel", minLevel);
 		return c;
 	}
@@ -581,6 +606,62 @@ final class QuestDefaults {
 	}
 
 	// ========================================================================================
+	// Future Saga Quests (folder: saga_future)
+	// ========================================================================================
+
+	private static void createFutureSagaQuests(Path questsDir) {
+		JsonObject prevAndroid = prevQuest("android_saga", 15);
+
+		writeSaga(questsDir.resolve("saga_future"), "future_saga", "saga_future", prevAndroid,
+				step("future", 1, "01_talk_to_future_trunks.json",
+						earthReq(1380),
+						new JsonObject[]{
+								objTalkTo("trunks")
+						},
+						rewTPS(8000)),
+				step("future", 2, "02_train_with_trunks_and_gohan.json",
+						earthReq(1400, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_ftrunks_base", 1, 52000, 2500, 4000),
+								objKill("dragonminez:saga_fgohan_base", 1, 56000, 2700, 4300)
+						},
+						rewTPS(22000)),
+				step("future", 3, "03_androids_ruined_plains.json",
+						earthReq(1440, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_a17", 1, 62000, 3000, 4800),
+								objKill("dragonminez:saga_a18", 1, 60000, 2900, 4600)
+						},
+						rewTPS(26000)),
+				step("future", 4, "04_face_future_gohan.json",
+						earthReq(1480, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_fgohan_ssj", 1, 68000, 3200, 5200)
+						},
+						rewTPS(28000)),
+				step("future", 5, "05_androids_in_the_mountains.json",
+						earthReq(1520, condBiome("#minecraft:is_mountain")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_a18", 1, 68000, 3300, 5300),
+								objKill("dragonminez:saga_a17", 1, 71000, 3500, 5600)
+						},
+						rewTPS(32000)),
+				step("future", 6, "06_imperfect_cell_of_the_future.json",
+						earthReq(1560, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_cell_imperfect", 1, 76000, 3700, 5900)
+						},
+						rewTPS(36000)),
+				step("future", 7, "07_future_restored.json",
+						earthReq(1580),
+						new JsonObject[]{
+								objTalkTo("trunks")
+						},
+						rewTPS(18000))
+		);
+	}
+
+	// ========================================================================================
 	// Buu Saga Quests (folder: saga_buu)
 	// ========================================================================================
 
@@ -588,18 +669,229 @@ final class QuestDefaults {
 		JsonObject prevAndroid = prevQuest("android_saga", 15);
 
 		writeSaga(questsDir.resolve("saga_buu"), "buu_saga", "saga_buu", prevAndroid,
-				step("buu", 1, "01_test_buu_saga.json",
-						earthReq(1400),
+				step("buu", 1, "01_train_with_goten_and_gohan.json",
+						earthReq(1420, condBiome("minecraft:plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_kibito", 1, 10, 10000, 20000)
+								objKill("dragonminez:saga_goten", 1, 50000, 2400, 3900),
+								objKill("dragonminez:saga_gohan_end_base", 1, 62000, 3000, 4800)
 						},
-						rewTPS(10))
-
+						rewTPS(36000)),
+				step("buu", 2, "02_assemble_gravity_device_parts.json",
+						earthReq(1460),
+						new JsonObject[]{
+								objItem("dragonminez:kikono_station", 1),
+								objItem("dragonminez:fuel_generator", 1),
+								objItem("dragonminez:energy_cable", 8)
+						},
+						rewTPS(22000)),
+				step("buu", 3, "03_train_with_trunks_and_vegeta.json",
+						earthReq(1500, condRealTimeMinutes(10)),
+						new JsonObject[]{
+								objKill("dragonminez:saga_kid_trunks", 1, 54000, 2600, 4200),
+								objKill("dragonminez:saga_vegeta_end_base", 1, 70000, 3400, 5500)
+						},
+						rewTPS(42000)),
+				step("buu", 4, "04_enter_the_world_tournament.json",
+						earthReq(1540, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objTalkTo("shin")
+						},
+						rewTPS(12000)),
+				step("buu", 5, "05_tournament_goten.json",
+						earthReq(1560, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_goten", 1, 56000, 2700, 4300)
+						},
+						rewTPS(24000)),
+				step("buu", 6, "06_tournament_trunks.json",
+						earthReq(1580, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_kid_trunks", 1, 60000, 2900, 4600)
+						},
+						rewTPS(26000)),
+				step("buu", 7, "07_tournament_krillin.json",
+						earthReq(1600, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_krillin", 1, 62000, 3000, 4800)
+						},
+						rewTPS(26000)),
+				step("buu", 8, "08_tournament_shin.json",
+						earthReq(1620, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_shin", 1, 66000, 3200, 5100)
+						},
+						rewTPS(28000)),
+				step("buu", 9, "09_tournament_spopovich.json",
+						earthReq(1640, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_spopovitch", 1, 68000, 3300, 5200)
+						},
+						rewTPS(30000)),
+				step("buu", 10, "10_find_babidi_ship.json",
+						earthReq(1660, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objTalkTo("shin")
+						},
+						rewTPS(14000)),
+				step("buu", 11, "11_babidi_level_pui_pui.json",
+						earthReq(1680, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_puipui", 1, 72000, 3500, 5600)
+						},
+						rewTPS(32000)),
+				step("buu", 12, "12_babidi_level_yakon.json",
+						earthReq(1700, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_yakon", 1, 78000, 3800, 6100)
+						},
+						rewTPS(34000)),
+				step("buu", 13, "13_babidi_level_dabura.json",
+						earthReq(1740, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_dabura", 1, 88000, 4300, 6900)
+						},
+						rewTPS(38000)),
+				step("buu", 14, "14_fat_buu_awakes.json",
+						earthReq(1780, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_buufat", 1, 98000, 4800, 7600)
+						},
+						rewTPS(42000)),
+				step("buu", 15, "15_goku_and_vegeta_clash.json",
+						earthReq(1820, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_goku_end_ssj2", 1, 92000, 4500, 7200),
+								objKill("dragonminez:saga_vegeta_majin", 1, 96000, 4700, 7500)
+						},
+						rewTPS(44000)),
+				step("buu", 16, "16_second_fat_buu_battle.json",
+						earthReq(1860, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_buufat", 1, 110000, 5400, 8600)
+						},
+						rewTPS(46000)),
+				step("buu", 17, "17_stop_babidi.json",
+						earthReq(1880, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_babidi", 1, 70000, 3400, 5400)
+						},
+						rewTPS(30000)),
+				step("buu", 18, "18_goku_super_saiyan_three.json",
+						earthReq(1920, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_goku_end_ssj3", 1, 125000, 6100, 9800)
+						},
+						rewTPS(52000)),
+				step("buu", 19, "19_beach_training_with_gotenks.json",
+						earthReq(1940, condBiome("#minecraft:is_beach")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_gotenks", 1, 90000, 4400, 7000)
+						},
+						rewTPS(42000)),
+				step("buu", 20, "20_evil_buu_at_buus_house.json",
+						earthReq(1960, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_evilbuu", 1, 115000, 5600, 9000)
+						},
+						rewTPS(52000)),
+				step("buu", 21, "21_krillin_and_android_18.json",
+						earthReq(1980, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_krillin", 1, 78000, 3800, 6100),
+								objKill("dragonminez:saga_a18", 1, 90000, 4400, 7000)
+						},
+						rewTPS(44000)),
+				step("buu", 22, "22_super_buu_in_the_time_chamber.json",
+						dimensionReq("dragonminez:time_chamber", 2020),
+						new JsonObject[]{
+								objKill("dragonminez:saga_superbuu", 1, 135000, 6600, 10500)
+						},
+						rewTPS(58000)),
+				step("buu", 23, "23_gotenks_rocky_wasteland.json",
+						earthReq(2040, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_gotenks_ssj3", 1, 135000, 6600, 10500)
+						},
+						rewTPS(56000)),
+				step("buu", 24, "24_sacred_world_and_z_sword.json",
+						namekReq(2060, condBiome("dragonminez:sacred_land"), condSkill("potentialunlock", 20)),
+						new JsonObject[]{
+								objItem("dragonminez:z_sword", 1),
+								objSkill("potentialunlock", 30)
+						},
+						rewTPS(52000)),
+				step("buu", 25, "25_super_buu_returns.json",
+						earthReq(2080, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_superbuu", 1, 145000, 7100, 11400)
+						},
+						rewTPS(60000)),
+				step("buu", 26, "26_super_buu_gotenks.json",
+						earthReq(2100, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_superbuu_gotenks", 1, 160000, 7800, 12500)
+						},
+						rewTPS(66000)),
+				step("buu", 27, "27_super_buu_gohan.json",
+						earthReq(2140, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_superbuu_gohan", 1, 175000, 8600, 13800)
+						},
+						rewTPS(72000)),
+				step("buu", 28, "28_face_vegetto.json",
+						earthReq(2180, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_goku_end_ssj2", 1, 120000, 5900, 9400),
+								objKill("dragonminez:saga_vegeta_end_ssj2", 1, 120000, 5900, 9400)
+						},
+						rewTPS(68000)),
+				step("buu", 29, "29_return_to_the_sacred_world.json",
+						namekReq(2200, condBiome("dragonminez:sacred_land")),
+						new JsonObject[]{
+								objStructure("dragonminez:village_sacred")
+						},
+						rewTPS(22000)),
+				step("buu", 30, "30_kid_buu.json",
+						namekReq(2240, condBiome("dragonminez:sacred_land")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_kidbuu", 1, 185000, 9100, 14500)
+						},
+						rewTPS(76000)),
+				step("buu", 31, "31_goku_ssj3_final_stand.json",
+						namekReq(2260, condBiome("dragonminez:sacred_land")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_goku_end_ssj3", 1, 155000, 7600, 12200)
+						},
+						rewTPS(62000)),
+				step("buu", 32, "32_vegeta_ssj2_final_stand.json",
+						namekReq(2280, condBiome("dragonminez:sacred_land")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_vegeta_end_ssj2", 1, 145000, 7100, 11400)
+						},
+						rewTPS(60000)),
+				step("buu", 33, "33_satan_and_majin_buu.json",
+						namekReq(2300, condBiome("dragonminez:sacred_land")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_buufat", 1, 125000, 6100, 9800)
+						},
+						rewTPS(52000)),
+				step("buu", 34, "34_destroy_kid_buu.json",
+						namekReq(2320, condBiome("dragonminez:sacred_land")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_kidbuu", 1, 220000, 10800, 17200)
+						},
+						rewTPS(90000)),
+				step("buu", 35, "35_return_to_earth.json",
+						earthReq(2320),
+						new JsonObject[]{
+								objDimension("minecraft:overworld")
+						},
+						rewTPS(30000))
 		);
 	}
 
 	private static void createMoviesSagaQuests(Path questsDir) {
-		 JsonObject prevBuu = prevQuest("buu_saga", 1);
+		 JsonObject prevBuu = prevQuest("buu_saga", 35);
 
 		writeSaga(questsDir.resolve("saga_movies"), "movies_saga", "saga_movies", prevBuu,
 				step("buu", 1, "01_test_movies_saga.json",
