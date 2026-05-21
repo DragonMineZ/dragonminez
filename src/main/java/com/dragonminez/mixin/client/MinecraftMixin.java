@@ -8,6 +8,8 @@ import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.CombatAttackRequestC2S;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
@@ -45,7 +47,14 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$startAttack(CallbackInfoReturnable<Boolean> cir) {
 		if (player == null || screen != null) return;
-		if (Screen.hasAltDown() && player.getMainHandItem().isEmpty()) return;
+
+		boolean[] isDmzBlocking = {false};
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> isDmzBlocking[0] = data.getStatus().isBlocking());
+		if (player.isBlocking() || isDmzBlocking[0]) {
+			cir.cancel();
+			cir.setReturnValue(false);
+			return;
+		}
 
 		var mcDMZ = (Minecraft_DMZ) this;
 		var comboCount = mcDMZ.getComboCount();

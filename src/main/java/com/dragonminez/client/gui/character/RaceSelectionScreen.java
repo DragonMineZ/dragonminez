@@ -29,6 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,6 +170,11 @@ public class RaceSelectionScreen extends ScaledScreen {
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		graphics.blit(MENU_BIG, (getUiWidth() / 2) - 70, (getUiHeight() / 2) + 85, 0, 215, 149, 21);
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
+		String currentRace = races.get(selectedRaceIndex);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("race." + Reference.MOD_ID + "." + currentRace), getUiWidth() / 2 + 4, getUiHeight() / 2 + 92, 0xFF7CFDD6);
 		RenderSystem.disableBlend();
 
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
