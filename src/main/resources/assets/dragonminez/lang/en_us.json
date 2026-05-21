@@ -228,6 +228,7 @@
   "gui.dragonminez.quests.requirement.alignment_min": "Alignment at least %s",
   "gui.dragonminez.quests.requirement.alignment_max": "Alignment at most %s",
   "gui.dragonminez.quests.requirement.alignment_range": "Alignment between %s and %s",
+  "gui.dragonminez.quests.requirement.skill": "Reach %s level %s",
   "gui.dragonminez.quests.rewards": "Rewards",
   "gui.dragonminez.quests.rewards.item": "%sx %s.",
   "gui.dragonminez.quests.rewards.command": "Run %s",
@@ -747,6 +748,45 @@
   "entity.dragonminez.saga_krillin": "Krillin",
   "entity.dragonminez.saga_cell_superperfect": "Super Perfect Cell",
   "entity.dragonminez.saga_cell_jr": "Cell Jr",
+  "entity.dragonminez.saga_ftrunks_base": "Future Trunks",
+  "entity.dragonminez.saga_ftrunks_kid_base": "Future Trunks (Kid)",
+  "entity.dragonminez.saga_ftrunks_kid_ssj": "Future Trunks (Kid Super Saiyan)",
+  "entity.dragonminez.saga_ftrunks_ssg3": "Future Trunks (SS Grade 3)",
+  "entity.dragonminez.saga_fgohan_base": "Future Gohan",
+  "entity.dragonminez.saga_fgohan_ssj": "Future Gohan (Super Saiyan)",
+  "entity.dragonminez.saga_goku_end_base": "Goku",
+  "entity.dragonminez.saga_goku_end_ssj": "Goku (Super Saiyan)",
+  "entity.dragonminez.saga_goku_end_ssj2": "Goku (Super Saiyan 2)",
+  "entity.dragonminez.saga_goku_end_ssj3": "Goku (Super Saiyan 3)",
+  "entity.dragonminez.saga_vegeta_end_base": "Vegeta",
+  "entity.dragonminez.saga_vegeta_end_ssj": "Vegeta (Super Saiyan)",
+  "entity.dragonminez.saga_vegeta_end_ssj2": "Vegeta (Super Saiyan 2)",
+  "entity.dragonminez.saga_vegeta_majin": "Majin Vegeta",
+  "entity.dragonminez.saga_gohan_end_base": "Gohan",
+  "entity.dragonminez.saga_gohan_end_ssj": "Gohan (Super Saiyan)",
+  "entity.dragonminez.saga_gohan_end_ssj2": "Gohan (Super Saiyan 2)",
+  "entity.dragonminez.saga_gohan_end_ultimate": "Ultimate Gohan",
+  "entity.dragonminez.saga_goten": "Goten",
+  "entity.dragonminez.saga_goten_ssj": "Goten (Super Saiyan)",
+  "entity.dragonminez.saga_kid_trunks": "Trunks",
+  "entity.dragonminez.saga_kid_trunks_ssj": "Trunks (Super Saiyan)",
+  "entity.dragonminez.saga_gotenks": "Gotenks",
+  "entity.dragonminez.saga_gotenks_ssj": "Gotenks (Super Saiyan)",
+  "entity.dragonminez.saga_gotenks_ssj3": "Gotenks (Super Saiyan 3)",
+  "entity.dragonminez.saga_shin": "Shin",
+  "entity.dragonminez.saga_kibito": "Kibito",
+  "entity.dragonminez.saga_spopovitch": "Spopovich",
+  "entity.dragonminez.saga_puipui": "Pui Pui",
+  "entity.dragonminez.saga_yakon": "Yakon",
+  "entity.dragonminez.saga_dabura": "Dabura",
+  "entity.dragonminez.saga_babidi": "Babidi",
+  "entity.dragonminez.saga_buufat": "Majin Buu",
+  "entity.dragonminez.saga_evilbuu": "Evil Buu",
+  "entity.dragonminez.saga_superbuu": "Super Buu",
+  "entity.dragonminez.saga_superbuu_piccolo": "Super Buu (Piccolo)",
+  "entity.dragonminez.saga_superbuu_gotenks": "Super Buu (Gotenks)",
+  "entity.dragonminez.saga_superbuu_gohan": "Super Buu (Gohan)",
+  "entity.dragonminez.saga_kidbuu": "Kid Buu",
   "entity.dragonminez.robotxv": "Xenoverse Robot",
   "entity.dragonminez.shenron": "Shenron",
   "entity.dragonminez.porunga": "Porunga",
@@ -1346,6 +1386,7 @@
   "dmz.quest.go_to.obj": "Go to %s",
   "dmz.quest.interact.obj": "Interact with %s",
   "dmz.quest.summon_dragon.obj": "Summon %s",
+  "dmz.quest.skill.obj": "Reach %s level %s",
 
   "dmz.quest.saiyan1.name": "Defeat Raditz",
   "dmz.quest.saiyan1.desc": "Raditz has come for Gohan in the plains. Defeat the invader and survive the opening strike of the Saiyan threat.",
@@ -1468,6 +1509,136 @@
   "dmz.quest.android15.name": "Super Perfect Cell",
   "dmz.quest.android15.desc": "Cell has returned stronger after Goku's sacrifice. End the fight for good before he destroys everything left standing.",
 
+  "dmz.saga.future_saga": "Future Saga",
+
+  "dmz.quest.future1.name": "A Future in Ruins",
+  "dmz.quest.future1.desc": "Future Trunks asks you to hear what became of his timeline after the Androids won. Speak with him and prepare to step into that nightmare.",
+
+  "dmz.quest.future2.name": "Resistance Training",
+  "dmz.quest.future2.desc": "Train on the plains with Future Trunks and Future Gohan. Their world has no room for hesitation.",
+
+  "dmz.quest.future3.name": "Androids of the Future",
+  "dmz.quest.future3.desc": "Android 17 and Android 18 are tearing through the ruined plains. Fight them before their destruction spreads any further.",
+
+  "dmz.quest.future4.name": "Future Gohan's Last Stand",
+  "dmz.quest.future4.desc": "Future Gohan pushes himself into Super Saiyan for one final battle. Face him and carry his resolve forward.",
+
+  "dmz.quest.future5.name": "Mountain Ambush",
+  "dmz.quest.future5.desc": "The Androids have retreated into the mountains. Track them down and end the hunt on their chosen ground.",
+
+  "dmz.quest.future6.name": "Imperfect Cell of the Future",
+  "dmz.quest.future6.desc": "A younger Imperfect Cell is stalking the plains, feeding on what remains of the future. Destroy him before he escapes into another timeline.",
+
+  "dmz.quest.future7.name": "Future Restored",
+  "dmz.quest.future7.desc": "The future has a chance to heal. Report back to Trunks and close this optional saga.",
+
+  "dmz.saga.buu_saga": "Buu Saga",
+
+  "dmz.quest.buu1.name": "Train with Goten and Gohan",
+  "dmz.quest.buu1.desc": "Peace never lasts. Train on the plains with Goten and Gohan before the next threat reveals itself.",
+
+  "dmz.quest.buu2.name": "Gravity Device Components",
+  "dmz.quest.buu2.desc": "A full gravity device will need serious machinery. Gather Kikono station parts, a fuel generator, and enough cabling to support the training load.",
+
+  "dmz.quest.buu3.name": "Trunks and Vegeta Training",
+  "dmz.quest.buu3.desc": "Train with Trunks and Vegeta under harsher conditions. Vegeta will not accept weak preparation.",
+
+  "dmz.quest.buu4.name": "Enter the World Tournament",
+  "dmz.quest.buu4.desc": "The World Martial Arts Tournament is underway. Speak with Shin and step into the tournament path.",
+
+  "dmz.quest.buu5.name": "Tournament: Goten",
+  "dmz.quest.buu5.desc": "Your first tournament bout is against Goten. Do not underestimate him because of his size.",
+
+  "dmz.quest.buu6.name": "Tournament: Trunks",
+  "dmz.quest.buu6.desc": "Kid Trunks enters with a Saiyan's pride and a champion's confidence. Defeat him in the tournament ring.",
+
+  "dmz.quest.buu7.name": "Tournament: Krillin",
+  "dmz.quest.buu7.desc": "Krillin brings years of experience into the tournament. Break through his technique and keep advancing.",
+
+  "dmz.quest.buu8.name": "Tournament: Shin",
+  "dmz.quest.buu8.desc": "Shin's calm hides a deeper purpose. Face him and learn why he is watching the tournament so closely.",
+
+  "dmz.quest.buu9.name": "Tournament: Spopovich",
+  "dmz.quest.buu9.desc": "Spopovich fights with unnatural strength. Defeat him before his stolen energy serves Babidi's plan.",
+
+  "dmz.quest.buu10.name": "Find Babidi's Ship",
+  "dmz.quest.buu10.desc": "Shin tracks Babidi's energy to a rocky wasteland. Follow the signal and find the entrance to the wizard's lair.",
+
+  "dmz.quest.buu11.name": "Babidi's Guard: Pui Pui",
+  "dmz.quest.buu11.desc": "Pui Pui guards the first level of Babidi's ship. Drop him and keep moving before the seal weakens.",
+
+  "dmz.quest.buu12.name": "Babidi's Guard: Yakon",
+  "dmz.quest.buu12.desc": "Yakon feeds on energy and darkness. Keep your power under control and bring the monster down.",
+
+  "dmz.quest.buu13.name": "Dabura, King of Demons",
+  "dmz.quest.buu13.desc": "Dabura stands between you and Babidi's plan. Survive his demonic power and cut through the ship's last defense.",
+
+  "dmz.quest.buu14.name": "Majin Buu Awakens",
+  "dmz.quest.buu14.desc": "Fat Buu has awakened. The innocent smile hides power that can erase the world.",
+
+  "dmz.quest.buu15.name": "Goku and Vegeta Clash",
+  "dmz.quest.buu15.desc": "Goku and Majin Vegeta's battle is feeding the disaster. Survive both warriors and force the battle back toward Buu.",
+
+  "dmz.quest.buu16.name": "Buu's Second Rampage",
+  "dmz.quest.buu16.desc": "Fat Buu is still loose and growing harder to contain. Fight him again before the damage becomes permanent.",
+
+  "dmz.quest.buu17.name": "Stop Babidi",
+  "dmz.quest.buu17.desc": "Babidi thinks he can control the monster he released. End the wizard's influence before he steers Buu toward more destruction.",
+
+  "dmz.quest.buu18.name": "Super Saiyan 3",
+  "dmz.quest.buu18.desc": "Goku reveals a power beyond Super Saiyan 2 on the plains. Stand against Super Saiyan 3 and learn what the next battles demand.",
+
+  "dmz.quest.buu19.name": "Beach Training with Gotenks",
+  "dmz.quest.buu19.desc": "Gotenks needs field experience away from the cities. Meet him at the beach and test the fusion's raw power.",
+
+  "dmz.quest.buu20.name": "Evil Buu",
+  "dmz.quest.buu20.desc": "Buu's evil has split into its own body. Face Evil Buu before the innocent side is consumed.",
+
+  "dmz.quest.buu21.name": "Krillin and Android 18",
+  "dmz.quest.buu21.desc": "Krillin and Android 18 test your readiness for the chaos ahead. Train against them together on the plains.",
+
+  "dmz.quest.buu22.name": "Super Buu in the Time Chamber",
+  "dmz.quest.buu22.desc": "Super Buu has reached the Hyperbolic Time Chamber. Fight him in that isolated space before he breaks loose.",
+
+  "dmz.quest.buu23.name": "Gotenks at Full Power",
+  "dmz.quest.buu23.desc": "Gotenks brings Super Saiyan 3 power to the rocky wasteland. Prove you can survive that pressure before facing Buu again.",
+
+  "dmz.quest.buu24.name": "The Z Sword and Ultimate Power",
+  "dmz.quest.buu24.desc": "Travel to the sacred lands, carry the Z Sword, and reach the Potential Unlock level needed to awaken ultimate power.",
+
+  "dmz.quest.buu25.name": "Super Buu Returns",
+  "dmz.quest.buu25.desc": "Super Buu has returned stronger and more focused. Challenge him in the rocky wasteland.",
+
+  "dmz.quest.buu26.name": "Super Buu Gotenks",
+  "dmz.quest.buu26.desc": "Buu has absorbed Gotenks and stolen his explosive power. Bring down the fused monster before the timer runs out.",
+
+  "dmz.quest.buu27.name": "Super Buu Gohan",
+  "dmz.quest.buu27.desc": "Buu has absorbed Gohan and reached a terrifying new peak. Survive the power of Super Buu Gohan.",
+
+  "dmz.quest.buu28.name": "Face Vegetto",
+  "dmz.quest.buu28.desc": "Vegetto's combined power is overwhelming. Fight through Goku and Vegeta's fused pressure and prepare for the final rescue.",
+
+  "dmz.quest.buu29.name": "Return to the Sacred World",
+  "dmz.quest.buu29.desc": "The final battle moves to the sacred world. Reach the sacred village before Kid Buu arrives.",
+
+  "dmz.quest.buu30.name": "Kid Buu",
+  "dmz.quest.buu30.desc": "Kid Buu is pure destruction with no restraint. Fight him on sacred ground and hold him back.",
+
+  "dmz.quest.buu31.name": "Goku's Final Stand",
+  "dmz.quest.buu31.desc": "Goku pushes Super Saiyan 3 to its limit. Face him and buy the time needed for one last chance.",
+
+  "dmz.quest.buu32.name": "Vegeta's Final Stand",
+  "dmz.quest.buu32.desc": "Vegeta steps in with Super Saiyan 2 resolve. Stand beside his defiance and test yourself against it.",
+
+  "dmz.quest.buu33.name": "Satan and Majin Buu",
+  "dmz.quest.buu33.desc": "Majin Buu's friendship with Mr. Satan becomes the world's unlikely hope. Hold the line with Buu while that hope takes shape.",
+
+  "dmz.quest.buu34.name": "Destroy Kid Buu",
+  "dmz.quest.buu34.desc": "This is the final clash. Destroy Kid Buu before his chaos reaches Earth again.",
+
+  "dmz.quest.buu35.name": "Return to Earth",
+  "dmz.quest.buu35.desc": "The battle is over. Return to Earth and close the Buu Saga.",
+
   "dmz.saga.movies_saga": "Movies Saga",
   "//": "SIDE QUESTS § TRAINING",
   "dmz.sidequest.roshi_basic.name": "Roshi's Basic Training",
@@ -1510,6 +1681,12 @@
   "dmz.sidequest.vegeta_pride.desc": "Vegeta demands you keep up with his training regimen. Enter the Hyperbolic Time Chamber and fight the deadliest enemies to prove you're worthy of a Saiyan's respect.",
   "dmz.sidequest.gohan_timechamber.name": "Gohan's Time Chamber Training",
   "dmz.sidequest.gohan_timechamber.desc": "Gohan is training inside the Hyperbolic Time Chamber to unlock his hidden potential. Help him prepare by gathering supplies and clearing out phantom threats.",
+
+  "//": "SIDE QUESTS - TRAINING - BUU SAGA",
+  "dmz.sidequest.kaiosama_buu.name": "Kaiosama's Warning",
+  "dmz.sidequest.kaiosama_buu.desc": "King Kai senses a sleeping evil behind the tournament. Speak with him before Babidi's plan reaches Earth.",
+  "dmz.sidequest.old_kai_ritual.name": "Old Kai's Ritual",
+  "dmz.sidequest.old_kai_ritual.desc": "The Z Sword has revealed a stranger path to hidden power. Bring the sword to the sacred village, speak with King Kai, and complete the ritual to awaken your ultimate potential.",
 
   "//": "SIDE QUESTS § EXPLORATION €” FRIEZA SAGA",
   "dmz.sidequest.krillin_scout.name": "Namek Reconnaissance",
@@ -1561,6 +1738,10 @@
   "dmz.sidequest.goku_farewell.name": "Goku's Final Farewell",
   "dmz.sidequest.goku_farewell.desc": "With Cell defeated, Goku has one last wish €” visit Kami's Lookout together one more time. This may be the last chance to say goodbye.",
 
+  "//": "SIDE QUESTS - STORY - FUTURE SAGA",
+  "dmz.sidequest.future_gohan_cure.name": "Medicine for the Future",
+  "dmz.sidequest.future_gohan_cure.desc": "Future Gohan is badly wounded after the Androids' attack. Gather golden apples and a Senzu Bean, then report back to Trunks.",
+
   "//": "SIDE QUESTS § COLLECTION €” SAIYAN SAGA",
   "dmz.sidequest.bulma_radar.name": "Radar Upgrade",
   "dmz.sidequest.bulma_radar.desc": "Bulma needs specific materials to improve the Dragon Radar's range. Gather redstone, copper, and gold for her €” she'll make it worth your while.",
@@ -1580,6 +1761,10 @@
   "//": "SIDE QUESTS § COLLECTION €” ANDROID SAGA",
   "dmz.sidequest.bulma_gero.name": "Gero's Blueprints",
   "dmz.sidequest.bulma_gero.desc": "Bulma needs data from Dr. Gero's laboratory to understand the Androids' weaknesses. Search the lab and bring back redstone circuits and Kikono components.",
+
+  "//": "SIDE QUESTS - COLLECTION - BUU SAGA",
+  "dmz.sidequest.buu_dragon_balls.name": "Dragon Balls for the Final Battle",
+  "dmz.sidequest.buu_dragon_balls.desc": "Bulma wants the Earth Dragon Balls ready before Buu's threat gets worse. Summon Shenron and return to her with the result.",
 
   "//": "SIDE QUESTS § CATEGORIES",
   "gui.dragonminez.story.sidequests.category.training": "Training",

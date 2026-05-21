@@ -45,7 +45,8 @@ public abstract class QuestObjective {
         DIMENSION,
         COORDS,
         TALK_TO,
-        DRAGON_SUMMON
+        DRAGON_SUMMON,
+        SKILL
     }
 }
 

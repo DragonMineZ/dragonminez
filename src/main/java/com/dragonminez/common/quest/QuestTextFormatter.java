@@ -7,6 +7,7 @@ import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsData;
@@ -33,6 +34,7 @@ public final class QuestTextFormatter {
 	private static final String OBJECTIVE_GO_TO = "dmz.quest.go_to.obj";
 	private static final String OBJECTIVE_INTERACT = "dmz.quest.interact.obj";
 	private static final String OBJECTIVE_SUMMON_DRAGON = "dmz.quest.summon_dragon.obj";
+	private static final String OBJECTIVE_SKILL = "dmz.quest.skill.obj";
 
 	private static final Pattern NPC_VARIANT_SUFFIX = Pattern.compile("^(.+?)_\\d+$");
 
@@ -51,7 +53,8 @@ public final class QuestTextFormatter {
 			Map.entry("minecraft:overworld", "Earth"),
 			Map.entry("minecraft:the_nether", "Nether"),
 			Map.entry("minecraft:the_end", "The End"),
-			Map.entry("dragonminez:namek", "Namek")
+			Map.entry("dragonminez:namek", "Namek"),
+			Map.entry("dragonminez:time_chamber", "Hyperbolic Time Chamber")
 	);
 
 	private QuestTextFormatter() {
@@ -76,6 +79,9 @@ public final class QuestTextFormatter {
 		}
 		if (objective instanceof DragonSummonObjective dragonSummon) {
 			return Component.translatable(OBJECTIVE_SUMMON_DRAGON, resolveDragonName(dragonSummon.getDragonId()));
+		}
+		if (objective instanceof SkillObjective skill) {
+			return Component.translatable(OBJECTIVE_SKILL, resolveSkillName(skill.getSkill()), skill.getLevel());
 		}
 		if (objective instanceof StructureObjective structure) {
 			return Component.translatable(OBJECTIVE_GO_TO, resolveStructureName(structure.getStructureId()));
@@ -128,6 +134,11 @@ public final class QuestTextFormatter {
 			);
 			case TIME -> buildTimeRequirement(condition, context);
 			case ALIGNMENT -> buildAlignmentRequirement(condition);
+			case SKILL -> Component.translatable(
+					"gui.dragonminez.quests.requirement.skill",
+					resolveSkillName(condition.getSkill()),
+					condition.getSkillLevel()
+			);
 		};
 	}
 
@@ -254,6 +265,18 @@ public final class QuestTextFormatter {
 					: Component.translatable(questNpcKey);
 		}
 		return null;
+	}
+
+	private static Component resolveSkillName(String skill) {
+		if (skill == null || skill.isBlank()) {
+			return Component.literal("?");
+		}
+		String normalized = skill.contains(":") ? skill.substring(skill.indexOf(':') + 1) : skill;
+		String key = normalized.contains(".") ? normalized : "skill.dragonminez." + normalized.toLowerCase();
+		Component translated = Component.translatable(key);
+		return translated.getString().equals(key)
+				? Component.literal(humanizeIdentifier(normalized))
+				: translated;
 	}
 
 	private static Component resolveStructureName(String structureId) {

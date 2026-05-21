@@ -28,6 +28,8 @@ public class QuestObjectiveTypeAdapter implements JsonSerializer<QuestObjective>
                 return context.deserialize(jsonObject, CoordsObjective.class);
             case "TALK_TO":
                 return context.deserialize(jsonObject, TalkToObjective.class);
+            case "SKILL":
+                return context.deserialize(jsonObject, SkillObjective.class);
             default:
                 throw new JsonParseException("Unknown objective type: " + type);
         }

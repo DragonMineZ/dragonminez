@@ -45,12 +45,14 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
       - name: Build dev jar
-        run: ./gradlew build
+        run: ./gradlew build --build-cache
 
       - name: Resolve dev jar
         id: artifact
