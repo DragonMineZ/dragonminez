@@ -119,17 +119,16 @@ public class TransformationsHelper {
 	}
 
 	private static int getSkillLevelForType(StatsData statsData, String formType) {
-		return switch (formType.toLowerCase()) {
-			case "super" -> statsData.getSkills().getSkillLevel("superform");
-			case "god" -> statsData.getSkills().getSkillLevel("godform");
-			case "legendary" -> statsData.getSkills().getSkillLevel("legendaryforms");
-			case "android" -> statsData.getSkills().getSkillLevel("androidforms");
-			default -> statsData.getSkills().getSkillLevel(formType);
-		};
+		if (formType.toLowerCase().contains("super")) return statsData.getSkills().getSkillLevel("superforms");
+		else if (formType.toLowerCase().contains("legendary")) return statsData.getSkills().getSkillLevel("legendaryforms");
+		else if (formType.toLowerCase().contains("god")) return statsData.getSkills().getSkillLevel("godforms");
+		else if (formType.toLowerCase().contains("android")) return statsData.getSkills().getSkillLevel("androidforms");
+		else return statsData.getSkills().getSkillLevel(formType);
 	}
 
 	private static int getSkillLevelForStackType(StatsData statsData, String formType) {
-		return statsData.getSkills().getSkillLevel(formType);
+		if (formType == null || formType.isEmpty()) return 0;
+		return statsData.getSkills().getSkillLevel(formType.toLowerCase(Locale.ROOT));
 	}
 
 	public static String getGroupWithFirstAvailableForm(StatsData statsData) {
@@ -138,12 +137,12 @@ public class TransformationsHelper {
 		if (allGroups == null || allGroups.isEmpty()) return null;
 
 		List<String> preferredTypes = new ArrayList<>();
-		if (statsData.getSkills().getSkillLevel("superform") > 0) preferredTypes.add("super");
-		if (statsData.getSkills().getSkillLevel("legendaryforms") > 0) preferredTypes.add("legendary");
-		if (statsData.getSkills().getSkillLevel("godform") > 0) preferredTypes.add("god");
-		if (statsData.getSkills().getSkillLevel("androidforms") > 0) preferredTypes.add("android");
+		if (statsData.getSkills().getSkillLevel("superforms") > 0) preferredTypes.add("superforms");
+		if (statsData.getSkills().getSkillLevel("legendaryforms") > 0) preferredTypes.add("legendaryforms");
+		if (statsData.getSkills().getSkillLevel("godforms") > 0) preferredTypes.add("godforms");
+		if (statsData.getSkills().getSkillLevel("androidforms") > 0) preferredTypes.add("androidforms");
 
-		if (preferredTypes.isEmpty()) preferredTypes.add("super");
+		if (preferredTypes.isEmpty()) preferredTypes.add("superforms");
 
 		for (String formType : preferredTypes) {
 			String group = findBestGroupByType(statsData, race, allGroups, formType);
@@ -155,18 +154,10 @@ public class TransformationsHelper {
 
 	public static String getFirstAvailableForm(StatsData statsData) {
 		String group = getGroupWithFirstAvailableForm(statsData);
-		if (group == null) {
-			return null;
-		}
-
+		if (group == null) return null;
 		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), group);
-		if (config == null) {
-			return null;
-		}
-
-		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) {
-			return null;
-		}
+		if (config == null) return null;
+		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return null;
 
 		int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
@@ -178,18 +169,10 @@ public class TransformationsHelper {
 
 	public static int getFirstAvailableFormLevel(StatsData statsData) {
 		String group = getGroupWithFirstAvailableForm(statsData);
-		if (group == null) {
-			return -1;
-		}
-
+		if (group == null) return -1;
 		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), group);
-		if (config == null) {
-			return -1;
-		}
-
-		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) {
-			return -1;
-		}
+		if (config == null) return -1;
+		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return -1;
 
 		int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
@@ -259,7 +242,7 @@ public class TransformationsHelper {
 		for (Map.Entry<String, FormConfig> entry : allGroups.entrySet()) {
 			String groupKey = entry.getKey();
 			FormConfig config = ConfigManager.getFormGroup(race, groupKey);
-			if (config == null || !config.getFormType().equalsIgnoreCase(formType)) continue;
+			if (config == null || !config.getFormType().toLowerCase().contains(formType)) continue;
 			if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) continue;
 
 			int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
@@ -285,7 +268,7 @@ public class TransformationsHelper {
 		for (Map.Entry<String, FormConfig> entry : allGroups.entrySet()) {
 			String groupKey = entry.getKey();
 			FormConfig config = entry.getValue();
-			if (config == null || !config.getFormType().equalsIgnoreCase(formType)) continue;
+			if (config == null || !config.getFormType().toLowerCase().contains(formType)) continue;
 
 			int currentSkillLevel = getSkillLevelForStackType(statsData, config.getFormType());
 			int[] reqLevels = config.getForms().values().stream()
@@ -305,33 +288,20 @@ public class TransformationsHelper {
 
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
 		String race = statsData.getCharacter().getRaceName();
-		String group = statsData.getCharacter().hasActiveForm() ?
-				statsData.getCharacter().getActiveFormGroup() :
-				statsData.getCharacter().getSelectedFormGroup();
-
-		if (group == null || group.isEmpty()) {
-			return null;
-		}
-
+		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		if (group == null || group.isEmpty()) return null;
 		FormConfig config = ConfigManager.getFormGroup(race, group);
-		if (config == null) {
-			return null;
-		}
+		if (config == null) return null;
+
 
 		boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
 		boolean isAndroidGroup = "androidforms".equalsIgnoreCase(group);
-		boolean isGodGroup = config.getFormType().equalsIgnoreCase("god");
+		boolean isGodGroup = config.getFormType().toLowerCase().contains("god");
 		boolean requiresSaiyanTail = "oozaru".equalsIgnoreCase(config.getGroupName());
 
-		if (!isAndroidUpgraded && isAndroidGroup) {
-			return null;
-		}
-		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) {
-			return null;
-		}
-		if (requiresSaiyanTail && !statsData.getCharacter().isHasSaiyanTail()) {
-			return null;
-		}
+		if (!isAndroidUpgraded && isAndroidGroup) return null;
+		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) return null;
+		if (requiresSaiyanTail && !statsData.getCharacter().isHasSaiyanTail()) return null;
 
 		String currentFormName = statsData.getCharacter().getActiveForm();
 		String nextFormName;
@@ -343,9 +313,7 @@ public class TransformationsHelper {
 			boolean foundCurrent = false;
 			for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
 				if (!foundCurrent) {
-					if (entry.getKey().equalsIgnoreCase(currentFormName)) {
-						foundCurrent = true;
-					}
+					if (entry.getKey().equalsIgnoreCase(currentFormName)) foundCurrent = true;
 					continue;
 				}
 

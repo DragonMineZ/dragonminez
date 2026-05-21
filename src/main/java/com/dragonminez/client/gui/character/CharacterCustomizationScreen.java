@@ -69,7 +69,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private float displayedScale = 95.0f;
 	private float displayedBaseY = 0.0f;
 	private boolean initializedAnimations = false;
-	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("super", "android", "legendary", "god");
+	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
 	private final List<TabId> activeTabs = new ArrayList<>();
 
 	private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));

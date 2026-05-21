@@ -50,6 +50,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData x2 = new FormConfig.FormData();
 		x2.setName(StackForms.X2);
 		x2.setUnlockOnSkillLevel(1);
+		x2.setKeepBaseFormHeadBones(true);
 		x2.setStrMultiplier(1.1);
 		x2.setSkpMultiplier(1.1);
 		x2.setDefMultiplier(1.1);
@@ -68,6 +69,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData x3 = new FormConfig.FormData();
 		x3.setName(StackForms.X3);
 		x3.setUnlockOnSkillLevel(2);
+		x3.setKeepBaseFormHeadBones(true);
 		x3.setStrMultiplier(1.2);
 		x3.setSkpMultiplier(1.2);
 		x3.setDefMultiplier(1.2);
@@ -84,6 +86,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData x4 = new FormConfig.FormData();
 		x4.setName(StackForms.X4);
 		x4.setUnlockOnSkillLevel(3);
+		x4.setKeepBaseFormHeadBones(true);
 		x4.setStrMultiplier(1.35);
 		x4.setSkpMultiplier(1.35);
 		x4.setDefMultiplier(1.35);
@@ -100,6 +103,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData x10 = new FormConfig.FormData();
 		x10.setName(StackForms.X10);
 		x10.setUnlockOnSkillLevel(4);
+		x10.setKeepBaseFormHeadBones(true);
 		x10.setStrMultiplier(1.5);
 		x10.setSkpMultiplier(1.5);
 		x10.setDefMultiplier(1.5);
@@ -116,6 +120,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData x20 = new FormConfig.FormData();
 		x20.setName(StackForms.X20);
 		x20.setUnlockOnSkillLevel(5);
+		x20.setKeepBaseFormHeadBones(true);
 		x20.setStrMultiplier(1.65);
 		x20.setSkpMultiplier(1.65);
 		x20.setDefMultiplier(1.65);
@@ -132,6 +137,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData x100 = new FormConfig.FormData();
 		x100.setName(StackForms.X100);
 		x100.setUnlockOnSkillLevel(6);
+		x100.setKeepBaseFormHeadBones(true);
 		x100.setStrMultiplier(2.0);
 		x100.setSkpMultiplier(2.0);
 		x100.setDefMultiplier(2.0);
@@ -167,6 +173,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ultimate = new FormConfig.FormData();
 		ultimate.setName(StackForms.ULTIMATE);
 		ultimate.setUnlockOnSkillLevel(1);
+		ultimate.setKeepBaseFormHeadBones(true);
 		ultimate.setCustomModel("");
 		ultimate.setStrMultiplier(1.25);
 		ultimate.setSkpMultiplier(1.25);
@@ -294,7 +301,7 @@ public class DefaultFormsFactory {
 		FormConfig humanForms = new FormConfig();
 		humanForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		humanForms.setGroupName(HumanForms.GROUP_SUPERFORMS);
-		humanForms.setFormType("super");
+		humanForms.setFormType("superforms");
 
 		FormConfig.FormData buffed = new FormConfig.FormData();
 		buffed.setName(HumanForms.BUFFED);
@@ -366,7 +373,7 @@ public class DefaultFormsFactory {
 		FormConfig humanLegendaryForms = new FormConfig();
 		humanLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		humanLegendaryForms.setGroupName(HumanForms.GROUP_LEGENDARYFORMS);
-		humanLegendaryForms.setFormType("legendary");
+		humanLegendaryForms.setFormType("legendaryforms");
 
 		FormConfig.FormData shiyoken = new FormConfig.FormData();
 		shiyoken.setName(HumanForms.SHIYOKEN);
@@ -471,7 +478,7 @@ public class DefaultFormsFactory {
 		FormConfig oozaruForms = new FormConfig();
 		oozaruForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		oozaruForms.setGroupName(SaiyanForms.GROUP_OOZARU);
-		oozaruForms.setFormType("super");
+		oozaruForms.setFormType("superforms");
 
 		FormConfig.FormData oozaru = new FormConfig.FormData();
 		oozaru.setName(SaiyanForms.OOZARU);
@@ -544,7 +551,7 @@ public class DefaultFormsFactory {
 		FormConfig ssGrades = new FormConfig();
 		ssGrades.setConfigVersion(FormConfig.CURRENT_VERSION);
 		ssGrades.setGroupName(SaiyanForms.GROUP_SSGRADES);
-		ssGrades.setFormType("super");
+		ssGrades.setFormType("superforms");
 
 		FormConfig.FormData ssj1 = new FormConfig.FormData();
 		ssj1.setName(SaiyanForms.SUPER_SAIYAN);
@@ -617,7 +624,7 @@ public class DefaultFormsFactory {
 		FormConfig superSaiyan = new FormConfig();
 		superSaiyan.setConfigVersion(FormConfig.CURRENT_VERSION);
 		superSaiyan.setGroupName(SaiyanForms.GROUP_SUPERSAIYAN);
-		superSaiyan.setFormType("super");
+		superSaiyan.setFormType("superforms");
 
 		FormConfig.FormData ssj1Mastered = new FormConfig.FormData();
 		ssj1Mastered.setName(SaiyanForms.SUPER_SAIYAN_MASTERED);
@@ -714,12 +721,16 @@ public class DefaultFormsFactory {
 		FormConfig saiyanLegendaryForms = new FormConfig();
 		saiyanLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		saiyanLegendaryForms.setGroupName(SaiyanForms.GROUP_LEGENDARYFORMS);
-		saiyanLegendaryForms.setFormType("legendary");
+		saiyanLegendaryForms.setFormType("legendaryforms");
 
 		FormConfig.FormData ikari = new FormConfig.FormData();
 		ikari.setName(SaiyanForms.IKARI);
 		ikari.setUnlockOnSkillLevel(1);
-		ikari.setCustomModel("");
+		ikari.setCustomModel("buffed");
+		ikari.setHairColor("#000000");
+		ikari.setEye1Color("#FFD700");
+		ikari.setEye2Color("#FFD700");
+		ikari.setAuraColor("#40FF00");
 		ikari.setStrMultiplier(4.25);
 		ikari.setSkpMultiplier(4.25);
 		ikari.setDefMultiplier(4.25);
@@ -732,24 +743,36 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssjHybrid = new FormConfig.FormData();
 		ssjHybrid.setName(SaiyanForms.SSJ_HYBRID);
 		ssjHybrid.setUnlockOnSkillLevel(2);
-		ssjHybrid.setCustomModel("");
+		ssjHybrid.setCustomModel("buffed");
+		ssjHybrid.setHairColor("#FFE89E");
+		ssjHybrid.setEye1Color("#FFFFFF");
+		ssjHybrid.setEye2Color("#FFFFFF");
+		ssjHybrid.setAuraColor("#40FF00");
+		ssjHybrid.setHasLightnings(true);
+		ssjHybrid.setLightningColor("#40FF00");
 		ssjHybrid.setStrMultiplier(4.75);
 		ssjHybrid.setSkpMultiplier(4.75);
 		ssjHybrid.setDefMultiplier(4.75);
 		ssjHybrid.setPwrMultiplier(4.75);
-		ssjHybrid.setHairType("base");
+		ssjHybrid.setHairType("ssj");
 		setDefaultMasteryValues(ssjHybrid);
 		ssjHybrid.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData ssjFullPower = new FormConfig.FormData();
 		ssjFullPower.setName(SaiyanForms.SSJ_FULL_POWER);
 		ssjFullPower.setUnlockOnSkillLevel(3);
-		ssjFullPower.setCustomModel("");
+		ssjFullPower.setCustomModel("buffed");
+		ssjFullPower.setHairColor("#9EFE53");
+		ssjFullPower.setEye1Color("#FFFFFF");
+		ssjFullPower.setEye2Color("#FFFFFF");
+		ssjFullPower.setAuraColor("#40FF00");
+		ssjFullPower.setHasLightnings(true);
+		ssjFullPower.setLightningColor("#40FF00");
 		ssjFullPower.setStrMultiplier(5.5);
 		ssjFullPower.setSkpMultiplier(5.5);
 		ssjFullPower.setDefMultiplier(5.5);
 		ssjFullPower.setPwrMultiplier(5.5);
-		ssjFullPower.setHairType("base");
+		ssjFullPower.setHairType("ssj2");
 		setDefaultMasteryValues(ssjFullPower);
 		ssjFullPower.setStackDrainMultiplier(2.0);
 
@@ -767,7 +790,7 @@ public class DefaultFormsFactory {
 		FormConfig namekianForms = new FormConfig();
 		namekianForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		namekianForms.setGroupName(NamekianForms.GROUP_SUPERFORMS);
-		namekianForms.setFormType("super");
+		namekianForms.setFormType("superforms");
 
 		FormConfig.FormData giantForm = new FormConfig.FormData();
 		giantForm.setName(NamekianForms.GIANT);
@@ -830,7 +853,7 @@ public class DefaultFormsFactory {
 		FormConfig namekianLegendaryForms = new FormConfig();
 		namekianLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		namekianLegendaryForms.setGroupName(NamekianForms.GROUP_LEGENDARYFORMS);
-		namekianLegendaryForms.setFormType("legendary");
+		namekianLegendaryForms.setFormType("legendaryforms");
 
 		FormConfig.FormData evilNamek = new FormConfig.FormData();
 		evilNamek.setName(NamekianForms.EVIL_NAMEK);
@@ -887,7 +910,7 @@ public class DefaultFormsFactory {
 		FormConfig frostForms = new FormConfig();
 		frostForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		frostForms.setGroupName(FrostDemonForms.GROUP_EVOLUTIONFORMS);
-		frostForms.setFormType("super");
+		frostForms.setFormType("superforms");
 
 		FormConfig.FormData second = new FormConfig.FormData();
 		second.setName(FrostDemonForms.SECOND_FORM);
@@ -978,7 +1001,7 @@ public class DefaultFormsFactory {
 		FormConfig frostLegendaryForms = new FormConfig();
 		frostLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		frostLegendaryForms.setGroupName(FrostDemonForms.GROUP_LEGENDARYFORMS);
-		frostLegendaryForms.setFormType("legendary");
+		frostLegendaryForms.setFormType("legendaryforms");
 
 		FormConfig.FormData mecha = new FormConfig.FormData();
 		mecha.setName(FrostDemonForms.MECHA);
@@ -1031,7 +1054,7 @@ public class DefaultFormsFactory {
 		FormConfig majinForms = new FormConfig();
 		majinForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		majinForms.setGroupName(MajinForms.GROUP_PUREFORMS);
-		majinForms.setFormType("super");
+		majinForms.setFormType("superforms");
 
 		FormConfig.FormData kid = new FormConfig.FormData();
 		kid.setName(MajinForms.KID);
@@ -1068,18 +1091,18 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(evil);
 		evil.setStackDrainMultiplier(2.0);
 
-		FormConfig.FormData superForm = new FormConfig.FormData();
-		superForm.setName(MajinForms.SUPER);
-		superForm.setUnlockOnSkillLevel(3);
-		superForm.setKeepBaseFormHeadBones(true);
-		superForm.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
-		superForm.setStrMultiplier(2.25);
-		superForm.setSkpMultiplier(2.25);
-		superForm.setDefMultiplier(2.15);
-		superForm.setPwrMultiplier(2.25);
-		superForm.setHairType("base");
-		setDefaultMasteryValues(superForm);
-		superForm.setStackDrainMultiplier(2.0);
+		FormConfig.FormData superForms = new FormConfig.FormData();
+		superForms.setName(MajinForms.SUPER);
+		superForms.setUnlockOnSkillLevel(3);
+		superForms.setKeepBaseFormHeadBones(true);
+		superForms.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
+		superForms.setStrMultiplier(2.25);
+		superForms.setSkpMultiplier(2.25);
+		superForms.setDefMultiplier(2.15);
+		superForms.setPwrMultiplier(2.25);
+		superForms.setHairType("base");
+		setDefaultMasteryValues(superForms);
+		superForms.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData ultra = new FormConfig.FormData();
 		ultra.setName(MajinForms.ULTRA);
@@ -1102,7 +1125,7 @@ public class DefaultFormsFactory {
 		Map<String, FormConfig.FormData> majinFormData = new LinkedHashMap<>();
 		majinFormData.put(MajinForms.KID, kid);
 		majinFormData.put(MajinForms.EVIL, evil);
-		majinFormData.put(MajinForms.SUPER, superForm);
+		majinFormData.put(MajinForms.SUPER, superForms);
 		majinFormData.put(MajinForms.ULTRA, ultra);
 		majinForms.setForms(majinFormData);
 
@@ -1112,7 +1135,7 @@ public class DefaultFormsFactory {
 		FormConfig majinLegendaryForms = new FormConfig();
 		majinLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		majinLegendaryForms.setGroupName(MajinForms.GROUP_LEGENDARYFORMS);
-		majinLegendaryForms.setFormType("legendary");
+		majinLegendaryForms.setFormType("legendaryforms");
 
 		FormConfig.FormData innocence = new FormConfig.FormData();
 		innocence.setName(MajinForms.INNOCENCE_DEMON);
@@ -1152,7 +1175,7 @@ public class DefaultFormsFactory {
 		FormConfig bioForms = new FormConfig();
 		bioForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		bioForms.setGroupName(BioAndroidForms.GROUP_BIOEVOLUTION);
-		bioForms.setFormType("super");
+		bioForms.setFormType("superforms");
 
 		FormConfig.FormData semiPerfect = new FormConfig.FormData();
 		semiPerfect.setName(BioAndroidForms.SEMI_PERFECT);
@@ -1253,7 +1276,7 @@ public class DefaultFormsFactory {
 		FormConfig bioLegendaryForms = new FormConfig();
 		bioLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		bioLegendaryForms.setGroupName(BioAndroidForms.GROUP_LEGENDARYFORMS);
-		bioLegendaryForms.setFormType("legendary");
+		bioLegendaryForms.setFormType("legendaryforms");
 
 		FormConfig.FormData imperfectMax = new FormConfig.FormData();
 		imperfectMax.setName(BioAndroidForms.IMPERFECT_MAX);

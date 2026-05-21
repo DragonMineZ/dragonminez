@@ -1,6 +1,7 @@
 package com.dragonminez.common.stats;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -626,7 +627,7 @@ public class StatsData {
 	}
 
 	public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
-										   int hairId, com.dragonminez.common.hair.CustomHair customHair,
+										   int hairId, CustomHair customHair,
 										   int bodyType, int eyesType, int noseType, int mouthType, int tattooType,
 									   String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
 										   String eye1Color, String eye2Color, String auraColor) {
@@ -687,12 +688,8 @@ public class StatsData {
 			Collection<String> formSkills = charConfig.getFormSkills();
 			List<String> androidBlacklistedForms = ConfigManager.getSkillsConfig().getAndroidBlacklistedForms();
 			for (String skillName : formSkills) {
-				if (status.isAndroidUpgraded() && androidBlacklistedForms.contains(skillName)) {
-					continue;
-				}
-				if (!status.isAndroidUpgraded() && "androidforms".equalsIgnoreCase(skillName)) {
-					continue;
-				}
+				if (status.isAndroidUpgraded() && androidBlacklistedForms.contains(skillName)) continue;
+				if (!status.isAndroidUpgraded() && "androidforms".equalsIgnoreCase(skillName)) continue;
 				Integer[] tpCosts = charConfig.getFormSkillTpCosts(skillName);
 				int maxLevel = tpCosts != null ? tpCosts.length : 0;
 				skills.registerDefaultSkill(skillName, maxLevel);

@@ -16,7 +16,7 @@ public class FormConfig {
 	private int configVersion;
 
 	private String groupName;
-	private String formType = "super";
+	private String formType = "superforms";
 	private Map<String, FormData> forms = new LinkedHashMap<>();
 
 	public FormData getForm(String formName) {
