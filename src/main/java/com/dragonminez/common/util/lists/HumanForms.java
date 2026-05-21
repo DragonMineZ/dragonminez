@@ -16,4 +16,10 @@ public class HumanForms {
 	public static final String ANDROID_BASE = "androidbase";
 	public static final String SUPER_ANDROID = "superandroid";
 	public static final String FUSED_ANDROID = "fusedandroid";
+
+	// Legendary Forms group
+	public static final String GROUP_LEGENDARYFORMS = "legendaryforms";
+	public static final String SHIYOKEN = "shiyoken";
+	public static final String LUNARIS = "lunaris";
+
 }

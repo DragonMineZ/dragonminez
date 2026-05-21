@@ -35,6 +35,7 @@ public class SkillsConfig {
 		formSkills.add("androidforms");
 
 		stackSkills.add("kaioken");
+ 		stackSkills.add("ultimate");
 //		stackSkills.add("ultrainstinct");
 //		stackSkills.add("ultraego");
 
@@ -202,6 +203,7 @@ public class SkillsConfig {
 		kaiokenCosts.add(7500);
 //		kaiokenCosts.add(25000);
 		skills.put("kaioken", new SkillCosts(kaiokenCosts));
+		skills.put("ultimate", new SkillCosts(List.of(-1)));
 
 //		List<Integer> ultraInstinctCosts = new ArrayList<>();
 //		ultraInstinctCosts.add(-1);

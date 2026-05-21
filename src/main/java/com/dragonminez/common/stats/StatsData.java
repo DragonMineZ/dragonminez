@@ -2,6 +2,7 @@ package com.dragonminez.common.stats;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainAttributes;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.init.MainEffects;
@@ -12,6 +13,7 @@ import com.dragonminez.common.stats.extras.Training;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.common.util.lists.StackForms;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.HTCDimension;
@@ -27,6 +29,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 public class StatsData {
@@ -383,6 +386,54 @@ public class StatsData {
 		return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
 	}
 
+	private double getBaseFormMultiplier(FormConfig.FormData formData, String statName) {
+		return switch (statName.toUpperCase()) {
+			case "STR" -> formData.getStrMultiplier();
+			case "SKP" -> formData.getSkpMultiplier();
+			case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
+			case "VIT" -> formData.getVitMultiplier();
+			case "PWR" -> formData.getPwrMultiplier();
+			case "ENE" -> formData.getEneMultiplier();
+			default -> 1.0;
+		};
+	}
+
+	private double getMasteryAdjustedMultiplier(FormConfig.FormData formData, String statName, double mastery) {
+		double baseMult = getBaseFormMultiplier(formData, statName);
+		double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
+		return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
+	}
+
+	private double getStrongestSuperFormMultiplier(String statName) {
+		String raceName = character.getRaceName();
+		Map<String, FormConfig> groups = ConfigManager.getAllFormsForRace(raceName);
+		if (groups == null || groups.isEmpty()) return 1.0;
+
+		double best = 1.0;
+		for (Map.Entry<String, FormConfig> entry : groups.entrySet()) {
+			String groupName = entry.getKey();
+			FormConfig group = entry.getValue();
+			if (group == null) continue;
+			if (!"super".equalsIgnoreCase(group.getFormType())) continue;
+
+			List<FormConfig.FormData> unlocked = TransformationsHelper.getUnlockedForms(this, raceName, groupName);
+			for (FormConfig.FormData formData : unlocked) {
+				if (formData == null) continue;
+				if (Boolean.TRUE.equals(formData.getExcemptFromUltimate())) continue;
+
+				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
+				double mult = getMasteryAdjustedMultiplier(formData, statName, mastery);
+				if (mult > best) best = mult;
+			}
+		}
+		return best;
+	}
+
+	private boolean isUltimateStackFormActive() {
+		String group = character.getActiveStackFormGroup();
+		return group != null && StackForms.GROUP_ULTIMATE.equalsIgnoreCase(group);
+	}
+
 	public double getStackFormMultiplier(String statName) {
 		String currentForm = character.getActiveStackForm();
 		String currentFormGroup = character.getActiveStackFormGroup();
@@ -395,21 +446,14 @@ public class StatsData {
 
 		var formData = formConfig.getForm(currentForm);
 		if (formData == null) return 1.0;
-
-		double baseMult = switch (statName.toUpperCase()) {
-			case "STR" -> formData.getStrMultiplier();
-			case "SKP" -> formData.getSkpMultiplier();
-			case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
-			case "VIT" -> formData.getVitMultiplier();
-			case "PWR" -> formData.getPwrMultiplier();
-			case "ENE" -> formData.getEneMultiplier();
-			default -> 1.0;
-		};
+		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(currentFormGroup)) {
+			double strongestSuper = getStrongestSuperFormMultiplier(statName);
+			double ultimateMult = getBaseFormMultiplier(formData, statName);
+			return strongestSuper * ultimateMult;
+		}
 
 		double mastery = character.getStackFormMasteries().getMastery(currentFormGroup, currentForm);
-		double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
-
-		return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
+		return getMasteryAdjustedMultiplier(formData, statName, mastery);
 	}
 
 	public double getEffectsMultiplier(String statName) {
@@ -446,7 +490,8 @@ public class StatsData {
 			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 
-			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+			double stackMastery = isUltimateStackFormActive() ? 0.0
+					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
 			adjustedStackDrain = stackDrain / stackDivisor;
 		}
@@ -481,7 +526,8 @@ public class StatsData {
 			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 
-			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+			double stackMastery = isUltimateStackFormActive() ? 0.0
+					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
 
 			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
@@ -522,7 +568,8 @@ public class StatsData {
 			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 
-			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+			double stackMastery = isUltimateStackFormActive() ? 0.0
+					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
 
 			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
@@ -563,7 +610,8 @@ public class StatsData {
 			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 
-			double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+			double stackMastery = isUltimateStackFormActive() ? 0.0
+					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
 
 			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
