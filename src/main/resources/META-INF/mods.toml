@@ -47,7 +47,30 @@ config="dragonminez.mixins.json"
     side="BOTH"
 
 [[dependencies.dragonminez]]
+    modId="curiosapi"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.dragonminez]]
     modId="legendarytooltips"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+    type="incompatible"
+
+[[dependencies.dragonminez]]
+    modId="epicfight"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+    type="incompatible"
+
+[[dependencies.dragonminez]]
+    modId="bettercombat"
     mandatory=false
     versionRange="*"
     ordering="NONE"

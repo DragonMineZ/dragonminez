@@ -1,3 +1,7 @@
 ﻿{
-  "parent": "dragonminez:trident"
+  "parent": "dragonminez:trident",
+  "attributes": {
+    "crit_chance": 0.05,
+    "crit_damage": 0.05
+  }
 }

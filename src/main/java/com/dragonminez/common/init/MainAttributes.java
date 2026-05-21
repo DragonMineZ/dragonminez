@@ -27,6 +27,9 @@ public class MainAttributes {
     public static final RegistryObject<Attribute> KI_DAMAGE = register("ki_damage", "attribute.dragonminez.ki_damage", 0.0, 0.0, 2000000000.0);
     public static final RegistryObject<Attribute> DEFENSE = register("defense", "attribute.dragonminez.defense", 0.0, 0.0, 2000000000.0);
 
+    public static final RegistryObject<Attribute> CRIT_CHANCE = register("crit_chance", "attribute.dragonminez.critical_chance", 0.05D, 0.0, 1.0D);
+    public static final RegistryObject<Attribute> CRIT_DAMAGE = register("crit_damage", "attribute.dragonminez.critical_damage", 1.5D, 1.0D, 100.0D);
+
     private static RegistryObject<Attribute> registerMainStat(String registryName, String translationKey, double defaultValue) {
         return register(registryName, translationKey, defaultValue, 0.0, getConfiguredMainStatMax());
     }

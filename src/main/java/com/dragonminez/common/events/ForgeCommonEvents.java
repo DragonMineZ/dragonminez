@@ -7,10 +7,13 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.alignment.NpcAlignmentRules;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
+import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.weapon.WeaponAttributes;
 import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.init.MainAttributes;
+import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -45,20 +48,28 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.AddReloadListenerEvent;
+import net.minecraftforge.event.ItemAttributeModifierEvent;
+import net.minecraftforge.event.PlayLevelSoundEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.CriticalHitEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.LevelEvent;
@@ -184,6 +195,20 @@ public class ForgeCommonEvents {
 		}
 	}
 
+	public static double getCriticalChance(Player player) {
+		double chance = player.getAttributeValue(MainAttributes.CRIT_CHANCE.get());
+		int chanceLevel = player.getMainHandItem().getEnchantmentLevel(MainEnchants.CRIT_CHANCE.get());
+		if (chanceLevel > 0) chance += (chanceLevel * 0.05D);
+		return chance;
+	}
+
+	public static double getCriticalDamage(Player player) {
+		double multiplier = player.getAttributeValue(MainAttributes.CRIT_DAMAGE.get());
+		int damageLevel = player.getMainHandItem().getEnchantmentLevel(MainEnchants.CRIT_DAMAGE.get());
+		if (damageLevel > 0) multiplier += (damageLevel * 0.05D);
+		return multiplier;
+	}
+
 	@SubscribeEvent
 	public static void onPlayerAttack(AttackEntityEvent event) {
 		Entity target = event.getTarget();
@@ -198,34 +223,117 @@ public class ForgeCommonEvents {
 			}
 			TargetHelper.onSuccessfulAttack(attacker, target, relation);
 
-			double x = target.getX();
-			double y = target.getY() + (target.getBbHeight() * 0.65);
-			double z = target.getZ();
+			double chance = getCriticalChance(attacker);
+			boolean isCrit = ((Player_DMZ) attacker).rollAndGetCriticalStatus(chance);
 
-			float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
-
+			boolean isValidTarget = false;
 			if (target instanceof ServerPlayer targetPlayer) {
-				StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
-					if (!targetData.getStatus().isBlocking() && !targetPlayer.isCreative()) {
-						serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
-					}
-				});
+				isValidTarget = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer)
+						.map(targetData -> !targetData.getStatus().isBlocking() && !targetPlayer.isCreative())
+						.orElse(false);
 			} else if (!(target instanceof MastersEntity) && !target.isInvulnerable() && !(target instanceof PunchMachineEntity)) {
-				serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
+				isValidTarget = true;
 			}
 
-			RegistryObject<SoundEvent>[] sonidosGolpe = new RegistryObject[]{
-					MainSounds.GOLPE1,
-					MainSounds.GOLPE2,
-					MainSounds.GOLPE3,
-					MainSounds.GOLPE4,
-					MainSounds.GOLPE5,
-					MainSounds.GOLPE6
-			};
+			if (isValidTarget) {
+				double x = target.getX();
+				double y = target.getY() + (target.getBbHeight() * 0.65);
+				double z = target.getZ();
+				float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
 
-			int indiceRandom = level.random.nextInt(sonidosGolpe.length);
-			SoundEvent sonidoElegido = sonidosGolpe[indiceRandom].get();
+				if (isCrit) {
+					//serverLevel.sendParticles(MainParticles.CRIT_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);}
+				}
+				else serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
+			}
 
+			if (isCrit) {
+				RegistryObject<SoundEvent>[] sonidosCritico = new RegistryObject[]{
+						MainSounds.CRITICO1, MainSounds.CRITICO2
+				};
+				int indiceRandom = level.random.nextInt(sonidosCritico.length);
+				SoundEvent sonidoCritico = sonidosCritico[indiceRandom].get();
+				attacker.playNotifySound(sonidoCritico, SoundSource.PLAYERS, 1.0F, 1.0F);
+			} else if (attacker.getMainHandItem() == ItemStack.EMPTY || attacker.getMainHandItem().is(Items.AIR)) {
+				RegistryObject<SoundEvent>[] sonidosGolpe = new RegistryObject[]{
+						MainSounds.GOLPE1,
+						MainSounds.GOLPE2,
+						MainSounds.GOLPE3,
+						MainSounds.GOLPE4,
+						MainSounds.GOLPE5,
+						MainSounds.GOLPE6
+				};
+
+				int indiceRandom = level.random.nextInt(sonidosGolpe.length);
+				SoundEvent sonidoElegido = sonidosGolpe[indiceRandom].get();
+				attacker.playNotifySound(sonidoElegido, SoundSource.PLAYERS, 1.0F, 1.0F);
+			}
+		}
+	}
+
+	@SubscribeEvent
+	public static void onMeleeCriticalHit(CriticalHitEvent event) {
+		Player player = event.getEntity();
+		if (player == null || player.level().isClientSide) return;
+
+		double chance = getCriticalChance(player);
+		boolean isCrit = ((Player_DMZ) player).rollAndGetCriticalStatus(chance);
+
+		if (isCrit) {
+			event.setDamageModifier((float) getCriticalDamage(player));
+			event.setResult(Event.Result.ALLOW);
+		} else event.setResult(Event.Result.DENY);
+	}
+
+	@SubscribeEvent
+	public static void onRangedCriticalHit(LivingHurtEvent event) {
+		if (event.getSource().getDirectEntity() instanceof AbstractArrow && event.getSource().getEntity() instanceof Player player) {
+			if (player.level().isClientSide) return;
+
+			double chance = getCriticalChance(player);
+			boolean isCrit = ((Player_DMZ) player).rollAndGetCriticalStatus(chance);
+
+			if (isCrit) event.setAmount((float) (event.getAmount() * getCriticalDamage(player)));
+		}
+	}
+
+	@SubscribeEvent
+	public static void suppressVanillaCritSounds(PlayLevelSoundEvent.AtPosition event) {
+		if (event.getSound() == SoundEvents.PLAYER_ATTACK_CRIT) event.setCanceled(true);
+	}
+
+	private static final UUID WEAPON_CRIT_CHANCE_UUID = UUID.fromString("c37e2055-7783-4559-b18a-1b3e6f5a0410");
+	private static final UUID WEAPON_CRIT_DAMAGE_UUID = UUID.fromString("496f2714-a61f-41e2-aed5-265e7fa0e0fa");
+
+	@SubscribeEvent
+	public static void attachDynamicWeaponAttributes(ItemAttributeModifierEvent event) {
+		if (event.getSlotType() == EquipmentSlot.MAINHAND) {
+			ItemStack stack = event.getItemStack();
+
+			WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
+
+			if (attributes != null) {
+				double weaponCritChance = attributes.getSafeCritChance();
+				double weaponCritDamage = attributes.getSafeCritDamage();
+
+				if (weaponCritChance > 0.0D) {
+					event.addModifier(MainAttributes.CRIT_CHANCE.get(), new AttributeModifier(
+							WEAPON_CRIT_CHANCE_UUID,
+							"Weapon innate crit chance",
+							weaponCritChance,
+							AttributeModifier.Operation.ADDITION
+					));
+				}
+
+				if (weaponCritDamage > 0.0D) {
+					event.addModifier(MainAttributes.CRIT_DAMAGE.get(), new AttributeModifier(
+							WEAPON_CRIT_DAMAGE_UUID,
+							"Weapon innate crit damage",
+							weaponCritDamage,
+							AttributeModifier.Operation.ADDITION
+					));
+				}
+			}
 		}
 	}
 

@@ -16,13 +16,24 @@ public final class WeaponAttributes {
     private final String category;
     private final Attack[] attacks;
 
-    public WeaponAttributes(double attack_range, @Nullable String pose, @Nullable String off_hand_pose, Boolean isTwoHanded, String category, Attack[] attacks) {
+    @Nullable
+    private final Double crit_chance;
+    @Nullable
+    private final Double crit_damage;
+
+    public WeaponAttributes(double attack_range, @Nullable String pose, @Nullable String off_hand_pose, Boolean isTwoHanded, String category, Attack[] attacks, @Nullable Double crit_chance, @Nullable Double crit_damage) {
         this.attack_range = attack_range;
         this.pose = pose;
         this.off_hand_pose = off_hand_pose;
         this.two_handed = isTwoHanded;
         this.category = category;
         this.attacks = attacks;
+        this.crit_chance = crit_chance;
+        this.crit_damage = crit_damage;
+    }
+
+    public WeaponAttributes(double attack_range, @Nullable String pose, @Nullable String off_hand_pose, Boolean isTwoHanded, String category, Attack[] attacks) {
+        this(attack_range, pose, off_hand_pose, isTwoHanded, category, attacks, null, null);
     }
 
     public static final class Attack {
@@ -222,6 +233,14 @@ public final class WeaponAttributes {
     public Boolean two_handed() { return two_handed; }
     public Attack[] attacks() { return attacks; }
 
+    @Nullable
+    public Double crit_chance() { return crit_chance; }
+    @Nullable
+    public Double crit_damage() { return crit_damage; }
+
+    public double getSafeCritChance() { return crit_chance != null ? crit_chance : 0.0D; }
+    public double getSafeCritDamage() { return crit_damage != null ? crit_damage : 0.0D; }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
@@ -229,16 +248,18 @@ public final class WeaponAttributes {
         var that = (WeaponAttributes) obj;
         return Double.doubleToLongBits(this.attack_range) == Double.doubleToLongBits(that.attack_range) &&
                 Objects.equals(this.pose, that.pose) && Objects.equals(this.two_handed, that.two_handed) &&
-                Objects.equals(this.attacks, that.attacks);
+                Objects.equals(this.attacks, that.attacks) &&
+                Objects.equals(this.crit_chance, that.crit_chance) &&
+                Objects.equals(this.crit_damage, that.crit_damage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(attack_range, two_handed, attacks);
+        return Objects.hash(attack_range, two_handed, attacks, crit_chance, crit_damage);
     }
 
     @Override
     public String toString() {
-        return "WeaponAttributes[" + "attack_range=" + attack_range + ", " + "pose=" + pose + ", " + "isTwoHanded=" + two_handed + ", " + "attacks=" + attacks + ']';
+        return "WeaponAttributes[" + "attack_range=" + attack_range + ", " + "pose=" + pose + ", " + "isTwoHanded=" + two_handed + ", " + "attacks=" + attacks + ", " + "crit_chance=" + crit_chance + ", " + "crit_damage=" + crit_damage + ']';
     }
 }

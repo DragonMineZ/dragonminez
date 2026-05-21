@@ -6,4 +6,5 @@ import org.jetbrains.annotations.Nullable;
 public interface Player_DMZ {
     @Nullable
     AttackHand getCurrentAttack();
+    boolean rollAndGetCriticalStatus(double chance);
 }
