@@ -115,12 +115,10 @@ public class FormModeHandler implements IActionModeHandler {
 	}
 
 	private String convertSuperformTypes(String type) {
-		return switch (type) {
-			case "super" -> "superform";
-			case "god" -> "godform";
-			case "legendary" -> "legendaryforms";
-			case "android" -> "androidforms";
-			default -> type;
-		};
+		if (type.toLowerCase().contains("super")) return "superforms";
+		else if (type.toLowerCase().contains("legendary")) return "legendaryforms";
+		else if (type.toLowerCase().contains("god")) return "godforms";
+		else if (type.toLowerCase().contains("android")) return "androidforms";
+		else return type;
 	}
 }

@@ -169,7 +169,7 @@ public class NPCActionC2S {
 			data.getStatus().setAndroidUpgraded(true);
 
 			data.getSkills().setSkillLevel("androidforms", 1);
-			data.getSkills().removeSkill("superform");
+			data.getSkills().removeSkill("superforms");
 			data.getSkills().removeSkill("legendaryforms");
 			data.updateTransformationSkillLimits(data.getCharacter().getRaceName());
 			data.getCharacter().setSelectedFormGroup("androidforms");

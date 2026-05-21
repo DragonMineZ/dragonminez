@@ -17,11 +17,8 @@ public class Skills {
 
 	public void registerDefaultSkill(String skillName, int maxLevel) {
 		String lowerName = skillName.toLowerCase();
-		if (skillMap.containsKey(lowerName)) {
-			skillMap.get(lowerName).setMaxLevel(maxLevel);
-		} else {
-			skillMap.put(lowerName, new Skill(skillName, maxLevel));
-		}
+		if (skillMap.containsKey(lowerName)) skillMap.get(lowerName).setMaxLevel(maxLevel);
+		else skillMap.put(lowerName, new Skill(skillName, maxLevel));
 	}
 
 	public Skill getSkill(String name) {
@@ -48,12 +45,9 @@ public class Skills {
 			var config = ConfigManager.getSkillsConfig();
 			if (config != null) {
 				var skillCosts = config.getSkillCosts(skillName);
-				if (skillCosts != null && skillCosts.getCosts() != null) {
-					costBasedMaxLevel = skillCosts.getCosts().size();
-				}
+				if (skillCosts != null && skillCosts.getCosts() != null) costBasedMaxLevel = skillCosts.getCosts().size();
 			}
-		} catch (Exception ignored) {
-		}
+		} catch (Exception ignored) {}
 
 		if (skillName.equalsIgnoreCase("potentialunlock")) return Math.min(costBasedMaxLevel, 30);
 		else return Math.min(costBasedMaxLevel, 50);
@@ -63,9 +57,7 @@ public class Skills {
 		var formSkills = ConfigManager.getSkillsConfig().getFormSkills();
 		for (Skill skill : skillMap.values()) {
 			String skillName = skill.getName().toLowerCase();
-			if (!formSkills.contains(skillName)) {
-				skill.setMaxLevel(calculateMaxLevel(skillName));
-			}
+			if (!formSkills.contains(skillName)) skill.setMaxLevel(calculateMaxLevel(skillName));
 		}
 	}
 
@@ -88,9 +80,7 @@ public class Skills {
 
 	public void addSkillLevel(String name, int amount) {
 		Skill skill = skillMap.get(name.toLowerCase());
-		if (skill != null) {
-			skill.addLevel(amount);
-		}
+		if (skill != null) skill.addLevel(amount);
 	}
 
 	public boolean isSkillActive(String name) {
@@ -100,16 +90,12 @@ public class Skills {
 
 	public void setSkillActive(String name, boolean active) {
 		Skill skill = skillMap.get(name.toLowerCase());
-		if (skill != null) {
-			skill.setActive(active);
-		}
+		if (skill != null) skill.setActive(active);
 	}
 
 	public void toggleSkillActive(String name) {
 		Skill skill = skillMap.get(name.toLowerCase());
-		if (skill != null) {
-			skill.setActive(!skill.isActive());
-		}
+		if (skill != null) skill.setActive(!skill.isActive());
 	}
 
 	public Map<String, Skill> getAllSkills() {
@@ -119,11 +105,7 @@ public class Skills {
 	public CompoundTag save() {
 		CompoundTag nbt = new CompoundTag();
 		ListTag skillsList = new ListTag();
-
-		for (Skill skill : skillMap.values()) {
-			skillsList.add(skill.save());
-		}
-
+		for (Skill skill : skillMap.values()) skillsList.add(skill.save());
 		nbt.put("SkillsList", skillsList);
 		return nbt;
 	}
@@ -137,9 +119,7 @@ public class Skills {
 				Skill skill = Skill.load(skillTag);
 
 				String skillName = skill.getName().toLowerCase();
-				if (!ConfigManager.getSkillsConfig().getFormSkills().contains(skillName)) {
-					skill.setMaxLevel(calculateMaxLevel(skillName));
-				}
+				if (!ConfigManager.getSkillsConfig().getFormSkills().contains(skillName)) skill.setMaxLevel(calculateMaxLevel(skillName));
 				skillMap.put(skillName, skill);
 			}
 		}
@@ -147,9 +127,7 @@ public class Skills {
 
 	public void toBytes(FriendlyByteBuf buf) {
 		buf.writeInt(skillMap.size());
-		for (Skill skill : skillMap.values()) {
-			skill.toBytes(buf);
-		}
+		for (Skill skill : skillMap.values()) skill.toBytes(buf);
 	}
 
 	public void fromBytes(FriendlyByteBuf buf) {

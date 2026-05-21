@@ -348,8 +348,8 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFFFF");
-		config.setFormSkillTpCosts("superform", new Integer[]{8000, 16000, 25000, 40000});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("superforms", new Integer[]{8000, 16000, 25000, 40000});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1});
 		config.setFormSkillTpCosts("androidforms", new Integer[]{16000, 40000});
 	}
@@ -372,8 +372,8 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFFFF");
-		config.setFormSkillTpCosts("superform", new Integer[]{5000, 8000, 12000, 16000, 20000, 25000, 30000, 40000});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("superforms", new Integer[]{5000, 8000, 12000, 16000, 20000, 25000, 30000, 40000});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
 
@@ -394,8 +394,8 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFF00");
-		config.setFormSkillTpCosts("superform", new Integer[]{9000, 18000, 30000, 45000});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("superforms", new Integer[]{9000, 18000, 30000, 45000});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
 
@@ -416,8 +416,8 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#FF001D");
 		config.setDefaultEye2Color("#FF001D");
 		config.setDefaultAuraColor("#5F00FF");
-		config.setFormSkillTpCosts("superform", new Integer[]{7000, 12000, 20000, 32000, 45000});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("superforms", new Integer[]{7000, 12000, 20000, 32000, 45000});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
 
@@ -437,8 +437,8 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#2E2424");
 		config.setDefaultEye2Color("#F06F6E");
 		config.setDefaultAuraColor("#1AA700");
-		config.setFormSkillTpCosts("superform", new Integer[]{10000, 22000, 34000, 48000});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("superforms", new Integer[]{10000, 22000, 34000, 48000});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1, -1});
 	}
 
@@ -459,8 +459,8 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#B40000");
 		config.setDefaultEye2Color("#B40000");
 		config.setDefaultAuraColor("#FF6DFF");
-		config.setFormSkillTpCosts("superform", new Integer[]{9000, 18000, 30000, 44000});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("superforms", new Integer[]{9000, 18000, 30000, 44000});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1});
 	}
 
@@ -480,8 +480,8 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFFFF");
-		config.setFormSkillTpCosts("superform", new Integer[]{});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("superforms", new Integer[]{});
+		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
 	}
 

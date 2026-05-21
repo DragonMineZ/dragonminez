@@ -29,9 +29,9 @@ public class SkillsConfig {
 	}
 
 	private void createDefaults() {
-		formSkills.add("superform");
+		formSkills.add("superforms");
 		formSkills.add("legendaryforms");
-		formSkills.add("godform");
+		formSkills.add("godforms");
 		formSkills.add("androidforms");
 
 		stackSkills.add("kaioken");
@@ -39,7 +39,7 @@ public class SkillsConfig {
 //		stackSkills.add("ultrainstinct");
 //		stackSkills.add("ultraego");
 
-		androidBlacklistedForms.add("superform");
+		androidBlacklistedForms.add("superforms");
 		androidBlacklistedForms.add("legendaryforms");
 
 		kiSkills.add("spiritbomb");
