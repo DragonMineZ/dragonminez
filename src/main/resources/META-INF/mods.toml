@@ -47,10 +47,10 @@ config="dragonminez.mixins.json"
     side="BOTH"
 
 [[dependencies.dragonminez]]
-    modId="curiosapi"
-    mandatory=false
-    versionRange="*"
-    ordering="NONE"
+    modId="curios"
+    mandatory=true
+    versionRange="${curios_version_range}"
+    ordering="AFTER"
     side="BOTH"
 
 [[dependencies.dragonminez]]
