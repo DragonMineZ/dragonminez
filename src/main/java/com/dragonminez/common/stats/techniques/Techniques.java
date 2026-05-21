@@ -29,6 +29,17 @@ public class Techniques {
 		}
 	}
 
+	public void removeTechnique(String techniqueId) {
+		unlockedTechniques.remove(techniqueId);
+		for (int i = 0; i < 5; i++) {
+			if (equippedSlots[i].equals(techniqueId)) {
+				equippedSlots[i] = "";
+				if (selectedSlot == i) selectedSlot = 0;
+			}
+		}
+		if (chargingTechniqueId.equals(techniqueId)) clearTechniqueCharge();
+	}
+
 	public void selectSlot(int slotIndex) {
 		if (slotIndex >= 0 && slotIndex < 5) {
 			this.selectedSlot = slotIndex;
