@@ -16,6 +16,7 @@ import com.dragonminez.common.quest.objectives.DimensionObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.AlignmentReward;
@@ -248,6 +249,9 @@ public class SyncQuestRegistryS2C {
 			obj.addProperty("structure", structure.getStructureId());
 		} else if (objective instanceof TalkToObjective talkTo) {
 			obj.addProperty("npcId", talkTo.getNpcId());
+		} else if (objective instanceof SkillObjective skill) {
+			obj.addProperty("skill", skill.getSkill());
+			obj.addProperty("level", skill.getLevel());
 		} else if (objective instanceof CoordsObjective coords) {
 			obj.addProperty("x", coords.getTargetPos().getX());
 			obj.addProperty("y", coords.getTargetPos().getY());
@@ -366,6 +370,10 @@ public class SyncQuestRegistryS2C {
 				if (condition.getMaxAlignment() != null) {
 					obj.addProperty("max", condition.getMaxAlignment());
 				}
+			}
+			case SKILL -> {
+				obj.addProperty("skill", condition.getSkill());
+				obj.addProperty("minLevel", condition.getSkillLevel());
 			}
 		}
 

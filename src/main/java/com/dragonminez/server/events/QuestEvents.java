@@ -20,6 +20,7 @@ import com.dragonminez.common.quest.objectives.InteractObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.DragonSummonObjective;
+import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -220,6 +221,12 @@ public class QuestEvents {
 					int itemCount = countItems(player, itemObjective.getItemId());
 					if (itemCount != currentProgress) {
 						int progressToSet = Math.min(itemCount, quest.getObjectiveRequired(pqd, questKey, i));
+						updateProgress(player, pqd, questKey, quest, i, progressToSet);
+					}
+				} else if (objective instanceof SkillObjective skillObjective) {
+					int skillLevel = data.getSkills().getSkillLevel(skillObjective.getSkill());
+					if (skillLevel != currentProgress) {
+						int progressToSet = Math.min(skillLevel, quest.getObjectiveRequired(pqd, questKey, i));
 						updateProgress(player, pqd, questKey, quest, i, progressToSet);
 					}
 				}

@@ -7,6 +7,7 @@ import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.CommandReward;
@@ -172,6 +173,11 @@ public class QuestParser {
 				String npcId = json.has("npcId") ? json.get("npcId").getAsString() : null;
 				yield npcId != null ? new TalkToObjective(npcId) : null;
 			}
+			case "SKILL" -> {
+				String skill = firstString(json, "skill", "skillId", "id");
+				int level = firstInt(json, 1, "level", "minLevel", "required");
+				yield skill != null ? new SkillObjective(skill, level) : null;
+			}
 			default -> null;
 		};
 	}
@@ -331,8 +337,23 @@ public class QuestParser {
 					json.has("min") ? json.get("min").getAsInt() : null,
 					json.has("max") ? json.get("max").getAsInt() : null
 			);
+			case "SKILL" -> {
+				String skill = firstString(json, "skill", "skillId", "id");
+				yield skill != null
+						? QuestPrerequisites.Condition.skill(skill, firstInt(json, 1, "minLevel", "level", "required"))
+						: null;
+			}
 			default -> null;
 		};
+	}
+
+	private static int firstInt(JsonObject json, int fallback, String... keys) {
+		for (String key : keys) {
+			if (json.has(key) && !json.get(key).isJsonNull()) {
+				return json.get(key).getAsInt();
+			}
+		}
+		return fallback;
 	}
 
 	private static QuestPrerequisites.StructureHint parseStructureHint(JsonObject json) {

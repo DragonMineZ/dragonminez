@@ -260,6 +260,12 @@ public class QuestAvailabilityChecker {
 				};
 			}
 			case ALIGNMENT -> matchesAlignmentCondition(condition, data.getResources().getAlignment());
+			case SKILL -> {
+				String skill = condition.getSkill();
+				Integer skillLevel = condition.getSkillLevel();
+				if (skill == null || skillLevel == null) yield false;
+				yield data.getSkills().getSkillLevel(skill) >= skillLevel;
+			}
 		};
 	}
 
