@@ -47,6 +47,13 @@ config="dragonminez.mixins.json"
     side="BOTH"
 
 [[dependencies.dragonminez]]
+    modId="curios"
+    mandatory=true
+    versionRange="${curios_version_range}"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.dragonminez]]
     modId="legendarytooltips"
     mandatory=false
     versionRange="*"
