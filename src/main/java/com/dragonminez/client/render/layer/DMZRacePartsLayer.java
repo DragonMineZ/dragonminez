@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -126,6 +127,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
 		var character = stats.getCharacter();
+        var isAlive = stats.getStatus().isAlive();
 		String race = character.getRaceName().toLowerCase();
 		String currentForm = character.getActiveForm();
 
@@ -225,6 +227,20 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                     }
                     float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
                     renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+                }
+            }
+
+            if (!stats.getStatus().isAlive()) {
+                GeoBone haloBone = partsModel.getBone("halo").orElse(null);
+
+                if (haloBone != null) {
+                    syncTargetBoneAndParents(haloBone, playerModel);
+
+                    float[] haloColor = ColorUtils.hexToRgb("#FFF461");
+
+                    renderTargetedBone(haloBone, poseStack, bufferSource, animatable,
+                            ModRenderTypes.energy(RACES_PARTS_TEXTURE),
+                            haloColor[0], haloColor[1], haloColor[2], 0.75f, partialTick, packedLight);
                 }
             }
 		}
