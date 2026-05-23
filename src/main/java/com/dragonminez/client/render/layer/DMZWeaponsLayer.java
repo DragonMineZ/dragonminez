@@ -48,40 +48,6 @@ public class DMZWeaponsLayer<T extends AbstractClientPlayer & GeoAnimatable> ext
         PlayerEffectQueue.addWeapon(animatable, livePlayerModel, poseStack, weaponType, getKiColor(stats), partialTick, packedLight);
     }
 
-//    @Override
-//    public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType,
-//                       MultiBufferSource bufferSource, VertexConsumer buffer,
-//                       float partialTick, int packedLight, int packedOverlay) {
-//        if (animatable.isSpectator()) return;
-//
-//        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
-//        if (stats == null || !stats.getSkills().isSkillActive("kimanipulation")) return;
-//
-//        String weaponType = stats.getStatus().getKiWeaponType();
-//        if (weaponType == null || weaponType.equalsIgnoreCase("none")) return;
-//
-//        PlayerEffectQueue.addWeapon(animatable, playerModel, poseStack, weaponType, getKiColor(stats), partialTick, packedLight);
-//        super.render(poseStack, animatable, playerModel, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-//
-//    }
-
-//    @Override
-//    public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-//        if (!"body".equals(playerBone.getName())) return;
-//        if (animatable.isSpectator()) return;
-//
-//        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
-//        if (stats == null || !stats.getSkills().isSkillActive("kimanipulation")) return;
-//
-//        String weaponType = stats.getStatus().getKiWeaponType();
-//        if (weaponType == null || weaponType.equalsIgnoreCase("none")) return;
-//
-//        BakedGeoModel livePlayerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
-//        if (livePlayerModel == null) return;
-//
-//        PlayerEffectQueue.addWeapon(animatable, livePlayerModel, poseStack, weaponType, getKiColor(stats), partialTick, packedLight);
-//    }
-
     private float[] getKiColor(StatsData stats) {
         var character = stats.getCharacter();
         float[] kiColor = character.getRgbAuraColor();
