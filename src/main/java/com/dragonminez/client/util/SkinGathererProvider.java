@@ -107,7 +107,7 @@ public class SkinGathererProvider {
 			return;
 		}
 
-		boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || raceName.equals("saiyan");
+		boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("ssj4gt") || logicKey.equals("ssj4d") || raceName.equals("saiyan");
 		boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 
 		if ((isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
@@ -124,36 +124,46 @@ public class SkinGathererProvider {
 			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tail1.png")), tailColor);
 		}
 
-		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || logicKey.equals("buffed");
+
+		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("ssj4d")
+                || logicKey.equals("ssj4gt") || logicKey.equals("buffed");
+
 		if (isHumanoid && bodyType == 0) {
 			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
-			return;
-		}
+		} else {
+            switch (logicKey) {
+                case "human", "saiyan", "ssj4gt", "ssj4d", "buffed" -> resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
+                case "namekian", "namekian_orange" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
+                case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
+                case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
+                case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
+                default -> {
+                    boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
+                    String genSuffix = hasGender ? ((character.getGender().equalsIgnoreCase("female") || character.getGender().equalsIgnoreCase("mujer")) ? "_female" : "_male") : "";
 
-		switch (logicKey) {
-			case "human", "saiyan", "saiyan_ssj4", "buffed" -> resolveBodyHumanSaiyan(character, b1, consumer);
-			case "namekian", "namekian_orange" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
-			case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
-			case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
-			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
-			default -> {
-				boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
-				String genSuffix = hasGender ? ((character.getGender().equalsIgnoreCase("female") || character.getGender().equalsIgnoreCase("mujer")) ? "_female" : "_male") : "";
+                    if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
+                        String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
+                        String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
 
-				if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
-					String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
-					String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
+                        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+                        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
+                        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
+                    } else {
+                        ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
+                        consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
+                    }
+                }
+            }
+        }
 
-					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
-					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
-				} else {
-					ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
-					consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
-				}
-			}
-		}
-	}
+        if (logicKey.equals("ssj4d") || logicKey.equals("ssj4gt")) {
+            String path = "textures/entity/races/humansaiyan/" + logicKey + "_layer1.png";
+            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path)), b2);
+        }
+
+
+
+    }
 
 	public void gatherAndroidLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		var character = stats.getCharacter();
@@ -175,12 +185,13 @@ public class SkinGathererProvider {
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tattoos/tattoo_" + tattooType + ".png")), WHITE_COLOR);
 	}
 
-	protected void resolveBodyHumanSaiyan(Character character, float[] bodyColor, BiConsumer<ResourceLocation, float[]> consumer) {
+	protected void resolveBodyHumanSaiyan(Character character, String key, float[] bodyColor, float[] bodyColor2, float[] bodyColor3, BiConsumer<ResourceLocation, float[]> consumer) {
 		int bodyType = character.getBodyType();
-		String gender = character.getGender().toLowerCase().trim();
-		String genderPart = (gender.equals("female") || gender.equals("mujer")) ? "_female" : "_male";
+        String gender = character.getGender().toLowerCase().trim();
+        String genderPart = (gender.equals("female") || gender.equals("mujer")) ? "_female" : "_male";
 		String path = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + ".png";
 		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0.png";
+
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), bodyColor);
 	}
 

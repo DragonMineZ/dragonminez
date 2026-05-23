@@ -46,7 +46,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation BIO_ANDROID_ULTRA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_ultra.geo.json");
     private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
-    private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem_fp.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slim.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem.geo.json");
 
     private static final ResourceLocation CANDY_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/candy.geo.json");
     private static final ResourceLocation CANDY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/candy.png");
@@ -145,31 +146,47 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         String key = modelName.toLowerCase();
 
         switch (key) {
-            case "human": case "saiyan": case "saiyan_ssj4":
+            // HUMAN & SAIYAN
+            case "human":
+            case "saiyan":
+            case "oozaru": return OOZARU;
+            case "ssj4gt":
                 if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
                 if (!isMale) return MAJIN_SLIM;
                 return BASE_DEFAULT;
-            case "buffed":
-                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_FEMALE_BUFFED : HUMAN_SAIYAN_BUFFED;
+            case "ssj4d":
+                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED : HUMAN_SAIYAN_BUFFED;
                 if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
                 return HUMAN_SAIYAN_BUFFED;
+            case "buffed":
+                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED : HUMAN_SAIYAN_BUFFED;
+                if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
+                return HUMAN_SAIYAN_BUFFED;
+
+            // NAMEKIAN
             case "namekian": return BASE_DEFAULT;
             case "namekian_orange": return HUMAN_SAIYAN_BUFFED;
+
+            // MAJIN
             case "majin": return isMale ? MAJIN_FAT : MAJIN_SLIM;
             case "majin_super": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
-            case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_FEMALE_BUFFED;
+            case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_SLIM_BUFFED;
             case "majin_evil": case "majin_kid": return isMale ? BASE_SLIM : MAJIN_SLIM;
             case "janemba_super": return JANEMBA_SUPER;
+
+            // FROSTDEMON
             case "frostdemon": case "frostdemon_final": return FROST_DEMON;
             case "frostdemon_second": return FROST_DEMON_SECOND;
             case "frostdemon_fifth": return FROST_DEMON_FIFTH;
             case "frostdemon_fp": return FROSTDEMON_BUFFED;
             case "frostdemon_third": return FROST_DEMON_THIRD;
+
+            // BIOANDROID
             case "bioandroid_base": return BIO_ANDROID;
             case "bioandroid_semi": return BIO_ANDROID_SEMI;
             case "bioandroid_perfect": return BIO_ANDROID_PERFECT;
             case "bioandroid_ultra": return BIO_ANDROID_ULTRA;
-            case "oozaru": return OOZARU;
+
         }
 
         String suffix = (customRaceGender != null && !customRaceGender.isEmpty()) ? "_" + customRaceGender : "";

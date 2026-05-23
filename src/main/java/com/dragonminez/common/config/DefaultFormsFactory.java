@@ -523,7 +523,7 @@ public class DefaultFormsFactory {
 
 		FormConfig.FormData ssj4gt = new FormConfig.FormData();
 		ssj4gt.setName(SaiyanForms.SUPER_SAIYAN_4);
-		ssj4gt.setCustomModel("");
+		ssj4gt.setCustomModel("ssj4gt");
 		ssj4gt.setUnlockOnSkillLevel(8);
 		ssj4gt.setHairColor("#000000");
 		ssj4gt.setBodyColor2("#B22E4D");
@@ -687,7 +687,7 @@ public class DefaultFormsFactory {
 
 		FormConfig.FormData ssj4d = new FormConfig.FormData();
 		ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
-		ssj4d.setCustomModel("");
+		ssj4d.setCustomModel("ssj4d");
 		ssj4d.setUnlockOnSkillLevel(8);
 		ssj4d.setHairColor("#83073F");
 		ssj4d.setBodyColor2("#83073F");

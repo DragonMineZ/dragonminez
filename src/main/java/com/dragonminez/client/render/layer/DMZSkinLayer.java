@@ -216,7 +216,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
 		if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
-		boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.equals("saiyan_ssj4") || finalFaceKey.equals("buffed");
+		boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.equals("ssj4d") || finalFaceKey.equals("ssj4gt") || finalFaceKey.equals("buffed");
 		if (isHumanoidModel && bodyType == 0) return;
 
 		model.getBone("head").ifPresent(headBone -> {
@@ -292,7 +292,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		hair = applyColorTint(hair, stats);
 		b2 = applyColorTint(b2, stats);
 
-		if (!faceKey.equals("human") && !faceKey.equals("saiyan") && !faceKey.equals("saiyan_ssj4") && !faceKey.equals("buffed")
+		if (!faceKey.equals("human") && !faceKey.equals("saiyan") && !faceKey.equals("ssj4d") && !faceKey.equals("ssj4gt") && !faceKey.equals("buffed")
 				&& !faceKey.equals("namekian") && !faceKey.equals("namekian_orange")
 				&& !faceKey.startsWith("frostdemon") && !faceKey.startsWith("bioandroid")
 				&& !faceKey.startsWith("majin") && !faceKey.startsWith("janemba_super")) {
