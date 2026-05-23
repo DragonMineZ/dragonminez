@@ -34,6 +34,18 @@ public class PlayerEffectsRenderHandler {
 		}
 	}
 
+    @SubscribeEvent
+    public static void onRenderLevelStage$Particles(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        PoseStack poseStack = event.getPoseStack();
+        KiWeaponRenderer.processWeapons(buffers, poseStack);
+        buffers.endBatch();
+
+    }
+
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
 		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
@@ -58,7 +70,6 @@ public class PlayerEffectsRenderHandler {
 		}
 
 		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, poseStack, buffers);
-		KiWeaponRenderer.processWeapons(buffers, poseStack);
 		buffers.endBatch();
 
 		var kiAttacks = PlayerEffectQueue.getAndClearKiAttacks();
