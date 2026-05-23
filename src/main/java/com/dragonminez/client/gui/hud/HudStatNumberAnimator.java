@@ -1,6 +1,6 @@
 package com.dragonminez.client.gui.hud;
 
-import net.minecraft.util.Mth;
+import com.dragonminez.common.config.ConfigManager;
 
 public class HudStatNumberAnimator {
 	public static final int WHITE_RGB = 0xFFFFFF;
@@ -60,14 +60,13 @@ public class HudStatNumberAnimator {
 			if (direction == ChangeDirection.UP || shouldPulseDamage(direction)) {
 				pulseDirection = direction;
 				pulseStartTick = tickTime;
-			} else {
-				pulseDirection = ChangeDirection.NONE;
-			}
+			} else pulseDirection = ChangeDirection.NONE;
 		}
 
 		float targetAlpha = 1.0f;
 		if (statKind != StatKind.KISENSE_HEALTH) {
-			targetAlpha = tickTime - lastChangeTick <= VISIBLE_HOLD_TICKS ? 1.0f : 0.0f;
+			if (!ConfigManager.getUserConfig().getAlwaysVisibleHudValues())
+				targetAlpha = tickTime - lastChangeTick <= VISIBLE_HOLD_TICKS ? 1.0f : 0.0f;
 		}
 		float rate = targetAlpha > alpha ? elapsed / FADE_IN_TICKS : elapsed / FADE_OUT_TICKS;
 		alpha = approach(alpha, targetAlpha, rate);

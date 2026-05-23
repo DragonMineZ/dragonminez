@@ -190,8 +190,22 @@ public class AlternativeHUD {
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(x + state.offsetX(), y + state.offsetY(), 0);
 		guiGraphics.pose().scale(0.5f, 0.5f, 1.0f);
-		TextUtil.drawStringWithBorder(guiGraphics, Minecraft.getInstance().font, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()));
+		drawFadingString(guiGraphics, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()), false);
 		guiGraphics.pose().popPose();
+	}
+
+	private static void drawFadingString(GuiGraphics guiGraphics, String text, int x, int y, int color, boolean centered) {
+		int alpha = (color >>> 24) & 0xFF;
+		if (alpha <= 2) return;
+		int borderCol = alpha << 24;
+		var font = Minecraft.getInstance().font;
+		int dx = centered ? -font.width(text) / 2 : 0;
+
+		guiGraphics.drawString(font, text, x + dx - 1, y, borderCol, false);
+		guiGraphics.drawString(font, text, x + dx + 1, y, borderCol, false);
+		guiGraphics.drawString(font, text, x + dx, y - 1, borderCol, false);
+		guiGraphics.drawString(font, text, x + dx, y + 1, borderCol, false);
+		guiGraphics.drawString(font, text, x + dx, y, color, false);
 	}
 
 	private static float displayValue(float current, float max, boolean showPercent) {
@@ -206,11 +220,5 @@ public class AlternativeHUD {
 	private static float lerp(float start, float end, float delta) {
 		float change = (end - start) * LERP_SPEED * delta;
 		return Math.abs(end - start) <= 1 ? end : start + change;
-	}
-
-	private static int borderColor(int color) {
-		int alpha = (color >>> 24) & 0xFF;
-		if (alpha == 0) alpha = 0xFF;
-		return alpha << 24;
 	}
 }

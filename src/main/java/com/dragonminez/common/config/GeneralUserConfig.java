@@ -15,6 +15,7 @@ public class GeneralUserConfig {
 	private Boolean firstPersonAnimated = true;
 	private boolean impactFramesEnabled = false;
 	private Boolean techniqueHotbarHorizontal = true;
+	private Boolean alwaysVisibleHudValues = false;
 	private Integer xenoverseHudPosX = 5;
 	private Integer xenoverseHudPosY = 5;
 	private Boolean advancedDescription = true;

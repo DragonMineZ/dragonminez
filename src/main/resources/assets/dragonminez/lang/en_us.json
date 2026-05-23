@@ -318,6 +318,7 @@
   "gui.dragonminez.config.firstPersonAnimated": "Use Animated First Person Model",
   "gui.dragonminez.config.impactFramesEnabled": "Enable Impact Frames",
   "gui.dragonminez.config.techniqueHotbarHorizontal": "Technique Hotbar Horizontal",
+  "gui.dragonminez.config.alwaysVisibleHudValues": "Always Visible HUD Values",
   "gui.dragonminez.config.xenoverseHudPosX": "Xenoverse HUD - Position X",
   "gui.dragonminez.config.xenoverseHudPosY": "Xenoverse HUD - Position Y",
   "gui.dragonminez.config.xenoverseHudScale": "Xenoverse HUD - Scale",

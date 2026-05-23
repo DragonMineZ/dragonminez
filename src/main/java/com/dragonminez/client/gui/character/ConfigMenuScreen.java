@@ -77,6 +77,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.BOOLEAN, userConfig.getTechniqueHotbarHorizontal() ? 1 : 0, 0, 1,
 				v -> userConfig.setTechniqueHotbarHorizontal(v > 0)));
 
+		configOptions.add(new ConfigOption("config.alwaysVisibleHudValues",
+				ConfigType.BOOLEAN, userConfig.getAlwaysVisibleHudValues() ? 1 : 0, 0, 1,
+				v -> userConfig.setAlwaysVisibleHudValues(v > 0)));
+
 		configOptions.add(new ConfigOption("config.xenoverseHudPosX",
 				ConfigType.INT, userConfig.getXenoverseHudPosX(), -1000, 2000,
 				v -> userConfig.setXenoverseHudPosX(v.intValue())));

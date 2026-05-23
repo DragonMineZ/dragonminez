@@ -168,8 +168,22 @@ public class XenoverseHUD {
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(x + state.offsetX(), y + state.offsetY(), 0);
 		guiGraphics.pose().scale(scale, scale, 1.0f);
-		TextUtil.drawCenteredStringWithBorder(guiGraphics, Minecraft.getInstance().font, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()));
+		drawFadingString(guiGraphics, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()), true);
 		guiGraphics.pose().popPose();
+	}
+
+	private static void drawFadingString(GuiGraphics guiGraphics, String text, int x, int y, int color, boolean centered) {
+		int alpha = (color >>> 24) & 0xFF;
+		if (alpha <= 2) return;
+		int borderCol = alpha << 24;
+		var font = Minecraft.getInstance().font;
+		int dx = centered ? -font.width(text) / 2 : 0;
+
+		guiGraphics.drawString(font, text, x + dx - 1, y, borderCol, false);
+		guiGraphics.drawString(font, text, x + dx + 1, y, borderCol, false);
+		guiGraphics.drawString(font, text, x + dx, y - 1, borderCol, false);
+		guiGraphics.drawString(font, text, x + dx, y + 1, borderCol, false);
+		guiGraphics.drawString(font, text, x + dx, y, color, false);
 	}
 
 	private static float displayValue(float current, float max, boolean showPercent) {
