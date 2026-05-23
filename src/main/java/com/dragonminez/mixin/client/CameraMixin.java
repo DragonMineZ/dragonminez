@@ -10,6 +10,9 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -48,15 +51,36 @@ public abstract class CameraMixin implements RollCamera {
 
 
 		if (!detached && entity instanceof LocalPlayer player && FirstPersonManager.shouldRenderFirstPerson(player)) {
-			Vec3 baseSmoothedPos = this.getPosition();
-			Vector3f offset = FirstPersonManager.offsetFirstPersonView(player);
+			Vec3 baseEyePos = this.getPosition();
+			Vector3f targetOffset = FirstPersonManager.offsetFirstPersonView(player);
+
+			Vector3f smoothedOffset = DMZCameraBuffer.getSmoothedOffset(targetOffset, 0.6f);
 
 			Vec3 forward = Vec3.directionFromRotation(0, player.getViewYRot(partialTick));
 			Vec3 left = Vec3.directionFromRotation(0, player.getViewYRot(partialTick) - 90.0F);
-			Vec3 targetPos = baseSmoothedPos.add(forward.scale(offset.z())).add(left.scale(offset.x())).add(0, offset.y(), 0);
 
-			DMZCameraBuffer.updateTarget(targetPos);
-			this.setPosition(DMZCameraBuffer.getSmoothedPosition(0.6f));
+			Vec3 movement = forward.scale(smoothedOffset.z()).add(left.scale(smoothedOffset.x())).add(0, smoothedOffset.y(), 0);
+
+			double movementLen = movement.length();
+			Vec3 desiredPos = baseEyePos;
+
+			if (movementLen > 0.001D) {
+				Vec3 direction = movement.normalize();
+				double safeMargin = 0.35D;
+
+				Vec3 rayEnd = baseEyePos.add(direction.scale(movementLen + safeMargin));
+				ClipContext context = new ClipContext(baseEyePos, rayEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player);
+				BlockHitResult hit = level.clip(context);
+
+				if (hit.getType() != HitResult.Type.MISS) {
+					double hitDistance = hit.getLocation().distanceTo(baseEyePos);
+					double allowedDistance = Math.max(0.0D, hitDistance - safeMargin);
+					if (allowedDistance < movementLen) desiredPos = baseEyePos.add(direction.scale(allowedDistance));
+					else desiredPos = baseEyePos.add(movement);
+				} else desiredPos = baseEyePos.add(movement);
+			}
+
+			this.setPosition(desiredPos);
 		}
 	}
 
