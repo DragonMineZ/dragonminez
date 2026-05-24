@@ -14,8 +14,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class ScaledScreen extends Screen {
-	private static final int MIN_GUI_WIDTH = 320;
-	private static final int MIN_GUI_HEIGHT = 240;
 	private static final float MIN_MENU_SCALE_MULTIPLIER = 0.25f;
 	private static final float MAX_MENU_SCALE_MULTIPLIER = 3.0f;
 
@@ -60,8 +58,8 @@ public abstract class ScaledScreen extends Screen {
 	private float getAvailableScale(Window window) {
 		int guiWidth = Math.max(1, window.getGuiScaledWidth());
 		int guiHeight = Math.max(1, window.getGuiScaledHeight());
-		float widthScale = guiWidth / (float) MIN_GUI_WIDTH;
-		float heightScale = guiHeight / (float) MIN_GUI_HEIGHT;
+		float widthScale = guiWidth / (float) getMinGuiWidth();
+		float heightScale = guiHeight / (float) getMinGuiHeight();
 		float availableScale = Math.min(widthScale, heightScale);
 
 		if (!Float.isFinite(availableScale) || availableScale <= 0.0f) {
@@ -84,6 +82,14 @@ public abstract class ScaledScreen extends Screen {
 			return min;
 		}
 		return Math.max(min, Math.min(max, value));
+	}
+
+	protected int getMinGuiWidth() {
+		return 320;
+	}
+
+	protected int getMinGuiHeight() {
+		return 240;
 	}
 
 	protected float getUiScale() {
