@@ -55,7 +55,7 @@ public class GeneralServerConfig {
 		private Integer maxTPDiscount = 140;
 		private Double tpHealthRatio = 0.10;
 		private Integer tpPerHit = 2;
-		private Integer passiveTpGain = 3;
+		private Integer passiveTpGain = 1;
 		private Integer tpPer20BlocksTraveled = 1;
 		private Integer tpPerBlockMined = 1;
 		private Integer tpPerItemCrafted = 1;
