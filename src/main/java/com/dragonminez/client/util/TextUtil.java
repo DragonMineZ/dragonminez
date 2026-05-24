@@ -165,7 +165,6 @@ public class TextUtil {
         int viewHeight = height;
         int totalContentHeight = lines.size() * lineHeight;
 
-        graphics.enableScissor(x, y, x + width, y + height);
         graphics.pose().pushPose();
         graphics.pose().translate(0, -currentScroll, 0);
 
@@ -175,7 +174,6 @@ public class TextUtil {
         }
 
         graphics.pose().popPose();
-        graphics.disableScissor();
 
         if (maxScroll > 0) {
             int scrollBarX = x + width - 4;

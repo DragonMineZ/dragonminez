@@ -1341,7 +1341,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
 		currentDescScroll = Mth.lerp(tickDelta * 0.4f, currentDescScroll, targetDescScroll);
 
+		graphics.enableScissor(toScreenCoord(x + 4), toScreenCoord(y + 18), toScreenCoord(x + width - 6), toScreenCoord(y + height - 2));
 		TextUtil.renderScrollableText(graphics, this.font, lines, x + 6, y + 18, width - 12, viewHeight, currentDescScroll, descMaxScroll, 0xFFCCCCCC);
+		graphics.disableScissor();
 	}
 
 	private void renderObjectivesSection(GuiGraphics graphics, int x, int y, int width, int height, Saga saga) {
