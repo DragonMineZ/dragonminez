@@ -148,6 +148,8 @@ public class CombatEvent {
 				else currentDamage[0] = baseDamage + finalDmzDamage;
 
 				boolean kiWeaponActive = attackerData.getSkills().isSkillActive("kimanipulation");
+				int kiWeaponLevel = attackerData.getSkills().getSkillLevel("kimanipulation");
+				float kiWeaponMult = kiWeaponLevel * 0.1f;
 				if (kiWeaponActive) {
 					String weaponType = attackerData.getStatus().getKiWeaponType();
 					int kiCost = 0;
@@ -155,17 +157,17 @@ public class CombatEvent {
 						case "blade" -> {
 							kiCost = (int) Math.round(ConfigManager.getCombatConfig().getBaselineFormDrain() * ConfigManager.getCombatConfig().getKiBladeConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost)
-								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiBladeConfig()[0];
+								currentDamage[0] = currentDamage[0] + (attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiBladeConfig()[0] * kiWeaponMult);
 						}
 						case "scythe" -> {
 							kiCost = (int) Math.round(ConfigManager.getCombatConfig().getBaselineFormDrain() * ConfigManager.getCombatConfig().getKiScytheConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost)
-								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiScytheConfig()[0];
+								currentDamage[0] = currentDamage[0] + (attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiScytheConfig()[0] * kiWeaponMult);
 						}
 						case "clawlance" -> {
 							kiCost = (int) Math.round(ConfigManager.getCombatConfig().getBaselineFormDrain() * ConfigManager.getCombatConfig().getKiClawLanceConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost)
-								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiClawLanceConfig()[0];
+								currentDamage[0] = currentDamage[0] + (attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiClawLanceConfig()[0] * kiWeaponMult);
 						}
 					}
 					if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
