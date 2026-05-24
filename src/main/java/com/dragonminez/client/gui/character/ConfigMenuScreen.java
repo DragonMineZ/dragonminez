@@ -38,6 +38,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private int scrollOffset = 0;
 	private int maxScroll = 0;
 	private boolean isDraggingScroll = false;
+	private int holdTicks = 0;
+	private int heldConfigIndex = -1;
+	private int heldDelta = 0;
 
 	private GeneralUserConfig userConfig;
 	private final List<ConfigOption> configOptions = new ArrayList<>();
@@ -183,7 +186,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 						.texture(STAT_BUTTONS)
 						.textureCoords(142, 0, 142, 10)
 						.textureSize(10, 10)
-						.onPress(button -> modifyConfigValue(index, -1))
+						.onPress(button -> {
+							modifyConfigValue(index, -1);
+							heldConfigIndex = index;
+							heldDelta = -1;
+							holdTicks = 0;
+						})
 						.build();
 				decreaseButtons.add(decreaseBtn);
 				this.addRenderableWidget(decreaseBtn);
@@ -194,7 +202,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 						.texture(STAT_BUTTONS)
 						.textureCoords(0, 0, 0, 10)
 						.textureSize(10, 10)
-						.onPress(button -> modifyConfigValue(index, 1))
+						.onPress(button -> {
+							modifyConfigValue(index, 1);
+							heldConfigIndex = index;
+							heldDelta = 1;
+							holdTicks = 0;
+						})
 						.build();
 				increaseButtons.add(increaseBtn);
 				this.addRenderableWidget(increaseBtn);
@@ -203,15 +216,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	private void clearConfigButtons() {
-		for (CustomTextureButton btn : decreaseButtons) {
-			this.removeWidget(btn);
-		}
-		for (CustomTextureButton btn : increaseButtons) {
-			this.removeWidget(btn);
-		}
-		for (SwitchButton btn : switchButtons) {
-			this.removeWidget(btn);
-		}
+		for (CustomTextureButton btn : decreaseButtons) this.removeWidget(btn);
+		for (CustomTextureButton btn : increaseButtons) this.removeWidget(btn);
+		for (SwitchButton btn : switchButtons) this.removeWidget(btn);
 		decreaseButtons.clear();
 		increaseButtons.clear();
 		switchButtons.clear();
@@ -221,6 +228,13 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public void tick() {
 		super.tick();
 		tickCount++;
+
+		if (heldConfigIndex != -1) {
+			holdTicks++;
+			if (holdTicks > 10 && holdTicks % 2 == 0) {
+				modifyConfigValue(heldConfigIndex, heldDelta);
+			}
+		}
 	}
 
 	private void updateConfigsList() {
@@ -467,6 +481,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		heldConfigIndex = -1;
+
 		if (isDraggingScroll) {
 			isDraggingScroll = false;
 			return true;

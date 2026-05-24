@@ -12,9 +12,6 @@ import com.dragonminez.common.stats.character.Status;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -32,6 +29,7 @@ public class AlternativeHUD {
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;
 	private static volatile float currentStmBarWidth = 0;
+	private static volatile float displayPowerRelease = 0;
 	private static volatile float lastSeenMaxHP = -1.0f;
 	private static volatile float lastSeenMaxKi = -1;
 	private static volatile float lastSeenMaxStm = -1;
@@ -86,6 +84,7 @@ public class AlternativeHUD {
 				currentHPBarWidth = lerp(currentHPBarWidth, targetHPBarWidth, partialTicks);
 				currentKiBarWidth = lerp(currentKiBarWidth, targetKiBarWidth, partialTicks);
 				currentStmBarWidth = lerp(currentStmBarWidth, targetStmBarWidth, partialTicks);
+				displayPowerRelease = lerp(displayPowerRelease, powerRelease, partialTicks);
 
 				RenderSystem.enableBlend();
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -115,7 +114,6 @@ public class AlternativeHUD {
 				guiGraphics.blit(hud, 0, 0, 0, 0, 83, 9, 128, 128);
 				int hpTextureV = (currentHP < maxHP * 0.33) ? 33 : (currentHP < maxHP * 0.66) ? 22 : 11;
 				guiGraphics.blit(hud, 2, 3, 2, hpTextureV, 7 + (int) currentHPBarWidth, 5, 128, 128);
-				drawTinyText(guiGraphics, powerRelease + "%", -4, 41, ColorUtils.hexToInt("#FACAF7"));
 				drawBarValues(guiGraphics, HP_NUMBER, currentHP, maxHP, 42, 3, tickTime);
 				guiGraphics.pose().popPose();
 
@@ -129,7 +127,7 @@ public class AlternativeHUD {
 				drawBarValues(guiGraphics, KI_NUMBER, currentKi, maxKi, 42, 3, tickTime);
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().scale(1.5f, 1.5f, 1.5f);
-				drawRacialIcon(guiGraphics, raceName, Math.min(powerRelease, 100), -28, 0);
+				drawRacialIcon(guiGraphics, raceName, displayPowerRelease, -28, 0);
 				drawFormIcon(guiGraphics, formRelease, -28, 0);
 				guiGraphics.pose().popPose();
 				guiGraphics.pose().popPose();
@@ -155,12 +153,12 @@ public class AlternativeHUD {
 		}
 	}
 
-	private static void drawRacialIcon(GuiGraphics guiGraphics, String raceName, int powerRelease, int x, int y) {
+	private static void drawRacialIcon(GuiGraphics guiGraphics, String raceName, float powerRelease, int x, int y) {
 		List<String> loadedRaces = ConfigManager.getDefaultRaces();
 		int raceIndex = Math.max(0, loadedRaces.indexOf(raceName.toLowerCase()));
 		int iconU = 1 + (raceIndex * 17);
 		boolean isCustomRace = !loadedRaces.contains(raceName.toLowerCase());
-		int fillHeight = (int) (16 * (powerRelease / 100.0f));
+		int fillHeight = (int) (16 * (Math.min(powerRelease, 100.0f) / 100.0f));
 
 		guiGraphics.blit(racialIcons, x + 7, y + 4, isCustomRace ? 103 : iconU, 1, 16, 16, 256, 256);
 		if (fillHeight > 0) guiGraphics.blit(racialIcons, x + 7, y + 4 + (16 - fillHeight), isCustomRace ? 103 : iconU, 18 + (16 - fillHeight), 16, fillHeight, 256, 256);
@@ -168,6 +166,7 @@ public class AlternativeHUD {
 		RenderSystem.enableBlend();
 		guiGraphics.blit(xvhud, x, y, 218, 100, 26, 27, 256, 256);
 		RenderSystem.disableBlend();
+		drawTinyText(guiGraphics, Math.round(powerRelease) + "%", -18, 11, ColorUtils.hexToInt("#FACAF7"));
 	}
 
 	private static void drawFormIcon(GuiGraphics guiGraphics, int formRelease, int x, int y) {

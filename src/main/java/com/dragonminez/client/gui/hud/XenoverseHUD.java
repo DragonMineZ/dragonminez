@@ -28,6 +28,7 @@ public class XenoverseHUD {
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;
 	private static volatile float currentStmBarWidth = 0;
+	private static volatile float displayPowerRelease = 0;
 	private static volatile float lastSeenMaxHP = -1.0f;
 	private static volatile float lastSeenMaxKi = -1;
 	private static volatile float lastSeenMaxStm = -1;
@@ -81,10 +82,12 @@ public class XenoverseHUD {
 				currentHPBarWidth += (targetHPBarWidth - currentHPBarWidth) * LERP_SPEED * partialTicks;
 				currentKiBarWidth += (targetKiBarWidth - currentKiBarWidth) * LERP_SPEED * partialTicks;
 				currentStmBarWidth += (targetStmBarWidth - currentStmBarWidth) * LERP_SPEED * partialTicks;
+				displayPowerRelease += (powerRelease - displayPowerRelease) * LERP_SPEED * partialTicks;
 
 				if (Math.abs(currentHPBarWidth - targetHPBarWidth) <= 1) currentHPBarWidth = targetHPBarWidth;
 				if (Math.abs(currentKiBarWidth - targetKiBarWidth) <= 1) currentKiBarWidth = targetKiBarWidth;
 				if (Math.abs(currentStmBarWidth - targetStmBarWidth) <= 1) currentStmBarWidth = targetStmBarWidth;
+				if (Math.abs(displayPowerRelease - powerRelease) <= 1) displayPowerRelease = powerRelease;
 
 				RenderSystem.enableBlend();
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -125,14 +128,14 @@ public class XenoverseHUD {
 				int raceY = isMajin ? 12 : 13;
 				guiGraphics.blit(racialIcons, 15, raceY, isCustomRace ? 103 : iconU, 1, 16, 16, 256, 256);
 
-				int fillHeight = (int) (16 * (Math.min(powerRelease, 100) / 100.0f));
+				int fillHeight = (int) (16 * (Math.min(displayPowerRelease, 100.0f) / 100.0f));
 				if (fillHeight > 0) guiGraphics.blit(racialIcons, 15, raceY + (16 - fillHeight), isCustomRace ? 103 : iconU, 18 + (16 - fillHeight), 16, fillHeight, 256, 256);
 
 				guiGraphics.blit(hud, 8, 8, 218, 100, 26, 27, 256, 256);
 				int fillFormHeight = (int) (17 * (formRelease / 100.0f));
 				if (fillFormHeight > 0) guiGraphics.blit(hud, 10, 20 + (17 - fillFormHeight), 220, 130 + (17 - fillFormHeight), 26, fillFormHeight, 256, 256);
 
-				drawScaledText(guiGraphics, powerRelease + "%", 7, 32, 0.5f, ColorUtils.hexToInt("#FACAF7"));
+				drawScaledText(guiGraphics, Math.round(displayPowerRelease) + "%", 7, 32, 0.5f, ColorUtils.hexToInt("#FACAF7"));
 
 				if (ConfigManager.getUserConfig().getAdvancedDescription()) {
 					boolean showPercent = ConfigManager.getUserConfig().getAdvancedDescriptionPercentage();
