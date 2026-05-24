@@ -75,6 +75,66 @@ public class AuraRenderer {
 		List<AuraLayer> lastLayers;
 	}
 
+	public static void renderGuiAura(Player player, PoseStack poseStack, Matrix4f projectionMatrix, int x, int y, int scale, float partialTick, boolean guiMode) {
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		if (stats == null) return;
+
+		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick);
+		if (activeLayers.isEmpty()) return;
+
+		ShaderInstance shader = DMZShaders.auraShader;
+		if (shader == null) return;
+
+		float[] modelScale = getModelScale(stats);
+		float[] auraScale = getAuraScale(stats, modelScale);
+		float animSpeed = (player.tickCount + partialTick) * 0.5f;
+		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
+
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		RenderSystem.disableDepthTest();
+		RenderSystem.depthMask(false);
+		RenderSystem.disableCull();
+
+		for (AuraLayer layer : activeLayers) {
+			float finalScaleX = auraScale[0] * scale * 2.0f * (1.0f + (layer.layerId * 0.15f));
+			float finalScaleY = auraScale[1] * scale * 2.0f * (1.0f + layer.layerId * 0.15f);
+
+			poseStack.pushPose();
+			poseStack.translate(x, y - (scale * 1.65f), 10.0D);
+			poseStack.scale(finalScaleX, -finalScaleY, 1.0f);
+
+			String typeStr = layer.type != null && !layer.type.isEmpty() ? layer.type.toLowerCase() : "kakarot";
+			ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
+
+			RenderSystem.setShaderTexture(0, mainTex);
+			RenderSystem.setShader(() -> shader);
+
+			shader.safeGetUniform("speed").set(animSpeed);
+			shader.safeGetUniform("ProjMat").set(projectionMatrix);
+			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+			shader.safeGetUniform("color1").set(layer.color[0] * 1.6f, layer.color[1] * 1.6f, layer.color[2] * 1.6f, 1.0f);
+			shader.safeGetUniform("color2").set(layer.color[0] * 1.3f, layer.color[1] * 1.3f, layer.color[2] * 1.3f, 1.0f);
+			shader.safeGetUniform("color3").set(layer.color[0] * 1.0f, layer.color[1] * 1.0f, layer.color[2] * 1.0f, 0.85f);
+			shader.safeGetUniform("color4").set(layer.color[0] * 0.75f, layer.color[1] * 0.75f, layer.color[2] * 0.75f, 0.65f);
+			shader.safeGetUniform("alp1").set(1.0f);
+			shader.apply();
+
+			mesh.bind();
+			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+
+			poseStack.popPose();
+		}
+
+		VertexBuffer.unbind();
+		shader.clear();
+
+		RenderSystem.enableDepthTest();
+		RenderSystem.depthMask(true);
+		RenderSystem.enableCull();
+		RenderSystem.disableBlend();
+	}
+
 	public static void processFusionFlashes(Minecraft mc, long gameTime, float partialTick, PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
 		for (Player player : mc.level.players()) {
 			int playerId = player.getId();

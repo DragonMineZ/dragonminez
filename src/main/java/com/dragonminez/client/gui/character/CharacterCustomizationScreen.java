@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextUtil;
@@ -38,8 +39,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 import java.util.*;
@@ -280,6 +283,15 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		}
 	}
 
+	private void onTabChanged() {
+		hideColorPicker();
+		TabId newTab = activeTabs.get(currentTabIndex);
+		if (newTab != TabId.HAIR && !(newTab == TabId.PRESET && shouldRenderFormPreviewInPreset())) {
+			previewFormIndex = previewFormOptions.isEmpty() ? -1 : 0;
+		}
+		refreshScreenWidgets();
+	}
+
 	private void initNavigationButtons() {
 		int buttonY = getUiHeight() - 28;
 		int nextX = getUiWidth() - 86;
@@ -295,8 +307,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				.onPress(btn -> {
 					if (currentTabIndex > 0) {
 						currentTabIndex--;
-						hideColorPicker();
-						refreshScreenWidgets();
+						onTabChanged();
 						return;
 					}
 					closeToPrevious();
@@ -317,8 +328,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				.onPress(btn -> {
 					if (currentTabIndex < activeTabs.size() - 1) {
 						currentTabIndex++;
-						hideColorPicker();
-						refreshScreenWidgets();
+						onTabChanged();
 						return;
 					}
 					finish();
@@ -381,7 +391,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		beginUiScale(graphics);
 		renderLeftPanel(graphics);
 		renderProgress(graphics);
-		renderPlayerModel(graphics);
+		renderPlayerModel(graphics, partialTick);
 		renderTabText(graphics);
 
 		if (colorPickerVisible) {
@@ -529,8 +539,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getEnergy()), centerX + 40, rowY + 12, 0xFFFFFF);
 	}
 
-	private void renderPlayerModel(GuiGraphics graphics) {
-		LivingEntity player = Minecraft.getInstance().player;
+	private void renderPlayerModel(GuiGraphics graphics, float partialTick) {
+		Player player = Minecraft.getInstance().player;
 		if (player == null) return;
 
 		ActiveFormSnapshot snapshot = captureLocalPlayerFormSnapshot(player);
@@ -584,11 +594,25 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		player.yHeadRot = playerRotation;
 		player.yHeadRotO = playerRotation;
 
+		Minecraft mc = Minecraft.getInstance();
+		float sw = (float) mc.getWindow().getGuiScaledWidth();
+		float sh = (float) mc.getWindow().getGuiScaledHeight();
+		Matrix4f guiProjection = new Matrix4f().ortho(0, sw, sh, 0, -10000, 10000);
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 320.0D);
+
 		InventoryScreen.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, pose, cameraOrientation, player);
 
-		if (previewApplied && snapshot != null) {
-			restoreLocalPlayerFormSnapshot(player, snapshot);
+		if (tab == TabId.AURA_CLASS) {
+			RenderSystem.enableBlend();
+			RenderSystem.defaultBlendFunc();
+			AuraRenderer.renderGuiAura(player, graphics.pose(), guiProjection, baseX, currentBaseY, adjustedScale, partialTick, true);
 		}
+
+		graphics.pose().popPose();
+
+		if (previewApplied && snapshot != null) restoreLocalPlayerFormSnapshot(player, snapshot);
 
 		player.yBodyRot = yBodyRot;
 		player.yBodyRotO = yBodyRotO;
@@ -743,7 +767,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			}
 			if (currentTabIndex > 0) {
 				currentTabIndex--;
-				refreshScreenWidgets();
+				onTabChanged();
 				return true;
 			}
 			closeToPrevious();
@@ -1606,7 +1630,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		character.setNoseType(originalNose);
 		character.setMouthType(originalMouth);
 		character.setTattooType(originalTattoo);
-		character.setActiveHeadBone(originalActiveBone); // Restaurado del hueso original
+		character.setActiveHeadBone(originalActiveBone);
 		HairRenderer.PHYSICS_ENABLED = oldHairPhysics;
 	}
 }
