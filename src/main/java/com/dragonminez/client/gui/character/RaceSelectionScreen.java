@@ -153,11 +153,6 @@ public class RaceSelectionScreen extends ScaledScreen {
 	public void tick() {
 		super.tick();
 
-		if (panoramaFade < 1.0f) panoramaFade = Math.min(1.0f, panoramaFade + 0.05f);
-
-		if (Math.abs(carouselAnim) > 0.001f) carouselAnim = Mth.lerp(0.2f, carouselAnim, 0.0f);
-		else carouselAnim = 0.0f;
-
 		if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) transitionState = TransitionState.NONE;
 		if (transitionState != TransitionState.CLOSING || closeCommitted) return;
 		if (getTransitionProgress() >= 1.0f) {
@@ -168,6 +163,13 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+
+		if (panoramaFade < 1.0f) panoramaFade = Math.min(1.0f, panoramaFade + (tickDelta * 0.05f));
+
+		if (Math.abs(carouselAnim) > 0.001f) carouselAnim = Mth.lerp(tickDelta * 0.35f, carouselAnim, 0.0f);
+		else carouselAnim = 0.0f;
+
 		renderPanorama(graphics, partialTick);
 		this.renderCinematicBars(graphics);
 
@@ -286,6 +288,10 @@ public class RaceSelectionScreen extends ScaledScreen {
 		String rawName = Component.translatable("race." + Reference.MOD_ID + "." + currentRace).getString();
 		String boldAndColoredName = "\u00A7l" + rawName.replaceAll("(?i)(\u00A7[0-9a-fr])", "$1\u00A7l");
 		Component raceName = txt(boldAndColoredName);
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 400.0D);
+
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, raceName, centerX, startY - 12, 0xFF7CFDD6);
 
 		Component description = tr("race." + Reference.MOD_ID + "." + currentRace + ".desc");
@@ -296,6 +302,8 @@ public class RaceSelectionScreen extends ScaledScreen {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX, textY, 0xFFCCCCCC);
 			textY += 12;
 		}
+
+		graphics.pose().popPose();
 	}
 
 	private void renderRacialInfo(GuiGraphics graphics) {
@@ -356,6 +364,10 @@ public class RaceSelectionScreen extends ScaledScreen {
 		int boxStartX = uiWidth - marginFromEdge - panelWidth;
 		int centerX = boxStartX + (panelWidth / 2);
 		int startY = (uiHeight / 2) - 50;
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 400.0D);
+
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, titleComp.copy().withStyle(ChatFormatting.BOLD), centerX + 60, startY - 12, 0xFF55FF55);
 		List<String> wrappedDesc = wrapText(description, panelWidth);
 		int textY = startY;
@@ -364,6 +376,8 @@ public class RaceSelectionScreen extends ScaledScreen {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX + 60, textY, 0xFFCCCCCC);
 			textY += 12;
 		}
+
+		graphics.pose().popPose();
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
