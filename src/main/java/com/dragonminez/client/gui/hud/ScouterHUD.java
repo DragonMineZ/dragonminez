@@ -40,7 +40,6 @@ public class ScouterHUD {
 	private static final ResourceLocation SCOUTER_PURPLE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/scouter/scouter_purple.png");
 
 	private static boolean isRenderingInfo = false;
-	private static Item scouterColor = null;
 
 	private static int scanTimer = 0;
 	private static int strongestEntityID = -1;
@@ -63,7 +62,7 @@ public class ScouterHUD {
 
 		ItemStack scouterStack = getScouterStack(mc.player);
 		if (scouterStack.isEmpty() || !scouterStack.getDescriptionId().contains("scouter")) {
-			isRenderingInfo = false; // Apagado automático si nos quitamos el scouter
+			isRenderingInfo = false;
 			return;
 		}
 
@@ -88,10 +87,9 @@ public class ScouterHUD {
 		for (LivingEntity entity : entities) {
 			int bp = getEntityBP(entity);
 
-			// Lógica de explosión por sobrecarga
 			if (bp > BP_LIMIT) {
 				damageScouter(player);
-				return; // Detenemos el escaneo inmediatamente
+				return;
 			}
 
 			if (bp > maxFoundBP) {
@@ -130,7 +128,6 @@ public class ScouterHUD {
 		ItemStack scouterStack = getScouterStack(mc.player);
 		if (scouterStack.isEmpty() || !scouterStack.getItem().getDescriptionId().contains("scouter")) return;
 
-		// Leemos el color directamente del ítem equipado en vez de la variable estática propensa a desincronizarse
 		Item currentItem = scouterStack.getItem();
 		ResourceLocation currentTexture = currentItem == MainItems.BLUE_SCOUTER.get() ? SCOUTER_BLUE :
 				currentItem == MainItems.RED_SCOUTER.get() ? SCOUTER_RED :
@@ -158,7 +155,7 @@ public class ScouterHUD {
 				if (bp > BP_LIMIT) {
 					damageScouter(mc.player);
 					guiGraphics.pose().popPose();
-					return; // Cortamos el renderizado inmediatamente tras explotar
+					return;
 				}
 
 				renderCustomNumbers(guiGraphics, currentTexture, formatBP(bp));
@@ -293,6 +290,4 @@ public class ScouterHUD {
 
 	public static void setRenderingInfo(boolean render) { isRenderingInfo = render; }
 	public static boolean isRenderingInfo() { return isRenderingInfo; }
-	public static void setScouterColor(Item item) { scouterColor = item; }
-	public static Item getScouterColor() { return scouterColor; }
 }

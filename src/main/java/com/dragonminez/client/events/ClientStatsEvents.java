@@ -35,6 +35,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
@@ -44,6 +45,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.Objects;
 
@@ -343,7 +345,7 @@ public class ClientStatsEvents {
 				}
 			} else flightSound = null;
 
-			boolean hasScouter = localPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
+			boolean hasScouter = !getScouterStack(localPlayer).isEmpty();
 			if (KeyBinds.KI_SENSE.consumeClick()) {
 				if (!hasScouter) {
 					Skill kiSense = data.getSkills().getSkill("kisense");
@@ -351,14 +353,7 @@ public class ClientStatsEvents {
 					int kiSenseLevel = kiSense.getLevel();
 					if (kiSenseLevel > 0)
 						NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, kiSense.getName(), 0));
-				} else {
-					ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
-				}
-			}
-
-			if (hasScouter) {
-				if (ScouterHUD.getScouterColor() != localPlayer.getItemBySlot(EquipmentSlot.HEAD).getItem())
-					ScouterHUD.setScouterColor(localPlayer.getItemBySlot(EquipmentSlot.HEAD).getItem());
+				} else ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
 			}
 
 			if (!(mc.screen instanceof TrainingScreen)) {
@@ -368,6 +363,13 @@ public class ClientStatsEvents {
 				}
 			}
 		});
+	}
+
+	private static ItemStack getScouterStack(Player player) {
+		return CuriosApi.getCuriosInventory(player)
+				.map(inv -> inv.getCurios().get("head_tech"))
+				.map(handler -> handler.getStacks().getStackInSlot(0))
+				.orElse(ItemStack.EMPTY);
 	}
 
 	@SubscribeEvent

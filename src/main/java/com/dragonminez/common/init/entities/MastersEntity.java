@@ -7,6 +7,7 @@ import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -33,11 +34,8 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+	@Getter
 	protected String masterName = null;
-
-	public String getMasterName() {
-		return masterName;
-	}
 
 	protected MastersEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);
@@ -116,9 +114,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	@Override
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
-		if (pHand != InteractionHand.MAIN_HAND) {
-			return InteractionResult.PASS;
-		}
+		if (pHand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
 
 		if (!this.level().isClientSide && pPlayer instanceof ServerPlayer serverPlayer && masterName != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
