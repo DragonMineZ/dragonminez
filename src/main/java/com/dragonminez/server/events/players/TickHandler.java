@@ -70,6 +70,7 @@ public class TickHandler {
 	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
 	private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
 	private static int masterySeconds = 0;
+	private static int chargeTicks = 0;
 
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
@@ -85,7 +86,6 @@ public class TickHandler {
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
 		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
 		if (!(event.player instanceof ServerPlayer serverPlayer)) return;
-
 
 		UUID playerId = serverPlayer.getUUID();
 		int graceTicks = forceKillGraceByPlayer.getOrDefault(playerId, 0);
@@ -133,7 +133,7 @@ public class TickHandler {
 
 			handleTechniqueCharge(serverPlayer, data);
 
-			boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
+			boolean shouldRegen = tickCounter >= REGEN_INTERVAL && !serverPlayer.isDeadOrDying();
 			boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
 			boolean isChargingKi = data.getStatus().isChargingKi();
 			boolean isDescending = data.getStatus().isDescending();
@@ -186,20 +186,29 @@ public class TickHandler {
 				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 			}
 
-			if (isChargingKi && tickCounter % 20 == 0) {
-				int currentRelease = data.getResources().getPowerRelease();
+			if (isChargingKi) {
+				chargeTicks++;
+				if (chargeTicks % 2 == 0) {
+					int currentRelease = data.getResources().getPowerRelease();
+					int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
+					int maxRelease = 50 + (potentialUnlockLevel * 5);
 
-				int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
-				int maxRelease = 50 + (potentialUnlockLevel * 5);
+					int effectiveLevel = Math.min(10, potentialUnlockLevel);
 
-				if (!isDescending && currentRelease < maxRelease) {
-					int newRelease = Math.min(maxRelease, currentRelease + 5);
-					data.getResources().setPowerRelease(newRelease);
-				} else if (isDescending && currentRelease > 0) {
-					int newRelease = Math.max(0, currentRelease - 5);
-					data.getResources().setPowerRelease(newRelease);
+					float temporalMultiplier = (float) Math.pow(chargeTicks / 50.0f, 2);
+					float levelMultiplier = 1.0f + (effectiveLevel * 0.1f);
+
+					int step = (int) Math.min(10, Math.max(1, 1 * temporalMultiplier * levelMultiplier));
+
+					if (!isDescending && currentRelease < maxRelease) {
+						int newRelease = Math.min(maxRelease, currentRelease + step);
+						data.getResources().setPowerRelease(newRelease);
+					} else if (isDescending && currentRelease > 0) {
+						int newRelease = Math.max(0, currentRelease - step);
+						data.getResources().setPowerRelease(newRelease);
+					}
 				}
-			}
+			} else if (chargeTicks != 0) chargeTicks = 0;
 
 			boolean auraFromActions = isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
 			boolean auraFromFlySprint = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && serverPlayer.getDeltaMovement().length() > 0.65F;
