@@ -25,14 +25,16 @@ import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
 public class RaceSelectionScreen extends ScaledScreen {
@@ -42,19 +44,11 @@ public class RaceSelectionScreen extends ScaledScreen {
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
 
-	private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
-	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
-	private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
-	private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
-	private static final ResourceLocation PANORAMA_FROST = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
-	private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
-
-	private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
-	private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
-	private final PanoramaRenderer panoramaNamek = new PanoramaRenderer(new CubeMap(PANORAMA_NAMEK));
-	private final PanoramaRenderer panoramaBio = new PanoramaRenderer(new CubeMap(PANORAMA_BIO));
-	private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
-	private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
+	private final Map<String, PanoramaRenderer> panoramaCache = new HashMap<>();
+	private PanoramaRenderer currentPanorama;
+	private PanoramaRenderer previousPanorama;
+	private float panoramaFade = 1.0f;
+	private float carouselAnim = 0.0f;
 
 	protected static boolean GLOBAL_SWITCHING = false;
 
@@ -94,10 +88,30 @@ public class RaceSelectionScreen extends ScaledScreen {
 		return ConfigManager.getLoadedRaces();
 	}
 
+	private PanoramaRenderer getPanorama(String raceName) {
+		return panoramaCache.computeIfAbsent(raceName, k -> {
+			ResourceLocation testLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama_0.png");
+			boolean exists = false;
+			if (Minecraft.getInstance().getResourceManager() != null) exists = Minecraft.getInstance().getResourceManager().getResource(testLoc).isPresent();
+
+			ResourceLocation baseLoc = exists
+					? ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama")
+					: ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/roshi");
+
+			return new PanoramaRenderer(new CubeMap(baseLoc));
+		});
+	}
+
 	@Override
 	protected void init() {
 		super.init();
 		startOpenTransition();
+
+		List<String> races = getAvailableRaces();
+		if (!races.isEmpty()) {
+			currentPanorama = getPanorama(races.get(selectedRaceIndex));
+			previousPanorama = currentPanorama;
+		}
 
 		int centerX = getUiWidth() / 2;
 		int centerY = getUiHeight() / 2;
@@ -108,26 +122,16 @@ public class RaceSelectionScreen extends ScaledScreen {
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(32, 0, 32, 14)
 				.textureSize(8, 14)
-				.message(txt("<"))
-				.onPress(btn -> {
-					previousRace();
-					clearWidgets();
-					init();
-				})
+				.onPress(btn -> previousRace())
 				.build();
 
 		rightButton = new CustomTextureButton.Builder()
-				.position(centerX - 60 + 145, centerY + 88)
+				.position(centerX - 60 + 138, centerY + 88)
 				.size(20, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(20, 0, 20, 14)
 				.textureSize(8, 14)
-				.message(txt(">"))
-				.onPress(btn -> {
-					nextRace();
-					clearWidgets();
-					init();
-				})
+				.onPress(btn -> nextRace())
 				.build();
 
 		selectButton = new TexturedTextButton.Builder()
@@ -148,6 +152,12 @@ public class RaceSelectionScreen extends ScaledScreen {
 	@Override
 	public void tick() {
 		super.tick();
+
+		if (panoramaFade < 1.0f) panoramaFade = Math.min(1.0f, panoramaFade + 0.05f);
+
+		if (Math.abs(carouselAnim) > 0.001f) carouselAnim = Mth.lerp(0.2f, carouselAnim, 0.0f);
+		else carouselAnim = 0.0f;
+
 		if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) transitionState = TransitionState.NONE;
 		if (transitionState != TransitionState.CLOSING || closeCommitted) return;
 		if (getTransitionProgress() >= 1.0f) {
@@ -166,18 +176,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 		beginUiScale(graphics);
 
-		RenderSystem.enableBlend();
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-		graphics.blit(MENU_BIG, (getUiWidth() / 2) - 70, (getUiHeight() / 2) + 85, 0, 215, 149, 21);
-		List<String> races = getAvailableRaces();
-		if (races.isEmpty()) return;
-		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
-		String currentRace = races.get(selectedRaceIndex);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("race." + Reference.MOD_ID + "." + currentRace), getUiWidth() / 2 + 4, getUiHeight() / 2 + 92, 0xFF7CFDD6);
-		RenderSystem.disableBlend();
-
-		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
+		renderCarouselElements(graphics, uiMouseX, uiMouseY);
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
@@ -187,47 +186,87 @@ public class RaceSelectionScreen extends ScaledScreen {
 		endUiScale(graphics);
 	}
 
-	private void renderCinematicBars(GuiGraphics guiGraphics) {
-		int totalBarHeight = (int) (this.height * 0.12);
+	private void renderCarouselElements(GuiGraphics graphics, int mouseX, int mouseY) {
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
 
-		int fadeSize = 60;
+		int centerX = getUiWidth() / 2;
+		int centerY = getUiHeight() / 2 + 92;
+		int modelBaseY = getUiHeight() / 2 + 70;
 
-		if (totalBarHeight <= fadeSize) {
-			totalBarHeight = fadeSize + 1;
+		String originalRace = races.get(selectedRaceIndex);
+
+		List<Integer> carouselIndices = new ArrayList<>(List.of(-2, -1, 0, 1, 2));
+		carouselIndices.sort((a, b) -> {
+			float absA = Math.abs(a + carouselAnim);
+			float absB = Math.abs(b + carouselAnim);
+			return Float.compare(absB, absA);
+		});
+
+		for (int i : carouselIndices) {
+			float visualPos = i + carouselAnim;
+			float absPos = Math.abs(visualPos);
+
+			if (absPos > 1.5f) continue;
+
+			float scale = Math.max(0.5f, 1.0f - (absPos * 0.35f));
+			float alpha = Math.max(0.0f, 1.0f - (absPos * 0.6f));
+
+			if (alpha <= 0.05f) continue;
+
+			int raceIndex = (selectedRaceIndex + i) % races.size();
+			if (raceIndex < 0) raceIndex += races.size();
+			String raceName = races.get(raceIndex);
+
+			float xOffset = visualPos * 130f;
+			applyRaceDefaults(raceName);
+			int modelX = (int) (centerX + 5 + xOffset);
+
+			RenderSystem.setShaderColor(alpha, alpha, alpha, 1.0f);
+			renderPlayerModel(graphics, modelX, modelBaseY, (int)(75 * scale), mouseX, mouseY);
+			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+			graphics.pose().pushPose();
+			graphics.pose().translate(centerX + xOffset, centerY, 0);
+			graphics.pose().scale(scale, scale, 1.0f);
+
+			RenderSystem.enableBlend();
+			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, alpha);
+			graphics.blit(MENU_BIG, -74, -7, 0, 215, 149, 21);
+			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+			RenderSystem.disableBlend();
+
+			int alphaHex = (int)(alpha * 255) << 24;
+			int color = (0x00FFFFFF & 0xFF7CFDD6) | alphaHex;
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("race." + Reference.MOD_ID + "." + raceName), 0, 0, color);
+
+			graphics.pose().popPose();
 		}
 
-		int solidHeight = totalBarHeight - fadeSize;
+		applyRaceDefaults(originalRace);
+	}
 
+	private void renderCinematicBars(GuiGraphics guiGraphics) {
+		int totalBarHeight = (int) (this.height * 0.12);
+		int fadeSize = 60;
+		if (totalBarHeight <= fadeSize) totalBarHeight = fadeSize + 1;
+
+		int solidHeight = totalBarHeight - fadeSize;
 		int colorSolid = 0xFF000000;
 		int colorTransparent = 0x00000000;
 
 		guiGraphics.fill(0, 0, this.width, solidHeight, colorSolid);
-
 		guiGraphics.fillGradient(0, solidHeight, this.width, solidHeight + fadeSize, colorSolid, colorTransparent);
-
 		int bottomBarStartY = this.height - totalBarHeight;
-
 		guiGraphics.fillGradient(0, bottomBarStartY, this.width, bottomBarStartY + fadeSize, colorTransparent, colorSolid);
-
 		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
 	}
 
 	private void renderPanorama(GuiGraphics graphics, float partialTick) {
-		List<String> races = getAvailableRaces();
-		if (races.isEmpty()) return;
-		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
-		String currentRace = races.get(selectedRaceIndex);
-
-		PanoramaRenderer panorama = switch (currentRace) {
-			case "saiyan" -> panoramaSaiyan;
-			case "namekian" -> panoramaNamek;
-			case "bioandroid" -> panoramaBio;
-			case "frostdemon" -> panoramaFrost;
-			case "majin" -> panoramaMajin;
-			default -> panoramaHuman;
-		};
-
-		panorama.render(partialTick, 1.0F);
+		if (previousPanorama != null && panoramaFade < 1.0f) {
+			previousPanorama.render(partialTick, 1.0f);
+			if (currentPanorama != null) currentPanorama.render(partialTick, panoramaFade);
+		} else if (currentPanorama != null) currentPanorama.render(partialTick, 1.0f);
 	}
 
 	private void renderRaceInfo(GuiGraphics graphics) {
@@ -395,41 +434,18 @@ public class RaceSelectionScreen extends ScaledScreen {
 				if (!currentLine.isEmpty()) currentLine.append(" ");
 				currentLine.append(word);
 			} else {
-				if (!currentLine.isEmpty()) {
-					lines.add(currentLine.toString());
-				}
+				if (!currentLine.isEmpty()) lines.add(currentLine.toString());
 				currentLine = new StringBuilder(word);
 			}
 		}
 
-		if (!currentLine.isEmpty()) {
-			lines.add(currentLine.toString());
-		}
-
+		if (!currentLine.isEmpty()) lines.add(currentLine.toString());
 		return lines;
 	}
 
-	private void previousRace() {
-		List<String> races = getAvailableRaces();
-		if (races.isEmpty()) return;
-		selectedRaceIndex = (selectedRaceIndex - 1 + races.size()) % races.size();
-		updateCharacterRace();
-	}
-
-	private void nextRace() {
-		List<String> races = getAvailableRaces();
-		if (races.isEmpty()) return;
-		selectedRaceIndex = (selectedRaceIndex + 1) % races.size();
-		updateCharacterRace();
-	}
-
-	private void updateCharacterRace() {
-		List<String> races = getAvailableRaces();
-		if (races.isEmpty()) return;
-		String selectedRace = races.get(selectedRaceIndex);
-		character.setRace(selectedRace);
-
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(selectedRace);
+	private void applyRaceDefaults(String race) {
+		character.setRace(race);
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 		if (config != null) {
 			character.setBodyColor(config.getDefaultBodyColor());
 			character.setBodyColor2(config.getDefaultBodyColor2());
@@ -440,8 +456,10 @@ public class RaceSelectionScreen extends ScaledScreen {
 			character.setAuraColor(config.getDefaultAuraColor());
 			character.setBodyType(config.getDefaultBodyType());
 			character.setHairId(config.getDefaultHairType());
-			if (HairManager.canUseHair(character)) character.setActiveHeadBone("hair");
-			else if (config.getHeadBones() != null && config.getHeadBones().length > 0) {
+
+			if (HairManager.canUseHair(character)) {
+				character.setActiveHeadBone("hair");
+			} else if (config.getHeadBones() != null && config.getHeadBones().length > 0) {
 				String firstExtraBone = "";
 				if (character.areExtraHeadBonesEnabled()) {
 					for (String bone : config.getHeadBones()) {
@@ -452,14 +470,50 @@ public class RaceSelectionScreen extends ScaledScreen {
 					}
 				}
 				character.setActiveHeadBone(firstExtraBone);
-			} else character.setActiveHeadBone("");
+			} else {
+				character.setActiveHeadBone("");
+			}
+
 			character.setEyesType(config.getDefaultEyesType());
 			character.setNoseType(config.getDefaultNoseType());
 			character.setMouthType(config.getDefaultMouthType());
 			character.setTattooType(config.getDefaultTattooType());
 		}
+	}
 
+	private void updateCharacterRace() {
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		applyRaceDefaults(races.get(selectedRaceIndex));
 		NetworkHandler.sendToServer(new StatsSyncC2S(character));
+	}
+
+	private void previousRace() {
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+
+		previousPanorama = currentPanorama;
+		panoramaFade = 0.0f;
+		carouselAnim = -1.0f;
+
+		selectedRaceIndex = (selectedRaceIndex - 1 + races.size()) % races.size();
+		updateCharacterRace();
+
+		currentPanorama = getPanorama(races.get(selectedRaceIndex));
+	}
+
+	private void nextRace() {
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+
+		previousPanorama = currentPanorama;
+		panoramaFade = 0.0f;
+		carouselAnim = 1.0f;
+
+		selectedRaceIndex = (selectedRaceIndex + 1) % races.size();
+		updateCharacterRace();
+
+		currentPanorama = getPanorama(races.get(selectedRaceIndex));
 	}
 
 	private void selectRace() {
@@ -471,10 +525,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		if (this.minecraft != null) {
 			isSwitchingMenu = true;
 			GLOBAL_SWITCHING = true;
-			Screen nextScreen = hasShiftDown()
-					? new CharacterCustomizationScreen(this, character)
-					: new CharacterCustomizationScreen(this, character);
-			startCloseTransition(nextScreen);
+			startCloseTransition(new CharacterCustomizationScreen(this, character));
 		}
 
 		NetworkHandler.sendToServer(new StatsSyncC2S(character));
@@ -575,6 +626,4 @@ public class RaceSelectionScreen extends ScaledScreen {
 		long elapsed = System.currentTimeMillis() - animationStartTime;
 		return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
 	}
-
-
 }

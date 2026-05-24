@@ -49,12 +49,6 @@ import java.util.function.IntConsumer;
 public class CharacterCustomizationScreen extends ScaledScreen {
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
-	private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
-	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
-	private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
-	private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
-	private static final ResourceLocation PANORAMA_FROST = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
-	private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
 
 	private static final int LEFT_PANEL_X = 12;
 	private static final int LEFT_PANEL_WIDTH = 141;
@@ -72,12 +66,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
 	private final List<TabId> activeTabs = new ArrayList<>();
 
-	private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
-	private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
-	private final PanoramaRenderer panoramaNamek = new PanoramaRenderer(new CubeMap(PANORAMA_NAMEK));
-	private final PanoramaRenderer panoramaBio = new PanoramaRenderer(new CubeMap(PANORAMA_BIO));
-	private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
-	private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
+	private final Map<String, PanoramaRenderer> panoramaCache = new HashMap<>();
 
 	private final Screen previousScreen;
 	private final Character character;
@@ -159,6 +148,20 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		resolveClassIndex();
 		reloadPreviewFormOptions();
 		refreshScreenWidgets();
+	}
+
+	private PanoramaRenderer getPanorama(String raceName) {
+		return panoramaCache.computeIfAbsent(raceName, k -> {
+			ResourceLocation testLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama_0.png");
+			boolean exists = false;
+			if (Minecraft.getInstance().getResourceManager() != null) exists = Minecraft.getInstance().getResourceManager().getResource(testLoc).isPresent();
+
+			ResourceLocation baseLoc = exists
+					? ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/" + k + "_panorama")
+					: ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/roshi");
+
+			return new PanoramaRenderer(new CubeMap(baseLoc));
+		});
 	}
 
 	protected void refreshScreenWidgets() {
@@ -1160,15 +1163,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void renderPanorama(float partialTick) {
-		String currentRace = character.getRace();
-		PanoramaRenderer panorama = switch (currentRace) {
-			case "saiyan" -> panoramaSaiyan;
-			case "namekian" -> panoramaNamek;
-			case "bioandroid" -> panoramaBio;
-			case "frostdemon" -> panoramaFrost;
-			case "majin" -> panoramaMajin;
-			default -> panoramaHuman;
-		};
+		String currentRace = character.getRace() != null ? character.getRace().toLowerCase(Locale.ROOT) : "human";
+		PanoramaRenderer panorama = getPanorama(currentRace);
 		panorama.render(partialTick, 1.0F);
 	}
 
