@@ -19,6 +19,7 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.util.BetaWhitelist;
@@ -186,25 +187,10 @@ public class ClientStatsEvents {
 			Character character = data.getCharacter();
 			TechniqueData selectedTechnique = data.getTechniques().getSelectedTechnique();
 			boolean hasSelectedKiTechnique = selectedTechnique instanceof KiAttackData;
+			boolean hasSelectedStrikeTechnique = selectedTechnique instanceof StrikeAttackData;
 			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 
-			if (isChargingTechnique) {
-				if (lockedVanillaHotbarSlot == -1) lockedVanillaHotbarSlot = localPlayer.getInventory().selected;
-				if (localPlayer.getInventory().selected != lockedVanillaHotbarSlot) {
-					localPlayer.getInventory().selected = lockedVanillaHotbarSlot;
-				}
-
-				if (lockedTechniqueSlot == -1) lockedTechniqueSlot = data.getTechniques().getSelectedSlot();
-				if (data.getTechniques().getSelectedSlot() != lockedTechniqueSlot) {
-					data.getTechniques().selectSlot(lockedTechniqueSlot);
-					NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(lockedTechniqueSlot));
-				}
-			} else {
-				lockedVanillaHotbarSlot = -1;
-				lockedTechniqueSlot = -1;
-			}
-
-			boolean isStunned = data.getStatus().isStunned();
+			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked();
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
@@ -239,7 +225,7 @@ public class ClientStatsEvents {
 			}
 
 
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !hasSelectedKiTechnique) {
+			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !hasSelectedKiTechnique && !hasSelectedStrikeTechnique) {
 				float[] kiRgb;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
@@ -258,6 +244,12 @@ public class ClientStatsEvents {
 				int colorBorder = ColorUtils.darkenColor(colorMain, 0.85f);
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
+			}
+
+			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && hasSelectedStrikeTechnique && !isStunned) {
+				var lockedTarget = LockOnEvent.getLockedTarget();
+				int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
+				NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
 			}
 			wasRightClickDown = isRightClickDown;
 
@@ -379,8 +371,8 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			boolean isStunned = data.getStatus().isStunned();
-			if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data)) return;
+			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked();
+			if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStrikeLocked()) return;
 
 			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();
 			if (isDashKeyDown && !wasDashKeyDown && !isStunned) {
@@ -449,7 +441,7 @@ public class ClientStatsEvents {
 	@SubscribeEvent
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
-			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data)) {
+			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStrikeLocked()) {
 				event.getInput().forwardImpulse = 0;
 				event.getInput().leftImpulse = 0;
 				event.getInput().jumping = false;

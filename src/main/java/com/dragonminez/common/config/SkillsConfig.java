@@ -23,6 +23,7 @@ public class SkillsConfig {
 	private final List<String> androidBlacklistedForms = new ArrayList<>();
 	private final Map<String, SkillCosts> skills = new HashMap<>();
 	private final Map<String, List<String>> skillOfferings = new HashMap<>();
+	private final List<String> strikeSkills = new ArrayList<>();
 
 	public SkillsConfig() {
 		createDefaults();
@@ -73,6 +74,24 @@ public class SkillsConfig {
 		skills.put("supernova_cooler", new SkillCosts(List.of(15000)));
 		skills.put("final_explosion", new SkillCosts(List.of(20000)));
 		skills.put("final_flash", new SkillCosts(List.of(5000)));
+
+		strikeSkills.add("meteor");
+		strikeSkills.add("dragon_fist");
+		strikeSkills.add("deadly_dance_vegetto");
+		strikeSkills.add("deadly_dance");
+		strikeSkills.add("kaioken_attack");
+		strikeSkills.add("wolf_fang");
+		strikeSkills.add("oozaru_fist");
+		strikeSkills.add("super_god_fist");
+
+		skills.put("meteor", new SkillCosts(List.of(3000)));
+		skills.put("dragon_fist", new SkillCosts(List.of(6000)));
+		skills.put("deadly_dance_vegetto", new SkillCosts(List.of(12000)));
+		skills.put("deadly_dance", new SkillCosts(List.of(8000)));
+		skills.put("kaioken_attack", new SkillCosts(List.of(5000)));
+		skills.put("wolf_fang", new SkillCosts(List.of(3500)));
+		skills.put("oozaru_fist", new SkillCosts(List.of(15000)));
+		skills.put("super_god_fist", new SkillCosts(List.of(10000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);

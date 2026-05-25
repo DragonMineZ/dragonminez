@@ -9,6 +9,8 @@ import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.MeleeAnimationS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -64,8 +66,14 @@ public class CombatAttackRequestC2S {
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
-			if (player != null) processAttackRequest(player, this);
+			if (player != null) {
+				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+					if (stats.getStatus().isStrikeLocked()) return;
+					processAttackRequest(player, this);
+				});
+			}
 		});
+
 		ctx.get().setPacketHandled(true);
 	}
 
@@ -179,4 +187,3 @@ public class CombatAttackRequestC2S {
 		});
 	}
 }
-

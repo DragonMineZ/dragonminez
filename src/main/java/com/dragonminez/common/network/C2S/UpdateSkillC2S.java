@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
+import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -52,11 +53,8 @@ public class UpdateSkillC2S {
 					boolean raceAllowed = isSkillAllowedForPlayerRace(data, skillName);
 					switch (action) {
 						case TOGGLE:
-							if (skill != null && skill.getLevel() > 0) {
-								skill.setActive(!skill.isActive());
-							}
+							if (skill != null && skill.getLevel() > 0) skill.setActive(!skill.isActive());
 							break;
-
 						case UPGRADE:
 							if (skill == null) break;
 							if (skill.getLevel() <= 0 && !raceAllowed) break;
@@ -66,9 +64,7 @@ public class UpdateSkillC2S {
 								boolean wasLevelZero = skill.getLevel() == 0;
 								skill.addLevel(1);
 
-								if (wasLevelZero) {
-									unlockTechniqueIfPresent(data, skillName);
-								}
+								if (wasLevelZero) unlockTechniqueIfPresent(data, skillName);
 							}
 							break;
 
@@ -77,12 +73,10 @@ public class UpdateSkillC2S {
 							if (!data.getSkills().hasSkill(skillName) && data.getResources().getTrainingPoints() >= cost && cost != -1) {
 								data.getResources().removeTrainingPoints(cost);
 								data.getSkills().setSkillLevel(skillName, 1);
-
 								unlockTechniqueIfPresent(data, skillName);
 							}
 							break;
 					}
-
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				});
 			}
@@ -101,6 +95,11 @@ public class UpdateSkillC2S {
 		if (PredefinedTechniques.REGISTRY.containsKey(techId)) {
 			KiAttackData template = PredefinedTechniques.REGISTRY.get(techId);
 			KiAttackData clone = new KiAttackData();
+			clone.load(template.save());
+			data.getTechniques().unlockTechnique(clone);
+		} else if (PredefinedTechniques.STRIKE_REGISTRY.containsKey(techId)) {
+			StrikeAttackData template = PredefinedTechniques.STRIKE_REGISTRY.get(techId);
+			StrikeAttackData clone = new StrikeAttackData();
 			clone.load(template.save());
 			data.getTechniques().unlockTechnique(clone);
 		}
@@ -122,9 +121,7 @@ public class UpdateSkillC2S {
 
 		int maxLevel = 0;
 		var skillCosts = skillsConfig.getSkillCosts(normalizedSkill);
-		if (skillCosts != null && skillCosts.getCosts() != null) {
-			maxLevel = skillCosts.getCosts().size();
-		}
+		if (skillCosts != null && skillCosts.getCosts() != null) maxLevel = skillCosts.getCosts().size();
 
 		if ("potentialunlock".equalsIgnoreCase(normalizedSkill)) maxLevel = Math.min(maxLevel, 30);
 		else maxLevel = Math.min(maxLevel, 50);

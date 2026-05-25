@@ -12,9 +12,14 @@ import net.minecraft.world.level.Level;
 public class MainDamageTypes {
 
     public static final ResourceKey<DamageType> KIBLAST = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kiblast"));
+    public static final ResourceKey<DamageType> STRIKE_ATTACK = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "strike_attack"));
 
 	public static DamageSource kiblast(Level level, Entity projectile, Entity owner) {
 		return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(KIBLAST), projectile, owner);
+	}
+
+	public static DamageSource strikeAttack(Level level, Entity attacker) {
+		return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(STRIKE_ATTACK), attacker);
 	}
 
 	public static boolean isKiblastDamage(DamageSource source) {
@@ -23,4 +28,3 @@ public class MainDamageTypes {
 
 	public static void register() {}
 }
-

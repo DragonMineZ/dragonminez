@@ -32,6 +32,7 @@ public class DashHandler {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 			if (player.hasEffect(MainEffects.STUN.get())) return;
+			if (data.getStatus().isStrikeLocked()) return;
 
 			if (ComboManager.canTeleport(player.getUUID())) {
 				int targetId = ComboManager.getTeleportTarget(player.getUUID());

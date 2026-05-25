@@ -231,6 +231,12 @@ public class NetworkHandler {
 				.consumerMainThread(TechniqueChargeC2S::handle)
 				.add();
 
+		net.messageBuilder(com.dragonminez.common.network.C2S.StrikeAttackC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(com.dragonminez.common.network.C2S.StrikeAttackC2S::new)
+				.encoder(com.dragonminez.common.network.C2S.StrikeAttackC2S::toBytes)
+				.consumerMainThread(com.dragonminez.common.network.C2S.StrikeAttackC2S::handle)
+				.add();
+
 		net.messageBuilder(CombatAttackRequestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CombatAttackRequestC2S::new)
 				.encoder(CombatAttackRequestC2S::encode)

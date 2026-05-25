@@ -43,6 +43,7 @@ public class Status {
 	private String scouterItem;
 	private String pothalaColor;
 	private boolean isPermanentAura;
+	private boolean isStrikeLocked;
 	private final Set<String> visitedDimensions;
 
 	public Status() {
@@ -73,6 +74,7 @@ public class Status {
 		this.scouterItem = "";
 		this.pothalaColor = "";
 		this.isPermanentAura = false;
+		this.isStrikeLocked = false;
 		this.visitedDimensions = new LinkedHashSet<>();
 	}
 
@@ -116,6 +118,7 @@ public class Status {
 		tag.putString("ScouterItem", scouterItem);
 		tag.putString("PothalaColor", pothalaColor);
 		tag.putBoolean("IsPermanentAura", isPermanentAura);
+		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
 
 		ListTag visitedDimensionsTag = new ListTag();
 		for (String dimensionId : visitedDimensions) {
@@ -156,6 +159,7 @@ public class Status {
 		this.scouterItem = tag.getString("ScouterItem");
 		this.pothalaColor = tag.getString("PothalaColor");
 		this.isPermanentAura = tag.getBoolean("IsPermanentAura");
+		this.isStrikeLocked = tag.getBoolean("IsStrikeLocked");
 		this.visitedDimensions.clear();
 		if (tag.contains("VisitedDimensions", Tag.TAG_LIST)) {
 			ListTag visitedDimensionsTag = tag.getList("VisitedDimensions", Tag.TAG_STRING);
@@ -193,6 +197,7 @@ public class Status {
 		this.pothalaColor = other.pothalaColor;
 		this.scouterItem = other.scouterItem;
 		this.isPermanentAura = other.isPermanentAura;
+		this.isStrikeLocked = other.isStrikeLocked;
 		this.visitedDimensions.clear();
 		this.visitedDimensions.addAll(other.visitedDimensions);
 	}

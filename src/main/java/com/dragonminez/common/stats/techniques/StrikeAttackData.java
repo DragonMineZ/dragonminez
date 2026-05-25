@@ -1,6 +1,8 @@
 package com.dragonminez.common.stats.techniques;
 
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.TechniqueConfig;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -9,6 +11,54 @@ import net.minecraft.nbt.CompoundTag;
 @Setter
 public class StrikeAttackData extends TechniqueData {
 	private float damageMultiplier;
+	private int damageLevel;
+	private int castTimeLevel;
+	private int cooldownLevel;
+	private String animationId;
+	private int durationTicks;
+
+	public void applyConfigDefaults() {
+		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
+		this.castTime = Math.max(0, cfg.getCastTimeTicks());
+		this.cooldown = Math.max(0, cfg.getCooldownTicks());
+	}
+
+	public int getActualCastTime() {
+		return Math.max(0, Math.round(castTime * Math.max(0.1f, 1.0f - (Math.max(0, castTimeLevel) * 0.05f))));
+	}
+
+	public int getActualCooldown() {
+		return Math.max(1, Math.round(cooldown * Math.max(0.1f, 1.0f - (Math.max(0, cooldownLevel) * 0.05f))));
+	}
+
+	public int getUpgradeXpCost(String statName) {
+		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
+		int baseMin = Math.max(0, cfg.getMinXPCost());
+		double multiplier = Math.max(0.0, cfg.getXpCostMultiplier());
+		int totalUpgrades = Math.max(0, damageLevel) + Math.max(0, castTimeLevel) + Math.max(0, cooldownLevel);
+		int scaledBase = (int) Math.round(baseMin * multiplier);
+		int upgradeExtra = (int) Math.round(totalUpgrades * Math.max(0.0, baseMin * (multiplier - 1.0)));
+		int computed = Math.max(0, scaledBase + upgradeExtra);
+		int max = cfg.getMaxXPCost();
+		if (max >= 0) computed = Math.min(computed, max);
+		return Math.max(0, computed);
+	}
+
+	public int getXpGainPerHit() {
+		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
+		double gain = Math.max(0.0, cfg.getXpGainPerHit() * cfg.getXpGainMultiplier());
+		return Math.max(0, (int) Math.round(gain));
+	}
+
+	public int getXpGainPerKill() {
+		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
+		double gain = Math.max(0.0, cfg.getXpGainPerKill() * cfg.getXpGainMultiplier());
+		return Math.max(0, (int) Math.round(gain));
+	}
+
+	public boolean canUpgradeStat(String statName) {
+		return "damage".equals(statName) || "cast".equals(statName) || "cooldown".equals(statName);
+	}
 
 	public StrikeAttackData() { super(); }
 
@@ -25,6 +75,11 @@ public class StrikeAttackData extends TechniqueData {
 		tag.putDouble("BaseCost", this.baseCost);
 		tag.putFloat("TpCost", this.tpCost);
 		tag.putFloat("DamageMultiplier", this.damageMultiplier);
+		tag.putInt("DamageLevel", this.damageLevel);
+		tag.putInt("CastTimeLevel", this.castTimeLevel);
+		tag.putInt("CooldownLevel", this.cooldownLevel);
+		tag.putString("AnimationId", this.animationId != null ? this.animationId : "");
+		tag.putInt("DurationTicks", this.durationTicks);
 		tag.putInt("CastTime", this.castTime);
 		tag.putInt("Cooldown", this.cooldown);
 		return tag;
@@ -39,12 +94,21 @@ public class StrikeAttackData extends TechniqueData {
 		this.baseCost = tag.getDouble("BaseCost");
 		this.tpCost = tag.contains("TpCost") ? tag.getFloat("TpCost") : 0;
 		this.damageMultiplier = tag.getFloat("DamageMultiplier");
+		this.damageLevel = tag.getInt("DamageLevel");
+		this.castTimeLevel = tag.getInt("CastTimeLevel");
+		this.cooldownLevel = tag.getInt("CooldownLevel");
+		this.animationId = tag.getString("AnimationId");
+		this.durationTicks = tag.contains("DurationTicks") ? tag.getInt("DurationTicks") : 60;
+		if (this.durationTicks <= 0) this.durationTicks = 60;
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
 	}
 
 	@Override
 	public double getCalculatedCost(StatsData statsData) {
-		return baseCost;
+		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
+		double baseDamage = statsData.getStrikeDamage() * this.damageMultiplier * Math.max(0.0, cfg.getDamageMultiplier());
+		double costMult = Math.max(0.0, cfg.getKiCostMultiplier());
+		return Math.max(5.0, baseDamage * 0.35 * costMult);
 	}
 }

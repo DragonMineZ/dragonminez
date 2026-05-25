@@ -5,6 +5,7 @@ import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -35,6 +36,8 @@ public class MomentumImpactHandler {
 	private static final Map<UUID, CollisionImpactContext> COLLISION_IMPACTS = new HashMap<>();
 	public static final double MOMENTUM_SPEED_THRESHOLD = 0.65;
 	public static final double MOMENTUM_MAX_SPEED = 1.5;
+	private static final String IMPACT_WALL_ANIM = "base.faint_horizontal";
+	private static final String IMPACT_GROUND_ANIM = "base.faint_vertical";
 
 	public enum CollisionImpactType {
 		WALL,
@@ -119,6 +122,7 @@ public class MomentumImpactHandler {
 
 		Vec3 dir = impact.momentumDirection() != null ? impact.momentumDirection() : living.getDeltaMovement().normalize();
 		COLLISION_IMPACTS.remove(living.getUUID());
+		playImpactAnimation(living, impact.type());
 		living.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 30, 0, false, false, true));
 		living.level().playSound(null, living.getX(), living.getY(), living.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
@@ -126,13 +130,6 @@ public class MomentumImpactHandler {
 			spawnRockImpactCircle(serverLevel, living.position(), impact.type() == CollisionImpactType.GROUND ? 2.75 : 1.9);
 			createCrater(serverLevel, living.blockPosition(), 1.5, living);
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6f, 0.05f, 2, true), living);
-		}
-
-		float impactDamage = Math.max(1.0F, impact.extraDamage());
-		if (wallImpact) {
-			living.hurt(living.damageSources().flyIntoWall(), impactDamage);
-		} else {
-			living.hurt(living.damageSources().fall(), impactDamage);
 		}
 	}
 
@@ -207,5 +204,14 @@ public class MomentumImpactHandler {
 			double z = center.z + Math.sin(angle) * radius;
 			level.sendParticles(MainParticles.ROCK.get(), x, center.y + 0.05, z, 1, 0.08, 0.03, 0.08, 0.01);
 		}
+	}
+
+	private static void playImpactAnimation(LivingEntity living, CollisionImpactType type) {
+		if (!(living instanceof ServerPlayer serverPlayer)) return;
+		String anim = type == CollisionImpactType.GROUND ? IMPACT_GROUND_ANIM : IMPACT_WALL_ANIM;
+		NetworkHandler.sendToTrackingEntityAndSelf(
+				new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, anim),
+				serverPlayer
+		);
 	}
 }

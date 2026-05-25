@@ -353,8 +353,7 @@ public class StatsData {
 		double stack = getStackFormMultiplier(statName);
 		double effect = getEffectsMultiplier(statName);
 
-		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers())
-			return form * stack * effect;
+		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect;
 		else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0);
 	}
 

@@ -39,17 +39,21 @@ public class UpgradeTechniqueC2S {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techniqueId);
 					if (tech != null) {
-						int cost = tech instanceof KiAttackData ki ? ki.getUpgradeXpCost(statType) : 100;
+						int cost = tech instanceof KiAttackData ki ? ki.getUpgradeXpCost(statType)
+								: tech instanceof StrikeAttackData st ? st.getUpgradeXpCost(statType) : 100;
 						if (tech.getExperience() >= cost) {
 							if (tech instanceof KiAttackData ki && !ki.canUpgradeStat(statType)) return;
-
+							if (tech instanceof StrikeAttackData st && !st.canUpgradeStat(statType)) return;
 							tech.setExperience(tech.getExperience() - cost);
 							switch (statType) {
 								case "damage" -> {
 									if (tech instanceof KiAttackData ki) {
 										ki.setDamageMultiplier(ki.getDamageMultiplier() + 0.1f);
 										ki.setDamageLevel(ki.getDamageLevel() + 1);
-									} else if (tech instanceof StrikeAttackData st) st.setDamageMultiplier(st.getDamageMultiplier() + 0.1f);
+									} else if (tech instanceof StrikeAttackData st) {
+										st.setDamageMultiplier(st.getDamageMultiplier() + 0.1f);
+										st.setDamageLevel(st.getDamageLevel() + 1);
+									}
 								}
 								case "size" -> {
 									if (tech instanceof KiAttackData ki) {
@@ -71,9 +75,11 @@ public class UpgradeTechniqueC2S {
 								}
 								case "cooldown" -> {
 									if (tech instanceof KiAttackData ki) ki.setCooldownLevel(ki.getCooldownLevel() + 1);
+									else if (tech instanceof StrikeAttackData st) st.setCooldownLevel(st.getCooldownLevel() + 1);
 								}
 								case "cast" -> {
 									if (tech instanceof KiAttackData ki) ki.setCastTimeLevel(ki.getCastTimeLevel() + 1);
+									else if (tech instanceof StrikeAttackData st) st.setCastTimeLevel(st.getCastTimeLevel() + 1);
 								}
 							}
 							if (tech instanceof KiAttackData ki) ki.calculateDerivedValues();

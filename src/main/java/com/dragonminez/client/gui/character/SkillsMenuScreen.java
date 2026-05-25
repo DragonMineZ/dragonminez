@@ -295,6 +295,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case SKILLS:
 				skills.getAllSkills().forEach((name, skill) -> {
 					if (!skillsConfig.getKiSkills().contains(name)
+							&& !skillsConfig.getStrikeSkills().contains(name)
 							&& !skillsConfig.getStackSkills().contains(name)
 							&& !skillsConfig.getFormSkills().contains(name)) {
 						skillNames.add(name);
@@ -448,6 +449,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private int getTechniqueUpgradeXpCost(TechniqueData tech, String statName) {
 		if (tech instanceof KiAttackData kiAttackData) return kiAttackData.getUpgradeXpCost(statName);
+		if (tech instanceof StrikeAttackData strikeAttackData) return strikeAttackData.getUpgradeXpCost(statName);
 		return 100;
 	}
 
@@ -1034,6 +1036,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		int yOffset = panelY + 40;
 		int xpReq = 100;
+		int castTimeTicks = tech.getCastTime();
+		int cooldownTicks = tech.getCooldown();
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF);
 		yOffset += 12;
@@ -1042,6 +1046,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		if (tech instanceof KiAttackData ki) {
 			xpReq = ki.getUpgradeXpCost("damage");
+			castTimeTicks = ki.getActualCastTime();
+			cooldownTicks = ki.getActualCooldown();
 			int scaledKiDamage = (int) (statsData.getKiDamage() * ki.getDamageMultiplier());
 
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + ki.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD);
@@ -1057,17 +1063,21 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			yOffset += 12;
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(ki.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF);
 			yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getCastTime() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", castTimeTicks / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
 			yOffset += 12;
 		} else if (tech instanceof StrikeAttackData st) {
+			castTimeTicks = st.getActualCastTime();
+			cooldownTicks = st.getActualCooldown();
 			int scaledStrikeDamage = (int) (statsData.getStrikeDamage() * st.getDamageMultiplier());
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD);
 			yOffset += 12;
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF);
 			yOffset += 12;
+			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", castTimeTicks / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
+			yOffset += 12;
 		}
 
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", cooldownTicks / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
 		yOffset += 16;
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA);

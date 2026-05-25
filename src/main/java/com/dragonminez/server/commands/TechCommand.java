@@ -27,7 +27,12 @@ public class TechCommand {
 		var validTechs = config.getKiSkills().stream()
 				.filter(PredefinedTechniques.REGISTRY::containsKey)
 				.toList();
-		return SharedSuggestionProvider.suggest(validTechs, builder);
+		var validStrike = config.getStrikeSkills().stream()
+				.filter(PredefinedTechniques.STRIKE_REGISTRY::containsKey)
+				.toList();
+		java.util.List<String> all = new java.util.ArrayList<>(validTechs);
+		all.addAll(validStrike);
+		return SharedSuggestionProvider.suggest(all, builder);
 	};
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -56,17 +61,24 @@ public class TechCommand {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String id = techniqueId.toLowerCase();
 
-		if (isUnknownKiTechnique(id)) {
+		if (isUnknownTechnique(id)) {
 			source.sendFailure(Component.translatable("command.dragonminez.tech.unknown_technique", techniqueId));
 			return 0;
 		}
 
-		KiAttackData template = PredefinedTechniques.REGISTRY.get(id);
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				KiAttackData clone = new KiAttackData();
-				clone.load(template.save());
-				data.getTechniques().unlockTechnique(clone);
+				if (PredefinedTechniques.REGISTRY.containsKey(id)) {
+					KiAttackData template = PredefinedTechniques.REGISTRY.get(id);
+					KiAttackData clone = new KiAttackData();
+					clone.load(template.save());
+					data.getTechniques().unlockTechnique(clone);
+				} else if (PredefinedTechniques.STRIKE_REGISTRY.containsKey(id)) {
+					var template = PredefinedTechniques.STRIKE_REGISTRY.get(id);
+					var clone = new com.dragonminez.common.stats.techniques.StrikeAttackData();
+					clone.load(template.save());
+					data.getTechniques().unlockTechnique(clone);
+				}
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
@@ -83,7 +95,7 @@ public class TechCommand {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String id = techniqueId.toLowerCase();
 
-		if (isUnknownKiTechnique(id)) {
+		if (isUnknownTechnique(id)) {
 			source.sendFailure(Component.translatable("command.dragonminez.tech.unknown_technique", techniqueId));
 			return 0;
 		}
@@ -108,9 +120,11 @@ public class TechCommand {
 		return targets.size();
 	}
 
-	private static boolean isUnknownKiTechnique(String id) {
+	private static boolean isUnknownTechnique(String id) {
 		var config = ConfigManager.getSkillsConfig();
-		return !config.getKiSkills().contains(id) || !PredefinedTechniques.REGISTRY.containsKey(id);
+		boolean isKi = config.getKiSkills().contains(id) && PredefinedTechniques.REGISTRY.containsKey(id);
+		boolean isStrike = config.getStrikeSkills().contains(id) && PredefinedTechniques.STRIKE_REGISTRY.containsKey(id);
+		return !isKi && !isStrike;
 	}
 }
 

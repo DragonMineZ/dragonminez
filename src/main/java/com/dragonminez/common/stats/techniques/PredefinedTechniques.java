@@ -1,11 +1,23 @@
 package com.dragonminez.common.stats.techniques;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PredefinedTechniques {
 
 	public static final Map<String, KiAttackData> REGISTRY = new HashMap<>();
+	public static final Map<String, StrikeAttackData> STRIKE_REGISTRY = new HashMap<>();
+	public static final List<String> STRIKE_IDS = java.util.List.of(
+			"meteor",
+			"dragon_fist",
+			"deadly_dance_vegetto",
+			"deadly_dance",
+			"kaioken_attack",
+			"wolf_fang",
+			"oozaru_fist",
+			"super_god_fist"
+	);
 
 	public void init() {
 		registerKi("spiritbomb", "technique.dragonminez.spiritbomb", "Goku", KiAttackData.KiType.GIANT_BALL, 3.00F, 0x30FFF1, 0x00F8FF, 5.0F, 0.5F, 10, "ki.large_ball");
@@ -23,6 +35,14 @@ public class PredefinedTechniques {
 		registerKi("emperor_death_beam", "technique.dragonminez.emperor_death_beam", "Frieza", KiAttackData.KiType.LASER, 1.25F, 0xCE10E3, 0xCE10E3, 0.6F, 2.0F, 10, "ki.makkako");
 		registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFFF00, 0xFFFF00, 0.4F, 1.5F, 10, "ki.barrage");
 		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 3.00F, 0xFFFF00, 0xFFFF00, 15.0F, 0.0F, 10, "ki.explosion");
+		registerStrike("skp.meteor", 1.0f, 40);
+		registerStrike("skp.dragon_fist", 1.0f, 30);
+		registerStrike("skp.deadly_dance_vegetto", 1.0f, 40);
+		registerStrike("skp.deadly_dance", 1.0f, 40);
+		registerStrike("skp.kaioken_attack", 1.0f, 45);
+		registerStrike("skp.wolf_fang", 1.0f, 35);
+		registerStrike("skp.oozaru_fist", 1.0f, 35);
+		registerStrike("skp.super_god_fist", 1.0f, 25);
 	}
 
 	public static boolean isPredefinedTechniqueId(String techniqueId) {
@@ -52,5 +72,18 @@ public class PredefinedTechniques {
 		data.setCooldown(cooldownSeconds * 20);
 		data.calculateDerivedValues();
 		REGISTRY.put(id, data);
+	}
+
+	private void registerStrike(String animationId, float damageMultiplier, int durationTicks) {
+		String id = animationId != null && animationId.startsWith("skp.") ? animationId.substring(4) : animationId;
+		StrikeAttackData data = new StrikeAttackData();
+		data.setId(id);
+		data.setName("technique.dragonminez." + id);
+		data.setAuthor("System");
+		data.setDamageMultiplier(damageMultiplier);
+		data.setAnimationId(animationId);
+		data.setDurationTicks(durationTicks);
+		data.applyConfigDefaults();
+		STRIKE_REGISTRY.put(id, data);
 	}
 }

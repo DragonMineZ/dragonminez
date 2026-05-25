@@ -5,6 +5,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -100,6 +101,7 @@ public class TechniqueHotbarHUD {
 	};
 
 	private static ResourceLocation getTechniqueIconTexture(TechniqueData techniqueData) {
+		if (techniqueData instanceof StrikeAttackData) return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/iconski/barrage.png");
 		if (!(techniqueData instanceof KiAttackData kiAttack) || kiAttack.getKiType() == null) return null;
 		String iconName = kiAttack.getKiType().name().toLowerCase(Locale.ROOT);
 		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/iconski/" + iconName + ".png");
