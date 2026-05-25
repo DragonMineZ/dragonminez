@@ -72,6 +72,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private StatsData statsData;
 	private int tickCount = 0;
 	private int pendingRefreshTicks = 0;
+	private long lastRenderTime = 0;
 
 	private TexturedTextButton actionButton;
 	private TexturedTextButton partyPrimaryButton;
@@ -799,28 +800,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				}
 			}
 		}
-
-		if (isAnimatingPan) {
-			long now = System.nanoTime();
-			if (lastPanAnimNanos == 0L) {
-				lastPanAnimNanos = now;
-			}
-
-			float dt = (now - lastPanAnimNanos) / 1_000_000_000.0f;
-			lastPanAnimNanos = now;
-			dt = Math.max(0.0f, Math.min(0.05f, dt));
-
-			float alpha = (float) (1.0 - Math.exp(-14.0f * dt));
-			panX += (targetPanX - panX) * alpha;
-			panY += (targetPanY - panY) * alpha;
-
-			if (Math.abs(targetPanX - panX) < 0.35f && Math.abs(targetPanY - panY) < 0.35f) {
-				panX = targetPanX;
-				panY = targetPanY;
-				isAnimatingPan = false;
-				lastPanAnimNanos = 0L;
-			}
-		}
 	}
 
 	private void updateStatsData() {
@@ -840,9 +819,28 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (isNotAnimating()) this.renderBackground(graphics);
 
+		long now = System.nanoTime();
+		if (lastRenderTime == 0) lastRenderTime = now;
+		float dt = (now - lastRenderTime) / 1_000_000_000.0f;
+		lastRenderTime = now;
+		dt = Math.min(dt, 0.1f);
+
+		if (isAnimatingPan) {
+			float alpha = (float) (1.0 - Math.exp(-14.0f * dt));
+			panX += (targetPanX - panX) * alpha;
+			panY += (targetPanY - panY) * alpha;
+
+			if (Math.abs(targetPanX - panX) < 0.35f && Math.abs(targetPanY - panY) < 0.35f) {
+				panX = targetPanX;
+				panY = targetPanY;
+				isAnimatingPan = false;
+			}
+		}
+
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
-		updatePanelInteractionAnimations(uiMouseX, uiMouseY, partialTick);
+
+		updatePanelInteractionAnimations(uiMouseX, uiMouseY, dt);
 
 		beginUiScale(graphics);
 		applyZoom(graphics, partialTick);
@@ -851,8 +849,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		rewardHitboxes.clear();
 
 		renderTreeCanvas(graphics, uiMouseX, uiMouseY);
-		renderLeftNavigatorPanel(graphics, uiMouseX, uiMouseY);
-		renderRightDetailPanel(graphics, uiMouseX, uiMouseY);
+		renderLeftNavigatorPanel(graphics, uiMouseX, uiMouseY, dt);
+		renderRightDetailPanel(graphics, uiMouseX, uiMouseY, dt);
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
@@ -935,7 +933,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 	}
 
-	private void renderLeftNavigatorPanel(GuiGraphics graphics, int mouseX, int mouseY) {
+	private void renderLeftNavigatorPanel(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
 		PanelRect panel = getLeftPanelRect();
 		renderSidePanelBackground(graphics, panel, true, false, false);
 
@@ -954,8 +952,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		navMaxScroll = Math.max(0, totalNavHeight - listH);
 		targetNavScroll = Mth.clamp(targetNavScroll, 0, navMaxScroll);
 
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentNavScroll = Mth.lerp(tickDelta * 0.4f, currentNavScroll, targetNavScroll);
+		currentNavScroll += (targetNavScroll - currentNavScroll) * (float)(1.0 - Math.exp(-15.0f * dt));
 
 		NavigatorEntry hoveredEntry = null;
 
@@ -1156,17 +1153,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return new PanelRect(panel.x + 8, panel.bottom() - footerHeight, panel.width - 16, footerHeight - 6);
 	}
 
-	private void renderRightDetailPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-		if (rightPanelRevealProgress <= 0.001f && selectedQuest == null) {
-			return;
-		}
+	private void renderRightDetailPanel(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
+		if (rightPanelRevealProgress <= 0.001f && selectedQuest == null) return;
 
 		PanelRect panel = getRightPanelRect();
 		renderSidePanelBackground(graphics, panel, false, true, false);
 
-		if (selectedQuest == null || statsData == null || availableSagas.isEmpty()) {
-			return;
-		}
+		if (selectedQuest == null || statsData == null || availableSagas.isEmpty()) return;
 
 		Saga saga = availableSagas.get(currentSagaIndex);
 		String questKey = questProgressKey(saga, selectedQuest);
@@ -1185,8 +1178,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		renderTopSection(graphics, innerX, innerY, innerW, layout.titleH(), status);
 		renderRewardsSection(graphics, innerX, rewardsY, innerW, layout.rewardsH(), questKey, mouseX, mouseY);
-		renderDescriptionSection(graphics, innerX, descY, innerW, layout.descH(), questKey);
-		renderObjectivesSection(graphics, innerX, objectivesY, innerW, layout.objectivesH(), saga);
+		renderDescriptionSection(graphics, innerX, descY, innerW, layout.descH(), questKey, dt);
+		renderObjectivesSection(graphics, innerX, objectivesY, innerW, layout.objectivesH(), saga, dt);
 	}
 
 	private DetailPanelLayout computeDetailPanelLayout(int width, int totalHeight, String questKey, Saga saga) {
@@ -1322,7 +1315,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 	}
 
-	private void renderDescriptionSection(GuiGraphics graphics, int x, int y, int width, int height, String questKey) {
+	private void renderDescriptionSection(GuiGraphics graphics, int x, int y, int width, int height, String questKey, float dt) {
 		graphics.fill(x, y, x + width, y + height, 0x44111122);
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
@@ -1338,15 +1331,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		descMaxScroll = Math.max(0, totalContentHeight - viewHeight);
 		targetDescScroll = Mth.clamp(targetDescScroll, 0, descMaxScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentDescScroll = Mth.lerp(tickDelta * 0.4f, currentDescScroll, targetDescScroll);
+		currentDescScroll += (targetDescScroll - currentDescScroll) * (float)(1.0 - Math.exp(-15.0f * dt));
 
 		graphics.enableScissor(toScreenCoord(x + 4), toScreenCoord(y + 18), toScreenCoord(x + width - 6), toScreenCoord(y + height - 2));
 		TextUtil.renderScrollableText(graphics, this.font, lines, x + 6, y + 18, width - 12, viewHeight, currentDescScroll, descMaxScroll, 0xFFCCCCCC);
 		graphics.disableScissor();
 	}
 
-	private void renderObjectivesSection(GuiGraphics graphics, int x, int y, int width, int height, Saga saga) {
+	private void renderObjectivesSection(GuiGraphics graphics, int x, int y, int width, int height, Saga saga, float dt) {
 		graphics.fill(x, y, x + width, y + height, 0x44111122);
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
@@ -1372,8 +1364,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		objMaxScroll = Math.max(0, totalContentHeight - viewHeight);
 		targetObjScroll = Mth.clamp(targetObjScroll, 0, objMaxScroll);
 
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentObjScroll = Mth.lerp(tickDelta * 0.4f, currentObjScroll, targetObjScroll);
+		currentObjScroll += (targetObjScroll - currentObjScroll) * (float)(1.0 - Math.exp(-15.0f * dt));
 
 		int drawY = y + 18;
 		graphics.enableScissor(toScreenCoord(x + 4), toScreenCoord(y + 18), toScreenCoord(x + width - 6), toScreenCoord(y + height - 2));
@@ -2830,17 +2821,17 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		actionButton.visible = selectedQuest != null && rightPanelRevealProgress > 0.15f;
 	}
 
-	private void updatePanelInteractionAnimations(int mouseX, int mouseY, float partialTick) {
-		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
+	private void updatePanelInteractionAnimations(int mouseX, int mouseY, float dt) {
+		float speed = 10.0f * dt;
 
 		boolean nearLeftEdge = mouseX <= 36;
 		boolean overLeftPanel = getLeftPanelRect().contains(mouseX, mouseY);
 		boolean keepLeftOpen = invitePopupOpen || confirmOverlayOpen;
 		float leftTarget = (nearLeftEdge || overLeftPanel || keepLeftOpen) ? 1.0f : 0.0f;
-		leftPanelRevealProgress = approach01(leftPanelRevealProgress, leftTarget, step);
+		leftPanelRevealProgress = approach01(leftPanelRevealProgress, leftTarget, speed);
 
 		float rightTarget = selectedQuest != null ? 1.0f : 0.0f;
-		rightPanelRevealProgress = approach01(rightPanelRevealProgress, rightTarget, step);
+		rightPanelRevealProgress = approach01(rightPanelRevealProgress, rightTarget, speed);
 	}
 
 	private float approach01(float current, float target, float step) {
