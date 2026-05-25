@@ -65,9 +65,9 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	public void tick() {
 		super.tick();
 		this.tooltipScrollY = Mth.lerp(0.5f, this.tooltipScrollY, this.targetTooltipScrollY);
-		if (panelSwitchState == PanelSwitchState.ENTERING && getPanelSwitchProgress() >= 1.0f) panelSwitchState = PanelSwitchState.NONE;
+		if (panelSwitchState == PanelSwitchState.ENTERING && getPanelSwitchProgress(getMinecraft().getPartialTick()) >= 1.0f) panelSwitchState = PanelSwitchState.NONE;
 
-		if (panelSwitchState == PanelSwitchState.EXITING && getPanelSwitchProgress() >= 1.0f) {
+		if (panelSwitchState == PanelSwitchState.EXITING && getPanelSwitchProgress(getMinecraft().getPartialTick()) >= 1.0f) {
 			panelSwitchState = PanelSwitchState.NONE;
 			if (this.minecraft != null) {
 				GLOBAL_SWITCHING = true;
@@ -75,8 +75,8 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 			}
 		}
 
-		if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) transitionState = TransitionState.NONE;
-		if (transitionState == TransitionState.CLOSING && getTransitionProgress() >= 1.0f)
+		if (transitionState == TransitionState.OPENING && getTransitionProgress(getMinecraft().getPartialTick()) >= 1.0f) transitionState = TransitionState.NONE;
+		if (transitionState == TransitionState.CLOSING && getTransitionProgress(getMinecraft().getPartialTick()) >= 1.0f)
 			if (this.minecraft != null) this.minecraft.setScreen(null);
 	}
 
@@ -152,17 +152,17 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	}
 
 	public boolean isNotAnimating() {
-		return transitionState == TransitionState.NONE || !(getTransitionProgress() < 1.0f);
+		return transitionState == TransitionState.NONE || !(getTransitionProgress(getMinecraft().getPartialTick()) < 1.0f);
 	}
 
 	public static boolean isStatsMenuReopenBlocked() {
 		return System.currentTimeMillis() < statsMenuReopenBlockedUntilMs;
 	}
 
-	protected void applyZoom(GuiGraphics graphics) {
+	protected void applyZoom(GuiGraphics graphics, float partialTick) {
 		if (transitionState == TransitionState.NONE) return;
 
-		float progress = getTransitionProgress();
+		float progress = getTransitionProgress(partialTick);
 		if (progress >= 1.0f) return;
 
 		float scale = transitionState == TransitionState.OPENING ? easeOutBack(progress) : easeOutBack(1.0f - progress);
@@ -176,9 +176,9 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		pose.translate(-uiWidth / 2.0, -uiHeight / 2.0, 0);
 	}
 
-	protected int getLeftPanelSwitchOffset() {
+	protected int getLeftPanelSwitchOffset(float partialTick) {
 		if (panelSwitchState == PanelSwitchState.NONE) return 0;
-		float p = getPanelSwitchProgress();
+		float p = getPanelSwitchProgress(partialTick);
 
 		if (panelSwitchState == PanelSwitchState.ENTERING) {
 			float eased = easeOutBack(p);
@@ -189,9 +189,9 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		return Math.round(-eased * PANEL_SWITCH_DISTANCE);
 	}
 
-	protected int getRightPanelSwitchOffset() {
+	protected int getRightPanelSwitchOffset(float partialTick) {
 		if (panelSwitchState == PanelSwitchState.NONE) return 0;
-		float p = getPanelSwitchProgress();
+		float p = getPanelSwitchProgress(partialTick);
 
 		if (panelSwitchState == PanelSwitchState.ENTERING) {
 			float eased = easeOutBack(p);
@@ -202,9 +202,9 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		return Math.round(eased * PANEL_SWITCH_DISTANCE);
 	}
 
-	protected int getTopPanelSwitchOffset() {
+	protected int getTopPanelSwitchOffset(float partialTick) {
 		if (panelSwitchState == PanelSwitchState.NONE) return 0;
-		float p = getPanelSwitchProgress();
+		float p = getPanelSwitchProgress(partialTick);
 
 		if (panelSwitchState == PanelSwitchState.ENTERING) {
 			float eased = easeOutBack(p);
@@ -295,15 +295,15 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		while (KeyBinds.STATS_MENU.consumeClick()) {}
 	}
 
-	private float getTransitionProgress() {
+	protected float getTransitionProgress(float partialTick) {
 		long elapsed = System.currentTimeMillis() - animationStartTime;
-		return Mth.clamp(elapsed / (float) OPEN_ANIMATION_DURATION, 0.0f, 1.0f);
+		return Mth.clamp((elapsed + (partialTick * 50)) / (float) OPEN_ANIMATION_DURATION, 0.0f, 1.0f);
 	}
 
-	private float getPanelSwitchProgress() {
+	protected float getPanelSwitchProgress(float partialTick) {
 		long elapsed = System.currentTimeMillis() - panelSwitchAnimationStartTime;
 		long duration = panelSwitchState == PanelSwitchState.EXITING ? PANEL_EXIT_ANIMATION_DURATION : PANEL_ENTER_ANIMATION_DURATION;
-		return Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
+		return Mth.clamp((elapsed + (partialTick * 50)) / (float) duration, 0.0f, 1.0f);
 	}
 
 	private float easeOutBack(float t) {

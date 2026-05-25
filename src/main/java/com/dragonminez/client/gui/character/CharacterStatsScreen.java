@@ -119,10 +119,10 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		applyZoom(graphics);
-		int leftOffset = getLeftPanelSwitchOffset();
-		int rightOffset = getRightPanelSwitchOffset();
-		int topOffset = getTopPanelSwitchOffset();
+		applyZoom(graphics, partialTick);
+		int leftOffset = getLeftPanelSwitchOffset(partialTick);
+		int rightOffset = getRightPanelSwitchOffset(partialTick);
+		int topOffset = getTopPanelSwitchOffset(partialTick);
 		updatePanelWidgetOffsets(leftOffset, rightOffset);
 
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);

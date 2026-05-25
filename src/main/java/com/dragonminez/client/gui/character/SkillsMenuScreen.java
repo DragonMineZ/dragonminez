@@ -668,12 +668,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		applyZoom(graphics);
+		applyZoom(graphics, partialTick);
 
 		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
 		formsTransitionProgress = approach01(formsTransitionProgress, currentCategory == SkillCategory.FORMS ? 1.0f : 0.0f, step);
 
-		int baseLeftOffset = getLeftPanelSwitchOffset();
+		int baseLeftOffset = getLeftPanelSwitchOffset(partialTick);
 
 		boolean nearLeftEdge = uiMouseX <= 36;
 		boolean overLeftPanel = uiMouseX >= currentLeftX && uiMouseX < currentLeftX + 141 && uiMouseY >= getUiHeight()/2 - 105 && uiMouseY < getUiHeight()/2 + 108;
@@ -685,7 +685,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		currentLeftX = 12 + baseLeftOffset + extraLeftOffset;
 
-		int rightOffset = getRightPanelSwitchOffset();
+		int rightOffset = getRightPanelSwitchOffset(partialTick);
 		int extraRightOffset = (int) (200 * easeInOutCubic(formsTransitionProgress));
 		currentRightX = getUiWidth() - 158 + rightOffset + extraRightOffset;
 

@@ -266,7 +266,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		applyZoom(graphics);
+		applyZoom(graphics, partialTick);
 
 		updateButtonAnimations(uiMouseX, uiMouseY, partialTick);
 		renderMasterEntity(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 90, uiMouseX, uiMouseY);

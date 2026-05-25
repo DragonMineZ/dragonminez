@@ -248,16 +248,16 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		applyZoom(graphics);
+		applyZoom(graphics, partialTick);
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
-		int leftOffset = getLeftPanelSwitchOffset();
+		int leftOffset = getLeftPanelSwitchOffset(partialTick);
 		graphics.pose().pushPose();
 		graphics.pose().translate(leftOffset, 0, 0);
 		renderLeftPanel(graphics, uiMouseX - leftOffset, uiMouseY);
 		graphics.pose().popPose();
 
-		int rightOffset = getRightPanelSwitchOffset();
+		int rightOffset = getRightPanelSwitchOffset(partialTick);
 		updateRightPanelButtonOffsets(rightOffset);
 		graphics.pose().pushPose();
 		graphics.pose().translate(rightOffset, 0, 0);

@@ -845,7 +845,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		updatePanelInteractionAnimations(uiMouseX, uiMouseY, partialTick);
 
 		beginUiScale(graphics);
-		applyZoom(graphics);
+		applyZoom(graphics, partialTick);
 		syncActionButtonPosition();
 		syncPartyButtonPositions();
 		rewardHitboxes.clear();
