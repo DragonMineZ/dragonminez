@@ -2,6 +2,7 @@ package com.dragonminez.common.combat.logic.player;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.alignment.NpcDispositionService;
+import com.dragonminez.common.quest.PartyManager;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
@@ -25,22 +26,23 @@ public class TargetHelper {
     }
 
     public static Relation getRelation(Player attacker, Entity target) {
-        if (attacker == target) {
-            return Relation.FRIENDLY;
-        }
-        if (target instanceof TamableAnimal tameable) {
-            var owner = tameable.getOwner();
-            if (owner != null) {
-                return getRelation(attacker, owner);
+        if (attacker == target) return Relation.FRIENDLY;
+
+        if (target instanceof Player targetPlayer) {
+            if (PartyManager.areInSameParty(attacker, targetPlayer)) {
+                if (!PartyManager.isPartyPvpEnabled(attacker)) return Relation.FRIENDLY;
             }
         }
-        if (target instanceof HangingEntity) {
-            return Relation.NEUTRAL;
+
+        if (target instanceof TamableAnimal tameable) {
+            var owner = tameable.getOwner();
+            if (owner != null) return getRelation(attacker, owner);
         }
+
+        if (target instanceof HangingEntity) return Relation.NEUTRAL;
+
         var interactiveRelation = NpcDispositionService.getInteractiveRelation(attacker, target);
-        if (interactiveRelation.isPresent()) {
-            return interactiveRelation.get();
-        }
+        if (interactiveRelation.isPresent()) return interactiveRelation.get();
 
         var config = ConfigManager.getCombatConfig();
         var casterTeam = attacker.getTeam();

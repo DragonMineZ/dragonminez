@@ -6,6 +6,7 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
+import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -40,16 +41,30 @@ public class TPGainEvents {
 	private static final Map<UUID, Vec3> lastPositions = new HashMap<>();
 	private static final Map<UUID, Double> accumulatedDistance = new HashMap<>();
 
+	private static final ThreadLocal<Boolean> IS_SHARING_TP = ThreadLocal.withInitial(() -> false);
+
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public static void onTPGain(DMZEvent.TPGainEvent event) {
 		if (!(event.getPlayer() instanceof ServerPlayer player)) return;
 		int baseTP = event.getTpGain();
 		if (baseTP <= 0) return;
+
+		if (IS_SHARING_TP.get()) return;
+
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return;
 		int finalTP = data.calculateTPGain(baseTP);
 
-		if (data.getStatus().isFused() && data.getStatus().isFusionLeader()) shareWithFusionPartner(player, data, finalTP);
+		if (!event.getShareWithParty()) {
+			IS_SHARING_TP.set(true);
+			try {
+				if (data.getStatus().isFused() && data.getStatus().isFusionLeader()) shareWithFusionPartner(player, data, finalTP);
+				shareWithParty(player, data, finalTP);
+			} finally {
+				IS_SHARING_TP.set(false);
+			}
+		}
+
 		event.setTpGain(finalTP);
 	}
 
@@ -124,7 +139,6 @@ public class TPGainEvents {
 						if (stack.getItem() instanceof TieredItem tiered) tierMult = Math.max(1, (int) (tiered.getTier().getSpeed() / 2));
 						else if (stack.getItem() instanceof ArmorItem armor) tierMult = Math.max(1, armor.getDefense() / 4);
 
-
 						int finalMult = Math.max(rarityMult, tierMult);
 						data.getResources().addTrainingPoints(baseTp * amount * finalMult);
 					}
@@ -188,5 +202,26 @@ public class TPGainEvents {
 			pData.getResources().addTrainingPoints(totalTP / 2);
 			NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(partner), partner);
 		});
+	}
+
+	private static void shareWithParty(ServerPlayer earner, StatsData data, int tp) {
+		if (!data.getPlayerQuestData().isInParty()) return;
+
+		double shareRatio = ConfigManager.getServerConfig().getGameplay().getPartyTpShareRatio();
+		if (shareRatio <= 0) return;
+
+		int sharedTP = (int) (tp * shareRatio);
+		if (sharedTP <= 0) return;
+
+		for (ServerPlayer member : PartyManager.getAllPartyMembers(earner)) {
+			if (member.getUUID().equals(earner.getUUID())) continue;
+
+			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(pData -> {
+				if (pData.getStatus().isAlive()) {
+					pData.getResources().addTrainingPoints(sharedTP);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(member), member);
+				}
+			});
+		}
 	}
 }

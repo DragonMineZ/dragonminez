@@ -83,13 +83,16 @@ public class Resources {
     public void addAlignment(int amount) { setAlignment(alignment + amount); }
 
     public void addTrainingPoints(float amount) {
+        addTrainingPoints(amount, true);
+    }
+    public void addTrainingPoints(float amount, boolean shareWithParty) {
         if (amount <= 0 || player == null) {
             setTrainingPoints(trainingPoints + amount);
             return;
         }
 
         float oldValue = this.trainingPoints;
-        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount);
+        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount, shareWithParty);
 
         if (!MinecraftForge.EVENT_BUS.post(event)) {
             setTrainingPoints(oldValue + event.getTpGain());

@@ -94,16 +94,23 @@ public abstract class DMZEvent extends Event {
 		private final Player player;
 		private final int oldValue;
 		@Setter
+		private boolean shareWithParty;
+		@Setter
 		private int tpGain;
 
-		public TPGainEvent(Player player, int oldValue, int tpGain) {
+		public TPGainEvent(Player player, int oldValue, int tpGain, boolean shareWithParty) {
 			this.player = player;
 			this.oldValue = oldValue;
 			this.tpGain = tpGain;
+			this.shareWithParty = shareWithParty;
 		}
 
 		public int getNewTpsValue() {
 			return oldValue + tpGain;
+		}
+
+		public boolean getShareWithParty() {
+			return shareWithParty;
 		}
 	}
 

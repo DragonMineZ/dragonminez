@@ -33,14 +33,20 @@ public class AcceptPartyInviteC2S {
                 return;
             }
 
-            if (invite.isExpired()) {
-                PartyManager.rejectInvite(player);
+            PartyManager.InviteAcceptResult result = PartyManager.acceptInvite(player);
+            if (result == PartyManager.InviteAcceptResult.EXPIRED) {
                 player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.expired")
                         .withStyle(ChatFormatting.RED));
                 return;
             }
 
-            if (!PartyManager.acceptInvite(player)) {
+            if (result == PartyManager.InviteAcceptResult.PARTY_FULL) {
+                player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.party_full")
+                        .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            if (result != PartyManager.InviteAcceptResult.SUCCESS) {
                 player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.invalid")
                         .withStyle(ChatFormatting.RED));
                 return;
