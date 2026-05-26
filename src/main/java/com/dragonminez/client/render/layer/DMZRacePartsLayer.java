@@ -31,8 +31,7 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import top.theillusivec4.curios.api.CuriosApi;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
@@ -50,10 +49,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation POWER_POLE_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
 	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/power_pole.png");
 
-	private static final Map<Integer, Float> AURA_TINT_PROGRESS = new ConcurrentHashMap<>();
-	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
-	private static final float FADE_SPEED = 0.005f;
-
 	public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
 	}
@@ -64,25 +59,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		int playerId = animatable.getId();
 		long gameTime = animatable.level().getGameTime();
-		float tintProgress = AURA_TINT_PROGRESS.getOrDefault(playerId, 0.0f);
-
-		if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) {
-			tintProgress = 0.0f;
-		}
-		LAST_RENDER_TIME.put(playerId, gameTime);
-
-		if (stats.getStatus().isChargingKi()) {
-			if (tintProgress < 1.0f) {
-				tintProgress += FADE_SPEED;
-				if (tintProgress > 1.0f) tintProgress = 1.0f;
-			}
-		} else {
-			if (tintProgress > 0.0f) {
-				tintProgress -= FADE_SPEED;
-				if (tintProgress < 0.0f) tintProgress = 0.0f;
-			}
-		}
-		AURA_TINT_PROGRESS.put(playerId, tintProgress);
+		boolean shouldFadeIn = stats.getStatus().isChargingKi()
+				|| stats.getStatus().isAuraActive()
+				|| stats.getStatus().isPermanentAura();
+		AuraTintTracker.update(playerId, gameTime, shouldFadeIn);
 	}
 
 	@Override
@@ -109,7 +89,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
-		float tintProgress = AURA_TINT_PROGRESS.getOrDefault(animatable.getId(), 0.0f);
+		float tintProgress = AuraTintTracker.get(animatable.getId());
 
 		BakedGeoModel playerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
 
@@ -127,7 +107,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
 		var character = stats.getCharacter();
-        var isAlive = stats.getStatus().isAlive();
+		var isAlive = stats.getStatus().isAlive();
 		String race = character.getRaceName().toLowerCase();
 		String currentForm = character.getActiveForm();
 
@@ -212,37 +192,37 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				}
 			}
 
-            if (extraHeadBonesEnabled && race.equals("majin")) {
-                GeoBone earsBone = partsModel.getBone("ears3").orElse(null);
-                boolean earsFromPlayerModel = false;
+			if (extraHeadBonesEnabled && race.equals("majin")) {
+				GeoBone earsBone = partsModel.getBone("ears3").orElse(null);
+				boolean earsFromPlayerModel = false;
 
-                if (earsBone == null) {
-                    earsBone = playerModel.getBone("ears3").orElse(null);
-                    earsFromPlayerModel = true;
-                }
+				if (earsBone == null) {
+					earsBone = playerModel.getBone("ears3").orElse(null);
+					earsFromPlayerModel = true;
+				}
 
-                if (earsBone != null) {
-                    if (!earsFromPlayerModel) {
-                        syncTargetBoneAndParents(earsBone, playerModel);
-                    }
-                    float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
-                    renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-                }
-            }
+				if (earsBone != null) {
+					if (!earsFromPlayerModel) {
+						syncTargetBoneAndParents(earsBone, playerModel);
+					}
+					float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
+					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+				}
+			}
 
-            if (!stats.getStatus().isAlive()) {
-                GeoBone haloBone = partsModel.getBone("halo").orElse(null);
+			if (!stats.getStatus().isAlive()) {
+				GeoBone haloBone = partsModel.getBone("halo").orElse(null);
 
-                if (haloBone != null) {
-                    syncTargetBoneAndParents(haloBone, playerModel);
+				if (haloBone != null) {
+					syncTargetBoneAndParents(haloBone, playerModel);
 
-                    float[] haloColor = ColorUtils.hexToRgb("#FFF461");
+					float[] haloColor = ColorUtils.hexToRgb("#FFF461");
 
-                    renderTargetedBone(haloBone, poseStack, bufferSource, animatable,
-                            ModRenderTypes.energy(RACES_PARTS_TEXTURE),
-                            haloColor[0], haloColor[1], haloColor[2], 0.75f, partialTick, packedLight);
-                }
-            }
+					renderTargetedBone(haloBone, poseStack, bufferSource, animatable,
+							ModRenderTypes.energy(RACES_PARTS_TEXTURE),
+							haloColor[0], haloColor[1], haloColor[2], 0.75f, partialTick, packedLight);
+				}
+			}
 		}
 
 		if (anchor.equals("body")) {

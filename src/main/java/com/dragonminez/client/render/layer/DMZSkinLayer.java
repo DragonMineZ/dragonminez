@@ -39,9 +39,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private static final Map<ResourceLocation, ResourceLocation> VALIDATED_TEXTURES_CACHE = new ConcurrentHashMap<>();
 	private static final ResourceLocation BLANK_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
 
-	private static final Map<Integer, Float> AURA_TINT_PROGRESS = new ConcurrentHashMap<>();
-	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
-	private static final float FADE_SPEED = 0.005f;
+
 	private static final float[] DARK_GRAY = ColorUtils.hexToRgb("#383838");
 
 	private static final String[] ARMOR_BONES = {
@@ -64,30 +62,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var player = (AbstractClientPlayer) animatable;
 		if (player == null) return;
 
-        if (player.hasEffect(MainEffects.CANDY.get())) return;
+		if (player.hasEffect(MainEffects.CANDY.get())) return;
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
 		var stats = statsCap.orElse(new StatsData(player));
 
 		int playerId = player.getId();
 		long gameTime = player.level().getGameTime();
-		float tintProgress = AURA_TINT_PROGRESS.getOrDefault(playerId, 0.0f);
-
-		if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) tintProgress = 0.0f;
-		LAST_RENDER_TIME.put(playerId, gameTime);
-
-		if (stats.getStatus().isChargingKi()) {
-			if (tintProgress < 1.0f) {
-				tintProgress += FADE_SPEED;
-				if (tintProgress > 1.0f) tintProgress = 1.0f;
-			}
-		} else {
-			if (tintProgress > 0.0f) {
-				tintProgress -= FADE_SPEED;
-				if (tintProgress < 0.0f) tintProgress = 0.0f;
-			}
-		}
-		AURA_TINT_PROGRESS.put(playerId, tintProgress);
+		boolean shouldFadeIn = stats.getStatus().isChargingKi()
+				|| stats.getStatus().isAuraActive()
+				|| stats.getStatus().isPermanentAura();
+		float tintProgress = AuraTintTracker.update(playerId, gameTime, shouldFadeIn);
 
 		this.currentTintProgress = tintProgress;
 		this.currentAuraColor = getTopAuraColor(stats);
@@ -332,55 +317,55 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "mouth_" + character.getMouthType() + ".png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "mouth_0.png")).getPath(), skin, pt, pl, po, alpha, true);
 	}
 
-    private void renderHumanFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
-        String folder = "textures/entity/races/humansaiyan/faces/";
-        String eyeBase = "humansaiyan_eye_" + character.getEyesType();
-        float[] white = {1.0f, 1.0f, 1.0f};
+	private void renderHumanFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
+		String folder = "textures/entity/races/humansaiyan/faces/";
+		String eyeBase = "humansaiyan_eye_" + character.getEyesType();
+		float[] white = {1.0f, 1.0f, 1.0f};
 
-        boolean isSsj4Model = false;
-        String customModel = "";
-        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-            customModel = character.getActiveStackFormData().getCustomModel();
-        } else if (character.hasActiveForm() && character.getActiveFormData() != null) {
-            customModel = character.getActiveFormData().getCustomModel();
-        }
+		boolean isSsj4Model = false;
+		String customModel = "";
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+			customModel = character.getActiveStackFormData().getCustomModel();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
+			customModel = character.getActiveFormData().getCustomModel();
+		}
 
-        if (customModel != null && (customModel.equalsIgnoreCase("ssj4d") || customModel.equalsIgnoreCase("ssj4gt"))) {
-            isSsj4Model = true;
-        }
-        boolean isMajin = animatable.hasEffect(MainEffects.MAJIN.get());
+		if (customModel != null && (customModel.equalsIgnoreCase("ssj4d") || customModel.equalsIgnoreCase("ssj4gt"))) {
+			isSsj4Model = true;
+		}
+		boolean isMajin = animatable.hasEffect(MainEffects.MAJIN.get());
 
-        renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_0.png")).getPath(), white, pt, pl, po, alpha);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_1.png")).getPath(), eye1, pt, pl, po, alpha);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_2.png")).getPath(), eye2, pt, pl, po, alpha);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_3.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_3.png")).getPath(), hair, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_0.png")).getPath(), white, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_1.png")).getPath(), eye1, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_2.png")).getPath(), eye2, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_3.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_3.png")).getPath(), hair, pt, pl, po, alpha);
 
-        boolean isSsj3 = (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getHairType().equalsIgnoreCase("ssj3")) ||
-                (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getHairType().equalsIgnoreCase("ssj3"));
-        if (isSsj3) renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "ssj3eyebrows_eye_" + character.getEyesType() + ".png", skin, pt, pl, po, alpha);
+		boolean isSsj3 = (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getHairType().equalsIgnoreCase("ssj3")) ||
+				(character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getHairType().equalsIgnoreCase("ssj3"));
+		if (isSsj3) renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "ssj3eyebrows_eye_" + character.getEyesType() + ".png", skin, pt, pl, po, alpha);
 
-        if (isSsj4Model || isMajin) {
-            String ssj4Eyes = folder + "ssj4_eyes_" + character.getEyesType() + ".png";
+		if (isSsj4Model || isMajin) {
+			String ssj4Eyes = folder + "ssj4_eyes_" + character.getEyesType() + ".png";
 
-            float[] finalColor;
-            if (isMajin) {
-                finalColor = ColorUtils.hexToRgb("#292929");
-            } else {
-                finalColor = character.getRgbBodyColor2();
-                if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
-                    finalColor = character.getActiveFormData().getRgbBodyColor2();
-                }
-                if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
-                    finalColor = character.getActiveStackFormData().getRgbBodyColor2();
-                }
-            }
+			float[] finalColor;
+			if (isMajin) {
+				finalColor = ColorUtils.hexToRgb("#292929");
+			} else {
+				finalColor = character.getRgbBodyColor2();
+				if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
+					finalColor = character.getActiveFormData().getRgbBodyColor2();
+				}
+				if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
+					finalColor = character.getActiveStackFormData().getRgbBodyColor2();
+				}
+			}
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, finalColor, pt, pl, po, alpha);
-        }
+			renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, finalColor, pt, pl, po, alpha);
+		}
 
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, true);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, true);
-    }
+		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, true);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, true);
+	}
 
 	private void renderNamekianFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float pt, int pl, int po, float alpha) {
 		String folder = "textures/entity/races/namekian/faces/";
@@ -439,26 +424,26 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer1.png")).getPath(), eye1, pt, pl, po, alpha);
 	}
 
-    private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float pt, int pl, int po, float alpha) {
-        String folder = "textures/entity/races/majin/faces/";
+	private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float pt, int pl, int po, float alpha) {
+		String folder = "textures/entity/races/majin/faces/";
 
-        if ("janemba_super".equals(faceKey)) {
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_eye_2_0.png", eye1, pt, pl, po, alpha);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_eye_2_1.png", eye2, pt, pl, po, alpha);
-        } else {
-            int eyeType = character.getEyesType();
-            float[] bgColor = eyeType == 0 ? skin : DARK_GRAY;
-            float[] layer1Color = eyeType == 0 ? skin : eye1;
-            String eyePath = folder + "majin_eye_" + eyeType + "_";
+		if ("janemba_super".equals(faceKey)) {
+			renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_eye_2_0.png", eye1, pt, pl, po, alpha);
+			renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_eye_2_1.png", eye2, pt, pl, po, alpha);
+		} else {
+			int eyeType = character.getEyesType();
+			float[] bgColor = eyeType == 0 ? skin : DARK_GRAY;
+			float[] layer1Color = eyeType == 0 ? skin : eye1;
+			String eyePath = folder + "majin_eye_" + eyeType + "_";
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_0.png")).getPath(), bgColor, pt, pl, po, alpha);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_1.png")).getPath(), layer1Color, pt, pl, po, alpha);
-            renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_2.png")).getPath(), skin, pt, pl, po, alpha);
-        }
+			renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_0.png")).getPath(), bgColor, pt, pl, po, alpha);
+			renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_1.png")).getPath(), layer1Color, pt, pl, po, alpha);
+			renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_2.png")).getPath(), skin, pt, pl, po, alpha);
+		}
 
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, true);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, true);
-    }
+		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, true);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, true);
+	}
 
 	private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha, boolean applyTransformationTint) {
 		if (applyTransformationTint) {
@@ -506,14 +491,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (rgb == null || rgb.length < 3) return rgb;
 
 		int phase = TransformationsHelper.getKaiokenPhase(stats);
-		boolean auraActive = stats.getStatus().isChargingKi() || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
-		if (phase <= 0 && !auraActive) return rgb;
+		if (phase <= 0 && this.currentTintProgress <= 0.0f) return rgb;
 
 		float[] tinted = rgb.clone();
 		if (phase > 0) {
 			applyKaiokenToRgb(tinted, phase);
 		} else {
-			float intensity = 0.2f;
+			float intensity = 0.2f * this.currentTintProgress;
 			float[] auraRgb = getTopAuraColor(stats);
 			applyAuraTintToRgb(tinted, auraRgb, intensity);
 		}

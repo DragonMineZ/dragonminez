@@ -113,6 +113,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		int entityId = animatable.getId();
 		long nowMs = System.currentTimeMillis();
+		long gameTime = animatable.level().getGameTime();
 		lastSeenMsMap.put(entityId, nowMs);
 		float lastHairProgress = progressMap.getOrDefault(entityId, 0.0f);
 		long lastUpdateTick = tickMap.getOrDefault(entityId, 0L);
@@ -167,8 +168,10 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		int phase = TransformationsHelper.getKaiokenPhase(stats);
-		boolean auraActive = stats.getStatus().isChargingKi() || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
-		if (phase > 0 || auraActive) {
+		boolean shouldFadeIn = stats.getStatus().isChargingKi() || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		float auraTintProgress = AuraTintTracker.update(entityId, gameTime, shouldFadeIn);
+
+		if (phase > 0 || auraTintProgress > 0.0f) {
 			float[] baseFrom = rgbFrom;
 			float[] baseTo = rgbTo;
 			rgbFrom = baseFrom.clone();
@@ -178,18 +181,16 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (phase > 0) {
 			applyKaiokenToRgb(rgbFrom, phase);
 			applyKaiokenToRgb(rgbTo, phase);
-		} else {
-			if (auraActive) {
-				float[] rgbAura = character.getRgbAuraColor();
-				FormConfig.FormData activeFormData = character.hasActiveForm() ? character.getActiveFormData() : null;
-				FormConfig.FormData activeStackFormData = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
-				if (activeFormData != null && activeFormData.getRgbAuraColor() != null) rgbAura = activeFormData.getRgbAuraColor();
-				if (activeStackFormData != null && activeStackFormData.getRgbAuraColor() != null) rgbAura = activeStackFormData.getRgbAuraColor();
+		} else if (auraTintProgress > 0.0f) {
+			float[] rgbAura = character.getRgbAuraColor();
+			FormConfig.FormData activeFormData = character.hasActiveForm() ? character.getActiveFormData() : null;
+			FormConfig.FormData activeStackFormData = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
+			if (activeFormData != null && activeFormData.getRgbAuraColor() != null) rgbAura = activeFormData.getRgbAuraColor();
+			if (activeStackFormData != null && activeStackFormData.getRgbAuraColor() != null) rgbAura = activeStackFormData.getRgbAuraColor();
 
-				float intensity = 0.2f;
-				applyAuraTintToRgb(rgbFrom, rgbAura, intensity);
-				applyAuraTintToRgb(rgbTo, rgbAura, intensity);
-			}
+			float intensity = 0.2f * auraTintProgress;
+			applyAuraTintToRgb(rgbFrom, rgbAura, intensity);
+			applyAuraTintToRgb(rgbTo, rgbAura, intensity);
 		}
 
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
