@@ -81,7 +81,8 @@ public class GeneralServerConfig {
 		private Integer fusionCooldownSeconds = 1800;
 		private Boolean multiplicationInsteadOfAdditionForMultipliers = false;
 		private Integer partyMaxMembers = -1;
-		private Double partyTpShareRatio = 0.0;
+		private Integer partyMaxLevelGap = 500;
+		private Double partyTpShareRatio = 0.5;
 
 		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
 				"dragonminez:pothala_left",
@@ -178,13 +179,14 @@ public class GeneralServerConfig {
 			return Math.max(0, Math.min(fusionCooldownSeconds, Integer.MAX_VALUE));
 		}
 
-		public List<String> getHelmetsThatKeepHair() {
-			return helmetsThatKeepHair;
-		}
-
 		public Integer getPartyMaxMembers() {
 			if (partyMaxMembers == null) return -1;
 			return partyMaxMembers < -1 ? -1 : partyMaxMembers;
+		}
+
+		public Integer getPartyMaxLevelGap() {
+			if (partyMaxLevelGap == null) return 500;
+			return partyMaxLevelGap < -1 ? -1 : partyMaxLevelGap;
 		}
 
 		public Double getPartyTpShareRatio() {

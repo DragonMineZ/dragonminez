@@ -86,6 +86,18 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 
 		this.addRenderableWidget(
 				new CustomTextureButton.Builder()
+						.position(centerX - 110, bottomY)
+						.size(20, 20)
+						.texture(SCREEN_BUTTONS)
+						.textureSize(20, 20)
+						.textureCoords(120, 0, 120, 20)
+						.onPress(btn -> switchMenu(new PartyMenuScreen()))
+						.sound(MainSounds.UI_MENU_SWITCH.get())
+						.build()
+		);
+
+		this.addRenderableWidget(
+				new CustomTextureButton.Builder()
 						.position(centerX - 70, bottomY)
 						.size(20, 20)
 						.texture(SCREEN_BUTTONS)
@@ -123,6 +135,18 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		this.addRenderableWidget(
 				new CustomTextureButton.Builder()
 						.position(centerX + 50, bottomY)
+						.size(20, 20)
+						.texture(SCREEN_BUTTONS)
+						.textureSize(20, 20)
+						.textureCoords(140, 0, 140, 20)
+						.onPress(btn -> switchMenu(new ConfigMenuScreen()))
+						.sound(MainSounds.UI_MENU_SWITCH.get())
+						.build()
+		);
+
+		this.addRenderableWidget(
+				new CustomTextureButton.Builder()
+						.position(centerX + 90, bottomY)
 						.size(20, 20)
 						.texture(SCREEN_BUTTONS)
 						.textureSize(20, 20)
