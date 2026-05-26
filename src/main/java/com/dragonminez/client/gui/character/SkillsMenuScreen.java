@@ -678,7 +678,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int baseLeftOffset = getLeftPanelSwitchOffset(partialTick);
 
 		boolean nearLeftEdge = uiMouseX <= 36;
-		boolean overLeftPanel = uiMouseX >= currentLeftX && uiMouseX < currentLeftX + 141 && uiMouseY >= getUiHeight()/2 - 105 && uiMouseY < getUiHeight()/2 + 108;
+		boolean overLeftPanel = uiMouseX >= currentLeftX && uiMouseX < currentLeftX + 141 + 42 && uiMouseY >= getUiHeight() / 2 - 105 && uiMouseY < getUiHeight() / 2 + 108;
 		float leftTarget = (nearLeftEdge || overLeftPanel) ? 1.0f : 0.0f;
 		leftPanelHoverProgress = approach01(leftPanelHoverProgress, leftTarget, step);
 
