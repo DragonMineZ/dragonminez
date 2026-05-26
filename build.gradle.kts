@@ -210,6 +210,7 @@ dependencies {
         runtimeOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge:$jeiVersion"))
         runtimeOnly(fg.deobf("curse.maven:xenon-564239:5752040"))
         runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
+        runtimeOnly(fg.deobf("curse.maven:free-cam-557076:4643128"))
     }
 
     // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)

@@ -41,6 +41,11 @@ public class TargetFinder {
         Vec3 size = WeaponHitBoxes.createHitbox(attack.hitbox(), attackRange, attack.angle() > 180);
 
         OrientedBoundingBox obb = new OrientedBoundingBox(origin, size, player.getXRot(), player.getYRot());
+        boolean isSpinAttack = attack.angle() > 180;
+        if (!isSpinAttack) {
+            double forwardOffset = player.getBbWidth() * 0.3;
+            obb.offsetAlongAxisZ(obb.extent.z - forwardOffset);
+        }
         obb.updateVertex();
 
         List<Entity> validTargets = filterTargetsByOBB(entities, origin, player.getLookAngle(), attack.angle(), attackRange, obb);
