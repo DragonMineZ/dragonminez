@@ -24,7 +24,7 @@ public class SkillsCommand {
 	private static final SuggestionProvider<CommandSourceStack> SKILL_SUGGESTIONS = (ctx, builder) -> {
 		var config = ConfigManager.getSkillsConfig();
 		var validSkills = config.getSkills().keySet().stream()
-				.filter(s -> !config.getKiSkills().contains(s) && !config.getStackSkills().contains(s) && !config.getFormSkills().contains(s))
+				.filter(s -> !config.getKiSkills().contains(s) && !config.getStackSkills().contains(s) && !config.getFormSkills().contains(s) && !config.getStrikeSkills().contains(s))
 				.toList();
 		return SharedSuggestionProvider.suggest(validSkills, builder);
 	};
