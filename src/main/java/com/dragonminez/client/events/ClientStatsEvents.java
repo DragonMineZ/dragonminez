@@ -69,17 +69,13 @@ public class ClientStatsEvents {
 	private static boolean itMenuOpened = false;
 	private static boolean wasTechniqueChargeDown = false;
 	private static boolean wasRightClickDown = false;
-	private static int lockedVanillaHotbarSlot = -1;
-	private static int lockedTechniqueSlot = -1;
 
 	@SubscribeEvent
 	public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
 		if (Minecraft.getInstance().player != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 				boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-				if (isChargingTechnique) {
-					event.setCanceled(true);
-				}
+				if (isChargingTechnique) event.setCanceled(true);
 			});
 			if (event.isCanceled()) return;
 		}
@@ -167,9 +163,7 @@ public class ClientStatsEvents {
 
 				if (player.getRandom().nextInt(20) == 0) {
 					int divineCount = 5 + player.getRandom().nextInt(10);
-					for (int i = 0; i < divineCount; i++) {
-						spawnPassiveDivineParticle(player, totalScale, 0xFFFFFF);
-					}
+					for (int i = 0; i < divineCount; i++) spawnPassiveDivineParticle(player, totalScale, 0xFFFFFF);
 				}
 			}
 		}
@@ -188,9 +182,8 @@ public class ClientStatsEvents {
 			TechniqueData selectedTechnique = data.getTechniques().getSelectedTechnique();
 			boolean hasSelectedKiTechnique = selectedTechnique instanceof KiAttackData;
 			boolean hasSelectedStrikeTechnique = selectedTechnique instanceof StrikeAttackData;
-			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 
-			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked();
+			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown();
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
@@ -371,7 +364,7 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked();
+			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown();
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStrikeLocked()) return;
 
 			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();
@@ -458,8 +451,6 @@ public class ClientStatsEvents {
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
 		wasTechniqueChargeDown = false;
 		wasRightClickDown = false;
-		lockedVanillaHotbarSlot = -1;
-		lockedTechniqueSlot = -1;
 		lastTransformTapTime = 0;
 		lastKiChargeTapTime = 0;
 		StatsCapability.clearClientCache();

@@ -27,9 +27,9 @@ public class Status {
 	private boolean isBlocking;
 	private long lastBlockTime;
 	private long lastHurtTime;
+	private boolean friendlyFistEnabled;
 	private boolean isStunned;
 	private boolean isKnockedDown;
-	private int remainingKnockdownTicks;
 	private ActionMode selectedAction;
 	private String kiWeaponType;
 	private int drainingTargetId;
@@ -60,9 +60,9 @@ public class Status {
 		this.isBlocking = false;
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
+		this.friendlyFistEnabled = false;
 		this.isStunned = false;
 		this.isKnockedDown = false;
-		this.remainingKnockdownTicks = 0;
 		this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = "blade";
 		this.drainingTargetId = -1;
@@ -104,9 +104,9 @@ public class Status {
 		tag.putBoolean("IsBlocking", isBlocking);
 		tag.putLong("LastBlockTime", lastBlockTime);
 		tag.putLong("LastHurtTime", lastHurtTime);
+		tag.putBoolean("FriendlyFistEnabled", friendlyFistEnabled);
 		tag.putBoolean("IsStunned", isStunned);
 		tag.putBoolean("IsKnockedDown", isKnockedDown);
-		tag.putInt("RemainingKnockdownTicks", remainingKnockdownTicks);
 		tag.putInt("SelectedAction", selectedAction.ordinal());
 		tag.putString("KiWeaponType", kiWeaponType);
 		tag.putInt("DrainingTargetId", drainingTargetId);
@@ -142,9 +142,9 @@ public class Status {
 		this.isBlocking = tag.getBoolean("IsBlocking");
 		this.lastBlockTime = tag.getLong("LastBlockTime");
 		this.lastHurtTime = tag.getLong("LastHurtTime");
+		this.friendlyFistEnabled = tag.getBoolean("FriendlyFistEnabled");
 		this.isStunned = tag.getBoolean("IsStunned");
 		this.isKnockedDown = tag.getBoolean("IsKnockedDown");
-		this.remainingKnockdownTicks = tag.getInt("RemainingKnockdownTicks");
 		if (tag.contains("SelectedAction")) this.selectedAction = ActionMode.values()[tag.getInt("SelectedAction")];
 		else this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = tag.getString("KiWeaponType");
@@ -183,9 +183,9 @@ public class Status {
 		this.isBlocking = other.isBlocking;
 		this.lastBlockTime = other.lastBlockTime;
 		this.lastHurtTime = other.lastHurtTime;
+		this.friendlyFistEnabled = other.friendlyFistEnabled;
 		this.isStunned = other.isStunned;
 		this.isKnockedDown = other.isKnockedDown;
-		this.remainingKnockdownTicks = other.remainingKnockdownTicks;
 		this.selectedAction = other.selectedAction;
 		this.kiWeaponType = other.kiWeaponType;
 		this.drainingTargetId = other.drainingTargetId;

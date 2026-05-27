@@ -80,7 +80,7 @@ public class FlySkillEvent {
 				lastFlyKeyPressTime = currentTime;
 
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-					if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned() || data.getResources().getPowerRelease() < 5) return;
+					if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned() || data.getResources().getPowerRelease() < 5) return;
 
 					Skill flySkill = data.getSkills().getSkill("fly");
 					if (flySkill == null || flySkill.getLevel() <= 0) return;

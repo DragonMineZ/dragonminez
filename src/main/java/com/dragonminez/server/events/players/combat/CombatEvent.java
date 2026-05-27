@@ -113,9 +113,7 @@ public class CombatEvent {
 					double mz = attacker.getPersistentData().getDouble("dmz_momentum_z");
 
 					Vec3 knockbackDir = new Vec3(mx, my, mz).normalize();
-					if (knockbackDir.lengthSqr() < 1.0E-6) {
-						knockbackDir = attacker.getLookAngle();
-					}
+					if (knockbackDir.lengthSqr() < 1.0E-6) knockbackDir = attacker.getLookAngle();
 
 					livingTarget.setDeltaMovement(knockbackDir.scale(1.8));
 					livingTarget.hurtMarked = true;
@@ -132,9 +130,7 @@ public class CombatEvent {
 				float currentStamina = attackerData.getResources().getCurrentStamina();
 				double finalDmzDamage;
 
-				if (!attackerData.getStatus().isAlive() && attacker.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
-					staminaRequired = 0;
-				}
+				if (!attackerData.getStatus().isAlive() && attacker.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) staminaRequired = 0;
 
 				if (currentStamina >= staminaRequired) {
 					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);

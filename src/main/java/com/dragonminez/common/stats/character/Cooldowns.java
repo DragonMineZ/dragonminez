@@ -22,6 +22,7 @@ public class Cooldowns {
 	public static final String KI_BLAST_CD = "KiBlastCooldown";
 	public static final String MAJIN_REVIVE_ACTIVE = "MajinReviveActive";
 	public static final String MAJIN_REVIVE_CD = "MajinReviveCooldown";
+	public static final String KNOCKDOWN_DURATION = "KnockdownDuration";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

@@ -35,7 +35,7 @@ public class JumpChargeHandler {
 			if (!data.getSkills().hasSkill("jump") || !data.getSkills().isSkillActive("jump")) return;
 
 			jumpLevel[0] = data.getSkills().getSkillLevel("jump");
-			isStunned[0] = data.getStatus().isStunned();
+			isStunned[0] = data.getStatus().isStunned() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown();
 		});
 
 		if (jumpLevel[0] <= 0 || isStunned[0]) {

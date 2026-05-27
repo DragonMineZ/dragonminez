@@ -135,11 +135,14 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		boolean flySkillActive = data.getSkills().isSkillActive("fly");
 		boolean isChargingKi = data.getStatus().isChargingKi();
 		boolean isBlocking = data.getStatus().isBlocking();
+		boolean isKnockedDown = data.getStatus().isKnockedDown();
 		boolean isOozaru = data.getCharacter().isOozaruCached();
 		var nextFormConfig = TransformationsHelper.getNextAvailableForm(data);
 		String nextForm = nextFormConfig != null ? nextFormConfig.getName().toLowerCase() : "";
 		boolean isTransforming = data.getStatus().isActionCharging();
 		String trainingStat = data.getTraining().getCurrentTrainingStat();
+
+		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
 
 		if (trainingStat != null && !trainingStat.isEmpty()) {
 			return switch (trainingStat) {
