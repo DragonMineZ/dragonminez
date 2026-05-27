@@ -584,11 +584,21 @@ public class StatsEvents {
 						if (activeStackForm != null) expectedMultiplier *= activeStackForm.getAttackSpeed();
 					}
 
-					double expectedBonus = expectedMultiplier - 1.0;
+					double base = attackSpeedAttr.getBaseValue();
+					double afterAdditions = base + attackSpeedAttr.getModifiers(AttributeModifier.Operation.ADDITION).stream().mapToDouble(AttributeModifier::getAmount).sum();
+					double intermediateSpeed = afterAdditions;
+					for (AttributeModifier m : attackSpeedAttr.getModifiers(AttributeModifier.Operation.MULTIPLY_BASE)) intermediateSpeed += afterAdditions * m.getAmount();
+
+					double expectedBonus;
+					if (intermediateSpeed > 0.0) {
+						double targetSpeed = Math.max(0.25, intermediateSpeed * expectedMultiplier);
+						expectedBonus = targetSpeed / intermediateSpeed - 1.0;
+					} else expectedBonus = 0.0;
+
 					AttributeModifier existingAttackSpeed = attackSpeedAttr.getModifier(FORM_ATTACK_SPEED_UUID);
 					double currentBonus = existingAttackSpeed != null ? existingAttackSpeed.getAmount() : 0.0;
 
-					if (expectedBonus != currentBonus) {
+					if (Math.abs(expectedBonus - currentBonus) > 1e-9) {
 						attackSpeedAttr.removeModifier(FORM_ATTACK_SPEED_UUID);
 						if (expectedBonus != 0.0) {
 							attackSpeedAttr.addTransientModifier(new AttributeModifier(

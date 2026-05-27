@@ -72,7 +72,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		isAwaitingUpswing = true;
 		upswingStack = hand;
 
-		int attackCooldownTicks = (int) Math.round(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
+		int attackCooldownTicks = Math.round(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
 		upswingTicks = (int) Math.round(attackCooldownTicks * hand.upswingRate());
 		lastSwingDuration = attackCooldownTicks;
 		lastAttacked = 0;
@@ -155,7 +155,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		((PlayerAttackProperties) player).setComboCount(nextComboCount);
 
 		player.resetAttackStrengthTicker();
-		setMiningCooldown((int) Math.round(PlayerAttackHelper.getAttackCooldownTicksCapped(player)));
+		setMiningCooldown(Math.max(2, Math.round(PlayerAttackHelper.getAttackCooldownTicksCapped(player))));
 	}
 
 	@Unique

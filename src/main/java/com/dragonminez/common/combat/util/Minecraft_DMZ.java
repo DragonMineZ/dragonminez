@@ -13,9 +13,7 @@ public interface Minecraft_DMZ {
     @Nullable
     default Entity getCursorTarget() {
         Minecraft client = (Minecraft) this;
-        if (client.hitResult != null && client.hitResult.getType() == HitResult.Type.ENTITY) {
-            return ((EntityHitResult) client.hitResult).getEntity();
-        }
+        if (client.hitResult != null && client.hitResult.getType() == HitResult.Type.ENTITY) return ((EntityHitResult) client.hitResult).getEntity();
         return null;
     }
 

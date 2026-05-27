@@ -54,7 +54,7 @@ public class PlayerAttackHelper {
         float rawDelay = player.getCurrentItemAttackStrengthDelay();
         if (!Float.isFinite(rawDelay) || rawDelay <= 0.0F) rawDelay = intervalCap;
         float capped = Math.max(rawDelay, intervalCap);
-        return Mth.clamp(capped, intervalCap, 200.0F);
+        return Math.max(2.0f, Mth.clamp(capped, intervalCap, 200.0F));
     }
 
     public static AttackHand getCurrentAttack(Player player, int comboCount) {

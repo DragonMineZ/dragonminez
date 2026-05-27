@@ -28,6 +28,8 @@ public class Status {
 	private long lastBlockTime;
 	private long lastHurtTime;
 	private boolean isStunned;
+	private boolean isKnockedDown;
+	private int remainingKnockdownTicks;
 	private ActionMode selectedAction;
 	private String kiWeaponType;
 	private int drainingTargetId;
@@ -59,6 +61,8 @@ public class Status {
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
 		this.isStunned = false;
+		this.isKnockedDown = false;
+		this.remainingKnockdownTicks = 0;
 		this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = "blade";
 		this.drainingTargetId = -1;
@@ -79,9 +83,7 @@ public class Status {
 	}
 
 	public void markVisitedDimension(String dimensionId) {
-		if (dimensionId == null || dimensionId.isBlank() || ResourceLocation.tryParse(dimensionId) == null) {
-			return;
-		}
+		if (dimensionId == null || dimensionId.isBlank() || ResourceLocation.tryParse(dimensionId) == null) return;
 		this.visitedDimensions.add(dimensionId);
 	}
 
@@ -103,6 +105,8 @@ public class Status {
 		tag.putLong("LastBlockTime", lastBlockTime);
 		tag.putLong("LastHurtTime", lastHurtTime);
 		tag.putBoolean("IsStunned", isStunned);
+		tag.putBoolean("IsKnockedDown", isKnockedDown);
+		tag.putInt("RemainingKnockdownTicks", remainingKnockdownTicks);
 		tag.putInt("SelectedAction", selectedAction.ordinal());
 		tag.putString("KiWeaponType", kiWeaponType);
 		tag.putInt("DrainingTargetId", drainingTargetId);
@@ -121,9 +125,7 @@ public class Status {
 		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
 
 		ListTag visitedDimensionsTag = new ListTag();
-		for (String dimensionId : visitedDimensions) {
-			visitedDimensionsTag.add(StringTag.valueOf(dimensionId));
-		}
+		for (String dimensionId : visitedDimensions) visitedDimensionsTag.add(StringTag.valueOf(dimensionId));
 		tag.put("VisitedDimensions", visitedDimensionsTag);
 		return tag;
 	}
@@ -141,6 +143,8 @@ public class Status {
 		this.lastBlockTime = tag.getLong("LastBlockTime");
 		this.lastHurtTime = tag.getLong("LastHurtTime");
 		this.isStunned = tag.getBoolean("IsStunned");
+		this.isKnockedDown = tag.getBoolean("IsKnockedDown");
+		this.remainingKnockdownTicks = tag.getInt("RemainingKnockdownTicks");
 		if (tag.contains("SelectedAction")) this.selectedAction = ActionMode.values()[tag.getInt("SelectedAction")];
 		else this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = tag.getString("KiWeaponType");
@@ -163,9 +167,7 @@ public class Status {
 		this.visitedDimensions.clear();
 		if (tag.contains("VisitedDimensions", Tag.TAG_LIST)) {
 			ListTag visitedDimensionsTag = tag.getList("VisitedDimensions", Tag.TAG_STRING);
-			for (Tag dimensionTag : visitedDimensionsTag) {
-				this.markVisitedDimension(dimensionTag.getAsString());
-			}
+			for (Tag dimensionTag : visitedDimensionsTag) this.markVisitedDimension(dimensionTag.getAsString());
 		}
 	}
 
@@ -182,6 +184,8 @@ public class Status {
 		this.lastBlockTime = other.lastBlockTime;
 		this.lastHurtTime = other.lastHurtTime;
 		this.isStunned = other.isStunned;
+		this.isKnockedDown = other.isKnockedDown;
+		this.remainingKnockdownTicks = other.remainingKnockdownTicks;
 		this.selectedAction = other.selectedAction;
 		this.kiWeaponType = other.kiWeaponType;
 		this.drainingTargetId = other.drainingTargetId;
