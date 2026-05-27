@@ -10,6 +10,7 @@ import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -29,9 +30,7 @@ public class TargetHelper {
         if (attacker == target) return Relation.FRIENDLY;
 
         if (target instanceof Player targetPlayer) {
-            if (PartyManager.areInSameParty(attacker, targetPlayer)) {
-                if (!PartyManager.isPartyPvpEnabled(attacker)) return Relation.FRIENDLY;
-            }
+            if (PartyManager.areInSameParty(attacker, targetPlayer)) if (!PartyManager.isPartyPvpEnabled(attacker)) return Relation.FRIENDLY;
         }
 
         if (target instanceof TamableAnimal tameable) {
@@ -81,22 +80,13 @@ public class TargetHelper {
     }
 
     private static boolean isLookingAt(Player attacker, Entity target, double maxRange) {
-        if (attacker == null || target == null) {
-            return false;
-        }
+        if (attacker == null || target == null) return false;
 
         Vec3 eye = attacker.getEyePosition();
-        Vec3 targetCenter = target.getBoundingBox().getCenter();
-        Vec3 toTarget = targetCenter.subtract(eye);
-        double distance = toTarget.length();
-        if (distance <= 0.0 || distance > maxRange + 0.75D) {
-            return false;
-        }
-
         Vec3 look = attacker.getLookAngle().normalize();
-        Vec3 direction = toTarget.normalize();
-        double dot = look.dot(direction);
-        return dot >= 0.985D;
+        AABB box = target.getBoundingBox().inflate(0.15);
+        var hit = box.clip(eye, eye.add(look.scale(maxRange + 1.0)));
+        return hit.isPresent();
     }
 
     public static boolean isEntityHostileVehicle(String entityName) {

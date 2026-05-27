@@ -13,8 +13,10 @@ import lombok.Getter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -28,8 +30,39 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public final class PartyManager {
     private static final long INVITE_DURATION_MS = 60_000L;
+    private static final String TEAM_PREFIX = "dmzp_";
 
     private PartyManager() {}
+
+    private static String getTeamName(UUID partyId) {
+        return TEAM_PREFIX + partyId.toString().replace("-", "").substring(0, 11);
+    }
+
+    private static void addToMinecraftTeam(MinecraftServer server, UUID partyId, ServerPlayer player) {
+        var scoreboard = server.getScoreboard();
+        String teamName = getTeamName(partyId);
+        PlayerTeam team = scoreboard.getPlayerTeam(teamName);
+        if (team == null) {
+            team = scoreboard.addPlayerTeam(teamName);
+            team.setAllowFriendlyFire(false);
+            team.setSeeFriendlyInvisibles(true);
+        }
+        scoreboard.addPlayerToTeam(player.getScoreboardName(), team);
+    }
+
+    private static void removeFromMinecraftTeam(MinecraftServer server, UUID partyId, ServerPlayer player) {
+        var scoreboard = server.getScoreboard();
+        String teamName = getTeamName(partyId);
+        PlayerTeam team = scoreboard.getPlayerTeam(teamName);
+        if (team == null) return;
+        scoreboard.removePlayerFromTeam(player.getScoreboardName(), team);
+        if (team.getPlayers().isEmpty()) scoreboard.removePlayerTeam(team);
+    }
+
+    private static void updateTeamFriendlyFire(MinecraftServer server, UUID partyId, boolean allowFriendlyFire) {
+        PlayerTeam team = server.getScoreboard().getPlayerTeam(getTeamName(partyId));
+        if (team != null) team.setAllowFriendlyFire(allowFriendlyFire);
+    }
 
     public static UUID getOrCreateParty(ServerPlayer player) {
         PartySavedData data = PartySavedData.get(player.getServer());
@@ -38,6 +71,7 @@ public final class PartyManager {
             return party.getPartyId();
         }
         party = data.createParty(player.getUUID());
+        addToMinecraftTeam(player.getServer(), party.getPartyId(), player);
         syncPartyToOnlineMembers(player.getServer(), party);
         return party.getPartyId();
     }
@@ -93,6 +127,7 @@ public final class PartyManager {
             party.setPvpEnabled(!party.isPvpEnabled());
             data.setDirty();
 
+            updateTeamFriendlyFire(leader.getServer(), party.getPartyId(), party.isPvpEnabled());
             String state = party.isPvpEnabled() ? "✓" : "✕";
             ChatFormatting color = party.isPvpEnabled() ? ChatFormatting.RED : ChatFormatting.GREEN;
 
@@ -112,21 +147,15 @@ public final class PartyManager {
     public static List<ServerPlayer> getAllPartyMembers(ServerPlayer player) {
         PartySavedData data = PartySavedData.get(player.getServer());
         PartySavedData.PartyInstance party = data.getPartyOf(player.getUUID());
-        if (party == null) {
-            return Collections.singletonList(player);
-        }
+        if (party == null) return Collections.singletonList(player);
 
         List<ServerPlayer> members = new ArrayList<>();
         for (UUID memberId : party.getMembers()) {
             ServerPlayer member = player.getServer().getPlayerList().getPlayer(memberId);
-            if (member != null && !members.contains(member)) {
-                members.add(member);
-            }
+            if (member != null && !members.contains(member)) members.add(member);
         }
 
-        if (members.isEmpty()) {
-            members.add(player);
-        }
+        if (members.isEmpty()) members.add(player);
         return members;
     }
 
@@ -253,6 +282,7 @@ public final class PartyManager {
         if (party == null) return;
 
         boolean isLeader = party.getLeaderId().equals(player.getUUID());
+        UUID partyId = party.getPartyId();
 
         PlayerQuestData questData = getQuestData(player);
         questData.restorePartyQuestBackup();
@@ -260,6 +290,7 @@ public final class PartyManager {
         questData.clearPartyState();
         syncSelf(player);
 
+        removeFromMinecraftTeam(player.getServer(), partyId, player);
         data.removePlayer(player.getUUID());
 
         if (isLeader && !party.getMembers().isEmpty()) transferLeadership(player, party);
@@ -285,6 +316,18 @@ public final class PartyManager {
     public static void forceJoinParty(ServerPlayer leader, ServerPlayer member) {
         leaveParty(member);
         joinLeaderParty(leader, member);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        PartySavedData data = PartySavedData.get(player.getServer());
+        PartySavedData.PartyInstance party = data.getPartyOf(player.getUUID());
+        if (party == null) return;
+
+        addToMinecraftTeam(player.getServer(), party.getPartyId(), player);
+        updateTeamFriendlyFire(player.getServer(), party.getPartyId(), party.isPvpEnabled());
     }
 
     @SubscribeEvent
@@ -334,14 +377,19 @@ public final class PartyManager {
         PartySavedData data = PartySavedData.get(leader.getServer());
         PartySavedData.PartyInstance party = data.getPartyOf(leader.getUUID());
 
-       getQuestData(member).savePartyQuestBackup();
+        getQuestData(member).savePartyQuestBackup();
 
         syncQuestProgress(leader, member);
         data.addPlayerToParty(partyId, member.getUUID());
+
+        addToMinecraftTeam(leader.getServer(), partyId, leader);
+        addToMinecraftTeam(leader.getServer(), partyId, member);
+        updateTeamFriendlyFire(leader.getServer(), partyId, party.isPvpEnabled());
+
         syncPartyToOnlineMembers(leader.getServer(), party);
     }
 
-    private static void syncPartyToOnlineMembers(net.minecraft.server.MinecraftServer server, PartySavedData.PartyInstance party) {
+    private static void syncPartyToOnlineMembers(MinecraftServer server, PartySavedData.PartyInstance party) {
         List<UUID> memberIds = party.getMembers();
         for (UUID id : memberIds) {
             ServerPlayer member = server.getPlayerList().getPlayer(id);
@@ -375,14 +423,10 @@ public final class PartyManager {
     }
 
     public static class PendingInvite {
-        @Getter
-        private final UUID inviterUUID;
-        @Getter
-        private final String teamName;
-        @Getter
-        private final UUID partyLeaderId;
-        @Getter
-        private final String inviterName;
+        @Getter private final UUID inviterUUID;
+        @Getter private final String teamName;
+        @Getter private final UUID partyLeaderId;
+        @Getter private final String inviterName;
         private final long expiresAtMs;
 
         public PendingInvite(UUID inviterUUID, String teamName, UUID partyLeaderId, String inviterName, long expiresAtMs) {

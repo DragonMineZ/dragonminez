@@ -20,7 +20,7 @@ public class CombatConfig {
 	@Setter
 	private int configVersion;
 
-	private Double staminaConsumptionRatio = 0.5;
+	private Double staminaConsumptionRatio = 0.083;
 	private Integer baselineFormDrain = 200;
 	private Boolean killPlayersOnCombatLogout = true;
 
@@ -30,27 +30,23 @@ public class CombatConfig {
 
 	private Boolean enableBlocking = true;
 	private Boolean enableParrying = true;
-	private Boolean enableComboAttacks = true;
-	private Integer parryWindowMs = 250;
+	private Integer parryWindowMs = 150;
 	private Integer blockBreakStunDurationTicks = 60;
-	private Double poiseDamageMultiplier = 1.0;
-	private Double blockDamageReductionCap = 0.8;
-	private Double blockDamageReductionMin = 0.1;
-	private Integer poiseRegenCooldown = 120;
+	private Double poiseDamageMultiplier = 0.25;
+	private Double blockDamageReductionCap = 0.65;
+	private Double blockDamageReductionMin = 0.05;
+	private Integer poiseRegenCooldown = 100;
 
 	private Boolean enablePerfectEvasion = true;
 	private Integer perfectEvasionWindowMs = 200;
-	private Integer dashCooldownSeconds = 1;
-	private Integer doubleDashCooldownSeconds = 3;
+	private Integer dashCooldownSeconds = 4;
+	private Integer doubleDashCooldownSeconds = 12;
 
-	private Double[] kiBladeConfig = {1.5, 0.4};
-	private Double[] kiScytheConfig = {2.0, 0.6};
-	private Double[] kiClawLanceConfig = {1.2, 0.3};
-	private String[] allowedCombatItems = {};
-	private String[] twoHandedCombatItems = {};
+	private Double[] kiBladeConfig = {1.0, 0.05};
+	private Double[] kiScytheConfig = {1.5, 0.075};
+	private Double[] kiClawLanceConfig = {2.0, 0.125};
 
 	private Float upswingMultiplier = 0.5F;
-	private Boolean allowFastAttacks = true;
 	private Boolean allowAttackingMount = false;
 	private Integer attackIntervalCap = 2;
 	private Boolean weaponRegistryLogging = false;
