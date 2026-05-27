@@ -431,7 +431,7 @@ final class QuestDefaults {
 				step("frieza", 5, "05_defeat_zarbon.json",
 						namekReq(148, condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_zarbont1", 1, 1700, 95, 220)
+								objKill("dragonminez:saga_zarbon", 1, 1700, 95, 220)
 						},
 						rewTPS(9400)),
 				step("frieza", 6, "06_the_saiyan_prince.json",
@@ -480,7 +480,7 @@ final class QuestDefaults {
 				step("frieza", 13, "13_defeat_frieza_third.json",
 						namekReq(280, condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_frieza_third", 1, 8500, 420, 690)
+								objKill("dragonminez:saga_frieza_second", 1, 8500, 420, 690)
 						},
 						rewTPS(17800)),
 				step("frieza", 14, "14_defeat_frieza_base.json",
@@ -890,17 +890,260 @@ final class QuestDefaults {
 		);
 	}
 
+	// ========================================================================================
+	// Movies Saga Quests (folder: saga_movies)
+	// ========================================================================================
+
 	private static void createMoviesSagaQuests(Path questsDir) {
-		 JsonObject prevBuu = prevQuest("buu_saga", 35);
+		JsonObject prevBuu = prevQuest("buu_saga", 35);
 
 		writeSaga(questsDir.resolve("saga_movies"), "movies_saga", "saga_movies", prevBuu,
-				step("buu", 1, "01_test_movies_saga.json",
-						earthReq(1400),
+				step("movies", 1, "01_kamis_lookout_warning.json",
+						earthReq(2340),
 						new JsonObject[]{
-								objKill("dragonminez:saga_kibito", 1, 10, 10000, 20000)
+								objStructure("dragonminez:kamilookout"),
+								objTalkTo("dende")
 						},
-						rewTPS(10))
-
+						rewTPS(30000)),
+				step("movies", 2, "02_garlic_jr_in_the_wasteland.json",
+						earthReq(2340, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_garlic_jr", 1, 95000, 4700, 7600)
+						},
+						rewTPS(52000)),
+				step("movies", 3, "03_garlic_jr_transformed.json",
+						earthReq(2350, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_garlic_jr", 1, 130000, 6400, 10200)
+						},
+						rewTPS(62000)),
+				step("movies", 4, "04_frozen_biome_signal.json",
+						earthReq(2360, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objBiome("minecraft:snowy_plains")
+						},
+						rewTPS(26000)),
+				step("movies", 5, "05_wheelo_controlled_allies.json",
+						earthReq(2360, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_kid_gohan", 1, 70000, 3400, 5400),
+								objKill("dragonminez:saga_krillin", 1, 68000, 3300, 5200)
+						},
+						rewTPS(58000)),
+				step("movies", 6, "06_dr_wheelo.json",
+						earthReq(2370, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_dr_wheelo", 1, 145000, 7100, 11400)
+						},
+						rewTPS(68000)),
+				step("movies", 7, "07_tree_of_might_wasteland.json",
+						earthReq(2380, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objBiome("dragonminez:rocky")
+						},
+						rewTPS(26000)),
+				step("movies", 8, "08_turles_goku.json",
+						earthReq(2380, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_goku_mid_base", 1, 105000, 5100, 8200)
+						},
+						rewTPS(56000)),
+				step("movies", 9, "09_turles_oozaru_gohan.json",
+						earthReq(2390, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_ozaru", 1, 150000, 7400, 11800)
+						},
+						rewTPS(70000)),
+				step("movies", 10, "10_turles.json",
+						earthReq(2400, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_turles", 1, 160000, 7900, 12600)
+						},
+						rewTPS(76000)),
+				step("movies", 11, "11_slug_soldiers.json",
+						earthReq(2410, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_slug_soldier", 8, 45000, 2200, 3600)
+						},
+						rewTPS(56000)),
+				step("movies", 12, "12_slug.json",
+						earthReq(2420, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_slug", 1, 150000, 7400, 11800)
+						},
+						rewTPS(72000)),
+				step("movies", 13, "13_giant_slug.json",
+						earthReq(2430, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_slug", 1, 190000, 9300, 14900)
+						},
+						rewTPS(84000)),
+				step("movies", 14, "14_cooler_armored_squadron.json",
+						earthReq(2440, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_neiz", 1, 90000, 4400, 7000),
+								objKill("dragonminez:saga_salza", 1, 95000, 4700, 7500),
+								objKill("dragonminez:saga_dore", 1, 105000, 5100, 8200)
+						},
+						rewTPS(78000)),
+				step("movies", 15, "15_cooler.json",
+						earthReq(2450, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_cooler", 1, 175000, 8600, 13800)
+						},
+						rewTPS(82000)),
+				step("movies", 16, "16_cooler_fifth_form.json",
+						earthReq(2460, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_cooler", 1, 230000, 11300, 18100)
+						},
+						rewTPS(94000)),
+				step("movies", 17, "17_big_gete_star.json",
+						namekReq(2470, condBiome("dragonminez:ajissa_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_gete_machine", 10, 60000, 2900, 4700)
+						},
+						rewTPS(70000)),
+				step("movies", 18, "18_metal_cooler.json",
+						namekReq(2480, condBiome("dragonminez:ajissa_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_metal_cooler", 1, 220000, 10800, 17200)
+						},
+						rewTPS(92000)),
+				step("movies", 19, "19_metal_cooler_core.json",
+						namekReq(2490, condBiome("dragonminez:ajissa_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_metal_cooler_core", 1, 260000, 12700, 20400)
+						},
+						rewTPS(104000)),
+				step("movies", 20, "20_androids_in_the_ice.json",
+						earthReq(2500, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_a14", 1, 135000, 6600, 10500),
+								objKill("dragonminez:saga_a15", 1, 130000, 6400, 10200)
+						},
+						rewTPS(82000)),
+				step("movies", 21, "21_android_13.json",
+						earthReq(2510, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_a13", 1, 190000, 9300, 14900)
+						},
+						rewTPS(90000)),
+				step("movies", 22, "22_super_android_13.json",
+						earthReq(2520, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_a13", 1, 250000, 12200, 19600)
+						},
+						rewTPS(102000)),
+				step("movies", 23, "23_broly_base.json",
+						earthReq(2530, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_broly", 1, 220000, 10800, 17200)
+						},
+						rewTPS(94000)),
+				step("movies", 24, "24_paragus.json",
+						earthReq(2540, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_paragus", 1, 105000, 5100, 8200)
+						},
+						rewTPS(52000)),
+				step("movies", 25, "25_legendary_broly.json",
+						earthReq(2550, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_broly", 1, 310000, 15200, 24400)
+						},
+						rewTPS(118000)),
+				step("movies", 26, "26_bojack_allies.json",
+						earthReq(2560, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_bojack_ally", 4, 90000, 4400, 7000)
+						},
+						rewTPS(76000)),
+				step("movies", 27, "27_gokua.json",
+						earthReq(2570, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_gokua", 1, 165000, 8100, 13000)
+						},
+						rewTPS(78000)),
+				step("movies", 28, "28_bojack.json",
+						earthReq(2580, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_bojack", 1, 225000, 11000, 17600)
+						},
+						rewTPS(94000)),
+				step("movies", 29, "29_full_power_bojack.json",
+						earthReq(2590, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_bojack", 1, 285000, 14000, 22400)
+						},
+						rewTPS(112000)),
+				step("movies", 30, "30_broly_second_coming.json",
+						earthReq(2600, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_broly", 1, 260000, 12700, 20400)
+						},
+						rewTPS(104000)),
+				step("movies", 31, "31_goten_and_trunks.json",
+						earthReq(2610, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_goten", 1, 110000, 5400, 8600),
+								objKill("dragonminez:saga_kid_trunks", 1, 115000, 5600, 9000)
+						},
+						rewTPS(76000)),
+				step("movies", 32, "32_legendary_broly_second_coming.json",
+						earthReq(2620, condBiome("minecraft:snowy_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_broly", 1, 340000, 16700, 26700)
+						},
+						rewTPS(124000)),
+				step("movies", 33, "33_bio_broly.json",
+						earthReq(2630, condBiome("minecraft:swamp")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_bio_broly", 1, 240000, 11800, 18800)
+						},
+						rewTPS(96000)),
+				step("movies", 34, "34_giant_bio_broly.json",
+						earthReq(2640, condBiome("minecraft:swamp")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_bio_broly", 1, 300000, 14700, 23500)
+						},
+						rewTPS(114000)),
+				step("movies", 35, "35_otherworld_tournament.json",
+						dimensionReq("dragonminez:otherworld", 2650),
+						new JsonObject[]{
+								objKill("dragonminez:saga_paikuhan", 1, 190000, 9300, 14900)
+						},
+						rewTPS(82000)),
+				step("movies", 36, "36_janemba.json",
+						dimensionReq("dragonminez:otherworld", 2660),
+						new JsonObject[]{
+								objKill("dragonminez:saga_janemba", 1, 270000, 13200, 21200)
+						},
+						rewTPS(104000)),
+				step("movies", 37, "37_super_janemba.json",
+						dimensionReq("dragonminez:otherworld", 2670),
+						new JsonObject[]{
+								objKill("dragonminez:saga_janemba", 1, 360000, 17600, 28200)
+						},
+						rewTPS(132000)),
+				step("movies", 38, "38_hildegarn_half.json",
+						earthReq(2680, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_hildegarn", 1, 280000, 13700, 22000)
+						},
+						rewTPS(108000)),
+				step("movies", 39, "39_hildegarn_complete.json",
+						earthReq(2690, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_hildegarn", 1, 350000, 17100, 27400)
+						},
+						rewTPS(128000)),
+				step("movies", 40, "40_super_hildegarn.json",
+						earthReq(2700, condBiome("minecraft:plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_hildegarn", 1, 430000, 21100, 33700)
+						},
+						rewTPS(150000))
 		);
 	}
 }

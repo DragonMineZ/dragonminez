@@ -109,3 +109,13 @@ Use this schema for each memory entry:
 ## Entries
 
 Add durable memories below this line, newest first.
+
+### 2026-05-27 - Contiguous Kill Objectives Track Together
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: `src/main/java/com/dragonminez/server/events/QuestEvents.java`
+- Summary: Sequential quests may still present multiple kill objectives at once because quest-spawned enemies are spawned for all kill objectives when the quest starts, and natural mixed-kill quests expect simultaneous counting.
+- Guidance: Treat contiguous kill objectives as one tracking block; preserve sequencing between blocks with intervening non-kill objectives instead of gating each kill objective behind earlier kill progress.
+- Related: `QuestEvents.isKillObjectiveUnlocked`

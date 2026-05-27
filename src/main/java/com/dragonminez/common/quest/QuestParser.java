@@ -134,7 +134,6 @@ public class QuestParser {
 			case "KILL" -> {
 				String entityId = json.get("entity").getAsString();
 				int killCount = json.get("count").getAsInt();
-				EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(entityId));
 				double health = json.has("health") ? json.get("health").getAsDouble() : 20.0;
 				double meleeDamage = json.has("meleeDamage") ? json.get("meleeDamage").getAsDouble() : 1.0;
 				double kiDamage = json.has("kiDamage") ? json.get("kiDamage").getAsDouble() : 1.0;
@@ -144,7 +143,7 @@ public class QuestParser {
 				KillObjective.CountMode countMode = parseKillCountMode(json.has("count_mode") && !json.get("count_mode").isJsonNull()
 						? json.get("count_mode").getAsString()
 						: null);
-				yield new KillObjective(entityType, killCount, health, meleeDamage, kiDamage, spawnMode, countMode);
+				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode);
 			}
 			case "BIOME" -> new BiomeObjective(json.get("biome").getAsString());
 			case "DIMENSION" -> new DimensionObjective(json.get("dimension").getAsString());

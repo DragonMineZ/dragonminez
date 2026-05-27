@@ -502,7 +502,7 @@ public final class QuestService {
 				continue;
 			}
 
-			String entityIdStr = resolveSpawnEntityId(killObjective.getEntityId());
+			String entityIdStr = killObjective.getEntityId();
 			EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityIdStr));
 			if (entityType == null) {
 				continue;
@@ -540,16 +540,6 @@ public final class QuestService {
 				requester.serverLevel().addFreshEntity(entity);
 			}
 		}
-	}
-
-	private static String resolveSpawnEntityId(String entityId) {
-		if ("dragonminez:saga_zarbont1".equals(entityId)) {
-			return "dragonminez:saga_zarbon";
-		}
-		if ("dragonminez:saga_frieza_third".equals(entityId)) {
-			return "dragonminez:saga_frieza_second";
-		}
-		return entityId;
 	}
 
 	@Nullable

@@ -297,12 +297,22 @@ final class SideQuestDefaults {
 				"training", true, "goku", "goku",
 				prereqs("AND", condQuest("weighted_training"), condLevel(10)),
 				new JsonObject[]{
-						objKill("minecraft:wither_skeleton", 5),
-						objKill("minecraft:blaze", 10),
+						objQuestKill("minecraft:wither_skeleton", 5),
+						objQuestKill("minecraft:blaze", 10),
 						objItem("minecraft:blaze_rod", 10),
 						objTalkTo("goku")
 				},
 				new JsonObject[]{ rewTPS(2000) }));
+		writeQuestFile(dir, "specialized_training.json", sidequest(
+				"specialized_training", "dmz.sidequest.specializedtr.name", "dmz.sidequest.specializedtr.desc",
+				"training", true, "bulma", "bulma",
+				prereqs("AND", condQuest("gravity_chamber"), condLevel(15)),
+				new JsonObject[]{
+						objItem("minecraft:diamond", 20),
+						objItem("minecraft:obsidian", 20)
+				},
+				new JsonObject[]{ rewTPS(3000), rewItem("minecraft:enderpearl", 16)}
+		));
 
 		// --- Saiyan Saga: Training ---
 
@@ -338,7 +348,7 @@ final class SideQuestDefaults {
 						objKill("minecraft:skeleton", 10),
 						objKill("minecraft:creeper", 5)
 				},
-				new JsonObject[]{ rewTPS(900) }));
+				new JsonObject[]{ rewTPS(1100) }));
 
 		writeQuestFile(dir, "gohan_survival.json", sidequest(
 				"gohan_survival", "dmz.sidequest.gohan_survival.name", "dmz.sidequest.gohan_survival.desc",
