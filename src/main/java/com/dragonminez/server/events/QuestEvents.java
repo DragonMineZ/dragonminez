@@ -248,11 +248,13 @@ public class QuestEvents {
 			if (currentProgress >= quest.getObjectiveRequired(pqd, questKey, i)) {
 				continue;
 			}
-			if (!quest.isParallelObjectives() && !isFirstUncompleted(pqd, questKey, quest, i)) {
+			if (!(objective instanceof KillObjective killObjective)) {
 				continue;
 			}
-			if (objective instanceof KillObjective killObjective
-					&& matchesKillObjective(killedEntity, questKey, i, killObjective, partyMembers)) {
+			if (!isKillObjectiveUnlocked(pqd, questKey, quest, i)) {
+				continue;
+			}
+			if (matchesKillObjective(killedEntity, questKey, i, killObjective, partyMembers)) {
 				updateProgress(player, pqd, questKey, quest, i, currentProgress + 1);
 			}
 		}
@@ -391,19 +393,23 @@ public class QuestEvents {
 		try {
 			ResourceLocation targetId = ResourceLocation.parse(killObjective.getEntityId());
 			EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(targetId);
-			if (requiredType == null || !killedEntity.getType().equals(requiredType)) {
-				return false;
-			}
-
-			if (killObjective.getCountMode() == KillObjective.CountMode.ANY_MATCHING
-					&& !hasQuestSpawnTags(killedEntity)) {
-				return true;
-			}
-
-			return matchesQuestSpawnTags(killedEntity, questKey, objectiveIndex, partyMembers);
+			boolean typeMatches = requiredType != null && killedEntity.getType().equals(requiredType);
+			boolean hasQuestTags = hasQuestSpawnTags(killedEntity);
+			boolean questTagsMatch = hasQuestTags && matchesQuestSpawnTags(killedEntity, questKey, objectiveIndex, partyMembers);
+			return acceptsKillMatch(typeMatches, questTagsMatch, killObjective.getCountMode(), hasQuestTags);
 		} catch (Exception e) {
 			return false;
 		}
+	}
+
+	static boolean acceptsKillMatch(boolean entityTypeMatches, boolean questSpawnTagsMatch,
+									KillObjective.CountMode countMode, boolean hasQuestSpawnTags) {
+		if (questSpawnTagsMatch) {
+			return true;
+		}
+		return entityTypeMatches
+				&& countMode == KillObjective.CountMode.ANY_MATCHING
+				&& !hasQuestSpawnTags;
 	}
 
 	private static boolean hasQuestSpawnTags(LivingEntity killedEntity) {
@@ -431,6 +437,24 @@ public class QuestEvents {
 			}
 		}
 		return false;
+	}
+
+	static boolean isKillObjectiveUnlocked(PlayerQuestData pqd, String questKey, Quest quest, int objectiveIndex) {
+		if (quest == null || objectiveIndex < 0 || objectiveIndex >= quest.getObjectives().size()) {
+			return false;
+		}
+		if (!(quest.getObjectives().get(objectiveIndex) instanceof KillObjective)) {
+			return false;
+		}
+		if (quest.isParallelObjectives()) {
+			return true;
+		}
+
+		int killBlockStart = objectiveIndex;
+		while (killBlockStart > 0 && quest.getObjectives().get(killBlockStart - 1) instanceof KillObjective) {
+			killBlockStart--;
+		}
+		return isFirstUncompleted(pqd, questKey, quest, killBlockStart);
 	}
 
 	private static boolean isFirstUncompleted(PlayerQuestData pqd, String questKey, Quest quest, int targetIndex) {
