@@ -256,8 +256,6 @@
   "gui.dragonminez.quests.untrack": "Untrack",
   "gui.dragonminez.story.hud.tracked": "Tracked Quest",
   "gui.dragonminez.story.hud.no_objectives": "No objectives",
-  "toast.dragonminez.story.intro.title": "Story Mode",
-  "toast.dragonminez.story.intro.desc": "Press %s to start your journey",
   "toast.dragonminez.story.quest_started.title": "Quest Started",
   "toast.dragonminez.story.quest_failed.title": "Quest Failed",
   "toast.dragonminez.story.quest_failed.desc": "%s failed. Restart the quest manually.",

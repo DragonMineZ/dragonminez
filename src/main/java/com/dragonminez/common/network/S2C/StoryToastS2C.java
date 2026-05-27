@@ -13,7 +13,6 @@ import java.util.function.Supplier;
 public class StoryToastS2C {
 
 	public enum ToastEventType {
-		INTRO_HINT,
 		QUEST_STARTED,
 		QUEST_FAILED,
 		OBJECTIVE_COMPLETE,
@@ -32,10 +31,6 @@ public class StoryToastS2C {
 		this.objectiveIndex = objectiveIndex;
 		this.objectiveProgress = objectiveProgress;
 		this.objectiveRequired = objectiveRequired;
-	}
-
-	public static StoryToastS2C introHint() {
-		return new StoryToastS2C(ToastEventType.INTRO_HINT, "", -1, -1, -1);
 	}
 
 	public static StoryToastS2C questStarted(String questId) {

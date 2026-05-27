@@ -153,12 +153,6 @@ public class NetworkHandler {
 				.consumerMainThread(SetTrackedQuestC2S::handle)
 				.add();
 
-		net.messageBuilder(AcknowledgeStoryIntroC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(AcknowledgeStoryIntroC2S::decode)
-				.encoder(AcknowledgeStoryIntroC2S::encode)
-				.consumerMainThread(AcknowledgeStoryIntroC2S::handle)
-				.add();
-
 		net.messageBuilder(CreatePartyC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CreatePartyC2S::new)
 				.encoder(CreatePartyC2S::encode)

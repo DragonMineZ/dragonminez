@@ -70,11 +70,6 @@ public class PlayerQuestData {
     @Getter
     private String trackedQuestId = null;
 
-    /** True once the player has seen the first-time "Press V" story prompt. */
-    @Setter
-    @Getter
-    private boolean introPromptShown = false;
-
     /** Active party identifier for synchronized story progress. */
     @Getter
     private UUID activePartyId = null;
@@ -467,7 +462,6 @@ public class PlayerQuestData {
         if (trackedQuestId != null && !trackedQuestId.isBlank()) {
             tag.putString("trackedQuestId", trackedQuestId);
         }
-        tag.putBoolean("introPromptShown", introPromptShown);
 
         if (!hostileNpcKeys.isEmpty()) {
             ListTag hostileNpcs = new ListTag();
@@ -486,7 +480,6 @@ public class PlayerQuestData {
         startRequirementTimings.clear();
         hostileNpcKeys.clear();
         trackedQuestId = null;
-        introPromptShown = false;
 
         ListTag questList = tag.getList("quests", Tag.TAG_COMPOUND);
         for (int i = 0; i < questList.size(); i++) {
@@ -513,10 +506,6 @@ public class PlayerQuestData {
         if (tag.contains("trackedQuestId", Tag.TAG_STRING)) {
             String tracked = tag.getString("trackedQuestId");
             if (!tracked.isBlank()) trackedQuestId = tracked;
-        }
-
-        if (tag.contains("introPromptShown", Tag.TAG_BYTE)) {
-            introPromptShown = tag.getBoolean("introPromptShown");
         }
 
         if (tag.contains("hostileNpcKeys", Tag.TAG_LIST)) {

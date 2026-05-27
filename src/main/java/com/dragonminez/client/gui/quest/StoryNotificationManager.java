@@ -26,12 +26,6 @@ public final class StoryNotificationManager {
 		StoryToast.Tone tone;
 
 		switch (message.getEventType()) {
-			case INTRO_HINT -> {
-				title = Component.translatable("toast.dragonminez.story.intro.title");
-				description = Component.translatable("toast.dragonminez.story.intro.desc",
-						KeyBinds.STATS_MENU.getTranslatedKeyMessage());
-				tone = StoryToast.Tone.INFO;
-			}
 			case QUEST_STARTED -> {
 				Quest quest = QuestRegistry.getClientQuest(message.getQuestId());
 				title = Component.translatable("toast.dragonminez.story.quest_started.title");
@@ -68,10 +62,6 @@ public final class StoryNotificationManager {
 		}
 
 		mc.getToasts().addToast(new StoryToast(title, description, tone));
-	}
-
-	public static void pushIntroHint() {
-		push(StoryToastS2C.introHint());
 	}
 
 	private static Component resolveObjectiveText(Minecraft mc, StoryToastS2C message, Quest quest) {

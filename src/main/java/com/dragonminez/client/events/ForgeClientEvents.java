@@ -7,7 +7,6 @@ import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.BaseMenuScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
-import com.dragonminez.client.gui.quest.StoryNotificationManager;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.util.TextureCounter;
@@ -17,7 +16,6 @@ import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
-import com.dragonminez.common.network.C2S.AcknowledgeStoryIntroC2S;
 import com.dragonminez.common.network.C2S.SokidanControlC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -43,7 +41,6 @@ import org.lwjgl.glfw.GLFW;
 public class ForgeClientEvents {
 	public static boolean isHasCreatedCharacterCache = false;
 	private static String lastLang = "";
-	private static boolean introToastShownThisSession = false;
 	private static boolean pendingCharacterCreationReopen = false;
 	private static int characterCreationOpenCooldownTicks = 0;
 	private static final int CHARACTER_CREATION_OPEN_COOLDOWN = 8;
@@ -178,12 +175,6 @@ public class ForgeClientEvents {
 
 				if (!data.isDataLoaded()) return;
 				if (data.getStatus().isHasCreatedCharacter()) return;
-				if (introToastShownThisSession) return;
-				if (data.getPlayerQuestData().isIntroPromptShown()) return;
-
-				StoryNotificationManager.pushIntroHint();
-				NetworkHandler.sendToServer(new AcknowledgeStoryIntroC2S());
-				introToastShownThisSession = true;
 			});
 		}
 
@@ -241,7 +232,6 @@ public class ForgeClientEvents {
 		ConfigManager.clearServerSync();
 		DMZRendererCache.clear();
 		TextureCounter.clearCache();
-		introToastShownThisSession = false;
 		pendingCharacterCreationReopen = false;
 		characterCreationOpenCooldownTicks = 0;
 	}
