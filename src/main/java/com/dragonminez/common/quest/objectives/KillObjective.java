@@ -2,7 +2,6 @@ package com.dragonminez.common.quest.objectives;
 
 import com.dragonminez.common.quest.QuestObjective;
 import lombok.Getter;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -28,14 +27,10 @@ public class KillObjective extends QuestObjective {
 	private final SpawnMode spawnMode;
 	private final CountMode countMode;
 
-	public KillObjective(EntityType<?> entityType, int count, double health, double meleeDamage, double kiDamage) {
-		this(entityType, count, health, meleeDamage, kiDamage, SpawnMode.QUEST, CountMode.QUEST_SPAWNED_ONLY);
-	}
-
-	public KillObjective(EntityType<?> entityType, int count, double health, double meleeDamage, double kiDamage,
+	public KillObjective(String entityId, int count, double health, double meleeDamage, double kiDamage,
 						 SpawnMode spawnMode, CountMode countMode) {
 		super(ObjectiveType.KILL, count);
-		this.entityId = ForgeRegistries.ENTITY_TYPES.getKey(entityType).toString();
+		this.entityId = entityId;
 		this.count = count;
 		this.health = health;
 		this.meleeDamage = meleeDamage;
