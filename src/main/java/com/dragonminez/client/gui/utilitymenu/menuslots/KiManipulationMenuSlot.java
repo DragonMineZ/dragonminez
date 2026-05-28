@@ -30,4 +30,9 @@ public class KiManipulationMenuSlot extends AbstractMenuSlot implements IUtility
             playToggleSound(!wasActive);
         }
     }
+
+    @Override
+    public boolean hasRightClickAction(StatsData statsData) {
+        return statsData.getSkills().hasSkill("kimanipulation") && statsData.getSkills().hasSkill("kicontrol");
+    }
 }

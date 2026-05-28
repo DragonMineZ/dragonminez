@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -155,6 +156,22 @@ public class UtilityMenuScreen extends Screen {
 					for (FormattedCharSequence line : descLines) {
 						graphics.drawCenteredString(font, line, x + BUTTON_WIDTH / 2, descY, descColor);
 						descY += font.lineHeight;
+					}
+
+					if (menuSlot.hasRightClickAction(statsData)) {
+						PoseStack pose = graphics.pose();
+						pose.pushPose();
+
+						float textScale = 0.85f;
+						pose.scale(textScale, textScale, 1.0f);
+
+						int rcX = (int) ((x + BUTTON_WIDTH / 2) / textScale);
+						int rcY = (int) ((y + BUTTON_HEIGHT - 12) / textScale);
+
+						Component rightClickText = Component.translatable("gui.dragonminez.right_click").withStyle(ChatFormatting.GRAY);
+						graphics.drawCenteredString(font, rightClickText, rcX, rcY, 0xFFFF55);
+
+						pose.popPose();
 					}
 				}
 			}

@@ -97,4 +97,9 @@ public class PassiveSkillsMenuSlot extends AbstractMenuSlot implements IUtilityM
 	private void playUiSound(net.minecraft.sounds.SoundEvent sound) {
 		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F));
 	}
+
+	@Override
+	public boolean hasRightClickAction(StatsData statsData) {
+		return statsData.getSkills().hasSkill("kicontrol");
+	}
 }
