@@ -11,6 +11,7 @@ import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
+import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -58,6 +59,22 @@ public class CombatEvent {
 		if (source.getEntity() instanceof LivingEntity livingAttacker && livingAttacker.hasEffect(MainEffects.STUN.get())) {
 			event.setCanceled(true);
 			return;
+		}
+
+		if (event.getEntity() instanceof Player victim) {
+			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
+				if (victimData.getStatus().isKnockedDown()) {
+					if (source.getEntity() instanceof Player attacker) {
+						boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
+						boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
+								.map(data -> data.getStatus().isFriendlyFistEnabled())
+								.orElse(false);
+
+						if (isSamePartyPvp || isFriendlyFist) event.setCanceled(true);
+					}
+				}
+			});
+			if (event.isCanceled()) return;
 		}
 
 		if (isSpecificKiAttack(source)) NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.7f, 0.1f, 2, true), event.getEntity());
@@ -410,7 +427,29 @@ public class CombatEvent {
 						victim.getPersistentData().remove("dmz_block_multiplier");
 					}
 
-					event.setAmount((float) postMitigation);
+					float finalDamage = (float) postMitigation;
+
+					if (victim.getHealth() - finalDamage <= 0) {
+						if (event.getSource().getEntity() instanceof Player attacker) {
+							boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
+							boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
+									.map(data -> data.getStatus().isFriendlyFistEnabled())
+									.orElse(false);
+
+							if (isSamePartyPvp || isFriendlyFist) {
+								finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
+
+								stats.getStatus().setKnockedDown(true);
+								stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20);
+
+								if (victim instanceof ServerPlayer serverPlayer) {
+									NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+								}
+							}
+						}
+					}
+
+					event.setAmount(finalDamage);
 				});
 
 				victim.getPersistentData().remove("dmz_raw_damage");

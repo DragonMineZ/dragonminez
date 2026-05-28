@@ -1,10 +1,14 @@
 package com.dragonminez.client.gui.utilitymenu;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.network.chat.Component;
 
+@Getter
 public class ButtonInfo {
     protected Component line1 = Component.empty();
     protected Component line2 = Component.empty();
+    @Setter
     protected int color = 0xFFFFFF;
     protected boolean isSelected = false;
 
@@ -23,27 +27,8 @@ public class ButtonInfo {
         this.isSelected = isSelected;
     }
 
-    public Component getLine1() {
-        return line1;
-    }
-
-    public Component getLine2() {
-        return line2;
-    }
-
-    public int getColor() {
-        return color;
-    }
-
-    public boolean isSelected() {
-        return isSelected;
-    }
-
 	public boolean hasContent() {
 		return !line1.getString().isEmpty() || !line2.getString().isEmpty();
 	}
 
-    public void setColor(int color) {
-        this.color = color;
-    }
 }

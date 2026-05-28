@@ -21,6 +21,7 @@ public class CombatConfig {
 	private int configVersion;
 
 	private Double staminaConsumptionRatio = 0.083;
+	private Integer knockdownDurationSeconds = 30;
 	private Integer baselineFormDrain = 200;
 	private Boolean killPlayersOnCombatLogout = true;
 

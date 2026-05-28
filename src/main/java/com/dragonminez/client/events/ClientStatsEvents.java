@@ -394,8 +394,12 @@ public class ClientStatsEvents {
 
 				AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
 				if (formMod != null) totalModFactor *= (1.0 + formMod.getAmount());
+
 				AttributeModifier gravityMod = speedAttr.getModifier(GravityLogic.GRAVITY_SPEED_UUID);
 				if (gravityMod != null) totalModFactor *= (1.0 + gravityMod.getAmount());
+
+				AttributeModifier sprintMod = speedAttr.getModifier(MovementSkillsHandler.SPRINT_SPEED_UUID);
+				if (sprintMod != null) totalModFactor *= (1.0 + sprintMod.getAmount());
 
 				if (totalModFactor != 1.0 && totalModFactor > 0.0) {
 					float walkSpeed = player.getAbilities().getWalkingSpeed();

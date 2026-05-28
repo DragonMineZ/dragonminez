@@ -18,27 +18,14 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-public class SkillsMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
+public class PassiveSkillsMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
 
-	private record MenuFunction(
-			String id,
-			Predicate<StatsData> hasFunction,
-			Predicate<StatsData> isActive,
-			BiConsumer<StatsData, Boolean> onToggle
-	) {
-	}
+	private record MenuFunction(String id, Predicate<StatsData> hasFunction, Predicate<StatsData> isActive, BiConsumer<StatsData, Boolean> onToggle) {}
 
 	private static final List<MenuFunction> FUNCTIONS = new ArrayList<>();
 	private int selectedIndex = 0;
 
 	static {
-		FUNCTIONS.add(new MenuFunction(
-				"jump",
-				stats -> stats.getSkills().hasSkill("jump"),
-				stats -> stats.getSkills().isSkillActive("jump"),
-				(stats, wasActive) -> NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, "jump", 0))
-		));
-
 		FUNCTIONS.add(new MenuFunction(
 				"aurastatus",
 				stats -> stats.getSkills().hasSkill("kicontrol"),
@@ -46,14 +33,12 @@ public class SkillsMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot
 				(stats, wasActive) -> NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_AURA, wasActive))
 		));
 
-        /*
         FUNCTIONS.add(new MenuFunction(
-                "friendly_fist",
-                stats -> true,
-                stats -> stats.getStatus().isPermanentAura(),
-                (stats, wasActive) -> NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_AURA, wasActive)
-        ));
-         */
+                "friendlyfist",
+                stats -> stats.getSkills().hasSkill("kicontrol"),
+                stats -> stats.getStatus().isFriendlyFistEnabled(),
+                (stats, wasActive) -> NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_FRIENDLY_FIST, wasActive))
+		));
 	}
 
 	@Override

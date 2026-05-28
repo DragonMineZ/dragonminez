@@ -251,8 +251,8 @@ public class UtilityMenuScreen extends Screen {
 			MENU_SLOTS.set(3, new FusionMenuSlot());
 
 			// Middle Row
-			MENU_SLOTS.set(6, new EmptyMenuSlot());
-			MENU_SLOTS.set(7, new SkillsMenuSlot());
+			MENU_SLOTS.set(6, new PassiveSkillsMenuSlot());
+			MENU_SLOTS.set(7, new MovementSkillsMenuSlot());
 
 			// Bottom Row
 			MENU_SLOTS.set(10, new KiManipulationMenuSlot());
