@@ -43,7 +43,7 @@ public class RaceStatsConfig {
 		private Double ep5EneScaling = 0.1;
 
 		private Double baseSp5 = 10.0;
-		private Double sp5VitScaling = 0.1;
+		private Double sp5StmScaling = 0.1;
 		private Double tpCostMultiplier = 1.0;
 		private Double tpGainMultiplier = 1.0;
 	}

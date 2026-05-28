@@ -21,6 +21,7 @@ public class CombatConfig {
 	private int configVersion;
 
 	private Double staminaConsumptionRatio = 0.083;
+	private Double blockStaminaCost = 0.25;
 	private Integer knockdownDurationSeconds = 30;
 	private Integer baselineFormDrain = 200;
 	private Boolean killPlayersOnCombatLogout = true;
@@ -32,6 +33,7 @@ public class CombatConfig {
 	private Boolean enableBlocking = true;
 	private Boolean enableParrying = true;
 	private Integer parryWindowMs = 150;
+	private Double parryStaminaCostPenalty = 2.0;
 	private Integer blockBreakStunDurationTicks = 60;
 	private Double poiseDamageMultiplier = 0.25;
 	private Double blockDamageReductionCap = 0.65;

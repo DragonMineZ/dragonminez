@@ -144,6 +144,9 @@ public class CombatEvent {
 				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 				int staminaRequired = (int) (baseStaminaRequired * gravityMult * attackerData.getAdjustedStaminaDrainMultiplier());
 
+				long parryPenaltyEnd = attacker.getPersistentData().getLong("dmz_parry_penalty");
+				if (System.currentTimeMillis() < parryPenaltyEnd) staminaRequired *= ConfigManager.getCombatConfig().getParryStaminaCostPenalty();
+
 				float currentStamina = attackerData.getResources().getCurrentStamina();
 				double finalDmzDamage;
 
@@ -259,10 +262,14 @@ public class CombatEvent {
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.66f;
-								float currentPoise = victimData.getResources().getCurrentPoise();
 
-								if (currentPoise - poiseDamage <= 0) {
+								float currentPoise = victimData.getResources().getCurrentPoise();
+								float currentStamina = victimData.getResources().getCurrentStamina();
+								int blockStaminaCost = (int) (event.getAmount() * ConfigManager.getCombatConfig().getBlockStaminaCost());
+
+								if (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0) {
 									victimData.getResources().setCurrentPoise(0);
+									victimData.getResources().setCurrentStamina(0);
 									victimData.getStatus().setBlocking(false);
 
 									int stunDuration = ConfigManager.getCombatConfig().getBlockBreakStunDurationTicks();
@@ -270,9 +277,6 @@ public class CombatEvent {
 									int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 									victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
-
-									float currentStamina = victimData.getResources().getCurrentStamina();
-									victimData.getResources().setCurrentStamina(currentStamina / 2);
 
 									victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.UNBLOCK.get(), SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
@@ -283,6 +287,7 @@ public class CombatEvent {
 									}
 								} else {
 									victimData.getResources().removePoise((int) poiseDamage);
+									victimData.getResources().removeStamina(blockStaminaCost);
 									wasBlocked[0] = true;
 
 									int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
@@ -296,6 +301,7 @@ public class CombatEvent {
 											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(), victim.getZ() - attackerLiving.getZ());
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
+											attackerLiving.getPersistentData().putLong("dmz_parry_penalty", System.currentTimeMillis() + 4000);
 										}
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
