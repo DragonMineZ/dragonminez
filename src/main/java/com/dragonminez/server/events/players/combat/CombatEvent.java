@@ -190,6 +190,23 @@ public class CombatEvent {
 					if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
 				}
 
+				int kiInfusionLevel = attackerData.getSkills().getSkillLevel("ki_infusion");
+				if (kiInfusionLevel > 0) {
+					float maxKi = attackerData.getMaxEnergy();
+					double baseCost = ConfigManager.getCombatConfig().getKiInfusionBaseCostPct();
+					double maxCost = ConfigManager.getCombatConfig().getKiInfusionMaxCostPct();
+					double damageMult = ConfigManager.getCombatConfig().getKiInfusionDamagePerLevel();
+
+					double costPct = baseCost + (kiInfusionLevel - 1) * ((maxCost - baseCost) / 9.0);
+					int kiCostInfusion = (int) (maxKi * (costPct / 100.0));
+
+					if (attackerData.getResources().getCurrentEnergy() >= kiCostInfusion) {
+						double bonusDmg = maxKi * (damageMult * kiInfusionLevel);
+						currentDamage[0] += bonusDmg;
+						if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCostInfusion);
+					}
+				}
+
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout() && event.getEntity() instanceof Player) {
 					attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 				}
@@ -431,6 +448,24 @@ public class CombatEvent {
 					if (victim.getPersistentData().contains("dmz_block_multiplier")) {
 						postMitigation *= victim.getPersistentData().getDouble("dmz_block_multiplier");
 						victim.getPersistentData().remove("dmz_block_multiplier");
+					}
+
+					int kiProtectionLevel = stats.getSkills().getSkillLevel("kiprotection");
+					if (kiProtectionLevel > 0) {
+						double mitigationPerLevel = ConfigManager.getCombatConfig().getKiProtectionMitigationPerLevel();
+						double costRatio = ConfigManager.getCombatConfig().getKiProtectionCostRatio();
+						double mitigationPct = kiProtectionLevel * mitigationPerLevel;
+						int kiCost = (int) Math.ceil(postMitigation * costRatio);
+						float currentEnergy = stats.getResources().getCurrentEnergy();
+
+						if (currentEnergy >= kiCost && kiCost > 0) {
+							postMitigation *= (1.0 - mitigationPct);
+							if (!victim.isCreative()) stats.getResources().removeEnergy(kiCost);
+						} else if (currentEnergy > 0) {
+							double affordableRatio = (double) currentEnergy / kiCost;
+							postMitigation *= (1.0 - (mitigationPct * affordableRatio));
+							if (!victim.isCreative()) stats.getResources().setCurrentEnergy(0);
+						}
 					}
 
 					float finalDamage = (float) postMitigation;

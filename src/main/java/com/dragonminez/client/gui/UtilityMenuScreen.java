@@ -99,6 +99,10 @@ public class UtilityMenuScreen extends Screen {
 	private boolean isSlotVisible(int index) {
 		IUtilityMenuSlot slot = MENU_SLOTS.get(index);
 		if (slot == null) return false;
+		if (index == 5) {
+			if (statsData == null) return false;
+			return statsData.getSkills().hasSkill("kiprotection") || statsData.getSkills().hasSkill("ki_infusion");
+		}
 		if (index == 6 || index == 7) return true;
 		return !(slot instanceof EmptyMenuSlot);
 	}
@@ -268,6 +272,7 @@ public class UtilityMenuScreen extends Screen {
 			MENU_SLOTS.set(3, new FusionMenuSlot());
 
 			// Middle Row
+			MENU_SLOTS.set(5, new CombatSkillsMenuSlot());
 			MENU_SLOTS.set(6, new PassiveSkillsMenuSlot());
 			MENU_SLOTS.set(7, new MovementSkillsMenuSlot());
 
@@ -276,7 +281,7 @@ public class UtilityMenuScreen extends Screen {
 			MENU_SLOTS.set(11, new RacialActionMenuSlot());
 			MENU_SLOTS.set(12, new DescendFormMenuSlot());
 
-			int[] addonIndices = {0, 4, 5, 8, 9, 13};
+			int[] addonIndices = {0, 4, 8, 9, 13};
 			int currentAddon = 0;
 
 			for (int index : addonIndices) {

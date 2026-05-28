@@ -26,6 +26,13 @@ public class CombatConfig {
 	private Integer baselineFormDrain = 200;
 	private Boolean killPlayersOnCombatLogout = true;
 
+	private Double kiProtectionMitigationPerLevel = 0.01;
+	private Double kiProtectionCostRatio = 0.5;
+
+	private Double kiInfusionDamagePerLevel = 0.025;
+	private Double kiInfusionBaseCostPct = 2.5;
+	private Double kiInfusionMaxCostPct = 7.5;
+
 	private Double baseDamageReductionCap = 0.75;
 	private Double enchantmentDamageReductionCap = 0.85;
 	private Double defenseDecayOnGuardBreak = 0.66;
