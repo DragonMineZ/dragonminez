@@ -193,11 +193,11 @@ public class StatsData {
 	public float getMaxStamina() {
 		double resistance = stats.getResistance();
 		double stmScaling = getStatScaling("STM");
-		double resMult = getTotalMultiplier("RES");
+		double stmMult = getTotalMultiplier("STM");
 		double flatBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), false);
 		double multBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), true);
 		double secondaryMaxStamina = getSecondaryAttributeValue(MainAttributes.MAX_STAMINA.get(), 20.0);
-		return Math.min((float) (secondaryMaxStamina + ((resistance + multBonusRes) * stmScaling * resMult) + (flatBonusRes * stmScaling)), Float.MAX_VALUE - 1);
+		return Math.min((float) (secondaryMaxStamina + ((resistance + multBonusRes) * stmScaling * stmMult) + (flatBonusRes * stmScaling)), Float.MAX_VALUE - 1);
 	}
 
 	public float getMaxPoise() {
@@ -291,7 +291,11 @@ public class StatsData {
 		double armor = player.getArmorValue();
 		double toughness = getArmorToughnessValue();
 		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
-		return secondaryDefense + ((resistance + multBonusRes) * defScaling) + (flatBonusRes * defScaling) + armor * 0.75 + toughness;
+
+		double statDef = ((resistance + multBonusRes) * defScaling) + (flatBonusRes * defScaling);
+		double armorComponent = (armor * 0.50) + (toughness * 0.70);
+
+		return secondaryDefense + statDef + armorComponent;
 	}
 
 	public double getDefense() {
@@ -303,15 +307,22 @@ public class StatsData {
 		double armor = player.getArmorValue();
 		double toughness = getArmorToughnessValue();
 		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
-		return (secondaryDefense + ((resistance + multBonusRes) * defScaling) + (flatBonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
+
+		double statDef = ((resistance + multBonusRes) * defScaling) + (flatBonusRes * defScaling);
+		double armorComponent = (armor * 0.50) + (toughness * 0.70);
+
+		return (secondaryDefense + statDef + armorComponent) * releaseMultiplier;
 	}
 
 	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken, double armorPenetration) {
-		double resTotalMult = getTotalMultiplier("RES");
+		double defTotalMult = getTotalMultiplier("DEF") / 2;
 		double baseDefense = getDefense();
 
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
+
+		double flatMitigation = baseDefense * 0.10;
+		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
 
 		int maxValue = getConfiguredMaxValue();
 		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
@@ -325,9 +336,9 @@ public class StatsData {
 		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
 		baseReduction = Math.min(baseReduction, baseCap);
 
-		double remainingDamage = incomingDamage * (1.0 - baseReduction);
+		double remainingDamage = postFlatDamage * (1.0 - baseReduction);
 
-		if (resTotalMult > 1.0) remainingDamage /= resTotalMult;
+		if (defTotalMult > 1.0) remainingDamage /= defTotalMult;
 
 		int totalProtection = 0;
 		if (player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
@@ -335,13 +346,10 @@ public class StatsData {
 		double enchReduction = 0.0;
 		if (totalProtection > 0) {
 			double effectiveProtection = totalProtection * (1.0 - armorPenetration);
-
 			double k_ench = 20.0;
 			enchReduction = effectiveProtection / (k_ench + effectiveProtection);
-
 			double totalCap = ConfigManager.getCombatConfig().getEnchantmentDamageReductionCap();
 			double maxEnchReductionAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
-
 			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
 		}
 
@@ -373,6 +381,8 @@ public class StatsData {
 		double baseMult = switch (statName.toUpperCase()) {
 			case "STR" -> formData.getStrMultiplier();
 			case "SKP" -> formData.getSkpMultiplier();
+			case "STM" -> formData.getStmMultiplier();
+			case "DEF" -> formData.getDefMultiplier();
 			case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
 			case "VIT" -> formData.getVitMultiplier();
 			case "PWR" -> formData.getPwrMultiplier();
@@ -390,6 +400,8 @@ public class StatsData {
 		return switch (statName.toUpperCase()) {
 			case "STR" -> formData.getStrMultiplier();
 			case "SKP" -> formData.getSkpMultiplier();
+			case "STM" -> formData.getStmMultiplier();
+			case "DEF" -> formData.getDefMultiplier();
 			case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
 			case "VIT" -> formData.getVitMultiplier();
 			case "PWR" -> formData.getPwrMultiplier();
