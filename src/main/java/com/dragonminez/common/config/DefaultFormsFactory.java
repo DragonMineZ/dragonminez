@@ -415,7 +415,7 @@ public class DefaultFormsFactory {
 		FormConfig androidForms = new FormConfig();
 		androidForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		androidForms.setGroupName(HumanForms.GROUP_ANDROIDFORMS);
-		androidForms.setFormType("android");
+		androidForms.setFormType("androidforms");
 
 		FormConfig.FormData androidBase = new FormConfig.FormData();
 		androidBase.setName(HumanForms.ANDROID_BASE);

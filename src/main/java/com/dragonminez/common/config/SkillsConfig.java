@@ -106,6 +106,19 @@ public class SkillsConfig {
 		jumpCosts.add(3000);
 		skills.put("jump", new SkillCosts(jumpCosts));
 
+		List<Integer> sprintCosts = new ArrayList<>();
+		sprintCosts.add(300);
+		sprintCosts.add(600);
+		sprintCosts.add(900);
+		sprintCosts.add(1200);
+		sprintCosts.add(1500);
+		sprintCosts.add(1800);
+		sprintCosts.add(2100);
+		sprintCosts.add(2400);
+		sprintCosts.add(2700);
+		sprintCosts.add(3000);
+		skills.put("sprint", new SkillCosts(sprintCosts));
+
 		List<Integer> flyCosts = new ArrayList<>();
 		flyCosts.add(1500);
 		flyCosts.add(600);
@@ -148,18 +161,7 @@ public class SkillsConfig {
 		meditationCosts.add(3000);
 		skills.put("meditation", new SkillCosts(meditationCosts));
 
-		List<Integer> kiControlCosts = new ArrayList<>();
-		kiControlCosts.add(300);
-		kiControlCosts.add(600);
-		kiControlCosts.add(900);
-		kiControlCosts.add(1200);
-		kiControlCosts.add(1500);
-		kiControlCosts.add(1800);
-		kiControlCosts.add(2100);
-		kiControlCosts.add(2400);
-		kiControlCosts.add(2700);
-		kiControlCosts.add(3000);
-		skills.put("kicontrol", new SkillCosts(kiControlCosts));
+		skills.put("kicontrol", new SkillCosts(List.of(3000)));
 
 		List<Integer> kiSenseCosts = new ArrayList<>();
 		kiSenseCosts.add(300);
@@ -200,7 +202,6 @@ public class SkillsConfig {
 		instantTranmission.add(3300);
 		skills.put("instant_transmission", new SkillCosts(instantTranmission));
 
-
 		List<Integer> defensePenetration = new ArrayList<>();
 		defensePenetration.add(3600);
 		defensePenetration.add(600);
@@ -213,6 +214,32 @@ public class SkillsConfig {
 		defensePenetration.add(2700);
 		defensePenetration.add(3300);
 		skills.put("defense_penetration", new SkillCosts(defensePenetration));
+
+		List<Integer> kiInfusion = new ArrayList<>();
+		kiInfusion.add(3600);
+		kiInfusion.add(600);
+		kiInfusion.add(900);
+		kiInfusion.add(1200);
+		kiInfusion.add(1500);
+		kiInfusion.add(1800);
+		kiInfusion.add(2100);
+		kiInfusion.add(2400);
+		kiInfusion.add(2700);
+		kiInfusion.add(3300);
+		skills.put("ki_infusion", new SkillCosts(kiInfusion));
+
+		List<Integer> kiProtection = new ArrayList<>();
+		kiProtection.add(3600);
+		kiProtection.add(600);
+		kiProtection.add(900);
+		kiProtection.add(1200);
+		kiProtection.add(1500);
+		kiProtection.add(1800);
+		kiProtection.add(2100);
+		kiProtection.add(2400);
+		kiProtection.add(2700);
+		kiProtection.add(3300);
+		skills.put("kiprotection", new SkillCosts(kiProtection));
 
 		List<Integer> kaiokenCosts = new ArrayList<>();
 		kaiokenCosts.add(1000);

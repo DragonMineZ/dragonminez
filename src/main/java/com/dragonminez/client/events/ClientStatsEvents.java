@@ -230,9 +230,7 @@ public class ClientStatsEvents {
 						&& character.getActiveFormData().getAuraColor() != null
 						&& !character.getActiveFormData().getAuraColor().isEmpty()) {
 					kiRgb = character.getActiveFormData().getRgbAuraColor();
-				} else {
-					kiRgb = character.getRgbAuraColor();
-				}
+				} else kiRgb = character.getRgbAuraColor();
 				int colorMain = ColorUtils.rgbToInt(kiRgb[0], kiRgb[1], kiRgb[2]);
 				int colorBorder = ColorUtils.darkenColor(colorMain, 0.85f);
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
@@ -248,17 +246,12 @@ public class ClientStatsEvents {
 
 			boolean techniqueChargeDown = isDescendKeyPressed && isRightClickDown && hasSelectedKiTechnique;
 
-			if (techniqueChargeDown && !wasTechniqueChargeDown) {
-				NetworkHandler.sendToServer(new TechniqueChargeC2S(true));
-			} else if (!techniqueChargeDown && wasTechniqueChargeDown) {
-				NetworkHandler.sendToServer(new TechniqueChargeC2S(false));
-			}
+			if (techniqueChargeDown && !wasTechniqueChargeDown) NetworkHandler.sendToServer(new TechniqueChargeC2S(true));
+			else if (!techniqueChargeDown && wasTechniqueChargeDown) NetworkHandler.sendToServer(new TechniqueChargeC2S(false));
 			wasTechniqueChargeDown = techniqueChargeDown;
 
 			if (kiBlastTimer > 0) {
-				if (kiBlastTimer == 1) {
-					NetworkHandler.sendToServer(new KiBlastC2S(false, 0, 0));
-				}
+				if (kiBlastTimer == 1) NetworkHandler.sendToServer(new KiBlastC2S(false, 0, 0));
 				kiBlastTimer--;
 			}
 
@@ -268,9 +261,7 @@ public class ClientStatsEvents {
 				if ((currentTime - lastTransformTapTime) <= 500) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
 					lastTransformTapTime = 0;
-				} else {
-					lastTransformTapTime = currentTime;
-				}
+				} else lastTransformTapTime = currentTime;
 			}
 			wasTransformKeyDown = isActionKeyPressed;
 
@@ -278,9 +269,7 @@ public class ClientStatsEvents {
 				if ((currentTime - lastKiChargeTapTime) <= 500) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_RELEASE));
 					lastKiChargeTapTime = 0;
-				} else {
-					lastKiChargeTapTime = currentTime;
-				}
+				} else lastKiChargeTapTime = currentTime;
 			}
 			wasKiChargeKeyDown = isKiChargeKeyPressed;
 
@@ -336,8 +325,7 @@ public class ClientStatsEvents {
 					Skill kiSense = data.getSkills().getSkill("kisense");
 					if (kiSense == null) return;
 					int kiSenseLevel = kiSense.getLevel();
-					if (kiSenseLevel > 0)
-						NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, kiSense.getName(), 0));
+					if (kiSenseLevel > 0) NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, kiSense.getName(), 0));
 				} else ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
 			}
 
