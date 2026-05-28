@@ -134,7 +134,7 @@ public class SkinGathererProvider {
             switch (logicKey) {
                 case "human", "saiyan", "ssj4gt", "ssj4d", "buffed" -> resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
                 case "namekian", "namekian_orange" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
-                case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
+                case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_fat","janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
                 case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
                 case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
                 default -> {
@@ -276,6 +276,13 @@ public class SkinGathererProvider {
             consumer.accept(getCachedTexture(path + "layer1.png"), b1);
             consumer.accept(getCachedTexture(path + "layer2.png"), b2);
             consumer.accept(getCachedTexture(path + "layer3.png"), b3);
+            return;
+        }
+
+        if ("janemba_fat".equals(key)) {
+            String path = "textures/entity/races/majin/janemba_0_male_";
+
+            consumer.accept(getCachedTexture(path + "layer1.png"), b1);
             return;
         }
 

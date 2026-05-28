@@ -165,7 +165,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 				|| logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra")) {
 			if (isDbzArmor) shouldRender = true;
 		} else if ((logicKey.equals("majin") && (gender.equals(Character.GENDER_MALE))
-				|| (raceName.equals("majin") && (gender.equals(Character.GENDER_MALE))))) {
+				|| (raceName.equals("majin") && (gender.equals(Character.GENDER_MALE))) || logicKey.equals("janemba_fat"))) {
 			shouldRender = true;
 			isMajinGordoTarget = true;
 		} else if (gender.equals(Character.GENDER_FEMALE)) {

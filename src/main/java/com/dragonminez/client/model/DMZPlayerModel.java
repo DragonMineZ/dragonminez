@@ -34,6 +34,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
     private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
     private static final ResourceLocation JANEMBA_SUPER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_super.geo.json");
+    private static final ResourceLocation JANEMBA_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_fat.geo.json");
 
     private static final ResourceLocation FROST_DEMON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
     private static final ResourceLocation FROST_DEMON_SECOND = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_second.geo.json");
@@ -172,6 +173,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "majin_super": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
             case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_SLIM_BUFFED;
             case "majin_evil": case "majin_kid": return isMale ? BASE_SLIM : MAJIN_SLIM;
+            case "janemba_fat": return JANEMBA_FAT;
             case "janemba_super": return JANEMBA_SUPER;
 
             // FROSTDEMON

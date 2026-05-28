@@ -280,7 +280,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (!faceKey.equals("human") && !faceKey.equals("saiyan") && !faceKey.equals("ssj4d") && !faceKey.equals("ssj4gt") && !faceKey.equals("buffed")
 				&& !faceKey.equals("namekian") && !faceKey.equals("namekian_orange")
 				&& !faceKey.startsWith("frostdemon") && !faceKey.startsWith("bioandroid")
-				&& !faceKey.startsWith("majin") && !faceKey.startsWith("janemba_super")) {
+				&& !faceKey.startsWith("majin") && !faceKey.startsWith("janemba_super") && !faceKey.startsWith("janemba_fat")) {
 
 			var rConfig = ConfigManager.getRaceCharacter(race);
 			if (rConfig != null && Boolean.TRUE.equals(rConfig.getIsLayered())) {
@@ -427,19 +427,28 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float pt, int pl, int po, float alpha) {
 		String folder = "textures/entity/races/majin/faces/";
 
-		if ("janemba_super".equals(faceKey)) {
-			renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_eye_2_0.png", eye1, pt, pl, po, alpha);
-			renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_eye_2_1.png", eye2, pt, pl, po, alpha);
-		} else {
-			int eyeType = character.getEyesType();
-			float[] bgColor = eyeType == 0 ? skin : DARK_GRAY;
-			float[] layer1Color = eyeType == 0 ? skin : eye1;
-			String eyePath = folder + "majin_eye_" + eyeType + "_";
+        if ("janemba_fat".equals(faceKey)) {
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_eye_0.png", DARK_GRAY, pt, pl, po, alpha);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_eye_1.png", eye1, pt, pl, po, alpha);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_mouth.png", skin, pt, pl, po, alpha);
+            return;
+        }
 
-			renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_0.png")).getPath(), bgColor, pt, pl, po, alpha);
-			renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_1.png")).getPath(), layer1Color, pt, pl, po, alpha);
-			renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_2.png")).getPath(), skin, pt, pl, po, alpha);
-		}
+		if ("janemba_super".equals(faceKey)) {
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_eye_2_0.png", eye1, pt, pl, po, alpha);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_eye_2_1.png", eye2, pt, pl, po, alpha);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, true);
+            return;
+        }
+
+		int eyeType = character.getEyesType();
+		float[] bgColor = eyeType == 0 ? skin : DARK_GRAY;
+		float[] layer1Color = eyeType == 0 ? skin : eye1;
+		String eyePath = folder + "majin_eye_" + eyeType + "_";
+
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_0.png")).getPath(), bgColor, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_1.png")).getPath(), layer1Color, pt, pl, po, alpha);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_2.png")).getPath(), skin, pt, pl, po, alpha);
 
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, true);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, true);

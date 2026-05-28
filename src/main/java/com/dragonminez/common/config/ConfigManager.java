@@ -461,7 +461,7 @@ public class ConfigManager {
 		config.setDefaultAuraColor("#FF6DFF");
 		config.setFormSkillTpCosts("superforms", new Integer[]{9000, 18000, 30000, 44000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
-		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1});
+		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
 
 	private static void setupDefaultCharacter(RaceCharacterConfig config) {

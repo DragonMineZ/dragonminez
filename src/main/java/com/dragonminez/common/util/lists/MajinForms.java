@@ -14,5 +14,6 @@ public class MajinForms {
 	// Legendary Forms group
 	public static final String GROUP_LEGENDARYFORMS = "legendaryforms";
 	public static final String INNOCENCE_DEMON = "innocencedemon";
-	public static final String SUPER_DEMON = "superdemon";
+    public static final String GIANT_INNOCENCE_DEMON = "giantinnocencedemon";
+    public static final String SUPER_DEMON = "superdemon";
 }
