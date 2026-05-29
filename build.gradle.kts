@@ -37,7 +37,6 @@ tasks.withType<AbstractArchiveTask>().configureEach {
 
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal"))
-    options.compilerArgs.add("-AoutRefMapFile=${layout.buildDirectory.dir("classes/java/main/dragonminez.refmap.json").get().asFile.absolutePath}")
     options.encoding = "UTF-8"
     options.release.set(17)
 }
