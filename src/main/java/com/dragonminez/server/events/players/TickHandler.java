@@ -139,6 +139,31 @@ public class TickHandler {
 			boolean isDescending = data.getStatus().isDescending();
 			int meditationLevel = data.getSkills().getSkillLevel("meditation");
 
+			double currentRegenMod = 1.0;
+			boolean isGuardBroken = data.getStatus().isStunned() && data.getResources().getCurrentPoise() <= 0;
+			boolean isFastFly = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting();
+			boolean isBlocking = data.getStatus().isBlocking();
+			boolean isAttacking = serverPlayer.swingTime > 0;
+			boolean isStill = serverPlayer.getDeltaMovement().lengthSqr() < 0.001 && serverPlayer.onGround();
+			boolean isWalk = !serverPlayer.isSprinting() && serverPlayer.onGround() && serverPlayer.getDeltaMovement().lengthSqr() >= 0.001;
+
+			if (isFastFly) currentRegenMod = 0.0;
+			else if (isGuardBroken) currentRegenMod = 4.0;
+			else if (isBlocking || isAttacking) currentRegenMod = 0.5;
+			else if (isStill) currentRegenMod = 2.0;
+			else if (isWalk) currentRegenMod = 1.5;
+
+			double savedMod = serverPlayer.getPersistentData().getDouble("dmz_stamina_regen_mod");
+			long modTimestamp = serverPlayer.getPersistentData().getLong("dmz_stamina_mod_time");
+			long now = System.currentTimeMillis();
+
+			if (currentRegenMod != savedMod) {
+				if (currentRegenMod < savedMod || (now - modTimestamp) >= 1000) {
+					serverPlayer.getPersistentData().putDouble("dmz_stamina_regen_mod", currentRegenMod);
+					serverPlayer.getPersistentData().putLong("dmz_stamina_mod_time", now);
+				}
+			} else serverPlayer.getPersistentData().putLong("dmz_stamina_mod_time", now);
+
 			if (shouldRegen) {
 				String raceName = data.getCharacter().getRaceName();
 				String characterClass = data.getCharacter().getCharacterClass();
@@ -562,6 +587,8 @@ public class TickHandler {
 	}
 
 	private static void regenerateStamina(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+		if (data.getCooldowns().hasCooldown(Cooldowns.STAMINA_PAUSE)) return;
+
 		float currentStamina = data.getResources().getCurrentStamina();
 		float maxStamina = data.getMaxStamina();
 
@@ -572,7 +599,7 @@ public class TickHandler {
 			double vitMult = data.getFormMultiplier("VIT");
 
 			double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
-			double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5VitScaling());
+			double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5StmScaling());
 
 			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
 			double enchMult = getRecoveryMultiplier(totalEnchLvl);
@@ -583,7 +610,8 @@ public class TickHandler {
 			if (adjustedStaminaDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedStaminaDrain / 50.0));
 			else if (adjustedStaminaDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedStaminaDrain);
 
-			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier;
+			double actionMod = player.getPersistentData().contains("dmz_stamina_regen_mod") ? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
+			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod;
 			regenPerSecond = PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
 
 			float newStamina = (float) Math.min(maxStamina, currentStamina + Math.ceil(regenPerSecond));

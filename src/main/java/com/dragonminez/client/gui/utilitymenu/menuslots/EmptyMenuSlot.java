@@ -12,6 +12,5 @@ public class EmptyMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot 
     }
 
     @Override
-    public void handle(StatsData statsData, boolean rightClick) {
-    }
+    public void handle(StatsData statsData, boolean rightClick) {}
 }

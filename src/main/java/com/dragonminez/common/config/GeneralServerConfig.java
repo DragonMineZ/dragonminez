@@ -85,14 +85,8 @@ public class GeneralServerConfig {
 		private Double partyTpShareRatio = 0.5;
 
 		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
-				"dragonminez:pothala_left",
-				"dragonminez:pothala_right",
-				"dragonminez:green_pothala_left",
-				"dragonminez:green_pothala_right",
-				"dragonminez:red_scouter",
-				"dragonminez:blue_scouter",
-				"dragonminez:green_scouter",
-				"dragonminez:purple_scouter"
+				"dragonminez:invencible_armor_helmet",
+				"dragonminez:invencible_blue_armor_helmet"
 		));
 
 		public Integer getReviveCooldownSeconds() {

@@ -15,7 +15,10 @@ public class MainEffects {
     public static final DeferredRegister<MobEffect> EFFECTS = DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, Reference.MOD_ID);
 
 	// Real Effects | Harmful
-    public static final RegistryObject<MobEffect> STAGGER = EFFECTS.register("stagger", () -> new DMZEffect(false));
+	public static final RegistryObject<MobEffect> MAJIN = EFFECTS.register("majin", () -> new DMZEffect(false));
+    public static final RegistryObject<MobEffect> STAGGER = EFFECTS.register("stagger", () -> new DMZEffect(false)
+			.addAttributeModifier(Attributes.MOVEMENT_SPEED, "19421075-15D9-4372-A2C7-57BC617E0906", -0.25F, AttributeModifier.Operation.MULTIPLY_TOTAL)
+			.addAttributeModifier(Attributes.ATTACK_SPEED, "55FCED67-E92A-486E-9800-B47F202C4386", -0.25F, AttributeModifier.Operation.MULTIPLY_TOTAL));
 	public static final RegistryObject<MobEffect> STUN = EFFECTS.register("stun", () ->
 			new DMZEffect(false).addAttributeModifier(Attributes.MOVEMENT_SPEED, "7107DE5E-7CE8-4030-940E-514C1F160890",
 					-1.0D, AttributeModifier.Operation.MULTIPLY_TOTAL));
@@ -39,7 +42,6 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> FLY = EFFECTS.register("fly", () -> new DMZEffect(true));
 
 	// Bonus Effects | Beneficial
-	public static final RegistryObject<MobEffect> MAJIN = EFFECTS.register("majin", () -> new DMZEffect(true));
 	public static final RegistryObject<MobEffect> MIGHTFRUIT = EFFECTS.register("mightfruit", () -> new DMZEffect(true));
     public static final RegistryObject<MobEffect> CANDY = EFFECTS.register("candy", () -> new DMZEffect(true));
 	public static final RegistryObject<MobEffect> KI_REGEN = EFFECTS.register("ki_regen", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x3C7DFF));

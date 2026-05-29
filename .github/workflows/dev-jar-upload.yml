@@ -51,6 +51,9 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Generate data for jar
+        run: ./gradlew runData --build-cache
+
       - name: Build dev jar
         run: ./gradlew build --build-cache
 

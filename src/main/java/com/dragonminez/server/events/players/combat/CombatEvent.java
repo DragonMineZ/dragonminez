@@ -11,6 +11,7 @@ import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
+import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -58,6 +59,22 @@ public class CombatEvent {
 		if (source.getEntity() instanceof LivingEntity livingAttacker && livingAttacker.hasEffect(MainEffects.STUN.get())) {
 			event.setCanceled(true);
 			return;
+		}
+
+		if (event.getEntity() instanceof Player victim) {
+			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
+				if (victimData.getStatus().isKnockedDown()) {
+					if (source.getEntity() instanceof Player attacker) {
+						boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
+						boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
+								.map(data -> data.getStatus().isFriendlyFistEnabled())
+								.orElse(false);
+
+						if (isSamePartyPvp || isFriendlyFist) event.setCanceled(true);
+					}
+				}
+			});
+			if (event.isCanceled()) return;
 		}
 
 		if (isSpecificKiAttack(source)) NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.7f, 0.1f, 2, true), event.getEntity());
@@ -127,6 +144,9 @@ public class CombatEvent {
 				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 				int staminaRequired = (int) (baseStaminaRequired * gravityMult * attackerData.getAdjustedStaminaDrainMultiplier());
 
+				long parryPenaltyEnd = attacker.getPersistentData().getLong("dmz_parry_penalty");
+				if (System.currentTimeMillis() < parryPenaltyEnd) staminaRequired *= ConfigManager.getCombatConfig().getParryStaminaCostPenalty();
+
 				float currentStamina = attackerData.getResources().getCurrentStamina();
 				double finalDmzDamage;
 
@@ -168,6 +188,23 @@ public class CombatEvent {
 						}
 					}
 					if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
+				}
+
+				int kiInfusionLevel = attackerData.getSkills().getSkillLevel("ki_infusion");
+				if (kiInfusionLevel > 0) {
+					float maxKi = attackerData.getMaxEnergy();
+					double baseCost = ConfigManager.getCombatConfig().getKiInfusionBaseCostPct();
+					double maxCost = ConfigManager.getCombatConfig().getKiInfusionMaxCostPct();
+					double damageMult = ConfigManager.getCombatConfig().getKiInfusionDamagePerLevel();
+
+					double costPct = baseCost + (kiInfusionLevel - 1) * ((maxCost - baseCost) / 9.0);
+					int kiCostInfusion = (int) (maxKi * (costPct / 100.0));
+
+					if (attackerData.getResources().getCurrentEnergy() >= kiCostInfusion) {
+						double bonusDmg = maxKi * (damageMult * kiInfusionLevel);
+						currentDamage[0] += bonusDmg;
+						if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCostInfusion);
+					}
 				}
 
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout() && event.getEntity() instanceof Player) {
@@ -242,10 +279,14 @@ public class CombatEvent {
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.66f;
-								float currentPoise = victimData.getResources().getCurrentPoise();
 
-								if (currentPoise - poiseDamage <= 0) {
+								float currentPoise = victimData.getResources().getCurrentPoise();
+								float currentStamina = victimData.getResources().getCurrentStamina();
+								int blockStaminaCost = (int) (event.getAmount() * ConfigManager.getCombatConfig().getBlockStaminaCost());
+
+								if (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0) {
 									victimData.getResources().setCurrentPoise(0);
+									victimData.getResources().setCurrentStamina(0);
 									victimData.getStatus().setBlocking(false);
 
 									int stunDuration = ConfigManager.getCombatConfig().getBlockBreakStunDurationTicks();
@@ -253,9 +294,6 @@ public class CombatEvent {
 									int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 									victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
-
-									float currentStamina = victimData.getResources().getCurrentStamina();
-									victimData.getResources().setCurrentStamina(currentStamina / 2);
 
 									victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.UNBLOCK.get(), SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
@@ -266,6 +304,7 @@ public class CombatEvent {
 									}
 								} else {
 									victimData.getResources().removePoise((int) poiseDamage);
+									victimData.getResources().removeStamina(blockStaminaCost);
 									wasBlocked[0] = true;
 
 									int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
@@ -279,6 +318,7 @@ public class CombatEvent {
 											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(), victim.getZ() - attackerLiving.getZ());
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
+											attackerLiving.getPersistentData().putLong("dmz_parry_penalty", System.currentTimeMillis() + 4000);
 										}
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
@@ -410,7 +450,47 @@ public class CombatEvent {
 						victim.getPersistentData().remove("dmz_block_multiplier");
 					}
 
-					event.setAmount((float) postMitigation);
+					int kiProtectionLevel = stats.getSkills().getSkillLevel("kiprotection");
+					if (kiProtectionLevel > 0) {
+						double mitigationPerLevel = ConfigManager.getCombatConfig().getKiProtectionMitigationPerLevel();
+						double costRatio = ConfigManager.getCombatConfig().getKiProtectionCostRatio();
+						double mitigationPct = kiProtectionLevel * mitigationPerLevel;
+						int kiCost = (int) Math.ceil(postMitigation * costRatio);
+						float currentEnergy = stats.getResources().getCurrentEnergy();
+
+						if (currentEnergy >= kiCost && kiCost > 0) {
+							postMitigation *= (1.0 - mitigationPct);
+							if (!victim.isCreative()) stats.getResources().removeEnergy(kiCost);
+						} else if (currentEnergy > 0) {
+							double affordableRatio = (double) currentEnergy / kiCost;
+							postMitigation *= (1.0 - (mitigationPct * affordableRatio));
+							if (!victim.isCreative()) stats.getResources().setCurrentEnergy(0);
+						}
+					}
+
+					float finalDamage = (float) postMitigation;
+
+					if (victim.getHealth() - finalDamage <= 0) {
+						if (event.getSource().getEntity() instanceof Player attacker) {
+							boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
+							boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
+									.map(data -> data.getStatus().isFriendlyFistEnabled())
+									.orElse(false);
+
+							if (isSamePartyPvp || isFriendlyFist) {
+								finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
+
+								stats.getStatus().setKnockedDown(true);
+								stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20);
+
+								if (victim instanceof ServerPlayer serverPlayer) {
+									NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+								}
+							}
+						}
+					}
+
+					event.setAmount(finalDamage);
 				});
 
 				victim.getPersistentData().remove("dmz_raw_damage");

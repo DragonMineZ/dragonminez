@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -98,6 +99,10 @@ public class UtilityMenuScreen extends Screen {
 	private boolean isSlotVisible(int index) {
 		IUtilityMenuSlot slot = MENU_SLOTS.get(index);
 		if (slot == null) return false;
+		if (index == 5) {
+			if (statsData == null) return false;
+			return statsData.getSkills().hasSkill("kiprotection") || statsData.getSkills().hasSkill("ki_infusion");
+		}
 		if (index == 6 || index == 7) return true;
 		return !(slot instanceof EmptyMenuSlot);
 	}
@@ -155,6 +160,22 @@ public class UtilityMenuScreen extends Screen {
 					for (FormattedCharSequence line : descLines) {
 						graphics.drawCenteredString(font, line, x + BUTTON_WIDTH / 2, descY, descColor);
 						descY += font.lineHeight;
+					}
+
+					if (menuSlot.hasRightClickAction(statsData)) {
+						PoseStack pose = graphics.pose();
+						pose.pushPose();
+
+						float textScale = 0.85f;
+						pose.scale(textScale, textScale, 1.0f);
+
+						int rcX = (int) ((x + BUTTON_WIDTH / 2) / textScale);
+						int rcY = (int) ((y + BUTTON_HEIGHT - 12) / textScale);
+
+						Component rightClickText = Component.translatable("gui.dragonminez.right_click").withStyle(ChatFormatting.GRAY);
+						graphics.drawCenteredString(font, rightClickText, rcX, rcY, 0xFFFF55);
+
+						pose.popPose();
 					}
 				}
 			}
@@ -251,15 +272,16 @@ public class UtilityMenuScreen extends Screen {
 			MENU_SLOTS.set(3, new FusionMenuSlot());
 
 			// Middle Row
-			MENU_SLOTS.set(6, new EmptyMenuSlot());
-			MENU_SLOTS.set(7, new SkillsMenuSlot());
+			MENU_SLOTS.set(5, new CombatSkillsMenuSlot());
+			MENU_SLOTS.set(6, new PassiveSkillsMenuSlot());
+			MENU_SLOTS.set(7, new MovementSkillsMenuSlot());
 
 			// Bottom Row
 			MENU_SLOTS.set(10, new KiManipulationMenuSlot());
 			MENU_SLOTS.set(11, new RacialActionMenuSlot());
 			MENU_SLOTS.set(12, new DescendFormMenuSlot());
 
-			int[] addonIndices = {0, 4, 5, 8, 9, 13};
+			int[] addonIndices = {0, 4, 8, 9, 13};
 			int currentAddon = 0;
 
 			for (int index : addonIndices) {

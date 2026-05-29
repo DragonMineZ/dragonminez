@@ -83,7 +83,8 @@ public class FlySkillEvent {
 					if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned() || data.getResources().getPowerRelease() < 5) return;
 
 					Skill flySkill = data.getSkills().getSkill("fly");
-					if (flySkill == null || flySkill.getLevel() <= 0) return;
+					Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
+					if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0 || data.getResources().getPowerRelease() < 5) return;
 
 					int flyLevel = flySkill.getLevel();
 					double energyCostPercent = getActivationEnergyPercent(flyLevel);
@@ -235,9 +236,7 @@ public class FlySkillEvent {
 		if (pendingFlightDisable) {
 			double newSpeed = Math.max(0.0, currentSpeed - (EXIT_DECELERATION * flySpeedScale));
 			Vec3 normalized = currentSpeed > 0.0001 ? flightVector.normalize() : Vec3.ZERO;
-			double slowDescent = Math.max(flightVector.y, SLOW_DESCENT_RATE);
-			double descentY = currentSpeed > 0.05 ? slowDescent : flightVector.y;
-			flightVector = new Vec3(normalized.x * newSpeed, descentY, normalized.z * newSpeed);
+			flightVector = normalized.scale(newSpeed);
 
 			if (flightVector.lengthSqr() < 0.03) {
 				pendingFlightDisable = false;

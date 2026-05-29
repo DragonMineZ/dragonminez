@@ -26,6 +26,7 @@ public class ExecuteActionC2S {
 		TOGGLE_TAIL,
 		TOGGLE_KI_WEAPON,
 		TOGGLE_AURA,
+		TOGGLE_FRIENDLY_FIST,
 		INSTANT_RELEASE
 	}
 
@@ -212,6 +213,11 @@ public class ExecuteActionC2S {
 							if (data.getSkills().hasSkill("kicontrol")) {
 								data.getStatus().setPermanentAura(!data.getStatus().isPermanentAura());
 								needsSync = true;
+							}
+						}
+						case TOGGLE_FRIENDLY_FIST -> {
+							if (data.getSkills().hasSkill("kicontrol")) {
+								data.getStatus().setFriendlyFistEnabled(!data.getStatus().isFriendlyFistEnabled());
 							}
 						}
 					}

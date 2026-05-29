@@ -69,7 +69,7 @@ public class KiBlastC2S {
 							)
 					);
 
-					float damage = (float) (data.getKiDamage() * Math.max(0.5f, (0.05f * data.getSkills().getSkillLevel("kicontrol"))));
+					float damage = (float) (data.getKiDamage() * Math.max(0.5f, (0.05f * data.getSkills().getSkillLevel("kimanipulation"))));
 
 					KiBlastEntity kiBlast = new KiBlastEntity(player.level(), player);
 					kiBlast.setup(player, damage, 0.5F, 1.5f, msg.colorMain, msg.colorBorder);

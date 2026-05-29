@@ -245,7 +245,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	}
 
 	private double[] getDamageReductionPercentages() {
-		double resTotalMult = statsData.getTotalMultiplier("RES");
+		double defTotalMult = statsData.getTotalMultiplier("DEF") / 2;
 		double baseDefense = statsData.getDefense();
 
 		int maxValue = statsData.getConfiguredMaxValue();
@@ -277,7 +277,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double mitigationReduction = 1.0 - ((1.0 - baseReduction) * (1.0 - enchReduction));
 		double mitigationReductionPct = Mth.clamp(mitigationReduction * 100.0, 0.0, 100.0);
 
-		return new double[]{mitigationReductionPct, resTotalMult, enchReduction * 100.0};
+		return new double[]{mitigationReductionPct, defTotalMult, enchReduction * 100.0};
 	}
 
 	private void renderTPCost(GuiGraphics graphics) {
@@ -501,6 +501,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			int yPos = statY + (i * 12);
 
 			double totalMult = statsData.getTotalMultiplier(statNamesUpper[i]);
+
 			int baseValue = statValues[i];
 			double modifiedValue = baseValue * totalMult;
 
@@ -516,8 +517,6 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt(statText), valueX + 5, yPos, statColor, 0x000000);
 
 			if (mouseX >= statLabelX && mouseX <= statLabelX + 25 && mouseY >= yPos && mouseY <= yPos + font.lineHeight) {
-				Component descComponent = tr("gui.dragonminez.character_stats." + statNames[i] + ".desc");
-
 				Component title = tr("gui.dragonminez.character_stats." + statNames[i]).withStyle(ChatFormatting.BOLD);
 				List<Component> desc = new ArrayList<>();
 				desc.add(tr("gui.dragonminez.character_stats." + statNames[i] + ".desc"));
@@ -527,18 +526,56 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					extras.add(tr("gui.dragonminez.character_stats.base_value").append(": " + numberFormatter.format(baseValue)).withStyle(ChatFormatting.GRAY));
 					extras.add(tr("gui.dragonminez.character_stats.modified_value").append(": " + numberFormatter.format((int) modifiedValue)).withStyle(ChatFormatting.YELLOW));
 
-					double formMultiplier = statsData.getFormMultiplier(statNamesUpper[i]);
-					double stackMultiplier = statsData.getStackFormMultiplier(statNamesUpper[i]);
-					double effectsMultiplier = statsData.getEffectsMultiplier(statNamesUpper[i]);
-					boolean hasForm = Math.abs(formMultiplier - 1.0) > 0.01;
-					boolean hasStack = Math.abs(stackMultiplier - 1.0) > 0.01;
-					boolean hasEffects = Math.abs(effectsMultiplier - 1.0) > 0.01;
+					if (statNamesUpper[i].equals("RES")) {
+						double formDef = statsData.getFormMultiplier("DEF");
+						double formStm = statsData.getFormMultiplier("STM");
+						double stackDef = statsData.getStackFormMultiplier("DEF");
+						double stackStm = statsData.getStackFormMultiplier("STM");
+						double effectsDef = statsData.getEffectsMultiplier("DEF");
+						double effectsStm = statsData.getEffectsMultiplier("STM");
 
-					if (hasForm || hasStack || hasEffects) {
-						extras.add(tr("gui.dragonminez.character_stats.multipliers").withStyle(ChatFormatting.AQUA));
-						if (hasForm) extras.add(tr("gui.dragonminez.character_stats.form_multiplier").append(" x" + String.format(Locale.US, "%.2f", formMultiplier)).withStyle(ChatFormatting.GOLD));
-						if (hasStack) extras.add(tr("gui.dragonminez.character_stats.stack_multiplier").append(" x" + String.format(Locale.US, "%.2f", stackMultiplier)).withStyle(ChatFormatting.RED));
-						if (hasEffects) extras.add(tr("gui.dragonminez.character_stats.effects_multiplier").append(" x" + String.format(Locale.US, "%.2f", effectsMultiplier)).withStyle(ChatFormatting.LIGHT_PURPLE));
+						boolean hasForm = Math.abs(formDef - 1.0) > 0.01 || Math.abs(formStm - 1.0) > 0.01;
+						boolean hasStack = Math.abs(stackDef - 1.0) > 0.01 || Math.abs(stackStm - 1.0) > 0.01;
+						boolean hasEffects = Math.abs(effectsDef - 1.0) > 0.01 || Math.abs(effectsStm - 1.0) > 0.01;
+
+						if (hasForm || hasStack || hasEffects) {
+							extras.add(tr("gui.dragonminez.character_stats.multipliers").withStyle(ChatFormatting.AQUA));
+							if (hasForm) {
+								extras.add(tr("gui.dragonminez.character_stats.form_multiplier")
+										.append(txt(" ("))
+										.append(tr("gui.dragonminez.character_stats.def")).append(txt(": x" + String.format(Locale.US, "%.2f", formDef) + ", "))
+										.append(tr("gui.dragonminez.character_stats.stm")).append(txt(": x" + String.format(Locale.US, "%.2f", formStm) + ")"))
+										.withStyle(ChatFormatting.GOLD));
+							}
+							if (hasStack) {
+								extras.add(tr("gui.dragonminez.character_stats.stack_multiplier")
+										.append(txt(" ("))
+										.append(tr("gui.dragonminez.character_stats.def")).append(txt(": x" + String.format(Locale.US, "%.2f", stackDef) + ", "))
+										.append(tr("gui.dragonminez.character_stats.stm")).append(txt(": x" + String.format(Locale.US, "%.2f", stackStm) + ")"))
+										.withStyle(ChatFormatting.RED));
+							}
+							if (hasEffects) {
+								extras.add(tr("gui.dragonminez.character_stats.effects_multiplier")
+										.append(txt(" ("))
+										.append(tr("gui.dragonminez.character_stats.def")).append(txt(": x" + String.format(Locale.US, "%.2f", effectsDef) + ", "))
+										.append(tr("gui.dragonminez.character_stats.stm")).append(txt(": x" + String.format(Locale.US, "%.2f", effectsStm) + ")"))
+										.withStyle(ChatFormatting.LIGHT_PURPLE));
+							}
+						}
+					} else {
+						double formMultiplier = statsData.getFormMultiplier(statNamesUpper[i]);
+						double stackMultiplier = statsData.getStackFormMultiplier(statNamesUpper[i]);
+						double effectsMultiplier = statsData.getEffectsMultiplier(statNamesUpper[i]);
+						boolean hasForm = Math.abs(formMultiplier - 1.0) > 0.01;
+						boolean hasStack = Math.abs(stackMultiplier - 1.0) > 0.01;
+						boolean hasEffects = Math.abs(effectsMultiplier - 1.0) > 0.01;
+
+						if (hasForm || hasStack || hasEffects) {
+							extras.add(tr("gui.dragonminez.character_stats.multipliers").withStyle(ChatFormatting.AQUA));
+							if (hasForm) extras.add(tr("gui.dragonminez.character_stats.form_multiplier").append(" x" + String.format(Locale.US, "%.2f", formMultiplier)).withStyle(ChatFormatting.GOLD));
+							if (hasStack) extras.add(tr("gui.dragonminez.character_stats.stack_multiplier").append(" x" + String.format(Locale.US, "%.2f", stackMultiplier)).withStyle(ChatFormatting.RED));
+							if (hasEffects) extras.add(tr("gui.dragonminez.character_stats.effects_multiplier").append(" x" + String.format(Locale.US, "%.2f", effectsMultiplier)).withStyle(ChatFormatting.LIGHT_PURPLE));
+						}
 					}
 				}
 
@@ -639,6 +676,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip2", formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
 						desc.add(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN));
 
+						double flatMitigation = defense * 0.10;
+						extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
+								.append(txt(formatUpToOneDecimal(flatMitigation)))
+								.withStyle(ChatFormatting.AQUA));
+
 						double[] pcts = getDamageReductionPercentages();
 						extras.add(tr("gui.dragonminez.character_stats.defense").append(": ")
 								.append(txt(formatUpToTwoDecimals(pcts[0]) + "% "))
@@ -647,9 +689,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 						if (pcts[1] > 1.0) {
 							extras.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
-								.append(txt(formatUpToOneDecimal(pcts[1]) + " "))
-								.append(tr("gui.dragonminez.character_stats.dmg_taken"))
-								.withStyle(ChatFormatting.GOLD));
+									.append(txt(formatUpToOneDecimal(pcts[1]) + " "))
+									.append(tr("gui.dragonminez.character_stats.dmg_taken"))
+									.withStyle(ChatFormatting.GOLD));
 						}
 
 						if (pcts[2] > 0) {
@@ -682,15 +724,16 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		double strTotalMult = statsData.getTotalMultiplier("STR");
 		double skpTotalMult = statsData.getTotalMultiplier("SKP");
-		double resTotalMult = statsData.getTotalMultiplier("RES");
+		double stmTotalMult = statsData.getTotalMultiplier("STM");
+		double defTotalMult = statsData.getTotalMultiplier("DEF");
 		double vitTotalMult = statsData.getTotalMultiplier("VIT");
 		double pwrTotalMult = statsData.getTotalMultiplier("PWR");
 		double eneTotalMult = statsData.getTotalMultiplier("ENE");
 
 		int meleeDamageColor = Math.abs(strTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
 		int strikeDamageColor = Math.abs(skpTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
-		int staminaColor = Math.abs(resTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
-		int defenseColor = Math.abs(resTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
+		int staminaColor = Math.abs(stmTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
+		int defenseColor = Math.abs(defTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
 		int healthColor = Math.abs(vitTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
 		int kiDamageColor = Math.abs(pwrTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
 		int energyColor = Math.abs(eneTotalMult - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
@@ -935,6 +978,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
 
 			List<Component> extras = new ArrayList<>();
+
+			double flatMitigation = defense * 0.10;
+			extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
+					.append(txt(formatUpToOneDecimal(flatMitigation)))
+					.withStyle(ChatFormatting.AQUA));
+
 			extras.add(tr("gui.dragonminez.character_stats.defense").append(": ")
 					.append(txt(formatUpToOneDecimal(defense)))
 					.withStyle(ChatFormatting.AQUA));

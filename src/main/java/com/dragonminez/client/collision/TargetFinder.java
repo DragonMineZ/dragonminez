@@ -48,7 +48,7 @@ public class TargetFinder {
         }
         obb.updateVertex();
 
-        List<Entity> validTargets = filterTargetsByOBB(entities, origin, player.getLookAngle(), attack.angle(), attackRange, obb);
+        List<Entity> validTargets = filterTargetsByOBB(entities, origin, obb);
 
         validTargets.sort((e1, e2) -> {
             if (e1 == cursorTarget) return -1;
@@ -80,18 +80,13 @@ public class TargetFinder {
                 .collect(Collectors.toList());
     }
 
-    private static List<Entity> filterTargetsByOBB(List<Entity> entities, Vec3 origin, Vec3 orientation, double attackAngle, double attackRange, OrientedBoundingBox obb) {
+    private static List<Entity> filterTargetsByOBB(List<Entity> entities, Vec3 origin, OrientedBoundingBox obb) {
         return entities.stream()
                 .filter(entity -> {
-                    var maxAngleDif = (attackAngle / 2.0);
+                    if (!obb.intersects(entity.getBoundingBox())) return false;
                     Vec3 distanceVector = CollisionHelper.distanceVector(origin, entity.getBoundingBox());
-                    Vec3 positionVector = entity.position().add(0, entity.getBbHeight() / 2F, 0).subtract(origin);
-                    return distanceVector.length() <= attackRange
-                            && obb.intersects(entity.getBoundingBox())
-                            && ((attackAngle == 0)
-                            || (CollisionHelper.angleBetween(positionVector, orientation) <= maxAngleDif
-                            || CollisionHelper.angleBetween(distanceVector, orientation) <= maxAngleDif))
-                            && rayContainsNoObstacle(origin, origin.add(positionVector));
+                    Vec3 closestPoint = origin.add(distanceVector);
+                    return rayContainsNoObstacle(origin, closestPoint);
                 })
                 .collect(Collectors.toList());
     }

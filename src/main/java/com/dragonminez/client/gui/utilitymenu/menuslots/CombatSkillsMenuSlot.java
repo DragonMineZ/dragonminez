@@ -3,7 +3,6 @@ package com.dragonminez.client.gui.utilitymenu.menuslots;
 import com.dragonminez.client.gui.utilitymenu.AbstractMenuSlot;
 import com.dragonminez.client.gui.utilitymenu.ButtonInfo;
 import com.dragonminez.client.gui.utilitymenu.IUtilityMenuSlot;
-import com.dragonminez.common.network.C2S.ExecuteActionC2S;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsData;
@@ -18,42 +17,27 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-public class SkillsMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
+public class CombatSkillsMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
 
-	private record MenuFunction(
-			String id,
-			Predicate<StatsData> hasFunction,
-			Predicate<StatsData> isActive,
-			BiConsumer<StatsData, Boolean> onToggle
-	) {
-	}
+	private record MenuFunction(String id, Predicate<StatsData> hasFunction, Predicate<StatsData> isActive, BiConsumer<StatsData, Boolean> onToggle) {}
 
 	private static final List<MenuFunction> FUNCTIONS = new ArrayList<>();
 	private int selectedIndex = 0;
 
 	static {
 		FUNCTIONS.add(new MenuFunction(
-				"jump",
-				stats -> stats.getSkills().hasSkill("jump"),
-				stats -> stats.getSkills().isSkillActive("jump"),
-				(stats, wasActive) -> NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, "jump", 0))
+				"kiprotection",
+				stats -> stats.getSkills().hasSkill("kiprotection"),
+				stats -> stats.getSkills().isSkillActive("kiprotection"),
+				(stats, wasActive) -> NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, "kiprotection", 0))
 		));
 
 		FUNCTIONS.add(new MenuFunction(
-				"aurastatus",
-				stats -> stats.getSkills().hasSkill("kicontrol"),
-				stats -> stats.getStatus().isPermanentAura(),
-				(stats, wasActive) -> NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_AURA, wasActive))
+				"ki_infusion",
+				stats -> stats.getSkills().hasSkill("ki_infusion"),
+				stats -> stats.getSkills().isSkillActive("ki_infusion"),
+				(stats, wasActive) -> NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, "ki_infusion", 0))
 		));
-
-        /*
-        FUNCTIONS.add(new MenuFunction(
-                "friendly_fist",
-                stats -> true,
-                stats -> stats.getStatus().isPermanentAura(),
-                (stats, wasActive) -> NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_AURA, wasActive)
-        ));
-         */
 	}
 
 	@Override
@@ -111,5 +95,10 @@ public class SkillsMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot
 
 	private void playUiSound(net.minecraft.sounds.SoundEvent sound) {
 		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F));
+	}
+
+	@Override
+	public boolean hasRightClickAction(StatsData statsData) {
+		return statsData.getSkills().hasSkill("kiprotection") && statsData.getSkills().hasSkill("ki_infusion");
 	}
 }

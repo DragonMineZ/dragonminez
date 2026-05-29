@@ -117,16 +117,29 @@ public class DashHandler {
 			double distance = baseDistance * speedMultiplier;
 
 			int baseDrain = ConfigManager.getCombatConfig().getBaselineFormDrain();
-			int kiCost;
+			int kiCost = 0;
+			int stamCost = 0;
 			DMZEvent.PlayerDashEvent.DashType dashType;
+			boolean inAir = isFlyingSkillActive || !player.onGround();
 
 			if (canDoubleDash) {
 				distance = distance * 1.5;
-				kiCost = (int) Math.ceil(baseDrain * 0.25);
 				dashType = DMZEvent.PlayerDashEvent.DashType.DOUBLE;
+				int totalCost = (int) Math.ceil(baseDrain * 0.25);
+				if (inAir) {
+					kiCost = totalCost;
+				} else {
+					kiCost = (int) Math.ceil(totalCost * 0.25);
+					stamCost = (int) Math.ceil(totalCost * 0.75);
+				}
 			} else {
-				kiCost = (int) Math.ceil(baseDrain * 0.12);
 				dashType = DMZEvent.PlayerDashEvent.DashType.NORMAL;
+				int totalCost = (int) Math.ceil(baseDrain * 0.12);
+				if (inAir) {
+					kiCost = totalCost;
+				} else {
+					stamCost = totalCost;
+				}
 			}
 
 			DMZEvent.PlayerDashEvent dashEvent = new DMZEvent.PlayerDashEvent(player, dashType, distance, kiCost);
@@ -135,12 +148,23 @@ public class DashHandler {
 
 			distance = dashEvent.getDistance();
 			kiCost = dashEvent.getKiCost();
-			float currentEnergy = data.getResources().getCurrentEnergy();
 
-			if (player.isCreative() || player.isSpectator()) kiCost = 0;
-			if (currentEnergy < kiCost) return;
+			float currentEnergy = data.getResources().getCurrentEnergy();
+			float currentStamina = data.getResources().getCurrentStamina();
+
+			if (player.isCreative() || player.isSpectator()) {
+				kiCost = 0;
+				stamCost = 0;
+			}
+
+			if (currentEnergy < kiCost || currentStamina < stamCost) return;
 			if (player.getFoodData().getFoodLevel() <= 3) return;
-			data.getResources().addEnergy(-kiCost);
+
+			data.getResources().removeEnergy(kiCost);
+			if (stamCost > 0) {
+				data.getResources().removeStamina(stamCost);
+				data.getCooldowns().setCooldown(Cooldowns.STAMINA_PAUSE, 20);
+			}
 
 			Vec3 forward = Vec3.directionFromRotation(0, player.getYRot()).normalize();
 			Vec3 right = forward.cross(new Vec3(0, 1, 0)).normalize();
