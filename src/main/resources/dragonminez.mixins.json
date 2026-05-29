@@ -36,6 +36,7 @@
     "client.MinecraftMixin",
     "client.MouseHandlerMixin",
     "client.MultiPlayerGameModeMixin",
+    "client.PauseScreenMixin",
     "client.PlayerGeoAnimatableMixin",
     "client.PlayerRendererMixin",
     "client.PostChainAccessor",

@@ -89,6 +89,9 @@
   "gui.dragonminez.title.discord": "Discord",
   "gui.dragonminez.title.discord.prompt": "Join the DragonMineZ Discord!",
   "gui.dragonminez.title.discord.open": "Open Discord",
+  "gui.dragonminez.title.patreon": "Patreon",
+  "gui.dragonminez.title.patreon.prompt": "Support DragonMineZ on Patreon!",
+  "gui.dragonminez.title.patreon.open": "Open Patreon",
   "gui.dragonminez.beta_access.title": "DragonMineZ Beta Access",
   "gui.dragonminez.beta_access.username": "Minecraft username: %s",
   "gui.dragonminez.beta_access.body": "Connect your Discord account to verify Patreon beta access. If your Discord account has an eligible role, the bot will add this Minecraft username to the beta whitelist automatically.",
@@ -1861,14 +1864,8 @@
   "dmz.sidequest.yamcha_bandit.desc": "Yamcha's old desert hideout has been overrun by bandits. He asks you to clear them out €” for old times' sake.",
   "dmz.sidequest.farmer_rr.name": "Red Ribbon Remnants",
   "dmz.sidequest.farmer_rr.desc": "A local farmer reports that Red Ribbon Army remnants are raiding the countryside. Stop them before they cause more damage.",
-
-  "//": "SIDE QUESTS § COMBAT €” FRIEZA SAGA",
-  "dmz.sidequest.elder_blessing.name": "The Elder's Blessing",
-  "dmz.sidequest.elder_blessing.desc": "The Namekian Elder needs proof that you stand against Frieza's tyranny. Defeat his soldiers to earn the Elder's trust and blessing.",
   "dmz.sidequest.ginyu_warmup.name": "Ginyu Force Warm-Up",
   "dmz.sidequest.ginyu_warmup.desc": "The Ginyu Force is coming. Goku asks you to train by clearing out Frieza's remaining soldiers on the Ajissa Plains €” you'll need every ounce of strength.",
-
-  "//": "SIDE QUESTS § COMBAT €” ANDROID SAGA",
   "dmz.sidequest.krillin_patrol.name": "Android Patrol",
   "dmz.sidequest.krillin_patrol.desc": "Krillin asks you to patrol the rocky wastelands for Android sightings. Clear out any Red Ribbon remnants you find along the way.",
   "dmz.sidequest.tien_cell.name": "Hunting Cell",
@@ -1887,10 +1884,6 @@
   "dmz.sidequest.piccolo_arrival.desc": "Piccolo has finally arrived on Planet Namek. He needs you to create a distraction by drawing out Frieza's soldiers while he powers up.",
   "dmz.sidequest.goku_healing.name": "Defending the Healing Pod",
   "dmz.sidequest.goku_healing.desc": "Goku is recovering in a healing pod after his battle with the Ginyu Force. Frieza's soldiers are closing in €” defend the area at all costs!",
-
-  "//": "SIDE QUESTS § STORY €” ANDROID SAGA",
-  "dmz.sidequest.chichi_worry.name": "A Mother's Worry",
-  "dmz.sidequest.chichi_worry.desc": "Chi-Chi is worried sick about Gohan fighting Cell. Bring her proof that her son is being well taken care of €” a weapon and some food should ease her mind.",
   "dmz.sidequest.goku_farewell.name": "Goku's Final Farewell",
   "dmz.sidequest.goku_farewell.desc": "With Cell defeated, Goku has one last wish €” visit Kami's Lookout together one more time. This may be the last chance to say goodbye.",
 

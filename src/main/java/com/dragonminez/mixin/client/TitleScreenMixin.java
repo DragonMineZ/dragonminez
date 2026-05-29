@@ -1,6 +1,7 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.gui.buttons.DiscordTitleButton;
+import com.dragonminez.client.gui.buttons.IconButton;
 import com.dragonminez.common.init.MainSounds;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -15,6 +16,7 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.registries.RegistryObject;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,6 +32,10 @@ import java.util.Random;
 public abstract class TitleScreenMixin extends Screen {
 	@Unique
 	private static final String dragonminez$DISCORD_URL = "https://discord.dragonminez.com";
+	@Unique
+	private static final String dragonminez$PATREON_URL = "https://www.patreon.com/cw/DragonMineZ";
+	@Unique
+	private static final ResourceLocation dragonminez$PATREON_LOGO = new ResourceLocation("minecraft", "textures/gui/title/patreon_logo.png");
 	@Unique
 	private static final List<RegistryObject<SoundEvent>> dragonminez$MENU_PLAYLIST = List.of(
 			MainSounds.MENU_MUSIC_1,
@@ -121,16 +127,31 @@ public abstract class TitleScreenMixin extends Screen {
 		}
 
 		this.removeWidget(realmsButton);
+		int discordWidth = realmsButton.getWidth() - (20 + 4);
 		Button dragonminez$discordButton = this.addRenderableWidget(new DiscordTitleButton(
 				realmsButton.getX(),
 				realmsButton.getY(),
-				realmsButton.getWidth(),
+				discordWidth,
 				realmsButton.getHeight(),
 				Component.translatable("gui.dragonminez.title.discord"),
 				button -> this.dragonminez$openDiscordPrompt()
 		));
 		dragonminez$discordButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.discord.prompt")));
 		dragonminez$discordButton.setTooltipDelay(120);
+
+		Button dragonminez$patreonButton = this.addRenderableWidget(new IconButton(
+				realmsButton.getX() + discordWidth + 4,
+				realmsButton.getY() + (realmsButton.getHeight() - 20) / 2,
+				20,
+				20,
+				dragonminez$PATREON_LOGO,
+				12,
+				32,
+				Component.translatable("gui.dragonminez.title.patreon"),
+				button -> this.dragonminez$openPatreonPrompt()
+		));
+		dragonminez$patreonButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.patreon.prompt")));
+		dragonminez$patreonButton.setTooltipDelay(120);
 	}
 
 	@Unique
@@ -161,6 +182,27 @@ public abstract class TitleScreenMixin extends Screen {
 				Component.translatable("gui.dragonminez.title.discord.prompt"),
 				Component.literal(dragonminez$DISCORD_URL),
 				Component.translatable("gui.dragonminez.title.discord.open"),
+				CommonComponents.GUI_CANCEL
+		));
+	}
+
+	@Unique
+	private void dragonminez$openPatreonPrompt() {
+		if (this.minecraft == null) {
+			return;
+		}
+
+		Screen titleScreen = this;
+		this.minecraft.setScreen(new ConfirmScreen(
+				confirmed -> {
+					if (confirmed) {
+						Util.getPlatform().openUri(dragonminez$PATREON_URL);
+					}
+					this.minecraft.setScreen(titleScreen);
+				},
+				Component.translatable("gui.dragonminez.title.patreon.prompt"),
+				Component.literal(dragonminez$PATREON_URL),
+				Component.translatable("gui.dragonminez.title.patreon.open"),
 				CommonComponents.GUI_CANCEL
 		));
 	}
