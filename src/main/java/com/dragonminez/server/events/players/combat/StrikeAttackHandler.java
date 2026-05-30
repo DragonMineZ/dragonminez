@@ -3,6 +3,7 @@ package com.dragonminez.server.events.players.combat;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
@@ -114,38 +115,57 @@ public class StrikeAttackHandler {
 		PENDING.put(player.getUUID(), pending.withTicksRemaining(pending.ticksRemaining() - 1));
 	}
 
-	private static void processActive(ServerPlayer player) {
-		ActiveStrike active = ACTIVE.get(player.getUUID());
-		if (active == null) return;
+    private static void processActive(ServerPlayer player) {
+        ActiveStrike active = ACTIVE.get(player.getUUID());
+        if (active == null) return;
 
-		LivingEntity target = resolveLiving(player, active.targetId());
-		if (target == null || !target.isAlive() || !player.isAlive()) {
-			endStrike(player, target, active);
-			return;
-		}
+        LivingEntity target = resolveLiving(player, active.targetId());
 
-		freezeEntity(player);
-		freezeEntity(target);
-		faceEntity(player, target);
-		if (target instanceof ServerPlayer targetPlayer) {
-			faceEntity(targetPlayer, player);
-		}
+        if (target == null || !target.isAlive() || !player.isAlive()) {
+            endStrike(player, target, active);
+            return;
+        }
 
-		int nextTick = active.ticksElapsed() + 1;
-		if (nextTick % active.hitIntervalTicks() == 0 && nextTick < active.durationTicks()) {
-			applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId());
-		}
+        if ("dragon_fist".equals(active.techniqueId())) {
+            if (active.ticksElapsed() == 0) {
+                faceEntity(player, target);
+            }
 
-		if (nextTick >= active.durationTicks()) {
-			applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId());
-			grantKillXpIfNeeded(player, target, active.techniqueId());
-			applyKnockback(player, target, active.totalDamage());
-			endStrike(player, target, active);
-			return;
-		}
+            if (active.ticksElapsed() == 5) {
+                SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
+                dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
+            }
 
-		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
-	}
+            if (active.ticksElapsed() >= active.durationTicks()) {
+                endStrike(player, target, active);
+            } else {
+                ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
+            }
+            return;
+        }
+
+        freezeEntity(player);
+        freezeEntity(target);
+        faceEntity(player, target);
+        if (target instanceof ServerPlayer targetPlayer) {
+            faceEntity(targetPlayer, player);
+        }
+
+        int nextTick = active.ticksElapsed() + 1;
+        if (nextTick % active.hitIntervalTicks() == 0 && nextTick < active.durationTicks()) {
+            applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId());
+        }
+
+        if (nextTick >= active.durationTicks()) {
+            applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId());
+            grantKillXpIfNeeded(player, target, active.techniqueId());
+            applyKnockback(player, target, active.totalDamage());
+            endStrike(player, target, active);
+            return;
+        }
+
+        ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+    }
 
 	private static void startStrike(ServerPlayer player, LivingEntity target, PendingStrike pending) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
@@ -178,7 +198,7 @@ public class StrikeAttackHandler {
 			ACTIVE.put(player.getUUID(), active);
 
 			applyStrikeDamage(player, target, perHitDamage, pending.techniqueId());
-			teleportToTargetFront(player, target);
+			//teleportToTargetFront(player, target);
 			setStrikeLocked(player, true);
 			setStrikeLocked(target, true);
 			faceEntity(player, target);
@@ -280,15 +300,16 @@ public class StrikeAttackHandler {
 		player.hurtMarked = true;
 	}
 
-	private static void teleportToTargetFront(ServerPlayer player, LivingEntity target) {
-		Vec3 targetPos = target.position();
-		Vec3 targetLook = target.getLookAngle();
-		Vec3 teleportPos = targetPos.subtract(targetLook.scale(1.3));
-		player.teleportTo(teleportPos.x, targetPos.y, teleportPos.z);
-		player.setYRot(target.getYRot());
-		player.setYHeadRot(target.getYRot());
-		player.hurtMarked = true;
-	}
+    private static void teleportToTargetFront(ServerPlayer player, LivingEntity target) {
+        Vec3 targetPos = target.position();
+        Vec3 targetLook = target.getLookAngle();
+        Vec3 teleportPos = targetPos.subtract(targetLook.scale(1.3));
+
+        player.teleportTo(teleportPos.x, targetPos.y, teleportPos.z);
+
+        player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+
+    }
 
 	private static void applyStrikeDamage(ServerPlayer player, LivingEntity target, double damage, String techniqueId) {
 		if (damage <= 0) return;

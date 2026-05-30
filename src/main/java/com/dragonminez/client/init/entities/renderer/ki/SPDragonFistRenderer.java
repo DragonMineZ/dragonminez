@@ -27,10 +27,10 @@ public class SPDragonFistRenderer<T extends SPDragonFistEntity> extends GeoEntit
 
         poseStack.pushPose();
 
-        float activeTick = (entity.tickCount + partialTick) - entity.getCastTime();
+        float activeTick = entity.tickCount + partialTick;
         float shakeIntensity;
 
-        if (activeTick < 20.0f) {
+        if (activeTick < (entity.getMaxLife() / 2.0f)) {
             shakeIntensity = 0.15f;
         } else {
             shakeIntensity = 0.04f;
@@ -41,9 +41,10 @@ public class SPDragonFistRenderer<T extends SPDragonFistEntity> extends GeoEntit
         float shakeZ = (entity.level().random.nextFloat() - 0.5f) * shakeIntensity;
 
         poseStack.translate(shakeX, shakeY, shakeZ);
+        poseStack.scale(5.0f, 5.0f, 5.0f);
 
-        poseStack.scale(3.0f, 3.0f, 3.0f);
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        super.render(entity, 0.0F, partialTick, poseStack, bufferSource, packedLight);
+
         poseStack.popPose();
     }
 
@@ -55,19 +56,21 @@ public class SPDragonFistRenderer<T extends SPDragonFistEntity> extends GeoEntit
     @Override
     public Color getRenderColor(T animatable, float partialTick, int packedLight) {
         float fadeDuration = 10.0f;
+        float activeTick = animatable.tickCount + partialTick;
 
-        float activeTick = (animatable.tickCount + partialTick) - animatable.getCastTime();
-
-        float maxActiveLife = 60.0f;
+        float maxActiveLife = animatable.getMaxLife();
         float remainingLife = maxActiveLife - activeTick;
 
-        float alpha = 0.8f;
+        float alpha = 0.5f;
 
         if (activeTick < fadeDuration) {
             alpha = (activeTick / fadeDuration) * 0.8f;
         }
         else if (remainingLife < fadeDuration) {
             alpha = (remainingLife / fadeDuration) * 0.8f;
+        }
+        else {
+            alpha = 0.8f;
         }
 
         alpha = Mth.clamp(alpha, 0.0f, 0.8f);

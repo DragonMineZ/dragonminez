@@ -17,8 +17,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
@@ -28,27 +30,27 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
-// IMPORTANTE: Asegúrate de añadir el import de tu KiTrailParticle aquí
-// import com.dragonminez.client.particle.KiTrailParticle;
-
 import java.util.List;
 
 public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntity {
 
-    private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(SPDragonFistEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(SPDragonFistEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Float> LOCKED_YAW = SynchedEntityData.defineId(SPDragonFistEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> LOCKED_PITCH = SynchedEntityData.defineId(SPDragonFistEntity.class, EntityDataSerializers.FLOAT);
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+    private Vec3 fixedDirection = null;
 
     public SPDragonFistEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
+        this.noPhysics = true;
     }
 
     public SPDragonFistEntity(Level level, LivingEntity owner) {
         super(MainEntities.SP_DRAGON_FIST.get(), level);
         this.setOwner(owner);
         this.setNoGravity(true);
+        this.noPhysics = true;
     }
 
     @Override
@@ -56,19 +58,21 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
         return this.getMaxLife() / 20;
     }
 
-    public void setupDragonFist(LivingEntity owner, float damage, float speed, int castTime) {
-        this.setOwner(owner);
-        this.setKiDamage(damage);
-        this.setKiSpeed(speed);
+    public void setupDragonFist(LivingEntity owner, float damage, float speed) {
+        this.setup(owner, damage, 1.5F, speed, 0xFFD700, 0xFF8C00);
+        this.setFiring(true);
+        this.setMaxLife(40);
 
-        this.setCastTime(castTime);
-        this.setFiring(false);
+        float yaw = owner.getYHeadRot();
+        float pitch = owner.getXRot();
 
-        this.setPos(owner.getX(), owner.getY(), owner.getZ());
-        this.setYRot(owner.getYRot());
-        this.setXRot(owner.getXRot());
+        this.entityData.set(LOCKED_YAW, yaw);
+        this.entityData.set(LOCKED_PITCH, pitch);
 
-        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        this.setYRot(yaw);
+        this.setXRot(pitch);
+
+        this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), MainSounds.OOZARU_GROWL_PLAYER.get(), SoundSource.PLAYERS, 2.0F, 1.0F);
 
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
@@ -78,6 +82,7 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
     @Override
     public void tick() {
         this.baseTick();
+        this.onKiTick();
 
         Entity owner = this.getOwner();
 
@@ -86,110 +91,73 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
             return;
         }
 
-        boolean isFiring = this.isFiring();
-        int ticksSinceFire = this.tickCount - this.getCastTime();
+        if (this.fixedDirection == null) {
+            float yaw = this.entityData.get(LOCKED_YAW);
+            float pitch = this.entityData.get(LOCKED_PITCH);
+            this.fixedDirection = Vec3.directionFromRotation(pitch, yaw).normalize();
 
-        if (!isFiring && this.tickCount >= this.getCastTime()) {
-            this.setFiring(true);
-            isFiring = true;
-
-            if (!this.level().isClientSide) {
-                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 1.5F, 0.8F);
-                launchEnemies();
+            if (yaw == 0.0f && pitch == 0.0f) {
+                this.fixedDirection = owner.getViewVector(1.0F).normalize();
             }
         }
 
-        if (!isFiring) {
-            this.setPos(owner.getX(), owner.getY(), owner.getZ());
+        int currentTick = this.tickCount;
 
-            double preserveGravity = owner.getDeltaMovement().y < 0 ? owner.getDeltaMovement().y : 0;
-            owner.setDeltaMovement(0, preserveGravity, 0);
+        Vec3 dragonPos = owner.position().add(this.fixedDirection.scale(1.5D));
+        this.setPos(dragonPos.x, owner.getY(), dragonPos.z);
+        this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
+
+        if (currentTick < this.getMaxLife()) {
+            owner.setDeltaMovement(this.fixedDirection.scale(3.0D).add(0, 0.1D, 0));
             owner.hasImpulse = true;
-
-            if (owner instanceof Player player) {
-                player.xxa = 0.0F;
-                player.zza = 0.0F;
-            }
-
-            if (this.level().isClientSide) {
-                spawnAdvancedKiParticles(owner, true);
-            }
-        }
-        else {
-            this.setPos(owner.getX(), owner.getY(), owner.getZ());
-            this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
-
-            if (owner instanceof Player player) {
-                player.xxa = 0.0F;
-                player.zza = 0.0F;
-            }
-
-            if (ticksSinceFire < 10) {
-                owner.setDeltaMovement(0, 0, 0);
-                owner.hasImpulse = true;
-            }
-            else if (ticksSinceFire < 25) {
-                owner.setDeltaMovement(0, 3.0D, 0);
-                owner.hasImpulse = true;
-                owner.fallDistance = 0;
-            }
-            else if (ticksSinceFire < 60) {
-                owner.setDeltaMovement(0, 0.04D, 0);
-                owner.hasImpulse = true;
-                owner.fallDistance = 0;
-                suspendEnemiesInAir();
-            }
-
-            if (this.level().isClientSide) {
-                spawnAdvancedKiParticles(owner, false);
-            }
+            owner.fallDistance = 0;
 
             if (!this.level().isClientSide) {
-                if (ticksSinceFire % 10 == 0 && ticksSinceFire > 15) {
-                    pulseDamage();
-                }
+                devastateEnemies(owner, this.fixedDirection);
+            } else {
+                spawnDragonAuraParticles(owner, this.fixedDirection);
             }
-        }
-
-        if (this.tickCount >= this.getCastTime() + 60) {
+        } else {
+            owner.setDeltaMovement(0, 0, 0);
             this.discard();
         }
     }
 
-    private void spawnAdvancedKiParticles(Entity owner, boolean isAbsorbing) {
-        float[] rgb = ColorUtils.rgbIntToFloat(0xFFF61F);
-        int particleAmount = isAbsorbing ? 4 : 8;
+    private void devastateEnemies(Entity owner, Vec3 fixedDirection) {
+        AABB hitbox = this.getBoundingBox().inflate(5.0D);
+        List<Entity> targets = this.level().getEntities(this, hitbox, this::shouldDamage);
 
-        for (int i = 0; i < particleAmount; i++) {
-            double dx, dy, dz, vx, vy, vz;
-            float scale;
-
-            if (isAbsorbing) {
-                double radius = owner.getBbWidth() * 4.0;
-                dx = (this.random.nextDouble() - 0.5) * radius * 2;
-                dy = (this.random.nextDouble() - 0.5) * owner.getBbHeight() * 2;
-                dz = (this.random.nextDouble() - 0.5) * radius * 2;
-
-                vx = -dx * 0.15D;
-                vy = -dy * 0.15D;
-                vz = -dz * 0.15D;
-
-                scale = 1.0f + this.random.nextFloat() * 1.5f;
-            } else {
-                dx = (this.random.nextDouble() - 0.5) * owner.getBbWidth();
-                dy = (this.random.nextDouble() - 0.5) * owner.getBbHeight();
-                dz = (this.random.nextDouble() - 0.5) * owner.getBbWidth();
-
-                vx = dx * 2.0D;
-                vy = -0.5D + (this.random.nextDouble() - 0.5) * 0.5D;
-                vz = dz * 2.0D;
-
-                scale = 2.0f + this.random.nextFloat() * 2.0f;
+        for (Entity target : targets) {
+            if (this.tickCount % 5 == 0) {
+                if (this.applyDamageOrHeal(target, this.getKiDamage())) {
+                    this.onSuccessfulHit(target);
+                }
             }
+
+            Vec3 pushVel = fixedDirection.scale(3.2D).add(0, 0.2D, 0);
+            target.setDeltaMovement(pushVel);
+            target.hasImpulse = true;
+            target.fallDistance = 0;
+        }
+    }
+
+    private void spawnDragonAuraParticles(Entity owner, Vec3 fixedDirection) {
+        float[] rgb = this.getRgbColorMain();
+
+        for (int i = 0; i < 10; i++) {
+            double dx = (this.random.nextDouble() - 0.5) * 4.0D;
+            double dy = (this.random.nextDouble() - 0.5) * 4.0D;
+            double dz = (this.random.nextDouble() - 0.5) * 4.0D;
+
+            double vx = -fixedDirection.x * 0.5D;
+            double vy = (this.random.nextDouble() - 0.5) * 0.2D;
+            double vz = -fixedDirection.z * 0.5D;
+
+            float scale = 3.0f + this.random.nextFloat() * 2.0f;
 
             net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
                     MainParticles.KI_TRAIL.get(),
-                    this.getX() + dx, this.getY() + (owner.getBbHeight() / 2.0) + dy, this.getZ() + dz,
+                    this.getX() + dx, this.getY() + 1.0D + dy, this.getZ() + dz,
                     vx, vy, vz
             );
 
@@ -200,67 +168,28 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
         }
     }
 
-    private void launchEnemies() {
-        AABB area = this.getBoundingBox().inflate(8.0D, 4.0D, 8.0D);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, area);
-
-        for (LivingEntity target : targets) {
-            if (shouldDamage(target) && !target.is(this.getOwner())) {
-                target.setDeltaMovement(0, 3.2D, 0);
-                target.hasImpulse = true;
-            }
-        }
-    }
-
-    private void suspendEnemiesInAir() {
-        AABB area = this.getBoundingBox().inflate(5.0D, 25.0D, 8.0D);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, area);
-
-        for (LivingEntity target : targets) {
-            if (shouldDamage(target) && !target.is(this.getOwner())) {
-                target.setDeltaMovement(target.getDeltaMovement().x * 0.5, 0, target.getDeltaMovement().z * 0.5);
-                target.hasImpulse = true;
-                target.fallDistance = 0;
-            }
-        }
-    }
-
-    private void pulseDamage() {
-        AABB area = this.getBoundingBox().inflate(8.0D, 25.0D, 8.0D);
-
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, area);
-
-        for (LivingEntity target : targets) {
-            if (shouldDamage(target) && !target.is(this.getOwner())) {
-                target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
-            }
-        }
-    }
+    public float getLockedYaw() { return this.entityData.get(LOCKED_YAW); }
+    public float getLockedPitch() { return this.entityData.get(LOCKED_PITCH); }
 
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(CAST_TIME, 0);
-        this.entityData.define(IS_FIRING, false);
+        this.entityData.define(LOCKED_YAW, 0.0F);
+        this.entityData.define(LOCKED_PITCH, 0.0F);
     }
-
-    public int getCastTime() { return this.entityData.get(CAST_TIME); }
-    public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }
-    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
-    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
-        pCompound.putInt("CastTime", this.getCastTime());
-        pCompound.putBoolean("IsFiring", this.isFiring());
+        pCompound.putFloat("LockedYaw", this.entityData.get(LOCKED_YAW));
+        pCompound.putFloat("LockedPitch", this.entityData.get(LOCKED_PITCH));
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
-        if (pCompound.contains("CastTime")) this.setCastTime(pCompound.getInt("CastTime"));
-        if (pCompound.contains("IsFiring")) this.setFiring(pCompound.getBoolean("IsFiring"));
+        if (pCompound.contains("LockedYaw")) this.entityData.set(LOCKED_YAW, pCompound.getFloat("LockedYaw"));
+        if (pCompound.contains("LockedPitch")) this.entityData.set(LOCKED_PITCH, pCompound.getFloat("LockedPitch"));
     }
 
     @Override
