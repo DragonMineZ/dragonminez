@@ -3,7 +3,7 @@ package com.dragonminez.client.gui;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.gui.character.BaseMenuScreen;
+import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.SkillsConfig;

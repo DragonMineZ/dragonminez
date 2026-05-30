@@ -15,9 +15,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Setter
 @Getter
@@ -47,8 +49,22 @@ public class Character {
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
+	private final Set<String> knownMinigames = new HashSet<>();
+
 	public void clearInteractedMasters() {
 		interactedMasters.clear();
+	}
+
+	public boolean isMinigameKnown(String minigameId) {
+		return minigameId != null && knownMinigames.contains(minigameId.toLowerCase());
+	}
+
+	public void addKnownMinigame(String minigameId) {
+		if (minigameId != null) knownMinigames.add(minigameId.toLowerCase());
+	}
+
+	public void removeKnownMinigame(String minigameId) {
+		if (minigameId != null) knownMinigames.remove(minigameId.toLowerCase());
 	}
 
 	public static final String GENDER_MALE = "male";
@@ -321,6 +337,10 @@ public class Character {
 		}
 		tag.put("InteractedMasters", mastersList);
 
+		ListTag minigamesList = new ListTag();
+		for (String minigame : knownMinigames) minigamesList.add(net.minecraft.nbt.StringTag.valueOf(minigame));
+		tag.put("KnownMinigames", minigamesList);
+
 		return tag;
 	}
 
@@ -382,6 +402,12 @@ public class Character {
 				BlockPos pos = BlockPos.of(masterTag.getLong("Pos"));
 				this.interactedMasters.put(id, new MasterLocation(id, name, dim, pos));
 			}
+		}
+
+		this.knownMinigames.clear();
+		if (tag.contains("KnownMinigames")) {
+			ListTag minigamesList = tag.getList("KnownMinigames", 8);
+			for (int i = 0; i < minigamesList.size(); i++) this.knownMinigames.add(minigamesList.getString(i));
 		}
 
 		updateOozaruCache();
@@ -504,5 +530,7 @@ public class Character {
 		this.armored = other.armored;
 		this.interactedMasters.clear();
 		this.interactedMasters.putAll(other.interactedMasters);
+		this.knownMinigames.clear();
+		this.knownMinigames.addAll(other.knownMinigames);
 	}
 }

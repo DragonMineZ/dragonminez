@@ -11,8 +11,7 @@ public enum CapsuleType {
 	YELLOW("RES", 5),
 	GREEN("VIT", 5),
     ORANGE("PWR", 5),
-	BLUE("ENE", 5)
-    ;
+	BLUE("ENE", 5);
 
     private final String statName;
     private final Integer statPoints;

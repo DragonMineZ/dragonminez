@@ -46,6 +46,7 @@ public class ConfigManager {
 	private static SkillsConfig SERVER_SYNCED_SKILLS;
 	private static TechniqueConfig SERVER_SYNCED_TECHNIQUES;
 	private static CombatConfig SERVER_SYNCED_COMBAT;
+	private static TrainingConfig SERVER_SYNCED_TRAINING;
 	private static Map<String, Map<String, FormConfig>> SERVER_SYNCED_FORMS;
 	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
 	private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
@@ -54,6 +55,7 @@ public class ConfigManager {
 	private static GeneralUserConfig userConfig;
 	private static GeneralServerConfig serverConfig;
 	private static CombatConfig combatConfig;
+	private static TrainingConfig trainingConfig;
 	private static SkillsConfig skillsConfig;
 	private static TechniqueConfig techniqueConfig;
 	@Getter
@@ -159,6 +161,7 @@ public class ConfigManager {
 		userConfig = loadAndValidate(CONFIG_DIR.resolve("general-user.json"), GeneralUserConfig.class, GeneralUserConfig::new, GeneralUserConfig::getConfigVersion, GeneralUserConfig::setConfigVersion, GeneralUserConfig.CURRENT_VERSION, null);
 		serverConfig = loadAndValidate(CONFIG_DIR.resolve("general-server.json"), GeneralServerConfig.class, GeneralServerConfig::new, GeneralServerConfig::getConfigVersion, GeneralServerConfig::setConfigVersion, GeneralServerConfig.CURRENT_VERSION, "general-server.json");
 		combatConfig = loadAndValidate(CONFIG_DIR.resolve("combat.json"), CombatConfig.class, CombatConfig::new, CombatConfig::getConfigVersion, CombatConfig::setConfigVersion, CombatConfig.CURRENT_VERSION, null);
+		trainingConfig = loadAndValidate(CONFIG_DIR.resolve("training.json"), TrainingConfig.class, TrainingConfig::new, TrainingConfig::getConfigVersion, TrainingConfig::setConfigVersion, TrainingConfig.CURRENT_VERSION, null);
 		skillsConfig = loadAndValidate(CONFIG_DIR.resolve("skills.json"), SkillsConfig.class, SkillsConfig::new, SkillsConfig::getConfigVersion, SkillsConfig::setConfigVersion, SkillsConfig.CURRENT_VERSION, "skills.json");
 		techniqueConfig = loadAndValidate(CONFIG_DIR.resolve("techniques.json"), TechniqueConfig.class, TechniqueConfig::new, TechniqueConfig::getConfigVersion, TechniqueConfig::setConfigVersion, TechniqueConfig.CURRENT_VERSION, null);
 		entitiesConfig = loadAndValidate(CONFIG_DIR.resolve("entities.json"), EntitiesConfig.class, ConfigManager::createDefaultEntitiesConfig, EntitiesConfig::getConfigVersion, EntitiesConfig::setConfigVersion, EntitiesConfig.CURRENT_VERSION, null);
@@ -568,6 +571,10 @@ public class ConfigManager {
 		if (SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
 		return combatConfig != null ? combatConfig : new CombatConfig();
 	}
+	public static TrainingConfig getTrainingConfig() {
+		if (SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
+		return trainingConfig != null ? trainingConfig : new TrainingConfig();
+	}
 	public static void saveGeneralUserConfig() {
 		try { LOADER.saveConfig(CONFIG_DIR.resolve("general-user.json"), userConfig); }
 		catch (IOException e) { LogUtil.error(Env.COMMON, "Error saving user configuration: {}", e.getMessage()); }
@@ -680,6 +687,8 @@ public class ConfigManager {
 			serverConfig = LOADER.loadConfig(path, GeneralServerConfig.class);
 		} else if (configFilePath.equals("combat")) {
 			combatConfig = LOADER.loadConfig(path, CombatConfig.class);
+		} else if (configFilePath.equals("training")) {
+			trainingConfig = LOADER.loadConfig(path, TrainingConfig.class);
 		} else if (configFilePath.equals("skills")) {
 			skillsConfig = LOADER.loadConfig(path, SkillsConfig.class);
 		} else if (configFilePath.equals("techniques")) {
@@ -714,6 +723,7 @@ public class ConfigManager {
 		try {
 			if (configFilePath.equals("general-server")) SERVER_SYNCED_GENERAL_SERVER = GSON.fromJson(json, GeneralServerConfig.class);
 			else if (configFilePath.equals("combat")) SERVER_SYNCED_COMBAT = GSON.fromJson(json, CombatConfig.class);
+			else if (configFilePath.equals("training")) SERVER_SYNCED_TRAINING = GSON.fromJson(json, TrainingConfig.class);
 			else if (configFilePath.equals("skills")) SERVER_SYNCED_SKILLS = GSON.fromJson(json, SkillsConfig.class);
 			else if (configFilePath.equals("techniques")) SERVER_SYNCED_TECHNIQUES = GSON.fromJson(json, TechniqueConfig.class);
 			else if (configFilePath.startsWith("races/")) {
@@ -750,6 +760,7 @@ public class ConfigManager {
 	public static void clearServerSync() {
 		SERVER_SYNCED_GENERAL_SERVER = null;
 		SERVER_SYNCED_COMBAT = null;
+		SERVER_SYNCED_TRAINING = null;
 		SERVER_SYNCED_SKILLS = null;
 		SERVER_SYNCED_TECHNIQUES = null;
 		SERVER_SYNCED_FORMS = null;

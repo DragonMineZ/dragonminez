@@ -573,7 +573,13 @@ public class TickHandler {
 		}
 
 		if (energyChange != 0) {
-			int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
+			// Cap Ki regen at (1-pct/100) of max when a player Shadow Dummy is active.
+			float effectiveMaxEnergy = maxEnergy;
+			if (data.getStatus().hasActiveShadowDummy()) {
+				int pct = data.getStatus().getShadowDummyPercent();
+				effectiveMaxEnergy = maxEnergy * (1.0f - pct / 100.0f);
+			}
+			int newEnergy = (int) Math.max(0, Math.min(effectiveMaxEnergy, currentEnergy + Math.ceil(energyChange)));
 			data.getResources().setCurrentEnergy(newEnergy);
 
 			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
@@ -614,7 +620,13 @@ public class TickHandler {
 			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod;
 			regenPerSecond = PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
 
-			float newStamina = (float) Math.min(maxStamina, currentStamina + Math.ceil(regenPerSecond));
+			// Cap Stamina regen at (1-pct/100) of max when a player Shadow Dummy is active.
+			float effectiveMaxStamina = maxStamina;
+			if (data.getStatus().hasActiveShadowDummy()) {
+				int pct = data.getStatus().getShadowDummyPercent();
+				effectiveMaxStamina = maxStamina * (1.0f - pct / 100.0f);
+			}
+			float newStamina = (float) Math.min(effectiveMaxStamina, currentStamina + Math.ceil(regenPerSecond));
 			data.getResources().setCurrentStamina(newStamina);
 		}
 	}

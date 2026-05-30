@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.HairManager;
@@ -27,7 +28,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 
 public class MasterTextScreen extends Screen {
@@ -247,7 +247,7 @@ public class MasterTextScreen extends Screen {
 					.message(tr("gui.dragonminez.button.popo.rythm"))
 					.onPress(btn -> {
 						if (Minecraft.getInstance().player.level().isClientSide()) {
-							Minecraft.getInstance().setScreen(new TrainingScreen());
+							Minecraft.getInstance().setScreen(new RythmGameScreen());
 						}
 					})
 					.build());

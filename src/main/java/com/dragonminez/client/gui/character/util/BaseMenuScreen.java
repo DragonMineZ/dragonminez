@@ -1,9 +1,9 @@
-package com.dragonminez.client.gui.character;
+package com.dragonminez.client.gui.character.util;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
+import com.dragonminez.client.gui.character.*;
 import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -139,7 +139,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 						.texture(SCREEN_BUTTONS)
 						.textureSize(20, 20)
 						.textureCoords(140, 0, 140, 20)
-						.onPress(btn -> switchMenu(new ConfigMenuScreen()))
+						.onPress(btn -> switchMenu(new MinigamesScreen()))
 						.sound(MainSounds.UI_MENU_SWITCH.get())
 						.build()
 		);

@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
-import com.dragonminez.client.gui.character.BaseMenuScreen;
+import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.render.DMZRendererCache;

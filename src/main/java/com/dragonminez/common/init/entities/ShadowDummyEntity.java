@@ -51,6 +51,23 @@ public class ShadowDummyEntity extends DBSagasEntity {
 		this.ownerUUID = owner.getUUID();
 	}
 
+	public void copyStatsFromPlayerWithPercent(ServerPlayer player, int percent) {
+		double scale = net.minecraft.util.Mth.clamp(percent, 25, 75) / 100.0;
+		this.setOwner(player);
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			double hp = player.getAttributeValue(Attributes.MAX_HEALTH) * scale;
+			if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
+				this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(hp);
+				this.setHealth((float) (hp + data.getDefense() * scale));
+			}
+			if (this instanceof IBattlePower bp) bp.setBattlePower((int) (data.getBattlePower() * scale));
+			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE))
+				this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(data.getMeleeDamage() * scale * 0.75);
+			this.setKiBlastDamage((float) (data.getKiDamage() * scale * 0.75));
+		});
+		this.getPersistentData().putBoolean("dmz_stats_configured", true);
+	}
+
 	public void copyStatsFromPlayer(ServerPlayer player) {
 		this.setOwner(player);
 
@@ -58,13 +75,13 @@ public class ShadowDummyEntity extends DBSagasEntity {
 			double playerMaxHP = player.getAttributeValue(Attributes.MAX_HEALTH);
 			if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
 				this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(playerMaxHP);
-				this.setHealth((float) ((float) playerMaxHP * 2 + data.getDefense() * 0.75f));
+				this.setHealth((float) ((float) playerMaxHP + data.getDefense() * 0.25f));
 			}
-			if (this instanceof IBattlePower bpEntity) bpEntity.setBattlePower(data.getBattlePower());
-			double playerDmg = data.getMeleeDamage() * 0.5;
+			if (this instanceof IBattlePower bpEntity) bpEntity.setBattlePower((int) (data.getBattlePower() * 0.25f));
+			double playerDmg = data.getMeleeDamage() * 0.25;
 			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE))
 				this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(playerDmg);
-			float calculatedKiDamage = (float) ((float) data.getKiDamage() * 0.5);
+			float calculatedKiDamage = (float) ((float) data.getKiDamage() * 0.25);
 			this.setKiBlastDamage(calculatedKiDamage);
 		});
 		this.getPersistentData().putBoolean("dmz_stats_configured", true);
