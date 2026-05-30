@@ -3,11 +3,10 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.InstantTransmissionScreen;
-import com.dragonminez.client.gui.TrainingScreen;
+import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.particles.AuraParticle;
 import com.dragonminez.common.init.particles.DivineParticle;
@@ -23,7 +22,6 @@ import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.util.BetaWhitelist;
-import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
@@ -31,7 +29,6 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -47,8 +44,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import top.theillusivec4.curios.api.CuriosApi;
-
-import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
@@ -327,13 +322,6 @@ public class ClientStatsEvents {
 					int kiSenseLevel = kiSense.getLevel();
 					if (kiSenseLevel > 0) NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, kiSense.getName(), 0));
 				} else ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
-			}
-
-			if (!(mc.screen instanceof TrainingScreen)) {
-				if (!data.getTraining().getCurrentTrainingStat().isEmpty()) {
-					data.getTraining().setCurrentTrainingStat("");
-					NetworkHandler.sendToServer(new TrainingRewardC2S(TrainingRewardC2S.TrainStat.NONE, -1));
-				}
 			}
 		});
 	}

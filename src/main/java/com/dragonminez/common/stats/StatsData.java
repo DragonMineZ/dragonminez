@@ -10,7 +10,6 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.character.*;
 import com.dragonminez.common.stats.character.Character;
-import com.dragonminez.common.stats.extras.Training;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.TransformationsHelper;
@@ -44,7 +43,6 @@ public class StatsData {
 	private final Effects effects;
 	private final PlayerQuestData playerQuestData;
 	private final BonusStats bonusStats;
-	private final Training training;
 	private final Techniques techniques;
 
 	private boolean hasInitializedHealth = false;
@@ -64,7 +62,6 @@ public class StatsData {
 		this.effects = new Effects();
 		this.playerQuestData = new PlayerQuestData();
 		this.bonusStats = new BonusStats();
-		this.training = new Training();
 		this.techniques = new Techniques();
 	}
 
@@ -959,7 +956,6 @@ public class StatsData {
 		nbt.put("Effects", effects.save());
 		nbt.put("PlayerQuestData", playerQuestData.serializeNBT());
 		nbt.put("BonusStats", bonusStats.save());
-		nbt.put("Training", training.save());
 		nbt.put("Techniques",  techniques.save());
 		nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
 		return nbt;
@@ -977,7 +973,6 @@ public class StatsData {
 		else throw new ClassNotFoundException("PlayerQuestData not found in NBT. This is required for quest progression to work correctly. " +
 				"Please update the mod or re-generate your config files.");
 		if (nbt.contains("BonusStats")) bonusStats.load(nbt.getCompound("BonusStats"));
-		if (nbt.contains("Training")) training.load(nbt.getCompound("Training"));
 		if (nbt.contains("Techniques")) techniques.load(nbt.getCompound("Techniques"));
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
@@ -994,7 +989,6 @@ public class StatsData {
 		this.effects.copyFrom(other.effects);
 		this.playerQuestData.deserializeNBT(other.playerQuestData.serializeNBT());
 		this.bonusStats.copyFrom(other.bonusStats);
-		this.training.copyFrom(other.training);
 		this.techniques.copyFrom(other.techniques);
 		this.hasInitializedHealth = other.hasInitializedHealth;
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty())

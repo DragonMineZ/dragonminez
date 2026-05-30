@@ -25,7 +25,6 @@ public class ProgressionSyncS2C {
 			this.nbt.put("Skills", data.getSkills().save());
 			this.nbt.put("Techniques", data.getTechniques().save());
 			this.nbt.put("PlayerQuestData", data.getPlayerQuestData().serializeNBT());
-			this.nbt.put("Training", data.getTraining().save());
 		});
 	}
 

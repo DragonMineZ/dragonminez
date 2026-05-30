@@ -7,6 +7,9 @@ import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
+import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerLevel;
@@ -123,7 +126,22 @@ public class EntitiesEvents {
 			if (entity instanceof LivingEntity) {
 				if (entity.getPersistentData().contains("dmz_quest_owner")) {
 					String ownerUUID = entity.getPersistentData().getString("dmz_quest_owner");
-					if (ownerUUID.equals(uuidStr)) entity.discard();
+					if (ownerUUID.equals(uuidStr)) {
+						if (entity instanceof ShadowDummyEntity && entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+							ServerPlayer owner = level.getServer().getPlayerList().getPlayer(playerUUID);
+							if (owner != null) {
+								StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(data -> {
+									if (data.getStatus().hasActiveShadowDummy() && data.getStatus().getActiveShadowDummyUUID().equals(entity.getUUID())) {
+										SummonPlayerShadowDummyC2S.removePenalties(owner, data);
+										data.getStatus().setActiveShadowDummyUUID(null);
+										data.getStatus().setShadowDummyPercent(0);
+										NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
+									}
+								});
+							}
+						}
+						entity.discard();
+					}
 				}
 			}
 		}

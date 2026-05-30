@@ -10,6 +10,7 @@ import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
+import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -223,6 +224,42 @@ public class StatsEvents {
 
 		if (removesAlignment(event.getEntity())) removeAlignment[0] = true;
 		if (addsAlignment(event.getEntity())) addAlignment[0] = true;
+
+		if (event.getEntity() instanceof ShadowDummyEntity dummyEntity && attacker instanceof ServerPlayer killer) {
+			StatsProvider.get(StatsCapability.INSTANCE, killer).ifPresent(killerData -> {
+				killerData.getStatus().setShadowDummyKillCount(killerData.getStatus().getShadowDummyKillCount() + 1);
+
+				if (dummyEntity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+					String ownerStr = dummyEntity.getPersistentData().getString("dmz_kimanip_shadow");
+					if (killer.getStringUUID().equals(ownerStr)
+							&& killerData.getStatus().hasActiveShadowDummy()
+							&& killerData.getStatus().getActiveShadowDummyUUID().equals(dummyEntity.getUUID())) {
+						SummonPlayerShadowDummyC2S.removePenalties(killer, killerData);
+						killerData.getStatus().setActiveShadowDummyUUID(null);
+						killerData.getStatus().setShadowDummyPercent(0);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(killer), killer);
+					}
+				}
+			});
+		}
+
+		if (event.getEntity() instanceof ShadowDummyEntity dummyEntity && dummyEntity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+			String ownerStr = dummyEntity.getPersistentData().getString("dmz_quest_owner");
+			try {
+				java.util.UUID ownerUUID = java.util.UUID.fromString(ownerStr);
+				ServerPlayer owner = dummyEntity.getServer().getPlayerList().getPlayer(ownerUUID);
+				if (owner != null) {
+					StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(ownerData -> {
+						if (ownerData.getStatus().hasActiveShadowDummy() && ownerData.getStatus().getActiveShadowDummyUUID().equals(dummyEntity.getUUID())) {
+							SummonPlayerShadowDummyC2S.removePenalties(owner, ownerData);
+							ownerData.getStatus().setActiveShadowDummyUUID(null);
+							ownerData.getStatus().setShadowDummyPercent(0);
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
+						}
+					});
+				}
+			} catch (Exception ignored) {}
+		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
@@ -466,7 +503,7 @@ public class StatsEvents {
 					float currentEnergy = data.getResources().getCurrentEnergy();
 					float currentStamina = data.getResources().getCurrentStamina();
 
-					player.heal(healAmount);
+					player.heal(maxHealth - player.getHealth());
 					data.getResources().setCurrentEnergy(Math.min(maxEnergy, currentEnergy + energyAmount));
 					data.getResources().setCurrentStamina(Math.min(maxStamina, currentStamina + staminaAmount));
 

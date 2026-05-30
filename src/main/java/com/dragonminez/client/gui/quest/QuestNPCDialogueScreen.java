@@ -4,10 +4,11 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.MasterTextScreen;
 import com.dragonminez.client.gui.MastersSkillsScreen;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.gui.character.ScaledScreen;
+import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.C2S.NPCActionC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.Quest;
@@ -64,6 +65,8 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	private float objScroll = 0, objTargetScroll = 0, objMaxScroll = 0;
 	private float rewardScroll = 0, rewardTargetScroll = 0, rewardMaxScroll = 0;
 
+	private boolean isTrainingMode = false;
+
 	public QuestNPCDialogueScreen(String npcId, List<String> offerableQuestIds,
 	                              List<String> turnInQuestIds, List<String> inProgressQuestIds) {
 		this(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds, false, -1);
@@ -111,6 +114,25 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		}
 	}
 
+	private String getMinigameForNpc(String targetNpc) {
+		for (String gameId : new String[]{"rhythm", "control", "memory", "precision", "gravity"}) {
+			if (ConfigManager.getTrainingConfig().getSettings(gameId).getMasterName().equalsIgnoreCase(targetNpc)) {
+				return gameId;
+			}
+		}
+		return null;
+	}
+
+	private void openMinigameScreen(String minigameId) {
+		switch (minigameId) {
+			case "rhythm" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.RythmGameScreen());
+			case "control" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.ControlGameScreen());
+			case "memory" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.MemoryGameScreen());
+			case "precision" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.PrecisionGameScreen());
+			case "gravity" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.GravityGameScreen());
+		}
+	}
+
 	private void initButtons() {
 		this.clearWidgets();
 		int btnY = getUiHeight() - 28;
@@ -121,43 +143,116 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(tr("gui.dragonminez.close"))
-				.onPress(btn -> this.onClose())
+				.message(tr(isTrainingMode ? "gui.dragonminez.customization.back" : "gui.dragonminez.close"))
+				.onPress(btn -> {
+					if (isTrainingMode) {
+						isTrainingMode = false;
+						initButtons();
+					} else {
+						this.onClose();
+					}
+				})
 				.build());
 
 		if (masterNpc) {
-			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(panelX + 8, btnY)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(TEXT_MASTERS.contains(npcId)
-							? tr("gui.dragonminez.npc.services")
-							: tr("gui.dragonminez.npc.train"))
-					.onPress(btn -> openMasterScreen())
-					.build());
+			String minigameId = getMinigameForNpc(npcId);
+			boolean isSkillMaster = !TEXT_MASTERS.contains(npcId);
+
+			if (isTrainingMode && isSkillMaster) {
+				if (minigameId != null) {
+					this.addRenderableWidget(new TexturedTextButton.Builder()
+							.position(panelX + 8, btnY)
+							.size(74, 20)
+							.texture(BUTTONS_TEXTURE)
+							.textureCoords(0, 28, 0, 48)
+							.textureSize(74, 20)
+							.message(tr("gui.dragonminez.button.popo.shadow"))
+							.onPress(btn -> {
+								NetworkHandler.sendToServer(new NPCActionC2S("popo", 1));
+								this.onClose();
+							})
+							.build());
+
+					this.addRenderableWidget(new TexturedTextButton.Builder()
+							.position(getUiWidth() / 2 - 74, btnY)
+							.size(74, 20)
+							.texture(BUTTONS_TEXTURE)
+							.textureCoords(0, 28, 0, 48)
+							.textureSize(74, 20)
+							.message(tr("gui.dragonminez.minigame." + minigameId))
+							.onPress(btn -> openMinigameScreen(minigameId))
+							.build());
+				} else {
+					this.addRenderableWidget(new TexturedTextButton.Builder()
+							.position(panelX + 8, btnY)
+							.size(74, 20)
+							.texture(BUTTONS_TEXTURE)
+							.textureCoords(0, 28, 0, 48)
+							.textureSize(74, 20)
+							.message(tr("gui.dragonminez.button.popo.shadow"))
+							.onPress(btn -> {
+								NetworkHandler.sendToServer(new NPCActionC2S("popo", 1));
+								this.onClose();
+							})
+							.build());
+				}
+			} else if (!isTrainingMode) {
+				if (isSkillMaster) {
+					this.addRenderableWidget(new TexturedTextButton.Builder()
+							.position(panelX + 8, btnY)
+							.size(74, 20)
+							.texture(BUTTONS_TEXTURE)
+							.textureCoords(0, 28, 0, 48)
+							.textureSize(74, 20)
+							.message(tr("gui.dragonminez.npc.skills"))
+							.onPress(btn -> openMasterScreen())
+							.build());
+
+					this.addRenderableWidget(new TexturedTextButton.Builder()
+							.position(getUiWidth() / 2 - 74, btnY)
+							.size(74, 20)
+							.texture(BUTTONS_TEXTURE)
+							.textureCoords(0, 28, 0, 48)
+							.textureSize(74, 20)
+							.message(tr("gui.dragonminez.npc.train"))
+							.onPress(btn -> {
+								isTrainingMode = true;
+								initButtons();
+							})
+							.build());
+				} else {
+					this.addRenderableWidget(new TexturedTextButton.Builder()
+							.position(panelX + 8, btnY)
+							.size(74, 20)
+							.texture(BUTTONS_TEXTURE)
+							.textureCoords(0, 28, 0, 48)
+							.textureSize(74, 20)
+							.message(tr("gui.dragonminez.npc.services"))
+							.onPress(btn -> openMasterScreen())
+							.build());
+				}
+			}
 		}
 
-		if (selectedIndex >= 0 && selectedIndex < questEntries.size()) {
+		if (!isTrainingMode && selectedIndex >= 0 && selectedIndex < questEntries.size()) {
 			QuestEntry entry = questEntries.get(selectedIndex);
-			if (entry.type == EntryType.IN_PROGRESS) return;
+			if (entry.type != EntryType.IN_PROGRESS) {
+				Component buttonText = entry.type == EntryType.OFFER
+						? tr("gui.dragonminez.story.sidequests.accept")
+						: tr("gui.dragonminez.sidequest.turn_in");
+				EntryType actionType = entry.type;
+				String questId = entry.questId;
 
-			Component buttonText = entry.type == EntryType.OFFER
-					? tr("gui.dragonminez.story.sidequests.accept")
-					: tr("gui.dragonminez.sidequest.turn_in");
-			EntryType actionType = entry.type;
-			String questId = entry.questId;
-
-			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(panelX + panelW - 78 - 74 - 13, btnY)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(buttonText)
-					.onPress(btn -> handleQuestAction(actionType, questId))
-					.build());
+				this.addRenderableWidget(new TexturedTextButton.Builder()
+						.position(panelX + panelW - 78 - 74 - 13, btnY)
+						.size(74, 20)
+						.texture(BUTTONS_TEXTURE)
+						.textureCoords(0, 28, 0, 48)
+						.textureSize(74, 20)
+						.message(buttonText)
+						.onPress(btn -> handleQuestAction(actionType, questId))
+						.build());
+			}
 		}
 	}
 

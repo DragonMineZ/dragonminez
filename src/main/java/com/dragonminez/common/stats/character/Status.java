@@ -48,6 +48,10 @@ public class Status {
 	private boolean isStrikeLocked;
 	private final Set<String> visitedDimensions;
 
+	private UUID activeShadowDummyUUID;
+	private int shadowDummyPercent;
+	private int shadowDummyKillCount;
+
 	public Status() {
 		this.isAlive = true;
 		this.isHasCreatedCharacter = false;
@@ -80,6 +84,13 @@ public class Status {
 		this.isPermanentAura = false;
 		this.isStrikeLocked = false;
 		this.visitedDimensions = new LinkedHashSet<>();
+		this.activeShadowDummyUUID = null;
+		this.shadowDummyPercent = 0;
+		this.shadowDummyKillCount = 0;
+	}
+
+	public boolean hasActiveShadowDummy() {
+		return activeShadowDummyUUID != null;
 	}
 
 	public void markVisitedDimension(String dimensionId) {
@@ -127,6 +138,10 @@ public class Status {
 		ListTag visitedDimensionsTag = new ListTag();
 		for (String dimensionId : visitedDimensions) visitedDimensionsTag.add(StringTag.valueOf(dimensionId));
 		tag.put("VisitedDimensions", visitedDimensionsTag);
+
+		if (activeShadowDummyUUID != null) tag.putUUID("ActiveShadowDummyUUID", activeShadowDummyUUID);
+		tag.putInt("ShadowDummyPercent", shadowDummyPercent);
+		tag.putInt("ShadowDummyKillCount", shadowDummyKillCount);
 		return tag;
 	}
 
@@ -169,6 +184,10 @@ public class Status {
 			ListTag visitedDimensionsTag = tag.getList("VisitedDimensions", Tag.TAG_STRING);
 			for (Tag dimensionTag : visitedDimensionsTag) this.markVisitedDimension(dimensionTag.getAsString());
 		}
+
+		this.activeShadowDummyUUID = tag.hasUUID("ActiveShadowDummyUUID") ? tag.getUUID("ActiveShadowDummyUUID") : null;
+		this.shadowDummyPercent = tag.getInt("ShadowDummyPercent");
+		this.shadowDummyKillCount = tag.contains("ShadowDummyKillCount") ? tag.getInt("ShadowDummyKillCount") : 0;
 	}
 
 	public void copyFrom(Status other) {
@@ -204,5 +223,8 @@ public class Status {
 		this.isStrikeLocked = other.isStrikeLocked;
 		this.visitedDimensions.clear();
 		this.visitedDimensions.addAll(other.visitedDimensions);
+		this.activeShadowDummyUUID = other.activeShadowDummyUUID;
+		this.shadowDummyPercent = other.shadowDummyPercent;
+		this.shadowDummyKillCount = other.shadowDummyKillCount;
 	}
 }

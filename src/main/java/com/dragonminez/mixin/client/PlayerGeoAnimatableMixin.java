@@ -140,16 +140,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		var nextFormConfig = TransformationsHelper.getNextAvailableForm(data);
 		String nextForm = nextFormConfig != null ? nextFormConfig.getName().toLowerCase() : "";
 		boolean isTransforming = data.getStatus().isActionCharging();
-		String trainingStat = data.getTraining().getCurrentTrainingStat();
 
 		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
-
-		if (trainingStat != null && !trainingStat.isEmpty()) {
-			return switch (trainingStat) {
-				case "pwr", "ene" -> state.setAndContinue(MEDITATION);
-				default -> state.setAndContinue(FLEX);
-			};
-		}
 
 		if (isDraining) return state.setAndContinue(DRAIN);
 

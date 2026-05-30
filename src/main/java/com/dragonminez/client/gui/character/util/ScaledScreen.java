@@ -1,4 +1,4 @@
-package com.dragonminez.client.gui.character;
+package com.dragonminez.client.gui.character.util;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
