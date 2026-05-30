@@ -597,6 +597,9 @@ public class ConfigManager {
 
 			if (!targetObj.has(key)) return false;
 
+			JsonElement existing = targetObj.get(key);
+			if (existing != null && (existing.isJsonObject() || existing.isJsonArray())) return false;
+
 			JsonElement parsedValue;
 			if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
 				parsedValue = JsonParser.parseString(value.toLowerCase(Locale.ROOT));
@@ -627,6 +630,18 @@ public class ConfigManager {
 			LogUtil.error(Env.COMMON, "Error scanning config files: " + e.getMessage());
 		}
 		return CACHED_CONFIG_FILES;
+	}
+
+	public static boolean isSubtype(String configFileName, String name) {
+		if (name == null || name.isEmpty()) return false;
+		try {
+			Path configPath = CONFIG_DIR.resolve(configFileName + ".json");
+			if (!Files.exists(configPath)) return false;
+			JsonObject rootObj = JsonParser.parseString(Files.readString(configPath)).getAsJsonObject();
+			return rootObj.has(name) && rootObj.get(name).isJsonObject();
+		} catch (Exception ignored) {
+			return false;
+		}
 	}
 
 	public static List<String> getKeysOrSubtypes(String configFileName, String optionalSubtype) {
