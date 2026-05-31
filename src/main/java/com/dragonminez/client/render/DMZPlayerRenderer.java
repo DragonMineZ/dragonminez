@@ -48,7 +48,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		this.addRenderLayer(new DMZAuraLayer<>(this));
         this.addRenderLayer(new DMZSkinLayer<>(this));
         this.addRenderLayer(new DMZHairLayer<>(this));
-		//this.addRenderLayer(new DMZThirdPartyLayerForwarder<>(this));
+		this.addRenderLayer(new DMZThirdPartyLayerForwarder<>(this));
 	}
 
 	public void reRender(GeoRenderLayer<T> calledFrom, BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
