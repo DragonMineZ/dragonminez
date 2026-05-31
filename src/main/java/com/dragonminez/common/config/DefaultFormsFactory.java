@@ -525,12 +525,12 @@ public class DefaultFormsFactory {
 		ssj4gt.setName(SaiyanForms.SUPER_SAIYAN_4);
 		ssj4gt.setCustomModel("ssj4gt");
 		ssj4gt.setUnlockOnSkillLevel(8);
-		ssj4gt.setHairColor("#000000");
-		ssj4gt.setBodyColor2("#B22E4D");
+		ssj4gt.setHairColor("");
+		ssj4gt.setBodyColor2("#9d1e31");
 		ssj4gt.setEye1Color("#FFD700");
 		ssj4gt.setEye2Color("#FFD700");
 		ssj4gt.setAuraColor("#FFD700");
-		ssj4gt.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
+		ssj4gt.setModelScaling(new Float[]{0.96f, 0.96f, 0.96f});
 		ssj4gt.setStrMultiplier(3.75);
 		ssj4gt.setSkpMultiplier(3.75);
 		ssj4gt.setDefMultiplier(2.5);
@@ -694,8 +694,8 @@ public class DefaultFormsFactory {
 		ssj4d.setEye1Color("#83073F");
 		ssj4d.setEye2Color("#83073F");
 		ssj4d.setAuraColor("#83073F");
-		ssj4d.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
-		ssj4d.setStrMultiplier(3.75);
+        ssj4d.setModelScaling(new Float[]{1.2f, 1.2f, 1.2f});
+        ssj4d.setStrMultiplier(3.75);
 		ssj4d.setSkpMultiplier(3.75);
 		ssj4d.setDefMultiplier(2.5);
 		ssj4d.setPwrMultiplier(3.75);
@@ -727,7 +727,6 @@ public class DefaultFormsFactory {
 		ikari.setName(SaiyanForms.IKARI);
 		ikari.setUnlockOnSkillLevel(1);
 		ikari.setCustomModel("buffed");
-		ikari.setHairColor("#000000");
 		ikari.setEye1Color("#FFD700");
 		ikari.setEye2Color("#FFD700");
 		ikari.setAuraColor("#40FF00");
