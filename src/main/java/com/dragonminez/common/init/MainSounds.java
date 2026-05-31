@@ -114,6 +114,8 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> ABSORB2 = registerSoundEvent("absorb2");
     public static final RegistryObject<SoundEvent> TRANSFORM = registerSoundEvent("transform");
     public static final RegistryObject<SoundEvent> FUSION = registerSoundEvent("fusion");
+    public static final RegistryObject<SoundEvent> OOZARU_FIST = registerSoundEvent("oozaru_fist");
+    public static final RegistryObject<SoundEvent> DRAGON_FIST = registerSoundEvent("dragon_fist");
 
 	public static final RegistryObject<SoundEvent> UI_MENU_SWITCH = registerSoundEvent("ui_menu_switch");
 	public static final RegistryObject<SoundEvent> CONFIRM_MENU = registerSoundEvent("confirm_menu");

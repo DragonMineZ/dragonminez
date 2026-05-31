@@ -72,7 +72,7 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
         this.setYRot(yaw);
         this.setXRot(pitch);
 
-        this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), MainSounds.OOZARU_GROWL_PLAYER.get(), SoundSource.PLAYERS, 2.0F, 1.0F);
+        this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), MainSounds.DRAGON_FIST.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
