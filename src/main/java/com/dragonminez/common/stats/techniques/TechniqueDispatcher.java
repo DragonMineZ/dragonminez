@@ -129,7 +129,6 @@ public class TechniqueDispatcher {
                 KiWaveEntity wave = new KiWaveEntity(level, owner);
                 if ("kamehameha".equals(data.getId())) {
                     wave.setupKiHamePlayer(owner, realDamage, data.getSpeed(), data.getSize());
-                    //wave.setupKiWavePlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                 } else if ("galick_gun".equals(data.getId())) {
                     wave.setupKiGalickGunPlayer(owner, realDamage, data.getSpeed(), data.getSize());
                 } else if ("final_flash".equals(data.getId())) {
