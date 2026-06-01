@@ -44,6 +44,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 import java.util.function.IntConsumer;
@@ -192,9 +193,29 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, bodyColorY, "bodyColor2"));
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 90, bodyColorY, "bodyColor3"));
 
+		if (isFemaleBody()) {
+			addRenderableWidget(new ColorSlider.Builder()
+					.position(LEFT_PANEL_X + 20, top + 160)
+					.size(100, 8)
+					.range(15, 25)
+					.value(Math.round(Math.max(0.75f, Math.min(1.25f, character.getBoobScale())) * 20f))
+					.message(txt("BoobScale"))
+					.onValueChange(v -> {
+						float newScale = v / 20f;
+						if (character.getBoobScale() == newScale) return;
+						character.setBoobScale(newScale);
+						syncCharacter();
+					})
+					.build());
+		}
+
 		if (shouldRenderFormPreviewInPreset()) {
 			initPreviewTransformationArrows(top + 174);
 		}
+	}
+
+	private boolean isFemaleBody() {
+		return Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender()) || character.getBodyType() == 1;
 	}
 
 	private void initHairTab(int top) {
@@ -401,6 +422,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 400.0D);
+		graphics.flush();
+		RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		graphics.pose().popPose();
 
@@ -456,6 +479,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.body_type").getString(), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
+		if (isFemaleBody()) {
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.chest_size").getString() + " x" + String.format("%.2f", character.getBoobScale()), centerX, top + 150, 0xFF9B9B);
+		}
 		if (shouldRenderFormPreviewInPreset()) {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
 		}
@@ -1213,6 +1239,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		return Math.max(1, Math.round(baseScale * normalization));
 	}
 
+	private int getNormalizedPreviewScale(LivingEntity player, int baseScale) {
+		float currentVisualScale = getCurrentVisualModelScale(player);
+		if (currentVisualScale <= 0.0f) return baseScale;
+		float normalization = 0.9375f / currentVisualScale;
+		return Math.max(1, Math.round(baseScale * normalization));
+	}
+
 	private float getCurrentVisualModelScale(LivingEntity player) {
 		final float[] currentVisualScale = {0.9375f};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
@@ -1583,7 +1616,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> scale + 16;
 			default -> scale;
 		};
-		previewScale = getAdjustedModelScale(player, previewScale);
+		if (mode == PreviewRenderMode.EYES_ONLY || mode == PreviewRenderMode.NOSE_ONLY || mode == PreviewRenderMode.MOUTH_ONLY)
+			previewScale = getNormalizedPreviewScale(player, previewScale);
+		else previewScale = getAdjustedModelScale(player, previewScale);
+
 		int previewY = 0;
 		switch (mode) {
 			case HAIR_ONLY -> {

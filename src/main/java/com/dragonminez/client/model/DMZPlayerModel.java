@@ -280,6 +280,34 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             if (rightArm != null) RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
             if (leftArm != null) RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
         } catch (Exception ignored) {}
+
+        applyBoobScale(animatable);
+    }
+
+    private void applyBoobScale(T animatable) {
+        CoreGeoBone boobas = this.getAnimationProcessor().getBone("boobas");
+        if (boobas == null) return;
+
+        float factor = StatsProvider.get(StatsCapability.INSTANCE, animatable).map(data -> {
+            Character c = data.getCharacter();
+            String gender = c.getGender() != null ? c.getGender().toLowerCase() : "";
+            boolean isFemale = gender.equals("female") || gender.equals("mujer") || c.getBodyType() == 1;
+            return isFemale ? Mth.clamp(c.getBoobScale(), 0.75f, 1.25f) : 1.0f;
+        }).orElse(1.0f);
+
+        float[] axis = computeBoobAxisScale(factor);
+        boobas.setScaleX(axis[0]);
+        boobas.setScaleY(axis[1]);
+        boobas.setScaleZ(axis[2]);
+    }
+
+    public static float[] computeBoobAxisScale(float factor) {
+        float delta = factor - 1.0f;
+        return new float[]{
+                1.0f + delta * 0.15f,
+                1.0f + delta * 0.3f,
+                1.0f + delta * 1.4f
+        };
     }
 
 

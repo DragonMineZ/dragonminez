@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -68,6 +69,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             GeoBone armorBody = getChild(playerBone, "armorBody");
             GeoBone armorLeggingsBody = getChild(playerBone, "armorLeggingsBody");
             GeoBone bodyLayer = getChild(playerBone, "body_layer");
+            GeoBone boobasBone = getChild(playerBone, "boobas");
 
             boolean ob1 = armorBody != null && armorBody.isHidden();
             boolean ob2 = armorLeggingsBody != null && armorLeggingsBody.isHidden();
@@ -77,11 +79,26 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (armorLeggingsBody != null) armorLeggingsBody.setHidden(true);
             if (bodyLayer != null) bodyLayer.setHidden(true);
 
+            float bX = 1f, bY = 1f, bZ = 1f;
+            if (boobasBone != null) {
+                bX = boobasBone.getScaleX();
+                bY = boobasBone.getScaleY();
+                bZ = boobasBone.getScaleZ();
+                boobasBone.setScaleX(bX * 1.03f);
+                boobasBone.setScaleY(bY * 1.06f);
+                boobasBone.setScaleZ(bZ * 1.15f);
+            }
+
             renderRootBoneInflated(playerBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight, inflation);
 
             if (armorBody != null) armorBody.setHidden(ob1);
             if (armorLeggingsBody != null) armorLeggingsBody.setHidden(ob2);
             if (bodyLayer != null) bodyLayer.setHidden(ob3);
+            if (boobasBone != null) {
+                boobasBone.setScaleX(bX);
+                boobasBone.setScaleY(bY);
+                boobasBone.setScaleZ(bZ);
+            }
 
             poseStack.popPose();
             return;
@@ -99,6 +116,21 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
         ResourceLocation texture = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, null);
 
+        GeoBone armorBoobas = findBoneDeep(armorBodyBone, "boobas");
+        float boobFactor = resolveBoobScale(stats);
+        float savedBoobX = 1f, savedBoobY = 1f, savedBoobZ = 1f;
+        if (armorBoobas != null) {
+            savedBoobX = armorBoobas.getScaleX();
+            savedBoobY = armorBoobas.getScaleY();
+            savedBoobZ = armorBoobas.getScaleZ();
+
+            // Cover the bare chest mostly forward (Z), barely widening (X), so it doesn't look bulkier sideways.
+            float[] axis = DMZPlayerModel.computeBoobAxisScale(boobFactor);
+            armorBoobas.setScaleX(savedBoobX * axis[0] * 1.03f);
+            armorBoobas.setScaleY(savedBoobY * axis[1] * 1.06f);
+            armorBoobas.setScaleZ(savedBoobZ * axis[2] * 1.15f);
+        }
+
         float translateY = resolveCustomArmorTranslateY(ctx);
         poseStack.pushPose();
         poseStack.translate(0, translateY, 0);
@@ -113,6 +145,19 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             renderRootBoneInflated(armorBodyBone, poseStack, bufferSource, animatable, overlayTex, partialTick, packedLight, 1.05f);
             poseStack.popPose();
         }
+
+        if (armorBoobas != null) {
+            armorBoobas.setScaleX(savedBoobX);
+            armorBoobas.setScaleY(savedBoobY);
+            armorBoobas.setScaleZ(savedBoobZ);
+        }
+    }
+
+    private float resolveBoobScale(StatsData stats) {
+        Character c = stats.getCharacter();
+        String gender = c.getGender() != null ? c.getGender().toLowerCase() : "";
+        boolean isFemale = gender.equals("female") || c.getBodyType() == 1;
+        return isFemale ? Math.max(0.75f, Math.min(1.25f, c.getBoobScale())) : 1.0f;
     }
 
     private ItemStack resolveChestArmorStack(T animatable) {

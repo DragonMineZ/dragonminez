@@ -21,6 +21,7 @@ public class UpdateCharacterC2S {
 	private final int noseType;
 	private final int mouthType;
 	private final int tattooType;
+	private final float boobScale;
 	private final String activeHeadBone;
 	private final String hairColor;
 	private final String bodyColor;
@@ -39,6 +40,7 @@ public class UpdateCharacterC2S {
 		this.noseType = character.getNoseType();
 		this.mouthType = character.getMouthType();
 		this.tattooType = character.getTattooType();
+		this.boobScale = character.getBoobScale();
 		this.activeHeadBone = character.getActiveHeadBone();
 		this.hairColor = character.getHairColor();
 		this.bodyColor = character.getBodyColor();
@@ -50,7 +52,7 @@ public class UpdateCharacterC2S {
 	}
 
 	public UpdateCharacterC2S(String className, int hairId, CustomHair customHair, int bodyType, int eyesType,
-							  int noseType, int mouthType, int tattooType, String activeHeadBone, String hairColor, String bodyColor,
+							  int noseType, int mouthType, int tattooType, float boobScale, String activeHeadBone, String hairColor, String bodyColor,
 							  String bodyColor2, String bodyColor3, String eye1Color, String eye2Color, String auraColor) {
 		this.className = className;
 		this.hairId = hairId;
@@ -60,6 +62,7 @@ public class UpdateCharacterC2S {
 		this.noseType = noseType;
 		this.mouthType = mouthType;
 		this.tattooType = tattooType;
+		this.boobScale = boobScale;
 		this.activeHeadBone = activeHeadBone;
 		this.hairColor = hairColor;
 		this.bodyColor = bodyColor;
@@ -81,6 +84,7 @@ public class UpdateCharacterC2S {
 		buf.writeInt(msg.noseType);
 		buf.writeInt(msg.mouthType);
 		buf.writeInt(msg.tattooType);
+		buf.writeFloat(msg.boobScale);
 		buf.writeUtf(msg.activeHeadBone);
 		buf.writeUtf(msg.hairColor);
 		buf.writeUtf(msg.bodyColor);
@@ -108,6 +112,7 @@ public class UpdateCharacterC2S {
 				buf.readInt(),
 				buf.readInt(),
 				buf.readInt(),
+				buf.readFloat(),
 				buf.readUtf(),
 				buf.readUtf(),
 				buf.readUtf(),
@@ -134,6 +139,7 @@ public class UpdateCharacterC2S {
 				c.setNoseType(msg.noseType);
 				c.setMouthType(msg.mouthType);
 				c.setTattooType(msg.tattooType);
+				c.setBoobScale(msg.boobScale);
 				c.setActiveHeadBone(msg.activeHeadBone);
 				c.setHairColor(msg.hairColor);
 				c.setBodyColor(msg.bodyColor);

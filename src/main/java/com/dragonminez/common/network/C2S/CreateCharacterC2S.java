@@ -25,6 +25,7 @@ public class CreateCharacterC2S {
 	private final int noseType;
 	private final int mouthType;
 	private final int tattooType;
+	private final float boobScale;
 	private final String activeHeadBone;
 	private final String hairColor;
 	private final String bodyColor;
@@ -45,6 +46,7 @@ public class CreateCharacterC2S {
 		this.noseType = character.getNoseType();
 		this.mouthType = character.getMouthType();
 		this.tattooType = character.getTattooType();
+		this.boobScale = character.getBoobScale();
 		this.activeHeadBone = character.getActiveHeadBone();
 		this.hairColor = character.getHairColor();
 		this.bodyColor = character.getBodyColor();
@@ -56,7 +58,7 @@ public class CreateCharacterC2S {
 	}
 
 	private CreateCharacterC2S(String raceName, String className, String gender, int hairId, CustomHair customHair, int bodyType, int eyesType,
-							   int noseType, int mouthType, int tattooType, String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
+							   int noseType, int mouthType, int tattooType, float boobScale, String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
 							   String eye1Color, String eye2Color, String auraColor) {
 		this.raceName = raceName;
 		this.className = className;
@@ -68,6 +70,7 @@ public class CreateCharacterC2S {
 		this.noseType = noseType;
 		this.mouthType = mouthType;
 		this.tattooType = tattooType;
+		this.boobScale = boobScale;
 		this.activeHeadBone = activeHeadBone;
 		this.hairColor = hairColor;
 		this.bodyColor = bodyColor;
@@ -93,6 +96,7 @@ public class CreateCharacterC2S {
 		buf.writeInt(msg.noseType);
 		buf.writeInt(msg.mouthType);
 		buf.writeInt(msg.tattooType);
+		buf.writeFloat(msg.boobScale);
 		buf.writeUtf(msg.activeHeadBone);
 		buf.writeUtf(msg.hairColor);
 		buf.writeUtf(msg.bodyColor);
@@ -117,6 +121,7 @@ public class CreateCharacterC2S {
 		int noseType = buf.readInt();
 		int mouthType = buf.readInt();
 		int tattooType = buf.readInt();
+		float boobScale = buf.readFloat();
 		String activeHeadBone = buf.readUtf();
 		String hairColor = buf.readUtf();
 		String bodyColor = buf.readUtf();
@@ -128,7 +133,7 @@ public class CreateCharacterC2S {
 
 		return new CreateCharacterC2S(
 				raceName, className, gender, hairId, customHair, bodyType, eyesType,
-				noseType, mouthType, tattooType, activeHeadBone, hairColor, bodyColor, bodyColor2, bodyColor3,
+				noseType, mouthType, tattooType, boobScale, activeHeadBone, hairColor, bodyColor, bodyColor2, bodyColor3,
 				eye1Color, eye2Color, auraColor
 		);
 	}
@@ -141,7 +146,7 @@ public class CreateCharacterC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isHasCreatedCharacter()) {
 					data.initializeWithRaceAndClass(msg.raceName, msg.className, msg.gender,
-							msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType,
+							msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType, msg.boobScale,
 							msg.activeHeadBone, msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
 							msg.eye1Color, msg.eye2Color, msg.auraColor);
 					data.getCharacter().setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(data));
