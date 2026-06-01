@@ -67,7 +67,10 @@ public abstract class TitleScreenMixin extends Screen {
 			MainSounds.MENU_MUSIC_27,
 			MainSounds.MENU_MUSIC_28,
 			MainSounds.MENU_MUSIC_29,
-			MainSounds.MENU_MUSIC_30
+			MainSounds.MENU_MUSIC_30,
+			MainSounds.MENU_MUSIC_31,
+			MainSounds.MENU_MUSIC_32,
+			MainSounds.MENU_MUSIC_33
 	);
 	@Unique
 	private static final Random dragonminez$RANDOM = new Random();
