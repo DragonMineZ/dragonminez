@@ -238,6 +238,9 @@ public class SyncQuestRegistryS2C {
 			obj.addProperty("kiDamage", kill.getKiDamage());
 			obj.addProperty("spawn", kill.getSpawnMode().name());
 			obj.addProperty("count_mode", kill.getCountMode().name());
+			if (kill.getTextureVariant() >= 0) {
+				obj.addProperty("TextureVariant", kill.getTextureVariant());
+			}
 		} else if (objective instanceof ItemObjective item) {
 			obj.addProperty("item", item.getItemId());
 			obj.addProperty("count", item.getCount());
