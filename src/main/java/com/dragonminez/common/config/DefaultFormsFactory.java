@@ -688,12 +688,13 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssj4d = new FormConfig.FormData();
         FormConfig.FormData.TransformationPostShaderConfig ssj4dOutline = new FormConfig.FormData.TransformationPostShaderConfig();
         ssj4dOutline.setEnabled(true);
-        ssj4dOutline.setPrimaryColor("#EBFFFF");
-        ssj4dOutline.setSecondaryColor("#DEEEFA");
+        ssj4dOutline.setPrimaryColor("#F4FF8A");
+        ssj4dOutline.setSecondaryColor("#8AFFFF");
         ssj4dOutline.setNoiseScale(1.5d);
-        ssj4dOutline.setColorMixSpeed(2.0d);
+        ssj4dOutline.setColorMixSpeed(0.2d);
         ssj4dOutline.setOutlineThickness(3.7D);
-		ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
+        ssj4d.setTransformationPostShader(ssj4dOutline);
+        ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
 		ssj4d.setCustomModel("ssj4d");
 		ssj4d.setUnlockOnSkillLevel(8);
 		ssj4d.setHairColor("#83073F");
@@ -713,7 +714,6 @@ public class DefaultFormsFactory {
         ssj4d.setHasLightnings(true);
         ssj4d.setStackDrainMultiplier(2.0);
         setDefaultMasteryValues(ssj4d);
-        ssj4d.setTransformationPostShader(ssj4dOutline);
         ssj4d.setDirectTransformation(true);
 
 		Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
@@ -734,6 +734,14 @@ public class DefaultFormsFactory {
 		saiyanLegendaryForms.setFormType("legendaryforms");
 
 		FormConfig.FormData ikari = new FormConfig.FormData();
+        FormConfig.FormData.TransformationPostShaderConfig ikariOutline = new FormConfig.FormData.TransformationPostShaderConfig();
+        ikariOutline.setEnabled(true);
+        ikariOutline.setPrimaryColor("#7FFF7D");
+        ikariOutline.setSecondaryColor("#F4FF7D");
+        ikariOutline.setNoiseScale(1.5d);
+        ikariOutline.setColorMixSpeed(0.2d);
+        ikariOutline.setOutlineThickness(3.5D);
+        ikari.setTransformationPostShader(ikariOutline);
 		ikari.setName(SaiyanForms.IKARI);
 		ikari.setUnlockOnSkillLevel(1);
 		ikari.setCustomModel("buffed");
@@ -744,7 +752,8 @@ public class DefaultFormsFactory {
 		ikari.setSkpMultiplier(4.25);
 		ikari.setDefMultiplier(4.25);
 		ikari.setPwrMultiplier(4.25);
-		ikari.setHairType("base");
+        ikari.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
+        ikari.setHairType("ssj");
 		setDefaultMasteryValues(ikari);
 		ikari.setStackDrainMultiplier(2.0);
 		ikari.setCanAlwaysTransform(true);
@@ -763,7 +772,8 @@ public class DefaultFormsFactory {
 		ssjHybrid.setSkpMultiplier(4.75);
 		ssjHybrid.setDefMultiplier(4.75);
 		ssjHybrid.setPwrMultiplier(4.75);
-		ssjHybrid.setHairType("ssj");
+        ssjHybrid.setModelScaling(new Float[]{1.15f, 1.15f, 1.15f});
+        ssjHybrid.setHairType("ssj");
 		setDefaultMasteryValues(ssjHybrid);
 		ssjHybrid.setStackDrainMultiplier(2.0);
 
@@ -781,7 +791,8 @@ public class DefaultFormsFactory {
 		ssjFullPower.setSkpMultiplier(5.5);
 		ssjFullPower.setDefMultiplier(5.5);
 		ssjFullPower.setPwrMultiplier(5.5);
-		ssjFullPower.setHairType("ssj2");
+        ssjHybrid.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
+        ssjFullPower.setHairType("ssj2");
 		setDefaultMasteryValues(ssjFullPower);
 		ssjFullPower.setStackDrainMultiplier(2.0);
 
