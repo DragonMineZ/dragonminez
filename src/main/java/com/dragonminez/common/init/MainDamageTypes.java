@@ -26,5 +26,9 @@ public class MainDamageTypes {
 		return source.typeHolder().is(KIBLAST);
 	}
 
+	public static boolean isStrikeAttackDamage(DamageSource source) {
+		return source.typeHolder().is(STRIKE_ATTACK);
+	}
+
 	public static void register() {}
 }

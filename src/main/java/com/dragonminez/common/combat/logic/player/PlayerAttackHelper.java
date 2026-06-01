@@ -7,6 +7,7 @@ import com.dragonminez.common.combat.player.ComboState;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.skills.Skills;
 import net.minecraft.util.Mth;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -31,6 +32,21 @@ public class PlayerAttackHelper {
     }
 
     public static boolean isDualWielding(Player player) {
+        if (isKiWeaponActive(player)) {
+            var mainAttributes = getKiWeaponAttributes(player);
+            if (mainAttributes == null || mainAttributes.isTwoHanded()) return false;
+
+            var offStack = player.getOffhandItem();
+            if (offStack.isEmpty() || offStack.getItem() instanceof ShieldItem) return false;
+
+            var offAttributes = WeaponRegistry.getAttributes(offStack);
+            if (offAttributes == null || offAttributes.isTwoHanded()) return false;
+
+            String mainCategory = mainAttributes.category();
+            String offCategory = offAttributes.category();
+            return mainCategory != null && !mainCategory.isEmpty() && mainCategory.equals(offCategory);
+        }
+
         boolean mainEmpty = player.getMainHandItem().isEmpty();
         boolean offEmpty = player.getOffhandItem().isEmpty();
 
@@ -44,6 +60,10 @@ public class PlayerAttackHelper {
     }
 
     public static boolean isTwoHandedWielding(Player player) {
+        if (isKiWeaponActive(player)) {
+            var kiAttributes = getKiWeaponAttributes(player);
+            return kiAttributes != null && kiAttributes.isTwoHanded();
+        }
         var mainAttributes = WeaponRegistry.getAttributes(player.getMainHandItem());
         if (mainAttributes != null) return mainAttributes.isTwoHanded();
         return false;
@@ -64,8 +84,7 @@ public class PlayerAttackHelper {
             WeaponAttributes attributes;
 
             if (itemStack.isEmpty()) {
-                attributes = getActiveFormComboAttributes(player);
-                if (attributes == null || attributes.attacks() == null) attributes = WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
+                attributes = resolveEmptyHandAttributes(player);
             } else attributes = WeaponRegistry.getAttributes(itemStack);
 
             if (attributes != null && attributes.attacks() != null) {
@@ -81,8 +100,7 @@ public class PlayerAttackHelper {
             WeaponAttributes attributes;
 
             if (itemStack.isEmpty()) {
-                attributes = getActiveFormComboAttributes(player);
-                if (attributes == null || attributes.attacks() == null) attributes = WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
+                attributes = resolveEmptyHandAttributes(player);
             } else attributes = WeaponRegistry.getAttributes(itemStack);
 
             if (attributes != null && attributes.attacks() != null) {
@@ -113,12 +131,51 @@ public class PlayerAttackHelper {
         return new AttackSelection(attacks[index], new ComboState(index + 1, attacks.length));
     }
 
-    private static boolean evaluateConditions(WeaponAttributes.Condition[] conditions, Player player, boolean isOffHandAttack) {
+    private static boolean evaluateConditions(String[] conditions, Player player, boolean isOffHandAttack) {
         return Arrays.stream(conditions).allMatch(condition -> evaluateCondition(condition, player, isOffHandAttack));
     }
 
-    private static boolean evaluateCondition(WeaponAttributes.Condition condition, Player player, boolean isOffHandAttack) {
-        if (condition == null) return true;
+    private static boolean evaluateCondition(String raw, Player player, boolean isOffHandAttack) {
+        if (raw == null || raw.isBlank()) return true;
+
+        String type;
+        String[] args;
+        int colon = raw.indexOf(':');
+        if (colon >= 0) {
+            type = raw.substring(0, colon).trim().toUpperCase();
+            args = Arrays.stream(raw.substring(colon + 1).split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toArray(String[]::new);
+        } else {
+            type = raw.trim().toUpperCase();
+            args = new String[0];
+        }
+
+        switch (type) {
+            case "SKILL_ACTIVE" -> {
+                if (args.length < 1) return true;
+                var skills = getSkills(player);
+                return skills != null && skills.isSkillActive(args[0]);
+            }
+            case "SKILL_LEVEL" -> {
+                if (args.length < 2) return true;
+                var skills = getSkills(player);
+                if (skills == null) return false;
+                try {
+                    return skills.getSkillLevel(args[0]) >= Integer.parseInt(args[1]);
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+            }
+        }
+
+        WeaponAttributes.Condition condition;
+        try {
+            condition = WeaponAttributes.Condition.valueOf(type);
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
 
         switch (condition) {
             case NOT_DUAL_WIELDING -> {
@@ -132,9 +189,13 @@ public class PlayerAttackHelper {
             }
             case DUAL_WIELDING_SAME_CATEGORY -> {
                 if (!isDualWielding(player)) return false;
-                var mainHandAttributes = WeaponRegistry.getAttributes(player.getMainHandItem());
+                // A Ki weapon (empty main hand) contributes the category of its resolved combo.
+                var mainHandAttributes = isKiWeaponActive(player)
+                        ? getKiWeaponAttributes(player)
+                        : WeaponRegistry.getAttributes(player.getMainHandItem());
                 var offHandAttributes = WeaponRegistry.getAttributes(player.getOffhandItem());
-                if (mainHandAttributes.category() == null || mainHandAttributes.category().isEmpty()
+                if (mainHandAttributes == null || offHandAttributes == null
+                        || mainHandAttributes.category() == null || mainHandAttributes.category().isEmpty()
                         || offHandAttributes.category() == null || offHandAttributes.category().isEmpty()) {
                     return false;
                 }
@@ -218,6 +279,73 @@ public class PlayerAttackHelper {
         }
 
         return null;
+    }
+
+    @Nullable
+    private static Skills getSkills(Player player) {
+        var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, player);
+        if (!statsOpt.isPresent()) return null;
+        var stats = statsOpt.resolve().orElse(null);
+        return stats != null ? stats.getSkills() : null;
+    }
+
+    /**
+     * A Ki weapon behaves as a "fake weapon" only when the Ki Manipulation skill is active,
+     * the main hand is empty (Ki weapons require an empty hand), and a config entry exists.
+     */
+    public static boolean isKiWeaponActive(Player player) {
+        if (!player.getMainHandItem().isEmpty()) return false;
+        var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, player);
+        if (!statsOpt.isPresent()) return false;
+        var stats = statsOpt.resolve().orElse(null);
+        if (stats == null || !stats.getSkills().isSkillActive("kimanipulation")) return false;
+
+        String type = stats.getStatus().getKiWeaponType();
+        if (type == null || type.equalsIgnoreCase("none")) return false;
+        return ConfigManager.getCombatConfig().getKiWeaponConfig(type) != null;
+    }
+
+    /**
+     * Resolves the attack set a Ki weapon should use, derived from its configured {@code weaponCombo}.
+     * Falls back to the default fist combo if the combo is missing or cannot be resolved.
+     */
+    @Nullable
+    public static WeaponAttributes getKiWeaponAttributes(Player player) {
+        var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, player);
+        if (!statsOpt.isPresent()) return null;
+        var stats = statsOpt.resolve().orElse(null);
+        if (stats == null) return null;
+
+        String type = stats.getStatus().getKiWeaponType();
+        if (type == null) return null;
+
+        var cfg = ConfigManager.getCombatConfig().getKiWeaponConfig(type);
+        String combo = cfg != null ? cfg.getWeaponCombo() : null;
+        if (combo != null && !combo.isBlank()) {
+            ResourceLocation comboId = ResourceLocation.tryParse(combo.trim().toLowerCase());
+            if (comboId != null) {
+                var attributes = WeaponRegistry.getAttributes(comboId);
+                if (attributes != null && attributes.attacks() != null) return attributes;
+            }
+        }
+        return WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
+    }
+
+    /**
+     * Attributes used when a hand is empty: the active Ki weapon combo if one is active,
+     * otherwise the active form combo, with the fist combo as the ultimate fallback.
+     */
+    @Nullable
+    private static WeaponAttributes resolveEmptyHandAttributes(Player player) {
+        if (isKiWeaponActive(player)) {
+            var kiAttributes = getKiWeaponAttributes(player);
+            if (kiAttributes != null && kiAttributes.attacks() != null) return kiAttributes;
+        }
+        var attributes = getActiveFormComboAttributes(player);
+        if (attributes == null || attributes.attacks() == null) {
+            attributes = WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
+        }
+        return attributes;
     }
 
     private static final Object attributesLock = new Object();

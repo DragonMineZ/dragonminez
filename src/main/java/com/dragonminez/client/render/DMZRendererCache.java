@@ -3,6 +3,7 @@ package com.dragonminez.client.render;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.model.DMZPlayerModel;
+import com.dragonminez.client.model.KiWeaponModelLoader;
 import com.dragonminez.client.render.firstperson.DMZPOVPlayerRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
@@ -30,6 +31,7 @@ public final class DMZRendererCache {
 	public static void onResourceReload(EntityRendererProvider.Context ctx) {
 		context = ctx;
 		clear();
+		KiWeaponModelLoader.clear();
 		LogUtil.info(Env.CLIENT, "DMZRendererCache cleared on resource reload");
 	}
 

@@ -28,6 +28,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -202,8 +203,12 @@ public class ClientStatsEvents {
 				}
 			}
 
-			if (isBlockKeyDown != data.getStatus().isBlocking()) {
-				if (isBlockKeyDown && localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty()) {
+			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
+			if (kiWeaponActive && data.getStatus().isBlocking()) {
+				data.getStatus().setBlocking(false);
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
+			} else if (isBlockKeyDown != data.getStatus().isBlocking() && !PlayerAttackHelper.isKiWeaponActive(localPlayer)) {
+				if (isBlockKeyDown && !kiWeaponActive && localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty()) {
 					data.getStatus().setBlocking(isBlockKeyDown);
 					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
 				} else if (!isBlockKeyDown) {

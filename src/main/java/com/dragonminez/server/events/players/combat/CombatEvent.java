@@ -12,6 +12,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.quest.PartyManager;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -167,27 +168,16 @@ public class CombatEvent {
 				boolean kiWeaponActive = attackerData.getSkills().isSkillActive("kimanipulation");
 				int kiWeaponLevel = attackerData.getSkills().getSkillLevel("kimanipulation");
 				float kiWeaponMult = kiWeaponLevel * 0.1f;
-				if (kiWeaponActive) {
+				if (kiWeaponActive && attacker.getMainHandItem().isEmpty()) {
 					String weaponType = attackerData.getStatus().getKiWeaponType();
-					int kiCost = 0;
-					switch (weaponType.toLowerCase()) {
-						case "blade" -> {
-							kiCost = (int) Math.round(ConfigManager.getCombatConfig().getBaselineFormDrain() * ConfigManager.getCombatConfig().getKiBladeConfig()[1]);
-							if (attackerData.getResources().getCurrentEnergy() >= kiCost)
-								currentDamage[0] = currentDamage[0] + (attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiBladeConfig()[0] * kiWeaponMult);
+					var kiCfg = ConfigManager.getCombatConfig().getKiWeaponConfig(weaponType);
+					if (kiCfg != null) {
+						int kiCost = (int) Math.round(kiCfg.getBaseKiCost() + ConfigManager.getCombatConfig().getBaselineFormDrain() * kiCfg.getKiScalingCost());
+						if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
+							currentDamage[0] = currentDamage[0] + kiCfg.getBaseDamage() + (attackerData.getKiDamage() * kiCfg.getKiScalingDamage() * kiWeaponMult);
 						}
-						case "scythe" -> {
-							kiCost = (int) Math.round(ConfigManager.getCombatConfig().getBaselineFormDrain() * ConfigManager.getCombatConfig().getKiScytheConfig()[1]);
-							if (attackerData.getResources().getCurrentEnergy() >= kiCost)
-								currentDamage[0] = currentDamage[0] + (attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiScytheConfig()[0] * kiWeaponMult);
-						}
-						case "clawlance" -> {
-							kiCost = (int) Math.round(ConfigManager.getCombatConfig().getBaselineFormDrain() * ConfigManager.getCombatConfig().getKiClawLanceConfig()[1]);
-							if (attackerData.getResources().getCurrentEnergy() >= kiCost)
-								currentDamage[0] = currentDamage[0] + (attackerData.getKiDamage() * ConfigManager.getCombatConfig().getKiClawLanceConfig()[0] * kiWeaponMult);
-						}
+						if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
 					}
-					if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
 				}
 
 				int kiInfusionLevel = attackerData.getSkills().getSkillLevel("ki_infusion");
@@ -285,17 +275,7 @@ public class CombatEvent {
 								int blockStaminaCost = (int) (event.getAmount() * ConfigManager.getCombatConfig().getBlockStaminaCost());
 
 								if (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0) {
-									victimData.getResources().setCurrentPoise(0);
-									victimData.getResources().setCurrentStamina(0);
-									victimData.getStatus().setBlocking(false);
-
-									int stunDuration = ConfigManager.getCombatConfig().getBlockBreakStunDurationTicks();
-									victim.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
-									int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
-									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
-									victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
-
-									victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.UNBLOCK.get(), SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
+									doGuardBreak(victim, victimData);
 
 									if (victim.level() instanceof ServerLevel serverLevel) {
 										Vec3 look = victim.getLookAngle();
@@ -319,6 +299,15 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
 											attackerLiving.getPersistentData().putLong("dmz_parry_penalty", System.currentTimeMillis() + 4000);
+										}
+										if (MainDamageTypes.isKiblastDamage(source)) {
+											divertKiProjectile(source, victim);
+										}
+										if (MainDamageTypes.isStrikeAttackDamage(source)) {
+											applyStrikeCounterGuardBreak(sourceEntity);
+											boolean isGuardBrokenTmp = victimData.getStatus().isStunned() && victimData.getResources().getCurrentPoise() <= 0;
+											double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp, finalDefensePenetration);
+											if (!(estimatedPostMitigation <= 0.0)) victimData.getResources().removeStamina((float) (estimatedPostMitigation * 0.5));
 										}
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
@@ -411,6 +400,41 @@ public class CombatEvent {
 				SoundHelper.playSound(serverLevel, event.getEntity(), currentAttack.attack().impactSound());
 			}
 		}
+	}
+
+	private static void divertKiProjectile(DamageSource source, Player defender) {
+		Entity direct = source.getDirectEntity();
+		if (!(direct instanceof AbstractKiProjectile projectile)) return;
+		Vec3 currentVelocity = projectile.getDeltaMovement();
+		double speed = Math.max(0.2, currentVelocity.length());
+		Vec3 randomDir = new Vec3(defender.getRandom().nextDouble() - 0.5, defender.getRandom().nextDouble() - 0.25, defender.getRandom().nextDouble() - 0.5);
+		if (randomDir.lengthSqr() < 1.0E-6) randomDir = defender.getLookAngle().scale(-1.0);
+		Vec3 newVelocity = randomDir.normalize().scale(speed);
+		projectile.setDeltaMovement(newVelocity);
+		projectile.hasImpulse = true;
+		projectile.hurtMarked = true;
+	}
+
+	private static void applyStrikeCounterGuardBreak(Entity sourceEntity) {
+		if (!(sourceEntity instanceof Player attacker)) return;
+		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
+			doGuardBreak(attacker, attackerData);
+			if (attacker instanceof ServerPlayer serverPlayer) {
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			}
+		});
+	}
+
+	private static void doGuardBreak(Player attacker, StatsData attackerData) {
+		attackerData.getResources().setCurrentPoise(0);
+		attackerData.getResources().setCurrentStamina(0);
+		attackerData.getStatus().setBlocking(false);
+		int stunDuration = ConfigManager.getCombatConfig().getBlockBreakStunDurationTicks();
+		attacker.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
+		int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
+		attackerData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+		attacker.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
+		attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), MainSounds.UNBLOCK.get(), SoundSource.PLAYERS, 1.0F, 0.9F + attacker.getRandom().nextFloat() * 0.1F);
 	}
 
 	private static boolean isSpecificKiAttack(DamageSource source) {

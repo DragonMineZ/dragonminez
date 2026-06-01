@@ -15,17 +15,6 @@ import net.minecraft.network.chat.Component;
 
 public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
 	private boolean hasAvailableSuperform(StatsData statsData) {
-		var skillConfig = ConfigManager.getSkillsConfig();
-		boolean hasSuperformSkill = false;
-		for (String formSkill : skillConfig.getFormSkills()) {
-			if (statsData.getSkills().getSkillLevel(formSkill) > 0) {
-				hasSuperformSkill = true;
-				break;
-			}
-		}
-
-		if (!hasSuperformSkill) return false;
-
 		String firstGroup = TransformationsHelper.getGroupWithFirstAvailableForm(statsData);
 		String firstForm = TransformationsHelper.getFirstAvailableForm(statsData);
 		return firstGroup != null && !firstGroup.isEmpty() && firstForm != null && !firstForm.isEmpty();

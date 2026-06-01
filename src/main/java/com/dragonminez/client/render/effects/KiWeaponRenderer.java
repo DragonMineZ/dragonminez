@@ -7,6 +7,7 @@ import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -17,8 +18,21 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 
 public class KiWeaponRenderer {
-	private static final ResourceLocation KI_WEAPONS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
-	private static final ResourceLocation KI_WEAPONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
+	private static ResourceLocation weaponModel(String type) {
+		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/kiweapon_" + type.toLowerCase() + ".geo.json");
+		if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) return loc;
+		return null;
+	}
+
+	private static ResourceLocation weaponTexture(String type) {
+		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + type.toLowerCase() + ".png");
+		if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) return loc;
+		return null;
+	}
+
+	private static String weaponBone(String type) {
+		return "kiweapon_" + type.toLowerCase();
+	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public static void processWeapons(MultiBufferSource.BufferSource buffers, PoseStack poseStack) {
@@ -28,54 +42,41 @@ public class KiWeaponRenderer {
 		for (var entry : weapons) {
 			if (entry == null || entry.player() == null) continue;
 
+			String type = entry.weaponType();
+			if (type == null || type.isEmpty()) continue;
+
 			Player player = entry.player();
 			DMZPlayerRenderer<?> renderer = DMZRendererCache.getTPRenderer(player);
 
 			if (renderer != null) {
-				BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(KI_WEAPONS_MODEL);
+				ResourceLocation modelLoc = weaponModel(type);
+				if (modelLoc == null) continue;
+				BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(modelLoc);
 				if (weaponModel == null) continue;
 
-				boolean isRight = player.getMainArm() == HumanoidArm.RIGHT;
-				String boneName = getWeaponBoneName(entry.weaponType(), isRight);
+				String boneName = weaponBone(type);
+				ResourceLocation texture = weaponTexture(type);
 
-				if (!boneName.isEmpty()) {
-					weaponModel.getBone(boneName).ifPresent(targetBone -> {
+				weaponModel.getBone(boneName).ifPresent(targetBone -> {
 
-						syncTargetBoneAndParents(targetBone, entry.playerModel());
+					syncTargetBoneAndParents(targetBone, entry.playerModel());
 
-						poseStack.pushPose();
-						poseStack.last().pose().set(entry.poseMatrix());
+					poseStack.pushPose();
+					poseStack.last().pose().set(entry.poseMatrix());
 
-						RenderType renderType = ModRenderTypes.energy(KI_WEAPONS_TEXTURE);
-						VertexConsumer vertexConsumer = buffers.getBuffer(renderType);
+					RenderType renderType = ModRenderTypes.energy2(texture);
+					VertexConsumer vertexConsumer = buffers.getBuffer(renderType);
 
-						DMZPlayerRenderer rawRenderer = renderer;
+					DMZPlayerRenderer rawRenderer = renderer;
 
-						rawRenderer.renderRecursively(poseStack, player, targetBone, renderType, buffers, vertexConsumer, true,
-								entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
-								entry.color()[0], entry.color()[1], entry.color()[2], 0.85f);
+					rawRenderer.renderRecursively(poseStack, player, targetBone, renderType, buffers, vertexConsumer, true,
+							entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
+							entry.color()[0], entry.color()[1], entry.color()[2], 0.65f);
 
-						poseStack.popPose();
-					});
-				}
+					poseStack.popPose();
+				});
 			}
 		}
-	}
-
-	private static String getWeaponBoneName(String type, boolean isRight) {
-		if (type == null) return "";
-		return switch (type) {
-			case "blade", "BLADE", "Blade" -> isRight ? "blade_right" : "blade_left";
-			case "scythe", "SCYTHE", "Scythe" -> isRight ? "scythe_right" : "scythe_left";
-			case "clawlance", "CLAWLANCE", "Clawlance" -> isRight ? "trident_right" : "trident_left";
-			default -> {
-				String lower = type.toLowerCase();
-				if (lower.equals("blade")) yield isRight ? "blade_right" : "blade_left";
-				if (lower.equals("scythe")) yield isRight ? "scythe_right" : "scythe_left";
-				if (lower.equals("clawlance")) yield isRight ? "trident_right" : "trident_left";
-				yield "";
-			}
-		};
 	}
 
 	private static void syncTargetBoneAndParents(GeoBone destBone, BakedGeoModel sourceModel) {

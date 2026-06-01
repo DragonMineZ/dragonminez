@@ -1,7 +1,6 @@
 package com.dragonminez.client.render.layer;
 
-import com.dragonminez.Reference;
-import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -11,12 +10,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.HumanoidArm;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
@@ -26,9 +23,7 @@ public class DMZWeaponsLayer<T extends AbstractClientPlayer & GeoAnimatable> ext
     }
 
     @Override
-    public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType,
-                              MultiBufferSource bufferSource, VertexConsumer buffer,
-                              float partialTick, int packedLight, int packedOverlay) {
+    public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
         if (!"right_arm".equals(playerBone.getName()) && !"left_arm".equals(playerBone.getName())) return;
         if (animatable.isSpectator()) return;
 
@@ -38,6 +33,8 @@ public class DMZWeaponsLayer<T extends AbstractClientPlayer & GeoAnimatable> ext
         String weaponType = stats.getStatus().getKiWeaponType();
         if (weaponType == null || weaponType.equalsIgnoreCase("none")) return;
 
+        if (!animatable.getMainHandItem().isEmpty()) return;
+
         boolean isRight = animatable.getMainArm() == HumanoidArm.RIGHT;
         boolean isRightArm = "right_arm".equals(playerBone.getName());
         if (isRight != isRightArm) return;
@@ -45,7 +42,7 @@ public class DMZWeaponsLayer<T extends AbstractClientPlayer & GeoAnimatable> ext
         BakedGeoModel livePlayerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
         if (livePlayerModel == null) return;
 
-        PlayerEffectQueue.addWeapon(animatable, livePlayerModel, poseStack, weaponType, getKiColor(stats), partialTick, packedLight);
+        PlayerEffectQueue.addWeapon(animatable, livePlayerModel, poseStack, weaponType, KiWeaponHelper.resolveColorForType(weaponType, getKiColor(stats)), partialTick, packedLight);
     }
 
     private float[] getKiColor(StatsData stats) {

@@ -3,7 +3,6 @@ package com.dragonminez.client.model;
 import com.dragonminez.Reference;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -12,13 +11,13 @@ import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 
-public class KiTridentModel extends HumanoidModel{
+public class KiClawlanceModel extends HumanoidModel{
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kiweapons"), "kitrident");
 	public final ModelPart trident_right;
     public final ModelPart trident;
     public final ModelPart kisword2;
 
-	public KiTridentModel(ModelPart root) {
+	public KiClawlanceModel(ModelPart root) {
         super(root);
         this.trident_right = root.getChild("trident_right");
 		this.trident = this.trident_right.getChild("trident");

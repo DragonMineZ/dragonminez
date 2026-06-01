@@ -3,7 +3,9 @@ package com.dragonminez.client.render;
 import com.dragonminez.Reference;
 import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
-import com.dragonminez.client.model.KiTridentModel;
+import com.dragonminez.client.model.KiClawlanceModel;
+import com.dragonminez.client.model.KiWeaponModelLoader;
+import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
@@ -51,7 +53,14 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 	public static final KiScytheModel KI_SCYTHE_MODEL = new KiScytheModel(KiScytheModel.createBodyLayer().bakeRoot());
 	public static final KiBladeModel KI_BLADE_MODEL = new KiBladeModel(KiBladeModel.createBodyLayer().bakeRoot());
-	public static final KiTridentModel KI_TRIDENT_MODEL = new KiTridentModel(KiTridentModel.createBodyLayer().bakeRoot());
+	public static final KiClawlanceModel KI_CLAWLANCE_MODEL = new KiClawlanceModel(KiClawlanceModel.createBodyLayer().bakeRoot());
+
+	private static final float KI_GEO_TX = -0.06F;
+	private static final float KI_GEO_TY = 0.1F;
+	private static final float KI_GEO_TZ = -0.2F;
+	private static final float KI_GEO_RX = 0.0F;
+	private static final float KI_GEO_RY = 15.0F;
+	private static final float KI_GEO_RZ = 0.0F;
 
 	private static final float[] WHITE_COLOR = {1.0F, 1.0F, 1.0F};
 	private final float[] colorBuffer = new float[3];
@@ -151,11 +160,25 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		if (!stats.getSkills().isSkillActive("kimanipulation")) return;
 		String type = stats.getStatus().getKiWeaponType();
 		if (type == null || type.equalsIgnoreCase("none")) return;
-		float[] color = getKiColor(stats);
+		float[] color = KiWeaponHelper.resolveColorForType(type, getKiColor(stats));
 		boolean isRight = arm == HumanoidArm.RIGHT;
+		String lower = type.toLowerCase();
+
+		ModelPart geoPart = KiWeaponModelLoader.get(lower);
+		if (geoPart != null) {
+			ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + lower + ".png");
+			ps.pushPose();
+			ps.translate(KI_GEO_TX, KI_GEO_TY, KI_GEO_TZ);
+			if (KI_GEO_RX != 0.0F) ps.mulPose(Axis.XP.rotationDegrees(KI_GEO_RX));
+			if (KI_GEO_RY != 0.0F) ps.mulPose(Axis.YP.rotationDegrees(KI_GEO_RY));
+			if (KI_GEO_RZ != 0.0F) ps.mulPose(Axis.ZP.rotationDegrees(KI_GEO_RZ));
+			renderKiPartTex(ps, buffer, light, geoPart, color, tex);
+			ps.popPose();
+			return;
+		}
 
 		ps.pushPose();
-		switch (type.toLowerCase()) {
+		switch (lower) {
 			case "blade" -> {
 				KI_BLADE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
 				ps.translate(isRight ? -0.02D : 0.15D, 0.1D, -0.1D);
@@ -169,10 +192,10 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 				renderKiPart(ps, buffer, light, KI_SCYTHE_MODEL.scythe_right, color);
 			}
 			case "clawlance" -> {
-				KI_TRIDENT_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
+				KI_CLAWLANCE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
 				ps.translate(isRight ? -0.05D : 0.8D, isRight ? 0.0D : 0, isRight ? -0.3D : 0.5);
 				ps.mulPose(Axis.XP.rotationDegrees(isRight ? 25.0F : -05.0F));
-				renderKiPart(ps, buffer, light, KI_TRIDENT_MODEL.trident_right, color);
+				renderKiPart(ps, buffer, light, KI_CLAWLANCE_MODEL.trident_right, color);
 			}
 		}
 		ps.popPose();
@@ -282,6 +305,11 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 	private void renderKiPart(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color) {
 		VertexConsumer vc = buffer.getBuffer(ModRenderTypes.kiblast(KI_WEAPON_TEX));
+		part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
+	}
+
+	private void renderKiPartTex(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color, ResourceLocation texture) {
+		VertexConsumer vc = buffer.getBuffer(ModRenderTypes.kiblast(texture));
 		part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
 	}
 

@@ -142,7 +142,7 @@ public class TransformationsHelper {
 		if (statsData.getSkills().getSkillLevel("godforms") > 0) preferredTypes.add("godforms");
 		if (statsData.getSkills().getSkillLevel("androidforms") > 0) preferredTypes.add("androidforms");
 
-		if (preferredTypes.isEmpty()) preferredTypes.add("superforms");
+		if (preferredTypes.isEmpty()) preferredTypes.addAll(Arrays.asList("superforms", "legendaryforms", "godforms", "androidforms"));
 
 		for (String formType : preferredTypes) {
 			String group = findBestGroupByType(statsData, race, allGroups, formType);
@@ -182,6 +182,8 @@ public class TransformationsHelper {
 		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
 	}
 
+
+
 	public static String getGroupWithFirstAvailableStackForm(StatsData statsData) {
 		Map<String, FormConfig> allGroups = ConfigManager.getAllStackForms();
 		if (allGroups == null || allGroups.isEmpty()) return null;
@@ -195,7 +197,12 @@ public class TransformationsHelper {
 			}
 		}
 
-		if (preferredTypes.isEmpty()) preferredTypes.add("kaioken");
+		if (preferredTypes.isEmpty()) {
+			for (FormConfig config : allGroups.values()) {
+				String formType = config.getFormType();
+				if (formType != null && !formType.isEmpty() && !preferredTypes.contains(formType.toLowerCase())) preferredTypes.add(formType.toLowerCase());
+			}
+		}
 
 		for (String formType : preferredTypes) {
 			String group = findBestStackGroupByType(statsData, allGroups, formType);
