@@ -385,6 +385,7 @@ public class FormConfig {
 			private String secondaryColor = "#7FFFFF";
 			private Double noiseScale = 4.0;
 			private Double colorMixSpeed = 0.7;
+			private Double outlineThickness = 1.5;
 
 			public boolean isEnabled() {
 				return Boolean.TRUE.equals(enabled);
@@ -404,6 +405,10 @@ public class FormConfig {
 
 			public double getColorMixSpeed() {
 				return Math.max(0.0, colorMixSpeed != null ? colorMixSpeed : 0.7);
+			}
+
+			public double getOutlineThickness() {
+				return Math.max(0.0, outlineThickness != null ? outlineThickness : 1.5);
 			}
 		}
 	}

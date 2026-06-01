@@ -37,7 +37,6 @@ public final class TransformationPostShaderManager {
 	private static final String MASK_TARGET = "entity_mask";
 	private static final String PARAMS_TARGET = "entity_params";
 
-	private static final float FIXED_OUTLINE_THICKNESS = 0.7f;
 	private static final float FIXED_EDGE_THRESHOLD = 0.16f;
 	private static final float FIXED_EDGE_STRENGTH = 1.35f;
 	private static final float FIXED_GLOW_STRENGTH = 1.35f;
@@ -193,7 +192,7 @@ public final class TransformationPostShaderManager {
 			}
 
 			if (SOBEL_PASS_NAME.equals(passName)) {
-				applyUniform(effect, "OutlineThickness", FIXED_OUTLINE_THICKNESS);
+				applyUniform(effect, "OutlineThickness", activeUniformState.outlineThickness());
 				applyUniform(effect, "EdgeThreshold", FIXED_EDGE_THRESHOLD);
 				applyUniform(effect, "EdgeStrength", FIXED_EDGE_STRENGTH);
 				continue;
@@ -304,7 +303,7 @@ public final class TransformationPostShaderManager {
 		private ShaderUniformState uniformState;
 	}
 
-	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float noiseScale, float colorMixSpeed) {
+	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float noiseScale, float colorMixSpeed, float outlineThickness) {
 		private static ShaderUniformState fromConfig(FormConfig.FormData.TransformationPostShaderConfig config) {
 			float[] primary = ColorUtils.hexToRgb(config.getPrimaryColor());
 			float[] secondary = ColorUtils.hexToRgb(config.getSecondaryColor());
@@ -317,7 +316,8 @@ public final class TransformationPostShaderManager {
 					secondary[1],
 					secondary[2],
 					(float) config.getNoiseScale(),
-					(float) config.getColorMixSpeed()
+					(float) config.getColorMixSpeed(),
+					(float) config.getOutlineThickness()
 			);
 		}
 	}

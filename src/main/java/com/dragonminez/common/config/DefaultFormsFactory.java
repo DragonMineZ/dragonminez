@@ -686,6 +686,13 @@ public class DefaultFormsFactory {
 		ssj3.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData ssj4d = new FormConfig.FormData();
+        FormConfig.FormData.TransformationPostShaderConfig ssj4dOutline = new FormConfig.FormData.TransformationPostShaderConfig();
+        ssj4dOutline.setEnabled(true);
+        ssj4dOutline.setPrimaryColor("#EBFFFF");
+        ssj4dOutline.setSecondaryColor("#DEEEFA");
+        ssj4dOutline.setNoiseScale(1.5d);
+        ssj4dOutline.setColorMixSpeed(2.0d);
+        ssj4dOutline.setOutlineThickness(3.7D);
 		ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
 		ssj4d.setCustomModel("ssj4d");
 		ssj4d.setUnlockOnSkillLevel(8);
@@ -693,7 +700,7 @@ public class DefaultFormsFactory {
 		ssj4d.setBodyColor2("#83073F");
 		ssj4d.setEye1Color("#83073F");
 		ssj4d.setEye2Color("#83073F");
-		ssj4d.setAuraColor("#83073F");
+		ssj4d.setAuraColor("#FFD633");
         ssj4d.setModelScaling(new Float[]{1.2f, 1.2f, 1.2f});
         ssj4d.setStrMultiplier(3.75);
 		ssj4d.setSkpMultiplier(3.75);
@@ -702,9 +709,12 @@ public class DefaultFormsFactory {
 		ssj4d.setEnergyDrain(0.24);
 		ssj4d.setHairType("base");
 		ssj4d.setForcedHairCode("");
-		setDefaultMasteryValues(ssj4d);
-		ssj4d.setStackDrainMultiplier(2.0);
-		ssj4d.setDirectTransformation(true);
+        ssj4d.setLightningColor("#82C9FF");
+        ssj4d.setHasLightnings(true);
+        ssj4d.setStackDrainMultiplier(2.0);
+        setDefaultMasteryValues(ssj4d);
+        ssj4d.setTransformationPostShader(ssj4dOutline);
+        ssj4d.setDirectTransformation(true);
 
 		Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
