@@ -132,7 +132,7 @@ public class SkinGathererProvider {
 			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
 		} else {
             switch (logicKey) {
-                case "human", "saiyan", "ssj4gt", "ssj4d", "buffed" -> resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
+                case "human", "saiyan", "ssj4gt", "ssj4d", "buffed", "4arms" -> resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
                 case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
                 case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_fat","janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
                 case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
@@ -187,12 +187,26 @@ public class SkinGathererProvider {
 
 	protected void resolveBodyHumanSaiyan(Character character, String key, float[] bodyColor, float[] bodyColor2, float[] bodyColor3, BiConsumer<ResourceLocation, float[]> consumer) {
 		int bodyType = character.getBodyType();
+        var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
         String gender = character.getGender().toLowerCase().trim();
         String genderPart = (gender.equals("female") || gender.equals("mujer")) ? "_female" : "_male";
 		String path = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + ".png";
 		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0.png";
 
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), bodyColor);
+        float[] finalBodyColor = bodyColor;
+        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") ||
+                character.getActiveForm().equals("chou_shiyoken"))){
+
+            float redness = 0.5F;
+
+            float newR = Math.min(1.0F, bodyColor[0] + redness);
+            float newG = bodyColor[1] * (1.0F - (redness * 0.5F));
+            float newB = bodyColor[2] * (1.0F - (redness * 0.5F));
+
+            finalBodyColor = new float[]{newR, newG, newB};
+        }
+
+		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), finalBodyColor);
 	}
 
 	protected void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {

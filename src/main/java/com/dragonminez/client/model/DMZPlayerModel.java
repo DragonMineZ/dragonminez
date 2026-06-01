@@ -53,6 +53,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slim.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem.geo.json");
 
+    private static final ResourceLocation HUMAN_SAIYAN_4ARMS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4arms.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_4ARMS_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4armsslim.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_4ARMS_FEM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4armsfem.geo.json");
+
     private static final ResourceLocation CANDY_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/candy.geo.json");
     private static final ResourceLocation CANDY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/candy.png");
 
@@ -166,6 +170,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED : HUMAN_SAIYAN_BUFFED;
                 if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
                 return HUMAN_SAIYAN_BUFFED;
+            case "4arms":
+                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_4ARMS_SLIM : HUMAN_SAIYAN_4ARMS;
+                if (!isMale) return HUMAN_SAIYAN_4ARMS_FEM;
+                return HUMAN_SAIYAN_4ARMS;
 
             // NAMEKIAN
             case "namekian": return BASE_DEFAULT;

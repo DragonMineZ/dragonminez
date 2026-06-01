@@ -20,6 +20,7 @@ public class HumanForms {
 	// Legendary Forms group
 	public static final String GROUP_LEGENDARYFORMS = "legendaryforms";
 	public static final String SHIYOKEN = "shiyoken";
-	public static final String LUNARIS = "lunaris";
+	public static final String SHIN_SHIYOKEN = "shin_shiyoken";
+    public static final String CHOU_SHIYOKEN = "chou_shiyoken";
 
 }

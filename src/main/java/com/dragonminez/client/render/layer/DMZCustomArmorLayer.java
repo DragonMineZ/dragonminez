@@ -158,7 +158,8 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             isOozaruTarget = true;
         } else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
                 || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d")
-                || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")) {
+                || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
+                || logicKey.contains("4arms")) {
             if (isDbzArmor) shouldRender = true;
         } else if ((logicKey.equals("majin") && (gender.equals(Character.GENDER_MALE))
                 || (raceName.equals("majin") && (gender.equals(Character.GENDER_MALE))) || logicKey.equals("janemba_fat"))) {
@@ -227,7 +228,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         return null;
     }
 
-    private static final Set<String> EXCLUDED_BONES = Set.of("tail1", "tail1m");
+    private static final Set<String> EXCLUDED_BONES = Set.of("tail1", "tail1m", "arm", "arm2", "arm3");
 
     private void renderRootBoneInflated(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float partialTick, int packedLight, float inflation) {
         float rotX = targetBone.getRotX();

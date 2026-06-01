@@ -353,7 +353,7 @@ public class ConfigManager {
 		config.setDefaultAuraColor("#7FFFFF");
 		config.setFormSkillTpCosts("superforms", new Integer[]{8000, 16000, 25000, 40000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
-		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1});
+		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 		config.setFormSkillTpCosts("androidforms", new Integer[]{16000, 40000});
 	}
 

@@ -279,7 +279,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (!faceKey.equals("human") && !faceKey.equals("saiyan") && !faceKey.equals("ssj4d") && !faceKey.equals("ssj4gt") && !faceKey.equals("buffed")
 				&& !faceKey.equals("namekian") && !faceKey.equals("namekian_orange") && !faceKey.equals("namekian_buffed")
 				&& !faceKey.startsWith("frostdemon") && !faceKey.startsWith("bioandroid")
-				&& !faceKey.startsWith("majin") && !faceKey.startsWith("janemba_super") && !faceKey.startsWith("janemba_fat")) {
+				&& !faceKey.startsWith("majin") && !faceKey.startsWith("janemba_super") && !faceKey.startsWith("janemba_fat")
+                && !faceKey.startsWith("4arms")) {
 
 			var rConfig = ConfigManager.getRaceCharacter(race);
 			if (rConfig != null && Boolean.TRUE.equals(rConfig.getIsLayered())) {
@@ -319,6 +320,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderHumanFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
 		String folder = "textures/entity/races/humansaiyan/faces/";
 		String eyeBase = "humansaiyan_eye_" + character.getEyesType();
+        var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
 		float[] white = {1.0f, 1.0f, 1.0f};
 
 		boolean isSsj4Model = false;
@@ -361,6 +363,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 			renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, finalColor, pt, pl, po, alpha);
 		}
+
+        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") ||
+                character.getActiveForm().equals("chou_shiyoken"))){
+
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "shiyoken_eye0.png", ColorUtils.hexToRgb("#FFFFFF"), pt, pl, po, alpha, true);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "shiyoken_eye1.png", eye1, pt, pl, po, alpha, true);
+
+        }
 
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, true);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, true);
