@@ -15,6 +15,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
+import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -31,6 +32,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,7 +51,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
 
-	private enum SkillCategory {SKILLS, KI}
+	private enum SkillCategory {SKILLS, KI, FORMS, STRIKE}
 
 	private SkillCategory currentCategory = SkillCategory.SKILLS;
 
@@ -61,7 +63,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private float currentScroll = 0;
 	private float maxScroll = 0;
 
-	private ClippableTextureButton skillsButton, kiButton;
+	private final Map<SkillCategory, ClippableTextureButton> categoryButtons = new LinkedHashMap<>();
+	private final List<SkillCategory> activeCategories = new ArrayList<>();
 	private float buttonRevealProgress = 0.0f;
 
 	private TexturedTextButton purchaseButton;
@@ -106,6 +109,16 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		}
 	}
 
+	private int textureUForCategory(SkillCategory category) {
+		switch (category) {
+			case SKILLS: return 142;
+			case KI: return 170;
+			case FORMS: return 198;
+			case STRIKE: return 226;
+		}
+		return 142;
+	}
+
 	private void initDynamicButtons() {
 		int leftPanelX = 12;
 		int centerY = getUiHeight() / 2;
@@ -120,75 +133,71 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int scissorRight = toScreenCoord(getUiWidth());
 		int scissorBottom = toScreenCoord(getUiHeight());
 
-		skillsButton = new ClippableTextureButton.Builder()
-				.position(hiddenX, buttonY)
-				.size(26, 32)
-				.texture(MENU_BIG)
-				.textureCoords(142, 44, 142, 44)
-				.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
-				.onPress(btn -> {
-					currentCategory = SkillCategory.SKILLS;
-					selectedSkill = null;
-					targetScroll = 0;
-					currentScroll = 0;
-					refreshButtons();
-				})
-				.build();
+		// Determine which categories the master actually offers, in fixed display order.
+		activeCategories.clear();
+		for (SkillCategory category : new SkillCategory[]{SkillCategory.SKILLS, SkillCategory.KI, SkillCategory.FORMS, SkillCategory.STRIKE}) {
+			if (!getSkillsForCategory(category).isEmpty()) activeCategories.add(category);
+		}
 
-		kiButton = new ClippableTextureButton.Builder()
-				.position(hiddenX, buttonY + 32)
-				.size(26, 32)
-				.texture(MENU_BIG)
-				.textureCoords(170, 44, 170, 44)
-				.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
-				.onPress(btn -> {
-					currentCategory = SkillCategory.KI;
-					selectedSkill = null;
-					targetScroll = 0;
-					currentScroll = 0;
-					refreshButtons();
-				})
-				.build();
+		// If the current category is no longer available, fall back to the first one offered.
+		if (!activeCategories.isEmpty() && !activeCategories.contains(currentCategory)) {
+			currentCategory = activeCategories.get(0);
+		}
 
-		this.addRenderableWidget(skillsButton);
-		this.addRenderableWidget(kiButton);
+		categoryButtons.clear();
+		int index = 0;
+		for (SkillCategory category : activeCategories) {
+			int u = textureUForCategory(category);
+			ClippableTextureButton button = new ClippableTextureButton.Builder()
+					.position(hiddenX, buttonY + index * 32)
+					.size(26, 32)
+					.texture(MENU_BIG)
+					.textureCoords(u, 44, u, 44)
+					.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
+					.onPress(btn -> {
+						currentCategory = category;
+						selectedSkill = null;
+						targetScroll = 0;
+						currentScroll = 0;
+						refreshButtons();
+					})
+					.build();
+			categoryButtons.put(category, button);
+			this.addRenderableWidget(button);
+			index++;
+		}
 	}
 
 	private List<String> getMasterSkills() {
 		Map<String, List<String>> skillOfferings = ConfigManager.getSkillsConfig().getSkillOfferings();
-		return skillOfferings.getOrDefault(
-				masterName.toLowerCase(),
-				skillOfferings.get("default")
-		);
+		return skillOfferings.getOrDefault(masterName.toLowerCase(), skillOfferings.get("default"));
 	}
 
 	private List<String> getVisibleSkillNames() {
+		return getSkillsForCategory(currentCategory);
+	}
+
+	private List<String> getSkillsForCategory(SkillCategory category) {
 		if (statsData == null) return new ArrayList<>();
 		List<String> masterOfferings = getMasterSkills();
+		if (masterOfferings == null) return new ArrayList<>();
 		List<String> visibleSkills = new ArrayList<>();
 		SkillsConfig skillsConfig = ConfigManager.getSkillsConfig();
 		String playerRace = getPlayerRaceName();
 
-		switch (currentCategory) {
-			case SKILLS:
-				for (String skillId : masterOfferings) {
-					if (!skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
+		for (String skillId : masterOfferings) {
+			if (!skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
 
-					if (!skillsConfig.getKiSkills().contains(skillId) && !skillsConfig.getFormSkills().contains(skillId) &&
-							!skillsConfig.getStackSkills().contains(skillId)) {
-						visibleSkills.add(skillId);
-					}
-				}
-				break;
-			case KI:
-				for (String skillId : masterOfferings) {
-					if (!skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
+			boolean isKi = skillsConfig.getKiSkills().contains(skillId);
+			boolean isForm = skillsConfig.getFormSkills().contains(skillId) || skillsConfig.getStackSkills().contains(skillId);
+			boolean isStrike = skillsConfig.getStrikeSkills().contains(skillId);
 
-					if (skillsConfig.getKiSkills().contains(skillId)) {
-						visibleSkills.add(skillId);
-					}
-				}
-				break;
+			switch (category) {
+				case SKILLS -> { if (!isKi && !isForm && !isStrike) visibleSkills.add(skillId); }
+				case KI -> { if (isKi) visibleSkills.add(skillId); }
+				case FORMS -> { if (isForm) visibleSkills.add(skillId); }
+				case STRIKE -> { if (isStrike) visibleSkills.add(skillId); }
+			}
 		}
 
 		return visibleSkills;
@@ -211,9 +220,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(selectedSkill, getPlayerRaceName())) return;
 
 		Skill skill = statsData.getSkills().getSkill(selectedSkill);
-		if (skill == null) {
-			skill = new Skill(selectedSkill, 0, false, 10);
-		}
+		if (skill == null) skill = new Skill(selectedSkill, 0, false, 10);
 
 		int rightPanelX = getUiWidth() - 158;
 		int centerY = getUiHeight() / 2;
@@ -290,12 +297,10 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int hotZoneX = hiddenX;
 		int hotZoneY = leftPanelY + 6;
 		int hotZoneWidth = (visibleX - hiddenX) + buttonWidth;
-		int hotZoneHeight = 100;
+		int hotZoneHeight = Math.max(1, categoryButtons.size()) * 32;
 
-		boolean overPanel = mouseX >= leftPanelX && mouseX < leftPanelX + panelWidth &&
-				mouseY >= leftPanelY && mouseY < leftPanelY + panelHeight;
-		boolean overHotZone = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
-				mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
+		boolean overPanel = mouseX >= leftPanelX && mouseX < leftPanelX + panelWidth && mouseY >= leftPanelY && mouseY < leftPanelY + panelHeight;
+		boolean overHotZone = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth && mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
 		boolean shouldReveal = overPanel || overHotZone;
 
 		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
@@ -303,16 +308,17 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		float animProgress = easeInOutCubic(buttonRevealProgress);
 
 		int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
-		skillsButton.setX(newX);
-		if (kiButton != null) kiButton.setX(newX);
 
 		int scissorX = leftPanelX + 141;
 		int scissorXScreen = toScreenCoord(scissorX);
 		int scissorYScreen = toScreenCoord(0);
 		int scissorRight = toScreenCoord(getUiWidth());
 		int scissorBottom = toScreenCoord(getUiHeight());
-		skillsButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
-		if (kiButton != null) kiButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+
+		for (ClippableTextureButton button : categoryButtons.values()) {
+			button.setX(newX);
+			button.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+		}
 	}
 
 	private float approach01(float current, float target, float step) {
@@ -374,17 +380,14 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 				Skill skill = statsData.getSkills().getSkill(skillName);
 				String displayName;
-				if (currentCategory == SkillCategory.KI) displayName = Component.translatable("technique.dragonminez." + skillName).getString();
+				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) displayName = Component.translatable("technique.dragonminez." + skillName).getString();
 				else displayName = Component.translatable("skill.dragonminez." + skillName).getString();
 
 				TextUtil.drawStringWithBorder(graphics, this.font, txt(displayName), panelX + 15, itemY + 5, color);
 
 				String levelText;
-				if (skill != null && skill.getLevel() > 0) {
-					levelText = String.valueOf(skill.getLevel());
-				} else {
-					levelText = "0";
-				}
+				if (skill != null && skill.getLevel() > 0) levelText = String.valueOf(skill.getLevel());
+				else levelText = "0";
 
 				int levelX = panelX + 130 - this.font.width(levelText);
 				TextUtil.drawStringWithBorder(graphics, this.font, txt(levelText), levelX, itemY + 5, color);
@@ -410,9 +413,11 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		switch (currentCategory) {
 			case SKILLS -> title = "gui.dragonminez.skills.tab.skills";
 			case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
+			case FORMS -> title = "gui.dragonminez.skills.tab.forms";
+			case STRIKE -> title = "gui.dragonminez.skills.tab.strikeattacks";
 		}
 
-		TextUtil.drawStringWithBorder(graphics, this.font, tr(title).withStyle(style -> style.withBold(true)), 65, getUiHeight() / 2 - 88, 0xFBC51C);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(title).withStyle(style -> style.withBold(true)), 80, getUiHeight() / 2 - 88, 0xFBC51C);
 	}
 
 	private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -422,7 +427,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		if (currentCategory == SkillCategory.KI) {
+		if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) {
 			graphics.blit(MENU_BIG, rightPanelX, rightPanelY, 0, 0, 141, 213, 256, 256);
 			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 		} else {
@@ -436,15 +441,13 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 				.withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
 		if (selectedSkill != null && statsData != null) {
-			if (currentCategory == SkillCategory.KI) {
-				renderTechniqueDetails(graphics, rightPanelX, rightPanelY);
-			} else {
-				renderSkillDetails(graphics, rightPanelX, rightPanelY);
-			}
+			if (currentCategory == SkillCategory.KI) renderKiTechniqueDetails(graphics, rightPanelX, rightPanelY);
+			else if (currentCategory == SkillCategory.STRIKE) renderStrikeTechniqueDetails(graphics, rightPanelX, rightPanelY);
+			else renderSkillDetails(graphics, rightPanelX, rightPanelY);
 		}
 	}
 
-	private void renderTechniqueDetails(GuiGraphics graphics, int panelX, int panelY) {
+	private void renderKiTechniqueDetails(GuiGraphics graphics, int panelX, int panelY) {
 		KiAttackData tech = PredefinedTechniques.REGISTRY.get(selectedSkill);
 		if (tech == null) return;
 
@@ -452,17 +455,43 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF); yOffset += 24;
 
+		int scaledKiDamage = (int) (statsData.getKiDamage() * tech.getDamageMultiplier());
+		String utilKey = tech.getUtility() == KiAttackData.Utility.HEAL ? "gui.dragonminez.technique.heal" : "gui.dragonminez.technique.damage";
+
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + tech.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.utility").append(": ").append(tr("technique.utility." + tech.getUtility().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.format(Locale.US, "%.0f%%", tech.getDamageMultiplier() * 100.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr(utilKey).append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getSize()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getSpeed()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(tech.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(tech.getCastTime() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(tech.getCooldown() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCastTime() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
 
+		renderLearnedFooter(graphics, panelX, yOffset);
+	}
+
+	private void renderStrikeTechniqueDetails(GuiGraphics graphics, int panelX, int panelY) {
+		StrikeAttackData tech = PredefinedTechniques.STRIKE_REGISTRY.get(selectedSkill);
+		if (tech == null) return;
+
+		int yOffset = panelY + 40;
+
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF); yOffset += 24;
+
+		int scaledStrikeDamage = (int) (statsData.getStrikeDamage() * tech.getDamageMultiplier());
+
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCastTime() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.format(Locale.US, "%.1fs", tech.getActualCooldown() / 20.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
+
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
+
+		renderLearnedFooter(graphics, panelX, yOffset);
+	}
+
+	private void renderLearnedFooter(GuiGraphics graphics, int panelX, int yOffset) {
 		boolean learned = statsData.getTechniques().getUnlockedTechniques().containsKey(selectedSkill);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, learned ? tr("gui.dragonminez.skills.already_learned") : tr("gui.dragonminez.skills.not_learned"), panelX + 70, yOffset, learned ? 0xFF55AA55 : 0xFFAAAAAA);
 
@@ -487,11 +516,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 				panelX + 72, startY, 0xFFFFFFFF);
 
 		Component levelComp;
-		if (skill.getLevel() > 0) {
-			levelComp = tr("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel());
-		} else {
-			levelComp = tr("gui.dragonminez.skills.not_learned");
-		}
+		if (skill.getLevel() > 0) levelComp = tr("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel());
+		else levelComp = tr("gui.dragonminez.skills.not_learned");
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, levelComp, panelX + 72, startY + 12, 0xFFAAAAAA);
 
@@ -501,9 +527,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 				TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt("%d TPS".formatted(cost)), panelX + 72, startY + 24, 0xFFAAAAAA);
 			}
 		} else {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font,
-					tr("gui.dragonminez.skills.already_learned"),
-					panelX + 72, startY + 24, 0xFF55AA55);
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.already_learned"), panelX + 72, startY + 24, 0xFF55AA55);
 		}
 
 		List<String> wrappedDesc = wrapText(description);
@@ -528,14 +552,10 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 				if (!currentLine.isEmpty()) {
 					lines.add(currentLine.toString());
 					currentLine = new StringBuilder(word);
-				} else {
-					lines.add(word);
-				}
+				} else lines.add(word);
 			}
 		}
-		if (!currentLine.isEmpty()) {
-			lines.add(currentLine.toString());
-		}
+		if (!currentLine.isEmpty()) lines.add(currentLine.toString());
 		return lines;
 	}
 
@@ -547,9 +567,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
-		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 &&
-				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
-
+		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 && uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
 			int scrollAmount = (int) Math.signum(delta);
 			targetScroll = Mth.clamp(targetScroll - (scrollAmount * SKILL_ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
@@ -574,17 +592,14 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int viewHeight = MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT;
 		int scrollBarX = leftPanelX + 135;
 
-		if (maxScroll > 0 && uiMouseX >= scrollBarX - 5 && uiMouseX <= scrollBarX + 10 &&
-				uiMouseY >= startY && uiMouseY <= startY + viewHeight) {
+		if (maxScroll > 0 && uiMouseX >= scrollBarX - 5 && uiMouseX <= scrollBarX + 10 && uiMouseY >= startY && uiMouseY <= startY + viewHeight) {
 			isDraggingScroll = true;
 			targetScroll = calculateScrollPercent(uiMouseY, startY, viewHeight) * maxScroll;
 			return true;
 		}
 
 		List<String> skillNames = getVisibleSkillNames();
-		if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 100 &&
-				uiMouseY >= startY && uiMouseY <= startY + viewHeight) {
-
+		if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 100 && uiMouseY >= startY && uiMouseY <= startY + viewHeight) {
 			int index = (int) ((uiMouseY - startY + currentScroll) / SKILL_ITEM_HEIGHT);
 
 			if (index >= 0 && index < skillNames.size()) {
