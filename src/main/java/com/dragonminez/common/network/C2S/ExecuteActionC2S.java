@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
@@ -192,18 +193,16 @@ public class ExecuteActionC2S {
 						}
 						case TOGGLE_KI_WEAPON -> {
 							if (data.getSkills().hasSkill("kimanipulation")) {
-								if (rightClick) {
+								if (!rightClick) {
 									data.getSkills().setSkillActive("kimanipulation", !data.getSkills().isSkillActive("kimanipulation"));
 								} else {
 									if (!data.getSkills().isSkillActive("kimanipulation"))
 										data.getSkills().setSkillActive("kimanipulation", true);
-									String currentWeapon = data.getStatus().getKiWeaponType();
-									if (currentWeapon == null || currentWeapon.equals("clawlance")) {
-										data.getStatus().setKiWeaponType("blade");
-									} else if (currentWeapon.equals("blade")) {
-										data.getStatus().setKiWeaponType("scythe");
-									} else if (currentWeapon.equals("scythe")) {
-										data.getStatus().setKiWeaponType("clawlance");
+									var types = ConfigManager.getCombatConfig().getKiWeaponTypes();
+									if (!types.isEmpty()) {
+										String current = data.getStatus().getKiWeaponType();
+										int idx = current != null ? types.indexOf(current.toLowerCase()) : -1;
+										data.getStatus().setKiWeaponType(types.get((idx + 1) % types.size()));
 									}
 								}
 								needsSync = true;

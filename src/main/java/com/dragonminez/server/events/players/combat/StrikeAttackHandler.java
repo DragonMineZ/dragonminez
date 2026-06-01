@@ -60,7 +60,7 @@ public class StrikeAttackHandler {
 			double cost = strike.getCalculatedCost(stats);
 			if (stats.getResources().getCurrentEnergy() < cost) return;
 
-			stats.getResources().addEnergy(-(int) Math.ceil(cost));
+			stats.getResources().removeEnergy((int) Math.ceil(cost));
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 
 			LivingEntity preferredTarget = resolvePreferredTarget(player, preferredTargetId);

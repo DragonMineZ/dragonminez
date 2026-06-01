@@ -19,9 +19,6 @@ import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.*;
-import com.dragonminez.client.model.KiBladeModel;
-import com.dragonminez.client.model.KiScytheModel;
-import com.dragonminez.client.model.KiTridentModel;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.init.*;
@@ -283,12 +280,7 @@ public class ModClientEvents {
         e.registerLayerDefinition(KiBallModel.LAYER_LOCATION, KiBallModel::createBodyLayer);
         e.registerLayerDefinition(KiBlockModel.LAYER_LOCATION, KiBlockModel::createBodyLayer);
 
-
-        e.registerLayerDefinition(KiScytheModel.LAYER_LOCATION, KiScytheModel::createBodyLayer);
-        e.registerLayerDefinition(KiBladeModel.LAYER_LOCATION, KiBladeModel::createBodyLayer);
-        e.registerLayerDefinition(KiTridentModel.LAYER_LOCATION, KiTridentModel::createBodyLayer);
         e.registerLayerDefinition(KiDiscModel.LAYER_LOCATION, KiDiscModel::createBodyLayer);
-
     }
 
     @SubscribeEvent

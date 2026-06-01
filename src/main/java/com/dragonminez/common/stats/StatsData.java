@@ -690,6 +690,7 @@ public class StatsData {
 
 	public void updateTransformationSkillLimits(String raceName) {
 		skills.refreshNonFormSkillMaxLevels();
+		status.validateKiWeaponType();
 
 		RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
 		if (charConfig != null) {

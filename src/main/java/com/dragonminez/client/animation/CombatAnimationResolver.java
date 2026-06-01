@@ -1,7 +1,9 @@
 package com.dragonminez.client.animation;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
+import com.dragonminez.common.combat.weapon.WeaponAttributes;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.client.Minecraft;
@@ -68,7 +70,10 @@ public final class CombatAnimationResolver {
     }
 
     public static String resolvePlayerPose(Player player) {
-        var main = WeaponRegistry.getAttributes(player.getMainHandItem());
+        // An active Ki weapon acts as a fake weapon: use its resolved combo pose, like a real weapon.
+        WeaponAttributes main = PlayerAttackHelper.isKiWeaponActive(player)
+                ? PlayerAttackHelper.getKiWeaponAttributes(player)
+                : WeaponRegistry.getAttributes(player.getMainHandItem());
         if (main == null) return "";
         return resolvePose(main.pose());
     }

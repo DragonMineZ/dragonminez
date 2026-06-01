@@ -65,7 +65,7 @@ public class FlyToggleC2S {
                     if (data.getResources().getCurrentEnergy() < totalCost) return;
 
                     if (msg.isBurst && burstCost > 0) {
-                        data.getResources().addEnergy(-burstCost);
+                        data.getResources().removeEnergy(burstCost);
                         NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
                     }
                 }

@@ -52,9 +52,11 @@ public class CombatConfig {
 	private Integer dashCooldownSeconds = 4;
 	private Integer doubleDashCooldownSeconds = 12;
 
-	private Double[] kiBladeConfig = {1.0, 0.05};
-	private Double[] kiScytheConfig = {1.5, 0.075};
-	private Double[] kiClawLanceConfig = {2.0, 0.125};
+	private Map<String, KiWeaponConfig> kiWeaponsConfig = new HashMap<>() {{
+		put("blade", new KiWeaponConfig(0.0, 1.0, 0.0, 0.05, -2.4, "#FFFFFF", "dragonminez:sword"));
+		put("scythe", new KiWeaponConfig(0.0, 1.5, 0.0, 0.075, -3.0, "#FFFFFF", "dragonminez:scythe"));
+		put("clawlance", new KiWeaponConfig(0.0, 2.0, 0.0, 0.125, -2.6, "#FFFFFF", "dragonminez:trident"));
+	}};
 
 	private Float upswingMultiplier = 0.5F;
 	private Boolean allowAttackingMount = false;
@@ -103,19 +105,17 @@ public class CombatConfig {
 		return Math.max(0.2F, Math.min(1.0F, upswingMultiplier));
 	}
 
-	public Double[] getKiBladeConfig() {
-		if (kiBladeConfig == null || kiBladeConfig.length < 2) return new Double[]{0.0, 0.0};
-		return new Double[]{Math.max(0, kiBladeConfig[0]), Math.max(0, kiBladeConfig[1])};
+	public KiWeaponConfig getKiWeaponConfig(String type) {
+		if (type == null || kiWeaponsConfig == null) return null;
+		return kiWeaponsConfig.get(type.toLowerCase());
 	}
 
-	public Double[] getKiScytheConfig() {
-		if (kiScytheConfig == null || kiScytheConfig.length < 2) return new Double[]{0.0, 0.0};
-		return new Double[]{Math.max(0, kiScytheConfig[0]), Math.max(0, kiScytheConfig[1])};
-	}
-
-	public Double[] getKiClawLanceConfig() {
-		if (kiClawLanceConfig == null || kiClawLanceConfig.length < 2) return new Double[]{0.0, 0.0};
-		return new Double[]{Math.max(0, kiClawLanceConfig[0]), Math.max(0, kiClawLanceConfig[1])};
+	/** Sorted list of Ki weapon types defined in the config, used for deterministic cycling. */
+	public List<String> getKiWeaponTypes() {
+		if (kiWeaponsConfig == null) return new ArrayList<>();
+		List<String> keys = new ArrayList<>(kiWeaponsConfig.keySet());
+		java.util.Collections.sort(keys);
+		return keys;
 	}
 
 	@AllArgsConstructor
@@ -124,5 +124,26 @@ public class CombatConfig {
 	public static class CompatibilitySpecifier {
 		private String item_id_regex;
 		private String weapon_attributes;
+	}
+
+	@AllArgsConstructor
+	@NoArgsConstructor
+	@Getter
+	public static class KiWeaponConfig {
+		private Double baseDamage = 0.0;
+		private Double kiScalingDamage = 1.0;
+		private Double baseKiCost = 0.0;
+		private Double kiScalingCost = 0.05;
+		private Double attackSpeed = -2.4;
+		private String forcedColor = "#FFFFFF";
+		private String weaponCombo = "";
+
+		public double getBaseDamage() { return baseDamage != null ? Math.max(0.0, baseDamage) : 0.0; }
+		public double getKiScalingDamage() { return kiScalingDamage != null ? Math.max(0.0, kiScalingDamage) : 0.0; }
+		public double getBaseKiCost() { return baseKiCost != null ? Math.max(0.0, baseKiCost) : 0.0; }
+		public double getKiScalingCost() { return kiScalingCost != null ? Math.max(0.0, kiScalingCost) : 0.0; }
+		public double getAttackSpeed() { return attackSpeed != null ? attackSpeed : 0.0; }
+		public String getForcedColor() { return forcedColor; }
+		public String getWeaponCombo() { return weaponCombo; }
 	}
 }

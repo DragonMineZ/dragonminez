@@ -37,7 +37,7 @@ public final class WeaponAttributes {
     }
 
     public static final class Attack {
-        private Condition[] conditions;
+        private String[] conditions;
         private HitBoxShape hitbox;
         private double damage_multiplier = 1;
         private double angle = 0;
@@ -52,7 +52,7 @@ public final class WeaponAttributes {
         public Attack() { }
 
         public Attack(
-                Condition[] conditions,
+                String[] conditions,
                 HitBoxShape hitbox,
                 double damage_multiplier,
                 double angle,
@@ -72,7 +72,7 @@ public final class WeaponAttributes {
         }
 
         @Nullable
-        public Condition[] conditions() {
+        public String[] conditions() {
             return conditions;
         }
 

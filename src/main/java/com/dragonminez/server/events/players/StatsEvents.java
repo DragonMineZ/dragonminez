@@ -1,6 +1,7 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig;
@@ -67,6 +68,7 @@ public class StatsEvents {
 	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
+	public static final UUID KI_WEAPON_ATTACK_SPEED_UUID = UUID.fromString("a3b1c5d7-9e2f-4a6b-8c1d-5f7e9a0b2c4d");
 
 	private static final Map<UUID, List<FoodRegenTask>> FOOD_REGEN_QUEUE = new ConcurrentHashMap<>();
 
@@ -606,6 +608,30 @@ public class StatsEvents {
 						speedAttr.removeModifier(FORM_SPEED_UUID);
 						if (expectedBonus > 0) {
 							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+						}
+					}
+				}
+
+				if (attackSpeedAttr != null) {
+					// Ki weapons act as fake weapons: apply their configured attack speed as a flat
+					// modifier (e.g. -2.4 -> base 4.0 becomes 1.6, like a real sword). Applied before
+					// the form multiplier below so forms scale the adjusted Ki weapon speed.
+					double expectedKi = 0.0;
+					if (PlayerAttackHelper.isKiWeaponActive(serverPlayer)) {
+						var kiCfg = ConfigManager.getCombatConfig().getKiWeaponConfig(data.getStatus().getKiWeaponType());
+						if (kiCfg != null) expectedKi = kiCfg.getAttackSpeed();
+					}
+					AttributeModifier existingKi = attackSpeedAttr.getModifier(KI_WEAPON_ATTACK_SPEED_UUID);
+					double currentKi = existingKi != null ? existingKi.getAmount() : 0.0;
+					if (Math.abs(expectedKi - currentKi) > 1e-9) {
+						attackSpeedAttr.removeModifier(KI_WEAPON_ATTACK_SPEED_UUID);
+						if (expectedKi != 0.0) {
+							attackSpeedAttr.addTransientModifier(new AttributeModifier(
+									KI_WEAPON_ATTACK_SPEED_UUID,
+									"Ki Weapon Attack Speed",
+									expectedKi,
+									AttributeModifier.Operation.ADDITION
+							));
 						}
 					}
 				}

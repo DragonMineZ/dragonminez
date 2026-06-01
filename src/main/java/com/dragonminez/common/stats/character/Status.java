@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats.character;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.extras.ActionMode;
 import lombok.Getter;
 import lombok.Setter;
@@ -87,6 +88,12 @@ public class Status {
 		this.activeShadowDummyUUID = null;
 		this.shadowDummyPercent = 0;
 		this.shadowDummyKillCount = 0;
+	}
+
+	public void validateKiWeaponType() {
+		var types = ConfigManager.getCombatConfig().getKiWeaponTypes();
+		if (types.isEmpty()) return;
+		if (kiWeaponType == null || !types.contains(kiWeaponType.toLowerCase())) kiWeaponType = types.get(0);
 	}
 
 	public boolean hasActiveShadowDummy() {

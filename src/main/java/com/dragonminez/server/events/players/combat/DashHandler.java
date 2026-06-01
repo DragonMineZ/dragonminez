@@ -76,7 +76,7 @@ public class DashHandler {
 				float currentEnergy = data.getResources().getCurrentEnergy();
 
 				if (currentEnergy >= kiCost) {
-					data.getResources().addEnergy(-kiCost);
+					data.getResources().removeEnergy(kiCost);
 					data.getStatus().setLastHurtTime(0);
 
 					if (recentAttacker != null) {

@@ -51,6 +51,16 @@
         "swing_sound": {
           "id": "dragonminez:fist_punch"
         }
+      },
+      {
+        "conditions": ["SKILL_ACTIVE: ki_infusion", "SKILL_LEVEL: ki_infusion, 5"],
+        "hitbox": "VERTICAL_PLANE",
+        "damage_multiplier": 1.5,
+        "upswing": 0.6,
+        "animation": "combat.one_handed_uppercut_right",
+        "swing_sound": {
+          "id": "dragonminez:fist_punch"
+        }
       }
     ]
   }
