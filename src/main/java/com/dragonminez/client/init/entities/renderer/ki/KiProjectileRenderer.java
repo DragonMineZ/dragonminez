@@ -98,17 +98,9 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                     renderCastigadorGrande(stack, immediateBuffer, ageInTicks, ColorUtils.rgbIntToFloat(0x70F5FF));
                     break;
                 case 6:
-                    applyJitter(stack, ageInTicks, 0.04F);
-                    stack.scale(2.0F, 2.0F, 2.0F);
-                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, ColorUtils.darkenColor(coreColor, 0.4F), outlineColor, 1.0F, ageInTicks, false, null);
-                    stack.scale(1.05F, 1.05F, 1.05F);
-                    int swapSpeed = 3;
-                    ResourceLocation fastTexture = ((int)(ageInTicks / swapSpeed) % 2 == 0) ? TEXTURE_NOVA : TEXTURE_NOVA2;
-                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 0.8F, ageInTicks, false, fastTexture);
-                    stack.scale(1.1F, 1.1F, 1.1F);
-                    int frame = (int)(ageInTicks / swapSpeed) % 3;
-                    ResourceLocation fireTex = frame == 0 ? TEXTURE_NOVA_FIRE : (frame == 1 ? TEXTURE_NOVA_FIRE2 : TEXTURE_NOVA_FIRE3);
-                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 0.6F, ageInTicks, false, fireTex);
+                    applyJitter(stack, ageInTicks, 0.01F);
+                    stack.scale(0.5F, 0.5F, 0.5F);
+                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 1.0F, ageInTicks, true, null);
                     break;
                 case 7:
                     applyJitter(stack, ageInTicks, 0.03F);
@@ -124,7 +116,21 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                         drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 0.8F, ageInTicks, false, sparkTex);
                     }
                     break;
+                case 9:
+                    float separation = 1.5F;
+
+                    stack.pushPose();
+                    stack.translate(-separation, 0.0D, 0.0D);
+                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 1.0F, ageInTicks, true, null);
+                    stack.popPose();
+
+                    stack.pushPose();
+                    stack.translate(separation, 0.0D, 0.0D);
+                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 1.0F, ageInTicks, true, null);
+                    stack.popPose();
+                    break;
                 default:
+                    stack.scale(0.5F, 0.5F, 0.5F);
                     drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 1.0F, ageInTicks, true, null);
                     break;
             }

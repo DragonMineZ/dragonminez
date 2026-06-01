@@ -55,7 +55,8 @@ public class SkillsConfig {
 		kiSkills.add("kienzan");
 		kiSkills.add("kienzan_doble");
 		kiSkills.add("death_beam");
-		kiSkills.add("emperor_death_beam");
+        kiSkills.add("makkanko");
+        kiSkills.add("emperor_death_beam");
 		kiSkills.add("ki_barrage");
 		kiSkills.add("final_explosion");
 
@@ -65,7 +66,8 @@ public class SkillsConfig {
 		skills.put("kienzan", new SkillCosts(List.of(3000)));
 		skills.put("kienzan_doble", new SkillCosts(List.of(4000)));
 		skills.put("death_beam", new SkillCosts(List.of(2500)));
-		skills.put("emperor_death_beam", new SkillCosts(List.of(5000)));
+        skills.put("makkanko", new SkillCosts(List.of(3500)));
+        skills.put("emperor_death_beam", new SkillCosts(List.of(5000)));
 		skills.put("big_bang", new SkillCosts(List.of(4000)));
 		skills.put("burning_attack", new SkillCosts(List.of(3500)));
 		skills.put("ki_barrage", new SkillCosts(List.of(1000)));
@@ -306,7 +308,8 @@ public class SkillsConfig {
 
 		List<String> piccoloSkills = new ArrayList<>();
 		piccoloSkills.add("masenko");
-		skillOfferings.put("piccolo", piccoloSkills);
+        piccoloSkills.add("makkanko");
+        skillOfferings.put("piccolo", piccoloSkills);
 
 		List<String> krillinSkills = new ArrayList<>();
 		krillinSkills.add("kamehameha");

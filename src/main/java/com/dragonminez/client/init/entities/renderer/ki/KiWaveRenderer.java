@@ -221,8 +221,8 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.pushPose();
 
         if (!isFiring) {
-            float startBallScale = width * 1.2F;
-            float initialSpread = 3.0F;
+            float startBallScale = width;
+            float initialSpread = 1.8F;
             float hitboxWidth = entity.getOwner() != null ? entity.getOwner().getBbWidth() : 0.6F;
             float lateralOffset = (hitboxWidth * initialSpread) * (1.0F - chargeProgress);
 

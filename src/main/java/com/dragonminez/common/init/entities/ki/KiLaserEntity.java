@@ -156,17 +156,17 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setSize(1.0f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFFE657, 0xFFE657, colorOutline);
+        this.setColors(0xFFE657, 0xF5A627, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(40);
-        this.setCastOffsets(0.3F, -0.1F, 0.5F);
+        this.setCastOffsets(-0.2F, 0.7F, 0.5F);
         updatePositionRelativeToOwner(owner);
         
     }
 
     public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed){
-        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0xFFFFFF);
+        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0xA927F5);
     }
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
@@ -306,9 +306,21 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 look = owner.getLookAngle();
         Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
         Vec3 up = right.cross(look).normalize();
-        Vec3 offset = right.scale(this.entityData.get(OFFSET_X)).add(up.scale(this.entityData.get(OFFSET_Y))).add(look.scale(this.entityData.get(OFFSET_Z)));
-        Vec3 newPos = owner.getEyePosition().add(offset);
+
+        Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
+                .add(up.scale(this.entityData.get(OFFSET_Y)))
+                .add(look.scale(this.entityData.get(OFFSET_Z)));
+
+        double centerX = owner.getX();
+        double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerZ = owner.getZ();
+        Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
+
+        Vec3 newPos = hitboxCenter.add(offset);
         this.setPos(newPos.x, newPos.y, newPos.z);
+
+        this.setYRot(owner.getYRot());
+        this.setXRot(owner.getXRot());
     }
 
 

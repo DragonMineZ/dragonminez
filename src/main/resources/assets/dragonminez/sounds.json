@@ -778,6 +778,18 @@
       "dragonminez:zanzoken"
     ]
   },
+  "dragon_fist": {
+    "subtitle": "sounds.dragonminez.dragon_fist",
+    "sounds": [
+      "dragonminez:dragon_fist"
+    ]
+  },
+  "oozaru_fist": {
+    "subtitle": "sounds.dragonminez.oozaru_fist",
+    "sounds": [
+      "dragonminez:oozaru_fist"
+    ]
+  },
   "anchor_slam": {
     "subtitle": "sounds.dragonminez.anchor_slam",
     "sounds": [

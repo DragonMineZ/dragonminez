@@ -155,7 +155,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size, int colorOutline) {
         this.setKiRenderType(1);
         this.setSize(size);
-        this.setCastSize(size / 2);
+        this.setCastSize(0.2f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0x4FF7FF, 0x4FF7FF, colorOutline);
@@ -196,10 +196,10 @@ public class KiWaveEntity extends AbstractKiProjectile {
     public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size, int colorOutline) {
         this.setKiRenderType(2);
         this.setSize(size);
-        this.setCastSize(size / 2);
+        this.setCastSize(0.3f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xCE10E3, 0xAE10E3, colorOutline);
+        this.setColors(0xCE10E3, 0xA024E3, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(0);
@@ -209,7 +209,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size) {
-        this.setupKiGalickGunPlayer(owner, damage, speed, size, 0xFFFFFF);
+        this.setupKiGalickGunPlayer(owner, damage, speed, size, 0x9827F5);
     }
 
     public void setupFinalFlash(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
@@ -218,7 +218,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastSize(size / 2.0F);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFFFD55, 0xFFFD55, colorOutline);
+        this.setColors(0xFFFD55, 0xFFFFFF, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
@@ -298,10 +298,10 @@ public class KiWaveEntity extends AbstractKiProjectile {
     public void setupKiMasenko(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
         this.setKiRenderType(4);
         this.setSize(size);
-        this.setCastSize(size / 2);
+        this.setCastSize(0.2f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFFF566, 0xFFF566, colorOutline);
+        this.setColors(0xFFFC85, 0xFCE062, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
@@ -315,6 +315,25 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     public void setupKiMasenko(LivingEntity owner, float damage, float speed, float size, int castTime) {
         this.setupKiMasenko(owner, damage, speed, size, 0xFFFFFF, castTime);
+    }
+
+    public void setupKiMasenkoPlayer(LivingEntity owner, float damage, float speed, float size, int colorOutline) {
+        this.setKiRenderType(4);
+        this.setSize(size);
+        this.setCastSize(0.2f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFFC85, 0xFCE062, colorOutline);
+        this.setFiring(false);
+        this.setCastWave(15);
+        this.setMaxLife(99999);
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        this.setCastOffsets(0.0F, 0.9F, 0.2F);
+        updatePositionRelativeToOwner(owner, true);
+    }
+
+    public void setupKiMasenkoPlayer(LivingEntity owner, float damage, float speed, float size) {
+        this.setupKiMasenkoPlayer(owner, damage, speed, size, 0xFFFFFF);
     }
 
     public void fireHability(int finalMaxLife) {
@@ -332,6 +351,11 @@ public class KiWaveEntity extends AbstractKiProjectile {
         Vec3 look = owner.getLookAngle();
         Vec3 newPos;
 
+        double centerX = owner.getX();
+        double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerZ = owner.getZ();
+        Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
+
         if (isCasting || this.isContinuousFollow()) {
             Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
             Vec3 up = right.cross(look).normalize();
@@ -340,11 +364,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
                     .add(up.scale(this.entityData.get(OFFSET_Y)))
                     .add(look.scale(this.entityData.get(OFFSET_Z)));
 
-            newPos = owner.getEyePosition().add(offset);
+            newPos = hitboxCenter.add(offset);
         } else {
-            double chestY = owner.getY() + (owner.getBbHeight() / 2.0F);
-
-            newPos = new Vec3(owner.getX(), chestY, owner.getZ()).add(look.scale(0.8D));
+            newPos = hitboxCenter.add(look.scale(0.8D));
         }
 
         this.setPos(newPos.x, newPos.y, newPos.z);
@@ -398,6 +420,25 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.baseTick();
         this.setDeltaMovement(0, 0, 0);
 
+        int renderType = this.getKiRenderType();
+        if (renderType == 1) {
+            if (this.tickCount <= 5) {
+                this.setCastOffsets(0.0F, 0.1F, 0.5F);
+            } else if (this.tickCount < 15) {
+                this.setCastOffsets(0.0F, 0.3F, 0.5F);
+            } else {
+                this.setCastOffsets(0.4F, 0.1F, 0.0F);
+            }
+        }
+        if (renderType == 2) {
+            if (this.tickCount <= 5) {
+                this.setCastOffsets(0.0F, 0.3F, 0.5F);
+            } else {
+                this.setCastOffsets(0.2F, 0.4F, -0.3F);
+            }
+
+        }
+
         // 1. AUTO-DISPARO: Si es invocado por un ítem o NPC (vida no es infinita) y ya cumplió su tiempo de casteo
         if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastWave()) {
             this.setFiring(true);
@@ -407,7 +448,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
 
         boolean isFiring = this.isFiring();
-        int castTime = this.getCastWave();
 
         var owner = this.getOwner();
         if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {

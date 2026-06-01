@@ -73,8 +73,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setColors(color, colorBorder, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
-        this.setCastTime(40);
-        this.setCastOffsets(0.0f, -0.5F, 0.5F);
+        this.setCastTime(100);
+        this.setCastOffsets(0.0f, -0.5F, 2.0F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
         
@@ -98,7 +98,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(40);
-        this.setCastOffsets(0.0f, 5.2F, 0.2F);
+        this.setCastOffsets(0.0f, 0.0F, 5.2F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
         
@@ -162,7 +162,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setSize(5.0F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
-        this.setColors(0x30FFF1, 0x00F8FF, colorOutline);
+        this.setColors(0xC4FFFD, 0x00F8FF, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(100);
@@ -182,18 +182,18 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setSize(5.0F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
-        this.setColors(0x9E0000, 0x9E0000, colorOutline);
+        this.setColors(0xFF7438, 0xC92620, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(100);
-        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+        this.setCastOffsets(0.0F, 2.5F, 0.0F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
         
     }
 
     public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed) {
-        this.setupKiNovaPlayer(owner, damage, speed, 0xFFFFFF);
+        this.setupKiNovaPlayer(owner, damage, speed, 0x800E0E);
     }
 
     public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
@@ -244,14 +244,14 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public void setupKiVolleyPlayer(LivingEntity owner, float damage, float speed, int color, int colorOutline, int castTime) {
         this.setOwner(owner);
         this.setKiRenderType(9);
-        this.setSize(0.0F);
+        this.setSize(0.4F);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, color, colorOutline);
         this.setFiring(false);
-        this.setCastTime(castTime);
+        this.setCastTime(8);
         this.setMaxLife(castTime + 100);
-        this.setCastOffsets(0.0f, 0.0f, 0.5f);
+        this.setCastOffsets(0.0f, 0f, 0.7f);
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) {
@@ -832,7 +832,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 .add(up.scale(this.entityData.get(OFFSET_Y)))
                 .add(look.scale(this.entityData.get(OFFSET_Z)));
 
-        Vec3 newPos = owner.getEyePosition().add(offset);
+        double centerX = owner.getX();
+        double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerZ = owner.getZ();
+        Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
+
+        Vec3 newPos = hitboxCenter.add(offset);
         this.setPos(newPos.x, newPos.y, newPos.z);
 
         this.setYRot(owner.getYRot());
@@ -954,13 +959,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize() * 3.5F);
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize() * 1.2F);
                 this.level().addFreshEntity(explosionVisual);
             }
             return;
         }
 
-        float explosionRadius = this.getSize() * 1.4F;
+        float explosionRadius = this.getSize() * 1.2F;
         float visualParticleSize = explosionRadius * 1.8F;
 
         AABB damageArea = this.getBoundingBox().inflate(explosionRadius);
@@ -1000,7 +1005,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize() * 2);
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize());
                 this.level().addFreshEntity(explosionVisual);
             }
         }
@@ -1040,7 +1045,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private boolean destroyBlocksInPath() {
         boolean hitSomething = false;
-        float eatRadius = this.getSize() * 2.0F;
+        float eatRadius = this.getSize();
         int bRad = Math.round(eatRadius);
         BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
         Level level = this.level();
@@ -1072,7 +1077,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (hitSomething && !this.level().isClientSide) {
             KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
             explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
-            explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize() * 2.0F);
+            explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize());
             this.level().addFreshEntity(explosionVisual);
         }
 

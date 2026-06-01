@@ -134,7 +134,10 @@ public class TechniqueDispatcher {
                     wave.setupKiGalickGunPlayer(owner, realDamage, data.getSpeed(), data.getSize());
                 } else if ("final_flash".equals(data.getId())) {
                     wave.setupFinalFlashPlayer(owner, realDamage, data.getSpeed(), data.getSize());
-                } else {
+                } else if ("masenko".equals(data.getId())) {
+                    wave.setupKiMasenkoPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                }
+                else {
                     wave.setupKiWavePlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                 }
                 wave.setTechniqueId(data.getId());
@@ -262,8 +265,6 @@ public class TechniqueDispatcher {
         for (AbstractKiProjectile ki : nearby) if (ki.getOwner() != null && ki.getOwner().getUUID().equals(owner.getUUID())) if (!ki.isFiring()) return ki;
         return null;
     }
-
-
 
     private static int resolvePlayerMaxLifeTicks(KiAttackData data, float chargeMultiplier) {
 		int base = switch (data.getKiType()) {
