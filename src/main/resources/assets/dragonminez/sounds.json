@@ -295,6 +295,18 @@
       {
         "name": "dragonminez:menu_music-30",
         "stream": true
+      },
+      {
+        "name": "dragonminez:call_for_a_miracle",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:gokus_father-son_victory",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:vegetas_sacrifice",
+        "stream": true
       }
     ]
   },
@@ -564,6 +576,33 @@
     "sounds": [
       {
         "name": "dragonminez:menu_music-30",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_31": {
+    "subtitle": "sounds.dragonminez.menu_music_31",
+    "sounds": [
+      {
+        "name": "dragonminez:call_for_a_miracle",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_32": {
+    "subtitle": "sounds.dragonminez.menu_music_32",
+    "sounds": [
+      {
+        "name": "dragonminez:gokus_father-son_victory",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_33": {
+    "subtitle": "sounds.dragonminez.menu_music_33",
+    "sounds": [
+      {
+        "name": "dragonminez:vegetas_sacrifice",
         "stream": true
       }
     ]

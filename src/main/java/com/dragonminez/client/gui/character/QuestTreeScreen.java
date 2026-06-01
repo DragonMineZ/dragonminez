@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
+import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -88,6 +89,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private QuestTreeLayoutHelper.TreeLayout currentLayout;
 	private Quest selectedQuest = null;
+
+	private final QuestEnemyPreview enemyPreview = new QuestEnemyPreview();
 
 	private float panX = 0;
 	private float panY = 0;
@@ -844,6 +847,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	public void tick() {
 		super.tick();
 		tickCount++;
+		enemyPreview.clientTick();
 
 		if (tickCount >= 10) {
 			tickCount = 0;
@@ -885,6 +889,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	@Override
+	public void removed() {
+		enemyPreview.clear();
+		super.removed();
+	}
+
+	@Override
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (isNotAnimating()) this.renderBackground(graphics);
 
@@ -919,6 +929,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		rewardHitboxes.clear();
 
 		renderTreeCanvas(graphics, uiMouseX, uiMouseY);
+		renderEnemyPreview(graphics, uiMouseX, uiMouseY, dt);
 		renderLeftNavigatorPanel(graphics, uiMouseX, uiMouseY, dt);
 		renderRightDetailPanel(graphics, uiMouseX, uiMouseY, dt);
 
@@ -1001,6 +1012,18 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		for (int y = tree.y + offsetY; y < tree.bottom(); y += spacing) {
 			graphics.fill(tree.x, y, tree.right(), y + 1, 0xFF222244);
 		}
+	}
+
+	private void renderEnemyPreview(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
+		enemyPreview.setQuest(selectedQuest);
+		if (!enemyPreview.isActive()) return;
+
+		PanelRect base = getBaseLeftPanelRect();
+		// As the saga navigator slides in (mouse near the left edge), fade the preview out
+		// so the navigator visually superposes the same left-hand area.
+		float visibility = 1.0f - leftPanelRevealProgress;
+		enemyPreview.render(graphics, this.font, base.x, base.y, base.width, base.height,
+				mouseX, mouseY, dt, visibility);
 	}
 
 	private void renderLeftNavigatorPanel(GuiGraphics graphics, int mouseX, int mouseY, float dt) {

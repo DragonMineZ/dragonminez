@@ -59,6 +59,7 @@ import java.util.List;
 
 public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextureVariant {
 
+    @Getter
     public enum KiSkillType {
         KAMEHAMEHA(1),
         GALICK_GUN(2),
@@ -83,17 +84,30 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         private final int id;
         KiSkillType(int id) { this.id = id; }
-        public int getId() { return id; }
-    }
 
+        public static KiSkillType fromId(int id) {
+            for (KiSkillType type : values()) {
+                if (type.id == id) return type;
+            }
+            return null;
+        }
+	}
+
+    @Getter
     public enum ComboType {
         BASIC(0), AIR(1), KI_CHARGE_ATTACK(2), METEOR_COMBINATION(3), ANDROID_ABSORPTION(4),
         GUM_PUNCH(5), GUM_EXPAND(6), SLEEP_RECOVERY(7), RAPID_KICKS(8);
 
         private final int id;
         ComboType(int id) { this.id = id; }
-        public int getId() { return id; }
-    }
+
+        public static ComboType fromId(int id) {
+            for (ComboType type : values()) {
+                if (type.id == id) return type;
+            }
+            return null;
+        }
+	}
 
     // --- DATA ACCESSORS ---
     private static final EntityDataAccessor<Boolean> IS_CASTING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -346,6 +360,16 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void addKiSkill(KiSkillType type, int cooldown) {
         this.addKiSkill(type, cooldown, 1.0F);
+    }
+
+    /** Read-only access to this entity's configured ki skills (used by GUI previews). */
+    public List<KiSkill> getSkillPool() {
+        return this.skillPool;
+    }
+
+    /** Read-only access to this entity's configured melee combo ids (used by GUI previews). */
+    public int[] getAllowedCombos() {
+        return this.allowedCombos;
     }
 
     @Override
