@@ -1,3 +1,4 @@
+import java.net.URI
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
@@ -291,6 +292,144 @@ tasks.named<ProcessResources>("processResources").configure {
         expand(replaceProperties + mapOf("project" to project))
     }
 }
+
+// ============================================================================
+// Resource optimization via PackSquash (https://github.com/ComunidadAylas/PackSquash)
+//
+// Optimizes bundled textures (.png), sounds (.ogg) and JSON in `build/resources/main`
+// before the jar is packed, so every produced jar (local, dev, release) is optimized
+// identically. Options live in `packsquash.toml`; this task injects the build paths.
+//
+// Opt-in: runs automatically on CI (env CI is set by GitHub Actions); locally it is
+// off by default to keep dev builds fast. Force on/off with -PoptimizeResources=true|false.
+// ============================================================================
+val packSquashVersion = "v0.4.1"
+
+val optimizeResourcesEnabled: Provider<Boolean> =
+    providers.gradleProperty("optimizeResources")
+        .map { it.toBoolean() }
+        .orElse(providers.environmentVariable("CI").map { it.equals("true", ignoreCase = true) || it == "1" })
+        .orElse(false)
+
+/** Escapes a path into a TOML basic string. */
+fun tomlString(value: String): String =
+    "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
+val optimizeResources by tasks.registering {
+    group = "build"
+    description = "Optimizes bundled resources (PNG/OGG/JSON) with PackSquash before packaging."
+    dependsOn("processResources")
+    mustRunAfter(copyGeneratedResourcesToOutput)
+    onlyIf { optimizeResourcesEnabled.get() }
+    // Mutates resources/main in place; never treat as up-to-date.
+    outputs.upToDateWhen { false }
+
+    val resourcesOutput = layout.buildDirectory.dir("resources/main")
+    val sourceResources = layout.projectDirectory.dir("src/main/resources")
+    val workDir = layout.buildDirectory.dir("packsquash")
+    val optionsFile = layout.projectDirectory.file("packsquash.toml")
+    val version = packSquashVersion
+
+    doLast {
+        val resDir = resourcesOutput.get().asFile
+        if (!resDir.exists()) error("Resources output not found: $resDir")
+        val srcDir = sourceResources.asFile
+
+        val work = workDir.get().asFile
+        val stagingDir = File(work, "input")
+        val outputZip = File(work, "optimized.zip")
+        work.mkdirs()
+        if (stagingDir.exists()) stagingDir.deleteRecursively()
+        stagingDir.mkdirs()
+        outputZip.delete()
+
+        // 1) Stage PackSquash-friendly files. Textures/sounds/icons come from the
+        //    PRISTINE source (assets are not template-expanded, so this is identical
+        //    to the build output but guarantees idempotent re-runs — important so
+        //    lossy OGG re-encoding never compounds across repeated local builds).
+        //    Excluded on purpose:
+        //      - shaders/: negligible savings; PackSquash's GLSL validator rejects
+        //        some non-standard cores.
+        //      - pack.mcmeta: the expanded copy contains literal control chars from
+        //        § / \n escapes (Minecraft-tolerated, but invalid strict JSON);
+        //        it has zero optimization value, so leave it untouched.
+        //      - data/: mostly binary (nbt/mca) with negligible gains; skipped for speed.
+        project.copy {
+            from(srcDir) {
+                include("assets/**")
+                include("dmz_icon.png")
+                include("dmz_logo.png")
+                exclude("assets/**/shaders/**")
+            }
+            into(stagingDir)
+        }
+
+        // 2) Resolve (download + cache) the PackSquash binary for this OS/arch.
+        val osName = System.getProperty("os.name").lowercase()
+        val osArch = System.getProperty("os.arch").lowercase()
+        val (asset, binaryName) = when {
+            osName.contains("win") -> "packsquash.exe-x86_64-pc-windows-gnu.zip" to "packsquash.exe"
+            osName.contains("mac") || osName.contains("darwin") -> "packsquash-universal2-apple-darwin.zip" to "packsquash"
+            osArch.contains("aarch64") || osArch.contains("arm64") -> "packsquash-aarch64-unknown-linux-gnu.zip" to "packsquash"
+            else -> "packsquash-x86_64-unknown-linux-gnu.zip" to "packsquash"
+        }
+        val toolDir = File(work, "bin/$version")
+        val binary = File(toolDir, binaryName)
+        if (!binary.exists()) {
+            toolDir.mkdirs()
+            val zipFile = File(toolDir, asset)
+            val url = "https://github.com/ComunidadAylas/PackSquash/releases/download/$version/$asset"
+            logger.lifecycle("Downloading PackSquash $version ($asset)...")
+            URI(url).toURL().openStream().use { input ->
+                zipFile.outputStream().use { output -> input.copyTo(output) }
+            }
+            project.copy {
+                from(project.zipTree(zipFile))
+                into(toolDir)
+            }
+            if (!binary.exists()) {
+                val found = toolDir.walkTopDown().firstOrNull { it.isFile && it.name == binaryName }
+                    ?: error("PackSquash binary '$binaryName' not found in $asset")
+                found.copyTo(binary, overwrite = true)
+            }
+            if (!osName.contains("win")) binary.setExecutable(true)
+        }
+
+        // 3) Compose the settings file: dynamic paths + committed options.
+        val settings = File(work, "settings.toml")
+        settings.writeText(
+            buildString {
+                appendLine("pack_directory = ${tomlString(stagingDir.absolutePath)}")
+                appendLine("output_file_path = ${tomlString(outputZip.absolutePath)}")
+                appendLine()
+                append(optionsFile.asFile.readText())
+            }
+        )
+
+        // 4) Run PackSquash.
+        val result = project.exec {
+            commandLine(binary.absolutePath, settings.absolutePath)
+            isIgnoreExitValue = true
+        }
+        if (result.exitValue != 0) error("PackSquash failed with exit code ${result.exitValue}")
+        if (!outputZip.exists()) error("PackSquash did not produce output: $outputZip")
+
+        // 5) Overlay optimized files back over resources/main. PackSquash drops file
+        //    types it does not recognize (.mca, .icns, ...); an overlay copy (no delete)
+        //    keeps those originals while replacing png/ogg/json/mcmeta with smaller ones.
+        fun dirSize(dir: File) = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        val before = dirSize(resDir)
+        project.copy {
+            from(project.zipTree(outputZip))
+            into(resDir)
+        }
+        val after = dirSize(resDir)
+        logger.lifecycle("PackSquash: resources/main ${before / 1024} KiB -> ${after / 1024} KiB")
+    }
+}
+
+tasks.named<Jar>("jar").configure { dependsOn(optimizeResources) }
+tasks.named<Jar>("jarJar").configure { dependsOn(optimizeResources) }
 
 /**
  * Optional manifest timestamp

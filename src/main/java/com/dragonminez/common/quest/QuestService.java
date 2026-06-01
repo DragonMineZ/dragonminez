@@ -137,6 +137,44 @@ public final class QuestService {
 		});
 	}
 
+	/**
+	 * Claims every unclaimed reward across all completed quests for the player.
+	 * NPC-only quests are skipped (they must be claimed by talking to their NPC).
+	 * Party reward-sharing rules are respected: only the controller may claim.
+	 */
+	public static void claimAllRewards(ServerPlayer requester) {
+		if (PartyManager.isInParty(requester) && !PartyManager.canClaimSharedRewards(requester)) {
+			requester.sendSystemMessage(Component.translatable("quest.dmz.party.reward.leader_only")
+					.withStyle(ChatFormatting.RED));
+			return;
+		}
+
+		ServerPlayer controller = PartyManager.resolveQuestController(requester);
+		if (controller == null) {
+			return;
+		}
+
+		StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
+			PlayerQuestData pqd = data.getPlayerQuestData();
+			boolean anyClaimed = false;
+
+			for (String questKey : new ArrayList<>(pqd.getCompletedQuestIds())) {
+				ResolvedQuest resolved = resolveQuest(questKey);
+				if (resolved == null) {
+					continue;
+				}
+				if (resolved.quest().getClaimMode() == Quest.ClaimMode.NPC_ONLY) {
+					continue;
+				}
+				anyClaimed |= claimAvailableRewards(controller, resolved.quest(), questKey, pqd);
+			}
+
+			if (anyClaimed) {
+				syncQuestState(controller);
+			}
+		});
+	}
+
 	public static boolean isTurnInReady(PlayerQuestData pqd, String questKey, Quest quest) {
 		if (pqd == null || quest == null || questKey == null || questKey.isBlank()) {
 			return false;
@@ -532,6 +570,9 @@ public final class QuestService {
 				entity.getPersistentData().putDouble("dmz_quest_hp", quest.getScaledKillHealth(killObjective, partySize));
 				entity.getPersistentData().putDouble("dmz_quest_melee", quest.getScaledKillMeleeDamage(killObjective, partySize));
 				entity.getPersistentData().putDouble("dmz_quest_ki", quest.getScaledKillKiDamage(killObjective, partySize));
+				if (killObjective.getTextureVariant() >= 0) {
+					entity.getPersistentData().putInt("dmz_quest_texture_variant", killObjective.getTextureVariant());
+				}
 
 				if (entity instanceof Mob mob) {
 					mob.setTarget(requester);

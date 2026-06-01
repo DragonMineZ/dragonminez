@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
@@ -48,6 +49,10 @@ public class EntitiesEvents {
 			double finalKi = entity.getPersistentData().getDouble("dmz_quest_ki") * dmgMult;
 
 			applyStatsToEntity(entity, finalHealth, finalMelee, finalKi);
+
+			if (entity.getPersistentData().contains("dmz_quest_texture_variant") && entity instanceof ITextureVariant variantEntity) {
+				variantEntity.setTextureVariant(entity.getPersistentData().getInt("dmz_quest_texture_variant"));
+			}
 		} else {
 			String registryName = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString();
 			EntitiesConfig.EntityStats defaultStats = ConfigManager.getEntityStats(registryName);

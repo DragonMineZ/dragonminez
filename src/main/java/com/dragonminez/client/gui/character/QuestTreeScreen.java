@@ -9,12 +9,14 @@ import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
+import com.dragonminez.common.network.C2S.ClaimAllQuestRewardsC2S;
 import com.dragonminez.common.network.C2S.ClaimQuestRewardC2S;
 import com.dragonminez.common.network.C2S.CreatePartyC2S;
 import com.dragonminez.common.network.C2S.InvitePartyMemberC2S;
 import com.dragonminez.common.network.C2S.LeavePartyC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.C2S.RejectPartyInviteC2S;
+import com.dragonminez.common.network.C2S.SetTrackedQuestC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
@@ -75,6 +77,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private long lastRenderTime = 0;
 
 	private TexturedTextButton actionButton;
+	private TexturedTextButton claimAllButton;
 	private TexturedTextButton partyPrimaryButton;
 	private TexturedTextButton partySecondaryButton;
 	private List<Component> actionButtonTooltip = List.of();
@@ -559,12 +562,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void refreshButtons() {
 		this.clearWidgets();
 		actionButton = null;
+		claimAllButton = null;
 		partyPrimaryButton = null;
 		partySecondaryButton = null;
 		actionButtonTooltip = List.of();
 		initNavigationButtons();
 		initPartyButtons();
 		initActionButton();
+		initClaimAllButton();
 	}
 
 	private void initActionButton() {
@@ -579,6 +584,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		Component buttonText;
 		boolean buttonActive = true;
 		boolean isClaimAction = false;
+		boolean isTrackAction = false;
 		List<Component> tooltipLines = List.of();
 
 		if (isCompleted) {
@@ -604,6 +610,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		} else if (canStart || showDisabledStart) {
 			buttonText = tr("gui.dragonminez.quests.start");
 			buttonActive = canStart;
+		} else if (questData.getQuestStatus(selectedKey) == PlayerQuestData.QuestStatus.ACCEPTED
+				&& !selectedKey.equals(questData.getTrackedQuestId())) {
+			buttonText = tr("gui.dragonminez.quests.track");
+			isTrackAction = true;
 		} else {
 			return;
 		}
@@ -617,6 +627,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		boolean finalIsClaimAction = isClaimAction;
+		boolean finalIsTrackAction = isTrackAction;
 		PanelRect right = getRightPanelRect();
 		int buttonX = right.x + (right.width - 74) / 2;
 		int buttonY = right.bottom() - 28;
@@ -637,6 +648,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						NetworkHandler.sendToServer(new ClaimQuestRewardC2S(selectedKey));
 						btn.visible = false;
 						pendingRefreshTicks = 5;
+					} else if (finalIsTrackAction) {
+						NetworkHandler.sendToServer(new SetTrackedQuestC2S(selectedKey));
+						questData.setTrackedQuestId(selectedKey);
+						btn.visible = false;
+						pendingRefreshTicks = 5;
 					} else {
 						boolean isHard = ConfigManager.getUserConfig().getStoryHardDifficulty();
 						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, isHard, ""));
@@ -648,6 +664,59 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		actionButton.active = buttonActive;
 		actionButtonTooltip = tooltipLines;
 		this.addRenderableWidget(actionButton);
+	}
+
+	private void initClaimAllButton() {
+		if (statsData == null || availableSagas.isEmpty()) return;
+		if (isInSharedPartyAsMember()) return;
+		if (!hasAnyClaimableRewards()) return;
+
+		PanelRect tree = getTreePanelRect();
+		int buttonX = tree.x + (tree.width - 74) / 2;
+		int buttonY = tree.y + 22;
+
+		claimAllButton = new TexturedTextButton.Builder()
+				.position(buttonX, buttonY)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.quests.claim_all"))
+				.onPress(btn -> {
+					long now = System.currentTimeMillis();
+					if (now - lastClickTime < 500) return;
+					lastClickTime = now;
+
+					NetworkHandler.sendToServer(new ClaimAllQuestRewardsC2S());
+					btn.visible = false;
+					pendingRefreshTicks = 5;
+				})
+				.build();
+
+		this.addRenderableWidget(claimAllButton);
+	}
+
+	private boolean hasAnyClaimableRewards() {
+		if (statsData == null) return false;
+		PlayerQuestData questData = statsData.getPlayerQuestData();
+		for (String questKey : questData.getCompletedQuestIds()) {
+			Quest quest = QuestRegistry.getClientQuest(questKey);
+			if (quest == null || quest.getClaimMode() == Quest.ClaimMode.NPC_ONLY) continue;
+			for (int i = 0; i < quest.getRewards().size(); i++) {
+				if (!questData.isRewardClaimed(questKey, i)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private void syncClaimAllButtonPosition() {
+		if (claimAllButton == null) return;
+		PanelRect tree = getTreePanelRect();
+		claimAllButton.setX(tree.x + (tree.width - 74) / 2);
+		claimAllButton.setY(tree.y + 22);
+		claimAllButton.visible = !invitePopupOpen && !confirmOverlayOpen;
 	}
 
 	private void initPartyButtons() {
@@ -845,6 +914,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		beginUiScale(graphics);
 		applyZoom(graphics, partialTick);
 		syncActionButtonPosition();
+		syncClaimAllButtonPosition();
 		syncPartyButtonPositions();
 		rewardHitboxes.clear();
 

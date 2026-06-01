@@ -213,6 +213,35 @@ public class QuestTreeLayoutHelper {
 					connections.add(new NodeConnection(parent, sideNode));
 				}
 			}
+			List<Quest> secretSide = new ArrayList<>();
+			for (Quest q : allQuests.values()) {
+				if (q.isSideQuest() && q.isSecret() && belongsToSaga(q, saga.getId())) {
+					secretSide.add(q);
+				}
+			}
+			secretSide.sort(Comparator.comparing(q -> q.getStringId() != null ? q.getStringId() : ""));
+
+			if (!secretSide.isEmpty()) {
+				int lowestRow = 0;
+				for (NodePosition n : nodes) {
+					lowestRow = Math.max(lowestRow, n.getGridRow());
+				}
+				int secretRow = lowestRow + 2;
+				int secretCol = 0;
+				for (Quest sq : secretSide) {
+					int row = reserveClosestFreeRow(occupied, secretCol, secretRow, 1);
+					int pixelX = secretCol * NODE_SPACING_X;
+					int pixelY = row * NODE_SPACING_Y;
+					NodePosition secretNode = new NodePosition(sq, secretCol, row, pixelX, pixelY, true);
+					nodes.add(secretNode);
+					occupied.add(secretCol + ":" + row);
+
+					maxPixelX = Math.max(maxPixelX, pixelX);
+					maxPixelY = Math.max(maxPixelY, pixelY);
+
+					secretCol++;
+				}
+			}
 		}
 
 		int totalWidth = maxPixelX + NODE_SPACING_X;

@@ -143,7 +143,10 @@ public class QuestParser {
 				KillObjective.CountMode countMode = parseKillCountMode(json.has("count_mode") && !json.get("count_mode").isJsonNull()
 						? json.get("count_mode").getAsString()
 						: null);
-				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode);
+				int textureVariant = json.has("TextureVariant") && !json.get("TextureVariant").isJsonNull()
+						? json.get("TextureVariant").getAsInt()
+						: -1;
+				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant);
 			}
 			case "BIOME" -> new BiomeObjective(json.get("biome").getAsString());
 			case "DIMENSION" -> new DimensionObjective(json.get("dimension").getAsString());

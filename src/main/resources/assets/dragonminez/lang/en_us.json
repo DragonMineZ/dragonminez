@@ -266,6 +266,7 @@
   "gui.dragonminez.quests.start": "Start Quest",
   "gui.dragonminez.quests.track": "Track",
   "gui.dragonminez.quests.untrack": "Untrack",
+  "gui.dragonminez.quests.claim_all": "Claim All",
   "gui.dragonminez.story.hud.tracked": "Tracked Quest",
   "gui.dragonminez.story.hud.no_objectives": "No objectives",
   "toast.dragonminez.story.quest_started.title": "Quest Started",
