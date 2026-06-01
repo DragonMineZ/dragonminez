@@ -158,7 +158,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             isOozaruTarget = true;
         } else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
                 || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d")
-                || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore")) {
+                || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")) {
             if (isDbzArmor) shouldRender = true;
         } else if ((logicKey.equals("majin") && (gender.equals(Character.GENDER_MALE))
                 || (raceName.equals("majin") && (gender.equals(Character.GENDER_MALE))) || logicKey.equals("janemba_fat"))) {

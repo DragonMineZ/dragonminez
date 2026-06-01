@@ -133,7 +133,7 @@ public class SkinGathererProvider {
 		} else {
             switch (logicKey) {
                 case "human", "saiyan", "ssj4gt", "ssj4d", "buffed" -> resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
-                case "namekian", "namekian_orange" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
+                case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
                 case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_fat","janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
                 case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
                 case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);

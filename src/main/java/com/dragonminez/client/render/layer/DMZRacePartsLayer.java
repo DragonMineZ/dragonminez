@@ -117,6 +117,22 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
 		if (raceConfig == null) return;
 
+        String formCustomModel = "";
+        boolean hasStackForm = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
+        boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
+
+        if (hasStackForm && character.getActiveStackFormData().hasCustomModel()) {
+            formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+        } else if (hasForm && character.getActiveFormData().hasCustomModel()) {
+            formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
+        }
+
+        String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
+        String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+        if (key.isEmpty()) key = race;
+
+        String logicKey = key;
+
 		BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
 		if (partsModel == null) return;
 
@@ -173,24 +189,24 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				}
 			}
 
-			if (extraHeadBonesEnabled && (race.equals("namekian") || race.equals("namekian_orange"))) {
+            if (extraHeadBonesEnabled && (race.equals("namekian") || logicKey.equals("namekian_orange") || logicKey.equals("namekian_buffed"))) {
 
-				GeoBone antennaBone = partsModel.getBone("antennas1").orElse(null);
-				boolean antennaFromPlayerModel = false;
+                GeoBone antennaBone = partsModel.getBone("antennas1").orElse(null);
+                boolean antennaFromPlayerModel = false;
 
-				if (antennaBone == null) {
-					antennaBone = playerModel.getBone("antennas1").orElse(null);
-					antennaFromPlayerModel = true;
-				}
+                if (antennaBone == null) {
+                    antennaBone = playerModel.getBone("antennas1").orElse(null);
+                    antennaFromPlayerModel = true;
+                }
 
-				if (antennaBone != null) {
-					if (!antennaFromPlayerModel) {
-						syncTargetBoneAndParents(antennaBone, playerModel);
-					}
-					float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
-					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-				}
-			}
+                if (antennaBone != null) {
+                    if (!antennaFromPlayerModel) {
+                        syncTargetBoneAndParents(antennaBone, playerModel);
+                    }
+                    float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
+                    renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+                }
+            }
 
 			if (extraHeadBonesEnabled && race.equals("majin")) {
 				GeoBone earsBone = partsModel.getBone("ears3").orElse(null);

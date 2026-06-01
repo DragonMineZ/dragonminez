@@ -169,7 +169,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
             // NAMEKIAN
             case "namekian": return BASE_DEFAULT;
-            case "namekian_orange": return HUMAN_SAIYAN_BUFFED;
+            case "namekian_orange": case "namekian_buffed": return HUMAN_SAIYAN_BUFFED;
 
             // MAJIN
             case "majin": return isMale ? MAJIN_FAT : MAJIN_SLIM;

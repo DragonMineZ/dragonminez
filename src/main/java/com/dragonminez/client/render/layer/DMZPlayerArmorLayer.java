@@ -92,7 +92,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
                 boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
                         || logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra")|| logicKey.startsWith("ssj4d")|| logicKey.startsWith("ssj4gt")
-                        || logicKey.startsWith("frostdemon_fifth") || logicKey.startsWith("frostdemon_metalcore");
+                        || logicKey.startsWith("frostdemon_fifth") || logicKey.startsWith("frostdemon_metalcore") || logicKey.startsWith("namekian_buffed");
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
 
                 if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {

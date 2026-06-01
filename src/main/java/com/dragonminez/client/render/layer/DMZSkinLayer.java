@@ -277,7 +277,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		b2 = applyColorTint(b2, stats);
 
 		if (!faceKey.equals("human") && !faceKey.equals("saiyan") && !faceKey.equals("ssj4d") && !faceKey.equals("ssj4gt") && !faceKey.equals("buffed")
-				&& !faceKey.equals("namekian") && !faceKey.equals("namekian_orange")
+				&& !faceKey.equals("namekian") && !faceKey.equals("namekian_orange") && !faceKey.equals("namekian_buffed")
 				&& !faceKey.startsWith("frostdemon") && !faceKey.startsWith("bioandroid")
 				&& !faceKey.startsWith("majin") && !faceKey.startsWith("janemba_super") && !faceKey.startsWith("janemba_fat")) {
 
