@@ -41,10 +41,13 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation FROST_DEMON_THIRD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_third.geo.json");
     private static final ResourceLocation FROST_DEMON_FIFTH = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fifth.geo.json");
     private static final ResourceLocation FROSTDEMON_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fp.geo.json");
+    private static final ResourceLocation FROSTDEMON_METALCORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_metalcore.geo.json");
+
     private static final ResourceLocation BIO_ANDROID = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json");
     private static final ResourceLocation BIO_ANDROID_SEMI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_semi.geo.json");
     private static final ResourceLocation BIO_ANDROID_PERFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
     private static final ResourceLocation BIO_ANDROID_ULTRA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_ultra.geo.json");
+
     private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slim.geo.json");
@@ -177,11 +180,12 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "janemba_super": return JANEMBA_SUPER;
 
             // FROSTDEMON
-            case "frostdemon": case "frostdemon_final": return FROST_DEMON;
+            case "frostdemon": case "frostdemon_final": case "frostdemon_mecha":return FROST_DEMON;
             case "frostdemon_second": return FROST_DEMON_SECOND;
             case "frostdemon_fifth": return FROST_DEMON_FIFTH;
             case "frostdemon_fp": return FROSTDEMON_BUFFED;
             case "frostdemon_third": return FROST_DEMON_THIRD;
+            case "frostdemon_metalcore": return FROSTDEMON_METALCORE;
 
             // BIOANDROID
             case "bioandroid_base": return BIO_ANDROID;

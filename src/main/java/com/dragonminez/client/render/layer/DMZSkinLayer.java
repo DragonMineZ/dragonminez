@@ -382,13 +382,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderFrostFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, boolean isModelEmpty, String race, float[] eye1, float[] eye2, float[] skin, float[] b2, float pt, int pl, int po, float alpha) {
 		String folder = "textures/entity/races/frostdemon/faces/";
-		float[] white = {1.0f, 1.0f, 1.0f};
-		float[] red = {1.0f, 0.0f, 0.0f};
 		int bodyType = character.getBodyType();
 		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
 		boolean isFifth = faceKey.equals("frostdemon_fifth") || currentForm.contains(FrostDemonForms.FIFTH_FORM);
+        boolean isMetalCore = faceKey.equals("frostdemon_metalcore");
 
-		float[] eyeBgColor = isFifth ? red : white;
+        float[] eyeBgColor = isFifth ? ColorUtils.hexToRgb("#D11A11") :
+                (isMetalCore ? ColorUtils.hexToRgb("#242424") : ColorUtils.hexToRgb("#F2F2F2"));
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_0.png")).getPath(), eyeBgColor, pt, pl, po, alpha);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_1.png")).getPath(), eye1, pt, pl, po, alpha);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_2.png")).getPath(), eye2, pt, pl, po, alpha);
