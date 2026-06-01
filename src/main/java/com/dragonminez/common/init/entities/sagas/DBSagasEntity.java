@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.animal.DinoGlobalEntity;
@@ -56,7 +57,7 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class DBSagasEntity extends Monster implements GeoEntity {
+public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextureVariant {
 
     public enum KiSkillType {
         KAMEHAMEHA(1),
