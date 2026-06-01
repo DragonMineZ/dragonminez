@@ -15,17 +15,6 @@ import net.minecraft.network.chat.Component;
 
 public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
 	private boolean hasAvailableStackForm(StatsData statsData) {
-		var skillConfig = ConfigManager.getSkillsConfig();
-		boolean hasStackSkill = false;
-		for (String formSkill : skillConfig.getStackSkills()) {
-			if (statsData.getSkills().getSkillLevel(formSkill) > 0) {
-				hasStackSkill = true;
-				break;
-			}
-		}
-
-		if (!hasStackSkill) return false;
-
 		String firstGroup = TransformationsHelper.getGroupWithFirstAvailableStackForm(statsData);
 		String firstForm = TransformationsHelper.getFirstAvailableStackForm(statsData);
 		return firstGroup != null && !firstGroup.isEmpty() && firstForm != null && !firstForm.isEmpty();
