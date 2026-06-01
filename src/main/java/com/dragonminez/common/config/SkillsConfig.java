@@ -281,13 +281,14 @@ public class SkillsConfig {
 
 		List<String> gokuSkills = new ArrayList<>();
 		gokuSkills.add("fly");
-		gokuSkills.add("kicontrol");
 		gokuSkills.add("kisense");
 		gokuSkills.add("defense_penetration");
 		gokuSkills.add("fusion");
-		gokuSkills.add("potentialunlock");
 		gokuSkills.add("kamehameha");
 		gokuSkills.add("spiritbomb");
+		gokuSkills.add("dragon_fist");
+		gokuSkills.add("oozaru_fist");
+		gokuSkills.add("super_god_fist");
 		skillOfferings.put("goku", gokuSkills);
 
 		List<String> kingKaiSkills = new ArrayList<>();
@@ -296,6 +297,7 @@ public class SkillsConfig {
 		kingKaiSkills.add("kimanipulation");
 		kingKaiSkills.add("fusion");
 		kingKaiSkills.add("spiritbomb");
+		kingKaiSkills.add("kaioken_attack");
 		skillOfferings.put("kingkai", kingKaiSkills);
 
 		List<String> vegetaSkills = new ArrayList<>();
@@ -304,6 +306,7 @@ public class SkillsConfig {
 		vegetaSkills.add("big_bang");
 		vegetaSkills.add("final_flash");
 		vegetaSkills.add("final_explosion");
+		vegetaSkills.add("deadly_dance_vegetto");
 		skillOfferings.put("vegeta", vegetaSkills);
 
 		List<String> piccoloSkills = new ArrayList<>();
@@ -315,6 +318,7 @@ public class SkillsConfig {
 		krillinSkills.add("kamehameha");
 		krillinSkills.add("kienzan");
 		krillinSkills.add("kibarrage");
+		krillinSkills.add("wolf_fang");
 		skillOfferings.put("krillin", krillinSkills);
 
 		List<String> friezaSkills = new ArrayList<>();
@@ -327,6 +331,7 @@ public class SkillsConfig {
 		List<String> coolerSkills = new ArrayList<>();
 		coolerSkills.add("supernova_cooler");
 		coolerSkills.add("death_beam");
+		coolerSkills.add("deadly_dance");
 		skillOfferings.put("cooler", coolerSkills);
 
 		List<String> trunksSkills = new ArrayList<>();

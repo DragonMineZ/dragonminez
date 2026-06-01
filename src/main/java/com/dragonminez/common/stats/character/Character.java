@@ -83,6 +83,7 @@ public class Character {
 	private int noseType;
 	private int mouthType;
 	private int tattooType;
+	private float boobScale = 1.0f;
 	private String bodyColor;
 	private String bodyColor2;
 	private String bodyColor3;
@@ -307,6 +308,7 @@ public class Character {
 		tag.putInt("NoseType", noseType);
 		tag.putInt("MouthType", mouthType);
 		tag.putInt("TattooType", tattooType);
+		tag.putFloat("BoobScale", boobScale);
 		saveAppearance(tag);
 		tag.putString("SelectedMaster",  safeString(selectedMaster));
 		tag.putString("SelectedFormGroup", safeString(selectedFormGroup));
@@ -366,6 +368,7 @@ public class Character {
 		this.noseType = tag.getInt("NoseType");
 		this.mouthType = tag.getInt("MouthType");
 		this.tattooType = tag.getInt("TattooType");
+		this.boobScale = tag.contains("BoobScale") ? tag.getFloat("BoobScale") : 1.0f;
 		setBodyColor(tag.getString("BodyColor"));
 		setBodyColor2(tag.getString("BodyColor2"));
 		setBodyColor3(tag.getString("BodyColor3"));
@@ -507,6 +510,7 @@ public class Character {
 		this.noseType = other.noseType;
 		this.mouthType = other.mouthType;
 		this.tattooType = other.tattooType;
+		this.boobScale = other.boobScale;
 		setBodyColor(other.bodyColor);
 		setBodyColor2(other.bodyColor2);
 		setBodyColor3(other.bodyColor3);

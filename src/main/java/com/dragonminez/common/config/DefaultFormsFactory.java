@@ -795,6 +795,7 @@ public class DefaultFormsFactory {
 		ssjHybrid.setName(SaiyanForms.SSJ_HYBRID);
 		ssjHybrid.setUnlockOnSkillLevel(2);
 		ssjHybrid.setCustomModel("buffed");
+		ssjHybrid.setBodyColor2("#FFE89E");
 		ssjHybrid.setHairColor("#FFE89E");
 		ssjHybrid.setEye1Color("#FFFFFF");
 		ssjHybrid.setEye2Color("#FFFFFF");
@@ -814,6 +815,7 @@ public class DefaultFormsFactory {
 		ssjFullPower.setName(SaiyanForms.SSJ_FULL_POWER);
 		ssjFullPower.setUnlockOnSkillLevel(3);
 		ssjFullPower.setCustomModel("buffed");
+		ssjFullPower.setBodyColor2("#9EFE53");
 		ssjFullPower.setHairColor("#9EFE53");
 		ssjFullPower.setEye1Color("#FFFFFF");
 		ssjFullPower.setEye2Color("#FFFFFF");
