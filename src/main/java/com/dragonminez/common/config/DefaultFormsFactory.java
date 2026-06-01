@@ -891,6 +891,7 @@ public class DefaultFormsFactory {
         evilNamek.setLightningColor("#D9180F");
         evilNamek.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
         evilNamek.setHairType("base");
+        evilNamek.setKeepBaseFormHeadBones(true);
 		setDefaultMasteryValues(evilNamek);
 		evilNamek.setStackDrainMultiplier(2.0);
 		evilNamek.setCanAlwaysTransform(true);
@@ -914,7 +915,8 @@ public class DefaultFormsFactory {
 		evilGiant.setEnergyDrain(0.25);
 		evilGiant.setStaminaDrainMultiplier(1.5);
 		evilGiant.setHairType("base");
-		setDefaultMasteryValues(evilGiant);
+        evilGiant.setKeepBaseFormHeadBones(true);
+        setDefaultMasteryValues(evilGiant);
 		evilGiant.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData buffedNamek = new FormConfig.FormData();
@@ -941,7 +943,8 @@ public class DefaultFormsFactory {
         buffedNamek.setHasLightnings(true);
         buffedNamek.setLightningColor("#D9180F");
         buffedNamek.setHairType("base");
-		setDefaultMasteryValues(buffedNamek);
+        buffedNamek.setKeepBaseFormHeadBones(true);
+        setDefaultMasteryValues(buffedNamek);
 		buffedNamek.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> namekianLegendaryData = new LinkedHashMap<>();
