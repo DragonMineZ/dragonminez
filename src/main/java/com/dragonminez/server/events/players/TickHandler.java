@@ -14,6 +14,7 @@ import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -60,6 +61,7 @@ public class TickHandler {
 	private static final Map<String, IActionModeHandler> ACTION_MODE_HANDLERS = new HashMap<>();
 	private static final List<IStatusEffectHandler> STATUS_EFFECT_HANDLERS = new ArrayList<>();
 	private static final Map<UUID, AbstractKiProjectile> CHARGING_CACHE = new HashMap<>();
+	private static final Map<UUID, Float> CHARGE_COST_ACCUM = new HashMap<>(); // fractional Ki consumed during charge
 
 	private static final int REGEN_INTERVAL = 20;
 	private static final int SYNC_INTERVAL = 10;
@@ -340,6 +342,7 @@ public class TickHandler {
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 		}
 		CHARGING_CACHE.remove(playerId);
+		CHARGE_COST_ACCUM.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
@@ -726,6 +729,7 @@ public class TickHandler {
 				var leftover = findChargingEntity(player);
 				if (leftover != null) leftover.discard();
 				CHARGING_CACHE.remove(player.getUUID());
+				CHARGE_COST_ACCUM.remove(player.getUUID());
 			}
 			if (hadCharge) techniques.clearTechniqueCharge();
 			return;
@@ -746,31 +750,64 @@ public class TickHandler {
 		if (!techniques.isTechniqueCharging()) return;
 
 		var activeKi = findChargingEntity(player);
+		if (activeKi != null && !chargingTechniqueId.equals(activeKi.getTechniqueId())) {
+			activeKi.discard();
+			CHARGING_CACHE.remove(player.getUUID());
+			activeKi = null;
+		}
 		if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f) {
 			TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f);
 		}
 
-		float currentCharge = techniques.getTechniqueChargePercent();
-		float ceiling = techniques.getChargeTierCeiling();
-		float kiCap = getMaxAllowedChargePercent(kiAttack, data);
-		float target = Math.min(ceiling, kiCap);
+		final float OVER = KiAttackData.OVERCHARGE_MAX_PERCENT;
+		boolean instant = kiAttack.isInstantCast();
+		int baseTicks = Math.max(1, kiAttack.getBaseChargeTicks());
+		float percent = techniques.getTechniqueChargePercent();
+		boolean holding = techniques.isChargeHolding();
+		float base = (float) kiAttack.getCalculatedCost(data);
 
-		float nextCharge = Math.min(200.0f, currentCharge + getChargeRatePerTick(kiAttack, currentCharge));
-		nextCharge = Math.min(nextCharge, target);
-		techniques.setTechniqueChargePercent(nextCharge);
+		boolean creative = player.isCreative();
+		float ceiling = (holding && !instant) ? OVER : 100.0f;
 
-		boolean kiLimited = kiCap < ceiling && nextCharge >= kiCap - 0.01f;
-		boolean reachedCeiling = nextCharge >= ceiling - 0.01f && !techniques.isChargeHolding();
+		boolean outOfKi = false;
+		if (percent < ceiling - 0.01f) {
+			float rate = (percent < 100.0f) ? 100.0f / baseTicks : KiAttackData.OVERCHARGE_TIER_PERCENT / (float) baseTicks;
+			float newP = Math.min(ceiling, percent + rate);
 
-		if (kiLimited || reachedCeiling) {
-			resolveKiAttackOnRelease(player, data, techniques);
+			if (creative) {
+				percent = newP;
+			} else {
+				double chargeCost = 0.5 * base * (KiAttackData.costMultiplier(newP) - KiAttackData.costMultiplier(percent));
+				float accum = CHARGE_COST_ACCUM.getOrDefault(player.getUUID(), 0.0f) + (float) chargeCost;
+				float energy = data.getResources().getCurrentEnergy();
+				int whole = (int) accum;
+
+				if (energy >= whole) {
+					if (whole > 0) { data.getResources().removeEnergy(whole); accum -= whole; }
+					CHARGE_COST_ACCUM.put(player.getUUID(), accum);
+					percent = newP;
+				} else {
+					float affordFrac = whole > 0 ? Math.max(0.0f, Math.min(1.0f, (float) energy / whole)) : 1.0f;
+					percent = percent + (newP - percent) * affordFrac;
+					data.getResources().setCurrentEnergy(0);
+					CHARGE_COST_ACCUM.put(player.getUUID(), 0.0f);
+					outOfKi = true;
+				}
+			}
+			techniques.setTechniqueChargePercent(percent);
 		}
+
+		boolean reachedCeiling = percent >= ceiling - 0.01f;
+		if ((!holding || instant) && (reachedCeiling || outOfKi)) {
+			resolveKiAttackOnRelease(player, data, techniques);
+			return;
+		}
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new TechniqueChargeSyncS2C(player.getId(), techniques.getTechniqueChargePercent(), true), player);
 	}
 
 	private static void resolveKiAttackOnRelease(ServerPlayer player, StatsData data, Techniques techniques) {
-		float chargedPercent = techniques.getTechniqueChargePercent();
-		float maxAllowedCharge = 200.0f;
-		float effectiveCharge = Math.min(chargedPercent, maxAllowedCharge);
+		float effectiveCharge = Math.min(techniques.getTechniqueChargePercent(), KiAttackData.OVERCHARGE_MAX_PERCENT);
 
 		var activeKi = findChargingEntity(player);
 
@@ -778,7 +815,7 @@ public class TickHandler {
 			if (effectiveCharge < 50.0f) {
 				activeKi.discard();
 			} else {
-				float chargeMultiplier = effectiveCharge / 100.0f;
+				float chargeMultiplier = effectiveCharge / 100.0f; // damage scaling
 
 				TechniqueData techniqueData = techniques.getUnlockedTechniques().get(techniques.getChargingTechniqueId());
 
@@ -786,13 +823,30 @@ public class TickHandler {
 					boolean fired = TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, chargeMultiplier);
 
 					if (fired) {
-						int cooldownTicks = Math.max(1, (int) Math.ceil(kiAttack.getActualCooldown() * chargeMultiplier));
+						boolean creative = player.isCreative();
+						int cooldownTicks = creative ? 60 : Math.max(1, (int) Math.ceil(kiAttack.getActualCooldown() * chargeMultiplier));
 						data.getCooldowns().setCooldown(getTechniqueCooldownKey(kiAttack.getId()), cooldownTicks);
+
+						if (!creative) {
+							double base = kiAttack.getCalculatedCost(data);
+							float costMult = KiAttackData.costMultiplier(effectiveCharge);
+							boolean drainsOverLife = activeKi.isMovementRestrictedType();
+							double fireFraction = drainsOverLife ? 0.25 : 0.50;
+							int fireCost = (int) Math.round(fireFraction * base * costMult);
+							if (fireCost > 0) data.getResources().removeEnergy(fireCost);
+
+							if (drainsOverLife) {
+								double lifeCost = 0.25 * base * costMult;
+								int maxLife = Math.max(1, activeKi.getMaxLife());
+								activeKi.setKiLifetimeDrainPerTick((float) (lifeCost / maxLife));
+							}
+						}
 					} else activeKi.discard();
 				} else activeKi.discard();
 			}
 		}
 
+		CHARGE_COST_ACCUM.remove(player.getUUID());
 		CHARGING_CACHE.remove(player.getUUID());
 		techniques.clearTechniqueCharge();
 	}
@@ -845,14 +899,6 @@ public class TickHandler {
 
 	private static String getTechniqueCooldownKey(String techniqueId) {
 		return "TechniqueCooldown_" + techniqueId;
-	}
-
-	private static float getChargeRatePerTick(KiAttackData kiAttack, float currentPercent) {
-		int castTime = Math.max(1, kiAttack.getActualCastTime());
-		if (currentPercent < 100.0f) {
-			return 50.0f / castTime;
-		}
-		return 25.0f / (castTime * 3.0f);
 	}
 
 	private static float getMaxAllowedChargePercent(KiAttackData kiAttack, StatsData data) {

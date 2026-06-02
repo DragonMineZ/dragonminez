@@ -32,10 +32,14 @@ public class KeyBinds {
 	public static final KeyMapping TECHNIQUE_SLOT_2 = registerKeyAlt("technique_slot_2", GLFW.GLFW_KEY_2);
 	public static final KeyMapping TECHNIQUE_SLOT_3 = registerKeyAlt("technique_slot_3", GLFW.GLFW_KEY_3);
 	public static final KeyMapping TECHNIQUE_SLOT_4 = registerKeyAlt("technique_slot_4", GLFW.GLFW_KEY_4);
-	public static final KeyMapping TECHNIQUE_SLOT_5 = registerKeyAlt("technique_slot_5", GLFW.GLFW_KEY_5);
+	public static final KeyMapping TECHNIQUE_SLOT_5 = registerKeyCtrl("technique_slot_5", GLFW.GLFW_KEY_1);
+	public static final KeyMapping TECHNIQUE_SLOT_6 = registerKeyCtrl("technique_slot_6", GLFW.GLFW_KEY_2);
+	public static final KeyMapping TECHNIQUE_SLOT_7 = registerKeyCtrl("technique_slot_7", GLFW.GLFW_KEY_3);
+	public static final KeyMapping TECHNIQUE_SLOT_8 = registerKeyCtrl("technique_slot_8", GLFW.GLFW_KEY_4);
 
 	public static final KeyMapping[] TECHNIQUE_SLOTS = {
-			TECHNIQUE_SLOT_1, TECHNIQUE_SLOT_2, TECHNIQUE_SLOT_3, TECHNIQUE_SLOT_4, TECHNIQUE_SLOT_5
+			TECHNIQUE_SLOT_1, TECHNIQUE_SLOT_2, TECHNIQUE_SLOT_3, TECHNIQUE_SLOT_4,
+			TECHNIQUE_SLOT_5, TECHNIQUE_SLOT_6, TECHNIQUE_SLOT_7, TECHNIQUE_SLOT_8
 	};
 
 	public static final KeyMapping RHYTHM_LEFT = registerKey("rhythm_left", GLFW.GLFW_KEY_LEFT, true);
@@ -62,6 +66,16 @@ public class KeyBinds {
 				"key." + Reference.MOD_ID + "." + name,
 				KeyConflictContext.IN_GAME,
 				KeyModifier.ALT,
+				InputConstants.Type.KEYSYM.getOrCreate(keyCode),
+				DMZ_CATEGORY
+		);
+	}
+
+	private static KeyMapping registerKeyCtrl(String name, int keyCode) {
+		return new KeyMapping(
+				"key." + Reference.MOD_ID + "." + name,
+				KeyConflictContext.IN_GAME,
+				KeyModifier.CONTROL,
 				InputConstants.Type.KEYSYM.getOrCreate(keyCode),
 				DMZ_CATEGORY
 		);

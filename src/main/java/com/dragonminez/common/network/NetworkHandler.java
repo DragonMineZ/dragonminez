@@ -300,6 +300,12 @@ public class NetworkHandler {
 				.consumerMainThread(ProgressionSyncS2C::handle)
 				.add();
 
+		net.messageBuilder(com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C::decode)
+				.encoder(com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C::encode)
+				.consumerMainThread(com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C::handle)
+				.add();
+
 		net.messageBuilder(AppearanceSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(AppearanceSyncS2C::decode)
 				.encoder(AppearanceSyncS2C::encode)

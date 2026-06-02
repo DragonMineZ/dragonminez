@@ -107,11 +107,29 @@ public class KiAttackData extends TechniqueData {
 	public float getActualSpeed() { return speed * (1.0f + (speedLevel * 0.05f)); }
 	public float getActualSize() { return size * (1.0f + (sizeLevel * 0.05f)); }
 	public int getActualArmorPenetration() { return Math.min(100, armorPenetration + (armorPenLevel * 2)); }
-	public int getActualCastTime() { return isInstantCast() ? 0 : castTime * KI_TIME_MULTIPLIER; }
+	public int getActualCastTime() { return getBaseChargeTicks(); }
 	public int getActualCooldown() { return cooldown * KI_TIME_MULTIPLIER; }
 
 	public boolean isInstantCast() {
 		return kiType == KiType.SMALL_BALL || kiType == KiType.LASER;
+	}
+
+	public static final int OVERCHARGE_MAX_PERCENT = 175;
+	public static final int OVERCHARGE_TIER_PERCENT = 25;
+
+	public int getBaseChargeTicks() {
+		if (isInstantCast()) return 0;
+		int configured = ConfigManager.getTechniqueConfig().getKiTypeConfig(kiType != null ? kiType : KiType.SMALL_BALL).getCastTimeTicks();
+		return Math.max(0, configured);
+	}
+
+	/**
+	 * Ki cost scaling vs charge percent: linear to 1.0x at 100%, then ramps to 2.0x at the overcharge
+	 * cap (e.g. 125% ≈ 1.33x, 175% = 2.0x). Total cost = baseCost * costMultiplier(percent).
+	 */
+	public static float costMultiplier(float percent) {
+		if (percent <= 100.0f) return Math.max(0.0f, percent) / 100.0f;
+		return 1.0f + (percent - 100.0f) / (OVERCHARGE_MAX_PERCENT - 100.0f);
 	}
 
 	@Override
@@ -169,7 +187,6 @@ public class KiAttackData extends TechniqueData {
 	public boolean canUpgradeStat(String statName) {
 		KiType type = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		if ("damage".equals(statName) || "cooldown".equals(statName)) return true;
-		if ("cast".equals(statName)) return type != KiType.SMALL_BALL;
 
 		return switch (type) {
 			case SMALL_BALL -> "speed".equals(statName);
@@ -239,7 +256,7 @@ public class KiAttackData extends TechniqueData {
 			int initialArmorPen = Math.max(0, Math.round(normalized[3]) - armorPenLevel);
 
 			float initialComplexity = getWeightedComplexity(initialDamage, initialSize, initialSpeed, initialArmorPen);
-			this.castTime = computeDerivedCastTime(resolvedType, resolvedUtil, initialComplexity, castTimeLevel);
+			this.castTime = 0;
 			this.cooldown = computeDerivedCooldown(resolvedType, resolvedUtil, initialComplexity, cooldownLevel);
 		}
 	}
@@ -450,7 +467,7 @@ public class KiAttackData extends TechniqueData {
 		float utilMult = getUtilityMultiplier(resolvedUtil);
 		float kiCost = Math.max(5, (float) ((10.0 + complexity * 40.0) * typeMult * utilMult));
 		float tpCostVal = Math.max(10, Math.round((80.0f + complexity * 200.0f) * typeMult * utilMult));
-		float castVal = computeDerivedCastTime(resolvedType, resolvedUtil, complexity, 0);
+		float castVal = ConfigManager.getTechniqueConfig().getKiTypeConfig(resolvedType).getCastTimeTicks();
 		float cdVal = computeDerivedCooldown(resolvedType, resolvedUtil, complexity, 0);
 
 		return new float[]{kiCost, tpCostVal, castVal, cdVal};
@@ -496,15 +513,6 @@ public class KiAttackData extends TechniqueData {
 
 	public static int getDefaultArmorPenForType(KiType type) {
 		return 0;
-	}
-
-	private static int computeDerivedCastTime(KiType type, Utility util, float initialComplexity, int castLevel) {
-		if (type == KiType.SMALL_BALL || type == KiType.LASER) return 0;
-		float typeMult = getTypeMultiplier(type != null ? type : KiType.SMALL_BALL);
-		float utilMult = getUtilityMultiplier(util != null ? util : Utility.DAMAGE);
-		float base = (10.0f + initialComplexity * 2.0f) * (float) Math.sqrt(typeMult) * utilMult;
-		float reduced = base * Math.max(0.1f, 1.0f - (Math.max(0, castLevel) * 0.05f));
-		return Math.max(5, Math.min(200, Math.round(reduced)));
 	}
 
 	private static int computeDerivedCooldown(KiType type, Utility util, float initialComplexity, int cooldownLevel) {

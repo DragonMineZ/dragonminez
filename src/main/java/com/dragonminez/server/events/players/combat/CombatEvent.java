@@ -13,6 +13,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -250,7 +251,33 @@ public class CombatEvent {
 
 					double blockMultiplier = 1.0;
 
-					if (ConfigManager.getCombatConfig().getEnableBlocking()) {
+					boolean techCharging = victimData.getTechniques().isTechniqueCharging();
+					boolean techFiring = !techCharging && TechniqueDispatcher.isFiringKiAttack(victim);
+					boolean techActive = techCharging || techFiring;
+
+					if (techActive) {
+						Entity sourceEntity = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
+						float reductionMult = techFiring ? 0.25f : 0.5f;
+						float poiseMult = techFiring ? 4.0f : 2.0f;
+
+						double poiseDamageMultiplier = ConfigManager.getCombatConfig().getPoiseDamageMultiplier();
+						if (!(sourceEntity instanceof Player)) poiseDamageMultiplier *= 1.5;
+						float poiseDamage = (float) (currentDamage[0] * poiseDamageMultiplier * poiseMult);
+						float currentPoise = victimData.getResources().getCurrentPoise();
+
+						if (currentPoise - poiseDamage <= 0) {
+							doGuardBreak(victim, victimData);
+							cancelActiveTechnique(victim, victimData);
+						} else {
+							victimData.getResources().removePoise((int) poiseDamage);
+							int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
+							victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+							victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
+							blockMultiplier = reductionMult;
+						}
+					}
+
+					if (!techActive && ConfigManager.getCombatConfig().getEnableBlocking()) {
 						Entity sourceEntity = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
 						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && sourceEntity != null) {
 							Vec3 targetLook = victim.getLookAngle();
@@ -423,6 +450,14 @@ public class CombatEvent {
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			}
 		});
+	}
+
+	private static void cancelActiveTechnique(Player player, StatsData data) {
+		data.getTechniques().clearTechniqueCharge();
+		var owned = player.level().getEntitiesOfClass(AbstractKiProjectile.class,
+				player.getBoundingBox().inflate(64.0),
+				p -> p.getOwner() != null && p.getOwner().getUUID().equals(player.getUUID()));
+		for (AbstractKiProjectile p : owned) p.discard();
 	}
 
 	private static void doGuardBreak(Player attacker, StatsData attackerData) {

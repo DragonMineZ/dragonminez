@@ -28,6 +28,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.UUID;
+
 public abstract class AbstractKiProjectile extends Projectile {
 
     private static final EntityDataAccessor<Integer> COLOR_MAIN = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
@@ -50,9 +52,15 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient float[] cachedColorBorderRgb;
     private transient float[] cachedColorOutlineRgb;
 
+    private transient float kiLifetimeDrainPerTick = 0.0f;
+    private transient float kiDrainAccumulator = 0.0f;
+
+    public void setKiLifetimeDrainPerTick(float perTick) { this.kiLifetimeDrainPerTick = Math.max(0.0f, perTick); }
+
     @Getter
     private transient float clashLockedLength = -1.0F; // -1 = not clash-locked
-    private transient java.util.UUID clashOpponentId = null;
+    @Getter
+    private transient UUID clashOpponentId = null;
 
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -95,11 +103,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         return this.clashLockedLength >= 0.0F;
     }
 
-	public java.util.UUID getClashOpponentId() {
-        return this.clashOpponentId;
-    }
-
-    public float getDamagePerHit() {
+	public float getDamagePerHit() {
         return this.getKiDamage() / Math.max(1.0F, (float)this.getMaxHits());
     }
 
@@ -237,6 +241,18 @@ public abstract class AbstractKiProjectile extends Projectile {
             HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
             if (hitResult.getType() != HitResult.Type.MISS) {
                 this.onHit(hitResult);
+            }
+        }
+
+        if (!this.level().isClientSide && this.isFiring() && this.kiLifetimeDrainPerTick > 0.0f
+                && this.getOwner() instanceof Player ownerPlayer) {
+            this.kiDrainAccumulator += this.kiLifetimeDrainPerTick;
+            int whole = (int) this.kiDrainAccumulator;
+            if (whole > 0) {
+                this.kiDrainAccumulator -= whole;
+                final int drain = whole;
+                StatsProvider.get(StatsCapability.INSTANCE, ownerPlayer)
+                        .ifPresent(stats -> stats.getResources().removeEnergy(drain));
             }
         }
 

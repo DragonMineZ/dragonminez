@@ -27,6 +27,7 @@ import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -50,7 +51,8 @@ import top.theillusivec4.curios.api.CuriosApi;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
-	private static final int TECHNIQUE_VISIBLE_SLOTS = 5;
+	private static final int TECHNIQUE_VISIBLE_SLOTS = com.dragonminez.common.stats.techniques.Techniques.SLOT_COUNT;
+	private static final int BAR_SLOTS = 4; // slots per HUD bar (bar 1 = 0-3, bar 2 = 4-7)
 
 	private static FlightSoundInstance flightSound;
 
@@ -68,11 +70,8 @@ public class ClientStatsEvents {
 	private static boolean itMenuOpened = false;
 	private static boolean wasRightClickDown = false;
 
-	private static final int CHARGE_HOLD_TICKS = 30;
 	private static int activeChargeSlot = -1;
-	private static boolean chargeReHolding = false;
-	private static boolean chargeIsInitialHold = false;
-	private static int chargeHoldTicks = 0;
+	private static boolean chargeReleaseSent = false;
 	private static boolean chargePending = false;
 	private static int chargePendingTicks = 0;
 	private static final boolean[] wasSlotKeyDown = new boolean[TECHNIQUE_VISIBLE_SLOTS];
@@ -293,8 +292,15 @@ public class ClientStatsEvents {
 		var techniques = data.getTechniques();
 		boolean sessionActive = techniques.isTechniqueCharging() || techniques.isTechniqueChargeActive();
 
+		boolean ctrlHeld = Screen.hasControlDown();
+
 		boolean[] downNow = new boolean[TECHNIQUE_VISIBLE_SLOTS];
-		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) downNow[i] = KeyBinds.TECHNIQUE_SLOTS[i].isDown();
+		boolean altHeld = KeyBinds.SECOND_FUNCTION_KEY.isDown() || Screen.hasAltDown();
+		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
+			boolean rawDown = KeyBinds.TECHNIQUE_SLOTS[i].isDown();
+			boolean barAllows = (i < BAR_SLOTS) ? !ctrlHeld : altHeld;
+			downNow[i] = rawDown && barAllows;
+		}
 
 		if (activeChargeSlot < 0) {
 			resetChargeSession();
@@ -317,20 +323,13 @@ public class ClientStatsEvents {
 					int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
 					NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
 				} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) {
-					if (ki.isInstantCast()) {
-						// Instant techniques (Small Ball, Laser): fire-and-forget, no charge/hold tracking.
-						NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
-					} else {
+					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
+					else {
 						activeChargeSlot = i;
-						// The continuous initial hold counts as a charge-up hold (holding from the start
-						// bumps tiers without needing to release first); releasing it never cancels.
-						chargeReHolding = true;
-						chargeIsInitialHold = true;
-						chargeHoldTicks = 0;
+						chargeReleaseSent = false;
 						chargePending = true;
 						chargePendingTicks = 0;
 						NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
-						NetworkHandler.sendToServer(TechniqueChargeC2S.setHolding(true));
 					}
 				}
 			}
@@ -341,10 +340,7 @@ public class ClientStatsEvents {
 
 		if (!sessionActive) {
 			if (chargePending) {
-				if (++chargePendingTicks > 30) {
-					resetChargeSession();
-					return;
-				}
+				if (++chargePendingTicks > 30) { resetChargeSession(); return; }
 			} else {
 				resetChargeSession();
 				return;
@@ -354,32 +350,10 @@ public class ClientStatsEvents {
 			chargePendingTicks = 0;
 		}
 
-		if (activeChargeSlot >= TECHNIQUE_VISIBLE_SLOTS) return;
-		boolean slotDown = downNow[activeChargeSlot];
-
-		if (slotDown) {
-			if (!chargeReHolding) {
-				chargeReHolding = true;
-				chargeIsInitialHold = false;
-				chargeHoldTicks = 0;
-				NetworkHandler.sendToServer(TechniqueChargeC2S.setHolding(true));
-			}
-			chargeHoldTicks++;
-			if (chargeHoldTicks >= CHARGE_HOLD_TICKS) {
-				NetworkHandler.sendToServer(TechniqueChargeC2S.bump());
-				chargeHoldTicks = 0;
-			}
-		} else if (chargeReHolding) {
-			boolean wasTap = chargeHoldTicks < CHARGE_HOLD_TICKS;
-			if (!chargeIsInitialHold && wasTap) {
-				float pct = techniques.getTechniqueChargePercent();
-				if (pct < 50.0f) NetworkHandler.sendToServer(TechniqueChargeC2S.cancel());
-				else if (techniques.getChargeTierCeiling() >= 200.0f) NetworkHandler.sendToServer(TechniqueChargeC2S.fireNow());
-			}
+		boolean slotDown = activeChargeSlot < TECHNIQUE_VISIBLE_SLOTS && downNow[activeChargeSlot];
+		if (!slotDown && !chargeReleaseSent) {
 			NetworkHandler.sendToServer(TechniqueChargeC2S.setHolding(false));
-			chargeReHolding = false;
-			chargeIsInitialHold = false;
-			chargeHoldTicks = 0;
+			chargeReleaseSent = true;
 		}
 	}
 
@@ -396,9 +370,7 @@ public class ClientStatsEvents {
 
 	private static void resetChargeSession() {
 		activeChargeSlot = -1;
-		chargeReHolding = false;
-		chargeIsInitialHold = false;
-		chargeHoldTicks = 0;
+		chargeReleaseSent = false;
 		chargePending = false;
 		chargePendingTicks = 0;
 	}
@@ -495,6 +467,12 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onMovementInput(MovementInputUpdateEvent event) {
+		boolean techMenu = KeyBinds.SECOND_FUNCTION_KEY.isDown() || Screen.hasAltDown();
+		if (techMenu) {
+			event.getInput().shiftKeyDown = false;
+			event.getEntity().setSprinting(false);
+		}
+
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStrikeLocked()) {
 				event.getInput().forwardImpulse = 0;
