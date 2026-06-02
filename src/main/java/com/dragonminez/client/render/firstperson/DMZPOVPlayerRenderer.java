@@ -1,13 +1,10 @@
 package com.dragonminez.client.render.firstperson;
 
 import com.dragonminez.client.render.DMZPlayerRenderer;
-import com.dragonminez.client.render.firstperson.dto.DMZCameraBuffer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
@@ -39,10 +36,11 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
         final Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         final Vec3 playerPos = localPlayer.getPosition(partialTick);
         final Vector3f offset = FirstPersonManager.offsetFirstPersonView(localPlayer);
+        final float BODY_PUSHBACK_Z = 0.15F;
 
         poseStack.translate(playerPos.x - cameraPos.x, playerPos.y - cameraPos.y, playerPos.z - cameraPos.z);
         super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
-        poseStack.translate(offset.x(), 0.0D, offset.z());
+        poseStack.translate(offset.x(), 0.0D, offset.z() + BODY_PUSHBACK_Z);
     }
 
     @Override

@@ -52,17 +52,14 @@ public class FirstPersonManager {
 			}
 		});
 
-		float ratioY = scaling[0][1] / BASE_SCALE;
-		float adjustedOffsetY;
-		if (ratioY <= 1.0f) {
-			adjustedOffsetY = BASE_OFFSET_Y + (1.0f - ratioY) * -2.0f;
-		} else {
-			float modelHeightInBlocks = scaling[0][1] * 1.8f;
-			float eyeHeightInBlocks = modelHeightInBlocks * 0.85f;
-			float defaultEyeHeight = 1.42f;
-			adjustedOffsetY = BASE_OFFSET_Y + (eyeHeightInBlocks - defaultEyeHeight);
+		final float BASE_EYE_FRACTION = 0.85f;
+		final float SHRINK_EYE_COMPENSATION = 1.5f;
+		float eyeFraction = BASE_EYE_FRACTION + Math.max(0f, BASE_SCALE - scaling[0][1]) * SHRINK_EYE_COMPENSATION;
 
-		}
+		float modelHeightInBlocks = scaling[0][1] * 1.8f;
+		float eyeHeightInBlocks = modelHeightInBlocks * eyeFraction;
+		float defaultEyeHeight = 1.42f;
+		float adjustedOffsetY = BASE_OFFSET_Y + (eyeHeightInBlocks - defaultEyeHeight);
 
 		return new Vector3f(0, adjustedOffsetY, BASE_OFFSET_Z[0]);
 	}
