@@ -315,17 +315,17 @@ public class TechniqueDispatcher {
 	private static boolean isChargingRestrictedTechniqueType(KiAttackData.KiType kiType, boolean movementRestriction) {
 		if (kiType == null) return false;
 		return switch (kiType) {
-			case GIANT_BALL, WAVE, LASER, BEAM, EXPLOSION, BARRAGE -> true;
+			case GIANT_BALL, WAVE, BEAM, EXPLOSION, BARRAGE -> true;
 			case SHIELD, AREA -> !movementRestriction;
-			case SMALL_BALL, MEDIUM_BALL, DISK -> false;
+			case SMALL_BALL, MEDIUM_BALL, DISK, LASER -> false;
 		};
 	}
 
 	private static boolean isProjectileRestrictedType(AbstractKiProjectile.KiType kiType, boolean movementRestriction) {
 		return switch (kiType) {
-			case GIANT_BALL, WAVE, LASER, BEAM, EXPLOSION, BARRAGE -> true;
+			case GIANT_BALL, WAVE, BEAM, EXPLOSION, BARRAGE -> true;
 			case SHIELD, AREA -> !movementRestriction;
-			case SMALL_BALL, MEDIUM_BALL, DISK -> false;
+			case SMALL_BALL, MEDIUM_BALL, DISK, LASER -> false;
 		};
 	}
 }

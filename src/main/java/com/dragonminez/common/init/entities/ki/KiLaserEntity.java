@@ -206,6 +206,26 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     @Override
+    public boolean isClashableBeam() {
+        return this.isFiring();
+    }
+
+    @Override
+    public float getClashYaw() {
+        return this.getFixedYaw();
+    }
+
+    @Override
+    public float getClashPitch() {
+        return this.getFixedPitch();
+    }
+
+    @Override
+    public float getClashBeamLength() {
+        return this.getBeamLength();
+    }
+
+    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(BEAM_LENGTH, 0.0F);
@@ -256,6 +276,13 @@ public class KiLaserEntity extends AbstractKiProjectile{
             this.setDeltaMovement(0, 0, 0);
 
             if (!this.level().isClientSide) {
+                // CLASH LOCK: el haz queda fijo en el punto de choque, sin extenderse ni dañar.
+                if (this.isClashLocked()) {
+                    this.setBeamLength(this.getClashLockedLength());
+                    this.onKiTick();
+                    return;
+                }
+
                 Vec3 startPos = this.position();
                 Vec3 dir = Vec3.directionFromRotation(this.getFixedPitch(), this.getFixedYaw());
 

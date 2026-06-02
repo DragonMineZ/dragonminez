@@ -208,6 +208,13 @@ public class TickHandler {
 				serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", true);
 			} else if (wasExecuting) {
 				serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+			}
+
+			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+			boolean kiAnimWasActive = serverPlayer.getPersistentData().getBoolean("dmz_ki_anim_active");
+			if (kiAnimShouldBeActive) serverPlayer.getPersistentData().putBoolean("dmz_ki_anim_active", true);
+			else if (kiAnimWasActive) {
+				serverPlayer.getPersistentData().putBoolean("dmz_ki_anim_active", false);
 				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 			}
 
@@ -714,9 +721,13 @@ public class TickHandler {
 		String chargingTechniqueId = techniques.getChargingTechniqueId();
 
 		if (chargingTechniqueId == null || chargingTechniqueId.isEmpty()) {
-			if (techniques.getTechniqueChargePercent() > 0.0f || techniques.isTechniqueCharging()) {
-				techniques.clearTechniqueCharge();
+			boolean hadCharge = techniques.getTechniqueChargePercent() > 0.0f || techniques.isTechniqueCharging();
+			if (hadCharge || CHARGING_CACHE.containsKey(player.getUUID())) {
+				var leftover = findChargingEntity(player);
+				if (leftover != null) leftover.discard();
+				CHARGING_CACHE.remove(player.getUUID());
 			}
+			if (hadCharge) techniques.clearTechniqueCharge();
 			return;
 		}
 
@@ -732,17 +743,26 @@ public class TickHandler {
 			return;
 		}
 
+		if (!techniques.isTechniqueCharging()) return;
+
 		var activeKi = findChargingEntity(player);
-		if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f && techniques.isTechniqueCharging()) {
+		if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f) {
 			TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f);
 		}
 
-		if (techniques.isTechniqueCharging()) {
-			float currentCharge = techniques.getTechniqueChargePercent();
-			float nextCharge = Math.min(200.0f, currentCharge + getChargeRatePerTick(kiAttack, currentCharge));
-			float maxAllowedCharge = getMaxAllowedChargePercent(kiAttack, data);
-			techniques.setTechniqueChargePercent(Math.min(nextCharge, maxAllowedCharge));
-		} else {
+		float currentCharge = techniques.getTechniqueChargePercent();
+		float ceiling = techniques.getChargeTierCeiling();
+		float kiCap = getMaxAllowedChargePercent(kiAttack, data);
+		float target = Math.min(ceiling, kiCap);
+
+		float nextCharge = Math.min(200.0f, currentCharge + getChargeRatePerTick(kiAttack, currentCharge));
+		nextCharge = Math.min(nextCharge, target);
+		techniques.setTechniqueChargePercent(nextCharge);
+
+		boolean kiLimited = kiCap < ceiling && nextCharge >= kiCap - 0.01f;
+		boolean reachedCeiling = nextCharge >= ceiling - 0.01f && !techniques.isChargeHolding();
+
+		if (kiLimited || reachedCeiling) {
 			resolveKiAttackOnRelease(player, data, techniques);
 		}
 	}
@@ -766,14 +786,10 @@ public class TickHandler {
 					boolean fired = TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, chargeMultiplier);
 
 					if (fired) {
-						int cooldownTicks = Math.max(1, (int) Math.ceil(kiAttack.getCooldown() * chargeMultiplier));
+						int cooldownTicks = Math.max(1, (int) Math.ceil(kiAttack.getActualCooldown() * chargeMultiplier));
 						data.getCooldowns().setCooldown(getTechniqueCooldownKey(kiAttack.getId()), cooldownTicks);
-					} else {
-						activeKi.discard();
-					}
-				} else {
-					activeKi.discard();
-				}
+					} else activeKi.discard();
+				} else activeKi.discard();
 			}
 		}
 
@@ -807,6 +823,15 @@ public class TickHandler {
 		return null;
 	}
 
+	private static boolean playerOwnsKiProjectile(ServerPlayer player) {
+		List<AbstractKiProjectile> list = player.level().getEntitiesOfClass(
+				AbstractKiProjectile.class, player.getBoundingBox().inflate(48.0D));
+		for (AbstractKiProjectile ki : list) {
+			if (ki.getOwner() != null && ki.getOwner().getUUID().equals(player.getUUID())) return true;
+		}
+		return false;
+	}
+
 	private static boolean isEntityFiring(AbstractKiProjectile ki) {
 		if (ki instanceof KiWaveEntity wave) return wave.isFiring();
 		if (ki instanceof KiBlastEntity blast) return blast.isFiring();
@@ -823,7 +848,7 @@ public class TickHandler {
 	}
 
 	private static float getChargeRatePerTick(KiAttackData kiAttack, float currentPercent) {
-		int castTime = Math.max(1, kiAttack.getCastTime());
+		int castTime = Math.max(1, kiAttack.getActualCastTime());
 		if (currentPercent < 100.0f) {
 			return 50.0f / castTime;
 		}

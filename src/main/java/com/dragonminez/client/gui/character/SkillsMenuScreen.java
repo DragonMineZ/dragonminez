@@ -16,6 +16,7 @@ import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.util.TransformationsHelper;
@@ -463,11 +464,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int rightPanelY = centerY - 105;
 		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
 		boolean isKi = tech instanceof KiAttackData;
+		boolean canShare = isKi && !PredefinedTechniques.isPredefinedTechniqueId(selectedSkill);
 
 		if (!isBinding) {
 			int yPos = rightPanelY + 185;
 
-			if (isKi) {
+			if (canShare) {
 				var importButton = new CustomTextureButton.Builder()
 						.position(rightPanelX + 11, yPos)
 						.size(20, 20)
@@ -505,7 +507,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					.build();
 			this.addRenderableWidget(bindButton);
 
-			if (isKi) {
+			if (canShare) {
 				var exportButton = new CustomTextureButton.Builder()
 						.position(rightPanelX + 114, yPos)
 						.size(20, 20)
@@ -523,7 +525,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				this.addRenderableWidget(exportButton);
 			}
 
-			if (isKi && isImportingTechnique) {
+			if (canShare && isImportingTechnique) {
 				techniqueImportBox = new EditBox(this.font, rightPanelX + 7, yPos + 22, 123, 12, Component.empty());
 				techniqueImportBox.setMaxLength(65536);
 				this.addRenderableWidget(techniqueImportBox);

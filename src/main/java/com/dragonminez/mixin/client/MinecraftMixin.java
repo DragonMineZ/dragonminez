@@ -50,7 +50,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 		boolean[] isDmzBlocking = {false};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> isDmzBlocking[0] = data.getStatus().isBlocking());
-		if (player.isBlocking() || isDmzBlocking[0]) {
+		if (player.isBlocking() || isDmzBlocking[0] || PlayerAttackHelper.isChargingTechnique(player)) {
 			cir.cancel();
 			cir.setReturnValue(false);
 			return;
@@ -86,6 +86,11 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Inject(method = "continueAttack", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$continueAttack(boolean leftClick, CallbackInfo ci) {
 		if (!leftClick || player == null) return;
+
+		if (PlayerAttackHelper.isChargingTechnique(player)) {
+			ci.cancel();
+			return;
+		}
 
 		var mcDMZ = (Minecraft_DMZ) this;
 		var comboCount = mcDMZ.getComboCount();

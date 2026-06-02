@@ -61,6 +61,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Unique private String dragonminez$currentKiAnim = null;
 	@Unique private String dragonminez$lastKiAnim = null;
+	@Unique private boolean dragonminez$kiAnimHold = true;
+	@Unique private int dragonminez$kiAnimTicks = 0;
+	@Unique private int dragonminez$lastKiTickRun = -1;
+	@Unique private String dragonminez$lastKiCtlAnim = null;
+	@Unique private static final int KI_FIRE_ONESHOT_TICKS = 14;
 
 	@Unique
 	private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
@@ -107,20 +112,22 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
 		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
 		registrar.add(new AnimationController<>(this, "pose_controller", 4, this::posePredicate));
+		registrar.add(new AnimationController<>(this, "ki_controller", 4, this::kiPredicate));
 	}
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 
-		if (dragonminez$currentKiAnim != null) {
+		if (dragonminez$currentKiAnim != null && dragonminez$kiAnimHold) {
 			if (!dragonminez$currentKiAnim.equals(dragonminez$lastKiAnim)) {
 				state.getController().setAnimation(RawAnimation.begin().thenPlayAndHold(dragonminez$currentKiAnim));
 				state.getController().forceAnimationReset();
 				dragonminez$lastKiAnim = dragonminez$currentKiAnim;
 			}
 			return PlayState.CONTINUE;
-		} else dragonminez$lastKiAnim = null;
+		}
+		dragonminez$lastKiAnim = null;
 
 		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
@@ -182,6 +189,44 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		}
 
 		return state.setAndContinue(JUMP);
+	}
+
+	@Unique
+	private <T extends GeoAnimatable> PlayState kiPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+
+		if (dragonminez$currentKiAnim == null || dragonminez$kiAnimHold) {
+			dragonminez$lastKiCtlAnim = null;
+			return PlayState.STOP;
+		}
+
+		AnimationController<T> ctl = state.getController();
+		boolean isFire = dragonminez$currentKiAnim.endsWith("_fire");
+
+		if (!isFire) {
+			if (!dragonminez$currentKiAnim.equals(dragonminez$lastKiCtlAnim)) {
+				ctl.setAnimation(RawAnimation.begin().thenPlayAndHold(dragonminez$currentKiAnim));
+				ctl.forceAnimationReset();
+				dragonminez$lastKiCtlAnim = dragonminez$currentKiAnim;
+			}
+			return PlayState.CONTINUE;
+		}
+
+		if (!dragonminez$currentKiAnim.equals(dragonminez$lastKiCtlAnim)) {
+			ctl.setAnimation(RawAnimation.begin().thenPlay(dragonminez$currentKiAnim));
+			ctl.forceAnimationReset();
+			dragonminez$lastKiCtlAnim = dragonminez$currentKiAnim;
+			dragonminez$kiAnimTicks = KI_FIRE_ONESHOT_TICKS;
+		}
+		if (player.tickCount != dragonminez$lastKiTickRun) {
+			dragonminez$lastKiTickRun = player.tickCount;
+			if (dragonminez$kiAnimTicks > 0) dragonminez$kiAnimTicks--;
+		}
+		if (dragonminez$kiAnimTicks > 0) return PlayState.CONTINUE;
+
+		dragonminez$currentKiAnim = null;
+		dragonminez$lastKiCtlAnim = null;
+		return PlayState.STOP;
 	}
 
 	@Unique
@@ -531,14 +576,19 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Override
-	public void dragonminez$playKiAnimation(String animationName) {
+	public void dragonminez$playKiAnimation(String animationName, boolean hold) {
 		this.dragonminez$currentKiAnim = animationName;
+		this.dragonminez$kiAnimHold = hold;
+		this.dragonminez$kiAnimTicks = 0;
 	}
 
 	@Override
 	public void dragonminez$stopKiAnimation() {
 		this.dragonminez$currentKiAnim = null;
 		this.dragonminez$lastKiAnim = null;
+		this.dragonminez$lastKiCtlAnim = null;
+		this.dragonminez$kiAnimHold = true;
+		this.dragonminez$kiAnimTicks = 0;
 	}
 
 	@Override

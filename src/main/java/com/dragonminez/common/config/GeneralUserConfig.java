@@ -14,7 +14,7 @@ public class GeneralUserConfig {
 
 	private Boolean firstPersonAnimated = true;
 	private boolean impactFramesEnabled = false;
-	private Boolean techniqueHotbarHorizontal = true;
+	private Boolean techniqueHotbarRightSide = false;
 	private Boolean alwaysVisibleHudValues = false;
 	private Integer xenoverseHudPosX = 5;
 	private Integer xenoverseHudPosY = 5;
@@ -38,9 +38,9 @@ public class GeneralUserConfig {
 		return menuScaleMultiplier;
 	}
 
-	public Boolean getTechniqueHotbarHorizontal() {
-		if (techniqueHotbarHorizontal == null) techniqueHotbarHorizontal = true;
-		return techniqueHotbarHorizontal;
+	public Boolean getTechniqueHotbarRightSide() {
+		if (techniqueHotbarRightSide == null) techniqueHotbarRightSide = false;
+		return techniqueHotbarRightSide;
 	}
 
 	public void setMenuScaleMultiplier(Float menuScaleMultiplier) {

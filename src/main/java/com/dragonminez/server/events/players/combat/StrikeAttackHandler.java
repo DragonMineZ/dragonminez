@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
@@ -53,6 +54,8 @@ public class StrikeAttackHandler {
 
 			TechniqueData selected = stats.getTechniques().getSelectedTechnique();
 			if (!(selected instanceof StrikeAttackData strike)) return;
+
+			if (stats.getSkills().getSkillLevel("kicontrol") <= 0 || stats.getResources().getPowerRelease() < 5 || !player.getMainHandItem().isEmpty()) return;
 
 			String cooldownKey = getTechniqueCooldownKey(strike.getId());
 			if (stats.getCooldowns().hasCooldown(cooldownKey)) return;
@@ -239,12 +242,14 @@ public class StrikeAttackHandler {
 		if (!living.isAlive()) return null;
 		if (player.distanceTo(living) > CONNECT_RANGE) return null;
 		if (!player.hasLineOfSight(living)) return null;
+		if (!TargetHelper.canAttack(player, living, CONNECT_RANGE)) return null;
 		return living;
 	}
 
 	private static LivingEntity resolveTargetForPending(ServerPlayer player, PendingStrike pending) {
 		LivingEntity preferred = pending.preferredTargetId() != null ? resolveLiving(player, pending.preferredTargetId()) : null;
-		if (preferred != null && player.distanceTo(preferred) <= CONNECT_RANGE && player.hasLineOfSight(preferred)) return preferred;
+		if (preferred != null && player.distanceTo(preferred) <= CONNECT_RANGE && player.hasLineOfSight(preferred)
+				&& TargetHelper.canAttack(player, preferred, CONNECT_RANGE)) return preferred;
 		return findTargetInFront(player, CONNECT_RANGE).orElse(null);
 	}
 
@@ -264,7 +269,7 @@ public class StrikeAttackHandler {
 		AABB searchBox = player.getBoundingBox().expandTowards(viewVec.scale(range)).inflate(1.0D);
 
 		List<LivingEntity> list = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
-				e -> e != player && e.isAlive() && e.isPickable());
+				e -> e != player && e.isAlive() && e.isPickable() && TargetHelper.canAttack(player, e, range));
 
 		LivingEntity closest = null;
 		double closestDist = range * range;

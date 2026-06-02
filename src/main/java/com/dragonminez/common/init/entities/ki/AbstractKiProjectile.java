@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -49,12 +50,54 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient float[] cachedColorBorderRgb;
     private transient float[] cachedColorOutlineRgb;
 
+    @Getter
+    private transient float clashLockedLength = -1.0F; // -1 = not clash-locked
+    private transient java.util.UUID clashOpponentId = null;
+
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.noCulling = true;
     }
 
     public abstract int getMaxHits();
+
+    public boolean isClashableBeam() {
+        return false;
+    }
+
+    /** Yaw of the fired beam axis (clash test for head-on opposition). */
+    public float getClashYaw() {
+        return this.getYRot();
+    }
+
+    /** Pitch of the fired beam axis. */
+    public float getClashPitch() {
+        return this.getXRot();
+    }
+
+    /** Current rendered length of the beam from its origin. */
+    public float getClashBeamLength() {
+        return 0.0F;
+    }
+
+    /** Locks this beam to a fixed length at the clash point. Length < 0 means unlocked. */
+    public void setClashLock(float lockedLength, java.util.UUID opponentId) {
+        this.clashLockedLength = lockedLength;
+        this.clashOpponentId = opponentId;
+    }
+
+    public void clearClashLock() {
+        this.clashLockedLength = -1.0F;
+        this.clashOpponentId = null;
+    }
+
+    public boolean isClashLocked() {
+        return this.clashLockedLength >= 0.0F;
+    }
+
+	public java.util.UUID getClashOpponentId() {
+        return this.clashOpponentId;
+    }
 
     public float getDamagePerHit() {
         return this.getKiDamage() / Math.max(1.0F, (float)this.getMaxHits());
@@ -325,6 +368,13 @@ public abstract class AbstractKiProjectile extends Projectile {
         return super.getDimensions(pPose).scale(this.getSize());
     }
 
+    public boolean isMovementRestrictedType() {
+        return switch (getKiType()) {
+            case GIANT_BALL, WAVE, BEAM, EXPLOSION, BARRAGE -> true;
+            default -> false;
+        };
+    }
+
     public void triggerAnimationPacket(String suffix) {
         if (!this.level().isClientSide && this.getOwner() instanceof ServerPlayer sp) {
             String techId = this.getTechniqueId();
@@ -333,7 +383,8 @@ public abstract class AbstractKiProjectile extends Projectile {
                     TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techId);
                     if (tech instanceof KiAttackData kiData) {
                         String fullAnim = kiData.getAnimationPrefix() + suffix;
-                        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, fullAnim), sp);
+                        int hold = this.isMovementRestrictedType() ? 1 : 0;
+                        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, hold, -1, fullAnim), sp);
                     }
                 });
             }

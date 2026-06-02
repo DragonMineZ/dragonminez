@@ -273,6 +273,12 @@ public class NetworkHandler {
 				.consumerMainThread(DeleteTechniqueC2S::handle)
 				.add();
 
+		net.messageBuilder(BeamClashInputC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(BeamClashInputC2S::new)
+				.encoder(BeamClashInputC2S::toBytes)
+				.consumerMainThread(BeamClashInputC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */
@@ -388,6 +394,12 @@ public class NetworkHandler {
 				.decoder(TechniqueImportResultS2C::new)
 				.encoder(TechniqueImportResultS2C::encode)
 				.consumerMainThread(TechniqueImportResultS2C::handle)
+				.add();
+
+		net.messageBuilder(BeamClashStateS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(BeamClashStateS2C::decode)
+				.encoder(BeamClashStateS2C::encode)
+				.consumerMainThread(BeamClashStateS2C::handle)
 				.add();
 	}
 

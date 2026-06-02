@@ -83,6 +83,26 @@ public class KiWaveEntity extends AbstractKiProjectile {
         return this.getMaxLife() / 20;
     }
 
+    @Override
+    public boolean isClashableBeam() {
+        return this.isFiring();
+    }
+
+    @Override
+    public float getClashYaw() {
+        return this.getFixedYaw();
+    }
+
+    @Override
+    public float getClashPitch() {
+        return this.getFixedPitch();
+    }
+
+    @Override
+    public float getClashBeamLength() {
+        return this.getBeamLength();
+    }
+
     //SETUPS
     public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime) {
         this.setKiRenderType(0);
@@ -472,6 +492,12 @@ public class KiWaveEntity extends AbstractKiProjectile {
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
                 }
             } else {
+                if (this.isClashLocked()) {
+                    this.setBeamLength(this.getClashLockedLength());
+                    this.onKiTick();
+                    return;
+                }
+
                 // Servidor en disparo: Expansión del láser, daño y colisiones
                 Vec3 startPos = this.position();
                 Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
