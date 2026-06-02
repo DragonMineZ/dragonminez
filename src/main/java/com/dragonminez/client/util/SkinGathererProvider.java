@@ -136,7 +136,7 @@ public class SkinGathererProvider {
                 case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
                 case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_fat","janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
                 case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
-                case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
+                case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
                 default -> {
                     boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
                     String genSuffix = hasGender ? ((character.getGender().equalsIgnoreCase("female") || character.getGender().equalsIgnoreCase("mujer")) ? "_female" : "_male") : "";
@@ -278,25 +278,47 @@ public class SkinGathererProvider {
         }
 	}
 
-	protected void resolveBodyBioAndroid(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
-		String phase = switch (key) {
-			case "bioandroid_semi" -> "semiperfect";
-			case "bioandroid_perfect", "bioandroid_ultra" -> "perfect";
-			case "bioandroid_base" -> "base";
-			case "bioandroid" -> character.hasActiveForm() ? "perfect" : "base";
-			default -> "perfect";
-		};
+    protected void resolveBodyBioAndroid(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
+        String phase = switch (key) {
+            case "bioandroid_semi" -> "semiperfect";
+            case "bioandroid_perfect", "bioandroid_ultra", "bioandroid_xeno" -> "perfect";
+            case "bioandroid_base" -> "base";
+            case "bioandroid" -> character.hasActiveForm() ? "perfect" : "base";
+            default -> "perfect";
+        };
 
-		int bodyType = character.getBodyType();
-		String prefix = "textures/entity/races/bioandroid/" + phase + "_" + bodyType + "_";
-		String fallbackPrefix = "textures/entity/races/bioandroid/" + phase + "_0_";
+        int bodyType = character.getBodyType();
 
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_STINGER_COLOR);
-	}
+        // Validaciones seguras
+        String currentForm = character.getActiveForm() != null ? character.getActiveForm() : "";
+        String formGroup = character.getActiveFormGroup() != null ? character.getActiveFormGroup() : "";
+        boolean legendaryGroup = formGroup.equals("legendaryforms");
+
+        String prefix = "textures/entity/races/bioandroid/" + phase + "_" + bodyType + "_";
+        String fallbackPrefix = "textures/entity/races/bioandroid/" + phase + "_0_";
+
+        float[] finalBodyColor = b1;
+        if(legendaryGroup){
+            finalBodyColor = ColorUtils.darkenColor(b1, 0.4f);
+        }
+
+        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), finalBodyColor);
+        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
+        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
+
+        if (!currentForm.equals("xenomax") && !currentForm.equals("xenofp")) {
+            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_STINGER_COLOR);
+        }
+
+        if(legendaryGroup){
+            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer1.png"), getCachedTexture("textures/entity/races/bioandroid/xenoform_layer1.png")), ColorUtils.hexToRgb("#FFFFFF"));
+
+            if (currentForm.equals("xenomax")){
+                consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer2.png"), getCachedTexture("textures/entity/races/bioandroid/xenoform_layer2.png")), ColorUtils.hexToRgb("#FFFFFF"));
+            }
+        }
+    }
 
 	protected void resolveBodyMajin(Character character, String key, float[] b1, float[] b2, float[] b3, BiConsumer<ResourceLocation, float[]> consumer) {
 

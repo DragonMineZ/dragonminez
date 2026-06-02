@@ -442,7 +442,7 @@ public class ConfigManager {
 		config.setDefaultAuraColor("#1AA700");
 		config.setFormSkillTpCosts("superforms", new Integer[]{10000, 22000, 34000, 48000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
-		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1, -1});
+		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
 
 	private static void setupMajinCharacter(RaceCharacterConfig config) {
