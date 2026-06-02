@@ -1,5 +1,6 @@
 package com.dragonminez.mixin.client;
 
+import com.dragonminez.client.animation.AnimationCache;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.events.FlySkillEvent;
@@ -121,7 +122,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (dragonminez$currentKiAnim != null && dragonminez$kiAnimHold) {
 			if (!dragonminez$currentKiAnim.equals(dragonminez$lastKiAnim)) {
-				state.getController().setAnimation(RawAnimation.begin().thenPlayAndHold(dragonminez$currentKiAnim));
+				state.getController().setAnimation(AnimationCache.getPlayAndHold(dragonminez$currentKiAnim));
 				state.getController().forceAnimationReset();
 				dragonminez$lastKiAnim = dragonminez$currentKiAnim;
 			}
@@ -158,7 +159,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (isTransforming && !isMoving && !isBlocking) {
 			if (nextFormConfig != null && nextFormConfig.hasTransformationAnimation()) {
-				return state.setAndContinue(RawAnimation.begin().thenPlay(nextFormConfig.getTransformationAnimation()));
+				return state.setAndContinue(AnimationCache.getPlay(nextFormConfig.getTransformationAnimation()));
 			}
 			if (nextForm.contains("ozaru")) return state.setAndContinue(OOZARU_TRANSFORMATION);
 			return state.setAndContinue(TRANSFORMATION);
@@ -208,7 +209,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (!isFire) {
 			if (!dragonminez$currentKiAnim.equals(dragonminez$lastKiCtlAnim)) {
-				ctl.setAnimation(RawAnimation.begin().thenPlayAndHold(dragonminez$currentKiAnim));
+				ctl.setAnimation(AnimationCache.getPlayAndHold(dragonminez$currentKiAnim));
 				ctl.forceAnimationReset();
 				dragonminez$lastKiCtlAnim = dragonminez$currentKiAnim;
 			}
@@ -216,7 +217,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		}
 
 		if (!dragonminez$currentKiAnim.equals(dragonminez$lastKiCtlAnim)) {
-			ctl.setAnimation(RawAnimation.begin().thenPlay(dragonminez$currentKiAnim));
+			ctl.setAnimation(AnimationCache.getPlay(dragonminez$currentKiAnim));
 			ctl.forceAnimationReset();
 			dragonminez$lastKiCtlAnim = dragonminez$currentKiAnim;
 			dragonminez$kiAnimTicks = KI_FIRE_ONESHOT_TICKS;
@@ -248,7 +249,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
 
-		return state.setAndContinue(RawAnimation.begin().thenLoop(dragonminez$currentPoseAnim));
+		return state.setAndContinue(AnimationCache.getLoop(dragonminez$currentPoseAnim));
 	}
 
 	@Unique
@@ -280,7 +281,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			ctl.setAnimationSpeed(dragonminez$currentMeleeSpeed);
 
 			if (!dragonminez$currentMeleeAnim.equals("fallback")) {
-				ctl.setAnimation(RawAnimation.begin().thenPlay(dragonminez$currentMeleeAnim));
+				ctl.setAnimation(AnimationCache.getPlay(dragonminez$currentMeleeAnim));
 			} else ctl.setAnimation(ATTACK);
 
 			ctl.forceAnimationReset();

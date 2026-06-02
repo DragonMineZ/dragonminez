@@ -2,6 +2,7 @@ package com.dragonminez.common.config;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.client.animation.AnimationCache;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -88,6 +89,7 @@ public class ConfigManager {
 			RACE_FORMS.clear();
 			LOADED_RACES.clear();
 			STACK_FORMS.clear();
+			AnimationCache.clear();
 
 			loadGeneralConfigs();
 			loadAllRaces();
