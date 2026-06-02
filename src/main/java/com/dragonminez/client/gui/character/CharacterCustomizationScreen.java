@@ -26,6 +26,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -424,7 +425,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		renderLeftPanel(graphics);
 		renderProgress(graphics);
 		renderPlayerModel(graphics, partialTick);
-		renderTabText(graphics);
+		renderTabText(graphics, uiMouseX, uiMouseY);
 
 		if (colorPickerVisible) {
 			renderColorPickerBackground(graphics);
@@ -471,7 +472,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().popPose();
 	}
 
-	private void renderTabText(GuiGraphics graphics) {
+	private void renderTabText(GuiGraphics graphics, int mouseX, int mouseY) {
 		int panelY = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2;
 		int centerX = LEFT_PANEL_X + LEFT_PANEL_WIDTH / 2;
 		int top = panelY + LEFT_PANEL_PADDING;
@@ -483,7 +484,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case EYES -> renderEyesText(graphics, centerX, top);
 			case FACE -> renderFaceText(graphics, centerX, top);
 			case BODY -> renderBodyText(graphics, centerX, top);
-			case AURA_CLASS -> renderAuraClassText(graphics, centerX, top);
+			case AURA_CLASS -> renderAuraClassText(graphics, centerX, top, mouseX, mouseY);
 		}
 	}
 
@@ -545,39 +546,137 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		renderPreviewGrid(graphics, top + 30, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), character.getTattooType(), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
 	}
 
-	private void renderAuraClassText(GuiGraphics graphics, int centerX, int top) {
+	private void renderAuraClassText(GuiGraphics graphics, int centerX, int top, int mouseX, int mouseY) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.class").getString(), centerX, top + 8, 0xFF9B9B);
 		Component className = tr("class.dragonminez." + character.getCharacterClass());
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, className, centerX, top + 20, 0xFFFFFF);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.aura").getString(), centerX, top + 124, 0xFF9B9B);
-		renderBaseStatsInline(graphics, centerX, top + 44);
+		renderBaseStatsInline(graphics, centerX, top + 44, mouseX, mouseY);
 	}
 
-	private void renderBaseStatsInline(GuiGraphics graphics, int centerX, int startY) {
+	private void renderBaseStatsInline(GuiGraphics graphics, int centerX, int startY, int mouseX, int mouseY) {
 		RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());
 		if (statsConfig == null) return;
 		RaceStatsConfig.ClassStats classStats = statsConfig.getClassStats(character.getCharacterClass());
 		if (classStats == null || classStats.getBaseStats() == null || classStats.getStatScaling() == null) return;
 
 		RaceStatsConfig.BaseStats base = classStats.getBaseStats();
+		RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.base_stats").getString(), centerX, startY, 0xFF9B9B);
-		int rowY = startY + 16;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.base_stats").getString(), centerX, startY, 0xFF9B9B);
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "STR", centerX - 40, rowY, 0x7CFDD6);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "SKP", centerX, rowY, 0x7CFDD6);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "RES", centerX + 40, rowY, 0x7CFDD6);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getStrength()), centerX - 40, rowY + 12, 0xFFFFFF);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getStrikePower()), centerX, rowY + 12, 0xFFFFFF);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getResistance()), centerX + 40, rowY + 12, 0xFFFFFF);
+		String strStr = tr("gui.dragonminez.character_stats.str").getString();
+		String skpStr = tr("gui.dragonminez.character_stats.skp").getString();
+		String resStr = tr("gui.dragonminez.character_stats.res").getString();
 
-		rowY += 32;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "VIT", centerX - 40, rowY, 0x7CFDD6);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "PWR", centerX, rowY, 0x7CFDD6);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "ENE", centerX + 40, rowY, 0x7CFDD6);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getVitality()), centerX - 40, rowY + 12, 0xFFFFFF);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getKiPower()), centerX, rowY + 12, 0xFFFFFF);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getEnergy()), centerX + 40, rowY + 12, 0xFFFFFF);
+		int row1Y = startY + 16;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, strStr, centerX - 40, row1Y, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, skpStr, centerX, row1Y, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, resStr, centerX + 40, row1Y, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getStrength()), centerX - 40, row1Y + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getStrikePower()), centerX, row1Y + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getResistance()), centerX + 40, row1Y + 12, 0xFFFFFF);
+
+		String vitStr = tr("gui.dragonminez.character_stats.vit").getString();
+		String pwrStr = tr("gui.dragonminez.character_stats.pwr").getString();
+		String eneStr = tr("gui.dragonminez.character_stats.ene").getString();
+
+		int row2Y = startY + 48;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, vitStr, centerX - 40, row2Y, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, pwrStr, centerX, row2Y, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, eneStr, centerX + 40, row2Y, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getVitality()), centerX - 40, row2Y + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getKiPower()), centerX, row2Y + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getEnergy()), centerX + 40, row2Y + 12, 0xFFFFFF);
+
+		int tpY = startY + 116;
+		Double tpGain = classStats.getTpGainMultiplier() != null ? classStats.getTpGainMultiplier() : 1.0;
+		Double tpCost = classStats.getTpCostMultiplier() != null ? classStats.getTpCostMultiplier() : 1.0;
+
+		Component tpGainComp = Component.empty()
+				.append(Component.translatable("gui.dragonminez.character_stats.tp_multiplier").withStyle(ChatFormatting.AQUA))
+				.append(Component.literal(": ").withStyle(ChatFormatting.AQUA))
+				.append(Component.literal("x" + String.format(Locale.US, "%.2f", tpGain)).withStyle(ChatFormatting.YELLOW));
+
+		Component tpCostComp = Component.empty()
+				.append(Component.translatable("gui.dragonminez.character_stats.tpc").withStyle(ChatFormatting.AQUA))
+				.append(Component.literal(": ").withStyle(ChatFormatting.AQUA))
+				.append(Component.literal("x" + String.format(Locale.US, "%.2f", tpCost)).withStyle(ChatFormatting.YELLOW));
+
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tpGainComp, centerX, tpY, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tpCostComp, centerX, tpY + 12, 0xFFFFFF);
+
+		Component title = null;
+		List<Component> desc = new ArrayList<>();
+		List<Component> extras = new ArrayList<>();
+		int headerColor = 0xD71432;
+
+		if (mouseY >= row1Y && mouseY <= row1Y + 22) {
+			if (mouseX >= centerX - 55 && mouseX <= centerX - 25) {
+				title = Component.translatable("gui.dragonminez.character_stats.str").withStyle(ChatFormatting.BOLD);
+				desc.add(Component.translatable("gui.dragonminez.character_stats.str.desc"));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.scaling").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.2f", scaling.getStrengthScaling())).withStyle(ChatFormatting.GREEN)));
+			} else if (mouseX >= centerX - 15 && mouseX <= centerX + 15) {
+				title = Component.translatable("gui.dragonminez.character_stats.skp").withStyle(ChatFormatting.BOLD);
+				desc.add(Component.translatable("gui.dragonminez.character_stats.skp.desc"));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.scaling").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.2f", scaling.getStrikePowerScaling())).withStyle(ChatFormatting.GREEN)));
+			} else if (mouseX >= centerX + 25 && mouseX <= centerX + 55) {
+				title = Component.translatable("gui.dragonminez.character_stats.res").withStyle(ChatFormatting.BOLD);
+				desc.add(Component.translatable("gui.dragonminez.character_stats.res.desc"));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.scaling.def").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.2f", scaling.getDefenseScaling())).withStyle(ChatFormatting.GREEN)));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.scaling.stm").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.2f", scaling.getStaminaScaling())).withStyle(ChatFormatting.GREEN)));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.stm").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.1f/s", classStats.getBaseSp5() * 0.2)).withStyle(ChatFormatting.YELLOW))
+						.append(Component.literal(" (+" + String.format(Locale.US, "%.2f", classStats.getSp5StmScaling() * 0.2) + "/STM)").withStyle(ChatFormatting.DARK_GRAY)));
+			}
+		}
+		else if (mouseY >= row2Y && mouseY <= row2Y + 22) {
+			if (mouseX >= centerX - 55 && mouseX <= centerX - 25) {
+				title = Component.translatable("gui.dragonminez.character_stats.vit").withStyle(ChatFormatting.BOLD);
+				desc.add(Component.translatable("gui.dragonminez.character_stats.vit.desc"));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.scaling.hp").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.2f", scaling.getVitalityScaling())).withStyle(ChatFormatting.GREEN)));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.hp").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.1f/s", classStats.getBaseHp5() * 0.2)).withStyle(ChatFormatting.YELLOW))
+						.append(Component.literal(" (+" + String.format(Locale.US, "%.2f", classStats.getHp5VitScaling() * 0.2) + "/VIT)").withStyle(ChatFormatting.DARK_GRAY)));
+			} else if (mouseX >= centerX - 15 && mouseX <= centerX + 15) {
+				title = Component.translatable("gui.dragonminez.character_stats.pwr").withStyle(ChatFormatting.BOLD);
+				desc.add(Component.translatable("gui.dragonminez.character_stats.pwr.desc"));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.scaling").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.2f", scaling.getKiPowerScaling())).withStyle(ChatFormatting.GREEN)));
+			} else if (mouseX >= centerX + 25 && mouseX <= centerX + 55) {
+				title = Component.translatable("gui.dragonminez.character_stats.ene").withStyle(ChatFormatting.BOLD);
+				desc.add(Component.translatable("gui.dragonminez.character_stats.ene.desc"));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.scaling.ki").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.2f", scaling.getEnergyScaling())).withStyle(ChatFormatting.GREEN)));
+				extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.ki").withStyle(ChatFormatting.GRAY)
+						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+						.append(Component.literal(String.format(Locale.US, "%.1f/s", classStats.getBaseEp5() * 0.2)).withStyle(ChatFormatting.YELLOW))
+						.append(Component.literal(" (+" + String.format(Locale.US, "%.2f", classStats.getEp5EneScaling() * 0.2) + "/ENE)").withStyle(ChatFormatting.DARK_GRAY)));
+			}
+		}
+
+		boolean isTooltipActive = (title != null);
+		for (TexturedTextButton colorBtn : colorButtons.values()) {
+			if (colorBtn != null) colorBtn.visible = !isTooltipActive;
+		}
+
+		if (title != null) {
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, headerColor);
+		}
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, float partialTick) {

@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.IncreaseStatC2S;
@@ -631,6 +632,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double eneScaling = statsData.getStatScaling("ENE");
 		double stmScaling = statsData.getStatScaling("STM");
 
+		RaceStatsConfig statsConfig = ConfigManager.getRaceStats(statsData.getCharacter().getRaceName());
+		RaceStatsConfig.ClassStats classStats = statsConfig != null ? statsConfig.getClassStats(statsData.getCharacter().getCharacterClass()) : null;
+
 		String[] labels = {
 				"gui.dragonminez.character_stats.melee_damage",
 				"gui.dragonminez.character_stats.strike_damage",
@@ -669,6 +673,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					case 2 -> {
 						desc.add(tr("gui.dragonminez.character_stats.stamina.tooltip1"));
 						desc.add(tr("gui.dragonminez.character_stats.stamina.tooltip2", formatUpToOneDecimal(stmScaling)).withStyle(ChatFormatting.YELLOW));
+						if (classStats != null) {
+							double currentRegenSec = (classStats.getBaseSp5() + (statsData.getStats().getResistance() * statsData.getTotalMultiplier("RES") * classStats.getSp5StmScaling())) * 0.2;
+							extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.stm").append(": ")
+									.append(txt(String.format(Locale.US, "%.1f/s", currentRegenSec)))
+									.withStyle(ChatFormatting.AQUA));
+						}
 					}
 					case 3 -> {
 						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip1"));
@@ -703,6 +713,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					case 4 -> {
 						desc.add(tr("gui.dragonminez.character_stats.health.tooltip1"));
 						desc.add(tr("gui.dragonminez.character_stats.health.tooltip2", formatUpToOneDecimal(vitScaling)).withStyle(ChatFormatting.YELLOW));
+						if (classStats != null) {
+							double currentRegenSec = (classStats.getBaseHp5() + (statsData.getStats().getVitality() * statsData.getTotalMultiplier("VIT") * classStats.getHp5VitScaling())) * 0.2;
+							extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.hp").append(": ")
+									.append(txt(String.format(Locale.US, "%.1f/s", currentRegenSec)))
+									.withStyle(ChatFormatting.AQUA));
+						}
 					}
 					case 5 -> {
 						desc.add(tr("gui.dragonminez.character_stats.ki_damage.tooltip1"));
@@ -714,6 +730,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					case 6 -> {
 						desc.add(tr("gui.dragonminez.character_stats.max_energy.tooltip1"));
 						desc.add(tr("gui.dragonminez.character_stats.max_energy.tooltip2", formatUpToOneDecimal(eneScaling)).withStyle(ChatFormatting.YELLOW));
+						if (classStats != null) {
+							double currentRegenSec = (classStats.getBaseEp5() + (statsData.getStats().getEnergy() * statsData.getTotalMultiplier("ENE") * classStats.getEp5EneScaling())) * 0.2;
+							extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.ki").append(": ")
+									.append(txt(String.format(Locale.US, "%.1f/s", currentRegenSec)))
+									.withStyle(ChatFormatting.AQUA));
+						}
 					}
 				}
 
