@@ -33,6 +33,10 @@ public class TechniqueHotbarHUD {
 	private static final int COLOR_BADGE_BORDER = 0x66FFFFFF;
 	private static final int COLOR_BADGE_TEXT = 0xFFFFFFFF;
 
+	private static final int[] cdLastTicks = new int[SLOTS];
+	private static final long[] cdLastUpdateMs = new long[SLOTS];
+	private static final String[] cdLastId = new String[SLOTS];
+
 	public static final IGuiOverlay HUD_TECHNIQUES = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
@@ -59,11 +63,12 @@ public class TechniqueHotbarHUD {
 				String id = slots[i];
 				TechniqueData tech = (id == null || id.isEmpty()) ? null : techniques.getUnlockedTechniques().get(id);
 
-				int cdTicks = tech != null ? data.getCooldowns().getCooldown("TechniqueCooldown_" + id) : 0;
-				boolean onCooldown = cdTicks > 0;
+				int syncedCd = tech != null ? data.getCooldowns().getCooldown("TechniqueCooldown_" + id) : 0;
+				boolean onCooldown = syncedCd > 0;
+				float displaySeconds = interpolateCooldownSeconds(i, id, syncedCd);
 
 				MutableComponent name = tech != null ? techniqueName(tech.getName()) : null;
-				MutableComponent cd = onCooldown ? styled(String.format("%.1fs", cdTicks / 20.0f)) : null;
+				MutableComponent cd = (onCooldown && displaySeconds > 0.05f) ? styled(String.format(java.util.Locale.US, "%.1fs", displaySeconds)) : null;
 				int nameWidth = name != null ? font.width(name) : 0;
 				int cdWidth = cd != null ? font.width(cd) : 0;
 
@@ -100,6 +105,18 @@ public class TechniqueHotbarHUD {
 		int textX = x + (BADGE_SIZE - textWidth) / 2 + 1;
 		int textY = y + (BADGE_SIZE - font.lineHeight) / 2 + 1;
 		guiGraphics.drawString(font, text, textX, textY, COLOR_BADGE_TEXT, false);
+	}
+
+	private static float interpolateCooldownSeconds(int slot, String id, int syncedCd) {
+		long now = System.currentTimeMillis();
+		if (!java.util.Objects.equals(id, cdLastId[slot]) || syncedCd != cdLastTicks[slot]) {
+			cdLastId[slot] = id;
+			cdLastTicks[slot] = syncedCd;
+			cdLastUpdateMs[slot] = now;
+		}
+		if (syncedCd <= 0) return 0.0f;
+		float elapsedSec = (now - cdLastUpdateMs[slot]) / 1000.0f;
+		return Math.max(0.0f, syncedCd / 20.0f - elapsedSec);
 	}
 
 	private static MutableComponent styled(String text) {
