@@ -113,11 +113,7 @@ public class RadarRenderEvent {
 			if (isMainHand) {
 				centerX = mc.getWindow().getGuiScaledWidth() - radarSize - 10;
 			} else {
-				if (mc.getWindow().getWidth() < 1080) {
-					centerX = (mc.getWindow().getGuiScaledWidth() / 2) - radarSize - 60;
-				} else {
-					centerX = (mc.getWindow().getGuiScaledWidth() / 2) - radarSize - 310;
-				}
+				centerX = 10;
 			}
 
 			renderRadar(event.getGuiGraphics(), player, targets, range, centerX, centerY);
