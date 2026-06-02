@@ -1,5 +1,6 @@
 package com.dragonminez.mixin.client;
 
+import com.dragonminez.client.clash.BeamClashCinematicCamera;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.flight.RollCamera;
 import com.dragonminez.client.render.firstperson.dto.DMZCameraBuffer;
@@ -30,6 +31,8 @@ public abstract class CameraMixin implements RollCamera {
 	@Shadow
 	public abstract Vec3 getPosition();
 
+	@Shadow protected abstract void setRotation(float yRot, float xRot);
+
 	@Unique private float dragonminez$roll = 0F;
 	@Unique private float dragonminez$lastRoll = 0F;
 	@Unique private float dragonminez$tickDelta = 0F;
@@ -49,6 +52,14 @@ public abstract class CameraMixin implements RollCamera {
 			dragonminez$rebaseRoll();
 		} else this.dragonminez$roll = Mth.lerp(0.1F, this.dragonminez$roll, 0F);
 
+		if (entity instanceof LocalPlayer clashPlayer && BeamClashCinematicCamera.isActive()) {
+			BeamClashCinematicCamera.Shot shot = BeamClashCinematicCamera.computeShot(level, clashPlayer, partialTick);
+			if (shot != null) {
+				this.setPosition(shot.pos());
+				this.setRotation(shot.yaw(), shot.pitch());
+				return;
+			}
+		}
 
 		if (!detached && entity instanceof LocalPlayer player && FirstPersonManager.shouldRenderFirstPerson(player)) {
 			Vec3 baseEyePos = this.getPosition();

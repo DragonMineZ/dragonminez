@@ -1,0 +1,181 @@
+package com.dragonminez.common.combat.clash;
+
+import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.phys.Vec3;
+
+/**
+ * One side of a beam clash: a firing beam, its owner, and that owner's live
+ * struggle state (auto-filling QTE meter + accumulated momentum). Players drive
+ * the meter with real key presses; NPCs drive it with a virtual presser based on
+ * their {@link IBattlePower}.
+ */
+public class ClashParticipant {
+
+    private final AbstractKiProjectile beam;
+    private final LivingEntity owner;
+    private final boolean npc;
+    private final boolean wasNoAi; // NPC AI state before the clash, restored on release
+    private final double statPower;
+
+    /** NPC timing accuracy in [0,1], derived from battle power. Unused for players. */
+    private final float npcAccuracy;
+
+    // --- live QTE state ---
+    private float meterPhase;     // sweeps 0 -> 1 repeatedly
+    private float prevMeterPhase;
+    private float momentum;       // recent struggle intensity, decays each tick
+
+    public ClashParticipant(AbstractKiProjectile beam, LivingEntity owner) {
+        this.beam = beam;
+        this.owner = owner;
+        this.npc = !(owner instanceof ServerPlayer);
+        this.wasNoAi = owner instanceof Mob mob && mob.isNoAi();
+        this.statPower = resolveStatPower(owner);
+        this.npcAccuracy = resolveNpcAccuracy(this.statPower, this.npc);
+        // Stagger the two meters so both players don't pulse in perfect lockstep.
+        this.meterPhase = owner.getRandom().nextFloat();
+        this.prevMeterPhase = this.meterPhase;
+    }
+
+    private static double resolveStatPower(LivingEntity owner) {
+        StatsData data = StatsProvider.get(StatsCapability.INSTANCE, owner).orElse(null);
+        if (data != null) {
+            // Ki damage is the most relevant stat for a beam struggle.
+            return Math.max(1.0, data.getKiDamage());
+        }
+        if (owner instanceof IBattlePower bp) {
+            return Math.max(1.0, bp.getBattlePower());
+        }
+        return Math.max(1.0, owner.getMaxHealth());
+    }
+
+    private static float resolveNpcAccuracy(double statPower, boolean npc) {
+        if (!npc) return 0.0f;
+        // Stronger NPCs time their struggle better. Compresses a wide BP range into [0.4, 0.92].
+        double t = Math.log10(statPower + 1.0) / 6.0; // ~0..1 across BP 1..1,000,000
+        return (float) Math.min(0.92, 0.40 + t * 0.52);
+    }
+
+    public AbstractKiProjectile beam() {
+        return beam;
+    }
+
+    public LivingEntity owner() {
+        return owner;
+    }
+
+    public boolean isNpc() {
+        return npc;
+    }
+
+    public double statPower() {
+        return statPower;
+    }
+
+    public float meterPhase() {
+        return meterPhase;
+    }
+
+    public float momentum() {
+        return momentum;
+    }
+
+    /** Origin of the beam (fixed while firing, since the owner is movement-locked). */
+    public Vec3 origin() {
+        return beam.position();
+    }
+
+    /** Normalized firing direction of the beam. */
+    public Vec3 direction() {
+        return Vec3.directionFromRotation(beam.getClashPitch(), beam.getClashYaw());
+    }
+
+    public boolean isStillFiring() {
+        return owner.isAlive() && !beam.isRemoved() && beam.isClashableBeam();
+    }
+
+    /**
+     * Freezes an NPC owner in place for the cinematic clash: disables its AI (so it can't
+     * path/charge/teleport toward the opponent) and zeroes any residual motion. Players are
+     * already movement-locked client-side, so this is a no-op for them.
+     */
+    public void freezeOwner() {
+        if (owner instanceof Mob mob) {
+            if (!mob.isNoAi()) mob.setNoAi(true);
+            mob.getNavigation().stop();
+            mob.setDeltaMovement(0, 0, 0);
+            mob.hasImpulse = true;
+        }
+    }
+
+    /** Restores the NPC owner's AI to its pre-clash state. */
+    public void unfreezeOwner() {
+        if (owner instanceof Mob mob) {
+            mob.setNoAi(wasNoAi);
+        }
+    }
+
+    /**
+     * Advances the auto-filling meter one tick and decays momentum. For NPCs, also
+     * runs the virtual presser. Returns true when the meter wrapped this tick.
+     */
+    public boolean tickMeter() {
+        this.prevMeterPhase = this.meterPhase;
+        this.meterPhase += BeamClash.SWEEP_RATE;
+        this.momentum *= BeamClash.MOMENTUM_DECAY;
+
+        boolean wrapped = false;
+        if (this.meterPhase >= 1.0f) {
+            this.meterPhase -= 1.0f;
+            wrapped = true;
+        }
+
+        if (this.npc) {
+            tickNpcPress();
+        }
+        return wrapped;
+    }
+
+    /** NPC presses once per sweep, right as the marker crosses the sweet-spot center. */
+    private void tickNpcPress() {
+        float center = (BeamClash.SWEET_LOW + BeamClash.SWEET_HIGH) * 0.5f;
+        boolean crossedCenter = prevMeterPhase < center && meterPhase >= center && meterPhase >= prevMeterPhase;
+        if (crossedCenter) {
+            float jitter = 0.7f + owner.getRandom().nextFloat() * 0.3f;
+            addBurst(npcAccuracy * jitter);
+        }
+    }
+
+    /**
+     * Scores a player's key press against the current meter position and feeds the
+     * result into momentum. One scoring opportunity per sweep: any press consumes the
+     * sweep by resetting the meter, so mistimed spam is self-punishing.
+     */
+    public void registerPlayerPress() {
+        float efficiency = scoreEfficiency(this.meterPhase);
+        addBurst(efficiency);
+        // Consume the sweep regardless of accuracy.
+        this.meterPhase = 0.0f;
+        this.prevMeterPhase = 0.0f;
+    }
+
+    /** 1.0 at the center of the sweet-spot, tapering to 0 at its edges, 0 outside. */
+    public static float scoreEfficiency(float phase) {
+        if (phase < BeamClash.SWEET_LOW || phase > BeamClash.SWEET_HIGH) return 0.0f;
+        float center = (BeamClash.SWEET_LOW + BeamClash.SWEET_HIGH) * 0.5f;
+        float half = (BeamClash.SWEET_HIGH - BeamClash.SWEET_LOW) * 0.5f;
+        float closeness = 1.0f - Math.abs(phase - center) / half;
+        return Math.max(0.0f, closeness);
+    }
+
+    private void addBurst(float efficiency) {
+        this.momentum += efficiency * BeamClash.BURST_PER_PERFECT_PRESS;
+    }
+}

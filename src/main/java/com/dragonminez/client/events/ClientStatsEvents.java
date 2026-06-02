@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.InstantTransmissionScreen;
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
@@ -195,6 +196,11 @@ public class ClientStatsEvents {
 				kiBlastTimer = 10;
 				blockLockTicks = 20;
 			}
+			// Beam clash QTE: while clashing, a fresh fire-key (right click) tap pushes the meter.
+			if (ClientBeamClashState.isActive() && isRightClickDown && !wasRightClickDown) {
+				NetworkHandler.sendToServer(new BeamClashInputC2S());
+			}
+
 			wasRightClickDown = isRightClickDown;
 
 			handleTechniqueSlotInput(data, isStunned);

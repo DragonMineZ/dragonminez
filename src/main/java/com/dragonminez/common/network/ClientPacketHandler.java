@@ -6,6 +6,8 @@ import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
 import com.dragonminez.client.gui.quest.StoryToast;
+import com.dragonminez.client.clash.ClientBeamClashState;
+import com.dragonminez.common.network.S2C.BeamClashStateS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -41,6 +43,17 @@ public class ClientPacketHandler {
 				}
 				player.refreshDimensions();
 			});
+		}
+	}
+
+	public static void handleBeamClashState(BeamClashStateS2C msg) {
+		if (msg.isActive()) {
+			ClientBeamClashState.update(true, msg.getMeterPhase(), msg.getSweetLow(),
+					msg.getSweetHigh(), msg.getAdvantage(), msg.getBeamColor(), msg.getOpponentEntityId());
+			com.dragonminez.client.clash.BeamClashCinematicCamera.activate();
+		} else {
+			ClientBeamClashState.clear();
+			com.dragonminez.client.clash.BeamClashCinematicCamera.deactivate();
 		}
 	}
 

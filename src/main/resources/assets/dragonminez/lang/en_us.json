@@ -5,6 +5,8 @@
   "itemGroup.dragonminez.items": "DMZ Items",
   "itemGroup.dragonminez.armors": "DMZ Armors",
   "itemGroup.dragonminez.ores": "DMZ Ores",
+  "//": "HUD",
+  "hud.dragonminez.beam_clash": "§c§lBEAM CLASH! §r§7Tap to overpower!",
   "//": "KEYS",
   "key.categories.dragonminez": "§e§lDragon§c§lMine Z",
   "key.categories.minigames.dragonminez": "§e§lDragon§c§lMine Z §7Minigames",
