@@ -189,9 +189,20 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void initPresetTab(int top) {
 		int bodyColorY = top + 12;
-		addRenderableWidget(createColorButton(LEFT_PANEL_X + 30, bodyColorY, "bodyColor"));
-		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, bodyColorY, "bodyColor2"));
-		addRenderableWidget(createColorButton(LEFT_PANEL_X + 90, bodyColorY, "bodyColor3"));
+
+		boolean isBioAndroid = character.getRace().equalsIgnoreCase("bioandroid");
+		int buttonCount = isBioAndroid ? 4 : 3;
+
+		int buttonWidth = 20;
+		int spacing = 10;
+		int totalWidth = (buttonCount * buttonWidth) + ((buttonCount - 1) * spacing);
+		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH / 2) - (totalWidth / 2);
+
+		addRenderableWidget(createColorButton(startX, bodyColorY, "bodyColor"));
+		addRenderableWidget(createColorButton(startX + (buttonWidth + spacing), bodyColorY, "bodyColor2"));
+		addRenderableWidget(createColorButton(startX + (buttonWidth + spacing) * 2, bodyColorY, "bodyColor3"));
+
+		if (isBioAndroid) addRenderableWidget(createColorButton(startX + (buttonWidth + spacing) * 3, bodyColorY, "hairColor"));
 
 		if (isFemaleBody()) {
 			addRenderableWidget(new ColorSlider.Builder()

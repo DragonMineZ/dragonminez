@@ -15,10 +15,7 @@ import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.skills.Skills;
-import com.dragonminez.common.stats.techniques.KiAttackData;
-import com.dragonminez.common.stats.techniques.PredefinedTechniques;
-import com.dragonminez.common.stats.techniques.StrikeAttackData;
-import com.dragonminez.common.stats.techniques.TechniqueData;
+import com.dragonminez.common.stats.techniques.*;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
@@ -51,7 +48,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
-	private static final int TECHNIQUE_BIND_SLOT_COUNT = com.dragonminez.common.stats.techniques.Techniques.SLOT_COUNT;
+	private static final int TECHNIQUE_BIND_SLOT_COUNT = Techniques.SLOT_COUNT;
 	private static final String NEW_SKILL_ENTRY = "__new_skill__";
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
 
@@ -545,8 +542,11 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		} else {
 			for (int i = 0; i < TECHNIQUE_BIND_SLOT_COUNT; i++) {
 				final int slotIndex = i;
+				int slotX = i < 4 ? i * 12 : (i - 4) * 12;
+				int slotY = i < 4 ? rightPanelY + 175 : rightPanelY + 186;
+
 				var slotBtn = new TexturedTextButton.Builder()
-						.position(rightPanelX + 40 + (i * 12), rightPanelY + 185)
+						.position(rightPanelX + 50 + slotX, slotY)
 						.size(10, 10)
 						.texture(BUTTONS_TEXTURE)
 						.textureCoords(152, 0, 152, 10)
