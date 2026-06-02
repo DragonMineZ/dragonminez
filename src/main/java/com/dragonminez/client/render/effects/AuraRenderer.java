@@ -101,7 +101,7 @@ public class AuraRenderer {
 			float finalScaleY = auraScale[1] * scale * 2.0f * (1.0f + layer.layerId * 0.15f);
 
 			poseStack.pushPose();
-			poseStack.translate(x, y - (scale * 1.65f), 10.0D);
+			poseStack.translate(x, y - (finalScaleY - scale * 0.45f), 10.0D);
 			poseStack.scale(finalScaleX, -finalScaleY, 1.0f);
 
 			String typeStr = layer.type != null && !layer.type.isEmpty() ? layer.type.toLowerCase() : "kakarot";
