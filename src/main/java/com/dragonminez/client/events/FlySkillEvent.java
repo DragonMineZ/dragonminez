@@ -110,7 +110,7 @@ public class FlySkillEvent {
 								flightVector = new Vec3(look.x, safeY, look.z).normalize().scale(maxSprint * 3.5F);
 								player.setDeltaMovement(flightVector);
 
-								player.playSound(MainSounds.TRANSFORM.get(), 1.0F, 1.0F);
+								player.playSound(MainSounds.TRANSFORM_ON.get(), 1.0F, 1.0F);
 
 								NetworkHandler.sendToServer(new FlyToggleC2S(true, true));
 								return;
@@ -207,7 +207,7 @@ public class FlySkillEvent {
 		float currentAccel = ACCELERATION * flySpeedScale;
 
 		if (canSprint && !wasSprintingInAir) {
-			player.playSound(MainSounds.TRANSFORM.get(), 0.7F, 1.2F);
+			player.playSound(MainSounds.TRANSFORM_ON.get(), 0.7F, 1.2F);
 		}
 		wasSprintingInAir = canSprint;
 

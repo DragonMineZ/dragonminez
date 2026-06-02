@@ -46,6 +46,7 @@ public class Character {
 	private int activeStackFormItemDurationTicks = 0;
 
 	private boolean hasSaiyanTail = true;
+	private boolean renderHairBase = true;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
@@ -326,6 +327,7 @@ public class Character {
 		tag.put("FormsUsedBefore", (formsUsedBefore != null ? formsUsedBefore : new UsedForms()).save());
 		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
+		tag.putBoolean("RenderHairBase", renderHairBase);
 		tag.putBoolean("isArmored", armored);
 
 		ListTag mastersList = new ListTag();
@@ -392,6 +394,7 @@ public class Character {
 		if (tag.contains("StackFormMasteries")) stackFormMasteries.load(tag.getCompound("StackFormMasteries"));
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
+		this.renderHairBase = tag.getBoolean("RenderHairBase");
 		this.armored = tag.getBoolean("isArmored");
 
 		this.interactedMasters.clear();
@@ -531,6 +534,8 @@ public class Character {
 		this.activeStackForm = safeString(other.activeStackForm);
 		this.activeStackFormItemDurationTicks = other.activeStackFormItemDurationTicks;
 		this.stackFormMasteries.copyFrom(other.stackFormMasteries);
+		this.hasSaiyanTail = other.hasSaiyanTail;
+		this.renderHairBase = other.renderHairBase;
 		this.armored = other.armored;
 		this.interactedMasters.clear();
 		this.interactedMasters.putAll(other.interactedMasters);

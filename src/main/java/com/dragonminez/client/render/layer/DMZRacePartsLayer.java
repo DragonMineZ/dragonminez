@@ -170,22 +170,22 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			String activeBone = character.getRenderableHeadBone();
 
 			if (extraHeadBonesEnabled && activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
-
-				GeoBone targetBone = partsModel.getBone(activeBone).orElse(null);
-				boolean fromPlayerModel = false;
-
-				if (targetBone == null) {
-					targetBone = playerModel.getBone(activeBone).orElse(null);
-					fromPlayerModel = true;
-				}
-
-				if (targetBone != null) {
-					if (!fromPlayerModel) {
-						syncTargetBoneAndParents(targetBone, playerModel);
+				for (String boneName : activeBone.split("\\+")) {
+					if (boneName.isEmpty() || boneName.equals("hair")) continue;
+					GeoBone targetBone = partsModel.getBone(boneName).orElse(null);
+					boolean fromPlayerModel = false;
+					if (targetBone == null) {
+						targetBone = playerModel.getBone(boneName).orElse(null);
+						fromPlayerModel = true;
 					}
-					float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
-					if (activeBone.contains("horn") && character.getRaceName().equals("frostdemon")) tintedColor = ColorUtils.hexToRgb("#1A1A1A");
-					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					if (targetBone != null) {
+						if (!fromPlayerModel) {
+							syncTargetBoneAndParents(targetBone, playerModel);
+						}
+						float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
+						if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) tintedColor = ColorUtils.hexToRgb("#1A1A1A");
+						renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					}
 				}
 			}
 

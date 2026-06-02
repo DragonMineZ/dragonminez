@@ -115,7 +115,8 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> TP_SHORT = registerSoundEvent("tp_short");
 	public static final RegistryObject<SoundEvent> ABSORB1 = registerSoundEvent("absorb1");
 	public static final RegistryObject<SoundEvent> ABSORB2 = registerSoundEvent("absorb2");
-    public static final RegistryObject<SoundEvent> TRANSFORM = registerSoundEvent("transform");
+    public static final RegistryObject<SoundEvent> TRANSFORM_ON = registerSoundEvent("transform_on");
+	public static final RegistryObject<SoundEvent> TRANSFORM_OFF = registerSoundEvent("transform_off");
     public static final RegistryObject<SoundEvent> FUSION = registerSoundEvent("fusion");
     public static final RegistryObject<SoundEvent> OOZARU_FIST = registerSoundEvent("oozaru_fist");
     public static final RegistryObject<SoundEvent> DRAGON_FIST = registerSoundEvent("dragon_fist");
@@ -128,6 +129,9 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> SWITCH_OFF = registerSoundEvent("switch_off");
 	public static final RegistryObject<SoundEvent> SWITCH_ON = registerSoundEvent("switch_on");
 	public static final RegistryObject<SoundEvent> LOCKON = registerSoundEvent("lockon");
+
+	public static final RegistryObject<SoundEvent> SWORD_IN = registerSoundEvent("sword_in");
+	public static final RegistryObject<SoundEvent> SWORD_OUT = registerSoundEvent("sword_out");
 
 	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_AMBIENT = registerSoundEvent("entity.frieza.s.ambient");
 	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_HURT = registerSoundEvent("entity.frieza.s.hurt");

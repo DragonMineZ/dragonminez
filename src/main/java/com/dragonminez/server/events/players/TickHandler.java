@@ -10,6 +10,7 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
@@ -36,6 +37,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -251,10 +253,23 @@ public class TickHandler {
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
 				boolean holdingYajirobe = serverPlayer.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get() || serverPlayer.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
-				if (data.getStatus().isRenderKatana() != (hasYajirobe && !holdingYajirobe))
-					data.getStatus().setRenderKatana(hasYajirobe && !holdingYajirobe);
+				boolean renderKatanaTarget = hasYajirobe && !holdingYajirobe;
+
+				boolean playedSound = false;
+
+				if (data.getStatus().isRenderKatana() != renderKatanaTarget) {
+					if (renderKatanaTarget) {
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						playedSound = true;
+					} else if (holdingYajirobe) {
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_OUT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						playedSound = true;
+					}
+					data.getStatus().setRenderKatana(renderKatanaTarget);
+				}
 
 				ItemStack backItem = ItemStack.EMPTY;
+				boolean holdingOtherWeapon = false;
 				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
 					ItemStack stack = serverPlayer.getInventory().getItem(i);
 					if (stack.isEmpty()) continue;
@@ -262,17 +277,24 @@ public class TickHandler {
 
 					if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get() || item == MainItems.POWER_POLE.get()) {
 						boolean isHeld = serverPlayer.getMainHandItem().getItem() == item || serverPlayer.getOffhandItem().getItem() == item;
-						if (!isHeld) {
-							backItem = item.getDefaultInstance();
-							break;
-						}
+						if (isHeld) holdingOtherWeapon = true;
+						else if (backItem == ItemStack.EMPTY) backItem = item.getDefaultInstance();
 					}
 				}
 
-				if (backItem != ItemStack.EMPTY) {
-					if (!data.getStatus().getBackWeapon().equals(backItem.getDescriptionId()))
-						data.getStatus().setBackWeapon(backItem.getDescriptionId());
-				} else data.getStatus().setBackWeapon("");
+				String newBackWeapon = backItem != ItemStack.EMPTY ? backItem.getDescriptionId() : "";
+				String currentBackWeapon = data.getStatus().getBackWeapon();
+
+				if (!currentBackWeapon.equals(newBackWeapon)) {
+					if (!playedSound) {
+						if (!newBackWeapon.isEmpty()) {
+							serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						} else if (holdingOtherWeapon) {
+							serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_OUT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						}
+					}
+					data.getStatus().setBackWeapon(newBackWeapon);
+				}
 
 				ItemStack headTechStack = CuriosApi.getCuriosInventory(serverPlayer)
 						.map(inv -> inv.getCurios().get("head_tech"))
@@ -284,7 +306,6 @@ public class TickHandler {
 				if (hasScouter) {
 					if (!data.getStatus().getScouterItem().equals(itemId)) data.getStatus().setScouterItem(itemId);
 				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
-
 
 				boolean hasPothala = itemId.contains("pothala");
 				if (hasPothala) {

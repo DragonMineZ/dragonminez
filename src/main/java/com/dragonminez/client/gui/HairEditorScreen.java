@@ -15,8 +15,10 @@ import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.C2S.UpdateCustomHairC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.stats.character.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
@@ -65,6 +67,7 @@ public class HairEditorScreen extends ScaledScreen {
 
 	private boolean physicsEnabled = true;
 	private boolean mirrorEnabled = false;
+	private boolean hairBase = true;
 
 	private float playerRotation = 180.0f;
 	private float playerPitch = 0.0f;
@@ -110,6 +113,7 @@ public class HairEditorScreen extends ScaledScreen {
 			character.setHairSSJ2(HairManager.getPresetHairSSJ2(id, color).copy());
 			character.setHairSSJ3(HairManager.getPresetHairSSJ3(id, color).copy());
 			character.setHairId(0);
+			this.hairBase = character.isRenderHairBase();
 		}
 
 		workingHairs[0] = character.getHairBase() != null ? character.getHairBase().copy() : new CustomHair();
@@ -117,9 +121,7 @@ public class HairEditorScreen extends ScaledScreen {
 		workingHairs[2] = character.getHairSSJ2() != null ? character.getHairSSJ2().copy() : workingHairs[1].copy();
 		workingHairs[3] = character.getHairSSJ3() != null ? character.getHairSSJ3().copy() : workingHairs[2].copy();
 
-		for (int i = 0; i < 4; i++) {
-			backupHairs[i] = workingHairs[i].copy();
-		}
+		for (int i = 0; i < 4; i++) backupHairs[i] = workingHairs[i].copy();
 
 		HairRenderer.EDITING_STRAND_ID = -1;
 	}
@@ -167,6 +169,13 @@ public class HairEditorScreen extends ScaledScreen {
 			physicsEnabled = !physicsEnabled;
 			((SwitchButton) btn).toggle();
 			Minecraft.getInstance().player.playSound(physicsEnabled ? MainSounds.SWITCH_ON.get() : MainSounds.SWITCH_OFF.get());
+		}));
+		addRenderableWidget(new SwitchButton(rightEdge - 170, 15, hairBase, Component.empty(), btn -> {
+			hairBase = !hairBase;
+			((SwitchButton) btn).toggle();
+			character.setRenderHairBase(hairBase);
+			NetworkHandler.sendToServer(new StatsSyncC2S(character));
+			Minecraft.getInstance().player.playSound(hairBase ? MainSounds.SWITCH_ON.get() : MainSounds.SWITCH_OFF.get());
 		}));
 
 		addRenderableWidget(new TexturedTextButton.Builder()
@@ -807,6 +816,7 @@ public class HairEditorScreen extends ScaledScreen {
 		int rightEdge = getUiWidth() - 12;
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.mirror"), rightEdge - 30 - font.width(tr("gui.dragonminez.hair_editor.mirror")) - 5, 17, 0xFFFFFF);
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.physics"), rightEdge - 90 - font.width(tr("gui.dragonminez.hair_editor.physics")) - 5, 17, 0xFFFFFF);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.hairbase"), rightEdge - 170 - font.width(tr("gui.dragonminez.hair_editor.hairbase")) - 5, 17, 0xFFFFFF);
 	}
 
 	private void renderOverviewContent(GuiGraphics graphics) {

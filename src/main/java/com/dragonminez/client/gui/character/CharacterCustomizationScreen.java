@@ -509,10 +509,14 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		}
 
 		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
-		int boneIndex = extraBones.indexOf(activeBone);
-		if (boneIndex >= 0) {
-			return hairPresets + boneIndex;
+		if (activeBone.contains("+")) {
+			List<String> combos = buildHeadBoneComboOptions(supportsHair, extraBones);
+			int comboIdx = combos.indexOf(activeBone);
+			return comboIdx >= 0 ? hairPresets + extraBones.size() + comboIdx : -1;
 		}
+
+		int boneIndex = extraBones.indexOf(activeBone);
+		if (boneIndex >= 0) return hairPresets + boneIndex;
 		return 0;
 	}
 
@@ -919,10 +923,28 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private int getMaxHairForCurrentState() {
-		int count = 0;
-		if (HairManager.canUseHair(character)) count += HairManager.getPresetCount();
-		count += getAvailableExtraHeadBonesForCurrentState().size();
+		boolean supportsHair = HairManager.canUseHair(character);
+		int count = supportsHair ? HairManager.getPresetCount() : 0;
+		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
+		count += extraBones.size();
+		count += buildHeadBoneComboOptions(supportsHair, extraBones).size();
 		return count;
+	}
+
+	private List<String> buildHeadBoneComboOptions(boolean supportsHair, List<String> extraBones) {
+		List<String> allBones = new ArrayList<>();
+		if (supportsHair) allBones.add("hair");
+		allBones.addAll(extraBones);
+		int n = allBones.size();
+		List<String> combos = new ArrayList<>();
+		for (int i = 0; i < n; i++)
+			for (int j = i + 1; j < n; j++)
+				combos.add(allBones.get(i) + "+" + allBones.get(j));
+		for (int i = 0; i < n; i++)
+			for (int j = i + 1; j < n; j++)
+				for (int k = j + 1; k < n; k++)
+					combos.add(allBones.get(i) + "+" + allBones.get(j) + "+" + allBones.get(k));
+		return combos;
 	}
 
 	private List<String> getAvailableExtraHeadBonesForCurrentState() {
@@ -966,31 +988,31 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		boolean supportsHair = HairManager.canUseHair(character);
 		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
 		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
-
-		String newActiveBone = null;
-		int newHairId = character.getHairId();
+		List<String> combos = buildHeadBoneComboOptions(supportsHair, extraBones);
 
 		if (supportsHair && value < hairPresets) {
-			newActiveBone = "hair";
-			newHairId = value + 1;
-		} else {
-			int boneIdxTarget = value - hairPresets;
-			if (boneIdxTarget >= 0 && boneIdxTarget < extraBones.size()) {
-				newActiveBone = extraBones.get(boneIdxTarget);
-			}
-		}
-
-		if (newActiveBone == null) return;
-		if (character.getHairId() == newHairId && newActiveBone.equals(character.getActiveHeadBone())) return;
-
-		character.setHairId(newActiveBone.equals("hair") ? newHairId : 0);
-		character.setActiveHeadBone(newActiveBone);
-
-		if (newHairId == 0 && newActiveBone.equals("hair")) {
+			int newHairId = value + 1;
+			if (character.getHairId() == newHairId && "hair".equals(character.getActiveHeadBone())) return;
+			character.setHairId(newHairId);
+			character.setActiveHeadBone("hair");
 			character.setHairBase(new CustomHair());
 			character.setHairSSJ(new CustomHair());
 			character.setHairSSJ2(new CustomHair());
 			character.setHairSSJ3(new CustomHair());
+		} else if (value < hairPresets + extraBones.size()) {
+			String newBone = extraBones.get(value - hairPresets);
+			if (character.getHairId() == 0 && newBone.equals(character.getActiveHeadBone())) return;
+			character.setHairId(0);
+			character.setActiveHeadBone(newBone);
+		} else {
+			int comboIdx = value - hairPresets - extraBones.size();
+			if (comboIdx < 0 || comboIdx >= combos.size()) return;
+			String comboStr = combos.get(comboIdx);
+			boolean comboHasHair = Arrays.asList(comboStr.split("\\+")).contains("hair");
+			int newHairId = comboHasHair ? Math.max(1, character.getHairId()) : 0;
+			if (character.getHairId() == newHairId && comboStr.equals(character.getActiveHeadBone())) return;
+			character.setHairId(newHairId);
+			character.setActiveHeadBone(comboStr);
 		}
 
 		syncCharacter();
@@ -1553,15 +1575,21 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				boolean supportsHair = HairManager.canUseHair(character);
 				int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
 				List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
+				List<String> combos = buildHeadBoneComboOptions(supportsHair, extraBones);
 
 				if (supportsHair && value < hairPresets) {
 					character.setHairId(value + 1);
 					character.setActiveHeadBone("hair");
-				} else {
+				} else if (value < hairPresets + extraBones.size()) {
 					character.setHairId(0);
-					int boneIdxTarget = value - hairPresets;
-					if (boneIdxTarget >= 0 && boneIdxTarget < extraBones.size()) {
-						character.setActiveHeadBone(extraBones.get(boneIdxTarget));
+					character.setActiveHeadBone(extraBones.get(value - hairPresets));
+				} else {
+					int comboIdx = value - hairPresets - extraBones.size();
+					if (comboIdx >= 0 && comboIdx < combos.size()) {
+						String comboStr = combos.get(comboIdx);
+						boolean comboHasHair = Arrays.asList(comboStr.split("\\+")).contains("hair");
+						character.setHairId(comboHasHair ? Math.max(1, originalHair) : 0);
+						character.setActiveHeadBone(comboStr);
 					}
 				}
 				character.setEyesType(0);

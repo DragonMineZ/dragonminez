@@ -474,6 +474,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 			if (HairManager.canUseHair(character)) {
 				character.setActiveHeadBone("hair");
+				character.setRenderHairBase(true);
 			} else if (config.getHeadBones() != null && config.getHeadBones().length > 0) {
 				String firstExtraBone = "";
 				if (character.areExtraHeadBonesEnabled()) {
