@@ -36,8 +36,8 @@ public class FlySkillEvent {
 	private static int verticalHover = 0;
 	private static float hovering = 0F;
 
-	private static final float NORMAL_MAX_SPEED = 0.85F;
-	private static final float SPRINT_MAX_SPEED = 1.5F;
+	private static final float NORMAL_MAX_SPEED = 0.7F;
+	private static final float SPRINT_MAX_SPEED = 1.25F;
 	private static final float ACCELERATION = 0.055F;
 	private static final float DECELERATION = 0.035F;
 	private static final float EXIT_DECELERATION = 0.08F;
