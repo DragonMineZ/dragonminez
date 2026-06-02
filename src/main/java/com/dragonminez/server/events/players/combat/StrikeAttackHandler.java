@@ -54,6 +54,8 @@ public class StrikeAttackHandler {
 			TechniqueData selected = stats.getTechniques().getSelectedTechnique();
 			if (!(selected instanceof StrikeAttackData strike)) return;
 
+			if (stats.getSkills().getSkillLevel("kicontrol") <= 0 || stats.getResources().getPowerRelease() < 5 || !player.getMainHandItem().isEmpty()) return;
+
 			String cooldownKey = getTechniqueCooldownKey(strike.getId());
 			if (stats.getCooldowns().hasCooldown(cooldownKey)) return;
 

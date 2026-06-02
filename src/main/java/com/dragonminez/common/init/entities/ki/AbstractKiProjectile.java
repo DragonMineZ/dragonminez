@@ -325,6 +325,13 @@ public abstract class AbstractKiProjectile extends Projectile {
         return super.getDimensions(pPose).scale(this.getSize());
     }
 
+    public boolean isMovementRestrictedType() {
+        return switch (getKiType()) {
+            case GIANT_BALL, WAVE, BEAM, EXPLOSION, BARRAGE -> true;
+            default -> false;
+        };
+    }
+
     public void triggerAnimationPacket(String suffix) {
         if (!this.level().isClientSide && this.getOwner() instanceof ServerPlayer sp) {
             String techId = this.getTechniqueId();
@@ -333,7 +340,8 @@ public abstract class AbstractKiProjectile extends Projectile {
                     TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techId);
                     if (tech instanceof KiAttackData kiData) {
                         String fullAnim = kiData.getAnimationPrefix() + suffix;
-                        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, fullAnim), sp);
+                        int hold = this.isMovementRestrictedType() ? 1 : 0;
+                        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, hold, -1, fullAnim), sp);
                     }
                 });
             }

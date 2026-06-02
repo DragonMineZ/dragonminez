@@ -235,6 +235,13 @@ public class PlayerAttackHelper {
         return true;
     }
 
+    public static boolean isChargingTechnique(Player player) {
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
+        if (stats == null) return false;
+        var techniques = stats.getTechniques();
+        return techniques.isTechniqueCharging() || techniques.isTechniqueChargeActive();
+    }
+
     public static double getEffectiveAttackRange(Player player, double weaponAttackRange) {
         var entityReachAttr = player.getAttribute(ForgeMod.ENTITY_REACH.get());
         if (entityReachAttr == null) return Math.max(0.0D, weaponAttackRange);

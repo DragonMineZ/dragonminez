@@ -102,12 +102,17 @@ public class KiAttackData extends TechniqueData {
 		};
 	}
 
+	public static final int KI_TIME_MULTIPLIER = 20;
 	public float getActualDamageMultiplier() { return damageMultiplier * (1.0f + (damageLevel * 0.1f)); }
 	public float getActualSpeed() { return speed * (1.0f + (speedLevel * 0.05f)); }
 	public float getActualSize() { return size * (1.0f + (sizeLevel * 0.05f)); }
 	public int getActualArmorPenetration() { return Math.min(100, armorPenetration + (armorPenLevel * 2)); }
-	public int getActualCastTime() { return castTime; }
-	public int getActualCooldown() { return cooldown; }
+	public int getActualCastTime() { return isInstantCast() ? 0 : castTime * KI_TIME_MULTIPLIER; }
+	public int getActualCooldown() { return cooldown * KI_TIME_MULTIPLIER; }
+
+	public boolean isInstantCast() {
+		return kiType == KiType.SMALL_BALL || kiType == KiType.LASER;
+	}
 
 	@Override
 	public double getCalculatedCost(com.dragonminez.common.stats.StatsData statsData) {
@@ -494,7 +499,7 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	private static int computeDerivedCastTime(KiType type, Utility util, float initialComplexity, int castLevel) {
-		if (type == KiType.SMALL_BALL) return 0;
+		if (type == KiType.SMALL_BALL || type == KiType.LASER) return 0;
 		float typeMult = getTypeMultiplier(type != null ? type : KiType.SMALL_BALL);
 		float utilMult = getUtilityMultiplier(util != null ? util : Utility.DAMAGE);
 		float base = (10.0f + initialComplexity * 2.0f) * (float) Math.sqrt(typeMult) * utilMult;

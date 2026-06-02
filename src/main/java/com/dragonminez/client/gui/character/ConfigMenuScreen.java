@@ -77,9 +77,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.BOOLEAN, userConfig.isImpactFramesEnabled() ? 1 : 0, 0, 1,
 				v -> userConfig.setImpactFramesEnabled(v > 0)));
 
-		configOptions.add(new ConfigOption("config.techniqueHotbarHorizontal",
-				ConfigType.BOOLEAN, userConfig.getTechniqueHotbarHorizontal() ? 1 : 0, 0, 1,
-				v -> userConfig.setTechniqueHotbarHorizontal(v > 0)));
+		configOptions.add(new ConfigOption("config.techniqueHotbarRightSide",
+				ConfigType.BOOLEAN, userConfig.getTechniqueHotbarRightSide() ? 1 : 0, 0, 1,
+				v -> userConfig.setTechniqueHotbarRightSide(v > 0)));
 
 		configOptions.add(new ConfigOption("config.alwaysVisibleHudValues",
 				ConfigType.BOOLEAN, userConfig.getAlwaysVisibleHudValues() ? 1 : 0, 0, 1,

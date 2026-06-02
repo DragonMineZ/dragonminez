@@ -100,7 +100,7 @@ public class ClientPacketHandler {
 				case EVASION -> animatable.dragonminez$triggerEvasion();
 				case DASH -> animatable.dragonminez$triggerDash(variant);
 				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
-				case KI_ANIMATION -> animatable.dragonminez$playKiAnimation(stringPayload);
+				case KI_ANIMATION -> animatable.dragonminez$playKiAnimation(stringPayload, variant == 1);
 				case KI_ANIMATION_STOP -> animatable.dragonminez$stopKiAnimation();
 			}
 		}

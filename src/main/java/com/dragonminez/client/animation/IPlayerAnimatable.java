@@ -15,6 +15,6 @@ public interface IPlayerAnimatable {
 	boolean dragonminez$isPlayingCombatAnimation();
 	boolean dragonminez$isAttackingWithOffhand();
 
-	void dragonminez$playKiAnimation(String animationName);
+	void dragonminez$playKiAnimation(String animationName, boolean hold);
 	void dragonminez$stopKiAnimation();
 }

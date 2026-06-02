@@ -24,9 +24,11 @@ import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import net.minecraft.world.InteractionHand;
@@ -43,7 +45,6 @@ import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.lwjgl.glfw.GLFW;
 import top.theillusivec4.curios.api.CuriosApi;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -55,6 +56,7 @@ public class ClientStatsEvents {
 	private static long lastTransformTapTime = 0;
 	private static long lastKiChargeTapTime = 0;
 	private static int kiBlastTimer = 0;
+	private static int blockLockTicks = 0;
 	private static boolean wasTransformKeyDown = false;
 	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
@@ -63,69 +65,24 @@ public class ClientStatsEvents {
 	private static long itKeyDownTime = 0;
 	private static boolean wasITKeyDown = false;
 	private static boolean itMenuOpened = false;
-	private static boolean wasTechniqueChargeDown = false;
 	private static boolean wasRightClickDown = false;
+
+	private static final int CHARGE_HOLD_TICKS = 30;
+	private static int activeChargeSlot = -1;
+	private static boolean chargeReHolding = false;
+	private static boolean chargeIsInitialHold = false;
+	private static int chargeHoldTicks = 0;
+	private static boolean chargePending = false;
+	private static int chargePendingTicks = 0;
+	private static final boolean[] wasSlotKeyDown = new boolean[TECHNIQUE_VISIBLE_SLOTS];
 
 	@SubscribeEvent
 	public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
-		if (Minecraft.getInstance().player != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
-				boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-				if (isChargingTechnique) event.setCanceled(true);
-			});
-			if (event.isCanceled()) return;
-		}
-
-		if (KeyBinds.SECOND_FUNCTION_KEY.isDown() && Minecraft.getInstance().player != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
-				boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-				if (isChargingTechnique) {
-					event.setCanceled(true);
-					return;
-				}
-
-				int delta = (int) Math.signum(event.getScrollDelta());
-				if (delta != 0) {
-					int currentSlot = data.getTechniques().getSelectedSlot();
-					int newSlot = currentSlot - delta;
-
-					if (newSlot < 0) newSlot = TECHNIQUE_VISIBLE_SLOTS - 1;
-					if (newSlot >= TECHNIQUE_VISIBLE_SLOTS) newSlot = 0;
-
-					data.getTechniques().selectSlot(newSlot);
-					NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(newSlot));
-
-					event.setCanceled(true);
-				}
-			});
-		}
-	}
-
-	@SubscribeEvent
-	public static void onKeyInputHotbar(InputEvent.Key event) {
 		if (Minecraft.getInstance().player == null) return;
-
-		if (event.getAction() == 1) {
-			int key = event.getKey();
-			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_5) {
-				StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
-					boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-					if (isChargingTechnique) return;
-				});
-				if (event.isCanceled()) return;
-			}
-		}
-
-		if (event.getAction() == 1 && KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
-			int key = event.getKey();
-			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_5) {
-				int slot = key - GLFW.GLFW_KEY_1;
-				StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
-					data.getTechniques().selectSlot(slot);
-					NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(slot));
-				});
-			}
-		}
+		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+			if (isChargingTechnique) event.setCanceled(true);
+		});
 	}
 
 	@SubscribeEvent
@@ -175,9 +132,6 @@ public class ClientStatsEvents {
 			}
 
 			Character character = data.getCharacter();
-			TechniqueData selectedTechnique = data.getTechniques().getSelectedTechnique();
-			boolean hasSelectedKiTechnique = selectedTechnique instanceof KiAttackData;
-			boolean hasSelectedStrikeTechnique = selectedTechnique instanceof StrikeAttackData;
 
 			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown();
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
@@ -203,8 +157,12 @@ public class ClientStatsEvents {
 				}
 			}
 
+			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+			if (blockLockTicks > 0) blockLockTicks--;
+			if (isChargingTechnique || isDescendKeyPressed || blockLockTicks > 0) isBlockKeyDown = false;
+
 			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
-			if (kiWeaponActive && data.getStatus().isBlocking()) {
+			if ((kiWeaponActive || isChargingTechnique) && data.getStatus().isBlocking()) {
 				data.getStatus().setBlocking(false);
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
 			} else if (isBlockKeyDown != data.getStatus().isBlocking() && !PlayerAttackHelper.isKiWeaponActive(localPlayer)) {
@@ -217,8 +175,8 @@ public class ClientStatsEvents {
 				}
 			}
 
-
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !hasSelectedKiTechnique && !hasSelectedStrikeTechnique) {
+			boolean chargeSessionActive = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !chargeSessionActive) {
 				float[] kiRgb;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
@@ -235,20 +193,11 @@ public class ClientStatsEvents {
 				int colorBorder = ColorUtils.darkenColor(colorMain, 0.85f);
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
-			}
-
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && hasSelectedStrikeTechnique && !isStunned) {
-				var lockedTarget = LockOnEvent.getLockedTarget();
-				int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
-				NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
+				blockLockTicks = 20;
 			}
 			wasRightClickDown = isRightClickDown;
 
-			boolean techniqueChargeDown = isDescendKeyPressed && isRightClickDown && hasSelectedKiTechnique;
-
-			if (techniqueChargeDown && !wasTechniqueChargeDown) NetworkHandler.sendToServer(new TechniqueChargeC2S(true));
-			else if (!techniqueChargeDown && wasTechniqueChargeDown) NetworkHandler.sendToServer(new TechniqueChargeC2S(false));
-			wasTechniqueChargeDown = techniqueChargeDown;
+			handleTechniqueSlotInput(data, isStunned);
 
 			if (kiBlastTimer > 0) {
 				if (kiBlastTimer == 1) NetworkHandler.sendToServer(new KiBlastC2S(false, 0, 0));
@@ -329,6 +278,128 @@ public class ClientStatsEvents {
 				} else ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
 			}
 		});
+	}
+
+	private static void handleTechniqueSlotInput(StatsData data, boolean isStunned) {
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player == null) return;
+
+		var techniques = data.getTechniques();
+		boolean sessionActive = techniques.isTechniqueCharging() || techniques.isTechniqueChargeActive();
+
+		boolean[] downNow = new boolean[TECHNIQUE_VISIBLE_SLOTS];
+		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) downNow[i] = KeyBinds.TECHNIQUE_SLOTS[i].isDown();
+
+		if (activeChargeSlot < 0) {
+			resetChargeSession();
+			boolean firingRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data);
+
+			for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
+				boolean pressed = downNow[i] && !wasSlotKeyDown[i];
+				wasSlotKeyDown[i] = downNow[i];
+				if (!pressed || isStunned || firingRestricted) continue;
+
+				String id = techniques.getEquippedSlots()[i];
+				TechniqueData t = (id == null || id.isEmpty()) ? null : techniques.getUnlockedTechniques().get(id);
+				if (t == null) continue;
+				if (!canActivateTechnique(data, player)) continue;
+
+				if (t instanceof StrikeAttackData) {
+					techniques.selectSlot(i);
+					NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(i));
+					var lockedTarget = LockOnEvent.getLockedTarget();
+					int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
+					NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
+				} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) {
+					if (ki.isInstantCast()) {
+						// Instant techniques (Small Ball, Laser): fire-and-forget, no charge/hold tracking.
+						NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
+					} else {
+						activeChargeSlot = i;
+						// The continuous initial hold counts as a charge-up hold (holding from the start
+						// bumps tiers without needing to release first); releasing it never cancels.
+						chargeReHolding = true;
+						chargeIsInitialHold = true;
+						chargeHoldTicks = 0;
+						chargePending = true;
+						chargePendingTicks = 0;
+						NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
+						NetworkHandler.sendToServer(TechniqueChargeC2S.setHolding(true));
+					}
+				}
+			}
+			return;
+		}
+
+		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) wasSlotKeyDown[i] = downNow[i];
+
+		if (!sessionActive) {
+			if (chargePending) {
+				if (++chargePendingTicks > 30) {
+					resetChargeSession();
+					return;
+				}
+			} else {
+				resetChargeSession();
+				return;
+			}
+		} else {
+			chargePending = false;
+			chargePendingTicks = 0;
+		}
+
+		if (activeChargeSlot >= TECHNIQUE_VISIBLE_SLOTS) return;
+		boolean slotDown = downNow[activeChargeSlot];
+
+		if (slotDown) {
+			if (!chargeReHolding) {
+				chargeReHolding = true;
+				chargeIsInitialHold = false;
+				chargeHoldTicks = 0;
+				NetworkHandler.sendToServer(TechniqueChargeC2S.setHolding(true));
+			}
+			chargeHoldTicks++;
+			if (chargeHoldTicks >= CHARGE_HOLD_TICKS) {
+				NetworkHandler.sendToServer(TechniqueChargeC2S.bump());
+				chargeHoldTicks = 0;
+			}
+		} else if (chargeReHolding) {
+			boolean wasTap = chargeHoldTicks < CHARGE_HOLD_TICKS;
+			if (!chargeIsInitialHold && wasTap) {
+				float pct = techniques.getTechniqueChargePercent();
+				if (pct < 50.0f) NetworkHandler.sendToServer(TechniqueChargeC2S.cancel());
+				else if (techniques.getChargeTierCeiling() >= 200.0f) NetworkHandler.sendToServer(TechniqueChargeC2S.fireNow());
+			}
+			NetworkHandler.sendToServer(TechniqueChargeC2S.setHolding(false));
+			chargeReHolding = false;
+			chargeIsInitialHold = false;
+			chargeHoldTicks = 0;
+		}
+	}
+
+	private static boolean canActivateTechnique(StatsData data, LocalPlayer player) {
+		if (data.getSkills().getSkillLevel("kicontrol") <= 0) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.technique.no_ki_control")
+					.withStyle(ChatFormatting.RED), true);
+			return false;
+		}
+		if (data.getResources().getPowerRelease() < 5) return false;
+		if (!player.getMainHandItem().isEmpty()) return false;
+		return true;
+	}
+
+	private static void resetChargeSession() {
+		activeChargeSlot = -1;
+		chargeReHolding = false;
+		chargeIsInitialHold = false;
+		chargeHoldTicks = 0;
+		chargePending = false;
+		chargePendingTicks = 0;
+	}
+
+	private static void resetChargeTracking() {
+		resetChargeSession();
+		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) wasSlotKeyDown[i] = false;
 	}
 
 	private static ItemStack getScouterStack(Player player) {
@@ -434,10 +505,10 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
-		wasTechniqueChargeDown = false;
 		wasRightClickDown = false;
 		lastTransformTapTime = 0;
 		lastKiChargeTapTime = 0;
+		resetChargeTracking();
 		StatsCapability.clearClientCache();
 	}
 
