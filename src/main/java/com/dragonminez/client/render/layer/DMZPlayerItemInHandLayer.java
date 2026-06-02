@@ -108,7 +108,13 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 			boolean isUsing = animatable.isUsingItem() && animatable.getUseItem() == stack;
 			String weaponType = resolveWeaponType(stack);
 			WeaponGripProfile profile = WeaponGripProfile.resolve(stack.getItem(), isUsing, weaponType);
-			profile.apply(poseStack, isLeft);
+
+			boolean applyAsLeft = isLeft;
+			if (!isCombatAnim && animatable.getMainArm() == HumanoidArm.LEFT) applyAsLeft = !isLeft;
+
+			profile.apply(poseStack, applyAsLeft);
+
+			if (!isCombatAnim && animatable.getMainArm() == HumanoidArm.LEFT) poseStack.translate(0.1, 0, 0);
 		}
 
 		float itemScale = resolveItemScale(animatable);
