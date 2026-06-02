@@ -614,8 +614,8 @@ public class TickHandler {
 			data.getResources().setCurrentEnergy(newEnergy);
 
 			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
-				data.getCharacter().clearActiveForm();
-				data.getCharacter().clearActiveStackForm();
+				data.getCharacter().clearActiveForm(player);
+				data.getCharacter().clearActiveStackForm(player);
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
 				player.refreshDimensions();
@@ -939,7 +939,7 @@ public class TickHandler {
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()) {
-			data.getCharacter().clearActiveForm();
+			data.getCharacter().clearActiveForm(player);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			player.refreshDimensions();
@@ -1013,10 +1013,10 @@ public class TickHandler {
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
 				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
 			} else {
-				data.getCharacter().clearActiveStackForm();
+				data.getCharacter().clearActiveStackForm(player);
 				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
-				data.getCharacter().clearActiveForm();
+				data.getCharacter().clearActiveForm(player);
 				TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 				player.refreshDimensions();
@@ -1069,11 +1069,11 @@ public class TickHandler {
 
 	private static void clearTransformationForMissingDurationItem(ServerPlayer player, StatsData data, boolean baseForm) {
 		if (baseForm) {
-			data.getCharacter().clearActiveForm();
+			data.getCharacter().clearActiveForm(player);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 		} else {
-			data.getCharacter().clearActiveStackForm();
+			data.getCharacter().clearActiveStackForm(player);
 			TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 		}

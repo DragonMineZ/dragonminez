@@ -8,11 +8,14 @@ import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.stats.extras.FormMasteries;
 import com.dragonminez.common.stats.extras.UsedForms;
+import com.dragonminez.common.init.MainSounds;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -437,6 +440,13 @@ public class Character {
 		updateOozaruCache();
 	}
 
+	public void clearActiveForm(LivingEntity entity) {
+		if (entity != null && hasActiveForm()) {
+			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+		}
+		clearActiveForm();
+	}
+
 	public FormConfig.FormData getActiveFormData() {
 		if (!hasActiveForm()) return null;
 		return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
@@ -456,6 +466,13 @@ public class Character {
 		this.activeStackFormGroup = "";
 		this.activeStackForm = "";
 		this.activeStackFormItemDurationTicks = 0;
+	}
+
+	public void clearActiveStackForm(LivingEntity entity) {
+		if (entity != null && hasActiveStackForm()) {
+			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+		}
+		clearActiveStackForm();
 	}
 
 	public FormConfig.FormData getActiveStackFormData() {

@@ -160,8 +160,8 @@ public class ForgeCommonEvents {
 				if (data.getSkills().hasSkill("kaioken") && data.getSkills().isSkillActive("kaioken"))
 					data.getSkills().setSkillActive("kaioken", false);
 				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
-				data.getCharacter().clearActiveForm();
-				data.getCharacter().clearActiveStackForm();
+				data.getCharacter().clearActiveForm(player);
+				data.getCharacter().clearActiveStackForm(player);
 				data.getEffects().removeAllEffects();
 			});
 		}

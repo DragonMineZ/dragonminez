@@ -47,7 +47,7 @@ public class FormModeHandler implements IActionModeHandler {
 				boolean isStackStackable = activeStackData.getFormStackable();
 
 				if (!isFormStackable || !isStackStackable) {
-					data.getCharacter().clearActiveStackForm();
+					data.getCharacter().clearActiveStackForm(player);
 					player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 					player.sendSystemMessage(Component.translatable("message.dragonminez.form.stack_removed"));
 				}

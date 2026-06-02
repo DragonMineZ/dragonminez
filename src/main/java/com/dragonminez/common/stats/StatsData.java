@@ -931,8 +931,8 @@ public class StatsData {
 
 		getCooldowns().clearCooldowns();
 		getBonusStats().clearAllStats();
-		getCharacter().clearActiveForm();
-		getCharacter().clearActiveStackForm();
+		getCharacter().clearActiveForm(player);
+		getCharacter().clearActiveStackForm(player);
 		getStatus().setHasCreatedCharacter(false);
 		if (forceSaiyanTail) getCharacter().setHasSaiyanTail(true);
 
