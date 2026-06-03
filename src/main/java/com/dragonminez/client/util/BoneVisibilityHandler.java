@@ -3,7 +3,7 @@ package com.dragonminez.client.util;
 import com.dragonminez.client.render.layer.DMZCustomArmorLayer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
-import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
@@ -135,8 +135,8 @@ public class BoneVisibilityHandler {
 
 	public static boolean hasModerfokinArmor(AbstractClientPlayer player) {
 		final ItemStack stack = player.getItemBySlot(EquipmentSlot.CHEST);
-		if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem armorItem)) return false;
-		return armorItem instanceof DbzArmorItem;
+		if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem)) return false;
+		return stack.getItem() instanceof DbzArmorTextured;
 	}
 
 	public static void applyBodyOnlyVisibility(BakedGeoModel model) {

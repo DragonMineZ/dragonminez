@@ -16,7 +16,7 @@ import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
@@ -442,7 +442,7 @@ public class ForgeCommonEvents {
 
 			if (!newStack.isEmpty() && newStack.getItem() instanceof ArmorItem) {
 				boolean isVanilla = ForgeRegistries.ITEMS.getKey(newStack.getItem()).getNamespace().equals("minecraft");
-				boolean isDbzArmor = newStack.getItem() instanceof DbzArmorItem;
+				boolean isDbzArmor = newStack.getItem() instanceof DbzArmorTextured;
 
 				if (!isVanilla && !isDbzArmor) {
 					shouldBeArmored = true;

@@ -19,6 +19,7 @@ import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.*;
+import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.init.*;
@@ -87,6 +88,7 @@ public class ModClientEvents {
 			@Override
 			protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
 				TextureCounter.clearCache();
+				ArmorTextureResolver.clearCache();
 				CombatAnimationResolver.reload(resourceManager);
 			}
 		});

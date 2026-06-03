@@ -3,6 +3,7 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -94,7 +95,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                         || logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra")|| logicKey.startsWith("ssj4d")|| logicKey.startsWith("ssj4gt")
                         || logicKey.startsWith("frostdemon_fifth") || logicKey.startsWith("frostdemon_metalcore") || logicKey.startsWith("namekian_buffed")
                         || logicKey.startsWith("4arms") || logicKey.startsWith("bioandroid_xeno");
-                boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
+                boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
 
                 if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
                     if (!isArmored) return null;

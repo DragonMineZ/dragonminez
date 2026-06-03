@@ -3,8 +3,9 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.Reference;
 import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsData;
@@ -59,7 +60,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         if (!ctx.shouldRender()) return;
 
         if (ctx.isDbzArmor()) {
-            ResourceLocation texture = getDbzArmorTexture((DbzArmorItem) stack.getItem(), stack);
+            ResourceLocation texture = getDbzArmorTexture((DbzArmorTextured) stack.getItem(), stack);
             float translateY = resolveCustomArmorTranslateY(ctx);
             float inflation = ctx.isOozaruTarget() ? 1.021f : 1.035f;
 
@@ -124,7 +125,6 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             savedBoobY = armorBoobas.getScaleY();
             savedBoobZ = armorBoobas.getScaleZ();
 
-            // Cover the bare chest mostly forward (Z), barely widening (X), so it doesn't look bulkier sideways.
             float[] axis = DMZPlayerModel.computeBoobAxisScale(boobFactor);
             armorBoobas.setScaleX(savedBoobX * axis[0] * 1.03f);
             armorBoobas.setScaleY(savedBoobY * axis[1] * 1.06f);
@@ -187,7 +187,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
         ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
         boolean isVanilla = itemKey != null && "minecraft".equals(itemKey.getNamespace());
-        boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
+        boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
         boolean isPothala = stack.getItem().getDescriptionId().contains("pothala");
         if (isPothala || (!isVanilla && !isDbzArmor)) {
             return new ArmorRenderContext(false, false, false, false, isDbzArmor);
@@ -351,11 +351,8 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         targetBone.setScaleZ(scaleZ);
     }
 
-    private ResourceLocation getDbzArmorTexture(DbzArmorItem item, ItemStack stack) {
-        String itemId = item.getItemId();
-        boolean isDamaged = item.isDamageOn() && stack.getDamageValue() > stack.getMaxDamage() / 2;
-        String suffix = isDamaged ? "_damaged_layer1.png" : "_layer1.png";
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/" + itemId + suffix);
+    private ResourceLocation getDbzArmorTexture(DbzArmorTextured item, ItemStack stack) {
+        return ArmorTextureResolver.resolve(item.getItemId(), EquipmentSlot.CHEST, stack);
     }
 
     private ResourceLocation getVanillaArmorTexture(LivingEntity entity, ItemStack stack, EquipmentSlot slot, String type) {

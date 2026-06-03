@@ -12,8 +12,8 @@ import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
-import com.dragonminez.common.init.armor.DbzArmorCapeItem;
-import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.client.util.ArmorTextureResolver;
+import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -44,7 +44,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jspecify.annotations.NonNull;
 
 @OnlyIn(Dist.CLIENT)
@@ -212,19 +211,10 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		}
 		if (chestStack.isEmpty()) return;
 
-		String itemId = null;
-
-		if (chestStack.getItem() instanceof DbzArmorItem armorItem) {
-			itemId = armorItem.getItemId();
-		} else if (chestStack.getItem() instanceof DbzArmorCapeItem capeItem) {
-			itemId = capeItem.getItemId();
-		}
+		String itemId = chestStack.getItem() instanceof DbzArmorTextured textured ? textured.getItemId() : null;
 
 		if (itemId != null) {
-			ResourceLocation registryName = ForgeRegistries.ITEMS.getKey(chestStack.getItem());
-			String namespace = registryName != null ? registryName.getNamespace() : Reference.MOD_ID;
-			String texturePath = "textures/armor/" + itemId + "_layer1.png";
-			ResourceLocation armorResource = ResourceLocation.fromNamespaceAndPath(namespace, texturePath);
+			ResourceLocation armorResource = ArmorTextureResolver.resolve(itemId, EquipmentSlot.CHEST, chestStack);
 
 			ps.pushPose();
 

@@ -42,6 +42,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		this.addRenderLayer(new DMZPlayerItemInHandLayer(this));
 		this.addRenderLayer(new DMZPlayerArmorLayer<>(this));
+		this.addRenderLayer(new DMZCapeLayer<>(this));
 		this.addRenderLayer(new DMZCustomArmorLayer(this));
 		this.addRenderLayer(new DMZRacePartsLayer(this));
 		this.addRenderLayer(new DMZWeaponsLayer<>(this));

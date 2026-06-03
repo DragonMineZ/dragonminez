@@ -1,7 +1,8 @@
 package com.dragonminez.common.init.armor;
 
-import com.dragonminez.Reference;
+import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
+import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.world.entity.Entity;
@@ -16,53 +17,19 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-public class DbzArmorItem extends ArmorItem {
+@Getter
+public class DbzArmorItem extends ArmorItem implements DbzArmorTextured {
 
     private final String itemId;
-    private final boolean isDamageOn;
 
-    public DbzArmorItem(ArmorMaterial pMaterial, Type pType, Properties pProperties, String itemId, boolean isDamageOn) {
+    public DbzArmorItem(ArmorMaterial pMaterial, Type pType, Properties pProperties, String itemId) {
         super(pMaterial, pType, pProperties);
         this.itemId = itemId;
-        this.isDamageOn = isDamageOn;
     }
 
     @Override
     public @Nullable String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-
-        String texturePath = Reference.MOD_ID + ":textures/armor/" + itemId;
-
-        if(isDamageOn()){
-            int maxDamage = stack.getMaxDamage();
-            int currentDamage = stack.getDamageValue();
-
-            // Determinamos si la armadura está dañada (menos de la mitad de durabilidad)
-            boolean isDamaged = currentDamage > maxDamage / 2;
-
-            switch (slot) {
-                case HEAD:
-                    return texturePath + (isDamaged ? "_damaged_layer1.png" : "_layer1.png");
-                case LEGS:
-                    return texturePath + (isDamaged ? "_damaged_layer2.png" : "_layer2.png");
-                case FEET:
-                    return texturePath + (isDamaged ? "_damaged_layer1.png" : "_layer1.png");
-                default:
-                    return texturePath + (isDamaged ? "_damaged_layer1.png" : "_layer1.png");
-            }
-        } else {
-            switch (slot) {
-                case HEAD:
-                    return texturePath + "_layer1.png";
-                case LEGS:
-                    return texturePath + "_layer2.png";
-                case FEET:
-                    return texturePath + "_layer1.png";
-                default:
-                    return texturePath + "_layer1.png";
-            }
-
-        }
-
+        return ArmorTextureResolver.resolve(itemId, slot, stack).toString();
     }
 
     @Override
@@ -76,13 +43,5 @@ public class DbzArmorItem extends ArmorItem {
                 return model;
             }
         });
-    }
-
-    public String getItemId() {
-        return itemId;
-    }
-
-    public boolean isDamageOn() {
-        return isDamageOn;
     }
 }
