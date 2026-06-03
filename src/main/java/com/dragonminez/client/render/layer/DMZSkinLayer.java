@@ -366,8 +366,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, finalColor, pt, pl, po, alpha);
 		}
 
-        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") ||
-                character.getActiveForm().equals("chou_shiyoken"))){
+        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
 
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "shiyoken_eye0.png", ColorUtils.hexToRgb("#FFFFFF"), pt, pl, po, alpha, true);
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "shiyoken_eye1.png", eye1, pt, pl, po, alpha, true);

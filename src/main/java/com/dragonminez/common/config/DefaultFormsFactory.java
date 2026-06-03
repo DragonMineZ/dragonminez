@@ -1257,7 +1257,7 @@ public class DefaultFormsFactory {
 		innocence.setSkpMultiplier(4.25);
 		innocence.setDefMultiplier(4.25);
 		innocence.setPwrMultiplier(4.25);
-		innocence.setHairType("base");
+		innocence.setHairType("empty");
         innocence.setModelScaling(new Float[]{1.4f, 1.4f, 1.4f});
         setDefaultMasteryValues(innocence);
 		innocence.setStackDrainMultiplier(2.0);
@@ -1275,7 +1275,7 @@ public class DefaultFormsFactory {
         giant_innocence_demon.setPwrMultiplier(4.85);
         giant_innocence_demon.setAttackSpeed(0.85);
         giant_innocence_demon.setEnergyDrain(0.25);
-        giant_innocence_demon.setHairType("base");
+        giant_innocence_demon.setHairType("empty");
         giant_innocence_demon.setBodyColor1("#FFFC82");
         giant_innocence_demon.setModelScaling(new Float[]{3.0f, 3.0f, 3.0f});
         setDefaultMasteryValues(giant_innocence_demon);
@@ -1291,7 +1291,7 @@ public class DefaultFormsFactory {
 		superDemon.setSkpMultiplier(5.5);
 		superDemon.setDefMultiplier(5.5);
 		superDemon.setPwrMultiplier(5.5);
-		superDemon.setHairType("base");
+		superDemon.setHairType("empty");
         superDemon.setBodyColor1("#FF6161");
         superDemon.setBodyColor2("#E1A8FF");
         superDemon.setEye1Color("#FFE98A");

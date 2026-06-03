@@ -194,8 +194,7 @@ public class SkinGathererProvider {
 		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0.png";
 
         float[] finalBodyColor = bodyColor;
-        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") ||
-                character.getActiveForm().equals("chou_shiyoken"))){
+        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
 
             float redness = 0.5F;
 

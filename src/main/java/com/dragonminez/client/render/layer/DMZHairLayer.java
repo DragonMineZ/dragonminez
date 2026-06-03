@@ -269,7 +269,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			case "ssj" -> character.getHairSSJ();
 			case "ssj2" -> character.getHairSSJ2();
 			case "ssj3" -> character.getHairSSJ3();
-			default -> character.getHairBase();
+			default -> character.emptyHair();
 		};
 	}
 

@@ -236,6 +236,10 @@ public class Character {
 				(raceName.equals("saiyan") && (Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.OOZARU) || Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.GOLDEN_OOZARU)));
 	}
 
+	public CustomHair emptyHair() {
+		return HairManager.getPresetHair(5, this.hairColor);
+	}
+
 	public CustomHair getHairBase() {
 		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
 		return hairBase;
