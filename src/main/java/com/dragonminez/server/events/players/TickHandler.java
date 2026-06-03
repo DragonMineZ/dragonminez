@@ -72,9 +72,7 @@ public class TickHandler {
 	private static final int AURA_LIGHT_LEVEL = 12;
 	private static final int AURA_LIGHT_STEP = 1;
 	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
-	private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
-	private static int masterySeconds = 0;
-
+	private static final Map<UUID, Integer> masterySecondsByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> chargeTicksByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
@@ -341,6 +339,7 @@ public class TickHandler {
 		CHARGING_CACHE.remove(playerId);
 		CHARGE_COST_ACCUM.remove(playerId);
 		chargeTicksByPlayer.remove(playerId);
+		masterySecondsByPlayer.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
@@ -471,9 +470,11 @@ public class TickHandler {
 			if (MinecraftForge.EVENT_BUS.post(kiEvent)) energyChange = 0;
 		}
 
-		if (masterySeconds < 5) masterySeconds++;
+		UUID masteryPlayerId = player.getUUID();
+		int masterySeconds = masterySecondsByPlayer.getOrDefault(masteryPlayerId, 0);
+		if (masterySeconds < 5) masterySecondsByPlayer.put(masteryPlayerId, masterySeconds + 1);
 		else {
-			masterySeconds = 0;
+			masterySecondsByPlayer.put(masteryPlayerId, 0);
 
 			if (hasActiveForm && activeForm != null) {
 				String activeFormName = activeForm.getName().toLowerCase();

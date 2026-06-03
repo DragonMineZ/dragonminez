@@ -58,7 +58,6 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private String dragonminez$currentMeleeAnim = null;
 	@Unique private String dragonminez$currentPoseAnim = null;
 	@Unique private float dragonminez$currentMeleeSpeed = 1.0F;
-	@Unique private boolean dragonminez$unarmedSwingLatch = false;
 
 	@Unique private String dragonminez$currentKiAnim = null;
 	@Unique private String dragonminez$lastKiAnim = null;
@@ -290,24 +289,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return PlayState.CONTINUE;
 		}
 
-		if (!hasSwingFrame) {
-			dragonminez$unarmedSwingLatch = false;
-		}
-
-		if (dragonminez$attackAnimTicks <= 0 && !dragonminez$unarmedSwingLatch && hasSwingFrame && shouldPlayUnarmedAttack(player)) {
+		if (dragonminez$attackAnimTicks <= 0 && hasSwingFrame && (shouldPlayUnarmedAttack(player) || shouldPlayGenericAttack(player))) {
 			ctl.setAnimationSpeed(1.0D);
-			ctl.setAnimation(ATTACK);
+			ctl.setAnimation(MINING1);
 			ctl.forceAnimationReset();
-			dragonminez$unarmedSwingLatch = true;
-			dragonminez$attackAnimTicks = 8;
-			return PlayState.CONTINUE;
-		}
-
-		if (dragonminez$attackAnimTicks <= 0 && !dragonminez$unarmedSwingLatch && hasSwingFrame && shouldPlayGenericAttack(player)) {
-			ctl.setAnimationSpeed(1.0D);
-			ctl.setAnimation(ATTACK);
-			ctl.forceAnimationReset();
-			dragonminez$unarmedSwingLatch = true;
 			dragonminez$attackAnimTicks = 8;
 			return PlayState.CONTINUE;
 		}
