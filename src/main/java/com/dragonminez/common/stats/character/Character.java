@@ -4,6 +4,7 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.stats.extras.FormMasteries;
@@ -14,8 +15,10 @@ import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -441,10 +444,16 @@ public class Character {
 	}
 
 	public void clearActiveForm(LivingEntity entity) {
-		if (entity != null && hasActiveForm()) {
+		String oldGroup = activeFormGroup;
+		String oldForm = activeForm;
+		boolean hadForm = hasActiveForm();
+		if (entity != null && hadForm) {
 			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		}
 		clearActiveForm();
+		if (hadForm && entity instanceof ServerPlayer serverPlayer && !serverPlayer.level().isClientSide) {
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.FormChangeEvent(serverPlayer, oldGroup, oldForm, "", ""));
+		}
 	}
 
 	public FormConfig.FormData getActiveFormData() {
@@ -469,10 +478,16 @@ public class Character {
 	}
 
 	public void clearActiveStackForm(LivingEntity entity) {
-		if (entity != null && hasActiveStackForm()) {
+		String oldGroup = activeStackFormGroup;
+		String oldForm = activeStackForm;
+		boolean hadForm = hasActiveStackForm();
+		if (entity != null && hadForm) {
 			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		}
 		clearActiveStackForm();
+		if (hadForm && entity instanceof ServerPlayer serverPlayer && !serverPlayer.level().isClientSide) {
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.StackFormChangeEvent(serverPlayer, oldGroup, oldForm, "", ""));
+		}
 	}
 
 	public FormConfig.FormData getActiveStackFormData() {

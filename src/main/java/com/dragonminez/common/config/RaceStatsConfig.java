@@ -12,7 +12,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class RaceStatsConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;
@@ -46,6 +46,15 @@ public class RaceStatsConfig {
 		private Double sp5StmScaling = 0.1;
 		private Double tpCostMultiplier = 1.0;
 		private Double tpGainMultiplier = 1.0;
+		private Passive passive = new Passive();
+	}
+
+	@Setter
+	@Getter
+	@NoArgsConstructor
+	public static class Passive {
+		private boolean enabled = true;
+		private Map<String, Double> values = new HashMap<>();
 	}
 
 	@Setter

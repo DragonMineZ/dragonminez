@@ -75,6 +75,8 @@ public class TechniqueChargeC2S {
 								&& !data.getCooldowns().hasCooldown("TechniqueCooldown_" + kiAttack.getId())) {
 							data.getTechniques().selectSlot(msg.slot);
 							data.getTechniques().startTechniqueCharge(kiAttack.getId());
+							net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+									new com.dragonminez.common.events.DMZEvent.KiAttackCastEvent(player, data, kiAttack));
 						} else {
 							data.getTechniques().clearTechniqueCharge();
 						}

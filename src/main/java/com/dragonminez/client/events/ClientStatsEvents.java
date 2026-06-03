@@ -322,6 +322,7 @@ public class ClientStatsEvents {
 					var lockedTarget = LockOnEvent.getLockedTarget();
 					int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
 					NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
+					net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.StrikeAttack(player, targetId));
 				} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) {
 					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
 					else {
@@ -331,6 +332,7 @@ public class ClientStatsEvents {
 						chargePendingTicks = 0;
 						NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
 					}
+					net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.KiAttackCast(player, i));
 				}
 			}
 			return;
@@ -354,6 +356,7 @@ public class ClientStatsEvents {
 		if (!slotDown && !chargeReleaseSent) {
 			NetworkHandler.sendToServer(TechniqueChargeC2S.setHolding(false));
 			chargeReleaseSent = true;
+			net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.KiAttackRelease(player));
 		}
 	}
 

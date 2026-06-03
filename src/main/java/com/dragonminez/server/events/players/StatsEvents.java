@@ -120,7 +120,11 @@ public class StatsEvents {
 					if (task.ticksPassed >= task.totalSeconds * 20) iterator.remove();
 				}
 
-				if (totalHpPulse > 0) serverPlayer.heal(totalHpPulse);
+				if (totalHpPulse > 0) {
+					com.dragonminez.common.passives.PassiveEventHandler.suppressHealingBonus = true;
+					serverPlayer.heal(totalHpPulse);
+					com.dragonminez.common.passives.PassiveEventHandler.suppressHealingBonus = false;
+				}
 
 				if (totalKiPulse > 0 || totalStamPulse > 0) {
 					float maxEnergy = data.getMaxEnergy();
@@ -505,9 +509,11 @@ public class StatsEvents {
 					float currentEnergy = data.getResources().getCurrentEnergy();
 					float currentStamina = data.getResources().getCurrentStamina();
 
+					com.dragonminez.common.passives.PassiveEventHandler.suppressHealingBonus = true;
 					player.heal(maxHealth - player.getHealth());
-					data.getResources().setCurrentEnergy(Math.min(maxEnergy, currentEnergy + energyAmount));
-					data.getResources().setCurrentStamina(Math.min(maxStamina, currentStamina + staminaAmount));
+					com.dragonminez.common.passives.PassiveEventHandler.suppressHealingBonus = false;
+					data.getResources().setCurrentEnergy(maxEnergy - currentEnergy);
+					data.getResources().setCurrentStamina(maxStamina - currentStamina);
 
 					int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
 					player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);

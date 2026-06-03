@@ -169,21 +169,13 @@ public class TickHandler {
 			} else serverPlayer.getPersistentData().putLong("dmz_stamina_mod_time", now);
 
 			if (shouldRegen) {
-				String raceName = data.getCharacter().getRaceName();
-				String characterClass = data.getCharacter().getCharacterClass();
+				double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
+				boolean activeCharging = isChargingKi && !isDescending;
 
-				RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-				if (raceConfig != null) {
-					RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
-
-					double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
-					boolean activeCharging = isChargingKi && !isDescending;
-
-					regenerateHealth(serverPlayer, data, classStats);
-					regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
-					regenerateStamina(serverPlayer, data, classStats, meditationBonus);
-					regeneratePoise(data, meditationBonus);
-				}
+				regenerateHealth(serverPlayer, data);
+				regenerateEnergy(serverPlayer, data, activeCharging);
+				regenerateStamina(serverPlayer, data);
+				regeneratePoise(data, meditationBonus);
 
 				playerTickCounters.put(playerId, 0);
 			} else {
@@ -455,41 +447,21 @@ public class TickHandler {
 		return current;
 	}
 
-	private static RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
-		return config.getClassStats(characterClass);
-	}
-
-	private static void regenerateHealth(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats) {
+	private static void regenerateHealth(ServerPlayer player, StatsData data) {
 		float currentHealth = player.getHealth();
 		float maxHealth = player.getMaxHealth();
+		if (currentHealth >= maxHealth) return;
 
-		if (currentHealth < maxHealth) {
-			int baseVit = data.getStats().getVitality();
-			double flatBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, false);
-			double multBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, true);
-			double vitMult = data.getFormMultiplier("VIT");
+		DMZEvent.HealthRegenEvent event = new DMZEvent.HealthRegenEvent(player, data, data.getHealthRegenPerSecond());
+		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
-			double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
-			double hp5 = classStats.getBaseHp5() + (effectiveVit * classStats.getHp5VitScaling());
+		double finalRegen = Math.max(0.0, event.getAmount());
+		if (finalRegen <= 0.0) return;
 
-			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), data.getPlayer());
-			double enchMult = getRecoveryMultiplier(totalEnchLvl);
-
-			double adjustedHealthDrain = data.getAdjustedHealthDrain();
-			double regenMultiplier = 1.0;
-
-			if (adjustedHealthDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedHealthDrain / 10.0));
-			else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
-
-			double regenPerSecond = (hp5 / 5.0) * enchMult * regenMultiplier;
-			if (regenPerSecond <= 0.0) return;
-
-			float newHealth = (float) Math.min(maxHealth, currentHealth + regenPerSecond);
-			player.setHealth(newHealth);
-		}
+		player.setHealth((float) Math.min(maxHealth, currentHealth + finalRegen));
 	}
 
-	private static void regenerateEnergy(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
+	private static void regenerateEnergy(ServerPlayer player, StatsData data, boolean activeCharging) {
 		float currentEnergy = data.getResources().getCurrentEnergy();
 		float maxEnergy = data.getMaxEnergy();
 
@@ -498,72 +470,11 @@ public class TickHandler {
 		boolean hasActiveStackForm = data.getCharacter().hasActiveStackForm();
 		FormConfig.FormData activeStackForm = hasActiveStackForm ? data.getCharacter().getActiveStackFormData() : null;
 
-		double energyChange = 0;
-
-		int baseEne = data.getStats().getEnergy();
-		double flatBonusEne = data.getBonusStats().calculateBonus("ENE", baseEne, false);
-		double multBonusEne = data.getBonusStats().calculateBonus("ENE", baseEne, true);
-		double eneMult = data.getFormMultiplier("ENE");
-
-		double effectiveEne = ((baseEne + multBonusEne) * eneMult) + flatBonusEne;
-		double ep5 = classStats.getBaseEp5() + (effectiveEne * classStats.getEp5EneScaling());
-
-		int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), data.getPlayer());
-		double enchMult = getRecoveryMultiplier(totalEnchLvl);
-
-		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult;
+		double energyChange = data.getEnergyRegenPerSecond(activeCharging);
 
 		if (activeCharging) {
-			double regenAmount = baseRegenPerSecond * ACTIVE_CHARGE_MULTIPLIER;
-			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
-
-			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
-					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
-				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-			}
-
-			if (regenAmount < 1.0) regenAmount = 1.0;
-			energyChange += regenAmount;
-
 			DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
 			if (MinecraftForge.EVENT_BUS.post(kiEvent)) energyChange = 0;
-		} else if (currentEnergy < maxEnergy) {
-			double regenAmount = baseRegenPerSecond;
-			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
-
-			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
-					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
-				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-			}
-
-			double formRawDrain = 0.0;
-			if (hasActiveForm && activeForm != null) formRawDrain = activeForm.getEnergyDrain();
-			else if (hasActiveStackForm && activeStackForm != null) formRawDrain = activeStackForm.getEnergyDrain();
-
-			double regenMultiplier = 1.0;
-			if (formRawDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (formRawDrain * 2.5));
-			else if (formRawDrain < 0.0) regenMultiplier = 1.0 + Math.abs(formRawDrain);
-
-
-			regenAmount *= regenMultiplier;
-
-			energyChange += regenAmount;
-		}
-
-		if (data.getStatus().isAndroidUpgraded()) {
-			double regenAmount = baseRegenPerSecond;
-			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
-
-			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
-					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
-				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-			}
-
-			if (regenAmount < 0.5) regenAmount = 0.5;
-			energyChange += regenAmount;
 		}
 
 		if (masterySeconds < 5) masterySeconds++;
@@ -604,7 +515,11 @@ public class TickHandler {
 		}
 
 		if (energyChange != 0) {
-			// Cap Ki regen at (1-pct/100) of max when a player Shadow Dummy is active.
+			DMZEvent.EnergyRegenEvent regenEvent = new DMZEvent.EnergyRegenEvent(player, data, energyChange);
+			energyChange = MinecraftForge.EVENT_BUS.post(regenEvent) ? 0 : regenEvent.getAmount();
+		}
+
+		if (energyChange != 0) {
 			float effectiveMaxEnergy = maxEnergy;
 			if (data.getStatus().hasActiveShadowDummy()) {
 				int pct = data.getStatus().getShadowDummyPercent();
@@ -623,43 +538,28 @@ public class TickHandler {
 		}
 	}
 
-	private static void regenerateStamina(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+	private static void regenerateStamina(ServerPlayer player, StatsData data) {
 		if (data.getCooldowns().hasCooldown(Cooldowns.STAMINA_PAUSE)) return;
 
 		float currentStamina = data.getResources().getCurrentStamina();
 		float maxStamina = data.getMaxStamina();
+		if (currentStamina >= maxStamina) return;
 
-		if (currentStamina < maxStamina) {
-			int baseVit = data.getStats().getVitality();
-			double flatBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, false);
-			double multBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, true);
-			double vitMult = data.getFormMultiplier("VIT");
+		double regenPerSecond = data.getStaminaRegenPerSecond();
+		if (regenPerSecond <= 0.0) return;
 
-			double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
-			double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5StmScaling());
+		DMZEvent.StaminaRegenEvent event = new DMZEvent.StaminaRegenEvent(player, data, regenPerSecond);
+		if (MinecraftForge.EVENT_BUS.post(event)) return;
+		regenPerSecond = Math.max(0.0, event.getAmount());
+		if (regenPerSecond <= 0.0) return;
 
-			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
-			double enchMult = getRecoveryMultiplier(totalEnchLvl);
-
-			double adjustedStaminaDrain = data.getAdjustedStaminaDrain();
-			double regenMultiplier = 1.0;
-
-			if (adjustedStaminaDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedStaminaDrain / 50.0));
-			else if (adjustedStaminaDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedStaminaDrain);
-
-			double actionMod = player.getPersistentData().contains("dmz_stamina_regen_mod") ? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
-			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod;
-			regenPerSecond = PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
-
-			// Cap Stamina regen at (1-pct/100) of max when a player Shadow Dummy is active.
-			float effectiveMaxStamina = maxStamina;
-			if (data.getStatus().hasActiveShadowDummy()) {
-				int pct = data.getStatus().getShadowDummyPercent();
-				effectiveMaxStamina = maxStamina * (1.0f - pct / 100.0f);
-			}
-			float newStamina = (float) Math.min(effectiveMaxStamina, currentStamina + Math.ceil(regenPerSecond));
-			data.getResources().setCurrentStamina(newStamina);
+		float effectiveMaxStamina = maxStamina;
+		if (data.getStatus().hasActiveShadowDummy()) {
+			int pct = data.getStatus().getShadowDummyPercent();
+			effectiveMaxStamina = maxStamina * (1.0f - pct / 100.0f);
 		}
+		float newStamina = (float) Math.min(effectiveMaxStamina, currentStamina + Math.ceil(regenPerSecond));
+		data.getResources().setCurrentStamina(newStamina);
 	}
 
 	private static void regeneratePoise(StatsData data, double meditationBonus) {
@@ -836,7 +736,7 @@ public class TickHandler {
 			if (effectiveCharge < 50.0f) {
 				activeKi.discard();
 			} else {
-				float chargeMultiplier = effectiveCharge / 100.0f; // damage scaling
+				float chargeMultiplier = effectiveCharge / 100.0f;
 
 				TechniqueData techniqueData = techniques.getUnlockedTechniques().get(techniques.getChargingTechniqueId());
 
@@ -845,7 +745,10 @@ public class TickHandler {
 
 					if (fired) {
 						boolean creative = player.isCreative();
-						int cooldownTicks = creative ? 60 : Math.max(1, (int) Math.ceil(kiAttack.getActualCooldown() * chargeMultiplier));
+						int baseCooldown = creative ? 60 : Math.max(1, (int) Math.ceil(kiAttack.getActualCooldown() * chargeMultiplier));
+						DMZEvent.KiAttackFireEvent fireEvent = new DMZEvent.KiAttackFireEvent(player, data, kiAttack, chargeMultiplier, baseCooldown);
+						MinecraftForge.EVENT_BUS.post(fireEvent);
+						int cooldownTicks = Math.max(1, fireEvent.getCooldownTicks());
 						data.getCooldowns().setCooldown(getTechniqueCooldownKey(kiAttack.getId()), cooldownTicks);
 
 						if (!creative) {
@@ -920,12 +823,6 @@ public class TickHandler {
 
 	private static String getTechniqueCooldownKey(String techniqueId) {
 		return "TechniqueCooldown_" + techniqueId;
-	}
-
-	private static float getMaxAllowedChargePercent(KiAttackData kiAttack, StatsData data) {
-		double baseCost = Math.max(1.0, kiAttack.getCalculatedCost(data));
-		double currentKi = Math.max(0.0, data.getResources().getCurrentEnergy());
-		return (float) Math.max(0.0, Math.min(200.0, (currentKi / baseCost) * 100.0));
 	}
 
 	private static boolean performAction(ServerPlayer player, StatsData data, ActionMode mode) {

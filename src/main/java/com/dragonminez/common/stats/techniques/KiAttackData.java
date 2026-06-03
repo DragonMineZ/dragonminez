@@ -31,6 +31,15 @@ public class KiAttackData extends TechniqueData {
 	public enum KiType { SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION, SHIELD, BARRAGE, AREA }
 	public enum Utility { DAMAGE, HEAL }
 
+	public enum SecondaryEffectType { NONE, BUFF, DEBUFF }
+	public enum AffectedStat { STR, SKP, DEF, STM_REGEN, HP_REGEN, ENE_REGEN, PWR }
+
+	public static final int MIN_SECONDARY_INTENSITY = 5;
+	public static final int MAX_SECONDARY_INTENSITY = 50;
+	public static final int MIN_SECONDARY_DURATION = 1;
+	public static final int MAX_SECONDARY_DURATION = 8;
+	public static final float SECONDARY_COST_FACTOR = 0.25f;
+
 	private static final String CODE_PREFIX = "DMZK1:";
 	private static final String BASE62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
@@ -47,6 +56,11 @@ public class KiAttackData extends TechniqueData {
 	private float speed;
 	private float size;
 	private int armorPenetration;
+
+	private SecondaryEffectType secondaryEffectType = SecondaryEffectType.NONE;
+	private AffectedStat affectedStat;
+	private float secondaryIntensity;
+	private int secondaryDuration;
 
 	private int damageLevel = 0;
 	private int castTimeLevel = 0;
@@ -132,6 +146,38 @@ public class KiAttackData extends TechniqueData {
 		return 1.0f + (percent - 100.0f) / (OVERCHARGE_MAX_PERCENT - 100.0f);
 	}
 
+	public void setSecondaryIntensity(float value) {
+		this.secondaryIntensity = value <= 0 ? 0 : Mth.clamp(value, MIN_SECONDARY_INTENSITY, MAX_SECONDARY_INTENSITY);
+	}
+
+	public void setSecondaryDuration(int value) {
+		this.secondaryDuration = value <= 0 ? 0 : Mth.clamp(value, MIN_SECONDARY_DURATION, MAX_SECONDARY_DURATION);
+	}
+
+	public boolean hasValidSecondaryEffect() {
+		if (secondaryEffectType == null || secondaryEffectType == SecondaryEffectType.NONE) return false;
+		if (affectedStat == null) return false;
+		if (secondaryIntensity <= 0 || secondaryDuration <= 0) return false;
+		Utility u = this.utility != null ? this.utility : Utility.DAMAGE;
+		return (secondaryEffectType == SecondaryEffectType.BUFF && u == Utility.HEAL)
+				|| (secondaryEffectType == SecondaryEffectType.DEBUFF && u == Utility.DAMAGE);
+	}
+
+	public float secondaryCostWeight() {
+		return secondaryCostWeight(hasValidSecondaryEffect() ? secondaryEffectType : SecondaryEffectType.NONE, secondaryIntensity, secondaryDuration);
+	}
+
+	private static float secondaryCostWeight(SecondaryEffectType type, float intensity, int duration) {
+		if (type == null || type == SecondaryEffectType.NONE) return 0f;
+		float intensityNorm = Mth.clamp((intensity - MIN_SECONDARY_INTENSITY) / (float) (MAX_SECONDARY_INTENSITY - MIN_SECONDARY_INTENSITY), 0f, 1f);
+		float durationNorm = Mth.clamp((duration - MIN_SECONDARY_DURATION) / (float) (MAX_SECONDARY_DURATION - MIN_SECONDARY_DURATION), 0f, 1f);
+		return intensityNorm * 0.6f + durationNorm * 0.4f;
+	}
+
+	public float secondaryCostMultiplier() {
+		return 1f + SECONDARY_COST_FACTOR * secondaryCostWeight();
+	}
+
 	@Override
 	public double getCalculatedCost(com.dragonminez.common.stats.StatsData statsData) {
 		double damageDone = statsData.getKiDamage() * getActualDamageMultiplier();
@@ -141,7 +187,7 @@ public class KiAttackData extends TechniqueData {
 		float utilMult = getUtilityMultiplier(this.utility != null ? this.utility : Utility.DAMAGE);
 		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig().getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
 		double configCostMult = Math.max(0.0, cfg.getKiCostMultiplier());
-		return Math.max(5.0, (damageDone * 0.5 + complexityFactor) * typeMult * utilMult * configCostMult);
+		return Math.max(5.0, (damageDone * 0.5 + complexityFactor) * typeMult * utilMult * configCostMult * secondaryCostMultiplier());
 	}
 
 	public int getUpgradeXpCost(String statName) {
@@ -246,7 +292,7 @@ public class KiAttackData extends TechniqueData {
 		float flatPen = (effectiveArmorPen / 100.0f) * 2.0f;
 		float complexity = flatDamage + flatSize + flatSpeed + flatPen;
 
-		float tpBase = (80.0f + complexity * 15.0f) * typeMult * utilMult;
+		float tpBase = (80.0f + complexity * 15.0f) * typeMult * utilMult * secondaryCostMultiplier();
 		this.tpCost = Math.max(10, Math.round(tpBase));
 
 		if (!PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
@@ -257,7 +303,8 @@ public class KiAttackData extends TechniqueData {
 
 			float initialComplexity = getWeightedComplexity(initialDamage, initialSize, initialSpeed, initialArmorPen);
 			this.castTime = 0;
-			this.cooldown = computeDerivedCooldown(resolvedType, resolvedUtil, initialComplexity, cooldownLevel);
+			int rawCooldown = computeDerivedCooldown(resolvedType, resolvedUtil, initialComplexity, cooldownLevel);
+			this.cooldown = Math.max(10, Math.min(600, Math.round(rawCooldown * secondaryCostMultiplier())));
 		}
 	}
 
@@ -412,6 +459,10 @@ public class KiAttackData extends TechniqueData {
 		tag.putInt("CooldownLevel", cooldownLevel);
 		tag.putInt("SpeedLevel", speedLevel);
 		tag.putInt("SizeLevel", sizeLevel);
+		tag.putString("SecondaryEffectType", secondaryEffectType != null ? secondaryEffectType.name() : SecondaryEffectType.NONE.name());
+		tag.putString("AffectedStat", affectedStat != null ? affectedStat.name() : "");
+		tag.putFloat("SecondaryIntensity", secondaryIntensity);
+		tag.putInt("SecondaryDuration", secondaryDuration);
 		return tag;
 	}
 
@@ -454,9 +505,22 @@ public class KiAttackData extends TechniqueData {
 		this.cooldownLevel = tag.getInt("CooldownLevel");
 		this.speedLevel = tag.getInt("SpeedLevel");
 		this.sizeLevel = tag.getInt("SizeLevel");
+
+		try { this.secondaryEffectType = SecondaryEffectType.valueOf(tag.getString("SecondaryEffectType")); }
+		catch (Exception e) { this.secondaryEffectType = SecondaryEffectType.NONE; }
+		String affected = tag.getString("AffectedStat");
+		if (affected == null || affected.isEmpty()) this.affectedStat = null;
+		else try { this.affectedStat = AffectedStat.valueOf(affected); } catch (Exception e) { this.affectedStat = null; }
+		setSecondaryIntensity(tag.getFloat("SecondaryIntensity"));
+		setSecondaryDuration(tag.getInt("SecondaryDuration"));
 	}
 
 	public static float[] previewDerivedValues(KiType type, Utility util, float damage, float size, float speed, int armorPen) {
+		return previewDerivedValues(type, util, damage, size, speed, armorPen, SecondaryEffectType.NONE, 0f, 0);
+	}
+
+	public static float[] previewDerivedValues(KiType type, Utility util, float damage, float size, float speed, int armorPen,
+											   SecondaryEffectType secondaryType, float secondaryIntensity, int secondaryDuration) {
 		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
 		Utility resolvedUtil = util != null ? util : Utility.DAMAGE;
 
@@ -465,10 +529,14 @@ public class KiAttackData extends TechniqueData {
 
 		float typeMult = getTypeMultiplier(resolvedType);
 		float utilMult = getUtilityMultiplier(resolvedUtil);
-		float kiCost = Math.max(5, (float) ((10.0 + complexity * 40.0) * typeMult * utilMult));
-		float tpCostVal = Math.max(10, Math.round((80.0f + complexity * 200.0f) * typeMult * utilMult));
+		boolean validSecondary = (secondaryType == SecondaryEffectType.BUFF && resolvedUtil == Utility.HEAL)
+				|| (secondaryType == SecondaryEffectType.DEBUFF && resolvedUtil == Utility.DAMAGE);
+		float secMult = 1f + SECONDARY_COST_FACTOR * secondaryCostWeight(validSecondary ? secondaryType : SecondaryEffectType.NONE, secondaryIntensity, secondaryDuration);
+
+		float kiCost = Math.max(5, (float) ((10.0 + complexity * 40.0) * typeMult * utilMult * secMult));
+		float tpCostVal = Math.max(10, Math.round((80.0f + complexity * 200.0f) * typeMult * utilMult * secMult));
 		float castVal = ConfigManager.getTechniqueConfig().getKiTypeConfig(resolvedType).getCastTimeTicks();
-		float cdVal = computeDerivedCooldown(resolvedType, resolvedUtil, complexity, 0);
+		float cdVal = Math.max(10, Math.min(600, Math.round(computeDerivedCooldown(resolvedType, resolvedUtil, complexity, 0) * secMult)));
 
 		return new float[]{kiCost, tpCostVal, castVal, cdVal};
 	}

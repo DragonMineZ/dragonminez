@@ -57,6 +57,7 @@ public class CombatEvent {
 		final boolean[] wasBlocked = {false};
 		final boolean[] wasParry = {false};
 		final boolean[] canceledByBlocking = {false};
+		final double[] passiveDefensePen = {0.0};
 
 		if (source.getEntity() instanceof LivingEntity livingAttacker && livingAttacker.hasEffect(MainEffects.STUN.get())) {
 			event.setCanceled(true);
@@ -117,6 +118,14 @@ public class CombatEvent {
 					dmzDamage *= currentAttack.attack().damageMultiplier();
 					if (currentAttack.isOffHand()) dmzDamage *= 0.9;
 				}
+
+				DMZEvent.DamageModifyEvent modifyEvent = new DMZEvent.DamageModifyEvent(attacker, livingTarget, dmzDamage, 0.0, DMZEvent.DamageSourceType.MELEE);
+					if (MinecraftForge.EVENT_BUS.post(modifyEvent)) {
+						dmzDamage = 0.0;
+					} else {
+						dmzDamage = Math.max(0.0, modifyEvent.getAmount());
+						passiveDefensePen[0] = modifyEvent.getDefensePenetration();
+					}
 
 				double currentSpeed = attacker.getPersistentData().getDouble("dmz_server_speed");
 				boolean wasFlying = attacker.getPersistentData().getBoolean("dmz_was_flying");
@@ -233,10 +242,12 @@ public class CombatEvent {
 				double skillPen = 0.0;
 				if (sourceLiving instanceof Player sourcePlayer) {
 					var attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
-					if (attackerStats != null) skillPen = attackerStats.getSkills().getSkillLevel("defense_penetration") * 0.025;
+					if (attackerStats != null) {
+						skillPen = attackerStats.getSkills().getSkillLevel("defense_penetration") * 0.025;
+					}
 				}
 
-				finalDefensePenetration = Math.min(0.50, enchPen + skillPen);
+				finalDefensePenetration = Math.min(0.50, enchPen + skillPen + passiveDefensePen[0]);
 			} else finalDefensePenetration = 0.0;
 
 
@@ -413,6 +424,12 @@ public class CombatEvent {
 		}
 
 		event.setAmount((float) currentDamage[0]);
+
+		if (!event.isCanceled() && source.getMsgId().equals("player")
+				&& source.getEntity() instanceof Player dmgAttacker) {
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.DamageDealtEvent(
+					dmgAttacker, event.getEntity(), currentDamage[0], wasBlocked[0], wasParry[0], DMZEvent.DamageSourceType.MELEE));
+		}
 
 		if (!event.isCanceled()
 				&& source.getMsgId().equals("player")
