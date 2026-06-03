@@ -15,10 +15,7 @@ import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.skills.Skills;
-import com.dragonminez.common.stats.techniques.KiAttackData;
-import com.dragonminez.common.stats.techniques.PredefinedTechniques;
-import com.dragonminez.common.stats.techniques.StrikeAttackData;
-import com.dragonminez.common.stats.techniques.TechniqueData;
+import com.dragonminez.common.stats.techniques.*;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
@@ -51,8 +48,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
-	private static final int TECHNIQUE_BIND_SLOT_COUNT = 5;
+	private static final int TECHNIQUE_BIND_SLOT_COUNT = Techniques.SLOT_COUNT;
 	private static final String NEW_SKILL_ENTRY = "__new_skill__";
+	private static final String CLASS_PASSIVE_ENTRY = "__class_passive__";
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
 
 	private enum SkillCategory {SKILLS, KI, FORMS, STRIKE}
@@ -327,10 +325,13 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		skillNames.sort((a, b) -> getDisplayNameForEntry(a).compareToIgnoreCase(getDisplayNameForEntry(b)));
 		if (skillNames.remove(NEW_SKILL_ENTRY)) skillNames.add(0, NEW_SKILL_ENTRY);
 		if (currentCategory == SkillCategory.SKILLS) {
+			int classPassiveIndex = 0;
 			String race = statsData.getCharacter().getRaceName().toLowerCase();
 			if (!race.isEmpty() && !ConfigManager.getRaceCharacter(race).getRacialSkill().isEmpty()) {
 				skillNames.add(0, "racial_" + ConfigManager.getRaceCharacter(race).getRacialSkill());
+				classPassiveIndex = 1;
 			}
+			skillNames.add(classPassiveIndex, CLASS_PASSIVE_ENTRY);
 		}
 		return skillNames;
 	}
@@ -545,8 +546,11 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		} else {
 			for (int i = 0; i < TECHNIQUE_BIND_SLOT_COUNT; i++) {
 				final int slotIndex = i;
+				int slotX = i < 4 ? i * 12 : (i - 4) * 12;
+				int slotY = i < 4 ? rightPanelY + 175 : rightPanelY + 186;
+
 				var slotBtn = new TexturedTextButton.Builder()
-						.position(rightPanelX + 40 + (i * 12), rightPanelY + 185)
+						.position(rightPanelX + 50 + slotX, slotY)
 						.size(10, 10)
 						.texture(BUTTONS_TEXTURE)
 						.textureCoords(152, 0, 152, 10)
@@ -958,6 +962,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				String displayName;
 				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE)
 					displayName = getDisplayNameForEntry(skillName);
+				else if (CLASS_PASSIVE_ENTRY.equals(skillName)) displayName = getClassPassiveTitle();
 				else displayName = tr("skill.dragonminez." + skillName).getString();
 
 				TextUtil.drawStringWithBorder(graphics, this.font, txt(displayName), panelX + 15, itemY + 5, color);
@@ -1039,7 +1044,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		int yOffset = panelY + 40;
 		int xpReq = 100;
-		int castTimeTicks = tech.getCastTime();
 		int cooldownTicks = tech.getCooldown();
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF);
@@ -1049,7 +1053,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		if (tech instanceof KiAttackData ki) {
 			xpReq = ki.getUpgradeXpCost("damage");
-			castTimeTicks = ki.getActualCastTime();
 			cooldownTicks = ki.getActualCooldown();
 			int scaledKiDamage = (int) (statsData.getKiDamage() * ki.getDamageMultiplier());
 
@@ -1066,17 +1069,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			yOffset += 12;
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(ki.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF);
 			yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", castTimeTicks / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
-			yOffset += 12;
 		} else if (tech instanceof StrikeAttackData st) {
-			castTimeTicks = st.getActualCastTime();
 			cooldownTicks = st.getActualCooldown();
 			int scaledStrikeDamage = (int) (statsData.getStrikeDamage() * st.getDamageMultiplier());
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD);
 			yOffset += 12;
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF);
-			yOffset += 12;
-			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.format(Locale.US, "%.1fs", castTimeTicks / 20.0f))), panelX + 15, yOffset, 0xFFFFFF);
 			yOffset += 12;
 		}
 
@@ -1143,12 +1141,15 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private void renderSkillDetails(GuiGraphics graphics, int panelX, int panelY) {
 		Skill skill = statsData.getSkills().getSkill(selectedSkill);
-		if (skill == null && !selectedSkill.startsWith("racial_")) return;
+		boolean isClassPassive = selectedSkill.equals(CLASS_PASSIVE_ENTRY);
+		if (skill == null && !selectedSkill.startsWith("racial_") && !isClassPassive) return;
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
-		String displayName = tr("skill.dragonminez." + selectedSkill).getString();
+		String displayName = isClassPassive ? getClassPassiveTitle() : tr("skill.dragonminez." + selectedSkill).getString();
 
 		String description = "";
-		if (selectedSkill.startsWith("racial_")) {
+		if (isClassPassive) {
+			description = tr("class.dragonminez." + statsData.getCharacter().getCharacterClass() + ".passive.desc").getString();
+		} else if (selectedSkill.startsWith("racial_")) {
 			switch (selectedSkill) {
 				case "racial_human" -> {
 					int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
@@ -1192,6 +1193,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			if (upgradeCost != Integer.MAX_VALUE && upgradeCost > 0) {
 				TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))), panelX + 72, startY + 24, 0xFFAAAAAA);
 			}
+		} else if (isClassPassive) {
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("class.dragonminez.passive"), panelX + 72, startY + 12, 0xFFFFD200);
 		} else {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.racial"), panelX + 72, startY + 12, 0xFF55FF55);
 		}
@@ -1444,6 +1447,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		String rawName = technique.getName();
 		if (rawName.contains(".")) return tr(rawName).getString();
 		return rawName;
+	}
+
+	private String getClassPassiveTitle() {
+		String characterClass = statsData.getCharacter().getCharacterClass();
+		String rawTitle = tr("class.dragonminez." + characterClass).getString() + " " + tr("class.dragonminez.passive").getString();
+		return ChatFormatting.stripFormatting(rawTitle);
 	}
 
 	private void openTechniqueCreator() {

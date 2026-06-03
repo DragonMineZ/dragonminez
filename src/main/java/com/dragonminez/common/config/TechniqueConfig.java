@@ -27,11 +27,23 @@ public class TechniqueConfig {
 
 	private void createDefaults() {
 		for (KiAttackData.KiType type : KiAttackData.KiType.values()) {
-			kiAttacks.put(type.name().toLowerCase(), TechniqueTypeConfig.defaults());
+			TechniqueTypeConfig cfg = TechniqueTypeConfig.defaults();
+			cfg.setCastTimeTicks(defaultCastTimeTicks(type));
+			kiAttacks.put(type.name().toLowerCase(), cfg);
 		}
 		for (String strikeId : PredefinedTechniques.STRIKE_IDS) {
 			strikeAttacks.put(strikeId, StrikeAttackConfig.defaults());
 		}
+	}
+
+	private static int defaultCastTimeTicks(KiAttackData.KiType type) {
+		return switch (type) {
+			case SMALL_BALL, LASER -> 0;
+			case MEDIUM_BALL, DISK -> 30;
+			case BARRAGE, SHIELD, AREA -> 40;
+			case WAVE, BEAM -> 50;
+			case GIANT_BALL, EXPLOSION -> 60;
+		};
 	}
 
 	public TechniqueTypeConfig getKiTypeConfig(KiAttackData.KiType type) {
@@ -57,6 +69,7 @@ public class TechniqueConfig {
 		private int xpGainPerKill = 3;
 		private double kiCostMultiplier = 1.0;
 		private double damageMultiplier = 1.0;
+		private int castTimeTicks = 30;
 
 		public static TechniqueTypeConfig defaults() {
 			return new TechniqueTypeConfig();

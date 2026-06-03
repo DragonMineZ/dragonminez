@@ -409,14 +409,14 @@ public class DefaultFormsFactory {
         shin_shiyoken.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 
         FormConfig.FormData chou_shiyoken = new FormConfig.FormData();
-        FormConfig.FormData.TransformationPostShaderConfig chou_shiyokenOutline = new FormConfig.FormData.TransformationPostShaderConfig();
+        FormConfig.FormData.OutlineShaderConfig chou_shiyokenOutline = new FormConfig.FormData.OutlineShaderConfig();
         chou_shiyokenOutline.setEnabled(true);
         chou_shiyokenOutline.setPrimaryColor("#F72D2D");
         chou_shiyokenOutline.setSecondaryColor("#7D0202");
         chou_shiyokenOutline.setNoiseScale(1.5d);
         chou_shiyokenOutline.setColorMixSpeed(0.2d);
         chou_shiyokenOutline.setOutlineThickness(3.7D);
-        chou_shiyoken.setTransformationPostShader(chou_shiyokenOutline);
+        chou_shiyoken.setOutlineShader(chou_shiyokenOutline);
         chou_shiyoken.setName(HumanForms.CHOU_SHIYOKEN);
         chou_shiyoken.setUnlockOnSkillLevel(3);
         chou_shiyoken.setCustomModel("4arms");
@@ -518,6 +518,7 @@ public class DefaultFormsFactory {
 		oozaru.setUnlockOnSkillLevel(0);
 		oozaru.setFormCombo("dragonminez:giant");
 		oozaru.setCustomModel("oozaru");
+		oozaru.setTransformationAnimation("base.ozaru_tr");
 		oozaru.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
 		oozaru.setStrMultiplier(1.2);
 		oozaru.setSkpMultiplier(1.2);
@@ -538,6 +539,7 @@ public class DefaultFormsFactory {
 		goldenOozaru.setUnlockOnSkillLevel(7);
 		goldenOozaru.setFormCombo("dragonminez:giant");
 		goldenOozaru.setCustomModel("oozaru");
+		goldenOozaru.setTransformationAnimation("base.ozaru_tr");
 		goldenOozaru.setHairColor("#FFD700");
 		goldenOozaru.setAuraColor("#FFD700");
 		goldenOozaru.setBodyColor2("#FFD700");
@@ -557,6 +559,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssj4gt = new FormConfig.FormData();
 		ssj4gt.setName(SaiyanForms.SUPER_SAIYAN_4);
 		ssj4gt.setCustomModel("ssj4gt");
+		ssj4gt.setTransformationAnimation("base.ozaru_tr");
 		ssj4gt.setUnlockOnSkillLevel(8);
 		ssj4gt.setHairColor("");
 		ssj4gt.setBodyColor2("#9d1e31");
@@ -719,16 +722,17 @@ public class DefaultFormsFactory {
 		ssj3.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData ssj4d = new FormConfig.FormData();
-        FormConfig.FormData.TransformationPostShaderConfig ssj4dOutline = new FormConfig.FormData.TransformationPostShaderConfig();
+        FormConfig.FormData.OutlineShaderConfig ssj4dOutline = new FormConfig.FormData.OutlineShaderConfig();
         ssj4dOutline.setEnabled(true);
         ssj4dOutline.setPrimaryColor("#F4FF8A");
         ssj4dOutline.setSecondaryColor("#8AFFFF");
         ssj4dOutline.setNoiseScale(1.5d);
         ssj4dOutline.setColorMixSpeed(0.2d);
         ssj4dOutline.setOutlineThickness(3.7D);
-        ssj4d.setTransformationPostShader(ssj4dOutline);
+        ssj4d.setOutlineShader(ssj4dOutline);
         ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
 		ssj4d.setCustomModel("ssj4d");
+		ssj4d.setTransformationAnimation("base.ozaru_tr");
 		ssj4d.setUnlockOnSkillLevel(8);
 		ssj4d.setHairColor("#83073F");
 		ssj4d.setBodyColor2("#83073F");
@@ -767,14 +771,14 @@ public class DefaultFormsFactory {
 		saiyanLegendaryForms.setFormType("legendaryforms");
 
 		FormConfig.FormData ikari = new FormConfig.FormData();
-        FormConfig.FormData.TransformationPostShaderConfig ikariOutline = new FormConfig.FormData.TransformationPostShaderConfig();
+        FormConfig.FormData.OutlineShaderConfig ikariOutline = new FormConfig.FormData.OutlineShaderConfig();
         ikariOutline.setEnabled(true);
         ikariOutline.setPrimaryColor("#7FFF7D");
         ikariOutline.setSecondaryColor("#F4FF7D");
         ikariOutline.setNoiseScale(1.5d);
         ikariOutline.setColorMixSpeed(0.2d);
         ikariOutline.setOutlineThickness(3.5D);
-        ikari.setTransformationPostShader(ikariOutline);
+        ikari.setOutlineShader(ikariOutline);
 		ikari.setName(SaiyanForms.IKARI);
 		ikari.setUnlockOnSkillLevel(1);
 		ikari.setCustomModel("buffed");
@@ -955,14 +959,14 @@ public class DefaultFormsFactory {
 		evilGiant.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData buffedNamek = new FormConfig.FormData();
-        FormConfig.FormData.TransformationPostShaderConfig buffedNamekOutline = new FormConfig.FormData.TransformationPostShaderConfig();
+        FormConfig.FormData.OutlineShaderConfig buffedNamekOutline = new FormConfig.FormData.OutlineShaderConfig();
         buffedNamekOutline.setEnabled(true);
         buffedNamekOutline.setPrimaryColor("#9E2F2F");
         buffedNamekOutline.setSecondaryColor("#470909");
         buffedNamekOutline.setNoiseScale(1.5d);
         buffedNamekOutline.setColorMixSpeed(0.2d);
         buffedNamekOutline.setOutlineThickness(3.5D);
-        buffedNamek.setTransformationPostShader(buffedNamekOutline);
+        buffedNamek.setOutlineShader(buffedNamekOutline);
 		buffedNamek.setName(NamekianForms.BUFFED_NAMEK);
 		buffedNamek.setUnlockOnSkillLevel(3);
 		buffedNamek.setCustomModel("namekian_buffed");

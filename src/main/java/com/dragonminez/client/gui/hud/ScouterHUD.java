@@ -6,6 +6,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.common.network.C2S.DamageCurioC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
@@ -107,9 +108,19 @@ public class ScouterHUD {
 		}
 	}
 
+	/** Bulma's Anti-Ki Cloak: a worn cloak hides the wearer's BP from scouters. */
+	private static boolean isCloaked(Player target) {
+		return CuriosApi.getCuriosInventory(target)
+				.map(inv -> inv.getCurios().get("head_tech"))
+				.map(handler -> handler.getStacks().getStackInSlot(0))
+				.map(stack -> stack.getItem() == MainItems.ANTI_KI_CLOAK.get())
+				.orElse(false);
+	}
+
 	private static int getEntityBP(LivingEntity entity) {
 		try {
 			if (entity instanceof Player player) {
+				if (isCloaked(player)) return 0;
 				var cap = StatsProvider.get(StatsCapability.INSTANCE, player);
 				if (cap.isPresent()) return cap.map(StatsData::getBattlePower).orElse(0);
 			}
@@ -158,8 +169,9 @@ public class ScouterHUD {
 					return;
 				}
 
-				renderCustomNumbers(guiGraphics, currentTexture, formatBP(bp));
-				renderEntityInfo(guiGraphics, currentTexture, true, focusedEntity instanceof Player);
+					if (QuestUnlocks.isCompleted(mc.player, QuestUnlocks.SCOUTER_CALIBRATION))
+						renderCustomNumbers(guiGraphics, currentTexture, formatBP(bp));
+				renderEntityInfo(guiGraphics, currentTexture, QuestUnlocks.isCompleted(mc.player, QuestUnlocks.SCOUTER_BIOSCAN), focusedEntity instanceof Player);
 
 			} else if (focusedEntity != null && distToFocus > 20 && distToFocus <= 50) {
 				renderDirectionIcon(guiGraphics, currentTexture, mc.player, focusedEntity, true);

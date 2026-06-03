@@ -82,8 +82,8 @@ public class SagaBabidiSoldiersEntity {
                         float dmg = (float) (ConfigManager.getCombatConfig().getBaselineFormDrain() * (data.getTotalMultiplier(
                                 data.getMeleeDamage() > data.getKiDamage() ? "STR" : data.getKiDamage() > data.getStrikeDamage() ? "PWR" : "SKP")) / 4);
 
-                        data.getCharacter().clearActiveForm();
-                        data.getCharacter().clearActiveStackForm();
+                        data.getCharacter().clearActiveForm(this);
+                        data.getCharacter().clearActiveStackForm(this);
 
                         this.hurt(damageSources().magic(), dmg);
                     }

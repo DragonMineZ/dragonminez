@@ -16,7 +16,7 @@ import net.minecraft.world.phys.Vec3;
 public class BeamClash {
 
     // --- QTE meter tuning ---
-    public static final float SWEEP_RATE = 0.025f;             // phase units per tick (~2s per sweep at 20 tps)
+    public static final float SWEEP_RATE = 0.0125f;            // phase units per tick (~4s per sweep at 20 tps)
     public static final float SWEET_LOW = 0.78f;               // sweet-spot window near the top of the sweep
     public static final float SWEET_HIGH = 0.96f;
     public static final float BURST_PER_PERFECT_PRESS = 1.0f;  // momentum from a centered press

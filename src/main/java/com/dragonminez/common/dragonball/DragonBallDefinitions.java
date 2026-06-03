@@ -41,6 +41,9 @@ public final class DragonBallDefinitions {
 		registerBootstrapBallSet(new DragonBallSetDefinition("namek", Set.of(NamekDimension.NAMEK_KEY.location()), () -> Math.max(1, ConfigManager.getServerConfig().getWorldGen().getDragonBallSets()), () -> ConfigManager.getServerConfig().getWorldGen().getDBSpawnRange(), 5, Map.of(1, "dball1_namek", 2, "dball2_namek", 3, "dball3_namek", 4, "dball4_namek", 5, "dball5_namek", 6, "dball6_namek", 7, "dball7_namek"), "namek_ballset", "Namek Dragon Ball"));
 		registerBootstrapRadar(new DragonRadarDefinition("earth_radar", "dball_radar", Set.of(Level.OVERWORLD.location()), "earth", "item.dragonminez.dball_radar.tooltip", new int[]{150, 300}, "earth_radar_recipe", "earth_radar", "Dragon Radar"));
 		registerBootstrapRadar(new DragonRadarDefinition("namek_radar", "namekdball_radar", Set.of(NamekDimension.NAMEK_KEY.location()), "namek", "item.dragonminez.namekdball_radar.tooltip", new int[]{150, 300}, "namek_radar_recipe", "namek_radar", "Namek Dragon Radar"));
+		// Bulma's "Bi-Dimensional Radar" — fused from an Earth + Namek radar (quest reward, not craftable).
+		// Works in BOTH dimensions; RadarRenderEvent picks the matching ball set per dimension.
+		registerBootstrapRadar(new DragonRadarDefinition("fused_radar", "fused_dball_radar", Set.of(Level.OVERWORLD.location(), NamekDimension.NAMEK_KEY.location()), "earth", "item.dragonminez.fused_dball_radar.tooltip", new int[]{150, 300, 600}, null, "earth_radar", "Bi-Dimensional Radar"));
 		registerBootstrapDragon(new DragonDefinition("shenron", "shenron", 3.0f, 17.0f, Set.of(Level.OVERWORLD.location()), "earth", "shenron", 1, "shenron"));
 		registerBootstrapDragon(new DragonDefinition("porunga", "porunga", 4.0f, 20.0f, Set.of(NamekDimension.NAMEK_KEY.location()), "namek", "porunga", 3, "porunga"));
 

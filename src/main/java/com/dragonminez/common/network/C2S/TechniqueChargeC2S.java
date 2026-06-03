@@ -6,6 +6,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
+import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -13,7 +14,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class TechniqueChargeC2S {
-	public enum Action { START, SET_HOLDING, BUMP, CANCEL, FIRE_NOW }
+	public enum Action { START, SET_HOLDING }
 
 	private final Action action;
 	private final int slot;
@@ -31,18 +32,6 @@ public class TechniqueChargeC2S {
 
 	public static TechniqueChargeC2S setHolding(boolean holding) {
 		return new TechniqueChargeC2S(Action.SET_HOLDING, -1, holding);
-	}
-
-	public static TechniqueChargeC2S bump() {
-		return new TechniqueChargeC2S(Action.BUMP, -1, false);
-	}
-
-	public static TechniqueChargeC2S cancel() {
-		return new TechniqueChargeC2S(Action.CANCEL, -1, false);
-	}
-
-	public static TechniqueChargeC2S fireNow() {
-		return new TechniqueChargeC2S(Action.FIRE_NOW, -1, false);
 	}
 
 	public TechniqueChargeC2S(FriendlyByteBuf buf) {
@@ -72,7 +61,7 @@ public class TechniqueChargeC2S {
 
 				switch (msg.action) {
 					case START -> {
-						if (msg.slot < 0 || msg.slot >= 5) {
+						if (msg.slot < 0 || msg.slot >= Techniques.SLOT_COUNT) {
 							data.getTechniques().clearTechniqueCharge();
 							break;
 						}
@@ -82,14 +71,12 @@ public class TechniqueChargeC2S {
 						boolean meetsRequirements = data.getSkills().getSkillLevel("kicontrol") > 0
 								&& data.getResources().getPowerRelease() >= 5
 								&& player.getMainHandItem().isEmpty();
-						if (selected instanceof KiAttackData kiAttack && meetsRequirements) {
-							String cooldownKey = "TechniqueCooldown_" + kiAttack.getId();
-							if (data.getCooldowns().hasCooldown(cooldownKey)) {
-								data.getTechniques().clearTechniqueCharge();
-							} else {
-								data.getTechniques().selectSlot(msg.slot);
-								data.getTechniques().startTechniqueCharge(kiAttack.getId());
-							}
+						if (selected instanceof KiAttackData kiAttack && meetsRequirements
+								&& !data.getCooldowns().hasCooldown("TechniqueCooldown_" + kiAttack.getId())) {
+							data.getTechniques().selectSlot(msg.slot);
+							data.getTechniques().startTechniqueCharge(kiAttack.getId());
+							net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+									new com.dragonminez.common.events.DMZEvent.KiAttackCastEvent(player, data, kiAttack));
 						} else {
 							data.getTechniques().clearTechniqueCharge();
 						}
@@ -97,22 +84,6 @@ public class TechniqueChargeC2S {
 					case SET_HOLDING -> {
 						if (data.getTechniques().isTechniqueChargeActive() || data.getTechniques().isTechniqueCharging()) {
 							data.getTechniques().setChargeHolding(msg.holding);
-						}
-					}
-					case BUMP -> {
-						if (data.getTechniques().isTechniqueChargeActive() || data.getTechniques().isTechniqueCharging()) {
-							data.getTechniques().bumpChargeTier();
-						}
-					}
-					case CANCEL -> {
-						if (data.getTechniques().getTechniqueChargePercent() < 50.0f) {
-							data.getTechniques().clearTechniqueCharge();
-						}
-					}
-					case FIRE_NOW -> {
-						if (data.getTechniques().isTechniqueChargeActive() || data.getTechniques().isTechniqueCharging()) {
-							data.getTechniques().setChargeHolding(false);
-							data.getTechniques().setChargeTierCeiling(data.getTechniques().getTechniqueChargePercent());
 						}
 					}
 				}

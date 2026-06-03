@@ -18,13 +18,6 @@ public class TechniqueDispatcher {
 		boolean isInitialSpawn = chargeMultiplier < 0.5f;
 		float clampedCharge = Mth.clamp(chargeMultiplier, 0.5f, 2.0f);
 
-		double cost = data.getCalculatedCost(statsData) * clampedCharge;
-		if (isInitialSpawn) if (statsData.getResources().getCurrentEnergy() < (data.getCalculatedCost(statsData) * 0.5)) return false;
-		else {
-			if (statsData.getResources().getCurrentEnergy() < cost) return false;
-			statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - cost));
-		}
-
 		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * clampedCharge);
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		boolean isHeal = (data.getUtility() == KiAttackData.Utility.HEAL);
@@ -65,11 +58,6 @@ public class TechniqueDispatcher {
 		switch (data.getKiType()) {
 			case SMALL_BALL:
 				if (!isInitialSpawn) return true;
-
-				double instantCost = data.getCalculatedCost(statsData);
-				if (statsData.getResources().getCurrentEnergy() < instantCost) return false;
-
-				statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - instantCost));
 
 				KiBlastEntity smallBall = new KiBlastEntity(level, owner);
 

@@ -63,6 +63,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.ItemAttributeModifierEvent;
 import net.minecraftforge.event.PlayLevelSoundEvent;
@@ -160,8 +161,8 @@ public class ForgeCommonEvents {
 				if (data.getSkills().hasSkill("kaioken") && data.getSkills().isSkillActive("kaioken"))
 					data.getSkills().setSkillActive("kaioken", false);
 				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
-				data.getCharacter().clearActiveForm();
-				data.getCharacter().clearActiveStackForm();
+				data.getCharacter().clearActiveForm(player);
+				data.getCharacter().clearActiveStackForm(player);
 				data.getEffects().removeAllEffects();
 			});
 		}
@@ -199,7 +200,9 @@ public class ForgeCommonEvents {
 		double chance = player.getAttributeValue(MainAttributes.CRIT_CHANCE.get());
 		int chanceLevel = player.getMainHandItem().getEnchantmentLevel(MainEnchants.CRIT_CHANCE.get());
 		if (chanceLevel > 0) chance += (chanceLevel * 0.05D);
-		return chance;
+		DMZEvent.CritChanceEvent event = new DMZEvent.CritChanceEvent(player, chance);
+		MinecraftForge.EVENT_BUS.post(event);
+		return event.getChance();
 	}
 
 	public static double getCriticalDamage(Player player) {

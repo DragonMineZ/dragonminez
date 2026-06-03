@@ -4,10 +4,12 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -79,6 +81,13 @@ public class TransformStatusHandler implements IStatusEffectHandler {
                     safe(activeForm),
                     safe(activeStackGroup),
                     safe(activeStackForm));
+        }
+
+        if (formChanged && activeForm != null) {
+            MinecraftForge.EVENT_BUS.post(new DMZEvent.FormChangeEvent(player, lastFormGroup, lastForm, activeFormGroup, activeForm));
+        }
+        if (stackChanged && activeStackForm != null) {
+            MinecraftForge.EVENT_BUS.post(new DMZEvent.StackFormChangeEvent(player, lastStackGroup, lastStackForm, activeStackGroup, activeStackForm));
         }
 
         FormConfig.FormData formData = resolveRegularFormData(data, activeFormGroup, activeForm, player);

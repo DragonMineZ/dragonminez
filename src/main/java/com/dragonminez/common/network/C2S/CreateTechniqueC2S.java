@@ -25,9 +25,14 @@ public class CreateTechniqueC2S {
 	private final int colorInterior;
 	private final int colorExterior;
 	private final int colorOutline;
+	private final String secondaryEffectType;
+	private final String affectedStat;
+	private final float secondaryIntensity;
+	private final int secondaryDuration;
 
 	public CreateTechniqueC2S(String name, String type, String utility, float damage, float speed, float size,
-							  int armorPen, int cast, int cooldown, int colorInterior, int colorExterior, int colorOutline) {
+							  int armorPen, int cast, int cooldown, int colorInterior, int colorExterior, int colorOutline,
+							  String secondaryEffectType, String affectedStat, float secondaryIntensity, int secondaryDuration) {
 		this.name = name;
 		this.type = type;
 		this.utility = utility;
@@ -40,6 +45,10 @@ public class CreateTechniqueC2S {
 		this.colorInterior = colorInterior;
 		this.colorExterior = colorExterior;
 		this.colorOutline = colorOutline;
+		this.secondaryEffectType = secondaryEffectType;
+		this.affectedStat = affectedStat;
+		this.secondaryIntensity = secondaryIntensity;
+		this.secondaryDuration = secondaryDuration;
 	}
 
 	public CreateTechniqueC2S(FriendlyByteBuf buf) {
@@ -55,6 +64,10 @@ public class CreateTechniqueC2S {
 		this.colorInterior = buf.readInt();
 		this.colorExterior = buf.readInt();
 		this.colorOutline = buf.readInt();
+		this.secondaryEffectType = buf.readUtf();
+		this.affectedStat = buf.readUtf();
+		this.secondaryIntensity = buf.readFloat();
+		this.secondaryDuration = buf.readInt();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
@@ -70,6 +83,10 @@ public class CreateTechniqueC2S {
 		buf.writeInt(this.colorInterior);
 		buf.writeInt(this.colorExterior);
 		buf.writeInt(this.colorOutline);
+		buf.writeUtf(this.secondaryEffectType != null ? this.secondaryEffectType : "NONE");
+		buf.writeUtf(this.affectedStat != null ? this.affectedStat : "");
+		buf.writeFloat(this.secondaryIntensity);
+		buf.writeInt(this.secondaryDuration);
 	}
 
 	public boolean handle(Supplier<NetworkEvent.Context> supplier) {
@@ -111,6 +128,17 @@ public class CreateTechniqueC2S {
 				technique.setColorExterior(colorExterior & 0xFFFFFF);
 				technique.setColorOutline(colorOutline & 0xFFFFFF);
 				technique.setAnimation("");
+
+				KiAttackData.SecondaryEffectType parsedSecondary;
+				try { parsedSecondary = KiAttackData.SecondaryEffectType.valueOf(secondaryEffectType); }
+				catch (Exception ignored) { parsedSecondary = KiAttackData.SecondaryEffectType.NONE; }
+				technique.setSecondaryEffectType(parsedSecondary);
+				if (affectedStat == null || affectedStat.isEmpty()) technique.setAffectedStat(null);
+				else try { technique.setAffectedStat(KiAttackData.AffectedStat.valueOf(affectedStat)); }
+				catch (Exception ignored) { technique.setAffectedStat(null); }
+				technique.setSecondaryIntensity(secondaryIntensity);
+				technique.setSecondaryDuration(secondaryDuration);
+
 				technique.calculateDerivedValues();
 
 				data.getTechniques().unlockTechnique(technique);

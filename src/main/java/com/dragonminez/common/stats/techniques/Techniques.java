@@ -1,24 +1,28 @@
 package com.dragonminez.common.stats.techniques;
 
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Techniques {
+	public static final int SLOT_COUNT = 8;
+
 	@Getter
 	private final Map<String, TechniqueData> unlockedTechniques = new HashMap<>();
-	private final String[] equippedSlots = new String[5];
+	private final String[] equippedSlots = new String[SLOT_COUNT];
 	private int selectedSlot = 0;
 	private String chargingTechniqueId = "";
 	private float techniqueChargePercent = 0.0f;
+	@Setter
 	private boolean techniqueCharging = false;
-	private float chargeTierCeiling = 55.0f;
+	@Setter
 	private boolean chargeHolding = false;
 
 	public Techniques() {
-		for (int i = 0; i < 5; i++) equippedSlots[i] = "";
+		for (int i = 0; i < SLOT_COUNT; i++) equippedSlots[i] = "";
 	}
 
 	public void unlockTechnique(TechniqueData data) {
@@ -26,14 +30,14 @@ public class Techniques {
 	}
 
 	public void equipTechnique(int slotIndex, String techniqueId) {
-		if (slotIndex >= 0 && slotIndex < 5 && unlockedTechniques.containsKey(techniqueId)) {
+		if (slotIndex >= 0 && slotIndex < SLOT_COUNT && unlockedTechniques.containsKey(techniqueId)) {
 			equippedSlots[slotIndex] = techniqueId;
 		}
 	}
 
 	public void removeTechnique(String techniqueId) {
 		unlockedTechniques.remove(techniqueId);
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < SLOT_COUNT; i++) {
 			if (equippedSlots[i].equals(techniqueId)) {
 				equippedSlots[i] = "";
 				if (selectedSlot == i) selectedSlot = 0;
@@ -43,7 +47,7 @@ public class Techniques {
 	}
 
 	public void selectSlot(int slotIndex) {
-		if (slotIndex >= 0 && slotIndex < 5) {
+		if (slotIndex >= 0 && slotIndex < SLOT_COUNT) {
 			this.selectedSlot = slotIndex;
 		}
 	}
@@ -80,45 +84,21 @@ public class Techniques {
 			this.techniqueChargePercent = 0.0f;
 		}
 		this.techniqueCharging = true;
-		this.chargeTierCeiling = 55.0f;
-		this.chargeHolding = false;
-	}
-
-	public void setTechniqueCharging(boolean charging) {
-		this.techniqueCharging = charging;
+		this.chargeHolding = true;
 	}
 
 	public void setTechniqueChargePercent(float percent) {
 		this.techniqueChargePercent = Math.max(0.0f, Math.min(200.0f, percent));
 	}
 
-	public float getChargeTierCeiling() {
-		return chargeTierCeiling;
-	}
-
-	public void setChargeTierCeiling(float ceiling) {
-		this.chargeTierCeiling = Math.max(0.0f, Math.min(200.0f, ceiling));
-	}
-
 	public boolean isChargeHolding() {
 		return chargeHolding;
-	}
-
-	public void setChargeHolding(boolean holding) {
-		this.chargeHolding = holding;
-	}
-
-	public void bumpChargeTier() {
-		if (this.chargeTierCeiling < 100.0f) this.chargeTierCeiling = 100.0f;
-		else if (this.chargeTierCeiling < 150.0f) this.chargeTierCeiling = 150.0f;
-		else this.chargeTierCeiling = 200.0f;
 	}
 
 	public void clearTechniqueCharge() {
 		this.chargingTechniqueId = "";
 		this.techniqueChargePercent = 0.0f;
 		this.techniqueCharging = false;
-		this.chargeTierCeiling = 55.0f;
 		this.chargeHolding = false;
 	}
 
@@ -136,10 +116,10 @@ public class Techniques {
 	}
 
 	public void equipOrSwapTechnique(int slotIndex, String techniqueId) {
-		if (slotIndex < 0 || slotIndex >= 5) return;
+		if (slotIndex < 0 || slotIndex >= SLOT_COUNT) return;
 
 		int existingSlot = -1;
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < SLOT_COUNT; i++) {
 			if (equippedSlots[i].equals(techniqueId)) {
 				existingSlot = i;
 				break;
@@ -170,11 +150,10 @@ public class Techniques {
 		tag.putString("ChargingTechniqueId", chargingTechniqueId);
 		tag.putFloat("TechniqueChargePercent", techniqueChargePercent);
 		tag.putBoolean("TechniqueCharging", techniqueCharging);
-		tag.putFloat("ChargeTierCeiling", chargeTierCeiling);
 		tag.putBoolean("ChargeHolding", chargeHolding);
 
 		CompoundTag slotsTag = new CompoundTag();
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < SLOT_COUNT; i++) {
 			slotsTag.putString("Slot" + i, equippedSlots[i]);
 		}
 		tag.put("EquippedSlots", slotsTag);
@@ -195,11 +174,10 @@ public class Techniques {
 		this.chargingTechniqueId = tag.getString("ChargingTechniqueId");
 		this.techniqueChargePercent = Math.max(0.0f, Math.min(200.0f, tag.getFloat("TechniqueChargePercent")));
 		this.techniqueCharging = tag.getBoolean("TechniqueCharging");
-		this.chargeTierCeiling = tag.contains("ChargeTierCeiling") ? Math.max(0.0f, Math.min(200.0f, tag.getFloat("ChargeTierCeiling"))) : 55.0f;
 		this.chargeHolding = tag.getBoolean("ChargeHolding");
 
 		CompoundTag slotsTag = tag.getCompound("EquippedSlots");
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < SLOT_COUNT; i++) {
 			this.equippedSlots[i] = slotsTag.getString("Slot" + i);
 		}
 
@@ -219,9 +197,8 @@ public class Techniques {
 		this.chargingTechniqueId = other.chargingTechniqueId;
 		this.techniqueChargePercent = other.techniqueChargePercent;
 		this.techniqueCharging = other.techniqueCharging;
-		this.chargeTierCeiling = other.chargeTierCeiling;
 		this.chargeHolding = other.chargeHolding;
-		System.arraycopy(other.equippedSlots, 0, this.equippedSlots, 0, 5);
+		System.arraycopy(other.equippedSlots, 0, this.equippedSlots, 0, SLOT_COUNT);
 		this.unlockedTechniques.clear();
 		for (Map.Entry<String, TechniqueData> entry : other.unlockedTechniques.entrySet()) {
 			TechniqueData clone = entry.getValue() instanceof KiAttackData ? new KiAttackData() : new StrikeAttackData();

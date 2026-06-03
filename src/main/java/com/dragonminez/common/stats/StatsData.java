@@ -3,6 +3,7 @@ package com.dragonminez.common.stats;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.init.MainAttributes;
+import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
@@ -18,6 +19,7 @@ import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.events.players.StatsEvents;
+import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.server.util.FusionLogic;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -195,6 +197,120 @@ public class StatsData {
 		double multBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), true);
 		double secondaryMaxStamina = getSecondaryAttributeValue(MainAttributes.MAX_STAMINA.get(), 20.0);
 		return Math.min((float) (secondaryMaxStamina + ((resistance + multBonusRes) * stmScaling * stmMult) + (flatBonusRes * stmScaling)), Float.MAX_VALUE - 1);
+	}
+
+	public double getStaminaRegenPerSecond() {
+		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(character.getRaceName());
+		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, character.getCharacterClass());
+
+		int baseVit = stats.getVitality();
+		double flatBonusVit = bonusStats.calculateBonus("VIT", baseVit, false);
+		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
+		double vitMult = getFormMultiplier("VIT");
+		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
+		double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5StmScaling());
+
+		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), player);
+		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
+
+		int meditationLevel = skills.getSkillLevel("meditation");
+		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.05) : 1.0;
+
+		double adjustedStaminaDrain = getAdjustedStaminaDrain();
+		double regenMultiplier = 1.0;
+		if (adjustedStaminaDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedStaminaDrain / 50.0));
+		else if (adjustedStaminaDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedStaminaDrain);
+
+		double actionMod = (player != null && player.getPersistentData().contains("dmz_stamina_regen_mod"))
+				? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
+
+		double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod;
+		return PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
+	}
+
+	public double getHealthRegenPerSecond() {
+		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(character.getRaceName());
+		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, character.getCharacterClass());
+
+		int baseVit = stats.getVitality();
+		double flatBonusVit = bonusStats.calculateBonus("VIT", baseVit, false);
+		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
+		double vitMult = getFormMultiplier("VIT");
+		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
+		double hp5 = classStats.getBaseHp5() + (effectiveVit * classStats.getHp5VitScaling());
+
+		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), player);
+		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
+
+		double adjustedHealthDrain = getAdjustedHealthDrain();
+		double regenMultiplier = 1.0;
+		if (adjustedHealthDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedHealthDrain / 10.0));
+		else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
+
+		return (hp5 / 5.0) * enchMult * regenMultiplier;
+	}
+
+	public double getEnergyRegenPerSecond(boolean activeCharging) {
+		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(character.getRaceName());
+		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, character.getCharacterClass());
+
+		float currentEnergy = resources.getCurrentEnergy();
+		float maxEnergy = getMaxEnergy();
+
+		boolean hasActiveForm = character.hasActiveForm();
+		FormConfig.FormData activeForm = hasActiveForm ? character.getActiveFormData() : null;
+		boolean hasActiveStackForm = character.hasActiveStackForm();
+		FormConfig.FormData activeStackForm = hasActiveStackForm ? character.getActiveStackFormData() : null;
+
+		int baseEne = stats.getEnergy();
+		double flatBonusEne = bonusStats.calculateBonus("ENE", baseEne, false);
+		double multBonusEne = bonusStats.calculateBonus("ENE", baseEne, true);
+		double eneMult = getFormMultiplier("ENE");
+		double effectiveEne = ((baseEne + multBonusEne) * eneMult) + flatBonusEne;
+		double ep5 = classStats.getBaseEp5() + (effectiveEne * classStats.getEp5EneScaling());
+
+		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), player);
+		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
+
+		int meditationLevel = skills.getSkillLevel("meditation");
+		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.05) : 1.0;
+
+		// Ki Conductivity (Gete-tech enchantment) further boosts ki/energy regen.
+		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
+		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult * kiConductivityMult;
+
+		boolean humanBoost = ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
+				&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
+				&& ConfigManager.getRaceCharacter(character.getRace()).getRacialSkill().equals("human");
+		double humanMult = humanBoost ? ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost() : 1.0;
+
+		double energyChange = 0;
+
+		if (activeCharging) {
+			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond * 1.5) * humanMult;
+			if (regenAmount < 1.0) regenAmount = 1.0;
+			energyChange += regenAmount;
+		} else if (currentEnergy < maxEnergy) {
+			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * humanMult;
+
+			double formRawDrain = 0.0;
+			if (hasActiveForm && activeForm != null) formRawDrain = activeForm.getEnergyDrain();
+			else if (hasActiveStackForm && activeStackForm != null) formRawDrain = activeStackForm.getEnergyDrain();
+
+			double regenMultiplier = 1.0;
+			if (formRawDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (formRawDrain * 2.5));
+			else if (formRawDrain < 0.0) regenMultiplier = 1.0 + Math.abs(formRawDrain);
+
+			energyChange += regenAmount * regenMultiplier;
+		}
+
+		if (status.isAndroidUpgraded()) {
+			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * humanMult;
+			if (regenAmount < 0.5) regenAmount = 0.5;
+			energyChange += regenAmount;
+		}
+
+		return energyChange;
 	}
 
 	public float getMaxPoise() {
@@ -931,8 +1047,8 @@ public class StatsData {
 
 		getCooldowns().clearCooldowns();
 		getBonusStats().clearAllStats();
-		getCharacter().clearActiveForm();
-		getCharacter().clearActiveStackForm();
+		getCharacter().clearActiveForm(player);
+		getCharacter().clearActiveStackForm(player);
 		getStatus().setHasCreatedCharacter(false);
 		if (forceSaiyanTail) getCharacter().setHasSaiyanTail(true);
 

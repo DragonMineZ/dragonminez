@@ -19,7 +19,8 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 public class TechniqueHotbarHUD {
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
-	private static final int SLOTS = 5;
+	private static final int SLOTS = Techniques.SLOT_COUNT;
+	private static final int BAR_SLOTS = 4;
 	private static final int ROW_HEIGHT = 13;
 	private static final int BADGE_SIZE = 11;
 	private static final int GAP = 5;
@@ -40,7 +41,12 @@ public class TechniqueHotbarHUD {
 	public static final IGuiOverlay HUD_TECHNIQUES = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (!KeyBinds.SECOND_FUNCTION_KEY.isDown()) return;
+
+		boolean altHeld = KeyBinds.SECOND_FUNCTION_KEY.isDown() || net.minecraft.client.gui.screens.Screen.hasAltDown();
+		if (!altHeld) return;
+
+		boolean ctrlHeld = net.minecraft.client.gui.screens.Screen.hasControlDown();
+		int baseSlot = ctrlHeld ? BAR_SLOTS : 0;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
@@ -50,11 +56,18 @@ public class TechniqueHotbarHUD {
 			boolean rightSide = ConfigManager.getUserConfig().getTechniqueHotbarRightSide();
 			Font font = mc.font;
 
-			int totalHeight = ROW_HEIGHT * SLOTS;
-			int startY = height - MARGIN_BOTTOM - totalHeight;
+			float hudScale = 1.5f;
+			int sw = Math.round(width / hudScale);
+			int sh = Math.round(height / hudScale);
+			guiGraphics.pose().pushPose();
+			guiGraphics.pose().scale(hudScale, hudScale, 1.0f);
 
-			for (int i = 0; i < SLOTS; i++) {
-				int rowY = startY + i * ROW_HEIGHT;
+			int totalHeight = ROW_HEIGHT * BAR_SLOTS;
+			int startY = sh - MARGIN_BOTTOM - totalHeight;
+
+			for (int j = 0; j < BAR_SLOTS; j++) {
+				int i = baseSlot + j;
+				int rowY = startY + j * ROW_HEIGHT;
 				int textY = rowY + (ROW_HEIGHT - font.lineHeight) / 2;
 				int badgeY = rowY + (ROW_HEIGHT - BADGE_SIZE) / 2;
 
@@ -83,7 +96,7 @@ public class TechniqueHotbarHUD {
 						}
 					}
 				} else {
-					int badgeX = width - MARGIN_X - BADGE_SIZE;
+					int badgeX = sw - MARGIN_X - BADGE_SIZE;
 					drawBadge(guiGraphics, font, badgeX, badgeY, keyLabel);
 					if (name != null) {
 						int nameX = badgeX - GAP - nameWidth;
@@ -94,6 +107,8 @@ public class TechniqueHotbarHUD {
 					}
 				}
 			}
+
+			guiGraphics.pose().popPose();
 		});
 	};
 

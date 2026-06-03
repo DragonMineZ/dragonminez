@@ -32,6 +32,15 @@ public enum ModArmorMaterials implements ArmorMaterial {
 		p_266655_.put(ArmorItem.Type.HELMET, 2);
 	}), 25, SoundEvents.ARMOR_EQUIP_NETHERITE, 5F, 0.1F, () -> {
 		return Ingredient.of(new ItemLike[]{MainItems.KIKONO_SHARD.get()});
+	}),
+	// Post-netherite Gete tier — Bulma's tech. Higher protection/toughness than Kikono.
+	GETE("gete", 45, (EnumMap) Util.make(new EnumMap(ArmorItem.Type.class), (p_266655_) -> {
+		p_266655_.put(ArmorItem.Type.BOOTS, 20);
+		p_266655_.put(ArmorItem.Type.LEGGINGS, 30);
+		p_266655_.put(ArmorItem.Type.CHESTPLATE, 40);
+		p_266655_.put(ArmorItem.Type.HELMET, 3);
+	}), 30, SoundEvents.ARMOR_EQUIP_NETHERITE, 7F, 0.15F, () -> {
+		return Ingredient.of(new ItemLike[]{MainItems.GETE_INGOT.get()});
 	});
 
 	public static final StringRepresentable.EnumCodec<ArmorMaterials> CODEC = StringRepresentable.fromEnum(ArmorMaterials::values);

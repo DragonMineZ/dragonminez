@@ -63,6 +63,25 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 		oreBlasting(pWriter, Carbon, RecipeCategory.MISC, Items.COAL, 0.1f, 100, "coal");
 		oreSmelting(pWriter, Carbon, RecipeCategory.MISC, Items.COAL, 0.1f, 200, "coal");
 
+		// Gete tech: premium capsules (base capsule + Gete ingot) ...
+		geteCapsule(pWriter, MainItems.RED_CAPSULE.get(), MainItems.GETE_RED_CAPSULE.get(), "gete_red_capsule");
+		geteCapsule(pWriter, MainItems.PURPLE_CAPSULE.get(), MainItems.GETE_PURPLE_CAPSULE.get(), "gete_purple_capsule");
+		geteCapsule(pWriter, MainItems.YELLOW_CAPSULE.get(), MainItems.GETE_YELLOW_CAPSULE.get(), "gete_yellow_capsule");
+		geteCapsule(pWriter, MainItems.GREEN_CAPSULE.get(), MainItems.GETE_GREEN_CAPSULE.get(), "gete_green_capsule");
+		geteCapsule(pWriter, MainItems.ORANGE_CAPSULE.get(), MainItems.GETE_ORANGE_CAPSULE.get(), "gete_orange_capsule");
+		geteCapsule(pWriter, MainItems.BLUE_CAPSULE.get(), MainItems.GETE_BLUE_CAPSULE.get(), "gete_blue_capsule");
+		// ... and smithing-table upgrades (netherite armor + Gete template + Gete ingot -> Gete armor).
+		geteArmorSmithing(pWriter, Items.NETHERITE_HELMET, MainItems.GETE_ARMOR.get(net.minecraft.world.item.ArmorItem.Type.HELMET).get(), "gete_armor_helmet_smithing");
+		geteArmorSmithing(pWriter, Items.NETHERITE_CHESTPLATE, MainItems.GETE_ARMOR.get(net.minecraft.world.item.ArmorItem.Type.CHESTPLATE).get(), "gete_armor_chestplate_smithing");
+		geteArmorSmithing(pWriter, Items.NETHERITE_LEGGINGS, MainItems.GETE_ARMOR.get(net.minecraft.world.item.ArmorItem.Type.LEGGINGS).get(), "gete_armor_leggings_smithing");
+		geteArmorSmithing(pWriter, Items.NETHERITE_BOOTS, MainItems.GETE_ARMOR.get(net.minecraft.world.item.ArmorItem.Type.BOOTS).get(), "gete_armor_boots_smithing");
+		// Ki Accumulator (battery) — Gete-cored energy cell.
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.KI_BATTERY.get())
+				.pattern("RLR").pattern("LGL").pattern("RLR")
+				.define('R', Items.REDSTONE).define('L', Items.LAPIS_LAZULI).define('G', MainItems.GETE_INGOT.get())
+				.unlockedBy(getHasName(MainItems.GETE_INGOT.get()), has(MainItems.GETE_INGOT.get())).group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "ki_battery"));
+
 		SimpleCookingRecipeBuilder.smelting(Ingredient.of(MainItems.FROG_LEGS_RAW.get()),
 						RecipeCategory.FOOD, MainItems.FROG_LEGS_COOKED.get(), 0.35f, 200)
 				.unlockedBy(getHasName(MainItems.FROG_LEGS_RAW.get()), has(MainItems.FROG_LEGS_RAW.get())).group(Reference.MOD_ID)
@@ -870,5 +889,23 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 					.save(pFinishedRecipeConsumer, Reference.MOD_ID + ":" + getItemName(pResult)
 							+ pRecipeName + "_" + getItemName(itemlike));
 		}
+	}
+
+	// --- Gete tech ---
+	private void geteCapsule(Consumer<FinishedRecipe> w, ItemLike base, ItemLike result, String id) {
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, result)
+				.requires(base).requires(MainItems.GETE_INGOT.get())
+				.unlockedBy(getHasName(MainItems.GETE_INGOT.get()), has(MainItems.GETE_INGOT.get())).group(Reference.MOD_ID)
+				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
+	}
+
+	private void geteArmorSmithing(Consumer<FinishedRecipe> w, net.minecraft.world.item.Item base, net.minecraft.world.item.Item result, String id) {
+		SmithingTransformRecipeBuilder.smithing(
+						Ingredient.of(MainItems.GETE_SMITHING_TEMPLATE.get()),
+						Ingredient.of(base),
+						Ingredient.of(MainItems.GETE_INGOT.get()),
+						RecipeCategory.COMBAT, result)
+				.unlocks(getHasName(MainItems.GETE_INGOT.get()), has(MainItems.GETE_INGOT.get()))
+				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
 	}
 }

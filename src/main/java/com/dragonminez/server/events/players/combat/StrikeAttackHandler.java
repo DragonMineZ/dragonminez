@@ -78,6 +78,8 @@ public class StrikeAttackHandler {
 					CONNECT_WINDOW_TICKS
 			);
 			PENDING.put(player.getUUID(), pending);
+			net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+					new com.dragonminez.common.events.DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
 			dashForward(player);
 		});
@@ -180,6 +182,12 @@ public class StrikeAttackHandler {
 
 			double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
 					ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
+
+			com.dragonminez.common.events.DMZEvent.DamageModifyEvent modifyEvent =
+					new com.dragonminez.common.events.DMZEvent.DamageModifyEvent(player, target, totalDamage, 0.0,
+							com.dragonminez.common.events.DMZEvent.DamageSourceType.STRIKE);
+			totalDamage = net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(modifyEvent) ? 0.0 : Math.max(0.0, modifyEvent.getAmount());
+
 			int durationTicks = Math.max(20, pending.durationTicks());
 			int hitCount = Math.max(1, (int) Math.ceil(durationTicks / (double) HIT_INTERVAL_TICKS));
 			double perHitDamage = (totalDamage * (1.0 - FINAL_HIT_RATIO)) / hitCount;
@@ -199,6 +207,8 @@ public class StrikeAttackHandler {
 					0
 			);
 			ACTIVE.put(player.getUUID(), active);
+			net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+					new com.dragonminez.common.events.DMZEvent.StrikeAttackFireEvent(player, stats, strike, target));
 
 			applyStrikeDamage(player, target, perHitDamage, pending.techniqueId());
 			//teleportToTargetFront(player, target);

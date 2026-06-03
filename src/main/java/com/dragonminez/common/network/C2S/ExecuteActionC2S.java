@@ -70,7 +70,7 @@ public class ExecuteActionC2S {
 										if (previousForm != null) {
 											data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
 										} else {
-											data.getCharacter().clearActiveStackForm();
+											data.getCharacter().clearActiveStackForm(player);
 											player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 										}
 									} else {
@@ -87,7 +87,7 @@ public class ExecuteActionC2S {
 											if (data.getStatus().isAndroidUpgraded()) {
 												data.getCharacter().setActiveForm("androidforms", "androidbase");
 											} else {
-												data.getCharacter().clearActiveForm();
+												data.getCharacter().clearActiveForm(player);
 											}
 											player.removeEffect(MainEffects.TRANSFORMED.get());
 										}
@@ -104,11 +104,11 @@ public class ExecuteActionC2S {
 						}
 						case FORCE_DESCEND -> {
 							if (rightClick) {
-								data.getCharacter().clearActiveStackForm();
+								data.getCharacter().clearActiveStackForm(player);
 								if (data.getStatus().isAndroidUpgraded()) {
 									data.getCharacter().setActiveForm("androidforms", "androidbase");
 								} else {
-									data.getCharacter().clearActiveForm();
+									data.getCharacter().clearActiveForm(player);
 								}
 							} else {
 								boolean activeStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
@@ -118,7 +118,7 @@ public class ExecuteActionC2S {
 									if (previousStackForm != null) {
 										data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousStackForm.getName());
 									} else {
-										data.getCharacter().clearActiveStackForm();
+										data.getCharacter().clearActiveStackForm(player);
 									}
 								} else if (activeForm) {
 									FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
@@ -128,7 +128,7 @@ public class ExecuteActionC2S {
 										if (data.getStatus().isAndroidUpgraded()) {
 											data.getCharacter().setActiveForm("androidforms", "androidbase");
 										} else {
-											data.getCharacter().clearActiveForm();
+											data.getCharacter().clearActiveForm(player);
 										}
 									}
 								}

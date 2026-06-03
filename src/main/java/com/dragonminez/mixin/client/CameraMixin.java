@@ -70,7 +70,7 @@ public abstract class CameraMixin implements RollCamera {
 			Vec3 forward = Vec3.directionFromRotation(0, player.getViewYRot(partialTick));
 			Vec3 left = Vec3.directionFromRotation(0, player.getViewYRot(partialTick) - 90.0F);
 
-			Vec3 movement = forward.scale(smoothedOffset.z()).add(left.scale(smoothedOffset.x())).add(0, smoothedOffset.y(), 0);
+			Vec3 movement = forward.scale(smoothedOffset.z()).add(left.scale(smoothedOffset.x()));
 
 			double movementLen = movement.length();
 			Vec3 desiredPos = baseEyePos;

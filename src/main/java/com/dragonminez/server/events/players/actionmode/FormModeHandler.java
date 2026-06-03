@@ -47,7 +47,7 @@ public class FormModeHandler implements IActionModeHandler {
 				boolean isStackStackable = activeStackData.getFormStackable();
 
 				if (!isFormStackable || !isStackStackable) {
-					data.getCharacter().clearActiveStackForm();
+					data.getCharacter().clearActiveStackForm(player);
 					player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 					player.sendSystemMessage(Component.translatable("message.dragonminez.form.stack_removed"));
 				}
@@ -90,7 +90,7 @@ public class FormModeHandler implements IActionModeHandler {
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.refreshDimensions();
 
-			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
 			String race = data.getCharacter().getRaceName();
 			Component translatedFormName = Component.translatable("race.dragonminez." + race + ".form." + data.getCharacter().getSelectedFormGroup() + "." + nextForm.getName());

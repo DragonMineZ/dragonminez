@@ -4,15 +4,21 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.stats.extras.FormMasteries;
 import com.dragonminez.common.stats.extras.UsedForms;
+import com.dragonminez.common.init.MainSounds;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,6 +52,7 @@ public class Character {
 	private int activeStackFormItemDurationTicks = 0;
 
 	private boolean hasSaiyanTail = true;
+	private boolean renderHairBase = true;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
@@ -326,6 +333,7 @@ public class Character {
 		tag.put("FormsUsedBefore", (formsUsedBefore != null ? formsUsedBefore : new UsedForms()).save());
 		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
+		tag.putBoolean("RenderHairBase", renderHairBase);
 		tag.putBoolean("isArmored", armored);
 
 		ListTag mastersList = new ListTag();
@@ -392,6 +400,7 @@ public class Character {
 		if (tag.contains("StackFormMasteries")) stackFormMasteries.load(tag.getCompound("StackFormMasteries"));
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
+		this.renderHairBase = tag.getBoolean("RenderHairBase");
 		this.armored = tag.getBoolean("isArmored");
 
 		this.interactedMasters.clear();
@@ -434,6 +443,19 @@ public class Character {
 		updateOozaruCache();
 	}
 
+	public void clearActiveForm(LivingEntity entity) {
+		String oldGroup = activeFormGroup;
+		String oldForm = activeForm;
+		boolean hadForm = hasActiveForm();
+		if (entity != null && hadForm) {
+			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+		}
+		clearActiveForm();
+		if (hadForm && entity instanceof ServerPlayer serverPlayer && !serverPlayer.level().isClientSide) {
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.FormChangeEvent(serverPlayer, oldGroup, oldForm, "", ""));
+		}
+	}
+
 	public FormConfig.FormData getActiveFormData() {
 		if (!hasActiveForm()) return null;
 		return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
@@ -453,6 +475,19 @@ public class Character {
 		this.activeStackFormGroup = "";
 		this.activeStackForm = "";
 		this.activeStackFormItemDurationTicks = 0;
+	}
+
+	public void clearActiveStackForm(LivingEntity entity) {
+		String oldGroup = activeStackFormGroup;
+		String oldForm = activeStackForm;
+		boolean hadForm = hasActiveStackForm();
+		if (entity != null && hadForm) {
+			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+		}
+		clearActiveStackForm();
+		if (hadForm && entity instanceof ServerPlayer serverPlayer && !serverPlayer.level().isClientSide) {
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.StackFormChangeEvent(serverPlayer, oldGroup, oldForm, "", ""));
+		}
 	}
 
 	public FormConfig.FormData getActiveStackFormData() {
@@ -531,6 +566,8 @@ public class Character {
 		this.activeStackForm = safeString(other.activeStackForm);
 		this.activeStackFormItemDurationTicks = other.activeStackFormItemDurationTicks;
 		this.stackFormMasteries.copyFrom(other.stackFormMasteries);
+		this.hasSaiyanTail = other.hasSaiyanTail;
+		this.renderHairBase = other.renderHairBase;
 		this.armored = other.armored;
 		this.interactedMasters.clear();
 		this.interactedMasters.putAll(other.interactedMasters);

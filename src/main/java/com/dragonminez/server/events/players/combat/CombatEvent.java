@@ -13,6 +13,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -56,6 +57,7 @@ public class CombatEvent {
 		final boolean[] wasBlocked = {false};
 		final boolean[] wasParry = {false};
 		final boolean[] canceledByBlocking = {false};
+		final double[] passiveDefensePen = {0.0};
 
 		if (source.getEntity() instanceof LivingEntity livingAttacker && livingAttacker.hasEffect(MainEffects.STUN.get())) {
 			event.setCanceled(true);
@@ -116,6 +118,14 @@ public class CombatEvent {
 					dmzDamage *= currentAttack.attack().damageMultiplier();
 					if (currentAttack.isOffHand()) dmzDamage *= 0.9;
 				}
+
+				DMZEvent.DamageModifyEvent modifyEvent = new DMZEvent.DamageModifyEvent(attacker, livingTarget, dmzDamage, 0.0, DMZEvent.DamageSourceType.MELEE);
+					if (MinecraftForge.EVENT_BUS.post(modifyEvent)) {
+						dmzDamage = 0.0;
+					} else {
+						dmzDamage = Math.max(0.0, modifyEvent.getAmount());
+						passiveDefensePen[0] = modifyEvent.getDefensePenetration();
+					}
 
 				double currentSpeed = attacker.getPersistentData().getDouble("dmz_server_speed");
 				boolean wasFlying = attacker.getPersistentData().getBoolean("dmz_was_flying");
@@ -232,10 +242,12 @@ public class CombatEvent {
 				double skillPen = 0.0;
 				if (sourceLiving instanceof Player sourcePlayer) {
 					var attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
-					if (attackerStats != null) skillPen = attackerStats.getSkills().getSkillLevel("defense_penetration") * 0.025;
+					if (attackerStats != null) {
+						skillPen = attackerStats.getSkills().getSkillLevel("defense_penetration") * 0.025;
+					}
 				}
 
-				finalDefensePenetration = Math.min(0.50, enchPen + skillPen);
+				finalDefensePenetration = Math.min(0.50, enchPen + skillPen + passiveDefensePen[0]);
 			} else finalDefensePenetration = 0.0;
 
 
@@ -250,7 +262,33 @@ public class CombatEvent {
 
 					double blockMultiplier = 1.0;
 
-					if (ConfigManager.getCombatConfig().getEnableBlocking()) {
+					boolean techCharging = victimData.getTechniques().isTechniqueCharging();
+					boolean techFiring = !techCharging && TechniqueDispatcher.isFiringKiAttack(victim);
+					boolean techActive = techCharging || techFiring;
+
+					if (techActive) {
+						Entity sourceEntity = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
+						float reductionMult = techFiring ? 0.25f : 0.5f;
+						float poiseMult = techFiring ? 4.0f : 2.0f;
+
+						double poiseDamageMultiplier = ConfigManager.getCombatConfig().getPoiseDamageMultiplier();
+						if (!(sourceEntity instanceof Player)) poiseDamageMultiplier *= 1.5;
+						float poiseDamage = (float) (currentDamage[0] * poiseDamageMultiplier * poiseMult);
+						float currentPoise = victimData.getResources().getCurrentPoise();
+
+						if (currentPoise - poiseDamage <= 0) {
+							doGuardBreak(victim, victimData);
+							cancelActiveTechnique(victim, victimData);
+						} else {
+							victimData.getResources().removePoise((int) poiseDamage);
+							int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
+							victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+							victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
+							blockMultiplier = reductionMult;
+						}
+					}
+
+					if (!techActive && ConfigManager.getCombatConfig().getEnableBlocking()) {
 						Entity sourceEntity = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
 						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && sourceEntity != null) {
 							Vec3 targetLook = victim.getLookAngle();
@@ -387,6 +425,12 @@ public class CombatEvent {
 
 		event.setAmount((float) currentDamage[0]);
 
+		if (!event.isCanceled() && source.getMsgId().equals("player")
+				&& source.getEntity() instanceof Player dmgAttacker) {
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.DamageDealtEvent(
+					dmgAttacker, event.getEntity(), currentDamage[0], wasBlocked[0], wasParry[0], DMZEvent.DamageSourceType.MELEE));
+		}
+
 		if (!event.isCanceled()
 				&& source.getMsgId().equals("player")
 				&& source.getEntity() instanceof Player attacker
@@ -423,6 +467,14 @@ public class CombatEvent {
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			}
 		});
+	}
+
+	private static void cancelActiveTechnique(Player player, StatsData data) {
+		data.getTechniques().clearTechniqueCharge();
+		var owned = player.level().getEntitiesOfClass(AbstractKiProjectile.class,
+				player.getBoundingBox().inflate(64.0),
+				p -> p.getOwner() != null && p.getOwner().getUUID().equals(player.getUUID()));
+		for (AbstractKiProjectile p : owned) p.discard();
 	}
 
 	private static void doGuardBreak(Player attacker, StatsData attackerData) {

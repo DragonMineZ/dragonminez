@@ -33,6 +33,7 @@ public class StatsSyncC2S {
 	private final String eye1Color;
 	private final String eye2Color;
 	private final String auraColor;
+	private final boolean renderHairBase;
 
 	public StatsSyncC2S(Character character) {
 		this.raceName = character.getRace();
@@ -54,6 +55,7 @@ public class StatsSyncC2S {
 		this.eye1Color = character.getEye1Color();
 		this.eye2Color = character.getEye2Color();
 		this.auraColor = character.getAuraColor();
+		this.renderHairBase = character.isRenderHairBase();
 	}
 
 	public static void encode(StatsSyncC2S msg, FriendlyByteBuf buf) {
@@ -80,6 +82,7 @@ public class StatsSyncC2S {
 		buf.writeUtf(msg.eye1Color);
 		buf.writeUtf(msg.eye2Color);
 		buf.writeUtf(msg.auraColor);
+		buf.writeBoolean(msg.renderHairBase);
 	}
 
 	public static StatsSyncC2S decode(FriendlyByteBuf buf) {
@@ -105,17 +108,18 @@ public class StatsSyncC2S {
 		String eye1Color = buf.readUtf();
 		String eye2Color = buf.readUtf();
 		String auraColor = buf.readUtf();
+		boolean renderHairBase = buf.readBoolean();
 
 		return new StatsSyncC2S(
-			raceName, gender, characterClass, hairId, customHair, bodyType, eyesType,
-			noseType, mouthType, tattooType, boobScale, activeHeadBone, hairColor, bodyColor, bodyColor2, bodyColor3,
-			eye1Color, eye2Color, auraColor
+				raceName, gender, characterClass, hairId, customHair, bodyType, eyesType,
+				noseType, mouthType, tattooType, boobScale, activeHeadBone, hairColor, bodyColor, bodyColor2, bodyColor3,
+				eye1Color, eye2Color, auraColor, renderHairBase
 		);
 	}
 
 	private StatsSyncC2S(String raceName, String gender, String characterClass, int hairId, CustomHair customHair, int bodyType, int eyesType,
 	                     int noseType, int mouthType, int tattooType, float boobScale, String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
-	                     String eye1Color, String eye2Color, String auraColor) {
+	                     String eye1Color, String eye2Color, String auraColor, boolean renderHairBase) {
 		this.raceName = raceName;
 		this.gender = gender;
 		this.characterClass = characterClass;
@@ -135,6 +139,7 @@ public class StatsSyncC2S {
 		this.eye1Color = eye1Color;
 		this.eye2Color = eye2Color;
 		this.auraColor = auraColor;
+		this.renderHairBase = renderHairBase;
 	}
 
 	public static void handle(StatsSyncC2S msg, Supplier<NetworkEvent.Context> ctx) {
@@ -164,6 +169,7 @@ public class StatsSyncC2S {
 				character.setEye1Color(msg.eye1Color);
 				character.setEye2Color(msg.eye2Color);
 				character.setAuraColor(msg.auraColor);
+				character.setRenderHairBase(msg.renderHairBase);
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

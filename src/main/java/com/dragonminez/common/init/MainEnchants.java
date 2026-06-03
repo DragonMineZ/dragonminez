@@ -38,6 +38,17 @@ public class MainEnchants {
 	public static final RegistryObject<Enchantment> CRIT_DAMAGE = ENCHANTMENTS.register("critical_damage",
 			() -> new CriticalStatEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND));
 
+	// --- Bulma's Gete-tech "special" armor enchantments ---
+	// Quest-only (not discoverable): granted by bulma_gete_enhancements as enchanted books.
+	public static final RegistryObject<Enchantment> KI_CONDUCTIVITY = ENCHANTMENTS.register("ki_conductivity",
+			() -> new GeteArmorEnchantment(Enchantment.Rarity.RARE, 4));
+
+	public static final RegistryObject<Enchantment> GRAVITY_FORGED = ENCHANTMENTS.register("gravity_forged",
+			() -> new GeteArmorEnchantment(Enchantment.Rarity.RARE, 4));
+
+	public static final RegistryObject<Enchantment> GETE_PLATING = ENCHANTMENTS.register("gete_plating",
+			() -> new GeteArmorEnchantment(Enchantment.Rarity.RARE, 4));
+
 	public static class WeaponPenetrationEnchantment extends Enchantment {
 		protected WeaponPenetrationEnchantment(Rarity rarity, EquipmentSlot... slots) {
 			super(rarity, EnchantmentCategory.WEAPON, slots);
@@ -92,6 +103,30 @@ public class MainEnchants {
 		protected boolean checkCompatibility(Enchantment other) {
 			if (other instanceof RecoveryEnchantment) return false;
 			return super.checkCompatibility(other);
+		}
+	}
+
+	public static class GeteArmorEnchantment extends Enchantment {
+		private final int maxLevel;
+
+		protected GeteArmorEnchantment(Rarity rarity, int maxLevel) {
+			super(rarity, EnchantmentCategory.ARMOR, ARMOR_SLOTS);
+			this.maxLevel = maxLevel;
+		}
+
+		@Override
+		public int getMaxLevel() {
+			return maxLevel;
+		}
+
+		@Override
+		public boolean isDiscoverable() {
+			return false;
+		}
+
+		@Override
+		public boolean isTradeable() {
+			return false;
 		}
 	}
 

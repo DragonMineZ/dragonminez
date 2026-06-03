@@ -254,11 +254,11 @@ public final class TransformationPostShaderManager {
 		FormConfig.FormData activeFormData = character.getActiveFormData();
 		FormConfig.FormData activeStackFormData = character.getActiveStackFormData();
 
-		FormConfig.FormData.TransformationPostShaderConfig selectedConfig = null;
+		FormConfig.FormData.OutlineShaderConfig selectedConfig = null;
 		String source = "";
 
 		if (activeFormData != null) {
-			FormConfig.FormData.TransformationPostShaderConfig formConfig = activeFormData.getTransformationPostShader();
+			FormConfig.FormData.OutlineShaderConfig formConfig = activeFormData.getOutlineShader();
 			if (formConfig.isEnabled()) {
 				selectedConfig = formConfig;
 				source = "form";
@@ -266,7 +266,7 @@ public final class TransformationPostShaderManager {
 		}
 
 		if (activeStackFormData != null) {
-			FormConfig.FormData.TransformationPostShaderConfig stackConfig = activeStackFormData.getTransformationPostShader();
+			FormConfig.FormData.OutlineShaderConfig stackConfig = activeStackFormData.getOutlineShader();
 			if (stackConfig.isEnabled()) {
 				selectedConfig = stackConfig;
 				source = "stack";
@@ -304,7 +304,7 @@ public final class TransformationPostShaderManager {
 	}
 
 	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float noiseScale, float colorMixSpeed, float outlineThickness) {
-		private static ShaderUniformState fromConfig(FormConfig.FormData.TransformationPostShaderConfig config) {
+		private static ShaderUniformState fromConfig(FormConfig.FormData.OutlineShaderConfig config) {
 			float[] primary = ColorUtils.hexToRgb(config.getPrimaryColor());
 			float[] secondary = ColorUtils.hexToRgb(config.getSecondaryColor());
 

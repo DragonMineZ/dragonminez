@@ -799,10 +799,28 @@
       "dragonminez:ki_sparks"
     ]
   },
-  "transform": {
-    "subtitle": "sounds.dragonminez.transform",
+  "transform_on": {
+    "subtitle": "sounds.dragonminez.transform_on",
     "sounds": [
-      "dragonminez:transform"
+      "dragonminez:transform_on"
+    ]
+  },
+  "transform_off": {
+    "subtitle": "sounds.dragonminez.transform_off",
+    "sounds": [
+      "dragonminez:transform_off"
+    ]
+  },
+  "sword_in": {
+    "subtitle": "sounds.dragonminez.sword_in",
+    "sounds": [
+      "dragonminez:sword_in"
+    ]
+  },
+  "sword_out": {
+    "subtitle": "sounds.dragonminez.sword_out",
+    "sounds": [
+      "dragonminez:sword_out"
     ]
   },
   "fusion": {

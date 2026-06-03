@@ -10,10 +10,12 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -35,6 +37,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -60,6 +63,7 @@ public class TickHandler {
 	private static final Map<String, IActionModeHandler> ACTION_MODE_HANDLERS = new HashMap<>();
 	private static final List<IStatusEffectHandler> STATUS_EFFECT_HANDLERS = new ArrayList<>();
 	private static final Map<UUID, AbstractKiProjectile> CHARGING_CACHE = new HashMap<>();
+	private static final Map<UUID, Float> CHARGE_COST_ACCUM = new HashMap<>(); // fractional Ki consumed during charge
 
 	private static final int REGEN_INTERVAL = 20;
 	private static final int SYNC_INTERVAL = 10;
@@ -165,21 +169,13 @@ public class TickHandler {
 			} else serverPlayer.getPersistentData().putLong("dmz_stamina_mod_time", now);
 
 			if (shouldRegen) {
-				String raceName = data.getCharacter().getRaceName();
-				String characterClass = data.getCharacter().getCharacterClass();
+				double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
+				boolean activeCharging = isChargingKi && !isDescending;
 
-				RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-				if (raceConfig != null) {
-					RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
-
-					double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
-					boolean activeCharging = isChargingKi && !isDescending;
-
-					regenerateHealth(serverPlayer, data, classStats);
-					regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
-					regenerateStamina(serverPlayer, data, classStats, meditationBonus);
-					regeneratePoise(data, meditationBonus);
-				}
+				regenerateHealth(serverPlayer, data);
+				regenerateEnergy(serverPlayer, data, activeCharging);
+				regenerateStamina(serverPlayer, data);
+				regeneratePoise(data, meditationBonus);
 
 				playerTickCounters.put(playerId, 0);
 			} else {
@@ -249,10 +245,23 @@ public class TickHandler {
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
 				boolean holdingYajirobe = serverPlayer.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get() || serverPlayer.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
-				if (data.getStatus().isRenderKatana() != (hasYajirobe && !holdingYajirobe))
-					data.getStatus().setRenderKatana(hasYajirobe && !holdingYajirobe);
+				boolean renderKatanaTarget = hasYajirobe && !holdingYajirobe;
+
+				boolean playedSound = false;
+
+				if (data.getStatus().isRenderKatana() != renderKatanaTarget) {
+					if (renderKatanaTarget) {
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						playedSound = true;
+					} else if (holdingYajirobe) {
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_OUT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						playedSound = true;
+					}
+					data.getStatus().setRenderKatana(renderKatanaTarget);
+				}
 
 				ItemStack backItem = ItemStack.EMPTY;
+				boolean holdingOtherWeapon = false;
 				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
 					ItemStack stack = serverPlayer.getInventory().getItem(i);
 					if (stack.isEmpty()) continue;
@@ -260,17 +269,24 @@ public class TickHandler {
 
 					if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get() || item == MainItems.POWER_POLE.get()) {
 						boolean isHeld = serverPlayer.getMainHandItem().getItem() == item || serverPlayer.getOffhandItem().getItem() == item;
-						if (!isHeld) {
-							backItem = item.getDefaultInstance();
-							break;
-						}
+						if (isHeld) holdingOtherWeapon = true;
+						else if (backItem == ItemStack.EMPTY) backItem = item.getDefaultInstance();
 					}
 				}
 
-				if (backItem != ItemStack.EMPTY) {
-					if (!data.getStatus().getBackWeapon().equals(backItem.getDescriptionId()))
-						data.getStatus().setBackWeapon(backItem.getDescriptionId());
-				} else data.getStatus().setBackWeapon("");
+				String newBackWeapon = backItem != ItemStack.EMPTY ? backItem.getDescriptionId() : "";
+				String currentBackWeapon = data.getStatus().getBackWeapon();
+
+				if (!currentBackWeapon.equals(newBackWeapon)) {
+					if (!playedSound) {
+						if (!newBackWeapon.isEmpty()) {
+							serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						} else if (holdingOtherWeapon) {
+							serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_OUT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+						}
+					}
+					data.getStatus().setBackWeapon(newBackWeapon);
+				}
 
 				ItemStack headTechStack = CuriosApi.getCuriosInventory(serverPlayer)
 						.map(inv -> inv.getCurios().get("head_tech"))
@@ -282,7 +298,6 @@ public class TickHandler {
 				if (hasScouter) {
 					if (!data.getStatus().getScouterItem().equals(itemId)) data.getStatus().setScouterItem(itemId);
 				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
-
 
 				boolean hasPothala = itemId.contains("pothala");
 				if (hasPothala) {
@@ -340,6 +355,7 @@ public class TickHandler {
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 		}
 		CHARGING_CACHE.remove(playerId);
+		CHARGE_COST_ACCUM.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
@@ -431,41 +447,21 @@ public class TickHandler {
 		return current;
 	}
 
-	private static RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
-		return config.getClassStats(characterClass);
-	}
-
-	private static void regenerateHealth(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats) {
+	private static void regenerateHealth(ServerPlayer player, StatsData data) {
 		float currentHealth = player.getHealth();
 		float maxHealth = player.getMaxHealth();
+		if (currentHealth >= maxHealth) return;
 
-		if (currentHealth < maxHealth) {
-			int baseVit = data.getStats().getVitality();
-			double flatBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, false);
-			double multBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, true);
-			double vitMult = data.getFormMultiplier("VIT");
+		DMZEvent.HealthRegenEvent event = new DMZEvent.HealthRegenEvent(player, data, data.getHealthRegenPerSecond());
+		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
-			double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
-			double hp5 = classStats.getBaseHp5() + (effectiveVit * classStats.getHp5VitScaling());
+		double finalRegen = Math.max(0.0, event.getAmount());
+		if (finalRegen <= 0.0) return;
 
-			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), data.getPlayer());
-			double enchMult = getRecoveryMultiplier(totalEnchLvl);
-
-			double adjustedHealthDrain = data.getAdjustedHealthDrain();
-			double regenMultiplier = 1.0;
-
-			if (adjustedHealthDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedHealthDrain / 10.0));
-			else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
-
-			double regenPerSecond = (hp5 / 5.0) * enchMult * regenMultiplier;
-			if (regenPerSecond <= 0.0) return;
-
-			float newHealth = (float) Math.min(maxHealth, currentHealth + regenPerSecond);
-			player.setHealth(newHealth);
-		}
+		player.setHealth((float) Math.min(maxHealth, currentHealth + finalRegen));
 	}
 
-	private static void regenerateEnergy(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
+	private static void regenerateEnergy(ServerPlayer player, StatsData data, boolean activeCharging) {
 		float currentEnergy = data.getResources().getCurrentEnergy();
 		float maxEnergy = data.getMaxEnergy();
 
@@ -474,72 +470,11 @@ public class TickHandler {
 		boolean hasActiveStackForm = data.getCharacter().hasActiveStackForm();
 		FormConfig.FormData activeStackForm = hasActiveStackForm ? data.getCharacter().getActiveStackFormData() : null;
 
-		double energyChange = 0;
-
-		int baseEne = data.getStats().getEnergy();
-		double flatBonusEne = data.getBonusStats().calculateBonus("ENE", baseEne, false);
-		double multBonusEne = data.getBonusStats().calculateBonus("ENE", baseEne, true);
-		double eneMult = data.getFormMultiplier("ENE");
-
-		double effectiveEne = ((baseEne + multBonusEne) * eneMult) + flatBonusEne;
-		double ep5 = classStats.getBaseEp5() + (effectiveEne * classStats.getEp5EneScaling());
-
-		int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), data.getPlayer());
-		double enchMult = getRecoveryMultiplier(totalEnchLvl);
-
-		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult;
+		double energyChange = data.getEnergyRegenPerSecond(activeCharging);
 
 		if (activeCharging) {
-			double regenAmount = baseRegenPerSecond * ACTIVE_CHARGE_MULTIPLIER;
-			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
-
-			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
-					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
-				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-			}
-
-			if (regenAmount < 1.0) regenAmount = 1.0;
-			energyChange += regenAmount;
-
 			DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
 			if (MinecraftForge.EVENT_BUS.post(kiEvent)) energyChange = 0;
-		} else if (currentEnergy < maxEnergy) {
-			double regenAmount = baseRegenPerSecond;
-			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
-
-			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
-					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
-				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-			}
-
-			double formRawDrain = 0.0;
-			if (hasActiveForm && activeForm != null) formRawDrain = activeForm.getEnergyDrain();
-			else if (hasActiveStackForm && activeStackForm != null) formRawDrain = activeStackForm.getEnergyDrain();
-
-			double regenMultiplier = 1.0;
-			if (formRawDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (formRawDrain * 2.5));
-			else if (formRawDrain < 0.0) regenMultiplier = 1.0 + Math.abs(formRawDrain);
-
-
-			regenAmount *= regenMultiplier;
-
-			energyChange += regenAmount;
-		}
-
-		if (data.getStatus().isAndroidUpgraded()) {
-			double regenAmount = baseRegenPerSecond;
-			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
-
-			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
-					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
-				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-			}
-
-			if (regenAmount < 0.5) regenAmount = 0.5;
-			energyChange += regenAmount;
 		}
 
 		if (masterySeconds < 5) masterySeconds++;
@@ -580,7 +515,11 @@ public class TickHandler {
 		}
 
 		if (energyChange != 0) {
-			// Cap Ki regen at (1-pct/100) of max when a player Shadow Dummy is active.
+			DMZEvent.EnergyRegenEvent regenEvent = new DMZEvent.EnergyRegenEvent(player, data, energyChange);
+			energyChange = MinecraftForge.EVENT_BUS.post(regenEvent) ? 0 : regenEvent.getAmount();
+		}
+
+		if (energyChange != 0) {
 			float effectiveMaxEnergy = maxEnergy;
 			if (data.getStatus().hasActiveShadowDummy()) {
 				int pct = data.getStatus().getShadowDummyPercent();
@@ -590,8 +529,8 @@ public class TickHandler {
 			data.getResources().setCurrentEnergy(newEnergy);
 
 			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
-				data.getCharacter().clearActiveForm();
-				data.getCharacter().clearActiveStackForm();
+				data.getCharacter().clearActiveForm(player);
+				data.getCharacter().clearActiveStackForm(player);
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
 				player.refreshDimensions();
@@ -599,43 +538,28 @@ public class TickHandler {
 		}
 	}
 
-	private static void regenerateStamina(ServerPlayer player, StatsData data, RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+	private static void regenerateStamina(ServerPlayer player, StatsData data) {
 		if (data.getCooldowns().hasCooldown(Cooldowns.STAMINA_PAUSE)) return;
 
 		float currentStamina = data.getResources().getCurrentStamina();
 		float maxStamina = data.getMaxStamina();
+		if (currentStamina >= maxStamina) return;
 
-		if (currentStamina < maxStamina) {
-			int baseVit = data.getStats().getVitality();
-			double flatBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, false);
-			double multBonusVit = data.getBonusStats().calculateBonus("VIT", baseVit, true);
-			double vitMult = data.getFormMultiplier("VIT");
+		double regenPerSecond = data.getStaminaRegenPerSecond();
+		if (regenPerSecond <= 0.0) return;
 
-			double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
-			double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5StmScaling());
+		DMZEvent.StaminaRegenEvent event = new DMZEvent.StaminaRegenEvent(player, data, regenPerSecond);
+		if (MinecraftForge.EVENT_BUS.post(event)) return;
+		regenPerSecond = Math.max(0.0, event.getAmount());
+		if (regenPerSecond <= 0.0) return;
 
-			int totalEnchLvl = getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
-			double enchMult = getRecoveryMultiplier(totalEnchLvl);
-
-			double adjustedStaminaDrain = data.getAdjustedStaminaDrain();
-			double regenMultiplier = 1.0;
-
-			if (adjustedStaminaDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedStaminaDrain / 50.0));
-			else if (adjustedStaminaDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedStaminaDrain);
-
-			double actionMod = player.getPersistentData().contains("dmz_stamina_regen_mod") ? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
-			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod;
-			regenPerSecond = PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
-
-			// Cap Stamina regen at (1-pct/100) of max when a player Shadow Dummy is active.
-			float effectiveMaxStamina = maxStamina;
-			if (data.getStatus().hasActiveShadowDummy()) {
-				int pct = data.getStatus().getShadowDummyPercent();
-				effectiveMaxStamina = maxStamina * (1.0f - pct / 100.0f);
-			}
-			float newStamina = (float) Math.min(effectiveMaxStamina, currentStamina + Math.ceil(regenPerSecond));
-			data.getResources().setCurrentStamina(newStamina);
+		float effectiveMaxStamina = maxStamina;
+		if (data.getStatus().hasActiveShadowDummy()) {
+			int pct = data.getStatus().getShadowDummyPercent();
+			effectiveMaxStamina = maxStamina * (1.0f - pct / 100.0f);
 		}
+		float newStamina = (float) Math.min(effectiveMaxStamina, currentStamina + Math.ceil(regenPerSecond));
+		data.getResources().setCurrentStamina(newStamina);
 	}
 
 	private static void regeneratePoise(StatsData data, double meditationBonus) {
@@ -726,6 +650,7 @@ public class TickHandler {
 				var leftover = findChargingEntity(player);
 				if (leftover != null) leftover.discard();
 				CHARGING_CACHE.remove(player.getUUID());
+				CHARGE_COST_ACCUM.remove(player.getUUID());
 			}
 			if (hadCharge) techniques.clearTechniqueCharge();
 			return;
@@ -746,31 +671,64 @@ public class TickHandler {
 		if (!techniques.isTechniqueCharging()) return;
 
 		var activeKi = findChargingEntity(player);
+		if (activeKi != null && !chargingTechniqueId.equals(activeKi.getTechniqueId())) {
+			activeKi.discard();
+			CHARGING_CACHE.remove(player.getUUID());
+			activeKi = null;
+		}
 		if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f) {
 			TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f);
 		}
 
-		float currentCharge = techniques.getTechniqueChargePercent();
-		float ceiling = techniques.getChargeTierCeiling();
-		float kiCap = getMaxAllowedChargePercent(kiAttack, data);
-		float target = Math.min(ceiling, kiCap);
+		final float OVER = KiAttackData.OVERCHARGE_MAX_PERCENT;
+		boolean instant = kiAttack.isInstantCast();
+		int baseTicks = Math.max(1, kiAttack.getBaseChargeTicks());
+		float percent = techniques.getTechniqueChargePercent();
+		boolean holding = techniques.isChargeHolding();
+		float base = (float) kiAttack.getCalculatedCost(data);
 
-		float nextCharge = Math.min(200.0f, currentCharge + getChargeRatePerTick(kiAttack, currentCharge));
-		nextCharge = Math.min(nextCharge, target);
-		techniques.setTechniqueChargePercent(nextCharge);
+		boolean creative = player.isCreative();
+		float ceiling = (holding && !instant) ? OVER : 100.0f;
 
-		boolean kiLimited = kiCap < ceiling && nextCharge >= kiCap - 0.01f;
-		boolean reachedCeiling = nextCharge >= ceiling - 0.01f && !techniques.isChargeHolding();
+		boolean outOfKi = false;
+		if (percent < ceiling - 0.01f) {
+			float rate = (percent < 100.0f) ? 100.0f / baseTicks : KiAttackData.OVERCHARGE_TIER_PERCENT / (float) baseTicks;
+			float newP = Math.min(ceiling, percent + rate);
 
-		if (kiLimited || reachedCeiling) {
-			resolveKiAttackOnRelease(player, data, techniques);
+			if (creative) {
+				percent = newP;
+			} else {
+				double chargeCost = 0.5 * base * (KiAttackData.costMultiplier(newP) - KiAttackData.costMultiplier(percent));
+				float accum = CHARGE_COST_ACCUM.getOrDefault(player.getUUID(), 0.0f) + (float) chargeCost;
+				float energy = data.getResources().getCurrentEnergy();
+				int whole = (int) accum;
+
+				if (energy >= whole) {
+					if (whole > 0) { data.getResources().removeEnergy(whole); accum -= whole; }
+					CHARGE_COST_ACCUM.put(player.getUUID(), accum);
+					percent = newP;
+				} else {
+					float affordFrac = whole > 0 ? Math.max(0.0f, Math.min(1.0f, (float) energy / whole)) : 1.0f;
+					percent = percent + (newP - percent) * affordFrac;
+					data.getResources().setCurrentEnergy(0);
+					CHARGE_COST_ACCUM.put(player.getUUID(), 0.0f);
+					outOfKi = true;
+				}
+			}
+			techniques.setTechniqueChargePercent(percent);
 		}
+
+		boolean reachedCeiling = percent >= ceiling - 0.01f;
+		if ((!holding || instant) && (reachedCeiling || outOfKi)) {
+			resolveKiAttackOnRelease(player, data, techniques);
+			return;
+		}
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new TechniqueChargeSyncS2C(player.getId(), techniques.getTechniqueChargePercent(), true), player);
 	}
 
 	private static void resolveKiAttackOnRelease(ServerPlayer player, StatsData data, Techniques techniques) {
-		float chargedPercent = techniques.getTechniqueChargePercent();
-		float maxAllowedCharge = 200.0f;
-		float effectiveCharge = Math.min(chargedPercent, maxAllowedCharge);
+		float effectiveCharge = Math.min(techniques.getTechniqueChargePercent(), KiAttackData.OVERCHARGE_MAX_PERCENT);
 
 		var activeKi = findChargingEntity(player);
 
@@ -786,13 +744,33 @@ public class TickHandler {
 					boolean fired = TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, chargeMultiplier);
 
 					if (fired) {
-						int cooldownTicks = Math.max(1, (int) Math.ceil(kiAttack.getActualCooldown() * chargeMultiplier));
+						boolean creative = player.isCreative();
+						int baseCooldown = creative ? 60 : Math.max(1, (int) Math.ceil(kiAttack.getActualCooldown() * chargeMultiplier));
+						DMZEvent.KiAttackFireEvent fireEvent = new DMZEvent.KiAttackFireEvent(player, data, kiAttack, chargeMultiplier, baseCooldown);
+						MinecraftForge.EVENT_BUS.post(fireEvent);
+						int cooldownTicks = Math.max(1, fireEvent.getCooldownTicks());
 						data.getCooldowns().setCooldown(getTechniqueCooldownKey(kiAttack.getId()), cooldownTicks);
+
+						if (!creative) {
+							double base = kiAttack.getCalculatedCost(data);
+							float costMult = KiAttackData.costMultiplier(effectiveCharge);
+							boolean drainsOverLife = activeKi.isMovementRestrictedType();
+							double fireFraction = drainsOverLife ? 0.25 : 0.50;
+							int fireCost = (int) Math.round(fireFraction * base * costMult);
+							if (fireCost > 0) data.getResources().removeEnergy(fireCost);
+
+							if (drainsOverLife) {
+								double lifeCost = 0.25 * base * costMult;
+								int maxLife = Math.max(1, activeKi.getMaxLife());
+								activeKi.setKiLifetimeDrainPerTick((float) (lifeCost / maxLife));
+							}
+						}
 					} else activeKi.discard();
 				} else activeKi.discard();
 			}
 		}
 
+		CHARGE_COST_ACCUM.remove(player.getUUID());
 		CHARGING_CACHE.remove(player.getUUID());
 		techniques.clearTechniqueCharge();
 	}
@@ -847,20 +825,6 @@ public class TickHandler {
 		return "TechniqueCooldown_" + techniqueId;
 	}
 
-	private static float getChargeRatePerTick(KiAttackData kiAttack, float currentPercent) {
-		int castTime = Math.max(1, kiAttack.getActualCastTime());
-		if (currentPercent < 100.0f) {
-			return 50.0f / castTime;
-		}
-		return 25.0f / (castTime * 3.0f);
-	}
-
-	private static float getMaxAllowedChargePercent(KiAttackData kiAttack, StatsData data) {
-		double baseCost = Math.max(1.0, kiAttack.getCalculatedCost(data));
-		double currentKi = Math.max(0.0, data.getResources().getCurrentEnergy());
-		return (float) Math.max(0.0, Math.min(200.0, (currentKi / baseCost) * 100.0));
-	}
-
 	private static boolean performAction(ServerPlayer player, StatsData data, ActionMode mode) {
 		IActionModeHandler handler = ACTION_MODE_HANDLERS.get(mode.name());
 		if (handler != null) return handler.performAction(player, data);
@@ -872,7 +836,7 @@ public class TickHandler {
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()) {
-			data.getCharacter().clearActiveForm();
+			data.getCharacter().clearActiveForm(player);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			player.refreshDimensions();
@@ -946,10 +910,10 @@ public class TickHandler {
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
 				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
 			} else {
-				data.getCharacter().clearActiveStackForm();
+				data.getCharacter().clearActiveStackForm(player);
 				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
-				data.getCharacter().clearActiveForm();
+				data.getCharacter().clearActiveForm(player);
 				TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 				player.refreshDimensions();
@@ -1002,11 +966,11 @@ public class TickHandler {
 
 	private static void clearTransformationForMissingDurationItem(ServerPlayer player, StatsData data, boolean baseForm) {
 		if (baseForm) {
-			data.getCharacter().clearActiveForm();
+			data.getCharacter().clearActiveForm(player);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 		} else {
-			data.getCharacter().clearActiveStackForm();
+			data.getCharacter().clearActiveStackForm(player);
 			TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 		}

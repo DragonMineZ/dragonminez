@@ -36,8 +36,8 @@ public class FlySkillEvent {
 	private static int verticalHover = 0;
 	private static float hovering = 0F;
 
-	private static final float NORMAL_MAX_SPEED = 0.85F;
-	private static final float SPRINT_MAX_SPEED = 1.5F;
+	private static final float NORMAL_MAX_SPEED = 0.7F;
+	private static final float SPRINT_MAX_SPEED = 1.25F;
 	private static final float ACCELERATION = 0.055F;
 	private static final float DECELERATION = 0.035F;
 	private static final float EXIT_DECELERATION = 0.08F;
@@ -110,7 +110,7 @@ public class FlySkillEvent {
 								flightVector = new Vec3(look.x, safeY, look.z).normalize().scale(maxSprint * 3.5F);
 								player.setDeltaMovement(flightVector);
 
-								player.playSound(MainSounds.TRANSFORM.get(), 1.0F, 1.0F);
+								player.playSound(MainSounds.TRANSFORM_ON.get(), 1.0F, 1.0F);
 
 								NetworkHandler.sendToServer(new FlyToggleC2S(true, true));
 								return;
@@ -207,7 +207,7 @@ public class FlySkillEvent {
 		float currentAccel = ACCELERATION * flySpeedScale;
 
 		if (canSprint && !wasSprintingInAir) {
-			player.playSound(MainSounds.TRANSFORM.get(), 0.7F, 1.2F);
+			player.playSound(MainSounds.TRANSFORM_ON.get(), 0.7F, 1.2F);
 		}
 		wasSprintingInAir = canSprint;
 

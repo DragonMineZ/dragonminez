@@ -29,11 +29,16 @@ public class DMZSpacePodDestinationProvider implements DataProvider {
 		JsonArray destinations = new JsonArray();
 		destinations.add(destination("overworld", "gui.dragonminez.spacepod.overworld", true, "minecraft:overworld", 0, null, null, null, null, true, primitive("ALWAYS")));
 		destinations.add(destination("namek", "gui.dragonminez.spacepod.namek", true, "dragonminez:namek", 1, null, null, null, null, true, primitive("ALWAYS")));
+		// Otherworld is unreachable by space pod until Bulma retunes the warp coils
+		// (sidequest "bulma_otherworld_drive").
 		destinations.add(destination("otherworld", "gui.dragonminez.spacepod.otherworld", true, "dragonminez:otherworld", 2, null, 54.0, 210.0, 1082.0, true,
-				and(primitive("KAIO_UNLOCKED"), primitive("OTHERWORLD_ENABLED"))));
+				and(primitive("OTHERWORLD_ENABLED"), quest("bulma_otherworld_drive"))));
 		destinations.add(destination("supreme", "gui.dragonminez.spacepod.supreme", true, "dragonminez:supreme_planet", 3, null, null, null, null, true, primitive("NEVER")));
 		destinations.add(destination("cereal", "gui.dragonminez.spacepod.cereal", true, "dragonminez:cereal_planet", 4, null, null, null, null, true, primitive("NEVER")));
 		destinations.add(destination("beerus", "gui.dragonminez.spacepod.beerus", true, "dmzsuper:beerus_planet", 5, null, null, null, null, true, primitive("NEVER")));
+		// Bulma rigs a dimensional anchor so the space pod can reach the Hyperbolic Time Chamber
+		// (sidequest "bulma_time_chamber_link"). Lands at the chamber's fallback entry point.
+		destinations.add(destination("time_chamber", "gui.dragonminez.spacepod.time_chamber", true, "dragonminez:time_chamber", 2, null, 0.5, 130.0, 0.5, true, quest("bulma_time_chamber_link")));
 		root.add("destinations", destinations);
 
 		Path path = this.output.getOutputFolder(PackOutput.Target.DATA_PACK)
@@ -77,6 +82,13 @@ public class DMZSpacePodDestinationProvider implements DataProvider {
 
 	private static String primitive(String rule) {
 		return rule;
+	}
+
+	/** A {@code { "quest": "<id>" }} unlock rule — passes once the player has completed the quest. */
+	private static JsonObject quest(String questId) {
+		JsonObject object = new JsonObject();
+		object.addProperty("quest", questId);
+		return object;
 	}
 
 	private static JsonObject and(Object... children) {

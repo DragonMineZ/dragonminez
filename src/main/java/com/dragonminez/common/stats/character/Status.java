@@ -58,7 +58,7 @@ public class Status {
 		this.isHasCreatedCharacter = false;
 		this.isAuraActive = false;
 		this.isActionCharging = false;
-		this.isTailVisible = false;
+		this.isTailVisible = true;
 		this.isDescending = false;
 		this.isInKaioPlanet = false;
 		this.isChargingKi = false;

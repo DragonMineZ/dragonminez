@@ -4,9 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Setter
 @Getter
@@ -39,6 +37,7 @@ public class FormConfig {
 		private String formCombo = "";
 		private String customModel = "";
 		private boolean keepBaseFormHeadBones = false;
+		private String transformationAnimation = "base.transformation";
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
 		private String bodyColor3 = "";
@@ -77,11 +76,11 @@ public class FormConfig {
 		private Boolean canAlwaysTransform = false;
 		private Boolean directTransformation = false;
 		private Boolean excemptFromUltimate = false;
-		private TransformationPostShaderConfig transformationPostShader = new TransformationPostShaderConfig();
+		private OutlineShaderConfig outlineShader = new OutlineShaderConfig();
 
-		private List<TriggerItemCost> triggerItemCosts = new java.util.ArrayList<>();
-		private List<DurationItemCost> durationItemCosts = new java.util.ArrayList<>();
-		private List<MobEffectConfig> mobEffects = new java.util.ArrayList<>();
+		private List<TriggerItemCost> triggerItemCosts = new ArrayList<>();
+		private List<DurationItemCost> durationItemCosts = new ArrayList<>();
+		private List<MobEffectConfig> mobEffects = new ArrayList<>();
 
 		private transient float[] rgbBodyColor1;
 		private transient float[] rgbBodyColor2;
@@ -171,6 +170,14 @@ public class FormConfig {
 			return customModel != null && !customModel.isEmpty();
 		}
 
+		public boolean hasTransformationAnimation() {
+			return transformationAnimation != null && !transformationAnimation.trim().isEmpty();
+		}
+
+		public String getTransformationAnimation() {
+			return transformationAnimation != null ? transformationAnimation.trim() : "";
+		}
+
 		public Boolean hasBodyColorOverride() {
 			return !bodyColor1.isEmpty() || !bodyColor2.isEmpty() || !bodyColor3.isEmpty();
 		}
@@ -195,21 +202,21 @@ public class FormConfig {
 			return auraColor != null && !auraColor.isEmpty();
 		}
 
-		public TransformationPostShaderConfig getTransformationPostShader() {
-			return transformationPostShader != null ? transformationPostShader : new TransformationPostShaderConfig();
+		public OutlineShaderConfig getOutlineShader() {
+			return outlineShader != null ? outlineShader : new OutlineShaderConfig();
 		}
 
-		public java.util.List<MobEffectConfig> getMobEffects() {
-			return mobEffects != null ? mobEffects : java.util.Collections.emptyList();
+		public List<MobEffectConfig> getMobEffects() {
+			return mobEffects != null ? mobEffects : Collections.emptyList();
 		}
 
 
-		public java.util.List<TriggerItemCost> getTriggerItemCosts() {
-			return triggerItemCosts != null ? triggerItemCosts : java.util.Collections.emptyList();
+		public List<TriggerItemCost> getTriggerItemCosts() {
+			return triggerItemCosts != null ? triggerItemCosts : Collections.emptyList();
 		}
 
-		public java.util.List<DurationItemCost> getDurationItemCosts() {
-			return durationItemCosts != null ? durationItemCosts : java.util.Collections.emptyList();
+		public List<DurationItemCost> getDurationItemCosts() {
+			return durationItemCosts != null ? durationItemCosts : Collections.emptyList();
 		}
 
 		public boolean hasTriggerItemCosts() {
@@ -379,7 +386,7 @@ public class FormConfig {
 		@Setter
 		@Getter
 		@NoArgsConstructor
-		public static class TransformationPostShaderConfig {
+		public static class OutlineShaderConfig {
 			private Boolean enabled = false;
 			private String primaryColor = "#7FFFFF";
 			private String secondaryColor = "#7FFFFF";

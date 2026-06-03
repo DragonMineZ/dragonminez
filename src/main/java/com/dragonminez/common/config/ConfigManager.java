@@ -2,6 +2,7 @@ package com.dragonminez.common.config;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.client.animation.AnimationCache;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -88,6 +89,7 @@ public class ConfigManager {
 			RACE_FORMS.clear();
 			LOADED_RACES.clear();
 			STACK_FORMS.clear();
+			AnimationCache.clear();
 
 			loadGeneralConfigs();
 			loadAllRaces();
@@ -490,13 +492,90 @@ public class ConfigManager {
 
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
+
 		setupInitialStats(config.getClassStats("warrior"), 10, 5, 10, 10, 5, 5, 5.0, 0.06, 5.0, 0.05, 14.0, 0.15);
 		setupScalingStats(config.getClassStats("warrior"), 1.0, 0.75, 0.5, 0.75, 1.5, 0.5, 2.5);
+
 		setupInitialStats(config.getClassStats("spiritualist"), 5, 10, 5, 5, 10, 10, 3.0, 0.03, 15.0, 0.15, 9.0, 0.09);
 		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 0.25, 0.25, 1.0, 1.0, 3.0);
+
 		setupInitialStats(config.getClassStats("martialartist"), 5, 10, 10, 10, 5, 5, 4.0, 0.045, 8.0, 0.08, 12.0, 0.12);
 		setupScalingStats(config.getClassStats("martialartist"), 0.75, 1.0, 0.75, 1.0, 1.75, 0.75, 2.75);
+
+		setupInitialStats(config.getClassStats("berserker"), 15, 5, 5, 10, 5, 5, 8.0, 0.10, 2.0, 0.02, 15.0, 0.14);
+		setupScalingStats(config.getClassStats("berserker"), 2.0, 0.5, 0.5, 1.0, 2.0, 0.5, 1.0);
+
+		setupInitialStats(config.getClassStats("paladin"), 5, 12, 12, 6, 5, 5, 8.0, 0.10, 8.0, 0.08, 9.0, 0.08);
+		setupScalingStats(config.getClassStats("paladin"), 0.5, 2.0, 2.0, 0.5, 1.0, 0.5, 1.0);
+
+		setupInitialStats(config.getClassStats("tank"), 5, 5, 15, 10, 5, 5, 12.0, 0.14, 3.0, 0.04, 10.0, 0.08);
+		setupScalingStats(config.getClassStats("tank"), 0.5, 0.5, 2.5, 0.5, 2.5, 0.5, 0.5);
+		config.getClassStats("tank").setTpGainMultiplier(1.15);
+
+		setupInitialStats(config.getClassStats("enchanter"), 5, 5, 12, 5, 5, 13, 4.0, 0.04, 14.0, 0.14, 7.0, 0.08);
+		setupScalingStats(config.getClassStats("enchanter"), 0.5, 0.5, 2.0, 0.5, 0.5, 1.0, 2.5);
+		config.getClassStats("enchanter").setTpGainMultiplier(1.15);
+		config.getClassStats("enchanter").setTpCostMultiplier(0.95);
+
+		setupDefaultPassives(config);
+
 		return config;
+	}
+
+	private static void setupDefaultPassives(RaceStatsConfig config) {
+		Map<String, Double> warrior = new HashMap<>();
+		warrior.put("comboHits", 3.0);
+		warrior.put("maxStacks", 5.0);
+		warrior.put("stmRegenPerStack", 0.10);
+		warrior.put("armorPenAtMax", 0.10);
+		warrior.put("stackDurationTicks", 100.0);
+		warrior.put("comboResetTicks", 60.0);
+		setupPassive(config.getClassStats("warrior"), warrior);
+
+		Map<String, Double> martial = new HashMap<>();
+		martial.put("maxBonus", 0.25);
+		martial.put("hpHigh", 0.75);
+		martial.put("hpLow", 0.25);
+		setupPassive(config.getClassStats("martialartist"), martial);
+
+		Map<String, Double> spiritualist = new HashMap<>();
+		spiritualist.put("cdPrimary", 0.20);
+		spiritualist.put("cdSecondary", 0.15);
+		spiritualist.put("durationBonus", 0.25);
+		setupPassive(config.getClassStats("spiritualist"), spiritualist);
+
+		Map<String, Double> berserker = new HashMap<>();
+		berserker.put("hpThreshHigh", 0.66);
+		berserker.put("hpThreshLow", 0.33);
+		berserker.put("hpRegenHigh", 0.25);
+		berserker.put("critHigh", 0.10);
+		berserker.put("hpRegenLow", 0.75);
+		berserker.put("critLow", 0.25);
+		setupPassive(config.getClassStats("berserker"), berserker);
+
+		Map<String, Double> paladin = new HashMap<>();
+		paladin.put("redirectPct", 0.15);
+		paladin.put("lifestealPct", 0.15);
+		setupPassive(config.getClassStats("paladin"), paladin);
+
+		Map<String, Double> tank = new HashMap<>();
+		tank.put("stmToHpRegenRatio", 0.5);
+		tank.put("healingBonus", 0.25);
+		tank.put("lowHpThreshold", 0.30);
+		tank.put("lowHpMultiplier", 2.0);
+		setupPassive(config.getClassStats("tank"), tank);
+
+		Map<String, Double> enchanter = new HashMap<>();
+		enchanter.put("cdPrimary", 0.20);
+		enchanter.put("cdSecondary", 0.15);
+		enchanter.put("durationBonus", 0.25);
+		setupPassive(config.getClassStats("enchanter"), enchanter);
+	}
+
+	private static void setupPassive(RaceStatsConfig.ClassStats classStats, Map<String, Double> values) {
+		RaceStatsConfig.Passive passive = classStats.getPassive();
+		passive.setEnabled(true);
+		passive.setValues(values);
 	}
 
 	private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene, double baseHp5, double hp5VitScaling, double baseEp5, double ep5EneScaling, double baseSp5, double sp5StmScaling) {

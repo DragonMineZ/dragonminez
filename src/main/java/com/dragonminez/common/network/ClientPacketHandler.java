@@ -46,6 +46,17 @@ public class ClientPacketHandler {
 		}
 	}
 
+	public static void handleTechniqueChargeSync(int playerId, float percent, boolean charging) {
+		var clientLevel = Minecraft.getInstance().level;
+		if (clientLevel == null) return;
+		if (clientLevel.getEntity(playerId) instanceof Player player) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				data.getTechniques().setTechniqueChargePercent(percent);
+				data.getTechniques().setTechniqueCharging(charging);
+			});
+		}
+	}
+
 	public static void handleBeamClashState(BeamClashStateS2C msg) {
 		if (msg.isActive()) {
 			ClientBeamClashState.update(true, msg.getMeterPhase(), msg.getSweetLow(),
