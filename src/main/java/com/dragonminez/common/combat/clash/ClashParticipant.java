@@ -5,6 +5,7 @@ import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import lombok.Getter;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -20,6 +21,7 @@ public class ClashParticipant {
 
     private final AbstractKiProjectile beam;
     private final LivingEntity owner;
+    @Getter
     private final boolean npc;
     private final boolean wasNoAi; // NPC AI state before the clash, restored on release
     private final double statPower;
@@ -71,11 +73,7 @@ public class ClashParticipant {
         return owner;
     }
 
-    public boolean isNpc() {
-        return npc;
-    }
-
-    public double statPower() {
+	public double statPower() {
         return statPower;
     }
 
