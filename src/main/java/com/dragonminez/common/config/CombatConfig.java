@@ -65,7 +65,7 @@ public class CombatConfig {
 	private Boolean weaponRegistryCompression = true;
 
 	private Map<String, TargetHelper.Relation> playerRelations = new HashMap<>() {{
-		put("minecraft:player", TargetHelper.Relation.NEUTRAL);
+		put("minecraft:player", TargetHelper.Relation.HOSTILE);
 		put("minecraft:villager", TargetHelper.Relation.NEUTRAL);
 		put("minecraft:iron_golem", TargetHelper.Relation.NEUTRAL);
 		put("guardvillagers:guard", TargetHelper.Relation.NEUTRAL);
@@ -110,7 +110,6 @@ public class CombatConfig {
 		return kiWeaponsConfig.get(type.toLowerCase());
 	}
 
-	/** Sorted list of Ki weapon types defined in the config, used for deterministic cycling. */
 	public List<String> getKiWeaponTypes() {
 		if (kiWeaponsConfig == null) return new ArrayList<>();
 		List<String> keys = new ArrayList<>(kiWeaponsConfig.keySet());
@@ -143,7 +142,5 @@ public class CombatConfig {
 		public double getBaseKiCost() { return baseKiCost != null ? Math.max(0.0, baseKiCost) : 0.0; }
 		public double getKiScalingCost() { return kiScalingCost != null ? Math.max(0.0, kiScalingCost) : 0.0; }
 		public double getAttackSpeed() { return attackSpeed != null ? attackSpeed : 0.0; }
-		public String getForcedColor() { return forcedColor; }
-		public String getWeaponCombo() { return weaponCombo; }
 	}
 }

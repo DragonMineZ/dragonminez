@@ -4,11 +4,6 @@ import com.dragonminez.common.config.ConfigManager;
 
 public class KiWeaponHelper {
 
-    /**
-     * Resolves the render color for a Ki weapon. If the configured {@code forcedColor} is blank or
-     * white (#FFFFFF), the player's current Ki/aura color is used; otherwise the forced hex color
-     * is parsed into an {@code {r, g, b}} float array in the 0..1 range.
-     */
     public static float[] resolveColorForType(String type, float[] kiColor) {
         var cfg = type != null ? ConfigManager.getCombatConfig().getKiWeaponConfig(type) : null;
         String forcedColor = cfg != null ? cfg.getForcedColor() : null;

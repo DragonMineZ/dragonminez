@@ -189,7 +189,6 @@ public class PlayerAttackHelper {
             }
             case DUAL_WIELDING_SAME_CATEGORY -> {
                 if (!isDualWielding(player)) return false;
-                // A Ki weapon (empty main hand) contributes the category of its resolved combo.
                 var mainHandAttributes = isKiWeaponActive(player)
                         ? getKiWeaponAttributes(player)
                         : WeaponRegistry.getAttributes(player.getMainHandItem());
@@ -296,10 +295,6 @@ public class PlayerAttackHelper {
         return stats != null ? stats.getSkills() : null;
     }
 
-    /**
-     * A Ki weapon behaves as a "fake weapon" only when the Ki Manipulation skill is active,
-     * the main hand is empty (Ki weapons require an empty hand), and a config entry exists.
-     */
     public static boolean isKiWeaponActive(Player player) {
         if (!player.getMainHandItem().isEmpty()) return false;
         var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, player);
@@ -312,10 +307,6 @@ public class PlayerAttackHelper {
         return ConfigManager.getCombatConfig().getKiWeaponConfig(type) != null;
     }
 
-    /**
-     * Resolves the attack set a Ki weapon should use, derived from its configured {@code weaponCombo}.
-     * Falls back to the default fist combo if the combo is missing or cannot be resolved.
-     */
     @Nullable
     public static WeaponAttributes getKiWeaponAttributes(Player player) {
         var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, player);
@@ -338,10 +329,6 @@ public class PlayerAttackHelper {
         return WeaponRegistry.getAttributes(ResourceLocation.fromNamespaceAndPath("dragonminez", "fist"));
     }
 
-    /**
-     * Attributes used when a hand is empty: the active Ki weapon combo if one is active,
-     * otherwise the active form combo, with the fist combo as the ultimate fallback.
-     */
     @Nullable
     private static WeaponAttributes resolveEmptyHandAttributes(Player player) {
         if (isKiWeaponActive(player)) {

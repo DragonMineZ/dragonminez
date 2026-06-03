@@ -22,9 +22,7 @@ public class TargetHelper {
         FRIENDLY, NEUTRAL, HOSTILE;
 
         public static Relation coalesce(Relation value, Relation fallback) {
-            if (value != null) {
-                return value;
-            }
+            if (value != null) return value;
             return fallback;
         }
     }
@@ -37,7 +35,9 @@ public class TargetHelper {
         }
 
         if (target instanceof Player targetPlayer) {
-            if (PartyManager.areInSameParty(attacker, targetPlayer)) if (!PartyManager.isPartyPvpEnabled(attacker)) return Relation.FRIENDLY;
+            if (PartyManager.areInSameParty(attacker, targetPlayer)) {
+                return PartyManager.isPartyPvpEnabled(attacker) ? Relation.HOSTILE : Relation.FRIENDLY;
+            }
         }
 
         if (target instanceof TamableAnimal tameable) {
