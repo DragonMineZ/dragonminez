@@ -599,4 +599,17 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	public AnimatableInstanceCache getAnimatableInstanceCache() {
 		return this.geoCache;
 	}
+
+	@Override
+	public String dragonminez$getCurrentPlayingAnimation() {
+		long instanceId = ((AbstractClientPlayer) (Object) this).getId();
+		var manager = this.geoCache.getManagerForId(instanceId);
+		if (manager != null) {
+			AnimationController<?> controller = manager.getAnimationControllers().get("controller");
+			if (controller != null && controller.getCurrentAnimation() != null) {
+				return controller.getCurrentAnimation().animation().name();
+			}
+		}
+		return "";
+	}
 }
