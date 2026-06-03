@@ -37,7 +37,7 @@ public class FormConfig {
 		private String formCombo = "";
 		private String customModel = "";
 		private boolean keepBaseFormHeadBones = false;
-		private String transformationAnimation = "base.transformation";
+		private String transformationAnimation = "transf.generic";
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
 		private String bodyColor3 = "";

@@ -518,7 +518,7 @@ public class DefaultFormsFactory {
 		oozaru.setUnlockOnSkillLevel(0);
 		oozaru.setFormCombo("dragonminez:giant");
 		oozaru.setCustomModel("oozaru");
-		oozaru.setTransformationAnimation("base.ozaru_tr");
+		oozaru.setTransformationAnimation("transf.ozaru");
 		oozaru.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
 		oozaru.setStrMultiplier(1.2);
 		oozaru.setSkpMultiplier(1.2);
@@ -539,7 +539,7 @@ public class DefaultFormsFactory {
 		goldenOozaru.setUnlockOnSkillLevel(7);
 		goldenOozaru.setFormCombo("dragonminez:giant");
 		goldenOozaru.setCustomModel("oozaru");
-		goldenOozaru.setTransformationAnimation("base.ozaru_tr");
+		goldenOozaru.setTransformationAnimation("transf.ozaru");
 		goldenOozaru.setHairColor("#FFD700");
 		goldenOozaru.setAuraColor("#FFD700");
 		goldenOozaru.setBodyColor2("#FFD700");
@@ -559,7 +559,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssj4gt = new FormConfig.FormData();
 		ssj4gt.setName(SaiyanForms.SUPER_SAIYAN_4);
 		ssj4gt.setCustomModel("ssj4gt");
-		ssj4gt.setTransformationAnimation("base.ozaru_tr");
+		ssj4gt.setTransformationAnimation("transf.ozaru");
 		ssj4gt.setUnlockOnSkillLevel(8);
 		ssj4gt.setHairColor("");
 		ssj4gt.setBodyColor2("#9d1e31");
@@ -610,6 +610,7 @@ public class DefaultFormsFactory {
 
 		FormConfig.FormData ssg2 = new FormConfig.FormData();
 		ssg2.setName(SaiyanForms.SUPER_SAIYAN_GRADE_2);
+		ssg2.setTransformationAnimation("transf.ssg2");
 		ssg2.setUnlockOnSkillLevel(2);
 		ssg2.setCustomModel("buffed");
 		ssg2.setHairColor("#FFEDB3");
@@ -704,6 +705,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssj3 = new FormConfig.FormData();
 		ssj3.setName(SaiyanForms.SUPER_SAIYAN_3);
 		ssj3.setUnlockOnSkillLevel(6);
+		ssj3.setTransformationAnimation("transf.ssj3");
 		ssj3.setHairColor("#FFE89E");
 		ssj3.setBodyColor2("#FFE89E");
 		ssj3.setEye1Color("#00FFFF");
@@ -732,7 +734,7 @@ public class DefaultFormsFactory {
         ssj4d.setOutlineShader(ssj4dOutline);
         ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
 		ssj4d.setCustomModel("ssj4d");
-		ssj4d.setTransformationAnimation("base.ozaru_tr");
+		ssj4d.setTransformationAnimation("transf.daima");
 		ssj4d.setUnlockOnSkillLevel(8);
 		ssj4d.setHairColor("#83073F");
 		ssj4d.setBodyColor2("#83073F");
@@ -781,6 +783,7 @@ public class DefaultFormsFactory {
         ikari.setOutlineShader(ikariOutline);
 		ikari.setName(SaiyanForms.IKARI);
 		ikari.setUnlockOnSkillLevel(1);
+		ikari.setTransformationAnimation("transf.berserker");
 		ikari.setCustomModel("buffed");
 		ikari.setEye1Color("#FFD700");
 		ikari.setEye2Color("#FFD700");
@@ -798,6 +801,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssjHybrid = new FormConfig.FormData();
 		ssjHybrid.setName(SaiyanForms.SSJ_HYBRID);
 		ssjHybrid.setUnlockOnSkillLevel(2);
+		ssjHybrid.setTransformationAnimation("transf.berserker");
 		ssjHybrid.setCustomModel("buffed");
 		ssjHybrid.setBodyColor2("#FFE89E");
 		ssjHybrid.setHairColor("#FFE89E");
@@ -818,6 +822,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssjFullPower = new FormConfig.FormData();
 		ssjFullPower.setName(SaiyanForms.SSJ_FULL_POWER);
 		ssjFullPower.setUnlockOnSkillLevel(3);
+		ssjFullPower.setTransformationAnimation("transf.berserker");
 		ssjFullPower.setCustomModel("buffed");
 		ssjFullPower.setBodyColor2("#9EFE53");
 		ssjFullPower.setHairColor("#9EFE53");
@@ -1005,6 +1010,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData second = new FormConfig.FormData();
 		second.setName(FrostDemonForms.SECOND_FORM);
 		second.setUnlockOnSkillLevel(1);
+		second.setTransformationAnimation("transf.freezer");
 		second.setCustomModel("");
 		second.setKeepBaseFormHeadBones(true);
 		second.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
@@ -1020,6 +1026,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData third = new FormConfig.FormData();
 		third.setName(FrostDemonForms.THIRD_FORM);
 		third.setUnlockOnSkillLevel(2);
+		third.setTransformationAnimation("transf.freezer");
 		third.setCustomModel("frostdemon_third");
 		third.setModelScaling(new Float[]{1.4f, 1.4f, 1.4f});
 		third.setStrMultiplier(1.75);
@@ -1033,6 +1040,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData finalForm = new FormConfig.FormData();
 		finalForm.setName(FrostDemonForms.FINAL_FORM);
 		finalForm.setUnlockOnSkillLevel(3);
+		second.setTransformationAnimation("transf.freezer2");
 		finalForm.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		finalForm.setStrMultiplier(2.25);
 		finalForm.setSkpMultiplier(2.25);
@@ -1045,6 +1053,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(FrostDemonForms.FULLPOWER);
 		fullPower.setUnlockOnSkillLevel(4);
+		second.setTransformationAnimation("transf.freezer2");
 		fullPower.setCustomModel("frostdemon_fp");
 		fullPower.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
 		fullPower.setStrMultiplier(2.75);
@@ -1062,6 +1071,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fifthForm = new FormConfig.FormData();
 		fifthForm.setName(FrostDemonForms.FIFTH_FORM);
 		fifthForm.setUnlockOnSkillLevel(5);
+		second.setTransformationAnimation("transf.freezer");
 		fifthForm.setCustomModel("frostdemon_fifth");
 		fifthForm.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
 		fifthForm.setStrMultiplier(3.0);
@@ -1241,6 +1251,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData innocence = new FormConfig.FormData();
 		innocence.setName(MajinForms.INNOCENCE_DEMON);
 		innocence.setUnlockOnSkillLevel(1);
+		innocence.setTransformationAnimation("transf.janemba");
 		innocence.setCustomModel("janemba_fat");
 		innocence.setStrMultiplier(4.25);
 		innocence.setSkpMultiplier(4.25);
@@ -1255,6 +1266,7 @@ public class DefaultFormsFactory {
         FormConfig.FormData giant_innocence_demon = new FormConfig.FormData();
         giant_innocence_demon.setName(MajinForms.GIANT_INNOCENCE_DEMON);
         giant_innocence_demon.setUnlockOnSkillLevel(2);
+		giant_innocence_demon.setTransformationAnimation("transf.janemba");
         giant_innocence_demon.setFormCombo("dragonminez:giant");
         giant_innocence_demon.setCustomModel("janemba_fat");
         giant_innocence_demon.setStrMultiplier(4.85);
@@ -1273,6 +1285,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData superDemon = new FormConfig.FormData();
 		superDemon.setName(MajinForms.SUPER_DEMON);
 		superDemon.setUnlockOnSkillLevel(3);
+		superDemon.setTransformationAnimation("transf.janemba");
 		superDemon.setCustomModel("janemba_super");
 		superDemon.setStrMultiplier(5.5);
 		superDemon.setSkpMultiplier(5.5);

@@ -11,6 +11,7 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.HumanoidArm;
@@ -147,6 +148,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		var nextFormConfig = TransformationsHelper.getNextAvailableForm(data);
 		String nextForm = nextFormConfig != null ? nextFormConfig.getName().toLowerCase() : "";
 		boolean isTransforming = data.getStatus().isActionCharging();
+		ActionMode actionMode = data.getStatus().getSelectedAction();
 
 		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
 
@@ -156,12 +158,14 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (isChargingKi && !isMoving && !isBlocking) return state.setAndContinue(KI_CHARGE);
 
-		if (isTransforming && !isMoving && !isBlocking) {
+		if (isTransforming && !isMoving && !isBlocking && !actionMode.equals(ActionMode.RACIAL)) {
 			if (nextFormConfig != null && nextFormConfig.hasTransformationAnimation()) {
 				return state.setAndContinue(AnimationCache.getPlay(nextFormConfig.getTransformationAnimation()));
 			}
 			if (nextForm.contains("ozaru")) return state.setAndContinue(OOZARU_TRANSFORMATION);
 			return state.setAndContinue(TRANSFORMATION);
+		} else if (isTransforming && !isMoving && isBlocking) {
+			return state.setAndContinue(ABSORB);
 		}
 
 		if (player.isSwimming()) return state.setAndContinue(SWIMMING);
