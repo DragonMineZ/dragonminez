@@ -50,6 +50,8 @@ public class TrainingRewardC2S {
 				if (totalReward <= 0) return;
 
 				statsData.getResources().addTrainingPoints(totalReward);
+				if (!statsData.getCharacter().getKnownMinigames().contains(minigameId)) statsData.getCharacter().addKnownMinigame(minigameId);
+
 
 				player.playSound(SoundEvents.PLAYER_LEVELUP, 0.6F, 1.0F);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);

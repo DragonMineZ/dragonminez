@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.MasterTextScreen;
 import com.dragonminez.client.gui.MastersSkillsScreen;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.minigames.*;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -125,11 +126,11 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 	private void openMinigameScreen(String minigameId) {
 		switch (minigameId) {
-			case "rhythm" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.RythmGameScreen());
-			case "control" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.ControlGameScreen());
-			case "memory" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.MemoryGameScreen());
-			case "precision" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.PrecisionGameScreen());
-			case "gravity" -> Minecraft.getInstance().setScreen(new com.dragonminez.client.gui.character.minigames.GravityGameScreen());
+			case "rhythm" -> Minecraft.getInstance().setScreen(new RythmGameScreen());
+			case "control" -> Minecraft.getInstance().setScreen(new ControlGameScreen());
+			case "memory" -> Minecraft.getInstance().setScreen(new MemoryGameScreen());
+			case "precision" -> Minecraft.getInstance().setScreen(new PrecisionGameScreen());
+			case "gravity" -> Minecraft.getInstance().setScreen(new GravityGameScreen());
 		}
 	}
 
