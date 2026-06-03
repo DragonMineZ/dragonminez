@@ -848,6 +848,14 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     .build("sp_dragon_fist")
     );
 
+    public static final RegistryObject<EntityType<OzaruFistEntity>> SP_OZARU_FIST = ENTITY_TYPES.register("sp_ozaru_fist",
+            () -> EntityType.Builder.<OzaruFistEntity>of(OzaruFistEntity::new, MobCategory.MISC)
+                    .sized(2.0F, 2.0F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("sp_ozaru_fist")
+    );
+
     public static final RegistryObject<EntityType<SPMajinCandyEntity>> SP_MAJIN_CANDY = ENTITY_TYPES.register("sp_majin_candy",
             () -> EntityType.Builder.<SPMajinCandyEntity>of(SPMajinCandyEntity::new, MobCategory.MISC)
                     .sized(0.5F, 0.5F)

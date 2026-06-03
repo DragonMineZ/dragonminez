@@ -3,6 +3,7 @@ package com.dragonminez.server.events.players.combat;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
@@ -139,6 +140,24 @@ public class StrikeAttackHandler {
             if (active.ticksElapsed() == 5) {
                 SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
                 dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
+            }
+
+            if (active.ticksElapsed() >= active.durationTicks()) {
+                endStrike(player, target, active);
+            } else {
+                ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
+            }
+            return;
+        }
+
+        if ("oozaru_fist".equals(active.techniqueId())) {
+            if (active.ticksElapsed() == 0) {
+                faceEntity(player, target);
+            }
+
+            if (active.ticksElapsed() == 5) {
+                OzaruFistEntity ozaruFist = new OzaruFistEntity(player.level(), player);
+                ozaruFist.setupOzaruFist(player, (float) active.totalDamage(), 1.0f);
             }
 
             if (active.ticksElapsed() >= active.durationTicks()) {
