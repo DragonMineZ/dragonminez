@@ -99,7 +99,31 @@ public class StrikeAttackHandler {
 	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
 		UUID id = event.getEntity().getUUID();
 		PENDING.remove(id);
-		ACTIVE.remove(id);
+		ActiveStrike active = ACTIVE.remove(id);
+		if (active != null && event.getEntity() instanceof ServerPlayer attacker) {
+			clearVictimStrikeLock(attacker, null, active.targetId());
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			if (stats.getStatus().isStrikeLocked()) {
+				stats.getStatus().setStrikeLocked(false);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			}
+		});
+	}
+
+	private static void clearVictimStrikeLock(ServerPlayer player, LivingEntity target, UUID targetId) {
+		if (target instanceof ServerPlayer) {
+			setStrikeLocked(target, false);
+			return;
+		}
+		if (targetId == null || player.getServer() == null) return;
+		ServerPlayer victim = player.getServer().getPlayerList().getPlayer(targetId);
+		if (victim != null) setStrikeLocked(victim, false);
 	}
 
 	private static void processPending(ServerPlayer player) {
@@ -244,7 +268,7 @@ public class StrikeAttackHandler {
 	private static void endStrike(ServerPlayer player, LivingEntity target, ActiveStrike active) {
 		ACTIVE.remove(player.getUUID());
 		setStrikeLocked(player, false);
-		if (target != null) setStrikeLocked(target, false);
+		clearVictimStrikeLock(player, target, active.targetId());
 		stopStrikeAnimation(player);
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
