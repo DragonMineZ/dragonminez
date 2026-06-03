@@ -7,6 +7,8 @@ import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.quest.PartyManager;
+import com.dragonminez.common.quest.QuestUnlocks;
+import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -76,7 +78,7 @@ public class TPGainEvents {
 
 				int passiveTp = ConfigManager.getServerConfig().getGameplay().getPassiveTpGain();
 				if (passiveTp > 0 && player.tickCount % 100 == 0) {
-					data.getResources().addTrainingPoints(passiveTp);
+					data.getResources().addTrainingPoints(applyGravityRoom(player, passiveTp));
 				}
 
 				int tpTravel = ConfigManager.getServerConfig().getGameplay().getTpPer20BlocksTraveled();
@@ -147,6 +149,17 @@ public class TPGainEvents {
 		}
 	}
 
+	/**
+	 * Bulma's gravity-room upgrades: training inside the Hyperbolic Time Chamber
+	 * earns more TP once the player has completed the gravity-room sidequests. Mk.III overrides Mk.II.
+	 */
+	private static int applyGravityRoom(Player player, int tp) {
+		if (tp <= 0 || !player.level().dimension().equals(HTCDimension.HTC_KEY)) return tp;
+		if (QuestUnlocks.isCompleted(player, QuestUnlocks.GRAVITY_MK3)) return (int) Math.round(tp * 2.0);
+		if (QuestUnlocks.isCompleted(player, QuestUnlocks.GRAVITY_MK2)) return (int) Math.round(tp * 1.5);
+		return tp;
+	}
+
 	private static boolean dropTps(Entity entity) {
 		List<Class<?>> enemyList = List.of(
 				Monster.class,
@@ -170,7 +183,7 @@ public class TPGainEvents {
 					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
 				else
 					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
-				data.getResources().addTrainingPoints(ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth);
+				data.getResources().addTrainingPoints(applyGravityRoom(attacker, ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth));
 			}
 		});
 	}
@@ -184,7 +197,7 @@ public class TPGainEvents {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
 						int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
-						attackerData.getResources().addTrainingPoints(baseTps);
+						attackerData.getResources().addTrainingPoints(applyGravityRoom(attacker, baseTps));
 					}
 				}
 			});

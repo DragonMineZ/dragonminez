@@ -5,6 +5,7 @@ import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
+import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -208,7 +209,10 @@ public class QuestEnemyPreview {
 
 		List<Component> lines = new ArrayList<>();
 		if (entity instanceof DBSagasEntity dbz) {
-			lines.add(stat("gui.dragonminez.quest_tree.preview.battle_power", abbreviate(dbz.getBattlePower()), 0xFFFFC857));
+			// Battle Power is hidden until Bulma calibrates the scouter; shown as "???" otherwise.
+			String bpValue = QuestUnlocks.isCompleted(Minecraft.getInstance().player, QuestUnlocks.SCOUTER_CALIBRATION)
+					? abbreviate(dbz.getBattlePower()) : "???";
+			lines.add(stat("gui.dragonminez.quest_tree.preview.battle_power", bpValue, 0xFFFFC857));
 		}
 		lines.add(stat("gui.dragonminez.quest_tree.preview.health", formatNumber(target.health), 0xFFFF6B6B));
 		if (target.meleeDamage > 0) {
@@ -221,7 +225,12 @@ public class QuestEnemyPreview {
 		List<Component> threats = collectThreats(entity);
 		if (!threats.isEmpty()) {
 			lines.add(tr("gui.dragonminez.quest_tree.preview.threats").withStyle(s -> s.withBold(true)));
-			lines.addAll(threats);
+			// The threat/ability breakdown is hidden until Bulma's scouter threat-database upgrade.
+			if (QuestUnlocks.isCompleted(Minecraft.getInstance().player, QuestUnlocks.SCOUTER_THREAT_DB)) {
+				lines.addAll(threats);
+			} else {
+				lines.add(tr("gui.dragonminez.quest_tree.preview.scan_required").withStyle(s -> s.withColor(0xFF888888)));
+			}
 		}
 
 		int pad = 5;

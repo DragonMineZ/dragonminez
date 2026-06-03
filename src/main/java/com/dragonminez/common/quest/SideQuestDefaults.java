@@ -43,6 +43,8 @@ final class SideQuestDefaults {
 		createCombatCategory(sideQuestDir);
 		createStoryCategory(sideQuestDir);
 		createCollectionCategory(sideQuestDir);
+		createBulmaTechCategory(sideQuestDir);
+		createBulmaErrandsCategory(sideQuestDir);
 	}
 
 	// ---- Helpers ----
@@ -175,6 +177,13 @@ final class SideQuestDefaults {
 
 	private static JsonObject rewSkill(String skill, int level) {
 		JsonObject r = new JsonObject(); r.addProperty("type", "SKILL"); r.addProperty("skill", skill); r.addProperty("level", level); return r;
+	}
+
+	/** A COMMAND reward — runs {@code command} at permission level 4 ({@code %player%} → player name). */
+	private static JsonObject rewCommand(String command, String translationKey) {
+		JsonObject r = new JsonObject(); r.addProperty("type", "COMMAND"); r.addProperty("command", command);
+		if (translationKey != null) r.addProperty("translationKey", translationKey);
+		return r;
 	}
 
 	// ---- Prerequisite helpers ----
@@ -816,6 +825,384 @@ final class SideQuestDefaults {
 						objTalkTo("bulma")
 				},
 				new JsonObject[]{ rewTPS(50000), rewItem("dragonminez:senzu_bean", 3) }));
+	}
+
+	// ========================================================================================
+	// Bulma Tech Side-Quests ("Bulma sidequests" — Capsule Corp R&D line)
+	// ========================================================================================
+	//
+	// Bulma "hacks/upgrades the game": radar, scouter, spacepod, and a Gete tech tree.
+	// Each quest hands the player a concrete upgrade. Features gate on quest completion via
+	// PlayerQuestData.isQuestCompleted(<id>).
+	//
+	// Spacepod: by default the Otherworld is unreachable by space pod; completing
+	// bulma_otherworld_drive retunes the pod so it can warp there. The Otherworld destination's
+	// unlock rule (DMZSpacePodDestinationProvider) checks this quest's completion.
+
+	private static void createBulmaTechCategory(Path baseDir) {
+		Path dir = baseDir.resolve("tech");
+
+		// --- Dragon Radar R&D ---
+		// Amplifier: unlocks an extra long-range tier on every Dragon Radar
+		// (DragonRadarItem checks isQuestCompleted("bulma_radar_amplifier")).
+		writeQuestFile(dir, "bulma_radar_amplifier.json", sidequest(
+				"bulma_radar_amplifier", "dmz.sidequest.bulma_radar_amplifier.name", "dmz.sidequest.bulma_radar_amplifier.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_radar_parts")),
+				new JsonObject[]{
+						objItem("minecraft:amethyst_shard", 16),
+						objItem("minecraft:redstone", 24),
+						objItem("minecraft:gold_ingot", 8),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(1500) }));
+
+		// Fusion: hand over an Earth + a Namek radar and Bulma fuses them into the Bi-Dimensional Radar
+		// (item reward "fused_dball_radar", works in both dimensions).
+		writeQuestFile(dir, "bulma_radar_fusion.json", sidequest(
+				"bulma_radar_fusion", "dmz.sidequest.bulma_radar_fusion.name", "dmz.sidequest.bulma_radar_fusion.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_radar_amplifier"), condQuest("bulma_namek_research")),
+				new JsonObject[]{
+						objItem("dragonminez:dball_radar", 1),
+						objItem("dragonminez:namekdball_radar", 1),
+						objItem("minecraft:diamond", 8),
+						objItem("minecraft:redstone_block", 3),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(6000), rewItem("dragonminez:fused_dball_radar", 1) }));
+
+		// Proximity HUD: enables the "nearest Dragon Ball" distance readout on the radar overlay
+		// (RadarRenderEvent checks isQuestCompleted("bulma_proximity_hud")).
+		writeQuestFile(dir, "bulma_proximity_hud.json", sidequest(
+				"bulma_proximity_hud", "dmz.sidequest.bulma_proximity_hud.name", "dmz.sidequest.bulma_proximity_hud.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_radar_fusion")),
+				new JsonObject[]{
+						objItem("minecraft:ender_eye", 4),
+						objItem("minecraft:diamond", 4),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(3000) }));
+
+		// --- Scouter Intelligence ---
+		// Each tier re-reveals enemy intel that is redacted by default from the scouter HUD and the
+		// quest "enemy preview" card (ScouterHUD / QuestEnemyPreview check these quests via QuestUnlocks).
+		// Calibration: unlocks the Battle Power readout.
+		writeQuestFile(dir, "bulma_scouter_calibration.json", sidequest(
+				"bulma_scouter_calibration", "dmz.sidequest.bulma_scouter_calibration.name", "dmz.sidequest.bulma_scouter_calibration.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condSaga("frieza_saga", 2)),
+				new JsonObject[]{
+						objItem("minecraft:redstone", 16),
+						objItem("minecraft:iron_ingot", 8),
+						objItem("minecraft:glass", 8),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(3000) }));
+
+		// Bio-Scan: unlocks the target classification tag (player vs. hostile) on the scouter.
+		writeQuestFile(dir, "bulma_scouter_bioscan.json", sidequest(
+				"bulma_scouter_bioscan", "dmz.sidequest.bulma_scouter_bioscan.name", "dmz.sidequest.bulma_scouter_bioscan.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_scouter_calibration")),
+				new JsonObject[]{
+						objKill("dragonminez:saga_friezasoldier01", 12),
+						objItem("minecraft:amethyst_shard", 8),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(5000) }));
+
+		// Threat Database: unlocks the enemy's attack/threat breakdown in the quest preview card.
+		writeQuestFile(dir, "bulma_scouter_threat_db.json", sidequest(
+				"bulma_scouter_threat_db", "dmz.sidequest.bulma_scouter_threat_db.name", "dmz.sidequest.bulma_scouter_threat_db.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_scouter_bioscan")),
+				new JsonObject[]{
+						objKill("dragonminez:saga_friezasoldier02", 15),
+						objItem("minecraft:diamond", 4),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(8000) }));
+
+		// --- Spacepod — Otherworld Drive ---
+		writeQuestFile(dir, "bulma_otherworld_drive.json", sidequest(
+				"bulma_otherworld_drive", "dmz.sidequest.bulma_otherworld_drive.name", "dmz.sidequest.bulma_otherworld_drive.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condSaga("saiyan_saga", 5), condQuest("bulma_radar_parts")),
+				new JsonObject[]{
+						objItem("minecraft:ender_pearl", 8),
+						objItem("minecraft:obsidian", 12),
+						objItem("minecraft:redstone_block", 4),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(2500) }));
+
+		// --- Gete Tech Tree ---
+		// Discovery: bring Bulma the mysterious Gete metal so she can start researching it.
+		writeQuestFile(dir, "bulma_gete_discovery.json", sidequest(
+				"bulma_gete_discovery", "dmz.sidequest.bulma_gete_discovery.name", "dmz.sidequest.bulma_gete_discovery.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_gero_blueprints")),
+				new JsonObject[]{
+						objItem("dragonminez:gete_scrap", 3),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(8000), rewItem("dragonminez:gete_ingot", 2) }));
+
+		// Gete armor: Bulma works out a post-netherite armor and hands over the crafting pattern.
+		writeQuestFile(dir, "bulma_gete_armor.json", sidequest(
+				"bulma_gete_armor", "dmz.sidequest.bulma_gete_armor.name", "dmz.sidequest.bulma_gete_armor.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_gete_discovery")),
+				new JsonObject[]{
+						objItem("dragonminez:gete_ingot", 8),
+						objItem("dragonminez:kikono_cloth", 4),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(12000), rewItem("dragonminez:pattern_gete", 1) }));
+
+		// Gete enhancements: Bulma's special enchantments, delivered as an enchanted book (COMMAND reward).
+		writeQuestFile(dir, "bulma_gete_enhancements.json", sidequest(
+				"bulma_gete_enhancements", "dmz.sidequest.bulma_gete_enhancements.name", "dmz.sidequest.bulma_gete_enhancements.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_gete_armor")),
+				new JsonObject[]{
+						objItem("dragonminez:gete_ingot", 6),
+						objItem("minecraft:lapis_block", 4),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{
+						rewTPS(15000),
+						rewCommand(
+								"give %player% minecraft:enchanted_book{StoredEnchantments:[{id:\"dragonminez:ki_conductivity\",lvl:2},{id:\"dragonminez:gravity_forged\",lvl:2},{id:\"dragonminez:gete_plating\",lvl:2}]} 1",
+								"dmz.sidequest.reward.gete_enchant_book")
+				}));
+
+		// Capsule tech: Bulma builds premium Gete-tech stat capsules (craft base capsule + Gete ingot).
+		writeQuestFile(dir, "bulma_capsule_tech.json", sidequest(
+				"bulma_capsule_tech", "dmz.sidequest.bulma_capsule_tech.name", "dmz.sidequest.bulma_capsule_tech.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_gete_discovery")),
+				new JsonObject[]{
+						objItem("dragonminez:gete_ingot", 4),
+						objItem("minecraft:diamond", 4),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{
+						rewTPS(10000),
+						rewItem("dragonminez:gete_red_capsule", 1),
+						rewItem("dragonminez:gete_orange_capsule", 1)
+				}));
+
+		// Retrofit kit: Bulma teaches you to upgrade netherite gear into Gete armor at a smithing table.
+		writeQuestFile(dir, "bulma_gete_retrofit.json", sidequest(
+				"bulma_gete_retrofit", "dmz.sidequest.bulma_gete_retrofit.name", "dmz.sidequest.bulma_gete_retrofit.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_gete_armor")),
+				new JsonObject[]{
+						objItem("dragonminez:gete_ingot", 6),
+						objItem("minecraft:netherite_ingot", 1),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(13000), rewItem("dragonminez:gete_smithing_template", 1) }));
+
+		// Gravity Room Mk.II/Mk.III: training inside the Time Chamber earns 1.5x / 2x TP (gate in TPGainEvents).
+		writeQuestFile(dir, "bulma_gravity_mk2.json", sidequest(
+				"bulma_gravity_mk2", "dmz.sidequest.bulma_gravity_mk2.name", "dmz.sidequest.bulma_gravity_mk2.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_gete_discovery"), condSaga("android_saga", 11)),
+				new JsonObject[]{
+						objStructure("dragonminez:timechamber"),
+						objItem("dragonminez:gete_ingot", 4),
+						objItem("minecraft:piston", 8),
+						objItem("minecraft:heavy_weighted_pressure_plate", 4),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(10000) }));
+
+		writeQuestFile(dir, "bulma_gravity_mk3.json", sidequest(
+				"bulma_gravity_mk3", "dmz.sidequest.bulma_gravity_mk3.name", "dmz.sidequest.bulma_gravity_mk3.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_gravity_mk2"), condSaga("buu_saga", 1)),
+				new JsonObject[]{
+						objItem("dragonminez:gete_block", 2),
+						objItem("minecraft:netherite_ingot", 2),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(18000) }));
+
+		// Ki Accumulator: hand over the parts and Bulma builds energy batteries (consumable ki restore).
+		writeQuestFile(dir, "bulma_ki_battery.json", sidequest(
+				"bulma_ki_battery", "dmz.sidequest.bulma_ki_battery.name", "dmz.sidequest.bulma_ki_battery.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_gete_enhancements"), condSaga("buu_saga", 1)),
+				new JsonObject[]{
+						objItem("dragonminez:gete_ingot", 2),
+						objItem("minecraft:lapis_lazuli", 32),
+						objItem("minecraft:redstone_block", 2),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(9000), rewItem("dragonminez:ki_battery", 3) }));
+
+		// Anti-Ki Cloak: a stealth curio that hides your Battle Power from enemy scouters.
+		writeQuestFile(dir, "bulma_anti_ki_cloak.json", sidequest(
+				"bulma_anti_ki_cloak", "dmz.sidequest.bulma_anti_ki_cloak.name", "dmz.sidequest.bulma_anti_ki_cloak.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_scouter_threat_db"), condSaga("android_saga", 14)),
+				new JsonObject[]{
+						objKill("dragonminez:saga_cell_jr", 5),
+						objItem("dragonminez:gete_ingot", 3),
+						objItem("minecraft:observer", 4),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(11000), rewItem("dragonminez:anti_ki_cloak", 1) }));
+
+		// Time-Chamber Link: Bulma adds the Hyperbolic Time Chamber as a space-pod destination.
+		writeQuestFile(dir, "bulma_time_chamber_link.json", sidequest(
+				"bulma_time_chamber_link", "dmz.sidequest.bulma_time_chamber_link.name", "dmz.sidequest.bulma_time_chamber_link.desc",
+				"tech", false, "bulma", "bulma",
+				prereqs("AND", condQuest("bulma_otherworld_drive"), condSaga("android_saga", 11)),
+				new JsonObject[]{
+						objStructure("dragonminez:timechamber"),
+						objItem("dragonminez:gete_ingot", 3),
+						objItem("minecraft:clock", 4),
+						objItem("minecraft:ender_chest", 1),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(12000) }));
+	}
+
+	// ========================================================================================
+	// Bulma Errands (R&D fetch/kill/talk quests)
+	// ========================================================================================
+
+	private static void createBulmaErrandsCategory(Path baseDir) {
+		Path dir = baseDir.resolve("errands");
+
+		// --- Saiyan Saga ---
+		writeQuestFile(dir, "bulma_capsule_development.json", sidequest(
+				"bulma_capsule_development", "dmz.sidequest.bulma_capsule_development.name", "dmz.sidequest.bulma_capsule_development.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 1)),
+				new JsonObject[]{ objItem("minecraft:diamond", 4), objItem("minecraft:redstone", 8), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(600) }));
+
+		writeQuestFile(dir, "bulma_rare_mineral_survey.json", sidequest(
+				"bulma_rare_mineral_survey", "dmz.sidequest.bulma_rare_mineral_survey.name", "dmz.sidequest.bulma_rare_mineral_survey.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 3)),
+				new JsonObject[]{ objItem("minecraft:amethyst_shard", 8), objItem("minecraft:copper_ingot", 12), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(800) }));
+
+		writeQuestFile(dir, "bulma_weapon_analysis.json", sidequest(
+				"bulma_weapon_analysis", "dmz.sidequest.bulma_weapon_analysis.name", "dmz.sidequest.bulma_weapon_analysis.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condQuest("bulma_radar_parts")),
+				new JsonObject[]{ objItem("minecraft:iron_sword", 1), objItem("minecraft:redstone", 12), objItem("minecraft:copper_ingot", 8), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(900) }));
+
+		writeQuestFile(dir, "bulma_flight_stabilizer.json", sidequest(
+				"bulma_flight_stabilizer", "dmz.sidequest.bulma_flight_stabilizer.name", "dmz.sidequest.bulma_flight_stabilizer.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 4)),
+				new JsonObject[]{ objItem("minecraft:feather", 16), objItem("minecraft:redstone", 12), objItem("minecraft:gold_ingot", 4), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(1200) }));
+
+		writeQuestFile(dir, "bulma_saiyan_biology_sample.json", sidequest(
+				"bulma_saiyan_biology_sample", "dmz.sidequest.bulma_saiyan_biology_sample.name", "dmz.sidequest.bulma_saiyan_biology_sample.desc",
+				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 6)),
+				new JsonObject[]{ objKill("dragonminez:saga_raditz", 1), objItem("minecraft:diamond", 3), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(2500) }));
+
+		writeQuestFile(dir, "bulma_energy_storage_battery.json", sidequest(
+				"bulma_energy_storage_battery", "dmz.sidequest.bulma_energy_storage_battery.name", "dmz.sidequest.bulma_energy_storage_battery.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condQuest("bulma_capsule_development")),
+				new JsonObject[]{ objItem("minecraft:lapis_lazuli", 32), objItem("minecraft:redstone_block", 3), objItem("minecraft:diamond", 4), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(7000) }));
+
+		// --- Frieza Saga ---
+		writeQuestFile(dir, "bulma_communication_relay.json", sidequest(
+				"bulma_communication_relay", "dmz.sidequest.bulma_communication_relay.name", "dmz.sidequest.bulma_communication_relay.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("frieza_saga", 1)),
+				new JsonObject[]{ objItem("minecraft:redstone", 16), objItem("minecraft:copper_block", 4), objItem("minecraft:amethyst_shard", 6), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(2000) }));
+
+		writeQuestFile(dir, "bulma_frieza_armor_study.json", sidequest(
+				"bulma_frieza_armor_study", "dmz.sidequest.bulma_frieza_armor_study.name", "dmz.sidequest.bulma_frieza_armor_study.desc",
+				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("frieza_saga", 3)),
+				new JsonObject[]{ objKill("dragonminez:saga_friezasoldier01", 8), objItem("minecraft:iron_ingot", 16), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(4000) }));
+
+		writeQuestFile(dir, "bulma_frieza_force_intelligence.json", sidequest(
+				"bulma_frieza_force_intelligence", "dmz.sidequest.bulma_frieza_force_intelligence.name", "dmz.sidequest.bulma_frieza_force_intelligence.desc",
+				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("frieza_saga", 4)),
+				new JsonObject[]{ objKill("dragonminez:saga_friezasoldier02", 10), objItem("minecraft:diamond", 6), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(5000) }));
+
+		writeQuestFile(dir, "bulma_namekian_tech_integration.json", sidequest(
+				"bulma_namekian_tech_integration", "dmz.sidequest.bulma_namekian_tech_integration.name", "dmz.sidequest.bulma_namekian_tech_integration.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("frieza_saga", 5)),
+				new JsonObject[]{ objItem("dragonminez:kikono_shard", 12), objItem("minecraft:copper_ingot", 16), objItem("minecraft:redstone_block", 2), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(6000) }));
+
+		writeQuestFile(dir, "bulma_senzu_bean_substitute.json", sidequest(
+				"bulma_senzu_bean_substitute", "dmz.sidequest.bulma_senzu_bean_substitute.name", "dmz.sidequest.bulma_senzu_bean_substitute.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("frieza_saga", 8)),
+				new JsonObject[]{ objItem("minecraft:golden_carrot", 12), objItem("minecraft:glow_berries", 8), objItem("dragonminez:kikono_cloth", 2), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(3000) }));
+
+		writeQuestFile(dir, "bulma_ki_energy_collector.json", sidequest(
+				"bulma_ki_energy_collector", "dmz.sidequest.bulma_ki_energy_collector.name", "dmz.sidequest.bulma_ki_energy_collector.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condQuest("bulma_scouter_calibration")),
+				new JsonObject[]{ objItem("minecraft:amethyst_shard", 12), objItem("minecraft:lapis_lazuli", 16), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(5000), rewItem("minecraft:golden_apple", 3) }));
+
+		// --- Android / Cell Saga ---
+		writeQuestFile(dir, "bulma_android_parts_delivery.json", sidequest(
+				"bulma_android_parts_delivery", "dmz.sidequest.bulma_android_parts_delivery.name", "dmz.sidequest.bulma_android_parts_delivery.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("android_saga", 3)),
+				new JsonObject[]{ objItem("minecraft:redstone", 24), objItem("minecraft:copper_ingot", 12), objItem("dragonminez:kikono_shard", 4), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(5500) }));
+
+		writeQuestFile(dir, "bulma_power_suppression_unit.json", sidequest(
+				"bulma_power_suppression_unit", "dmz.sidequest.bulma_power_suppression_unit.name", "dmz.sidequest.bulma_power_suppression_unit.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("android_saga", 4)),
+				new JsonObject[]{ objItem("minecraft:redstone", 24), objItem("minecraft:glass", 12), objItem("minecraft:diamond", 4), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(8000) }));
+
+		writeQuestFile(dir, "bulma_android_tech_reverse_engineer.json", sidequest(
+				"bulma_android_tech_reverse_engineer", "dmz.sidequest.bulma_android_tech_reverse_engineer.name", "dmz.sidequest.bulma_android_tech_reverse_engineer.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("android_saga", 5)),
+				new JsonObject[]{ objItem("minecraft:redstone", 16), objItem("dragonminez:kikono_shard", 6), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(10000) }));
+
+		writeQuestFile(dir, "bulma_gravity_chamber_parts.json", sidequest(
+				"bulma_gravity_chamber_parts", "dmz.sidequest.bulma_gravity_chamber_parts.name", "dmz.sidequest.bulma_gravity_chamber_parts.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("android_saga", 6)),
+				new JsonObject[]{ objItem("minecraft:obsidian", 20), objItem("minecraft:redstone_block", 4), objItem("minecraft:diamond", 6), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(12000) }));
+
+		writeQuestFile(dir, "bulma_power_level_detector.json", sidequest(
+				"bulma_power_level_detector", "dmz.sidequest.bulma_power_level_detector.name", "dmz.sidequest.bulma_power_level_detector.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condQuest("bulma_scouter_bioscan")),
+				new JsonObject[]{ objItem("minecraft:redstone", 20), objItem("minecraft:glass", 16), objItem("minecraft:amethyst_shard", 8), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(9000) }));
+
+		writeQuestFile(dir, "bulma_time_chamber_diagnostics.json", sidequest(
+				"bulma_time_chamber_diagnostics", "dmz.sidequest.bulma_time_chamber_diagnostics.name", "dmz.sidequest.bulma_time_chamber_diagnostics.desc",
+				"exploration", false, "bulma", "bulma", prereqs("AND", condSaga("android_saga", 10)),
+				new JsonObject[]{ objStructure("dragonminez:timechamber"), objItem("minecraft:redstone", 20), objItem("minecraft:diamond", 8), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(15000) }));
+
+		// --- Buu Saga ---
+		writeQuestFile(dir, "bulma_buu_energy_analysis.json", sidequest(
+				"bulma_buu_energy_analysis", "dmz.sidequest.bulma_buu_energy_analysis.name", "dmz.sidequest.bulma_buu_energy_analysis.desc",
+				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("buu_saga", 5)),
+				new JsonObject[]{ objKill("dragonminez:saga_buufat", 5), objItem("minecraft:lapis_block", 3), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(40000) }));
+
+		writeQuestFile(dir, "bulma_emergency_teleport_device.json", sidequest(
+				"bulma_emergency_teleport_device", "dmz.sidequest.bulma_emergency_teleport_device.name", "dmz.sidequest.bulma_emergency_teleport_device.desc",
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("buu_saga", 8)),
+				new JsonObject[]{ objItem("minecraft:ender_pearl", 12), objItem("minecraft:obsidian", 8), objItem("minecraft:redstone_block", 3), objTalkTo("bulma") },
+				new JsonObject[]{ rewTPS(35000) }));
 	}
 }
 

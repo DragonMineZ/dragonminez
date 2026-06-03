@@ -159,6 +159,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
         generateArmorSetModels(MainItems.GINE_ARMOR);
         generateArmorSetModels(MainItems.KALE_ARMOR);
         generateArmorSetModels(MainItems.CAULIFLA_ARMOR);
+        generateArmorSetModels(MainItems.GETE_ARMOR);
 
         //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);
@@ -205,11 +206,25 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		patternItem(MainItems.PATTERN_MAJIN_BUU);
 		patternItem(MainItems.PATTERN_GAMMA1);
 		patternItem(MainItems.PATTERN_GAMMA2);
+		patternItem(MainItems.PATTERN_GETE);
 
 		//Minerales
 		simpleItem(MainItems.GETE_SCRAP);
 		simpleItem(MainItems.GETE_INGOT);
 		simpleItem(MainItems.KIKONO_SHARD);
+
+		//Gete Cosas
+		simpleItem(MainItems.GETE_SMITHING_TEMPLATE);
+		simpleItem(MainItems.GETE_RED_CAPSULE);
+		simpleItem(MainItems.GETE_PURPLE_CAPSULE);
+		simpleItem(MainItems.GETE_YELLOW_CAPSULE);
+		simpleItem(MainItems.GETE_GREEN_CAPSULE);
+		simpleItem(MainItems.GETE_ORANGE_CAPSULE);
+		simpleItem(MainItems.GETE_BLUE_CAPSULE);
+
+		//Bulma Cosas
+		simpleItem(MainItems.KI_BATTERY);
+		simpleItem(MainItems.ANTI_KI_CLOAK);
 
 		//Bloques (MainBlocks)
 		simpleBlockItem(MainBlocks.NAMEK_BLOCK);

@@ -41,6 +41,13 @@ public final class MainItems {
 	public static final RegistryObject<Item> GREEN_CAPSULE = ITEM_REGISTER.register("green_capsule", () -> new CapsuleItem(CapsuleType.GREEN));
 	public static final RegistryObject<Item> ORANGE_CAPSULE = ITEM_REGISTER.register("orange_capsule", () -> new CapsuleItem(CapsuleType.ORANGE));
 	public static final RegistryObject<Item> BLUE_CAPSULE = ITEM_REGISTER.register("blue_capsule", () -> new CapsuleItem(CapsuleType.BLUE));
+
+	public static final RegistryObject<Item> GETE_RED_CAPSULE = ITEM_REGISTER.register("gete_red_capsule", () -> new CapsuleItem(CapsuleType.RED, net.minecraft.ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
+	public static final RegistryObject<Item> GETE_PURPLE_CAPSULE = ITEM_REGISTER.register("gete_purple_capsule", () -> new CapsuleItem(CapsuleType.PURPLE, net.minecraft.ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
+	public static final RegistryObject<Item> GETE_YELLOW_CAPSULE = ITEM_REGISTER.register("gete_yellow_capsule", () -> new CapsuleItem(CapsuleType.YELLOW, net.minecraft.ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
+	public static final RegistryObject<Item> GETE_GREEN_CAPSULE = ITEM_REGISTER.register("gete_green_capsule", () -> new CapsuleItem(CapsuleType.GREEN, net.minecraft.ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
+	public static final RegistryObject<Item> GETE_ORANGE_CAPSULE = ITEM_REGISTER.register("gete_orange_capsule", () -> new CapsuleItem(CapsuleType.ORANGE, net.minecraft.ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
+	public static final RegistryObject<Item> GETE_BLUE_CAPSULE = ITEM_REGISTER.register("gete_blue_capsule", () -> new CapsuleItem(CapsuleType.BLUE, net.minecraft.ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final RegistryObject<Item> SENZU_BEAN = ITEM_REGISTER.register("senzu_bean",
 			() -> new FoodItem(20, 0.0f, 8));
 
@@ -212,6 +219,13 @@ public final class MainItems {
 	//MINERALES
 	public static final RegistryObject<Item> GETE_SCRAP = regItem("gete_scrap");
 	public static final RegistryObject<Item> GETE_INGOT = regItem("gete_ingot");
+	// Smithing-table upgrade template: netherite armor + this + Gete ingot -> Gete armor
+	public static final RegistryObject<Item> GETE_SMITHING_TEMPLATE = regItem("gete_smithing_template");
+	// Novel wave: Ki Accumulator consumable (restores ki/energy) + Anti-Ki Cloak curios (hides BP from scouters).
+	public static final RegistryObject<Item> KI_BATTERY = ITEM_REGISTER.register("ki_battery",
+			() -> new com.dragonminez.common.init.item.consumables.KiBatteryItem());
+	public static final RegistryObject<Item> ANTI_KI_CLOAK = ITEM_REGISTER.register("anti_ki_cloak",
+			() -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant(), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> KIKONO_SHARD = regItem("kikono_shard");
 	public static final RegistryObject<Item> KIKONO_STICK = regItem("kikono_stick");
 
@@ -222,6 +236,7 @@ public final class MainItems {
 
 	public static final RegistryObject<Item> DBALL_RADAR_ITEM = getDragonRadarItemOrThrow("earth_radar");
 	public static final RegistryObject<Item> NAMEKDBALL_RADAR_ITEM = getDragonRadarItemOrThrow("namek_radar");
+	public static final RegistryObject<Item> FUSED_DBALL_RADAR_ITEM = getDragonRadarItemOrThrow("fused_radar");
 	public static final RegistryObject<Item> RADAR_PIECE = ITEM_REGISTER.register("radar_piece",
 			() -> new Item(properties.stacksTo(16)));
 	public static final RegistryObject<Item> T1_RADAR_CHIP = ITEM_REGISTER.register("t1_radar_chip",
@@ -281,6 +296,7 @@ public final class MainItems {
 	public static final RegistryObject<Item> KIKONO_CLOTH = regItem("kikono_cloth");
 	public static final RegistryObject<Item> BLANK_PATTERN_Z = regItem("blank_pattern_z");
 	public static final RegistryObject<Item> BLANK_PATTERN_SUPER = regItem("blank_pattern_super");
+	public static final RegistryObject<Item> PATTERN_GETE = regItem("pattern_gete");
 	public static final RegistryObject<Item> PATTERN_GOKU_KID = regItem("pattern_goku_kid");
 	public static final RegistryObject<Item> PATTERN_GOKU1 = regItem("pattern_goku1");
 	public static final RegistryObject<Item> PATTERN_GOKU_SUPER = regItem("pattern_goku_super");
@@ -414,6 +430,18 @@ public final class MainItems {
 	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorSet(String itemId, String textureId, boolean isDamageOn) {
 		return registerArmorSet(itemId, textureId, true, isDamageOn);
 	}
+
+	// Post-netherite Gete armor, same crafting flow as Kikono sets but with the GETE material.
+	private static Map<ArmorItem.Type, RegistryObject<Item>> registerGeteArmorSet(String name, String texture) {
+		Map<ArmorItem.Type, RegistryObject<Item>> armorPieces = new HashMap<>();
+		armorPieces.put(ArmorItem.Type.HELMET, ITEM_REGISTER.register(name + "_helmet", () -> new DbzArmorItem(ModArmorMaterials.GETE, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), texture, false)));
+		armorPieces.put(ArmorItem.Type.CHESTPLATE, ITEM_REGISTER.register(name + "_chestplate", () -> new DbzArmorItem(ModArmorMaterials.GETE, ArmorItem.Type.CHESTPLATE, new Item.Properties().fireResistant().stacksTo(1), texture, false)));
+		armorPieces.put(ArmorItem.Type.LEGGINGS, ITEM_REGISTER.register(name + "_leggings", () -> new DbzArmorItem(ModArmorMaterials.GETE, ArmorItem.Type.LEGGINGS, new Item.Properties().fireResistant().stacksTo(1), texture, false)));
+		armorPieces.put(ArmorItem.Type.BOOTS, ITEM_REGISTER.register(name + "_boots", () -> new DbzArmorItem(ModArmorMaterials.GETE, ArmorItem.Type.BOOTS, new Item.Properties().fireResistant().stacksTo(1), texture, false)));
+		return armorPieces;
+	}
+
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> GETE_ARMOR = registerGeteArmorSet("gete_armor", "gete");
 
 	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorNoHelmetSet(String itemId, String textureId, boolean isDamageOn) {
 		return registerArmorSet(itemId, textureId, false, isDamageOn);

@@ -275,7 +275,9 @@ public class StatsData {
 		int meditationLevel = skills.getSkillLevel("meditation");
 		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.05) : 1.0;
 
-		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult;
+		// Ki Conductivity (Gete-tech enchantment) further boosts ki/energy regen.
+		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
+		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult * kiConductivityMult;
 
 		boolean humanBoost = ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 				&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()

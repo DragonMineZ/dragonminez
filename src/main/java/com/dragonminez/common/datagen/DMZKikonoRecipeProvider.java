@@ -58,6 +58,44 @@ public class DMZKikonoRecipeProvider {
 		buildArmorNoHelmetSet("majin_buu", MainItems.MAJIN_BUU_ARMOR, MainItems.PATTERN_MAJIN_BUU.get());
 		buildArmorNoHelmetSet("gamma1", MainItems.GAMMA1_ARMOR, MainItems.PATTERN_GAMMA1.get());
 		buildArmorNoHelmetSet("gamma2", MainItems.GAMMA2_ARMOR, MainItems.PATTERN_GAMMA2.get());
+		buildGeteArmorSet(MainItems.GETE_ARMOR, MainItems.PATTERN_GETE.get());
+	}
+
+	protected void buildGeteArmorSet(Map<ArmorItem.Type, RegistryObject<Item>> armorSet, Item pattern) {
+		Item gete = MainItems.GETE_INGOT.get();
+		Item cloth = MainItems.KIKONO_CLOTH.get();
+
+		KikonoRecipeBuilder.kikonize(armorSet.get(ArmorItem.Type.HELMET).get())
+				.pattern(pattern).template(Items.IRON_HELMET)
+				.input(gete).input(gete).input(gete)
+				.input(cloth).input(Items.AIR).input(cloth)
+				.input(Items.AIR).input(Items.AIR).input(Items.AIR)
+				.time(300).energy(2000)
+				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_armor_helmet"));
+
+		KikonoRecipeBuilder.kikonize(armorSet.get(ArmorItem.Type.CHESTPLATE).get())
+				.pattern(pattern).template(Items.IRON_CHESTPLATE)
+				.input(gete).input(Items.AIR).input(gete)
+				.input(gete).input(gete).input(gete)
+				.input(cloth).input(Items.AIR).input(cloth)
+				.time(300).energy(2000)
+				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_armor_chestplate"));
+
+		KikonoRecipeBuilder.kikonize(armorSet.get(ArmorItem.Type.LEGGINGS).get())
+				.pattern(pattern).template(Items.IRON_LEGGINGS)
+				.input(gete).input(gete).input(gete)
+				.input(gete).input(Items.AIR).input(gete)
+				.input(cloth).input(Items.AIR).input(cloth)
+				.time(300).energy(2000)
+				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_armor_leggings"));
+
+		KikonoRecipeBuilder.kikonize(armorSet.get(ArmorItem.Type.BOOTS).get())
+				.pattern(pattern).template(Items.IRON_BOOTS)
+				.input(Items.AIR).input(Items.AIR).input(Items.AIR)
+				.input(gete).input(Items.AIR).input(gete)
+				.input(gete).input(Items.AIR).input(gete)
+				.time(300).energy(2000)
+				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_armor_boots"));
 	}
 
 	protected void buildFullArmorSet(String name, Map<ArmorItem.Type, RegistryObject<Item>> armorSet, Item pattern) {
