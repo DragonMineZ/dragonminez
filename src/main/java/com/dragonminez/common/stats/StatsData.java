@@ -1032,10 +1032,12 @@ public class StatsData {
 		}
 
 		if (getStatus().isFused()) FusionLogic.endFusion(player, this, false);
-		getResources().setRacialSkillCount(0);
+		getCharacter().clearActiveForm(player);
+		getCharacter().clearActiveStackForm(player);
+
+		getStatus().reset();
+		getResources().reset();
 		getResources().setPowerRelease(0);
-		getStatus().setAndroidUpgraded(false);
-		getStatus().setInKaioPlanet(false);
 		getPlayerQuestData().resetAll();
 		getCharacter().clearInteractedMasters();
 
@@ -1047,9 +1049,6 @@ public class StatsData {
 
 		getCooldowns().clearCooldowns();
 		getBonusStats().clearAllStats();
-		getCharacter().clearActiveForm(player);
-		getCharacter().clearActiveStackForm(player);
-		getStatus().setHasCreatedCharacter(false);
 		if (forceSaiyanTail) getCharacter().setHasSaiyanTail(true);
 
 		player.refreshDimensions();

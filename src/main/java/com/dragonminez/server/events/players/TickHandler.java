@@ -63,7 +63,7 @@ public class TickHandler {
 	private static final Map<String, IActionModeHandler> ACTION_MODE_HANDLERS = new HashMap<>();
 	private static final List<IStatusEffectHandler> STATUS_EFFECT_HANDLERS = new ArrayList<>();
 	private static final Map<UUID, AbstractKiProjectile> CHARGING_CACHE = new HashMap<>();
-	private static final Map<UUID, Float> CHARGE_COST_ACCUM = new HashMap<>(); // fractional Ki consumed during charge
+	private static final Map<UUID, Float> CHARGE_COST_ACCUM = new HashMap<>();
 
 	private static final int REGEN_INTERVAL = 20;
 	private static final int SYNC_INTERVAL = 10;
@@ -74,8 +74,8 @@ public class TickHandler {
 	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
 	private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
 	private static int masterySeconds = 0;
-	private static int chargeTicks = 0;
 
+	private static final Map<UUID, Integer> chargeTicksByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
 	private static final Map<UUID, Integer> auraLightLevels = new HashMap<>();
@@ -171,10 +171,11 @@ public class TickHandler {
 			if (shouldRegen) {
 				double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
 				boolean activeCharging = isChargingKi && !isDescending;
+				double foodRegenMod = getFoodRegenMultiplier(serverPlayer);
 
-				regenerateHealth(serverPlayer, data);
-				regenerateEnergy(serverPlayer, data, activeCharging);
-				regenerateStamina(serverPlayer, data);
+				regenerateHealth(serverPlayer, data, foodRegenMod);
+				regenerateEnergy(serverPlayer, data, activeCharging, foodRegenMod);
+				regenerateStamina(serverPlayer, data, foodRegenMod);
 				regeneratePoise(data, meditationBonus);
 
 				playerTickCounters.put(playerId, 0);
@@ -214,29 +215,12 @@ public class TickHandler {
 				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 			}
 
-			if (isChargingKi) {
-				chargeTicks++;
-				if (chargeTicks % 2 == 0) {
-					int currentRelease = data.getResources().getPowerRelease();
-					int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
-					int maxRelease = 50 + (potentialUnlockLevel * 5);
-
-					int effectiveLevel = Math.min(10, potentialUnlockLevel);
-
-					float temporalMultiplier = (float) Math.pow(chargeTicks / 50.0f, 2);
-					float levelMultiplier = 1.0f + (effectiveLevel * 0.1f);
-
-					int step = (int) Math.min(10, Math.max(1, 1 * temporalMultiplier * levelMultiplier));
-
-					if (!isDescending && currentRelease < maxRelease) {
-						int newRelease = Math.min(maxRelease, currentRelease + step);
-						data.getResources().setPowerRelease(newRelease);
-					} else if (isDescending && currentRelease > 0) {
-						int newRelease = Math.max(0, currentRelease - step);
-						data.getResources().setPowerRelease(newRelease);
-					}
-				}
-			} else if (chargeTicks != 0) chargeTicks = 0;
+			boolean isReleaseCharging = isChargingKi || data.getStatus().isActionCharging();
+			if (isReleaseCharging) {
+				int chargeTicks = chargeTicksByPlayer.getOrDefault(playerId, 0) + 1;
+				chargeTicksByPlayer.put(playerId, chargeTicks);
+				if (chargeTicks % 2 == 0) chargePowerRelease(data, chargeTicks, isChargingKi && isDescending);
+			} else if (chargeTicksByPlayer.containsKey(playerId)) chargeTicksByPlayer.remove(playerId);
 
 			boolean auraFromActions = isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
 			boolean auraFromFlySprint = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && serverPlayer.getDeltaMovement().length() > 0.65F;
@@ -356,6 +340,7 @@ public class TickHandler {
 		}
 		CHARGING_CACHE.remove(playerId);
 		CHARGE_COST_ACCUM.remove(playerId);
+		chargeTicksByPlayer.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
@@ -447,7 +432,16 @@ public class TickHandler {
 		return current;
 	}
 
-	private static void regenerateHealth(ServerPlayer player, StatsData data) {
+	private static double getFoodRegenMultiplier(ServerPlayer player) {
+		int drumsticks = player.getFoodData().getFoodLevel() / 2;
+		if (drumsticks >= 9) return 1.0;
+		if (drumsticks <= 3) return 0.0;
+		return 1.0 - ((9 - drumsticks) * 0.10);
+	}
+
+	private static void regenerateHealth(ServerPlayer player, StatsData data, double foodRegenMod) {
+		if (foodRegenMod <= 0.0) return;
+
 		float currentHealth = player.getHealth();
 		float maxHealth = player.getMaxHealth();
 		if (currentHealth >= maxHealth) return;
@@ -455,13 +449,13 @@ public class TickHandler {
 		DMZEvent.HealthRegenEvent event = new DMZEvent.HealthRegenEvent(player, data, data.getHealthRegenPerSecond());
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
-		double finalRegen = Math.max(0.0, event.getAmount());
+		double finalRegen = Math.max(0.0, event.getAmount()) * foodRegenMod;
 		if (finalRegen <= 0.0) return;
 
 		player.setHealth((float) Math.min(maxHealth, currentHealth + finalRegen));
 	}
 
-	private static void regenerateEnergy(ServerPlayer player, StatsData data, boolean activeCharging) {
+	private static void regenerateEnergy(ServerPlayer player, StatsData data, boolean activeCharging, double foodRegenMod) {
 		float currentEnergy = data.getResources().getCurrentEnergy();
 		float maxEnergy = data.getMaxEnergy();
 
@@ -514,6 +508,8 @@ public class TickHandler {
 			}
 		}
 
+		if (energyChange > 0) energyChange *= foodRegenMod;
+
 		if (energyChange != 0) {
 			DMZEvent.EnergyRegenEvent regenEvent = new DMZEvent.EnergyRegenEvent(player, data, energyChange);
 			energyChange = MinecraftForge.EVENT_BUS.post(regenEvent) ? 0 : regenEvent.getAmount();
@@ -538,7 +534,8 @@ public class TickHandler {
 		}
 	}
 
-	private static void regenerateStamina(ServerPlayer player, StatsData data) {
+	private static void regenerateStamina(ServerPlayer player, StatsData data, double foodRegenMod) {
+		if (foodRegenMod <= 0.0) return;
 		if (data.getCooldowns().hasCooldown(Cooldowns.STAMINA_PAUSE)) return;
 
 		float currentStamina = data.getResources().getCurrentStamina();
@@ -550,7 +547,7 @@ public class TickHandler {
 
 		DMZEvent.StaminaRegenEvent event = new DMZEvent.StaminaRegenEvent(player, data, regenPerSecond);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
-		regenPerSecond = Math.max(0.0, event.getAmount());
+		regenPerSecond = Math.max(0.0, event.getAmount()) * foodRegenMod;
 		if (regenPerSecond <= 0.0) return;
 
 		float effectiveMaxStamina = maxStamina;
@@ -622,14 +619,6 @@ public class TickHandler {
 				execute = true;
 			}
 			data.getResources().setActionCharge(currentRelease);
-
-			int powerRelease = data.getResources().getPowerRelease();
-			int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
-			int maxRelease = 50 + (potentialUnlockLevel * 5);
-			if (powerRelease < maxRelease) {
-				int newRelease = Math.min(maxRelease, powerRelease + 5);
-				data.getResources().setPowerRelease(newRelease);
-			}
 		}
 
 		if (execute) {
@@ -637,6 +626,25 @@ public class TickHandler {
 			if (success) {
 				data.getResources().setActionCharge(0);
 			}
+		}
+	}
+
+	private static void chargePowerRelease(StatsData data, int chargeTicks, boolean descending) {
+		int currentRelease = data.getResources().getPowerRelease();
+		int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
+		int maxRelease = 50 + (potentialUnlockLevel * 5);
+
+		int effectiveLevel = Math.min(10, potentialUnlockLevel);
+
+		float temporalMultiplier = (float) Math.pow(chargeTicks / 50.0f, 2);
+		float levelMultiplier = 1.0f + (effectiveLevel * 0.1f);
+
+		int step = (int) Math.min(10, Math.max(1, temporalMultiplier * levelMultiplier));
+
+		if (!descending && currentRelease < maxRelease) {
+			data.getResources().setPowerRelease(Math.min(maxRelease, currentRelease + step));
+		} else if (descending && currentRelease > 0) {
+			data.getResources().setPowerRelease(Math.max(0, currentRelease - step));
 		}
 	}
 

@@ -90,6 +90,43 @@ public class Status {
 		this.shadowDummyKillCount = 0;
 	}
 
+	public void reset() {
+		this.isAlive = true;
+		this.isHasCreatedCharacter = false;
+		this.isAuraActive = false;
+		this.isActionCharging = false;
+		this.isTailVisible = true;
+		this.isDescending = false;
+		this.isInKaioPlanet = false;
+		this.isChargingKi = false;
+		this.isBlocking = false;
+		this.lastBlockTime = 0;
+		this.lastHurtTime = 0;
+		this.friendlyFistEnabled = false;
+		this.isStunned = false;
+		this.isKnockedDown = false;
+		this.selectedAction = ActionMode.FORM;
+		this.kiWeaponType = "blade";
+		this.drainingTargetId = -1;
+		this.isFused = false;
+		this.isFusionLeader = false;
+		this.fusionPartnerUUID = null;
+		this.fusionTimer = 0;
+		this.fusionType = "";
+		this.originalAppearance = new CompoundTag();
+		this.androidUpgraded = false;
+		this.renderKatana = false;
+		this.backWeapon = "";
+		this.scouterItem = "";
+		this.pothalaColor = "";
+		this.isPermanentAura = false;
+		this.isStrikeLocked = false;
+		this.visitedDimensions.clear();
+		this.activeShadowDummyUUID = null;
+		this.shadowDummyPercent = 0;
+		this.shadowDummyKillCount = 0;
+	}
+
 	public void validateKiWeaponType() {
 		var types = ConfigManager.getCombatConfig().getKiWeaponTypes();
 		if (types.isEmpty()) return;

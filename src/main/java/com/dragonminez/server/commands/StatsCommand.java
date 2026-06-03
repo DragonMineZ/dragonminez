@@ -68,20 +68,17 @@ public class StatsCommand {
 												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
 												.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), EntityArgument.getPlayers(ctx, "targets"), "remove"))))))
 
-				// reset [keepPercentage] [targets]
+				// reset [targets] [keepPercentage] [keepSkills]
 				.then(Commands.literal("reset")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF, DMZPermissions.STATS_RESET_OTHERS))
 						.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), null, false))
-						.then(Commands.argument("keepPercentage", StringArgumentType.word()).suggests(PERCENTAGE_SUGGESTIONS)
-								.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "keepPercentage"), false))
-								.then(Commands.argument("keepSkills", BoolArgumentType.bool())
-										.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "keepPercentage"), BoolArgumentType.getBool(ctx, "keepSkills")))
-										.then(Commands.argument("targets", EntityArgument.players())
-												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
-												.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage"), BoolArgumentType.getBool(ctx, "keepSkills"))))))
 						.then(Commands.argument("targets", EntityArgument.players())
 								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
-								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), null, false))))
+								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), null, false))
+								.then(Commands.argument("keepPercentage", StringArgumentType.word()).suggests(PERCENTAGE_SUGGESTIONS)
+										.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage"), false))
+										.then(Commands.argument("keepSkills", BoolArgumentType.bool())
+												.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage"), BoolArgumentType.getBool(ctx, "keepSkills")))))))
 		);
 	}
 

@@ -33,6 +33,16 @@ public class Resources {
         this.racialSkillCount = 0;
     }
 
+    public void reset() {
+        this.currentEnergy = 0;
+        this.currentStamina = 0;
+        this.currentPoise = 0;
+        this.release = 5;
+        this.actionCharge = 0;
+        this.alignment = 100;
+        this.racialSkillCount = 0;
+    }
+
     private static float roundToQuarter(float value) {
         return Math.round(value * 4.0f) / 4.0f;
     }

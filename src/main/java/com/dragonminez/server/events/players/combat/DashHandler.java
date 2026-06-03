@@ -120,13 +120,12 @@ public class DashHandler {
 			int kiCost = 0;
 			int stamCost = 0;
 			DMZEvent.PlayerDashEvent.DashType dashType;
-			boolean inAir = isFlyingSkillActive || !player.onGround();
 
 			if (canDoubleDash) {
 				distance = distance * 1.5;
 				dashType = DMZEvent.PlayerDashEvent.DashType.DOUBLE;
 				int totalCost = (int) Math.ceil(baseDrain * 0.25);
-				if (inAir) {
+				if (isFlyingSkillActive) {
 					kiCost = totalCost;
 				} else {
 					kiCost = (int) Math.ceil(totalCost * 0.25);
@@ -135,7 +134,7 @@ public class DashHandler {
 			} else {
 				dashType = DMZEvent.PlayerDashEvent.DashType.NORMAL;
 				int totalCost = (int) Math.ceil(baseDrain * 0.12);
-				if (inAir) {
+				if (isFlyingSkillActive) {
 					kiCost = totalCost;
 				} else {
 					stamCost = totalCost;
