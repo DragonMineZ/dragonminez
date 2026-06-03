@@ -23,11 +23,14 @@ import software.bernie.geckolib.core.molang.MolangParser;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
+
+    private static final List<String> SKIP_HEAD_ANIMATIONS = List.of("transf.ssj", "transf.ssj2");
 
     private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
     private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
@@ -228,6 +231,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
+        boolean skipHead = animatable instanceof IPlayerAnimatable pa && SKIP_HEAD_ANIMATIONS.contains(pa.dragonminez$getCurrentPlayingAnimation());
 
         float partialTick = animationState.getPartialTick();
         float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
@@ -240,17 +244,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
         CoreGeoBone leftArm = this.getAnimationProcessor().getBone("left_arm");
 
-        float desiredHeadPitch;
-        float desiredHeadYaw;
-        if (FlySkillEvent.getInstance().isFlyingFast(animatable)) {
-            desiredHeadPitch = 0.7854F;
-            desiredHeadYaw = 0.0F;
-        } else {
-            desiredHeadPitch = Mth.clamp(lookPitch * 0.1F, -0.75F, 0.75F);
-            desiredHeadYaw = Mth.clamp(lookYaw * 0.95F, -1.2F, 1.2F);
-        }
-
-        if (head != null) {
+        if (head != null && !skipHead) {
             EntityModelData entityModelData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
             float lookPitchRad = entityModelData.headPitch() * Mth.DEG_TO_RAD;
@@ -330,13 +324,14 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void applyMolangQueries(T animatable, double animTime) {
         super.applyMolangQueries(animatable, animTime);
+        boolean skipHead = animatable instanceof IPlayerAnimatable pa && SKIP_HEAD_ANIMATIONS.contains(pa.dragonminez$getCurrentPlayingAnimation());
 
         MolangParser parser = MolangParser.INSTANCE;
 
-        float clampedPitch = -Mth.clamp(animatable.getXRot(), -85F, 85F);
+        float clampedPitch = skipHead ? 0F : -Mth.clamp(animatable.getXRot(), -85F, 85F);
 
         float relativeYaw = -Mth.wrapDegrees(animatable.getYHeadRot() - animatable.yBodyRot);
-        float clampedYaw = Mth.clamp(relativeYaw, -90F, 90F);
+        float clampedYaw = skipHead ? 0F : Mth.clamp(relativeYaw, -90F, 90F);
 
         parser.setValue("query.head_x_rotation", () -> (double) clampedPitch);
         parser.setValue("query.head_y_rotation", () -> (double) clampedYaw);

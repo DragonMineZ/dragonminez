@@ -36,9 +36,15 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
         final Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         final Vec3 playerPos = localPlayer.getPosition(partialTick);
         final Vector3f offset = FirstPersonManager.offsetFirstPersonView(localPlayer);
-        final float BODY_PUSHBACK_Z = 0.15F;
+        final float BODY_PUSHBACK_Z = 0.25F;
 
-        poseStack.translate(playerPos.x - cameraPos.x, playerPos.y - cameraPos.y, playerPos.z - cameraPos.z);
+        final Vector3f modelScale = poseStack.last().pose().getScale(new Vector3f());
+
+        float invX = modelScale.x() != 0F ? 1.0F / modelScale.x() : 1.0F;
+        float invY = modelScale.y() != 0F ? 1.0F / modelScale.y() : 1.0F;
+        float invZ = modelScale.z() != 0F ? 1.0F / modelScale.z() : 1.0F;
+
+        poseStack.translate((playerPos.x - cameraPos.x) * invX, (playerPos.y - cameraPos.y) * invY, (playerPos.z - cameraPos.z) * invZ);
         super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
         poseStack.translate(offset.x(), 0.0D, offset.z() + BODY_PUSHBACK_Z);
     }
