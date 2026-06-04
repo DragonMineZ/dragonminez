@@ -3,6 +3,7 @@ package com.dragonminez.common.stats;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
@@ -55,6 +56,7 @@ public class StatsCapability {
 		Player original = event.getOriginal();
 		original.reviveCaps();
 
+		TickHandler.registerForceKillGrace(player.getUUID());
 		StatsProvider.get(INSTANCE, player).ifPresent(newData -> {
 			StatsProvider.get(INSTANCE, original).ifPresent(oldData -> {
 				newData.copyFrom(oldData);
@@ -108,7 +110,6 @@ public class StatsCapability {
 	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-				serverPlayer.setHealth(serverPlayer.getMaxHealth());
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
 				data.getResources().setCurrentStamina(data.getMaxStamina());
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);

@@ -354,13 +354,17 @@ public class TickHandler {
 	}
 
 	private static boolean shouldForceKillForInvalidHealth(ServerPlayer serverPlayer, UUID playerId) {
-		if (forceKillGraceByPlayer.getOrDefault(playerId, 0) > 0) return false;
 		if (!serverPlayer.isAlive() || serverPlayer.isDeadOrDying() || serverPlayer.deathTime > 0) return false;
 
 		float health = serverPlayer.getHealth();
 		if (Float.isNaN(health) || Float.isInfinite(health)) return true;
 
+		if (forceKillGraceByPlayer.getOrDefault(playerId, 0) > 0) return false;
 		return health <= 0.0F;
+	}
+
+	public static void registerForceKillGrace(UUID playerId) {
+		forceKillGraceByPlayer.put(playerId, FORCED_KILL_GRACE_TICKS);
 	}
 
 
@@ -439,10 +443,13 @@ public class TickHandler {
 	}
 
 	private static void regenerateHealth(ServerPlayer player, StatsData data, double foodRegenMod) {
-		if (Float.isNaN(player.getHealth()) || Float.isInfinite(player.getHealth())) shouldForceKillForInvalidHealth(player, player.getUUID());
+		float currentHealth = player.getHealth();
+		if (!Float.isFinite(currentHealth)) {
+			player.setHealth(1.0f);
+			return;
+		}
 		if (foodRegenMod <= 0.0) return;
 
-		float currentHealth = player.getHealth();
 		float maxHealth = player.getMaxHealth();
 		if (currentHealth >= maxHealth) return;
 
@@ -450,7 +457,7 @@ public class TickHandler {
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
 		double finalRegen = Math.max(0.0, event.getAmount()) * foodRegenMod;
-		if (finalRegen <= 0.0) return;
+		if (!Double.isFinite(finalRegen) || finalRegen <= 0.0) return;
 
 		player.setHealth((float) Math.min(maxHealth, currentHealth + finalRegen));
 	}

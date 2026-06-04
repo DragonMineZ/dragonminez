@@ -156,6 +156,8 @@ public class StatsEvents {
 			if (maxHealthAttr == null) return;
 
 			float dmzHealthBonus = data.getHealthBonus();
+			if (!Float.isFinite(dmzHealthBonus) || dmzHealthBonus < 0) dmzHealthBonus = 0f;
+
 			AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
 
 			if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
