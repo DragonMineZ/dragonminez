@@ -22,6 +22,7 @@ import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.passives.PassiveEventHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
@@ -506,21 +507,17 @@ public class StatsEvents {
 				float staminaAmount = (maxStamina * staminaTotalRecoveryPercentage);
 
 				if (isSenzu || isHeartMedicine) {
-					float currentEnergy = data.getResources().getCurrentEnergy();
-					float currentStamina = data.getResources().getCurrentStamina();
-
-					com.dragonminez.common.passives.PassiveEventHandler.suppressHealingBonus = true;
+					PassiveEventHandler.suppressHealingBonus = true;
 					player.heal(maxHealth - player.getHealth());
-					com.dragonminez.common.passives.PassiveEventHandler.suppressHealingBonus = false;
-					data.getResources().setCurrentEnergy(maxEnergy - currentEnergy);
-					data.getResources().setCurrentStamina(maxStamina - currentStamina);
+					PassiveEventHandler.suppressHealingBonus = false;
+					data.getResources().setCurrentEnergy(maxEnergy);
+					data.getResources().setCurrentStamina(maxStamina);
 
 					int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
 					player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
 				} else {
 					int durationSeconds = 6;
-					FOOD_REGEN_QUEUE.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
-							.add(new FoodRegenTask(durationSeconds, healAmount, energyAmount, staminaAmount));
+					FOOD_REGEN_QUEUE.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new FoodRegenTask(durationSeconds, healAmount, energyAmount, staminaAmount));
 				}
 			});
 		}

@@ -117,15 +117,18 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
 		if (hairId == 5) return;
 		if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
+		List<String> hairTypes = List.of("base", "ssj", "ssj2", "ssj3");
 
 		float[] currentTint = character.getRgbHairColor();
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+			if (!hairTypes.contains(character.getActiveFormData().getHairType().toLowerCase())) return;
 			if (!character.getActiveFormData().getHairColor().isEmpty()) {
 				currentTint = character.getActiveFormData().getRgbHairColor();
 			}
 		}
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+			if (!hairTypes.contains(character.getActiveStackFormData().getHairType().toLowerCase())) return;
 			if (!character.getActiveStackFormData().getHairColor().isEmpty()) {
 				currentTint = character.getActiveStackFormData().getRgbHairColor();
 			}

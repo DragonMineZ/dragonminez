@@ -309,7 +309,7 @@ val optimizeResourcesEnabled: Provider<Boolean> =
     providers.gradleProperty("optimizeResources")
         .map { it.toBoolean() }
         .orElse(providers.environmentVariable("CI").map { it.equals("true", ignoreCase = true) || it == "1" })
-        .orElse(false)
+        .orElse(true)
 
 /** Escapes a path into a TOML basic string. */
 fun tomlString(value: String): String =

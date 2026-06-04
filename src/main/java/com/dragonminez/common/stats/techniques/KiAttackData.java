@@ -2,6 +2,7 @@ package com.dragonminez.common.stats.techniques;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TechniqueConfig;
+import com.dragonminez.common.stats.StatsData;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -179,15 +180,15 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	@Override
-	public double getCalculatedCost(com.dragonminez.common.stats.StatsData statsData) {
-		double damageDone = statsData.getKiDamage() * getActualDamageMultiplier();
+	public double getCalculatedCost(StatsData statsData) {
+		double damageDone = statsData.getKiDamageNoForms() * getActualDamageMultiplier();
 		double complexityFactor = (getActualSize() * 5.0) + (getActualSpeed() * 5.0) + (getActualArmorPenetration() * 0.2);
 
 		float typeMult = getTypeMultiplier(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
 		float utilMult = getUtilityMultiplier(this.utility != null ? this.utility : Utility.DAMAGE);
 		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig().getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
 		double configCostMult = Math.max(0.0, cfg.getKiCostMultiplier());
-		return Math.max(5.0, (damageDone * 0.5 + complexityFactor) * typeMult * utilMult * configCostMult * secondaryCostMultiplier());
+		return Math.max(5.0, ((damageDone * 0.5 + complexityFactor) * typeMult * utilMult * configCostMult * secondaryCostMultiplier()) / 2);
 	}
 
 	public int getUpgradeXpCost(String statName) {
