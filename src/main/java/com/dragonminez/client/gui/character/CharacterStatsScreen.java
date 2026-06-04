@@ -15,6 +15,8 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.extras.DynamicGrowthMath;
+import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -588,12 +590,38 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					}
 				}
 
+				appendDynamicGrowthProgress(extras, statNamesUpper[i], baseValue);
+
 				TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 			}
 		}
 
 		Component tpcComponent = tr("gui.dragonminez.character_stats.tpc").withStyle(style -> style.withBold(true));
 		TextUtil.drawStringWithBorder(graphics, this.font, tpcComponent, 42, statY + 76, 0x2BFFE2, 0x000000);
+	}
+
+	private void appendDynamicGrowthProgress(List<Component> extras, String statName, int currentStat) {
+		if (statsData == null) return;
+		if (!ConfigManager.getServerConfig().getDynamicGrowth().isEnabled()) return;
+
+		DynamicGrowthStat stat;
+		try {
+			stat = DynamicGrowthStat.valueOf(statName);
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+
+		extras.add(tr("dynamicgrowth.dragonminez.title").withStyle(ChatFormatting.AQUA));
+		if (statsData.getMaxAllowedIncreaseForStat(statName, 1) <= 0) {
+			extras.add(txt("  ").append(tr("dynamicgrowth.dragonminez.maxed")).withStyle(ChatFormatting.GREEN));
+			return;
+		}
+
+		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
+		double currentXp = statsData.getDynamicGrowth().getPracticeXp(stat);
+		double percent = requiredXp <= 0 ? 100.0 : Math.min(100.0, currentXp / requiredXp * 100.0);
+		extras.add(txt("  " + String.format(Locale.US, "%.1f", currentXp) + " / " + requiredXp + " XP ("
+				+ String.format(Locale.US, "%.1f", percent) + "%)").withStyle(ChatFormatting.GREEN));
 	}
 
 	private void renderStatisticsInfo(GuiGraphics graphics, int mouseX, int mouseY) {

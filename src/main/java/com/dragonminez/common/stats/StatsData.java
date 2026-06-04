@@ -11,6 +11,7 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.character.*;
 import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.stats.extras.DynamicGrowthData;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.TransformationsHelper;
@@ -46,6 +47,7 @@ public class StatsData {
 	private final PlayerQuestData playerQuestData;
 	private final BonusStats bonusStats;
 	private final Techniques techniques;
+	private final DynamicGrowthData dynamicGrowth;
 
 	private boolean hasInitializedHealth = false;
 	private boolean isDataLoaded = false;
@@ -65,6 +67,7 @@ public class StatsData {
 		this.playerQuestData = new PlayerQuestData();
 		this.bonusStats = new BonusStats();
 		this.techniques = new Techniques();
+		this.dynamicGrowth = new DynamicGrowthData();
 	}
 
 	public boolean hasInitializedHealth() {
@@ -394,6 +397,16 @@ public class StatsData {
 		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), true);
 		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
 		return secondaryKiDamage + (((kiPower + multBonusPwr) * pwrScaling * pwrMult) + (flatBonusPwr * pwrScaling)) * releaseMultiplier;
+	}
+
+	public double getKiDamageNoForms() {
+		double kiPower = stats.getKiPower();
+		double pwrScaling = getStatScaling("PWR");
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), false);
+		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), true);
+		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
+		return secondaryKiDamage + (((kiPower + multBonusPwr) * pwrScaling) + (flatBonusPwr * pwrScaling)) * releaseMultiplier;
 	}
 
 	public double getMaxDefense() {
@@ -953,6 +966,10 @@ public class StatsData {
 	}
 
 	public int getSingleStatCost(int simulatedTotalStats) {
+		var dynamicGrowthConfig = ConfigManager.getServerConfig().getDynamicGrowth();
+		// When Dynamic Growth forbids manual purchases, make every point unaffordable.
+		if (!dynamicGrowthConfig.isManualTpPurchasesEnabled()) return Integer.MAX_VALUE;
+
 		double globalMult = ConfigManager.getServerConfig().getGameplay().getGlobalTpCostMultiplier();
 		double raceMult = getRaceTpCostMultiplier();
 		double totalMult = globalMult * raceMult;
@@ -966,10 +983,19 @@ public class StatsData {
 		if (simulatedTotalStats < discountThreshold) earlyGameDiscount = discountThreshold - simulatedTotalStats;
 
 		int finalCost = (int) (baseCost * totalMult) - earlyGameDiscount;
-		return Math.max(minCost, finalCost);
+		finalCost = Math.max(minCost, finalCost);
+
+		double tpCostMultiplier = dynamicGrowthConfig.getAttributeTpCostMultiplier();
+		if (tpCostMultiplier > 1.0) {
+			double scaled = Math.ceil(finalCost * tpCostMultiplier);
+			finalCost = scaled >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) scaled;
+		}
+		return finalCost;
 	}
 
 	public int calculateRecursiveCost(int statsToAdd, int maxStats) {
+		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled())
+			return statsToAdd <= 0 ? 0 : Integer.MAX_VALUE;
 		int totalCost = 0;
 		int currentTotalStats = stats.getTotalStats();
 		int totalCap = getConfiguredMaxTotalStats();
@@ -982,6 +1008,7 @@ public class StatsData {
 	}
 
 	public int calculateStatIncrease(int maxStatsToAdd, float availableTPs, int maxStats) {
+		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return 0;
 		int statsIncreased = 0;
 		int costAccumulated = 0;
 		int currentTotalStats = stats.getTotalStats();
@@ -1040,6 +1067,7 @@ public class StatsData {
 		getResources().setPowerRelease(0);
 		getPlayerQuestData().resetAll();
 		getCharacter().clearInteractedMasters();
+		getDynamicGrowth().clear();
 
 		if (!keepSkills) {
 			getSkills().removeAllSkills();
@@ -1074,6 +1102,7 @@ public class StatsData {
 		nbt.put("PlayerQuestData", playerQuestData.serializeNBT());
 		nbt.put("BonusStats", bonusStats.save());
 		nbt.put("Techniques",  techniques.save());
+		nbt.put("DynamicGrowth", dynamicGrowth.save());
 		nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
 		return nbt;
 	}
@@ -1091,6 +1120,7 @@ public class StatsData {
 				"Please update the mod or re-generate your config files.");
 		if (nbt.contains("BonusStats")) bonusStats.load(nbt.getCompound("BonusStats"));
 		if (nbt.contains("Techniques")) techniques.load(nbt.getCompound("Techniques"));
+		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
 		this.isDataLoaded = true;
@@ -1107,6 +1137,7 @@ public class StatsData {
 		this.playerQuestData.deserializeNBT(other.playerQuestData.serializeNBT());
 		this.bonusStats.copyFrom(other.bonusStats);
 		this.techniques.copyFrom(other.techniques);
+		this.dynamicGrowth.copyFrom(other.dynamicGrowth);
 		this.hasInitializedHealth = other.hasInitializedHealth;
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty())
 			updateTransformationSkillLimits(character.getRaceName());

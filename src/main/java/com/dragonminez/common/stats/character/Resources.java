@@ -2,9 +2,11 @@ package com.dragonminez.common.stats.character;
 
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 
@@ -111,8 +113,28 @@ public class Resources {
 
     public void addRacialSkillCount(int amount) { setRacialSkillCount(racialSkillCount + amount); }
 
-    public void removeEnergy(float amount) { setCurrentEnergy(currentEnergy - amount); }
-    public void removeStamina(float amount) { setCurrentStamina(currentStamina - amount); }
+    public void removeEnergy(float amount) {
+        float before = currentEnergy;
+        setCurrentEnergy(currentEnergy - amount);
+        awardDynamicGrowthEnergy(before - currentEnergy);
+    }
+    public void removeStamina(float amount) {
+        float before = currentStamina;
+        setCurrentStamina(currentStamina - amount);
+        awardDynamicGrowthStamina(before - currentStamina);
+    }
+
+    private void awardDynamicGrowthStamina(float spent) {
+        if (spent > 0 && statsData != null && player instanceof ServerPlayer serverPlayer) {
+            DynamicGrowthService.awardStaminaSpent(serverPlayer, statsData, spent);
+        }
+    }
+
+    private void awardDynamicGrowthEnergy(float spent) {
+        if (spent > 0 && statsData != null && player instanceof ServerPlayer serverPlayer) {
+            DynamicGrowthService.awardEnergySpent(serverPlayer, statsData, spent);
+        }
+    }
     public void removePoise(float amount) { setCurrentPoise(currentPoise - amount); }
     public void removeAlignment(int amount) { setAlignment(alignment - amount); }
     public void removeTrainingPoints(float amount) { setTrainingPoints(trainingPoints - amount); }

@@ -439,6 +439,7 @@ public class TickHandler {
 	}
 
 	private static void regenerateHealth(ServerPlayer player, StatsData data, double foodRegenMod) {
+		if (Float.isNaN(player.getHealth()) || Float.isInfinite(player.getHealth())) shouldForceKillForInvalidHealth(player, player.getUUID());
 		if (foodRegenMod <= 0.0) return;
 
 		float currentHealth = player.getHealth();

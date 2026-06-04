@@ -23,6 +23,7 @@ public class GeneralServerConfig {
 	private WorldGenConfig worldGen = new WorldGenConfig();
 	private GameplayConfig gameplay = new GameplayConfig();
 	private RacialSkillsConfig racialSkills = new RacialSkillsConfig();
+	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
 	private StorageConfig storage = new StorageConfig();
 
 	@Getter
@@ -341,6 +342,134 @@ public class GeneralServerConfig {
 
 		public Double getMajinReviveHealthRatioPerBlop() {
 			return Math.max(0, Math.min(majinReviveHealthRatioPerBlop, Double.MAX_VALUE));
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class DynamicGrowthConfig {
+		private Boolean enabled = true;
+		private Boolean debugChat = false;
+		private Boolean practiceCurveEnabled = true;
+		private Double practiceXpMultiplier = 2.0;
+
+		private Double strPracticeMultiplier = 1.0;
+		private Double skpPracticeMultiplier = 1.0;
+		private Double resPracticeMultiplier = 1.0;
+		private Double vitPracticeMultiplier = 1.0;
+		private Double pwrPracticeMultiplier = 1.0;
+		private Double enePracticeMultiplier = 1.0;
+
+		private Double staminaSpentXpRatio = 0.1;
+		private Double energySpentXpRatio = 0.1;
+		private Double kiWeaponMeleePwrShare = 0.25;
+
+		private Double naturalCombatTpMultiplier = 1.0;
+		private Boolean manualTpPurchasesEnabled = true;
+		private Double attributeTpCostMultiplier = 1.0;
+
+		private Double passiveAnimalPracticeMultiplier = 0.5;
+		private Double villagerPracticeMultiplier = 0.1;
+		private Double lowDamagePracticeMultiplier = 0.2;
+		private Double shadowDummyPracticeMultiplier = 0.35;
+		private Double noRiskPracticeMultiplier = 0.5;
+		private Integer repeatTargetWindowSeconds = 30;
+		private Integer repeatTargetSoftCap = 8;
+		private Integer repeatTargetHardCap = 24;
+		private Double repeatTargetSoftMultiplier = 0.5;
+		private Double repeatTargetHardMultiplier = 0.15;
+
+		public Boolean isEnabled() {
+			return enabled != null ? enabled : true;
+		}
+
+		public Boolean isPracticeCurveEnabled() {
+			return practiceCurveEnabled == null || practiceCurveEnabled;
+		}
+
+		public Double getPracticeXpMultiplier() {
+			return clampNonNeg(practiceXpMultiplier, 2.0);
+		}
+
+		public Double getStatPracticeMultiplier(String statName) {
+			return switch (statName.toUpperCase()) {
+				case "STR" -> clampNonNeg(strPracticeMultiplier, 1.0);
+				case "SKP" -> clampNonNeg(skpPracticeMultiplier, 1.0);
+				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.0);
+				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 1.0);
+				case "PWR" -> clampNonNeg(pwrPracticeMultiplier, 1.0);
+				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.0);
+				default -> 1.0;
+			};
+		}
+
+		public Double getStaminaSpentXpRatio() {
+			return clampNonNeg(staminaSpentXpRatio, 0.1);
+		}
+
+		public Double getEnergySpentXpRatio() {
+			return clampNonNeg(energySpentXpRatio, 0.1);
+		}
+
+		public Double getKiWeaponMeleePwrShare() {
+			return clampNonNeg(kiWeaponMeleePwrShare, 0.25);
+		}
+
+		public Double getNaturalCombatTpMultiplier() {
+			return clampNonNeg(naturalCombatTpMultiplier, 1.0);
+		}
+
+		public Boolean isManualTpPurchasesEnabled() {
+			return manualTpPurchasesEnabled == null || manualTpPurchasesEnabled;
+		}
+
+		public Double getAttributeTpCostMultiplier() {
+			return Math.max(1.0, attributeTpCostMultiplier != null ? attributeTpCostMultiplier : 1.0);
+		}
+
+		public Double getPassiveAnimalPracticeMultiplier() {
+			return clampNonNeg(passiveAnimalPracticeMultiplier, 0.5);
+		}
+
+		public Double getVillagerPracticeMultiplier() {
+			return clampNonNeg(villagerPracticeMultiplier, 0.1);
+		}
+
+		public Double getLowDamagePracticeMultiplier() {
+			return clampNonNeg(lowDamagePracticeMultiplier, 0.2);
+		}
+
+		public Double getShadowDummyPracticeMultiplier() {
+			return clampNonNeg(shadowDummyPracticeMultiplier, 0.35);
+		}
+
+		public Double getNoRiskPracticeMultiplier() {
+			return clampNonNeg(noRiskPracticeMultiplier, 0.5);
+		}
+
+		public Integer getRepeatTargetWindowSeconds() {
+			return Math.max(1, repeatTargetWindowSeconds != null ? repeatTargetWindowSeconds : 30);
+		}
+
+		public Integer getRepeatTargetSoftCap() {
+			return Math.max(0, repeatTargetSoftCap != null ? repeatTargetSoftCap : 8);
+		}
+
+		public Integer getRepeatTargetHardCap() {
+			return Math.max(0, repeatTargetHardCap != null ? repeatTargetHardCap : 24);
+		}
+
+		public Double getRepeatTargetSoftMultiplier() {
+			return clampNonNeg(repeatTargetSoftMultiplier, 0.5);
+		}
+
+		public Double getRepeatTargetHardMultiplier() {
+			return clampNonNeg(repeatTargetHardMultiplier, 0.15);
+		}
+
+		private static double clampNonNeg(Double value, double fallback) {
+			if (value == null) return fallback;
+			return Math.max(0.0, value);
 		}
 	}
 

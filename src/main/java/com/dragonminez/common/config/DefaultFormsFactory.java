@@ -1280,7 +1280,6 @@ public class DefaultFormsFactory {
         giant_innocence_demon.setModelScaling(new Float[]{3.0f, 3.0f, 3.0f});
         setDefaultMasteryValues(giant_innocence_demon);
         giant_innocence_demon.setStackDrainMultiplier(2.0);
-        giant_innocence_demon.setCanAlwaysTransform(true);
 
 		FormConfig.FormData superDemon = new FormConfig.FormData();
 		superDemon.setName(MajinForms.SUPER_DEMON);

@@ -6,14 +6,19 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.quest.QuestUnlocks;
+import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.FlyingMob;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.Animal;
@@ -34,6 +39,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -183,7 +189,8 @@ public class TPGainEvents {
 					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
 				else
 					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
-				data.getResources().addTrainingPoints(applyGravityRoom(attacker, ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth));
+				int killTp = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth);
+				data.getResources().addTrainingPoints(applyGravityRoom(attacker, killTp));
 			}
 		});
 	}
@@ -196,12 +203,67 @@ public class TPGainEvents {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
-						int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
+						int baseTps = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
 						attackerData.getResources().addTrainingPoints(applyGravityRoom(attacker, baseTps));
 					}
 				}
 			});
 		}
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void onLivingHurtDynamicGrowth(LivingHurtEvent event) {
+		if (event.isCanceled() || event.getEntity().level().isClientSide) return;
+		if (!ConfigManager.getServerConfig().getDynamicGrowth().isEnabled()) return;
+
+		LivingEntity target = event.getEntity();
+		DamageSource source = event.getSource();
+		Entity sourceEntity = source.getEntity();
+		Entity directEntity = source.getDirectEntity();
+		float damage = event.getAmount();
+		if (damage <= 0.0F) return;
+
+		if (sourceEntity instanceof ServerPlayer attacker && !attacker.is(target)) {
+			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
+				DynamicGrowthService.markCombat(attackerData);
+				double damageXp = DynamicGrowthService.practiceDamageXp(attacker, target, damage);
+				if (isKiDamage(source, directEntity)) {
+					DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.PWR, damageXp, target);
+				} else if (isPlayerMeleeDamage(source, attacker)) {
+					DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.STR, damageXp, target);
+					if (attackerData.getSkills().isSkillActive("kimanipulation")) {
+						double pwrShare = ConfigManager.getServerConfig().getDynamicGrowth().getKiWeaponMeleePwrShare();
+						DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.PWR, damageXp * pwrShare, target);
+					}
+				}
+			});
+		}
+
+		if (target instanceof ServerPlayer victim && sourceEntity instanceof LivingEntity attacker && !sourceEntity.is(victim)) {
+			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
+				DynamicGrowthService.markCombat(victimData);
+				double vitalityXp = DynamicGrowthService.practiceDamageXp(victim, attacker, damage);
+				DynamicGrowthService.award(victim, victimData, DynamicGrowthStat.VIT, vitalityXp, attacker);
+			});
+		}
+	}
+
+	private static boolean isPlayerMeleeDamage(DamageSource source, ServerPlayer attacker) {
+		return "player".equals(source.getMsgId()) && (source.getDirectEntity() == null || source.getDirectEntity().is(attacker));
+	}
+
+	private static boolean isKiDamage(DamageSource source, Entity directEntity) {
+		if (directEntity instanceof AbstractKiProjectile) return true;
+		return source.getMsgId().toLowerCase(Locale.ROOT).contains("kiblast");
+	}
+
+	private static int applyDynamicGrowthCombatTpMult(int tp) {
+		if (tp <= 0) return tp;
+		var dynamicGrowth = ConfigManager.getServerConfig().getDynamicGrowth();
+		if (!dynamicGrowth.isEnabled()) return tp;
+		double mult = dynamicGrowth.getNaturalCombatTpMultiplier();
+		if (mult == 1.0) return tp;
+		return mult <= 0.0 ? 0 : Math.max(1, (int) Math.round(tp * mult));
 	}
 
 	private static void shareWithFusionPartner(ServerPlayer leader, StatsData leaderData, int totalTP) {

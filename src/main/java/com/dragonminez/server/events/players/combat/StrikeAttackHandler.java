@@ -13,6 +13,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
+import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -380,6 +381,8 @@ public class StrikeAttackHandler {
 				int xpGain = strike.getXpGainPerHit();
 				if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 			}
+			DynamicGrowthService.markCombat(stats);
+			DynamicGrowthService.awardStrike(player, stats, target, damage);
 		});
 	}
 
