@@ -207,7 +207,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		if (isBioAndroid) addRenderableWidget(createColorButton(startX + (buttonWidth + spacing) * 3, bodyColorY, "hairColor"));
 
-		if (isFemaleBody()) {
+		if (Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender())) {
 			addRenderableWidget(new ColorSlider.Builder()
 					.position(LEFT_PANEL_X + 20, top + 160)
 					.size(100, 8)
@@ -226,10 +226,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		if (shouldRenderFormPreviewInPreset()) {
 			initPreviewTransformationArrows(top + 174);
 		}
-	}
-
-	private boolean isFemaleBody() {
-		return Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender()) || character.getBodyType() == 1;
 	}
 
 	private void initHairTab(int top) {
@@ -498,7 +494,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.body_type"), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
-		if (isFemaleBody()) {
+		if (Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender())) {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(tr("gui.dragonminez.customization.chest_size").getString() + " x" + String.format("%.2f", character.getBoobScale())), centerX, top + 150, 0xFF9B9B);
 		}
 		if (shouldRenderFormPreviewInPreset()) {
