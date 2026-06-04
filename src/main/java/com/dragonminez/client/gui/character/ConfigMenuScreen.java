@@ -13,13 +13,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -154,7 +152,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		clearConfigButtons();
 		LivingEntity player = this.minecraft.player;
 
-		int rightPanelX = getUiWidth() - 163;
+		int rightPanelX = getRightPanelX() - 5;
 		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 		int startY = rightPanelY + 35;
@@ -250,7 +248,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 		beginUiScale(graphics);
 		applyZoom(graphics, partialTick);
-		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
 		int leftOffset = getLeftPanelSwitchOffset(partialTick);
 		graphics.pose().pushPose();
@@ -270,7 +267,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	private void updateRightPanelButtonOffsets(int rightOffset) {
-		int rightPanelX = getUiWidth() - 163;
+		int rightPanelX = getRightPanelX() - 5;
 		int decreaseX = rightPanelX + 25 + rightOffset;
 		int increaseX = rightPanelX + 108 + rightOffset;
 		int switchX = rightPanelX + 65 + rightOffset;
@@ -286,14 +283,24 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		}
 	}
 
+	// The two panels are centered side by side (no player model on this screen),
+	// so both X anchors are derived from the screen center.
+	private int getLeftPanelX() {
+		return getUiWidth() / 2 - 143;
+	}
+
+	private int getRightPanelX() {
+		return getUiWidth() / 2 + 2;
+	}
+
 	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-		int leftPanelX = 12;
+		int leftPanelX = getLeftPanelX();
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, leftPanelX, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, leftPanelX + 17, centerY - 95, 142, 22, 107, 21, 256, 256);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
 				leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
@@ -346,13 +353,13 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-		int rightPanelX = getUiWidth() - 158;
+		int rightPanelX = getRightPanelX();
 		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, rightPanelX, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, rightPanelX + 17, centerY - 95, 142, 22, 107, 21, 256, 256);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
 				rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
@@ -428,7 +435,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int leftPanelX = 12;
+		int leftPanelX = getLeftPanelX();
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
@@ -447,7 +454,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int leftPanelX = 12;
+		int leftPanelX = getLeftPanelX();
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
@@ -489,43 +496,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			return true;
 		}
 		return super.mouseReleased(mouseX, mouseY, button);
-	}
-
-	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
-		LivingEntity player = this.minecraft.player;
-		if (player == null) return;
-
-		int adjustedScale = getAdjustedModelScale(scale);
-
-		float xRotation = (float) Math.atan((y - mouseY) / 40.0F);
-		float yRotation = (float) Math.atan((x - mouseX) / 40.0F);
-
-		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
-		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float) Math.PI / 180F));
-		pose.mul(cameraOrientation);
-
-		float yBodyRotO = player.yBodyRot;
-		float yRotO = player.getYRot();
-		float xRotO = player.getXRot();
-		float yHeadRotO = player.yHeadRotO;
-		float yHeadRot = player.yHeadRot;
-
-		player.yBodyRot = 180.0F + yRotation * 20.0F;
-		player.setYRot(180.0F + yRotation * 40.0F);
-		player.setXRot(-xRotation * 20.0F);
-		player.yHeadRot = player.getYRot();
-		player.yHeadRotO = player.getYRot();
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
-		graphics.pose().popPose();
-
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
 	}
 
 	@Override
