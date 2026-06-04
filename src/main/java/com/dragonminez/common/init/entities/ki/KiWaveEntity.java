@@ -84,8 +84,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     @Override
-    public boolean isClashableBeam() {
-        return this.isFiring();
+    public ClashRole getClashRole() {
+        // Every ki wave (Kamehameha, Galick Gun, Final Flash, Masenko, Oozaru…) is a major beam.
+        return ClashRole.MAJOR;
     }
 
     @Override

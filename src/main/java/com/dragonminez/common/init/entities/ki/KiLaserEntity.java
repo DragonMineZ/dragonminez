@@ -206,8 +206,10 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     @Override
-    public boolean isClashableBeam() {
-        return this.isFiring();
+    public ClashRole getClashRole() {
+        // Render type 1 = Special Beam Cannon (a major clashing beam); type 0 = plain laser /
+        // Dodonpa, classified as a minor attack that gets broken instead of clashing.
+        return this.getKiRenderType() == 1 ? ClashRole.MAJOR : ClashRole.MINOR;
     }
 
     @Override

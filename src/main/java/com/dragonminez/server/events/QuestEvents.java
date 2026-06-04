@@ -92,6 +92,10 @@ public class QuestEvents {
 			return;
 		}
 
+		if (!isPartyWiped(controller, deadPlayer)) {
+			return;
+		}
+
 		StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();
 			Set<String> acceptedQuestIds = new LinkedHashSet<>(pqd.getAcceptedQuestIds());
@@ -131,6 +135,24 @@ public class QuestEvents {
 			notifyQuestFailure(controller, failedQuestIds);
 			QuestService.syncQuestState(controller);
 		});
+	}
+
+	/**
+	 * Returns whether the just-died player's party is fully down — i.e. every other online member is
+	 * dead or dying (health {@code <= 0}). Uses {@link net.minecraft.world.entity.LivingEntity#isDeadOrDying()}
+	 * rather than {@code isAlive()} because a player on the respawn screen is not yet removed and would
+	 * otherwise read as alive. A solo player has no other members, so this is always {@code true}.
+	 */
+	private static boolean isPartyWiped(ServerPlayer controller, ServerPlayer deadPlayer) {
+		for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
+			if (member.getUUID().equals(deadPlayer.getUUID())) {
+				continue;
+			}
+			if (!member.isDeadOrDying()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@SubscribeEvent

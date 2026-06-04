@@ -55,7 +55,7 @@ public class QuestActionC2S {
 			};
 
 			if (failure != null) {
-				player.displayClientMessage(failure.copy().withStyle(ChatFormatting.RED), true);
+				player.sendSystemMessage(failure.copy().withStyle(ChatFormatting.RED));
 			}
 		});
 		context.setPacketHandled(true);

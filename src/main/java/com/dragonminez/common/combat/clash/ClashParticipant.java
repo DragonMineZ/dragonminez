@@ -1,10 +1,6 @@
 package com.dragonminez.common.combat.clash;
 
-import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
-import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -14,8 +10,10 @@ import net.minecraft.world.phys.Vec3;
 /**
  * One side of a beam clash: a firing beam, its owner, and that owner's live
  * struggle state (auto-filling QTE meter + accumulated momentum). Players drive
- * the meter with real key presses; NPCs drive it with a virtual presser based on
- * their {@link IBattlePower}.
+ * the meter with real key presses; NPCs drive it with a virtual presser.
+ *
+ * <p>Clash power is the firing attack's own damage ({@link AbstractKiProjectile#getKiDamage()}),
+ * i.e. the technique's strength — not the owner's raw stats — so the stronger technique wins.
  */
 public class ClashParticipant {
 
@@ -39,30 +37,18 @@ public class ClashParticipant {
         this.owner = owner;
         this.npc = !(owner instanceof ServerPlayer);
         this.wasNoAi = owner instanceof Mob mob && mob.isNoAi();
-        this.statPower = resolveStatPower(owner);
+        this.statPower = Math.max(1.0, beam.getKiDamage());
         this.npcAccuracy = resolveNpcAccuracy(this.statPower, this.npc);
         // Stagger the two meters so both players don't pulse in perfect lockstep.
         this.meterPhase = owner.getRandom().nextFloat();
         this.prevMeterPhase = this.meterPhase;
     }
 
-    private static double resolveStatPower(LivingEntity owner) {
-        StatsData data = StatsProvider.get(StatsCapability.INSTANCE, owner).orElse(null);
-        if (data != null) {
-            // Ki damage is the most relevant stat for a beam struggle.
-            return Math.max(1.0, data.getKiDamage());
-        }
-        if (owner instanceof IBattlePower bp) {
-            return Math.max(1.0, bp.getBattlePower());
-        }
-        return Math.max(1.0, owner.getMaxHealth());
-    }
-
-    private static float resolveNpcAccuracy(double statPower, boolean npc) {
+    private static float resolveNpcAccuracy(double attackPower, boolean npc) {
         if (!npc) return 0.0f;
-        // Stronger NPCs time their struggle better. Compresses a wide BP range into [0.4, 0.92].
-        double t = Math.log10(statPower + 1.0) / 6.0; // ~0..1 across BP 1..1,000,000
-        return (float) Math.min(0.92, 0.40 + t * 0.52);
+        // Stronger attacks come from stronger fighters, who time their struggle better.
+        double t = Math.log10(attackPower + 1.0) / 3.0; // ~0..1 across damage 1..1000
+        return (float) Math.min(0.92, 0.45 + t * 0.45);
     }
 
     public AbstractKiProjectile beam() {
