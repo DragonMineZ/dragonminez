@@ -50,7 +50,6 @@ public class PlayerAttackHelper {
         boolean mainEmpty = player.getMainHandItem().isEmpty();
         boolean offEmpty = player.getOffhandItem().isEmpty();
 
-        if (mainEmpty && offEmpty) return true;
         if (mainEmpty || offEmpty) return false;
         if (player.getOffhandItem().getItem() instanceof ShieldItem) return false;
 
