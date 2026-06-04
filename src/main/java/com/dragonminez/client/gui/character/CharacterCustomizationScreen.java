@@ -636,7 +636,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				.append(Component.literal("x" + String.format(Locale.US, "%.2f", tpGain)).withStyle(ChatFormatting.YELLOW));
 
 		Component tpCostComp = txt("")
-				.append(Component.translatable("gui.dragonminez.character_stats.tpc").withStyle(ChatFormatting.AQUA))
+				.append(Component.translatable("gui.dragonminez.character_stats.tpc_multiplier").withStyle(ChatFormatting.AQUA))
 				.append(Component.literal(": ").withStyle(ChatFormatting.AQUA))
 				.append(Component.literal("x" + String.format(Locale.US, "%.2f", tpCost)).withStyle(ChatFormatting.YELLOW));
 

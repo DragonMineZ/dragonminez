@@ -23,7 +23,7 @@ public class CombatConfig {
 	private Double staminaConsumptionRatio = 0.083;
 	private Double blockStaminaCost = 0.25;
 	private Integer knockdownDurationSeconds = 30;
-	private Integer baselineFormDrain = 200;
+	private Integer baselineFormDrain = 100;
 	private Boolean killPlayersOnCombatLogout = true;
 
 	private Double kiProtectionMitigationPerLevel = 0.01;

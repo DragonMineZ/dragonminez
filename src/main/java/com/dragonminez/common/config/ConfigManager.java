@@ -493,29 +493,29 @@ public class ConfigManager {
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
 
-		setupInitialStats(config.getClassStats("warrior"), 10, 5, 10, 10, 5, 5, 5.0, 0.06, 5.0, 0.05, 14.0, 0.15);
-		setupScalingStats(config.getClassStats("warrior"), 1.0, 0.75, 0.5, 0.75, 1.5, 0.5, 2.5);
+		setupInitialStats(config.getClassStats("warrior"), 15, 5, 10, 10, 5, 5, 7.0, 0.08, 4.0, 0.04, 12.0, 0.12);
+		setupScalingStats(config.getClassStats("warrior"), 1.1, 0.6, 0.8, 0.8, 1.5, 0.4, 1.5);
 
-		setupInitialStats(config.getClassStats("spiritualist"), 5, 10, 5, 5, 10, 10, 3.0, 0.03, 15.0, 0.15, 9.0, 0.09);
-		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 0.25, 0.25, 1.0, 1.0, 3.0);
+		setupInitialStats(config.getClassStats("spiritualist"), 5, 5, 5, 5, 15, 15, 2.0, 0.02, 8.0, 0.10, 5.0, 0.05);
+		setupScalingStats(config.getClassStats("spiritualist"), 0.4, 0.4, 0.25, 0.25, 0.75, 1.75, 3.5);
 
-		setupInitialStats(config.getClassStats("martialartist"), 5, 10, 10, 10, 5, 5, 4.0, 0.045, 8.0, 0.08, 12.0, 0.12);
-		setupScalingStats(config.getClassStats("martialartist"), 0.75, 1.0, 0.75, 1.0, 1.75, 0.75, 2.75);
+		setupInitialStats(config.getClassStats("martialartist"), 5, 15, 5, 15, 5, 5, 6.0, 0.07, 4.0, 0.04, 9.0, 0.09);
+		setupScalingStats(config.getClassStats("martialartist"), 0.7, 1.25, 0.5, 0.7, 1.75, 0.4, 1.5);
 
-		setupInitialStats(config.getClassStats("berserker"), 15, 5, 5, 10, 5, 5, 8.0, 0.10, 2.0, 0.02, 15.0, 0.14);
-		setupScalingStats(config.getClassStats("berserker"), 2.0, 0.5, 0.5, 1.0, 2.0, 0.5, 1.0);
+		setupInitialStats(config.getClassStats("berserker"), 15, 5, 5, 15, 5, 5, 4.0, 0.05, 2.0, 0.02, 14.0, 0.13);
+		setupScalingStats(config.getClassStats("berserker"), 1.5, 0.5, 0.3, 0.5, 2.0, 0.4, 1.0);
 
-		setupInitialStats(config.getClassStats("paladin"), 5, 12, 12, 6, 5, 5, 8.0, 0.10, 8.0, 0.08, 9.0, 0.08);
-		setupScalingStats(config.getClassStats("paladin"), 0.5, 2.0, 2.0, 0.5, 1.0, 0.5, 1.0);
+		setupInitialStats(config.getClassStats("paladin"), 5, 10, 15, 10, 5, 5, 8.0, 0.09, 4.0, 0.04, 8.0, 0.08);
+		setupScalingStats(config.getClassStats("paladin"), 0.5, 0.8, 1.75, 0.8, 1.25, 0.4, 1.0);
 
-		setupInitialStats(config.getClassStats("tank"), 5, 5, 15, 10, 5, 5, 12.0, 0.14, 3.0, 0.04, 10.0, 0.08);
-		setupScalingStats(config.getClassStats("tank"), 0.5, 0.5, 2.5, 0.5, 2.5, 0.5, 0.5);
-		config.getClassStats("tank").setTpGainMultiplier(1.15);
+		setupInitialStats(config.getClassStats("tank"), 5, 5, 15, 15, 5, 5, 9.0, 0.10, 5.0, 0.05, 9.0, 0.09);
+		setupScalingStats(config.getClassStats("tank"), 0.5, 0.5, 2.0, 1.0, 2.5, 0.5, 1.0);
+		config.getClassStats("tank").setTpGainMultiplier(1.25);
 
-		setupInitialStats(config.getClassStats("enchanter"), 5, 5, 12, 5, 5, 13, 4.0, 0.04, 14.0, 0.14, 7.0, 0.08);
-		setupScalingStats(config.getClassStats("enchanter"), 0.5, 0.5, 2.0, 0.5, 0.5, 1.0, 2.5);
-		config.getClassStats("enchanter").setTpGainMultiplier(1.15);
-		config.getClassStats("enchanter").setTpCostMultiplier(0.95);
+		setupInitialStats(config.getClassStats("enchanter"), 5, 5, 10, 5, 5, 20, 2.0, 0.02, 12.0, 0.12, 16.0, 0.12);
+		setupScalingStats(config.getClassStats("enchanter"), 0.3, 0.3, 0.35, 2.0, 0.5, 0.5, 2.75);
+		config.getClassStats("enchanter").setTpGainMultiplier(1.25);
+		config.getClassStats("enchanter").setTpCostMultiplier(0.9);
 
 		setupDefaultPassives(config);
 
