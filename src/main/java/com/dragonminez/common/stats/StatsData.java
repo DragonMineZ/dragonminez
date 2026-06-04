@@ -290,7 +290,9 @@ public class StatsData {
 		double energyChange = 0;
 
 		if (activeCharging) {
-			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond * 1.5) * humanMult;
+			int kiBoostLevel = skills.getSkillLevel("kiboost");
+			double kiBoostMult = 1.0 + (kiBoostLevel * 0.25);
+			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond * 1.5) * humanMult * kiBoostMult;
 			if (regenAmount < 1.0) regenAmount = 1.0;
 			energyChange += regenAmount;
 		} else if (currentEnergy < maxEnergy) {

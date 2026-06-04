@@ -30,8 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
 
-    private static final List<String> SKIP_HEAD_ANIMATIONS = List.of("transf.ssj", "transf.ssj2");
-
     private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
     private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
     private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
@@ -231,7 +229,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
-        boolean skipHead = animatable instanceof IPlayerAnimatable pa && SKIP_HEAD_ANIMATIONS.contains(pa.dragonminez$getCurrentPlayingAnimation());
+        boolean skipHead = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
 
         float partialTick = animationState.getPartialTick();
         float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
@@ -324,7 +322,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void applyMolangQueries(T animatable, double animTime) {
         super.applyMolangQueries(animatable, animTime);
-        boolean skipHead = animatable instanceof IPlayerAnimatable pa && SKIP_HEAD_ANIMATIONS.contains(pa.dragonminez$getCurrentPlayingAnimation());
+        boolean skipHead = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
 
         MolangParser parser = MolangParser.INSTANCE;
 

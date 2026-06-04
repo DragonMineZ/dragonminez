@@ -174,8 +174,8 @@ public class ExecuteActionC2S {
 								double mastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
 								double maxMastery = nextForm.getMaxMastery();
 
-								if (mastery >= (maxMastery * 0.25)) {
-									int cost = (int) (data.getAdjustedEnergyDrain() * 3);
+								if (mastery >= (maxMastery * 0.4)) {
+									int cost = (int) (data.getAdjustedEnergyDrain() * 4);
 
 									if (data.getResources().getCurrentEnergy() >= cost) {
 										data.getResources().removeEnergy(cost);

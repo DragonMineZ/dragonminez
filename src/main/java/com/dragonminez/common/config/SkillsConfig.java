@@ -165,6 +165,13 @@ public class SkillsConfig {
 
 		skills.put("kicontrol", new SkillCosts(List.of(3000)));
 
+		List<Integer> kiBoostCosts = new ArrayList<>();
+		kiBoostCosts.add(2000);
+		kiBoostCosts.add(4000);
+		kiBoostCosts.add(6000);
+		kiBoostCosts.add(8000);
+		skills.put("kiboost", new SkillCosts(kiBoostCosts));
+
 		List<Integer> kiSenseCosts = new ArrayList<>();
 		kiSenseCosts.add(300);
 		kiSenseCosts.add(600);

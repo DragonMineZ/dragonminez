@@ -70,7 +70,6 @@ public final class CombatAnimationResolver {
     }
 
     public static String resolvePlayerPose(Player player) {
-        // An active Ki weapon acts as a fake weapon: use its resolved combo pose, like a real weapon.
         WeaponAttributes main = PlayerAttackHelper.isKiWeaponActive(player)
                 ? PlayerAttackHelper.getKiWeaponAttributes(player)
                 : WeaponRegistry.getAttributes(player.getMainHandItem());

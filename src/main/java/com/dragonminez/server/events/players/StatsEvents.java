@@ -122,9 +122,9 @@ public class StatsEvents {
 				}
 
 				if (totalHpPulse > 0) {
-					com.dragonminez.common.passives.PassiveEventHandler.suppressHealingBonus = true;
+					PassiveEventHandler.suppressHealingBonus = true;
 					serverPlayer.heal(totalHpPulse);
-					com.dragonminez.common.passives.PassiveEventHandler.suppressHealingBonus = false;
+					PassiveEventHandler.suppressHealingBonus = false;
 				}
 
 				if (totalKiPulse > 0 || totalStamPulse > 0) {

@@ -1,6 +1,5 @@
 package com.dragonminez.server.events.players.actionmode;
 
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
@@ -30,9 +29,8 @@ public class StackFormModeHandler implements IActionModeHandler {
 
 			String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
-			String type = ConfigManager.getStackFormGroup(group).getFormType();
-			int skillLvl = data.getSkills().getSkillLevel(type);
-			return (5 + 5 * Math.max(1, skillLvl));
+			int mastery = (int) data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
+			return (5 + Math.max(20, mastery));
 		}
 		return 0;
 	}

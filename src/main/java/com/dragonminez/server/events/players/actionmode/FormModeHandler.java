@@ -1,6 +1,5 @@
 package com.dragonminez.server.events.players.actionmode;
 
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
@@ -20,11 +19,8 @@ public class FormModeHandler implements IActionModeHandler {
 		if (nextForm != null) {
 			String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
 
-			String type = ConfigManager.getFormGroup(data.getCharacter().getRaceName(), group).getFormType();
-			int skillLvl = data.getSkills().getSkillLevel(
-					convertSuperformTypes(type)
-			);
-			return (5 + 5 * Math.max(1, skillLvl));
+			int mastery = (int) data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
+			return (5 + Math.max(20, mastery));
 		}
 		return 0;
 	}
@@ -114,11 +110,4 @@ public class FormModeHandler implements IActionModeHandler {
 		}
 	}
 
-	private String convertSuperformTypes(String type) {
-		if (type.toLowerCase().contains("super")) return "superforms";
-		else if (type.toLowerCase().contains("legendary")) return "legendaryforms";
-		else if (type.toLowerCase().contains("god")) return "godforms";
-		else if (type.toLowerCase().contains("android")) return "androidforms";
-		else return type;
-	}
 }
