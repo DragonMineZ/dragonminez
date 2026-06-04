@@ -69,8 +69,18 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     public abstract int getMaxHits();
 
+    public enum ClashRole { NONE, MAJOR, MINOR }
+
+    public ClashRole getClashRole() {
+        return ClashRole.NONE;
+    }
+
+    public boolean isMinorClashAttack() {
+        return this.getClashRole() == ClashRole.MINOR;
+    }
+
     public boolean isClashableBeam() {
-        return false;
+        return this.getClashRole() == ClashRole.MAJOR && this.isFiring();
     }
 
     /** Yaw of the fired beam axis (clash test for head-on opposition). */

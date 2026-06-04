@@ -64,6 +64,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
         return this.getMaxLife() / 20;
     }
 
+    @Override
+    public ClashRole getClashRole() {
+        // Small ki blasts (render type 0) are minor attacks broken by major beams.
+        return this.getKiRenderType() == 0 ? ClashRole.MINOR : ClashRole.NONE;
+    }
+
     public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setOwner(owner);
         this.setKiRenderType(1);

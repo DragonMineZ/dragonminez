@@ -33,12 +33,14 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BeamClashManager {
 
-    /** Beams must face within this dot-product to count as head-on (dot < -0.5 ≈ >120° apart). */
-    private static final double OPPOSITION_DOT = -0.5;
-    /** Extra slack (blocks) added to the combined beam radii when testing axis alignment. */
-    private static final double ALIGN_TOLERANCE = 1.5;
-    /** Trigger the clash slightly before the tips perfectly meet so it feels responsive. */
-    private static final double OVERLAP_SLACK = 1.5;
+    /** Beam directions must oppose at least this much (dot < value) to count as head-on. */
+    private static final double OPPOSITION_DOT = -0.3;
+    /** Clash triggers when the two beam segments come within (combined size × factor + pad). */
+    private static final double CLASH_RADIUS_FACTOR = 1.0;
+    private static final double CLASH_RADIUS_PAD = 1.5;
+    /** A minor attack is shattered when its center is within (combined size × factor + pad) of a major beam. */
+    private static final double MINOR_BREAK_FACTOR = 0.7;
+    private static final double MINOR_BREAK_PAD = 0.6;
 
     private static final List<BeamClash> ACTIVE_CLASHES = new ArrayList<>();
     private static final Set<UUID> CLASHING_OWNERS = new HashSet<>();
@@ -49,7 +51,22 @@ public class BeamClashManager {
         if (!(event.level instanceof ServerLevel level)) return;
 
         advanceActiveClashes();
-        detectNewClashes(level);
+
+        List<AbstractKiProjectile> majors = new ArrayList<>();
+        List<AbstractKiProjectile> minors = new ArrayList<>();
+        for (Entity entity : level.getAllEntities()) {
+            if (!(entity instanceof AbstractKiProjectile ki) || ki.isRemoved()) continue;
+            if (!(ki.getOwner() instanceof LivingEntity)) continue;
+            AbstractKiProjectile.ClashRole role = ki.getClashRole();
+            if (role == AbstractKiProjectile.ClashRole.MAJOR && ki.isClashableBeam() && !ki.isClashLocked()) {
+                majors.add(ki);
+            } else if (role == AbstractKiProjectile.ClashRole.MINOR) {
+                minors.add(ki);
+            }
+        }
+
+        detectNewClashes(majors);
+        breakMinorAttacks(level, majors, minors);
         rebuildClashingOwners();
         syncParticipants();
     }
@@ -75,24 +92,14 @@ public class BeamClashManager {
         });
     }
 
-    private static void detectNewClashes(ServerLevel level) {
-        List<AbstractKiProjectile> candidates = new ArrayList<>();
-        for (Entity entity : level.getAllEntities()) {
-            if (entity instanceof AbstractKiProjectile beam
-                    && beam.isClashableBeam()
-                    && !beam.isClashLocked()
-                    && beam.getOwner() instanceof LivingEntity) {
-                candidates.add(beam);
-            }
-        }
-
-        for (int i = 0; i < candidates.size(); i++) {
-            AbstractKiProjectile beamA = candidates.get(i);
+    private static void detectNewClashes(List<AbstractKiProjectile> majors) {
+        for (int i = 0; i < majors.size(); i++) {
+            AbstractKiProjectile beamA = majors.get(i);
             if (beamA.isClashLocked()) continue;
-            for (int j = i + 1; j < candidates.size(); j++) {
-                AbstractKiProjectile beamB = candidates.get(j);
+            if (!(beamA.getOwner() instanceof LivingEntity ownerA)) continue;
+            for (int j = i + 1; j < majors.size(); j++) {
+                AbstractKiProjectile beamB = majors.get(j);
                 if (beamB.isClashLocked()) continue;
-                if (!(beamA.getOwner() instanceof LivingEntity ownerA)) break;
                 if (!(beamB.getOwner() instanceof LivingEntity ownerB)) continue;
                 if (ownerA == ownerB) continue;
 
@@ -111,30 +118,100 @@ public class BeamClashManager {
     }
 
     private static boolean beamsClash(AbstractKiProjectile beamA, AbstractKiProjectile beamB) {
-        Vec3 originA = beamA.position();
-        Vec3 originB = beamB.position();
         Vec3 dirA = Vec3.directionFromRotation(beamA.getClashPitch(), beamA.getClashYaw());
         Vec3 dirB = Vec3.directionFromRotation(beamB.getClashPitch(), beamB.getClashYaw());
-
-        // Must be roughly facing each other.
         if (dirA.dot(dirB) > OPPOSITION_DOT) return false;
 
-        Vec3 toB = originB.subtract(originA);
-        double gap = toB.length();
-        if (gap < 1.0e-3) return false;
+        Vec3 a0 = beamA.position();
+        Vec3 a1 = a0.add(dirA.scale(Math.max(0.1F, beamA.getClashBeamLength())));
+        Vec3 b0 = beamB.position();
+        Vec3 b1 = b0.add(dirB.scale(Math.max(0.1F, beamB.getClashBeamLength())));
 
-        // B must lie ahead of A along A's firing axis...
-        double projB = toB.dot(dirA);
-        if (projB <= 0) return false;
+        double threshold = (beamA.getSize() + beamB.getSize()) * CLASH_RADIUS_FACTOR + CLASH_RADIUS_PAD;
+        return segmentDistanceSq(a0, a1, b0, b1) <= threshold * threshold;
+    }
 
-        // ...and close to that axis (the two beams must be roughly collinear).
-        double perp = toB.subtract(dirA.scale(projB)).length();
-        double alignRadius = (beamA.getSize() + beamB.getSize()) + ALIGN_TOLERANCE;
-        if (perp > alignRadius) return false;
+    private static void breakMinorAttacks(ServerLevel level, List<AbstractKiProjectile> majors,
+                                          List<AbstractKiProjectile> minors) {
+        if (minors.isEmpty()) return;
+        for (AbstractKiProjectile major : majors) {
+            if (!(major.getOwner() instanceof LivingEntity majorOwner)) continue;
+            Vec3 dir = Vec3.directionFromRotation(major.getClashPitch(), major.getClashYaw());
+            Vec3 a0 = major.position();
+            Vec3 a1 = a0.add(dir.scale(Math.max(0.1F, major.getClashBeamLength())));
 
-        // The two growing beams must have (nearly) spanned the gap between them.
-        double reach = beamA.getClashBeamLength() + beamB.getClashBeamLength();
-        return reach + OVERLAP_SLACK >= gap;
+            for (AbstractKiProjectile minor : minors) {
+                if (minor.isRemoved()) continue;
+                if (minor.getOwner() == majorOwner) continue; // don't shatter your own blasts
+                double threshold = (major.getSize() + minor.getSize()) * MINOR_BREAK_FACTOR + MINOR_BREAK_PAD;
+                if (pointSegmentDistanceSq(minor.position(), a0, a1) <= threshold * threshold) {
+                    shatterMinor(level, minor);
+                }
+            }
+        }
+    }
+
+    private static void shatterMinor(ServerLevel level, AbstractKiProjectile minor) {
+        Vec3 p = minor.position();
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF,
+                p.x, p.y, p.z, 6, 0.2, 0.2, 0.2, 0.02);
+        level.playSound(null, p.x, p.y, p.z, MainSounds.KI_EXPLOSION_IMPACT.get(),
+                SoundSource.PLAYERS, 0.6F, 1.3F);
+        minor.discard();
+    }
+
+    private static double segmentDistanceSq(Vec3 p1, Vec3 q1, Vec3 p2, Vec3 q2) {
+        Vec3 d1 = q1.subtract(p1);
+        Vec3 d2 = q2.subtract(p2);
+        Vec3 r = p1.subtract(p2);
+        double a = d1.dot(d1);
+        double e = d2.dot(d2);
+        double f = d2.dot(r);
+        final double EPS = 1.0e-9;
+
+        double s, t;
+        if (a <= EPS && e <= EPS) {
+            return r.dot(r);
+        }
+        if (a <= EPS) {
+            s = 0.0;
+            t = clamp01(f / e);
+        } else {
+            double c = d1.dot(r);
+            if (e <= EPS) {
+                t = 0.0;
+                s = clamp01(-c / a);
+            } else {
+                double b = d1.dot(d2);
+                double denom = a * e - b * b;
+                s = denom > EPS ? clamp01((b * f - c * e) / denom) : 0.0;
+                t = (b * s + f) / e;
+                if (t < 0.0) {
+                    t = 0.0;
+                    s = clamp01(-c / a);
+                } else if (t > 1.0) {
+                    t = 1.0;
+                    s = clamp01((b - c) / a);
+                }
+            }
+        }
+        Vec3 c1 = p1.add(d1.scale(s));
+        Vec3 c2 = p2.add(d2.scale(t));
+        Vec3 diff = c1.subtract(c2);
+        return diff.dot(diff);
+    }
+
+    private static double pointSegmentDistanceSq(Vec3 p, Vec3 s0, Vec3 s1) {
+        Vec3 d = s1.subtract(s0);
+        double len2 = d.dot(d);
+        if (len2 <= 1.0e-9) return p.subtract(s0).lengthSqr();
+        double t = clamp01(p.subtract(s0).dot(d) / len2);
+        Vec3 proj = s0.add(d.scale(t));
+        return p.subtract(proj).lengthSqr();
+    }
+
+    private static double clamp01(double v) {
+        return v < 0.0 ? 0.0 : Math.min(v, 1.0);
     }
 
     private static void rebuildClashingOwners() {

@@ -148,6 +148,12 @@ public class KiDiskEntity extends AbstractKiProjectile {
     }
 
     @Override
+    public ClashRole getClashRole() {
+        // Discs (e.g. Destructo Disc) are minor attacks: they don't clash, they get broken.
+        return ClashRole.MINOR;
+    }
+
+    @Override
     public EntityDimensions getDimensions(Pose pPose) {
         float scale = this.getSize();
         float width = 1.0F * scale;
