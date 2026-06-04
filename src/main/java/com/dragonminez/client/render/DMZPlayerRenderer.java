@@ -7,6 +7,7 @@ import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.util.BoneVisibilityHandler;
+import com.dragonminez.mixin.client.GeoModelAccessor;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -75,6 +76,8 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
+		((GeoModelAccessor) (Object) getGeoModel()).dmz$setLastRenderedInstance(-1L);
+
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));
 		var character = stats.getCharacter();
@@ -88,9 +91,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 				? activeForm.getCustomModel().toLowerCase() : "";
 
 		String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (logicKey.isEmpty()) {
-			logicKey = race;
-		}
+		if (logicKey.isEmpty()) logicKey = race;
 
 		float configScaleX, configScaleY, configScaleZ;
 		if (activeForm != null) {
@@ -105,9 +106,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		float scalingX, scalingY, scalingZ;
 
-		boolean isOozaru = logicKey.startsWith("oozaru") ||
-				(race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) ||
-						Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+		boolean isOozaru = logicKey.startsWith("oozaru") || (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
 
 		if (isOozaru) {
 			scalingX = Math.max(0.1f, configScaleX - 2.8f);
