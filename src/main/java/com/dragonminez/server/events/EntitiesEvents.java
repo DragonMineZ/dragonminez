@@ -25,11 +25,18 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.server.MinecraftServer;
+import com.dragonminez.common.quest.QuestService;
+import com.dragonminez.server.world.data.PartySavedData;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class EntitiesEvents {
+
+	private static final double QUEST_TETHER_RANGE_SQR = 31250.0;
 
 	@SubscribeEvent
 	public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
@@ -109,47 +116,91 @@ public class EntitiesEvents {
 		LivingEntity entity = event.getEntity();
 		if (entity.level().isClientSide() || entity.tickCount % 1000 != 0) return;
 
-		if (entity.getPersistentData().contains("dmz_quest_owner")) {
-			String ownerUUIDStr = entity.getPersistentData().getString("dmz_quest_owner");
-			try {
-				UUID ownerUUID = UUID.fromString(ownerUUIDStr);
-				ServerPlayer player = entity.getServer().getPlayerList().getPlayer(ownerUUID);
+		if (!entity.getPersistentData().contains("dmz_quest_owner")) return;
 
-				if (player == null || player.level() != entity.level() || entity.distanceToSqr(player) > 31250) {
+		String ownerUUIDStr = entity.getPersistentData().getString("dmz_quest_owner");
+		try {
+			UUID ownerUUID = UUID.fromString(ownerUUIDStr);
+			MinecraftServer server = entity.getServer();
+
+			if (entity.getPersistentData().contains(QuestService.QUEST_KEY_TAG)) {
+				if (!hasQuestGuardianInRange(server, entity, ownerUUID, null)) {
 					entity.discard();
 				}
-			} catch (Exception e) {
+				return;
+			}
+
+			ServerPlayer player = server.getPlayerList().getPlayer(ownerUUID);
+			if (player == null || player.level() != entity.level() || entity.distanceToSqr(player) > QUEST_TETHER_RANGE_SQR) {
 				entity.discard();
 			}
+		} catch (Exception e) {
+			entity.discard();
 		}
 	}
 
 	public static void cleanupQuestEntities(ServerLevel level, UUID playerUUID) {
 		String uuidStr = playerUUID.toString();
+		MinecraftServer server = level.getServer();
 
 		for (Entity entity : level.getAllEntities()) {
-			if (entity instanceof LivingEntity) {
-				if (entity.getPersistentData().contains("dmz_quest_owner")) {
-					String ownerUUID = entity.getPersistentData().getString("dmz_quest_owner");
-					if (ownerUUID.equals(uuidStr)) {
-						if (entity instanceof ShadowDummyEntity && entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
-							ServerPlayer owner = level.getServer().getPlayerList().getPlayer(playerUUID);
-							if (owner != null) {
-								StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(data -> {
-									if (data.getStatus().hasActiveShadowDummy() && data.getStatus().getActiveShadowDummyUUID().equals(entity.getUUID())) {
-										SummonPlayerShadowDummyC2S.removePenalties(owner, data);
-										data.getStatus().setActiveShadowDummyUUID(null);
-										data.getStatus().setShadowDummyPercent(0);
-										NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
-									}
-								});
-							}
+			if (!(entity instanceof LivingEntity)) continue;
+			if (!entity.getPersistentData().contains("dmz_quest_owner")) continue;
+
+			String ownerUUID = entity.getPersistentData().getString("dmz_quest_owner");
+			if (!ownerUUID.equals(uuidStr)) continue;
+
+			if (entity instanceof ShadowDummyEntity && entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+				ServerPlayer owner = server.getPlayerList().getPlayer(playerUUID);
+				if (owner != null) {
+					StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(data -> {
+						if (data.getStatus().hasActiveShadowDummy() && data.getStatus().getActiveShadowDummyUUID().equals(entity.getUUID())) {
+							SummonPlayerShadowDummyC2S.removePenalties(owner, data);
+							data.getStatus().setActiveShadowDummyUUID(null);
+							data.getStatus().setShadowDummyPercent(0);
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
 						}
-						entity.discard();
-					}
+					});
 				}
+				entity.discard();
+				continue;
+			}
+
+			if (entity.getPersistentData().contains(QuestService.QUEST_KEY_TAG)
+					&& hasQuestGuardianInRange(server, entity, playerUUID, playerUUID)) {
+				continue;
+			}
+
+			entity.discard();
+		}
+	}
+
+	private static boolean hasQuestGuardianInRange(MinecraftServer server, Entity questEntity, UUID ownerUUID, UUID excluded) {
+		for (ServerPlayer guardian : questGuardians(server, ownerUUID)) {
+			if (excluded != null && guardian.getUUID().equals(excluded)) continue;
+			if (guardian.level() == questEntity.level() && questEntity.distanceToSqr(guardian) <= QUEST_TETHER_RANGE_SQR) {
+				return true;
 			}
 		}
+		return false;
+	}
+
+	private static List<ServerPlayer> questGuardians(MinecraftServer server, UUID ownerUUID) {
+		List<ServerPlayer> guardians = new ArrayList<>();
+		if (server == null || ownerUUID == null) return guardians;
+
+		PartySavedData.PartyInstance party = PartySavedData.get(server).getPartyOf(ownerUUID);
+		if (party != null) {
+			for (UUID memberId : party.getMembers()) {
+				ServerPlayer member = server.getPlayerList().getPlayer(memberId);
+				if (member != null) guardians.add(member);
+			}
+			return guardians;
+		}
+
+		ServerPlayer owner = server.getPlayerList().getPlayer(ownerUUID);
+		if (owner != null) guardians.add(owner);
+		return guardians;
 	}
 	@SubscribeEvent
 	public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {

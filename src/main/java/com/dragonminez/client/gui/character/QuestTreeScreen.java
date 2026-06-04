@@ -588,6 +588,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean buttonActive = true;
 		boolean isClaimAction = false;
 		boolean isTrackAction = false;
+		boolean isStartAction = false;
 		List<Component> tooltipLines = List.of();
 
 		if (isCompleted) {
@@ -613,6 +614,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		} else if (canStart || showDisabledStart) {
 			buttonText = tr("gui.dragonminez.quests.start");
 			buttonActive = canStart;
+			isStartAction = true;
 		} else if (questData.getQuestStatus(selectedKey) == PlayerQuestData.QuestStatus.ACCEPTED
 				&& !selectedKey.equals(questData.getTrackedQuestId())) {
 			buttonText = tr("gui.dragonminez.quests.track");
@@ -627,6 +629,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			tooltipLines = List.of(tr("gui.dragonminez.party.leader_only"));
 		} else if (!buttonActive && tooltipLines.isEmpty()) {
 			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
+		} else if (isStartAction && buttonActive && questData.isInParty() && tooltipLines.isEmpty()) {
+			tooltipLines = List.of(tr("gui.dragonminez.party.start_requirements_all"));
 		}
 
 		boolean finalIsClaimAction = isClaimAction;
