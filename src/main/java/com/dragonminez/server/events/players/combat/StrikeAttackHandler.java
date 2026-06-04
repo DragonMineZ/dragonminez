@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players.combat;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -80,8 +82,7 @@ public class StrikeAttackHandler {
 					CONNECT_WINDOW_TICKS
 			);
 			PENDING.put(player.getUUID(), pending);
-			net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
-					new com.dragonminez.common.events.DMZEvent.StrikeAttackCastEvent(player, stats, strike));
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
 			dashForward(player);
 		});
@@ -103,6 +104,7 @@ public class StrikeAttackHandler {
 		ActiveStrike active = ACTIVE.remove(id);
 		if (active != null && event.getEntity() instanceof ServerPlayer attacker) {
 			clearVictimStrikeLock(attacker, null, active.targetId());
+			stopVictimAnimation(attacker, null, active.targetId());
 		}
 	}
 
@@ -118,13 +120,31 @@ public class StrikeAttackHandler {
 	}
 
 	private static void clearVictimStrikeLock(ServerPlayer player, LivingEntity target, UUID targetId) {
-		if (target instanceof ServerPlayer) {
-			setStrikeLocked(target, false);
-			return;
+		// Prefer UUID lookup: the target reference may point to a stale entity (recreated
+		// after death / dimension change) whose capability is already invalidated.
+		if (targetId != null && player.getServer() != null) {
+			ServerPlayer victim = player.getServer().getPlayerList().getPlayer(targetId);
+			if (victim != null) {
+				setStrikeLocked(victim, false);
+				return;
+			}
 		}
-		if (targetId == null || player.getServer() == null) return;
-		ServerPlayer victim = player.getServer().getPlayerList().getPlayer(targetId);
-		if (victim != null) setStrikeLocked(victim, false);
+		// Fallback for non-player targets or offline victims
+		if (target instanceof ServerPlayer serverTarget) setStrikeLocked(serverTarget, false);
+	}
+
+	private static void stopVictimAnimation(ServerPlayer player, LivingEntity target, UUID targetId) {
+		// Same UUID-first strategy as clearVictimStrikeLock.
+		if (targetId != null && player.getServer() != null) {
+			ServerPlayer victim = player.getServer().getPlayerList().getPlayer(targetId);
+			if (victim != null) {
+				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victim.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), victim);
+				return;
+			}
+		}
+		if (target instanceof ServerPlayer serverTarget) {
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverTarget.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverTarget);
+		}
 	}
 
 	private static void processPending(ServerPlayer player) {
@@ -227,10 +247,10 @@ public class StrikeAttackHandler {
 			double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
 					ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
 
-			com.dragonminez.common.events.DMZEvent.DamageModifyEvent modifyEvent =
-					new com.dragonminez.common.events.DMZEvent.DamageModifyEvent(player, target, totalDamage, 0.0,
-							com.dragonminez.common.events.DMZEvent.DamageSourceType.STRIKE);
-			totalDamage = net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(modifyEvent) ? 0.0 : Math.max(0.0, modifyEvent.getAmount());
+			DMZEvent.DamageModifyEvent modifyEvent =
+					new DMZEvent.DamageModifyEvent(player, target, totalDamage, 0.0,
+							DMZEvent.DamageSourceType.STRIKE);
+			totalDamage = MinecraftForge.EVENT_BUS.post(modifyEvent) ? 0.0 : Math.max(0.0, modifyEvent.getAmount());
 
 			int durationTicks = Math.max(20, pending.durationTicks());
 			int hitCount = Math.max(1, (int) Math.ceil(durationTicks / (double) HIT_INTERVAL_TICKS));
@@ -251,8 +271,8 @@ public class StrikeAttackHandler {
 					0
 			);
 			ACTIVE.put(player.getUUID(), active);
-			net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
-					new com.dragonminez.common.events.DMZEvent.StrikeAttackFireEvent(player, stats, strike, target));
+			MinecraftForge.EVENT_BUS.post(
+					new DMZEvent.StrikeAttackFireEvent(player, stats, strike, target));
 
 			applyStrikeDamage(player, target, perHitDamage, pending.techniqueId());
 			//teleportToTargetFront(player, target);
@@ -271,6 +291,7 @@ public class StrikeAttackHandler {
 		setStrikeLocked(player, false);
 		clearVictimStrikeLock(player, target, active.targetId());
 		stopStrikeAnimation(player);
+		stopVictimAnimation(player, target, active.targetId());
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(active.techniqueId());
