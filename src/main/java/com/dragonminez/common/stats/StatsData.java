@@ -278,25 +278,20 @@ public class StatsData {
 		int meditationLevel = skills.getSkillLevel("meditation");
 		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.05) : 1.0;
 
-		// Ki Conductivity (Gete-tech enchantment) further boosts ki/energy regen.
 		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
 		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult * kiConductivityMult;
-
-		boolean humanBoost = ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-				&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
-				&& ConfigManager.getRaceCharacter(character.getRace()).getRacialSkill().equals("human");
-		double humanMult = humanBoost ? ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost() : 1.0;
+		double androidRegenMult = isAndroidRacialActive() ? 2.0 : 1.0;
 
 		double energyChange = 0;
 
 		if (activeCharging) {
 			int kiBoostLevel = skills.getSkillLevel("kiboost");
 			double kiBoostMult = 1.0 + (kiBoostLevel * 0.25);
-			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond * 1.5) * humanMult * kiBoostMult;
+			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond * 1.5) * androidRegenMult * kiBoostMult;
 			if (regenAmount < 1.0) regenAmount = 1.0;
 			energyChange += regenAmount;
 		} else if (currentEnergy < maxEnergy) {
-			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * humanMult;
+			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * androidRegenMult;
 
 			double formRawDrain = 0.0;
 			if (hasActiveForm && activeForm != null) formRawDrain = activeForm.getEnergyDrain();
@@ -307,12 +302,6 @@ public class StatsData {
 			else if (formRawDrain < 0.0) regenMultiplier = 1.0 + Math.abs(formRawDrain);
 
 			energyChange += regenAmount * regenMultiplier;
-		}
-
-		if (status.isAndroidUpgraded()) {
-			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * humanMult;
-			if (regenAmount < 0.5) regenAmount = 0.5;
-			energyChange += regenAmount;
 		}
 
 		return energyChange;
@@ -908,6 +897,27 @@ public class StatsData {
 
 	private long getConfiguredMaxTotalStatsRaw() {
 		return getConfiguredMaxValue() * 6L;
+	}
+
+	public boolean isHumanRacialActive() {
+		return ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
+				&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
+				&& ConfigManager.getRaceCharacter(character.getRace()).getRacialSkill().equals("human");
+	}
+
+	public boolean isAndroidRacialActive() {
+		return isHumanRacialActive() && status.isAndroidUpgraded();
+	}
+
+	public double getKiAttackCostModifier() {
+		if (isAndroidRacialActive()) return 0.50;
+		if (isHumanRacialActive())   return 0.75;
+		return 1.0;
+	}
+
+	public double getKiAttackDamageModifier() {
+		if (isAndroidRacialActive()) return 0.85;
+		return 1.0;
 	}
 
 	public double getRaceTpCostMultiplier() {

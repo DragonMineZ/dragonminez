@@ -343,7 +343,10 @@ public class TickHandler {
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
-		if (event.getEntity() instanceof ServerPlayer serverPlayer) removeAuraLight(serverPlayer.serverLevel(), playerId);
+		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+			removeAuraLight(serverPlayer.serverLevel(), playerId);
+			clearHumanKiAccumulators(serverPlayer);
+		}
 	}
 
 	@SubscribeEvent
@@ -668,6 +671,7 @@ public class TickHandler {
 				if (leftover != null) leftover.discard();
 				CHARGING_CACHE.remove(player.getUUID());
 				CHARGE_COST_ACCUM.remove(player.getUUID());
+				clearHumanKiAccumulators(player);
 			}
 			if (hadCharge) techniques.clearTechniqueCharge();
 			return;
@@ -712,23 +716,28 @@ public class TickHandler {
 			float rate = (percent < 100.0f) ? 100.0f / baseTicks : KiAttackData.OVERCHARGE_TIER_PERCENT / (float) baseTicks;
 			float newP = Math.min(ceiling, percent + rate);
 
-			if (creative) {
-				percent = newP;
-			} else {
+			if (creative) percent = newP;
+			else {
 				double chargeCost = 0.5 * base * (KiAttackData.costMultiplier(newP) - KiAttackData.costMultiplier(percent));
 				float accum = CHARGE_COST_ACCUM.getOrDefault(player.getUUID(), 0.0f) + (float) chargeCost;
 				float energy = data.getResources().getCurrentEnergy();
 				int whole = (int) accum;
+				int effectiveWhole = (int) Math.round(whole * data.getKiAttackCostModifier());
 
-				if (energy >= whole) {
-					if (whole > 0) { data.getResources().removeEnergy(whole); accum -= whole; }
+				if (energy >= effectiveWhole) {
+					if (effectiveWhole > 0) {
+						data.getResources().removeEnergy(effectiveWhole);
+						applyHumanKiPassiveDuringCharge(player, data, whole);
+					}
+					accum -= whole;
 					CHARGE_COST_ACCUM.put(player.getUUID(), accum);
 					percent = newP;
 				} else {
-					float affordFrac = whole > 0 ? Math.max(0.0f, Math.min(1.0f, (float) energy / whole)) : 1.0f;
+					float affordFrac = effectiveWhole > 0 ? Math.max(0.0f, Math.min(1.0f, energy / effectiveWhole)) : 1.0f;
 					percent = percent + (newP - percent) * affordFrac;
 					data.getResources().setCurrentEnergy(0);
 					CHARGE_COST_ACCUM.put(player.getUUID(), 0.0f);
+					applyHumanKiPassiveDuringCharge(player, data, Math.round(whole * affordFrac));
 					outOfKi = true;
 				}
 			}
@@ -773,8 +782,12 @@ public class TickHandler {
 							float costMult = KiAttackData.costMultiplier(effectiveCharge);
 							boolean drainsOverLife = activeKi.isMovementRestrictedType();
 							double fireFraction = drainsOverLife ? 0.25 : 0.50;
-							int fireCost = (int) Math.round(fireFraction * base * costMult);
-							if (fireCost > 0) data.getResources().removeEnergy(fireCost);
+							int originalFireCost = (int) Math.round(fireFraction * base * costMult);
+							int modifiedFireCost = (int) Math.round(originalFireCost * data.getKiAttackCostModifier());
+							if (modifiedFireCost > 0) data.getResources().removeEnergy(modifiedFireCost);
+
+							applyHumanKiPassiveDuringCharge(player, data, originalFireCost);
+							player.getPersistentData().putFloat("dmz_human_hp_drain_accum", 0.0f);
 
 							if (drainsOverLife) {
 								double lifeCost = 0.25 * base * costMult;
@@ -995,6 +1008,25 @@ public class TickHandler {
 		player.refreshDimensions();
 	}
 
+	private static void applyHumanKiPassiveDuringCharge(ServerPlayer player, StatsData data, int originalKiCost) {
+		if (!data.isHumanRacialActive() || data.isAndroidRacialActive() || originalKiCost <= 0) return;
+
+		float hpAccum = player.getPersistentData().getFloat("dmz_human_hp_drain_accum") + originalKiCost * 0.125f;
+		int hpWhole = (int) hpAccum;
+
+		if (hpWhole > 0 && player.getHealth() > hpWhole + 2.0f) {
+			player.setHealth(player.getHealth() - hpWhole);
+			double bonusDmg = player.getPersistentData().getDouble("dmz_human_ki_bonus_dmg") + hpWhole;
+			player.getPersistentData().putDouble("dmz_human_ki_bonus_dmg", bonusDmg);
+			hpAccum -= hpWhole;
+		}
+		player.getPersistentData().putFloat("dmz_human_hp_drain_accum", hpAccum);
+	}
+
+	private static void clearHumanKiAccumulators(ServerPlayer player) {
+		player.getPersistentData().putFloat("dmz_human_hp_drain_accum", 0.0f);
+		player.getPersistentData().putDouble("dmz_human_ki_bonus_dmg", 0.0);
+	}
 
 	public static void registerActionModeHandlers() {
 		ACTION_MODE_HANDLERS.put(ActionMode.FORM.name(), new FormModeHandler());

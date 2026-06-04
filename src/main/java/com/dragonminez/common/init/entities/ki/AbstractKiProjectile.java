@@ -163,6 +163,18 @@ public abstract class AbstractKiProjectile extends Projectile {
                 }
                 return false;
             } else {
+                if (!this.level().isClientSide && this.getOwner() instanceof Player ownerPlayer) {
+                    float[] mod = { amount };
+                    StatsProvider.get(StatsCapability.INSTANCE, ownerPlayer).ifPresent(stats -> {
+                        mod[0] *= (float) stats.getKiAttackDamageModifier();
+                        double bonusDmg = ownerPlayer.getPersistentData().getDouble("dmz_human_ki_bonus_dmg");
+                        if (bonusDmg > 0.0) {
+                            mod[0] += (float) bonusDmg;
+                            ownerPlayer.getPersistentData().remove("dmz_human_ki_bonus_dmg");
+                        }
+                    });
+                    amount = mod[0];
+                }
                 return livingTarget.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), amount);
             }
         }
