@@ -378,6 +378,23 @@ public class StatsData {
 		return secondaryStrikeDamage + baseDamage * releaseMultiplier;
 	}
 
+	public double getStrikeDamageNoForms() {
+		double strikePower = stats.getStrikePower();
+		double strength = stats.getStrength();
+		double skpScaling = getStatScaling("SKP");
+		double strScaling = getStatScaling("STR");
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+
+		double flatBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower), false);
+		double multBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower), true);
+		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
+		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
+
+		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
+		double baseDamage = ((strikePower + multBonusSkp) * skpScaling) + (flatBonusSkp * skpScaling) + (((strength + multBonusStr) * strScaling) + (flatBonusStr * strScaling)) * 0.25;
+		return secondaryStrikeDamage + baseDamage * releaseMultiplier;
+	}
+
 	public double getMaxKiDamage() {
 		double kiPower = stats.getKiPower();
 		double pwrScaling = getStatScaling("PWR");

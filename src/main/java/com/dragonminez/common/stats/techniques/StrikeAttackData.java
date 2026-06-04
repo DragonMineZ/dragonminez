@@ -107,8 +107,8 @@ public class StrikeAttackData extends TechniqueData {
 	@Override
 	public double getCalculatedCost(StatsData statsData) {
 		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
-		double baseDamage = statsData.getStrikeDamage() * this.damageMultiplier * Math.max(0.0, cfg.getDamageMultiplier());
+		double baseDamage = statsData.getStrikeDamageNoForms() * this.damageMultiplier * Math.max(0.0, cfg.getDamageMultiplier());
 		double costMult = Math.max(0.0, cfg.getKiCostMultiplier());
-		return Math.max(5.0, baseDamage * 0.35 * costMult);
+		return Math.max(5.0, (baseDamage * 0.35 * costMult) /2);
 	}
 }
