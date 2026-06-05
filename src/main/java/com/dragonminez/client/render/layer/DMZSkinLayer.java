@@ -205,7 +205,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
         if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
-        boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.equals("ssj4d") || finalFaceKey.equals("ssj4gt") || finalFaceKey.equals("buffed");
+        boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.equals("ssj4d") || finalFaceKey.equals("ssj4gt") || finalFaceKey.equals("buffed") || finalFaceKey.equals("4arms");
         if (isHumanoidModel && bodyType == 0) return;
 
         model.getBone("head").ifPresent(headBone -> {

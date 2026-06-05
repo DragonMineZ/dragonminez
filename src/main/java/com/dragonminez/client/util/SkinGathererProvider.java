@@ -126,7 +126,7 @@ public class SkinGathererProvider {
 
 
 		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("ssj4d")
-                || logicKey.equals("ssj4gt") || logicKey.equals("buffed");
+                || logicKey.equals("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
 
 		if (isHumanoid && bodyType == 0) {
 			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
