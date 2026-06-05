@@ -61,8 +61,11 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.GETE_ORE.get())
 				.add(MainBlocks.GETE_BLOCK.get())
 				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
-				.add(MainBlocks.KIKONO_BLOCK.get());
-				//.add(MainBlocks.KIKONO_ARMOR_STATION.get());
+				.add(MainBlocks.KIKONO_BLOCK.get())
+				.add(MainBlocks.KIKONO_STATION.get());
+
+		//this.tag(MainTags.Blocks.NEEDS_GETE_TOOL)
+		//		.add(MainBlocks.INVISIBLE_LADDER_BLOCK.get());
 
 		this.tag(BlockTags.MINEABLE_WITH_AXE)
 				.add(MainBlocks.NAMEK_AJISSA_LOG.get())

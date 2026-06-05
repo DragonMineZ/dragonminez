@@ -100,8 +100,10 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		withExistingParent(MainItems.BANDIT_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 
 		//Comidas
-		simpleItem(MainItems.COMIDA_DINO_RAW);
-		simpleItem(MainItems.COMIDA_DINO_COOKED);
+		simpleItem(MainItems.DINO_MEAT_RAW);
+		simpleItem(MainItems.DINO_MEAT_COOKED);
+		simpleItem(MainItems.BABY_DINO_MEAT_RAW);
+		simpleItem(MainItems.BABY_DINO_MEAT_COOKED);
 		simpleItem(MainItems.DINO_TAIL_RAW);
 		simpleItem(MainItems.DINO_TAIL_COOKED);
 		simpleItem(MainItems.FROG_LEGS_RAW);
@@ -159,7 +161,6 @@ public class DMZItemModelProvider extends ItemModelProvider {
         generateArmorSetModels(MainItems.GINE_ARMOR);
         generateArmorSetModels(MainItems.KALE_ARMOR);
         generateArmorSetModels(MainItems.CAULIFLA_ARMOR);
-        generateArmorSetModels(MainItems.GETE_ARMOR);
 
         //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);
@@ -214,7 +215,6 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.KIKONO_SHARD);
 
 		//Gete Cosas
-		simpleItem(MainItems.GETE_SMITHING_TEMPLATE);
 		simpleItem(MainItems.GETE_RED_CAPSULE);
 		simpleItem(MainItems.GETE_PURPLE_CAPSULE);
 		simpleItem(MainItems.GETE_YELLOW_CAPSULE);
@@ -309,6 +309,12 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		blockItem(MainBlocks.SACRED_FERN);
 		saplingItem(MainBlocks.NAMEK_AJISSA_SAPLING);
 
+		// Herramientas
+		handheldItem(MainItems.GETE_PICKAXE);
+		handheldItem(MainItems.GETE_AXE);
+		handheldItem(MainItems.GETE_SHOVEL);
+		handheldItem(MainItems.GETE_HOE);
+
 	}
 
 	private void simpleItem(RegistryObject<Item> item) {
@@ -367,5 +373,10 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		for (RegistryObject<Item> piece : armorSet.values()) {
 			armorItem(piece);
 		}
+	}
+	private void handheldItem(RegistryObject<Item> item) {
+		withExistingParent(item.getId().getPath(),
+				ResourceLocation.parse("item/handheld")).texture("layer0",
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
 }

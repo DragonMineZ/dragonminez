@@ -47,7 +47,7 @@ public class CapsuleItem extends Item {
 		return Component.translatable("item.dragonminez.capsule")
 				.append(Component.literal(" "))
 				.append(tierLabel != null
-						? Component.translatable("item.dragonminez.capsule.tier", tierLabel).withStyle(tierColor)
+						? Component.translatable("item.dragonminez.capsule.tier", tierLabel).withStyle(tierColor).append(Component.literal(" "))
 						: Component.empty())
 				.append(Component.translatable("item.dragonminez.capsule.stat", values.getStats()).withStyle(ChatFormatting.GREEN))
 				;

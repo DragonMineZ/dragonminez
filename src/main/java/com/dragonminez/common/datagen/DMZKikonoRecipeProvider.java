@@ -58,44 +58,15 @@ public class DMZKikonoRecipeProvider {
 		buildArmorNoHelmetSet("majin_buu", MainItems.MAJIN_BUU_ARMOR, MainItems.PATTERN_MAJIN_BUU.get());
 		buildArmorNoHelmetSet("gamma1", MainItems.GAMMA1_ARMOR, MainItems.PATTERN_GAMMA1.get());
 		buildArmorNoHelmetSet("gamma2", MainItems.GAMMA2_ARMOR, MainItems.PATTERN_GAMMA2.get());
-		buildGeteArmorSet(MainItems.GETE_ARMOR, MainItems.PATTERN_GETE.get());
-	}
-
-	protected void buildGeteArmorSet(Map<ArmorItem.Type, RegistryObject<Item>> armorSet, Item pattern) {
-		Item gete = MainItems.GETE_INGOT.get();
-		Item cloth = MainItems.KIKONO_CLOTH.get();
-
-		KikonoRecipeBuilder.kikonize(armorSet.get(ArmorItem.Type.HELMET).get())
-				.pattern(pattern).template(Items.IRON_HELMET)
-				.input(gete).input(gete).input(gete)
-				.input(cloth).input(Items.AIR).input(cloth)
-				.input(Items.AIR).input(Items.AIR).input(Items.AIR)
-				.time(300).energy(2000)
-				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_armor_helmet"));
-
-		KikonoRecipeBuilder.kikonize(armorSet.get(ArmorItem.Type.CHESTPLATE).get())
-				.pattern(pattern).template(Items.IRON_CHESTPLATE)
-				.input(gete).input(Items.AIR).input(gete)
-				.input(gete).input(gete).input(gete)
-				.input(cloth).input(Items.AIR).input(cloth)
-				.time(300).energy(2000)
-				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_armor_chestplate"));
-
-		KikonoRecipeBuilder.kikonize(armorSet.get(ArmorItem.Type.LEGGINGS).get())
-				.pattern(pattern).template(Items.IRON_LEGGINGS)
-				.input(gete).input(gete).input(gete)
-				.input(gete).input(Items.AIR).input(gete)
-				.input(cloth).input(Items.AIR).input(cloth)
-				.time(300).energy(2000)
-				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_armor_leggings"));
-
-		KikonoRecipeBuilder.kikonize(armorSet.get(ArmorItem.Type.BOOTS).get())
-				.pattern(pattern).template(Items.IRON_BOOTS)
-				.input(Items.AIR).input(Items.AIR).input(Items.AIR)
-				.input(gete).input(Items.AIR).input(gete)
-				.input(gete).input(Items.AIR).input(gete)
-				.time(300).energy(2000)
-				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "gete_armor_boots"));
+		buildToolSetNoSword("gete",
+				MainItems.GETE_PICKAXE.get(),
+				MainItems.GETE_AXE.get(),
+				MainItems.GETE_SHOVEL.get(),
+				MainItems.GETE_HOE.get(),
+				MainItems.PATTERN_GETE.get(),
+				MainItems.GETE_INGOT.get(),
+				MainItems.KIKONO_STICK.get()
+		);
 	}
 
 	protected void buildFullArmorSet(String name, Map<ArmorItem.Type, RegistryObject<Item>> armorSet, Item pattern) {
@@ -109,6 +80,13 @@ public class DMZKikonoRecipeProvider {
 		buildChestplateRecipes(name, armorSet.get(ArmorItem.Type.CHESTPLATE).get(), pattern);
 		buildLeggingsRecipes(name, armorSet.get(ArmorItem.Type.LEGGINGS).get(), pattern);
 		buildBootsRecipes(name, armorSet.get(ArmorItem.Type.BOOTS).get(), pattern);
+	}
+
+	protected void buildToolSetNoSword(String name, Item pickaxe, Item axe, Item shovel, Item hoe, Item pattern, Item material, Item stick) {
+		buildPickaxeRecipes(name, pickaxe, pattern, material, stick);
+		buildAxeRecipes(name, axe, pattern, material, stick);
+		buildShovelRecipes(name, shovel, pattern, material, stick);
+		buildHoeRecipes(name, hoe, pattern, material, stick);
 	}
 
 	protected void buildFullToolSet(String name, Item pickaxe, Item axe, Item sword, Item shovel, Item hoe, Item scythe, Item pattern, Item material, Item stick) {
@@ -136,24 +114,6 @@ public class DMZKikonoRecipeProvider {
 				.time(200)
 				.energy(1000)
 				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name + "_armor_helmet"));
-	}
-
-	protected void buildCapeRecipes(String name, Item output, Item pattern) {
-		KikonoRecipeBuilder.kikonize(output)
-				.pattern(pattern)
-				.template(Items.IRON_CHESTPLATE)
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_STRING.get())
-				.input(MainItems.KIKONO_STRING.get())
-				.input(MainItems.KIKONO_STRING.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.time(200)
-				.energy(1000)
-				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name + "_armor_cape"));
 	}
 
 	protected void buildChestplateRecipes(String name, Item output, Item pattern) {
