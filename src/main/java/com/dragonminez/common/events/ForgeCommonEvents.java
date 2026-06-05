@@ -164,6 +164,7 @@ public class ForgeCommonEvents {
 				data.getCharacter().clearActiveForm(player);
 				data.getCharacter().clearActiveStackForm(player);
 				data.getEffects().removeAllEffects();
+                player.refreshDimensions();
 			});
 		}
 	}
@@ -177,7 +178,8 @@ public class ForgeCommonEvents {
 					player.teleportTo(otherworld, 0, 41, 10, 0, 0);
 				}
 			});
-		}
+            player.refreshDimensions();
+        }
 	}
 
 	@SubscribeEvent

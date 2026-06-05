@@ -453,7 +453,8 @@ public class Character {
 		boolean hadForm = hasActiveForm();
 		if (entity != null && hadForm) {
 			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-		}
+            entity.refreshDimensions();
+        }
 		clearActiveForm();
 		if (hadForm && entity instanceof ServerPlayer serverPlayer && !serverPlayer.level().isClientSide) {
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.FormChangeEvent(serverPlayer, oldGroup, oldForm, "", ""));
@@ -487,11 +488,12 @@ public class Character {
 		boolean hadForm = hasActiveStackForm();
 		if (entity != null && hadForm) {
 			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-		}
+            entity.refreshDimensions();
+        }
 		clearActiveStackForm();
 		if (hadForm && entity instanceof ServerPlayer serverPlayer && !serverPlayer.level().isClientSide) {
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StackFormChangeEvent(serverPlayer, oldGroup, oldForm, "", ""));
-		}
+        }
 	}
 
 	public FormConfig.FormData getActiveStackFormData() {

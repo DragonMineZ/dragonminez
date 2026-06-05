@@ -802,82 +802,91 @@ public class StatsEvents {
 		return p1IsGreen == p2IsGreen;
 	}
 
-	@SubscribeEvent
-	public static void onEntitySize(EntityEvent.Size event) {
-		Entity entity = event.getEntity();
-		if (!(entity instanceof Player)) return;
+    @SubscribeEvent
+    public static void onEntitySize(EntityEvent.Size event) {
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Player)) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
-			var character = data.getCharacter();
-			var activeForm = character.getActiveFormData();
-			String currentForm = character.getActiveForm();
-			String race = character.getRaceName().toLowerCase();
+        StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
+            var character = data.getCharacter();
+            var activeForm = character.getActiveFormData();
+            String currentForm = character.getActiveForm();
+            String race = character.getRaceName().toLowerCase();
 
-			var raceConfig = ConfigManager.getRaceCharacter(race);
-			String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-			String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-					? activeForm.getCustomModel().toLowerCase() : "";
+            var raceConfig = ConfigManager.getRaceCharacter(race);
+            String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+            String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
+                    ? activeForm.getCustomModel().toLowerCase() : "";
 
-			String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-			if (logicKey.isEmpty()) {
-				logicKey = race;
-			}
+            String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+            if (logicKey.isEmpty()) {
+                logicKey = race;
+            }
 
-			float configScaleX, configScaleY;
+            float configScaleX, configScaleY;
 
-			if (activeForm != null) {
-				configScaleX = activeForm.getModelScaling()[0];
-				configScaleY = activeForm.getModelScaling()[1];
-			} else {
-				configScaleX = character.getModelScaling()[0];
-				configScaleY = character.getModelScaling()[1];
-			}
+            if (activeForm != null) {
+                configScaleX = activeForm.getModelScaling()[0];
+                configScaleY = activeForm.getModelScaling()[1];
+            } else {
+                configScaleX = character.getModelScaling()[0];
+                configScaleY = character.getModelScaling()[1];
+            }
 
-			float scalingX = configScaleX;
-			float scalingY = configScaleY;
+            float scalingX = configScaleX;
+            float scalingY = configScaleY;
 
-			boolean isOozaru = logicKey.startsWith("oozaru") ||
-					(race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+            boolean isOozaru = logicKey.startsWith("oozaru") ||
+                    (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
 
-			if (isOozaru) {
-				float baseOozaruSize = 3.8f;
+            if (isOozaru) {
+                float baseOozaruSize = 3.8f;
 
-				float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
-				float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
+                float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
+                float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
 
-				scalingX = visualScaleX * baseOozaruSize;
-				scalingY = visualScaleY * baseOozaruSize;
-			} else {
-				scalingX = configScaleX;
-				scalingY = configScaleY;
-			}
+                scalingX = visualScaleX * baseOozaruSize;
+                scalingY = visualScaleY * baseOozaruSize;
+            } else {
+                scalingX = configScaleX;
+                scalingY = configScaleY;
+            }
 
-			float rawWidth = 0.6F * scalingX;
-			float rawHeight = 1.9F * scalingY;
+            Pose pose = event.getPose();
 
-			float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
-			float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
+            if (pose == Pose.DYING || pose == Pose.SLEEPING) {
+                event.setNewSize(EntityDimensions.fixed(0.2F, 0.2F));
+                event.setNewEyeHeight(0.2F);
+                return;
+            }
 
-			Pose pose = event.getPose();
-			float poseHeightMultiplier = 1.0F;
-			float eyeHeightMultiplier = 1.0F;
+            float rawWidth = 0.6F * scalingX;
+            float rawHeight = 1.9F * scalingY;
 
-			if (pose == Pose.CROUCHING) {
-				poseHeightMultiplier = 1.5F / 1.8F;
-				eyeHeightMultiplier = 1.27F / 1.62F;
-			} else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
-				poseHeightMultiplier = 0.6F / 1.8F;
-				eyeHeightMultiplier = 0.4F / 1.62F;
-			}
+            float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
+            float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
 
-			EntityDimensions newDims = EntityDimensions.fixed(finalWidth, finalHeight * poseHeightMultiplier);
-			event.setNewSize(newDims);
+            float poseHeightMultiplier = 1.0F;
+            float eyeHeightMultiplier = 1.0F;
 
-			float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
-			float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
+            if (pose == Pose.CROUCHING) {
+                poseHeightMultiplier = 1.5F / 1.8F;
+                eyeHeightMultiplier = 1.27F / 1.62F;
+            } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
+                poseHeightMultiplier = 0.6F / 1.8F;
+                eyeHeightMultiplier = 0.4F / 1.62F;
+            }
 
-			event.setNewEyeHeight(finalEyeHeight);
-		});
-	}
+            float heightConPose = finalHeight * poseHeightMultiplier;
+            float alturaSegura = Math.round(heightConPose * 10.0F) / 10.0F;
 
+            EntityDimensions newDims = EntityDimensions.fixed(finalWidth, alturaSegura);
+            event.setNewSize(newDims);
+
+            float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
+            float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
+
+            event.setNewEyeHeight(finalEyeHeight);
+        });
+    }
 }
