@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.List;
 import java.util.UUID;
 
 public abstract class AbstractKiProjectile extends Projectile {
@@ -332,7 +333,7 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     public void setKiDamage(float damage) { this.entityData.set(DAMAGE, damage); }
     public float getKiDamage() { return this.entityData.get(DAMAGE); }
-    public void setSize(float size) { this.entityData.set(SIZE, size); }
+    public void setSize(float size) { this.entityData.set(SIZE, size); this.refreshDimensions();}
     public float getSize() { return this.entityData.get(SIZE); }
     public void setKiSpeed(float speed) { this.entityData.set(SPEED, speed); }
     public float getKiSpeed() { return this.entityData.get(SPEED); }
@@ -428,4 +429,14 @@ public abstract class AbstractKiProjectile extends Projectile {
             }
         }
     }
+
+    @Override
+    public void onSyncedDataUpdated(List<SynchedEntityData.DataValue<?>> pDataValues) {
+        super.onSyncedDataUpdated(pDataValues);
+
+        if (SIZE.equals(pDataValues)) {
+            this.refreshDimensions();
+        }
+    }
+
 }

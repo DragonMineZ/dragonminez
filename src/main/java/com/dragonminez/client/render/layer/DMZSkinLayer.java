@@ -209,7 +209,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         if (isHumanoidModel && bodyType == 0) return;
 
         model.getBone("head").ifPresent(headBone -> {
-            // Ocultamos el cuerpo sin tocar la posición Z del headBone
             List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
             try {
                 dispatchFaceRender(model, poseStack, animatable, bufferSource, stats, character, finalFaceKey, isModelEmpty, raceName, partialTick, packedLight, packedOverlay, alpha);

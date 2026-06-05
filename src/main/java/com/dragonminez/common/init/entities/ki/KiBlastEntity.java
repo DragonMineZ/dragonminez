@@ -17,9 +17,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
@@ -535,18 +533,46 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
 
-            if (this.getKiRenderType() == 9) { //KiVolley
+            if (this.getKiRenderType() == 9) {
                 return;
             }
 
+            Vec3 eyePos = livingOwner.getEyePosition();
             Vec3 lookDir = livingOwner.getLookAngle();
-            Vec3 spawnPos = livingOwner.getEyePosition().add(lookDir.scale(0.5D));
+            double reach = 100.0D;
+            Vec3 endPos = eyePos.add(lookDir.scale(reach));
 
-            this.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
+            BlockHitResult blockHit = this.level().clip(new net.minecraft.world.level.ClipContext(
+                    eyePos, endPos,
+                    net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                    net.minecraft.world.level.ClipContext.Fluid.NONE,
+                    livingOwner
+            ));
 
-            this.shootFromRotation(livingOwner, livingOwner.getXRot(), livingOwner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
+            if (blockHit.getType() != BlockHitResult.Type.MISS) {
+                endPos = blockHit.getLocation();
+                reach = eyePos.distanceTo(endPos);
+            }
 
-            this.setDeltaMovement(lookDir.scale(this.getKiSpeed()));
+            AABB searchBox = livingOwner.getBoundingBox().expandTowards(lookDir.scale(reach)).inflate(1.0D);
+            for (Entity entity : this.level().getEntities(livingOwner, searchBox, e -> !e.isSpectator() && e.isPickable())) {
+                AABB hitbox = entity.getBoundingBox().inflate(0.3D);
+                java.util.Optional<Vec3> hit = hitbox.clip(eyePos, endPos);
+
+                if (hit.isPresent()) {
+                    double dist = eyePos.distanceTo(hit.get());
+                    if (dist < reach) {
+                        reach = dist;
+                        endPos = hit.get();
+                    }
+                }
+            }
+
+            Vec3 kiPos = new Vec3(this.getX(), this.getVisualCenterY(), this.getZ());
+            Vec3 newTrajectory = endPos.subtract(kiPos).normalize();
+
+            this.shoot(newTrajectory.x, newTrajectory.y, newTrajectory.z, this.getKiSpeed(), 0.0F);
+            this.hasImpulse = true;
 
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (this.random.nextFloat() * 0.2F));
         }
@@ -851,14 +877,19 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
 
     private void pulseAreaDamage() {
-        double radius = this.getSize();
-        AABB area = this.getBoundingBox().inflate(radius);
+        AABB area = this.getBoundingBox().inflate(5.0D);
         List<LivingEntity> nearby = this.level().getEntitiesOfClass(LivingEntity.class, area);
 
+        Vec3 center = new Vec3(this.getX(), this.getVisualCenterY(), this.getZ());
+        double radius = this.getSize() / 2.0D;
+        double radiusSq = radius * radius;
+
         for (LivingEntity target : nearby) {
-            if (this.shouldDamage(target)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
-                if (wasHit) this.onSuccessfulHit(target);
+            if (target.distanceToSqr(center) <= radiusSq + 25.0D) {
+                if (this.shouldDamage(target)) {
+                    boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                    if (wasHit) this.onSuccessfulHit(target);
+                }
             }
         }
     }
@@ -940,12 +971,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         if ((type == 5 || type == 6) && !this.level().isClientSide) {
             this.isDetonating = true;
-            this.maxDetonationRadius = this.getSize() * 2.5F;
+            this.maxDetonationRadius = (this.getSize() / 2.0F) * 2.5F;
             this.currentDetonationRadius = 0.0F;
             this.setDeltaMovement(0, 0, 0);
 
-            AABB damageArea = this.getBoundingBox().inflate(this.maxDetonationRadius);
-            List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
+            AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(this.maxDetonationRadius);            List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
             for (LivingEntity target : targets) {
                 if (this.shouldDamage(target)) {
                     boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
@@ -964,17 +994,17 @@ public class KiBlastEntity extends AbstractKiProjectile {
                         SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 5.0F, 0.6F);
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
-                explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
+                explosionVisual.setPos(this.getX(), centerY, this.getZ());
                 explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize() * 1.2F);
                 this.level().addFreshEntity(explosionVisual);
             }
             return;
         }
 
-        float explosionRadius = this.getSize() * 1.2F;
+        float explosionRadius = (this.getSize() / 2.0F) * 1.2F;
         float visualParticleSize = explosionRadius * 1.8F;
 
-        AABB damageArea = this.getBoundingBox().inflate(explosionRadius);
+        AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(explosionRadius);
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
@@ -1010,7 +1040,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                         SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 5.0F, 0.6F);
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
-                explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
+                explosionVisual.setPos(this.getX(), centerY, this.getZ());
                 explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize());
                 this.level().addFreshEntity(explosionVisual);
             }
@@ -1051,7 +1081,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private boolean destroyBlocksInPath() {
         boolean hitSomething = false;
-        float eatRadius = this.getSize();
+        float eatRadius = this.getSize() / 2.0f;
         int bRad = Math.round(eatRadius);
         BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
         Level level = this.level();
@@ -1082,7 +1112,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         if (hitSomething && !this.level().isClientSide) {
             KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
-            explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
+            explosionVisual.setPos(this.getX(), this.getVisualCenterY(), this.getZ());
             explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize());
             this.level().addFreshEntity(explosionVisual);
         }
@@ -1115,6 +1145,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (pCompound.contains("IsParked")) setParked(pCompound.getBoolean("IsParked"));
         if (pCompound.contains("ParkedDistance")) setParkedDistance(pCompound.getFloat("ParkedDistance"));
     }
+
+
 
     private double getVisualCenterY() {
         return this.getY() + (this.getSize() / 2.0);
