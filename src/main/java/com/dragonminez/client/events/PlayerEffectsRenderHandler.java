@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
+import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -34,24 +35,55 @@ public class PlayerEffectsRenderHandler {
 		}
 	}
 
-    @SubscribeEvent
-    public static void onRenderLevelStage$Particles(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null) return;
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        PoseStack poseStack = event.getPoseStack();
-        KiWeaponRenderer.processWeapons(buffers, poseStack);
-        buffers.endBatch();
-
-    }
-
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
-		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null || mc.player == null) return;
 
+		// When a shaderpack (BSL/Complementary via Oculus) is active, the world
+		// pipeline is deferred and our custom-shader draws done at AFTER_WEATHER /
+		// AFTER_PARTICLES get discarded. In that case we defer every effect batch
+		// to AFTER_LEVEL, where Oculus has already composited the final scene to
+		// the main render target, and draw on top of it.
+		boolean shaderPack = IrisCompat.isShaderPackInUse(mc.level.getGameTime());
+		RenderLevelStageEvent.Stage stage = event.getStage();
+
+		if (shaderPack) {
+			// Oculus renders entities multiple times per frame (shadow passes from
+			// the sun's POV + the main camera pass). Each pass re-queues effects
+			// with that pass's pose, so a shadow-pass entry would render the effect
+			// at a wrong/far position. RenderLevelStageEvent only fires in the main
+			// pass, so clearing the queues at AFTER_SKY (before main-pass entities
+			// render) drops every shadow-pass entry, leaving only the main ones.
+			if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) {
+				PlayerEffectQueue.getAndClearAuras();
+				PlayerEffectQueue.getAndClearSparks();
+				PlayerEffectQueue.getAndClearWeapons();
+				PlayerEffectQueue.getAndClearFirstPersonAuras();
+				PlayerEffectQueue.getAndClearKiAttacks();
+			} else if (stage == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+				mc.getMainRenderTarget().bindWrite(false);
+				renderWeapons(mc, event);
+				renderEffects(mc, event);
+			}
+			return;
+		}
+
+		if (stage == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+			renderWeapons(mc, event);
+		} else if (stage == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+			renderEffects(mc, event);
+		}
+	}
+
+	private static void renderWeapons(Minecraft mc, RenderLevelStageEvent event) {
+		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+		PoseStack poseStack = event.getPoseStack();
+		KiWeaponRenderer.processWeapons(buffers, poseStack);
+		buffers.endBatch();
+	}
+
+	private static void renderEffects(Minecraft mc, RenderLevelStageEvent event) {
 		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
 		PoseStack poseStack = event.getPoseStack();
 		Matrix4f projectionMatrix = event.getProjectionMatrix();

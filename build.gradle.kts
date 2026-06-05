@@ -148,7 +148,7 @@ minecraft {
         create("client") { /* inherits defaults */ }
         create("server") { /* inherits defaults */ }
 
-        create("gameTestServer") {
+        create("gameTestServer") {  
             property("forge.enabledGameTestNamespaces", modId)
         }
 

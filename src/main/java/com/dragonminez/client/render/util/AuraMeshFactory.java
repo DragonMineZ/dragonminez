@@ -10,6 +10,14 @@ public class AuraMeshFactory {
 	private static VertexBuffer billboardQuad;
 	private static VertexBuffer groundQuad;
 
+	// Per-frame POSITION_TEX quads: same geometry as the billboard/ground quads but
+	// with the UVs sliced to one column of the 1x4 aura spritesheet. Used by the
+	// shaderpack path, which draws with a vanilla position_tex shader (it can't
+	// offset UVs by a 'speed' uniform like the custom aura shader does), so the
+	// current animation frame is baked into the mesh instead.
+	private static final VertexBuffer[] billboardFrames = new VertexBuffer[4];
+	private static final VertexBuffer[] groundFrames = new VertexBuffer[4];
+
 	public static VertexBuffer getBillboardQuad() {
 		if (billboardQuad == null) {
 			billboardQuad = new VertexBuffer(VertexBuffer.Usage.STATIC);
@@ -42,5 +50,45 @@ public class AuraMeshFactory {
 			VertexBuffer.unbind();
 		}
 		return groundQuad;
+	}
+
+	public static VertexBuffer getBillboardQuadFrame(int frame) {
+		frame = ((frame % 4) + 4) % 4;
+		if (billboardFrames[frame] == null) {
+			float u0 = frame / 4.0f;
+			float u1 = (frame + 1) / 4.0f;
+			VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			BufferBuilder builder = Tesselator.getInstance().getBuilder();
+			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+			builder.vertex(-1.0f, -1.0f, 0.0f).uv(u0, 1.0f).endVertex();
+			builder.vertex(1.0f, -1.0f, 0.0f).uv(u1, 1.0f).endVertex();
+			builder.vertex(1.0f, 1.0f, 0.0f).uv(u1, 0.0f).endVertex();
+			builder.vertex(-1.0f, 1.0f, 0.0f).uv(u0, 0.0f).endVertex();
+			vb.bind();
+			vb.upload(builder.end());
+			VertexBuffer.unbind();
+			billboardFrames[frame] = vb;
+		}
+		return billboardFrames[frame];
+	}
+
+	public static VertexBuffer getGroundQuadFrame(int frame) {
+		frame = ((frame % 4) + 4) % 4;
+		if (groundFrames[frame] == null) {
+			float u0 = frame / 4.0f;
+			float u1 = (frame + 1) / 4.0f;
+			VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			BufferBuilder builder = Tesselator.getInstance().getBuilder();
+			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+			builder.vertex(-1.0f, 0.0f, -1.0f).uv(u0, 0.0f).endVertex();
+			builder.vertex(-1.0f, 0.0f, 1.0f).uv(u0, 1.0f).endVertex();
+			builder.vertex(1.0f, 0.0f, 1.0f).uv(u1, 1.0f).endVertex();
+			builder.vertex(1.0f, 0.0f, -1.0f).uv(u1, 0.0f).endVertex();
+			vb.bind();
+			vb.upload(builder.end());
+			VertexBuffer.unbind();
+			groundFrames[frame] = vb;
+		}
+		return groundFrames[frame];
 	}
 }

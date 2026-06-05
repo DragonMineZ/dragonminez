@@ -6,6 +6,9 @@ import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
+import com.dragonminez.client.render.util.IrisCompat;
+import com.dragonminez.client.render.util.OutlineBufferSource;
+import com.dragonminez.client.render.util.OutlineConfigResolver;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.mixin.client.GeoModelAccessor;
 import com.dragonminez.common.config.ConfigManager;
@@ -17,6 +20,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -37,6 +41,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	protected GeoRenderLayer<T> caller = null;
 	private boolean renderingMaskPass = false;
+	private final OutlineBufferSource outlineBuffers = new OutlineBufferSource();
 
 	public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
 		super(renderManager, model);
@@ -120,7 +125,12 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		poseStack.pushPose();
 
-		TransformationPostShaderManager.MaskData maskData = TransformationPostShaderManager.getEntityMaskData(entity);
+		// The PostChain outline cannot composite while a shaderpack (Oculus) is
+		// active, so under a shaderpack we skip it and use the geometry hull
+		// outline instead; without a shaderpack we keep the original PostChain.
+		boolean shaderPack = IrisCompat.isShaderPackInUse();
+
+		TransformationPostShaderManager.MaskData maskData = shaderPack ? null : TransformationPostShaderManager.getEntityMaskData(entity);
 		TransformationMaskBufferSource maskBufferSource = null;
 		if (maskData != null) {
 			maskBufferSource = TransformationPostShaderManager.getMaskBufferSource();
@@ -141,6 +151,13 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			);
 		}
 
+		// Geometry inverted-hull outline, only under a shaderpack and not for the
+		// local player in first person (it would fill the view).
+		boolean localFirstPerson = entity == Minecraft.getInstance().player
+				&& Minecraft.getInstance().options.getCameraType().isFirstPerson();
+		OutlineConfigResolver.OutlineData outlineData = (shaderPack && !localFirstPerson)
+				? OutlineConfigResolver.resolve(entity) : null;
+
 		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
 			float roll = FlightRollHandler.getRoll(partialTick);
 			float pitch = entity.getViewXRot(partialTick);
@@ -157,6 +174,26 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		// Torso/head pitch is still handled by the animation/model layers.
 
 		poseStack.scale(scalingX, scalingY, scalingZ);
+
+		// Shader-only outline: draw the inflated silhouette BEFORE the body and
+		// without depth writes, so the normal-size body is painted over its centre
+		// and only the surrounding ring remains. Tinted to the form's primary colour.
+		if (outlineData != null) {
+			float inflate = 1.0f + Mth.clamp(outlineData.thickness() * 0.02f, 0.01f, 0.08f);
+			this.outlineBuffers.configure(getTextureLocation(entity), outlineData.primary());
+			poseStack.pushPose();
+			poseStack.scale(inflate, inflate, inflate);
+			try {
+				// Reuse the mask-pass flag so applyRenderLayers keeps only the
+				// body-silhouette layers (skin/hair/race parts).
+				this.renderingMaskPass = true;
+				super.render(entity, entityYaw, partialTick, poseStack, this.outlineBuffers, packedLight);
+			} finally {
+				this.renderingMaskPass = false;
+			}
+			poseStack.popPose();
+			this.outlineBuffers.flush();
+		}
 
 		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
 

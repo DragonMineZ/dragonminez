@@ -65,6 +65,49 @@ public class ModRenderTypes extends RenderType {
                         .createCompositeState(false));
     }
 
+    /**
+     * Shaderpack-compatible aura variant. Under Oculus the world is deferred and
+     * the scene depth (incl. the player body) is written to the main target, so
+     * a depth-tested aura billboard at the player's position is occluded and
+     * vanishes; the mod's stencil that normally gated this is gone too. This
+     * variant disables depth testing and draws the aura on top (like the GUI
+     * aura) so it stays visible with shaderpacks active.
+     */
+    public static RenderType getCustomAuraCompat(ResourceLocation texture) {
+        return RenderType.create("dragonminez_custom_aura_compat",
+                DefaultVertexFormat.POSITION_COLOR_NORMAL,
+                VertexFormat.Mode.QUADS,
+                256,
+                false,
+                false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.auraShader))
+                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                        .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                        .setCullState(RenderStateShard.NO_CULL)
+                        .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .createCompositeState(false));
+    }
+
+    /** Shaderpack-compatible lightning variant (see {@link #getCustomAuraCompat}). */
+    public static RenderType getCustomLightningCompat(ResourceLocation texture) {
+        return RenderType.create("dragonminez_custom_lightning_compat",
+                DefaultVertexFormat.POSITION_COLOR_NORMAL,
+                VertexFormat.Mode.QUADS,
+                256,
+                false,
+                false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.lightningShader))
+                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                        .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                        .setCullState(RenderStateShard.NO_CULL)
+                        .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .createCompositeState(false));
+    }
+
     private static final RenderStateShard.ShaderStateShard TRANSFORMATION_MASK_SHADER = new RenderStateShard.ShaderStateShard(() -> DMZShaders.outlineShader);
 
     private static final RenderStateShard.OutputStateShard TRANSFORMATION_MASK_TARGET = new RenderStateShard.OutputStateShard(
@@ -183,6 +226,24 @@ public class ModRenderTypes extends RenderType {
                     .setOverlayState(OVERLAY)
                     .createCompositeState(false)));
 
+    // Shaderpack-compatible aura: vanilla emissive shader + additive blending so
+    // the grayscale-on-black aura spritesheet glows (black adds nothing). Same
+    // proven pattern as the ki render types, which already work under Oculus —
+    // unlike the custom aura shader, whose texture sampling Oculus drops.
+    private static final Function<ResourceLocation, RenderType> AURA_EMISSIVE = Util.memoize((pLocation) ->
+            create("aura_emissive", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, false, false))
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(NO_DEPTH_TEST)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(false)));
+
+    public static RenderType auraEmissive(ResourceLocation pLocation) { return AURA_EMISSIVE.apply(pLocation); }
+
     private static final Function<ResourceLocation, RenderType> ENERGY = Util.memoize((pLocation) ->
             create("energy", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
                     .setShaderState(RENDERTYPE_EYES_SHADER)
@@ -300,5 +361,29 @@ public class ModRenderTypes extends RenderType {
 
     public static RenderType transformationParamsViewOffset() {
         return TRANSFORMATION_PARAMS_VIEW_OFFSET;
+    }
+
+    // Inflated outline used ONLY when a shaderpack is active (the PostChain
+    // outline above cannot composite under Oculus). It uses a VANILLA emissive
+    // shader (which Oculus patches and renders natively, unlike a custom shader).
+    // It is drawn BEFORE the body with no depth writes, so the normal-size body
+    // is then painted over the centre and only the surrounding ring remains —
+    // this avoids relying on face-cull winding (which Oculus can override).
+    // Colour is applied through the ColorModulator at flush time.
+    private static final Function<ResourceLocation, RenderType> TRANSFORMATION_HULL = Util.memoize((pLocation) ->
+            create("transformation_hull", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 2048, false, false,
+                    CompositeState.builder()
+                            .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                            .setTextureState(new TextureStateShard(pLocation, false, false))
+                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                            .setCullState(NO_CULL)
+                            .setDepthTestState(LEQUAL_DEPTH_TEST)
+                            .setLightmapState(LIGHTMAP)
+                            .setOverlayState(OVERLAY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .createCompositeState(false)));
+
+    public static RenderType transformationHull(ResourceLocation pLocation) {
+        return TRANSFORMATION_HULL.apply(pLocation);
     }
 }

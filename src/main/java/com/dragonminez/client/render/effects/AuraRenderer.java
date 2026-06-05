@@ -3,6 +3,7 @@ package com.dragonminez.client.render.effects;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
+import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.ColorUtils;
@@ -27,6 +28,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -53,6 +55,115 @@ public class AuraRenderer {
 	private static final Map<Integer, CachedAuraData> AURA_CACHE = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
 	private static VertexBuffer cachedLightningMesh;
+
+	// Picks shaderpack-compatible (no-stencil, depth-tested) render types when a
+	// shaderpack is active, otherwise the stencil-gated default ones.
+	private static RenderType auraType(ResourceLocation texture) {
+		return IrisCompat.isShaderPackInUse() ? ModRenderTypes.getCustomAuraCompat(texture) : ModRenderTypes.getCustomAura(texture);
+	}
+
+	private static RenderType lightningType(ResourceLocation texture) {
+		return IrisCompat.isShaderPackInUse() ? ModRenderTypes.getCustomLightningCompat(texture) : ModRenderTypes.getCustomLightning(texture);
+	}
+
+	// Under Oculus, binding a custom shader through RenderType.setupRenderState()
+	// is intercepted and the draw is dropped (this is why the aura/lightning
+	// vanished with shaders while the ki renderer — which binds manually via
+	// drawWithShader — kept working). So with a shaderpack active we replicate
+	// that manual bind (same pattern as renderGuiAura) instead of the RenderType.
+	private static void customSetup(RenderType type, ResourceLocation texture, ShaderInstance shader) {
+		if (IrisCompat.isShaderPackInUse()) {
+			RenderSystem.enableBlend();
+			RenderSystem.defaultBlendFunc();
+			RenderSystem.disableDepthTest();
+			RenderSystem.depthMask(false);
+			RenderSystem.disableCull();
+			RenderSystem.setShaderTexture(0, texture);
+			RenderSystem.setShader(() -> shader);
+		} else {
+			type.setupRenderState();
+		}
+	}
+
+	private static void customClear(RenderType type) {
+		if (IrisCompat.isShaderPackInUse()) {
+			RenderSystem.enableDepthTest();
+			RenderSystem.depthMask(true);
+			RenderSystem.enableCull();
+			RenderSystem.disableBlend();
+		} else {
+			type.clearRenderState();
+		}
+	}
+
+	// Draws one aura quad. Without a shaderpack we use the custom aura shader via
+	// drawWithShader (its 4-colour gradient + frame blend, unchanged). Under a
+	// shaderpack the custom shader cannot sample its texture — Oculus leaves its own
+	// state on the texture units, so aura.fsh reads black and discards every pixel
+	// (invisible). So we draw with a vanilla position_tex shader (Oculus samples it
+	// fine) using the SAME drawWithShader(pose, projectionMatrix) call, so movement
+	// is identical to the no-shader path.
+	private static void applyAndDraw(VertexBuffer mesh, PoseStack poseStack, Matrix4f projectionMatrix, ShaderInstance shader,
+									 ResourceLocation texture, float[] color, float alpha, float speed, boolean ground) {
+		if (IrisCompat.isShaderPackInUse()) {
+			drawShaderpackAura(poseStack, projectionMatrix, ground, texture, color, alpha, speed);
+			return;
+		}
+		mesh.bind();
+		mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+	}
+
+	// Shaderpack aura draw. Under Oculus the only way to sample the aura texture is
+	// through a vanilla render type via a MultiBufferSource (drawWithShader never
+	// samples a texture under Oculus, regardless of the shader). The trade-off is
+	// that Iris transforms these vertices with its own matrices, so we emit them in
+	// camera-relative world space (the standard particle/entity space) and let Iris
+	// place them. The animation frame is baked into the UVs and the colour into the
+	// vertex colour; additive blending makes the grayscale-on-black sprite glow.
+	private static void drawShaderpackAura(PoseStack poseStack, Matrix4f projectionMatrix, boolean ground,
+										   ResourceLocation texture, float[] color, float alpha, float speed) {
+		if (alpha <= 0.001f) return;
+
+		int frame = (int) Math.floor(((speed % 4.0f) + 4.0f) % 4.0f);
+		float uL = frame / 4.0f;
+		float uR = (frame + 1) / 4.0f;
+
+		float boost = 1.3f;
+		int r = (int) (Mth.clamp(color[0] * boost, 0.0f, 1.0f) * 255.0f);
+		int g = (int) (Mth.clamp(color[1] * boost, 0.0f, 1.0f) * 255.0f);
+		int b = (int) (Mth.clamp(color[2] * boost, 0.0f, 1.0f) * 255.0f);
+		int a = (int) (Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f);
+
+		Matrix4f m = poseStack.last().pose();
+		MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
+		RenderType rt = ModRenderTypes.auraEmissive(texture);
+		VertexConsumer vc = buffers.getBuffer(rt);
+
+		if (ground) {
+			emissiveVertex(vc, m, -1.0f, 0.0f, -1.0f, r, g, b, a, uL, 0.0f);
+			emissiveVertex(vc, m, -1.0f, 0.0f, 1.0f, r, g, b, a, uL, 1.0f);
+			emissiveVertex(vc, m, 1.0f, 0.0f, 1.0f, r, g, b, a, uR, 1.0f);
+			emissiveVertex(vc, m, 1.0f, 0.0f, -1.0f, r, g, b, a, uR, 0.0f);
+		} else {
+			emissiveVertex(vc, m, -1.0f, -1.0f, 0.0f, r, g, b, a, uL, 1.0f);
+			emissiveVertex(vc, m, 1.0f, -1.0f, 0.0f, r, g, b, a, uR, 1.0f);
+			emissiveVertex(vc, m, 1.0f, 1.0f, 0.0f, r, g, b, a, uR, 0.0f);
+			emissiveVertex(vc, m, -1.0f, 1.0f, 0.0f, r, g, b, a, uL, 0.0f);
+		}
+
+		buffers.endBatch(rt);
+	}
+
+	private static void emissiveVertex(VertexConsumer vc, Matrix4f m, float x, float y, float z,
+									   int r, int g, int b, int a, float u, float v) {
+		vc.vertex(m, x, y, z)
+				.color(r, g, b, a)
+				.uv(u, v)
+				.overlayCoords(OverlayTexture.NO_OVERLAY)
+				.uv2(15728880) // LightTexture.FULL_BRIGHT
+				.normal(0.0f, 0.0f, 1.0f)
+				.endVertex();
+	}
 
 	public static class AuraLayer {
 		public String type;
@@ -519,6 +630,15 @@ public class AuraRenderer {
 		if (activeLayers.isEmpty()) return;
 		data.lastLayers = activeLayers;
 
+		// Under a shaderpack the aura is drawn via a MultiBufferSource (the only path
+		// that samples its texture under Oculus), which positions vertices with Iris's
+		// own matrices and expects camera-relative WORLD space from an identity base.
+		// The event poseStack carries extra transforms, so use a fresh stack — the
+		// translate below already moves to the player's camera-relative position.
+		if (IrisCompat.isShaderPackInUse()) {
+			poseStack = new PoseStack();
+		}
+
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 		double lerpX = Mth.lerp(entry.partialTick(), player.xo, player.getX());
 		double lerpY = Mth.lerp(entry.partialTick(), player.yo, player.getY());
@@ -552,6 +672,11 @@ public class AuraRenderer {
 
 		List<AuraLayer> activeLayers = data.lastLayers;
 		if (activeLayers == null || activeLayers.isEmpty()) return false;
+
+		// See renderShaderAura: under a shaderpack build on a fresh (identity) stack.
+		if (IrisCompat.isShaderPackInUse()) {
+			poseStack = new PoseStack();
+		}
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 		double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
@@ -620,20 +745,17 @@ public class AuraRenderer {
 
 			shader.safeGetUniform("alp1").set(finalAlpha * 0.45f);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			RenderType mainRender = ModRenderTypes.getCustomAura(mainTex);
-			mainRender.setupRenderState();
-			shader.apply();
-			mesh.bind();
-			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-			mainRender.clearRenderState();
+			RenderType mainRender = auraType(mainTex);
+			customSetup(mainRender, mainTex, shader);
+			applyAndDraw(mesh, poseStack, projectionMatrix, shader, mainTex, layer.color, finalAlpha * 0.45f, animSpeed, false);
+			customClear(mainRender);
 
-			RenderType sparkingRender = ModRenderTypes.getCustomAura(sparkingTex);
-			sparkingRender.setupRenderState();
+			RenderType sparkingRender = auraType(sparkingTex);
+			customSetup(sparkingRender, sparkingTex, shader);
 			poseStack.scale(0.6f, 0.45f, 0.6f);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			shader.apply();
-			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-			sparkingRender.clearRenderState();
+			applyAndDraw(mesh, poseStack, projectionMatrix, shader, sparkingTex, layer.color, finalAlpha * 0.45f, animSpeed, false);
+			customClear(sparkingRender);
 
 			poseStack.popPose();
 			VertexBuffer.unbind();
@@ -663,12 +785,10 @@ public class AuraRenderer {
 
 			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			RenderType mainRender = ModRenderTypes.getCustomAura(mainTex);
-			mainRender.setupRenderState();
-			shader.apply();
-			mesh.bind();
-			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-			mainRender.clearRenderState();
+			RenderType mainRender = auraType(mainTex);
+			customSetup(mainRender, mainTex, shader);
+			applyAndDraw(mesh, poseStack, projectionMatrix, shader, mainTex, layer.color, (1.0f - crossFactor) * finalAlpha, animSpeed, false);
+			customClear(mainRender);
 
 			poseStack.pushPose();
 			float sparkingPulse = 1.0f + (float) Math.sin((player.tickCount + partialTick) * 0.2f) * 0.05f;
@@ -676,13 +796,12 @@ public class AuraRenderer {
 
 			poseStack.translate(0.0, -0.25, 0.0);
 
-			RenderType sparkingRender = ModRenderTypes.getCustomAura(sparkingTex);
-			sparkingRender.setupRenderState();
+			RenderType sparkingRender = auraType(sparkingTex);
+			customSetup(sparkingRender, sparkingTex, shader);
 			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha * 0.8f);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			shader.apply();
-			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-			sparkingRender.clearRenderState();
+			applyAndDraw(mesh, poseStack, projectionMatrix, shader, sparkingTex, layer.color, (1.0f - crossFactor) * finalAlpha * 0.8f, animSpeed, false);
+			customClear(sparkingRender);
 			poseStack.popPose();
 
 			poseStack.popPose();
@@ -699,13 +818,11 @@ public class AuraRenderer {
 
 			shader.safeGetUniform("alp1").set(crossFactor * finalAlpha);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			RenderType crossRender = ModRenderTypes.getCustomAura(crossTex);
-			crossRender.setupRenderState();
-			shader.apply();
+			RenderType crossRender = auraType(crossTex);
+			customSetup(crossRender, crossTex, shader);
 			VertexBuffer groundMesh = AuraMeshFactory.getGroundQuad();
-			groundMesh.bind();
-			groundMesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-			crossRender.clearRenderState();
+			applyAndDraw(groundMesh, poseStack, projectionMatrix, shader, crossTex, layer.color, crossFactor * finalAlpha, animSpeed, true);
+			customClear(crossRender);
 
 			poseStack.popPose();
 		}
@@ -774,16 +891,13 @@ public class AuraRenderer {
 
 		shader.safeGetUniform("alp1").set(alphaCurve * 0.6f * alphaMultiplier);
 
-		RenderType pulseRender = ModRenderTypes.getCustomAura(crossTex);
-		pulseRender.setupRenderState();
-
-		shader.apply();
+		RenderType pulseRender = auraType(crossTex);
+		customSetup(pulseRender, crossTex, shader);
 
 		VertexBuffer mesh = AuraMeshFactory.getGroundQuad();
-		mesh.bind();
-		mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+		applyAndDraw(mesh, poseStack, projectionMatrix, shader, crossTex, topLayer.color, alphaCurve * 0.6f * alphaMultiplier, animSpeed, true);
 
-		pulseRender.clearRenderState();
+		customClear(pulseRender);
 		VertexBuffer.unbind();
 		shader.clear();
 
@@ -872,8 +986,9 @@ public class AuraRenderer {
 		shader.safeGetUniform("power").set(3.0f);
 		shader.safeGetUniform("divis").set(1.0f);
 
-		RenderType renderType = ModRenderTypes.getCustomLightning(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png"));
-		renderType.setupRenderState();
+		ResourceLocation lightningTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+		RenderType renderType = lightningType(lightningTex);
+		customSetup(renderType, lightningTex, shader);
 
 		shader.apply();
 		VertexBuffer mesh = getLightningMesh();
@@ -917,7 +1032,7 @@ public class AuraRenderer {
 		poseStack.popPose();
 		VertexBuffer.unbind();
 		shader.clear();
-		renderType.clearRenderState();
+		customClear(renderType);
 	}
 
 	private static void renderFusionFlash(Player player, float time, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {
