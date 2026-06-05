@@ -24,7 +24,7 @@ public class MightTreeFruitItem extends Item {
     private static final int EFFECT_DURATION_TICKS = 20 * 60;
 
     public MightTreeFruitItem() {
-        super(new Properties().stacksTo(1).food(
+        super(new Properties().stacksTo(6).food(
                 new FoodProperties.Builder()
                         .nutrition(HUNGER)
                         .saturationMod(SATURATION)

@@ -107,7 +107,7 @@ public class SkillManager {
             user.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.0F + (user.getRandom().nextFloat() * 0.2F));
         });
 
-        // 12. BLUE HURRICANE
+        // 12. ENE HURRICANE
         REGISTRY.put(12, (user, target, dmg) -> {
             SPBlueHurricaneEntity hurricane = new SPBlueHurricaneEntity(user.level(), user);
             hurricane.setupHurricane(user, dmg, user.getKiBlastSpeed(), 30);

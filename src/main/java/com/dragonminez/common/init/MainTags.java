@@ -21,7 +21,7 @@ public class MainTags {
 
 	public static class Blocks {
 		public static final TagKey<Block> NAMEK_ALOG = create("namek_alog"), NAMEK_SLOG = create("namek_slog"), NAMEKDEEPSLATE_REPLACEABLES = create("namek_deepslate_ore_replaceables"),
-		NAMEKSTONE_REPLACEABLES = create("namek_stone_ore_replaceables");
+		NAMEKSTONE_REPLACEABLES = create("namek_stone_ore_replaceables"), NEEDS_GETE_TOOL = create("needs_gete_tool");
 
 		private static TagKey<Block> create(String name) {
 		    return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
