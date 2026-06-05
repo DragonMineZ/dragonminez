@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AuraTintTracker {
-	public static final float FADE_SPEED = 0.005f;
+	public static final float FADE_SPEED = 0.025f;
 
 	private static final Map<Integer, Float> PROGRESS = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long>	LAST_UPDATE = new ConcurrentHashMap<>();
