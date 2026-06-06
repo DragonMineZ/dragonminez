@@ -12,6 +12,7 @@ import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.MajinForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -319,11 +320,10 @@ public class SkinGathererProvider {
         }
     }
 
-	protected void resolveBodyMajin(Character character, String key, float[] b1, float[] b2, float[] b3, BiConsumer<ResourceLocation, float[]> consumer) {
+    protected void resolveBodyMajin(Character character, String key, float[] b1, float[] b2, float[] b3, BiConsumer<ResourceLocation, float[]> consumer) {
 
         if ("janemba_super".equals(key)) {
             String path = "textures/entity/races/majin/janembasuper_0_male_";
-
             consumer.accept(getCachedTexture(path + "layer1.png"), b1);
             consumer.accept(getCachedTexture(path + "layer2.png"), b2);
             consumer.accept(getCachedTexture(path + "layer3.png"), b3);
@@ -332,33 +332,42 @@ public class SkinGathererProvider {
 
         if ("janemba_fat".equals(key)) {
             String path = "textures/entity/races/majin/janemba_0_male_";
-
             consumer.accept(getCachedTexture(path + "layer1.png"), b1);
             return;
         }
 
         String currentForm = character.getActiveForm();
-		String gender = character.getGender().toLowerCase().trim();
-		String genderSuffix = (gender.equals("female") || gender.equals("mujer")) ? "female" : "male";
-		boolean isFemale = genderSuffix.equals("female");
-		String phase;
+        String gender = character.getGender().toLowerCase().trim();
+        String genderSuffix = (gender.equals("female") || gender.equals("mujer")) ? "female" : "male";
+        String phase;
 
-		if (Objects.equals(currentForm, MajinForms.KID) || key.equals("majin_kid")) phase = "kid";
-		else if (Objects.equals(currentForm, MajinForms.EVIL) || key.equals("majin_evil")) phase = "evil";
-		else if (Objects.equals(currentForm, MajinForms.SUPER) || key.equals("majin_super")) phase = "super";
-		else if (Objects.equals(currentForm, MajinForms.ULTRA) || key.equals("majin_ultra")) phase = "ultra";
-		else if (character.hasActiveForm()) phase = "super";
-		else phase = "base";
+        if (Objects.equals(currentForm, MajinForms.KID) || key.equals("majin_kid")) phase = "kid";
+        else if (Objects.equals(currentForm, MajinForms.EVIL) || key.equals("majin_evil")) phase = "evil";
+        else if (Objects.equals(currentForm, MajinForms.SUPER) || key.equals("majin_super")) phase = "super";
+        else if (Objects.equals(currentForm, MajinForms.ULTRA) || key.equals("majin_ultra")) phase = "ultra";
+        else if (character.hasActiveForm()) phase = "super";
+        else phase = "base";
 
-		int bodyType = character.getBodyType();
-		String prefix = "textures/entity/races/majin/" + phase + "_" + bodyType + "_" + genderSuffix + "_";
-		String fallbackPrefix = "textures/entity/races/majin/" + phase + "_0_" + genderSuffix + "_";
+        int bodyType = character.getBodyType();
+        String basePath = "textures/entity/races/majin/bodytype_" + genderSuffix + "_" + bodyType + "_";
+        String fallbackPath = "textures/entity/races/majin/bodytype_" + genderSuffix + "_0_";
 
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+        ResourceLocation l1 = DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png"));
+        if (l1 != null) consumer.accept(l1, b1);
 
-		if (isFemale && (phase.equals("super") || phase.equals("ultra"))) {
-			ResourceLocation tailLoc = getCachedTexture("textures/entity/races/tail1.png");
-			consumer.accept(DMZSkinLayer.getSafeTexture(tailLoc, tailLoc), b1);
-		}
-	}
+        tryLoadOptionalLayer(basePath + "layer2.png", b2, consumer);
+        tryLoadOptionalLayer(basePath + "layer3.png", b3, consumer);
+
+        if (genderSuffix.equals("female") && (phase.equals("super") || phase.equals("ultra"))) {
+            ResourceLocation tailLoc = getCachedTexture("textures/entity/races/tail1.png");
+            consumer.accept(DMZSkinLayer.getSafeTexture(tailLoc, tailLoc), b1);
+        }
+    }
+
+    private void tryLoadOptionalLayer(String path, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
+        ResourceLocation loc = getCachedTexture(path);
+        if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
+            consumer.accept(loc, color);
+        }
+    }
 }

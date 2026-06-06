@@ -169,25 +169,55 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			boolean extraHeadBonesEnabled = character.areExtraHeadBonesEnabled();
 			String activeBone = character.getRenderableHeadBone();
 
-			if (extraHeadBonesEnabled && activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
-				for (String boneName : activeBone.split("\\+")) {
-					if (boneName.isEmpty() || boneName.equals("hair")) continue;
-					GeoBone targetBone = partsModel.getBone(boneName).orElse(null);
-					boolean fromPlayerModel = false;
-					if (targetBone == null) {
-						targetBone = playerModel.getBone(boneName).orElse(null);
-						fromPlayerModel = true;
-					}
-					if (targetBone != null) {
-						if (!fromPlayerModel) {
-							syncTargetBoneAndParents(targetBone, playerModel);
-						}
-						float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
-						if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) tintedColor = ColorUtils.hexToRgb("#1A1A1A");
-						renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-					}
-				}
-			}
+            if (extraHeadBonesEnabled && activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
+                for (String boneName : activeBone.split("\\+")) {
+                    if (boneName.isEmpty() || boneName.equals("hair")) continue;
+                    GeoBone targetBone = partsModel.getBone(boneName).orElse(null);
+                    boolean fromPlayerModel = false;
+                    if (targetBone == null) {
+                        targetBone = playerModel.getBone(boneName).orElse(null);
+                        fromPlayerModel = true;
+                    }
+                    if (targetBone != null) {
+                        if (!fromPlayerModel) {
+                            syncTargetBoneAndParents(targetBone, playerModel);
+                        }
+
+                        float[] colorToTint = accessoryColor;
+
+                        if (character.getRaceName().equals("majin")) {
+                            float[] majinBodyColor = character.getRgbBodyColor();
+
+                            if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor1().isEmpty()) {
+                                majinBodyColor = character.getActiveFormData().getRgbBodyColor1();
+                            }
+                            if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor1().isEmpty()) {
+                                majinBodyColor = character.getActiveStackFormData().getRgbBodyColor1();
+                            }
+
+                            if (stats.getStatus().isActionCharging()) {
+                                if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+                                    var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+                                    if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
+                                        float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+                                        majinBodyColor = DMZSkinLayer.lerpColor(factor, majinBodyColor, nextForm.getRgbBodyColor1());
+                                    }
+                                }
+                            }
+
+                            colorToTint = majinBodyColor;
+                        }
+
+                        float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], phase, topAuraColor, tintProgress);
+
+                        if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) {
+                            tintedColor = ColorUtils.hexToRgb("#1A1A1A");
+                        }
+
+                        renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+                    }
+                }
+            }
 
             if (extraHeadBonesEnabled && (race.equals("namekian") || logicKey.equals("namekian_orange") || logicKey.equals("namekian_buffed"))) {
 
@@ -208,23 +238,49 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                 }
             }
 
-			if (extraHeadBonesEnabled && race.equals("majin")) {
-				GeoBone earsBone = partsModel.getBone("ears3").orElse(null);
-				boolean earsFromPlayerModel = false;
+            if (extraHeadBonesEnabled && race.equals("majin")) {
+                float[] majinBodyColor = character.getRgbBodyColor();
 
-				if (earsBone == null) {
-					earsBone = playerModel.getBone("ears3").orElse(null);
-					earsFromPlayerModel = true;
-				}
+                if (hasForm && !character.getActiveFormData().getBodyColor1().isEmpty()) {
+                    majinBodyColor = character.getActiveFormData().getRgbBodyColor1();
+                }
+                if (hasStackForm && !character.getActiveStackFormData().getBodyColor1().isEmpty()) {
+                    majinBodyColor = character.getActiveStackFormData().getRgbBodyColor1();
+                }
 
-				if (earsBone != null) {
-					if (!earsFromPlayerModel) {
-						syncTargetBoneAndParents(earsBone, playerModel);
-					}
-					float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
-					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-				}
-			}
+                if (stats.getStatus().isActionCharging()) {
+                    if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+                        var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+                        if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
+                            float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+                            majinBodyColor = DMZSkinLayer.lerpColor(factor, majinBodyColor, nextForm.getRgbBodyColor1());
+                        }
+                    } else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+                        var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+                        if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
+                            float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+                            majinBodyColor = DMZSkinLayer.lerpColor(factor, majinBodyColor, nextForm.getRgbBodyColor1());
+                        }
+                    }
+                }
+
+                GeoBone earsBone = partsModel.getBone("ears3").orElse(null);
+                boolean earsFromPlayerModel = false;
+
+                if (earsBone == null) {
+                    earsBone = playerModel.getBone("ears3").orElse(null);
+                    earsFromPlayerModel = true;
+                }
+
+                if (earsBone != null) {
+                    if (!earsFromPlayerModel) {
+                        syncTargetBoneAndParents(earsBone, playerModel);
+                    }
+
+                    float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], phase, topAuraColor, tintProgress);
+                    renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+                }
+            }
 
 			if (!stats.getStatus().isAlive()) {
 				GeoBone haloBone = partsModel.getBone("halo").orElse(null);

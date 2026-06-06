@@ -136,8 +136,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 if (race.equals("namekian")) return BASE_DEFAULT;
 
                 if (race.equals("majin")) {
-                    if (isBaseForm) return isMale ? MAJIN_FAT : MAJIN_SLIM;
-                    return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                    if (bodyType == 2) return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                    if (!isMale) return MAJIN_SLIM;
+                    return MAJIN_FAT;
                 }
 
                 if (race.equals("human") || race.equals("saiyan")) {
@@ -182,7 +183,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "namekian_orange": case "namekian_buffed": return HUMAN_SAIYAN_BUFFED;
 
             // MAJIN
-            case "majin": return isMale ? MAJIN_FAT : MAJIN_SLIM;
+            case "majin":
+                if (bodyType == 2) return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                if(!isMale) return MAJIN_SLIM;
+                return MAJIN_FAT;
             case "majin_super": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
             case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_FEMALE_BUFFED;
             case "majin_evil": case "majin_kid": return isMale ? BASE_SLIM : MAJIN_SLIM;

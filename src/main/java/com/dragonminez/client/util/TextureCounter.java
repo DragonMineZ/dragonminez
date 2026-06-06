@@ -87,6 +87,16 @@ public class TextureCounter {
         RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
         boolean isCustomLayered = !isNativeLayered && config != null && Boolean.TRUE.equals(config.getIsLayered());
 
+        if (race.equals("majin")) {
+            for (int i = 0; i <= 100; i++) {
+                String basePath = "textures/entity/races/majin/bodytype_" + gender + "_" + i + "_layer1.png";
+                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath);
+                if (resourceManager.getResource(location).isPresent()) count++;
+                else break;
+            }
+            return count > 0 ? count - 1 : 0;
+        }
+
         if (isNativeLayered) {
             for (int i = 0; i <= 100; i++) {
                 String basePath = "textures/entity/races/" + race + "/bodytype_" + i + "_layer1.png";
