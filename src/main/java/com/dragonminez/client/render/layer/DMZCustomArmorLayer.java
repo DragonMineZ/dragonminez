@@ -176,6 +176,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         var character = stats.getCharacter();
         String raceName = character.getRaceName().toLowerCase();
         String gender = character.getGender().toLowerCase();
+        int bodyType = character.getBodyType(); // Asegúrate de obtener el bodyType
 
         var raceConfig = ConfigManager.getRaceCharacter(raceName);
         String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
@@ -212,7 +213,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                 || logicKey.contains("4arms") || logicKey.contains("bioandroid_xeno")) {
             if (isDbzArmor) shouldRender = true;
         }
-        else if (logicKey.equals("majin") && gender.equals(Character.GENDER_MALE)) {
+        else if (logicKey.equals("majin") && gender.equals(Character.GENDER_MALE) && bodyType != 2) {
             shouldRender = true;
             isMajinGordoTarget = true;
         }
