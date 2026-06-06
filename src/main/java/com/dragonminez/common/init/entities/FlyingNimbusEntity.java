@@ -76,26 +76,20 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
     @Override
     public void travel(Vec3 pTravelVector) {
         if (this.isAlive()) {
-            if (this.getControllingPassenger() instanceof Player passenger) {
+            Entity controllingPassenger = this.getControllingPassenger();
+            if (controllingPassenger instanceof Player passenger) {
                 this.setYRot(passenger.getYRot());
                 this.yRotO = this.getYRot();
                 this.setXRot(passenger.getXRot() * 0.5F);
                 this.setRot(this.getYRot(), this.getXRot());
                 this.yBodyRot = this.getYRot();
-                this.yHeadRot = this.getYRot();
-
 
                 double speed = this.getAttributeValue(Attributes.FLYING_SPEED) * 0.5D;
                 double verticalSpeed = 0;
 
-                // Control Vertical (Cliente)
                 if (this.level().isClientSide) {
-                    if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) {
-                        verticalSpeed = 0.4;
-                    }
-                    else if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
-                        verticalSpeed = -0.4;
-                    }
+                    if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) verticalSpeed = 0.4;
+                    else if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) verticalSpeed = -0.4;
                 }
 
                 float forwardInput = passenger.zza;
@@ -110,14 +104,9 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
 
                 this.setDeltaMovement(moveVector.x, verticalSpeed, moveVector.z);
                 this.move(net.minecraft.world.entity.MoverType.SELF, this.getDeltaMovement());
-
                 return;
             }
         }
-
-        Vec3 currentMotion = this.getDeltaMovement();
-        this.setDeltaMovement(currentMotion.x * 0.9, -0.07, currentMotion.z * 0.9);
-
         super.travel(pTravelVector);
     }
 
@@ -131,25 +120,28 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
         return 0.9D;
     }
 
-	@Override
-	public void positionRider(Entity passenger, MoveFunction callback) {
-		if (this.hasPassenger(passenger)) {
-			double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
-			Vec3 vec3 = (new Vec3(0.0D, 0.0D, 0.0D)).yRot(-this.getYRot() * ((float)Math.PI / 180F) - ((float)Math.PI / 2F));
-			callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
-			if (passenger instanceof LivingEntity livingPassenger) {
-				livingPassenger.yBodyRot = this.getYRot();
-				livingPassenger.setYHeadRot(livingPassenger.getYHeadRot());
-			}
-		}
-	}
+    @Override
+    public void positionRider(Entity passenger, MoveFunction callback) {
+        if (this.hasPassenger(passenger)) {
+            int index = this.getPassengers().indexOf(passenger);
+
+            float xOffset = 0.0f;
+            float zOffset = (index == 0) ? 0.4F : -0.4F;
+
+            double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
+
+            float yaw = -this.getYRot() * ((float)Math.PI / 180F);
+            Vec3 vec3 = (new Vec3(xOffset, 0.0D, zOffset)).yRot(yaw);
+
+            callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
+
+        }
+    }
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!this.level().isClientSide) {
-            if (!player.isPassenger()) {
-                player.startRiding(this);
-            }
+            player.startRiding(this);
         }
         return InteractionResult.SUCCESS;
     }
@@ -179,6 +171,11 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
         controllerRegistrar.add(new AnimationController<>(this, "controller", 0, this::predicate));
+    }
+
+    @Override
+    protected boolean canAddPassenger(Entity pPassenger) {
+        return this.getPassengers().size() < 2;
     }
 
     private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> tAnimationState) {
