@@ -188,7 +188,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
         boolean isVanilla = itemKey != null && "minecraft".equals(itemKey.getNamespace());
         boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
-        boolean isPothala = stack.getItem().getDescriptionId().contains("pothala");
+        boolean isPothala = stack.getDescriptionId().contains("pothala");
         if (isPothala || (!isVanilla && !isDbzArmor)) {
             return new ArmorRenderContext(false, false, false, false, isDbzArmor);
         }
@@ -201,22 +201,24 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         if (character.isOozaruCached() || logicKey.equals("oozaru")) {
             shouldRender = true;
             isOozaruTarget = true;
-        } else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
+        }
+        else if (SLIM_SUPPORTED_MODELS.contains(logicKey) && gender.equals(Character.GENDER_FEMALE)) {
+            shouldRender = true;
+            isSlimTarget = true;
+        }
+        else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
                 || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d")
                 || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
                 || logicKey.contains("4arms") || logicKey.contains("bioandroid_xeno")) {
             if (isDbzArmor) shouldRender = true;
-        } else if ((logicKey.equals("majin") && (gender.equals(Character.GENDER_MALE))
-                || (raceName.equals("majin") && (gender.equals(Character.GENDER_MALE))) || logicKey.equals("janemba_fat"))) {
+        }
+        else if (logicKey.equals("majin") && gender.equals(Character.GENDER_MALE)) {
             shouldRender = true;
             isMajinGordoTarget = true;
-        } else if (gender.equals(Character.GENDER_FEMALE)) {
-            boolean isKnownModel = SLIM_SUPPORTED_MODELS.contains(logicKey);
-            boolean hasGenderConfig = raceConfig != null && raceConfig.getHasGender();
-            if (isKnownModel || hasGenderConfig) {
-                shouldRender = true;
-                isSlimTarget = true;
-            }
+        }
+        else if (logicKey.equals("janemba_fat")) {
+            shouldRender = true;
+            isMajinGordoTarget = true;
         }
 
         return new ArmorRenderContext(shouldRender, isSlimTarget, isOozaruTarget, isMajinGordoTarget, isDbzArmor);

@@ -7,6 +7,7 @@ import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Character;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HumanoidModel;
@@ -86,8 +87,8 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
             if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
                 boolean isArmored = character.getArmored();
-                boolean isMajin = race.equals("majin") || logicKey.startsWith("majin");
-                boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
+                boolean isMajin = logicKey.equals("majin");
+                boolean isFemaleHumanOrSaiyan = gender.equals(Character.GENDER_FEMALE) || (race.equals("human") || race.equals("saiyan") && gender.equals(Character.GENDER_FEMALE) );
 
                 boolean isOozaru = character.isOozaruCached() || logicKey.contains("oozaru");
 

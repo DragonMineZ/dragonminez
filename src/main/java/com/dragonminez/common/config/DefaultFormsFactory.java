@@ -1203,6 +1203,7 @@ public class DefaultFormsFactory {
 		evil.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData superForms = new FormConfig.FormData();
+        superForms.setCustomModel("majin_super");
 		superForms.setName(MajinForms.SUPER);
 		superForms.setUnlockOnSkillLevel(3);
 		superForms.setKeepBaseFormHeadBones(true);

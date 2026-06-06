@@ -184,7 +184,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             // MAJIN
             case "majin": return isMale ? MAJIN_FAT : MAJIN_SLIM;
             case "majin_super": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
-            case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_SLIM_BUFFED;
+            case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_FEMALE_BUFFED;
             case "majin_evil": case "majin_kid": return isMale ? BASE_SLIM : MAJIN_SLIM;
             case "janemba_fat": return JANEMBA_FAT;
             case "janemba_super": return JANEMBA_SUPER;
