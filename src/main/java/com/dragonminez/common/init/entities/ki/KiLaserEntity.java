@@ -100,7 +100,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setFiring(false);
         this.setCastTime(castTime);
         this.setMaxLife(castTime + 80);
-        this.setCastOffsets(0.3F, -0.1F, 0.5F);
+        this.setCastOffsets(0.3F, 0.1F, 0.5F);
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) {
@@ -142,7 +142,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(20);
-        this.setCastOffsets(0.3F, -0.1F, 0.5F);
+        this.setCastOffsets(0.3F, 0.4F, 0.5F);
         updatePositionRelativeToOwner(owner);
         
     }

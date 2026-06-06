@@ -265,7 +265,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(40);
-        this.setCastOffsets(0.0F, -0.3F, 0.4F);
+        this.setCastOffsets(0.0F, 0.3F, 0.4F);
         updatePositionRelativeToOwner(owner, false);
         
     }
