@@ -269,28 +269,28 @@ public final class QuestService {
 			return Component.translatable("message.dragonminez.quest.start.already_active");
 		}
 
-		if (!restartingFailed) {
-			if (!isQuestAvailableToStart(resolved, data)) {
-				Component reason = QuestAvailabilityChecker.describeAvailabilityFailure(quest, data);
-				return reason != null ? reason : Component.translatable("message.dragonminez.quest.start.locked");
-			}
+		if (!restartingFailed && !isQuestAvailableToStart(resolved, data)) {
+			Component reason = QuestAvailabilityChecker.describeAvailabilityFailure(quest, data);
+			return reason != null ? reason : Component.translatable("message.dragonminez.quest.start.locked");
+		}
 
-			Component controllerBlocker = QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, controller, data);
-			if (controllerBlocker != null) {
-				if (requester.getUUID().equals(controller.getUUID())) {
-					return controllerBlocker;
-				}
-				return Component.translatable(
-						"message.dragonminez.quest.start.party_member_requirement",
-						controller.getGameProfile().getName(),
-						controllerBlocker
-				);
+		Component controllerBlocker = restartingFailed
+				? QuestAvailabilityChecker.describeStartRequirementFailure(quest, questKey, controller, data)
+				: QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, controller, data);
+		if (controllerBlocker != null) {
+			if (requester.getUUID().equals(controller.getUUID())) {
+				return controllerBlocker;
 			}
+			return Component.translatable(
+					"message.dragonminez.quest.start.party_member_requirement",
+					controller.getGameProfile().getName(),
+					controllerBlocker
+			);
+		}
 
-			Component partyBlocker = getPartyRequirementFailure(requester, controller, quest, questKey);
-			if (partyBlocker != null) {
-				return partyBlocker;
-			}
+		Component partyBlocker = getPartyRequirementFailure(requester, controller, quest, questKey, restartingFailed);
+		if (partyBlocker != null) {
+			return partyBlocker;
 		}
 
 		DMZEvent.QuestStartEvent startEvent = new DMZEvent.QuestStartEvent(
@@ -584,14 +584,17 @@ public final class QuestService {
 	}
 
 	@Nullable
-	private static Component getPartyRequirementFailure(ServerPlayer requester, ServerPlayer controller, Quest quest, String questKey) {
+	private static Component getPartyRequirementFailure(ServerPlayer requester, ServerPlayer controller, Quest quest,
+														String questKey, boolean restartingFailed) {
 		if (!PartyManager.isInParty(controller)) {
 			return null;
 		}
 
 		for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
 			Component blocker = StatsProvider.get(StatsCapability.INSTANCE, member)
-					.map(data -> QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, member, data))
+					.map(data -> restartingFailed
+							? QuestAvailabilityChecker.describeStartRequirementFailure(quest, questKey, member, data)
+							: QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, member, data))
 					.orElse(Component.translatable("message.dragonminez.quest.start.unavailable"));
 			if (blocker == null) {
 				continue;

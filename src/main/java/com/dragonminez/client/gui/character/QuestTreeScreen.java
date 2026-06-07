@@ -842,7 +842,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (questData.isQuestCompleted(questKey)) return false;
 		PlayerQuestData.QuestStatus status = questData.getQuestStatus(questKey);
 		if (status == PlayerQuestData.QuestStatus.ACCEPTED) return false;
-		if (status == PlayerQuestData.QuestStatus.FAILED) return true;
+		if (status == PlayerQuestData.QuestStatus.FAILED) {
+			return QuestAvailabilityChecker.areStartRequirementsMet(quest, questKey, mc.player, statsData);
+		}
 		if (getNodeStatus(quest) != QuestNodeStatus.AVAILABLE) return false;
 		return QuestAvailabilityChecker.areStartRequirementsMet(quest, questKey, mc.player, statsData);
 	}
