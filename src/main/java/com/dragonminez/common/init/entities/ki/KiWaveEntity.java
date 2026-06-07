@@ -457,10 +457,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
             } else {
                 this.setCastOffsets(0.2F, 0.4F, -0.3F);
             }
-
         }
 
-        // 1. AUTO-DISPARO: Si es invocado por un ítem o NPC (vida no es infinita) y ya cumplió su tiempo de casteo
         if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastWave()) {
             this.setFiring(true);
             if (this.getOwner() instanceof LivingEntity livingOwner) {
@@ -473,10 +471,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         var owner = this.getOwner();
         if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
             if (!isFiring) {
-                // FASE DE CARGA: Solo sigue la rotación/posición en las manos
                 updatePositionRelativeToOwner(livingOwner, true);
             } else {
-                // FASE DE DISPARO: Se queda fijo frente al jugador o lo sigue
                 if (this.isContinuousFollow()) {
                     updatePositionRelativeToOwner(livingOwner, false);
                 }
@@ -488,7 +484,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         if (!this.level().isClientSide) {
             if (!isFiring) {
-                // Servidor en carga: Solo reproducir el sonido de carga inicial
                 if (this.tickCount == 1) {
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
                 }
@@ -499,13 +494,11 @@ public class KiWaveEntity extends AbstractKiProjectile {
                     return;
                 }
 
-                // Servidor en disparo: Expansión del láser, daño y colisiones
                 Vec3 startPos = this.position();
                 Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
                 float currentLen = this.getBeamLength();
                 float currentSpeed = this.getKiSpeed();
 
-                // Sonido de avance del láser
                 if (this.tickCount % 5 == 0) {
                     Vec3 tipPosForSound = startPos.add(dir.scale(currentLen));
                     this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
@@ -514,10 +507,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 float targetLen = currentLen + currentSpeed;
                 Vec3 tipPos = startPos.add(dir.scale(targetLen));
 
-                // Romper bloques en la punta
                 this.destroyBlocksAtTip(tipPos);
 
-                // Colisión con bloques sólidos
                 HitResult hitResult = this.level().clip(new ClipContext(
                         startPos.add(dir.scale(currentLen)), tipPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this
                 ));
@@ -533,23 +524,35 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
                 this.setBeamLength(targetLen);
 
-                // Dañar entidades atravesadas por el láser
                 damageEntitiesInBeam(startPos, dir, targetLen);
 
-                // Si se detiene o se le acaba el tiempo de vida real, explota
                 if (currentSpeed < 0.05F || this.tickCount > this.getMaxLife()) {
                     explodeAndDie(startPos.add(dir.scale(targetLen)));
                     return;
                 }
             }
         } else {
-            // Cliente: Efectos visuales y partículas
             if (!isFiring) {
-                // Aquí podrías agregar partículas girando alrededor de la esfera mientras carga
             } else {
                 spawnWaveParticles();
                 spawnOriginSplash();
             }
+        }
+
+        // hitbox
+        if (isFiring) {
+            Vec3 startPos = this.position();
+            Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
+            Vec3 tipPos = startPos.add(dir.scale(this.getBeamLength()));
+
+            double radius = this.getSize() * 1.5;
+
+            AABB tipBox = new AABB(
+                    tipPos.x - radius, tipPos.y - radius, tipPos.z - radius,
+                    tipPos.x + radius, tipPos.y + radius, tipPos.z + radius
+            );
+
+            this.setBoundingBox(tipBox);
         }
 
         this.onKiTick();
