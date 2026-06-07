@@ -30,6 +30,9 @@ public class HudStatNumberAnimator {
 	}
 
 	public RenderState update(String text, float value, float tickTime) {
+		if (statKind != StatKind.KISENSE_HEALTH && ConfigManager.getUserConfig().getHideHudNumbers())
+			return new RenderState(0.0f, WHITE_RGB, 0.0f, 0.0f);
+
 		if (!initialized) {
 			initialized = true;
 			lastText = text;
