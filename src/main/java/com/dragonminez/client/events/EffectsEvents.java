@@ -2,6 +2,9 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
@@ -63,6 +66,36 @@ public class EffectsEvents {
                     float shakePitch = (player.getRandom().nextFloat() - 0.5F) * 2.5F * intensity;
                     float shakeYaw = (player.getRandom().nextFloat() - 0.5F) * 2.5F * intensity;
                     float shakeRoll = (player.getRandom().nextFloat() - 0.5F) * 1.5F * intensity;
+
+                    event.setPitch(event.getPitch() + shakePitch);
+                    event.setYaw(event.getYaw() + shakeYaw);
+                    event.setRoll(event.getRoll() + shakeRoll);
+                    break;
+                }
+            }
+        }
+
+        double kiShakeRadius = 50.0D;
+        var nearbyKiAttacks = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(kiShakeRadius));
+
+        for (AbstractKiProjectile kiAttack : nearbyKiAttacks) {
+
+            boolean isActuallyFiring = false;
+
+            if (kiAttack instanceof KiWaveEntity wave) {
+                isActuallyFiring = wave.isFiring();
+            } else if (kiAttack instanceof KiBlastEntity) {
+                isActuallyFiring = true;
+            }
+
+            if (kiAttack.isAlive() && isActuallyFiring) {
+                double distance = player.distanceTo(kiAttack);
+                if (distance <= kiShakeRadius) {
+                    float intensity = (float) (1.0D - (distance / kiShakeRadius));
+
+                    float shakePitch = (player.getRandom().nextFloat() - 0.5F) * 0.5F * intensity;
+                    float shakeYaw = (player.getRandom().nextFloat() - 0.5F) * 0.5F * intensity;
+                    float shakeRoll = (player.getRandom().nextFloat() - 0.5F) * 0.1F * intensity;
 
                     event.setPitch(event.getPitch() + shakePitch);
                     event.setYaw(event.getYaw() + shakeYaw);

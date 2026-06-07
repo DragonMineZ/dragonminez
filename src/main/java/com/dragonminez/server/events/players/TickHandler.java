@@ -322,13 +322,26 @@ public class TickHandler {
 
 	}
 
-	@SubscribeEvent
-	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-		if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) return;
-		serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
-		CHARGING_CACHE.remove(serverPlayer.getUUID());
-		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
-	}
+    @SubscribeEvent
+    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) return;
+
+        serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+        CHARGING_CACHE.remove(serverPlayer.getUUID());
+
+        StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+            data.getStatus().setChargingKi(false);
+            data.getStatus().setActionCharging(false);
+            data.getResources().setActionCharge(0);
+
+            data.getTechniques().clearTechniqueCharge();
+            data.getTechniques().setTechniqueChargePercent(0.0f);
+
+            NetworkHandler.sendToTrackingEntityAndSelf(new TechniqueChargeSyncS2C(serverPlayer.getId(), 0.0f, false), serverPlayer);
+        });
+
+        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
+    }
 
 	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
