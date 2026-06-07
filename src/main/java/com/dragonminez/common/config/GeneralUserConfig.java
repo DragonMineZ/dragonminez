@@ -16,6 +16,7 @@ public class GeneralUserConfig {
 	private boolean impactFramesEnabled = false;
 	private Boolean techniqueHotbarRightSide = false;
 	private Boolean alwaysVisibleHudValues = false;
+	private Boolean hideHudNumbers = false;
 	private Integer xenoverseHudPosX = 5;
 	private Integer xenoverseHudPosY = 5;
 	private Boolean advancedDescription = true;
@@ -41,6 +42,11 @@ public class GeneralUserConfig {
 	public Boolean getTechniqueHotbarRightSide() {
 		if (techniqueHotbarRightSide == null) techniqueHotbarRightSide = false;
 		return techniqueHotbarRightSide;
+	}
+
+	public Boolean getHideHudNumbers() {
+		if (hideHudNumbers == null) hideHudNumbers = false;
+		return hideHudNumbers;
 	}
 
 	public void setMenuScaleMultiplier(Float menuScaleMultiplier) {
