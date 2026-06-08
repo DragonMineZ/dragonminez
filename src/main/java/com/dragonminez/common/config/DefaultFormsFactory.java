@@ -13,6 +13,17 @@ import java.util.Map;
 
 @AllArgsConstructor
 public class DefaultFormsFactory {
+	private void applySequentialMasteryRequisites(String groupName, Map<String, FormConfig.FormData> orderedForms) {
+		String previousFormName = null;
+		for (FormConfig.FormData form : orderedForms.values()) {
+			if (previousFormName != null) {
+				form.setFormRequisite(groupName + "." + previousFormName);
+				form.setUnlockOnMastery(25.0);
+			}
+			previousFormName = form.getName();
+		}
+	}
+
 	private void setDefaultMasteryValues(FormConfig.FormData form) {
 		form.setMaxMastery(100.0);
 		form.setMasteryPerHitDealt(0.025);
@@ -371,6 +382,7 @@ public class DefaultFormsFactory {
 		humanFormData.put(HumanForms.FULLPOWER, fullPower);
 		humanFormData.put(HumanForms.OVERDRIVE, overdrive);
 		humanFormData.put(HumanForms.SOLARIS, solaris);
+		applySequentialMasteryRequisites(HumanForms.GROUP_SUPERFORMS, humanFormData);
 		humanForms.setForms(humanFormData);
 
 		forms.put(HumanForms.GROUP_SUPERFORMS, humanForms);
@@ -442,6 +454,7 @@ public class DefaultFormsFactory {
 		humanLegendaryData.put(HumanForms.SHIYOKEN, shiyoken);
 		humanLegendaryData.put(HumanForms.SHIN_SHIYOKEN, shin_shiyoken);
         humanLegendaryData.put(HumanForms.CHOU_SHIYOKEN, chou_shiyoken);
+        applySequentialMasteryRequisites(HumanForms.GROUP_LEGENDARYFORMS, humanLegendaryData);
         humanLegendaryForms.setForms(humanLegendaryData);
 
 		forms.put(HumanForms.GROUP_LEGENDARYFORMS, humanLegendaryForms);
@@ -507,6 +520,7 @@ public class DefaultFormsFactory {
 		androidFormData.put(HumanForms.ANDROID_BASE, androidBase);
 		androidFormData.put(HumanForms.SUPER_ANDROID, superAndroid);
 		androidFormData.put(HumanForms.FUSED_ANDROID, fusedAndroid);
+		applySequentialMasteryRequisites(HumanForms.GROUP_ANDROIDFORMS, androidFormData);
 		androidForms.setForms(androidFormData);
 
 		forms.put(HumanForms.GROUP_ANDROIDFORMS, androidForms);
@@ -592,6 +606,7 @@ public class DefaultFormsFactory {
 		oozaruFormData.put(SaiyanForms.OOZARU, oozaru);
 		oozaruFormData.put(SaiyanForms.GOLDEN_OOZARU, goldenOozaru);
 		oozaruFormData.put(SaiyanForms.SUPER_SAIYAN_4, ssj4gt);
+		applySequentialMasteryRequisites(SaiyanForms.GROUP_OOZARU, oozaruFormData);
 		oozaruForms.setForms(oozaruFormData);
 
 		FormConfig ssGrades = new FormConfig();
@@ -669,6 +684,7 @@ public class DefaultFormsFactory {
 		ssGradeForms.put(SaiyanForms.SUPER_SAIYAN, ssj1);
 		ssGradeForms.put(SaiyanForms.SUPER_SAIYAN_GRADE_2, ssg2);
 		ssGradeForms.put(SaiyanForms.SUPER_SAIYAN_GRADE_3, ssg3);
+		applySequentialMasteryRequisites(SaiyanForms.GROUP_SSGRADES, ssGradeForms);
 		ssGrades.setForms(ssGradeForms);
 
 		FormConfig superSaiyan = new FormConfig();
@@ -778,6 +794,7 @@ public class DefaultFormsFactory {
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_2, ssj2);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_4, ssj4d);
+		applySequentialMasteryRequisites(SaiyanForms.GROUP_SUPERSAIYAN, superSaiyanForms);
 		superSaiyan.setForms(superSaiyanForms);
 
 		forms.put(SaiyanForms.OOZARU, oozaruForms);
@@ -862,6 +879,7 @@ public class DefaultFormsFactory {
 		saiyanLegendaryData.put(SaiyanForms.IKARI, ikari);
 		saiyanLegendaryData.put(SaiyanForms.SSJ_HYBRID, ssjHybrid);
 		saiyanLegendaryData.put(SaiyanForms.SSJ_FULL_POWER, ssjFullPower);
+		applySequentialMasteryRequisites(SaiyanForms.GROUP_LEGENDARYFORMS, saiyanLegendaryData);
 		saiyanLegendaryForms.setForms(saiyanLegendaryData);
 
 		forms.put(SaiyanForms.GROUP_LEGENDARYFORMS, saiyanLegendaryForms);
@@ -930,6 +948,7 @@ public class DefaultFormsFactory {
 		namekianFormData.put(NamekianForms.GIANT, giantForm);
 		namekianFormData.put(NamekianForms.FULLPOWER, fullPower);
 		namekianFormData.put(NamekianForms.SUPER_NAMEKIAN, superNamekian);
+		applySequentialMasteryRequisites(NamekianForms.GROUP_SUPERFORMS, namekianFormData);
 		namekianForms.setForms(namekianFormData);
 
 		forms.put(NamekianForms.GROUP_SUPERFORMS, namekianForms);
@@ -1016,6 +1035,7 @@ public class DefaultFormsFactory {
 		namekianLegendaryData.put(NamekianForms.EVIL_NAMEK, evilNamek);
 		namekianLegendaryData.put(NamekianForms.EVIL_GIANT_NAMEK, evilGiant);
 		namekianLegendaryData.put(NamekianForms.BUFFED_NAMEK, buffedNamek);
+		applySequentialMasteryRequisites(NamekianForms.GROUP_LEGENDARYFORMS, namekianLegendaryData);
 		namekianLegendaryForms.setForms(namekianLegendaryData);
 
 		forms.put(NamekianForms.GROUP_LEGENDARYFORMS, namekianLegendaryForms);
@@ -1119,6 +1139,7 @@ public class DefaultFormsFactory {
 		frostFormData.put(FrostDemonForms.FINAL_FORM, finalForm);
 		frostFormData.put(FrostDemonForms.FULLPOWER, fullPower);
 		frostFormData.put(FrostDemonForms.FIFTH_FORM, fifthForm);
+		applySequentialMasteryRequisites(FrostDemonForms.GROUP_EVOLUTIONFORMS, frostFormData);
 		frostForms.setForms(frostFormData);
 
 		forms.put(FrostDemonForms.GROUP_EVOLUTIONFORMS, frostForms);
@@ -1181,6 +1202,7 @@ public class DefaultFormsFactory {
 		frostLegendaryData.put(FrostDemonForms.MECHA, mecha);
 		frostLegendaryData.put(FrostDemonForms.METAL, metal);
 		frostLegendaryData.put(FrostDemonForms.METAL_CORE, metalCore);
+		applySequentialMasteryRequisites(FrostDemonForms.GROUP_LEGENDARYFORMS, frostLegendaryData);
 		frostLegendaryForms.setForms(frostLegendaryData);
 
 		forms.put(FrostDemonForms.GROUP_LEGENDARYFORMS, frostLegendaryForms);
@@ -1269,6 +1291,7 @@ public class DefaultFormsFactory {
 		majinFormData.put(MajinForms.EVIL, evil);
 		majinFormData.put(MajinForms.SUPER, superForm);
 		majinFormData.put(MajinForms.ULTRA, ultra);
+		applySequentialMasteryRequisites(MajinForms.GROUP_PUREFORMS, majinFormData);
 		majinForms.setForms(majinFormData);
 
 		forms.put(MajinForms.GROUP_PUREFORMS, majinForms);
@@ -1334,6 +1357,7 @@ public class DefaultFormsFactory {
 		majinLegendaryData.put(MajinForms.INNOCENCE_DEMON, innocence);
         majinLegendaryData.put(MajinForms.GIANT_INNOCENCE_DEMON, giant_innocence_demon);
         majinLegendaryData.put(MajinForms.SUPER_DEMON, superDemon);
+		applySequentialMasteryRequisites(MajinForms.GROUP_LEGENDARYFORMS, majinLegendaryData);
 		majinLegendaryForms.setForms(majinLegendaryData);
 
 		forms.put(MajinForms.GROUP_LEGENDARYFORMS, majinLegendaryForms);
@@ -1441,6 +1465,7 @@ public class DefaultFormsFactory {
 		bioFormData.put(BioAndroidForms.PERFECT, perfect);
 		bioFormData.put(BioAndroidForms.SUPER_PERFECT, superPerfect);
 		bioFormData.put(BioAndroidForms.ULTRA_PERFECT, ultraperfect);
+		applySequentialMasteryRequisites(BioAndroidForms.GROUP_BIOEVOLUTION, bioFormData);
 		bioForms.setForms(bioFormData);
 
 		forms.put(BioAndroidForms.GROUP_BIOEVOLUTION, bioForms);
@@ -1519,6 +1544,7 @@ public class DefaultFormsFactory {
 		bioLegendaryData.put(BioAndroidForms.XENO, xeno);
 		bioLegendaryData.put(BioAndroidForms.XENO_FP, xenoFP);
 		bioLegendaryData.put(BioAndroidForms.XENO_MAX, xenoMax);
+		applySequentialMasteryRequisites(BioAndroidForms.GROUP_LEGENDARYFORMS, bioLegendaryData);
 		bioLegendaryForms.setForms(bioLegendaryData);
 
 		forms.put(BioAndroidForms.GROUP_LEGENDARYFORMS, bioLegendaryForms);

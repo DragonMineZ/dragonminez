@@ -449,13 +449,13 @@ public class StatsData {
 	}
 
 	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken, double armorPenetration) {
-		double defTotalMult = getTotalMultiplier("DEF") / 2;
+		double defMult = getTotalMultiplier("DEF");
 		double baseDefense = getDefense();
 
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
 
-		double flatMitigation = baseDefense * 0.10;
+		double flatMitigation = baseDefense * 0.10 * Math.max(1.0, defMult);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
 
 		int maxValue = getConfiguredMaxValue();
@@ -472,7 +472,7 @@ public class StatsData {
 
 		double remainingDamage = postFlatDamage * (1.0 - baseReduction);
 
-		if (defTotalMult > 1.0) remainingDamage /= defTotalMult;
+		if (defMult > 1.0) remainingDamage /= (1.0 + (defMult - 1.0) * 0.20);
 
 		int totalProtection = 0;
 		if (player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);

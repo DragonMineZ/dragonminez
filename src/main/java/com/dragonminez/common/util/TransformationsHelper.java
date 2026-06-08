@@ -136,6 +136,7 @@ public class TransformationsHelper {
 
 	private static boolean meetsMasteryRequisite(StatsData statsData, FormConfig.FormData formData) {
 		if (formData == null) return false;
+		if (statsData.getPlayer() != null && statsData.getPlayer().isCreative()) return true;
 		String req = formData.getFormRequisite();
 		double need = formData.getUnlockOnMastery();
 		if (req == null || req.isEmpty() || need <= 0.0) return true;
