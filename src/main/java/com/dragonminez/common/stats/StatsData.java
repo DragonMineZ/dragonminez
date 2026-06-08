@@ -44,6 +44,7 @@ public class StatsData {
 	private final Resources resources;
 	private final Skills skills;
 	private final Effects effects;
+	private final SecondaryStatEffects secondaryStatEffects;
 	private final PlayerQuestData playerQuestData;
 	private final BonusStats bonusStats;
 	private final Techniques techniques;
@@ -64,6 +65,7 @@ public class StatsData {
 		this.resources.setStatsData(this);
 		this.skills = new Skills();
 		this.effects = new Effects();
+		this.secondaryStatEffects = new SecondaryStatEffects();
 		this.playerQuestData = new PlayerQuestData();
 		this.bonusStats = new BonusStats();
 		this.techniques = new Techniques();
@@ -227,7 +229,7 @@ public class StatsData {
 		double actionMod = (player != null && player.getPersistentData().contains("dmz_stamina_regen_mod"))
 				? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
 
-		double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod;
+		double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod * secondaryStatEffects.getMultiplier(SecondaryStatEffects.STM_REGEN);
 		return PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
 	}
 
@@ -250,7 +252,7 @@ public class StatsData {
 		if (adjustedHealthDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedHealthDrain / 10.0));
 		else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
 
-		return (hp5 / 5.0) * enchMult * regenMultiplier;
+		return (hp5 / 5.0) * enchMult * regenMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.HP_REGEN);
 	}
 
 	public double getEnergyRegenPerSecond(boolean activeCharging) {
@@ -304,7 +306,7 @@ public class StatsData {
 			energyChange += regenAmount * regenMultiplier;
 		}
 
-		return energyChange;
+		return energyChange * secondaryStatEffects.getMultiplier(SecondaryStatEffects.ENE_REGEN);
 	}
 
 	public float getMaxPoise() {
@@ -429,7 +431,7 @@ public class StatsData {
 		double statDef = ((resistance + multBonusRes) * defScaling) + (flatBonusRes * defScaling);
 		double armorComponent = (armor * 0.50) + (toughness * 0.70);
 
-		return secondaryDefense + statDef + armorComponent;
+		return (secondaryDefense + statDef + armorComponent) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);
 	}
 
 	public double getDefense() {
@@ -445,7 +447,7 @@ public class StatsData {
 		double statDef = ((resistance + multBonusRes) * defScaling) + (flatBonusRes * defScaling);
 		double armorComponent = (armor * 0.50) + (toughness * 0.70);
 
-		return (secondaryDefense + statDef + armorComponent) * releaseMultiplier;
+		return (secondaryDefense + statDef + armorComponent) * releaseMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);
 	}
 
 	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken, double armorPenetration) {
@@ -494,9 +496,10 @@ public class StatsData {
 		double form = getFormMultiplier(statName);
 		double stack = getStackFormMultiplier(statName);
 		double effect = getEffectsMultiplier(statName);
+		double secondary = statName.equalsIgnoreCase("DEF") ? 1.0 : secondaryStatEffects.getMultiplier(statName);
 
-		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect;
-		else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0);
+		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect * secondary;
+		else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0) + (secondary - 1.0);
 	}
 
 	public double getFormMultiplier(String statName) {
@@ -1120,6 +1123,7 @@ public class StatsData {
 		if (!keepSkills) {
 			getSkills().removeAllSkills();
 			getEffects().removeAllEffects();
+			getSecondaryStatEffects().clear();
 			getTechniques().clearAllTechniques();
 		}
 
@@ -1147,6 +1151,7 @@ public class StatsData {
 		nbt.put("Resources", resources.save());
 		nbt.put("Skills", skills.save());
 		nbt.put("Effects", effects.save());
+		nbt.put("SecondaryStatEffects", secondaryStatEffects.save());
 		nbt.put("PlayerQuestData", playerQuestData.serializeNBT());
 		nbt.put("BonusStats", bonusStats.save());
 		nbt.put("Techniques",  techniques.save());
@@ -1163,6 +1168,8 @@ public class StatsData {
 		if (nbt.contains("Resources")) resources.load(nbt.getCompound("Resources"));
 		if (nbt.contains("Skills")) skills.load(nbt.getCompound("Skills"));
 		if (nbt.contains("Effects")) effects.load(nbt.getCompound("Effects"));
+		if (nbt.contains("SecondaryStatEffects")) secondaryStatEffects.load(nbt.getCompound("SecondaryStatEffects"));
+		else secondaryStatEffects.clear();
 		if (nbt.contains("PlayerQuestData")) playerQuestData.deserializeNBT(nbt.getCompound("PlayerQuestData"));
 		else throw new ClassNotFoundException("PlayerQuestData not found in NBT. This is required for quest progression to work correctly. " +
 				"Please update the mod or re-generate your config files.");
@@ -1182,6 +1189,7 @@ public class StatsData {
 		this.resources.copyFrom(other.resources);
 		this.skills.copyFrom(other.skills);
 		this.effects.copyFrom(other.effects);
+		this.secondaryStatEffects.copyFrom(other.secondaryStatEffects);
 		this.playerQuestData.deserializeNBT(other.playerQuestData.serializeNBT());
 		this.bonusStats.copyFrom(other.bonusStats);
 		this.techniques.copyFrom(other.techniques);

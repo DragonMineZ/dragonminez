@@ -118,6 +118,7 @@ public class TickHandler {
 
 				data.getCooldowns().tick();
 				data.getEffects().tick();
+				data.getSecondaryStatEffects().tick();
 				clearExpiredKnockdown(data);
 
 				for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
@@ -132,6 +133,7 @@ public class TickHandler {
 			} else {
 				data.getCooldowns().tick();
 				data.getEffects().tick();
+				data.getSecondaryStatEffects().tick();
 				clearExpiredKnockdown(data);
 				if (data.getStatus().isStunned()) data.getStatus().setStunned(false);
 			}
@@ -828,6 +830,16 @@ public class TickHandler {
 						}
 					} else activeKi.discard();
 				} else activeKi.discard();
+			}
+		} else {
+			TechniqueData techniqueData = techniques.getUnlockedTechniques().get(techniques.getChargingTechniqueId());
+			if (techniqueData instanceof KiAttackData kiAttack && kiAttack.isInstantCast() && effectiveCharge >= 50.0f) {
+				boolean creative = player.isCreative();
+				int baseCooldown = creative ? 60 : Math.max(1, kiAttack.getActualCooldown());
+				DMZEvent.KiAttackFireEvent fireEvent = new DMZEvent.KiAttackFireEvent(player, data, kiAttack, 1.0f, baseCooldown);
+				MinecraftForge.EVENT_BUS.post(fireEvent);
+				int cooldownTicks = Math.max(1, fireEvent.getCooldownTicks());
+				data.getCooldowns().setCooldown(getTechniqueCooldownKey(kiAttack.getId()), cooldownTicks);
 			}
 		}
 

@@ -6,7 +6,9 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.passives.ClassPassives;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
@@ -223,12 +225,30 @@ public abstract class AbstractKiProjectile extends Projectile {
                     TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
                     if (tech instanceof KiAttackData kiAttackData) {
                         stats.getTechniques().addExperienceToTechnique(techId, kiAttackData.getXpGainPerHit());
+                        applySecondaryEffect(target, kiAttackData, stats);
                     } else if (tech != null) {
                         stats.getTechniques().addExperienceToTechnique(techId, 1);
                     }
                 });
             }
         }
+    }
+
+    private void applySecondaryEffect(Entity target, KiAttackData kiAttack, StatsData casterStats) {
+        if (!kiAttack.hasValidSecondaryEffect()) return;
+        if (!(target instanceof LivingEntity living)) return;
+        KiAttackData.AffectedStat affected = kiAttack.getAffectedStat();
+        if (affected == null) return;
+
+        StatsProvider.get(StatsCapability.INSTANCE, living).ifPresent(targetStats -> {
+            double magnitude = kiAttack.getSecondaryIntensity() / 100.0;
+            double factor = kiAttack.getSecondaryEffectType() == KiAttackData.SecondaryEffectType.BUFF ? magnitude : -magnitude;
+
+            double durationMult = ClassPassives.get(casterStats).secondaryDurationMultiplier(casterStats, kiAttack);
+            int durationTicks = Math.max(1, (int) Math.round(kiAttack.getSecondaryDuration() * 20 * durationMult));
+
+            targetStats.getSecondaryStatEffects().apply(affected.name(), factor, durationTicks);
+        });
     }
 
     @Override

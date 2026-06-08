@@ -222,6 +222,7 @@ public class StatsEvents {
 				else removeAlignment[0] = true;
 				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getEffects().removeAllEffects();
+					victimData.getSecondaryStatEffects().clear();
 					victimData.getStatus().setChargingKi(false);
 					victimData.getStatus().setActionCharging(false);
 					victimData.getCharacter().setActiveForm(null, null);

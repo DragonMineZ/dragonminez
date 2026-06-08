@@ -282,18 +282,9 @@ public class KiAttackData extends TechniqueData {
 		float utilMult = getUtilityMultiplier(resolvedUtil);
 
 		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);
-		float effectiveDamage = normalized[0] * (1.0f + (damageLevel * 0.1f));
-		float effectiveSize = normalized[1] * (1.0f + (sizeLevel * 0.05f));
-		float effectiveSpeed = normalized[2] * (1.0f + (speedLevel * 0.05f));
-		float effectiveArmorPen = Math.min(100.0f, normalized[3] + (armorPenLevel * 2.0f));
 
-		float flatDamage = effectiveDamage * 10.0f;
-		float flatSize = effectiveSize * 4.0f;
-		float flatSpeed = effectiveSpeed * 3.0f;
-		float flatPen = (effectiveArmorPen / 100.0f) * 2.0f;
-		float complexity = flatDamage + flatSize + flatSpeed + flatPen;
-
-		float tpBase = (80.0f + complexity * 15.0f) * typeMult * utilMult * secondaryCostMultiplier();
+		float complexity = getWeightedComplexity(normalized[0], normalized[1], normalized[2], Math.round(normalized[3]));
+		float tpBase = (80.0f + complexity * 200.0f) * typeMult * utilMult * secondaryCostMultiplier();
 		this.tpCost = Math.max(10, Math.round(tpBase));
 
 		if (!PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
@@ -585,9 +576,14 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	private static int computeDerivedCooldown(KiType type, Utility util, float initialComplexity, int cooldownLevel) {
-		float typeMult = getTypeMultiplier(type != null ? type : KiType.SMALL_BALL);
+		KiType resolved = type != null ? type : KiType.SMALL_BALL;
+		float typeMult = getTypeMultiplier(resolved);
 		float utilMult = getUtilityMultiplier(util != null ? util : Utility.DAMAGE);
-		float base = (20.0f + initialComplexity * 4.0f) * typeMult * utilMult;
+		float cdTypeMult = switch (resolved) {
+			case SMALL_BALL, LASER, DISK -> 0.5f;
+			default -> 1.0f;
+		};
+		float base = (20.0f + initialComplexity * 4.0f) * typeMult * utilMult * cdTypeMult;
 		float reduced = base * Math.max(0.1f, 1.0f - (Math.max(0, cooldownLevel) * 0.05f));
 		return Math.max(10, Math.min(600, Math.round(reduced)));
 	}

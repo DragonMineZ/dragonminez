@@ -70,7 +70,9 @@ public class PredefinedTechniques {
 		data.getAllowedRaces().add("ALL");
 		data.setAnimation(animPrefix);
 		data.setCastTime(5 * 20);
-		data.setCooldown(cooldownSeconds * 20);
+		// cooldown is stored in seconds (getActualCooldown() converts to ticks via KI_TIME_MULTIPLIER),
+		// matching player-created techniques. Storing ticks here made every predefined attack ~20x too long.
+		data.setCooldown(cooldownSeconds);
 		data.calculateDerivedValues();
 		REGISTRY.put(id, data);
 	}
