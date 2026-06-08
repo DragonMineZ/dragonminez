@@ -534,17 +534,20 @@ public class CombatEvent {
 						int kiCost = (int) Math.ceil(postMitigation * costRatio);
 						float currentEnergy = stats.getResources().getCurrentEnergy();
 
-						if (currentEnergy >= kiCost && kiCost > 0) {
-							postMitigation *= (1.0 - mitigationPct);
-							if (!victim.isCreative()) stats.getResources().removeEnergy(kiCost);
-						} else if (currentEnergy > 0) {
-							double affordableRatio = (double) currentEnergy / kiCost;
-							postMitigation *= (1.0 - (mitigationPct * affordableRatio));
-							if (!victim.isCreative()) stats.getResources().setCurrentEnergy(0);
+						if (kiCost > 0) {
+							if (currentEnergy >= kiCost) {
+								postMitigation *= (1.0 - mitigationPct);
+								if (!victim.isCreative()) stats.getResources().removeEnergy(kiCost);
+							} else if (currentEnergy > 0) {
+								double affordableRatio = (double) currentEnergy / kiCost;
+								postMitigation *= (1.0 - (mitigationPct * affordableRatio));
+								if (!victim.isCreative()) stats.getResources().setCurrentEnergy(0);
+							}
 						}
 					}
 
 					float finalDamage = (float) postMitigation;
+					if (!Float.isFinite(finalDamage) || finalDamage < 0.0f) finalDamage = 0.0f;
 
 					if (victim.getHealth() - finalDamage <= 0) {
 						if (event.getSource().getEntity() instanceof Player attacker) {

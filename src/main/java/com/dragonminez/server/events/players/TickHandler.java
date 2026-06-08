@@ -118,6 +118,7 @@ public class TickHandler {
 
 				data.getCooldowns().tick();
 				data.getEffects().tick();
+				clearExpiredKnockdown(data);
 
 				for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
 					handler.onPlayerTick(serverPlayer, data);
@@ -131,6 +132,7 @@ public class TickHandler {
 			} else {
 				data.getCooldowns().tick();
 				data.getEffects().tick();
+				clearExpiredKnockdown(data);
 				if (data.getStatus().isStunned()) data.getStatus().setStunned(false);
 			}
 
@@ -368,6 +370,12 @@ public class TickHandler {
 		UUID playerId = event.getEntity().getUUID();
 		forceKillGraceByPlayer.put(playerId, FORCED_KILL_GRACE_TICKS);
 		playerTickCounters.remove(playerId);
+	}
+
+	private static void clearExpiredKnockdown(StatsData data) {
+		if (data.getStatus().isKnockedDown() && !data.getCooldowns().hasCooldown(Cooldowns.KNOCKDOWN_DURATION)) {
+			data.getStatus().setKnockedDown(false);
+		}
 	}
 
 	private static boolean shouldForceKillForInvalidHealth(ServerPlayer serverPlayer, UUID playerId) {
