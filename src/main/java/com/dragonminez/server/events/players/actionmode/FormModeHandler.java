@@ -109,5 +109,4 @@ public class FormModeHandler implements IActionModeHandler {
 			player.refreshDimensions();
 		}
 	}
-
 }

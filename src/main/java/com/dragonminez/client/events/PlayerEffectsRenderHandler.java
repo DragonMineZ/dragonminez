@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
+import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -40,31 +41,25 @@ public class PlayerEffectsRenderHandler {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null || mc.player == null) return;
 
-		// When a shaderpack (BSL/Complementary via Oculus) is active, the world
-		// pipeline is deferred and our custom-shader draws done at AFTER_WEATHER /
-		// AFTER_PARTICLES get discarded. In that case we defer every effect batch
-		// to AFTER_LEVEL, where Oculus has already composited the final scene to
-		// the main render target, and draw on top of it.
 		boolean shaderPack = IrisCompat.isShaderPackInUse(mc.level.getGameTime());
 		RenderLevelStageEvent.Stage stage = event.getStage();
 
 		if (shaderPack) {
-			// Oculus renders entities multiple times per frame (shadow passes from
-			// the sun's POV + the main camera pass). Each pass re-queues effects
-			// with that pass's pose, so a shadow-pass entry would render the effect
-			// at a wrong/far position. RenderLevelStageEvent only fires in the main
-			// pass, so clearing the queues at AFTER_SKY (before main-pass entities
-			// render) drops every shadow-pass entry, leaving only the main ones.
+
 			if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) {
 				PlayerEffectQueue.getAndClearAuras();
 				PlayerEffectQueue.getAndClearSparks();
 				PlayerEffectQueue.getAndClearWeapons();
 				PlayerEffectQueue.getAndClearFirstPersonAuras();
 				PlayerEffectQueue.getAndClearKiAttacks();
+
+				TransformationPostShaderManager.setShaderpackMainPass(true);
 			} else if (stage == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+				TransformationPostShaderManager.setShaderpackMainPass(false);
 				mc.getMainRenderTarget().bindWrite(false);
 				renderWeapons(mc, event);
 				renderEffects(mc, event);
+				TransformationPostShaderManager.processShaderpackOutline(event.getPartialTick());
 			}
 			return;
 		}
@@ -127,3 +122,4 @@ public class PlayerEffectsRenderHandler {
 		AuraRenderer.cleanCaches(CURRENT_FRAME_PLAYERS);
 	}
 }
+
