@@ -3,6 +3,8 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
+import com.dragonminez.client.render.shader.DMZShaders;
+import com.dragonminez.client.render.shader.KiBloomRenderer;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
@@ -101,6 +103,9 @@ public class PlayerEffectsRenderHandler {
 
 		var kiAttacks = PlayerEffectQueue.getAndClearKiAttacks();
 		if (!kiAttacks.isEmpty()) {
+			float kiAlpha = isFirstPerson ? 0.35f : 0.85f;
+			if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(kiAlpha);
+
 			RenderSystem.depthMask(false);
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
@@ -113,6 +118,12 @@ public class PlayerEffectsRenderHandler {
 			RenderSystem.enableCull();
 			RenderSystem.depthMask(true);
 			RenderSystem.disableBlend();
+
+			if (!IrisCompat.isShaderPackInUse(gameTime)) {
+				KiBloomRenderer.render(kiAttacks, poseStack, projectionMatrix, partialTick);
+			}
+
+			if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(1.0f);
 		}
 
 		AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);

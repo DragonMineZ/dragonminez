@@ -1,0 +1,42 @@
+{
+  "targets": [
+    "swap",
+    "ki_scene",
+    "h_blur"
+  ],
+  "passes": [
+    {
+      "name": "dragonminez:ki_blur_h",
+      "intarget": "ki_scene",
+      "outtarget": "h_blur"
+    },
+    {
+      "name": "dragonminez:ki_blur_v",
+      "intarget": "h_blur",
+      "outtarget": "ki_scene"
+    },
+    {
+      "name": "dragonminez:ki_blur_h",
+      "intarget": "ki_scene",
+      "outtarget": "h_blur"
+    },
+    {
+      "name": "dragonminez:ki_blur_v",
+      "intarget": "h_blur",
+      "outtarget": "ki_scene"
+    },
+    {
+      "name": "dragonminez:ki_composite",
+      "intarget": "minecraft:main",
+      "outtarget": "swap",
+      "auxtargets": [
+        { "name": "BloomSampler", "id": "ki_scene" }
+      ]
+    },
+    {
+      "name": "blit",
+      "intarget": "swap",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}

@@ -106,12 +106,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.apply();
         sphereMesh.bind();
         sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-        poseStack.scale(1.25f, 1.25f, 1.25f);
-        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-        shader.safeGetUniform("alphaMult").set(0.15f * fadeAlpha);
-        shader.apply();
-        sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
         VertexBuffer.unbind();
 
@@ -127,12 +121,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             shader.safeGetUniform("alphaMult").set(1.0f * fadeAlpha);
             shader.apply();
             cylinderMesh.bind();
-            cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-            poseStack.scale(1.2f, 1.2f, 1.0f);
-            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-            shader.safeGetUniform("alphaMult").set(0.15f * fadeAlpha);
-            shader.apply();
             cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
             poseStack.popPose();
             VertexBuffer.unbind();
@@ -339,13 +327,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
         shader.apply();
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-        poseStack.scale(1.25f, 1.25f, 1.25f);
-        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-        shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
-        shader.apply();
-        mesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
         poseStack.popPose();
         VertexBuffer.unbind();
         shader.clear();
@@ -372,13 +353,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
         shader.apply();
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-        poseStack.scale(1.3f, 1.3f, 1.0f);
-        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-        shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
-        shader.apply();
-        mesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
         poseStack.popPose();
         VertexBuffer.unbind();
         shader.clear();

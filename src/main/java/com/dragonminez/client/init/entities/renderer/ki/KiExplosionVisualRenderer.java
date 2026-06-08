@@ -73,12 +73,6 @@ public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualE
             shader.apply();
             mesh.drawWithShader(stack.last().pose(), proj, shader);
 
-            stack.scale(1.2f, 1.2f, 1.2f);
-            shader.safeGetUniform("ModelViewMat").set(stack.last().pose());
-            shader.safeGetUniform("alphaMult").set(currentAlpha * 0.15f);
-            shader.apply();
-            mesh.drawWithShader(stack.last().pose(), proj, shader);
-
             stack.popPose();
             VertexBuffer.unbind();
             shader.clear();

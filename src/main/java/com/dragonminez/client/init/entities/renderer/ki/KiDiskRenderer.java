@@ -78,12 +78,6 @@ public class KiDiskRenderer extends EntityRenderer<KiDiskEntity> {
                 shader.apply();
                 mesh.drawWithShader(stack.last().pose(), proj, shader);
 
-                stack.scale(1.2f, 1.2f, 1.5f);
-                shader.safeGetUniform("ModelViewMat").set(stack.last().pose());
-                shader.safeGetUniform("alphaMult").set(0.15f);
-                shader.apply();
-                mesh.drawWithShader(stack.last().pose(), proj, shader);
-
                 stack.popPose();
                 VertexBuffer.unbind();
                 shader.clear();
