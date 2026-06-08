@@ -62,6 +62,10 @@ public class Skill {
         return level >= maxLevel;
     }
 
+    public boolean isUnlockedAt(int requiredLevel) {
+        return level >= requiredLevel;
+    }
+
     public CompoundTag save() {
         CompoundTag nbt = new CompoundTag();
         nbt.putString("Name", name);

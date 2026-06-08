@@ -29,6 +29,11 @@ public class Skills {
 		return skillMap.containsKey(name.toLowerCase());
 	}
 
+	public boolean isUnlockedAtLevel(String name, int requiredLevel) {
+		Skill skill = skillMap.get(name.toLowerCase());
+		return skill != null && skill.isUnlockedAt(requiredLevel);
+	}
+
 	public int getSkillLevel(String name) {
 		Skill skill = skillMap.get(name.toLowerCase());
 		return skill != null ? skill.getLevel() : 0;

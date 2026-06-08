@@ -90,10 +90,9 @@ public class TransformationsHelper {
 		}
 
 		String formType = formConfig.getFormType();
-		int skillLevel = getSkillLevelForType(statsData, formType);
 
 		for (FormConfig.FormData formData : formConfig.getForms().values()) {
-			if (formData.getUnlockOnSkillLevel() <= skillLevel) {
+			if (isFormUnlocked(statsData, formType, formData.getUnlockOnSkillLevel())) {
 				unlockedForms.add(formData);
 			}
 		}
@@ -108,27 +107,31 @@ public class TransformationsHelper {
 		}
 
 		String formType = formConfig.getFormType();
-		int skillLevel = getSkillLevelForStackType(statsData, formType);
 
 		for (FormConfig.FormData formData : formConfig.getForms().values()) {
-			if (formData.getUnlockOnSkillLevel() <= skillLevel) {
+			if (isStackFormUnlocked(statsData, formType, formData.getUnlockOnSkillLevel())) {
 				unlockedForms.add(formData);
 			}
 		}
 		return unlockedForms;
 	}
 
-	private static int getSkillLevelForType(StatsData statsData, String formType) {
-		if (formType.toLowerCase().contains("super")) return statsData.getSkills().getSkillLevel("superforms");
-		else if (formType.toLowerCase().contains("legendary")) return statsData.getSkills().getSkillLevel("legendaryforms");
-		else if (formType.toLowerCase().contains("god")) return statsData.getSkills().getSkillLevel("godforms");
-		else if (formType.toLowerCase().contains("android")) return statsData.getSkills().getSkillLevel("androidforms");
-		else return statsData.getSkills().getSkillLevel(formType);
+	private static String getSkillNameForType(String formType) {
+		String lower = formType.toLowerCase();
+		if (lower.contains("super")) return "superforms";
+		else if (lower.contains("legendary")) return "legendaryforms";
+		else if (lower.contains("god")) return "godforms";
+		else if (lower.contains("android")) return "androidforms";
+		else return formType;
 	}
 
-	private static int getSkillLevelForStackType(StatsData statsData, String formType) {
-		if (formType == null || formType.isEmpty()) return 0;
-		return statsData.getSkills().getSkillLevel(formType.toLowerCase(Locale.ROOT));
+	private static boolean isFormUnlocked(StatsData statsData, String formType, int requiredLevel) {
+		return statsData.getSkills().isUnlockedAtLevel(getSkillNameForType(formType), requiredLevel);
+	}
+
+	private static boolean isStackFormUnlocked(StatsData statsData, String formType, int requiredLevel) {
+		if (formType == null || formType.isEmpty()) return false;
+		return statsData.getSkills().isUnlockedAtLevel(formType.toLowerCase(Locale.ROOT), requiredLevel);
 	}
 
 	public static String getGroupWithFirstAvailableForm(StatsData statsData) {
@@ -159,9 +162,8 @@ public class TransformationsHelper {
 		if (config == null) return null;
 		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return null;
 
-		int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> f.getUnlockOnSkillLevel() <= currentSkillLevel)
+				.filter(f -> isFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getName).orElse(null);
@@ -174,9 +176,8 @@ public class TransformationsHelper {
 		if (config == null) return -1;
 		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return -1;
 
-		int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> f.getUnlockOnSkillLevel() <= currentSkillLevel)
+				.filter(f -> isFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
@@ -219,9 +220,8 @@ public class TransformationsHelper {
 		FormConfig config = ConfigManager.getStackFormGroup(group);
 		if (config == null) return null;
 
-		int currentSkillLevel = getSkillLevelForStackType(statsData, config.getFormType());
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> f.getUnlockOnSkillLevel() <= currentSkillLevel)
+				.filter(f -> isStackFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getName).orElse(null);
@@ -234,9 +234,8 @@ public class TransformationsHelper {
 		FormConfig config = ConfigManager.getStackFormGroup(group);
 		if (config == null) return -1;
 
-		int currentSkillLevel = getSkillLevelForStackType(statsData, config.getFormType());
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> f.getUnlockOnSkillLevel() <= currentSkillLevel)
+				.filter(f -> isStackFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
@@ -252,10 +251,10 @@ public class TransformationsHelper {
 			if (config == null || !config.getFormType().toLowerCase().contains(formType)) continue;
 			if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) continue;
 
-			int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
+			final FormConfig formConfig = config;
 			int[] reqLevels = config.getForms().values().stream()
 					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
-					.filter(req -> req <= currentSkillLevel)
+					.filter(req -> isFormUnlocked(statsData, formConfig.getFormType(), req))
 					.sorted()
 					.toArray();
 
@@ -277,10 +276,10 @@ public class TransformationsHelper {
 			FormConfig config = entry.getValue();
 			if (config == null || !config.getFormType().toLowerCase().contains(formType)) continue;
 
-			int currentSkillLevel = getSkillLevelForStackType(statsData, config.getFormType());
+			final FormConfig formConfig = config;
 			int[] reqLevels = config.getForms().values().stream()
 					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
-					.filter(req -> req <= currentSkillLevel)
+					.filter(req -> isStackFormUnlocked(statsData, formConfig.getFormType(), req))
 					.sorted()
 					.toArray();
 
@@ -329,9 +328,7 @@ public class TransformationsHelper {
 			}
 		}
 		if (nextFormConfig != null) {
-			int reqLevel = nextFormConfig.getUnlockOnSkillLevel();
-			int myLevel = getSkillLevelForType(statsData, config.getFormType());
-			return reqLevel <= myLevel ? nextFormConfig : null;
+			return isFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) ? nextFormConfig : null;
 		}
 		return nextFormConfig;
 	}
@@ -366,9 +363,7 @@ public class TransformationsHelper {
 			}
 		}
 		if (nextFormConfig != null) {
-			int reqLevel = nextFormConfig.getUnlockOnSkillLevel();
-			int myLevel = getSkillLevelForStackType(statsData, config.getFormType());
-			return reqLevel <= myLevel ? nextFormConfig : null;
+			return isStackFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) ? nextFormConfig : null;
 		}
 		return nextFormConfig;
 	}
