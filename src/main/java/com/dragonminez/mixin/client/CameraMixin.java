@@ -73,7 +73,7 @@ public abstract class CameraMixin implements RollCamera {
 			Vec3 movement = forward.scale(smoothedOffset.z()).add(left.scale(smoothedOffset.x()));
 
 			double movementLen = movement.length();
-			Vec3 desiredPos = baseEyePos;
+			Vec3 appliedShift = Vec3.ZERO;
 
 			if (movementLen > 0.001D) {
 				Vec3 direction = movement.normalize();
@@ -86,12 +86,12 @@ public abstract class CameraMixin implements RollCamera {
 				if (hit.getType() != HitResult.Type.MISS) {
 					double hitDistance = hit.getLocation().distanceTo(baseEyePos);
 					double allowedDistance = Math.max(0.0D, hitDistance - safeMargin);
-					if (allowedDistance < movementLen) desiredPos = baseEyePos.add(direction.scale(allowedDistance));
-					else desiredPos = baseEyePos.add(movement);
-				} else desiredPos = baseEyePos.add(movement);
+					if (allowedDistance < movementLen) appliedShift = direction.scale(allowedDistance);
+					else appliedShift = movement;
+				} else appliedShift = movement;
 			}
 
-			this.setPosition(desiredPos);
+			DMZCameraBuffer.setFirstPersonShift(appliedShift);
 		}
 	}
 
