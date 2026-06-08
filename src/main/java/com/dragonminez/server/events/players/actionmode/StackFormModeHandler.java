@@ -14,25 +14,28 @@ import net.minecraft.world.effect.MobEffectInstance;
 
 public class StackFormModeHandler implements IActionModeHandler {
 	@Override
-	public int handleActionCharge(ServerPlayer player, StatsData data) {
+	public boolean canCharge(ServerPlayer player, StatsData data) {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
-		if (nextForm != null) {
-			if (data.getCharacter().hasActiveForm()) {
-				FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
-				if (activeFormData != null) {
-					boolean isFormStackable = activeFormData.getFormStackable();
-					boolean isStackStackable = nextForm.getFormStackable();
+		if (nextForm == null) return false;
 
-					if (!isFormStackable || !isStackStackable) return 0;
-				}
+		if (data.getCharacter().hasActiveForm()) {
+			FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
+			if (activeFormData != null && (!activeFormData.getFormStackable() || !nextForm.getFormStackable())) {
+				return false;
 			}
-
-			String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
-
-			int mastery = (int) data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
-			return (5 + Math.max(20, mastery));
 		}
-		return 0;
+		return true;
+	}
+
+	@Override
+	public int handleActionCharge(ServerPlayer player, StatsData data) {
+		if (!canCharge(player, data)) return 0;
+
+		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
+		String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
+
+		int mastery = (int) data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
+		return (5 + Math.max(20, mastery));
 	}
 
 	@Override
@@ -49,6 +52,14 @@ public class StackFormModeHandler implements IActionModeHandler {
 			FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
 			if (activeFormData != null) {
 				if (!activeFormData.getFormStackable() || !nextForm.getFormStackable()) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
+					return;
+				}
+
+				String nextGroup = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
+				double baseMastery = data.getCharacter().getFormMasteries().getMastery(data.getCharacter().getActiveFormGroup(), data.getCharacter().getActiveForm());
+				double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(nextGroup, nextForm.getName());
+				if (baseMastery < activeFormData.getStackOnMastery() || stackMastery < nextForm.getStackOnMastery()) {
 					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
 					return;
 				}

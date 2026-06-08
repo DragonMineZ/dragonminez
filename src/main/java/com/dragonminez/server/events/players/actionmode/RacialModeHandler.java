@@ -8,6 +8,16 @@ import net.minecraft.server.level.ServerPlayer;
 
 public class RacialModeHandler implements IActionModeHandler {
     @Override
+    public boolean canCharge(ServerPlayer player, StatsData data) {
+        return switch (data.getCharacter().getRace()) {
+            case "saiyan" -> data.getResources().getRacialSkillCount() < ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiAmount();
+            case "namekian" -> data.getResources().getRacialSkillCount() < ConfigManager.getServerConfig().getRacialSkills().getNamekianAssimilationAmount();
+            case "majin" -> data.getResources().getRacialSkillCount() < ConfigManager.getServerConfig().getRacialSkills().getMajinAbsorptionAmount();
+            default -> false;
+        };
+    }
+
+    @Override
     public int handleActionCharge(ServerPlayer player, StatsData data) {
         String race = data.getCharacter().getRaceName();
         String racialSkill = ConfigManager.getRaceCharacter(race) == null ? "" : ConfigManager.getRaceCharacter(race).getRacialSkill();

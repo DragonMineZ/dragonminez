@@ -81,6 +81,7 @@ public class GeneralServerConfig {
 		private Integer fusionDurationSeconds = 900;
 		private Integer fusionCooldownSeconds = 1800;
 		private Boolean multiplicationInsteadOfAdditionForMultipliers = false;
+		private Boolean ultimateFormFixedValue = false;
 		private Integer partyMaxMembers = -1;
 		private Integer partyMaxLevelGap = 500;
 		private Double partyTpShareRatio = 0.5;
@@ -187,6 +188,10 @@ public class GeneralServerConfig {
 		public Double getPartyTpShareRatio() {
 			if (partyTpShareRatio == null) return 0.0;
 			return Math.max(0.0, Math.min(partyTpShareRatio, 10.0));
+		}
+
+		public Boolean getUltimateFormFixedValue() {
+			return ultimateFormFixedValue != null && ultimateFormFixedValue;
 		}
 	}
 

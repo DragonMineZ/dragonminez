@@ -66,16 +66,22 @@ public class FormConfig {
 		private Double healthDrain = 0.0;
 		private Double attackSpeed = 1.0;
 		private Double maxMastery = 100.0;
-		private Double masteryPerHit = 0.01;
-		private Double masteryPerDamageReceived = 0.01;
-		private Double statMultPerMasteryPoint = 0.02;
-		private Double costDecreasePerMasteryPoint = 0.02;
-		private Double passiveMasteryGainEveryFiveSeconds = 0.001;
+		private Double masteryPerHitDealt = 0.01;
+		private Double masteryPerHitReceived = 0.01;
+		private Double passiveMasteryEveryFiveSeconds = 0.001;
+		private Double maxCostMultiplier = 0.5;
+		private Double maxStatsMultiplier = 1.25;
+		private String formRequisite = "";
+		private Double unlockOnMastery = 0.0;
+		private Double stackOnMastery = 0.0;
+		private Double instantTransformOnMastery = 40.0;
+		private Double allowAlwaysTransformOnMastery = 0.0;
+		private Double directTransformIfUsedOnMastery = 0.0;
 		private Boolean formStackable = true;
 		private Double stackDrainMultiplier = 2.0;
 		private Boolean canAlwaysTransform = false;
-		private Boolean directTransformation = false;
-		private Boolean excemptFromUltimate = false;
+		private Boolean directTransformationIfUsed = false;
+		private List<String> incompatibleWith = new ArrayList<>(List.of("ultimate.ultimate"));
 		private OutlineShaderConfig outlineShader = new OutlineShaderConfig();
 
 		private List<TriggerItemCost> triggerItemCosts = new ArrayList<>();
@@ -142,24 +148,61 @@ public class FormConfig {
 			return Math.max(0.1, attackSpeed);
 		}
 
-		public Double getMasteryPerHit() {
-			return Math.max(0, masteryPerHit);
+		public Double getMasteryPerHitDealt() {
+			return Math.max(0, masteryPerHitDealt);
 		}
 
-		public Double getMasteryPerDamageReceived() {
-			return Math.max(0, masteryPerDamageReceived);
+		public Double getMasteryPerHitReceived() {
+			return Math.max(0, masteryPerHitReceived);
 		}
 
-		public Double getStatMultPerMasteryPoint() {
-			return Math.max(0, statMultPerMasteryPoint);
+		public Double getPassiveMasteryEveryFiveSeconds() {
+			return Math.max(0, passiveMasteryEveryFiveSeconds);
 		}
 
-		public Double getCostDecreasePerMasteryPoint() {
-			return Math.max(0, costDecreasePerMasteryPoint);
+		public Double getMaxCostMultiplier() {
+			return Math.max(0, maxCostMultiplier);
 		}
 
-		public Double getPassiveMasteryGainEveryFiveSeconds() {
-			return Math.max(0, passiveMasteryGainEveryFiveSeconds);
+		public Double getMaxStatsMultiplier() {
+			return Math.max(0, maxStatsMultiplier);
+		}
+
+		public String getFormRequisite() {
+			return formRequisite != null ? formRequisite.trim() : "";
+		}
+
+		public Double getUnlockOnMastery() {
+			return Math.max(0, unlockOnMastery);
+		}
+
+		public Double getStackOnMastery() {
+			return Math.max(0, stackOnMastery);
+		}
+
+		public Double getInstantTransformOnMastery() {
+			return Math.max(0, instantTransformOnMastery);
+		}
+
+		public Double getAllowAlwaysTransformOnMastery() {
+			return Math.max(0, allowAlwaysTransformOnMastery);
+		}
+
+		public Double getDirectTransformIfUsedOnMastery() {
+			return Math.max(0, directTransformIfUsedOnMastery);
+		}
+
+		public List<String> getIncompatibleWith() {
+			return incompatibleWith != null ? incompatibleWith : Collections.emptyList();
+		}
+
+		public boolean isIncompatibleWith(String groupId, String formId) {
+			if (groupId == null || formId == null) return false;
+			String key = (groupId + "." + formId).toLowerCase();
+			for (String entry : getIncompatibleWith()) {
+				if (entry != null && entry.trim().toLowerCase().equals(key)) return true;
+			}
+			return false;
 		}
 
 		public Double getStackDrainMultiplier() {

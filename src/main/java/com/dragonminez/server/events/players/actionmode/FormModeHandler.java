@@ -14,6 +14,11 @@ import net.minecraft.world.effect.MobEffectInstance;
 
 public class FormModeHandler implements IActionModeHandler {
 	@Override
+	public boolean canCharge(ServerPlayer player, StatsData data) {
+		return TransformationsHelper.getNextAvailableForm(data) != null;
+	}
+
+	@Override
 	public int handleActionCharge(ServerPlayer player, StatsData data) {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
 		if (nextForm != null) {
@@ -42,7 +47,12 @@ public class FormModeHandler implements IActionModeHandler {
 				boolean isFormStackable = nextForm.getFormStackable();
 				boolean isStackStackable = activeStackData.getFormStackable();
 
-				if (!isFormStackable || !isStackStackable) {
+				String nextGroup = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
+				double baseMastery = data.getCharacter().getFormMasteries().getMastery(nextGroup, nextForm.getName());
+				double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(data.getCharacter().getActiveStackFormGroup(), data.getCharacter().getActiveStackForm());
+				boolean meetsStackMastery = baseMastery >= nextForm.getStackOnMastery() && stackMastery >= activeStackData.getStackOnMastery();
+
+				if (!isFormStackable || !isStackStackable || !meetsStackMastery) {
 					data.getCharacter().clearActiveStackForm(player);
 					player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 					player.sendSystemMessage(Component.translatable("message.dragonminez.form.stack_removed"));

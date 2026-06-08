@@ -2249,6 +2249,8 @@
   "skill.dragonminez.kiboost.desc": "Increases your Active Ki regeneration rate by 25% per level. Does not affect your passive Ki regeneration rate.",
   "skill.dragonminez.kaioken": "Kaioken",
   "skill.dragonminez.kaioken.desc": "A powerful technique that multiplies your stats but strains your body.",
+  "skill.dragonminez.ultimate": "Ultimate",
+  "skill.dragonminez.ultimate.desc": "Unlease your power to the limit! Ultimate Forms takes the multiplier of your strongest-compatible form and applies it to your stats with a bonus!",
   "skill.dragonminez.ultrainstinct": "Ultra Instinct",
   "skill.dragonminez.ultrainstinct.desc": "An ultimate, divine technique that severs the connection between the mind and body, allowing the user to react, dodge, and attack automatically without conscious thought.",
   "skill.dragonminez.ultraego": "Ultra Ego",

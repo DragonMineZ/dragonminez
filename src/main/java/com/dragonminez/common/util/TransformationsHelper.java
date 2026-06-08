@@ -92,7 +92,7 @@ public class TransformationsHelper {
 		String formType = formConfig.getFormType();
 
 		for (FormConfig.FormData formData : formConfig.getForms().values()) {
-			if (isFormUnlocked(statsData, formType, formData.getUnlockOnSkillLevel())) {
+			if (isFormUnlocked(statsData, formType, formData.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, formData)) {
 				unlockedForms.add(formData);
 			}
 		}
@@ -109,7 +109,7 @@ public class TransformationsHelper {
 		String formType = formConfig.getFormType();
 
 		for (FormConfig.FormData formData : formConfig.getForms().values()) {
-			if (isStackFormUnlocked(statsData, formType, formData.getUnlockOnSkillLevel())) {
+			if (isStackFormUnlocked(statsData, formType, formData.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, formData)) {
 				unlockedForms.add(formData);
 			}
 		}
@@ -132,6 +132,37 @@ public class TransformationsHelper {
 	private static boolean isStackFormUnlocked(StatsData statsData, String formType, int requiredLevel) {
 		if (formType == null || formType.isEmpty()) return false;
 		return statsData.getSkills().isUnlockedAtLevel(formType.toLowerCase(Locale.ROOT), requiredLevel);
+	}
+
+	private static boolean meetsMasteryRequisite(StatsData statsData, FormConfig.FormData formData) {
+		if (formData == null) return false;
+		String req = formData.getFormRequisite();
+		double need = formData.getUnlockOnMastery();
+		if (req == null || req.isEmpty() || need <= 0.0) return true;
+		int dot = req.indexOf('.');
+		if (dot <= 0 || dot >= req.length() - 1) return true;
+		String reqGroup = req.substring(0, dot);
+		String reqForm = req.substring(dot + 1);
+		double have = statsData.getCharacter().getFormMasteries().getMastery(reqGroup, reqForm);
+		return have >= need;
+	}
+
+	private static boolean isFormSelectable(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
+		double mastery = stack
+				? statsData.getCharacter().getStackFormMasteries().getMastery(groupName, formData.getName())
+				: statsData.getCharacter().getFormMasteries().getMastery(groupName, formData.getName());
+
+		boolean canAlways = formData.getCanAlwaysTransform()
+				&& mastery >= formData.getAllowAlwaysTransformOnMastery();
+
+		boolean usedBefore = stack
+				? statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(groupName).contains(formData.getName())
+				: statsData.getCharacter().getFormsUsedBefore().getFormGroup(groupName).contains(formData.getName());
+		boolean directIfUsed = formData.getDirectTransformationIfUsed()
+				&& usedBefore
+				&& mastery >= formData.getDirectTransformIfUsedOnMastery();
+
+		return canAlways || directIfUsed;
 	}
 
 	public static String getGroupWithFirstAvailableForm(StatsData statsData) {
@@ -163,7 +194,7 @@ public class TransformationsHelper {
 		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return null;
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> isFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()))
+				.filter(f -> isFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getName).orElse(null);
@@ -177,7 +208,7 @@ public class TransformationsHelper {
 		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return -1;
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> isFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()))
+				.filter(f -> isFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
@@ -221,7 +252,7 @@ public class TransformationsHelper {
 		if (config == null) return null;
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> isStackFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()))
+				.filter(f -> isStackFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getName).orElse(null);
@@ -235,7 +266,7 @@ public class TransformationsHelper {
 		if (config == null) return -1;
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> isStackFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()))
+				.filter(f -> isStackFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
@@ -253,6 +284,7 @@ public class TransformationsHelper {
 
 			final FormConfig formConfig = config;
 			int[] reqLevels = config.getForms().values().stream()
+					.filter(f -> meetsMasteryRequisite(statsData, f))
 					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
 					.filter(req -> isFormUnlocked(statsData, formConfig.getFormType(), req))
 					.sorted()
@@ -278,6 +310,7 @@ public class TransformationsHelper {
 
 			final FormConfig formConfig = config;
 			int[] reqLevels = config.getForms().values().stream()
+					.filter(f -> meetsMasteryRequisite(statsData, f))
 					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
 					.filter(req -> isStackFormUnlocked(statsData, formConfig.getFormType(), req))
 					.sorted()
@@ -328,7 +361,8 @@ public class TransformationsHelper {
 			}
 		}
 		if (nextFormConfig != null) {
-			return isFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) ? nextFormConfig : null;
+			return (isFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel())
+					&& meetsMasteryRequisite(statsData, nextFormConfig)) ? nextFormConfig : null;
 		}
 		return nextFormConfig;
 	}
@@ -363,7 +397,8 @@ public class TransformationsHelper {
 			}
 		}
 		if (nextFormConfig != null) {
-			return isStackFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) ? nextFormConfig : null;
+			return (isStackFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel())
+					&& meetsMasteryRequisite(statsData, nextFormConfig)) ? nextFormConfig : null;
 		}
 		return nextFormConfig;
 	}
@@ -401,9 +436,7 @@ public class TransformationsHelper {
 		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
 		List<FormConfig.FormData> unlockedForms = getUnlockedForms(statsData, race, groupName);
 		return unlockedForms.stream()
-				.filter(formData -> formData.getCanAlwaysTransform() ||
-						(formData.getDirectTransformation()
-								&& statsData.getCharacter().getFormsUsedBefore().getFormGroup(groupName).contains(formData.getName())))
+				.filter(formData -> isFormSelectable(statsData, groupName, formData, false))
 				.map(FormConfig.FormData::getName)
 				.toList();
 	}
@@ -412,9 +445,7 @@ public class TransformationsHelper {
 		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
 		List<FormConfig.FormData> unlockedForms = getUnlockedStackForms(statsData, groupName);
 		return unlockedForms.stream()
-				.filter(formData -> formData.getCanAlwaysTransform() ||
-						(formData.getDirectTransformation()
-								&& statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(groupName).contains(formData.getName())))
+				.filter(formData -> isFormSelectable(statsData, groupName, formData, true))
 				.map(FormConfig.FormData::getName)
 				.toList();
 	}

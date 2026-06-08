@@ -216,6 +216,15 @@ public class TickHandler {
 				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 			}
 
+			// Holding the action key sets isActionCharging client-side without validating
+			// the action. Clear it here when the selected action is not actually possible
+			// so the aura, the transformation animation and the movement lock (all keyed on
+			// isActionCharging) never trigger on an impossible action.
+			if (data.getStatus().isActionCharging() && !canChargeSelectedAction(serverPlayer, data)) {
+				data.getStatus().setActionCharging(false);
+				if (data.getResources().getActionCharge() > 0) data.getResources().setActionCharge(0);
+			}
+
 			boolean isReleaseCharging = isChargingKi || data.getStatus().isActionCharging();
 			if (isReleaseCharging) {
 				int chargeTicks = chargeTicksByPlayer.getOrDefault(playerId, 0) + 1;
@@ -518,7 +527,7 @@ public class TickHandler {
 				if (formData != null) maxMastery = formData.getMaxMastery();
 
 				if (!data.getCharacter().getFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
-					double masteryGain = formData != null ? formData.getPassiveMasteryGainEveryFiveSeconds() : 0.001;
+					double masteryGain = formData != null ? formData.getPassiveMasteryEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
 					data.getCharacter().getFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
 					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
@@ -534,7 +543,7 @@ public class TickHandler {
 				if (formData != null) maxMastery = formData.getMaxMastery();
 
 				if (!data.getCharacter().getStackFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
-					double masteryGain = formData != null ? formData.getPassiveMasteryGainEveryFiveSeconds() : 0.001;
+					double masteryGain = formData != null ? formData.getPassiveMasteryEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
 					data.getCharacter().getStackFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
 					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
@@ -881,6 +890,11 @@ public class TickHandler {
 		IActionModeHandler handler = ACTION_MODE_HANDLERS.get(mode.name());
 		if (handler != null) return handler.performAction(player, data);
 		return false;
+	}
+
+	public static boolean canChargeSelectedAction(ServerPlayer player, StatsData data) {
+		IActionModeHandler handler = ACTION_MODE_HANDLERS.get(data.getStatus().getSelectedAction().name());
+		return handler == null || handler.canCharge(player, data);
 	}
 
 	private static void handleActiveFormDrains(ServerPlayer player, StatsData data) {

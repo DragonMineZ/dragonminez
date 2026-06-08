@@ -8,17 +8,19 @@ import lombok.AllArgsConstructor;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @AllArgsConstructor
 public class DefaultFormsFactory {
 	private void setDefaultMasteryValues(FormConfig.FormData form) {
 		form.setMaxMastery(100.0);
-		form.setMasteryPerHit(0.025);
-		form.setMasteryPerDamageReceived(0.025);
-		form.setStatMultPerMasteryPoint(0.0075);
-		form.setCostDecreasePerMasteryPoint(0.025);
-		form.setPassiveMasteryGainEveryFiveSeconds(0.01);
+		form.setMasteryPerHitDealt(0.025);
+		form.setMasteryPerHitReceived(0.025);
+		form.setMaxStatsMultiplier(1.5);
+		form.setMaxCostMultiplier(0.75);
+		form.setPassiveMasteryEveryFiveSeconds(0.01);
+		form.setStackOnMastery(25.0);
 		form.setAuraType("kakarot");
 		form.setAuraLayer(0);
 	}
@@ -175,20 +177,20 @@ public class DefaultFormsFactory {
 		ultimate.setUnlockOnSkillLevel(1);
 		ultimate.setKeepBaseFormHeadBones(true);
 		ultimate.setCustomModel("");
-		ultimate.setStrMultiplier(1.25);
-		ultimate.setSkpMultiplier(1.25);
+		ultimate.setStrMultiplier(2.0);
+		ultimate.setSkpMultiplier(2.0);
 		ultimate.setDefMultiplier(1.15);
-		ultimate.setPwrMultiplier(1.25);
+		ultimate.setPwrMultiplier(2.0);
 		ultimate.setEnergyDrain(0.0);
 		ultimate.setStaminaDrain(0.0);
 		ultimate.setHealthDrain(0.0);
 		ultimate.setAttackSpeed(1.0);
 		ultimate.setHairType("base");
 		ultimate.setMaxMastery(0.0);
-		ultimate.setMasteryPerHit(0.0);
-		ultimate.setMasteryPerDamageReceived(0.0);
-		ultimate.setStatMultPerMasteryPoint(0.0);
-		ultimate.setPassiveMasteryGainEveryFiveSeconds(0.0);
+		ultimate.setMasteryPerHitDealt(0.0);
+		ultimate.setMasteryPerHitReceived(0.0);
+		ultimate.setMaxStatsMultiplier(1.0);
+		ultimate.setPassiveMasteryEveryFiveSeconds(0.0);
 		ultimate.setFormStackable(false);
 		ultimate.setStackDrainMultiplier(1.0);
 		ultimate.setCanAlwaysTransform(true);
@@ -238,7 +240,7 @@ public class DefaultFormsFactory {
 		mastered.setHairType("");
 		setDefaultMasteryValues(mastered);
 		mastered.setStackDrainMultiplier(1.0);
-		mastered.setDirectTransformation(true);
+		mastered.setDirectTransformationIfUsed(true);
 
 		Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
 		stackFormData.put(StackForms.ULTRAINSTINCT_SIGN, sign);
@@ -286,7 +288,7 @@ public class DefaultFormsFactory {
 		mastered.setHairType("ssj2");
 		setDefaultMasteryValues(mastered);
 		mastered.setStackDrainMultiplier(1.0);
-		mastered.setDirectTransformation(true);
+		mastered.setDirectTransformationIfUsed(true);
 
 		Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
 		stackFormData.put(StackForms.ULTRAEGO_SIGN, sign);
@@ -317,6 +319,7 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(buffed);
 		buffed.setStackDrainMultiplier(2.0);
 		buffed.setCanAlwaysTransform(true);
+		buffed.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(HumanForms.FULLPOWER);
@@ -330,6 +333,7 @@ public class DefaultFormsFactory {
 		fullPower.setHairType("ssj");
 		setDefaultMasteryValues(fullPower);
 		fullPower.setStackDrainMultiplier(2.0);
+		fullPower.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData overdrive = new FormConfig.FormData();
 		overdrive.setName(HumanForms.OVERDRIVE);
@@ -346,6 +350,7 @@ public class DefaultFormsFactory {
 		overdrive.setHairType("ssj2");
 		setDefaultMasteryValues(overdrive);
 		overdrive.setStackDrainMultiplier(2.0);
+		overdrive.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData solaris = new FormConfig.FormData();
 		solaris.setName(HumanForms.SOLARIS);
@@ -359,12 +364,13 @@ public class DefaultFormsFactory {
 		solaris.setHairType("ssj2");
 		setDefaultMasteryValues(solaris);
 		solaris.setStackDrainMultiplier(2.0);
+		solaris.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> humanFormData = new LinkedHashMap<>();
 		humanFormData.put(HumanForms.BUFFED, buffed);
 		humanFormData.put(HumanForms.FULLPOWER, fullPower);
 		humanFormData.put(HumanForms.OVERDRIVE, overdrive);
-		//humanFormData.put(HumanForms.SOLARIS, solaris);
+		humanFormData.put(HumanForms.SOLARIS, solaris);
 		humanForms.setForms(humanFormData);
 
 		forms.put(HumanForms.GROUP_SUPERFORMS, humanForms);
@@ -533,6 +539,7 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(oozaru);
 		oozaru.setStackDrainMultiplier(2.0);
 		oozaru.setCanAlwaysTransform(true);
+		oozaru.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData goldenOozaru = new FormConfig.FormData();
 		goldenOozaru.setName(SaiyanForms.GOLDEN_OOZARU);
@@ -555,6 +562,7 @@ public class DefaultFormsFactory {
 		goldenOozaru.setHairType("base");
 		setDefaultMasteryValues(goldenOozaru);
 		goldenOozaru.setStackDrainMultiplier(2.0);
+		goldenOozaru.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData ssj4gt = new FormConfig.FormData();
 		ssj4gt.setName(SaiyanForms.SUPER_SAIYAN_4);
@@ -576,7 +584,9 @@ public class DefaultFormsFactory {
 		ssj4gt.setForcedHairCode("DMZ1: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");
 		setDefaultMasteryValues(ssj4gt);
 		ssj4gt.setStackDrainMultiplier(2.0);
-		ssj4gt.setDirectTransformation(true);
+		ssj4gt.setDirectTransformationIfUsed(true);
+		ssj4gt.setDirectTransformIfUsedOnMastery(50.0);
+		ssj4gt.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
 		oozaruFormData.put(SaiyanForms.OOZARU, oozaru);
@@ -607,6 +617,7 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(ssj1);
 		ssj1.setStackDrainMultiplier(2.0);
 		ssj1.setCanAlwaysTransform(true);
+		ssj1.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData ssg2 = new FormConfig.FormData();
 		ssg2.setName(SaiyanForms.SUPER_SAIYAN_GRADE_2);
@@ -629,6 +640,7 @@ public class DefaultFormsFactory {
 		ssg2.setHairType("ssj");
 		setDefaultMasteryValues(ssg2);
 		ssg2.setStackDrainMultiplier(2.0);
+		ssg2.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData ssg3 = new FormConfig.FormData();
 		ssg3.setName(SaiyanForms.SUPER_SAIYAN_GRADE_3);
@@ -651,6 +663,7 @@ public class DefaultFormsFactory {
 		ssg3.setHairType("ssj");
 		setDefaultMasteryValues(ssg3);
 		ssg3.setStackDrainMultiplier(2.0);
+		ssg3.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> ssGradeForms = new LinkedHashMap<>();
 		ssGradeForms.put(SaiyanForms.SUPER_SAIYAN, ssj1);
@@ -681,6 +694,7 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(ssj1Mastered);
 		ssj1Mastered.setStackDrainMultiplier(2.0);
 		ssj1Mastered.setCanAlwaysTransform(true);
+		ssj1Mastered.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData ssj2 = new FormConfig.FormData();
 		ssj2.setName(SaiyanForms.SUPER_SAIYAN_2);
@@ -701,6 +715,7 @@ public class DefaultFormsFactory {
 		ssj2.setHairType("ssj2");
 		setDefaultMasteryValues(ssj2);
 		ssj2.setStackDrainMultiplier(2.0);
+		ssj2.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData ssj3 = new FormConfig.FormData();
 		ssj3.setName(SaiyanForms.SUPER_SAIYAN_3);
@@ -722,6 +737,7 @@ public class DefaultFormsFactory {
 		ssj3.setHairType("ssj3");
 		setDefaultMasteryValues(ssj3);
 		ssj3.setStackDrainMultiplier(2.0);
+		ssj3.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData ssj4d = new FormConfig.FormData();
         FormConfig.FormData.OutlineShaderConfig ssj4dOutline = new FormConfig.FormData.OutlineShaderConfig();
@@ -753,7 +769,9 @@ public class DefaultFormsFactory {
         ssj4d.setHasLightnings(true);
         ssj4d.setStackDrainMultiplier(2.0);
         setDefaultMasteryValues(ssj4d);
-        ssj4d.setDirectTransformation(true);
+        ssj4d.setDirectTransformationIfUsed(true);
+		ssj4d.setDirectTransformIfUsedOnMastery(50.0);
+		ssj4d.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
@@ -872,6 +890,7 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(giantForm);
 		giantForm.setStackDrainMultiplier(2.0);
 		giantForm.setCanAlwaysTransform(true);
+		giantForm.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(NamekianForms.FULLPOWER);
@@ -886,6 +905,7 @@ public class DefaultFormsFactory {
 		fullPower.setHairType("base");
 		setDefaultMasteryValues(fullPower);
 		fullPower.setStackDrainMultiplier(2.0);
+		fullPower.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData superNamekian = new FormConfig.FormData();
 		superNamekian.setName(NamekianForms.SUPER_NAMEKIAN);
@@ -904,6 +924,7 @@ public class DefaultFormsFactory {
 		superNamekian.setHairType("base");
 		setDefaultMasteryValues(superNamekian);
 		superNamekian.setStackDrainMultiplier(2.0);
+		superNamekian.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> namekianFormData = new LinkedHashMap<>();
 		namekianFormData.put(NamekianForms.GIANT, giantForm);
@@ -1022,6 +1043,7 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(second);
 		second.setStackDrainMultiplier(2.0);
 		second.setCanAlwaysTransform(true);
+		second.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData third = new FormConfig.FormData();
 		third.setName(FrostDemonForms.THIRD_FORM);
@@ -1036,6 +1058,7 @@ public class DefaultFormsFactory {
 		third.setHairType("base");
 		setDefaultMasteryValues(third);
 		third.setStackDrainMultiplier(2.0);
+		third.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData finalForm = new FormConfig.FormData();
 		finalForm.setName(FrostDemonForms.FINAL_FORM);
@@ -1049,6 +1072,7 @@ public class DefaultFormsFactory {
 		finalForm.setHairType("base");
 		setDefaultMasteryValues(finalForm);
 		finalForm.setStackDrainMultiplier(2.0);
+		finalForm.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(FrostDemonForms.FULLPOWER);
@@ -1067,6 +1091,7 @@ public class DefaultFormsFactory {
 		fullPower.setHairType("base");
 		setDefaultMasteryValues(fullPower);
 		fullPower.setStackDrainMultiplier(2.0);
+		fullPower.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData fifthForm = new FormConfig.FormData();
 		fifthForm.setName(FrostDemonForms.FIFTH_FORM);
@@ -1086,6 +1111,7 @@ public class DefaultFormsFactory {
 		fifthForm.setHairType("base");
 		setDefaultMasteryValues(fifthForm);
 		fifthForm.setStackDrainMultiplier(2.0);
+		fifthForm.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> frostFormData = new LinkedHashMap<>();
 		frostFormData.put(FrostDemonForms.SECOND_FORM, second);
@@ -1181,6 +1207,7 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(kid);
 		kid.setStackDrainMultiplier(2.0);
 		kid.setCanAlwaysTransform(true);
+		kid.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData evil = new FormConfig.FormData();
 		evil.setName(MajinForms.EVIL);
@@ -1201,20 +1228,22 @@ public class DefaultFormsFactory {
 		evil.setHairType("base");
 		setDefaultMasteryValues(evil);
 		evil.setStackDrainMultiplier(2.0);
+		evil.setIncompatibleWith(List.of(""));
 
-		FormConfig.FormData superForms = new FormConfig.FormData();
-        superForms.setCustomModel("majin_super");
-		superForms.setName(MajinForms.SUPER);
-		superForms.setUnlockOnSkillLevel(3);
-		superForms.setKeepBaseFormHeadBones(true);
-		superForms.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
-		superForms.setStrMultiplier(2.25);
-		superForms.setSkpMultiplier(2.25);
-		superForms.setDefMultiplier(2.15);
-		superForms.setPwrMultiplier(2.25);
-		superForms.setHairType("base");
-		setDefaultMasteryValues(superForms);
-		superForms.setStackDrainMultiplier(2.0);
+		FormConfig.FormData superForm = new FormConfig.FormData();
+        superForm.setCustomModel("majin_super");
+		superForm.setName(MajinForms.SUPER);
+		superForm.setUnlockOnSkillLevel(3);
+		superForm.setKeepBaseFormHeadBones(true);
+		superForm.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
+		superForm.setStrMultiplier(2.25);
+		superForm.setSkpMultiplier(2.25);
+		superForm.setDefMultiplier(2.15);
+		superForm.setPwrMultiplier(2.25);
+		superForm.setHairType("base");
+		setDefaultMasteryValues(superForm);
+		superForm.setStackDrainMultiplier(2.0);
+		superForm.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData ultra = new FormConfig.FormData();
 		ultra.setName(MajinForms.ULTRA);
@@ -1233,11 +1262,12 @@ public class DefaultFormsFactory {
 		ultra.setHairType("base");
 		setDefaultMasteryValues(ultra);
 		ultra.setStackDrainMultiplier(2.0);
+		ultra.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> majinFormData = new LinkedHashMap<>();
 		majinFormData.put(MajinForms.KID, kid);
 		majinFormData.put(MajinForms.EVIL, evil);
-		majinFormData.put(MajinForms.SUPER, superForms);
+		majinFormData.put(MajinForms.SUPER, superForm);
 		majinFormData.put(MajinForms.ULTRA, ultra);
 		majinForms.setForms(majinFormData);
 
@@ -1335,6 +1365,7 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(semiPerfect);
 		semiPerfect.setStackDrainMultiplier(2.0);
 		semiPerfect.setCanAlwaysTransform(true);
+		semiPerfect.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData perfect = new FormConfig.FormData();
 		perfect.setName(BioAndroidForms.PERFECT);
@@ -1354,6 +1385,7 @@ public class DefaultFormsFactory {
 		perfect.setHairType("base");
 		setDefaultMasteryValues(perfect);
 		perfect.setStackDrainMultiplier(2.0);
+		perfect.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData superPerfect = new FormConfig.FormData();
 		superPerfect.setName(BioAndroidForms.SUPER_PERFECT);
@@ -1376,6 +1408,7 @@ public class DefaultFormsFactory {
 		superPerfect.setHairType("base");
 		setDefaultMasteryValues(superPerfect);
 		superPerfect.setStackDrainMultiplier(2.0);
+		superPerfect.setIncompatibleWith(List.of(""));
 
 		FormConfig.FormData ultraperfect = new FormConfig.FormData();
 		ultraperfect.setName(BioAndroidForms.ULTRA_PERFECT);
@@ -1401,6 +1434,7 @@ public class DefaultFormsFactory {
 		ultraperfect.setHairType("base");
 		setDefaultMasteryValues(ultraperfect);
 		ultraperfect.setStackDrainMultiplier(2.0);
+		ultraperfect.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> bioFormData = new LinkedHashMap<>();
 		bioFormData.put(BioAndroidForms.SEMI_PERFECT, semiPerfect);
