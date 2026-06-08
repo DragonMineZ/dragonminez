@@ -529,7 +529,7 @@ public class TickHandler {
 				if (!data.getCharacter().getFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
 					double masteryGain = formData != null ? formData.getPassiveMasteryEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
-					data.getCharacter().getFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
+					data.getCharacter().gainMastery(activeFormGroup, activeFormName, masteryGain);
 					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
 				}
 			}
@@ -545,7 +545,7 @@ public class TickHandler {
 				if (!data.getCharacter().getStackFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
 					double masteryGain = formData != null ? formData.getPassiveMasteryEveryFiveSeconds() : 0.001;
 					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
-					data.getCharacter().getStackFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
+					data.getCharacter().gainMastery(activeFormGroup, activeFormName, masteryGain);
 					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
 				}
 			}
