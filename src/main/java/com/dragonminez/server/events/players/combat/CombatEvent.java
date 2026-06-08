@@ -191,7 +191,7 @@ public class CombatEvent {
 				}
 
 				int kiInfusionLevel = attackerData.getSkills().getSkillLevel("ki_infusion");
-				if (kiInfusionLevel > 0) {
+				if (kiInfusionLevel > 0 && attackerData.getSkills().isSkillActive("ki_infusion")) {
 					float maxKi = attackerData.getMaxEnergy();
 					double baseCost = ConfigManager.getCombatConfig().getKiInfusionBaseCostPct();
 					double maxCost = ConfigManager.getCombatConfig().getKiInfusionMaxCostPct();
@@ -527,7 +527,7 @@ public class CombatEvent {
 					}
 
 					int kiProtectionLevel = stats.getSkills().getSkillLevel("kiprotection");
-					if (kiProtectionLevel > 0) {
+					if (kiProtectionLevel > 0 && stats.getSkills().isSkillActive("kiprotection")) {
 						double mitigationPerLevel = ConfigManager.getCombatConfig().getKiProtectionMitigationPerLevel();
 						double costRatio = ConfigManager.getCombatConfig().getKiProtectionCostRatio();
 						double mitigationPct = kiProtectionLevel * mitigationPerLevel;
