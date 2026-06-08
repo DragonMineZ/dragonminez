@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.armor;
 
+import com.dragonminez.Reference;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import lombok.Getter;
@@ -28,17 +29,23 @@ public class DbzArmorCapeItem extends ArmorItem implements GeoItem, DbzArmorText
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     @Getter
+    private final String modId;
+    @Getter
     private final String itemId;
 
-
     public DbzArmorCapeItem(ArmorMaterial pMaterial, Type pType, Properties pProperties, String itemId) {
+        this(pMaterial, pType, pProperties, Reference.MOD_ID, itemId);
+    }
+
+    public DbzArmorCapeItem(ArmorMaterial pMaterial, Type pType, Properties pProperties, String modId, String itemId) {
         super(pMaterial, pType, pProperties);
+        this.modId = modId;
         this.itemId = itemId;
     }
 
     @Override
     public @Nullable String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-        return ArmorTextureResolver.resolve(itemId, slot, stack).toString();
+        return ArmorTextureResolver.resolve(modId, itemId, slot, stack).toString();
     }
 
     @Override

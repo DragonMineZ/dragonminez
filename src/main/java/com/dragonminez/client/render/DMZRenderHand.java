@@ -13,6 +13,7 @@ import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.client.util.ArmorTextureResolver;
+import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -200,36 +201,44 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		ps.popPose();
 	}
 
-	private void renderDbzArmor(PoseStack ps, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer player, ModelPart pRendererArm) {
-		ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
-		if (CosmeticArmorCompat.isLoaded()) {
-			ItemStack cosmeticStack = CosmeticArmorCompat.getCosmeticStack(player, EquipmentSlot.CHEST);
-			if (cosmeticStack != null) {
-				if (cosmeticStack.isEmpty()) return;
-				chestStack = cosmeticStack;
-			}
-		}
-		if (chestStack.isEmpty()) return;
+    private void renderDbzArmor(PoseStack ps, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer player, ModelPart pRendererArm) {
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (CosmeticArmorCompat.isLoaded()) {
+            ItemStack cosmeticStack = CosmeticArmorCompat.getCosmeticStack(player, EquipmentSlot.CHEST);
+            if (cosmeticStack != null) {
+                if (cosmeticStack.isEmpty()) return;
+                chestStack = cosmeticStack;
+            }
+        }
+        if (chestStack.isEmpty()) return;
 
-		String itemId = chestStack.getItem() instanceof DbzArmorTextured textured ? textured.getItemId() : null;
+        String modId = Reference.MOD_ID;
+        String itemId = null;
 
-		if (itemId != null) {
-			ResourceLocation armorResource = ArmorTextureResolver.resolve(itemId, EquipmentSlot.CHEST, chestStack);
+        if (chestStack.getItem() instanceof DbzArmorItem dbzItem) {
+            modId = dbzItem.getModId();
+            itemId = dbzItem.getItemId();
+        } else if (chestStack.getItem() instanceof DbzArmorTextured textured) {
+            itemId = textured.getItemId();
+        }
 
-			ps.pushPose();
+        if (itemId != null) {
+            ResourceLocation armorResource = ArmorTextureResolver.resolve(modId, itemId, EquipmentSlot.CHEST, chestStack);
 
-			boolean isRightArm = (pRendererArm == this.model.rightArm);
+            ps.pushPose();
 
-			float armorInflation = 1.05F;
-			ps.scale(armorInflation, armorInflation, armorInflation);
+            boolean isRightArm = (pRendererArm == this.model.rightArm);
 
-			ps.translate(isRightArm ? 0.02D : -0.01, -0.04D, 0.0D);
+            float armorInflation = 1.05F;
+            ps.scale(armorInflation, armorInflation, armorInflation);
 
-			renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, WHITE_COLOR);
+            ps.translate(isRightArm ? 0.02D : -0.01, -0.04D, 0.0D);
 
-			ps.popPose();
-		}
-	}
+            renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, WHITE_COLOR);
+
+            ps.popPose();
+        }
+    }
 
 	private void renderPart(PoseStack stack, MultiBufferSource buffer, int light, ModelPart part, ResourceLocation texture, float[] rgb) {
 		VertexConsumer vc = buffer.getBuffer(RenderType.entityTranslucent(texture));
