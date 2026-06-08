@@ -2,6 +2,7 @@ package com.dragonminez.client.render.shader;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsCapability;
@@ -54,6 +55,20 @@ public final class TransformationPostShaderManager {
 	private static ShaderUniformState activeUniformState;
 	private static TransformationMaskBufferSource maskBufferSource = new TransformationMaskBufferSource();
 
+	@Nullable
+	private static PostChain shaderpackChain;
+	private static int shaderpackChainWidth = -1;
+	private static int shaderpackChainHeight = -1;
+	private static volatile boolean shaderpackMainPass = false;
+
+	public static void setShaderpackMainPass(boolean active) {
+		shaderpackMainPass = active;
+	}
+
+	public static boolean isShaderpackMainPass() {
+		return shaderpackMainPass;
+	}
+
 	private TransformationPostShaderManager() {}
 
 	public static void tick() {
@@ -64,6 +79,12 @@ public final class TransformationPostShaderManager {
 		}
 
 		updateTrackedPlayers(mc);
+
+		if (IrisCompat.isShaderPackInUse()) {
+			shutdownManagedShader(mc);
+			return;
+		}
+
 		if (ACTIVE_MASK_PLAYERS.isEmpty() || activeUniformState == null || !ModRenderTypes.hasTransformationMaskShader()) {
 			shutdownManagedShader(mc);
 			return;
@@ -83,7 +104,8 @@ public final class TransformationPostShaderManager {
 		UUID playerId = player.getUUID();
 		if (!ACTIVE_MASK_PLAYERS.contains(playerId)) return null;
 
-		if (!ModRenderTypes.hasTransformationMaskShader() || !isTransformationShaderActive(mc)) return null;
+		if (!ModRenderTypes.hasTransformationMaskShader()) return null;
+		if (!IrisCompat.isShaderPackInUse() && !isTransformationShaderActive(mc)) return null;
 		if (player == mc.player && mc.options.getCameraType().isFirstPerson()) return null;
 		TrackedShaderState tracked = TRACKED_PLAYERS.get(playerId);
 		if (tracked == null || tracked.uniformState == null) return null;
@@ -131,6 +153,56 @@ public final class TransformationPostShaderManager {
 		}
 
 		applyRuntimeUniforms(postChain, partialTicks, mc);
+	}
+
+	public static void processShaderpackOutline(float partialTicks) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.level == null || mc.gameRenderer == null) return;
+		if (ACTIVE_MASK_PLAYERS.isEmpty() || activeUniformState == null || !ModRenderTypes.hasTransformationMaskShader()) return;
+
+		RenderTarget main = mc.getMainRenderTarget();
+		PostChain chain = ensureShaderpackChain(mc, main);
+		if (chain == null) return;
+
+		RenderTarget maskTarget = chain.getTempTarget(MASK_TARGET);
+		RenderTarget paramsTarget = chain.getTempTarget(PARAMS_TARGET);
+		if (maskTarget == null || paramsTarget == null) return;
+
+		maskTarget.clear(Minecraft.ON_OSX);
+		maskTarget.copyDepthFrom(main);
+		paramsTarget.clear(Minecraft.ON_OSX);
+		paramsTarget.copyDepthFrom(main);
+
+		TransformationMaskRenderState.setCurrentTargets(maskTarget, paramsTarget);
+		try {
+			maskBufferSource.endMaskBatch();
+		} finally {
+			TransformationMaskRenderState.setCurrentTargets(null, null);
+			main.bindWrite(false);
+		}
+
+		applyRuntimeUniforms(chain, partialTicks, mc);
+		chain.process(partialTicks);
+		main.bindWrite(false);
+	}
+
+	@Nullable
+	private static PostChain ensureShaderpackChain(Minecraft mc, RenderTarget main) {
+		if (shaderpackChain != null && shaderpackChainWidth == main.width && shaderpackChainHeight == main.height) {
+			return shaderpackChain;
+		}
+		try {
+			if (shaderpackChain != null) shaderpackChain.close();
+			shaderpackChain = new PostChain(mc.getTextureManager(), mc.getResourceManager(), main, TRANSFORMATION_EFFECT);
+			shaderpackChain.resize(main.width, main.height);
+			shaderpackChainWidth = main.width;
+			shaderpackChainHeight = main.height;
+		} catch (Exception e) {
+			shaderpackChain = null;
+			shaderpackChainWidth = -1;
+			shaderpackChainHeight = -1;
+		}
+		return shaderpackChain;
 	}
 
 	public static void reset() {
@@ -240,6 +312,13 @@ public final class TransformationPostShaderManager {
 		activeUniformState = null;
 		maskBufferSource = new TransformationMaskBufferSource();
 		TransformationMaskRenderState.setCurrentTargets(null, null);
+
+		if (shaderpackChain != null) {
+			shaderpackChain.close();
+			shaderpackChain = null;
+			shaderpackChainWidth = -1;
+			shaderpackChainHeight = -1;
+		}
 
 		if (shutdownShader) shutdownManagedShader(mc);
 	}

@@ -449,13 +449,13 @@ public class StatsData {
 	}
 
 	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken, double armorPenetration) {
-		double defTotalMult = getTotalMultiplier("DEF") / 2;
+		double defMult = getTotalMultiplier("DEF");
 		double baseDefense = getDefense();
 
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
 
-		double flatMitigation = baseDefense * 0.10;
+		double flatMitigation = baseDefense * 0.10 * Math.max(1.0, defMult);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
 
 		int maxValue = getConfiguredMaxValue();
@@ -472,7 +472,7 @@ public class StatsData {
 
 		double remainingDamage = postFlatDamage * (1.0 - baseReduction);
 
-		if (defTotalMult > 1.0) remainingDamage /= defTotalMult;
+		if (defMult > 1.0) remainingDamage /= (1.0 + (defMult - 1.0) * 0.20);
 
 		int totalProtection = 0;
 		if (player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
@@ -525,9 +525,7 @@ public class StatsData {
 		};
 
 		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
-		double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
-
-		return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
+		return applyMasteryStatBonus(formData, baseMult, mastery);
 	}
 
 	private double getBaseFormMultiplier(FormConfig.FormData formData, String statName) {
@@ -546,30 +544,49 @@ public class StatsData {
 
 	private double getMasteryAdjustedMultiplier(FormConfig.FormData formData, String statName, double mastery) {
 		double baseMult = getBaseFormMultiplier(formData, statName);
-		double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
-		return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
+		return applyMasteryStatBonus(formData, baseMult, mastery);
 	}
 
-	private double getStrongestSuperFormMultiplier(String statName) {
+	private double applyMasteryStatBonus(FormConfig.FormData formData, double baseMult, double mastery) {
+		if (baseMult < 1.0) return baseMult;
+		double maxMastery = formData.getMaxMastery();
+		if (maxMastery <= 0.0) return baseMult;
+		double ratio = Math.min(1.0, Math.max(0.0, mastery) / maxMastery);
+		double factor = 1.0 + ratio * (formData.getMaxStatsMultiplier() - 1.0);
+		return baseMult * factor;
+	}
+
+	private double getMasteryCostFactor(FormConfig.FormData formData, double mastery) {
+		double maxMastery = formData.getMaxMastery();
+		if (maxMastery <= 0.0) return 1.0;
+		double ratio = Math.min(1.0, Math.max(0.0, mastery) / maxMastery);
+		return 1.0 + ratio * (formData.getMaxCostMultiplier() - 1.0);
+	}
+
+	private FormConfig.FormData getBestUltimateBaseForm() {
 		String raceName = character.getRaceName();
 		Map<String, FormConfig> groups = ConfigManager.getAllFormsForRace(raceName);
-		if (groups == null || groups.isEmpty()) return 1.0;
+		if (groups == null || groups.isEmpty()) return null;
 
-		double best = 1.0;
+		FormConfig.FormData best = null;
+		double bestAverage = -1.0;
 		for (Map.Entry<String, FormConfig> entry : groups.entrySet()) {
 			String groupName = entry.getKey();
 			FormConfig group = entry.getValue();
 			if (group == null) continue;
-			if (!"super".equalsIgnoreCase(group.getFormType())) continue;
 
 			List<FormConfig.FormData> unlocked = TransformationsHelper.getUnlockedForms(this, raceName, groupName);
 			for (FormConfig.FormData formData : unlocked) {
 				if (formData == null) continue;
-				if (Boolean.TRUE.equals(formData.getExcemptFromUltimate())) continue;
+				if (formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
 
-				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
-				double mult = getMasteryAdjustedMultiplier(formData, statName, mastery);
-				if (mult > best) best = mult;
+				double average = (formData.getStrMultiplier() + formData.getSkpMultiplier()
+						+ formData.getDefMultiplier() + formData.getVitMultiplier()
+						+ formData.getPwrMultiplier() + formData.getEneMultiplier()) / 6.0;
+				if (average > bestAverage) {
+					bestAverage = average;
+					best = formData;
+				}
 			}
 		}
 		return best;
@@ -592,10 +609,11 @@ public class StatsData {
 
 		var formData = formConfig.getForm(currentForm);
 		if (formData == null) return 1.0;
-		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(currentFormGroup)) {
-			double strongestSuper = getStrongestSuperFormMultiplier(statName);
+		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(currentFormGroup) && !ConfigManager.getServerConfig().getGameplay().getUltimateFormFixedValue()) {
+			FormConfig.FormData bestForm = getBestUltimateBaseForm();
+			double bestMult = bestForm != null ? getBaseFormMultiplier(bestForm, statName) : 1.0;
 			double ultimateMult = getBaseFormMultiplier(formData, statName);
-			return strongestSuper * ultimateMult;
+			return bestMult + ultimateMult - 1.0;
 		}
 
 		double mastery = character.getStackFormMasteries().getMastery(currentFormGroup, currentForm);
@@ -617,17 +635,18 @@ public class StatsData {
 
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
+		var powerRelease = resources.getPowerRelease() / 100.0;
 		if (formData == null && stackFormData == null) return 1.0;
 
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
 			double baseDrain = formData.getStaminaDrainMultiplier();
-			if (character.hasActiveStackForm() && stackFormData != null)
-				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-
+			if (character.hasActiveStackForm() && stackFormData != null) baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-			double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-			adjustedBaseDrain = baseDrain / divisor;
+			double costFactor = getMasteryCostFactor(formData, mastery);
+
+			if (baseDrain < 0) adjustedBaseDrain = (baseDrain / costFactor) * powerRelease;
+			else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
 		}
 
 		double adjustedStackDrain = 0;
@@ -635,11 +654,11 @@ public class StatsData {
 			double stackDrain = stackFormData.getStackDrainMultiplier();
 			if (character.hasActiveForm() && formData != null)
 				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+			double mastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+			double costFactor = getMasteryCostFactor(stackFormData, mastery);
 
-			double stackMastery = isUltimateStackFormActive() ? 0.0
-					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-			double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-			adjustedStackDrain = stackDrain / stackDivisor;
+			if (stackDrain < 0) adjustedStackDrain = (stackDrain / costFactor) * powerRelease;
+			else adjustedStackDrain = (stackDrain * costFactor) * powerRelease;
 		}
 
 		return Math.max(0.001, adjustedBaseDrain + adjustedStackDrain);
@@ -660,10 +679,10 @@ public class StatsData {
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+			double costFactor = getMasteryCostFactor(formData, mastery);
 
-			if (baseDrain < 0) adjustedBaseDrain = (baseDrain * masteryFactor) * powerRelease;
-			else adjustedBaseDrain = (baseDrain / masteryFactor) * powerRelease;
+			if (baseDrain < 0) adjustedBaseDrain = (baseDrain / costFactor) * powerRelease;
+			else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
 		}
 
 		double adjustedStackDrain = 0;
@@ -674,10 +693,10 @@ public class StatsData {
 
 			double stackMastery = isUltimateStackFormActive() ? 0.0
 					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+			double stackCostFactor = getMasteryCostFactor(stackFormData, stackMastery);
 
-			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
-			else adjustedStackDrain = (stackDrain / stackMasteryFactor) * powerRelease;
+			if (stackDrain < 0) adjustedStackDrain = (stackDrain / stackCostFactor) * powerRelease;
+			else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
@@ -702,10 +721,10 @@ public class StatsData {
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+			double costFactor = getMasteryCostFactor(formData, mastery);
 
-			if (baseDrain < 0) adjustedBaseDrain = (baseDrain * masteryFactor) * powerRelease;
-			else adjustedBaseDrain = (baseDrain / masteryFactor) * powerRelease;
+			if (baseDrain < 0) adjustedBaseDrain = (baseDrain / costFactor) * powerRelease;
+			else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
 		}
 
 		double adjustedStackDrain = 0;
@@ -716,10 +735,10 @@ public class StatsData {
 
 			double stackMastery = isUltimateStackFormActive() ? 0.0
 					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+			double stackCostFactor = getMasteryCostFactor(stackFormData, stackMastery);
 
-			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
-			else adjustedStackDrain = (stackDrain / stackMasteryFactor) * powerRelease;
+			if (stackDrain < 0) adjustedStackDrain = (stackDrain / stackCostFactor) * powerRelease;
+			else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
@@ -744,10 +763,10 @@ public class StatsData {
 				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-			double masteryFactor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+			double costFactor = getMasteryCostFactor(formData, mastery);
 
-			if (baseDrain < 0) adjustedBaseDrain = (baseDrain * masteryFactor) * powerRelease;
-			else adjustedBaseDrain = (baseDrain / masteryFactor) * powerRelease;
+			if (baseDrain < 0) adjustedBaseDrain = (baseDrain / costFactor) * powerRelease;
+			else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
 		}
 
 		double adjustedStackDrain = 0;
@@ -758,10 +777,10 @@ public class StatsData {
 
 			double stackMastery = isUltimateStackFormActive() ? 0.0
 					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-			double stackMasteryFactor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+			double stackCostFactor = getMasteryCostFactor(stackFormData, stackMastery);
 
-			if (stackDrain < 0) adjustedStackDrain = (stackDrain * stackMasteryFactor) * powerRelease;
-			else adjustedStackDrain = (stackDrain / stackMasteryFactor) * powerRelease;
+			if (stackDrain < 0) adjustedStackDrain = (stackDrain / stackCostFactor) * powerRelease;
+			else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;

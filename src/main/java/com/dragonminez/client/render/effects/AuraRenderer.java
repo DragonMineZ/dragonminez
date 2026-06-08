@@ -56,8 +56,6 @@ public class AuraRenderer {
 	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
 	private static VertexBuffer cachedLightningMesh;
 
-	// Picks shaderpack-compatible (no-stencil, depth-tested) render types when a
-	// shaderpack is active, otherwise the stencil-gated default ones.
 	private static RenderType auraType(ResourceLocation texture) {
 		return IrisCompat.isShaderPackInUse() ? ModRenderTypes.getCustomAuraCompat(texture) : ModRenderTypes.getCustomAura(texture);
 	}
@@ -66,16 +64,13 @@ public class AuraRenderer {
 		return IrisCompat.isShaderPackInUse() ? ModRenderTypes.getCustomLightningCompat(texture) : ModRenderTypes.getCustomLightning(texture);
 	}
 
-	// Under Oculus, binding a custom shader through RenderType.setupRenderState()
-	// is intercepted and the draw is dropped (this is why the aura/lightning
-	// vanished with shaders while the ki renderer — which binds manually via
-	// drawWithShader — kept working). So with a shaderpack active we replicate
-	// that manual bind (same pattern as renderGuiAura) instead of the RenderType.
 	private static void customSetup(RenderType type, ResourceLocation texture, ShaderInstance shader) {
 		if (IrisCompat.isShaderPackInUse()) {
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
-			RenderSystem.disableDepthTest();
+
+			RenderSystem.enableDepthTest();
+			RenderSystem.depthFunc(GL11.GL_LEQUAL);
 			RenderSystem.depthMask(false);
 			RenderSystem.disableCull();
 			RenderSystem.setShaderTexture(0, texture);
@@ -96,73 +91,10 @@ public class AuraRenderer {
 		}
 	}
 
-	// Draws one aura quad. Without a shaderpack we use the custom aura shader via
-	// drawWithShader (its 4-colour gradient + frame blend, unchanged). Under a
-	// shaderpack the custom shader cannot sample its texture — Oculus leaves its own
-	// state on the texture units, so aura.fsh reads black and discards every pixel
-	// (invisible). So we draw with a vanilla position_tex shader (Oculus samples it
-	// fine) using the SAME drawWithShader(pose, projectionMatrix) call, so movement
-	// is identical to the no-shader path.
 	private static void applyAndDraw(VertexBuffer mesh, PoseStack poseStack, Matrix4f projectionMatrix, ShaderInstance shader,
 									 ResourceLocation texture, float[] color, float alpha, float speed, boolean ground) {
-		if (IrisCompat.isShaderPackInUse()) {
-			drawShaderpackAura(poseStack, projectionMatrix, ground, texture, color, alpha, speed);
-			return;
-		}
 		mesh.bind();
 		mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-	}
-
-	// Shaderpack aura draw. Under Oculus the only way to sample the aura texture is
-	// through a vanilla render type via a MultiBufferSource (drawWithShader never
-	// samples a texture under Oculus, regardless of the shader). The trade-off is
-	// that Iris transforms these vertices with its own matrices, so we emit them in
-	// camera-relative world space (the standard particle/entity space) and let Iris
-	// place them. The animation frame is baked into the UVs and the colour into the
-	// vertex colour; additive blending makes the grayscale-on-black sprite glow.
-	private static void drawShaderpackAura(PoseStack poseStack, Matrix4f projectionMatrix, boolean ground,
-										   ResourceLocation texture, float[] color, float alpha, float speed) {
-		if (alpha <= 0.001f) return;
-
-		int frame = (int) Math.floor(((speed % 4.0f) + 4.0f) % 4.0f);
-		float uL = frame / 4.0f;
-		float uR = (frame + 1) / 4.0f;
-
-		float boost = 1.3f;
-		int r = (int) (Mth.clamp(color[0] * boost, 0.0f, 1.0f) * 255.0f);
-		int g = (int) (Mth.clamp(color[1] * boost, 0.0f, 1.0f) * 255.0f);
-		int b = (int) (Mth.clamp(color[2] * boost, 0.0f, 1.0f) * 255.0f);
-		int a = (int) (Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f);
-
-		Matrix4f m = poseStack.last().pose();
-		MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-		RenderType rt = ModRenderTypes.auraEmissive(texture);
-		VertexConsumer vc = buffers.getBuffer(rt);
-
-		if (ground) {
-			emissiveVertex(vc, m, -1.0f, 0.0f, -1.0f, r, g, b, a, uL, 0.0f);
-			emissiveVertex(vc, m, -1.0f, 0.0f, 1.0f, r, g, b, a, uL, 1.0f);
-			emissiveVertex(vc, m, 1.0f, 0.0f, 1.0f, r, g, b, a, uR, 1.0f);
-			emissiveVertex(vc, m, 1.0f, 0.0f, -1.0f, r, g, b, a, uR, 0.0f);
-		} else {
-			emissiveVertex(vc, m, -1.0f, -1.0f, 0.0f, r, g, b, a, uL, 1.0f);
-			emissiveVertex(vc, m, 1.0f, -1.0f, 0.0f, r, g, b, a, uR, 1.0f);
-			emissiveVertex(vc, m, 1.0f, 1.0f, 0.0f, r, g, b, a, uR, 0.0f);
-			emissiveVertex(vc, m, -1.0f, 1.0f, 0.0f, r, g, b, a, uL, 0.0f);
-		}
-
-		buffers.endBatch(rt);
-	}
-
-	private static void emissiveVertex(VertexConsumer vc, Matrix4f m, float x, float y, float z,
-									   int r, int g, int b, int a, float u, float v) {
-		vc.vertex(m, x, y, z)
-				.color(r, g, b, a)
-				.uv(u, v)
-				.overlayCoords(OverlayTexture.NO_OVERLAY)
-				.uv2(15728880) // LightTexture.FULL_BRIGHT
-				.normal(0.0f, 0.0f, 1.0f)
-				.endVertex();
 	}
 
 	public static class AuraLayer {
@@ -549,6 +481,14 @@ public class AuraRenderer {
 		return new float[]{r, g, b};
 	}
 
+	private static PoseStack shaderpackViewStack(Minecraft mc) {
+		PoseStack stack = new PoseStack();
+		var cam = mc.gameRenderer.getMainCamera();
+		stack.mulPose(Axis.XP.rotationDegrees(cam.getXRot()));
+		stack.mulPose(Axis.YP.rotationDegrees(cam.getYRot() + 180.0F));
+		return stack;
+	}
+
 	public static void renderShaderFirstPersonAura(Player player, float partialTick, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix) {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return;
@@ -576,6 +516,10 @@ public class AuraRenderer {
 		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick);
 		if (activeLayers.isEmpty()) return;
 		data.lastLayers = activeLayers;
+
+		if (IrisCompat.isShaderPackInUse()) {
+			poseStack = shaderpackViewStack(mc);
+		}
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 		double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
@@ -630,13 +574,8 @@ public class AuraRenderer {
 		if (activeLayers.isEmpty()) return;
 		data.lastLayers = activeLayers;
 
-		// Under a shaderpack the aura is drawn via a MultiBufferSource (the only path
-		// that samples its texture under Oculus), which positions vertices with Iris's
-		// own matrices and expects camera-relative WORLD space from an identity base.
-		// The event poseStack carries extra transforms, so use a fresh stack — the
-		// translate below already moves to the player's camera-relative position.
 		if (IrisCompat.isShaderPackInUse()) {
-			poseStack = new PoseStack();
+			poseStack = shaderpackViewStack(mc);
 		}
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
@@ -673,9 +612,8 @@ public class AuraRenderer {
 		List<AuraLayer> activeLayers = data.lastLayers;
 		if (activeLayers == null || activeLayers.isEmpty()) return false;
 
-		// See renderShaderAura: under a shaderpack build on a fresh (identity) stack.
 		if (IrisCompat.isShaderPackInUse()) {
-			poseStack = new PoseStack();
+			poseStack = shaderpackViewStack(mc);
 		}
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();

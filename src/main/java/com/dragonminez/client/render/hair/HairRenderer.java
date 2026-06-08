@@ -26,14 +26,15 @@ public class HairRenderer {
 	private static final float UNIT_SCALE = 1.0f / 16.0f;
 	private static final float SIZE_DECAY = 0.85f;
 	private static final float INVISIBLE_SCALE = 0.0001f;
+
+	private static final float MICRO_SWAY = 4.0f;
+	private static final float SEGMENT_PHASE = 0.6f;
+	private static final float INERTIA_GAIN = 260.0f;
+	private static final float INERTIA_MAX = 75.0f;
 	private static final ResourceLocation HAIR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/hair.png");
 	private static final HairFace[] FACES = HairFace.values();
 
-	public static void render(PoseStack poseStack, MultiBufferSource bufferSource,
-	                          CustomHair hairFrom, CustomHair hairTo, float transitionFactor,
-	                          Character character, StatsData stats, AbstractClientPlayer player,
-	                          float[] rgbFrom, float[] rgbTo, float partialTick, int packedLight, int packedOverlay, float baseAlpha, float physicsLodMultiplier) {
-
+	public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hairFrom, CustomHair hairTo, float transitionFactor, Character character, StatsData stats, AbstractClientPlayer player, float[] rgbFrom, float[] rgbTo, float partialTick, int packedLight, int packedOverlay, float baseAlpha, float physicsLodMultiplier) {
 		if (hairFrom == null) hairFrom = new CustomHair();
 		if (hairTo == null) hairTo = hairFrom;
 
@@ -42,15 +43,38 @@ public class HairRenderer {
 		float movementIntensity = 0.0f;
 		boolean isCharging = false;
 		float time = 0;
+
+		float inertiaForward = 0.0f;
+		float inertiaSide = 0.0f;
+		float inertiaLift = 0.0f;
 		boolean useFromOnly = transitionFactor <= 0.0001f;
 		boolean useToOnly = transitionFactor >= 0.9999f;
 
 		if (stats != null && player != null && PHYSICS_ENABLED && physicsLodMultiplier > 0.01f) {
 			time = player.tickCount + partialTick;
-			double velocity = player.getDeltaMovement().lengthSqr();
-			boolean isMoving = velocity > 0.002 || player.isSprinting() || player.isSwimming();
+			double velX = player.getX() - player.xo;
+			double velY = player.getY() - player.yo;
+			double velZ = player.getZ() - player.zo;
+			double velocity = velX * velX + velY * velY + velZ * velZ;
+			boolean isMoving = velocity > 0.0004 || player.isSprinting() || player.isSwimming();
 			movementIntensity = (isMoving ? 1.0f : 0.2f) * physicsLodMultiplier;
 			isCharging = stats.getStatus().isChargingKi() || stats.getStatus().isActionCharging();
+
+			float headYaw = Mth.lerp(partialTick, player.yHeadRotO, player.yHeadRot);
+			double hy = Math.toRadians(headYaw);
+			float sinY = (float) Math.sin(hy);
+			float cosY = (float) Math.cos(hy);
+			float fwd = (float) (-sinY * velX + cosY * velZ);
+			float side = (float) (cosY * velX + sinY * velZ);
+			float vert = (float) velY;
+			float gain = INERTIA_GAIN * physicsLodMultiplier;
+			inertiaForward = Mth.clamp(fwd * gain, -INERTIA_MAX, INERTIA_MAX);
+			inertiaSide = Mth.clamp(-side * gain, -INERTIA_MAX, INERTIA_MAX);
+			inertiaLift = Mth.clamp(-vert * gain, -INERTIA_MAX, INERTIA_MAX);
+		}
+
+		if (!useFromOnly && !useToOnly) {
+			transitionFactor = transitionFactor * transitionFactor * (3.0f - 2.0f * transitionFactor);
 		}
 
 		float[] tempRgb = new float[3];
@@ -196,6 +220,7 @@ public class HairRenderer {
 				renderStrandInterpolated(poseStack, strandBuffer,
 						staticPos, tempRgb[0], tempRgb[1], tempRgb[2], packedLight, packedOverlay,
 						time, movementIntensity, isCharging,
+						inertiaForward, inertiaSide, inertiaLift,
 						lerpRotX, lerpRotY, lerpRotZ,
 						lerpScaleX, lerpScaleY, lerpScaleZ, lerpStretch,
 						lerpCurveX, lerpCurveY, lerpCurveZ,
@@ -231,6 +256,7 @@ public class HairRenderer {
 
 	private static void renderStrandInterpolated(PoseStack poseStack, VertexConsumer strandBuffer, Vector3f pos, float r, float g, float b, int packedLight, int packedOverlay,
 	                                             float time, float moveIntensity, boolean isCharging,
+	                                             float inertiaForward, float inertiaSide, float inertiaLift,
 	                                             float rotX, float rotY, float rotZ,
 	                                             float scaleX, float scaleY, float scaleZ, float stretchFactor,
 	                                             float curveX, float curveY, float curveZ,
@@ -279,10 +305,21 @@ public class HairRenderer {
 			float overlap = 0.0f;
 			if (i > 0) {
 				poseStack.translate(0, accumulatedHeight, 0);
-				applyRotation(poseStack, curveX, curveY, curveZ);
 
-				float radX = Math.abs(curveX) * ((float) Math.PI / 180.0f);
-				float radZ = Math.abs(curveZ) * ((float) Math.PI / 180.0f);
+				float segCurveX = curveX;
+				float segCurveZ = curveZ;
+				if (time != 0) {
+					float tip = (float) i / length;
+					float seg = tip * physicsLodMultiplier;
+					float microPhase = (time * swaySpeed) + offset + i * SEGMENT_PHASE;
+					segCurveX += Mth.sin(microPhase) * MICRO_SWAY * seg + (inertiaForward - inertiaLift) * seg;
+					segCurveZ += Mth.cos(microPhase * 0.7f) * MICRO_SWAY * 0.5f * seg + inertiaSide * seg;
+				}
+
+				applyRotation(poseStack, segCurveX, curveY, segCurveZ);
+
+				float radX = Math.abs(segCurveX) * ((float) Math.PI / 180.0f);
+				float radZ = Math.abs(segCurveZ) * ((float) Math.PI / 180.0f);
 				overlap = (cubeW / 2.0f) * Mth.sin(radZ) + (cubeD / 2.0f) * Mth.sin(radX) + 0.015f;
 			}
 

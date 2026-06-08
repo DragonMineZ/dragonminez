@@ -172,9 +172,8 @@ public class ExecuteActionC2S {
 								String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
 
 								double mastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
-								double maxMastery = nextForm.getMaxMastery();
 
-								if (mastery >= (maxMastery * 0.4)) {
+								if (player.isCreative() || mastery >= nextForm.getInstantTransformOnMastery()) {
 									int cost = (int) (data.getAdjustedEnergyDrain() * 4);
 
 									if (data.getResources().getCurrentEnergy() >= cost) {

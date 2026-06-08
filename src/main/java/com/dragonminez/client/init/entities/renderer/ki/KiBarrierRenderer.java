@@ -58,12 +58,6 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
                 shader.apply();
                 mesh.drawWithShader(stack.last().pose(), proj, shader);
 
-                stack.scale(1.1f, 1.1f, 1.1f);
-                shader.safeGetUniform("ModelViewMat").set(stack.last().pose());
-                shader.safeGetUniform("alphaMult").set(0.15f);
-                shader.apply();
-                mesh.drawWithShader(stack.last().pose(), proj, shader);
-
                 stack.popPose();
                 VertexBuffer.unbind();
                 shader.clear();

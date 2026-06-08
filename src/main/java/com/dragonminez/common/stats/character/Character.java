@@ -445,6 +445,7 @@ public class Character {
 		this.activeForm = "";
 		this.activeFormItemDurationTicks = 0;
 		updateOozaruCache();
+
 	}
 
 	public void clearActiveForm(LivingEntity entity) {

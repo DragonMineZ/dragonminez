@@ -36,8 +36,10 @@ import java.util.Map;
 
 public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private final Map<Integer, Float> progressMap = new HashMap<>();
-	private final Map<Integer, Long> tickMap = new HashMap<>();
 	private final Map<Integer, Long> lastSeenMsMap = new HashMap<>();
+	// Progress per tick for the base->form hair morph. Decoupled from actionCharge (which updates only a
+	// few times over the whole charge); full morph takes ~1/HAIR_MORPH_RATE ticks. Higher = faster.
+	private static final float HAIR_MORPH_RATE = 0.06f;
 	private static final double PHYSICS_LOD_NEAR_DISTANCE_SQR = 24.0 * 24.0;
 	private static final double PHYSICS_LOD_FAR_DISTANCE_SQR = 48.0 * 48.0;
 	private static final long TRACKING_TTL_MS = 30_000L;
@@ -115,8 +117,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		long nowMs = System.currentTimeMillis();
 		long gameTime = animatable.level().getGameTime();
 		lastSeenMsMap.put(entityId, nowMs);
-		float lastHairProgress = progressMap.getOrDefault(entityId, 0.0f);
-		long lastUpdateTick = tickMap.getOrDefault(entityId, 0L);
+		float curHairProgress = progressMap.getOrDefault(entityId, 0.0f);
 
 		if (stats.getStatus().isActionCharging()) {
 			String targetGroup;
@@ -141,26 +142,19 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 
 			if (nextForm != null && targetHair != null && targetRgb != null) {
-				float targetProgress = stats.getResources().getActionCharge() / 100.0f;
-				long currentTick = animatable.tickCount;
-				float interpolationSpeed = 0.1f;
-
-				if (currentTick != lastUpdateTick) {
-					lastHairProgress = lastHairProgress + (targetProgress - lastHairProgress) * interpolationSpeed;
-					tickMap.put(entityId, currentTick);
-					progressMap.put(entityId, lastHairProgress);
-				}
-
-				float smoothProgress = Mth.lerp(partialTick * interpolationSpeed, lastHairProgress, targetProgress);
-				smoothProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
+				// Time-based morph: ramp continuously toward the full transformation every frame. Decoupled
+				// from actionCharge, which only reports 2-3 coarse values over the charge and looked stepped.
+				// getDeltaFrameTime() = ticks elapsed this frame, so the speed is framerate-independent.
+				float dt = Minecraft.getInstance().getDeltaFrameTime();
+				curHairProgress = Math.min(1.0f, curHairProgress + HAIR_MORPH_RATE * dt);
+				progressMap.put(entityId, curHairProgress);
 
 				hairTo = targetHair;
 				rgbTo = targetRgb;
-				factor = smoothProgress;
+				factor = curHairProgress;
 			}
 		} else {
 			progressMap.remove(entityId);
-			tickMap.remove(entityId);
 		}
 		if (nowMs - lastCleanupMs >= CLEANUP_INTERVAL_MS) {
 			cleanupStaleTracking(nowMs);
@@ -229,7 +223,6 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			if (stale) {
 				int id = entry.getKey();
 				progressMap.remove(id);
-				tickMap.remove(id);
 			}
 			return stale;
 		});

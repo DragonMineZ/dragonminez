@@ -16,6 +16,8 @@
     { "name": "colorOutline", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
     { "name": "alphaMult", "type": "float", "count": 1, "values": [1.0] },
     { "name": "time", "type": "float", "count": 1, "values": [0.0] },
-    { "name": "texBlend", "type": "float", "count": 1, "values": [0.0] }
+    { "name": "texBlend", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "bloomMode", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "globalAlpha", "type": "float", "count": 1, "values": [1.0] }
   ]
 }

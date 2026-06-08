@@ -175,6 +175,7 @@ public class NPCActionC2S {
 			data.getCharacter().setSelectedFormGroup("androidforms");
 			data.getCharacter().setSelectedForm("androidbase");
 			data.getCharacter().setActiveForm("androidforms", "androidbase");
+			data.getCharacter().clearActiveStackForm();
 			player.refreshDimensions();
 			player.sendSystemMessage(Component.translatable("message.dragonminez.gero.upgrade_success"));
 		}

@@ -20,10 +20,7 @@ public class DMZShaders {
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
-		// The aura mesh and shader use Position + UV (POSITION_TEX). Registering
-		// with the matching format is what lets Iris/Oculus treat it as a textured
-		// pass and actually bind Sampler0 — otherwise the aura samples nothing and
-		// the fragment shader discards every pixel (invisible) under shaderpacks.
+
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura"),
 						DefaultVertexFormat.POSITION_TEX),

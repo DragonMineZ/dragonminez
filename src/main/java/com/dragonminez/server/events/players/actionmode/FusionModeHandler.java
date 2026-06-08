@@ -13,10 +13,16 @@ import java.util.List;
 
 public class FusionModeHandler implements IActionModeHandler {
     @Override
+    public boolean canCharge(ServerPlayer player, StatsData data) {
+        return data.getSkills().hasSkill("fusion")
+                && !data.getCooldowns().hasCooldown(Cooldowns.COMBAT)
+                && !data.getCooldowns().hasCooldown(Cooldowns.FUSION_CD)
+                && !data.getStatus().isFused();
+    }
+
+    @Override
     public int handleActionCharge(ServerPlayer player, StatsData data) {
-        if (data.getSkills().hasSkill("fusion") && !data.getCooldowns().hasCooldown(Cooldowns.COMBAT) && !data.getCooldowns().hasCooldown(Cooldowns.FUSION_CD)) {
-            return 10;
-        }
+        if (canCharge(player, data)) return 10;
         return 0;
     }
 

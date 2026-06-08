@@ -18,13 +18,11 @@ import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
-import com.dragonminez.common.stats.techniques.KiAttackData;
-import com.dragonminez.common.stats.techniques.StrikeAttackData;
-import com.dragonminez.common.stats.techniques.TechniqueData;
-import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
+import com.dragonminez.common.stats.techniques.*;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -51,8 +49,8 @@ import top.theillusivec4.curios.api.CuriosApi;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
-	private static final int TECHNIQUE_VISIBLE_SLOTS = com.dragonminez.common.stats.techniques.Techniques.SLOT_COUNT;
-	private static final int BAR_SLOTS = 4; // slots per HUD bar (bar 1 = 0-3, bar 2 = 4-7)
+	private static final int TECHNIQUE_VISIBLE_SLOTS = Techniques.SLOT_COUNT;
+	private static final int BAR_SLOTS = 4;
 
 	private static FlightSoundInstance flightSound;
 
@@ -296,9 +294,13 @@ public class ClientStatsEvents {
 
 		boolean[] downNow = new boolean[TECHNIQUE_VISIBLE_SLOTS];
 		boolean altHeld = KeyBinds.SECOND_FUNCTION_KEY.isDown() || Screen.hasAltDown();
+		long window = Minecraft.getInstance().getWindow().getWindow();
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
-			boolean rawDown = KeyBinds.TECHNIQUE_SLOTS[i].isDown();
-			boolean barAllows = (i < BAR_SLOTS) ? !ctrlHeld : altHeld;
+			InputConstants.Key key = KeyBinds.TECHNIQUE_SLOTS[i].getKey();
+			boolean rawDown = key.getType() == InputConstants.Type.KEYSYM
+					? InputConstants.isKeyDown(window, key.getValue())
+					: KeyBinds.TECHNIQUE_SLOTS[i].isDown();
+			boolean barAllows = (i < BAR_SLOTS) ? (altHeld && !ctrlHeld) : (ctrlHeld && altHeld);
 			downNow[i] = rawDown && barAllows;
 		}
 

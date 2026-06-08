@@ -164,7 +164,7 @@ public class ForgeCommonEvents {
 				data.getCharacter().clearActiveForm(player);
 				data.getCharacter().clearActiveStackForm(player);
 				data.getEffects().removeAllEffects();
-                player.refreshDimensions();
+				player.refreshDimensions();
 			});
 		}
 	}
@@ -177,9 +177,9 @@ public class ForgeCommonEvents {
 					ServerLevel otherworld = player.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 					player.teleportTo(otherworld, 0, 41, 10, 0, 0);
 				}
+				player.refreshDimensions();
 			});
-            player.refreshDimensions();
-        }
+		}
 	}
 
 	@SubscribeEvent

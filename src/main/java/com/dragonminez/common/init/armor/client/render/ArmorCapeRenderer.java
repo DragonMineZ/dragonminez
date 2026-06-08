@@ -17,12 +17,13 @@ public class ArmorCapeRenderer extends GeoArmorRenderer<DbzArmorCapeItem> {
 
     @Override
     public ResourceLocation getTextureLocation(DbzArmorCapeItem animatable) {
+        String modId = animatable.getModId();
         String itemId = animatable.getItemId();
 
         if (itemId.contains("pothala") || itemId.contains("scouter"))
             return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/blank.png");
 
-        return ArmorTextureResolver.resolve(itemId, this.getCurrentSlot(), this.getCurrentStack());
+        return ArmorTextureResolver.resolve(modId, itemId, this.getCurrentSlot(), this.getCurrentStack());
     }
 
     @Override

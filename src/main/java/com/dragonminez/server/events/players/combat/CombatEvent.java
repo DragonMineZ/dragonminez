@@ -191,7 +191,7 @@ public class CombatEvent {
 				}
 
 				int kiInfusionLevel = attackerData.getSkills().getSkillLevel("ki_infusion");
-				if (kiInfusionLevel > 0) {
+				if (kiInfusionLevel > 0 && attackerData.getSkills().isSkillActive("ki_infusion")) {
 					float maxKi = attackerData.getMaxEnergy();
 					double baseCost = ConfigManager.getCombatConfig().getKiInfusionBaseCostPct();
 					double maxCost = ConfigManager.getCombatConfig().getKiInfusionMaxCostPct();
@@ -527,24 +527,27 @@ public class CombatEvent {
 					}
 
 					int kiProtectionLevel = stats.getSkills().getSkillLevel("kiprotection");
-					if (kiProtectionLevel > 0) {
+					if (kiProtectionLevel > 0 && stats.getSkills().isSkillActive("kiprotection")) {
 						double mitigationPerLevel = ConfigManager.getCombatConfig().getKiProtectionMitigationPerLevel();
 						double costRatio = ConfigManager.getCombatConfig().getKiProtectionCostRatio();
 						double mitigationPct = kiProtectionLevel * mitigationPerLevel;
 						int kiCost = (int) Math.ceil(postMitigation * costRatio);
 						float currentEnergy = stats.getResources().getCurrentEnergy();
 
-						if (currentEnergy >= kiCost && kiCost > 0) {
-							postMitigation *= (1.0 - mitigationPct);
-							if (!victim.isCreative()) stats.getResources().removeEnergy(kiCost);
-						} else if (currentEnergy > 0) {
-							double affordableRatio = (double) currentEnergy / kiCost;
-							postMitigation *= (1.0 - (mitigationPct * affordableRatio));
-							if (!victim.isCreative()) stats.getResources().setCurrentEnergy(0);
+						if (kiCost > 0) {
+							if (currentEnergy >= kiCost) {
+								postMitigation *= (1.0 - mitigationPct);
+								if (!victim.isCreative()) stats.getResources().removeEnergy(kiCost);
+							} else if (currentEnergy > 0) {
+								double affordableRatio = (double) currentEnergy / kiCost;
+								postMitigation *= (1.0 - (mitigationPct * affordableRatio));
+								if (!victim.isCreative()) stats.getResources().setCurrentEnergy(0);
+							}
 						}
 					}
 
 					float finalDamage = (float) postMitigation;
+					if (!Float.isFinite(finalDamage) || finalDamage < 0.0f) finalDamage = 0.0f;
 
 					if (victim.getHealth() - finalDamage <= 0) {
 						if (event.getSource().getEntity() instanceof Player attacker) {

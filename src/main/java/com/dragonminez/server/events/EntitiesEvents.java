@@ -79,7 +79,7 @@ public class EntitiesEvents {
 	private static void applyStatsToEntity(LivingEntity entity, double health, double melee, double ki) {
 		if (entity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
 			entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
-			entity.setHealth((float) health);
+			entity.heal((float) health);
 		}
 		if (entity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
 			entity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(melee);

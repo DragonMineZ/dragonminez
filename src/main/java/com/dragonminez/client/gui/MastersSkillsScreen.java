@@ -132,14 +132,11 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int scissorYScreen = toScreenCoord(0);
 		int scissorRight = toScreenCoord(getUiWidth());
 		int scissorBottom = toScreenCoord(getUiHeight());
-
-		// Determine which categories the master actually offers, in fixed display order.
 		activeCategories.clear();
 		for (SkillCategory category : new SkillCategory[]{SkillCategory.SKILLS, SkillCategory.KI, SkillCategory.FORMS, SkillCategory.STRIKE}) {
 			if (!getSkillsForCategory(category).isEmpty()) activeCategories.add(category);
 		}
 
-		// If the current category is no longer available, fall back to the first one offered.
 		if (!activeCategories.isEmpty() && !activeCategories.contains(currentCategory)) {
 			currentCategory = activeCategories.get(0);
 		}

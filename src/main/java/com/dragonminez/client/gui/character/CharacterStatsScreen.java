@@ -27,6 +27,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -247,7 +248,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	}
 
 	private double[] getDamageReductionPercentages() {
-		double defTotalMult = statsData.getTotalMultiplier("DEF") / 2;
+		double defMult = statsData.getTotalMultiplier("DEF");
+		double transformDivider = defMult > 1.0 ? (1.0 + (defMult - 1.0) * 0.20) : 1.0;
 		double baseDefense = statsData.getDefense();
 
 		int maxValue = statsData.getConfiguredMaxValue();
@@ -279,7 +281,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double mitigationReduction = 1.0 - ((1.0 - baseReduction) * (1.0 - enchReduction));
 		double mitigationReductionPct = Mth.clamp(mitigationReduction * 100.0, 0.0, 100.0);
 
-		return new double[]{mitigationReductionPct, defTotalMult, enchReduction * 100.0};
+		return new double[]{mitigationReductionPct, transformDivider, enchReduction * 100.0};
 	}
 
 	private void renderTPCost(GuiGraphics graphics) {
@@ -412,12 +414,27 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		}
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.form").withStyle(style -> style.withBold(true)), labelX, startY + 22, 0xD7FEF5, 0x000000);
-		Component formComponent;
 		boolean isBase = form == null || form.isEmpty() || form.equals("base");
+		boolean hasActiveStack = stackForm != null && !stackForm.isEmpty();
+		String activeStackGroup = statsData.getCharacter().getActiveStackFormGroup();
 
-		if (isBase) formComponent = tr("race.dragonminez.base");
-		else
-			formComponent = tr("race.dragonminez." + statsData.getCharacter().getRaceName() + ".form." + statsData.getCharacter().getActiveFormGroup() + "." + form);
+		Component baseFormComponent = isBase
+				? tr("race.dragonminez.base")
+				: tr("race.dragonminez." + statsData.getCharacter().getRaceName() + ".form." + statsData.getCharacter().getActiveFormGroup() + "." + form);
+
+		Component formComponent;
+		if (!isBase) {
+			if (hasActiveStack) formComponent = baseFormComponent.copy()
+					.append(" ")
+					.append(tr("race.dragonminez.stack.form." + activeStackGroup + "." + stackForm));
+			else formComponent = baseFormComponent;
+		} else if (hasActiveStack) {
+			formComponent = tr("race.dragonminez.stack.group." + activeStackGroup)
+					.append(" ")
+					.append(tr("race.dragonminez.stack.form." + activeStackGroup + "." + stackForm));
+		} else {
+			formComponent = baseFormComponent;
+		}
 		TextUtil.drawStringWithBorder(graphics, this.font, formComponent, valueX + 5, startY + 22, 0xC7EAFC, 0x000000);
 
 		if (mouseX >= valueX + 5 && mouseX <= valueX + 85 && mouseY >= startY + 22 && mouseY <= startY + 22 + font.lineHeight) {
@@ -441,7 +458,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 							double maxMastery = formData.getMaxMastery();
 
 							tooltip.add(txt(" ")
-									.append(formComponent.copy().withStyle(ChatFormatting.GRAY))
+									.append(baseFormComponent.copy().withStyle(ChatFormatting.GRAY))
 									.append(txt(": " + String.format(Locale.US, "%.2f", mastery) + " / " + String.format(Locale.US, "%.0f", maxMastery)).withStyle(ChatFormatting.AQUA)));
 						}
 					}
@@ -713,7 +730,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip2", formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
 						desc.add(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN));
 
-						double flatMitigation = defense * 0.10;
+						double flatMitigation = defense * 0.10 * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
 						extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
 								.append(txt(formatUpToOneDecimal(flatMitigation)))
 								.withStyle(ChatFormatting.AQUA));
@@ -766,6 +783,15 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						}
 					}
 				}
+
+				if (i == 0 || i == 1) appendAttackSkillInfo(extras);
+				if (i == 3) appendKiProtectionInfo(extras);
+				if (i == 2) appendMeditationInfo(extras, false);
+				if (i == 6) appendMeditationInfo(extras, true);
+				boolean hasAdvanced = ((i == 0 || i == 1) && hasAttackSkillInfo())
+						|| (i == 3 && hasKiProtectionInfo())
+						|| ((i == 2 || i == 6) && hasMeditationInfo());
+				appendAdvancedHint(extras, hasAdvanced);
 
 				TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0x7CFDD6);
 			}
@@ -989,6 +1015,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				extras.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
 						.withStyle(ChatFormatting.RED));
 			}
+			appendAttackSkillInfo(extras);
+			appendAdvancedHint(extras, hasAttackSkillInfo());
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
@@ -1010,6 +1038,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				extras.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
 						.withStyle(ChatFormatting.RED));
 			}
+			appendAttackSkillInfo(extras);
+			appendAdvancedHint(extras, hasAttackSkillInfo());
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
@@ -1028,7 +1058,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 			List<Component> extras = new ArrayList<>();
 
-			double flatMitigation = defense * 0.10;
+			double flatMitigation = defense * 0.10 * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
 			extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
 					.append(txt(formatUpToOneDecimal(flatMitigation)))
 					.withStyle(ChatFormatting.AQUA));
@@ -1061,6 +1091,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 						.withStyle(ChatFormatting.LIGHT_PURPLE));
 			}
+			appendKiProtectionInfo(extras);
+			appendMeditationInfo(extras, false);
+			appendAdvancedHint(extras, hasKiProtectionInfo() || hasMeditationInfo());
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
@@ -1082,6 +1115,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				extras.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
 						.withStyle(ChatFormatting.RED));
 			}
+			appendAdvancedHint(extras, false);
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
@@ -1096,6 +1130,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			extras.add(tr("gui.dragonminez.character_stats.max_energy").append(": ")
 					.append(txt(formatUpToOneDecimal(energy)))
 					.withStyle(ChatFormatting.AQUA));
+			appendMeditationInfo(extras, true);
+			appendAdvancedHint(extras, hasMeditationInfo());
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
@@ -1110,6 +1146,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			extras.add(tr("gui.dragonminez.character_stats.health").append(": ")
 					.append(txt(formatUpToOneDecimal(health)))
 					.withStyle(ChatFormatting.AQUA));
+			appendAdvancedHint(extras, false);
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 	}
@@ -1163,6 +1200,105 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			}
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0x7CFDD6);
 		}
+	}
+
+	private void appendAdvancedHint(List<Component> extras, boolean hasAdvancedContent) {
+		if (hasShiftDown() || !hasAdvancedContent) return;
+		extras.add(tr("gui.dragonminez.character_stats.shift_hint").withStyle(ChatFormatting.DARK_GRAY));
+	}
+
+	// Whether the player has Ki Infusion / Ki Manipulation contributions worth showing on attack tooltips.
+	private boolean hasAttackSkillInfo() {
+		var skills = statsData.getSkills();
+		if (skills.hasSkill("ki_infusion") && skills.getSkillLevel("ki_infusion") > 0) return true;
+		if (skills.hasSkill("kimanipulation") && skills.getSkillLevel("kimanipulation") > 0) {
+			String weaponType = statsData.getStatus().getKiWeaponType();
+			return weaponType != null && ConfigManager.getCombatConfig().getKiWeaponConfig(weaponType) != null;
+		}
+		return false;
+	}
+
+	private boolean hasKiProtectionInfo() {
+		var skills = statsData.getSkills();
+		return skills.hasSkill("kiprotection") && skills.getSkillLevel("kiprotection") > 0;
+	}
+
+	private boolean hasMeditationInfo() {
+		return statsData.getSkills().getSkillLevel("meditation") > 0;
+	}
+
+	private MutableComponent skillBonusLine(String labelKey, String valuePart, boolean active) {
+		MutableComponent line = tr(labelKey).append(": ").append(txt(valuePart))
+				.withStyle(active ? ChatFormatting.AQUA : ChatFormatting.GRAY);
+		if (!active) line.append(tr("gui.dragonminez.character_stats.inactive_suffix").withStyle(ChatFormatting.DARK_GRAY));
+		return line;
+	}
+
+	private void appendAttackSkillInfo(List<Component> extras) {
+		if (!hasShiftDown()) return;
+		var skills = statsData.getSkills();
+
+		int infusionLevel = skills.getSkillLevel("ki_infusion");
+		if (skills.hasSkill("ki_infusion") && infusionLevel > 0) {
+			double dmgPerLevel = ConfigManager.getCombatConfig().getKiInfusionDamagePerLevel();
+			double infuseDamage = statsData.getMaxEnergy() * dmgPerLevel * infusionLevel;
+			extras.add(skillBonusLine("gui.dragonminez.character_stats.infuse_damage",
+					"+" + formatUpToOneDecimal(infuseDamage), skills.isSkillActive("ki_infusion")));
+		}
+
+		int weaponLevel = skills.getSkillLevel("kimanipulation");
+		if (skills.hasSkill("kimanipulation") && weaponLevel > 0) {
+			String weaponType = statsData.getStatus().getKiWeaponType();
+			var kiCfg = weaponType != null ? ConfigManager.getCombatConfig().getKiWeaponConfig(weaponType) : null;
+			if (kiCfg != null) {
+				double weaponMult = weaponLevel * 0.1;
+				double weaponDamage = kiCfg.getBaseDamage() + (statsData.getKiDamage() * kiCfg.getKiScalingDamage() * weaponMult);
+				extras.add(skillBonusLine("gui.dragonminez.character_stats.ki_weapon_damage",
+						"+" + formatUpToOneDecimal(weaponDamage), skills.isSkillActive("kimanipulation")));
+			}
+		}
+	}
+
+	private void appendKiProtectionInfo(List<Component> extras) {
+		if (!hasShiftDown()) return;
+		var skills = statsData.getSkills();
+		int level = skills.getSkillLevel("kiprotection");
+		if (!skills.hasSkill("kiprotection") || level <= 0) return;
+		double pct = level * ConfigManager.getCombatConfig().getKiProtectionMitigationPerLevel() * 100.0;
+		boolean active = skills.isSkillActive("kiprotection");
+		MutableComponent line = tr("gui.dragonminez.character_stats.ki_protection").append(": ")
+				.append(txt(formatUpToOneDecimal(pct) + "% "))
+				.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
+				.withStyle(active ? ChatFormatting.AQUA : ChatFormatting.GRAY);
+		if (!active) line.append(" ").append(tr("gui.dragonminez.character_stats.inactive_suffix").withStyle(ChatFormatting.DARK_GRAY));
+		extras.add(line);
+	}
+
+	private void appendMeditationInfo(List<Component> extras, boolean energy) {
+		if (!hasShiftDown()) return;
+		int level = statsData.getSkills().getSkillLevel("meditation");
+		if (level <= 0) return;
+		double base = energy ? baseEnergyRegenPerSec() : baseStaminaRegenPerSec();
+		double bonus = base * (level * 0.05);
+		extras.add(tr("gui.dragonminez.character_stats.meditation_bonus",
+				formatUpToOneDecimal(bonus), formatUpToOneDecimal(level * 5.0)).withStyle(ChatFormatting.GREEN));
+	}
+
+	private RaceStatsConfig.ClassStats currentClassStats() {
+		RaceStatsConfig sc = ConfigManager.getRaceStats(statsData.getCharacter().getRaceName());
+		return sc != null ? sc.getClassStats(statsData.getCharacter().getCharacterClass()) : null;
+	}
+
+	private double baseStaminaRegenPerSec() {
+		RaceStatsConfig.ClassStats cs = currentClassStats();
+		if (cs == null) return 0.0;
+		return (cs.getBaseSp5() + (statsData.getStats().getResistance() * statsData.getTotalMultiplier("RES") * cs.getSp5StmScaling())) * 0.2;
+	}
+
+	private double baseEnergyRegenPerSec() {
+		RaceStatsConfig.ClassStats cs = currentClassStats();
+		if (cs == null) return 0.0;
+		return (cs.getBaseEp5() + (statsData.getStats().getEnergy() * statsData.getTotalMultiplier("ENE") * cs.getEp5EneScaling())) * 0.2;
 	}
 
 	private String formatUpToOneDecimal(double value) {

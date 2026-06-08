@@ -6,4 +6,5 @@ import net.minecraft.server.level.ServerPlayer;
 public interface IActionModeHandler {
     int handleActionCharge(ServerPlayer player, StatsData data);
     boolean performAction(ServerPlayer player, StatsData data);
+    boolean canCharge(ServerPlayer player, StatsData data);
 }

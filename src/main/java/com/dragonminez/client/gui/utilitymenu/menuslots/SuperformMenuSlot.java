@@ -70,12 +70,7 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
 		}
 
 		boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.FORM;
-		if (wasActive && statsData.getCharacter().hasActiveForm()) {
-			if (TransformationsHelper.canDescend(statsData)) {
-				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
-				playToggleSound(false);
-			}
-		} else if (!wasActive) {
+		if (!wasActive) {
 			NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FORM));
 			playToggleSound(true);
 		} else {

@@ -175,16 +175,6 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         shader.apply();
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
-
-        if (addBloom && texture == null) {
-            poseStack.pushPose();
-            poseStack.scale(1.25F, 1.25F, 1.25F);
-            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-            shader.safeGetUniform("alphaMult").set(alpha * 0.15F);
-            shader.apply();
-            mesh.drawWithShader(poseStack.last().pose(), proj, shader);
-            poseStack.popPose();
-        }
     }
 
     private void renderLegacyBlockModel(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float ageInTicks, float[] coreColor, float[] borderColor, int packedLight) {

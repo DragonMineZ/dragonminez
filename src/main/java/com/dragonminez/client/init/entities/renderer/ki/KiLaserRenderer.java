@@ -101,17 +101,6 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
         shader.apply();
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-        if (isFiring) {
-            poseStack.scale(1.4f, 1.4f, 1.0f);
-        } else {
-            poseStack.scale(1.25f, 1.25f, 1.25f);
-        }
-
-        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-        shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
-        shader.apply();
-        mesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
 
         poseStack.popPose();
@@ -157,13 +146,6 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
             shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
             shader.apply();
             sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-            poseStack.scale(1.25f, 1.25f, 1.25f);
-            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-            shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
-            shader.apply();
-            sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
             poseStack.popPose();
             VertexBuffer.unbind();
             shader.clear();
@@ -178,12 +160,6 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         poseStack.scale(width, width, length);
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
-        shader.apply();
-        cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-        poseStack.scale(1.4f, 1.4f, 1.0f);
-        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-        shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
         shader.apply();
         cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
@@ -275,13 +251,6 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
             shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
             shader.apply();
             sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-            poseStack.scale(1.25f, 1.25f, 1.25f);
-            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-            shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
-            shader.apply();
-            sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
             poseStack.popPose();
             VertexBuffer.unbind();
             shader.clear();
@@ -296,12 +265,6 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         poseStack.scale(width, width, length);
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
-        shader.apply();
-        cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-
-        poseStack.scale(1.4f, 1.4f, 1.0f);
-        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-        shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
         shader.apply();
         cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();

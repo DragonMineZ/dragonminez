@@ -320,7 +320,7 @@ public class StatsEvents {
 								String formGroup = attackerData.getCharacter().getActiveFormGroup();
 								String formName = attackerData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
-								attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeForm.getMasteryPerHit() * bonus), activeForm.getMaxMastery());
+								attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeForm.getMasteryPerHitDealt() * bonus), activeForm.getMaxMastery());
 							}
 						}
 
@@ -330,7 +330,7 @@ public class StatsEvents {
 								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
 								String stackForm = attackerData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
-								attackerData.getCharacter().getStackFormMasteries().addMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeStackForm.getMasteryPerHit() * bonus), activeStackForm.getMaxMastery());
+								attackerData.getCharacter().getStackFormMasteries().addMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeStackForm.getMasteryPerHitDealt() * bonus), activeStackForm.getMaxMastery());
 							}
 						}
 					}
@@ -349,7 +349,7 @@ public class StatsEvents {
 								String formGroup = victimData.getCharacter().getActiveFormGroup();
 								String formName = victimData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
-								victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeForm.getMasteryPerDamageReceived() * bonus), activeForm.getMaxMastery());
+								victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeForm.getMasteryPerHitReceived() * bonus), activeForm.getMaxMastery());
 							}
 						}
 
@@ -359,7 +359,7 @@ public class StatsEvents {
 								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
 								String stackForm = victimData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
-								victimData.getCharacter().getStackFormMasteries().addMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeStackForm.getMasteryPerDamageReceived() * bonus), activeStackForm.getMaxMastery());
+								victimData.getCharacter().getStackFormMasteries().addMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeStackForm.getMasteryPerHitReceived() * bonus), activeStackForm.getMaxMastery());
 							}
 						}
 					}

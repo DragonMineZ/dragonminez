@@ -762,7 +762,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			int currentLevel = skill != null ? skill.getLevel() : 0;
 
 			int requiredLevel = node.data.getUnlockOnSkillLevel();
-			boolean unlocked = currentLevel >= requiredLevel;
+			boolean unlocked = skill != null && skill.isUnlockedAt(requiredLevel);
 			boolean canPurchaseLevel = requiredLevel == currentLevel + 1;
 
 			boolean selected = node.group.equalsIgnoreCase(selectedFormGroup) && node.data.getName().equalsIgnoreCase(selectedFormName);
@@ -818,7 +818,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			int currentLevel = skill != null ? skill.getLevel() : 0;
 			int requiredLevel = hovered.data.getUnlockOnSkillLevel();
 
-			boolean unlocked = currentLevel >= requiredLevel;
+			boolean unlocked = skill != null && skill.isUnlockedAt(requiredLevel);
 			boolean canPurchaseLevel = requiredLevel == currentLevel + 1;
 
 			lines.add(Component.translatable("skill.dragonminez." + hovered.formType).withStyle(ChatFormatting.GRAY).append(": " + requiredLevel).withStyle(ChatFormatting.GRAY));
