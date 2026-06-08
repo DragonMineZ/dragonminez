@@ -14,6 +14,7 @@ import com.dragonminez.common.init.item.entities.FlyingNimbusItem;
 import com.dragonminez.common.init.item.entities.PunchMachineItem;
 import com.dragonminez.common.init.item.entities.SaiyanShipItem;
 import com.dragonminez.common.init.item.tools.ToolTiers;
+import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.item.weapons.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.sounds.SoundEvent;
@@ -229,6 +230,9 @@ public final class MainItems {
 			() -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant(), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> KIKONO_SHARD = regItem("kikono_shard");
 	public static final RegistryObject<Item> KIKONO_STICK = regItem("kikono_stick");
+
+	// WEIGHTS
+	public static final RegistryObject<Item> WEIGHT_ITEM = ITEM_REGISTER.register("weight_item", () -> new WeightItem(properties.stacksTo(1)));
 
 	// HERRAMIENTAS
 	public static final RegistryObject<Item> PATTERN_GETE = regItem("pattern_gete");

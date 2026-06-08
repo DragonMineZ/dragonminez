@@ -11,6 +11,9 @@ import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import com.dragonminez.server.world.dimension.HTCDimension;
+import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.common.init.item.WeightItem;
+import top.theillusivec4.curios.api.CuriosApi;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -61,7 +64,9 @@ public class TPGainEvents {
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return;
-		int finalTP = data.calculateTPGain(baseTP);
+		
+		int modifiedBaseTp = applyWeights(player, data, baseTP);
+		int finalTP = data.calculateTPGain(modifiedBaseTp);
 
 		if (!event.getShareWithParty()) {
 			IS_SHARING_TP.set(true);
@@ -166,6 +171,62 @@ public class TPGainEvents {
 		return tp;
 	}
 
+	private static int applyWeights(Player player, StatsData data, int tp) {
+		
+		if (tp <= 0) return tp;
+		int[] totalWeight = {0};
+		CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
+			var handler = inv.getCurios().get("weights");
+			if (handler != null) {
+				for (int i = 0; i < handler.getSlots(); i++) {
+					ItemStack stack = handler.getStacks().getStackInSlot(i);
+					if (stack.getItem() instanceof WeightItem) {
+						totalWeight[0] += WeightItem.getWeight(stack);
+					} else if (!stack.isEmpty()) {
+						totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
+					}
+				}
+			}
+		});
+
+		
+
+		if (totalWeight[0] > 0) {
+			GravityLogic.IGNORE_WEIGHT.set(true);
+			double baseGravity;
+			try {
+				baseGravity = GravityLogic.getRawGravity(player);
+			} finally {
+				GravityLogic.IGNORE_WEIGHT.set(false);
+			}
+			int effectiveWeight = (int) (totalWeight[0] * baseGravity);
+
+			int currentBaseLevel = data.getLevel();
+			int totalBaseStats = data.getStats().getTotalStats();
+			int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
+
+			double boostedTotal = 0;
+			boostedTotal += data.getStats().getStrength() * data.getTotalMultiplier("STR");
+			boostedTotal += data.getStats().getStrikePower() * data.getTotalMultiplier("SKP");
+			boostedTotal += data.getStats().getResistance() * data.getTotalMultiplier("RES");
+			boostedTotal += data.getStats().getVitality() * data.getTotalMultiplier("VIT");
+			boostedTotal += data.getStats().getKiPower() * data.getTotalMultiplier("PWR");
+			boostedTotal += data.getStats().getEnergy() * data.getTotalMultiplier("ENE");
+
+			double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
+
+			double peak = 2.0;
+			double exponent = -Math.pow((relativeLevel - 2 * effectiveWeight), 2) / (2 * Math.pow(7, 2));
+			double multiplier = peak * Math.exp(exponent) + 1;
+
+			
+
+			int newTp = (int) (tp * multiplier);
+			return newTp == 0 && multiplier > 0 ? 1 : newTp;
+		}
+		return tp;
+	}
+
 	private static boolean dropTps(Entity entity) {
 		List<Class<?>> enemyList = List.of(
 				Monster.class,
@@ -190,7 +251,8 @@ public class TPGainEvents {
 				else
 					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
 				int killTp = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth);
-				data.getResources().addTrainingPoints(applyGravityRoom(attacker, killTp));
+				int finalTp = applyGravityRoom(attacker, killTp);
+				data.getResources().addTrainingPoints(finalTp);
 			}
 		});
 	}
@@ -204,7 +266,8 @@ public class TPGainEvents {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
 						int baseTps = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
-						attackerData.getResources().addTrainingPoints(applyGravityRoom(attacker, baseTps));
+						int finalTps = applyGravityRoom(attacker, baseTps);
+						attackerData.getResources().addTrainingPoints(finalTps);
 					}
 				}
 			});

@@ -22,6 +22,8 @@ public class GravityLogic {
 	public static final UUID GRAVITY_SPEED_UUID = UUID.fromString("019c3047-cd2f-7af4-a3cd-5bca51dd3588");
 	private static final UUID GRAVITY_ATTACK_SPEED_UUID = UUID.fromString("019c3047-4e91-74e1-ac87-d4ea8e463688");
 
+	public static final ThreadLocal<Boolean> IGNORE_WEIGHT = ThreadLocal.withInitial(() -> false);
+
 	private static final Map<UUID, Double> NPC_GRAVITY_CACHE = new HashMap<>();
 	private static final Map<UUID, Long> NPC_GRAVITY_TICK = new HashMap<>();
 
@@ -35,6 +37,29 @@ public class GravityLogic {
 
 		double npcGravity = getNpcGravity(player);
 		if (npcGravity > 0) maxGravity = Math.max(maxGravity, npcGravity);
+
+		if (!IGNORE_WEIGHT.get()) {
+			int[] totalWeight = {0};
+			top.theillusivec4.curios.api.CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
+				var handler = inv.getCurios().get("weights");
+				if (handler != null) {
+					for (int i = 0; i < handler.getSlots(); i++) {
+						net.minecraft.world.item.ItemStack stack = handler.getStacks().getStackInSlot(i);
+						if (stack.getItem() instanceof com.dragonminez.common.init.item.WeightItem) {
+							totalWeight[0] += com.dragonminez.common.init.item.WeightItem.getWeight(stack);
+						} else if (!stack.isEmpty()) {
+							totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
+						}
+					}
+				}
+			});
+
+			if (totalWeight[0] > 0) {
+				double effectiveWeight = totalWeight[0] * maxGravity;
+				double extraGravity = effectiveWeight / 1000.0;
+				maxGravity += extraGravity;
+			}
+		}
 
 		// double machineGravity = GravityMachineLogic.getNearbyGravity(player);
 		// if (machineGravity > 1.0) return machineGravity;
@@ -61,7 +86,13 @@ public class GravityLogic {
 	}
 
 	public static double getBonusGravity(Player player) {
-		double rawGravity = getRawGravity(player);
+		IGNORE_WEIGHT.set(true);
+		double rawGravity;
+		try {
+			rawGravity = getRawGravity(player);
+		} finally {
+			IGNORE_WEIGHT.set(false);
+		}
 		if (rawGravity <= 1.0) return 0.0;
 
 		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
