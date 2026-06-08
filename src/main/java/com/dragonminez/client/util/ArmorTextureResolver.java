@@ -30,18 +30,18 @@ public final class ArmorTextureResolver {
         return max > 0 && stack.getDamageValue() > max / 2;
     }
 
-    public static ResourceLocation resolve(String itemId, EquipmentSlot slot, ItemStack stack) {
+    public static ResourceLocation resolve(String modId, String itemId, EquipmentSlot slot, ItemStack stack) {
         boolean legs = slot == EquipmentSlot.LEGS;
 
         if (isDamaged(stack)) {
-            ResourceLocation damaged = texture(itemId, legs ? "_damaged_layer2" : "_damaged_layer1");
+            ResourceLocation damaged = texture(modId, itemId, legs ? "_damaged_layer2" : "_damaged_layer1");
             if (textureExists(damaged)) return damaged;
         }
 
-        return texture(itemId, legs ? "_layer2" : "_layer1");
+        return texture(modId, itemId, legs ? "_layer2" : "_layer1");
     }
 
-    private static ResourceLocation texture(String itemId, String suffix) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/" + itemId + suffix + ".png");
+    private static ResourceLocation texture(String modId, String itemId, String suffix) {
+        return ResourceLocation.fromNamespaceAndPath(modId, "textures/armor/" + itemId + suffix + ".png");
     }
 }

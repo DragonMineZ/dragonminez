@@ -355,7 +355,11 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
     }
 
     private ResourceLocation getDbzArmorTexture(DbzArmorTextured item, ItemStack stack) {
-        return ArmorTextureResolver.resolve(item.getItemId(), EquipmentSlot.CHEST, stack);
+        String modId = Reference.MOD_ID;
+        if (stack.getItem() instanceof com.dragonminez.common.init.armor.DbzArmorItem dbzItem) {
+            modId = dbzItem.getModId();
+        }
+        return ArmorTextureResolver.resolve(modId, item.getItemId(), EquipmentSlot.CHEST, stack);
     }
 
     private ResourceLocation getVanillaArmorTexture(LivingEntity entity, ItemStack stack, EquipmentSlot slot, String type) {
