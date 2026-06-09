@@ -210,6 +210,7 @@
   "gui.dragonminez.character_stats.form_multiplier": "  Form:",
   "gui.dragonminez.character_stats.stack_multiplier": "  Stack:",
   "gui.dragonminez.character_stats.effects_multiplier": "  Effects:",
+  "gui.dragonminez.character_stats.secondary_multiplier": "  Technique:",
   "gui.dragonminez.character_stats.bonus": "Bonus:",
   "dynamicgrowth.dragonminez.title": "Dynamic Growth:",
   "dynamicgrowth.dragonminez.maxed": "Limit reached",

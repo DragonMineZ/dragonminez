@@ -467,6 +467,39 @@ public class Character {
 		return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
 	}
 
+	public void gainMastery(String group, String form, double amount) {
+		addMasteryResolved(group, form, amount);
+
+		FormConfig.FormData formData = resolveFormData(group, form);
+		if (formData == null) return;
+
+		double shared = amount * formData.getShareMasteryMultiplier();
+		if (shared == 0.0) return;
+
+		for (String entry : formData.getShareMasteryWith()) {
+			if (entry == null) continue;
+			int dot = entry.indexOf('.');
+			if (dot <= 0 || dot >= entry.length() - 1) continue;
+			addMasteryResolved(entry.substring(0, dot), entry.substring(dot + 1), shared);
+		}
+	}
+
+	private void addMasteryResolved(String group, String form, double amount) {
+		boolean isStack = ConfigManager.getStackFormGroup(group) != null;
+		FormConfig.FormData formData = isStack
+				? ConfigManager.getStackForm(group, form)
+				: ConfigManager.getForm(getRaceName(), group, form);
+		double maxMastery = formData != null ? formData.getMaxMastery() : 100.0;
+		(isStack ? stackFormMasteries : formMasteries).addMastery(group, form, amount, maxMastery);
+	}
+
+	private FormConfig.FormData resolveFormData(String group, String form) {
+		boolean isStack = ConfigManager.getStackFormGroup(group) != null;
+		return isStack
+				? ConfigManager.getStackForm(group, form)
+				: ConfigManager.getForm(getRaceName(), group, form);
+	}
+
 	public boolean hasActiveStackForm() {
 		return !activeStackFormGroup.isEmpty() && !activeStackForm.isEmpty();
 	}

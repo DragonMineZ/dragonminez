@@ -15,6 +15,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.extras.DynamicGrowthMath;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -552,12 +553,14 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						double stackStm = statsData.getStackFormMultiplier("STM");
 						double effectsDef = statsData.getEffectsMultiplier("DEF");
 						double effectsStm = statsData.getEffectsMultiplier("STM");
+						double secondaryDef = statsData.getSecondaryStatEffects().getMultiplier(SecondaryStatEffects.DEF);
 
 						boolean hasForm = Math.abs(formDef - 1.0) > 0.01 || Math.abs(formStm - 1.0) > 0.01;
 						boolean hasStack = Math.abs(stackDef - 1.0) > 0.01 || Math.abs(stackStm - 1.0) > 0.01;
 						boolean hasEffects = Math.abs(effectsDef - 1.0) > 0.01 || Math.abs(effectsStm - 1.0) > 0.01;
+						boolean hasSecondary = Math.abs(secondaryDef - 1.0) > 0.01;
 
-						if (hasForm || hasStack || hasEffects) {
+						if (hasForm || hasStack || hasEffects || hasSecondary) {
 							extras.add(tr("gui.dragonminez.character_stats.multipliers").withStyle(ChatFormatting.AQUA));
 							if (hasForm) {
 								extras.add(tr("gui.dragonminez.character_stats.form_multiplier")
@@ -580,20 +583,29 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 										.append(tr("gui.dragonminez.character_stats.stm")).append(txt(": x" + String.format(Locale.US, "%.2f", effectsStm) + ")"))
 										.withStyle(ChatFormatting.LIGHT_PURPLE));
 							}
+							if (hasSecondary) {
+								extras.add(tr("gui.dragonminez.character_stats.secondary_multiplier")
+										.append(txt(" ("))
+										.append(tr("gui.dragonminez.character_stats.def")).append(txt(": x" + String.format(Locale.US, "%.2f", secondaryDef) + ")"))
+										.withStyle(ChatFormatting.DARK_AQUA));
+							}
 						}
 					} else {
 						double formMultiplier = statsData.getFormMultiplier(statNamesUpper[i]);
 						double stackMultiplier = statsData.getStackFormMultiplier(statNamesUpper[i]);
 						double effectsMultiplier = statsData.getEffectsMultiplier(statNamesUpper[i]);
+						double secondaryMultiplier = statsData.getSecondaryStatEffects().getMultiplier(statNamesUpper[i]);
 						boolean hasForm = Math.abs(formMultiplier - 1.0) > 0.01;
 						boolean hasStack = Math.abs(stackMultiplier - 1.0) > 0.01;
 						boolean hasEffects = Math.abs(effectsMultiplier - 1.0) > 0.01;
+						boolean hasSecondary = Math.abs(secondaryMultiplier - 1.0) > 0.01;
 
-						if (hasForm || hasStack || hasEffects) {
+						if (hasForm || hasStack || hasEffects || hasSecondary) {
 							extras.add(tr("gui.dragonminez.character_stats.multipliers").withStyle(ChatFormatting.AQUA));
 							if (hasForm) extras.add(tr("gui.dragonminez.character_stats.form_multiplier").append(" x" + String.format(Locale.US, "%.2f", formMultiplier)).withStyle(ChatFormatting.GOLD));
 							if (hasStack) extras.add(tr("gui.dragonminez.character_stats.stack_multiplier").append(" x" + String.format(Locale.US, "%.2f", stackMultiplier)).withStyle(ChatFormatting.RED));
 							if (hasEffects) extras.add(tr("gui.dragonminez.character_stats.effects_multiplier").append(" x" + String.format(Locale.US, "%.2f", effectsMultiplier)).withStyle(ChatFormatting.LIGHT_PURPLE));
+							if (hasSecondary) extras.add(tr("gui.dragonminez.character_stats.secondary_multiplier").append(" x" + String.format(Locale.US, "%.2f", secondaryMultiplier)).withStyle(ChatFormatting.DARK_AQUA));
 						}
 					}
 				}

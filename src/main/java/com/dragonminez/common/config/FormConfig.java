@@ -82,6 +82,8 @@ public class FormConfig {
 		private Boolean canAlwaysTransform = false;
 		private Boolean directTransformationIfUsed = false;
 		private List<String> incompatibleWith = new ArrayList<>(List.of("ultimate.ultimate"));
+		private List<String> shareMasteryWith = new ArrayList<>();
+		private Double shareMasteryMultiplier = 1.0;
 		private OutlineShaderConfig outlineShader = new OutlineShaderConfig();
 
 		private List<TriggerItemCost> triggerItemCosts = new ArrayList<>();
@@ -194,6 +196,14 @@ public class FormConfig {
 
 		public List<String> getIncompatibleWith() {
 			return incompatibleWith != null ? incompatibleWith : Collections.emptyList();
+		}
+
+		public List<String> getShareMasteryWith() {
+			return shareMasteryWith != null ? shareMasteryWith : Collections.emptyList();
+		}
+
+		public Double getShareMasteryMultiplier() {
+			return Math.max(0, shareMasteryMultiplier);
 		}
 
 		public boolean isIncompatibleWith(String groupId, String formId) {

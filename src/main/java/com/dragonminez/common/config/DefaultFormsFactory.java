@@ -76,6 +76,9 @@ public class DefaultFormsFactory {
 		x2.setHasLightnings(false);
 		x2.setHairType("");
 		setDefaultMasteryValues(x2);
+		x2.setStackOnMastery(0.0);
+		x2.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X3));
+		x2.setShareMasteryMultiplier(0.25);
 		x2.setStackDrainMultiplier(1.0);
 		x2.setCanAlwaysTransform(true);
 
@@ -94,6 +97,9 @@ public class DefaultFormsFactory {
 		x3.setAuraColor("#DB182C");
 		x3.setHairType("");
 		setDefaultMasteryValues(x3);
+		x3.setStackOnMastery(0.0);
+		x3.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X4));
+		x3.setShareMasteryMultiplier(0.25);
 		x3.setStackDrainMultiplier(1.0);
 
 		FormConfig.FormData x4 = new FormConfig.FormData();
@@ -111,6 +117,9 @@ public class DefaultFormsFactory {
 		x4.setAuraColor("#DB182C");
 		x4.setHairType("");
 		setDefaultMasteryValues(x4);
+		x4.setStackOnMastery(0.0);
+		x4.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X10));
+		x4.setShareMasteryMultiplier(0.25);
 		x4.setStackDrainMultiplier(1.0);
 
 		FormConfig.FormData x10 = new FormConfig.FormData();
@@ -128,6 +137,9 @@ public class DefaultFormsFactory {
 		x10.setAuraColor("#DB182C");
 		x10.setHairType("");
 		setDefaultMasteryValues(x10);
+		x10.setStackOnMastery(0.0);
+		x10.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X20));
+		x10.setShareMasteryMultiplier(0.25);
 		x10.setStackDrainMultiplier(1.0);
 
 		FormConfig.FormData x20 = new FormConfig.FormData();
@@ -145,6 +157,9 @@ public class DefaultFormsFactory {
 		x20.setAuraColor("#DB182C");
 		x20.setHairType("");
 		setDefaultMasteryValues(x20);
+		x20.setStackOnMastery(0.0);
+		x20.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X100));
+		x20.setShareMasteryMultiplier(0.25);
 		x20.setStackDrainMultiplier(1.0);
 
 		FormConfig.FormData x100 = new FormConfig.FormData();
@@ -162,6 +177,7 @@ public class DefaultFormsFactory {
 		x100.setAuraColor("#DB182C");
 		x100.setHairType("");
 		setDefaultMasteryValues(x100);
+		x100.setStackOnMastery(0.0);
 		x100.setStackDrainMultiplier(1.0);
 
 		Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();

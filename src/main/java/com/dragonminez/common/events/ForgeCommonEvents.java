@@ -164,6 +164,7 @@ public class ForgeCommonEvents {
 				data.getCharacter().clearActiveForm(player);
 				data.getCharacter().clearActiveStackForm(player);
 				data.getEffects().removeAllEffects();
+				data.getSecondaryStatEffects().clear();
 				player.refreshDimensions();
 			});
 		}
