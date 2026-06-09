@@ -551,7 +551,7 @@ public class StatsData {
 	}
 
 	private double applyMasteryStatBonus(FormConfig.FormData formData, double baseMult, double mastery) {
-		if (baseMult < 1.0) return baseMult;
+		if (baseMult <= 1.0) return baseMult;
 		double maxMastery = formData.getMaxMastery();
 		if (maxMastery <= 0.0) return baseMult;
 		double ratio = Math.min(1.0, Math.max(0.0, mastery) / maxMastery);
