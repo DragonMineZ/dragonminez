@@ -117,6 +117,9 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> RACIAL_RESET_SELF = register("dmzracial.reset.self", "Allows resetting your own racial skills.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> RACIAL_RESET_OTHERS = register("dmzracial.reset.others", "Allows resetting other players' racial skills.", (player, uuid, context) -> false);
 
+	// Weights
+	public static final PermissionNode<Boolean> WEIGHT_GIVE = register("dmzweight.give", "Allows giving Weight items.", (player, uuid, context) -> false);
+
 	public static void init() {}
 
 	private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {

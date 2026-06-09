@@ -448,6 +448,9 @@ public class ClientStatsEvents {
 				AttributeModifier sprintMod = speedAttr.getModifier(MovementSkillsHandler.SPRINT_SPEED_UUID);
 				if (sprintMod != null) totalModFactor *= (1.0 + sprintMod.getAmount());
 
+				AttributeModifier weightMod = speedAttr.getModifier(StatsEvents.WEIGHT_MOVEMENT_SPEED_MOD_UUID);
+				if (weightMod != null) totalModFactor *= (1.0 + weightMod.getAmount());
+
 				if (totalModFactor != 1.0 && totalModFactor > 0.0) {
 					float walkSpeed = player.getAbilities().getWalkingSpeed();
 					double currentSpeed = speedAttr.getValue();

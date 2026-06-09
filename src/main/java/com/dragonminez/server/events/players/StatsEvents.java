@@ -72,7 +72,7 @@ public class StatsEvents {
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
 	public static final UUID KI_WEAPON_ATTACK_SPEED_UUID = UUID.fromString("a3b1c5d7-9e2f-4a6b-8c1d-5f7e9a0b2c4d");
 
-	private static final UUID WEIGHT_MOVEMENT_SPEED_MOD_UUID = UUID.fromString("6f663f73-199f-431a-8c35-132d75a31742");
+	public static final UUID WEIGHT_MOVEMENT_SPEED_MOD_UUID = UUID.fromString("6f663f73-199f-431a-8c35-132d75a31742");
 	private static final UUID WEIGHT_ATTACK_SPEED_MOD_UUID = UUID.fromString("a1b2c3d4-e5f6-431a-8c35-132d75a31742");
 
 	private static double getWeightStatMultiplier(int level, int weight) {
@@ -183,10 +183,14 @@ public class StatsEvents {
 					data.getBonusStats().addBonus("STR", "Weights", "*", multiplier);
 					data.getBonusStats().addBonus("SKP", "Weights", "*", multiplier);
 					data.getBonusStats().addBonus("PWR", "Weights", "*", multiplier);
+					data.getBonusStats().addBonus("DEF", "Weights", "*", multiplier);
+					data.getBonusStats().addBonus("STM", "Weights", "*", multiplier);
 				} else {
 					data.getBonusStats().removeBonus("STR", "Weights");
 					data.getBonusStats().removeBonus("SKP", "Weights");
 					data.getBonusStats().removeBonus("PWR", "Weights");
+					data.getBonusStats().removeBonus("DEF", "Weights");
+					data.getBonusStats().removeBonus("STM", "Weights");
 				}
 
 				double reductionModifier = multiplier - 1.0;
@@ -196,6 +200,8 @@ public class StatsEvents {
 				data.getBonusStats().removeBonus("STR", "Weights");
 				data.getBonusStats().removeBonus("SKP", "Weights");
 				data.getBonusStats().removeBonus("PWR", "Weights");
+				data.getBonusStats().removeBonus("DEF", "Weights");
+				data.getBonusStats().removeBonus("STM", "Weights");
 				applyWeightAttributeModifier(serverPlayer, Attributes.MOVEMENT_SPEED, WEIGHT_MOVEMENT_SPEED_MOD_UUID, "Weight Speed Penalty", 0);
 				applyWeightAttributeModifier(serverPlayer, Attributes.ATTACK_SPEED, WEIGHT_ATTACK_SPEED_MOD_UUID, "Weight Attack Speed Penalty", 0);
 			}

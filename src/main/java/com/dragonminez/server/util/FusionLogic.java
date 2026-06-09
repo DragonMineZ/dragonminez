@@ -205,7 +205,7 @@ public class FusionLogic {
 
 		for (String stat : statsToBoost) {
 			int partnerStatValue = getStatValue(p, stat);
-			l.getBonusStats().addBonus(stat, "FusionBonus", "+", partnerStatValue * finalMult, true);
+			l.getBonusStats().addBonusSplit(stat, "FusionBonus", "+", partnerStatValue * finalMult, true);
 		}
 	}
 

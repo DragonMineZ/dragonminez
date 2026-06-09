@@ -101,7 +101,8 @@ public class SummonPlayerShadowDummyC2S {
 		bonus.addBonus("STR", BONUS_KEY, "*", factor, true);
 		bonus.addBonus("SKP", BONUS_KEY, "*", factor, true);
 		bonus.addBonus("PWR", BONUS_KEY, "*", factor, true);
-		bonus.addBonus("RES", BONUS_KEY, "*", factor, true);
+		bonus.addBonus("DEF", BONUS_KEY, "*", factor, true);
+		bonus.addBonus("STM", BONUS_KEY, "*", factor, true);
 
 		var maxHealthAttr = player.getAttribute(Attributes.MAX_HEALTH);
 		if (maxHealthAttr != null) {

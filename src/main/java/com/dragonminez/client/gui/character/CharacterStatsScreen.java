@@ -610,7 +610,17 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					}
 				}
 
-				var bonuses = statsData.getBonusStats().getBonuses(statNamesUpper[i]);
+				var bonuses = new ArrayList<>(statsData.getBonusStats().getBonuses(statNamesUpper[i]));
+				if (statNamesUpper[i].equals("RES")) {
+					List<String> seenNames = new ArrayList<>();
+					for (var b : bonuses) seenNames.add(b.name);
+					for (var b : statsData.getBonusStats().getBonuses("DEF")) {
+						if (!seenNames.contains(b.name)) { bonuses.add(b); seenNames.add(b.name); }
+					}
+					for (var b : statsData.getBonusStats().getBonuses("STM")) {
+						if (!seenNames.contains(b.name)) { bonuses.add(b); seenNames.add(b.name); }
+					}
+				}
 				if (!bonuses.isEmpty()) {
 					extras.add(tr("gui.dragonminez.character_stats.bonus").withStyle(ChatFormatting.AQUA));
 					for (var bonus : bonuses) {

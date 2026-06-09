@@ -27,7 +27,7 @@ import java.util.Set;
 public class BonusCommand {
 
 	private static final SuggestionProvider<CommandSourceStack> STAT_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE", "ALL"), builder);
+			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "DEF", "STM", "VIT", "PWR", "ENE", "ALL"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> OPERATOR_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(Set.of("+", "-", "x", "\"*\""), builder);
@@ -110,8 +110,8 @@ public class BonusCommand {
 			final String finalOp = operation;
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (finalStat.equals("ALL")) {
-					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) data.getBonusStats().addBonus(s, bonusName, finalOp, value, applyMultipliers);
-				} else data.getBonusStats().addBonus(finalStat, bonusName, finalOp, value, applyMultipliers);
+					for (String s : new String[]{"STR", "SKP", "DEF", "STM", "VIT", "PWR", "ENE"}) data.getBonusStats().addBonus(s, bonusName, finalOp, value, applyMultipliers);
+				} else data.getBonusStats().addBonusSplit(finalStat, bonusName, finalOp, value, applyMultipliers);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
@@ -132,7 +132,7 @@ public class BonusCommand {
 
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.getBonusStats().removeBonus(finalStat, bonusName);
+				data.getBonusStats().removeBonusSplit(finalStat, bonusName);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
@@ -155,7 +155,7 @@ public class BonusCommand {
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (finalStat.equals("ALL")) data.getBonusStats().clearAllStats();
-				else data.getBonusStats().clearAll(finalStat);
+				else data.getBonusStats().clearAllSplit(finalStat);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
@@ -166,6 +166,6 @@ public class BonusCommand {
 	}
 
 	private static boolean isValidStat(String stat) {
-		return Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE").contains(stat);
+		return Set.of("STR", "SKP", "DEF", "STM", "VIT", "PWR", "ENE").contains(stat);
 	}
 }

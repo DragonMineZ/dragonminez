@@ -198,10 +198,10 @@ public class StatsData {
 		double resistance = stats.getResistance();
 		double stmScaling = getStatScaling("STM");
 		double stmMult = getTotalMultiplier("STM");
-		double flatBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), false);
-		double multBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), true);
+		double flatBonusStm = bonusStats.calculateBonus("STM", (int) Math.round(resistance), false);
+		double multBonusStm = bonusStats.calculateBonus("STM", (int) Math.round(resistance), true);
 		double secondaryMaxStamina = getSecondaryAttributeValue(MainAttributes.MAX_STAMINA.get(), 20.0);
-		return Math.min((float) (secondaryMaxStamina + ((resistance + multBonusRes) * stmScaling * stmMult) + (flatBonusRes * stmScaling)), Float.MAX_VALUE - 1);
+		return Math.min((float) (secondaryMaxStamina + ((resistance + multBonusStm) * stmScaling * stmMult) + (flatBonusStm * stmScaling)), Float.MAX_VALUE - 1);
 	}
 
 	public double getStaminaRegenPerSecond() {
@@ -422,13 +422,13 @@ public class StatsData {
 	public double getMaxDefense() {
 		double resistance = stats.getResistance();
 		double defScaling = getStatScaling("DEF");
-		double flatBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), false);
-		double multBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), true);
+		double flatBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), false);
+		double multBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), true);
 		double armor = player.getArmorValue();
 		double toughness = getArmorToughnessValue();
 		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
 
-		double statDef = ((resistance + multBonusRes) * defScaling) + (flatBonusRes * defScaling);
+		double statDef = ((resistance + multBonusDef) * defScaling) + (flatBonusDef * defScaling);
 		double armorComponent = (armor * 0.50) + (toughness * 0.70);
 
 		return (secondaryDefense + statDef + armorComponent) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);
@@ -438,13 +438,13 @@ public class StatsData {
 		double resistance = stats.getResistance();
 		double defScaling = getStatScaling("DEF");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double flatBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), false);
-		double multBonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance), true);
+		double flatBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), false);
+		double multBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), true);
 		double armor = player.getArmorValue();
 		double toughness = getArmorToughnessValue();
 		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
 
-		double statDef = ((resistance + multBonusRes) * defScaling) + (flatBonusRes * defScaling);
+		double statDef = ((resistance + multBonusDef) * defScaling) + (flatBonusDef * defScaling);
 		double armorComponent = (armor * 0.50) + (toughness * 0.70);
 
 		return (secondaryDefense + statDef + armorComponent) * releaseMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);

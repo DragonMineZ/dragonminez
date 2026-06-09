@@ -15,7 +15,8 @@ public class BonusStats {
     public BonusStats() {
         initializeStat("STR");
         initializeStat("SKP");
-        initializeStat("RES");
+        initializeStat("DEF");
+        initializeStat("STM");
         initializeStat("VIT");
         initializeStat("PWR");
         initializeStat("ENE");
@@ -23,6 +24,27 @@ public class BonusStats {
 
     private void initializeStat(String stat) {
         bonuses.put(stat, new ArrayList<>());
+    }
+
+    public void addBonusSplit(String stat, String bonusName, String operation, double value, boolean applyMultipliers) {
+        if (stat.equalsIgnoreCase("RES")) {
+            addBonus("DEF", bonusName, operation, value, applyMultipliers);
+            addBonus("STM", bonusName, operation, value, applyMultipliers);
+        } else addBonus(stat, bonusName, operation, value, applyMultipliers);
+    }
+
+    public void removeBonusSplit(String stat, String bonusName) {
+        if (stat.equalsIgnoreCase("RES")) {
+            removeBonus("DEF", bonusName);
+            removeBonus("STM", bonusName);
+        } else removeBonus(stat, bonusName);
+    }
+
+    public void clearAllSplit(String stat) {
+        if (stat.equalsIgnoreCase("RES")) {
+            clearAll("DEF");
+            clearAll("STM");
+        } else clearAll(stat);
     }
 
     public void addBonus(String stat, String bonusName, String operation, double value) {

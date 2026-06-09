@@ -31,7 +31,7 @@ public class WeightItem extends DMZCuriosItem {
 		super.appendHoverText(stack, level, tooltip, flag);
 		int weight = getWeight(stack);
 		if (weight > 0) {
-			tooltip.add(Component.literal("Weight: " + weight + " kg").withStyle(ChatFormatting.GOLD));
+			tooltip.add(Component.translatable("item.dragonminez.weight_item.tooltip", weight).withStyle(ChatFormatting.GOLD));
 		}
 	}
 }
