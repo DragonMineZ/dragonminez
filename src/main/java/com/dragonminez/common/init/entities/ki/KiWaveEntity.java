@@ -135,7 +135,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     public void setupKiWavePlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setKiRenderType(0);
         this.setSize(size);
-        this.setCastSize(size / 2);
+        this.setCastSize(0.2f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder, colorOutline);
@@ -387,7 +387,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
             newPos = hitboxCenter.add(offset);
         } else {
-            newPos = hitboxCenter.add(look.scale(0.8D));
+            newPos = hitboxCenter.add(look.scale(2.0D));
         }
 
         this.setPos(newPos.x, newPos.y, newPos.z);
@@ -442,7 +442,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setDeltaMovement(0, 0, 0);
 
         int renderType = this.getKiRenderType();
-        if (renderType == 1) {
+        if (renderType == 1 || renderType == 0) {
             if (this.tickCount <= 5) {
                 this.setCastOffsets(0.0F, 0.1F, 0.5F);
             } else if (this.tickCount < 15) {

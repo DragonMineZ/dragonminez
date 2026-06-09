@@ -78,7 +78,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(100);
-        this.setCastOffsets(0.0f, -0.5F, 2.0F);
+        this.setCastOffsets(0.0f, 0.0F, 2.0F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
         
@@ -102,7 +102,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(40);
-        this.setCastOffsets(0.0f, 0.0F, 5.2F);
+        this.setCastOffsets(0.0F, 5.5F, 0.0F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
         
