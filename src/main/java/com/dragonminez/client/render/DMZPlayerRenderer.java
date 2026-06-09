@@ -146,7 +146,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 
 		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
-			float roll = FlightRollHandler.getRoll(partialTick);
+			float roll = entity == Minecraft.getInstance().player ? FlightRollHandler.getRoll(partialTick) : 0f;
 			float pitch = entity.getViewXRot(partialTick);
 			float pivotY = entity.getBbHeight() / 2f;
 			poseStack.translate(0, pivotY, 0);

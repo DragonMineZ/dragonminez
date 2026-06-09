@@ -404,7 +404,13 @@ public class FlySkillEvent {
 		LocalPlayer localPlayer = Minecraft.getInstance().player;
 		if (localPlayer != null && player == localPlayer) return isFlyingFast();
 
-		return player.getDeltaMovement().lengthSqr() > (FAST_FLYING_THRESHOLD * FAST_FLYING_THRESHOLD);
+		boolean flyActive = StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(data -> {
+					Skill flySkill = data.getSkills().getSkill("fly");
+					return flySkill != null && flySkill.isActive();
+				}).orElse(false);
+
+		return flyActive && player.getDeltaMovement().lengthSqr() > (FAST_FLYING_THRESHOLD * FAST_FLYING_THRESHOLD);
 	}
 
 	private static double getActivationEnergyPercent(int flyLevel) {
