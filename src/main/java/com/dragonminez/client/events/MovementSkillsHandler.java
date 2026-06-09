@@ -35,11 +35,14 @@ public class MovementSkillsHandler {
 		final int[] jumpLevel = {0};
 		final int[] sprintLevel = {0};
 		final boolean[] isStunned = {false};
+		final boolean[] isFlying = {false};
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 
 			isStunned[0] = data.getStatus().isStunned() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown();
+			var flySkill = data.getSkills().getSkill("fly");
+			isFlying[0] = flySkill != null && flySkill.isActive();
 
 			if (data.getResources().getPowerRelease() >= 5) {
 				if (data.getSkills().hasSkill("jump") && data.getSkills().isSkillActive("jump")) {
@@ -94,12 +97,7 @@ public class MovementSkillsHandler {
 				float blocksToAdd = targetBlocks - 1.25f;
 				float baseBoost = blocksToAdd * 0.18f;
 
-				double pGravity = GravityLogic.getPenalizationGravity(player);
-				if (pGravity >= 75.0) baseBoost = 0;
-				else if (pGravity > 0) {
-					double penalty = GravityLogic.getGeneralPenaltyFactor(pGravity);
-					baseBoost *= (float) (1.0 - Math.min(0.95, penalty));
-				}
+				baseBoost *= (float) GravityLogic.getJumpFactor(player);
 
 				player.setDeltaMovement(player.getDeltaMovement().add(0, baseBoost, 0));
 				hasAppliedBaseBoost = true;
@@ -125,6 +123,14 @@ public class MovementSkillsHandler {
 			airTicks = 0;
 			wasJumping = false;
 			hasAppliedBaseBoost = false;
+		}
+
+		// Physical gravity: extra downward pull while airborne. Lowers the jump apex and speeds up
+		// descent for everyone (independent of the jump skill). Skipped while flying / in creative
+		// flight / in water / on a ladder.
+		if (!isOnGround && !isFlying[0] && !player.getAbilities().flying && !player.isInWater() && !player.onClimbable()) {
+			double fallExtra = GravityLogic.getFallExtra(player);
+			if (fallExtra > 0) player.setDeltaMovement(player.getDeltaMovement().add(0, -fallExtra, 0));
 		}
 	}
 }

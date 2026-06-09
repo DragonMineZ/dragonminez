@@ -282,13 +282,12 @@ public class FlySkillEvent {
 
 		FlightRollHandler.tick();
 
-		double pGravity = GravityLogic.getPenalizationGravity(player);
-		if (pGravity >= 75.0) {
+		if (GravityLogic.isFlightHardStopped(player)) {
 			flightVector = Vec3.ZERO;
 			player.setDeltaMovement(0, -1.5, 0);
-		} else if (pGravity > 0) {
-			double penalty = GravityLogic.getGeneralPenaltyFactor(pGravity);
-			flightVector = flightVector.scale(1.0 - Math.min(0.95, penalty));
+		} else {
+			double flyFactor = GravityLogic.getFlyFactor(player);
+			if (flyFactor < 1.0) flightVector = flightVector.scale(flyFactor);
 		}
 
 		if (flightVector.length() > 0.01 || pendingFlightDisable) {

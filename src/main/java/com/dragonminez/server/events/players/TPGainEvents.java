@@ -12,8 +12,7 @@ import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.util.GravityLogic;
-import com.dragonminez.common.init.item.WeightItem;
-import top.theillusivec4.curios.api.CuriosApi;
+import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -172,59 +171,38 @@ public class TPGainEvents {
 	}
 
 	private static int applyWeights(Player player, StatsData data, int tp) {
-		
 		if (tp <= 0) return tp;
-		int[] totalWeight = {0};
-		CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
-			var handler = inv.getCurios().get("weights");
-			if (handler != null) {
-				for (int i = 0; i < handler.getSlots(); i++) {
-					ItemStack stack = handler.getStacks().getStackInSlot(i);
-					if (stack.getItem() instanceof WeightItem) {
-						totalWeight[0] += WeightItem.getWeight(stack);
-					} else if (!stack.isEmpty()) {
-						totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
-					}
-				}
-			}
-		});
 
-		
+		GeneralServerConfig.GravityConfig gravityConfig = ConfigManager.getServerConfig().getGravity();
+		if (!gravityConfig.getTpEnabled()) return tp;
 
-		if (totalWeight[0] > 0) {
-			GravityLogic.IGNORE_WEIGHT.set(true);
-			double baseGravity;
-			try {
-				baseGravity = GravityLogic.getRawGravity(player);
-			} finally {
-				GravityLogic.IGNORE_WEIGHT.set(false);
-			}
-			int effectiveWeight = (int) (totalWeight[0] * baseGravity);
+		int totalWeight = GravityLogic.getTotalWeight(player);
+		if (totalWeight <= 0) return tp;
 
-			int currentBaseLevel = data.getLevel();
-			int totalBaseStats = data.getStats().getTotalStats();
-			int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
+		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
+		int effectiveWeight = (int) (totalWeight * gravityMultiplier);
 
-			double boostedTotal = 0;
-			boostedTotal += data.getStats().getStrength() * data.getTotalMultiplier("STR");
-			boostedTotal += data.getStats().getStrikePower() * data.getTotalMultiplier("SKP");
-			boostedTotal += data.getStats().getResistance() * data.getTotalMultiplier("RES");
-			boostedTotal += data.getStats().getVitality() * data.getTotalMultiplier("VIT");
-			boostedTotal += data.getStats().getKiPower() * data.getTotalMultiplier("PWR");
-			boostedTotal += data.getStats().getEnergy() * data.getTotalMultiplier("ENE");
+		int currentBaseLevel = data.getLevel();
+		int totalBaseStats = data.getStats().getTotalStats();
+		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
 
-			double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
+		double boostedTotal = 0;
+		boostedTotal += data.getStats().getStrength() * data.getTotalMultiplier("STR");
+		boostedTotal += data.getStats().getStrikePower() * data.getTotalMultiplier("SKP");
+		boostedTotal += data.getStats().getResistance() * data.getTotalMultiplier("RES");
+		boostedTotal += data.getStats().getVitality() * data.getTotalMultiplier("VIT");
+		boostedTotal += data.getStats().getKiPower() * data.getTotalMultiplier("PWR");
+		boostedTotal += data.getStats().getEnergy() * data.getTotalMultiplier("ENE");
 
-			double peak = 2.0;
-			double exponent = -Math.pow((relativeLevel - 2 * effectiveWeight), 2) / (2 * Math.pow(7, 2));
-			double multiplier = peak * Math.exp(exponent) + 1;
+		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
 
-			
+		double peak = gravityConfig.getTpPeakMultiplier();
+		double width = gravityConfig.getTpCurveWidth();
+		double exponent = -Math.pow((relativeLevel - 2 * effectiveWeight), 2) / (2 * Math.pow(width, 2));
+		double multiplier = peak * Math.exp(exponent) + 1;
 
-			int newTp = (int) (tp * multiplier);
-			return newTp == 0 && multiplier > 0 ? 1 : newTp;
-		}
-		return tp;
+		int newTp = (int) (tp * multiplier);
+		return newTp == 0 && multiplier > 0 ? 1 : newTp;
 	}
 
 	private static boolean dropTps(Entity entity) {

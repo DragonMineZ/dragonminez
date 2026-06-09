@@ -102,20 +102,23 @@ public class BonusStats {
             return 0;
         }
 
-        double result = 0;
+        double flatResult = 0;
+        double multiplierProduct = 1.0;
         List<StatBonus> statBonuses = bonuses.get(stat);
 
         for (StatBonus bonus : statBonuses) {
             if (bonus.applyMultipliers == getMultiplicable) {
                 switch (bonus.operation) {
-                    case "+" -> result += bonus.value;
-                    case "-" -> result -= bonus.value;
-                    case "*" -> result += (baseStat * bonus.value) - baseStat;
+                    case "+" -> flatResult += bonus.value;
+                    case "-" -> flatResult -= bonus.value;
+                    case "*" -> multiplierProduct *= bonus.value;
                 }
             }
         }
 
-        return result;
+        // Apply all * bonuses as a single combined multiplier (multiplicative chaining)
+        // then add flat +/- bonuses on top
+        return (baseStat * multiplierProduct - baseStat) + flatResult;
     }
 
     public List<StatBonus> getBonuses(String stat) {

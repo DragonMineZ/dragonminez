@@ -153,15 +153,10 @@ public class StatsEvents {
 			});
 
 			if (totalWeight[0] > 0) {
-				GravityLogic.IGNORE_WEIGHT.set(true);
-				double baseGravity;
-				try {
-					baseGravity = GravityLogic.getRawGravity(serverPlayer);
-				} finally {
-					GravityLogic.IGNORE_WEIGHT.set(false);
-				}
-
-				int effectiveWeight = (int) (totalWeight[0] * baseGravity);
+				// Stat debuff uses raw weight (not gravity-amplified) because gravity already has
+				// its own separate stat-reduction channel (applyStatReduction / "Gravity" bonus).
+				// Gravity amplification is intentional only for the TP bell-curve in TPGainEvents.
+				int effectiveWeight = totalWeight[0];
 
 				int currentBaseLevel = data.getLevel();
 				int totalBaseStats = data.getStats().getTotalStats();
@@ -429,7 +424,7 @@ public class StatsEvents {
 							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 								String formGroup = attackerData.getCharacter().getActiveFormGroup();
 								String formName = attackerData.getCharacter().getActiveForm();
-								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
 								attackerData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeForm.getMasteryPerHitDealt() * bonus));
 							}
 						}
@@ -439,7 +434,7 @@ public class StatsEvents {
 							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
 								String stackForm = attackerData.getCharacter().getActiveStackForm();
-								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
 								attackerData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeStackForm.getMasteryPerHitDealt() * bonus));
 							}
 						}
@@ -458,7 +453,7 @@ public class StatsEvents {
 							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
 								String formGroup = victimData.getCharacter().getActiveFormGroup();
 								String formName = victimData.getCharacter().getActiveForm();
-								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
 								victimData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeForm.getMasteryPerHitReceived() * bonus));
 							}
 						}
@@ -468,7 +463,7 @@ public class StatsEvents {
 							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
 								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
 								String stackForm = victimData.getCharacter().getActiveStackForm();
-								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
 								victimData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeStackForm.getMasteryPerHitReceived() * bonus));
 							}
 						}

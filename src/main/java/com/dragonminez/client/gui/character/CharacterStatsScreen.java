@@ -621,10 +621,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						if (!seenNames.contains(b.name)) { bonuses.add(b); seenNames.add(b.name); }
 					}
 				}
+				bonuses.sort((a, b) -> a.name.compareTo(b.name));
 				if (!bonuses.isEmpty()) {
 					extras.add(tr("gui.dragonminez.character_stats.bonus").withStyle(ChatFormatting.AQUA));
 					for (var bonus : bonuses) {
-						String bonusText = bonus.name.replace("_", " +") + ": " + bonus.operation + (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : String.format(Locale.US, "%.0f", bonus.value));
+						String opDisplay = bonus.operation.equals("*") ? "x" : bonus.operation;
+						String bonusText = bonus.name.replace("_", " ") + ": " + opDisplay + (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : String.format(Locale.US, "%.0f", bonus.value));
 						extras.add(txt("  " + bonusText).withStyle(ChatFormatting.GREEN));
 					}
 				}
@@ -666,6 +668,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	private void renderStatisticsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
 		if (useHexagonView) renderStatisticsInfoHexagon(graphics, mouseX, mouseY);
 		else renderStatisticsInfoList(graphics, mouseX, mouseY);
+		renderGravityInfo(graphics, mouseX, mouseY);
 		renderTpMultiplierInfo(graphics, mouseX, mouseY);
 	}
 
@@ -1173,6 +1176,73 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		}
 	}
 
+	private void renderGravityInfo(GuiGraphics graphics, int mouseX, int mouseY) {
+		if (statsData == null) return;
+
+		int centerY = getUiHeight() / 2;
+		int labelX = getUiWidth() - 137;
+		int valueX = getUiWidth() - 65;
+		int y = centerY + 66;
+
+		double netGravity = statsData.getGravityPenalizationGravity();
+		double gravityStatMult = statsData.getGravityStatMultiplier();
+		boolean hasGravity = netGravity > 0.01;
+
+		Component label = tr("gui.dragonminez.character_stats.gravity");
+		TextUtil.drawStringWithBorder(graphics, this.font, label, labelX, y, hasGravity ? 0xFF7722 : 0x7CFDD6, 0x000000);
+
+		String penStr = (hasGravity && gravityStatMult < 0.999)
+				? " -" + formatUpToOneDecimal((1.0 - gravityStatMult) * 100.0) + "%"
+				: "";
+		Component valueComp = hasGravity
+				? txt(formatUpToOneDecimal(netGravity) + "g" + penStr)
+				: txt("--");
+		int valueColor = hasGravity ? 0xFF9944 : 0xFFD7AB;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, valueComp, valueX, y, valueColor, 0x000000);
+
+		int totalTextWidth = font.width(label) + font.width(valueComp) + 20;
+		if (mouseX >= labelX && mouseX <= labelX + totalTextWidth && mouseY >= y && mouseY <= y + font.lineHeight) {
+			Component title = tr("gui.dragonminez.character_stats.gravity").withStyle(ChatFormatting.GOLD);
+
+			List<Component> desc = new ArrayList<>();
+			double envGravity = statsData.getGravityEnvironmentalMultiplier();
+			int totalWeight = statsData.getGravityTotalWeight();
+			double weightGravityDivisor = ConfigManager.getServerConfig().getGravity().getWeightGravityDivisor();
+			double weightContrib = totalWeight > 0 ? (totalWeight * envGravity) / weightGravityDivisor : 0.0;
+
+			desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.environmental",
+					formatUpToOneDecimal(envGravity)).withStyle(ChatFormatting.YELLOW));
+			if (totalWeight > 0) {
+				desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_load",
+						totalWeight, formatUpToOneDecimal(weightContrib)).withStyle(ChatFormatting.YELLOW));
+			}
+
+			List<Component> extras = new ArrayList<>();
+			extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.net",
+					formatUpToOneDecimal(netGravity)).withStyle(hasGravity ? ChatFormatting.RED : ChatFormatting.GREEN));
+
+			if (hasGravity) {
+				if (gravityStatMult < 0.999) {
+					extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.stat_penalty",
+							formatUpToOneDecimal((1.0 - gravityStatMult) * 100.0)).withStyle(ChatFormatting.RED));
+				}
+				double gravityTpBonus = statsData.getTpGravityMultiplier();
+				if (gravityTpBonus > 1.0) {
+					extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.tp_bonus",
+							formatUpToOneDecimal(gravityTpBonus)).withStyle(ChatFormatting.GREEN));
+				}
+				double weightBell = statsData.getTpWeightBellMultiplier();
+				if (weightBell > 1.01 && totalWeight > 0) {
+					extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_bell",
+							formatUpToOneDecimal(weightBell)).withStyle(ChatFormatting.AQUA));
+				}
+			}
+
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(),
+					title, desc, extras, 0xFF7722);
+		}
+	}
+
 	private void renderTpMultiplierInfo(GuiGraphics graphics, int mouseX, int mouseY) {
 		int centerY = getUiHeight() / 2;
 		int labelX = getUiWidth() - 137;
@@ -1214,6 +1284,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			double gravity = statsData.getTpGravityMultiplier();
 			if (gravity > 1.0) {
 				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", formatUpToOneDecimal(gravity)).withStyle(ChatFormatting.GREEN));
+			}
+
+			double weightBell = statsData.getTpWeightBellMultiplier();
+			if (weightBell > 1.01) {
+				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.weight", formatUpToOneDecimal(weightBell)).withStyle(ChatFormatting.YELLOW));
 			}
 
 			double potionEffect = statsData.getTpPotionEffectMultiplier();

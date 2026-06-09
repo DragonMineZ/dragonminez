@@ -996,9 +996,60 @@ public class StatsData {
 
 	public double getTpGravityMultiplier() {
 		if (player.level().dimension().equals(HTCDimension.HTC_KEY)) return 1.0;
+		var gravityConfig = ConfigManager.getServerConfig().getGravity();
+		if (!gravityConfig.getTpEnabled()) return 1.0;
 		double bonusGravity = GravityLogic.getBonusGravity(player);
 		if (bonusGravity <= 0) return 1.0;
-		return 1.0 + (bonusGravity * 0.05);
+		return 1.0 + (bonusGravity * gravityConfig.getTpGravityBonusPerGravity());
+	}
+
+	public double getGravityPenalizationGravity() {
+		return GravityLogic.getPenalizationGravity(player);
+	}
+
+	public double getGravityEnvironmentalMultiplier() {
+		return GravityLogic.getGravityMultiplier(player);
+	}
+
+	public double getGravityStatMultiplier() {
+		var config = ConfigManager.getServerConfig().getGravity();
+		if (!config.getStatReductionEnabled()) return 1.0;
+		double pGravity = GravityLogic.getPenalizationGravity(player);
+		if (pGravity <= 0) return 1.0;
+		double reduction = pGravity * config.getStatReductionPerGravity();
+		reduction = Math.max(config.getMinStatReduction(), Math.min(config.getMaxStatReduction(), reduction));
+		return 1.0 - reduction;
+	}
+
+	public double getTpWeightBellMultiplier() {
+		var gravityConfig = ConfigManager.getServerConfig().getGravity();
+		if (!gravityConfig.getTpEnabled()) return 1.0;
+		int totalWeight = GravityLogic.getTotalWeight(player);
+		if (totalWeight <= 0) return 1.0;
+
+		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
+		int effectiveWeight = (int) (totalWeight * gravityMultiplier);
+
+		int currentBaseLevel = getLevel();
+		int totalBaseStats = stats.getTotalStats();
+		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
+
+		double boostedTotal = stats.getStrength() * getTotalMultiplier("STR")
+				+ stats.getStrikePower() * getTotalMultiplier("SKP")
+				+ stats.getResistance() * getTotalMultiplier("RES")
+				+ stats.getVitality() * getTotalMultiplier("VIT")
+				+ stats.getKiPower() * getTotalMultiplier("PWR")
+				+ stats.getEnergy() * getTotalMultiplier("ENE");
+
+		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
+		double peak = gravityConfig.getTpPeakMultiplier();
+		double width = gravityConfig.getTpCurveWidth();
+		double exponent = -Math.pow((relativeLevel - 2.0 * effectiveWeight), 2) / (2.0 * Math.pow(width, 2));
+		return peak * Math.exp(exponent) + 1.0;
+	}
+
+	public int getGravityTotalWeight() {
+		return GravityLogic.getTotalWeight(player);
 	}
 
 	public double getTpPotionEffectMultiplier() {
@@ -1018,7 +1069,6 @@ public class StatsData {
 
 	public int getSingleStatCost(int simulatedTotalStats) {
 		var dynamicGrowthConfig = ConfigManager.getServerConfig().getDynamicGrowth();
-		// When Dynamic Growth forbids manual purchases, make every point unaffordable.
 		if (!dynamicGrowthConfig.isManualTpPurchasesEnabled()) return Integer.MAX_VALUE;
 
 		double globalMult = ConfigManager.getServerConfig().getGameplay().getGlobalTpCostMultiplier();

@@ -2,16 +2,19 @@ package com.dragonminez.server.util;
 
 import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.entities.masters.MasterKaiosamaEntity;
+import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.server.world.dimension.HTCDimension;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,55 +30,86 @@ public class GravityLogic {
 	private static final Map<UUID, Double> NPC_GRAVITY_CACHE = new HashMap<>();
 	private static final Map<UUID, Long> NPC_GRAVITY_TICK = new HashMap<>();
 
-	public static double getRawGravity(Player player) {
-		double maxGravity = 1.0;
+	private static GeneralServerConfig.GravityConfig cfg() {
+		return ConfigManager.getServerConfig().getGravity();
+	}
 
-		if (player.level().dimension().equals(HTCDimension.HTC_KEY)) maxGravity = Math.max(maxGravity, 10.0);
+	public static double getGravityMultiplier(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.isEnabled()) return 1.0;
+
+		String dimId = player.level().dimension().location().toString();
+		double gravity = config.getWorldGravity(dimId);
 
 		double wgGravity = WorldGuardCompat.getGravity(player.level(), player.blockPosition(), player);
-		if (wgGravity > 0) maxGravity = Math.max(maxGravity, wgGravity);
+		if (wgGravity > gravity) gravity = wgGravity;
 
 		double npcGravity = getNpcGravity(player);
-		if (npcGravity > 0) maxGravity = Math.max(maxGravity, npcGravity);
+		if (npcGravity > gravity) gravity = npcGravity;
+
+		double machineGravity = getMachineGravity(player);
+		if (machineGravity > gravity) gravity = machineGravity;
+
+		return Math.max(0.0, gravity);
+	}
+
+	public static double getRawGravity(Player player) {
+		double gravity = getGravityMultiplier(player);
 
 		if (!IGNORE_WEIGHT.get()) {
-			int[] totalWeight = {0};
-			top.theillusivec4.curios.api.CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
-				var handler = inv.getCurios().get("weights");
-				if (handler != null) {
-					for (int i = 0; i < handler.getSlots(); i++) {
-						net.minecraft.world.item.ItemStack stack = handler.getStacks().getStackInSlot(i);
-						if (stack.getItem() instanceof com.dragonminez.common.init.item.WeightItem) {
-							totalWeight[0] += com.dragonminez.common.init.item.WeightItem.getWeight(stack);
-						} else if (!stack.isEmpty()) {
-							totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
-						}
-					}
-				}
-			});
-
-			if (totalWeight[0] > 0) {
-				double effectiveWeight = totalWeight[0] * maxGravity;
-				double extraGravity = effectiveWeight / 1000.0;
-				maxGravity += extraGravity;
+			int totalWeight = getTotalWeight(player);
+			if (totalWeight > 0) {
+				double effectiveWeight = totalWeight * gravity;
+				gravity += effectiveWeight / cfg().getWeightGravityDivisor();
 			}
 		}
 
-		// double machineGravity = GravityMachineLogic.getNearbyGravity(player);
-		// if (machineGravity > 1.0) return machineGravity;
-		return maxGravity;
+		return gravity;
+	}
+
+	private static double getResistance(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			double avgEffectiveStats = (
+					data.getStats().getStrength() * data.getTotalMultiplier("STR") +
+					data.getStats().getStrikePower() * data.getTotalMultiplier("SKP") +
+					data.getStats().getResistance() * data.getTotalMultiplier("RES") +
+					data.getStats().getVitality() * data.getTotalMultiplier("VIT") +
+					data.getStats().getKiPower() * data.getTotalMultiplier("PWR") +
+					data.getStats().getEnergy() * data.getTotalMultiplier("ENE")
+			) / 6.0;
+
+			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
+			double div = Math.max(1.0, maxStats * config.getResistanceStatDivisorRatio());
+			return (avgEffectiveStats / div) * config.getResistanceScale();
+		}).orElse(0.0);
+	}
+
+	public static double getNetGravity(Player player) {
+		double gravity = getGravityMultiplier(player);
+		if (gravity <= 1.0) return 0.0;
+		return Math.max(0.0, gravity - getResistance(player));
+	}
+
+	public static double getBonusGravity(Player player) {
+		return getNetGravity(player);
+	}
+
+	public static double getPenalizationGravity(Player player) {
+		return getNetGravity(player);
 	}
 
 	private static double getNpcGravity(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
 		UUID id = player.getUUID();
 		long currentTick = player.level().getGameTime();
 
 		if (!NPC_GRAVITY_CACHE.containsKey(id) || currentTick - NPC_GRAVITY_TICK.getOrDefault(id, 0L) > 100) {
 			double gravity = 0.0;
-			double range = 100.0;
+			double range = config.getNpcGravityRange();
 			AABB searchBox = player.getBoundingBox().inflate(range);
 			List<MasterKaiosamaEntity> kais = player.level().getEntitiesOfClass(MasterKaiosamaEntity.class, searchBox);
-			if (!kais.isEmpty()) gravity = 10.0;
+			if (!kais.isEmpty()) gravity = config.getNpcGravityValue();
 
 			NPC_GRAVITY_CACHE.put(id, gravity);
 			NPC_GRAVITY_TICK.put(id, currentTick);
@@ -85,60 +119,72 @@ public class GravityLogic {
 		return NPC_GRAVITY_CACHE.getOrDefault(id, 0.0);
 	}
 
-	public static double getBonusGravity(Player player) {
-		IGNORE_WEIGHT.set(true);
-		double rawGravity;
-		try {
-			rawGravity = getRawGravity(player);
-		} finally {
-			IGNORE_WEIGHT.set(false);
-		}
-		if (rawGravity <= 1.0) return 0.0;
-
-		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-			double totalStats = data.getStats().getTotalStats();
-			double avgStats = totalStats / 6.0;
-
-			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
-			double div = Math.max(1.0, maxStats - (maxStats / 10.0));
-			double baseResistance = (avgStats / div) * 100.0;
-
-			return Math.max(0.0, rawGravity - baseResistance);
-		}).orElse(0.0);
+	private static double getMachineGravity(Player player) {
+		if (!cfg().getMachineGravityEnabled()) return 0.0;
+		// WIP GravityMachine (return the strongest nearby gravity-machine value once implemented)
+		return 0.0;
 	}
 
-	public static double getPenalizationGravity(Player player) {
-		double rawGravity = getRawGravity(player);
-		if (rawGravity <= 1.0) return 0.0;
-
-		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-			double totalStats = data.getStats().getTotalStats();
-			double avgStats = totalStats / 6.0;
-
-			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
-			double div = Math.max(1.0, maxStats - (maxStats / 10.0));
-			double baseResistance = (avgStats / div) * 100.0;
-			double strMult = data.getTotalMultiplier("STR");
-			double skpMult = data.getTotalMultiplier("SKP");
-			double resMult = data.getTotalMultiplier("RES");
-			double vitMult = data.getTotalMultiplier("VIT");
-			double pwrMult = data.getTotalMultiplier("PWR");
-			double eneMult = data.getTotalMultiplier("ENE");
-			double avgBonus = (strMult + skpMult + resMult + vitMult + pwrMult + eneMult) / 6.0;
-			double transformFactor = 1.0 + avgBonus;
-			double finalResistance = baseResistance * transformFactor;
-
-			return Math.max(0.0, rawGravity - finalResistance);
-		}).orElse(0.0);
+	public static int getTotalWeight(Player player) {
+		int[] totalWeight = {0};
+		CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
+			var handler = inv.getCurios().get("weights");
+			if (handler != null) {
+				for (int i = 0; i < handler.getSlots(); i++) {
+					ItemStack stack = handler.getStacks().getStackInSlot(i);
+					if (stack.getItem() instanceof WeightItem) {
+						totalWeight[0] += WeightItem.getWeight(stack);
+					} else if (!stack.isEmpty()) {
+						totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
+					}
+				}
+			}
+		});
+		return totalWeight[0];
 	}
 
 	public static double getGeneralPenaltyFactor(double pGravity) {
 		if (pGravity <= 0) return 0.0;
 		double baseCurve = Math.sqrt(pGravity / 100.0);
-		return baseCurve * 1.6;
+		return baseCurve * cfg().getPenaltyCurveFactor();
+	}
+
+	public static double getJumpFactor(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.getPhysicalEnabled()) return 1.0;
+		double pGravity = getPenalizationGravity(player);
+		if (pGravity <= 0) return 1.0;
+		if (pGravity >= config.getHardStopThreshold()) return 1.0 - config.getMaxJumpPenalty();
+		double penalty = Math.min(config.getMaxJumpPenalty(), getGeneralPenaltyFactor(pGravity));
+		return 1.0 - penalty;
+	}
+
+	public static double getFlyFactor(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.getPhysicalEnabled()) return 1.0;
+		double pGravity = getPenalizationGravity(player);
+		if (pGravity <= 0) return 1.0;
+		if (pGravity >= config.getHardStopThreshold()) return 0.0;
+		double penalty = Math.min(config.getMaxFlyPenalty(), getGeneralPenaltyFactor(pGravity));
+		return 1.0 - penalty;
+	}
+
+	public static boolean isFlightHardStopped(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.getPhysicalEnabled()) return false;
+		return getPenalizationGravity(player) >= config.getHardStopThreshold();
+	}
+
+	public static double getFallExtra(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.getPhysicalEnabled()) return 0.0;
+		double pGravity = getPenalizationGravity(player);
+		if (pGravity <= 0) return 0.0;
+		return Math.min(config.getMaxExtraFall(), pGravity * config.getExtraFallPerGravity());
 	}
 
 	public static void tick(ServerPlayer player) {
+		GeneralServerConfig.GravityConfig config = cfg();
 		double pGravity = getPenalizationGravity(player);
 
 		AttributeInstance movementSpeed = player.getAttribute(Attributes.MOVEMENT_SPEED);
@@ -152,14 +198,14 @@ public class GravityLogic {
 			double movePenalty;
 			double attackPenalty;
 
-			if (pGravity >= 75.0) {
-				movePenalty = -1.0;
-				attackPenalty = -1.0;
+			if (pGravity >= config.getHardStopThreshold()) {
+				movePenalty = -config.getMaxMovementPenalty();
+				attackPenalty = -config.getMaxAttackPenalty();
 			} else {
 				double generalFactor = getGeneralPenaltyFactor(pGravity);
-				movePenalty = -Math.min(0.95, generalFactor);
+				movePenalty = -Math.min(config.getMaxMovementPenalty(), generalFactor);
 				double attackFactor = Math.sqrt(pGravity / 100.0);
-				attackPenalty = -Math.min(0.9, attackFactor);
+				attackPenalty = -Math.min(config.getMaxAttackPenalty(), attackFactor);
 			}
 
 			movementSpeed.addTransientModifier(new AttributeModifier(
@@ -176,11 +222,33 @@ public class GravityLogic {
 					AttributeModifier.Operation.MULTIPLY_TOTAL
 			));
 		}
+
+		applyStatReduction(player, pGravity, config);
+	}
+
+	private static void applyStatReduction(ServerPlayer player, double pGravity, GeneralServerConfig.GravityConfig config) {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			String[] stats = config.getAffectedStats();
+
+			double reduction = 0.0;
+			if (config.getStatReductionEnabled() && pGravity > 0) {
+				reduction = pGravity * config.getStatReductionPerGravity();
+				reduction = Math.max(config.getMinStatReduction(), Math.min(config.getMaxStatReduction(), reduction));
+			}
+
+			if (reduction <= 0.0) {
+				for (String stat : stats) data.getBonusStats().removeBonusSplit(stat, "Gravity");
+				return;
+			}
+
+			double multiplier = 1.0 - reduction;
+			for (String stat : stats) data.getBonusStats().addBonusSplit(stat, "Gravity", "*", multiplier, false);
+		});
 	}
 
 	public static double getConsumptionMultiplier(Player player) {
 		double pGravity = getPenalizationGravity(player);
 		if (pGravity <= 0) return 1.0;
-		return 1.0 + (pGravity / 25.0);
+		return 1.0 + (pGravity * cfg().getConsumptionPerGravity());
 	}
 }
