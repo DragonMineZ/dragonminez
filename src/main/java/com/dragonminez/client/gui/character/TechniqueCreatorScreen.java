@@ -51,7 +51,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	private KiAttackData.KiType creatorType = KiAttackData.KiType.SMALL_BALL;
 	private KiAttackData.Utility creatorUtility = KiAttackData.Utility.DAMAGE;
 	private float creatorDamage = 1.0f;
-	private float creatorSize = 1.0f;
+	private float creatorSize = KiAttackData.getDefaultSizeForType(KiAttackData.KiType.SMALL_BALL);
 	private float creatorSpeed = 1.0f;
 	private int creatorArmorPen = 0;
 	private int creatorCast = 20;
@@ -98,8 +98,8 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		addAdjusters(x, y + 76, () -> creatorDamage = Mth.clamp(creatorDamage - 0.1f, 0.1f, 20.0f), () -> creatorDamage = Mth.clamp(creatorDamage + 0.1f, 0.1f, 20.0f));
 
 		CustomTextureButton[] sizeBtns = addAdjusters(x, y + 91,
-				() -> { if (KiAttackData.usesCustomSize(creatorType)) creatorSize = Mth.clamp(creatorSize - 0.1f, 0.1f, 20.0f); },
-				() -> { if (KiAttackData.usesCustomSize(creatorType)) creatorSize = Mth.clamp(creatorSize + 0.1f, 0.1f, 20.0f); });
+				() -> { if (KiAttackData.usesCustomSize(creatorType)) creatorSize = Mth.clamp(creatorSize - 0.5f, KiAttackData.getMinSizeForType(creatorType), KiAttackData.getMaxSizeForType(creatorType)); },
+				() -> { if (KiAttackData.usesCustomSize(creatorType)) creatorSize = Mth.clamp(creatorSize + 0.5f, KiAttackData.getMinSizeForType(creatorType), KiAttackData.getMaxSizeForType(creatorType)); });
 		sizeLeft = sizeBtns[0]; sizeRight = sizeBtns[1];
 
 		CustomTextureButton[] speedBtns = addAdjusters(x, y + 106,
@@ -273,7 +273,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	}
 
 	private boolean allowsUtility(KiAttackData.KiType type) {
-		return type == KiAttackData.KiType.SHIELD || type == KiAttackData.KiType.AREA;
+		return KiAttackData.allowsHealUtility(type);
 	}
 
 	private void updateAdjusterVisibility() {

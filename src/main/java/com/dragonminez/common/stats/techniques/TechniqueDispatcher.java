@@ -21,7 +21,8 @@ public class TechniqueDispatcher {
 
 		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * clampedCharge);
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
-		boolean isHeal = (data.getUtility() == KiAttackData.Utility.HEAL);
+		boolean isHeal = (data.getEffectiveUtility() == KiAttackData.Utility.HEAL);
+		int kiTypeOrdinal = data.getKiType().ordinal();
 
         if (!isInitialSpawn) {
             List<AbstractKiProjectile> activeKis = getChargingKiEntities(owner, level);
@@ -64,8 +65,9 @@ public class TechniqueDispatcher {
                 KiBlastEntity smallBall = new KiBlastEntity(level, owner);
 
                 smallBall.setOwner(owner);
+                smallBall.setKiType(kiTypeOrdinal);
                 smallBall.setKiRenderType(0);
-                smallBall.setSize(0.8F);
+                smallBall.setSize(data.getSize());
                 smallBall.setKiSpeed(data.getSpeed());
                 smallBall.setKiDamage(realDamage);
                 smallBall.setColors(data.getColorExterior(), data.getColorExterior(), 0xFFFFFF);
@@ -91,6 +93,7 @@ public class TechniqueDispatcher {
             case MEDIUM_BALL:
                 KiBlastEntity medBall = new KiBlastEntity(level, owner);
                 medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+                medBall.setKiType(kiTypeOrdinal);
                 medBall.setTechniqueId(data.getId());
                 medBall.setArmorPenetration(data.getArmorPenetration());
                 medBall.setHeal(isHeal);
@@ -108,6 +111,7 @@ public class TechniqueDispatcher {
                 } else {
                     giantBall.setupKiLargeBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                 }
+                giantBall.setKiType(kiTypeOrdinal);
                 giantBall.setTechniqueId(data.getId());
                 giantBall.setArmorPenetration(data.getArmorPenetration());
                 giantBall.setHeal(isHeal);
@@ -127,6 +131,7 @@ public class TechniqueDispatcher {
                 } else {
                     wave.setupKiWavePlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                 }
+                wave.setKiType(kiTypeOrdinal);
                 wave.setTechniqueId(data.getId());
                 wave.setArmorPenetration(data.getArmorPenetration());
                 wave.setHeal(isHeal);
@@ -141,6 +146,7 @@ public class TechniqueDispatcher {
             case LASER:
                 KiLaserEntity laser = new KiLaserEntity(level, owner);
                 laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior());
+                laser.setKiType(kiTypeOrdinal);
                 laser.setTechniqueId(data.getId());
                 laser.setArmorPenetration(data.getArmorPenetration());
                 laser.setHeal(isHeal);
@@ -149,6 +155,7 @@ public class TechniqueDispatcher {
             case BEAM:
                 KiLaserEntity beam = new KiLaserEntity(level, owner);
                 beam.setupKiMakkankosanpoPlayer(owner, realDamage, data.getSpeed());
+                beam.setKiType(kiTypeOrdinal);
                 beam.setTechniqueId(data.getId());
                 beam.setArmorPenetration(data.getArmorPenetration());
                 beam.setHeal(isHeal);
@@ -161,6 +168,7 @@ public class TechniqueDispatcher {
                     KiDiskEntity diskRight = new KiDiskEntity(level, owner);
                     diskRight.setupKiDiskPlayer(owner, realDamage, data.getSpeed()*1.5F, data.getColorInterior(), data.getSize());
                     diskRight.setCastOffsets(0.8F, 0.7F, 0.2F);
+                    diskRight.setKiType(kiTypeOrdinal);
                     diskRight.setTechniqueId(data.getId());
                     diskRight.setArmorPenetration(data.getArmorPenetration());
                     diskRight.setHeal(isHeal);
@@ -168,6 +176,7 @@ public class TechniqueDispatcher {
                     KiDiskEntity diskLeft = new KiDiskEntity(level, owner);
                     diskLeft.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize());
                     diskLeft.setCastOffsets(-0.8F, 0.7F, 0.2F);
+                    diskLeft.setKiType(kiTypeOrdinal);
                     diskLeft.setTechniqueId(data.getId());
                     diskLeft.setArmorPenetration(data.getArmorPenetration());
                     diskLeft.setHeal(isHeal);
@@ -179,6 +188,7 @@ public class TechniqueDispatcher {
                 } else {
                     KiDiskEntity disk = new KiDiskEntity(level, owner);
                     disk.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize());
+                    disk.setKiType(kiTypeOrdinal);
                     disk.setTechniqueId(data.getId());
                     disk.setArmorPenetration(data.getArmorPenetration());
                     disk.setHeal(isHeal);
@@ -189,6 +199,7 @@ public class TechniqueDispatcher {
             case SHIELD:
                 KiBarrierEntity barrier = new KiBarrierEntity(level, owner);
                 barrier.setupBarrierPlayer(owner, realDamage, data.getSize(), data.getColorInterior(), data.getColorExterior());
+                barrier.setKiType(kiTypeOrdinal);
                 barrier.setTechniqueId(data.getId());
                 barrier.setArmorPenetration(data.getArmorPenetration());
                 barrier.setHeal(isHeal);
@@ -198,6 +209,7 @@ public class TechniqueDispatcher {
             case EXPLOSION:
                 KiExplosionEntity explosion = new KiExplosionEntity(level, owner);
                 explosion.setupExplosionPlayer(owner, realDamage, data.getSize(), data.getColorInterior(), data.getColorExterior());
+                explosion.setKiType(kiTypeOrdinal);
                 explosion.setTechniqueId(data.getId());
                 explosion.setArmorPenetration(data.getArmorPenetration());
                 explosion.setHeal(isHeal);
@@ -217,6 +229,7 @@ public class TechniqueDispatcher {
                             0xFFFFFF
                     );
 
+                    area.setKiType(kiTypeOrdinal);
                     area.setTechniqueId(data.getId());
                     area.setArmorPenetration(data.getArmorPenetration());
                     area.setHeal(isHeal);
@@ -233,6 +246,7 @@ public class TechniqueDispatcher {
 
                     volley.setupKiVolleyPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), 40);
 
+                    volley.setKiType(kiTypeOrdinal);
                     volley.setTechniqueId(data.getId());
                     volley.setArmorPenetration(data.getArmorPenetration());
                     volley.setHeal(isHeal);
@@ -246,6 +260,7 @@ public class TechniqueDispatcher {
             default:
                 KiBlastEntity defaultBlast = new KiBlastEntity(level, owner);
                 defaultBlast.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+                defaultBlast.setKiType(kiTypeOrdinal);
                 defaultBlast.setTechniqueId(data.getId());
                 defaultBlast.setArmorPenetration(data.getArmorPenetration());
                 defaultBlast.setHeal(isHeal);

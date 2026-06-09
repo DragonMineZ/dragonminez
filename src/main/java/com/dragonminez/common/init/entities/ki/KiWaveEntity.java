@@ -539,7 +539,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
             }
         }
 
-        // hitbox
         if (isFiring) {
             Vec3 startPos = this.position();
             Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
@@ -547,12 +546,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
             double radius = this.getSize() * 1.5;
 
-            AABB tipBox = new AABB(
-                    tipPos.x - radius, tipPos.y - radius, tipPos.z - radius,
-                    tipPos.x + radius, tipPos.y + radius, tipPos.z + radius
-            );
+            AABB beamBox = new AABB(startPos, tipPos).inflate(radius);
 
-            this.setBoundingBox(tipBox);
+            this.setBoundingBox(beamBox);
         }
 
         this.onKiTick();

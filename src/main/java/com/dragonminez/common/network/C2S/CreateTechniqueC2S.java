@@ -157,7 +157,7 @@ public class CreateTechniqueC2S {
 	}
 
 	private static boolean allowsUtilityForType(KiAttackData.KiType type) {
-		return type == KiAttackData.KiType.SHIELD || type == KiAttackData.KiType.AREA;
+		return KiAttackData.allowsHealUtility(type);
 	}
 }
 

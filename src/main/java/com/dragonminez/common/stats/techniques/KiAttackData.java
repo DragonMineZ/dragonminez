@@ -106,6 +106,7 @@ public class KiAttackData extends TechniqueData {
 			case DISK -> "ki.kienzan";
 			case EXPLOSION -> "ki.explosion";
 			case BEAM, LASER -> "ki.makkako";
+			case SMALL_BALL, MEDIUM_BALL -> "ki.bigbang";
 			default -> "ki.kameha";
 		};
 	}
@@ -115,6 +116,16 @@ public class KiAttackData extends TechniqueData {
 			case DAMAGE -> 1.0f;
 			case HEAL -> 1.25f;
 		};
+	}
+
+	public static boolean allowsHealUtility(KiType type) {
+		return type == KiType.AREA || type == KiType.SMALL_BALL || type == KiType.SHIELD;
+	}
+
+	public Utility getEffectiveUtility() {
+		Utility u = this.utility != null ? this.utility : Utility.DAMAGE;
+		if (u == Utility.HEAL && !allowsHealUtility(this.kiType != null ? this.kiType : KiType.SMALL_BALL)) return Utility.DAMAGE;
+		return u;
 	}
 
 	public static final int KI_TIME_MULTIPLIER = 20;
@@ -138,10 +149,6 @@ public class KiAttackData extends TechniqueData {
 		return Math.max(0, configured);
 	}
 
-	/**
-	 * Ki cost scaling vs charge percent: linear to 1.0x at 100%, then ramps to 2.0x at the overcharge
-	 * cap (e.g. 125% ≈ 1.33x, 175% = 2.0x). Total cost = baseCost * costMultiplier(percent).
-	 */
 	public static float costMultiplier(float percent) {
 		if (percent <= 100.0f) return Math.max(0.0f, percent) / 100.0f;
 		return 1.0f + (percent - 100.0f) / (OVERCHARGE_MAX_PERCENT - 100.0f);
@@ -201,7 +208,8 @@ public class KiAttackData extends TechniqueData {
 		float initialSpeed = Math.max(0.0f, this.speed - (this.speedLevel * 0.1f));
 		int initialArmorPen = Math.max(0, this.armorPenetration - this.armorPenLevel);
 
-		float initialComplexity = getWeightedComplexity(initialDamage, initialSize, initialSpeed, initialArmorPen);
+		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
+		float initialComplexity = getWeightedComplexity(initialDamage, sizeComplexityRatio(resolvedType, initialSize), initialSpeed, initialArmorPen);
 		int totalUpgrades = getTotalUpgradeCount();
 
 		int complexityBase = baseMin + (int) Math.round(initialComplexity * 10.0);
@@ -255,7 +263,7 @@ public class KiAttackData extends TechniqueData {
 				+ Math.max(0, cooldownLevel);
 	}
 
-	private static float getWeightedComplexity(float damage, float size, float speed, int armorPen) {
+	private static float getWeightedComplexity(float damage, float sizeRatio01, float speed, int armorPen) {
 		float maxStat = 20.0f;
 		int maxArmorPen = 100;
 
@@ -265,7 +273,7 @@ public class KiAttackData extends TechniqueData {
 		float armorPenWeight = 2.0f;
 
 		float damageRatio = damage / maxStat;
-		float sizeRatio = size / maxStat;
+		float sizeRatio = Mth.clamp(sizeRatio01, 0f, 1f);
 		float speedRatio = speed / maxStat;
 		float armorPenRatio = (float) armorPen / maxArmorPen;
 
@@ -283,7 +291,7 @@ public class KiAttackData extends TechniqueData {
 
 		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);
 
-		float complexity = getWeightedComplexity(normalized[0], normalized[1], normalized[2], Math.round(normalized[3]));
+		float complexity = getWeightedComplexity(normalized[0], sizeComplexityRatio(resolvedType, normalized[1]), normalized[2], Math.round(normalized[3]));
 		float tpBase = (80.0f + complexity * 200.0f) * typeMult * utilMult * secondaryCostMultiplier();
 		this.tpCost = Math.max(10, Math.round(tpBase));
 
@@ -293,7 +301,7 @@ public class KiAttackData extends TechniqueData {
 			float initialSpeed = Math.max(0.0f, normalized[2] - (speedLevel * 0.1f));
 			int initialArmorPen = Math.max(0, Math.round(normalized[3]) - armorPenLevel);
 
-			float initialComplexity = getWeightedComplexity(initialDamage, initialSize, initialSpeed, initialArmorPen);
+			float initialComplexity = getWeightedComplexity(initialDamage, sizeComplexityRatio(resolvedType, initialSize), initialSpeed, initialArmorPen);
 			this.castTime = 0;
 			int rawCooldown = computeDerivedCooldown(resolvedType, resolvedUtil, initialComplexity, cooldownLevel);
 			this.cooldown = Math.max(10, Math.min(600, Math.round(rawCooldown * secondaryCostMultiplier())));
@@ -478,6 +486,7 @@ public class KiAttackData extends TechniqueData {
 		try { this.kiType = KiType.valueOf(tag.getString("KiType")); } catch (Exception e) { this.kiType = KiType.SMALL_BALL; }
 		this.animation = tag.getString("Animation");
 		try { this.utility = Utility.valueOf(tag.getString("Utility")); } catch (Exception e) { this.utility = Utility.DAMAGE; }
+		if (this.utility == Utility.HEAL && !allowsHealUtility(this.kiType)) this.utility = Utility.DAMAGE;
 
 		if ((this.animation == null || this.animation.isEmpty()) && PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
 			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
@@ -517,7 +526,7 @@ public class KiAttackData extends TechniqueData {
 		Utility resolvedUtil = util != null ? util : Utility.DAMAGE;
 
 		float[] normalized = normalizeStatsForType(resolvedType, damage, size, speed, armorPen);
-		float complexity = getWeightedComplexity(normalized[0], normalized[1], normalized[2], Math.round(normalized[3]));
+		float complexity = getWeightedComplexity(normalized[0], sizeComplexityRatio(resolvedType, normalized[1]), normalized[2], Math.round(normalized[3]));
 
 		float typeMult = getTypeMultiplier(resolvedType);
 		float utilMult = getUtilityMultiplier(resolvedUtil);
@@ -536,14 +545,36 @@ public class KiAttackData extends TechniqueData {
 	public static float[] normalizeStatsForType(KiType type, float damage, float size, float speed, int armorPen) {
 		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
 		float normalizedDamage = Mth.clamp(damage, 0.1f, 20.0f);
-		float normalizedSize = usesCustomSize(resolvedType) ? Mth.clamp(size, 0.1f, 20.0f) : getDefaultSizeForType(resolvedType);
+		float normalizedSize = usesCustomSize(resolvedType)
+				? Mth.clamp(size, getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType))
+				: getDefaultSizeForType(resolvedType);
 		float normalizedSpeed = usesCustomSpeed(resolvedType) ? Mth.clamp(speed, 0.1f, 20.0f) : getDefaultSpeedForType(resolvedType);
 		float normalizedArmorPen = usesCustomArmorPen(resolvedType) ? Mth.clamp(armorPen, 0, 100) : getDefaultArmorPenForType(resolvedType);
 		return new float[]{normalizedDamage, normalizedSize, normalizedSpeed, normalizedArmorPen};
 	}
 
 	public static boolean usesCustomSize(KiType type) {
-		return type == KiType.GIANT_BALL;
+		return switch (type) {
+			case SMALL_BALL, MEDIUM_BALL, GIANT_BALL -> true;
+			default -> false;
+		};
+	}
+
+	public static float getMinSizeForType(KiType type) {
+		return switch (type) {
+			case SMALL_BALL -> 1.0f;
+			case MEDIUM_BALL -> 7.5f;
+			case GIANT_BALL -> 15.0f;
+			default -> 0.1f;
+		};
+	}
+
+	public static float getMaxSizeForType(KiType type) {
+		return switch (type) {
+			case MEDIUM_BALL -> 12.5f;
+			case SMALL_BALL -> 5.0f;
+			default -> 20.0f;
+		};
 	}
 
 	public static boolean usesCustomSpeed(KiType type) {
@@ -562,9 +593,23 @@ public class KiAttackData extends TechniqueData {
 
 	public static float getDefaultSizeForType(KiType type) {
 		return switch (type) {
+			case GIANT_BALL -> 17.5f;
+			case MEDIUM_BALL -> 10.0f;
 			case EXPLOSION -> 8.0f;
+			case SMALL_BALL -> 3.0f;
 			default -> 1.0f;
 		};
+	}
+
+	private static float sizeComplexityRatio(KiType type, float size) {
+		KiType resolved = type != null ? type : KiType.SMALL_BALL;
+		if (usesCustomSize(resolved)) {
+			float min = getMinSizeForType(resolved);
+			float max = getMaxSizeForType(resolved);
+			if (max <= min) return 0f;
+			return Mth.clamp((size - min) / (max - min), 0f, 1f);
+		}
+		return Mth.clamp(getDefaultSizeForType(resolved) / 20.0f, 0f, 1f);
 	}
 
 	public static float getDefaultSpeedForType(KiType type) {
