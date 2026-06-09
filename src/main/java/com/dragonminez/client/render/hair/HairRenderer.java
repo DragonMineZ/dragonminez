@@ -71,9 +71,8 @@ public class HairRenderer {
 			float gain = INERTIA_GAIN * physicsLodMultiplier;
 			inertiaForward = Mth.clamp(fwd * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaSide = Mth.clamp(-side * gain, -INERTIA_MAX, INERTIA_MAX);
-			inertiaLift = Mth.clamp(-vert * gain, -INERTIA_MAX, INERTIA_MAX);
-
-			if (stats.getStatus().isChargingKi()) inertiaLift += KI_CHARGE_LIFT * physicsLodMultiplier;
+			inertiaLift = Mth.clamp(vert * gain, -INERTIA_MAX, INERTIA_MAX);
+			if (stats.getStatus().isChargingKi()) inertiaLift -= KI_CHARGE_LIFT * physicsLodMultiplier;
 		}
 
 		if (!useFromOnly && !useToOnly) {
@@ -277,7 +276,7 @@ public class HairRenderer {
 
 		if (isCharging && time != 0) {
 			float chargeLift = Mth.abs(Mth.sin(time * 0.5f)) * 5.0f * physicsLodMultiplier;
-			curveX -= chargeLift;
+			curveX += chargeLift;
 		}
 
 		float finalRotX = rotX + animRotX;

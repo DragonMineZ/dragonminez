@@ -255,6 +255,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 						eye2 = lerpColor(factor, eye2, nextForm.getRgbEye2Color());
 					if (!nextForm.getBodyColor1().isEmpty())
 						skin = lerpColor(factor, skin, nextForm.getRgbBodyColor1());
+					if (!nextForm.getBodyColor2().isEmpty())
+						b2 = lerpColor(factor, b2, nextForm.getRgbBodyColor2());
 					if (!nextForm.getHairColor().isEmpty())
 						hair = lerpColor(factor, hair, nextForm.getRgbHairColor());
 				}
@@ -268,6 +270,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 						eye2 = lerpColor(factor, eye2, nextForm.getRgbEye2Color());
 					if (!nextForm.getBodyColor1().isEmpty())
 						skin = lerpColor(factor, skin, nextForm.getRgbBodyColor1());
+					if (!nextForm.getBodyColor2().isEmpty())
+						b2 = lerpColor(factor, b2, nextForm.getRgbBodyColor2());
 					if (!nextForm.getHairColor().isEmpty())
 						hair = lerpColor(factor, hair, nextForm.getRgbHairColor());
 				}
@@ -301,7 +305,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			case "bioandroid" ->
 					renderBioFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, pt, pl, po, alpha);
 			case "majin" ->
-					renderMajinFace(model, poseStack, animatable, bufferSource, character, faceKey, eye1, eye2, skin, pt, pl, po, alpha);
+					renderMajinFace(model, poseStack, animatable, bufferSource, character, faceKey, eye1, eye2, skin, b2, pt, pl, po, alpha);
 		}
 	}
 
@@ -434,7 +438,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer1.png")).getPath(), eye1, pt, pl, po, alpha);
 	}
 
-	private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float pt, int pl, int po, float alpha) {
+	private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float[] b2, float pt, int pl, int po, float alpha) {
 		String folder = "textures/entity/races/majin/faces/";
 
         if ("janemba_fat".equals(faceKey)) {
@@ -461,9 +465,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_1.png")).getPath(), layer1Color, pt, pl, po, alpha);
         renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, eyePath + "2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "majin_eye_0_2.png")).getPath(), skin, pt, pl, po, alpha);
 
-        if(bodytype == 1){
-            skin = character.getRgbBodyColor2();
-        }
+        if(bodytype == 1) skin = b2;
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha);
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
 	}
