@@ -178,6 +178,7 @@ public class CombatAttackRequestC2S {
 			player.resetLastActionTime();
 
 			if (comboAttributes != null) player.getAttributes().removeAttributeModifiers(comboAttributes);
+			if (dualWieldingAttributes != null) player.getAttributes().removeAttributeModifiers(dualWieldingAttributes);
 			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, false);
 			if (!sweepingModifiers.isEmpty()) {
 				player.getAttributes().removeAttributeModifiers(sweepingModifiers);
