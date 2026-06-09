@@ -564,7 +564,6 @@ public class DefaultFormsFactory {
 		oozaru.setEnergyDrain(0.05);
 		oozaru.setStaminaDrainMultiplier(1.2);
 		oozaru.setAttackSpeed(0.25);
-		oozaru.setAttackSpeed(0.9);
 		oozaru.setHairType("base");
 		setDefaultMasteryValues(oozaru);
 		oozaru.setStackDrainMultiplier(2.0);
@@ -1011,7 +1010,7 @@ public class DefaultFormsFactory {
         evilGiant.setEye2Color("#9E092F");
         evilGiant.setBodyColor1("#274D18");
         evilGiant.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
-        evilGiant.setAttackSpeed(0.85);
+        evilGiant.setAttackSpeed(0.25);
 		evilGiant.setEnergyDrain(0.25);
 		evilGiant.setStaminaDrainMultiplier(1.5);
 		evilGiant.setHairType("base");
@@ -1210,6 +1209,7 @@ public class DefaultFormsFactory {
 		metalCore.setDefMultiplier(5.5);
 		metalCore.setPwrMultiplier(5.5);
 		metalCore.setHairType("base");
+		metalCore.setAttackSpeed(0.25);
         metalCore.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
         setDefaultMasteryValues(metalCore);
 		metalCore.setStackDrainMultiplier(2.0);
@@ -1343,7 +1343,7 @@ public class DefaultFormsFactory {
         giant_innocence_demon.setSkpMultiplier(4.85);
         giant_innocence_demon.setDefMultiplier(4.85);
         giant_innocence_demon.setPwrMultiplier(4.85);
-        giant_innocence_demon.setAttackSpeed(0.85);
+        giant_innocence_demon.setAttackSpeed(0.25);
         giant_innocence_demon.setEnergyDrain(0.25);
         giant_innocence_demon.setHairType("empty");
         giant_innocence_demon.setBodyColor1("#FFFC82");

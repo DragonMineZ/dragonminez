@@ -122,13 +122,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float[] currentTint = character.getRgbHairColor();
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			if (!hairTypes.contains(character.getActiveFormData().getHairType().toLowerCase())) return;
+			if (character.getActiveFormData().hasDefinedHairType() && !hairTypes.contains(character.getActiveFormData().getHairType().toLowerCase())) return;
 			if (!character.getActiveFormData().getHairColor().isEmpty()) {
 				currentTint = character.getActiveFormData().getRgbHairColor();
 			}
 		}
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			if (!hairTypes.contains(character.getActiveStackFormData().getHairType().toLowerCase())) return;
+			if (character.getActiveStackFormData().hasDefinedHairType() && !hairTypes.contains(character.getActiveStackFormData().getHairType().toLowerCase())) return;
 			if (!character.getActiveStackFormData().getHairColor().isEmpty()) {
 				currentTint = character.getActiveStackFormData().getRgbHairColor();
 			}

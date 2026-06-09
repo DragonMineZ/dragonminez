@@ -37,9 +37,6 @@ import java.util.Map;
 public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private final Map<Integer, Float> progressMap = new HashMap<>();
 	private final Map<Integer, Long> lastSeenMsMap = new HashMap<>();
-	// Progress per tick for the base->form hair morph. Decoupled from actionCharge (which updates only a
-	// few times over the whole charge); full morph takes ~1/HAIR_MORPH_RATE ticks. Higher = faster.
-	private static final float HAIR_MORPH_RATE = 0.06f;
 	private static final double PHYSICS_LOD_NEAR_DISTANCE_SQR = 24.0 * 24.0;
 	private static final double PHYSICS_LOD_FAR_DISTANCE_SQR = 48.0 * 48.0;
 	private static final long TRACKING_TTL_MS = 30_000L;
@@ -124,6 +121,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			FormConfig.FormData nextForm = null;
 			CustomHair targetHair = null;
 			float[] targetRgb = null;
+			int chargeMastery = 0;
 
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
 				targetGroup = character.getSelectedFormGroup();
@@ -131,6 +129,8 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				if (nextForm != null) {
 					targetHair = getHairForForm(character, targetGroup, nextForm.getName());
 					targetRgb = getRgbForForm(character, targetGroup, nextForm.getName());
+					String masteryGroup = character.hasActiveForm() ? character.getActiveFormGroup() : targetGroup;
+					chargeMastery = (int) character.getFormMasteries().getMastery(masteryGroup, nextForm.getName());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
 				targetGroup = character.getSelectedStackFormGroup();
@@ -138,24 +138,24 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				if (nextForm != null) {
 					targetHair = getHairForStackForm(character, targetGroup, nextForm.getName(), hairFrom);
 					targetRgb = getRgbForStackForm(targetGroup, nextForm.getName(), rgbFrom);
+					String masteryGroup = character.hasActiveStackForm() ? character.getActiveStackFormGroup() : targetGroup;
+					chargeMastery = (int) character.getStackFormMasteries().getMastery(masteryGroup, nextForm.getName());
 				}
 			}
 
 			if (nextForm != null && targetHair != null && targetRgb != null) {
-				// Time-based morph: ramp continuously toward the full transformation every frame. Decoupled
-				// from actionCharge, which only reports 2-3 coarse values over the charge and looked stepped.
-				// getDeltaFrameTime() = ticks elapsed this frame, so the speed is framerate-independent.
+				int increment = 5 + Math.max(20, chargeMastery);
+				float ratePerTick = increment / 2000.0f;
 				float dt = Minecraft.getInstance().getDeltaFrameTime();
-				curHairProgress = Math.min(1.0f, curHairProgress + HAIR_MORPH_RATE * dt);
+				curHairProgress = Math.min(1.0f, curHairProgress + ratePerTick * dt);
 				progressMap.put(entityId, curHairProgress);
 
 				hairTo = targetHair;
-				rgbTo = targetRgb;
+				rgbTo = nextForm.hasHairColorOverride() ? targetRgb : rgbFrom;
 				factor = curHairProgress;
 			}
-		} else {
-			progressMap.remove(entityId);
-		}
+		} else progressMap.remove(entityId);
+
 		if (nowMs - lastCleanupMs >= CLEANUP_INTERVAL_MS) {
 			cleanupStaleTracking(nowMs);
 			lastCleanupMs = nowMs;

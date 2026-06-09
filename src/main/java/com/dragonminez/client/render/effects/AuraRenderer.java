@@ -369,7 +369,7 @@ public class AuraRenderer {
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) baseScale += 0.1f;
 		if (character.hasActiveForm() && character.getActiveFormData() != null) baseScale += 0.1f;
-		if (currentForm.contains("oozaru")) baseScale = 3.0f;
+		if (currentForm.contains("oozaru")) baseScale = 1.2f;
 		if (currentForm.contains("supersaiyan2") || currentForm.contains("supersaiyan3") || currentForm.contains("ultra") || currentForm.contains("superperfect")) {
 			baseScale += 0.2f;
 		}
@@ -399,19 +399,32 @@ public class AuraRenderer {
 
 		float chargeProgress = 0.0f;
 		if (chargingNormal || chargingStack) {
+			// Don't read actionCharge directly — it only syncs in coarse 20-tick steps so the colour used
+			// to snap to the final hue only on completion. Instead mirror the server charge rate locally:
+			// it adds (5 + max(20, mastery)) once every 20 ticks toward 100, i.e. increment/2000 of the
+			// full ramp per tick. Same formula the hair morph uses, so aura and hair stay in sync.
+			int mastery;
+			if (chargingStack) {
+				String mGroup = character.hasActiveStackForm() ? character.getActiveStackFormGroup() : character.getSelectedStackFormGroup();
+				mastery = (int) character.getStackFormMasteries().getMastery(mGroup, nextForm.getName());
+			} else {
+				String mGroup = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
+				mastery = (int) character.getFormMasteries().getMastery(mGroup, nextForm.getName());
+			}
+			float ratePerTick = (5 + Math.max(20, mastery)) / 2000.0f;
+
 			float lastProgress = COLOR_PROGRESS_MAP.getOrDefault(entityId, 0.0f);
 			long lastTick = COLOR_TICK_MAP.getOrDefault(entityId, 0L);
-			float targetProgress = stats.getResources().getActionCharge() / 100.0f;
 			long currentTick = player.tickCount;
-			float interpolationSpeed = 0.15f;
 
 			if (currentTick != lastTick) {
-				lastProgress = lastProgress + (targetProgress - lastProgress) * interpolationSpeed;
+				long ticksElapsed = lastTick == 0L ? 1L : Math.max(1L, currentTick - lastTick);
+				lastProgress = Math.min(1.0f, lastProgress + ratePerTick * ticksElapsed);
 				COLOR_TICK_MAP.put(entityId, currentTick);
 				COLOR_PROGRESS_MAP.put(entityId, lastProgress);
 			}
-			float smoothProgress = Mth.lerp(partialTick * interpolationSpeed, lastProgress, targetProgress);
-			chargeProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
+			// Sub-tick smoothing so the colour ramps cleanly between ticks.
+			chargeProgress = Math.max(0.0f, Math.min(1.0f, lastProgress + ratePerTick * partialTick));
 		} else COLOR_PROGRESS_MAP.put(entityId, 0.0f);
 
 		Map<Integer, AuraLayer> layerMap = new HashMap<>();

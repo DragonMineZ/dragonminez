@@ -146,6 +146,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		boolean isKnockedDown = data.getStatus().isKnockedDown();
 		boolean isOozaru = data.getCharacter().isOozaruCached();
 		var nextFormConfig = TransformationsHelper.getNextAvailableForm(data);
+		var nextStackFormConfig = TransformationsHelper.getNextAvailableStackForm(data);
 		String nextForm = nextFormConfig != null ? nextFormConfig.getName().toLowerCase() : "";
 		boolean isTransforming = data.getStatus().isActionCharging();
 		ActionMode actionMode = data.getStatus().getSelectedAction();
@@ -158,15 +159,23 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (isChargingKi && !isMoving && !isBlocking) return state.setAndContinue(KI_CHARGE);
 
-		if (isTransforming && !actionMode.equals(ActionMode.RACIAL)) {
+		if (isTransforming && actionMode.equals(ActionMode.FORM)) {
 			if (nextFormConfig != null && nextFormConfig.hasTransformationAnimation()) {
 				return state.setAndContinue(AnimationCache.getPlay(nextFormConfig.getTransformationAnimation()));
 			}
 			if (nextForm.contains("ozaru")) return state.setAndContinue(OOZARU_TRANSFORMATION);
 			return state.setAndContinue(TRANSFORMATION);
-		} else if (isTransforming) {
+		} else if (isTransforming && actionMode.equals(ActionMode.STACK)) {
+			if (nextStackFormConfig != null && nextStackFormConfig.hasTransformationAnimation()) {
+				return state.setAndContinue(AnimationCache.getPlay(nextStackFormConfig.getTransformationAnimation()));
+			}
+			return state.setAndContinue(TRANSFORMATION);
+		} else if (isTransforming && actionMode.equals(ActionMode.RACIAL)) {
 			return state.setAndContinue(ABSORB);
+		} else if (isTransforming) {
+			return state.setAndContinue(TRANSFORMATION);
 		}
+
 
 		if (player.isSwimming()) return state.setAndContinue(SWIMMING);
 

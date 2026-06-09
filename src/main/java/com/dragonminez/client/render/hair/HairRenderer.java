@@ -31,6 +31,7 @@ public class HairRenderer {
 	private static final float SEGMENT_PHASE = 0.6f;
 	private static final float INERTIA_GAIN = 260.0f;
 	private static final float INERTIA_MAX = 75.0f;
+	private static final float KI_CHARGE_LIFT = 95.0f;
 	private static final ResourceLocation HAIR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/hair.png");
 	private static final HairFace[] FACES = HairFace.values();
 
@@ -71,6 +72,8 @@ public class HairRenderer {
 			inertiaForward = Mth.clamp(fwd * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaSide = Mth.clamp(-side * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaLift = Mth.clamp(-vert * gain, -INERTIA_MAX, INERTIA_MAX);
+
+			if (stats.getStatus().isChargingKi()) inertiaLift += KI_CHARGE_LIFT * physicsLodMultiplier;
 		}
 
 		if (!useFromOnly && !useToOnly) {
