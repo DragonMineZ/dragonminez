@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players.actionmode;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.events.players.IActionModeHandler;
 import com.dragonminez.server.util.RacialSkillLogic;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,9 +11,9 @@ public class RacialModeHandler implements IActionModeHandler {
     @Override
     public boolean canCharge(ServerPlayer player, StatsData data) {
         return switch (data.getCharacter().getRace()) {
-            case "saiyan" -> data.getResources().getRacialSkillCount() < ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiAmount();
             case "namekian" -> data.getResources().getRacialSkillCount() < ConfigManager.getServerConfig().getRacialSkills().getNamekianAssimilationAmount();
             case "majin" -> data.getResources().getRacialSkillCount() < ConfigManager.getServerConfig().getRacialSkills().getMajinAbsorptionAmount();
+            case "bioandroid" -> !data.getCooldowns().hasCooldown(Cooldowns.DRAIN);
             default -> false;
         };
     }
