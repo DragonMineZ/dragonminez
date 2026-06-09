@@ -27,7 +27,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 
 import java.util.Collection;
@@ -477,11 +476,20 @@ public class StatsData {
 		if (defMult > 1.0) remainingDamage /= (1.0 + (defMult - 1.0) * 0.20);
 
 		int totalProtection = 0;
-		if (player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
+		if (player != null) totalProtection = TickHandler.getTotalArmorEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
 
 		double enchReduction = 0.0;
 		if (totalProtection > 0) {
-			double effectiveProtection = totalProtection * (1.0 - armorPenetration);
+			double rawEffective = 0.0;
+			int remaining = totalProtection;
+			double mult = 1.0;
+			while (remaining > 0) {
+				int chunk = Math.min(remaining, 4);
+				rawEffective += chunk * mult;
+				remaining -= chunk;
+				mult *= 0.5;
+			}
+			double effectiveProtection = rawEffective * (1.0 - armorPenetration);
 			double k_ench = 20.0;
 			enchReduction = effectiveProtection / (k_ench + effectiveProtection);
 			double totalCap = ConfigManager.getCombatConfig().getEnchantmentDamageReductionCap();

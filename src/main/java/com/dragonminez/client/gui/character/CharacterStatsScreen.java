@@ -266,12 +266,24 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		baseReduction = Mth.clamp(baseReduction, 0.0, baseCap);
 
 		int totalProtection = 0;
-		if (Minecraft.getInstance().player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, Minecraft.getInstance().player);
+		if (Minecraft.getInstance().player != null) {
+			for (var stack : Minecraft.getInstance().player.getArmorSlots())
+				totalProtection += EnchantmentHelper.getItemEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, stack);
+		}
 
 		double enchReduction = 0.0;
 		if (totalProtection > 0) {
+			double effectiveProtection = 0.0;
+			int remaining = totalProtection;
+			double mult = 1.0;
+			while (remaining > 0) {
+				int chunk = Math.min(remaining, 4);
+				effectiveProtection += chunk * mult;
+				remaining -= chunk;
+				mult *= 0.5;
+			}
 			double k_ench = 20.0;
-			enchReduction = totalProtection / (k_ench + totalProtection);
+			enchReduction = effectiveProtection / (k_ench + effectiveProtection);
 
 			double totalCap = ConfigManager.getCombatConfig().getEnchantmentDamageReductionCap();
 			double maxEnchReductionAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
