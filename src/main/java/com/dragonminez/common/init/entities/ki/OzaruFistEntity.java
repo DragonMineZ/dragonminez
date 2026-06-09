@@ -101,6 +101,7 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
             if (this.tickCount % 5 == 0) {
                 if (this.applyDamageOrHeal(target, this.getKiDamage())) {
                     this.onSuccessfulHit(target);
+                    this.applyStrikeStun(target);
                 }
             }
 

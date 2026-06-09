@@ -3,6 +3,7 @@ package com.dragonminez.common.init.entities.ki;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
@@ -21,6 +22,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -64,6 +66,22 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient float clashLockedLength = -1.0F; // -1 = not clash-locked
     @Getter
     private transient UUID clashOpponentId = null;
+
+    private transient int strikeStunTicks = 0;
+    private transient UUID strikeStunExcludeId = null;
+
+    public void setStrikeStun(int ticks, UUID excludeMainTargetId) {
+        this.strikeStunTicks = Math.max(0, ticks);
+        this.strikeStunExcludeId = excludeMainTargetId;
+    }
+
+    protected void applyStrikeStun(Entity target) {
+        if (this.strikeStunTicks <= 0) return;
+        if (!(target instanceof LivingEntity living)) return;
+        if (living == this.getOwner()) return;
+        if (living instanceof Player && this.strikeStunExcludeId != null && living.getUUID().equals(this.strikeStunExcludeId)) return;
+        living.addEffect(new MobEffectInstance(MainEffects.STUN.get(), this.strikeStunTicks, 0, false, false, true));
+    }
 
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);

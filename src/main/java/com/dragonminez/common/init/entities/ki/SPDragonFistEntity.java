@@ -131,6 +131,7 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
             if (this.tickCount % 5 == 0) {
                 if (this.applyDamageOrHeal(target, this.getKiDamage())) {
                     this.onSuccessfulHit(target);
+                    this.applyStrikeStun(target);
                 }
             }
 

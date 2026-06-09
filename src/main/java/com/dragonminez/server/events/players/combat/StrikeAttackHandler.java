@@ -187,6 +187,7 @@ public class StrikeAttackHandler {
             if (active.ticksElapsed() == 5) {
                 SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
                 dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
+                dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
             }
 
             if (active.ticksElapsed() >= active.durationTicks()) {
@@ -205,6 +206,7 @@ public class StrikeAttackHandler {
             if (active.ticksElapsed() == 5) {
                 OzaruFistEntity ozaruFist = new OzaruFistEntity(player.level(), player);
                 ozaruFist.setupOzaruFist(player, (float) active.totalDamage(), 1.0f);
+                ozaruFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
             }
 
             if (active.ticksElapsed() >= active.durationTicks()) {
