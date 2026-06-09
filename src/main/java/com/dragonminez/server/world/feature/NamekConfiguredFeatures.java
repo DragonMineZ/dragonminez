@@ -111,7 +111,7 @@ public class NamekConfiguredFeatures {
 
 		register(context, AJISSA_TREE, Feature.TREE, new TreeConfiguration.TreeConfigurationBuilder(
 				BlockStateProvider.simple(MainBlocks.NAMEK_AJISSA_LOG.get()),
-				new StraightTrunkPlacer(5, 2, 0),
+				new StraightTrunkPlacer(14, 2, 0),
 				BlockStateProvider.simple(MainBlocks.NAMEK_AJISSA_LEAVES.get()),
 				new BlobFoliagePlacer(ConstantInt.of(2), ConstantInt.of(0), 3),
 				new TwoLayersFeatureSize(1, 0, 1)
@@ -119,7 +119,7 @@ public class NamekConfiguredFeatures {
 
 		register(context, SACRED_TREE, Feature.TREE, new TreeConfiguration.TreeConfigurationBuilder(
 				BlockStateProvider.simple(MainBlocks.NAMEK_SACRED_LOG.get()),
-				new StraightTrunkPlacer(4, 2, 4),
+				new StraightTrunkPlacer(16, 2, 4),
 				BlockStateProvider.simple(MainBlocks.NAMEK_SACRED_LEAVES.get()),
 				new BlobFoliagePlacer(ConstantInt.of(3), ConstantInt.of(2), 3),
 				new TwoLayersFeatureSize(1, 0, 2)

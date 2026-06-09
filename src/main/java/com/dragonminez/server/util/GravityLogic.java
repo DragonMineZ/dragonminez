@@ -29,6 +29,7 @@ public class GravityLogic {
 
 	private static final Map<UUID, Double> NPC_GRAVITY_CACHE = new HashMap<>();
 	private static final Map<UUID, Long> NPC_GRAVITY_TICK = new HashMap<>();
+	private static final Map<UUID, String> NPC_GRAVITY_DIM = new HashMap<>();
 
 	private static GeneralServerConfig.GravityConfig cfg() {
 		return ConfigManager.getServerConfig().getGravity();
@@ -103,8 +104,12 @@ public class GravityLogic {
 		GeneralServerConfig.GravityConfig config = cfg();
 		UUID id = player.getUUID();
 		long currentTick = player.level().getGameTime();
+		String currentDim = player.level().dimension().location().toString();
 
-		if (!NPC_GRAVITY_CACHE.containsKey(id) || currentTick - NPC_GRAVITY_TICK.getOrDefault(id, 0L) > 100) {
+		boolean dimChanged = !currentDim.equals(NPC_GRAVITY_DIM.get(id));
+		boolean expired = currentTick - NPC_GRAVITY_TICK.getOrDefault(id, 0L) > 100;
+
+		if (dimChanged || expired || !NPC_GRAVITY_CACHE.containsKey(id)) {
 			double gravity = 0.0;
 			double range = config.getNpcGravityRange();
 			AABB searchBox = player.getBoundingBox().inflate(range);
@@ -113,6 +118,7 @@ public class GravityLogic {
 
 			NPC_GRAVITY_CACHE.put(id, gravity);
 			NPC_GRAVITY_TICK.put(id, currentTick);
+			NPC_GRAVITY_DIM.put(id, currentDim);
 			return gravity;
 		}
 
@@ -121,7 +127,6 @@ public class GravityLogic {
 
 	private static double getMachineGravity(Player player) {
 		if (!cfg().getMachineGravityEnabled()) return 0.0;
-		// WIP GravityMachine (return the strongest nearby gravity-machine value once implemented)
 		return 0.0;
 	}
 
@@ -244,6 +249,13 @@ public class GravityLogic {
 			double multiplier = 1.0 - reduction;
 			for (String stat : stats) data.getBonusStats().addBonusSplit(stat, "Gravity", "*", multiplier, false);
 		});
+	}
+
+	/** Clears all per-player NPC gravity cache entries. Call on player logout. */
+	public static void clearNpcGravityCache(UUID playerId) {
+		NPC_GRAVITY_CACHE.remove(playerId);
+		NPC_GRAVITY_TICK.remove(playerId);
+		NPC_GRAVITY_DIM.remove(playerId);
 	}
 
 	public static double getConsumptionMultiplier(Player player) {

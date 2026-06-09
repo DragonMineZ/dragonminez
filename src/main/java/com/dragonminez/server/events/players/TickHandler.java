@@ -370,6 +370,7 @@ public class TickHandler {
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
+		GravityLogic.clearNpcGravityCache(playerId);
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			removeAuraLight(serverPlayer.serverLevel(), playerId);
 			clearHumanKiAccumulators(serverPlayer);

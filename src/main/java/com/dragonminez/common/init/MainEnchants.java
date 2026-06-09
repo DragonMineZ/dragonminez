@@ -61,7 +61,7 @@ public class MainEnchants {
 
 		@Override
 		public boolean canEnchant(ItemStack stack) {
-			return stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem || stack.getItem() instanceof WeaponItem || super.canEnchant(stack);
+			return stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem || stack.getItem() instanceof WeaponItem;
 		}
 	}
 
@@ -77,7 +77,7 @@ public class MainEnchants {
 
 		@Override
 		public boolean canEnchant(ItemStack stack) {
-			return stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem || stack.getItem() instanceof WeaponItem || super.canEnchant(stack);
+			return stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem || stack.getItem() instanceof WeaponItem;
 		}
 
 		@Override
