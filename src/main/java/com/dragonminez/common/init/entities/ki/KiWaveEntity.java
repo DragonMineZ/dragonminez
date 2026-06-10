@@ -782,7 +782,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(pos.x, pos.y - 0.5, pos.z);
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize() * 2.5F);
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 2.5F);
                 this.level().addFreshEntity(explosionVisual);
             }
         }

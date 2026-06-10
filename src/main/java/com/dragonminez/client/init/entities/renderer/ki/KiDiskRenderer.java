@@ -54,6 +54,7 @@ public class KiDiskRenderer extends EntityRenderer<KiDiskEntity> {
                 shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
                 shader.safeGetUniform("time").set(ageInTicks / 20.0f);
                 shader.safeGetUniform("ProjMat").set(proj);
+                shader.safeGetUniform("shapeMode").set(1.0f);
 
                 VertexBuffer mesh = KiMeshFactory.getCylinderMesh();
                 mesh.bind();
@@ -79,6 +80,7 @@ public class KiDiskRenderer extends EntityRenderer<KiDiskEntity> {
                 mesh.drawWithShader(stack.last().pose(), proj, shader);
 
                 stack.popPose();
+                shader.safeGetUniform("shapeMode").set(0.0f);
                 VertexBuffer.unbind();
                 shader.clear();
             }

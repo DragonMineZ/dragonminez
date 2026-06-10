@@ -147,7 +147,7 @@ public class TickHandler {
 			int meditationLevel = data.getSkills().getSkillLevel("meditation");
 
 			double currentRegenMod = 1.0;
-			boolean isGuardBroken = data.getStatus().isStunned() && data.getResources().getCurrentPoise() <= 0;
+			boolean isGuardBroken = data.getStatus().isStunned() || data.getResources().getCurrentPoise() <= 0;
 			boolean isFastFly = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting();
 			boolean isBlocking = data.getStatus().isBlocking();
 			boolean isAttacking = serverPlayer.swingTime > 0;

@@ -103,6 +103,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(1.0f * fadeAlpha);
+        shader.safeGetUniform("zCut").set(-1.0f);
         shader.apply();
         sphereMesh.bind();
         sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
@@ -117,12 +118,16 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             float cylinderWidth = currentWidth * 1.2F;
             poseStack.scale(cylinderWidth, cylinderWidth, length);
 
+            float zCut = Math.min((ballScale * 0.95F) / length, 0.49F);
             shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
             shader.safeGetUniform("alphaMult").set(1.0f * fadeAlpha);
+            shader.safeGetUniform("zCut").set(zCut);
+            shader.safeGetUniform("zCutFar").set(2.0f);
             shader.apply();
             cylinderMesh.bind();
             cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
             poseStack.popPose();
+            shader.safeGetUniform("zCut").set(-1.0f);
             VertexBuffer.unbind();
         }
 
@@ -164,7 +169,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
 
         float tubeLength = Math.max(length, 0.1F);
-        renderKiCylinderWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width, tubeLength, fadeAlpha);
+        renderKiCylinderWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width, tubeLength, fadeAlpha, width * 1.5F, width * 2.5F);
 
         if (entity.getKiRenderType() == 2) {
             renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, isFiring);
@@ -239,7 +244,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
-        renderKiCylinderWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width, length, fadeAlpha);
+        renderKiCylinderWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width, length, fadeAlpha, width * 1.8F, width * 2.5F);
         renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, isFiring);
         poseStack.popPose();
 
@@ -325,6 +330,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.pushPose();
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
+        shader.safeGetUniform("zCut").set(-1.0f);
         shader.apply();
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
@@ -332,7 +338,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.clear();
     }
 
-    private void renderKiCylinderWithShader(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float radius, float length, float alphaMultiplier) {
+    private void renderKiCylinderWithShader(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float radius, float length, float alphaMultiplier, float cutRadius, float cutRadiusEnd) {
         float[] outlineColor = entity.getRgbColorOutline();
         ShaderInstance shader = DMZShaders.ki3dShader;
         if (shader == null) return;
@@ -346,14 +352,21 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         VertexBuffer mesh = KiMeshFactory.getCylinderMesh();
         mesh.bind();
 
+        float zCut = (length > 0.001f) ? Math.min((cutRadius * 0.95f) / length, 0.49f) : -1.0f;
+        float zCutFar = (length > 0.001f) ? Math.max(1.0f - (cutRadiusEnd * 0.95f) / length, 0.51f) : 2.0f;
+
         poseStack.pushPose();
         poseStack.scale(radius, radius, length);
 
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
+        shader.safeGetUniform("zCut").set(zCut);
+        shader.safeGetUniform("zCutFar").set(zCutFar);
         shader.apply();
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
+        shader.safeGetUniform("zCut").set(-1.0f);
+        shader.safeGetUniform("zCutFar").set(2.0f);
         VertexBuffer.unbind();
         shader.clear();
     }

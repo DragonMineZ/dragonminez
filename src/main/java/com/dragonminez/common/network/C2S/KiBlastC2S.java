@@ -54,6 +54,7 @@ public class KiBlastC2S {
 					int baseCost = ConfigManager.getCombatConfig().getBaselineFormDrain();
 
 					int cost = (int) (data.getMaxEnergy() * 0.02 + 0.1 * baseCost);
+					if (player.isCreative()) cost = 0;
 					if (data.getResources().getCurrentEnergy() < cost) return;
 					data.getResources().removeEnergy(cost);
 

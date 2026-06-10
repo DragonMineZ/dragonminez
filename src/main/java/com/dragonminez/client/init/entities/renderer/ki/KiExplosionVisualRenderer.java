@@ -4,7 +4,6 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
-import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -38,7 +37,7 @@ public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualE
             float currentScale = entity.getMaxSize() * (0.5F + (progress * 0.5F));
 
             float fadeStart = 0.55F;
-            float maxAlpha = 1.0F;
+            float maxAlpha = 0.45F;
             float currentAlpha = maxAlpha;
 
             if (progress > fadeStart) {
@@ -46,8 +45,8 @@ public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualE
             }
 
             float[] coreColor = entity.getRgbColorMain();
-            float[] borderColor = ColorUtils.lightenColor(coreColor, 0.2f);
-            float[] outlineColor = ColorUtils.lightenColor(coreColor, 0.6f);
+            float[] borderColor = entity.getRgbColorBorder();
+            float[] outlineColor = entity.getRgbColorOutline();
 
             ShaderInstance shader = DMZShaders.ki3dShader;
             if (shader == null) {
@@ -65,7 +64,6 @@ public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualE
             mesh.bind();
 
             stack.pushPose();
-            stack.translate(0.0D, -1.25D, 0.0D);
             stack.scale(currentScale, currentScale, currentScale);
 
             shader.safeGetUniform("ModelViewMat").set(stack.last().pose());

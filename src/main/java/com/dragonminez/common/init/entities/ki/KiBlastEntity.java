@@ -995,7 +995,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(this.getX(), centerY, this.getZ());
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize() * 1.2F);
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 1.2F);
                 this.level().addFreshEntity(explosionVisual);
             }
             return;
@@ -1041,7 +1041,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(this.getX(), centerY, this.getZ());
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize());
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize());
                 this.level().addFreshEntity(explosionVisual);
             }
         }
@@ -1113,7 +1113,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (hitSomething && !this.level().isClientSide) {
             KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
             explosionVisual.setPos(this.getX(), this.getVisualCenterY(), this.getZ());
-            explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize());
+            explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize());
             this.level().addFreshEntity(explosionVisual);
         }
 
