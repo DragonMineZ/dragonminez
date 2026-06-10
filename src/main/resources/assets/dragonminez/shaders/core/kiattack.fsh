@@ -10,8 +10,8 @@ uniform float texBlend;
 uniform float bloomMode;
 uniform float globalAlpha;
 uniform float shapeMode;
-uniform float zCut;    // < -0.5 = disabled. Discard fragments with local z below this (cuts the cylinder start so the muzzle ball wins).
-uniform float zCutFar; // >= cylinder length (e.g. 2.0) = disabled. Discard fragments with local z above this (cuts the cylinder end so the impact ball wins).
+uniform float zCut;
+uniform float zCutFar;
 
 in vec3 vNormal;
 in vec3 vViewDir;
@@ -19,10 +19,10 @@ in vec3 vLocalPos;
 in vec2 vUv;
 out vec4 fragColor;
 
-const float CORE_LEVEL    = 0.80;
-const float BORDER_LEVEL  = 0.44;
-const float OUTLINE_LEVEL = 0.14;
-const float EDGE_FADE     = 0.06;
+const float CORE_LEVEL    = 0.58;
+const float BORDER_LEVEL  = 0.26;
+const float OUTLINE_LEVEL = 0.10;
+const float EDGE_FADE     = 0.05;
 
 const float WOBBLE_CORE    = 0.17;
 const float WOBBLE_BORDER  = 0.11;
@@ -52,7 +52,8 @@ void main() {
         float r = clamp(length(p.xy), 0.0, 1.0);
         g = 1.0 - r;
     } else {
-        g = clamp(abs(dot(normalize(vViewDir), normalize(vNormal))), 0.0, 1.0);
+        float f = clamp(abs(dot(normalize(vViewDir), normalize(vNormal))), 0.0, 1.0);
+        g = 1.0 - sqrt(max(0.0, 1.0 - f * f));
     }
 
     vec3 outCol = colorOutline;

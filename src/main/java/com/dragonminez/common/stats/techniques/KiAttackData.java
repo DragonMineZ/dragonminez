@@ -294,7 +294,7 @@ public class KiAttackData extends TechniqueData {
 		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);
 
 		float complexity = getWeightedComplexity(normalized[0], sizeComplexityRatio(resolvedType, normalized[1]), normalized[2], Math.round(normalized[3]));
-		float tpBase = (80.0f + complexity * 200.0f) * typeMult * utilMult * secondaryCostMultiplier();
+		float tpBase = (80.0f + complexity * 100.0f) * typeMult * utilMult * secondaryCostMultiplier();
 		this.tpCost = Math.max(10, Math.round(tpBase));
 
 		if (!PredefinedTechniques.isPredefinedTechniqueId(this.id)) {

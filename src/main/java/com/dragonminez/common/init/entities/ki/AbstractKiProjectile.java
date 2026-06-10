@@ -368,6 +368,11 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(outline);
     }
 
+    public void setColorOutline(int outline) {
+        this.entityData.set(COLOR_OUTLINE, outline);
+        this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(outline);
+    }
+
     public int getColor() { return this.entityData.get(COLOR_MAIN); }
     public int getColorBorder() { return this.entityData.get(COLOR_BORDER); }
     public int getColorOutline() { return this.entityData.get(COLOR_OUTLINE); }
