@@ -139,6 +139,14 @@ public final class QuestTextFormatter {
 					resolveSkillName(condition.getSkill()),
 					condition.getSkillLevel()
 			);
+			case RACE -> Component.translatable(
+					"gui.dragonminez.quests.requirement.race",
+					Component.literal(humanizeIdentifier(condition.getRace()))
+			);
+			case CLASS -> Component.translatable(
+					"gui.dragonminez.quests.requirement.class",
+					Component.literal(humanizeIdentifier(condition.getCharacterClass()))
+			);
 		};
 	}
 

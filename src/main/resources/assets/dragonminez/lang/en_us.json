@@ -2568,5 +2568,7 @@
   "effect.dragonminez.stamina_regen": "Stamina Regeneration",
   "effect.dragonminez.tp_gain": "TP Multiplier",
   "effect.dragonminez.mastery_gain": "Mastery Multiplier",
-  "gui.dragonminez.tutorial.title": "Tutorial"
+  "gui.dragonminez.tutorial.title": "Tutorial",
+  "gui.dragonminez.quests.requirement.race": "Must be %s class",
+  "gui.dragonminez.quests.requirement.class": "Must have %s class"
 }

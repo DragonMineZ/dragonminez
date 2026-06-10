@@ -13,8 +13,11 @@ import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.AlignmentReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
+import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
+import com.dragonminez.common.quest.rewards.TransformationReward;
+import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -236,6 +239,20 @@ public class QuestParser {
 				yield new CommandReward(command, translationKeyElement != null ? translationKeyElement.getAsString() : null);
 			}
 			case "SKILL" -> new SkillReward(json.get("skill").getAsString(), json.get("level").getAsInt());
+			case "TRANSFORMATION" -> {
+				String formGroup = firstString(json, "formGroup", "form_group", "group");
+				String formName = firstString(json, "formName", "form_name", "form");
+				if (formGroup == null || formName == null) yield null;
+				double mastery = json.has("mastery") ? json.get("mastery").getAsDouble() : 100.0;
+				boolean stack = json.has("stack") && json.get("stack").getAsBoolean();
+				yield new TransformationReward(formGroup, formName, mastery, stack);
+			}
+			case "KI_TECHNIQUE" -> {
+				String code = firstString(json, "code", "techniqueCode", "technique_code");
+				if (code == null) yield null;
+				KiAttackData technique = KiAttackData.importFromCode(code);
+				yield technique != null ? new KiTechniqueReward(technique) : null;
+			}
 			default -> null;
 		};
 
@@ -344,6 +361,14 @@ public class QuestParser {
 				yield skill != null
 						? QuestPrerequisites.Condition.skill(skill, firstInt(json, 1, "minLevel", "level", "required"))
 						: null;
+			}
+			case "RACE" -> {
+				String race = firstString(json, "race", "raceName", "race_name");
+				yield race != null ? QuestPrerequisites.Condition.race(race) : null;
+			}
+			case "CLASS" -> {
+				String className = firstString(json, "class", "className", "class_name", "characterClass");
+				yield className != null ? QuestPrerequisites.Condition.characterClass(className) : null;
 			}
 			default -> null;
 		};

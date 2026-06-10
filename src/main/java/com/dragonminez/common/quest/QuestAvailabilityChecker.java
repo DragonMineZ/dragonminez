@@ -266,6 +266,17 @@ public class QuestAvailabilityChecker {
 				if (skill == null || skillLevel == null) yield false;
 				yield data.getSkills().getSkillLevel(skill) >= skillLevel;
 			}
+			case RACE -> {
+				String requiredRace = condition.getRace();
+				if (requiredRace == null) yield false;
+				yield requiredRace.equalsIgnoreCase(data.getCharacter().getRaceName());
+			}
+			case CLASS -> {
+				String requiredClass = condition.getCharacterClass();
+				if (requiredClass == null) yield false;
+				String playerClass = data.getCharacter().getCharacterClass();
+				yield playerClass != null && playerClass.equalsIgnoreCase(requiredClass);
+			}
 		};
 	}
 

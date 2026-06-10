@@ -186,13 +186,13 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.46")
 
     // Database libraries
-    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.8,)") {
+    jarJar("org.mariadb.jdbc:mariadb-java-client:[3.5.8,)") {
         jarJar.ranged(
             this,
             "[3.5.7,)"
         )
     }
-    jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }
+    jarJar("com.zaxxer:HikariCP:[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.8")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
 
@@ -204,6 +204,7 @@ dependencies {
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
     runtimeOnly(fg.deobf("me.lucko:spark-api:0.1-SNAPSHOT"))
+    runtimeOnly(fg.deobf("curse.maven:huge-structure-blocks-474114:4803547"))
 
     // Client-only visual/testing mods should stay off dedicated server and data runs.
     if (includeClientOnlyDevMods.get()) {

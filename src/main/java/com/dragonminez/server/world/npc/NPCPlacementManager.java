@@ -367,20 +367,28 @@ public final class NPCPlacementManager {
 		addManualMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 6.5, 41, 53.5, false, 180);
 		addManualMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 190, 1079.5, false, 180);
 
-		addQuestNPC(placements, "npc_bulma", "bulma", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "", "");
+		// Quest NPCs (TALK_TO / quest-giver / turn-in targets) are no longer spawned at runtime here:
+		// they are baked directly into structure NBT via structure blocks (mirroring the namek_trader
+		// pattern), so they live in fixed, hand-placed spots instead of piling up at world spawn.
+		// These entries are kept DISABLED as a reference for each NPC's id/model/texture; addQuestNPC
+		// forces enabled=false. See docs/quest_npc_structure_placement.md for the in-game workflow and
+		// the per-NPC spawn commands. Masters above stay runtime-placed (they resolve into structures).
+		addQuestNPC(placements, "npc_bulma", "bulma", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_bulma", "saga_bulma");
 		addQuestNPC(placements, "npc_krillin", "krillin", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_vegeta", "saga_krillin");
 		addQuestNPC(placements, "npc_yamcha", "yamcha", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_yamcha", "saga_yamcha");
 		addQuestNPC(placements, "npc_tien", "tien", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_goku", "saga_tien_early");
-		addQuestNPC(placements, "npc_chiaotzu", "chiaotzu", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "", "");
+		addQuestNPC(placements, "npc_chiaotzu", "chiaotzu", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_chaoz", "saga_chaoz");
 		addQuestNPC(placements, "npc_piccolo", "piccolo", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "saga_piccolo", "saga_piccolo");
 		addQuestNPC(placements, "npc_gohan", "gohan", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "saga_gohan_mid", "saga_gohan_mid_base");
 		addQuestNPC(placements, "npc_vegeta", "vegeta", "minecraft:overworld", 0.0, 0.0, 0.0, 330, "saga_vegeta", "saga_vegeta");
 		addQuestNPC(placements, "npc_trunks", "trunks", "minecraft:overworld", 0.0, 0.0, 0.0, 330, "saga_trunks", "saga_ftrunks_base");
 		addQuestNPC(placements, "npc_chi_chi", "chi_chi", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "", "");
-		addQuestNPC(placements, "npc_videl", "videl", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "", "");
+		addQuestNPC(placements, "npc_videl", "videl", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "saga_videl", "saga_videl");
 		addQuestNPC(placements, "npc_farmer_01", "farmer_01", "minecraft:overworld", 0.0, 0.0, 0.0, 300, "", "");
 		addQuestNPC(placements, "npc_merchant_01", "merchant_01", "minecraft:overworld", 0.0, 0.0, 0.0, 60, "", "");
 		addQuestNPC(placements, "npc_scholar_01", "scholar_01", "minecraft:overworld", 0.0, 0.0, 0.0, 45, "", "");
+		addQuestNPC(placements, "npc_shin", "shin", "minecraft:overworld", 0.0, 0.0, 0.0, 180, "saga_shin", "saga_shin");
+		addQuestNPC(placements, "npc_namek_elder", "namek_elder", "dragonminez:namek", 0.0, 0.0, 0.0, 180, "", "");
 
 		return placements;
 	}
@@ -406,6 +414,8 @@ public final class NPCPlacementManager {
 		placement.addProperty("npc_id", npcId);
 		placement.addProperty("model", model);
 		placement.addProperty("texture", texture);
+		// Disabled: these NPCs are baked into structure NBT instead of runtime-spawned at world spawn.
+		placement.addProperty("enabled", false);
 		placements.add(placement);
 	}
 
