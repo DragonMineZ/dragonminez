@@ -62,7 +62,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	private String creatorName;
 	private KiAttackData.KiType creatorType = KiAttackData.KiType.SMALL_BALL;
 	private KiAttackData.Utility creatorUtility = KiAttackData.Utility.DAMAGE;
-	private float creatorDamage = 1.0f;
+	private float creatorDamage = KiAttackData.getDefaultDamageForType(KiAttackData.KiType.SMALL_BALL);
 	private float creatorSize = KiAttackData.getDefaultSizeForType(KiAttackData.KiType.SMALL_BALL);
 	private float creatorSpeed = 1.0f;
 	private int creatorArmorPen = 0;
@@ -260,8 +260,9 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	}
 
 	private void adjustDamage(boolean inc) {
-		float step = hasShiftDown() ? 0.5f : 0.05f;
-		creatorDamage = Mth.clamp(creatorDamage + (inc ? step : -step), 0.05f, 2.0f);
+		float step = hasShiftDown() ? 0.25f : 0.05f;
+		creatorDamage = Mth.clamp(creatorDamage + (inc ? step : -step),
+				KiAttackData.getMinDamageForType(creatorType), KiAttackData.getMaxDamageForType(creatorType));
 		recomputeDerivedValues();
 	}
 
@@ -274,15 +275,16 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 
 	private void adjustSpeed(boolean inc) {
 		if (!KiAttackData.usesCustomSpeed(creatorType)) return;
-		float step = hasShiftDown() ? 1.0f : 0.1f;
-		creatorSpeed = Mth.clamp(creatorSpeed + (inc ? step : -step), 0.1f, 20.0f);
+		float step = hasShiftDown() ? 0.5f : 0.1f;
+		creatorSpeed = Mth.clamp(creatorSpeed + (inc ? step : -step),
+				KiAttackData.getMinSpeedForType(creatorType), KiAttackData.getMaxSpeedForType(creatorType));
 		recomputeDerivedValues();
 	}
 
 	private void adjustArmor(boolean inc) {
 		if (!KiAttackData.usesCustomArmorPen(creatorType)) return;
-		int step = hasShiftDown() ? 10 : 1;
-		creatorArmorPen = Mth.clamp(creatorArmorPen + (inc ? step : -step), 0, 100);
+		int step = hasShiftDown() ? 5 : 1;
+		creatorArmorPen = Mth.clamp(creatorArmorPen + (inc ? step : -step), 0, KiAttackData.getMaxArmorPenForType(creatorType));
 		recomputeDerivedValues();
 	}
 
@@ -359,6 +361,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	private void setCreatorType(KiAttackData.KiType newType) {
 		creatorType = newType;
 		creatorUtility = KiAttackData.Utility.DAMAGE;
+		creatorDamage = KiAttackData.getDefaultDamageForType(creatorType);
 		creatorSize = KiAttackData.getDefaultSizeForType(creatorType);
 		creatorSpeed = KiAttackData.getDefaultSpeedForType(creatorType);
 		creatorArmorPen = KiAttackData.getDefaultArmorPenForType(creatorType);
@@ -625,7 +628,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 
 		int armorColor = KiAttackData.usesCustomArmorPen(creatorType) ? 0xFFFFFFFF : 0xFF777777;
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
-				tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(creatorArmorPen))),
+				tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(creatorArmorPen + "%")),
 				cx, panelY + 188, armorColor);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,

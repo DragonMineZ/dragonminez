@@ -195,7 +195,9 @@ public class KiAttackData extends TechniqueData {
 		float utilMult = getUtilityMultiplier(this.utility != null ? this.utility : Utility.DAMAGE);
 		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig().getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
 		double configCostMult = Math.max(0.0, cfg.getKiCostMultiplier());
-		return Math.max(5.0, ((damageDone * 0.5 + complexityFactor) * typeMult * utilMult * configCostMult * secondaryCostMultiplier()) / 2);
+		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
+		double overload = largeOverloadKiMultiplier(resolvedType, this.damageMultiplier);
+		return Math.max(5.0, ((damageDone * 0.5 + complexityFactor) * typeMult * utilMult * configCostMult * secondaryCostMultiplier() * overload) / 2);
 	}
 
 	public int getUpgradeXpCost(String statName) {
@@ -263,7 +265,7 @@ public class KiAttackData extends TechniqueData {
 				+ Math.max(0, cooldownLevel);
 	}
 
-	private static final float MAX_DAMAGE_MULT = 2.0f;
+	private static final float MAX_DAMAGE_MULT = 2.5f;
 
 	private static float getWeightedComplexity(float damage, float sizeRatio01, float speed, int armorPen) {
 		float maxStat = 20.0f;
@@ -536,7 +538,7 @@ public class KiAttackData extends TechniqueData {
 				|| (secondaryType == SecondaryEffectType.DEBUFF && resolvedUtil == Utility.DAMAGE);
 		float secMult = 1f + SECONDARY_COST_FACTOR * secondaryCostWeight(validSecondary ? secondaryType : SecondaryEffectType.NONE, secondaryIntensity, secondaryDuration);
 
-		float kiCost = Math.max(5, (float) ((10.0 + complexity * 40.0) * typeMult * utilMult * secMult));
+		float kiCost = Math.max(5, (float) ((10.0 + complexity * 40.0) * typeMult * utilMult * secMult * largeOverloadKiMultiplier(resolvedType, normalized[0])));
 		float tpCostVal = Math.max(10, Math.round((80.0f + complexity * 200.0f) * typeMult * utilMult * secMult));
 		float castVal = ConfigManager.getTechniqueConfig().getKiTypeConfig(resolvedType).getCastTimeTicks();
 		float cdVal = Math.max(10, Math.min(600, Math.round(computeDerivedCooldown(resolvedType, resolvedUtil, complexity, 0) * secMult)));
@@ -546,12 +548,16 @@ public class KiAttackData extends TechniqueData {
 
 	public static float[] normalizeStatsForType(KiType type, float damage, float size, float speed, int armorPen) {
 		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
-		float normalizedDamage = Mth.clamp(damage, 0.05f, 2.0f);
+		float normalizedDamage = Mth.clamp(damage, getMinDamageForType(resolvedType), getMaxDamageForType(resolvedType));
 		float normalizedSize = usesCustomSize(resolvedType)
 				? Mth.clamp(size, getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType))
 				: getDefaultSizeForType(resolvedType);
-		float normalizedSpeed = usesCustomSpeed(resolvedType) ? Mth.clamp(speed, 0.1f, 20.0f) : getDefaultSpeedForType(resolvedType);
-		float normalizedArmorPen = usesCustomArmorPen(resolvedType) ? Mth.clamp(armorPen, 0, 100) : getDefaultArmorPenForType(resolvedType);
+		float normalizedSpeed = usesCustomSpeed(resolvedType)
+				? Mth.clamp(speed, getMinSpeedForType(resolvedType), getMaxSpeedForType(resolvedType))
+				: getDefaultSpeedForType(resolvedType);
+		float normalizedArmorPen = usesCustomArmorPen(resolvedType)
+				? Mth.clamp(armorPen, 0, getMaxArmorPenForType(resolvedType))
+				: getDefaultArmorPenForType(resolvedType);
 		return new float[]{normalizedDamage, normalizedSize, normalizedSpeed, normalizedArmorPen};
 	}
 
@@ -581,7 +587,7 @@ public class KiAttackData extends TechniqueData {
 
 	public static boolean usesCustomSpeed(KiType type) {
 		return switch (type) {
-			case SMALL_BALL, MEDIUM_BALL, WAVE, LASER, BEAM, DISK, BARRAGE -> true;
+			case SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, BARRAGE -> true;
 			default -> false;
 		};
 	}
@@ -591,6 +597,64 @@ public class KiAttackData extends TechniqueData {
 			case MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION -> true;
 			default -> false;
 		};
+	}
+
+	public static boolean isLargeDamageTier(KiType type) {
+		return type == KiType.GIANT_BALL || type == KiType.EXPLOSION;
+	}
+
+	private static boolean isMediumDamageTier(KiType type) {
+		return switch (type) {
+			case MEDIUM_BALL, BEAM, WAVE, SHIELD, AREA -> true;
+			default -> false;
+		};
+	}
+
+	public static float getMinDamageForType(KiType type) {
+		if (isLargeDamageTier(type)) return 1.0f;
+		if (isMediumDamageTier(type)) return 0.5f;
+		return 0.25f;
+	}
+
+	public static float getMaxDamageForType(KiType type) {
+		if (isLargeDamageTier(type)) return 2.5f;
+		if (isMediumDamageTier(type)) return 1.5f;
+		return 0.75f;
+	}
+
+	public static float getDefaultDamageForType(KiType type) {
+		if (isLargeDamageTier(type)) return 1.5f;
+		if (isMediumDamageTier(type)) return 1.0f;
+		return 0.5f;
+	}
+
+	public static float getMinSpeedForType(KiType type) {
+		return 0.1f;
+	}
+
+	public static float getMaxSpeedForType(KiType type) {
+		return switch (type) {
+			case SMALL_BALL, LASER -> 2.0f;
+			case DISK -> 1.75f;
+			case MEDIUM_BALL, BEAM, BARRAGE -> 1.5f;
+			case WAVE -> 1.25f;
+			case GIANT_BALL -> 0.75f;
+			default -> 1.0f;
+		};
+	}
+
+	public static int getMaxArmorPenForType(KiType type) {
+		return switch (type) {
+			case DISK, BEAM, GIANT_BALL -> 25;
+			default -> 15;
+		};
+	}
+
+	private static final float LARGE_OVERLOAD_KI_FACTOR = 2.0f;
+
+	private static float largeOverloadKiMultiplier(KiType type, float damage) {
+		if (!isLargeDamageTier(type) || damage <= 2.0f) return 1.0f;
+		return 1.0f + (damage - 2.0f) * LARGE_OVERLOAD_KI_FACTOR;
 	}
 
 	public static float getDefaultSizeForType(KiType type) {
@@ -615,7 +679,7 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public static float getDefaultSpeedForType(KiType type) {
-		return 1.0f;
+		return Math.min(1.0f, getMaxSpeedForType(type));
 	}
 
 	public static int getDefaultArmorPenForType(KiType type) {

@@ -11,6 +11,7 @@ import com.dragonminez.common.passives.ClassPassives;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.EntityStatDebuffs;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import lombok.Getter;
@@ -311,15 +312,17 @@ public abstract class AbstractKiProjectile extends Projectile {
         boolean isBuff = kiAttack.getSecondaryEffectType() == KiAttackData.SecondaryEffectType.BUFF;
         if (!secondaryRelationAllows(target, isBuff)) return;
 
-        StatsProvider.get(StatsCapability.INSTANCE, living).ifPresent(targetStats -> {
-            double magnitude = kiAttack.getSecondaryIntensity() / 100.0;
-            double factor = kiAttack.getSecondaryEffectType() == KiAttackData.SecondaryEffectType.BUFF ? magnitude : -magnitude;
+        double magnitude = kiAttack.getSecondaryIntensity() / 100.0;
+        double factor = isBuff ? magnitude : -magnitude;
+        double durationMult = ClassPassives.get(casterStats).secondaryDurationMultiplier(casterStats, kiAttack);
+        int durationTicks = Math.max(1, (int) Math.round(kiAttack.getSecondaryDuration() * 20 * durationMult));
 
-            double durationMult = ClassPassives.get(casterStats).secondaryDurationMultiplier(casterStats, kiAttack);
-            int durationTicks = Math.max(1, (int) Math.round(kiAttack.getSecondaryDuration() * 20 * durationMult));
-
-            targetStats.getSecondaryStatEffects().apply(affected.name(), factor, durationTicks);
-        });
+        var targetStatsOpt = StatsProvider.get(StatsCapability.INSTANCE, living).resolve();
+        if (targetStatsOpt.isPresent()) {
+            targetStatsOpt.get().getSecondaryStatEffects().apply(affected.name(), factor, durationTicks);
+        } else if (!isBuff && EntityStatDebuffs.isSupported(affected.name())) {
+            EntityStatDebuffs.applyDebuff(living, affected.name(), factor, durationTicks);
+        }
     }
 
     private boolean secondaryRelationAllows(Entity target, boolean isBuff) {
