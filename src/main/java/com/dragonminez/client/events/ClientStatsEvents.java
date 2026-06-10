@@ -325,14 +325,14 @@ public class ClientStatsEvents {
 					int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
 					NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
 					net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.StrikeAttack(player, targetId));
-				} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) {
-					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
+				} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) { if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(ki.getKiType())) continue; var lockedKiTarget = LockOnEvent.getLockedTarget(); int kiTargetId = lockedKiTarget != null ? lockedKiTarget.getId() : -1;
+					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i, kiTargetId));
 					else {
 						activeChargeSlot = i;
 						chargeReleaseSent = false;
 						chargePending = true;
 						chargePendingTicks = 0;
-						NetworkHandler.sendToServer(TechniqueChargeC2S.start(i));
+						NetworkHandler.sendToServer(TechniqueChargeC2S.start(i, kiTargetId));
 					}
 					net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.KiAttackCast(player, i));
 				}
@@ -363,6 +363,8 @@ public class ClientStatsEvents {
 	}
 
 	private static boolean canActivateTechnique(StatsData data, LocalPlayer player) {
+		if (player.isSpectator()) return false;
+		if (data.getStatus().isFused() && !data.getStatus().isFusionLeader()) return false;
 		if (data.getSkills().getSkillLevel("kicontrol") <= 0) {
 			player.displayClientMessage(Component.translatable("message.dragonminez.technique.no_ki_control")
 					.withStyle(ChatFormatting.RED), true);

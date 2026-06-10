@@ -10,6 +10,7 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
@@ -29,6 +30,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> FIRE_TICK = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> SHIELD_HOST = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
 
     private static final int GROW_DURATION = 25;
     private static final int MAX_LIFESPAN = 100;
@@ -106,6 +108,26 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         this.entityData.define(CAST_TIME, 0);
         this.entityData.define(IS_FIRING, false);
         this.entityData.define(FIRE_TICK, -1);
+        this.entityData.define(SHIELD_HOST, -1);
+    }
+
+    public void setShieldHost(int id) { this.entityData.set(SHIELD_HOST, id); }
+    public int getShieldHost() { return this.entityData.get(SHIELD_HOST); }
+
+    private LivingEntity getAnchor() {
+        int hostId = this.getShieldHost();
+        if (hostId >= 0) {
+            if (this.level() instanceof ServerLevel sl && sl.getEntity(hostId) instanceof LivingEntity host && host.isAlive()) {
+                return host;
+            }
+            return null;
+        }
+        return this.getOwner() instanceof LivingEntity owner ? owner : null;
+    }
+
+    private void centerOn(LivingEntity anchor) {
+        double bodyCenterY = anchor.getY() + (anchor.getBbHeight() / 2.0D);
+        this.setPos(anchor.getX(), bodyCenterY - (this.getBbHeight() * 0.5D), anchor.getZ());
     }
 
     public float getCurrentSize() {
@@ -139,8 +161,12 @@ public class KiBarrierEntity extends AbstractKiProjectile {
             this.fireHability(this.getMaxLife() - this.tickCount);
         }
 
-        if (this.getOwner() instanceof LivingEntity owner && owner.isAlive()) {
-            centerOnOwner();
+        LivingEntity anchor = getAnchor();
+        boolean hostMode = this.getShieldHost() >= 0;
+        if (anchor != null && anchor.isAlive()) {
+            centerOn(anchor);
+            this.setDeltaMovement(0, 0, 0);
+        } else if (hostMode && this.level().isClientSide) {
             this.setDeltaMovement(0, 0, 0);
         } else {
             if (!this.level().isClientSide) this.discard();
@@ -154,7 +180,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
                 this.setCurrentSize(0.1F);
             } else {
                 int activeTicks = this.tickCount - this.getFireTick();
-                float maxSize = this.getSize(); // Usa el tamaño real de la habilidad
+                float maxSize = this.getSize();
                 float progress = (float) activeTicks / 10.0F;
                 float size = Math.min(maxSize, 1.0F + (maxSize * progress));
                 this.setCurrentSize(size);
@@ -181,8 +207,11 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         AABB area = this.getBoundingBox().inflate(0.3D);
 
         List<Entity> targets = this.level().getEntities(this, area);
+        LivingEntity shieldedAnchor = getAnchor();
+        Entity shielded = shieldedAnchor != null ? shieldedAnchor : this.getOwner();
 
         for (Entity target : targets) {
+            if (shielded != null && target.is(shielded)) continue;
             if (target.is(this.getOwner())) continue;
             if (!(target instanceof LivingEntity) && !(target instanceof Projectile)) continue;
 

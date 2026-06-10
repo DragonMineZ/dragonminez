@@ -21,6 +21,10 @@ public class Techniques {
 	@Setter
 	private boolean chargeHolding = false;
 
+	@Getter
+	@Setter
+	private transient int homingTargetId = -1;
+
 	public Techniques() {
 		for (int i = 0; i < SLOT_COUNT; i++) equippedSlots[i] = "";
 	}
@@ -100,6 +104,7 @@ public class Techniques {
 		this.techniqueChargePercent = 0.0f;
 		this.techniqueCharging = false;
 		this.chargeHolding = false;
+		this.homingTargetId = -1;
 	}
 
 	public void clearAllTechniques() {

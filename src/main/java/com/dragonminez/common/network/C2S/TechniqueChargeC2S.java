@@ -6,6 +6,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,31 +20,35 @@ public class TechniqueChargeC2S {
 	private final Action action;
 	private final int slot;
 	private final boolean holding;
+	private final int targetId;
 
-	private TechniqueChargeC2S(Action action, int slot, boolean holding) {
+	private TechniqueChargeC2S(Action action, int slot, boolean holding, int targetId) {
 		this.action = action;
 		this.slot = slot;
 		this.holding = holding;
+		this.targetId = targetId;
 	}
 
-	public static TechniqueChargeC2S start(int slot) {
-		return new TechniqueChargeC2S(Action.START, slot, false);
+	public static TechniqueChargeC2S start(int slot, int targetId) {
+		return new TechniqueChargeC2S(Action.START, slot, false, targetId);
 	}
 
 	public static TechniqueChargeC2S setHolding(boolean holding) {
-		return new TechniqueChargeC2S(Action.SET_HOLDING, -1, holding);
+		return new TechniqueChargeC2S(Action.SET_HOLDING, -1, holding, -1);
 	}
 
 	public TechniqueChargeC2S(FriendlyByteBuf buf) {
 		this.action = buf.readEnum(Action.class);
 		this.slot = buf.readVarInt();
 		this.holding = buf.readBoolean();
+		this.targetId = buf.readInt();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
 		buf.writeEnum(this.action);
 		buf.writeVarInt(this.slot);
 		buf.writeBoolean(this.holding);
+		buf.writeInt(this.targetId);
 	}
 
 	public static void handle(TechniqueChargeC2S msg, Supplier<NetworkEvent.Context> ctx) {
@@ -61,6 +66,11 @@ public class TechniqueChargeC2S {
 
 				switch (msg.action) {
 					case START -> {
+						if (player.isSpectator()
+								|| (data.getStatus().isFused() && !data.getStatus().isFusionLeader())) {
+							data.getTechniques().clearTechniqueCharge();
+							break;
+						}
 						if (msg.slot < 0 || msg.slot >= Techniques.SLOT_COUNT) {
 							data.getTechniques().clearTechniqueCharge();
 							break;
@@ -73,8 +83,13 @@ public class TechniqueChargeC2S {
 								&& player.getMainHandItem().isEmpty();
 						if (selected instanceof KiAttackData kiAttack && meetsRequirements
 								&& !data.getCooldowns().hasCooldown("TechniqueCooldown_" + kiAttack.getId())) {
+							if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(kiAttack.getKiType())) {
+								data.getTechniques().clearTechniqueCharge();
+								break;
+							}
 							data.getTechniques().selectSlot(msg.slot);
 							data.getTechniques().startTechniqueCharge(kiAttack.getId());
+							data.getTechniques().setHomingTargetId(msg.targetId);
 							net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
 									new com.dragonminez.common.events.DMZEvent.KiAttackCastEvent(player, data, kiAttack));
 						} else {

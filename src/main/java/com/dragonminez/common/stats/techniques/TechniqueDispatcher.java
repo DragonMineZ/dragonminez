@@ -1,15 +1,20 @@
 package com.dragonminez.common.stats.techniques;
 
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.stats.StatsData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class TechniqueDispatcher {
 
@@ -23,6 +28,12 @@ public class TechniqueDispatcher {
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		boolean isHeal = (data.getEffectiveUtility() == KiAttackData.Utility.HEAL);
 		int kiTypeOrdinal = data.getKiType().ordinal();
+
+		// Resolve the lock-on / look target this attack should pursue (relation-gated).
+		LivingEntity homingTarget = resolveHomingTarget(owner, level, data, statsData);
+		int homingTargetId = homingTarget != null ? homingTarget.getId() : -1;
+		// Persist the resolved target (covers the HEAL look-at case) so mid-cast checks can see it.
+		if (homingTarget != null && owner instanceof Player) statsData.getTechniques().setHomingTargetId(homingTargetId);
 
         if (!isInitialSpawn) {
             List<AbstractKiProjectile> activeKis = getChargingKiEntities(owner, level);
@@ -76,6 +87,7 @@ public class TechniqueDispatcher {
                 smallBall.setTechniqueId(data.getId());
                 smallBall.setArmorPenetration(data.getArmorPenetration());
                 smallBall.setHeal(isHeal);
+                smallBall.setHomingTarget(homingTargetId);
                 smallBall.setFiring(true);
 
                 Vec3 lookSmall = owner.getLookAngle();
@@ -98,6 +110,7 @@ public class TechniqueDispatcher {
                 medBall.setTechniqueId(data.getId());
                 medBall.setArmorPenetration(data.getArmorPenetration());
                 medBall.setHeal(isHeal);
+                medBall.setHomingTarget(homingTargetId);
 
                 if (!level.isClientSide) level.addFreshEntity(medBall);
                 break;
@@ -139,6 +152,7 @@ public class TechniqueDispatcher {
                 wave.setTechniqueId(data.getId());
                 wave.setArmorPenetration(data.getArmorPenetration());
                 wave.setHeal(isHeal);
+                wave.setHomingTarget(homingTargetId);
 
                 if (isInitialSpawn) {
                     wave.setFiring(false);
@@ -178,6 +192,7 @@ public class TechniqueDispatcher {
                     diskRight.setTechniqueId(data.getId());
                     diskRight.setArmorPenetration(data.getArmorPenetration());
                     diskRight.setHeal(isHeal);
+                    diskRight.setHomingTarget(homingTargetId);
 
                     KiDiskEntity diskLeft = new KiDiskEntity(level, owner);
                     diskLeft.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize());
@@ -187,6 +202,7 @@ public class TechniqueDispatcher {
                     diskLeft.setTechniqueId(data.getId());
                     diskLeft.setArmorPenetration(data.getArmorPenetration());
                     diskLeft.setHeal(isHeal);
+                    diskLeft.setHomingTarget(homingTargetId);
 
                     if (!level.isClientSide) {
                         level.addFreshEntity(diskRight);
@@ -200,6 +216,7 @@ public class TechniqueDispatcher {
                     disk.setTechniqueId(data.getId());
                     disk.setArmorPenetration(data.getArmorPenetration());
                     disk.setHeal(isHeal);
+                    disk.setHomingTarget(homingTargetId);
 
                     if (!level.isClientSide) level.addFreshEntity(disk);
                 }
@@ -212,6 +229,8 @@ public class TechniqueDispatcher {
                 barrier.setTechniqueId(data.getId());
                 barrier.setArmorPenetration(data.getArmorPenetration());
                 barrier.setHeal(isHeal);
+                // A HEAL shield aimed at a friendly target wraps that ally instead of the caster.
+                if (isHeal && homingTarget != null) barrier.setShieldHost(homingTarget.getId());
 
                 if (!level.isClientSide) level.addFreshEntity(barrier);
                 break;
@@ -362,5 +381,60 @@ public class TechniqueDispatcher {
 			case SHIELD, AREA -> !movementRestriction;
 			case SMALL_BALL, MEDIUM_BALL, DISK, LASER -> false;
 		};
+	}
+
+	public static boolean restrictsMovementWhileCharging(KiAttackData.KiType type) {
+		return isChargingRestrictedTechniqueType(type, true);
+	}
+
+	public static LivingEntity resolveHomingTarget(LivingEntity owner, Level level, KiAttackData data, StatsData statsData) {
+		if (!(owner instanceof Player player) || level.isClientSide) return null;
+		boolean heal = data.getEffectiveUtility() == KiAttackData.Utility.HEAL;
+
+		int lockedId = statsData.getTechniques().getHomingTargetId();
+		LivingEntity locked = resolveLiving(level, lockedId);
+		if (locked != null) return targetingAllowed(player, locked, heal) ? locked : null;
+
+		if (heal) {
+			LivingEntity looked = lookTarget(player, level, HOMING_RANGE);
+			if (looked != null && targetingAllowed(player, looked, true)) return looked;
+		}
+		return null;
+	}
+
+	private static final double HOMING_RANGE = 30.0;
+
+	private static boolean targetingAllowed(Player attacker, LivingEntity target, boolean heal) {
+		TargetHelper.Relation relation = TargetHelper.getRelation(attacker, target);
+		return heal ? relation != TargetHelper.Relation.HOSTILE
+		            : relation != TargetHelper.Relation.FRIENDLY;
+	}
+
+	private static LivingEntity resolveLiving(Level level, int id) {
+		if (id < 0 || !(level instanceof ServerLevel serverLevel)) return null;
+		return (serverLevel.getEntity(id) instanceof LivingEntity living && living.isAlive()) ? living : null;
+	}
+
+	private static LivingEntity lookTarget(Player player, Level level, double range) {
+		Vec3 eye = player.getEyePosition();
+		Vec3 view = player.getViewVector(1.0F);
+		Vec3 end = eye.add(view.scale(range));
+		AABB box = player.getBoundingBox().expandTowards(view.scale(range)).inflate(1.0);
+
+		LivingEntity best = null;
+		double bestDist = range * range;
+		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box,
+				x -> x != player && x.isAlive() && x.isPickable() && !x.isSpectator())) {
+			AABB hitbox = e.getBoundingBox().inflate(0.3);
+			Optional<Vec3> hit = hitbox.clip(eye, end);
+			if (hit.isPresent()) {
+				double d = eye.distanceToSqr(hit.get());
+				if (d < bestDist) {
+					best = e;
+					bestDist = d;
+				}
+			}
+		}
+		return best;
 	}
 }

@@ -39,6 +39,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -724,6 +725,21 @@ public class TickHandler {
 		}
 
 		if (!techniques.isTechniqueCharging()) return;
+
+		if (kiAttack.getKiType() == KiAttackData.KiType.SHIELD
+				&& kiAttack.getEffectiveUtility() == KiAttackData.Utility.HEAL
+				&& techniques.getHomingTargetId() >= 0) {
+			Entity targetEntity = player.serverLevel().getEntity(techniques.getHomingTargetId());
+			boolean targetGone = !(targetEntity instanceof LivingEntity living) || !living.isAlive() || player.distanceTo(living) > 30.0;
+			if (targetGone) {
+				var leftover = findChargingEntity(player);
+				if (leftover != null) leftover.discard();
+				CHARGING_CACHE.remove(player.getUUID());
+				CHARGE_COST_ACCUM.remove(player.getUUID());
+				techniques.clearTechniqueCharge();
+				return;
+			}
+		}
 
 		var activeKi = findChargingEntity(player);
 		if (activeKi != null && !chargingTechniqueId.equals(activeKi.getTechniqueId())) {

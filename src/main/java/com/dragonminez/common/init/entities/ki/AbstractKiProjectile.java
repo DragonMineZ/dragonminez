@@ -19,6 +19,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -59,6 +60,55 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     private transient float kiLifetimeDrainPerTick = 0.0f;
     private transient float kiDrainAccumulator = 0.0f;
+
+    private static final int HOMING_GRACE_TICKS = 30;
+    private static final double HOMING_LEASH = 90.0;
+    private static final double HOMING_TURN_RATE = 0.2;
+    private transient int homingTargetId = -1;
+    private transient int firingStartTick = -1;
+
+    public void setHomingTarget(int targetId) {
+        this.homingTargetId = targetId;
+        this.firingStartTick = -1;
+    }
+
+    private boolean canHome() {
+        return switch (this.getKiType()) {
+            case SMALL_BALL, MEDIUM_BALL, DISK, WAVE -> true;
+            default -> false;
+        };
+    }
+
+    private void applyHomingSteering() {
+        if (this.level().isClientSide || !this.isFiring() || !this.canHome()) return;
+        if (this.firingStartTick < 0) this.firingStartTick = this.tickCount;
+        if (this.homingTargetId < 0 || !(this.level() instanceof ServerLevel serverLevel)) return;
+
+        if (!(serverLevel.getEntity(this.homingTargetId) instanceof LivingEntity target) || !target.isAlive()) {
+            this.homingTargetId = -1;
+            return;
+        }
+
+        Vec3 selfPos = this.position();
+        Vec3 targetPos = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+        double dist = selfPos.distanceTo(targetPos);
+        boolean inGrace = (this.tickCount - this.firingStartTick) <= HOMING_GRACE_TICKS;
+
+        if (!inGrace && dist > HOMING_LEASH) {
+            this.homingTargetId = -1;
+            return;
+        }
+
+        Vec3 vel = this.getDeltaMovement();
+        double speed = vel.length();
+        if (speed < 1.0e-4) return;
+
+        Vec3 dir = vel.scale(1.0 / speed);
+        Vec3 toTarget = targetPos.subtract(selfPos).normalize();
+        Vec3 newDir = dir.add(toTarget.subtract(dir).scale(HOMING_TURN_RATE));
+        if (newDir.lengthSqr() < 1.0e-8) newDir = toTarget;
+        this.setDeltaMovement(newDir.normalize().scale(speed));
+    }
 
     public void setKiLifetimeDrainPerTick(float perTick) { this.kiLifetimeDrainPerTick = Math.max(0.0f, perTick); }
 
@@ -308,6 +358,7 @@ public abstract class AbstractKiProjectile extends Projectile {
     @Override
     public void tick() {
         super.tick();
+        this.applyHomingSteering();
         Vec3 movement = this.getDeltaMovement();
         double nextX = this.getX() + movement.x;
         double nextY = this.getY() + movement.y;
