@@ -91,6 +91,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private static Component pendingImportStatusText = null;
 	private static int pendingImportStatusColor = 0xFFFFFF;
+	private static boolean pendingImportSuccess = false;
 
 	private TexturedTextButton upgradeButton;
 
@@ -518,8 +519,13 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 						.message(Component.empty())
 						.onPress(btn -> {
 							if (tech instanceof KiAttackData kiAttackData) {
-								Minecraft.getInstance().keyboardHandler.setClipboard(kiAttackData.generateExportCode());
-								setActionStatus(tr("gui.dragonminez.skills.status.copied"), 0x55FF55);
+								String code = kiAttackData.generateExportCode();
+								if (code == null || code.isEmpty()) {
+									setActionStatus(tr("gui.dragonminez.skills.status.invalid_code"), 0xFF5555);
+								} else {
+									Minecraft.getInstance().keyboardHandler.setClipboard(code);
+									setActionStatus(tr("gui.dragonminez.skills.status.copied"), 0x55FF55);
+								}
 							}
 						})
 						.build();
@@ -539,7 +545,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					.textureCoords(10, 0, 10, 10)
 					.textureSize(10, 10)
 					.onPress(btn -> {
-						NetworkHandler.sendToServer(new DeleteTechniqueC2S(selectedSkill));
+						if (selectedSkill == null || NEW_SKILL_ENTRY.equals(selectedSkill)) return; NetworkHandler.sendToServer(new DeleteTechniqueC2S(selectedSkill)); selectedSkill = null; isImportingTechnique = false; techniqueImportBox = null; refreshButtons();
 						selectedSkill = null;
 					})
 					.build());
@@ -1120,6 +1126,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (pendingImportStatusText == null) return;
 		setActionStatus(pendingImportStatusText, pendingImportStatusColor);
 		pendingImportStatusText = null;
+		if (pendingImportSuccess) {
+			pendingImportSuccess = false;
+			isImportingTechnique = false;
+			techniqueImportBox = null;
+			refreshButtons();
+		}
 	}
 
 	public static void handleTechniqueImportResult(com.dragonminez.common.network.S2C.TechniqueImportResultS2C.Status status, int value) {
@@ -1135,6 +1147,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case IMPORTED -> {
 				pendingImportStatusText = Component.translatable("gui.dragonminez.skills.status.imported_used_tp", value);
 				pendingImportStatusColor = 0x55FF55;
+				pendingImportSuccess = true;
 			}
 		}
 	}
@@ -1283,6 +1296,18 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private float calculateScrollPercent(double uiMouseY, int startY, int scrollBarHeight) {
 		float percent = (float) (uiMouseY - startY) / scrollBarHeight;
 		return Mth.clamp(percent, 0.0f, 1.0f);
+	}
+
+	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		// While the import box is focused, keys (paste, typing, navigation) belong to it —
+		// not to the menu keybind, which would otherwise close the menu mid-typing.
+		if (techniqueImportBox != null && techniqueImportBox.isFocused() && keyCode != 256) {
+			if (techniqueImportBox.keyPressed(keyCode, scanCode, modifiers) || techniqueImportBox.canConsumeInput()) {
+				return true;
+			}
+		}
+		return super.keyPressed(keyCode, scanCode, modifiers);
 	}
 
 	@Override

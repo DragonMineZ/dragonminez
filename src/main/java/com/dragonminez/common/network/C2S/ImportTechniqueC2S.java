@@ -39,6 +39,7 @@ public class ImportTechniqueC2S {
 				return;
 			}
 
+			imported.calculateDerivedValues();
 			int tpCost = Math.max(0, Math.round(imported.getTpCost()));
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (data.getResources().getTrainingPoints() < tpCost) {

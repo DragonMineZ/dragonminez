@@ -10,6 +10,7 @@ import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -93,6 +94,8 @@ public class StatsCapability {
 				markCurrentDimensionVisited(serverPlayer, data);
 				PlayerQuestData questData = data.getPlayerQuestData();
 				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
+				TransformationsHelper.ensureSelectedFormDefault(data);
+				TransformationsHelper.ensureSelectedStackFormDefault(data);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
