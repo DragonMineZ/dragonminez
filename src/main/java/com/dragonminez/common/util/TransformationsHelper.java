@@ -451,6 +451,32 @@ public class TransformationsHelper {
 				.toList();
 	}
 
+	public static boolean ensureSelectedFormDefault(StatsData statsData) {
+		String form = statsData.getCharacter().getSelectedForm();
+		if (form != null && !form.isEmpty()) return false;
+
+		String group = getGroupWithFirstAvailableForm(statsData);
+		String firstForm = getFirstAvailableForm(statsData);
+		if (group == null || group.isEmpty() || firstForm == null || firstForm.isEmpty()) return false;
+
+		statsData.getCharacter().setSelectedFormGroup(group);
+		statsData.getCharacter().setSelectedForm(firstForm);
+		return true;
+	}
+
+	public static boolean ensureSelectedStackFormDefault(StatsData statsData) {
+		String form = statsData.getCharacter().getSelectedStackForm();
+		if (form != null && !form.isEmpty()) return false;
+
+		String group = getGroupWithFirstAvailableStackForm(statsData);
+		String firstForm = getFirstAvailableStackForm(statsData);
+		if (group == null || group.isEmpty() || firstForm == null || firstForm.isEmpty()) return false;
+
+		statsData.getCharacter().setSelectedStackFormGroup(group);
+		statsData.getCharacter().setSelectedStackForm(firstForm);
+		return true;
+	}
+
 	public static void cycleSelectedFormGroup(StatsData statsData, boolean reverse) {
 		String race = statsData.getCharacter().getRaceName();
 		Map<String, FormConfig> allGroups = ConfigManager.getAllFormsForRace(race);
