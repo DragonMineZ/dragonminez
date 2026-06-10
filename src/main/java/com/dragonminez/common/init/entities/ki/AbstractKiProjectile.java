@@ -258,6 +258,9 @@ public abstract class AbstractKiProjectile extends Projectile {
         KiAttackData.AffectedStat affected = kiAttack.getAffectedStat();
         if (affected == null) return;
 
+        boolean isBuff = kiAttack.getSecondaryEffectType() == KiAttackData.SecondaryEffectType.BUFF;
+        if (!secondaryRelationAllows(target, isBuff)) return;
+
         StatsProvider.get(StatsCapability.INSTANCE, living).ifPresent(targetStats -> {
             double magnitude = kiAttack.getSecondaryIntensity() / 100.0;
             double factor = kiAttack.getSecondaryEffectType() == KiAttackData.SecondaryEffectType.BUFF ? magnitude : -magnitude;
@@ -267,6 +270,21 @@ public abstract class AbstractKiProjectile extends Projectile {
 
             targetStats.getSecondaryStatEffects().apply(affected.name(), factor, durationTicks);
         });
+    }
+
+    private boolean secondaryRelationAllows(Entity target, boolean isBuff) {
+        Entity owner = this.getOwner();
+        if (target == owner) return isBuff;
+        if (owner instanceof Player playerOwner) {
+            TargetHelper.Relation relation = TargetHelper.getRelation(playerOwner, target);
+            return isBuff ? relation != TargetHelper.Relation.HOSTILE
+                          : relation != TargetHelper.Relation.FRIENDLY;
+        }
+        if (owner instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
+            boolean allied = ownerLiving.isAlliedTo(targetLiving);
+            return isBuff ? allied : !allied;
+        }
+        return false;
     }
 
     @Override

@@ -21,14 +21,26 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class TechniqueCreatorScreen extends ScaledScreen {
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+	private static final ResourceLocation MENU_NPC = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final NumberFormat COST_NUMBER_FORMAT = NumberFormat.getIntegerInstance(new Locale("es", "ES"));
 
+	private static final int PANEL_W = 345;
+	private static final int PANEL_H = 273;
+
 	private final Screen parent;
+
+	private int panelX, panelY;
+
+	private static final int HOLD_DELAY = 5;
+	private static final int HOLD_INTERVAL = 2;
+	private Runnable heldAdjuster;
+	private int holdTicks;
 
 	private EditBox nameField;
 	private EditBox hexField;
@@ -73,103 +85,85 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	}
 
 	@Override
+	protected int getMinGuiWidth() {
+		return 365;
+	}
+
+	@Override
+	protected int getMinGuiHeight() {
+		return 293;
+	}
+
+	@Override
 	protected void init() {
 		super.init();
 		if (!auraDefaultsApplied) applyAuraDefaults();
 		recomputeDerivedValues();
 		clearWidgets();
-		int x = getUiWidth() / 2 - 70;
-		int y = getUiHeight() / 2 - 106;
 
-		nameField = new EditBox(this.font, x + 18, y + 24, 105, 12, Component.empty());
+		panelX = (getUiWidth() - PANEL_W) / 2;
+		panelY = (getUiHeight() - PANEL_H) / 2;
+
+		int r1 = panelY + 32;
+		int r2 = panelY + 46;
+		int r3 = panelY + 58;
+		int r4 = panelY + 70;
+
+		nameField = new EditBox(this.font, panelX + 138, panelY + 30, 70, 12, Component.empty());
 		nameField.setMaxLength(24);
 		nameField.setValue(creatorName);
 		nameField.setResponder(v -> creatorName = v);
 		addRenderableWidget(nameField);
 
-		addRenderableWidget(createArrowButton(x + 8, y + 41, true, btn -> setCreatorType(prevEnum(creatorType, KiAttackData.KiType.values()))));
-		addRenderableWidget(createArrowButton(x + 122, y + 41, false, btn -> setCreatorType(nextEnum(creatorType, KiAttackData.KiType.values()))));
-		utilityLeft = createArrowButton(x + 8, y + 56, true, btn -> toggleUtility());
-		utilityRight = createArrowButton(x + 122, y + 56, false, btn -> toggleUtility());
+		addRenderableWidget(createArrowButton(panelX + 16, r1 + 2, true, btn -> setCreatorType(prevEnum(creatorType, KiAttackData.KiType.values()))));
+		addRenderableWidget(createArrowButton(panelX + 118, r1 + 2, false, btn -> setCreatorType(nextEnum(creatorType, KiAttackData.KiType.values()))));
+
+		utilityLeft = createArrowButton(panelX + 16, r2 + 2, true, btn -> toggleUtility());
+		utilityRight = createArrowButton(panelX + 118, r2 + 2, false, btn -> toggleUtility());
 		addRenderableWidget(utilityLeft);
 		addRenderableWidget(utilityRight);
 		updateUtilityArrowsVisibility();
 
-		addAdjusters(x, y + 76, () -> creatorDamage = Mth.clamp(creatorDamage - 0.1f, 0.1f, 20.0f), () -> creatorDamage = Mth.clamp(creatorDamage + 0.1f, 0.1f, 20.0f));
-
-		CustomTextureButton[] sizeBtns = addAdjusters(x, y + 91,
-				() -> { if (KiAttackData.usesCustomSize(creatorType)) creatorSize = Mth.clamp(creatorSize - 0.5f, KiAttackData.getMinSizeForType(creatorType), KiAttackData.getMaxSizeForType(creatorType)); },
-				() -> { if (KiAttackData.usesCustomSize(creatorType)) creatorSize = Mth.clamp(creatorSize + 0.5f, KiAttackData.getMinSizeForType(creatorType), KiAttackData.getMaxSizeForType(creatorType)); });
-		sizeLeft = sizeBtns[0]; sizeRight = sizeBtns[1];
-
-		CustomTextureButton[] speedBtns = addAdjusters(x, y + 106,
-				() -> { if (KiAttackData.usesCustomSpeed(creatorType)) creatorSpeed = Mth.clamp(creatorSpeed - 0.1f, 0.1f, 20.0f); },
-				() -> { if (KiAttackData.usesCustomSpeed(creatorType)) creatorSpeed = Mth.clamp(creatorSpeed + 0.1f, 0.1f, 20.0f); });
-		speedLeft = speedBtns[0]; speedRight = speedBtns[1];
-
-		CustomTextureButton[] armorBtns = addAdjusters(x, y + 121,
-				() -> { if (KiAttackData.usesCustomArmorPen(creatorType)) creatorArmorPen = Mth.clamp(creatorArmorPen - 1, 0, 100); },
-				() -> { if (KiAttackData.usesCustomArmorPen(creatorType)) creatorArmorPen = Mth.clamp(creatorArmorPen + 1, 0, 100); });
-		armorLeft = armorBtns[0]; armorRight = armorBtns[1];
-
-		interiorColorButton = new CustomTextureButton.Builder()
-				.position(x + 14, y + 160)
-				.size(20, 20)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(42, 15, 42, 15)
-				.textureSize(5, 5)
-				.message(Component.empty())
-				.onPress(btn -> showColorPicker("interior"))
-				.build();
+		interiorColorButton = createSwatchButton(panelX + 300, r1 - 2, "interior");
+		exteriorColorButton = createSwatchButton(panelX + 300, r2 - 2, "exterior");
+		outlineColorButton = createSwatchButton(panelX + 300, r3 - 2, "outline");
 		addRenderableWidget(interiorColorButton);
-
-		exteriorColorButton = new CustomTextureButton.Builder()
-				.position(x + 60, y + 160)
-				.size(20, 20)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(42, 15, 42, 15)
-				.textureSize(5, 5)
-				.message(Component.empty())
-				.onPress(btn -> showColorPicker("exterior"))
-				.build();
 		addRenderableWidget(exteriorColorButton);
-
-		outlineColorButton = new CustomTextureButton.Builder()
-				.position(x + 106, y + 160)
-				.size(20, 20)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(42, 15, 42, 15)
-				.textureSize(5, 5)
-				.message(Component.empty())
-				.onPress(btn -> showColorPicker("outline"))
-				.build();
 		addRenderableWidget(outlineColorButton);
 
-		// Secondary effect controls (right column, above the color picker zone).
-		int scX = x + 151;
-		int scXR = x + 151 + 76;
-		int scY = y + 26;
-		addRenderableWidget(createArrowButton(scX, scY, true, btn -> cycleSecondaryType()));
-		addRenderableWidget(createArrowButton(scXR, scY, false, btn -> cycleSecondaryType()));
-		addRenderableWidget(createArrowButton(scX, scY + 16, true, btn -> { creatorAffectedStat = prevEnum(creatorAffectedStat, KiAttackData.AffectedStat.values()); recomputeDerivedValues(); }));
-		addRenderableWidget(createArrowButton(scXR, scY + 16, false, btn -> { creatorAffectedStat = nextEnum(creatorAffectedStat, KiAttackData.AffectedStat.values()); recomputeDerivedValues(); }));
-		addRenderableWidget(createArrowButton(scX, scY + 32, true, btn -> { creatorSecondaryIntensity = Mth.clamp(creatorSecondaryIntensity - 5, KiAttackData.MIN_SECONDARY_INTENSITY, KiAttackData.MAX_SECONDARY_INTENSITY); recomputeDerivedValues(); }));
-		addRenderableWidget(createArrowButton(scXR, scY + 32, false, btn -> { creatorSecondaryIntensity = Mth.clamp(creatorSecondaryIntensity + 5, KiAttackData.MIN_SECONDARY_INTENSITY, KiAttackData.MAX_SECONDARY_INTENSITY); recomputeDerivedValues(); }));
-		addRenderableWidget(createArrowButton(scX, scY + 48, true, btn -> { creatorSecondaryDuration = Mth.clamp(creatorSecondaryDuration - 1, KiAttackData.MIN_SECONDARY_DURATION, KiAttackData.MAX_SECONDARY_DURATION); recomputeDerivedValues(); }));
-		addRenderableWidget(createArrowButton(scXR, scY + 48, false, btn -> { creatorSecondaryDuration = Mth.clamp(creatorSecondaryDuration + 1, KiAttackData.MIN_SECONDARY_DURATION, KiAttackData.MAX_SECONDARY_DURATION); recomputeDerivedValues(); }));
+		int beLeft = panelX + 18;
+		int beRight = panelX + 150;
+		addRenderableWidget(arrow(beLeft, panelY + 128, true, () -> adjustDamage(false)));
+		addRenderableWidget(arrow(beRight, panelY + 128, false, () -> adjustDamage(true)));
 
-		addRenderableWidget(new TexturedTextButton.Builder()
-				.position(x - 8, y + 215)
-				.size(74, 20)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(tr("gui.dragonminez.hair_editor.cancel"))
-				.onPress(btn -> onClose())
-				.build());
+		sizeLeft = arrow(beLeft, panelY + 148, true, () -> adjustSize(false));
+		sizeRight = arrow(beRight, panelY + 148, false, () -> adjustSize(true));
+		addRenderableWidget(sizeLeft); addRenderableWidget(sizeRight);
 
+		speedLeft = arrow(beLeft, panelY + 168, true, () -> adjustSpeed(false));
+		speedRight = arrow(beRight, panelY + 168, false, () -> adjustSpeed(true));
+		addRenderableWidget(speedLeft); addRenderableWidget(speedRight);
+
+		armorLeft = arrow(beLeft, panelY + 188, true, () -> adjustArmor(false));
+		armorRight = arrow(beRight, panelY + 188, false, () -> adjustArmor(true));
+		addRenderableWidget(armorLeft); addRenderableWidget(armorRight);
+
+		updateAdjusterVisibility();
+
+		int seLeft = panelX + 192;
+		int seRight = panelX + 326;
+		addRenderableWidget(createArrowButton(seLeft, panelY + 128 + 2, true, btn -> cycleSecondaryType()));
+		addRenderableWidget(createArrowButton(seRight, panelY + 128 + 2, false, btn -> cycleSecondaryType()));
+		addRenderableWidget(createArrowButton(seLeft, panelY + 148 + 2, true, btn -> { creatorAffectedStat = prevEnum(creatorAffectedStat, KiAttackData.AffectedStat.values()); recomputeDerivedValues(); }));
+		addRenderableWidget(createArrowButton(seRight, panelY + 148 + 2, false, btn -> { creatorAffectedStat = nextEnum(creatorAffectedStat, KiAttackData.AffectedStat.values()); recomputeDerivedValues(); }));
+		addRenderableWidget(arrow(seLeft, panelY + 168, true, () -> adjustIntensity(false)));
+		addRenderableWidget(arrow(seRight, panelY + 168, false, () -> adjustIntensity(true)));
+		addRenderableWidget(arrow(seLeft, panelY + 188, true, () -> adjustDuration(false)));
+		addRenderableWidget(arrow(seRight, panelY + 188, false, () -> adjustDuration(true)));
+
+		int btnY = getUiHeight() - 28;
 		addRenderableWidget(new TexturedTextButton.Builder()
-				.position(x + 75, y + 215)
+				.position(panelX + PANEL_W / 2 - 78, btnY)
 				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -178,17 +172,27 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				.onPress(btn -> createSkill())
 				.build());
 
+		addRenderableWidget(new TexturedTextButton.Builder()
+				.position(panelX + PANEL_W / 2 + 4, btnY)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.hair_editor.cancel"))
+				.onPress(btn -> onClose())
+				.build());
+
 		initColorPickerSliders();
 
 		if (colorPickerVisible) showColorPicker(colorTarget);
 	}
 
-	private void initColorPickerSliders() {
-		int x = getUiWidth() / 2 - 70;
-		int y = getUiHeight() / 2 - 106;
+	private int pickerOriginX() { return panelX + 232; }
+	private int pickerOriginY() { return panelY + 120; }
 
-		int sliderX = x + 141 + 10;
-		int sliderY = y + 130;
+	private void initColorPickerSliders() {
+		int sliderX = pickerOriginX();
+		int sliderY = pickerOriginY();
 		int sliderWidth = 90;
 
 		hueSlider = new ColorSlider.Builder()
@@ -230,18 +234,68 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		setSlidersVisible();
 	}
 
-	private CustomTextureButton[] addAdjusters(int x, int y, Runnable dec, Runnable inc) {
-		CustomTextureButton left = createArrowButton(x + 8, y - 5, true, btn -> {
-			dec.run();
-			recomputeDerivedValues();
-		});
-		CustomTextureButton right = createArrowButton(x + 122, y - 5, false, btn -> {
-			inc.run();
-			recomputeDerivedValues();
-		});
-		addRenderableWidget(left);
-		addRenderableWidget(right);
-		return new CustomTextureButton[]{left, right};
+	private CustomTextureButton arrow(int x, int textY, boolean left, Runnable repeatable) {
+		return createArrowButton(x, textY + 2, left, btn -> beginHold(repeatable));
+	}
+
+	private void beginHold(Runnable action) {
+		this.heldAdjuster = action;
+		this.holdTicks = 0;
+		action.run();
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (heldAdjuster != null) {
+			holdTicks++;
+			if (holdTicks >= HOLD_DELAY && (holdTicks - HOLD_DELAY) % HOLD_INTERVAL == 0) heldAdjuster.run();
+		}
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		heldAdjuster = null;
+		return super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	private void adjustDamage(boolean inc) {
+		float step = hasShiftDown() ? 0.5f : 0.05f;
+		creatorDamage = Mth.clamp(creatorDamage + (inc ? step : -step), 0.05f, 2.0f);
+		recomputeDerivedValues();
+	}
+
+	private void adjustSize(boolean inc) {
+		if (!KiAttackData.usesCustomSize(creatorType)) return;
+		float step = hasShiftDown() ? 5.0f : 0.5f;
+		creatorSize = Mth.clamp(creatorSize + (inc ? step : -step), KiAttackData.getMinSizeForType(creatorType), KiAttackData.getMaxSizeForType(creatorType));
+		recomputeDerivedValues();
+	}
+
+	private void adjustSpeed(boolean inc) {
+		if (!KiAttackData.usesCustomSpeed(creatorType)) return;
+		float step = hasShiftDown() ? 1.0f : 0.1f;
+		creatorSpeed = Mth.clamp(creatorSpeed + (inc ? step : -step), 0.1f, 20.0f);
+		recomputeDerivedValues();
+	}
+
+	private void adjustArmor(boolean inc) {
+		if (!KiAttackData.usesCustomArmorPen(creatorType)) return;
+		int step = hasShiftDown() ? 10 : 1;
+		creatorArmorPen = Mth.clamp(creatorArmorPen + (inc ? step : -step), 0, 100);
+		recomputeDerivedValues();
+	}
+
+	private void adjustIntensity(boolean inc) {
+		int step = hasShiftDown() ? 25 : 5;
+		creatorSecondaryIntensity = Mth.clamp(creatorSecondaryIntensity + (inc ? step : -step), KiAttackData.MIN_SECONDARY_INTENSITY, KiAttackData.MAX_SECONDARY_INTENSITY);
+		recomputeDerivedValues();
+	}
+
+	private void adjustDuration(boolean inc) {
+		int step = hasShiftDown() ? 4 : 1;
+		creatorSecondaryDuration = Mth.clamp(creatorSecondaryDuration + (inc ? step : -step), KiAttackData.MIN_SECONDARY_DURATION, KiAttackData.MAX_SECONDARY_DURATION);
+		recomputeDerivedValues();
 	}
 
 	private CustomTextureButton createArrowButton(int x, int y, boolean left, CustomTextureButton.OnPress onPress) {
@@ -253,6 +307,18 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				.textureSize(8, 14)
 				.message(Component.empty())
 				.onPress(onPress)
+				.build();
+	}
+
+	private CustomTextureButton createSwatchButton(int x, int y, String target) {
+		return new CustomTextureButton.Builder()
+				.position(x, y)
+				.size(12, 12)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(42, 15, 42, 15)
+				.textureSize(5, 5)
+				.message(Component.empty())
+				.onPress(btn -> showColorPicker(target))
 				.build();
 	}
 
@@ -440,8 +506,6 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		applyColor(newColor);
 	}
 
-
-
 	private void applyColor(String hex) {
 		int color = ColorUtils.hexToInt(hex);
 		if ("interior".equals(colorTarget)) creatorColorInterior = color;
@@ -483,82 +547,141 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 		beginUiScale(graphics);
 
-		int x = getUiWidth() / 2 - 70;
-		int y = getUiHeight() / 2 - 106;
-		graphics.blit(MENU_BIG, x, y, 0, 0, 141, 213, 256, 256);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.title"), x + 70, y + 10, 0xFFFFD700);
+		graphics.blit(MENU_NPC, panelX, panelY, 0, 0, PANEL_W, PANEL_H, 512, 512);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.title"), panelX + PANEL_W / 2, panelY + 12, 0xFFFFD700);
 
-		int rowY = y + 39;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.type").append(": ").append(tr("technique.type." + creatorType.name().toLowerCase(Locale.ROOT))), x + 70, rowY, 0xFFFFFFFF);
-		rowY += 15;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.utility").append(": ").append(tr("technique.utility." + creatorUtility.name().toLowerCase(Locale.ROOT))), x + 70, rowY, allowsUtility(creatorType) ? 0xFFFFFFFF : 0xFF777777);
-		rowY += 15;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(getDamageHealingExpression())), x + 70, rowY, 0xFFFFFFFF);
-		rowY += 15;
-		int sizeColor = KiAttackData.usesCustomSize(creatorType) ? 0xFFFFFFFF : 0xFF777777;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSize))), x + 70, rowY, sizeColor);
-		rowY += 15;
-		int speedColor = KiAttackData.usesCustomSpeed(creatorType) ? 0xFFFFFFFF : 0xFF777777;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSpeed))), x + 70, rowY, speedColor);
-		rowY += 15;
-		int armorColor = KiAttackData.usesCustomArmorPen(creatorType) ? 0xFFFFFFFF : 0xFF777777;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(creatorArmorPen))), x + 70, rowY, armorColor);
-		rowY += 15;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.valueOf(creatorCast))), x + 70, rowY, 0xFFFFFFFF);
-		rowY += 15;
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.valueOf(creatorCooldown))), x + 70, rowY, 0xFFFFFFFF);
-
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.color.interior"), x + 24, y + 152, 0xFFCCCCCC);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.color.exterior"), x + 70, y + 152, 0xFFCCCCCC);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.color.outline"), x + 116, y + 152, 0xFFCCCCCC);
-		graphics.fill(x + 18, y + 165, x + 30, y + 178, 0xFF000000 | creatorColorInterior);
-		graphics.fill(x + 64, y + 165, x + 76, y + 178, 0xFF000000 | creatorColorExterior);
-		graphics.fill(x + 110, y + 165, x + 122, y + 178, 0xFF000000 | creatorColorOutline);
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.ki_cost_label"), x + 14, y + 180, 0xFFDDDDDD);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(COST_NUMBER_FORMAT.format(kiCost)), x + 98, y + 180, 0xFFDDDDDD);
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.tp_cost_label"), x + 14, y + 190, 0xFFDDDDDD);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(COST_NUMBER_FORMAT.format(tpCost)), x + 98, y + 190, 0xFFDDDDDD);
-
-		renderSecondaryEffects(graphics, x, y);
+		renderHeader(graphics);
+		renderBaseEffects(graphics);
+		renderSecondaryEffects(graphics);
 
 		if (colorPickerVisible) renderColorPickerBackground(graphics);
 
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 400.0D);
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
+		graphics.pose().popPose();
+
+		if (!colorPickerVisible) renderEffectTooltip(graphics, uiMouseX, uiMouseY);
+
 		endUiScale(graphics);
 	}
 
-	private void renderSecondaryEffects(GuiGraphics graphics, int x, int y) {
-		int center = x + 151 + 38;
+	private void renderHeader(GuiGraphics graphics) {
+		int r1 = panelY + 32;
+		int r2 = panelY + 46;
+		int r3 = panelY + 58;
+		int r4 = panelY + 70;
+		int leftCx = panelX + 72;
+		int centerCx = panelX + 172;
+
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.skills.creator.type").append(": ").append(tr("technique.type." + creatorType.name().toLowerCase(Locale.ROOT))),
+				leftCx, r1, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.skills.creator.utility").append(": ").append(tr("technique.utility." + creatorUtility.name().toLowerCase(Locale.ROOT))),
+				leftCx, r2, allowsUtility(creatorType) ? 0xFFFFFFFF : 0xFF777777);
+
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.skills.creator.ki_cost_label").append(" ").append(txt(COST_NUMBER_FORMAT.format(kiCost))),
+				centerCx, r2, 0xFFDDDDDD);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.valueOf(creatorCooldown))),
+				centerCx, r3, 0xFFDDDDDD);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.skills.creator.tp_cost_label").append(" ").append(txt(COST_NUMBER_FORMAT.format(tpCost))),
+				centerCx, r4, 0xFFDDDDDD);
+
+		drawColorRow(graphics, tr("gui.dragonminez.skills.creator.color.interior"), creatorColorInterior, r1);
+		drawColorRow(graphics, tr("gui.dragonminez.skills.creator.color.exterior"), creatorColorExterior, r2);
+		drawColorRow(graphics, tr("gui.dragonminez.skills.creator.color.outline"), creatorColorOutline, r3);
+	}
+
+	private void drawColorRow(GuiGraphics graphics, Component label, int color, int rowY) {
+		TextUtil.drawStringWithBorder(graphics, this.font, label, panelX + 234, rowY, 0xFFCCCCCC);
+		int sx = panelX + 300;
+		int sy = rowY - 2;
+		graphics.fill(sx - 1, sy - 1, sx + 13, sy + 13, 0xFF000000);
+		graphics.fill(sx, sy, sx + 12, sy + 12, 0xFF000000 | color);
+	}
+
+	private void renderBaseEffects(GuiGraphics graphics) {
+		int cx = panelX + 84;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.base_effects"), cx, panelY + 108, 0xFFFFD700);
+
+		int damagePercent = Math.round(creatorDamage * 100.0f);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.damage").append(": ").append(txt(damagePercent + "%")),
+				cx, panelY + 128, 0xFFFFFFFF);
+
+		int sizeColor = KiAttackData.usesCustomSize(creatorType) ? 0xFFFFFFFF : 0xFF777777;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSize))),
+				cx, panelY + 148, sizeColor);
+
+		int speedColor = KiAttackData.usesCustomSpeed(creatorType) ? 0xFFFFFFFF : 0xFF777777;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSpeed))),
+				cx, panelY + 168, speedColor);
+
+		int armorColor = KiAttackData.usesCustomArmorPen(creatorType) ? 0xFFFFFFFF : 0xFF777777;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(creatorArmorPen))),
+				cx, panelY + 188, armorColor);
+
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.valueOf(creatorCast / 20)).append("s")),
+				cx, panelY + 208, 0xFFAACCFF);
+	}
+
+	private void renderSecondaryEffects(GuiGraphics graphics) {
+		int cx = panelX + 259;
 		boolean hasSec = creatorSecondaryType != KiAttackData.SecondaryEffectType.NONE;
 		int active = 0xFFFFFFFF;
 		int inactive = 0xFF777777;
 
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.secondary_effects"), center, y + 14, 0xFFFFD700);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.secondary_effects"), cx, panelY + 108, 0xFFFFD700);
 
-		Component effLabel = tr("gui.dragonminez.technique.effect_type").append(": ")
-				.append(tr("gui.dragonminez.technique.effect_type." + creatorSecondaryType.name().toLowerCase(Locale.ROOT)));
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, effLabel, center, y + 26, active);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.effect_type").append(": ").append(tr("gui.dragonminez.technique.effect_type." + creatorSecondaryType.name().toLowerCase(Locale.ROOT))),
+				cx, panelY + 128, active);
 
-		Component statLabel = tr("gui.dragonminez.technique.affected_stat").append(": ")
-				.append(tr("gui.dragonminez.technique.affected_stat." + creatorAffectedStat.name().toLowerCase(Locale.ROOT)));
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, statLabel, center, y + 42, hasSec ? active : inactive);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.affected_stat").append(": ").append(tr("gui.dragonminez.technique.affected_stat." + creatorAffectedStat.name().toLowerCase(Locale.ROOT))),
+				cx, panelY + 148, hasSec ? active : inactive);
 
-		Component intLabel = tr("gui.dragonminez.technique.intensity").append(": ").append(txt(creatorSecondaryIntensity + "%"));
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, intLabel, center, y + 58, hasSec ? active : inactive);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.intensity").append(": ").append(txt(creatorSecondaryIntensity + "%")),
+				cx, panelY + 168, hasSec ? active : inactive);
 
-		Component durLabel = tr("gui.dragonminez.technique.duration").append(": ").append(txt(creatorSecondaryDuration + "s"));
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, durLabel, center, y + 74, hasSec ? active : inactive);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.technique.duration").append(": ").append(txt(creatorSecondaryDuration + "s")),
+				cx, panelY + 188, hasSec ? active : inactive);
+	}
+
+	private void renderEffectTooltip(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
+		int rowY = panelY + 128;
+		boolean hovering = uiMouseX >= panelX + 30 && uiMouseX <= panelX + 150
+				&& uiMouseY >= rowY - 2 && uiMouseY <= rowY + 9;
+		if (!hovering) return;
+
+		boolean heal = creatorUtility == KiAttackData.Utility.HEAL && allowsUtility(creatorType);
+		String valueKey = heal ? "gui.dragonminez.technique.effect.tooltip.heal" : "gui.dragonminez.technique.effect.tooltip.damage";
+
+		List<Component> desc = new ArrayList<>();
+		desc.add(tr(valueKey, getDamageHealingExpression()));
+		desc.add(tr("gui.dragonminez.technique.effect.tooltip.desc"));
+
+		TextUtil.renderAdvancedTooltip(graphics, this.font, uiMouseX, uiMouseY, getUiWidth(), getUiHeight(),
+				tr("gui.dragonminez.technique.damage"), desc, null, 0xFFFFD700);
 	}
 
 	private void renderColorPickerBackground(GuiGraphics graphics) {
 		var poseStack = graphics.pose();
 		poseStack.pushPose();
 		poseStack.translate(0.0D, 0.0D, 200.0D);
-		int x = getUiWidth() / 2 - 70;
-		int y = getUiHeight() / 2 - 106;
-		int sliderX = x + 141 + 10;
-		int sliderY = y + 130;
-		graphics.fill(sliderX - 5, sliderY - 5, sliderX + 95, sliderY + 56, 0x88000000);
+		int sliderX = pickerOriginX();
+		int sliderY = pickerOriginY();
+		graphics.fill(sliderX - 5, sliderY - 5, sliderX + 95, sliderY + 56, 0xCC000000);
 		poseStack.popPose();
 	}
 
@@ -570,18 +693,19 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		double uiMouseY = toUiY(mouseY);
 
 		if (colorPickerVisible) {
-			int x = getUiWidth() / 2 - 70;
-			int y = getUiHeight() / 2 - 106;
-			int sliderX = x + 141 + 10;
-			int sliderY = y + 130;
+			int sliderX = pickerOriginX();
+			int sliderY = pickerOriginY();
 			int pickerW = 90;
 			int pickerH = 56;
 
 			boolean insidePicker = uiMouseX >= sliderX - 5 && uiMouseX <= sliderX + pickerW + 5
 					&& uiMouseY >= sliderY - 5 && uiMouseY <= sliderY + pickerH + 5;
-			boolean insideColorButtons = (uiMouseX >= x + 14 && uiMouseX <= x + 34 && uiMouseY >= y + 160 && uiMouseY <= y + 180)
-					|| (uiMouseX >= x + 60 && uiMouseX <= x + 80 && uiMouseY >= y + 160 && uiMouseY <= y + 180)
-					|| (uiMouseX >= x + 106 && uiMouseX <= x + 126 && uiMouseY >= y + 160 && uiMouseY <= y + 180);
+
+			int sx = panelX + 300;
+			boolean insideColorButtons =
+					(uiMouseX >= sx && uiMouseX <= sx + 12 && uiMouseY >= panelY + 30 && uiMouseY <= panelY + 42)
+					|| (uiMouseX >= sx && uiMouseX <= sx + 12 && uiMouseY >= panelY + 44 && uiMouseY <= panelY + 56)
+					|| (uiMouseX >= sx && uiMouseX <= sx + 12 && uiMouseY >= panelY + 56 && uiMouseY <= panelY + 68);
 
 			if (!insidePicker && !insideColorButtons) {
 				hideColorPicker();

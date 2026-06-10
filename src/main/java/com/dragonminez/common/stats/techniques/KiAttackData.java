@@ -104,7 +104,7 @@ public class KiAttackData extends TechniqueData {
 			case GIANT_BALL -> "ki.large_ball";
 			case WAVE -> "ki.kameha";
 			case DISK -> "ki.kienzan";
-			case EXPLOSION -> "ki.explosion";
+			case EXPLOSION, SHIELD -> "ki.explosion";
 			case BEAM, LASER -> "ki.makkako";
 			case SMALL_BALL, MEDIUM_BALL -> "ki.bigbang";
 			default -> "ki.kameha";
@@ -263,6 +263,8 @@ public class KiAttackData extends TechniqueData {
 				+ Math.max(0, cooldownLevel);
 	}
 
+	private static final float MAX_DAMAGE_MULT = 2.0f;
+
 	private static float getWeightedComplexity(float damage, float sizeRatio01, float speed, int armorPen) {
 		float maxStat = 20.0f;
 		int maxArmorPen = 100;
@@ -272,7 +274,7 @@ public class KiAttackData extends TechniqueData {
 		float speedWeight = 3.0f;
 		float armorPenWeight = 2.0f;
 
-		float damageRatio = damage / maxStat;
+		float damageRatio = Mth.clamp(damage / MAX_DAMAGE_MULT, 0f, 1f);
 		float sizeRatio = Mth.clamp(sizeRatio01, 0f, 1f);
 		float speedRatio = speed / maxStat;
 		float armorPenRatio = (float) armorPen / maxArmorPen;
@@ -544,7 +546,7 @@ public class KiAttackData extends TechniqueData {
 
 	public static float[] normalizeStatsForType(KiType type, float damage, float size, float speed, int armorPen) {
 		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
-		float normalizedDamage = Mth.clamp(damage, 0.1f, 20.0f);
+		float normalizedDamage = Mth.clamp(damage, 0.05f, 2.0f);
 		float normalizedSize = usesCustomSize(resolvedType)
 				? Mth.clamp(size, getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType))
 				: getDefaultSizeForType(resolvedType);
