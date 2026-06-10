@@ -133,6 +133,7 @@ public final class NpcAlignmentRules {
 		addRule(npcs, "chi_chi", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
 		addRule(npcs, "videl", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
 		addRule(npcs, "namek_elder", TargetHelper.Relation.FRIENDLY, 61, null, 25, null);
+		addRule(npcs, "shin", TargetHelper.Relation.FRIENDLY, 41, null, 25, null);
 		addRule(npcs, "piccolo", TargetHelper.Relation.NEUTRAL, 41, null, 20, null);
 		addRule(npcs, "vegeta", TargetHelper.Relation.NEUTRAL, null, null, null, null);
 		addRule(npcs, "farmer_01", TargetHelper.Relation.FRIENDLY, null, null, 20, null);
