@@ -28,7 +28,9 @@ public class StrikeAttackData extends TechniqueData {
 	}
 
 	public int getActualCooldown() {
-		return Math.max(1, Math.round(cooldown * Math.max(0.1f, 1.0f - (Math.max(0, cooldownLevel) * 0.05f))));
+		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
+		int base = Math.max(0, cfg.getCooldownTicks());
+		return Math.max(1, Math.round(base * Math.max(0.1f, 1.0f - (Math.max(0, cooldownLevel) * 0.05f))));
 	}
 
 	public int getUpgradeXpCost(String statName) {

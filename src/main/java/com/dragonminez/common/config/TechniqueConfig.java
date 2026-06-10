@@ -32,8 +32,21 @@ public class TechniqueConfig {
 			kiAttacks.put(type.name().toLowerCase(), cfg);
 		}
 		for (String strikeId : PredefinedTechniques.STRIKE_IDS) {
-			strikeAttacks.put(strikeId, StrikeAttackConfig.defaults());
+			StrikeAttackConfig cfg = StrikeAttackConfig.defaults();
+			cfg.setCooldownTicks(defaultStrikeCooldownTicks(strikeId));
+			strikeAttacks.put(strikeId, cfg);
 		}
+	}
+
+	private static int defaultStrikeCooldownTicks(String strikeId) {
+		return switch (strikeId) {
+			case "dragon_fist" -> 320;
+			case "oozaru_fist" -> 280;
+			case "super_god_fist", "kaioken_attack" -> 240;
+			case "deadly_dance_vegetto" -> 200;
+			case "wolf_fang" -> 140;
+			default -> 160;
+		};
 	}
 
 	private static int defaultCastTimeTicks(KiAttackData.KiType type) {
