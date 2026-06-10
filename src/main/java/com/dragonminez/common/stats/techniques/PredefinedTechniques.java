@@ -36,14 +36,14 @@ public class PredefinedTechniques {
         registerKi("makkanko", "technique.dragonminez.makkankosanpo", "Piccolo", KiAttackData.KiType.BEAM, 0.75F, 0xFFE53B, 0xC43BFF, 0.8F, 2.0F, 10, "ki.makkako");
         registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFFF00, 0xFFFF00, 0.4F, 1.5F, 10, "ki.barrage");
 		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 3.00F, 0xFFFF00, 0xFFFF00, 15.0F, 0.0F, 10, "ki.explosion");
-		registerStrike("skp.meteor", 1.0f, 40);
-		registerStrike("skp.dragon_fist", 1.0f, 50);
-		registerStrike("skp.deadly_dance_vegetto", 1.0f, 40);
-		registerStrike("skp.deadly_dance", 1.0f, 40);
-		registerStrike("skp.kaioken_attack", 1.0f, 45);
-		registerStrike("skp.wolf_fang", 1.0f, 35);
-		registerStrike("skp.oozaru_fist", 1.0f, 35);
-		registerStrike("skp.super_god_fist", 1.0f, 25);
+		registerStrike("skp.meteor", 1.25f, 40);
+		registerStrike("skp.dragon_fist", 2.5f, 50);
+		registerStrike("skp.deadly_dance_vegetto", 1.5f, 40);
+		registerStrike("skp.deadly_dance", 1.25f, 40);
+		registerStrike("skp.kaioken_attack", 1.75f, 45);
+		registerStrike("skp.wolf_fang", 1.25f, 35);
+		registerStrike("skp.oozaru_fist", 2.25f, 35);
+		registerStrike("skp.super_god_fist", 2.0f, 25);
 	}
 
 	public static boolean isPredefinedTechniqueId(String techniqueId) {
@@ -70,8 +70,6 @@ public class PredefinedTechniques {
 		data.getAllowedRaces().add("ALL");
 		data.setAnimation(animPrefix);
 		data.setCastTime(5 * 20);
-		// cooldown is stored in seconds (getActualCooldown() converts to ticks via KI_TIME_MULTIPLIER),
-		// matching player-created techniques. Storing ticks here made every predefined attack ~20x too long.
 		data.setCooldown(cooldownSeconds);
 		data.calculateDerivedValues();
 		REGISTRY.put(id, data);
