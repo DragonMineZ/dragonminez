@@ -5,6 +5,7 @@ import com.dragonminez.server.world.feature.OverworldPlacedFeatures;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BiomeDefaultFeatures;
 import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.Carvers;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -27,17 +28,27 @@ public class OverworldBiomes {
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CONFIGURED_CARVER));
 
 		BiomeDefaultFeatures.addDefaultCarversAndLakes(biomeBuilder);
+		// Extra canyon carvers so the desolate rocky desert is cut by deep canyons with cliff walls.
+		biomeBuilder.addCarver(GenerationStep.Carving.AIR,
+				context.lookup(Registries.CONFIGURED_CARVER).getOrThrow(Carvers.CANYON));
+		biomeBuilder.addCarver(GenerationStep.Carving.AIR,
+				context.lookup(Registries.CONFIGURED_CARVER).getOrThrow(Carvers.CANYON));
 		BiomeDefaultFeatures.addDefaultCrystalFormations(biomeBuilder);
 		BiomeDefaultFeatures.addDefaultOres(biomeBuilder);
 		BiomeDefaultFeatures.addDefaultSoftDisks(biomeBuilder);
-		BiomeDefaultFeatures.addDesertVegetation(biomeBuilder);
-		BiomeDefaultFeatures.addDesertExtraVegetation(biomeBuilder);
+		// No vegetation: a desolate rocky desert.
 
 		biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION,
 				context.lookup(Registries.PLACED_FEATURE).getOrThrow(OverworldPlacedFeatures.STONE_SPIKE_PLACED_KEY));
 
         biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION,
                 context.lookup(Registries.PLACED_FEATURE).getOrThrow(OverworldPlacedFeatures.ROCKY_PEAK_PLACED_KEY));
+
+        biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION,
+                context.lookup(Registries.PLACED_FEATURE).getOrThrow(OverworldPlacedFeatures.KARST_PILLAR_PLACED_KEY));
+
+        biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION,
+                context.lookup(Registries.PLACED_FEATURE).getOrThrow(OverworldPlacedFeatures.ROCKY_CLIFF_PLACED_KEY));
 
 		BiomeSpecialEffects.Builder effectsBuilder = new BiomeSpecialEffects.Builder()
 				.waterColor(0x3F76E4)
