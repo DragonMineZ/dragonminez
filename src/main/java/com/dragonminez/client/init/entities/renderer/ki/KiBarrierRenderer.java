@@ -7,6 +7,7 @@ import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -38,6 +39,15 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
             float[] borderColor = entity.getRgbColorBorder();
             float[] outlineColor = entity.getRgbColorOutline();
 
+            float barrierAlpha = 0.85f;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null
+                    && mc.options.getCameraType().isFirstPerson()
+                    && entity.getShieldHost() == mc.player.getId()
+                    && entity.getOwner() != mc.player) {
+                barrierAlpha = 0.4f;
+            }
+
             ShaderInstance shader = DMZShaders.ki3dShader;
             if (shader != null) {
                 shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
@@ -54,7 +64,7 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
                 stack.scale(scale, scale, scale);
 
                 shader.safeGetUniform("ModelViewMat").set(stack.last().pose());
-                shader.safeGetUniform("alphaMult").set(0.6f);
+                shader.safeGetUniform("alphaMult").set(barrierAlpha);
                 shader.apply();
                 mesh.drawWithShader(stack.last().pose(), proj, shader);
 
