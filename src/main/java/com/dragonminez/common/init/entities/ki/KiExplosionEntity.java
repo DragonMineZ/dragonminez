@@ -191,7 +191,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
 
     private void pulseDamage(float radius) {
-        float damageRadius = radius;
+        float damageRadius = radius*1.4f;
 
         AABB area = new AABB(
                 this.getX() - damageRadius, this.getY() - damageRadius, this.getZ() - damageRadius,
