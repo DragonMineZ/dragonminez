@@ -74,12 +74,8 @@ jobs:
             exit 1
           fi
 
-          branch_slug="$(printf '%s' "${GITHUB_REF_NAME}" | tr '/[:upper:]' '-[:lower:]' | tr -cd 'a-z0-9._-')"
-          if [[ -z "$branch_slug" ]]; then
-            branch_slug="branch"
-          fi
           short_sha="${GITHUB_SHA::12}"
-          remote_name="dragonminez-${version}__${branch_slug}__${short_sha}.jar"
+          remote_name="dragonminez-${version}__${short_sha}.jar"
           sha256="$(sha256sum "$artifact" | cut -d ' ' -f1)"
 
           echo "path=${artifact}" >> "$GITHUB_OUTPUT"
@@ -196,7 +192,7 @@ jobs:
           artifacts = sorted(
               (
                   path
-                  for path in upload_dir.glob("dragonminez-*__*__*.jar")
+                  for path in upload_dir.glob("dragonminez-*__*.jar")
                   if path.is_file()
               ),
               key=lambda path: (path.stat().st_mtime, path.name),
