@@ -23,7 +23,9 @@ public abstract class QuestReward {
 		COMMAND,
 		TPS,
 		SKILL,
-		ALIGNMENT
+		ALIGNMENT,
+		TRANSFORMATION,
+		KI_TECHNIQUE
 	}
 
 	public enum DifficultyType {

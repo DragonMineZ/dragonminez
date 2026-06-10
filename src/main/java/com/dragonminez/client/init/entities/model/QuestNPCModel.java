@@ -30,13 +30,17 @@ public class QuestNPCModel extends GeoModel<QuestNPCEntity> {
 	private static final Map<String, AssetPaths> NPC_ASSETS = Map.ofEntries(
 			Map.entry("generic_npc", FALLBACK),
 			Map.entry("goku", FALLBACK),
+			Map.entry("bulma", saga("saga_bulma", "saga_bulma")),
 			Map.entry("krillin", saga("saga_vegeta", "saga_krillin")),
 			Map.entry("yamcha", saga("saga_yamcha", "saga_yamcha")),
 			Map.entry("tien", saga("saga_goku", "saga_tien_early")),
+			Map.entry("chiaotzu", saga("saga_chaoz", "saga_chaoz")),
 			Map.entry("piccolo", saga("saga_piccolo", "saga_piccolo")),
 			Map.entry("gohan", saga("saga_gohan_mid", "saga_gohan_mid_base")),
 			Map.entry("vegeta", saga("saga_vegeta", "saga_vegeta")),
 			Map.entry("trunks", saga("saga_trunks", "saga_ftrunks_base")),
+			Map.entry("videl", saga("saga_videl", "saga_videl")),
+			Map.entry("shin", saga("saga_shin", "saga_shin")),
 			Map.entry("namek_elder", master("master_guru"))
 	);
 
