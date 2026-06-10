@@ -44,7 +44,7 @@ public class KiAreaEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return -1;
+        return Math.max(1, this.getMaxLife() / 10);
     }
 
     public void setupAreaPlayer(LivingEntity owner, float damage, float radius, int colorMain, int colorBorder, int colorOutline) {
@@ -128,11 +128,11 @@ public class KiAreaEntity extends AbstractKiProjectile {
         for (LivingEntity target : targets) {
             if (this.isHeal()) {
                 if (target == this.getOwner() || !this.shouldDamage(target)) {
-                    this.applyDamageOrHeal(target, this.getKiDamage());
+                    this.applyDamageOrHeal(target, this.getDamagePerHit());
                 }
             } else {
                 if (target != this.getOwner() && this.shouldDamage(target)) {
-                    this.applyDamageOrHeal(target, this.getKiDamage());
+                    this.applyDamageOrHeal(target, this.getDamagePerHit());
                     this.onSuccessfulHit(target);
                 }
             }

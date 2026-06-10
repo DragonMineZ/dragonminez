@@ -518,7 +518,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
             if (this.shouldDamage(target)) {
                 double dist = target.distanceToSqr(pos);
                 if (dist <= radius * radius) {
-                    boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                    boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
                     if (wasHit) this.onSuccessfulHit(target);
                 }
             }

@@ -64,7 +64,6 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     public ClashRole getClashRole() {
-        // Small ki blasts (render type 0) are minor attacks broken by major beams.
         return this.getKiRenderType() == 0 ? ClashRole.MINOR : ClashRole.NONE;
     }
 
@@ -908,7 +907,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             Entity targetEntity = pResult.getEntity();
 
             if (this.shouldDamage(targetEntity)) {
-                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getDamagePerHit());
+                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getKiDamage());
 
                 if (wasHit) {
                     this.onSuccessfulHit(targetEntity);

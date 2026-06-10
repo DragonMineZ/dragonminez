@@ -265,7 +265,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : nearby) {
             if (this.shouldDamage(target)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
                 if (wasHit) this.onSuccessfulHit(target);
             }
         }
@@ -311,7 +311,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             Entity targetEntity = pResult.getEntity();
             if (this.shouldDamage(targetEntity)) {
-                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getDamagePerHit());
+                // A piercing disk delivers its FULL damage on contact (i-frames keep it to one full hit per pass).
+                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getKiDamage());
 
                 if (wasHit) {
                     this.onSuccessfulHit(targetEntity);

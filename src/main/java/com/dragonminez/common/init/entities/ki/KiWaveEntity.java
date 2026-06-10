@@ -749,7 +749,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
                 if (wasHit) this.onSuccessfulHit(target);
             }
         }

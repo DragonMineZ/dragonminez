@@ -63,7 +63,8 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient float kiDrainAccumulator = 0.0f;
 
     private static final int HOMING_GRACE_TICKS = 30;
-    private static final double HOMING_LEASH = 90.0;
+    private static final int HOMING_EXTENDED_TICKS = 90;
+    private static final double HOMING_RANGE = 30.0;
     private static final double HOMING_TURN_RATE = 0.2;
     private transient int homingTargetId = -1;
     private transient int firingStartTick = -1;
@@ -93,11 +94,14 @@ public abstract class AbstractKiProjectile extends Projectile {
         Vec3 selfPos = this.position();
         Vec3 targetPos = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
         double dist = selfPos.distanceTo(targetPos);
-        boolean inGrace = (this.tickCount - this.firingStartTick) <= HOMING_GRACE_TICKS;
 
-        if (!inGrace && dist > HOMING_LEASH) {
-            this.homingTargetId = -1;
-            return;
+        int elapsed = this.tickCount - this.firingStartTick;
+        if (elapsed > HOMING_GRACE_TICKS) {
+            boolean windowExpired = elapsed > HOMING_GRACE_TICKS + HOMING_EXTENDED_TICKS;
+            if (windowExpired || dist > HOMING_RANGE) {
+                this.homingTargetId = -1;
+                return;
+            }
         }
 
         Vec3 vel = this.getDeltaMovement();
@@ -287,6 +291,12 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     public void onSuccessfulHit(Entity target) {
+        // Once the homed (main) target is struck, stop chasing and continue straight. This stops
+        // penetrating projectiles like the Disk from orbiting a target they already passed through.
+        if (target != null && this.homingTargetId >= 0 && target.getId() == this.homingTargetId) {
+            this.homingTargetId = -1;
+        }
+
         if (!this.level().isClientSide && this.getOwner() instanceof net.minecraft.world.entity.player.Player player) {
             String techId = this.getTechniqueId();
             if (techId != null && !techId.isEmpty()) {

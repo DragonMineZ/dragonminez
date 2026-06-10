@@ -202,7 +202,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit() * 2.0f);
 
                 if (wasHit && !this.isHeal()) {
                     this.onSuccessfulHit(target);
