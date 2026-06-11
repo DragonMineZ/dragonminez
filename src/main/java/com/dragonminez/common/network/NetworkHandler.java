@@ -279,6 +279,18 @@ public class NetworkHandler {
 				.consumerMainThread(InstantTransmissionTravelC2S::handle)
 				.add();
 
+		net.messageBuilder(InstantTransmissionTravelToPlayerC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(InstantTransmissionTravelToPlayerC2S::new)
+				.encoder(InstantTransmissionTravelToPlayerC2S::toBytes)
+				.consumerMainThread(InstantTransmissionTravelToPlayerC2S::handle)
+				.add();
+
+		net.messageBuilder(RequestITTargetsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RequestITTargetsC2S::new)
+				.encoder(RequestITTargetsC2S::encode)
+				.consumerMainThread(RequestITTargetsC2S::handle)
+				.add();
+
 		net.messageBuilder(DeleteTechniqueC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(DeleteTechniqueC2S::new)
 				.encoder(DeleteTechniqueC2S::toBytes)
@@ -418,6 +430,12 @@ public class NetworkHandler {
 				.decoder(BeamClashStateS2C::decode)
 				.encoder(BeamClashStateS2C::encode)
 				.consumerMainThread(BeamClashStateS2C::handle)
+				.add();
+
+		net.messageBuilder(OpenITMenuS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(OpenITMenuS2C::new)
+				.encoder(OpenITMenuS2C::encode)
+				.consumerMainThread(OpenITMenuS2C::handle)
 				.add();
 	}
 

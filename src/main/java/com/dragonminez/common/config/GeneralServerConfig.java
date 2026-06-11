@@ -87,6 +87,7 @@ public class GeneralServerConfig {
 		private Integer partyMaxMembers = -1;
 		private Integer partyMaxLevelGap = 500;
 		private Double partyTpShareRatio = 0.5;
+		private Integer instantTransmissionPlayerRangePerLevel = 200;
 
 		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
 				"dragonminez:invencible_armor_helmet",
@@ -190,6 +191,11 @@ public class GeneralServerConfig {
 		public Double getPartyTpShareRatio() {
 			if (partyTpShareRatio == null) return 0.0;
 			return Math.max(0.0, Math.min(partyTpShareRatio, 10.0));
+		}
+
+		public Integer getInstantTransmissionPlayerRangePerLevel() {
+			if (instantTransmissionPlayerRangePerLevel == null) return 200;
+			return Math.max(0, Math.min(instantTransmissionPlayerRangePerLevel, Integer.MAX_VALUE));
 		}
 
 		public Boolean getUltimateFormFixedValue() {

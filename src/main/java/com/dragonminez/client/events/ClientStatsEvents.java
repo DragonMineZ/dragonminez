@@ -3,7 +3,6 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.FlightSoundInstance;
-import com.dragonminez.client.gui.InstantTransmissionScreen;
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.util.ColorUtils;
@@ -239,7 +238,7 @@ public class ClientStatsEvents {
 				itMenuOpened = true;
 				Skill itSkill = data.getSkills().getSkill("instant_transmission");
 				if (itSkill != null && itSkill.getLevel() >= 5) {
-					mc.setScreen(new InstantTransmissionScreen(data.getCharacter().getInteractedMasters(), itSkill.getLevel()));
+					NetworkHandler.sendToServer(new RequestITTargetsC2S());
 				}
 			}
 			wasITKeyDown = isITKeyDown;

@@ -4,9 +4,10 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.ITTargetEntry;
 import com.dragonminez.common.network.C2S.InstantTransmissionTravelC2S;
+import com.dragonminez.common.network.C2S.InstantTransmissionTravelToPlayerC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.character.MasterLocation;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -24,8 +25,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 @OnlyIn(Dist.CLIENT)
 public class InstantTransmissionScreen extends Screen {
@@ -52,19 +54,17 @@ public class InstantTransmissionScreen extends Screen {
 
 	private TexturedTextButton travelButton;
 
-	public InstantTransmissionScreen(Map<String, MasterLocation> masters, int skillLevel) {
+	public InstantTransmissionScreen(List<ITTargetEntry> entries, int skillLevel) {
 		super(Component.literal("Instant Transmission").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 		this.skillLevel = skillLevel;
 		this.currentDimension = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.level().dimension().location().toString() : "";
-		loadDestinations(masters);
+		loadDestinations(entries);
 	}
 
-	private void loadDestinations(Map<String, MasterLocation> masters) {
+	private void loadDestinations(List<ITTargetEntry> entries) {
 		destinations.clear();
-		for (MasterLocation master : masters.values()) {
-			boolean isReachable = skillLevel >= 10 || master.getDimension().equals(currentDimension);
-			destinations.add(new MasterEntry(master.getMasterId(), master.getDisplayName(), master.getDimension(), isReachable));
-		}
+		for (ITTargetEntry entry : entries) destinations.add(new MasterEntry(entry.getType(), entry.getId(), entry.getName(), entry.getDimension(), entry.isReachable()));
+		destinations.sort(Comparator.comparingInt((MasterEntry e) -> e.priority()).thenComparing(e -> e.name, String.CASE_INSENSITIVE_ORDER));
 	}
 
 	@Override
@@ -95,7 +95,8 @@ public class InstantTransmissionScreen extends Screen {
 		if (selectedIndex >= 0 && selectedIndex < destinations.size()) {
 			MasterEntry dest = destinations.get(selectedIndex);
 			if (dest.reachable) {
-				NetworkHandler.sendToServer(new InstantTransmissionTravelC2S(dest.id));
+				if (dest.type == ITTargetEntry.Type.MASTER) NetworkHandler.sendToServer(new InstantTransmissionTravelC2S(dest.id));
+				else NetworkHandler.sendToServer(new InstantTransmissionTravelToPlayerC2S(UUID.fromString(dest.id)));
 				this.onClose();
 			}
 		}
@@ -151,7 +152,7 @@ public class InstantTransmissionScreen extends Screen {
 				}
 
 				Component textToDraw = txt(dest.name).copy().withStyle(ChatFormatting.BOLD);
-				int textColor = dest.reachable ? 0x20E0FF : 0x747678;
+				int textColor = dest.reachable ? colorForType(dest.type) : 0x747678;
 				TextUtil.drawStringWithBorder(graphics, this.font, textToDraw, listLeft + 10, itemY + 8, textColor);
 			}
 		}
@@ -249,17 +250,35 @@ public class InstantTransmissionScreen extends Screen {
 		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 
+	private static int colorForType(ITTargetEntry.Type type) {
+		return switch (type) {
+			case MASTER -> 0x20E0FF;
+			case PARTY -> 0xFFD700;
+			case EXTERNAL -> 0xFFFFFF;
+		};
+	}
+
 	private static class MasterEntry {
+		ITTargetEntry.Type type;
 		String id;
 		String name;
 		String dimension;
 		boolean reachable;
 
-		public MasterEntry(String id, String name, String dimension, boolean reachable) {
+		public MasterEntry(ITTargetEntry.Type type, String id, String name, String dimension, boolean reachable) {
+			this.type = type;
 			this.id = id;
 			this.name = name;
 			this.dimension = dimension;
 			this.reachable = reachable;
+		}
+
+		int priority() {
+			return switch (type) {
+				case MASTER -> 1;
+				case PARTY -> 2;
+				case EXTERNAL -> 3;
+			};
 		}
 	}
 }

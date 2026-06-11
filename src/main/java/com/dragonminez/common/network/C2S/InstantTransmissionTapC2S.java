@@ -2,7 +2,9 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -47,7 +49,7 @@ public class InstantTransmissionTapC2S {
 				LivingEntity finalTarget = null;
 
 				if (targetId != null) {
-					if (level.getEntity(targetId) instanceof LivingEntity le) finalTarget = le;
+					if (level.getEntity(targetId) instanceof LivingEntity le && !isBlockedPlayer(le)) finalTarget = le;
 				} else {
 					double range = 25.0 + (skillLevel * 10.0);
 					Vec3 eyePos = player.getEyePosition();
@@ -55,7 +57,7 @@ public class InstantTransmissionTapC2S {
 					AABB searchBox = player.getBoundingBox().expandTowards(viewVec.scale(range)).inflate(5.0D);
 
 					List<LivingEntity> list = level.getEntitiesOfClass(LivingEntity.class, searchBox,
-							e -> e != player && e.isAlive() && player.hasLineOfSight(e));
+							e -> e != player && e.isAlive() && player.hasLineOfSight(e) && !isBlockedPlayer(e));
 
 					if (!list.isEmpty()) {
 						finalTarget = list.stream().max(Comparator.comparingDouble(LivingEntity::getMaxHealth)).orElse(null);
@@ -78,5 +80,11 @@ public class InstantTransmissionTapC2S {
 			});
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static boolean isBlockedPlayer(LivingEntity entity) {
+		if (!(entity instanceof ServerPlayer targetPlayer)) return false;
+		StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).orElse(null);
+		return targetData != null && TransformationsHelper.isInstantTransmissionBlocked(targetData);
 	}
 }

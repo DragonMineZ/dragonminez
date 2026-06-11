@@ -2,6 +2,7 @@ package com.dragonminez.common.network;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.RadarRenderEvent;
+import com.dragonminez.client.gui.InstantTransmissionScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
@@ -28,6 +29,16 @@ import java.util.UUID;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientPacketHandler {
+
+	public static void handleOpenITMenu(List<com.dragonminez.common.network.ITTargetEntry> entries) {
+		var player = Minecraft.getInstance().player;
+		if (player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			var skill = data.getSkills().getSkill("instant_transmission");
+			if (skill == null || skill.getLevel() < 5) return;
+			Minecraft.getInstance().setScreen(new InstantTransmissionScreen(entries, skill.getLevel()));
+		});
+	}
 
 	public static void handleStatsSyncPacket(int playerId, CompoundTag nbt) {
 		var clientLevel = Minecraft.getInstance().level;
