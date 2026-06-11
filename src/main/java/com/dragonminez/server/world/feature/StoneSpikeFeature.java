@@ -41,10 +41,7 @@ public class StoneSpikeFeature extends Feature<NoneFeatureConfiguration> {
 			float distFromCenter = Math.abs(relativeHeight - 0.5F) * 2.0F;
 			float widthFactor = (float) Math.pow(distFromCenter, 1.5);
 			float currentRadius = minRadius + (maxRadius - minRadius) * widthFactor;
-			if (i == height - 1) {
-				currentRadius *= 0.8F;
-			}
-
+			if (i == height - 1) currentRadius *= 0.8F;
 			int r = Mth.ceil(currentRadius);
 
 			for (int x = -r; x <= r; ++x) {
@@ -54,40 +51,21 @@ public class StoneSpikeFeature extends Feature<NoneFeatureConfiguration> {
 					if (distSq <= maxDistSq + 1.0) {
 						boolean placeBlock = true;
 						boolean isEdge = distSq >= (currentRadius - 1.2) * (currentRadius - 1.2);
-						if (i >= 4 && isEdge) {
-							if (random.nextFloat() < 0.05F) {
-								placeBlock = false;
-							}
-						}
+						if (i >= 4 && isEdge) if (random.nextFloat() < 0.05F) placeBlock = false;
 
 						if (placeBlock) {
 							BlockPos placePos = pos.offset(x, i, z);
-
 							if (this.canReplace(level, placePos)) {
 								BlockState blockState = MainBlocks.ROCKY_STONE.get().defaultBlockState();
-
-								if (random.nextInt(4) == 0) {
-									blockState = MainBlocks.ROCKY_COBBLESTONE.get().defaultBlockState();
-								}
-
+								if (random.nextInt(4) == 0) blockState = MainBlocks.ROCKY_COBBLESTONE.get().defaultBlockState();
 								this.setBlock(level, placePos, blockState);
-
-								if (i == 0) {
-									BlockPos belowPos = placePos.below();
-									int safety = 0;
-									while (canReplace(level, belowPos) && safety < 6) {
-										this.setBlock(level, belowPos, blockState);
-										belowPos = belowPos.below();
-										safety++;
-									}
-								}
+								if (i == 0) FeatureUtil.groundColumn(level, placePos, MainBlocks.ROCKY_STONE.get().defaultBlockState());
 							}
 						}
 					}
 				}
 			}
 		}
-
 		return true;
 	}
 

@@ -28,15 +28,12 @@ public class OverworldBiomes {
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CONFIGURED_CARVER));
 
 		BiomeDefaultFeatures.addDefaultCarversAndLakes(biomeBuilder);
-		// Extra canyon carvers so the desolate rocky desert is cut by deep canyons with cliff walls.
-		biomeBuilder.addCarver(GenerationStep.Carving.AIR,
-				context.lookup(Registries.CONFIGURED_CARVER).getOrThrow(Carvers.CANYON));
-		biomeBuilder.addCarver(GenerationStep.Carving.AIR,
-				context.lookup(Registries.CONFIGURED_CARVER).getOrThrow(Carvers.CANYON));
+		biomeBuilder.addCarver(GenerationStep.Carving.AIR, context.lookup(Registries.CONFIGURED_CARVER).getOrThrow(Carvers.CANYON));
+		biomeBuilder.addCarver(GenerationStep.Carving.AIR, context.lookup(Registries.CONFIGURED_CARVER).getOrThrow(Carvers.CANYON));
 		BiomeDefaultFeatures.addDefaultCrystalFormations(biomeBuilder);
 		BiomeDefaultFeatures.addDefaultOres(biomeBuilder);
 		BiomeDefaultFeatures.addDefaultSoftDisks(biomeBuilder);
-		// No vegetation: a desolate rocky desert.
+		BiomeDefaultFeatures.addDesertVegetation(biomeBuilder);
 
 		biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION,
 				context.lookup(Registries.PLACED_FEATURE).getOrThrow(OverworldPlacedFeatures.STONE_SPIKE_PLACED_KEY));
