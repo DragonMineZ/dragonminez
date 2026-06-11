@@ -120,7 +120,7 @@ public class TrainingConfig {
 		private double baseRingSpeed = 0.7;
 		private double ringSpeedPerLevel = 0.18;
 		private int spawnIntervalTicks = 8;
-		private int maxCircles = 10;
+		private int maxCircles = 4;
 		private int perfectWindow = 4;
 		private int goodWindow = 11;
 		private int perfectPoints = 2;

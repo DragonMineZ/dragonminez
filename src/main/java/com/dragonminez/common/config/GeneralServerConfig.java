@@ -74,7 +74,7 @@ public class GeneralServerConfig {
 		private Double globalTPCostMultiplier = 1.0;
 		private Integer minTPCost = 16;
 		private Integer maxTPDiscount = 140;
-		private Double tpHealthRatio = 0.10;
+		private Double tpHealthRatio = 0.25;
 		private Integer tpPerHit = 2;
 		private Integer passiveTpGain = 1;
 		private Integer tpPer20BlocksTraveled = 1;

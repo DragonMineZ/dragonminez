@@ -38,7 +38,7 @@ public class DMZStructureSets {
 				new BiomeAwareUniquePlacement(
 						Vec3i.ZERO,
 						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						25.0f,
+						1.0f,
 						12345678,
 						Optional.empty(),
 						biomes.getOrThrow(VILLAGE_PLAINS_TAG)
@@ -50,7 +50,7 @@ public class DMZStructureSets {
 				new BiomeAwareUniquePlacement(
 						Vec3i.ZERO,
 						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						25.0f,
+						1.0f,
 						87654321,
 						Optional.empty(),
 						biomes.getOrThrow(BiomeTags.IS_OCEAN)
@@ -74,7 +74,7 @@ public class DMZStructureSets {
 				new BiomeAwareUniquePlacement(
 						Vec3i.ZERO,
 						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						40.0f,
+						1.0f,
 						44332211,
 						Optional.empty(),
 						biomes.getOrThrow(MainTags.Biomes.IS_SACREDLAND)
@@ -86,7 +86,7 @@ public class DMZStructureSets {
 				new UniqueNearSpawnPlacement(
 						Vec3i.ZERO,
 						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						25.0f,
+						1.0f,
 						55667788,
 						Optional.empty()
 				)
@@ -97,7 +97,7 @@ public class DMZStructureSets {
 				new BiomeAwareUniquePlacement(
 						Vec3i.ZERO,
 						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						100.0f,
+						1.0f,
 						99887766,
 						Optional.empty(),
 						biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME)
