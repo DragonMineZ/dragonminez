@@ -34,22 +34,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.ArrayList;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StrikeAttackHandler {
 	private static final int CONNECT_WINDOW_TICKS = 10;
 	private static final double CONNECT_RANGE = 4.0;
+	private static final double CONE_RANGE = 6.0;
+	private static final double CONE_RANGE_FLY = 12.0;
+	private static final double CONE_HALF_ANGLE_COS = 0.5;
 	private static final double DASH_BASE_DISTANCE = 4.0;
 	private static final double DASH_DISTANCE_SCALE = 0.3;
 	private static final double KNOCKBACK_FORCE = 1.8;
 	private static final double FINAL_HIT_RATIO = 0.35;
 	private static final double IMPACT_DAMAGE_RATIO = 0.20;
 	private static final int HIT_INTERVAL_TICKS = 10;
+	private static final long RECENT_HIT_WINDOW_MS = 10_000L;
 	private static final String STRIKE_HIT_ANIM = "base.flyback";
 	private static final String STRIKE_KNOCKBACK_ANIM = "base.flyback";
 
 	private static final Map<UUID, PendingStrike> PENDING = new HashMap<>();
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
+	private static final Map<UUID, RecentHit> RECENTLY_DAMAGED = new HashMap<>();
 
 	public static void requestStrike(ServerPlayer player, int preferredTargetId) {
 		if (player.level().isClientSide) return;
@@ -72,10 +78,14 @@ public class StrikeAttackHandler {
 			stats.getResources().removeEnergy((int) Math.ceil(cost));
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 
-			LivingEntity preferredTarget = resolvePreferredTarget(player, preferredTargetId);
+			boolean isFlying = stats.getSkills().isSkillActive("fly");
+			double coneRange = isFlying ? CONE_RANGE_FLY : CONE_RANGE;
+
+			LivingEntity immediateTarget = findConeTarget(player, coneRange, preferredTargetId);
+
 			PendingStrike pending = new PendingStrike(
 					player.getUUID(),
-					preferredTarget != null ? preferredTarget.getUUID() : null,
+					immediateTarget != null ? immediateTarget.getUUID() : null,
 					strike.getId(),
 					strike.getAnimationId(),
 					strike.getDurationTicks(),
@@ -83,10 +93,18 @@ public class StrikeAttackHandler {
 					cost,
 					CONNECT_WINDOW_TICKS
 			);
-			PENDING.put(player.getUUID(), pending);
+
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
-			dashForward(player);
+			if (immediateTarget != null) {
+				teleportToTargetFront(player, immediateTarget);
+				player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+						MainSounds.TP_SHORT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+				startStrike(player, immediateTarget, pending);
+			} else {
+				dashForward(player, isFlying);
+				PENDING.put(player.getUUID(), pending);
+			}
 		});
 	}
 
@@ -696,14 +714,74 @@ public class StrikeAttackHandler {
 		return Optional.ofNullable(closest);
 	}
 
-	private static void dashForward(ServerPlayer player) {
+	private static void dashForward(ServerPlayer player, boolean isFlying) {
 		double speedMultiplier = player.getAttributeValue(Attributes.MOVEMENT_SPEED) / 0.1;
 		double distance = DASH_BASE_DISTANCE * speedMultiplier;
+		if (isFlying) distance *= 3.0;
 		Vec3 direction = Vec3.directionFromRotation(0, player.getYRot()).normalize();
 		Vec3 velocity = direction.scale(distance * DASH_DISTANCE_SCALE);
 		double yVel = player.onGround() ? 0.35 : 0.2;
 		player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, yVel, velocity.z));
 		player.hurtMarked = true;
+	}
+
+	private static LivingEntity findConeTarget(ServerPlayer player, double range, int preferredTargetId) {
+		if (preferredTargetId > 0) {
+			LivingEntity pref = player.level().getEntity(preferredTargetId) instanceof LivingEntity l ? l : null;
+			if (pref != null && pref.isAlive() && player.distanceTo(pref) <= range
+					&& isInFrontCone(player, pref) && player.hasLineOfSight(pref)
+					&& TargetHelper.canAttack(player, pref, range)) {
+				return pref;
+			}
+		}
+
+		AABB searchBox = player.getBoundingBox().inflate(range);
+		List<LivingEntity> candidates = new ArrayList<>(player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
+				e -> e != player && e.isAlive() && e.isPickable()
+						&& TargetHelper.canAttack(player, e, range)
+						&& player.distanceTo(e) <= range
+						&& isInFrontCone(player, e)
+						&& player.hasLineOfSight(e)));
+
+		if (candidates.isEmpty()) return null;
+		if (candidates.size() == 1) return candidates.get(0);
+
+		RecentHit recent = RECENTLY_DAMAGED.get(player.getUUID());
+		if (recent != null && (System.currentTimeMillis() - recent.timestamp()) <= RECENT_HIT_WINDOW_MS) {
+			for (LivingEntity e : candidates) {
+				if (e.getUUID().equals(recent.targetId())) return e;
+			}
+		}
+
+		Vec3 eyePos = player.getEyePosition();
+		Vec3 viewVec = player.getViewVector(1.0F);
+		Vec3 endPos = eyePos.add(viewVec.scale(range));
+
+		LivingEntity best = null;
+		double bestDist = Double.MAX_VALUE;
+		for (LivingEntity e : candidates) {
+			AABB bb = e.getBoundingBox().inflate(e.getPickRadius());
+			Optional<Vec3> hit = bb.clip(eyePos, endPos);
+			double dist;
+			if (bb.contains(eyePos)) {
+				dist = 0.0;
+			} else if (hit.isPresent()) {
+				dist = eyePos.distanceToSqr(hit.get());
+			} else {
+				dist = eyePos.distanceToSqr(e.getEyePosition());
+			}
+			if (dist < bestDist) {
+				best = e;
+				bestDist = dist;
+			}
+		}
+		return best;
+	}
+
+	private static boolean isInFrontCone(ServerPlayer player, LivingEntity target) {
+		Vec3 look = player.getLookAngle();
+		Vec3 toTarget = target.getEyePosition().subtract(player.getEyePosition()).normalize();
+		return look.dot(toTarget) >= CONE_HALF_ANGLE_COS;
 	}
 
     private static void teleportToTargetFront(ServerPlayer player, LivingEntity target) {
@@ -721,6 +799,7 @@ public class StrikeAttackHandler {
 		if (damage <= 0) return;
 		playStrikeHitAnimation(target);
 		target.hurt(MainDamageTypes.strikeAttack(player.level(), player), (float) damage);
+		RECENTLY_DAMAGED.put(player.getUUID(), new RecentHit(target.getUUID(), System.currentTimeMillis()));
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techniqueId);
@@ -820,4 +899,6 @@ public class StrikeAttackHandler {
 			return new ActiveStrike(playerId, targetId, techniqueId, animationId, durationTicks, cooldownTicks, totalDamage, perHitDamage, finalDamage, hitIntervalTicks, ticksElapsed);
 		}
 	}
+
+	private record RecentHit(UUID targetId, long timestamp) {}
 }
