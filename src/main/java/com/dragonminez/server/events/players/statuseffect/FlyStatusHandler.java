@@ -5,6 +5,7 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -64,6 +65,9 @@ public class FlyStatusHandler implements IStatusEffectHandler {
         energyCostPercent *= getFlyCostMultiplier(flyLevel);
         boolean isSprintFlight = player.isSprinting() && player.getDeltaMovement().length() > 0.65F;
         if (isSprintFlight) energyCostPercent *= 2.0;
+        if (data.getStatus().getFlightMode() == Status.FLIGHT_COMBAT) {
+            energyCostPercent *= ConfigManager.getCombatConfig().getCombatFlyDrainMultiplier();
+        }
         int energyCost = (int) Math.ceil(baseCost * energyCostPercent);
 
         float currentEnergy = data.getResources().getCurrentEnergy();

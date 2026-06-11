@@ -15,7 +15,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class CombatConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;
@@ -51,6 +51,16 @@ public class CombatConfig {
 	private Integer perfectEvasionWindowMs = 200;
 	private Integer dashCooldownSeconds = 4;
 	private Integer doubleDashCooldownSeconds = 12;
+
+	private Boolean combatFlyAutoSwitchOnDamage = true;
+	private Integer combatFlyLockSeconds = 8;
+	private Double combatFlyBaseSpeed = 0.30;
+	private Double combatFlySprintSpeed = 0.50;
+	private Double combatFlyImpulseStrength = 5.0;
+	private Double combatFlyHoldSpeedMultiplier = 1.6;
+	private Double combatFlyDrainMultiplier = 0.5;
+	private Double combatFlyImpulseKiCostPct = 0.05;
+	private Integer combatFlyImpulseCooldownTicks = 25;
 
 	private Map<String, KiWeaponConfig> kiWeaponsConfig = new HashMap<>() {{
 		put("blade", new KiWeaponConfig(0.0, 1.0, 0.0, 0.05, -2.4, "#FFFFFF", "dragonminez:sword"));

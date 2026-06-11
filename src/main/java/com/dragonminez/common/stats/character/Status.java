@@ -17,6 +17,9 @@ import java.util.UUID;
 @Getter
 @Setter
 public class Status {
+	public static final int FLIGHT_SEARCH = 0;
+	public static final int FLIGHT_COMBAT = 1;
+
 	private boolean isAlive;
 	private boolean isHasCreatedCharacter;
 	private boolean isAuraActive;
@@ -47,6 +50,7 @@ public class Status {
 	private String pothalaColor;
 	private boolean isPermanentAura;
 	private boolean isStrikeLocked;
+	private int flightMode;
 	private final Set<String> visitedDimensions;
 
 	private UUID activeShadowDummyUUID;
@@ -84,6 +88,7 @@ public class Status {
 		this.pothalaColor = "";
 		this.isPermanentAura = false;
 		this.isStrikeLocked = false;
+		this.flightMode = FLIGHT_SEARCH;
 		this.visitedDimensions = new LinkedHashSet<>();
 		this.activeShadowDummyUUID = null;
 		this.shadowDummyPercent = 0;
@@ -121,6 +126,7 @@ public class Status {
 		this.pothalaColor = "";
 		this.isPermanentAura = false;
 		this.isStrikeLocked = false;
+		this.flightMode = FLIGHT_SEARCH;
 		this.visitedDimensions.clear();
 		this.activeShadowDummyUUID = null;
 		this.shadowDummyPercent = 0;
@@ -178,6 +184,7 @@ public class Status {
 		tag.putString("PothalaColor", pothalaColor);
 		tag.putBoolean("IsPermanentAura", isPermanentAura);
 		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
+		tag.putInt("FlightMode", flightMode);
 
 		ListTag visitedDimensionsTag = new ListTag();
 		for (String dimensionId : visitedDimensions) visitedDimensionsTag.add(StringTag.valueOf(dimensionId));
@@ -223,6 +230,7 @@ public class Status {
 		this.pothalaColor = tag.getString("PothalaColor");
 		this.isPermanentAura = tag.getBoolean("IsPermanentAura");
 		this.isStrikeLocked = tag.getBoolean("IsStrikeLocked");
+		this.flightMode = tag.getInt("FlightMode");
 		this.visitedDimensions.clear();
 		if (tag.contains("VisitedDimensions", Tag.TAG_LIST)) {
 			ListTag visitedDimensionsTag = tag.getList("VisitedDimensions", Tag.TAG_STRING);
@@ -265,6 +273,7 @@ public class Status {
 		this.scouterItem = other.scouterItem;
 		this.isPermanentAura = other.isPermanentAura;
 		this.isStrikeLocked = other.isStrikeLocked;
+		this.flightMode = other.flightMode;
 		this.visitedDimensions.clear();
 		this.visitedDimensions.addAll(other.visitedDimensions);
 		this.activeShadowDummyUUID = other.activeShadowDummyUUID;

@@ -123,6 +123,18 @@ public class NetworkHandler {
 				.consumerMainThread(FlyToggleC2S::handle)
 				.add();
 
+		net.messageBuilder(FlightModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(FlightModeC2S::decode)
+				.encoder(FlightModeC2S::encode)
+				.consumerMainThread(FlightModeC2S::handle)
+				.add();
+
+		net.messageBuilder(CombatFlyImpulseC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(CombatFlyImpulseC2S::decode)
+				.encoder(CombatFlyImpulseC2S::encode)
+				.consumerMainThread(CombatFlyImpulseC2S::handle)
+				.add();
+
 		net.messageBuilder(DashC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(DashC2S::new)
 				.encoder(DashC2S::encode)

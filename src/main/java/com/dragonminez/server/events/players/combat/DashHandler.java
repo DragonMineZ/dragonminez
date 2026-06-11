@@ -11,6 +11,7 @@ import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.util.ComboManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -107,6 +108,9 @@ public class DashHandler {
 			}
 
 			boolean isFlyingSkillActive = data.getSkills().isSkillActive("fly");
+
+			if (isFlyingSkillActive && data.getStatus().getFlightMode() == Status.FLIGHT_COMBAT) return;
+
 			boolean canDoubleDash = !isFlyingSkillActive && isDoubleDash && data.getCooldowns().hasCooldown(Cooldowns.DASH_ACTIVE) && !data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD);
 			boolean canNormalDash = !isDoubleDash && !data.getCooldowns().hasCooldown(Cooldowns.DASH_CD);
 

@@ -2250,6 +2250,8 @@
   "//": "SKILLS",
   "skill.dragonminez.fly": "Fly",
   "skill.dragonminez.fly.desc": "Control your Ki to Fly! Jump and press the Fly Key mid-air to Fly, level up the skill to increase your speed.",
+  "dragonminez.flight.mode.switched.combat": "Has cambiado tu modo de vuelo a: Combat Fly",
+  "dragonminez.flight.mode.switched.search": "Has cambiado tu modo de vuelo a: Search Fly",
   "skill.dragonminez.jump": "Jump",
   "skill.dragonminez.jump.desc": "Let's you Jump higher. The more you level up, the higher you can jump.",
   "skill.dragonminez.sprint": "Sprint",

@@ -1,22 +1,27 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.flight.CombatFlightHandler;
 import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.C2S.FlightModeC2S;
 import com.dragonminez.common.network.C2S.FlyToggleC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
@@ -36,8 +41,8 @@ public class FlySkillEvent {
 	private static int verticalHover = 0;
 	private static float hovering = 0F;
 
-	private static final float NORMAL_MAX_SPEED = 0.7F;
-	private static final float SPRINT_MAX_SPEED = 1.25F;
+	private static final float NORMAL_MAX_SPEED = 0.6F;
+	private static final float SPRINT_MAX_SPEED = 1.05F;
 	private static final float ACCELERATION = 0.055F;
 	private static final float DECELERATION = 0.035F;
 	private static final float EXIT_DECELERATION = 0.08F;
@@ -45,7 +50,7 @@ public class FlySkillEvent {
 	private static final float TURN_SPEED_NORMAL = 0.15F;
 	private static final float TURN_SPEED_FAST = 0.3F;
 	private static final float BASE_ATTRIBUTE_FLY_SPEED = 0.35F;
-	private static final float FAST_FLYING_THRESHOLD = 0.65F;
+	private static final float FAST_FLYING_THRESHOLD = 0.55F;
 	private static final double MIN_GROUND_CLEARANCE = 0.25D;
 
 	private static int kiConsumptionTicks = 0;
@@ -63,6 +68,7 @@ public class FlySkillEvent {
 	private static boolean wasFlyingSkillActive = false;
 	private static boolean pendingFlightDisable = false;
 	private static boolean wasSprintingInAir = false;
+	private static int lastFlightMode = Status.FLIGHT_SEARCH;
 
 	public static FlySkillEvent getInstance() {
 		return INSTANCE;
@@ -75,6 +81,18 @@ public class FlySkillEvent {
 			LocalPlayer player = mc.player;
 
 			if (player != null && mc.screen == null) {
+				if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
+					StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+						if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned()) return;
+						Skill flySkill = data.getSkills().getSkill("fly");
+						Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
+						if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0) return;
+						NetworkHandler.sendToServer(new FlightModeC2S());
+						player.playSound(MainSounds.UI_MENU_SWITCH.get(), 0.7F, 1.0F);
+					});
+					return;
+				}
+
 				long currentTime = System.currentTimeMillis();
 				boolean isDoubleTap = (currentTime - lastFlyKeyPressTime) <= DOUBLE_TAP_WINDOW_MS;
 				lastFlyKeyPressTime = currentTime;
@@ -170,15 +188,45 @@ public class FlySkillEvent {
 			if (flySkill == null) return;
 
 			boolean isFlying = flySkill.isActive() || burstDecelActive;
+			int flightMode = data.getStatus().getFlightMode();
+			boolean isCombatFly = flightMode == Status.FLIGHT_COMBAT && !burstDecelActive;
 
 			if (isFlying && !wasFlyingSkillActive) {
-				if (!burstDecelActive) initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"));
+				if (isCombatFly) CombatFlightHandler.initFromMotion(player);
+				else if (!burstDecelActive) initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"));
+				lastFlightMode = flightMode;
+			}
+
+			if (isFlying && flightMode != lastFlightMode) {
+				if (isCombatFly) {
+					resetFlightState();
+					CombatFlightHandler.initFromMotion(player);
+				} else {
+					CombatFlightHandler.reset();
+					initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"));
+				}
+				player.displayClientMessage(Component.translatable(
+						isCombatFly ? "dragonminez.flight.mode.switched.combat" : "dragonminez.flight.mode.switched.search"), true);
+				lastFlightMode = flightMode;
 			}
 
 			if (isFlying) {
-				handleFlightMovement(player, data.getSkills().getSkillLevel("fly"));
+				if (isCombatFly) {
+					if (pendingFlightDisable) {
+						pendingFlightDisable = false;
+						NetworkHandler.sendToServer(new FlyToggleC2S(false, false));
+						CombatFlightHandler.reset();
+						resetFlightState();
+						return;
+					}
+					CombatFlightHandler.handle(player, data);
+				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"));
 				handleKiConsumption(player, data, flySkill);
-			} else if (!pendingFlightDisable) resetFlightState();
+			} else if (!pendingFlightDisable) {
+				resetFlightState();
+				CombatFlightHandler.reset();
+				lastFlightMode = Status.FLIGHT_SEARCH;
+			}
 
 			wasFlyingSkillActive = isFlying;
 		});
@@ -266,7 +314,8 @@ public class FlySkillEvent {
 				Vec3 targetVelocity = targetDirection.scale(maxSprintSpeed);
 				flightVector = targetVelocity;
 			} else {
-				double targetSpeed = Math.min(currentSpeed + currentAccel, currentMaxSpeed);
+				double minSpeed = ConfigManager.getCombatConfig().getCombatFlyBaseSpeed() * levelMultiplier * flySpeedScale;
+				double targetSpeed = Math.max(minSpeed, Math.min(currentSpeed + currentAccel, currentMaxSpeed));
 				Vec3 targetVelocity = targetDirection.scale(targetSpeed);
 				float turnSpeed = isFastFlight ? TURN_SPEED_FAST : TURN_SPEED_NORMAL;
 				flightVector = new Vec3(Mth.lerp(turnSpeed, flightVector.x, targetVelocity.x), Mth.lerp(turnSpeed, flightVector.y, targetVelocity.y), Mth.lerp(turnSpeed, flightVector.z, targetVelocity.z));
@@ -406,7 +455,7 @@ public class FlySkillEvent {
 		boolean flyActive = StatsProvider.get(StatsCapability.INSTANCE, player)
 				.map(data -> {
 					Skill flySkill = data.getSkills().getSkill("fly");
-					return flySkill != null && flySkill.isActive();
+					return flySkill != null && flySkill.isActive() && data.getStatus().getFlightMode() != Status.FLIGHT_COMBAT;
 				}).orElse(false);
 
 		return flyActive && player.getDeltaMovement().lengthSqr() > (FAST_FLYING_THRESHOLD * FAST_FLYING_THRESHOLD);

@@ -15,6 +15,7 @@ import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.util.GravityLogic;
@@ -49,6 +50,25 @@ import java.util.Map;
 public class CombatEvent {
 	private static final Map<String, Long> LAST_PLAYER_HIT_GUARD_MS = new HashMap<>();
 	public static final String DMZ_LAST_ATTACKER_ID_TAG = "dmz_last_attacker_id";
+
+	private static void maybeForceCombatFly(Player player) {
+		if (!ConfigManager.getCombatConfig().getCombatFlyAutoSwitchOnDamage()) return;
+		if (!(player instanceof ServerPlayer serverPlayer)) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+			if (!data.getSkills().isSkillActive("fly")) return;
+
+			int lockTicks = ConfigManager.getCombatConfig().getCombatFlyLockSeconds() * 20;
+			boolean switched = false;
+			if (data.getStatus().getFlightMode() == Status.FLIGHT_SEARCH) {
+				data.getStatus().setFlightMode(Status.FLIGHT_COMBAT);
+				switched = true;
+			}
+			data.getCooldowns().setCooldown(Cooldowns.COMBAT_FLY_LOCK, lockTicks);
+
+			if (switched) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+		});
+	}
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public static void onLivingHurt(LivingHurtEvent event) {
@@ -255,6 +275,8 @@ public class CombatEvent {
 				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
 
+					maybeForceCombatFly(victim);
+					if (source.getEntity() instanceof Player attackerPlayer) maybeForceCombatFly(attackerPlayer);
 					if (source.getEntity() instanceof LivingEntity sourceLiving) victim.getPersistentData().putInt(DMZ_LAST_ATTACKER_ID_TAG, sourceLiving.getId());
 
 					boolean isPvP = source.getEntity() instanceof Player;
