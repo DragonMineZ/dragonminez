@@ -5,6 +5,9 @@ import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.client.gui.hud.ScouterHUD;
+import com.dragonminez.client.systems.kisense.CombatIndicators;
+import com.dragonminez.client.systems.kisense.KiSenseScan;
+import com.dragonminez.client.systems.kisense.KiSenseState;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainParticles;
@@ -274,9 +277,7 @@ public class ClientStatsEvents {
 			if (KeyBinds.KI_SENSE.consumeClick()) {
 				if (!hasScouter) {
 					Skill kiSense = data.getSkills().getSkill("kisense");
-					if (kiSense == null) return;
-					int kiSenseLevel = kiSense.getLevel();
-					if (kiSenseLevel > 0) NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, kiSense.getName(), 0));
+					if (kiSense != null && kiSense.getLevel() > 0) KiSenseState.cycle();
 				} else ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
 			}
 		});
@@ -503,6 +504,9 @@ public class ClientStatsEvents {
 		lastTransformTapTime = 0;
 		lastKiChargeTapTime = 0;
 		resetChargeTracking();
+		KiSenseState.reset();
+		KiSenseScan.clear();
+		CombatIndicators.clear();
 		StatsCapability.clearClientCache();
 	}
 

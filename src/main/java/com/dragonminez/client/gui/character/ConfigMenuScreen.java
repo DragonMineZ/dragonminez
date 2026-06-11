@@ -75,6 +75,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.BOOLEAN, userConfig.isImpactFramesEnabled() ? 1 : 0, 0, 1,
 				v -> userConfig.setImpactFramesEnabled(v > 0)));
 
+		configOptions.add(new ConfigOption("config.showAccumulativeDamage",
+				ConfigType.BOOLEAN, userConfig.getShowAccumulativeDamage() ? 1 : 0, 0, 1,
+				v -> userConfig.setShowAccumulativeDamage(v > 0)));
+
 		configOptions.add(new ConfigOption("config.techniqueHotbarRightSide",
 				ConfigType.BOOLEAN, userConfig.getTechniqueHotbarRightSide() ? 1 : 0, 0, 1,
 				v -> userConfig.setTechniqueHotbarRightSide(v > 0)));

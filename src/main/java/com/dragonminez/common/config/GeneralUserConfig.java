@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GeneralUserConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;
@@ -33,6 +33,12 @@ public class GeneralUserConfig {
 	private Boolean storyHardDifficulty = false;
 	private Boolean cameraMovementDuringFlight = true;
 	private Boolean liveCrowdinTranslations = true;
+	private Boolean showAccumulativeDamage = true;
+
+	public Boolean getShowAccumulativeDamage() {
+		if (showAccumulativeDamage == null) showAccumulativeDamage = true;
+		return showAccumulativeDamage;
+	}
 
 	public Float getMenuScaleMultiplier() {
 		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;

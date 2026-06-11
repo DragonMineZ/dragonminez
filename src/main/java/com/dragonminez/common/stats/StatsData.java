@@ -139,9 +139,9 @@ public class StatsData {
 		return Math.min(allowedByTotal, remainingStat);
 	}
 
-	private static final double K = 310_000.0;
+	private static final double K = 39_000.0;
 	private static final double BP_REF_VALUE = 5_000_000_000.0;
-	private static final double BP_CURVE_EXPONENT = 1.5;
+	private static final double BP_CURVE_EXPONENT = 2.8;
 
 	public int getBattlePower() {
 		long exact = getBattlePowerExact();

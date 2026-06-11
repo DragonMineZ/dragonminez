@@ -1,0 +1,19 @@
+{
+  "targets": [
+    "swap"
+  ],
+  "passes": [
+    {
+      "name": "dragonminez:kisense_grayscale",
+      "intarget": "minecraft:main",
+      "outtarget": "swap",
+      "uniforms": []
+    },
+    {
+      "name": "blit",
+      "intarget": "swap",
+      "outtarget": "minecraft:main",
+      "uniforms": []
+    }
+  ]
+}

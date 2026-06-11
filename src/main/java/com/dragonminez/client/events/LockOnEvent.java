@@ -1,8 +1,10 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -51,10 +53,10 @@ public class LockOnEvent {
 			int level = data.getSkills().getSkillLevel("kisense");
 			if (level <= 0) return;
 
-			double range = 5.0 + 3.0 * level;
+			double range = 15.0 + 5.0 * level;
 			if (data.getStatus().isAndroidUpgraded()) range += 10.0;
 
-			findTargetInFront(player, range).ifPresent(target -> {
+			findTargetInFront(player, range, data).ifPresent(target -> {
 				lockedTarget = target;
 				player.playSound(MainSounds.LOCKON.get());
 			});
@@ -89,10 +91,15 @@ public class LockOnEvent {
 					return;
 				}
 
-				double maxRange = 5 + 3.0 * level;
+				double maxRange = 15.0 + 5.0 * level;
 				if (data.getStatus().isAndroidUpgraded()) maxRange += 10.0;
 
 				if (player.distanceTo(lockedTarget) > maxRange) {
+					unlock();
+					return;
+				}
+
+				if (!KiSenseScan.canTarget(lockedTarget, data)) {
 					unlock();
 					return;
 				}
@@ -163,7 +170,8 @@ public class LockOnEvent {
 		RenderSystem.depthMask(false);
 		RenderSystem.depthFunc(GL11.GL_ALWAYS);
 
-		long time = System.currentTimeMillis();
+		boolean lod = Minecraft.getInstance().player != null && Minecraft.getInstance().player.distanceTo(lockedTarget) > 24.0;
+		long time = lod ? 0L : System.currentTimeMillis();
 		float angle1 = (time % 3600L) / 10.0f;
 		float angle2 = -((time % 7200L) / 20.0f);
 
@@ -206,14 +214,14 @@ public class LockOnEvent {
 		tesselator.end();
 	}
 
-	private static Optional<LivingEntity> findTargetInFront(Player player, double range) {
+	private static Optional<LivingEntity> findTargetInFront(Player player, double range, StatsData data) {
 		Vec3 eyePos = player.getEyePosition();
 		Vec3 viewVec = player.getViewVector(1.0F);
 		Vec3 endPos = eyePos.add(viewVec.scale(range));
 		AABB searchBox = player.getBoundingBox().expandTowards(viewVec.scale(range)).inflate(1.0D);
 
 		List<LivingEntity> list = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
-				e -> e != player && e.isAlive() && e.isPickable());
+				e -> e != player && e.isAlive() && e.isPickable() && KiSenseScan.canTarget(e, data));
 
 		LivingEntity closest = null;
 		double closestDist = range * range;
