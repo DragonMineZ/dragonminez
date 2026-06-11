@@ -140,8 +140,6 @@ public class StrikeAttackHandler {
 	}
 
 	private static void clearVictimStrikeLock(ServerPlayer player, LivingEntity target, UUID targetId) {
-		// Prefer UUID lookup: the target reference may point to a stale entity (recreated
-		// after death / dimension change) whose capability is already invalidated.
 		if (targetId != null && player.getServer() != null) {
 			ServerPlayer victim = player.getServer().getPlayerList().getPlayer(targetId);
 			if (victim != null) {
@@ -149,12 +147,10 @@ public class StrikeAttackHandler {
 				return;
 			}
 		}
-		// Fallback for non-player targets or offline victims
 		if (target instanceof ServerPlayer serverTarget) setStrikeLocked(serverTarget, false);
 	}
 
 	private static void stopVictimAnimation(ServerPlayer player, LivingEntity target, UUID targetId) {
-		// Same UUID-first strategy as clearVictimStrikeLock.
 		if (targetId != null && player.getServer() != null) {
 			ServerPlayer victim = player.getServer().getPlayerList().getPlayer(targetId);
 			if (victim != null) {
@@ -186,399 +182,399 @@ public class StrikeAttackHandler {
 		PENDING.put(player.getUUID(), pending.withTicksRemaining(pending.ticksRemaining() - 1));
 	}
 
-    private static void processActive(ServerPlayer player) {
-        ActiveStrike active = ACTIVE.get(player.getUUID());
-        if (active == null) return;
-
-        LivingEntity target = resolveLiving(player, active.targetId());
-
-        if (target == null || !target.isAlive() || !player.isAlive()) {
-            endStrike(player, target, active);
-            return;
-        }
-
-        if ("dragon_fist".equals(active.techniqueId())) {
-            if (active.ticksElapsed() == 0) {
-                faceEntity(player, target);
-            }
-
-            if (active.ticksElapsed() == 5) {
-                SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
-                dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
-                dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
-            }
-
-            if (active.ticksElapsed() >= active.durationTicks()) {
-                endStrike(player, target, active);
-            } else {
-                ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
-            }
-            return;
-        }
-
-        if ("oozaru_fist".equals(active.techniqueId())) {
-            if (active.ticksElapsed() == 0) {
-                faceEntity(player, target);
-            }
-
-            if (active.ticksElapsed() == 5) {
-                OzaruFistEntity ozaruFist = new OzaruFistEntity(player.level(), player);
-                ozaruFist.setupOzaruFist(player, (float) active.totalDamage(), 1.0f);
-                ozaruFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
-            }
-
-            if (active.ticksElapsed() >= active.durationTicks()) {
-                endStrike(player, target, active);
-            } else {
-                ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
-            }
-            return;
-        }
-
-        if ("meteor".equals(active.techniqueId())) {
-            if (target instanceof ServerPlayer targetPlayer) {
-                faceEntity(targetPlayer, player);
-            } else {
-                faceEntity(target, player);
-            }
-
-            player.invulnerableTime = 20;
-
-            Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
-
-            double advanceSpeed = 0.25;
-            player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
-            player.hurtMarked = true;
-
-            double distance = 1.5;
-            double targetX = player.getX() + lookVec.x * distance;
-            double targetY = player.getY();
-            double targetZ = player.getZ() + lookVec.z * distance;
-
-            target.setPos(targetX, targetY, targetZ);
-            target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
-            target.hurtMarked = true;
-
-            int nextTick = active.ticksElapsed() + 1;
-
-            if (nextTick % active.hitIntervalTicks() == 0 && nextTick < active.durationTicks()) {
-                applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId());
-
-                player.level().playSound(
-                        null, target.getX(), target.getY(), target.getZ(),
-                        MainSounds.GOLPE1.get(),
-                        net.minecraft.sounds.SoundSource.PLAYERS,
-                        1.0F, // Volumen
-                        0.8F + (player.getRandom().nextFloat() * 0.4F)
-                );
-            }
-
-            if (nextTick >= active.durationTicks()) {
-                applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId());
-                grantKillXpIfNeeded(player, target, active.techniqueId());
-
-                player.level().playSound(
-                        null, target.getX(), target.getY(), target.getZ(),
-                        MainSounds.CRITICO1.get(),
-                        net.minecraft.sounds.SoundSource.PLAYERS,
-                        2.0F,
-                        1.0F
-                );
-
-                Vec3 pushDir = player.getLookAngle().normalize();
-                target.setDeltaMovement(pushDir.x * 2.5, 0.4, pushDir.z * 2.5);
-                target.hurtMarked = true;
-
-                playStrikeKnockbackAnimation(target);
-
-                MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || pushDir.y < -0.5
-                        ? MomentumImpactHandler.CollisionImpactType.GROUND
-                        : MomentumImpactHandler.CollisionImpactType.WALL;
-                MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
-
-                endStrike(player, target, active);
-                return;
-            }
-
-            ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
-            return;
-        }
-
-        if ("super_god_fist".equals(active.techniqueId())) {
-
-            int nextTick = active.ticksElapsed() + 1;
-
-            if (nextTick < 14) {
-                faceEntity(player, target);
-                if (target instanceof ServerPlayer targetPlayer) {
-                    faceEntity(targetPlayer, player);
-                } else {
-                    faceEntity(target, player);
-                }
-            }
-
-            player.invulnerableTime = 20;
-
-            if (nextTick <= 12) {
-                target.invulnerableTime = 20;
-
-                double dist = player.distanceTo(target);
-                if (dist > 1.5) {
-                    Vec3 dir = target.position().subtract(player.position()).normalize();
-                    double dashSpeed = 1.5;
-                    player.setDeltaMovement(dir.x * dashSpeed, player.getDeltaMovement().y, dir.z * dashSpeed);
-                    player.hurtMarked = true;
-                } else {
-                    freezeEntity(player);
-                }
-                freezeEntity(target);
-            }
-            else if (nextTick == 13) {
-                target.invulnerableTime = 20;
-                freezeEntity(player);
-                freezeEntity(target);
-            }
-            else if (nextTick == 14) {
-                target.invulnerableTime = 0;
-
-                applyStrikeDamage(player, target, active.totalDamage(), active.techniqueId());
-                grantKillXpIfNeeded(player, target, active.techniqueId());
-
-                player.level().playSound(
-                        null, target.getX(), target.getY(), target.getZ(),
-                        MainSounds.CRITICO2.get(),
-                        net.minecraft.sounds.SoundSource.PLAYERS,
-                        2.5F,
-                        0.7F
-                );
-
-                Vec3 pushDir = player.getLookAngle().normalize();
-                double knockbackPower = 4.0;
-                target.setDeltaMovement(pushDir.x * knockbackPower, 0.6, pushDir.z * knockbackPower);
-                target.hurtMarked = true;
-
-                playStrikeKnockbackAnimation(target);
-
-                MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || pushDir.y < -0.5
-                        ? MomentumImpactHandler.CollisionImpactType.GROUND
-                        : MomentumImpactHandler.CollisionImpactType.WALL;
-                MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
-
-                freezeEntity(player);
-            }
-            else if (nextTick < 25) {
-                freezeEntity(player);
-            }
-
-            if (nextTick >= 35) {
-                endStrike(player, target, active);
-                return;
-            }
-
-            ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
-            return;
-        }
-
-        if ("deadly_dance".equals(active.techniqueId()) || "deadly_dance_vegetto".equals(active.techniqueId())) {
-
-            if (target instanceof ServerPlayer targetPlayer) {
-                faceEntity(targetPlayer, player);
-            } else {
-                faceEntity(target, player);
-            }
-
-            player.invulnerableTime = 20;
-
-            Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
-
-            double advanceSpeed = 0.25;
-            player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
-            player.hurtMarked = true;
-
-            double distance = 1.5;
-            double targetX = player.getX() + lookVec.x * distance;
-            double targetY = player.getY();
-            double targetZ = player.getZ() + lookVec.z * distance;
-
-            target.setPos(targetX, targetY, targetZ);
-            target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
-            target.hurtMarked = true;
-
-            int nextTick = active.ticksElapsed() + 1;
-
-            if (nextTick % active.hitIntervalTicks() == 0 && nextTick < 30) {
-                applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId());
-
-                player.level().playSound(
-                        null, target.getX(), target.getY(), target.getZ(),
-                        MainSounds.GOLPE1.get(),
-                        net.minecraft.sounds.SoundSource.PLAYERS,
-                        1.0F,
-                        0.8F + (player.getRandom().nextFloat() * 0.4F)
-                );
-            }
-
-            if (nextTick >= 30) {
-                applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId());
-                grantKillXpIfNeeded(player, target, active.techniqueId());
-
-                player.level().playSound(
-                        null, target.getX(), target.getY(), target.getZ(),
-                        MainSounds.CRITICO2.get(),
-                        net.minecraft.sounds.SoundSource.PLAYERS,
-                        2.0F,
-                        1.0F
-                );
-
-                Vec3 pushDir = player.getLookAngle().normalize();
-                double upwardForce = 1.5;
-                double forwardForce = 0.5;
-
-                target.setDeltaMovement(pushDir.x * forwardForce, upwardForce, pushDir.z * forwardForce);
-                target.hurtMarked = true;
-
-                playStrikeKnockbackAnimation(target);
-
-                MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0, 1, 0));
-
-                endStrike(player, target, active);
-                return;
-            }
-
-            ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
-            return;
-        }
-
-        if ("kaioken_attack".equals(active.techniqueId())) {
-
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-                stats.getStatus().setAuraActive(true);
-
-                if (active.ticksElapsed() % 10 == 0) {
-                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-                }
-            });
-
-            int nextTick = active.ticksElapsed() + 1;
-
-            if (nextTick < 20) {
-                faceEntity(player, target);
-                if (target instanceof ServerPlayer targetPlayer) {
-                    faceEntity(targetPlayer, player);
-                } else {
-                    faceEntity(target, player);
-                }
-            }
-
-            player.invulnerableTime = 20;
-
-            if (nextTick < 10) {
-                double dist = player.distanceTo(target);
-                if (dist > 1.5) {
-                    Vec3 dir = target.position().subtract(player.position()).normalize();
-                    player.setDeltaMovement(dir.scale(1.5));
-                    player.hurtMarked = true;
-                } else {
-                    freezeEntity(player);
-                }
-                freezeEntity(target);
-            }
-            else if (nextTick == 10) {
-                applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId());
-                player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.GOLPE1.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.0F);
-
-                Vec3 pushDir = player.getLookAngle().normalize();
-                target.setDeltaMovement(pushDir.x * 1.5, 0.4, pushDir.z * 1.5);
-                target.hurtMarked = true;
-                freezeEntity(player);
-            }
-            else if (nextTick < 15) {
-                Vec3 dir = target.position().subtract(player.position()).normalize();
-                player.setDeltaMovement(dir.scale(2.5));
-                player.hurtMarked = true;
-            }
-            else if (nextTick == 15) {
-                applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId());
-                player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.2F);
-
-                freezeEntity(target);
-                freezeEntity(player);
-            }
-            else if (nextTick < 20) {
-                freezeEntity(target);
-                freezeEntity(player);
-            }
-            else if (nextTick == 20) {
-                applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId());
-                player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 0.8F);
-
-                Vec3 pushDir = player.getLookAngle().normalize();
-                target.setDeltaMovement(pushDir.x * 3.5, 0.2, pushDir.z * 3.5);
-                target.hurtMarked = true;
-                playStrikeKnockbackAnimation(target);
-
-                freezeEntity(player);
-            }
-            else if (nextTick < 34) {
-                freezeEntity(player);
-                if (nextTick == 21) {
-                    player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
-                }
-            }
-            else if (nextTick == 34) {
-                freezeEntity(player);
-
-                applyStrikeDamage(player, target, active.finalDamage() * 0.1, active.techniqueId());
-
-                KiWaveEntity kamehameha = new KiWaveEntity(player.level(), player);
-                kamehameha.setupKiHame(player, (float) active.finalDamage() * 0.9F, 2.0F, 1.0F, 10);
-                kamehameha.setFiring(true);
-                kamehameha.setMaxLife(40);
-                player.level().addFreshEntity(kamehameha);
-
-                player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_KAME_FIRE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
-            }
-            else if (nextTick < 50) {
-                freezeEntity(player);
-            }
-            else if (nextTick >= 50) {
-                grantKillXpIfNeeded(player, target, active.techniqueId());
-
-                StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-                    stats.getStatus().setAuraActive(false);
-                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-                });
-
-                endStrike(player, target, active);
-                return;
-            }
-
-            ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
-            return;
-        }
-
-        freezeEntity(player);
-        freezeEntity(target);
-        faceEntity(player, target);
-        if (target instanceof ServerPlayer targetPlayer) {
-            faceEntity(targetPlayer, player);
-        }
-
-        int nextTick = active.ticksElapsed() + 1;
-        if (nextTick % active.hitIntervalTicks() == 0 && nextTick < active.durationTicks()) {
-            applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId());
-        }
-
-        if (nextTick >= active.durationTicks()) {
-            applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId());
-            grantKillXpIfNeeded(player, target, active.techniqueId());
-            applyKnockback(player, target, active.totalDamage());
-            endStrike(player, target, active);
-            return;
-        }
-
-        ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
-    }
+	private static void processActive(ServerPlayer player) {
+		ActiveStrike active = ACTIVE.get(player.getUUID());
+		if (active == null) return;
+
+		LivingEntity target = resolveLiving(player, active.targetId());
+
+		if (target == null || !target.isAlive() || !player.isAlive()) {
+			endStrike(player, target, active);
+			return;
+		}
+
+		if ("dragon_fist".equals(active.techniqueId())) {
+			if (active.ticksElapsed() == 0) {
+				faceEntity(player, target);
+			}
+
+			if (active.ticksElapsed() == 5) {
+				SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
+				dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
+				dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
+			}
+
+			if (active.ticksElapsed() >= active.durationTicks()) {
+				endStrike(player, target, active);
+			} else {
+				ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
+			}
+			return;
+		}
+
+		if ("oozaru_fist".equals(active.techniqueId())) {
+			if (active.ticksElapsed() == 0) {
+				faceEntity(player, target);
+			}
+
+			if (active.ticksElapsed() == 5) {
+				OzaruFistEntity ozaruFist = new OzaruFistEntity(player.level(), player);
+				ozaruFist.setupOzaruFist(player, (float) active.totalDamage(), 1.0f);
+				ozaruFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
+			}
+
+			if (active.ticksElapsed() >= active.durationTicks()) {
+				endStrike(player, target, active);
+			} else {
+				ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
+			}
+			return;
+		}
+
+		if ("meteor".equals(active.techniqueId())) {
+			if (target instanceof ServerPlayer targetPlayer) {
+				faceEntity(targetPlayer, player);
+			} else {
+				faceEntity(target, player);
+			}
+
+			player.invulnerableTime = 20;
+
+			Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
+
+			double advanceSpeed = 0.25;
+			player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
+			player.hurtMarked = true;
+
+			double distance = 1.5;
+			double targetX = player.getX() + lookVec.x * distance;
+			double targetY = player.getY();
+			double targetZ = player.getZ() + lookVec.z * distance;
+
+			target.setPos(targetX, targetY, targetZ);
+			target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
+			target.hurtMarked = true;
+
+			int nextTick = active.ticksElapsed() + 1;
+
+			if (nextTick % active.hitIntervalTicks() == 0 && nextTick < active.durationTicks()) {
+				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+
+				player.level().playSound(
+						null, target.getX(), target.getY(), target.getZ(),
+						MainSounds.GOLPE1.get(),
+						net.minecraft.sounds.SoundSource.PLAYERS,
+						1.0F,
+						0.8F + (player.getRandom().nextFloat() * 0.4F)
+				);
+			}
+
+			if (nextTick >= active.durationTicks()) {
+				applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
+				grantKillXpIfNeeded(player, target, active.techniqueId());
+
+				player.level().playSound(
+						null, target.getX(), target.getY(), target.getZ(),
+						MainSounds.CRITICO1.get(),
+						net.minecraft.sounds.SoundSource.PLAYERS,
+						2.0F,
+						1.0F
+				);
+
+				Vec3 pushDir = player.getLookAngle().normalize();
+				target.setDeltaMovement(pushDir.x * 2.5, 0.4, pushDir.z * 2.5);
+				target.hurtMarked = true;
+
+				playStrikeKnockbackAnimation(target);
+
+				MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || pushDir.y < -0.5
+						? MomentumImpactHandler.CollisionImpactType.GROUND
+						: MomentumImpactHandler.CollisionImpactType.WALL;
+				MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+
+				endStrike(player, target, active);
+				return;
+			}
+
+			ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+			return;
+		}
+
+		if ("super_god_fist".equals(active.techniqueId())) {
+
+			int nextTick = active.ticksElapsed() + 1;
+
+			if (nextTick < 14) {
+				faceEntity(player, target);
+				if (target instanceof ServerPlayer targetPlayer) {
+					faceEntity(targetPlayer, player);
+				} else {
+					faceEntity(target, player);
+				}
+			}
+
+			player.invulnerableTime = 20;
+
+			if (nextTick <= 12) {
+				target.invulnerableTime = 20;
+
+				double dist = player.distanceTo(target);
+				if (dist > 1.5) {
+					Vec3 dir = target.position().subtract(player.position()).normalize();
+					double dashSpeed = 1.5;
+					player.setDeltaMovement(dir.x * dashSpeed, player.getDeltaMovement().y, dir.z * dashSpeed);
+					player.hurtMarked = true;
+				} else {
+					freezeEntity(player);
+				}
+				freezeEntity(target);
+			}
+			else if (nextTick == 13) {
+				target.invulnerableTime = 20;
+				freezeEntity(player);
+				freezeEntity(target);
+			}
+			else if (nextTick == 14) {
+				target.invulnerableTime = 0;
+
+				applyStrikeDamage(player, target, active.totalDamage(), active.techniqueId(), true);
+				grantKillXpIfNeeded(player, target, active.techniqueId());
+
+				player.level().playSound(
+						null, target.getX(), target.getY(), target.getZ(),
+						MainSounds.CRITICO2.get(),
+						net.minecraft.sounds.SoundSource.PLAYERS,
+						2.5F,
+						0.7F
+				);
+
+				Vec3 pushDir = player.getLookAngle().normalize();
+				double knockbackPower = 4.0;
+				target.setDeltaMovement(pushDir.x * knockbackPower, 0.6, pushDir.z * knockbackPower);
+				target.hurtMarked = true;
+
+				playStrikeKnockbackAnimation(target);
+
+				MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || pushDir.y < -0.5
+						? MomentumImpactHandler.CollisionImpactType.GROUND
+						: MomentumImpactHandler.CollisionImpactType.WALL;
+				MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+
+				freezeEntity(player);
+			}
+			else if (nextTick < 25) {
+				freezeEntity(player);
+			}
+
+			if (nextTick >= 35) {
+				endStrike(player, target, active);
+				return;
+			}
+
+			ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+			return;
+		}
+
+		if ("deadly_dance".equals(active.techniqueId()) || "deadly_dance_vegetto".equals(active.techniqueId())) {
+
+			if (target instanceof ServerPlayer targetPlayer) {
+				faceEntity(targetPlayer, player);
+			} else {
+				faceEntity(target, player);
+			}
+
+			player.invulnerableTime = 20;
+
+			Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
+
+			double advanceSpeed = 0.25;
+			player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
+			player.hurtMarked = true;
+
+			double distance = 1.5;
+			double targetX = player.getX() + lookVec.x * distance;
+			double targetY = player.getY();
+			double targetZ = player.getZ() + lookVec.z * distance;
+
+			target.setPos(targetX, targetY, targetZ);
+			target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
+			target.hurtMarked = true;
+
+			int nextTick = active.ticksElapsed() + 1;
+
+			if (nextTick % active.hitIntervalTicks() == 0 && nextTick < 30) {
+				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+
+				player.level().playSound(
+						null, target.getX(), target.getY(), target.getZ(),
+						MainSounds.GOLPE1.get(),
+						net.minecraft.sounds.SoundSource.PLAYERS,
+						1.0F,
+						0.8F + (player.getRandom().nextFloat() * 0.4F)
+				);
+			}
+
+			if (nextTick >= 30) {
+				applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
+				grantKillXpIfNeeded(player, target, active.techniqueId());
+
+				player.level().playSound(
+						null, target.getX(), target.getY(), target.getZ(),
+						MainSounds.CRITICO2.get(),
+						net.minecraft.sounds.SoundSource.PLAYERS,
+						2.0F,
+						1.0F
+				);
+
+				Vec3 pushDir = player.getLookAngle().normalize();
+				double upwardForce = 1.5;
+				double forwardForce = 0.5;
+
+				target.setDeltaMovement(pushDir.x * forwardForce, upwardForce, pushDir.z * forwardForce);
+				target.hurtMarked = true;
+
+				playStrikeKnockbackAnimation(target);
+
+				MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0, 1, 0));
+
+				endStrike(player, target, active);
+				return;
+			}
+
+			ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+			return;
+		}
+
+		if ("kaioken_attack".equals(active.techniqueId())) {
+
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+				stats.getStatus().setAuraActive(true);
+
+				if (active.ticksElapsed() % 10 == 0) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				}
+			});
+
+			int nextTick = active.ticksElapsed() + 1;
+
+			if (nextTick < 20) {
+				faceEntity(player, target);
+				if (target instanceof ServerPlayer targetPlayer) {
+					faceEntity(targetPlayer, player);
+				} else {
+					faceEntity(target, player);
+				}
+			}
+
+			player.invulnerableTime = 20;
+
+			if (nextTick < 10) {
+				double dist = player.distanceTo(target);
+				if (dist > 1.5) {
+					Vec3 dir = target.position().subtract(player.position()).normalize();
+					player.setDeltaMovement(dir.scale(1.5));
+					player.hurtMarked = true;
+				} else {
+					freezeEntity(player);
+				}
+				freezeEntity(target);
+			}
+			else if (nextTick == 10) {
+				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+				player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.GOLPE1.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.0F);
+
+				Vec3 pushDir = player.getLookAngle().normalize();
+				target.setDeltaMovement(pushDir.x * 1.5, 0.4, pushDir.z * 1.5);
+				target.hurtMarked = true;
+				freezeEntity(player);
+			}
+			else if (nextTick < 15) {
+				Vec3 dir = target.position().subtract(player.position()).normalize();
+				player.setDeltaMovement(dir.scale(2.5));
+				player.hurtMarked = true;
+			}
+			else if (nextTick == 15) {
+				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+				player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.2F);
+
+				freezeEntity(target);
+				freezeEntity(player);
+			}
+			else if (nextTick < 20) {
+				freezeEntity(target);
+				freezeEntity(player);
+			}
+			else if (nextTick == 20) {
+				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+				player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 0.8F);
+
+				Vec3 pushDir = player.getLookAngle().normalize();
+				target.setDeltaMovement(pushDir.x * 3.5, 0.2, pushDir.z * 3.5);
+				target.hurtMarked = true;
+				playStrikeKnockbackAnimation(target);
+
+				freezeEntity(player);
+			}
+			else if (nextTick < 34) {
+				freezeEntity(player);
+				if (nextTick == 21) {
+					player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+				}
+			}
+			else if (nextTick == 34) {
+				freezeEntity(player);
+
+				applyStrikeDamage(player, target, active.finalDamage() * 0.1, active.techniqueId(), false);
+
+				KiWaveEntity kamehameha = new KiWaveEntity(player.level(), player);
+				kamehameha.setupKiHame(player, (float) active.finalDamage() * 0.9F, 2.0F, 1.0F, 10);
+				kamehameha.setFiring(true);
+				kamehameha.setMaxLife(40);
+				player.level().addFreshEntity(kamehameha);
+
+				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_KAME_FIRE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
+			}
+			else if (nextTick < 50) {
+				freezeEntity(player);
+			}
+			else if (nextTick >= 50) {
+				grantKillXpIfNeeded(player, target, active.techniqueId());
+
+				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+					stats.getStatus().setAuraActive(false);
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				});
+
+				endStrike(player, target, active);
+				return;
+			}
+
+			ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+			return;
+		}
+
+		freezeEntity(player);
+		freezeEntity(target);
+		faceEntity(player, target);
+		if (target instanceof ServerPlayer targetPlayer) {
+			faceEntity(targetPlayer, player);
+		}
+
+		int nextTick = active.ticksElapsed() + 1;
+		if (nextTick % active.hitIntervalTicks() == 0 && nextTick < active.durationTicks()) {
+			applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+		}
+
+		if (nextTick >= active.durationTicks()) {
+			applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
+			grantKillXpIfNeeded(player, target, active.techniqueId());
+			applyKnockback(player, target, active.totalDamage());
+			endStrike(player, target, active);
+			return;
+		}
+
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+	}
 
 	private static void startStrike(ServerPlayer player, LivingEntity target, PendingStrike pending) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
@@ -618,7 +614,7 @@ public class StrikeAttackHandler {
 			MinecraftForge.EVENT_BUS.post(
 					new DMZEvent.StrikeAttackFireEvent(player, stats, strike, target));
 
-			applyStrikeDamage(player, target, perHitDamage, pending.techniqueId());
+			applyStrikeDamage(player, target, perHitDamage, pending.techniqueId(), false);
 			//teleportToTargetFront(player, target);
 			setStrikeLocked(player, true);
 			setStrikeLocked(target, true);
@@ -784,23 +780,26 @@ public class StrikeAttackHandler {
 		return look.dot(toTarget) >= CONE_HALF_ANGLE_COS;
 	}
 
-    private static void teleportToTargetFront(ServerPlayer player, LivingEntity target) {
-        Vec3 targetPos = target.position();
-        Vec3 targetLook = target.getLookAngle();
-        Vec3 teleportPos = targetPos.subtract(targetLook.scale(1.3));
+	private static void teleportToTargetFront(ServerPlayer player, LivingEntity target) {
+		Vec3 targetPos = target.position();
+		Vec3 targetLook = target.getLookAngle();
+		Vec3 teleportPos = targetPos.subtract(targetLook.scale(1.3));
 
-        player.teleportTo(teleportPos.x, targetPos.y, teleportPos.z);
+		player.teleportTo(teleportPos.x, targetPos.y, teleportPos.z);
 
-        player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+		player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
 
-    }
+	}
 
-	private static void applyStrikeDamage(ServerPlayer player, LivingEntity target, double damage, String techniqueId) {
+	private static void applyStrikeDamage(ServerPlayer player, LivingEntity target, double damage, String techniqueId, boolean isFinalHit) {
 		if (damage <= 0) return;
+		if (!isFinalHit) if (target.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, target.getHealth() - 1.0F);
+
 		playStrikeHitAnimation(target);
 		target.hurt(MainDamageTypes.strikeAttack(player.level(), player), (float) damage);
 		RECENTLY_DAMAGED.put(player.getUUID(), new RecentHit(target.getUUID(), System.currentTimeMillis()));
 
+		double finalDamage = damage;
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techniqueId);
 			if (tech instanceof StrikeAttackData strike) {
@@ -808,7 +807,7 @@ public class StrikeAttackHandler {
 				if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 			}
 			DynamicGrowthService.markCombat(stats);
-			DynamicGrowthService.awardStrike(player, stats, target, damage);
+			DynamicGrowthService.awardStrike(player, stats, target, finalDamage);
 		});
 	}
 
@@ -886,15 +885,15 @@ public class StrikeAttackHandler {
 	}
 
 	private record PendingStrike(UUID playerId, UUID preferredTargetId, String techniqueId, String animationId,
-									 int durationTicks, int cooldownTicks, double energyCost, int ticksRemaining) {
+	                             int durationTicks, int cooldownTicks, double energyCost, int ticksRemaining) {
 		private PendingStrike withTicksRemaining(int ticksRemaining) {
 			return new PendingStrike(playerId, preferredTargetId, techniqueId, animationId, durationTicks, cooldownTicks, energyCost, ticksRemaining);
 		}
 	}
 
 	private record ActiveStrike(UUID playerId, UUID targetId, String techniqueId, String animationId,
-								   int durationTicks, int cooldownTicks, double totalDamage, double perHitDamage,
-								   double finalDamage, int hitIntervalTicks, int ticksElapsed) {
+	                            int durationTicks, int cooldownTicks, double totalDamage, double perHitDamage,
+	                            double finalDamage, int hitIntervalTicks, int ticksElapsed) {
 		private ActiveStrike withTicksElapsed(int ticksElapsed) {
 			return new ActiveStrike(playerId, targetId, techniqueId, animationId, durationTicks, cooldownTicks, totalDamage, perHitDamage, finalDamage, hitIntervalTicks, ticksElapsed);
 		}
