@@ -64,14 +64,21 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     private static final Map<ResourceLocation, Boolean> FILE_EXISTS_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, ResourceLocation> MODEL_RESOLUTION_CACHE = new ConcurrentHashMap<>();
+
+    private static final ResourceLocation ANIM_PRIMARY = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/movement.animation.json");
+    private static final ResourceLocation[] ANIM_FALLBACKS = {
+        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/combat.animation.json"),
+        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/ki.animation.json"),
+        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/transf.animation.json"),
+        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/skp.animation.json")
+    };
+
     private final ResourceLocation textureLocation;
-    private final ResourceLocation animationLocation;
     private final String customModel;
 
     public DMZPlayerModel(String raceName, String customModel) {
         this.customModel = customModel;
         this.textureLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
-        this.animationLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/base.animation.json");
     }
 
     @Override
@@ -227,7 +234,12 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getAnimationResource(T t) {
-        return animationLocation;
+        return ANIM_PRIMARY;
+    }
+
+    @Override
+    public ResourceLocation[] getAnimationResourceFallbacks(T t) {
+        return ANIM_FALLBACKS;
     }
 
     @Override
@@ -326,7 +338,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void applyMolangQueries(T animatable, double animTime) {
         super.applyMolangQueries(animatable, animTime);
-        boolean skipHead = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
+        boolean skipHead = animatable instanceof IPlayerAnimatable pa && (pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.")
+                || pa.dragonminez$getCurrentPlayingAnimation().startsWith("ki."));
 
         MolangParser parser = MolangParser.INSTANCE;
 
@@ -337,7 +350,6 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         parser.setValue("query.head_x_rotation", () -> (double) clampedPitch);
         parser.setValue("query.head_y_rotation", () -> (double) clampedYaw);
-
         parser.setValue("query.head_pitch", () -> (double) clampedPitch);
         parser.setValue("query.head_yaw", () -> (double) clampedYaw);
     }
