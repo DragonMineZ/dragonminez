@@ -73,18 +73,30 @@ public class WeaponRegistry {
     }
 
     public static void resolveAndRegisterAttributes(ResourceLocation itemId, AttributesContainer container) {
-        if (container.attributes() != null) {
-            if (container.parent() == null) register(itemId, container.attributes());
-            else {
-                var parentAttributes = getAttributes(ResourceLocation.parse(container.parent()));
-                if (parentAttributes != null) register(itemId, WeaponAttributesHelper.override(parentAttributes, container.attributes()));
-            }
-        } else {
-            if (container.parent() != null) {
-                var parentAttributes = getAttributes(ResourceLocation.parse(container.parent()));
-                if (parentAttributes != null) register(itemId, parentAttributes);
+        var resolved = resolveAttributes(itemId, container, new HashSet<>());
+        if (resolved != null) register(itemId, resolved);
+    }
+
+    private static WeaponAttributes resolveAttributes(ResourceLocation itemId, AttributesContainer container, Set<ResourceLocation> visiting) {
+        if (container == null) return null;
+        if (container.parent() == null) return container.attributes();
+
+        var parentId = ResourceLocation.parse(container.parent());
+        if (itemId != null) visiting.add(itemId);
+
+        var parentAttributes = getAttributes(parentId);
+        if (parentAttributes == null && !visiting.contains(parentId)) {
+            var parentContainer = containers.get(parentId);
+            if (parentContainer != null) {
+                parentAttributes = resolveAttributes(parentId, parentContainer, visiting);
+                if (parentAttributes != null) register(parentId, parentAttributes);
             }
         }
+
+        if (parentAttributes == null) return null;
+
+        if (container.attributes() == null) return parentAttributes;
+        return WeaponAttributesHelper.override(parentAttributes, container.attributes());
     }
 
     public static void buildAnimationCache(ResourceManager resourceManager) {
