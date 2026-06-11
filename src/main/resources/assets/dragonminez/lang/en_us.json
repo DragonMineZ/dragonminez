@@ -127,6 +127,7 @@
   "gui.dragonminez.character_stats.base_stats": "Base Statistics",
   "gui.dragonminez.character_stats.level": "Level",
   "gui.dragonminez.character_stats.battle_power": "Battle Power",
+  "gui.dragonminez.character_stats.power_level": "Power Level",
   "gui.dragonminez.character_stats.info": "INFORMATION",
   "gui.dragonminez.character_stats.tps": "TPs",
   "gui.dragonminez.character_stats.form": "Form",

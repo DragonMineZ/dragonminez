@@ -139,17 +139,32 @@ public class StatsData {
 		return Math.min(allowedByTotal, remainingStat);
 	}
 
+	private static final double K = 310_000.0;
+	private static final double BP_REF_VALUE = 5_000_000_000.0;
+	private static final double BP_CURVE_EXPONENT = 1.5;
+
 	public int getBattlePower() {
+		long exact = getBattlePowerExact();
+		return exact > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) exact;
+	}
+
+	public long getBattlePowerExact() {
 		if (status.isAndroidUpgraded()) return Integer.MAX_VALUE;
-		int str = stats.getStrength();
-		int skp = stats.getStrikePower();
-		int res = stats.getResistance();
-		int vit = stats.getVitality();
-		int pwr = stats.getKiPower();
 
 		double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
 
-		return (int) ((str + skp + res + vit + pwr) * releaseMultiplier);
+		double rawPower = (stats.getStrength() * getStatScaling("STR") * getTotalMultiplier("STR")
+				+ stats.getStrikePower() * getStatScaling("SKP") * getTotalMultiplier("SKP")
+				+ stats.getResistance() * getStatScaling("DEF") * getTotalMultiplier("RES")
+				+ stats.getVitality() * getStatScaling("VIT") * getTotalMultiplier("VIT")
+				+ stats.getKiPower() * getStatScaling("PWR") * getTotalMultiplier("PWR")) * releaseMultiplier;
+
+		if (Double.isNaN(rawPower) || rawPower <= 0) return 0L;
+
+		double bp = BP_REF_VALUE * Math.pow(rawPower / K, BP_CURVE_EXPONENT);
+
+		if (Double.isNaN(bp) || bp <= 0) return 0L;
+		return (long) Math.min(bp, (double) Long.MAX_VALUE);
 	}
 
 	private double getSecondaryAttributeValue(net.minecraft.world.entity.ai.attributes.Attribute attribute, double fallback) {

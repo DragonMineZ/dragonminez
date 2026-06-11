@@ -64,6 +64,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	private final DecimalFormat twoDecimalFormatter;
 	private final DecimalFormat scientificFormatter;
 	private final DecimalFormat fullTpsFormatter;
+	private final DecimalFormat compactBpFormatter;
 	private boolean useHexagonView = false;
 
 	private CustomTextureButton strButton;
@@ -82,6 +83,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		this.twoDecimalFormatter = new DecimalFormat("#,##0.00", symbols);
 		this.scientificFormatter = new DecimalFormat("0.###E0", symbols);
 		this.fullTpsFormatter = new DecimalFormat("#,##0.######", symbols);
+		this.compactBpFormatter = new DecimalFormat("0.##", symbols);
 	}
 
 	@Override
@@ -680,8 +682,52 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	private void renderStatisticsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
 		if (useHexagonView) renderStatisticsInfoHexagon(graphics, mouseX, mouseY);
 		else renderStatisticsInfoList(graphics, mouseX, mouseY);
+		renderBattlePowerInfo(graphics, mouseX, mouseY);
 		renderGravityInfo(graphics, mouseX, mouseY);
 		renderTpMultiplierInfo(graphics, mouseX, mouseY);
+	}
+
+	private void renderBattlePowerInfo(GuiGraphics graphics, int mouseX, int mouseY) {
+		if (statsData == null) return;
+
+		int centerY = getUiHeight() / 2;
+		int labelX = getUiWidth() - 137;
+		int y = centerY + 54;
+
+		boolean androidUpgraded = statsData.getStatus().isAndroidUpgraded();
+		long bp = statsData.getBattlePowerExact();
+		String displayedBp = androidUpgraded ? "???" : formatBattlePower(bp);
+
+		Component label = tr("gui.dragonminez.character_stats.power_level");
+		Component separator = txt(": ");
+		Component value = txt(displayedBp);
+
+		TextUtil.drawStringWithBorder(graphics, this.font, label, labelX, y, 0x7CFDD6, 0x000000);
+		int separatorX = labelX + font.width(label);
+		TextUtil.drawStringWithBorder(graphics, this.font, separator, separatorX, y, 0x7CFDD6, 0x000000);
+		int valueX = separatorX + font.width(separator);
+		TextUtil.drawStringWithBorder(graphics, this.font, value, valueX, y, 0xFFE593, 0x000000);
+
+		int textWidth = font.width(label) + font.width(separator) + font.width(value);
+		if (!androidUpgraded && shouldUseCompactForBp(bp) && mouseX >= labelX && mouseX <= labelX + textWidth && mouseY >= y && mouseY <= y + font.lineHeight) {
+			List<Component> tooltip = new ArrayList<>();
+			tooltip.add(txt(numberFormatter.format(bp)).withStyle(ChatFormatting.YELLOW));
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), null, tooltip, null, 0xFFFF00);
+		}
+	}
+
+	private boolean shouldUseCompactForBp(long bp) {
+		return bp > 9_999_999L;
+	}
+
+	private String formatBattlePower(long bp) {
+		if (!shouldUseCompactForBp(bp)) return numberFormatter.format(bp);
+
+		final String[] suffixes = {"M", "B", "T", "Qa", "Qi"};
+		final double[] scales = {1e6, 1e9, 1e12, 1e15, 1e18};
+		int i = scales.length - 1;
+		while (i > 0 && bp < scales[i]) i--;
+		return compactBpFormatter.format(bp / scales[i]) + suffixes[i];
 	}
 
 	private void renderStatisticsInfoList(GuiGraphics graphics, int mouseX, int mouseY) {
