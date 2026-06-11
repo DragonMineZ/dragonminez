@@ -98,7 +98,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return this.getMaxLife() / 20;
+        return Math.max(1, this.firingWindowTicks() / 20);
     }
 
     @Override

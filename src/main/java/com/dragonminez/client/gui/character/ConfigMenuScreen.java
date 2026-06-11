@@ -444,11 +444,15 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int leftPanelX = getLeftPanelX();
+		int rightPanelX = getRightPanelX();
 		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
+		int panelY = centerY - 105;
 
-		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
-				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
+		boolean overLeft = uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148;
+		boolean overRight = uiMouseX >= rightPanelX && uiMouseX <= rightPanelX + 148;
+
+		if ((overLeft || overRight) &&
+				uiMouseY >= panelY + 40 && uiMouseY <= panelY + 219) {
 
 			int scrollAmount = (int) Math.signum(delta);
 			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - scrollAmount));

@@ -80,7 +80,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return this.getMaxLife() / 20;
+        return Math.max(1, this.firingWindowTicks() / 20);
     }
 
     @Override
@@ -360,6 +360,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     public void fireHability(int finalMaxLife) {
         this.setFiring(true);
         this.setMaxLife(this.tickCount + finalMaxLife);
+        this.setFireTick(this.tickCount);
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
             updatePositionRelativeToOwner(livingOwner, false);

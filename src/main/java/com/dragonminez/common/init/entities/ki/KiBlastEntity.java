@@ -59,7 +59,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return this.getMaxLife() / 20;
+        return Math.max(1, this.firingWindowTicks() / 20);
     }
 
     @Override
@@ -529,6 +529,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public void fireHability(int finalMaxLife) {
         this.setFiring(true);
         this.setMaxLife(this.tickCount + finalMaxLife);
+        this.setFireTick(this.tickCount);
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
 
@@ -977,7 +978,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(this.maxDetonationRadius);            List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
             for (LivingEntity target : targets) {
                 if (this.shouldDamage(target)) {
-                    boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                    boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
                     if (wasHit) this.onSuccessfulHit(target);
                 }
             }
@@ -1007,7 +1008,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
                 if (wasHit) this.onSuccessfulHit(target);
             }
         }

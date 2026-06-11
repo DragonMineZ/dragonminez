@@ -44,7 +44,7 @@ public class KiAreaEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return Math.max(1, this.getMaxLife() / 10);
+        return Math.max(1, this.firingWindowTicks() / 10);
     }
 
     public void setupAreaPlayer(LivingEntity owner, float damage, float radius, int colorMain, int colorBorder, int colorOutline) {
@@ -66,6 +66,7 @@ public class KiAreaEntity extends AbstractKiProjectile {
         this.setFiring(true);
         int finalDuration = durationTicks > 0 ? durationTicks : DEFAULT_DURATION;
         this.setMaxLife(this.tickCount + finalDuration);
+        this.setFireTick(this.tickCount);
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }

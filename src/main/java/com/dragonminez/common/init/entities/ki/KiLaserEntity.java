@@ -191,6 +191,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
     public void fireHability(int finalMaxLife) {
         this.setFiring(true);
         this.setMaxLife(this.tickCount + finalMaxLife);
+        this.setFireTick(this.tickCount);
         if (this.getOwner() instanceof LivingEntity livingOwner) {
             updatePositionRelativeToOwner(livingOwner);
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 0.4F, 1.0F + (this.random.nextFloat() * 0.2F));
@@ -202,7 +203,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
     @Override
     public int getMaxHits() {
-        return this.getMaxLife() / 20;
+        return Math.max(1, this.firingWindowTicks() / 20);
     }
 
     @Override

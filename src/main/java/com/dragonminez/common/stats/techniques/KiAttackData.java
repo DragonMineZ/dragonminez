@@ -135,10 +135,10 @@ public class KiAttackData extends TechniqueData {
 		return getEffectiveUtility() == Utility.HEAL ? HEAL_OUTPUT_FACTOR : 1.0f;
 	}
 
-	public float getActualDamageMultiplier() { return damageMultiplier * (1.0f + (damageLevel * 0.1f)); }
-	public float getActualSpeed() { return speed * (1.0f + (speedLevel * 0.05f)); }
-	public float getActualSize() { return size * (1.0f + (sizeLevel * 0.05f)); }
-	public int getActualArmorPenetration() { return Math.min(100, armorPenetration + (armorPenLevel * 2)); }
+	public float getActualDamageMultiplier() { return damageMultiplier; }
+	public float getActualSpeed() { return speed; }
+	public float getActualSize() { return size; }
+	public int getActualArmorPenetration() { return Math.min(100, armorPenetration); }
 	public int getActualCastTime() { return getBaseChargeTicks(); }
 	public int getActualCooldown() { return cooldown * KI_TIME_MULTIPLIER; }
 

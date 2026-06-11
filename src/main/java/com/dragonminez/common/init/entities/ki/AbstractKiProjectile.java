@@ -145,6 +145,12 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     public abstract int getMaxHits();
 
+    protected int firingWindowTicks() {
+        int fireTick = this.getFireTick();
+        int window = fireTick >= 0 ? this.getMaxLife() - fireTick : this.getMaxLife();
+        return Math.max(1, window);
+    }
+
     public enum ClashRole { NONE, MAJOR, MINOR }
 
     public ClashRole getClashRole() {

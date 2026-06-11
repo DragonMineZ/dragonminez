@@ -380,7 +380,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int rightPanelY = centerY - 105;
 
 		int btnX = rightPanelX + 115;
-		int yOffset = rightPanelY + (tech instanceof KiAttackData ? 92 : 80);
+		int yOffset = rightPanelY + 80;
 
 		if (tech instanceof KiAttackData) {
 			if (shouldShowTechniqueUpgradeButton(tech, "damage")) {
@@ -413,12 +413,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			}
 			yOffset += 12;
 		}
-
-		if (shouldShowTechniqueUpgradeButton(tech, "cast")) {
-			btnCast = createUpgradeBtn(btnX, yOffset, "cast", true);
-			this.addRenderableWidget(btnCast);
-		}
-		yOffset += 12;
 
 		if (shouldShowTechniqueUpgradeButton(tech, "cooldown")) {
 			btnCd = createUpgradeBtn(btnX, yOffset, "cooldown", true);
@@ -1065,7 +1059,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + ki.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD);
 			yOffset += 12;
 
-			String utilKey = ki.getUtility() == KiAttackData.Utility.HEAL ? "gui.dragonminez.technique.heal" : "gui.dragonminez.technique.damage";
+			String utilKey = ki.getEffectiveUtility() == KiAttackData.Utility.HEAL ? "gui.dragonminez.technique.heal" : "gui.dragonminez.technique.damage";
 			TextUtil.drawStringWithBorder(graphics, this.font, tr(utilKey).append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF);
 			yOffset += 12;
 

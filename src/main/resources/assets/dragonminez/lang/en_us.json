@@ -596,6 +596,7 @@
   "gui.dragonminez.technique.type": "Type",
   "gui.dragonminez.technique.utility": "Utility",
   "gui.dragonminez.technique.damage": "Damage",
+  "gui.dragonminez.technique.heal": "Healing",
   "gui.dragonminez.technique.effect.tooltip.damage": "Damage: %s",
   "gui.dragonminez.technique.effect.tooltip.heal": "Healing: %s",
   "gui.dragonminez.technique.effect.tooltip.desc": "Scales with your current Ki Damage.",

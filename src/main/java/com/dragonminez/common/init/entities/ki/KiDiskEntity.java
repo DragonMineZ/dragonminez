@@ -92,6 +92,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
     public void fireHability(int finalMaxLife) {
         this.setFiring(true);
         this.setMaxLife(this.tickCount + finalMaxLife);
+        this.setFireTick(this.tickCount);
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
             Vec3 lookDir = livingOwner.getLookAngle();
@@ -144,7 +145,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return this.getMaxLife() / 20;
+        return Math.max(1, this.firingWindowTicks() / 20);
     }
 
     @Override
