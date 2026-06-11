@@ -24,6 +24,7 @@ public class RockyPeakFeature extends Feature<NoneFeatureConfiguration> {
         WorldGenLevel level = context.level();
         RandomSource random = context.random();
 
+        if (FeatureUtil.isInsideDmzStructure(level, pos)) return false;
         if (!level.getBlockState(pos.below()).isSolid()) return false;
 
         boolean tall = random.nextInt(4) != 0;

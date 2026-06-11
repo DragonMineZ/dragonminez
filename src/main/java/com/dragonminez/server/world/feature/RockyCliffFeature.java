@@ -26,6 +26,7 @@ public class RockyCliffFeature extends Feature<NoneFeatureConfiguration> {
         WorldGenLevel level = context.level();
         RandomSource random = context.random();
 
+        if (FeatureUtil.isInsideDmzStructure(level, pos)) return false;
         if (!level.getBlockState(pos.below()).isSolid()) return false;
 
         int height = 8 + random.nextInt(28);

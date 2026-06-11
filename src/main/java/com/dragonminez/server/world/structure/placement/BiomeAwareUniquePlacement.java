@@ -37,17 +37,18 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 
 	private static Field biomeSourceField = null;
 
-	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod,
-									 float frequency, int salt, Optional<ExclusionZone> exclusionZone,
-									 HolderSet<Biome> validBiomes, Rotation rotation) {
+	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes, Rotation rotation) {
 		super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
 		this.validBiomes = validBiomes;
 		this.rotation = rotation;
+		StructureSpawnPlanner.register(this);
 	}
 
-	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod,
-									 float frequency, int salt, Optional<ExclusionZone> exclusionZone,
-									 HolderSet<Biome> validBiomes) {
+	public int placementSalt() {
+		return this.salt();
+	}
+
+	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, Optional<ExclusionZone> exclusionZone, HolderSet<Biome> validBiomes) {
 		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, Rotation.NONE);
 	}
 
@@ -62,9 +63,7 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 					}
 				}
 			}
-			if (biomeSourceField != null) {
-				return (BiomeSource) biomeSourceField.get(state);
-			}
+			if (biomeSourceField != null) return (BiomeSource) biomeSourceField.get(state);
 		} catch (Exception e) {
 			System.err.println("[DMZ Debug] Error trying to get BiomeSource: " + e.getMessage());
 		}
@@ -73,36 +72,13 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 
 	@Override
 	protected boolean isPlacementChunk(@NonNull ChunkGeneratorStructureState structureState, int x, int z) {
-		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) {
-			return false;
-		}
-
+		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return false;
 		ChunkPos pos = getStructureChunk(structureState.getLevelSeed(), getBiomeSourceReflection(structureState), structureState.randomState());
-
 		return pos != null && pos.x == x && pos.z == z;
 	}
 
 	public ChunkPos getStructureChunk(long worldSeed, BiomeSource biomeSource, RandomState randomState) {
-		if (biomeSource == null || randomState == null) return null;
-
-		for (int attempt = 0; attempt < 200; attempt++) {
-			WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + this.salt() + attempt));
-			int searchRadius = 10 + (attempt * 3);
-
-			int targetChunkX = random.nextInt(searchRadius * 2) - searchRadius;
-			int targetChunkZ = random.nextInt(searchRadius * 2) - searchRadius;
-
-			int quartX = QuartPos.fromBlock(targetChunkX * 16 + 8);
-			int quartY = QuartPos.fromBlock(64);
-			int quartZ = QuartPos.fromBlock(targetChunkZ * 16 + 8);
-
-			Holder<Biome> biome = biomeSource.getNoiseBiome(quartX, quartY, quartZ, randomState.sampler());
-
-			if (this.validBiomes.contains(biome)) {
-				return new ChunkPos(targetChunkX, targetChunkZ);
-			}
-		}
-		return null;
+		return StructureSpawnPlanner.getPositionFor(this, worldSeed, biomeSource, randomState);
 	}
 
 	@Override

@@ -24,6 +24,7 @@ public class StoneSpikeFeature extends Feature<NoneFeatureConfiguration> {
 		RandomSource random = context.random();
 		WorldGenLevel level = context.level();
 
+		if (FeatureUtil.isInsideDmzStructure(level, pos)) return false;
 		while (level.isEmptyBlock(pos) && pos.getY() > level.getMinBuildHeight() + 2) pos = pos.below();
 
 		if (!level.getBlockState(pos).is(MainBlocks.ROCKY_STONE.get()) && !level.getBlockState(pos).is(Blocks.GRAVEL) && !level.getBlockState(pos).is(Blocks.COARSE_DIRT)) {

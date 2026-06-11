@@ -36,6 +36,9 @@ public class GeneralServerConfig {
 		private Boolean otherworldActive = true;
 		private Integer dbSpawnRange = 1000;
 		private Integer dragonBallSets = 1;
+		private Integer structureMinDistanceFromSpawn = 0;
+		private Integer structureMaxDistanceFromSpawn = 8000;
+		private Integer structureMinDistanceBetween = 250;
 
 		public Integer getDBSpawnRange() {
 			return Math.max(100, Math.min(dbSpawnRange, 6000));
@@ -43,6 +46,21 @@ public class GeneralServerConfig {
 
 		public Integer getDragonBallSets() {
 			return Math.max(0, Math.min(dragonBallSets, 10));
+		}
+
+		public Integer getStructureMaxDistanceFromSpawn() {
+			int value = structureMaxDistanceFromSpawn != null ? structureMaxDistanceFromSpawn : 8000;
+			return Math.max(3000, value);
+		}
+
+		public Integer getStructureMinDistanceFromSpawn() {
+			int value = structureMinDistanceFromSpawn != null ? structureMinDistanceFromSpawn : 0;
+			return Math.max(0, Math.min(value, getStructureMaxDistanceFromSpawn() - 16));
+		}
+
+		public Integer getStructureMinDistanceBetween() {
+			int value = structureMinDistanceBetween != null ? structureMinDistanceBetween : 250;
+			return Math.max(0, value);
 		}
 	}
 

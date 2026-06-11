@@ -25,6 +25,7 @@ public class KarstPillarFeature extends Feature<NoneFeatureConfiguration> {
         WorldGenLevel level = context.level();
         RandomSource random = context.random();
 
+        if (FeatureUtil.isInsideDmzStructure(level, origin)) return false;
         BlockState stone = MainBlocks.ROCKY_STONE.get().defaultBlockState();
         BlockState cobble = MainBlocks.ROCKY_COBBLESTONE.get().defaultBlockState();
 

@@ -51,11 +51,13 @@ public class DragonBallSavedData extends SavedData {
 
 	public List<BlockPos> getAllKnownPositionsForRadar(String setId) {
 		List<BlockPos> allPos = new ArrayList<>();
-		Map<Integer, List<BlockPos>> active = getActiveBalls(setId);
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
 		if (definition == null) return allPos;
+		Map<Integer, List<BlockPos>> active = getActiveBalls(setId);
+		Map<Integer, List<BlockPos>> pending = getPendingBalls(setId);
 		for (int star : definition.getStars()) {
 			allPos.addAll(active.getOrDefault(star, List.of()));
+			allPos.addAll(pending.getOrDefault(star, List.of()));
 		}
 		return allPos;
 	}
