@@ -170,7 +170,7 @@ public class TextUtil {
 
         for (int i = 0; i < lines.size(); i++) {
             float lineY = y + (i * lineHeight);
-            if (lineY + lineHeight >= y + currentScroll && lineY <= y + viewHeight + currentScroll) drawStringWithBorder(graphics, font, lines.get(i), x, (int)lineY, color);
+            if (lineY + lineHeight >= y + currentScroll && lineY <= y + viewHeight + currentScroll) drawStringWithBorder(graphics, font, Component.literal(lines.get(i)), x, (int)lineY, color);
         }
 
         graphics.pose().popPose();
