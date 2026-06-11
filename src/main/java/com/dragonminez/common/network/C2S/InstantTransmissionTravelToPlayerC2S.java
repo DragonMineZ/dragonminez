@@ -18,10 +18,6 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-/**
- * Travel to an online player (party member or external similar-BP player) chosen in the Instant
- * Transmission menu. The server re-validates state/range/BP/dimension before teleporting; never trusts the client.
- */
 public class InstantTransmissionTravelToPlayerC2S {
 
 	private static final int MENU_SKILL_LEVEL = 5;
@@ -55,15 +51,13 @@ public class InstantTransmissionTravelToPlayerC2S {
 
 				StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, target).orElse(null);
 				if (targetData == null || !targetData.getStatus().isHasCreatedCharacter()) return;
-				if (TransformationsHelper.isInstantTransmissionBlocked(targetData)) return;
+				if (TransformationsHelper.isInstantTransmissionBlocked(data, targetData)) return;
 
 				boolean sameDimension = target.level().dimension().equals(player.level().dimension());
 
 				if (PartyManager.areInSameParty(player, target)) {
-					// Party members: master-like rules (infinite range, cross-dimension requires skill 10).
 					if (!sameDimension && skillLevel < CROSS_DIMENSION_SKILL_LEVEL) return;
 				} else {
-					// External players: same dimension, range/BP limited.
 					long selfBp = data.getBattlePowerExact();
 					int rangePerLevel = ConfigManager.getServerConfig().getGameplay().getInstantTransmissionPlayerRangePerLevel();
 					double maxRange = (double) rangePerLevel * skillLevel;

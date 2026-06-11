@@ -651,7 +651,8 @@ public class TransformationsHelper {
 		return config != null && config.getFormType() != null && config.getFormType().toLowerCase(Locale.ROOT).contains("god");
 	}
 
-	public static boolean isInstantTransmissionBlocked(StatsData statsData) {
-		return statsData.getStatus().isAndroidUpgraded() || hasGodFormActive(statsData);
+	public static boolean isInstantTransmissionBlocked(StatsData requester, StatsData target) {
+		if (target.getStatus().isAndroidUpgraded()) return true;
+		return hasGodFormActive(target) && requester.getSkills().getSkillLevel("godforms") < 1;
 	}
 }
