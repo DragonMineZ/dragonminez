@@ -57,6 +57,55 @@ jobs:
       - name: Build dev jar
         run: ./gradlew build --build-cache
 
+      - name: Verify generated data
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Vanilla datagen logs serialization failures but still exits 0 and even
+          # writes the offending file (DFU partial results), so the jar would ship
+          # broken JSON. Fail loudly instead.
+          log="run-data/logs/latest.log"
+          if [[ -f "$log" ]] && grep -F "Couldn't serialize element" "$log"; then
+            echo "::error::Data generation logged serialization errors (see lines above)."
+            exit 1
+          fi
+
+          # Guard against dev-mod codec patches (e.g. Huge Structure Blocks) baking
+          # values into generated worldgen JSON that vanilla rejects at load time.
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          worldgen = Path("src/generated/resources/data/dragonminez/worldgen")
+          problems = []
+
+          structures = sorted(worldgen.glob("structure/*.json"))
+          if not structures:
+              problems.append("no generated worldgen/structure JSONs found")
+          for path in structures:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              distance = data.get("max_distance_from_center", 80)
+              if not 1 <= distance <= 128:
+                  problems.append(f"{path}: max_distance_from_center {distance} outside vanilla range [1, 128]")
+
+          structure_sets = sorted(worldgen.glob("structure_set/*.json"))
+          if not structure_sets:
+              problems.append("no generated worldgen/structure_set JSONs found")
+          for path in structure_sets:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              frequency = data.get("placement", {}).get("frequency", 1.0)
+              if not 0.0 <= frequency <= 1.0:
+                  problems.append(f"{path}: placement frequency {frequency} outside vanilla range [0.0, 1.0]")
+
+          for problem in problems:
+              print(f"::error::{problem}")
+          if problems:
+              sys.exit(1)
+          print(f"Validated {len(structures)} structure and {len(structure_sets)} structure_set JSONs.")
+          PY
+
       - name: Resolve dev jar
         id: artifact
         shell: bash

@@ -116,12 +116,15 @@ val mappingChannelProp = requiredProp("mapping_channel")
 val mappingVersionProp = requiredProp("mapping_version")
 val jeiVersion = requiredProp("jei_version")
 val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
-val serverLikeTaskRequested = requestedTasks.any {
-    it.contains("runserver") || it.contains("gametestserver") || it.contains("rundata")
-}
+// Client/dev-only mods belong on the classpath only when a client is actually launched.
+// Keeping them out of every other task graph is critical for data generation: `build`
+// re-runs runData, and codec-altering dev mods (e.g. Huge Structure Blocks' jigsaw
+// limit patch) would otherwise bake values into the generated JSON that vanilla
+// codecs reject at load time in production.
+val clientRunRequested = requestedTasks.any { it.contains("runclient") }
 val includeClientOnlyDevMods = providers.gradleProperty("includeClientOnlyDevMods")
     .map { it.toBoolean() }
-    .orElse(!serverLikeTaskRequested)
+    .orElse(clientRunRequested)
 
 minecraft {
     mappings(mappingChannelProp, mappingVersionProp)
@@ -204,10 +207,12 @@ dependencies {
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
     runtimeOnly(fg.deobf("me.lucko:spark-api:0.1-SNAPSHOT"))
-    runtimeOnly(fg.deobf("curse.maven:huge-structure-blocks-474114:4803547"))
 
-    // Client-only visual/testing mods should stay off dedicated server and data runs.
+    // Client-only visual/testing mods must stay off dedicated server and data runs.
+    // Huge Structure Blocks in particular mixes into JigsawStructure's codec and
+    // would poison generated structure JSON with out-of-vanilla-range values.
     if (includeClientOnlyDevMods.get()) {
+        runtimeOnly(fg.deobf("curse.maven:huge-structure-blocks-474114:4803547"))
         runtimeOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge:$jeiVersion"))
         runtimeOnly(fg.deobf("curse.maven:xenon-564239:5752040"))
         runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
