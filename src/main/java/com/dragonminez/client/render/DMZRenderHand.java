@@ -7,6 +7,8 @@ import com.dragonminez.client.model.KiClawlanceModel;
 import com.dragonminez.client.model.KiWeaponModelLoader;
 import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.layer.DMZSkinLayer;
+import com.dragonminez.client.render.layer.Ssj4FadeTracker;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.SkinGathererProvider;
@@ -149,6 +151,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		} else {
 			float pt = Minecraft.getInstance().getFrameTime();
 			SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
+			renderSsj4HandFur(pPoseStack, pBuffer, pCombinedLight, pPlayer, stats, pRendererArm, kaiokenPhase);
 			SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
 			SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
 		}
@@ -240,9 +243,32 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         }
     }
 
+	private void renderSsj4HandFur(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, StatsData stats, ModelPart arm, int kaiokenPhase) {
+		DMZSkinLayer.Ssj4Overlay ssj4 = DMZSkinLayer.resolveSsj4Overlay(stats);
+		String key = ssj4 != null ? ssj4.key() : null;
+		float[] color = ssj4 != null ? ssj4.color() : null;
+		float target = ssj4 != null ? ssj4.target() : 0.0F;
+
+		int id = player.getId();
+		long gameTime = player.level().getGameTime();
+		float furAlpha = Ssj4FadeTracker.update(id, gameTime, target, key, color);
+
+		String furKey = key != null ? key : Ssj4FadeTracker.lastKey(id);
+		float[] furColor = color != null ? color : Ssj4FadeTracker.lastColor(id);
+		if (furAlpha <= 0.001F || furKey == null || furColor == null) return;
+
+		applyKaiokenTint(furColor, kaiokenPhase, colorBuffer);
+		ResourceLocation tex = SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + furKey + "_layer1.png");
+		renderPart(ps, buffer, light, arm, tex, colorBuffer, furAlpha);
+	}
+
 	private void renderPart(PoseStack stack, MultiBufferSource buffer, int light, ModelPart part, ResourceLocation texture, float[] rgb) {
+		renderPart(stack, buffer, light, part, texture, rgb, 1.0F);
+	}
+
+	private void renderPart(PoseStack stack, MultiBufferSource buffer, int light, ModelPart part, ResourceLocation texture, float[] rgb, float alpha) {
 		VertexConsumer vc = buffer.getBuffer(RenderType.entityTranslucent(texture));
-		part.render(stack, vc, light, OverlayTexture.NO_OVERLAY, rgb[0], rgb[1], rgb[2], 1.0F);
+		part.render(stack, vc, light, OverlayTexture.NO_OVERLAY, rgb[0], rgb[1], rgb[2], alpha);
 	}
 
 	private ResourceLocation loc(String path) {

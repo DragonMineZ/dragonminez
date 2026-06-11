@@ -156,14 +156,6 @@ public class SkinGathererProvider {
                 }
             }
         }
-
-        if (logicKey.equals("ssj4d") || logicKey.equals("ssj4gt")) {
-            String path = "textures/entity/races/humansaiyan/" + logicKey + "_layer1.png";
-            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path)), b2);
-        }
-
-
-
     }
 
 	public void gatherAndroidLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {

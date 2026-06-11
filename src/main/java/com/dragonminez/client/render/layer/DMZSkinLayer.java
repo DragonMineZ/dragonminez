@@ -5,6 +5,7 @@ import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.*;
@@ -51,6 +52,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private float currentTintProgress = 0.0f;
 	private float[] currentAuraColor = new float[]{1.0f, 1.0f, 1.0f};
 
+	private float currentSsj4Alpha = 0.0f;
+	private String currentSsj4Key = null;
+	private float[] currentSsj4Color = null;
+
 	public DMZSkinLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
 	}
@@ -77,12 +82,21 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		this.currentAuraColor = getTopAuraColor(stats);
 		this.currentKaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
 
+		Ssj4Overlay ssj4 = resolveSsj4Overlay(stats);
+		String ssj4Key = ssj4 != null ? ssj4.key() : null;
+		float[] ssj4Color = ssj4 != null ? ssj4.color() : null;
+		float ssj4Target = ssj4 != null ? ssj4.target() : 0.0f;
+		this.currentSsj4Alpha = Ssj4FadeTracker.update(playerId, gameTime, ssj4Target, ssj4Key, ssj4Color);
+		this.currentSsj4Key = ssj4Key != null ? ssj4Key : Ssj4FadeTracker.lastKey(playerId);
+		this.currentSsj4Color = ssj4Color != null ? ssj4Color : Ssj4FadeTracker.lastColor(playerId);
+
 		float alpha = player.isSpectator() ? 0.15f : 1.0f;
 		TransformationMaskBufferSource maskBuffer = bufferSource instanceof TransformationMaskBufferSource mask ? mask : null;
 
 		BiConsumer<ResourceLocation, float[]> geoConsumer = (texture, color) -> renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
 
 		SkinGathererProvider.INSTANCE.gatherBodyLayers(player, stats, partialTick, geoConsumer);
+		renderSsj4Fur(model, poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay, alpha);
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(player, stats, partialTick, geoConsumer);
 
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(false);
@@ -329,17 +343,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
 		float[] white = {1.0f, 1.0f, 1.0f};
 
-		boolean isSsj4Model = false;
-		String customModel = "";
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			customModel = character.getActiveStackFormData().getCustomModel();
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			customModel = character.getActiveFormData().getCustomModel();
-		}
-
-		if (customModel != null && (customModel.equalsIgnoreCase("ssj4d") || customModel.equalsIgnoreCase("ssj4gt"))) {
-			isSsj4Model = true;
-		}
 		boolean isMajin = animatable.hasEffect(MainEffects.MAJIN.get());
 
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_0.png")).getPath(), white, pt, pl, po, alpha);
@@ -351,23 +354,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				(character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getHairType().equalsIgnoreCase("ssj3"));
 		if (isSsj3) renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "ssj3eyebrows_eye_" + character.getEyesType() + ".png", skin, pt, pl, po, alpha);
 
-		if (isSsj4Model || isMajin) {
-			String ssj4Eyes = folder + "ssj4_eyes_" + character.getEyesType() + ".png";
-
-			float[] finalColor;
-			if (isMajin) {
-				finalColor = ColorUtils.hexToRgb("#292929");
-			} else {
-				finalColor = character.getRgbBodyColor2();
-				if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
-					finalColor = character.getActiveFormData().getRgbBodyColor2();
-				}
-				if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
-					finalColor = character.getActiveStackFormData().getRgbBodyColor2();
-				}
-			}
-
-			renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, finalColor, pt, pl, po, alpha);
+		String ssj4Eyes = folder + "ssj4_eyes_" + character.getEyesType() + ".png";
+		if (isMajin) {
+			renderColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, ColorUtils.hexToRgb("#292929"), pt, pl, po, alpha);
+		} else if (this.currentSsj4Alpha > 0.001f && this.currentSsj4Color != null) {
+			renderFadingColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, this.currentSsj4Color, pt, pl, po, alpha * this.currentSsj4Alpha);
 		}
 
         if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
@@ -510,6 +501,76 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha, boolean applyTransformationTint) {
 		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
 		renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(getSafeTexture(loc)), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, applyTransformationTint);
+	}
+
+	public record Ssj4Overlay(String key, float[] color, float target) {}
+
+	public static Ssj4Overlay resolveSsj4Overlay(StatsData stats) {
+		var character = stats.getCharacter();
+
+		String activeModel = "";
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && Boolean.TRUE.equals(character.getActiveStackFormData().hasCustomModel())) {
+			activeModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null && Boolean.TRUE.equals(character.getActiveFormData().hasCustomModel())) {
+			activeModel = character.getActiveFormData().getCustomModel().toLowerCase();
+		}
+		boolean activeSsj4 = isSsj4Model(activeModel);
+
+		boolean chargingSsj4 = false;
+		String targetModel = "";
+		float chargeFraction = 0.0f;
+		FormConfig.FormData nextForm = null;
+		if (stats.getStatus().isActionCharging()) {
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.getNextAvailableForm(stats);
+			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+
+			if (nextForm != null && Boolean.TRUE.equals(nextForm.hasCustomModel())) {
+				targetModel = nextForm.getCustomModel().toLowerCase();
+				chargingSsj4 = isSsj4Model(targetModel);
+				chargeFraction = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+			}
+		}
+
+		if (!activeSsj4 && !chargingSsj4) return null;
+
+		String key = activeSsj4 ? activeModel : targetModel;
+		float target = activeSsj4 ? 1.0f : chargeFraction;
+		float[] color = resolveSsj4OverlayColor(character, chargingSsj4 ? nextForm : null, chargeFraction);
+		return new Ssj4Overlay(key, color, target);
+	}
+
+	private static boolean isSsj4Model(String model) {
+		return model.equals("ssj4d") || model.equals("ssj4gt");
+	}
+
+	private static float[] resolveSsj4OverlayColor(Character character, FormConfig.FormData chargeTarget, float chargeFraction) {
+		float[] b2 = character.getRgbBodyColor2();
+		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
+			b2 = character.getActiveFormData().getRgbBodyColor2();
+		}
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
+			b2 = character.getActiveStackFormData().getRgbBodyColor2();
+		}
+		if (chargeTarget != null && chargeTarget.getRgbBodyColor2() != null) {
+			b2 = lerpColor(chargeFraction, b2, chargeTarget.getRgbBodyColor2());
+		}
+		return b2;
+	}
+
+	private void renderSsj4Fur(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, float partialTick, int packedLight, int packedOverlay, float baseAlpha) {
+		if (this.currentSsj4Alpha <= 0.001f || this.currentSsj4Key == null || this.currentSsj4Color == null) return;
+
+		float furAlpha = baseAlpha * this.currentSsj4Alpha;
+		ResourceLocation tex = getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + this.currentSsj4Key + "_layer1.png"));
+		RenderType renderType = furAlpha < 1.0f ? RenderType.entityTranslucent(tex) : RenderType.entityCutoutNoCull(tex);
+		float[] color = this.currentSsj4Color;
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, furAlpha, true);
+	}
+
+	private void renderFadingColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha) {
+		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
+		RenderType renderType = alpha < 1.0f ? RenderType.entityTranslucent(loc) : RenderType.entityCutoutNoCull(loc);
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
 	}
 
 	private float[] applyColorTint(float[] rgb, StatsData stats) {

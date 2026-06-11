@@ -36,9 +36,12 @@ import java.util.Map;
 
 public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private final Map<Integer, Float> progressMap = new HashMap<>();
+	private final Map<Integer, CustomHair> fadeTargetHairMap = new HashMap<>();
+	private final Map<Integer, float[]> fadeTargetRgbMap = new HashMap<>();
 	private final Map<Integer, Long> lastSeenMsMap = new HashMap<>();
 	private static final double PHYSICS_LOD_NEAR_DISTANCE_SQR = 24.0 * 24.0;
 	private static final double PHYSICS_LOD_FAR_DISTANCE_SQR = 48.0 * 48.0;
+	private static final float FADE_OUT_RATE = 0.05f;
 	private static final long TRACKING_TTL_MS = 30_000L;
 	private static final long CLEANUP_INTERVAL_MS = 5_000L;
 	private long lastCleanupMs = 0L;
@@ -152,9 +155,25 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 				hairTo = targetHair;
 				rgbTo = nextForm.hasHairColorOverride() ? targetRgb : rgbFrom;
+				fadeTargetHairMap.put(entityId, hairTo);
+				fadeTargetRgbMap.put(entityId, rgbTo);
 				factor = curHairProgress;
 			}
-		} else progressMap.remove(entityId);
+		} else if (curHairProgress > 0.0f) {
+				float dt = Minecraft.getInstance().getDeltaFrameTime();
+				curHairProgress = Math.max(0.0f, curHairProgress - FADE_OUT_RATE * dt);
+				CustomHair fadeTarget = fadeTargetHairMap.get(entityId);
+
+				if (curHairProgress <= 0.0f || fadeTarget == null) {
+					clearHairTracking(entityId);
+				} else {
+					progressMap.put(entityId, curHairProgress);
+					float[] fadeRgb = fadeTargetRgbMap.get(entityId);
+					hairTo = fadeTarget;
+					rgbTo = fadeRgb != null ? fadeRgb : rgbFrom;
+					factor = curHairProgress;
+				}
+			} else clearHairTracking(entityId);
 
 		if (nowMs - lastCleanupMs >= CLEANUP_INTERVAL_MS) {
 			cleanupStaleTracking(nowMs);
@@ -216,13 +235,18 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		return (float) (1.0 - t);
 	}
 
+	private void clearHairTracking(int entityId) {
+		progressMap.remove(entityId);
+		fadeTargetHairMap.remove(entityId);
+		fadeTargetRgbMap.remove(entityId);
+	}
+
 	private void cleanupStaleTracking(long nowMs) {
 		if (lastSeenMsMap.size() < 64) return;
 		lastSeenMsMap.entrySet().removeIf(entry -> {
 			boolean stale = nowMs - entry.getValue() > TRACKING_TTL_MS;
 			if (stale) {
-				int id = entry.getKey();
-				progressMap.remove(id);
+				clearHairTracking(entry.getKey());
 			}
 			return stale;
 		});
