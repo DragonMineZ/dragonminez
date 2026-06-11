@@ -15,6 +15,7 @@ import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -50,6 +51,9 @@ import java.util.Map;
 public class CombatEvent {
 	private static final Map<String, Long> LAST_PLAYER_HIT_GUARD_MS = new HashMap<>();
 	public static final String DMZ_LAST_ATTACKER_ID_TAG = "dmz_last_attacker_id";
+
+	private static final double HEALING_REDUCTION_CAP = 0.40;
+	private static final int HEALING_REDUCTION_DURATION_TICKS = 120;
 
 	private static void maybeForceCombatFly(Player player) {
 		if (!ConfigManager.getCombatConfig().getCombatFlyAutoSwitchOnDamage()) return;
@@ -251,6 +255,7 @@ public class CombatEvent {
 			if (isExcludedSource(source)) return;
 
 			double finalDefensePenetration;
+			double healingReduction = 0.0;
 			if (source.getEntity() instanceof LivingEntity sourceLiving) {
 
 				int mainHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getMainHandItem());
@@ -259,21 +264,33 @@ public class CombatEvent {
 				int enchLevel = Math.max(mainHandLvl, offHandLvl);
 				double enchPen = enchLevel * 0.025;
 
+				int healMainHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.HEALING_REDUCTION.get(), sourceLiving.getMainHandItem());
+				int healOffHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.HEALING_REDUCTION.get(), sourceLiving.getOffhandItem());
+				double enchHealReduction = Math.max(healMainHandLvl, healOffHandLvl) * 0.05;
+
 				double skillPen = 0.0;
+				double skillHealReduction = 0.0;
 				if (sourceLiving instanceof Player sourcePlayer) {
 					var attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
 					if (attackerStats != null) {
 						skillPen = attackerStats.getSkills().getSkillLevel("defense_penetration") * 0.025;
+						skillHealReduction = attackerStats.getSkills().getSkillLevel("healing_reduction") * 0.02;
 					}
 				}
 
 				finalDefensePenetration = Math.min(0.50, enchPen + skillPen + passiveDefensePen[0]);
+				healingReduction = Math.min(HEALING_REDUCTION_CAP, enchHealReduction + skillHealReduction);
 			} else finalDefensePenetration = 0.0;
+
+			final double finalHealingReduction = healingReduction;
 
 
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
+
+					if (finalHealingReduction > 0.0)
+						victimData.getSecondaryStatEffects().apply(SecondaryStatEffects.HP_REGEN, -finalHealingReduction, HEALING_REDUCTION_DURATION_TICKS);
 
 					maybeForceCombatFly(victim);
 					if (source.getEntity() instanceof Player attackerPlayer) maybeForceCombatFly(attackerPlayer);

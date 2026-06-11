@@ -1060,7 +1060,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (tech instanceof KiAttackData ki) {
 			xpReq = ki.getUpgradeXpCost("damage");
 			cooldownTicks = ki.getActualCooldown();
-			int scaledKiDamage = (int) (statsData.getKiDamage() * ki.getActualDamageMultiplier() * ki.getConfiguredDamageMultiplier());
+			int scaledKiDamage = (int) (statsData.getKiDamage() * ki.getActualDamageMultiplier() * ki.getConfiguredDamageMultiplier() * ki.getOutputMultiplier());
 
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + ki.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD);
 			yOffset += 12;

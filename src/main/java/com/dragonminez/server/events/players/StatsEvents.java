@@ -25,6 +25,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.passives.PassiveEventHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.util.lists.SaiyanForms;
@@ -226,9 +227,12 @@ public class StatsEvents {
 				}
 
 				if (totalHpPulse > 0) {
-					PassiveEventHandler.suppressHealingBonus = true;
-					serverPlayer.heal(totalHpPulse);
-					PassiveEventHandler.suppressHealingBonus = false;
+					totalHpPulse *= (float) Math.min(1.0, data.getSecondaryStatEffects().getMultiplier(SecondaryStatEffects.HP_REGEN));
+					if (totalHpPulse > 0) {
+						PassiveEventHandler.suppressHealingBonus = true;
+						serverPlayer.heal(totalHpPulse);
+						PassiveEventHandler.suppressHealingBonus = false;
+					}
 				}
 
 				if (totalKiPulse > 0 || totalStamPulse > 0) {

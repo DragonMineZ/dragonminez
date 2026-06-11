@@ -24,15 +24,13 @@ public class TechniqueDispatcher {
 		boolean isInitialSpawn = chargeMultiplier < 0.5f;
 		float clampedCharge = Mth.clamp(chargeMultiplier, 0.5f, 2.0f);
 
-		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * clampedCharge);
+		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * clampedCharge * data.getOutputMultiplier());
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		boolean isHeal = (data.getEffectiveUtility() == KiAttackData.Utility.HEAL);
 		int kiTypeOrdinal = data.getKiType().ordinal();
 
-		// Resolve the lock-on / look target this attack should pursue (relation-gated).
 		LivingEntity homingTarget = resolveHomingTarget(owner, level, data, statsData);
 		int homingTargetId = homingTarget != null ? homingTarget.getId() : -1;
-		// Persist the resolved target (covers the HEAL look-at case) so mid-cast checks can see it.
 		if (homingTarget != null && owner instanceof Player) statsData.getTechniques().setHomingTargetId(homingTargetId);
 
         if (!isInitialSpawn) {

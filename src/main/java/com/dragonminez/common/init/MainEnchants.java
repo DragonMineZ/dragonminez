@@ -32,6 +32,9 @@ public class MainEnchants {
 	public static final RegistryObject<Enchantment> DEFENSE_PENETRATION = ENCHANTMENTS.register("defense_penetration",
 			() -> new WeaponPenetrationEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND));
 
+	public static final RegistryObject<Enchantment> HEALING_REDUCTION = ENCHANTMENTS.register("healing_reduction",
+			() -> new HealingReductionEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND));
+
 	public static final RegistryObject<Enchantment> CRIT_CHANCE = ENCHANTMENTS.register("critical_chance",
 			() -> new CriticalStatEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND));
 
@@ -57,6 +60,22 @@ public class MainEnchants {
 		@Override
 		public int getMaxLevel() {
 			return 5;
+		}
+
+		@Override
+		public boolean canEnchant(ItemStack stack) {
+			return stack.getItem() instanceof SwordItem || stack.getItem() instanceof AxeItem || stack.getItem() instanceof WeaponItem;
+		}
+	}
+
+	public static class HealingReductionEnchantment extends Enchantment {
+		protected HealingReductionEnchantment(Rarity rarity, EquipmentSlot... slots) {
+			super(rarity, EnchantmentCategory.WEAPON, slots);
+		}
+
+		@Override
+		public int getMaxLevel() {
+			return 4;
 		}
 
 		@Override

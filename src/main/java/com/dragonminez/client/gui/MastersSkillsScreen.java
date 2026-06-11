@@ -452,7 +452,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF); yOffset += 24;
 
-		int scaledKiDamage = (int) (statsData.getKiDamage() * tech.getDamageMultiplier());
+		int scaledKiDamage = (int) (statsData.getKiDamage() * tech.getDamageMultiplier() * tech.getOutputMultiplier());
 		String utilKey = tech.getUtility() == KiAttackData.Utility.HEAL ? "gui.dragonminez.technique.heal" : "gui.dragonminez.technique.damage";
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + tech.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;

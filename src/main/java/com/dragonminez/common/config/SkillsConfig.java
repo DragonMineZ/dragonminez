@@ -224,6 +224,19 @@ public class SkillsConfig {
 		defensePenetration.add(3300);
 		skills.put("defense_penetration", new SkillCosts(defensePenetration));
 
+		List<Integer> healingReduction = new ArrayList<>();
+		healingReduction.add(3600);
+		healingReduction.add(600);
+		healingReduction.add(900);
+		healingReduction.add(1200);
+		healingReduction.add(1500);
+		healingReduction.add(1800);
+		healingReduction.add(2100);
+		healingReduction.add(2400);
+		healingReduction.add(2700);
+		healingReduction.add(3300);
+		skills.put("healing_reduction", new SkillCosts(healingReduction));
+
 		List<Integer> kiInfusion = new ArrayList<>();
 		kiInfusion.add(3600);
 		kiInfusion.add(600);
@@ -309,6 +322,7 @@ public class SkillsConfig {
 
 		List<String> vegetaSkills = new ArrayList<>();
 		vegetaSkills.add("defense_penetration");
+		vegetaSkills.add("healing_reduction");
 		vegetaSkills.add("galick_gun");
 		vegetaSkills.add("big_bang");
 		vegetaSkills.add("final_flash");
@@ -329,6 +343,7 @@ public class SkillsConfig {
 		skillOfferings.put("krillin", krillinSkills);
 
 		List<String> friezaSkills = new ArrayList<>();
+		friezaSkills.add("healing_reduction");
 		friezaSkills.add("death_beam");
 		friezaSkills.add("emperor_death_beam");
 		friezaSkills.add("kienzan_doble");

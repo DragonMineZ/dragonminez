@@ -129,6 +129,12 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public static final int KI_TIME_MULTIPLIER = 20;
+	public static final float HEAL_OUTPUT_FACTOR = 0.4f;
+
+	public float getOutputMultiplier() {
+		return getEffectiveUtility() == Utility.HEAL ? HEAL_OUTPUT_FACTOR : 1.0f;
+	}
+
 	public float getActualDamageMultiplier() { return damageMultiplier * (1.0f + (damageLevel * 0.1f)); }
 	public float getActualSpeed() { return speed * (1.0f + (speedLevel * 0.05f)); }
 	public float getActualSize() { return size * (1.0f + (sizeLevel * 0.05f)); }
