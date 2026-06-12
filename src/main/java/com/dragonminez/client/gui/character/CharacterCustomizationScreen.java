@@ -49,6 +49,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 
 @OnlyIn(Dist.CLIENT)
 public class CharacterCustomizationScreen extends ScaledScreen {
@@ -502,32 +503,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		}
 	}
 
-	private int getCurrentHairOrBoneValue() {
-		String activeBone = character.getRenderableHeadBone();
-		boolean supportsHair = HairManager.canUseHair(character);
-		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
-
-		if (activeBone == null || activeBone.isEmpty() || activeBone.equals("hair")) {
-			int hairId = character.getHairId();
-			return hairId > 0 ? hairId - 1 : -1;
-		}
-
-		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
-		if (activeBone.contains("+")) {
-			List<String> combos = buildHeadBoneComboOptions(supportsHair, extraBones);
-			int comboIdx = combos.indexOf(activeBone);
-			return comboIdx >= 0 ? hairPresets + extraBones.size() + comboIdx : -1;
-		}
-
-		int boneIndex = extraBones.indexOf(activeBone);
-		if (boneIndex >= 0) return hairPresets + boneIndex;
-		return 0;
-	}
-
 	private void renderHairText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.hair"), centerX, top + 2, 0xFF9B9B);
 		int maxHairIndex = Math.max(0, getMaxHairForCurrentState() - 1);
-		renderPreviewGrid(graphics, top + 30, 0, maxHairIndex, getCurrentHairOrBoneValue(), PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
+		Set<Integer> selected = getSelectedHeadBoneValues();
+		renderPreviewGrid(graphics, top + 30, 0, maxHairIndex, selected::contains, PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(getCurrentPreviewTransformationName()), centerX, top + 178, 0xFFFFFF);
 	}
 
@@ -1060,24 +1040,60 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int count = supportsHair ? HairManager.getPresetCount() : 0;
 		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
 		count += extraBones.size();
-		count += buildHeadBoneComboOptions(supportsHair, extraBones).size();
+		count += headBoneEmptyCount();
 		return count;
 	}
 
-	private List<String> buildHeadBoneComboOptions(boolean supportsHair, List<String> extraBones) {
-		List<String> allBones = new ArrayList<>();
-		if (supportsHair) allBones.add("hair");
-		allBones.addAll(extraBones);
-		int n = allBones.size();
-		List<String> combos = new ArrayList<>();
-		for (int i = 0; i < n; i++)
-			for (int j = i + 1; j < n; j++)
-				combos.add(allBones.get(i) + "+" + allBones.get(j));
-		for (int i = 0; i < n; i++)
-			for (int j = i + 1; j < n; j++)
-				for (int k = j + 1; k < n; k++)
-					combos.add(allBones.get(i) + "+" + allBones.get(j) + "+" + allBones.get(k));
-		return combos;
+	private boolean hasEmptyHeadBoneOption() {
+		return ConfigManager.getRaceCharacter(character.getRace()) != null &&
+				ConfigManager.getRaceCharacter(character.getRace()).getHeadBones().length >= 1;
+	}
+
+	private int headBoneEmptyCount() {
+		return hasEmptyHeadBoneOption() ? 1 : 0;
+	}
+
+	private String headBoneCategory(String bone) {
+		if (bone == null) return "";
+		int i = bone.length();
+		while (i > 0 && java.lang.Character.isDigit(bone.charAt(i - 1))) i--;
+		return bone.substring(0, i);
+	}
+
+	private Set<String> parseActiveBoneTokens() {
+		Set<String> tokens = new LinkedHashSet<>();
+		String bone = character.getActiveHeadBone();
+		if (bone == null || bone.isEmpty()) return tokens;
+		for (String token : bone.split("\\+")) {
+			if (!token.isEmpty()) tokens.add(token);
+		}
+		return tokens;
+	}
+
+	private Set<Integer> getSelectedHeadBoneValues() {
+		Set<Integer> selected = new HashSet<>();
+		int emptyCount = headBoneEmptyCount();
+		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
+		boolean supportsHair = HairManager.canUseHair(character);
+		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+		Set<String> tokens = parseActiveBoneTokens();
+
+		boolean anySelected = false;
+		for (int i = 0; i < extraBones.size(); i++) {
+			if (tokens.contains(extraBones.get(i))) {
+				selected.add(emptyCount + i);
+				anySelected = true;
+			}
+		}
+		if (supportsHair && tokens.contains("hair") && character.getHairId() > 0) {
+			int style = character.getHairId() - 1;
+			if (style >= 0 && style < hairPresets) {
+				selected.add(emptyCount + extraBones.size() + style);
+				anySelected = true;
+			}
+		}
+		if (hasEmptyHeadBoneOption() && !anySelected) selected.add(0);
+		return selected;
 	}
 
 	private List<String> getAvailableExtraHeadBonesForCurrentState() {
@@ -1118,36 +1134,52 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void setHairFromPreview(int value) {
-		boolean supportsHair = HairManager.canUseHair(character);
-		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+		int emptyCount = headBoneEmptyCount();
 		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
-		List<String> combos = buildHeadBoneComboOptions(supportsHair, extraBones);
+		boolean supportsHair = HairManager.canUseHair(character);
 
-		if (supportsHair && value < hairPresets) {
-			int newHairId = value + 1;
-			if (character.getHairId() == newHairId && "hair".equals(character.getActiveHeadBone())) return;
-			character.setHairId(newHairId);
-			character.setActiveHeadBone("hair");
+		// "empty": strip every head accessory, leaving the head bare.
+		if (hasEmptyHeadBoneOption() && value == 0) {
+			character.setHairId(0);
+			character.setActiveHeadBone("");
 			character.setHairBase(new CustomHair());
 			character.setHairSSJ(new CustomHair());
 			character.setHairSSJ2(new CustomHair());
 			character.setHairSSJ3(new CustomHair());
-		} else if (value < hairPresets + extraBones.size()) {
-			String newBone = extraBones.get(value - hairPresets);
-			if (character.getHairId() == 0 && newBone.equals(character.getActiveHeadBone())) return;
-			character.setHairId(0);
-			character.setActiveHeadBone(newBone);
-		} else {
-			int comboIdx = value - hairPresets - extraBones.size();
-			if (comboIdx < 0 || comboIdx >= combos.size()) return;
-			String comboStr = combos.get(comboIdx);
-			boolean comboHasHair = Arrays.asList(comboStr.split("\\+")).contains("hair");
-			int newHairId = comboHasHair ? Math.max(1, character.getHairId()) : 0;
-			if (character.getHairId() == newHairId && comboStr.equals(character.getActiveHeadBone())) return;
-			character.setHairId(newHairId);
-			character.setActiveHeadBone(comboStr);
+			syncCharacter();
+			refreshScreenWidgets();
+			return;
 		}
 
+		Set<String> tokens = parseActiveBoneTokens();
+		int local = value - emptyCount;
+
+		if (local < extraBones.size()) {
+			String bone = extraBones.get(local);
+			String category = headBoneCategory(bone);
+			boolean wasSelected = tokens.contains(bone);
+			// One bone per category: clicking another of the same family replaces it,
+			// clicking the active one again removes it.
+			tokens.removeIf(token -> !token.equals("hair") && headBoneCategory(token).equals(category));
+			if (!wasSelected) tokens.add(bone);
+		} else if (supportsHair) {
+			int style = local - extraBones.size();
+			int newHairId = style + 1;
+			boolean wasSelected = tokens.contains("hair") && character.getHairId() == newHairId;
+			if (wasSelected) {
+				tokens.remove("hair");
+				character.setHairId(0);
+			} else {
+				tokens.add("hair");
+				character.setHairId(newHairId);
+				character.setHairBase(new CustomHair());
+				character.setHairSSJ(new CustomHair());
+				character.setHairSSJ2(new CustomHair());
+				character.setHairSSJ3(new CustomHair());
+			}
+		}
+
+		character.setActiveHeadBone(String.join("+", tokens));
 		syncCharacter();
 		refreshScreenWidgets();
 	}
@@ -1583,6 +1615,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void renderPreviewGrid(GuiGraphics graphics, int startY, int minValue, int maxValue, int selectedValue, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
+		renderPreviewGrid(graphics, startY, minValue, maxValue, (IntPredicate) (v -> v == selectedValue), mode, headZoom, visibleRows, scrollRows);
+	}
+
+	private void renderPreviewGrid(GuiGraphics graphics, int startY, int minValue, int maxValue, IntPredicate selectedPredicate, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
 		if (maxValue < minValue) return;
 		int total = maxValue - minValue + 1;
 		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
@@ -1595,7 +1631,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			int row = i / PREVIEW_GRID_COLUMNS;
 			int cardX = startX + col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP);
 			int cardY = startY + row * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP);
-			boolean selected = value == selectedValue;
+			boolean selected = selectedPredicate.test(value);
 
 			int borderColor = selected ? 0xFFE8D0A1 : 0xFF2A2A2A;
 			graphics.fill(cardX - 1, cardY - 1, cardX + PREVIEW_CARD_WIDTH + 1, cardY + PREVIEW_CARD_HEIGHT + 1, borderColor);
@@ -1688,23 +1724,20 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			}
 			case HAIR_ONLY -> {
 				boolean supportsHair = HairManager.canUseHair(character);
-				int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+				int emptyCount = headBoneEmptyCount();
 				List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
-				List<String> combos = buildHeadBoneComboOptions(supportsHair, extraBones);
 
-				if (supportsHair && value < hairPresets) {
-					character.setHairId(value + 1);
-					character.setActiveHeadBone("hair");
-				} else if (value < hairPresets + extraBones.size()) {
+				if (hasEmptyHeadBoneOption() && value == 0) {
 					character.setHairId(0);
-					character.setActiveHeadBone(extraBones.get(value - hairPresets));
+					character.setActiveHeadBone("");
 				} else {
-					int comboIdx = value - hairPresets - extraBones.size();
-					if (comboIdx >= 0 && comboIdx < combos.size()) {
-						String comboStr = combos.get(comboIdx);
-						boolean comboHasHair = Arrays.asList(comboStr.split("\\+")).contains("hair");
-						character.setHairId(comboHasHair ? Math.max(1, originalHair) : 0);
-						character.setActiveHeadBone(comboStr);
+					int local = value - emptyCount;
+					if (local < extraBones.size()) {
+						character.setHairId(0);
+						character.setActiveHeadBone(extraBones.get(local));
+					} else if (supportsHair) {
+						character.setHairId(local - extraBones.size() + 1);
+						character.setActiveHeadBone("hair");
 					}
 				}
 				character.setEyesType(0);
