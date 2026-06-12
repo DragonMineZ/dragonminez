@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public final class StructureSpawnPlanner {
-	private static final int MAX_ATTEMPTS = 1200;
+	private static final int ANGLES_PER_RING = 16;
 	private static final TreeMap<Integer, BiomeAwareUniquePlacement> REGISTERED = new TreeMap<>();
 
 	private static long cachedSeed = Long.MIN_VALUE;
@@ -55,19 +55,33 @@ public final class StructureSpawnPlanner {
 		Map<Integer, ChunkPos> plan = new HashMap<>();
 		List<ChunkPos> accepted = new ArrayList<>();
 
+		int minRing = (int) Math.floor(minChunks);
+		int maxRing = (int) Math.ceil(maxChunks);
+
 		for (Map.Entry<Integer, BiomeAwareUniquePlacement> entry : REGISTERED.entrySet()) {
 			BiomeAwareUniquePlacement placement = entry.getValue();
-			ChunkPos found = null;
+			ChunkPos found = searchNearest(placement, worldSeed, biomeSource, randomState,
+					minRing, maxRing, accepted, spacingSqr);
 
-			for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-				WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + placement.placementSalt() + attempt));
+			if (found != null) {
+				plan.put(placement.placementSalt(), found);
+				accepted.add(found);
+			}
+		}
+		return plan;
+	}
 
-				double angle = random.nextDouble() * Math.PI * 2.0;
-				double t = random.nextDouble();
-				double r = Math.sqrt(minChunks * minChunks + t * (maxChunks * maxChunks - minChunks * minChunks));
+	private static ChunkPos searchNearest(BiomeAwareUniquePlacement placement, long worldSeed, BiomeSource biomeSource, RandomState randomState, int minRing, int maxRing, List<ChunkPos> accepted, double spacingSqr) {
+		for (int ring = minRing; ring <= maxRing; ring++) {
+			WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + placement.placementSalt() + ring));
+			double baseAngle = random.nextDouble() * Math.PI * 2.0;
 
-				int chunkX = (int) Math.round(Math.cos(angle) * r);
-				int chunkZ = (int) Math.round(Math.sin(angle) * r);
+			int angleCount = ring == 0 ? 1 : ANGLES_PER_RING;
+
+			for (int a = 0; a < angleCount; a++) {
+				double angle = baseAngle + a * (Math.PI * 2.0 / angleCount);
+				int chunkX = (int) Math.round(Math.cos(angle) * ring);
+				int chunkZ = (int) Math.round(Math.sin(angle) * ring);
 
 				if (tooClose(accepted, chunkX, chunkZ, spacingSqr)) continue;
 
@@ -77,17 +91,11 @@ public final class StructureSpawnPlanner {
 				Holder<Biome> biome = biomeSource.getNoiseBiome(quartX, quartY, quartZ, randomState.sampler());
 
 				if (placement.getValidBiomes().contains(biome)) {
-					found = new ChunkPos(chunkX, chunkZ);
-					break;
+					return new ChunkPos(chunkX, chunkZ);
 				}
 			}
-
-			if (found != null) {
-				plan.put(placement.placementSalt(), found);
-				accepted.add(found);
-			}
 		}
-		return plan;
+		return null;
 	}
 
 	private static boolean tooClose(List<ChunkPos> accepted, int chunkX, int chunkZ, double spacingSqr) {
