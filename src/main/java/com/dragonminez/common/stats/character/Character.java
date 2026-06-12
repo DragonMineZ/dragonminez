@@ -43,6 +43,10 @@ public class Character {
 	private UsedForms formsUsedBefore = new UsedForms();
 	private int activeFormItemDurationTicks = 0;
 
+	private String previousFormGroup = "";
+	private String previousForm = "";
+	private boolean hasPreviousFormRecord = false;
+
 	private String selectedStackFormGroup = "";
 	private String activeStackFormGroup = "";
 	private String selectedStackForm = "";
@@ -50,6 +54,10 @@ public class Character {
 	private final FormMasteries stackFormMasteries = new FormMasteries();
 	private UsedForms stackFormsUsedBefore = new UsedForms();
 	private int activeStackFormItemDurationTicks = 0;
+
+	private String previousStackFormGroup = "";
+	private String previousStackForm = "";
+	private boolean hasPreviousStackFormRecord = false;
 
 	private boolean hasSaiyanTail = true;
 	private boolean renderHairBase = true;
@@ -327,12 +335,18 @@ public class Character {
 		tag.putString("SelectedForm", safeString(selectedForm));
 		tag.putString("CurrentForm", safeString(activeForm));
 		tag.putInt("ActiveFormItemDurationTicks", activeFormItemDurationTicks);
+		tag.putString("PreviousFormGroup", safeString(previousFormGroup));
+		tag.putString("PreviousForm", safeString(previousForm));
+		tag.putBoolean("HasPreviousFormRecord", hasPreviousFormRecord);
 		tag.put("FormMasteries", formMasteries.save());
 		tag.putString("SelectedStackFormGroup", safeString(selectedStackFormGroup));
 		tag.putString("CurrentStackFormGroup", safeString(activeStackFormGroup));
 		tag.putString("SelectedStackForm", safeString(selectedStackForm));
 		tag.putString("CurrentStackForm", safeString(activeStackForm));
 		tag.putInt("ActiveStackFormItemDurationTicks", activeStackFormItemDurationTicks);
+		tag.putString("PreviousStackFormGroup", safeString(previousStackFormGroup));
+		tag.putString("PreviousStackForm", safeString(previousStackForm));
+		tag.putBoolean("HasPreviousStackFormRecord", hasPreviousStackFormRecord);
 		tag.put("StackFormMasteries", stackFormMasteries.save());
 		tag.put("FormsUsedBefore", (formsUsedBefore != null ? formsUsedBefore : new UsedForms()).save());
 		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
@@ -394,6 +408,9 @@ public class Character {
 		this.selectedForm = tag.getString("SelectedForm");
 		this.activeForm = tag.getString("CurrentForm");
 		this.activeFormItemDurationTicks = tag.getInt("ActiveFormItemDurationTicks");
+		this.previousFormGroup = tag.getString("PreviousFormGroup");
+		this.previousForm = tag.getString("PreviousForm");
+		this.hasPreviousFormRecord = tag.getBoolean("HasPreviousFormRecord");
 		if (tag.contains("FormMasteries")) formMasteries.load(tag.getCompound("FormMasteries"));
 		if (tag.contains("FormsUsedBefore")) formsUsedBefore.load(tag.getCompound("FormsUsedBefore"));
 		this.selectedStackFormGroup = tag.getString("SelectedStackFormGroup");
@@ -401,6 +418,9 @@ public class Character {
 		this.selectedStackForm = tag.getString("SelectedStackForm");
 		this.activeStackForm = tag.getString("CurrentStackForm");
 		this.activeStackFormItemDurationTicks = tag.getInt("ActiveStackFormItemDurationTicks");
+		this.previousStackFormGroup = tag.getString("PreviousStackFormGroup");
+		this.previousStackForm = tag.getString("PreviousStackForm");
+		this.hasPreviousStackFormRecord = tag.getBoolean("HasPreviousStackFormRecord");
 		if (tag.contains("StackFormMasteries")) stackFormMasteries.load(tag.getCompound("StackFormMasteries"));
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
@@ -438,6 +458,30 @@ public class Character {
 		this.activeForm = formName != null ? formName : "";
 		this.activeFormItemDurationTicks = 0;
 		updateOozaruCache();
+	}
+
+	public void recordPreviousForm() {
+		this.previousFormGroup = this.activeFormGroup;
+		this.previousForm = this.activeForm;
+		this.hasPreviousFormRecord = true;
+	}
+
+	public void clearPreviousFormRecord() {
+		this.previousFormGroup = "";
+		this.previousForm = "";
+		this.hasPreviousFormRecord = false;
+	}
+
+	public void recordPreviousStackForm() {
+		this.previousStackFormGroup = this.activeStackFormGroup;
+		this.previousStackForm = this.activeStackForm;
+		this.hasPreviousStackFormRecord = true;
+	}
+
+	public void clearPreviousStackFormRecord() {
+		this.previousStackFormGroup = "";
+		this.previousStackForm = "";
+		this.hasPreviousStackFormRecord = false;
 	}
 
 	public void clearActiveForm() {
@@ -599,12 +643,18 @@ public class Character {
 		this.selectedForm = safeString(other.selectedForm);
 		this.activeForm = safeString(other.activeForm);
 		this.activeFormItemDurationTicks = other.activeFormItemDurationTicks;
+		this.previousFormGroup = safeString(other.previousFormGroup);
+		this.previousForm = safeString(other.previousForm);
+		this.hasPreviousFormRecord = other.hasPreviousFormRecord;
 		this.formMasteries.copyFrom(other.formMasteries);
 		this.selectedStackFormGroup = safeString(other.selectedStackFormGroup);
 		this.activeStackFormGroup = safeString(other.activeStackFormGroup);
 		this.selectedStackForm = safeString(other.selectedStackForm);
 		this.activeStackForm = safeString(other.activeStackForm);
 		this.activeStackFormItemDurationTicks = other.activeStackFormItemDurationTicks;
+		this.previousStackFormGroup = safeString(other.previousStackFormGroup);
+		this.previousStackForm = safeString(other.previousStackForm);
+		this.hasPreviousStackFormRecord = other.hasPreviousStackFormRecord;
 		this.stackFormMasteries.copyFrom(other.stackFormMasteries);
 		this.hasSaiyanTail = other.hasSaiyanTail;
 		this.renderHairBase = other.renderHairBase;

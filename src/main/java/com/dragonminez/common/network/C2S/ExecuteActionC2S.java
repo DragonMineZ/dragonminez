@@ -7,6 +7,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
@@ -65,31 +66,13 @@ public class ExecuteActionC2S {
 						case DESCEND -> {
 							switch (data.getStatus().getSelectedAction()) {
 								case STACK: {
-									if (TransformationsHelper.canStackDescend(data)) {
-										FormConfig.FormData previousForm = TransformationsHelper.getPreviousStackForm(data);
-										if (previousForm != null) {
-											data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
-										} else {
-											data.getCharacter().clearActiveStackForm(player);
-											player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
-										}
-									} else {
-										data.getResources().setPowerRelease(0);
-									}
+									if (TransformationsHelper.canStackDescend(data)) descendStackForm(player, data);
+									else data.getResources().setPowerRelease(0);
 									break;
 								}
 								case FORM: {
-									if (TransformationsHelper.canDescend(data)) {
-										FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-										if (previousForm != null) {
-											data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-										} else {
-											if (data.getStatus().isAndroidUpgraded()) {
-												data.getCharacter().setActiveForm("androidforms", "androidbase");
-											} else data.getCharacter().clearActiveForm(player);
-											player.removeEffect(MainEffects.TRANSFORMED.get());
-										}
-									} else data.getResources().setPowerRelease(0);
+									if (TransformationsHelper.canDescend(data)) descendForm(player, data);
+									else data.getResources().setPowerRelease(0);
 									break;
 								}
 								default: data.getResources().setPowerRelease(0);
@@ -109,21 +92,8 @@ public class ExecuteActionC2S {
 									data.getResources().setPowerRelease(0);
 								}
 
-								if (activeStackForm) {
-									FormConfig.FormData previousStackForm = TransformationsHelper.getPreviousStackForm(data);
-									if (previousStackForm != null) {
-										data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousStackForm.getName());
-									} else data.getCharacter().clearActiveStackForm(player);
-								} else if (activeForm) {
-									FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-									if (previousForm != null) {
-										data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-									} else {
-										if (data.getStatus().isAndroidUpgraded()) {
-											data.getCharacter().setActiveForm("androidforms", "androidbase");
-										} else data.getCharacter().clearActiveForm(player);
-									}
-								}
+								if (activeStackForm) descendStackForm(player, data);
+								else if (activeForm) descendForm(player, data);
 								needsSync = true;
 							}
 						}
@@ -166,11 +136,11 @@ public class ExecuteActionC2S {
 
 									if (data.getResources().getCurrentEnergy() >= cost) {
 										data.getResources().removeEnergy(cost);
+										data.getCharacter().recordPreviousForm();
 										data.getCharacter().setActiveForm(group, nextForm.getName());
 										needsSync = true;
-									} else {
+									} else
 										player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki_instant", cost), true);
-									}
 								}
 							}
 						}
@@ -183,8 +153,7 @@ public class ExecuteActionC2S {
 								if (!rightClick) {
 									data.getSkills().setSkillActive("kimanipulation", !data.getSkills().isSkillActive("kimanipulation"));
 								} else {
-									if (!data.getSkills().isSkillActive("kimanipulation"))
-										data.getSkills().setSkillActive("kimanipulation", true);
+									if (!data.getSkills().isSkillActive("kimanipulation")) data.getSkills().setSkillActive("kimanipulation", true);
 									var types = ConfigManager.getCombatConfig().getKiWeaponTypes();
 									if (!types.isEmpty()) {
 										String current = data.getStatus().getKiWeaponType();
@@ -214,5 +183,52 @@ public class ExecuteActionC2S {
 			}
 		});
 		context.setPacketHandled(true);
+	}
+
+	private static void descendForm(ServerPlayer player, StatsData data) {
+		if (data.getCharacter().isHasPreviousFormRecord()) {
+			String previousGroup = data.getCharacter().getPreviousFormGroup();
+			String previousForm = data.getCharacter().getPreviousForm();
+			data.getCharacter().clearPreviousFormRecord();
+			if (previousForm != null && !previousForm.isEmpty()) {
+				data.getCharacter().setActiveForm(previousGroup, previousForm);
+				return;
+			}
+			if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
+			else data.getCharacter().clearActiveForm(player);
+			player.removeEffect(MainEffects.TRANSFORMED.get());
+			return;
+		}
+
+		FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
+		if (previousForm != null) {
+			data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+		} else {
+			if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
+			else data.getCharacter().clearActiveForm(player);
+			player.removeEffect(MainEffects.TRANSFORMED.get());
+		}
+	}
+
+	private static void descendStackForm(ServerPlayer player, StatsData data) {
+		if (data.getCharacter().isHasPreviousStackFormRecord()) {
+			String previousGroup = data.getCharacter().getPreviousStackFormGroup();
+			String previousForm = data.getCharacter().getPreviousStackForm();
+			data.getCharacter().clearPreviousStackFormRecord();
+			if (previousForm != null && !previousForm.isEmpty()) {
+				data.getCharacter().setActiveStackForm(previousGroup, previousForm);
+				return;
+			}
+			data.getCharacter().clearActiveStackForm(player);
+			player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
+			return;
+		}
+
+		FormConfig.FormData previousForm = TransformationsHelper.getPreviousStackForm(data);
+		if (previousForm != null) data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
+		else {
+			data.getCharacter().clearActiveStackForm(player);
+			player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
+		}
 	}
 }
