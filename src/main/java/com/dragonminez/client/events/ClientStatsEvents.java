@@ -176,7 +176,8 @@ public class ClientStatsEvents {
 			}
 
 			boolean chargeSessionActive = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !chargeSessionActive) {
+			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !chargeSessionActive
+					&& !TechniqueDispatcher.isFiringKiAttack(localPlayer) && (!data.getStatus().isFused() && !data.getStatus().isFusionLeader())) {
 				float[] kiRgb;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
