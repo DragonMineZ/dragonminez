@@ -162,7 +162,7 @@ public class ClientStatsEvents {
 			if (isChargingTechnique || isDescendKeyPressed || blockLockTicks > 0) isBlockKeyDown = false;
 
 			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
-			if ((kiWeaponActive || isChargingTechnique) && data.getStatus().isBlocking()) {
+			if ((kiWeaponActive || isChargingTechnique) && data.getStatus().isBlocking() || Minecraft.getInstance().screen != null) {
 				data.getStatus().setBlocking(false);
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
 			} else if (isBlockKeyDown != data.getStatus().isBlocking() && !PlayerAttackHelper.isKiWeaponActive(localPlayer)) {

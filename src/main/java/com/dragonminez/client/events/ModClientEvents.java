@@ -21,7 +21,9 @@ import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.*;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.SkinCacheManager;
 import com.dragonminez.client.util.TextureCounter;
+import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
@@ -90,6 +92,7 @@ public class ModClientEvents {
 				TextureCounter.clearCache();
 				ArmorTextureResolver.clearCache();
 				CombatAnimationResolver.reload(resourceManager);
+				SkinCacheManager.revalidate();
 			}
 		});
 	}
@@ -124,6 +127,9 @@ public class ModClientEvents {
 	public static void onClientSetup(FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
 			setCustomWindowIcon();
+
+			BetaWhitelist.reload();
+			SkinCacheManager.init();
 
 			//Bloques
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);
