@@ -109,9 +109,9 @@ public class FlySkillEvent {
 					int energyCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * energyCostPercent);
 
 					if (!flySkill.isActive()) {
-						if (player.onGround() && isDoubleTap && flyLevel >= 5) {
+						if (player.onGround() && isDoubleTap && flyLevel >= 5 && data.getStatus().getFlightMode() == Status.FLIGHT_SEARCH) {
 							int burstCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * 0.75);
-							if (data.getResources().getCurrentEnergy() >= energyCost + burstCost) {
+							if (player.isCreative() || data.getResources().getCurrentEnergy() >= energyCost + burstCost) {
 								pendingGroundActivation = false;
 								pendingFlightActivation = false;
 								decelerationImmunity = true;

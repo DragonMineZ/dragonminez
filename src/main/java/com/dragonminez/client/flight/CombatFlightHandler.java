@@ -154,7 +154,7 @@ public class CombatFlightHandler {
 		};
 
 		double levelScale = 1.0 + (0.20 * flyLevel);
-		double strength = config.getCombatFlyImpulseStrength() * speedScale * levelScale;
+		double strength = 1.0 * speedScale * levelScale;
 		burstVelocity = burstVelocity.add(impulseDir.scale(strength));
 		player.fallDistance = 0F;
 
