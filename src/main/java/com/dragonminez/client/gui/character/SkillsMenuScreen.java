@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
@@ -13,6 +14,7 @@ import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.*;
@@ -1487,6 +1489,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		String activeStackFormGroupO = null;
 		String activeStackFormO = null;
 		Character character = null;
+		Status status = null;
+		boolean androidUpgradedO = false;
+		boolean androidUpgradedOverridden = false;
 
 		if (isFormPreview && selectedFormName != null && selectedFormGroup != null) {
 			var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -1502,6 +1507,13 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 				if (ConfigManager.getSkillsConfig().getStackSkills().contains(selectedFormName)) character.setActiveStackForm(selectedFormGroup, selectedFormName);
 				else character.setActiveForm(selectedFormGroup, selectedFormName);
+
+				status = stats.getStatus();
+				androidUpgradedO = status.isAndroidUpgraded();
+				if ("androidforms".equals(selectedFormGroup) && !androidUpgradedO) {
+					status.setAndroidUpgraded(true);
+					androidUpgradedOverridden = true;
+				}
 			}
 		}
 
@@ -1528,7 +1540,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		DMZSkinLayer.PREVIEW_MODE = character != null;
+		try {
+			InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		} finally {
+			DMZSkinLayer.PREVIEW_MODE = false;
+		}
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;
@@ -1542,6 +1559,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			character.clearActiveStackForm();
 			character.setActiveForm(activeFormGroupO, activeFormO);
 			character.setActiveStackForm(activeStackFormGroupO, activeStackFormO);
+			if (androidUpgradedOverridden) status.setAndroidUpgraded(androidUpgradedO);
 		}
 	}
 }

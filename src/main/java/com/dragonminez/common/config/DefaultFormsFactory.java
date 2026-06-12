@@ -71,11 +71,11 @@ public class DefaultFormsFactory {
 		x2.setSpeedMultiplier(1.1);
 		x2.setHealthDrain(0.03);
 		x2.setAttackSpeed(1.1);
-		x2.setAuraLayer(1);
 		x2.setAuraColor("#DB182C");
 		x2.setHasLightnings(false);
 		x2.setHairType("");
 		setDefaultMasteryValues(x2);
+		x2.setAuraLayer(1);
 		x2.setStackOnMastery(0.0);
 		x2.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X3));
 		x2.setShareMasteryMultiplier(0.25);
@@ -93,10 +93,10 @@ public class DefaultFormsFactory {
 		x3.setSpeedMultiplier(1.2);
 		x3.setAttackSpeed(1.2);
 		x3.setHealthDrain(0.06);
-		x3.setAuraLayer(1);
 		x3.setAuraColor("#DB182C");
 		x3.setHairType("");
 		setDefaultMasteryValues(x3);
+		x3.setAuraLayer(1);
 		x3.setStackOnMastery(0.0);
 		x3.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X4));
 		x3.setShareMasteryMultiplier(0.25);
@@ -113,10 +113,10 @@ public class DefaultFormsFactory {
 		x4.setSpeedMultiplier(1.35);
 		x4.setAttackSpeed(1.35);
 		x4.setHealthDrain(0.095);
-		x4.setAuraLayer(1);
 		x4.setAuraColor("#DB182C");
 		x4.setHairType("");
 		setDefaultMasteryValues(x4);
+		x4.setAuraLayer(1);
 		x4.setStackOnMastery(0.0);
 		x4.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X10));
 		x4.setShareMasteryMultiplier(0.25);
@@ -133,10 +133,10 @@ public class DefaultFormsFactory {
 		x10.setSpeedMultiplier(1.5);
 		x10.setHealthDrain(0.11);
 		x10.setAttackSpeed(1.5);
-		x10.setAuraLayer(1);
 		x10.setAuraColor("#DB182C");
 		x10.setHairType("");
 		setDefaultMasteryValues(x10);
+		x10.setAuraLayer(1);
 		x10.setStackOnMastery(0.0);
 		x10.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X20));
 		x10.setShareMasteryMultiplier(0.25);
@@ -153,10 +153,10 @@ public class DefaultFormsFactory {
 		x20.setSpeedMultiplier(1.65);
 		x20.setHealthDrain(0.15);
 		x20.setAttackSpeed(1.65);
-		x20.setAuraLayer(1);
 		x20.setAuraColor("#DB182C");
 		x20.setHairType("");
 		setDefaultMasteryValues(x20);
+		x20.setAuraLayer(1);
 		x20.setStackOnMastery(0.0);
 		x20.setShareMasteryWith(List.of(StackForms.GROUP_KAIOKEN + "." + StackForms.X100));
 		x20.setShareMasteryMultiplier(0.25);
@@ -173,10 +173,10 @@ public class DefaultFormsFactory {
 		x100.setSpeedMultiplier(2.0);
 		x100.setHealthDrain(0.20);
 		x100.setAttackSpeed(2.0);
-		x100.setAuraLayer(1);
 		x100.setAuraColor("#DB182C");
 		x100.setHairType("");
 		setDefaultMasteryValues(x100);
+		x100.setAuraLayer(1);
 		x100.setStackOnMastery(0.0);
 		x100.setStackDrainMultiplier(1.0);
 
@@ -212,7 +212,7 @@ public class DefaultFormsFactory {
 		ultimate.setStaminaDrain(0.0);
 		ultimate.setHealthDrain(0.0);
 		ultimate.setAttackSpeed(1.0);
-		ultimate.setHairType("base");
+		ultimate.setHairType("ssj2");
 		ultimate.setMaxMastery(0.0);
 		ultimate.setMasteryPerHitDealt(0.0);
 		ultimate.setMasteryPerHitReceived(0.0);

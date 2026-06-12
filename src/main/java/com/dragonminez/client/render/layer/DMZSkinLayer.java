@@ -37,6 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
+	public static boolean PREVIEW_MODE = false;
+
 	private static final Map<ResourceLocation, ResourceLocation> VALIDATED_TEXTURES_CACHE = new ConcurrentHashMap<>();
 	private static final ResourceLocation BLANK_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
 
@@ -86,9 +88,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		String ssj4Key = ssj4 != null ? ssj4.key() : null;
 		float[] ssj4Color = ssj4 != null ? ssj4.color() : null;
 		float ssj4Target = ssj4 != null ? ssj4.target() : 0.0f;
-		this.currentSsj4Alpha = Ssj4FadeTracker.update(playerId, gameTime, ssj4Target, ssj4Key, ssj4Color);
-		this.currentSsj4Key = ssj4Key != null ? ssj4Key : Ssj4FadeTracker.lastKey(playerId);
-		this.currentSsj4Color = ssj4Color != null ? ssj4Color : Ssj4FadeTracker.lastColor(playerId);
+		if (PREVIEW_MODE) {
+			this.currentSsj4Alpha = ssj4Target;
+			this.currentSsj4Key = ssj4Key;
+			this.currentSsj4Color = ssj4Color;
+		} else {
+			this.currentSsj4Alpha = Ssj4FadeTracker.update(playerId, gameTime, ssj4Target, ssj4Key, ssj4Color);
+			this.currentSsj4Key = ssj4Key != null ? ssj4Key : Ssj4FadeTracker.lastKey(playerId);
+			this.currentSsj4Color = ssj4Color != null ? ssj4Color : Ssj4FadeTracker.lastColor(playerId);
+		}
 
 		float alpha = player.isSpectator() ? 0.15f : 1.0f;
 		TransformationMaskBufferSource maskBuffer = bufferSource instanceof TransformationMaskBufferSource mask ? mask : null;
