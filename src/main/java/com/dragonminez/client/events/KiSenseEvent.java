@@ -67,6 +67,9 @@ public class KiSenseEvent {
 				CombatIndicators.clear();
 				return;
 			}
+			if (KiSenseState.isActive() && (!data.getSkills().isSkillActive("kisense") || data.getSkills().getSkillLevel("kisense") <= 0)) {
+				KiSenseState.reset();
+			}
 			KiSenseScan.tick(player, data, KiSenseState.getMode());
 			if (KiSenseState.isCombat()) CombatIndicators.tick();
 			else CombatIndicators.clear();

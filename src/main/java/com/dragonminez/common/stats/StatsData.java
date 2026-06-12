@@ -1189,6 +1189,7 @@ public class StatsData {
 		getStatus().reset();
 		getResources().reset();
 		getResources().setPowerRelease(0);
+		getSkills().setSkillActive("kisense", false);
 		getPlayerQuestData().resetAll();
 		getCharacter().clearInteractedMasters();
 		getDynamicGrowth().clear();

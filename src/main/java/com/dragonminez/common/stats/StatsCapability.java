@@ -96,6 +96,7 @@ public class StatsCapability {
 				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
 				TransformationsHelper.ensureSelectedFormDefault(data);
 				TransformationsHelper.ensureSelectedStackFormDefault(data);
+				data.getSkills().setSkillActive("kisense", false);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -125,6 +126,7 @@ public class StatsCapability {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				markCurrentDimensionVisited(serverPlayer, data);
+				data.getSkills().setSkillActive("kisense", false);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}

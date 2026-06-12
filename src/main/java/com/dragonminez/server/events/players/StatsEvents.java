@@ -256,6 +256,7 @@ public class StatsEvents {
 	@SubscribeEvent
 	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
 		FOOD_REGEN_QUEUE.remove(event.getEntity().getUUID());
+		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> data.getSkills().setSkillActive("kisense", false));
 	}
 
 	public static void applyHealthBonus(ServerPlayer serverPlayer) {
@@ -302,6 +303,7 @@ public class StatsEvents {
 				player.setHealth(player.getMaxHealth());
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
 				data.getResources().setCurrentStamina(data.getMaxStamina());
+				data.getSkills().setSkillActive("kisense", false);
 			});
 		}
 	}
@@ -335,6 +337,7 @@ public class StatsEvents {
 					victimData.getStatus().setActionCharging(false);
 					victimData.getCharacter().setActiveForm(null, null);
 					victimData.getCharacter().setActiveStackForm(null, null);
+					victimData.getSkills().setSkillActive("kisense", false);
 					FOOD_REGEN_QUEUE.remove(victim.getUUID());
 				}
 			});
