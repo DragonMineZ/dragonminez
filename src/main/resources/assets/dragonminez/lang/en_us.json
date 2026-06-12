@@ -719,6 +719,7 @@
   "message.dragonminez.quest.start.already_active": "This quest is already active or completed.",
   "message.dragonminez.quest.start.locked": "You do not meet the requirements for this quest yet.",
   "message.dragonminez.quest.start.party_member_requirement": "%s has not met the requirement to start this quest: %s",
+  "message.dragonminez.quest.start.current_location": " (currently in %s)",
   "message.dragonminez.npc.unavailable": "This NPC will not respond right now.",
   "message.dragonminez.npc.hostile": "This NPC is hostile toward you.",
   "message.dragonminez.npc.alignment_too_low": "Your alignment must be at least %s to speak with this NPC.",

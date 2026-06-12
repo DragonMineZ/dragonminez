@@ -294,7 +294,7 @@ public final class QuestTextFormatter {
 				: Component.literal(humanizeResourceIdentifier(structureId));
 	}
 
-	private static Component resolveBiomeName(String biomeId) {
+	public static Component resolveBiomeName(String biomeId) {
 		ResourceLocation id = safeParse(biomeId != null && biomeId.startsWith("#") ? biomeId.substring(1) : biomeId);
 		if (biomeId != null && biomeId.startsWith("#")) {
 			return Component.literal(humanizeResourceIdentifier(biomeId));
@@ -305,7 +305,7 @@ public final class QuestTextFormatter {
 		return Component.literal(humanizeResourceIdentifier(biomeId));
 	}
 
-	private static Component resolveDimensionName(String dimensionId) {
+	public static Component resolveDimensionName(String dimensionId) {
 		String display = DIMENSION_NAMES.get(dimensionId);
 		return display != null
 				? Component.literal(display)

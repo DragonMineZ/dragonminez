@@ -184,7 +184,42 @@ public class QuestAvailabilityChecker {
 		if (evaluateCondition(condition, context, ignoreTimeConditions)) {
 			return null;
 		}
-		return QuestTextFormatter.describeRequirement(condition, context.toRequirementContext());
+		Component base = QuestTextFormatter.describeRequirement(condition, context.toRequirementContext());
+		Component current = describeCurrentLocation(condition.getType(), context);
+		if (current == null) {
+			return base;
+		}
+		return Component.empty().append(base)
+				.append(Component.translatable("message.dragonminez.quest.start.current_location", current));
+	}
+
+	/**
+	 * For location-based requirements (biome/dimension), resolves the player's <em>current</em>
+	 * location so the failure message can spell out the mismatch — e.g. a party member standing in
+	 * {@code sunflower_plains} a few blocks from the required {@code plains}, or a leader who is in a
+	 * different biome entirely. Returns {@code null} for non-location conditions.
+	 */
+	private static Component describeCurrentLocation(QuestPrerequisites.ConditionType type, EvaluationContext context) {
+		if (type == null) {
+			return null;
+		}
+		Level level = context.level();
+		if (level == null) {
+			return null;
+		}
+		return switch (type) {
+			case BIOME -> {
+				BlockPos pos = context.pos();
+				if (pos == null) {
+					yield null;
+				}
+				yield level.getBiome(pos).unwrapKey()
+						.map(key -> QuestTextFormatter.resolveBiomeName(key.location().toString()))
+						.orElse(null);
+			}
+			case DIMENSION -> QuestTextFormatter.resolveDimensionName(level.dimension().location().toString());
+			default -> null;
+		};
 	}
 
 	private static boolean evaluateCondition(QuestPrerequisites.Condition condition, EvaluationContext context, boolean ignoreTimeConditions) {

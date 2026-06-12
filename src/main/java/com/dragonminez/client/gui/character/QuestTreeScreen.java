@@ -663,7 +663,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					} else {
 						boolean isHard = ConfigManager.getUserConfig().getStoryHardDifficulty();
 						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, isHard, ""));
-						this.onClose();
+						btn.visible = false;
+						pendingRefreshTicks = 5;
 					}
 				})
 				.build();
