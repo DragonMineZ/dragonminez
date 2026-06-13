@@ -56,10 +56,9 @@ public class ModCommonEvents {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         // MAESTROS
-        regAttr(event, MastersEntity.createAttributes().build(),
-                MainEntities.MASTER_KARIN, MainEntities.MASTER_GOKU, MainEntities.MASTER_KAIOSAMA, MainEntities.MASTER_ROSHI,
-                MainEntities.MASTER_URANAI, MainEntities.MASTER_ENMA, MainEntities.MASTER_DENDE, MainEntities.MASTER_GERO,
-                MainEntities.MASTER_POPO, MainEntities.MASTER_GURU, MainEntities.MASTER_TORIBOT);
+        for (var masterEntity : MainEntities.getMasterEntities()) {
+            event.put((EntityType<? extends LivingEntity>) masterEntity.get(), MastersEntity.createAttributes().build());
+        }
 
         // Quest NPC — single entity type for all data-driven quest NPCs | Usa un solo tipo de entidad para todos los NPCs de misiones basados en datos
         event.put(MainEntities.QUEST_NPC.get(), MastersEntity.createAttributes().build());

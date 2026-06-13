@@ -191,10 +191,9 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         //MAESTROS
-        regRender(event, MasterEntityRenderer::new,
-                MainEntities.MASTER_KARIN, MainEntities.MASTER_GOKU, MainEntities.MASTER_KAIOSAMA, MainEntities.MASTER_ROSHI,
-                MainEntities.MASTER_URANAI, MainEntities.MASTER_ENMA, MainEntities.MASTER_DENDE, MainEntities.MASTER_GERO,
-                MainEntities.MASTER_POPO, MainEntities.MASTER_GURU, MainEntities.MASTER_TORIBOT);
+        for (var masterEntity : MainEntities.getMasterEntities()) {
+            event.registerEntityRenderer((EntityType) masterEntity.get(), context -> new MasterEntityRenderer(context));
+        }
 
         // Quest NPC — single renderer for all data-driven quest NPCs | usa un renderer genérico para los NPCs de misiones, después usa gráficos.json para asignar modelos/texturas específicos a cada npcId
         event.registerEntityRenderer(MainEntities.QUEST_NPC.get(), QuestNPCRenderer::new);

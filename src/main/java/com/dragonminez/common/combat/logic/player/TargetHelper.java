@@ -2,9 +2,7 @@ package com.dragonminez.common.combat.logic.player;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.alignment.NpcDispositionService;
-import com.dragonminez.common.init.entities.masters.MasterEnmaEntity;
-import com.dragonminez.common.init.entities.masters.MasterToribotEntity;
-import com.dragonminez.common.init.entities.masters.MasterUranaiEntity;
+import com.dragonminez.common.init.entities.AllMastersEntity;
 import com.dragonminez.common.quest.PartyManager;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.TamableAnimal;
@@ -30,7 +28,7 @@ public class TargetHelper {
     public static Relation getRelation(Player attacker, Entity target) {
         if (attacker == target) return Relation.FRIENDLY;
 
-        if (target instanceof MasterEnmaEntity || target instanceof MasterUranaiEntity || target instanceof MasterToribotEntity) {
+        if (target instanceof AllMastersEntity.MasterEnmaEntity || target instanceof AllMastersEntity.MasterUranaiEntity || target instanceof AllMastersEntity.MasterToribotEntity) {
             return Relation.FRIENDLY;
         }
 
