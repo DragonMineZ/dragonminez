@@ -3,7 +3,7 @@ package com.dragonminez.server.util;
 import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
-import com.dragonminez.common.init.entities.masters.MasterKaiosamaEntity;
+import com.dragonminez.common.init.entities.AllMastersEntity;
 import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -113,7 +113,7 @@ public class GravityLogic {
 			double gravity = 0.0;
 			double range = config.getNpcGravityRange();
 			AABB searchBox = player.getBoundingBox().inflate(range);
-			List<MasterKaiosamaEntity> kais = player.level().getEntitiesOfClass(MasterKaiosamaEntity.class, searchBox);
+			List<AllMastersEntity.MasterKaiosamaEntity> kais = player.level().getEntitiesOfClass(AllMastersEntity.MasterKaiosamaEntity.class, searchBox);
 			if (!kais.isEmpty()) gravity = config.getNpcGravityValue();
 
 			NPC_GRAVITY_CACHE.put(id, gravity);

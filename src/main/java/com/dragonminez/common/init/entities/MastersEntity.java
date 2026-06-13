@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities;
 
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
@@ -96,7 +97,9 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 		controllers.add(new AnimationController<>(this, "controller", 0, event -> {
 			return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
 		}));
-	}
+        controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
+
+    }
 
 	@Override
 	public AnimatableInstanceCache getAnimatableInstanceCache() {
