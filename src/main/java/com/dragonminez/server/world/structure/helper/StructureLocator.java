@@ -64,7 +64,8 @@ public class StructureLocator {
 			ChunkPos chunkPos = uniquePlacement.getStructureChunk(
 					level.getSeed(),
 					level.getChunkSource().getGenerator().getBiomeSource(),
-					level.getChunkSource().randomState()
+					level.getChunkSource().randomState(),
+					level.getChunkSource().getGeneratorState()
 			);
 			if (chunkPos != null) {
 				return new BlockPos(chunkPos.getMiddleBlockX(), 90, chunkPos.getMiddleBlockZ());

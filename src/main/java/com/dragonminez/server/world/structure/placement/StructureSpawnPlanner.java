@@ -6,9 +6,13 @@ import net.minecraft.core.QuartPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
+import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
+import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +23,9 @@ import java.util.TreeMap;
 
 public final class StructureSpawnPlanner {
 	private static final int ANGLES_PER_RING = 16;
+	private static final int EXCLUSION_CHUNK_RADIUS = 5;
 	private static final TreeMap<Integer, BiomeAwareUniquePlacement> REGISTERED = new TreeMap<>();
+	private static final TreeMap<Integer, UniqueNearSpawnPlacement> NEAR_SPAWN_RESERVED = new TreeMap<>();
 
 	private static long cachedSeed = Long.MIN_VALUE;
 	private static BiomeSource cachedBiomeSource = null;
@@ -29,22 +35,34 @@ public final class StructureSpawnPlanner {
 
 	static synchronized void register(BiomeAwareUniquePlacement placement) {
 		REGISTERED.put(placement.placementSalt(), placement);
+		invalidate();
+	}
+
+	static synchronized void registerReservation(UniqueNearSpawnPlacement placement) {
+		NEAR_SPAWN_RESERVED.put(placement.placementSalt(), placement);
+		invalidate();
+	}
+
+	private static void invalidate() {
 		cachedSeed = Long.MIN_VALUE;
 		cachedBiomeSource = null;
 	}
 
-	static synchronized ChunkPos getPositionFor(BiomeAwareUniquePlacement placement, long worldSeed, BiomeSource biomeSource, RandomState randomState) {
+	static synchronized ChunkPos getPositionFor(BiomeAwareUniquePlacement placement, long worldSeed,
+												BiomeSource biomeSource, RandomState randomState,
+												ChunkGeneratorStructureState state) {
 		if (biomeSource == null || randomState == null) return null;
 
 		if (worldSeed != cachedSeed || biomeSource != cachedBiomeSource) {
-			cachedPlan = computePlan(worldSeed, biomeSource, randomState);
+			cachedPlan = computePlan(worldSeed, biomeSource, randomState, state);
 			cachedSeed = worldSeed;
 			cachedBiomeSource = biomeSource;
 		}
 		return cachedPlan.get(placement.placementSalt());
 	}
 
-	private static Map<Integer, ChunkPos> computePlan(long worldSeed, BiomeSource biomeSource, RandomState randomState) {
+	private static Map<Integer, ChunkPos> computePlan(long worldSeed, BiomeSource biomeSource,
+													  RandomState randomState, ChunkGeneratorStructureState state) {
 		GeneralServerConfigWorldGen cfg = new GeneralServerConfigWorldGen();
 
 		double minChunks = cfg.minDistanceFromSpawn / 16.0;
@@ -55,13 +73,19 @@ public final class StructureSpawnPlanner {
 		Map<Integer, ChunkPos> plan = new HashMap<>();
 		List<ChunkPos> accepted = new ArrayList<>();
 
+		for (UniqueNearSpawnPlacement reserved : NEAR_SPAWN_RESERVED.values()) {
+			ChunkPos pos = reserved.getStructureChunk(worldSeed);
+			if (pos != null) accepted.add(pos);
+		}
+
 		int minRing = (int) Math.floor(minChunks);
 		int maxRing = (int) Math.ceil(maxChunks);
 
+		List<Holder<StructureSet>> avoid = collectAvoidableSets(state);
+
 		for (Map.Entry<Integer, BiomeAwareUniquePlacement> entry : REGISTERED.entrySet()) {
 			BiomeAwareUniquePlacement placement = entry.getValue();
-			ChunkPos found = searchNearest(placement, worldSeed, biomeSource, randomState,
-					minRing, maxRing, accepted, spacingSqr);
+			ChunkPos found = searchNearest(placement, worldSeed, biomeSource, randomState, minRing, maxRing, accepted, spacingSqr, state, avoid);
 
 			if (found != null) {
 				plan.put(placement.placementSalt(), found);
@@ -71,7 +95,29 @@ public final class StructureSpawnPlanner {
 		return plan;
 	}
 
-	private static ChunkPos searchNearest(BiomeAwareUniquePlacement placement, long worldSeed, BiomeSource biomeSource, RandomState randomState, int minRing, int maxRing, List<ChunkPos> accepted, double spacingSqr) {
+	private static List<Holder<StructureSet>> collectAvoidableSets(ChunkGeneratorStructureState state) {
+		if (state == null) return Collections.emptyList();
+
+		List<Holder<StructureSet>> result = new ArrayList<>();
+		for (Holder<StructureSet> holder : state.possibleStructureSets()) {
+			StructurePlacement placement = holder.value().placement();
+			if (placement instanceof BiomeAwareUniquePlacement
+					|| placement instanceof UniqueNearSpawnPlacement
+					|| placement instanceof FixedStructurePlacement
+					|| placement instanceof ConcentricRingsStructurePlacement) {
+				continue;
+			}
+			result.add(holder);
+		}
+		return result;
+	}
+
+	private static ChunkPos searchNearest(BiomeAwareUniquePlacement placement, long worldSeed,
+										  BiomeSource biomeSource, RandomState randomState, int minRing, int maxRing,
+										  List<ChunkPos> accepted, double spacingSqr,
+										  ChunkGeneratorStructureState state, List<Holder<StructureSet>> avoid) {
+		ChunkPos biomeValidFallback = null;
+
 		for (int ring = minRing; ring <= maxRing; ring++) {
 			WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + placement.placementSalt() + ring));
 			double baseAngle = random.nextDouble() * Math.PI * 2.0;
@@ -90,12 +136,23 @@ public final class StructureSpawnPlanner {
 				int quartZ = QuartPos.fromBlock(chunkZ * 16 + 8);
 				Holder<Biome> biome = biomeSource.getNoiseBiome(quartX, quartY, quartZ, randomState.sampler());
 
-				if (placement.getValidBiomes().contains(biome)) {
-					return new ChunkPos(chunkX, chunkZ);
-				}
+				if (!placement.getValidBiomes().contains(biome)) continue;
+				if (biomeValidFallback == null) biomeValidFallback = new ChunkPos(chunkX, chunkZ);
+				if (!overlapsOtherStructures(state, avoid, chunkX, chunkZ)) return new ChunkPos(chunkX, chunkZ);
 			}
 		}
-		return null;
+		return biomeValidFallback;
+	}
+
+	private static boolean overlapsOtherStructures(ChunkGeneratorStructureState state,
+												   List<Holder<StructureSet>> avoid, int chunkX, int chunkZ) {
+		if (state == null || avoid.isEmpty()) return false;
+		for (Holder<StructureSet> holder : avoid) {
+			if (state.hasStructureChunkInRange(holder, chunkX, chunkZ, EXCLUSION_CHUNK_RADIUS)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean tooClose(List<ChunkPos> accepted, int chunkX, int chunkZ, double spacingSqr) {

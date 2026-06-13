@@ -30,6 +30,11 @@ public class UniqueNearSpawnPlacement extends StructurePlacement {
                                    float frequency, int salt, Optional<ExclusionZone> exclusionZone, Rotation rotation) {
         super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
         this.rotation = rotation;
+        StructureSpawnPlanner.registerReservation(this);
+    }
+
+    public int placementSalt() {
+        return this.salt();
     }
 
     public UniqueNearSpawnPlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod,

@@ -73,12 +73,13 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 	@Override
 	protected boolean isPlacementChunk(@NonNull ChunkGeneratorStructureState structureState, int x, int z) {
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return false;
-		ChunkPos pos = getStructureChunk(structureState.getLevelSeed(), getBiomeSourceReflection(structureState), structureState.randomState());
+		ChunkPos pos = getStructureChunk(structureState.getLevelSeed(), getBiomeSourceReflection(structureState), structureState.randomState(), structureState);
 		return pos != null && pos.x == x && pos.z == z;
 	}
 
-	public ChunkPos getStructureChunk(long worldSeed, BiomeSource biomeSource, RandomState randomState) {
-		return StructureSpawnPlanner.getPositionFor(this, worldSeed, biomeSource, randomState);
+	public ChunkPos getStructureChunk(long worldSeed, BiomeSource biomeSource, RandomState randomState,
+									  ChunkGeneratorStructureState state) {
+		return StructureSpawnPlanner.getPositionFor(this, worldSeed, biomeSource, randomState, state);
 	}
 
 	@Override
