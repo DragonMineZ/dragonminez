@@ -8,6 +8,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TrainingConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.TrainingRewardC2S;
+import com.dragonminez.common.network.C2S.TrainingAnimationC2S;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -39,6 +40,7 @@ public abstract class BaseMinigameScreen extends Screen {
 	protected State state = State.READY;
 
 	private int finalRewardDisplay = 0;
+	private boolean trainingAnimActive = false;
 
 	protected BaseMinigameScreen(String minigameId, String titleKey) {
 		super(Component.translatable(titleKey).withStyle(Style.EMPTY.withFont(DMZ_FONT)));
@@ -67,6 +69,7 @@ public abstract class BaseMinigameScreen extends Screen {
 			NetworkHandler.sendToServer(new TrainingRewardC2S(minigameId, levelsCleared));
 		}
 		this.finalRewardDisplay = computeRewardDisplay();
+		stopTrainingAnimation();
 	}
 
 	private int computeRewardDisplay() {
@@ -90,7 +93,26 @@ public abstract class BaseMinigameScreen extends Screen {
 
 	protected void startGame() {
 		this.state = State.PLAYING;
+		startTrainingAnimation();
 		onStart();
+	}
+
+	private void startTrainingAnimation() {
+		if (trainingAnimActive) return;
+		trainingAnimActive = true;
+		NetworkHandler.sendToServer(new TrainingAnimationC2S(true));
+	}
+
+	private void stopTrainingAnimation() {
+		if (!trainingAnimActive) return;
+		trainingAnimActive = false;
+		NetworkHandler.sendToServer(new TrainingAnimationC2S(false));
+	}
+
+	@Override
+	public void removed() {
+		stopTrainingAnimation();
+		super.removed();
 	}
 
 	protected void playUi(SoundEvent sound, float pitch, float volume) {

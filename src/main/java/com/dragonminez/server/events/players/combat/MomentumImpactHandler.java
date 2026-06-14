@@ -34,6 +34,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class MomentumImpactHandler {
 	private static final Map<UUID, CollisionImpactContext> COLLISION_IMPACTS = new HashMap<>();
+	private static final java.util.Set<UUID> IMPACT_ANIM_PLAYING = new java.util.HashSet<>();
 	public static final double MOMENTUM_SPEED_THRESHOLD = 0.65;
 	public static final double MOMENTUM_MAX_SPEED = 1.5;
 	private static final String IMPACT_WALL_ANIM = "base.faint_horizontal";
@@ -106,6 +107,11 @@ public class MomentumImpactHandler {
 		LivingEntity living = event.getEntity();
 		if (living.level().isClientSide) return;
 
+		if (IMPACT_ANIM_PLAYING.contains(living.getUUID()) && !living.hasEffect(MainEffects.STUN.get())) {
+			IMPACT_ANIM_PLAYING.remove(living.getUUID());
+			stopImpactAnimation(living);
+		}
+
 		CollisionImpactContext impact = COLLISION_IMPACTS.get(living.getUUID());
 		if (impact == null) return;
 
@@ -123,6 +129,7 @@ public class MomentumImpactHandler {
 		Vec3 dir = impact.momentumDirection() != null ? impact.momentumDirection() : living.getDeltaMovement().normalize();
 		COLLISION_IMPACTS.remove(living.getUUID());
 		playImpactAnimation(living, impact.type());
+		if (living instanceof ServerPlayer) IMPACT_ANIM_PLAYING.add(living.getUUID());
 		living.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 30, 0, false, false, true));
 		living.level().playSound(null, living.getX(), living.getY(), living.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
@@ -137,6 +144,7 @@ public class MomentumImpactHandler {
 	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
 		UUID id = event.getEntity().getUUID();
 		COLLISION_IMPACTS.remove(id);
+		IMPACT_ANIM_PLAYING.remove(id);
 	}
 
 	public static void registerCollisionImpact(LivingEntity victim, CollisionImpactType type, float extraDamage, Vec3 momentumDir) {
@@ -211,6 +219,14 @@ public class MomentumImpactHandler {
 		String anim = type == CollisionImpactType.GROUND ? IMPACT_GROUND_ANIM : IMPACT_WALL_ANIM;
 		NetworkHandler.sendToTrackingEntityAndSelf(
 				new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, anim),
+				serverPlayer
+		);
+	}
+
+	private static void stopImpactAnimation(LivingEntity living) {
+		if (!(living instanceof ServerPlayer serverPlayer)) return;
+		NetworkHandler.sendToTrackingEntityAndSelf(
+				new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""),
 				serverPlayer
 		);
 	}

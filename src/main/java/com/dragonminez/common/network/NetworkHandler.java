@@ -159,6 +159,12 @@ public class NetworkHandler {
 				.consumerMainThread(TrainingRewardC2S::handle)
 				.add();
 
+		net.messageBuilder(TrainingAnimationC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TrainingAnimationC2S::new)
+				.encoder(TrainingAnimationC2S::toBytes)
+				.consumerMainThread(TrainingAnimationC2S::handle)
+				.add();
+
 		net.messageBuilder(SummonPlayerShadowDummyC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(SummonPlayerShadowDummyC2S::new)
 				.encoder(SummonPlayerShadowDummyC2S::toBytes)

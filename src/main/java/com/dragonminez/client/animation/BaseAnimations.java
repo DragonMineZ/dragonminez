@@ -44,6 +44,6 @@ public class BaseAnimations {
 	public static final RawAnimation FLEX = RawAnimation.begin().thenPlay("base.flex");
 	public static final RawAnimation MEDITATION = RawAnimation.begin().thenLoop("base.meditation");
 	public static final RawAnimation FLYBACK = RawAnimation.begin().thenPlay("base.flyback");
-	public static final RawAnimation KNOCKBACK_HORIZONTAL = RawAnimation.begin().thenPlay("base.knockback_horizontal");
-	public static final RawAnimation KNOCKBACK_VERTICAL = RawAnimation.begin().thenPlay("base.knockback_vertical");
+	public static final RawAnimation KNOCKBACK_HORIZONTAL = RawAnimation.begin().thenPlay("base.faint_horizontal");
+	public static final RawAnimation KNOCKBACK_VERTICAL = RawAnimation.begin().thenPlay("base.faint_vertical");
 }
