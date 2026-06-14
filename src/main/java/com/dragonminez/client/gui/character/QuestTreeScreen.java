@@ -12,7 +12,6 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
 import com.dragonminez.common.network.C2S.ClaimAllQuestRewardsC2S;
 import com.dragonminez.common.network.C2S.ClaimQuestRewardC2S;
-import com.dragonminez.common.network.C2S.CreatePartyC2S;
 import com.dragonminez.common.network.C2S.InvitePartyMemberC2S;
 import com.dragonminez.common.network.C2S.LeavePartyC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
@@ -86,6 +85,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private int currentSagaIndex = 0;
 	private final List<Saga> availableSagas = new ArrayList<>();
+
+	private static String persistedSagaId = null;
+	private static String persistedQuestKey = null;
 
 	private QuestTreeLayoutHelper.TreeLayout currentLayout;
 	private Quest selectedQuest = null;
@@ -220,9 +222,91 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		startPanelIntroAnimation();
 		updateStatsData();
 		loadAvailableSagas();
+		restorePersistedSagaIndex();
 		rebuildLayout();
+		restorePersistedQuestSelection();
 		rebuildNavigatorEntries();
+		scrollNavigatorToSelected();
 		refreshButtons();
+	}
+
+	private void restorePersistedSagaIndex() {
+		if (persistedSagaId == null || availableSagas.isEmpty()) return;
+		for (int i = 0; i < availableSagas.size(); i++) {
+			if (availableSagas.get(i).getId().equals(persistedSagaId)) {
+				currentSagaIndex = i;
+				return;
+			}
+		}
+	}
+
+	private void restorePersistedQuestSelection() {
+		if (persistedQuestKey == null || availableSagas.isEmpty()) return;
+		Saga saga = availableSagas.get(currentSagaIndex);
+		Quest found = findQuestByProgressKey(saga, persistedQuestKey);
+		if (found == null) return;
+		selectedQuest = found;
+		expandSideBranchTo(saga, found);
+		QuestTreeLayoutHelper.NodePosition node = findNodeForQuest(found);
+		if (node != null) {
+			PanelRect tree = getTreePanelRect();
+			panX = (tree.x + tree.width / 2.0f) - (node.getPixelX() * zoom) - ((float) NODE_SIZE / 2) * zoom;
+			panY = (tree.y + tree.height / 2.0f) - (node.getPixelY() * zoom) - ((float) NODE_SIZE / 2) * zoom;
+		}
+	}
+
+	private Quest findQuestByProgressKey(Saga saga, String key) {
+		if (saga == null || key == null) return null;
+		for (Quest q : saga.getQuests()) {
+			if (questProgressKey(saga, q).equals(key)) return q;
+		}
+		for (List<Quest> branch : buildSideBranchesForSaga(saga).values()) {
+			for (Quest q : branch) {
+				if (questProgressKey(saga, q).equals(key)) return q;
+			}
+		}
+		return null;
+	}
+
+	private void expandSideBranchTo(Saga saga, Quest target) {
+		if (saga == null || target == null || !target.isSideQuest() || currentLayout == null) return;
+		Map<String, Quest> childKeyToParent = new HashMap<>();
+		for (QuestTreeLayoutHelper.NodeConnection connection : currentLayout.getConnections()) {
+			Quest to = connection.getTo().getQuest();
+			if (!to.isSideQuest()) continue;
+			childKeyToParent.put(questProgressKey(saga, to), connection.getFrom().getQuest());
+		}
+		Quest current = target;
+		Set<String> guard = new HashSet<>();
+		while (current != null && current.isSideQuest() && guard.add(questProgressKey(saga, current))) {
+			Quest parent = childKeyToParent.get(questProgressKey(saga, current));
+			if (parent == null) break;
+			expandedSideBranches.add(questProgressKey(saga, parent));
+			current = parent;
+		}
+	}
+
+	private void scrollNavigatorToSelected() {
+		if (selectedQuest == null) return;
+		for (int i = 0; i < navigatorEntries.size(); i++) {
+			NavigatorEntry entry = navigatorEntries.get(i);
+			if (entry.quest() != null && sameQuestIdentity(entry.quest(), selectedQuest)) {
+				targetNavScroll = Mth.clamp((i * 13) - 40, 0, navMaxScroll);
+				currentNavScroll = targetNavScroll;
+				return;
+			}
+		}
+	}
+
+	private void persistSelection() {
+		if (availableSagas.isEmpty() || currentSagaIndex >= availableSagas.size()) {
+			persistedSagaId = null;
+			persistedQuestKey = null;
+			return;
+		}
+		Saga saga = availableSagas.get(currentSagaIndex);
+		persistedSagaId = saga.getId();
+		persistedQuestKey = selectedQuest != null ? questProgressKey(saga, selectedQuest) : null;
 	}
 
 	private static final List<SagaCatalogEntry> SAGA_CATALOG = List.of(
@@ -613,7 +697,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 		} else if (canStart || showDisabledStart) {
 			buttonText = tr("gui.dragonminez.quests.start");
-			buttonActive = canStart;
+			buttonActive = true;
 			isStartAction = true;
 		} else if (questData.getQuestStatus(selectedKey) == PlayerQuestData.QuestStatus.ACCEPTED
 				&& !selectedKey.equals(questData.getTrackedQuestId())) {
@@ -627,6 +711,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			buttonText = tr("gui.dragonminez.party.leader_only");
 			buttonActive = false;
 			tooltipLines = List.of(tr("gui.dragonminez.party.leader_only"));
+		} else if (isStartAction && !canStart) {
+			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
 		} else if (!buttonActive && tooltipLines.isEmpty()) {
 			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
 		} else if (isStartAction && buttonActive && questData.isInParty() && tooltipLines.isEmpty()) {
@@ -811,11 +897,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				tr("gui.dragonminez.party.create"),
 				footer.x + (footer.width - 74) / 2,
 				footer.bottom() - 20,
-				btn -> {
-					NetworkHandler.sendToServer(new CreatePartyC2S());
-					openInvitePopup();
-					queuePartyRefresh();
-				}
+				btn -> openInvitePopup()
 		);
 	}
 
@@ -2337,6 +2419,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				currentObjScroll = 0;
 				rebuildLayout();
 				rebuildNavigatorEntries();
+				persistSelection();
 				refreshButtons();
 			}
 			return true;
@@ -2393,6 +2476,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				selectedQuest = null;
 				currentObjScroll = 0;
 				objMaxScroll = 0;
+				persistSelection();
 				refreshButtons();
 			}
 
@@ -2465,6 +2549,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		currentObjScroll = 0;
 		objMaxScroll = 0;
 		resetTypewriterForSelectedQuest();
+		persistSelection();
 		refreshButtons();
 		if (playClickSound) {
 			Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
