@@ -207,6 +207,30 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> KALE_ARMOR = fullArmorNoHelmetSet("kale_armor", "kale");
 	// CAULIFLA
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> CAULIFLA_ARMOR = fullArmorNoHelmetSet("caulifla_armor", "caulifla");
+	// ANDROID 17 SUPER
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> A17_SUPER_ARMOR = fullArmorNoHelmetSet("a17_super_armor", "a17super");
+	// ANDROID 18 BUU SAGA (KAME HOUSE)
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> A18_KAME_ARMOR = fullArmorNoHelmetSet("a18_kame_armor", "a18kame");
+	// ANDROID 18 BUU SAGA (WORLD TOURNAMENT)
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> A18_TOURNAMENT_ARMOR = fullArmorNoHelmetSet("a18_tournament_armor", "a18tournament");
+	// ANDROID 18 CELL SAGA
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> A18_CELL_ARMOR = fullArmorNoHelmetSet("a18_cell_armor", "a18cell");
+	// BEERUS
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> BEERUS_ARMOR = fullArmorNoHelmetSet("beerus_armor", "beerus");
+	// GOKU WHIS GI
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOKU_WHIS_ARMOR = fullArmorNoHelmetSet("goku_whis_armor", "gokuwhis");
+	// KEFLA
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> KEFLA_ARMOR = fullArmorNoHelmetSet("kefla_armor", "kefla");
+	// MAJIN 21
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> MAJIN21_ARMOR = fullArmorNoHelmetSet("majin21_armor", "majin21");
+	// VEGETA WHIS GI
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETA_WHIS_ARMOR = fullArmorNoHelmetSet("vegeta_whis_armor", "vegetawhis");
+	// VEGETA GT
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETA_GT_ARMOR = fullArmorNoHelmetSet("vegeta_gt_armor", "vegetagt");
+	// VIDEL
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> VIDEL_ARMOR = fullArmorNoHelmetSet("videl_armor", "videl");
+	// WHIS
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> WHIS_ARMOR = fullArmorNoHelmetSet("whis_armor", "whis");
 
 
 	//INVENCIBLE
@@ -353,6 +377,27 @@ public final class MainItems {
 	public static final RegistryObject<Item> PATTERN_MAJIN_BUU = regItem("pattern_majin_buu");
 	public static final RegistryObject<Item> PATTERN_GAMMA1 = regItem("pattern_gamma1");
 	public static final RegistryObject<Item> PATTERN_GAMMA2 = regItem("pattern_gamma2");
+	public static final RegistryObject<Item> PATTERN_A16 = regItem("pattern_a16");
+	public static final RegistryObject<Item> PATTERN_A17 = regItem("pattern_a17");
+	public static final RegistryObject<Item> PATTERN_A18 = regItem("pattern_a18");
+	public static final RegistryObject<Item> PATTERN_ORANGE_HIGH = regItem("pattern_orange_high");
+	public static final RegistryObject<Item> PATTERN_GRANOLA = regItem("pattern_granola");
+	public static final RegistryObject<Item> PATTERN_AGE1000 = regItem("pattern_age1000");
+	public static final RegistryObject<Item> PATTERN_GINE = regItem("pattern_gine");
+	public static final RegistryObject<Item> PATTERN_KALE = regItem("pattern_kale");
+	public static final RegistryObject<Item> PATTERN_CAULIFLA = regItem("pattern_caulifla");
+	public static final RegistryObject<Item> PATTERN_A17_SUPER = regItem("pattern_a17_super");
+	public static final RegistryObject<Item> PATTERN_A18_KAME = regItem("pattern_a18_kame");
+	public static final RegistryObject<Item> PATTERN_A18_TOURNAMENT = regItem("pattern_a18_tournament");
+	public static final RegistryObject<Item> PATTERN_A18_CELL = regItem("pattern_a18_cell");
+	public static final RegistryObject<Item> PATTERN_BEERUS = regItem("pattern_beerus");
+	public static final RegistryObject<Item> PATTERN_GOKU_WHIS = regItem("pattern_goku_whis");
+	public static final RegistryObject<Item> PATTERN_KEFLA = regItem("pattern_kefla");
+	public static final RegistryObject<Item> PATTERN_MAJIN21 = regItem("pattern_majin21");
+	public static final RegistryObject<Item> PATTERN_VEGETA_WHIS = regItem("pattern_vegeta_whis");
+	public static final RegistryObject<Item> PATTERN_VEGETA_GT = regItem("pattern_vegeta_gt");
+	public static final RegistryObject<Item> PATTERN_VIDEL = regItem("pattern_videl");
+	public static final RegistryObject<Item> PATTERN_WHIS = regItem("pattern_whis");
 
 	//DRAGON BALLS
 	private static final Map<String, Map<Integer, RegistryObject<Item>>> DRAGON_BALL_BLOCK_ITEMS = registerDragonBallBlockItems();

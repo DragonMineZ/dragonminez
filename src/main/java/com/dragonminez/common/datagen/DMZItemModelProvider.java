@@ -161,6 +161,18 @@ public class DMZItemModelProvider extends ItemModelProvider {
         generateArmorSetModels(MainItems.GINE_ARMOR);
         generateArmorSetModels(MainItems.KALE_ARMOR);
         generateArmorSetModels(MainItems.CAULIFLA_ARMOR);
+        generateArmorSetModels(MainItems.A17_SUPER_ARMOR);
+        generateArmorSetModels(MainItems.A18_KAME_ARMOR);
+        generateArmorSetModels(MainItems.A18_TOURNAMENT_ARMOR);
+        generateArmorSetModels(MainItems.A18_CELL_ARMOR);
+        generateArmorSetModels(MainItems.BEERUS_ARMOR);
+        generateArmorSetModels(MainItems.GOKU_WHIS_ARMOR);
+        generateArmorSetModels(MainItems.KEFLA_ARMOR);
+        generateArmorSetModels(MainItems.MAJIN21_ARMOR);
+        generateArmorSetModels(MainItems.VEGETA_WHIS_ARMOR);
+        generateArmorSetModels(MainItems.VEGETA_GT_ARMOR);
+        generateArmorSetModels(MainItems.VIDEL_ARMOR);
+        generateArmorSetModels(MainItems.WHIS_ARMOR);
 
         //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);
@@ -207,6 +219,27 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		patternItem(MainItems.PATTERN_MAJIN_BUU);
 		patternItem(MainItems.PATTERN_GAMMA1);
 		patternItem(MainItems.PATTERN_GAMMA2);
+		patternItem(MainItems.PATTERN_A16);
+		patternItem(MainItems.PATTERN_A17);
+		patternItem(MainItems.PATTERN_A18);
+		patternItem(MainItems.PATTERN_ORANGE_HIGH);
+		patternItem(MainItems.PATTERN_GRANOLA);
+		patternItem(MainItems.PATTERN_AGE1000);
+		patternItem(MainItems.PATTERN_GINE);
+		patternItem(MainItems.PATTERN_KALE);
+		patternItem(MainItems.PATTERN_CAULIFLA);
+		patternItem(MainItems.PATTERN_A17_SUPER);
+		patternItem(MainItems.PATTERN_A18_KAME);
+		patternItem(MainItems.PATTERN_A18_TOURNAMENT);
+		patternItem(MainItems.PATTERN_A18_CELL);
+		patternItem(MainItems.PATTERN_BEERUS);
+		patternItem(MainItems.PATTERN_GOKU_WHIS);
+		patternItem(MainItems.PATTERN_KEFLA);
+		patternItem(MainItems.PATTERN_MAJIN21);
+		patternItem(MainItems.PATTERN_VEGETA_WHIS);
+		patternItem(MainItems.PATTERN_VEGETA_GT);
+		patternItem(MainItems.PATTERN_VIDEL);
+		patternItem(MainItems.PATTERN_WHIS);
 		patternItem(MainItems.PATTERN_GETE);
 
 		//Minerales
