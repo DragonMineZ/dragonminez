@@ -13,7 +13,9 @@ import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.world.dimension.SacredKaiDimension;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -74,6 +76,18 @@ public class EntitiesEvents {
 		}
 
 		entity.getPersistentData().putBoolean("dmz_stats_configured", true);
+	}
+
+	@SubscribeEvent
+	public static void onMooshroomSpawnVariant(EntityJoinLevelEvent event) {
+		if (event.getLevel().isClientSide()) return;
+		if (!(event.getEntity() instanceof MushroomCow cow)) return;
+		if (!event.getLevel().dimension().equals(SacredKaiDimension.SACREDKAI_KEY)) return;
+		if (cow.getPersistentData().getBoolean("dmz_mooshroom_variant")) return;
+		cow.getPersistentData().putBoolean("dmz_mooshroom_variant", true);
+		if (cow.getRandom().nextBoolean()) {
+			cow.setVariant(MushroomCow.MushroomType.BROWN);
+		}
 	}
 
 	private static void applyStatsToEntity(LivingEntity entity, double health, double melee, double ki) {

@@ -34,8 +34,10 @@ import com.mojang.blaze3d.platform.MacosUtil;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.level.GrassColor;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -230,7 +232,7 @@ public class ModClientEvents {
                 MainEntities.SAGA_GOTENKS, MainEntities.SAGA_GOTENKS_SSJ, MainEntities.SAGA_GOTENKS_SSJ3,
                 MainEntities.SAGA_SHIN, MainEntities.SAGA_KIBITO, MainEntities.SAGA_SPOPOVITCH, MainEntities.SAGA_PUIPUI, MainEntities.SAGA_YAKON, MainEntities.SAGA_DABURA,
                 MainEntities.SAGA_BABIDI, MainEntities.SAGA_BUU_FAT, MainEntities.SAGA_EVILBUU, MainEntities.SAGA_SUPERBUU,  MainEntities.SAGA_SUPERBUU_PICCOLO,
-                MainEntities.SAGA_SUPERBUU_GOTENKS, MainEntities.SAGA_SUPERBUU_GOHAN, MainEntities.SAGA_KIDBUU,
+                MainEntities.SAGA_SUPERBUU_GOTENKS, MainEntities.SAGA_SUPERBUU_GOHAN, MainEntities.SAGA_KIDBUU, MainEntities.MINI_BUU,
                 MainEntities.SHADOW_DUMMY);
 
 
@@ -326,6 +328,19 @@ public class ModClientEvents {
 	@SubscribeEvent
 	public static void registerDimensionEffects(RegisterDimensionSpecialEffectsEvent event) {
 		CustomSpecialEffects.registerSpecialEffects(event);
+	}
+
+	@SubscribeEvent
+	public static void registerBlockColors(RegisterColorHandlersEvent.Block event) {
+		event.register((state, level, pos, tintIndex) ->
+						(level != null && pos != null) ? BiomeColors.getAverageGrassColor(level, pos) : GrassColor.getDefaultColor(),
+				MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
+	}
+
+	@SubscribeEvent
+	public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
+		event.register((stack, tintIndex) -> GrassColor.get(0.5D, 1.0D),
+				MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
 	}
 
 	private static void setCustomWindowIcon() {

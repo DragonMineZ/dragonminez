@@ -5,7 +5,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
@@ -29,6 +31,32 @@ final class FeatureUtil {
             level.setBlock(cursor, fill, 2);
             cursor.move(0, -1, 0);
         }
+    }
+
+    static void scatterSacredKaiPlant(WorldGenLevel level, BlockPos pos, RandomSource random) {
+        if (!level.isEmptyBlock(pos)) return;
+        if (random.nextFloat() < 0.5F) return;
+
+        float t = random.nextFloat();
+        BlockState plant;
+        if (t < 0.6F) {
+            plant = Blocks.GRASS.defaultBlockState();
+        } else if (t < 0.8F) {
+            plant = Blocks.FERN.defaultBlockState();
+        } else {
+            plant = randomSacredKaiFlower(random);
+        }
+        level.setBlock(pos, plant, 2);
+    }
+
+    private static BlockState randomSacredKaiFlower(RandomSource random) {
+        return switch (random.nextInt(5)) {
+            case 0 -> Blocks.DANDELION.defaultBlockState();
+            case 1 -> Blocks.POPPY.defaultBlockState();
+            case 2 -> Blocks.AZURE_BLUET.defaultBlockState();
+            case 3 -> Blocks.OXEYE_DAISY.defaultBlockState();
+            default -> Blocks.CORNFLOWER.defaultBlockState();
+        };
     }
 
     static boolean isInsideDmzStructure(WorldGenLevel level, BlockPos pos) {

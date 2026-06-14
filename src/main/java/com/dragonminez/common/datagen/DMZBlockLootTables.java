@@ -141,6 +141,7 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 				block -> createLeavesDrops(block, MainBlocks.NAMEK_SACRED_SAPLING.get(), NORMAL_LEAVES_SAPLING_CHANCES));
 		this.add(MainBlocks.NAMEK_GRASS_BLOCK.get(), block -> SilkTouchBlockDrop(MainBlocks.NAMEK_GRASS_BLOCK.get(), MainBlocks.NAMEK_DIRT.get()));
 		this.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get(), block -> SilkTouchBlockDrop(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get(), MainBlocks.NAMEK_DIRT.get()));
+		this.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get(), block -> SilkTouchBlockDrop(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get(), MainBlocks.ROCKY_DIRT.get()));
 		this.add(MainBlocks.NAMEK_GRASS.get(), block -> ShearsOnlyDrop(MainBlocks.NAMEK_GRASS.get()));
 		this.add(MainBlocks.NAMEK_SACRED_GRASS.get(), block -> ShearsOnlyDrop(MainBlocks.NAMEK_SACRED_GRASS.get()));
 		this.add(MainBlocks.NAMEK_FERN.get(), block -> ShearsOnlyDrop(MainBlocks.NAMEK_FERN.get()));

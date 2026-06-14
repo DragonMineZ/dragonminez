@@ -10,8 +10,12 @@ import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import com.dragonminez.server.world.feature.NamekConfiguredFeatures;
 import com.dragonminez.server.world.feature.NamekPlacedFeatures;
+import com.dragonminez.server.world.biome.SacredKaiBiomes;
+import com.dragonminez.server.world.dimension.SacredKaiDimension;
 import com.dragonminez.server.world.feature.OverworldConfiguredFeatures;
 import com.dragonminez.server.world.feature.OverworldPlacedFeatures;
+import com.dragonminez.server.world.feature.SacredKaiConfiguredFeatures;
+import com.dragonminez.server.world.feature.SacredKaiPlacedFeatures;
 import com.dragonminez.server.world.gen.*;
 import com.dragonminez.server.world.structure.helper.DMZPools;
 import com.dragonminez.server.world.structure.helper.DMZStructureSets;
@@ -32,30 +36,36 @@ public class DMZWorldGenProvider extends DatapackBuiltinEntriesProvider {
 				NamekDimension.bootstrap(context);
 				HTCDimension.bootstrap(context);
 				OtherworldDimension.bootstrap(context);
+				SacredKaiDimension.bootstrap(context);
 			})
 			.add(Registries.BIOME, context -> {
 				NamekBiomes.bootstrap(context);
 				HTCBiomes.bootstrap(context);
 				OtherworldBiomes.bootstrap(context);
 				OverworldBiomes.bootstrap(context);
+				SacredKaiBiomes.bootstrap(context);
 			})
 			.add(Registries.NOISE_SETTINGS, context -> {
 				NamekGeneration.bootstrapNoise(context);
 				HTCGeneration.bootstrapNoise(context);
 				OtherworldGeneration.bootstrapNoise(context);
+				SacredKaiGeneration.bootstrapNoise(context);
 			})
 			.add(Registries.LEVEL_STEM, context -> {
 				NamekGeneration.bootstrap(context);
 				HTCGeneration.bootstrap(context);
 				OtherworldGeneration.bootstrap(context);
+				SacredKaiGeneration.bootstrap(context);
 			})
 			.add(Registries.CONFIGURED_FEATURE, context -> {
 				NamekConfiguredFeatures.bootstrap(context);
 				OverworldConfiguredFeatures.bootstrap(context);
+				SacredKaiConfiguredFeatures.bootstrap(context);
 			})
 			.add(Registries.PLACED_FEATURE, context -> {
 				NamekPlacedFeatures.bootstrap(context);
 				OverworldPlacedFeatures.bootstrap(context);
+				SacredKaiPlacedFeatures.bootstrap(context);
 			})
 			.add(Registries.TEMPLATE_POOL, DMZPools::bootstrap)
 			.add(Registries.STRUCTURE, DMZStructures::bootstrap)

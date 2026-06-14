@@ -6,6 +6,7 @@ import com.dragonminez.server.world.biome.HTCBiomes;
 import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.biome.OtherworldBiomes;
 import com.dragonminez.server.world.biome.OverworldBiomes;
+import com.dragonminez.server.world.biome.SacredKaiBiomes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -68,5 +69,11 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 		this.tag(MainTags.Biomes.IS_ROCKYBIOME)
 				.replace(false)
 				.add(OverworldBiomes.ROCKY);
+
+		this.tag(MainTags.Biomes.IS_SACREDKAI)
+				.replace(false)
+				.add(SacredKaiBiomes.SACREDKAI_PLAINS)
+				.add(SacredKaiBiomes.SACREDKAI_HILLS)
+				.add(SacredKaiBiomes.SACREDKAI_RIVERS);
 	}
 }

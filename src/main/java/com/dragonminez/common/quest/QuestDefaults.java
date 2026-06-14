@@ -306,6 +306,10 @@ final class QuestDefaults {
 		return dimensionReq("dragonminez:namek", minLevel, extraConditions);
 	}
 
+	private static JsonObject sacredKaiReq(int minLevel, JsonObject... extraConditions) {
+		return dimensionReq("dragonminez:sacredkaiplanet", minLevel, extraConditions);
+	}
+
 	private record QuestStep(int id, String filename, String title, String desc, JsonObject startRequirements,
 							 JsonObject[] objectives, JsonObject[] rewards) {
 	}
@@ -814,7 +818,7 @@ final class QuestDefaults {
 						},
 						rewTPS(56000)),
 				step("buu", 24, "24_sacred_world_and_z_sword.json",
-						namekReq(2060, condBiome("dragonminez:sacred_land"), condSkill("potentialunlock", 20)),
+						sacredKaiReq(2060, condSkill("potentialunlock", 20)),
 						new JsonObject[]{
 								objItem("dragonminez:z_sword", 1),
 								objSkill("potentialunlock", 30)
@@ -846,37 +850,37 @@ final class QuestDefaults {
 						},
 						rewTPS(68000)),
 				step("buu", 29, "29_return_to_the_sacred_world.json",
-						namekReq(2200, condBiome("dragonminez:sacred_land")),
+						sacredKaiReq(2200),
 						new JsonObject[]{
-								objStructure("dragonminez:village_sacred")
+								objDimension("dragonminez:sacredkaiplanet")
 						},
 						rewTPS(22000)),
 				step("buu", 30, "30_kid_buu.json",
-						namekReq(2240, condBiome("dragonminez:sacred_land")),
+						sacredKaiReq(2240),
 						new JsonObject[]{
 								objKill("dragonminez:saga_kidbuu", 1, 185000, 9100, 14500)
 						},
 						rewTPS(76000)),
 				step("buu", 31, "31_goku_ssj3_final_stand.json",
-						namekReq(2260, condBiome("dragonminez:sacred_land")),
+						sacredKaiReq(2260),
 						new JsonObject[]{
 								objKill("dragonminez:saga_goku_end_ssj3", 1, 155000, 7600, 12200)
 						},
 						rewTPS(62000)),
 				step("buu", 32, "32_vegeta_ssj2_final_stand.json",
-						namekReq(2280, condBiome("dragonminez:sacred_land")),
+						sacredKaiReq(2280),
 						new JsonObject[]{
 								objKill("dragonminez:saga_vegeta_end_ssj2", 1, 145000, 7100, 11400)
 						},
 						rewTPS(60000)),
 				step("buu", 33, "33_satan_and_majin_buu.json",
-						namekReq(2300, condBiome("dragonminez:sacred_land")),
+						sacredKaiReq(2300),
 						new JsonObject[]{
 								objKill("dragonminez:saga_buufat", 1, 125000, 6100, 9800)
 						},
 						rewTPS(52000)),
 				step("buu", 34, "34_destroy_kid_buu.json",
-						namekReq(2320, condBiome("dragonminez:sacred_land")),
+						sacredKaiReq(2320),
 						new JsonObject[]{
 								objKill("dragonminez:saga_kidbuu", 1, 220000, 10800, 17200)
 						},

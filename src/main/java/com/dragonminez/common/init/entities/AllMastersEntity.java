@@ -5,7 +5,7 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.level.Level;
 
-public class AllMastersEntity{
+public class AllMastersEntity {
 
     public static class MasterPiccolo extends MastersEntity {
         public MasterPiccolo(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {

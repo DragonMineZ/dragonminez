@@ -19,6 +19,7 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 	public static final ResourceLocation NAMEK_EFFECTS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek_effects");
 	public static final ResourceLocation OTHERWORLD_EFFECTS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "otherworld_effects");
 	public static final ResourceLocation HTC_EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "htc_effects");
+	public static final ResourceLocation SACREDKAI_EFFECTS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkai_effects");
 	final DMZCloudsRenderer cloudRenderer;
 
 	public CustomSpecialEffects(float cloudLevel, boolean hasGround, SkyType skyType, boolean forceBrightLightMap, boolean constantAmbientLight) {
@@ -195,10 +196,17 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		}
 	}
 
+	public static class SacredKaiEffects extends CustomSpecialEffects {
+		public SacredKaiEffects() {
+			super(192.0F, true, SkyType.NORMAL, false, false);
+		}
+	}
+
 	public static void registerSpecialEffects(RegisterDimensionSpecialEffectsEvent event) {
 		event.register(NAMEK_EFFECTS, new NamekEffects());
 		event.register(OTHERWORLD_EFFECTS, new OtherWorldEffects());
 		event.register(HTC_EFFECT, new HTCEffects());
+		event.register(SACREDKAI_EFFECTS, new SacredKaiEffects());
 	}
 
 }

@@ -792,6 +792,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaBuuEntity.EvilBuuEntity::new, MobCategory.MONSTER)
                             .sized(0.5f, 2.1f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_evilbuu").toString()));
+    public static final RegistryObject<EntityType<SagaBuuEntity.MiniBuuEntity>> MINI_BUU =
+            ENTITY_TYPES.register("mini_buu",
+                    () -> EntityType.Builder.of(SagaBuuEntity.MiniBuuEntity::new, MobCategory.MONSTER)
+                            .sized(0.7f, 1.5f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "mini_buu").toString()));
     public static final RegistryObject<EntityType<SagaBuuEntity.SuperBuuEntity>> SAGA_SUPERBUU=
             ENTITY_TYPES.register("saga_superbuu",
                     () -> EntityType.Builder.of(SagaBuuEntity.SuperBuuEntity::new, MobCategory.MONSTER)
@@ -959,7 +964,7 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
         }
 
         List<RegistryObject<? extends EntityType<? extends Mob>>> redRibbonEntities = List.of(
-                BANDIT, RED_RIBBON_ROBOT1, RED_RIBBON_ROBOT2, RED_RIBBON_ROBOT3, RED_RIBBON_SOLDIER);
+                BANDIT, RED_RIBBON_ROBOT1, RED_RIBBON_ROBOT2, RED_RIBBON_ROBOT3, RED_RIBBON_SOLDIER, MINI_BUU);
 
         for (RegistryObject<? extends EntityType<? extends Mob>> rrE : redRibbonEntities) {
             registerRedRibbonSpawn(event, rrE.get());

@@ -26,6 +26,7 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		blockWithItem(MainBlocks.NAMEK_DIRT);
 		grassBlock(MainBlocks.NAMEK_GRASS_BLOCK);
 		grassBlock(MainBlocks.NAMEK_SACRED_GRASS_BLOCK);
+		grassBlock(MainBlocks.SACRED_PLANET_GRASS_BLOCK);
 		blockWithItem(MainBlocks.NAMEK_STONE);
 		blockWithItem(MainBlocks.NAMEK_COBBLESTONE);
 		blockWithItem(MainBlocks.ROCKY_DIRT);

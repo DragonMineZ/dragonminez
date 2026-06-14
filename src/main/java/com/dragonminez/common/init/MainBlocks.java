@@ -181,6 +181,8 @@ public final class MainBlocks {
 			() -> new StairBlock(() -> ROCKY_COBBLESTONE.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.COBBLESTONE_STAIRS).requiresCorrectToolForDrops()));
 	public static final RegistryObject<Block> ROCKY_COBBLESTONE_WALL = registerBlock("rocky_cobblestone_wall",
 			() -> new WallBlock(BlockBehaviour.Properties.copy(Blocks.COBBLESTONE_WALL).requiresCorrectToolForDrops()));
+	public static final RegistryObject<Block> SACRED_PLANET_GRASS_BLOCK = registerBlock("sacred_planet_grass_block",
+			() -> new SacredPlanetGrassBlock(BlockBehaviour.Properties.copy(Blocks.GRASS_BLOCK).sound(SoundType.GRASS)));
 
 	//Ores (Default) de Namek
 	public static final RegistryObject<Block> NAMEK_DIAMOND_ORE = registerBlock("namek_diamond_ore",

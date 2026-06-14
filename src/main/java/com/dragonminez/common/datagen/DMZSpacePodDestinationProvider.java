@@ -33,7 +33,7 @@ public class DMZSpacePodDestinationProvider implements DataProvider {
 		// (sidequest "bulma_otherworld_drive").
 		destinations.add(destination("otherworld", "gui.dragonminez.spacepod.otherworld", true, "dragonminez:otherworld", 2, null, 54.0, 210.0, 1082.0, true,
 				and(primitive("OTHERWORLD_ENABLED"), quest("bulma_otherworld_drive"))));
-		destinations.add(destination("supreme", "gui.dragonminez.spacepod.supreme", true, "dragonminez:supreme_planet", 3, null, null, null, null, true, primitive("NEVER")));
+		destinations.add(destination("sacredkaiplanet", "gui.dragonminez.spacepod.sacredkaiplanet", true, "dragonminez:sacredkaiplanet", 3, null, null, null, null, true, quest("buu_saga:23")));
 		destinations.add(destination("cereal", "gui.dragonminez.spacepod.cereal", true, "dragonminez:cereal_planet", 4, null, null, null, null, true, primitive("NEVER")));
 		destinations.add(destination("beerus", "gui.dragonminez.spacepod.beerus", true, "dmzsuper:beerus_planet", 5, null, null, null, null, true, primitive("NEVER")));
 		// Bulma rigs a dimensional anchor so the space pod can reach the Hyperbolic Time Chamber

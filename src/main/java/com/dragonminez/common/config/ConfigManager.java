@@ -267,6 +267,7 @@ public class ConfigManager {
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT1, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT2, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.MINI_BUU, 60.0, 8.0, 6.0);
 
 		return config;
 	}

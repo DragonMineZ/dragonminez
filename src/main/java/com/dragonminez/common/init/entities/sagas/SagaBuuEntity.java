@@ -270,4 +270,29 @@ public class SagaBuuEntity {
 
     }
 
+    public static class MiniBuuEntity extends DBSagasEntity {
+
+        public MiniBuuEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(0xFF82F3);
+            this.setKiBlastSpeed(1.6f);
+            this.setScaleVal(0.7f);
+
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFF82F3, 0xFF1AEC);
+
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.28D);
+            this.setDefaultMovementSpeed(0.28D);
+
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.2D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_buufat";
+        }
+    }
+
 }

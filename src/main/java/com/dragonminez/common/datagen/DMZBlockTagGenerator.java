@@ -147,7 +147,9 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 		this.tag(BlockTags.MINEABLE_WITH_SHOVEL)
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
-				.add(MainBlocks.NAMEK_DIRT.get());
+				.add(MainBlocks.NAMEK_DIRT.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get())
+				.add(MainBlocks.ROCKY_DIRT.get());
 
 		this.tag(BlockTags.LOGS)
 				.add(MainBlocks.NAMEK_AJISSA_LOG.get())
@@ -245,11 +247,14 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 		this.tag(BlockTags.ANIMALS_SPAWNABLE_ON)
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
-				.add(MainBlocks.NAMEK_DIRT.get());
+				.add(MainBlocks.NAMEK_DIRT.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get())
+				.add(MainBlocks.ROCKY_DIRT.get());
 
 		this.tag(BlockTags.FROGS_SPAWNABLE_ON)
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
-				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get());
+				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
 
 		this.tag(BlockTags.BEACON_BASE_BLOCKS)
 				.add(MainBlocks.GETE_BLOCK.get())
@@ -259,7 +264,8 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_DIRT.get())
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
-				.add(MainBlocks.ROCKY_DIRT.get());
+				.add(MainBlocks.ROCKY_DIRT.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
 
 		this.tag(BlockTags.COAL_ORES)
 				.add(MainBlocks.NAMEK_COAL_ORE.get())
@@ -325,7 +331,9 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_DIRT.get())
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
-				.add(MainBlocks.ROCKY_DIRT.get());
+				.add(MainBlocks.ROCKY_DIRT.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get())
+				.add(MainBlocks.ROCKY_STONE.get());
 
 		this.tag(MainTags.Blocks.NAMEK_ALOG)
 				.add(MainBlocks.NAMEK_AJISSA_LOG.get())

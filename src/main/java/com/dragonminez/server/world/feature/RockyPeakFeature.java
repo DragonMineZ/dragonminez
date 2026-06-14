@@ -18,6 +18,13 @@ public class RockyPeakFeature extends Feature<NoneFeatureConfiguration> {
         super(codec);
     }
 
+    protected BlockState capState() {
+        return MainBlocks.ROCKY_DIRT.get().defaultBlockState();
+    }
+
+    protected void decorateTop(WorldGenLevel level, BlockPos capPos, RandomSource random) {
+    }
+
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         BlockPos pos = context.origin();
@@ -43,7 +50,7 @@ public class RockyPeakFeature extends Feature<NoneFeatureConfiguration> {
 
         BlockState stone = MainBlocks.ROCKY_STONE.get().defaultBlockState();
         BlockState cobble = MainBlocks.ROCKY_COBBLESTONE.get().defaultBlockState();
-        BlockState dirt = MainBlocks.ROCKY_DIRT.get().defaultBlockState();
+        BlockState cap = capState();
 
         int maxReach = Mth.ceil(semiMajor) + 2;
         int topY = height - 1;
@@ -74,12 +81,13 @@ public class RockyPeakFeature extends Feature<NoneFeatureConfiguration> {
 
 
                     BlockState toPlace;
-                    if (y == colTop) toPlace = dirt;
+                    if (y == colTop) toPlace = cap;
                     else if (((y % 4) == 0 || (y % 7) == 0) && random.nextInt(4) != 0) toPlace = cobble;
                     else toPlace = stone;
                     level.setBlock(placePos, toPlace, 2);
 
                     if (y == 0) FeatureUtil.groundColumn(level, placePos, stone);
+                    if (y == colTop) decorateTop(level, placePos, random);
                 }
             }
         }
