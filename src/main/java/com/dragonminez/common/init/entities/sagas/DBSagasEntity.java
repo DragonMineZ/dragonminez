@@ -993,8 +993,39 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(SCALE_VAL, 1.0F);
     }
 
+    public String getQuestTeam() {
+        return this.getPersistentData().getString(QuestService.QUEST_TEAM_TAG);
+    }
+
+    public boolean hasQuestTeam() {
+        return !this.getPersistentData().getString(QuestService.QUEST_TEAM_TAG).isEmpty();
+    }
+
+    public boolean isQuestTeammate(Entity other) {
+        if (other == null || other == this || !this.hasQuestTeam()) return false;
+        String team = this.getQuestTeam();
+        if (team.equals(other.getPersistentData().getString(QuestService.QUEST_TEAM_TAG))) return true;
+        if (other instanceof AbstractKiProjectile proj && proj.getOwner() != null) {
+            return team.equals(proj.getOwner().getPersistentData().getString(QuestService.QUEST_TEAM_TAG));
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isAlliedTo(Entity pEntity) {
+        if (this.isQuestTeammate(pEntity)) return true;
+        return super.isAlliedTo(pEntity);
+    }
+
+    @Override
+    public void setTarget(LivingEntity pTarget) {
+        if (pTarget != null && this.isQuestTeammate(pTarget)) return;
+        super.setTarget(pTarget);
+    }
+
     @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
+        if (this.isQuestTeammate(pSource.getEntity())) return false;
         if (this.isTransforming() || this.isZanzoken()) return false;
         if (this.isComboing() && this.entityData.get(CURRENT_COMBO_ID) == 4) return false;
 
@@ -1198,6 +1229,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 			}
 			if (this.getPersistentData().contains(QuestService.QUEST_KEY_TAG)) {
 				newEntity.getPersistentData().putString(QuestService.QUEST_KEY_TAG, this.getPersistentData().getString(QuestService.QUEST_KEY_TAG));
+			}
+			if (this.getPersistentData().contains(QuestService.QUEST_TEAM_TAG)) {
+				newEntity.getPersistentData().putString(QuestService.QUEST_TEAM_TAG, this.getPersistentData().getString(QuestService.QUEST_TEAM_TAG));
 			}
 			if (this.getPersistentData().contains(QuestService.QUEST_OBJECTIVE_INDEX_TAG)) {
 				newEntity.getPersistentData().putInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG, this.getPersistentData().getInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG));

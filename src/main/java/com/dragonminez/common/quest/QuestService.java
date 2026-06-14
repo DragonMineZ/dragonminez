@@ -32,6 +32,7 @@ public final class QuestService {
 	public static final String QUEST_OBJECTIVE_INDEX_TAG = "dmz_quest_objective_index";
 	public static final String QUEST_OWNER_TAG = "dmz_quest_owner";
 	public static final String SAGA_ID_TAG = "dmz_saga_id";
+	public static final String QUEST_TEAM_TAG = "dmz_quest_team";
 
 	private QuestService() {
 	}
@@ -524,6 +525,25 @@ public final class QuestService {
 		Quest quest = resolved.quest();
 		String questKey = resolved.questKey();
 
+		int totalToSpawn = 0;
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			QuestObjective objective = quest.getObjectives().get(i);
+			if (!(objective instanceof KillObjective killObjective)) {
+				continue;
+			}
+			if (killObjective.getSpawnMode() != KillObjective.SpawnMode.QUEST) {
+				continue;
+			}
+			int currentProgress = pqd.getObjectiveProgress(questKey, i);
+			int required = quest.getObjectiveRequired(pqd, questKey, i);
+			totalToSpawn += Math.max(0, required - currentProgress);
+		}
+
+		// Si la quest invoca a mas de un enemigo a la vez, todos comparten equipo para no danarse entre si.
+		String questTeam = totalToSpawn > 1
+				? questKey + "@" + requester.getStringUUID() + "@" + System.nanoTime()
+				: null;
+
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
 			QuestObjective objective = quest.getObjectives().get(i);
 			if (!(objective instanceof KillObjective killObjective)) {
@@ -567,6 +587,9 @@ public final class QuestService {
 				entity.getPersistentData().putString(QUEST_KEY_TAG, questKey);
 				entity.getPersistentData().putInt(QUEST_OBJECTIVE_INDEX_TAG, i);
 				entity.getPersistentData().putString(QUEST_OWNER_TAG, requester.getStringUUID());
+				if (questTeam != null) {
+					entity.getPersistentData().putString(QUEST_TEAM_TAG, questTeam);
+				}
 				entity.getPersistentData().putDouble("dmz_quest_hp", quest.getScaledKillHealth(killObjective, partySize));
 				entity.getPersistentData().putDouble("dmz_quest_melee", quest.getScaledKillMeleeDamage(killObjective, partySize));
 				entity.getPersistentData().putDouble("dmz_quest_ki", quest.getScaledKillKiDamage(killObjective, partySize));
