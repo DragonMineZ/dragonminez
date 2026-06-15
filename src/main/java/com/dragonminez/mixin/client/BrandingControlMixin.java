@@ -25,9 +25,7 @@ public abstract class BrandingControlMixin {
 	@Inject(method = "computeBranding", at = @At("TAIL"))
 	private static void dragonminez$addBuildBranding(CallbackInfo info) {
 		String buildLine = TitleFooterText.buildVersionLine(Reference.VERSION);
-		if (brandings == null || brandings.contains(buildLine)) {
-			return;
-		}
+		if (brandings == null || brandings.contains(buildLine)) return;
 
 		List<String> updatedBrandings = new ArrayList<>(brandings);
 		updatedBrandings.add(dragonminez$findMinecraftBrandingIndex(updatedBrandings) + 1, buildLine);
@@ -37,22 +35,22 @@ public abstract class BrandingControlMixin {
 
 	@Inject(method = "computeOverCopyrightBrandings", at = @At("TAIL"))
 	private static void dragonminez$addTrademarkBranding(CallbackInfo info) {
-		String trademarkLine = TitleFooterText.DRAGON_BALL_TRADEMARK_LINE;
-		if (overCopyrightBrandings == null || overCopyrightBrandings.contains(trademarkLine)) {
-			return;
-		}
+		if (overCopyrightBrandings == null) return;
 
 		List<String> updatedBrandings = new ArrayList<>(overCopyrightBrandings);
-		updatedBrandings.add(0, trademarkLine);
+
+		if (!updatedBrandings.contains(TitleFooterText.DRAGON_BALL_TRADEMARK_LINE_1)) {
+			updatedBrandings.add(0, TitleFooterText.DRAGON_BALL_TRADEMARK_LINE_2);
+			updatedBrandings.add(1, TitleFooterText.DRAGON_BALL_TRADEMARK_LINE_1);
+		}
+
 		overCopyrightBrandings = List.copyOf(updatedBrandings);
 	}
 
 	@Unique
 	private static int dragonminez$findMinecraftBrandingIndex(List<String> brandingLines) {
 		for (int i = 0; i < brandingLines.size(); i++) {
-			if (brandingLines.get(i).startsWith("Minecraft ")) {
-				return i;
-			}
+			if (brandingLines.get(i).startsWith("Minecraft ")) return i;
 		}
 		return Math.max(0, brandingLines.size() - 1);
 	}

@@ -307,6 +307,22 @@
       {
         "name": "dragonminez:vegetas_sacrifice",
         "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-34",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-35",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-36",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-37",
+        "stream": true
       }
     ]
   },
@@ -603,6 +619,42 @@
     "sounds": [
       {
         "name": "dragonminez:vegetas_sacrifice",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_34": {
+    "subtitle": "sounds.dragonminez.menu_music_34",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-34",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_35": {
+    "subtitle": "sounds.dragonminez.menu_music_35",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-35",
+        "stream": true
+      }
+    ]
+  },
+    "menu_music_36": {
+        "subtitle": "sounds.dragonminez.menu_music_36",
+        "sounds": [
+        {
+            "name": "dragonminez:menu_music-36",
+            "stream": true
+        }
+        ]
+    },
+  "menu_music_37": {
+    "subtitle": "sounds.dragonminez.menu_music_37",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-37",
         "stream": true
       }
     ]
