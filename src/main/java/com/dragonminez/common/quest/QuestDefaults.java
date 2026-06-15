@@ -737,31 +737,31 @@ final class QuestDefaults {
 						},
 						rewTPS(30000)),
 				step("buu", 10, "10_find_babidi_ship.json",
-						earthReq(1660, condBiome("dragonminez:rocky")),
+						earthReq(1660, condStructure("dragonminez:babidi")),
 						new JsonObject[]{
 								objTalkTo("shin")
 						},
 						rewTPS(14000)),
 				step("buu", 11, "11_babidi_level_pui_pui.json",
-						earthReq(1680, condBiome("dragonminez:rocky")),
+						earthReq(1680, condStructure("dragonminez:babidi")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_puipui", 1, 72000, 3500, 5600, 1)
 						},
 						rewTPS(32000)),
 				step("buu", 12, "12_babidi_level_yakon.json",
-						earthReq(1700, condBiome("dragonminez:rocky")),
+						earthReq(1700, condStructure("dragonminez:babidi")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_yakon", 1, 78000, 3800, 6100, 2)
 						},
 						rewTPS(34000)),
 				step("buu", 13, "13_babidi_level_dabura.json",
-						earthReq(1740, condBiome("dragonminez:rocky")),
+						earthReq(1740, condStructure("dragonminez:babidi")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_dabura", 1, 88000, 4300, 6900, 2)
 						},
 						rewTPS(38000)),
 				step("buu", 14, "14_fat_buu_awakes.json",
-						earthReq(1780, condBiome("dragonminez:rocky")),
+						earthReq(1780, condStructure("dragonminez:babidi")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_buufat", 1, 98000, 4800, 7600, 3)
 						},

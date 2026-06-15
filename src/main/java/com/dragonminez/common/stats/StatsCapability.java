@@ -11,6 +11,8 @@ import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.world.structure.helper.QuestStructureHints;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -45,9 +47,7 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
 		if (event.getObject() instanceof Player player) {
-			if (!player.getCapability(INSTANCE).isPresent()) {
-				event.addCapability(StatsProvider.ID, new StatsProvider(player));
-			}
+			if (!player.getCapability(INSTANCE).isPresent()) event.addCapability(StatsProvider.ID, new StatsProvider(player));
 		}
 	}
 
@@ -63,11 +63,8 @@ public class StatsCapability {
 				newData.copyFrom(oldData);
 
 				if (player.level().isClientSide) {
-					if (oldData.getStatus().isHasCreatedCharacter()) {
-						CLIENT_CACHE = oldData;
-					} else if (CLIENT_CACHE != null) {
-						newData.copyFrom(CLIENT_CACHE);
-					}
+					if (oldData.getStatus().isHasCreatedCharacter()) CLIENT_CACHE = oldData;
+					else if (CLIENT_CACHE != null) newData.copyFrom(CLIENT_CACHE);
 				}
 			});
 		});
@@ -83,12 +80,16 @@ public class StatsCapability {
 				String jsonPayload = ConfigManager.getSpecificConfigJson(file);
 				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload), serverPlayer);
 			}
-			NetworkHandler.sendToPlayer(
-					new SyncQuestRegistryS2C(
-							QuestRegistry.getAllSagas(),
-							QuestRegistry.getAllQuests()
-					), serverPlayer
-			);
+			NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), serverPlayer);
+
+			MinecraftServer server = serverPlayer.getServer();
+			if (server != null && !QuestStructureHints.isResolved()) {
+				java.util.UUID playerId = serverPlayer.getUUID();
+				QuestStructureHints.ensureResolvedAsync(server).thenRun(() -> server.execute(() -> {
+					ServerPlayer online = server.getPlayerList().getPlayer(playerId);
+					if (online != null) NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), online);
+				}));
+			}
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				markCurrentDimensionVisited(serverPlayer, data);

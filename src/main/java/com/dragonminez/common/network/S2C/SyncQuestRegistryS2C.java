@@ -2,7 +2,6 @@ package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.Reference;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestParser;
@@ -24,11 +23,7 @@ import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
-import com.dragonminez.server.world.dimension.HTCDimension;
-import com.dragonminez.server.world.dimension.NamekDimension;
-import com.dragonminez.server.world.structure.helper.DMZStructures;
-import com.dragonminez.server.world.structure.helper.StructureLocator;
-import com.mojang.datafixers.util.Pair;
+import com.dragonminez.server.world.structure.helper.QuestStructureHints;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -36,18 +31,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -61,14 +48,6 @@ import java.util.function.Supplier;
 public class SyncQuestRegistryS2C {
 
 	private static final Gson GSON = new GsonBuilder().create();
-	private static final Map<String, Pair<ResourceKey<Structure>, ResourceKey<Level>>> DMZ_STRUCTURE_INFO = Map.of(
-			Reference.MOD_ID + ":goku_house", Pair.of(DMZStructures.GOKU_HOUSE, Level.OVERWORLD),
-			Reference.MOD_ID + ":roshi_house", Pair.of(DMZStructures.ROSHI_HOUSE, Level.OVERWORLD),
-			Reference.MOD_ID + ":elder_guru", Pair.of(DMZStructures.ELDER_GURU, NamekDimension.NAMEK_KEY),
-			Reference.MOD_ID + ":timechamber", Pair.of(DMZStructures.TIMECHAMBER, HTCDimension.HTC_KEY),
-			Reference.MOD_ID + ":kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD),
-			Reference.MOD_ID + ":gero_lab", Pair.of(DMZStructures.GERO_LAB, Level.OVERWORLD)
-	);
 
 	private final String sagasJson;
 	private final String questsJson;
@@ -340,7 +319,7 @@ public class SyncQuestRegistryS2C {
 				obj.addProperty("structure", condition.getStructureId());
 				QuestPrerequisites.StructureHint hint = condition.getStructureHint();
 				if (hint == null) {
-					hint = resolveStructureHint(condition.getStructureId());
+					hint = QuestStructureHints.getCached(condition.getStructureId());
 				}
 				if (hint != null) {
 					JsonObject hintObj = new JsonObject();
@@ -383,44 +362,4 @@ public class SyncQuestRegistryS2C {
 		return obj;
 	}
 
-	private static QuestPrerequisites.StructureHint resolveStructureHint(String structureId) {
-		if (structureId == null || structureId.isBlank() || !structureId.contains(":")) {
-			return null;
-		}
-
-		String normalized;
-		try {
-			normalized = ResourceLocation.parse(structureId).toString();
-		} catch (Exception e) {
-			return null;
-		}
-
-		Pair<ResourceKey<Structure>, ResourceKey<Level>> info = DMZ_STRUCTURE_INFO.get(normalized);
-		if (info == null) {
-			return null;
-		}
-
-		String dimensionId = info.getSecond().location().toString();
-		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-		if (server == null) {
-			return new QuestPrerequisites.StructureHint(dimensionId, null, null, null);
-		}
-
-		ServerLevel targetLevel = server.getLevel(info.getSecond());
-		if (targetLevel == null) {
-			return new QuestPrerequisites.StructureHint(dimensionId, null, null, null);
-		}
-
-		BlockPos structurePos = StructureLocator.locateStructure(targetLevel, info.getFirst(), targetLevel.getSharedSpawnPos());
-		if (structurePos == null) {
-			return new QuestPrerequisites.StructureHint(dimensionId, null, null, null);
-		}
-
-		return new QuestPrerequisites.StructureHint(
-				dimensionId,
-				structurePos.getX(),
-				structurePos.getY(),
-				structurePos.getZ()
-		);
-	}
 }
