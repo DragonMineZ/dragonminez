@@ -279,7 +279,7 @@ public class SagaBuuEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(1.6f);
-            this.setScaleVal(0.7f);
+            this.setScaleVal(0.45f);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFF82F3, 0xFF1AEC);
 

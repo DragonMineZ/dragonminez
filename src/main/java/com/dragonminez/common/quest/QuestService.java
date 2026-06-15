@@ -1,5 +1,7 @@
 package com.dragonminez.common.quest;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
@@ -312,7 +314,12 @@ public final class QuestService {
 		pqd.setQuestHardMode(questKey, startEvent.isHardMode());
 		pqd.setTrackedQuestId(questKey);
 
-		spawnKillObjectives(requester, resolved, pqd, partySize, startEvent.isHardMode());
+		try {
+			spawnKillObjectives(requester, resolved, pqd, partySize, startEvent.isHardMode());
+		} catch (Exception exception) {
+			LogUtil.error(Env.SERVER, "Failed to spawn kill objectives for quest '" + questKey
+					+ "' started by " + requester.getGameProfile().getName(), exception);
+		}
 
 		NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), controller);
 		if (PartyManager.isInParty(controller)) {
@@ -595,6 +602,9 @@ public final class QuestService {
 				entity.getPersistentData().putDouble("dmz_quest_ki", quest.getScaledKillKiDamage(killObjective, partySize));
 				if (killObjective.getTextureVariant() >= 0) {
 					entity.getPersistentData().putInt("dmz_quest_texture_variant", killObjective.getTextureVariant());
+				}
+				if (killObjective.getAiTier() > 0) {
+					entity.getPersistentData().putInt("dmz_quest_ai_tier", killObjective.getAiTier());
 				}
 
 				if (entity instanceof Mob mob) {

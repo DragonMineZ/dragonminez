@@ -6,6 +6,7 @@ import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -61,6 +62,10 @@ public class EntitiesEvents {
 
 			if (entity.getPersistentData().contains("dmz_quest_texture_variant") && entity instanceof ITextureVariant variantEntity) {
 				variantEntity.setTextureVariant(entity.getPersistentData().getInt("dmz_quest_texture_variant"));
+			}
+
+			if (entity.getPersistentData().contains("dmz_quest_ai_tier") && entity instanceof DBSagasEntity sagasEntity) {
+				sagasEntity.setAiTierById(entity.getPersistentData().getInt("dmz_quest_ai_tier"));
 			}
 		} else {
 			String registryName = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString();

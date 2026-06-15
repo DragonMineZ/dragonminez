@@ -149,7 +149,10 @@ public class QuestParser {
 				int textureVariant = json.has("TextureVariant") && !json.get("TextureVariant").isJsonNull()
 						? json.get("TextureVariant").getAsInt()
 						: -1;
-				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant);
+				int aiTier = json.has("AITier") && !json.get("AITier").isJsonNull()
+						? json.get("AITier").getAsInt()
+						: -1;
+				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier);
 			}
 			case "BIOME" -> new BiomeObjective(json.get("biome").getAsString());
 			case "DIMENSION" -> new DimensionObjective(json.get("dimension").getAsString());

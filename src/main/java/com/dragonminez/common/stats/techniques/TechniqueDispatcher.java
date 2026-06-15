@@ -345,6 +345,10 @@ public class TechniqueDispatcher {
 		return hasOwnedProjectileWithRestriction(player, false);
 	}
 
+	public static KiAttackData.KiType getChargingKiType(StatsData data) {
+		return getCurrentChargingKiType(data);
+	}
+
 	private static KiAttackData.KiType getCurrentChargingKiType(StatsData data) {
 		if (data == null) return null;
 		String chargingTechniqueId = data.getTechniques().getChargingTechniqueId();
