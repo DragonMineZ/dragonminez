@@ -81,4 +81,20 @@ public class StructureLocator {
 	public static int getDistanceTo(BlockPos from, BlockPos to) {
 		return (int) Math.sqrt(from.distSqr(to));
 	}
+
+	public static boolean usesCustomPlacement(ServerLevel level, ResourceKey<Structure> structureKey) {
+		var structureSetRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
+		for (var entry : structureSetRegistry.entrySet()) {
+			StructureSet set = entry.getValue();
+			for (var structureEntry : set.structures()) {
+				if (structureEntry.structure().is(structureKey)) {
+					StructurePlacement placement = set.placement();
+					return placement instanceof BiomeAwareUniquePlacement
+							|| placement instanceof FixedStructurePlacement
+							|| placement instanceof UniqueNearSpawnPlacement;
+				}
+			}
+		}
+		return false;
+	}
 }

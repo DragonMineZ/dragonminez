@@ -63,15 +63,34 @@ public class TallJigsawStructure extends Structure {
 		int offset = this.startHeight.sample(context.random(), new WorldGenerationContext(context.chunkGenerator(), context.heightAccessor()));
 
 		int startY;
+		int sx = x;
+		int sz = z;
 		if (this.projectStartToHeightmap.isPresent()) {
-			startY = context.chunkGenerator().getFirstFreeHeight(x, z, this.projectStartToHeightmap.get(),
-					context.heightAccessor(), context.randomState()) + offset;
+			Heightmap.Types heightmap = this.projectStartToHeightmap.get();
+			if (this.minStartY > Integer.MIN_VALUE) {
+				int bestH = Integer.MIN_VALUE;
+				for (int dx = 0; dx < 16; dx += 4) {
+					for (int dz = 0; dz < 16; dz += 4) {
+						int h = context.chunkGenerator().getFirstFreeHeight(x + dx, z + dz, heightmap,
+								context.heightAccessor(), context.randomState());
+						if (h > bestH) {
+							bestH = h;
+							sx = x + dx;
+							sz = z + dz;
+						}
+					}
+				}
+				if (bestH < this.minStartY) return Optional.empty();
+				startY = bestH + offset;
+			} else {
+				startY = context.chunkGenerator().getFirstFreeHeight(x, z, heightmap, context.heightAccessor(), context.randomState()) + offset;
+			}
 		} else {
 			startY = offset;
+			if (this.minStartY > Integer.MIN_VALUE && startY < this.minStartY) return Optional.empty();
 		}
-		if (startY < this.minStartY) startY = this.minStartY;
 
-		BlockPos start = new BlockPos(x, startY, z);
+		BlockPos start = new BlockPos(sx, startY, sz);
 		return JigsawPlacement.addPieces(context, this.startPool, this.startJigsawName,
 				this.maxDepth, start, this.useExpansionHack, Optional.empty(), this.maxDistanceFromCenter);
 	}

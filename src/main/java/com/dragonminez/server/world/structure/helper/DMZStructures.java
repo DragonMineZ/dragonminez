@@ -124,7 +124,7 @@ public class DMZStructures {
 
 		context.register(BABIDI, new TallJigsawStructure(
 				new Structure.StructureSettings(
-						biomes.getOrThrow(MainTags.Biomes.IS_LAND),
+						biomes.getOrThrow(BiomeTags.IS_MOUNTAIN),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE

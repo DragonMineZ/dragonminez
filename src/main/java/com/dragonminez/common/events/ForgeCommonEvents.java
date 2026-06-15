@@ -36,13 +36,20 @@ import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.DMZServer;
 import com.dragonminez.server.commands.DMZPermissions;
+import com.dragonminez.server.commands.LocateCommand;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.*;
 import com.dragonminez.server.world.npc.NPCPlacementManager;
+import com.dragonminez.server.world.structure.helper.StructureLocator;
+import com.mojang.brigadier.ParseResults;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -62,12 +69,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.ItemAttributeModifierEvent;
-import net.minecraftforge.event.PlayLevelSoundEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.*;
 import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.CriticalHitEvent;
@@ -411,6 +416,31 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onRegisterCommands(RegisterCommandsEvent event) {
 		DMZServer.registerCommands(event.getDispatcher());
+	}
+
+	@SubscribeEvent
+	public static void onLocateCommand(CommandEvent event) {
+		try {
+			ParseResults<CommandSourceStack> parse = event.getParseResults();
+			var nodes = parse.getContext().getNodes();
+			if (nodes.size() < 3) return;
+			if (!nodes.get(0).getNode().getName().equals("locate")) return;
+			if (!nodes.get(1).getNode().getName().equals("structure")) return;
+
+			String argument = nodes.get(2).getRange().get(parse.getReader().getString());
+			if (argument.isEmpty() || argument.charAt(0) == '#') return;
+
+			ResourceLocation id = ResourceLocation.tryParse(argument);
+			if (id == null || !id.getNamespace().equals(Reference.MOD_ID)) return;
+
+			CommandSourceStack source = parse.getContext().getSource();
+			ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, id);
+
+			if (!StructureLocator.usesCustomPlacement(source.getLevel(), key)) return;
+
+			event.setCanceled(true);
+			LocateCommand.locate(source, key);
+		} catch (Exception ignored) {}
 	}
 
 	@SubscribeEvent
