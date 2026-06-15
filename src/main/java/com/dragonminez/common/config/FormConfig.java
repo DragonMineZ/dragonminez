@@ -10,7 +10,7 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 public class FormConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 	private int configVersion;
 
 	private String groupName;

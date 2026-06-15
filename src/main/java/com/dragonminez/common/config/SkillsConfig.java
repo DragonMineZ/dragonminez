@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Getter
 public class SkillsConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;
@@ -301,66 +301,89 @@ public class SkillsConfig {
 
 		List<String> gokuSkills = new ArrayList<>();
 		gokuSkills.add("fly");
-		gokuSkills.add("kisense");
-		gokuSkills.add("defense_penetration");
-		gokuSkills.add("fusion");
+		gokuSkills.add("instant_transmission");
 		gokuSkills.add("kamehameha");
 		gokuSkills.add("spiritbomb");
 		gokuSkills.add("dragon_fist");
-		gokuSkills.add("oozaru_fist");
 		gokuSkills.add("super_god_fist");
+		gokuSkills.add("oozaru_fist");
+		gokuSkills.add("fusion");
 		skillOfferings.put("goku", gokuSkills);
 
 		List<String> kingKaiSkills = new ArrayList<>();
 		kingKaiSkills.add("kaioken");
+		kingKaiSkills.add("kaioken_attack");
 		kingKaiSkills.add("potentialunlock");
 		kingKaiSkills.add("kimanipulation");
-		kingKaiSkills.add("fusion");
 		kingKaiSkills.add("spiritbomb");
-		kingKaiSkills.add("kaioken_attack");
 		skillOfferings.put("kingkai", kingKaiSkills);
 
 		List<String> vegetaSkills = new ArrayList<>();
-		vegetaSkills.add("defense_penetration");
-		vegetaSkills.add("healing_reduction");
 		vegetaSkills.add("galick_gun");
 		vegetaSkills.add("big_bang");
 		vegetaSkills.add("final_flash");
 		vegetaSkills.add("final_explosion");
+		vegetaSkills.add("defense_penetration");
+		vegetaSkills.add("potentialunlock");
 		vegetaSkills.add("deadly_dance_vegetto");
 		skillOfferings.put("vegeta", vegetaSkills);
 
+		List<String> gohanSkills = new ArrayList<>();
+		gohanSkills.add("masenko");
+		gohanSkills.add("makkanko");
+		gohanSkills.add("kamehameha");
+		gohanSkills.add("kisense");
+		gohanSkills.add("ki_barrage");
+		skillOfferings.put("gohan", gohanSkills);
+
 		List<String> piccoloSkills = new ArrayList<>();
 		piccoloSkills.add("masenko");
-        piccoloSkills.add("makkanko");
-        skillOfferings.put("piccolo", piccoloSkills);
+		piccoloSkills.add("makkanko");
+		piccoloSkills.add("ki_barrage");
+		piccoloSkills.add("potentialunlock");
+		piccoloSkills.add("kicontrol");
+		piccoloSkills.add("kienzan");
+		skillOfferings.put("piccolo", piccoloSkills);
 
 		List<String> krillinSkills = new ArrayList<>();
-		krillinSkills.add("kamehameha");
+		krillinSkills.add("sprint");
 		krillinSkills.add("kienzan");
-		krillinSkills.add("kibarrage");
-		krillinSkills.add("wolf_fang");
+		krillinSkills.add("kienzan_doble");
+		krillinSkills.add("ki_barrage");
+		krillinSkills.add("deadly_dance");
 		skillOfferings.put("krillin", krillinSkills);
 
 		List<String> friezaSkills = new ArrayList<>();
-		friezaSkills.add("healing_reduction");
 		friezaSkills.add("death_beam");
 		friezaSkills.add("emperor_death_beam");
-		friezaSkills.add("kienzan_doble");
 		friezaSkills.add("supernova");
+		friezaSkills.add("healing_reduction");
+		friezaSkills.add("kienzan_doble");
 		skillOfferings.put("frieza", friezaSkills);
-
-		List<String> coolerSkills = new ArrayList<>();
-		coolerSkills.add("supernova_cooler");
-		coolerSkills.add("death_beam");
-		coolerSkills.add("deadly_dance");
-		skillOfferings.put("cooler", coolerSkills);
 
 		List<String> trunksSkills = new ArrayList<>();
 		trunksSkills.add("burning_attack");
 		trunksSkills.add("galick_gun");
-		trunksSkills.add("kibarrage");
+		trunksSkills.add("ki_barrage");
+		trunksSkills.add("meteor");
 		skillOfferings.put("trunks", trunksSkills);
+
+		List<String> cellSkills = new ArrayList<>();
+		cellSkills.add("kamehameha");
+		cellSkills.add("kienzan");
+		cellSkills.add("galick_gun");
+		cellSkills.add("masenko");
+		cellSkills.add("death_beam");
+		cellSkills.add("defense_penetration");
+		cellSkills.add("healing_reduction");
+		skillOfferings.put("cell", cellSkills);
+
+		List<String> yamchaSkills = new ArrayList<>();
+		yamchaSkills.add("wolf_fang");
+		yamchaSkills.add("kamehameha");
+		yamchaSkills.add("ki_barrage");
+		yamchaSkills.add("kicontrol");
+		skillOfferings.put("yamcha", yamchaSkills);
 
 		List<String> defaultSkills = new ArrayList<>();
 		defaultSkills.add("jump");

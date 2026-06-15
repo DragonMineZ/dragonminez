@@ -44,7 +44,8 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			"textures/gui/menu/menunpc.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
-	private static final Set<String> TEXT_MASTERS = Set.of("karin", "guru", "dende", "enma", "baba", "popo", "gero", "toribot");
+	private static final Set<String> TEXT_MASTERS = Set.of("karin", "guru", "dende", "enma", "baba", "popo", "gero", "toribot", "oldkai", "babidi");
+	private static final Set<String> SERVICE_MASTERS = Set.of("piccolo", "oldkai", "babidi");
 
 	private static final int MAX_VISIBLE = 7;
 	private static final int ENTRY_HEIGHT = 18;
@@ -209,18 +210,30 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 							.onPress(btn -> openMasterScreen())
 							.build());
 
-					this.addRenderableWidget(new TexturedTextButton.Builder()
-							.position(getUiWidth() / 2 - 74, btnY)
-							.size(74, 20)
-							.texture(BUTTONS_TEXTURE)
-							.textureCoords(0, 28, 0, 48)
-							.textureSize(74, 20)
-							.message(tr("gui.dragonminez.npc.train"))
-							.onPress(btn -> {
-								isTrainingMode = true;
-								initButtons();
-							})
-							.build());
+					if (SERVICE_MASTERS.contains(npcId)) {
+						this.addRenderableWidget(new TexturedTextButton.Builder()
+								.position(getUiWidth() / 2 - 74, btnY)
+								.size(74, 20)
+								.texture(BUTTONS_TEXTURE)
+								.textureCoords(0, 28, 0, 48)
+								.textureSize(74, 20)
+								.message(tr("gui.dragonminez.npc.services"))
+								.onPress(btn -> openServicesScreen())
+								.build());
+					} else {
+						this.addRenderableWidget(new TexturedTextButton.Builder()
+								.position(getUiWidth() / 2 - 74, btnY)
+								.size(74, 20)
+								.texture(BUTTONS_TEXTURE)
+								.textureCoords(0, 28, 0, 48)
+								.textureSize(74, 20)
+								.message(tr("gui.dragonminez.npc.train"))
+								.onPress(btn -> {
+									isTrainingMode = true;
+									initButtons();
+								})
+								.build());
+					}
 				} else {
 					this.addRenderableWidget(new TexturedTextButton.Builder()
 							.position(panelX + 8, btnY)
@@ -546,6 +559,12 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		Entity entity = entityId >= 0 ? mc.level.getEntity(entityId) : null;
 		LivingEntity livingEntity = entity instanceof LivingEntity living ? living : null;
 		mc.setScreen(new MastersSkillsScreen(npcId, livingEntity));
+	}
+
+	private void openServicesScreen() {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return;
+		mc.setScreen(new MasterTextScreen(npcId));
 	}
 
 	private MutableComponent npcName() {

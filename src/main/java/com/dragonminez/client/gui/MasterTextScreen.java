@@ -3,6 +3,7 @@ package com.dragonminez.client.gui;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
+import com.dragonminez.client.gui.character.minigames.UltimateChallenge;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.HairManager;
@@ -22,6 +23,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -41,6 +43,7 @@ public class MasterTextScreen extends Screen {
 	private Component currentDialogue;
 	private boolean secondFunc = false;
 	private boolean thirdFunc = false;
+	private EditBox weightBox;
 
 	public MasterTextScreen(String masterName) {
 		super(Component.literal(masterName).withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
@@ -64,6 +67,9 @@ public class MasterTextScreen extends Screen {
 				case "popo" -> initPopo(buttonX, buttonY, stats);
 				case "gero" -> initGero(buttonX, buttonY, stats);
 				case "toribot" -> initToribot(buttonX, buttonY, stats);
+				case "piccolo" -> initPiccolo(buttonX, buttonY, stats);
+				case "oldkai" -> initOldKai(buttonX, buttonY, stats);
+				case "babidi" -> initBabidi(buttonX, buttonY, stats);
 			}
 		});
 	}
@@ -361,6 +367,108 @@ public class MasterTextScreen extends Screen {
 	}
 
 	private void initToribot(int x, int y, StatsData stats) {
+	}
+
+	private void initPiccolo(int x, int y, StatsData stats) {
+		if (secondFunc) {
+			weightBox = new EditBox(this.font, this.width / 2 - 60, y - 28, 120, 16, Component.empty());
+			weightBox.setMaxLength(6);
+			weightBox.setFilter(s -> s.matches("\\d*"));
+			this.addRenderableWidget(weightBox);
+			this.setInitialFocus(weightBox);
+
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.button.piccolo.confirm"))
+					.onPress(b -> {
+						int weight = parseWeight(weightBox.getValue());
+						if (weight > 0) {
+							NetworkHandler.sendToServer(new NPCActionC2S("piccolo", 2, weight));
+							this.onClose();
+						}
+					})
+					.build());
+		} else {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.button.piccolo.heal"))
+					.onPress(b -> {
+						NetworkHandler.sendToServer(new NPCActionC2S("piccolo", 1));
+						this.onClose();
+					})
+					.build());
+
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x + 180, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.button.piccolo.weight"))
+					.onPress(b -> {
+						secondFunc = true;
+						this.currentDialogue = tr("gui.dragonminez.lines.piccolo.weight_prompt", Minecraft.getInstance().player.getName());
+						refreshButtons();
+					})
+					.build());
+		}
+	}
+
+	private int parseWeight(String value) {
+		try {
+			return Integer.parseInt(value.trim());
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+	}
+
+	private void initOldKai(int x, int y, StatsData stats) {
+		this.addRenderableWidget(new TexturedTextButton.Builder()
+				.position(x, y)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.button.oldkai.unlock_ultimate"))
+				.onPress(b -> {
+					if (stats.getResources().getAlignment() <= 61) {
+						this.currentDialogue = tr("gui.dragonminez.lines.oldkai.evil");
+					} else if (stats.getSkills().getSkillLevel("potentialunlock") < 10) {
+						this.currentDialogue = tr("gui.dragonminez.lines.oldkai.level");
+					} else {
+						new UltimateChallenge().start();
+					}
+				})
+				.build());
+	}
+
+	private void initBabidi(int x, int y, StatsData stats) {
+		this.addRenderableWidget(new TexturedTextButton.Builder()
+				.position(x, y)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.button.babidi.mark"))
+				.onPress(b -> {
+					if (stats.getEffects().hasEffect("majin")) {
+						this.currentDialogue = tr("gui.dragonminez.lines.babidi.already");
+					} else if (stats.getResources().getAlignment() >= 39) {
+						this.currentDialogue = tr("gui.dragonminez.lines.babidi.too_good");
+					} else {
+						NetworkHandler.sendToServer(new NPCActionC2S("babidi", 1));
+						this.onClose();
+					}
+				})
+				.build());
 	}
 
 	@Override

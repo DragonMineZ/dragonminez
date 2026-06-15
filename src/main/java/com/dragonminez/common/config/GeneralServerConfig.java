@@ -16,7 +16,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class GeneralServerConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;

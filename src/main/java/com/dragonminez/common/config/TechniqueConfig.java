@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Getter
 public class TechniqueConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;

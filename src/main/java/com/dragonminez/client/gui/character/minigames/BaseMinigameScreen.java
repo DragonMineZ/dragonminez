@@ -11,6 +11,7 @@ import com.dragonminez.common.network.C2S.TrainingRewardC2S;
 import com.dragonminez.common.network.C2S.TrainingAnimationC2S;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import lombok.Setter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -38,6 +39,8 @@ public abstract class BaseMinigameScreen extends Screen {
 	private final String howToKey;
 	protected int levelsCleared = 0;
 	protected State state = State.READY;
+	@Setter
+	protected UltimateChallenge challenge = null;
 
 	private int finalRewardDisplay = 0;
 	private boolean trainingAnimActive = false;
@@ -59,12 +62,22 @@ public abstract class BaseMinigameScreen extends Screen {
 	protected void levelCleared() {
 		levelsCleared++;
 		playUi(SoundEvents.PLAYER_LEVELUP, 1.2F, 0.5f);
+		if (challenge != null && levelsCleared >= challenge.targetLevel()) {
+			this.state = State.FINISHED;
+			challenge.onStageComplete();
+			return;
+		}
 		onLevelCleared();
 	}
 
 	protected void endGame() {
 		if (state != State.PLAYING) return;
 		this.state = State.FINISHED;
+		if (challenge != null) {
+			stopTrainingAnimation();
+			challenge.onFail();
+			return;
+		}
 		if (levelsCleared > 0) {
 			NetworkHandler.sendToServer(new TrainingRewardC2S(minigameId, levelsCleared));
 		}
@@ -88,6 +101,10 @@ public abstract class BaseMinigameScreen extends Screen {
 	}
 
 	private void quitToHub() {
+		if (challenge != null) {
+			Minecraft.getInstance().setScreen(null);
+			return;
+		}
 		Minecraft.getInstance().setScreen(new MinigamesScreen());
 	}
 

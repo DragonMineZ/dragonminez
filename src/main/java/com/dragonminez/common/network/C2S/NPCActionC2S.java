@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -26,20 +27,28 @@ public class NPCActionC2S {
 
 	private final String npcName;
 	private final int actionId;
+	private final int value;
 
 	public NPCActionC2S(String npcName, int actionId) {
+		this(npcName, actionId, 0);
+	}
+
+	public NPCActionC2S(String npcName, int actionId, int value) {
 		this.npcName = npcName;
 		this.actionId = actionId;
+		this.value = value;
 	}
 
 	public NPCActionC2S(FriendlyByteBuf buf) {
 		this.npcName = buf.readUtf();
 		this.actionId = buf.readInt();
+		this.value = buf.readInt();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
 		buf.writeUtf(this.npcName);
 		buf.writeInt(this.actionId);
+		buf.writeInt(this.value);
 	}
 
 	public static void handle(NPCActionC2S packet, Supplier<NetworkEvent.Context> ctx) {
@@ -62,6 +71,9 @@ public class NPCActionC2S {
 					case "baba" -> handleBaba(player, data, packet.actionId);
 					case "popo" -> handlePopo(player, data, packet.actionId);
 					case "gero" -> handleGero(player, data, packet.actionId);
+					case "piccolo" -> handlePiccolo(player, data, packet.actionId, packet.value);
+					case "oldkai" -> handleOldKai(player, data, packet.actionId);
+					case "babidi" -> handleBabidi(player, data, packet.actionId);
 				}
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
@@ -178,6 +190,47 @@ public class NPCActionC2S {
 			data.getCharacter().clearActiveStackForm();
 			player.refreshDimensions();
 			player.sendSystemMessage(Component.translatable("message.dragonminez.gero.upgrade_success"));
+		}
+	}
+
+	private static final int MAX_WEIGHT_REQUEST = 100000;
+
+	private static void handlePiccolo(ServerPlayer player, StatsData data, int action, int value) {
+		if (action == 1) {
+			player.setHealth(player.getMaxHealth());
+			data.getResources().setCurrentPoise(data.getMaxPoise());
+			data.getResources().setCurrentEnergy(data.getMaxEnergy());
+			data.getResources().setCurrentStamina(data.getMaxStamina());
+		} else if (action == 2) {
+			int weight = Math.max(1, Math.min(MAX_WEIGHT_REQUEST, value));
+			ItemStack weightStack = new ItemStack(MainItems.WEIGHT_ITEM.get());
+			WeightItem.setWeight(weightStack, weight);
+			player.addItem(weightStack);
+			player.sendSystemMessage(Component.translatable("message.dragonminez.piccolo.weight_given", weight));
+		}
+	}
+
+	private static void handleOldKai(ServerPlayer player, StatsData data, int action) {
+		if (action == 1) {
+			if (data.getResources().getAlignment() > 61 && data.getSkills().getSkillLevel("potentialunlock") >= 10) {
+				data.getSkills().setSkillLevel("ultimate", 1);
+				player.sendSystemMessage(Component.translatable("message.dragonminez.oldkai.ultimate"));
+			}
+		}
+	}
+
+	private static void handleBabidi(ServerPlayer player, StatsData data, int action) {
+		if (action == 1) {
+			if (data.getEffects().hasEffect("majin")) {
+				player.sendSystemMessage(Component.translatable("message.dragonminez.babidi.already"));
+				return;
+			}
+			if (data.getResources().getAlignment() >= 39) {
+				player.sendSystemMessage(Component.translatable("message.dragonminez.babidi.too_good"));
+				return;
+			}
+			data.getEffects().addEffect("majin", ConfigManager.getServerConfig().getGameplay().getMajinPower(), -1);
+			player.sendSystemMessage(Component.translatable("message.dragonminez.babidi.marked"));
 		}
 	}
 }
