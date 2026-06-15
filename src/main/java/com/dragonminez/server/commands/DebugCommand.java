@@ -1,9 +1,11 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.world.data.PartySavedData;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -17,6 +19,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.ChatFormatting;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -28,10 +31,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 
 public class DebugCommand {
 	private static final SuggestionProvider<CommandSourceStack> DEBUG_VALUE_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(List.of("ALL", "STATS", "CHARACTER", "TECHNIQUES"), builder);
+			SharedSuggestionProvider.suggest(List.of("ALL", "STATS", "CHARACTER", "TECHNIQUES", "QUESTS"), builder);
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzdebug")
@@ -111,15 +116,134 @@ public class DebugCommand {
 		}
 
 		if (scope.includesCharacter()) {
-			appendSection(builder, "Character", root.getCompound("Character"));
-			appendSection(builder, "Training", root.getCompound("Training"));
+			appendSection(builder, "Character", withoutHairData(root.getCompound("Character")));
 		}
 
 		if (scope.includesTechniques()) {
 			appendSection(builder, "Techniques", root.getCompound("Techniques"));
 		}
 
+		if (scope.includesQuests()) {
+			appendPartySection(builder, target, data);
+			appendQuestsSection(builder, target, data);
+			appendSection(builder, "PlayerQuestData (raw)", root.getCompound("PlayerQuestData"));
+		}
+
 		return builder.toString();
+	}
+
+	private static CompoundTag withoutHairData(CompoundTag character) {
+		CompoundTag copy = character.copy();
+		copy.remove("HairBase");
+		copy.remove("HairSSJ");
+		copy.remove("HairSSJ2");
+		copy.remove("HairSSJ3");
+		return copy;
+	}
+
+	private static void appendPartySection(StringBuilder builder, ServerPlayer target, StatsData data) {
+		builder.append("# Party:\n");
+		PlayerQuestData quest = data.getPlayerQuestData();
+		MinecraftServer server = target.getServer();
+
+		builder.append("In party (client view): ").append(quest.isInParty()).append("\n");
+		builder.append("Active party id (client): ").append(formatUuid(quest.getActivePartyId())).append("\n");
+		builder.append("Party leader (client): ").append(formatMember(server, quest.getPartyLeaderId())).append("\n");
+
+		List<UUID> clientMembers = quest.getPartyMemberIds();
+		builder.append("Party members (client) [").append(clientMembers.size()).append("]:\n");
+		if (clientMembers.isEmpty()) {
+			builder.append("  (none)\n");
+		} else {
+			for (UUID memberId : clientMembers) {
+				builder.append("  - ").append(formatMember(server, memberId)).append("\n");
+			}
+		}
+
+		PlayerQuestData.PartyInviteData invite = quest.getPendingPartyInviteData();
+		if (invite == null) {
+			builder.append("Pending invite: none\n");
+		} else {
+			builder.append("Pending invite: from ").append(invite.getInviterName())
+					.append(" (").append(formatUuid(invite.getInviterUUID())).append(")")
+					.append(invite.isExpired() ? " [EXPIRED]" : "").append("\n");
+		}
+
+		PartySavedData.PartyInstance serverParty = server == null ? null
+				: PartySavedData.get(server).getPartyOf(target.getUUID());
+		if (serverParty == null) {
+			builder.append("Server party (PartySavedData): not in a server party\n");
+		} else {
+			builder.append("Server party id: ").append(formatUuid(serverParty.getPartyId())).append("\n");
+			builder.append("Server leader: ").append(formatMember(server, serverParty.getLeaderId())).append("\n");
+			builder.append("Server PvP enabled: ").append(serverParty.isPvpEnabled()).append("\n");
+			List<UUID> serverMembers = serverParty.getMembers();
+			builder.append("Server members [").append(serverMembers.size()).append("]:\n");
+			for (UUID memberId : serverMembers) {
+				boolean isLeader = memberId.equals(serverParty.getLeaderId());
+				builder.append("  - ").append(formatMember(server, memberId))
+						.append(isLeader ? " [LEADER]" : "").append("\n");
+			}
+		}
+
+		builder.append("\n");
+	}
+
+	private static void appendQuestsSection(StringBuilder builder, ServerPlayer target, StatsData data) {
+		builder.append("# Quests:\n");
+		PlayerQuestData quest = data.getPlayerQuestData();
+
+		String tracked = quest.getTrackedQuestId();
+		builder.append("Tracked quest: ").append(tracked == null ? "none" : tracked).append("\n");
+
+		Set<String> completed = quest.getCompletedQuestIds();
+		String lastCompleted = null;
+		for (String id : completed) {
+			lastCompleted = id;
+		}
+		builder.append("Last completed quest: ").append(lastCompleted == null ? "none" : lastCompleted)
+				.append(lastCompleted == null ? "" : " (status " + quest.getQuestStatus(lastCompleted) + ")").append("\n");
+
+		appendQuestList(builder, "Completed", completed);
+		appendQuestList(builder, "In progress (accepted)", quest.getAcceptedQuestIds());
+		appendQuestList(builder, "Failed", quest.getFailedQuestIds());
+
+		builder.append("\n");
+	}
+
+	private static void appendQuestList(StringBuilder builder, String title, Set<String> questIds) {
+		builder.append(title).append(" [").append(questIds.size()).append("]:\n");
+		if (questIds.isEmpty()) {
+			builder.append("  (none)\n");
+			return;
+		}
+		for (String id : questIds) {
+			builder.append("  - ").append(id).append("\n");
+		}
+	}
+
+	private static String formatMember(MinecraftServer server, UUID id) {
+		if (id == null) {
+			return "null";
+		}
+		return id + " (" + resolveName(server, id) + ")";
+	}
+
+	private static String formatUuid(UUID id) {
+		return id == null ? "null" : id.toString();
+	}
+
+	private static String resolveName(MinecraftServer server, UUID id) {
+		if (server == null || id == null) {
+			return "unknown";
+		}
+		ServerPlayer online = server.getPlayerList().getPlayer(id);
+		if (online != null) {
+			return online.getGameProfile().getName();
+		}
+		return server.getProfileCache() == null
+				? "offline"
+				: server.getProfileCache().get(id).map(profile -> profile.getName()).orElse("offline");
 	}
 
 	private static void appendSection(StringBuilder builder, String title, CompoundTag tag) {
@@ -177,7 +301,8 @@ public class DebugCommand {
 		ALL,
 		STATS,
 		CHARACTER,
-		TECHNIQUES;
+		TECHNIQUES,
+		QUESTS;
 
 		private static DebugScope from(String value) {
 			try {
@@ -197,6 +322,10 @@ public class DebugCommand {
 
 		private boolean includesTechniques() {
 			return this == ALL || this == TECHNIQUES;
+		}
+
+		private boolean includesQuests() {
+			return this == ALL || this == QUESTS;
 		}
 	}
 }
