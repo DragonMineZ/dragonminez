@@ -18,6 +18,7 @@ import com.dragonminez.server.world.feature.SacredKaiConfiguredFeatures;
 import com.dragonminez.server.world.feature.SacredKaiPlacedFeatures;
 import com.dragonminez.server.world.gen.*;
 import com.dragonminez.server.world.structure.helper.DMZPools;
+import com.dragonminez.server.world.structure.helper.DMZProcessorLists;
 import com.dragonminez.server.world.structure.helper.DMZStructureSets;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import net.minecraft.core.HolderLookup;
@@ -67,6 +68,7 @@ public class DMZWorldGenProvider extends DatapackBuiltinEntriesProvider {
 				OverworldPlacedFeatures.bootstrap(context);
 				SacredKaiPlacedFeatures.bootstrap(context);
 			})
+			.add(Registries.PROCESSOR_LIST, DMZProcessorLists::bootstrap)
 			.add(Registries.TEMPLATE_POOL, DMZPools::bootstrap)
 			.add(Registries.STRUCTURE, DMZStructures::bootstrap)
 			.add(Registries.STRUCTURE_SET, DMZStructureSets::bootstrap);

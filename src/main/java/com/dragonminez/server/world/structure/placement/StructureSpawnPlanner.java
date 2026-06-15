@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public final class StructureSpawnPlanner {
-	private static final int ANGLES_PER_RING = 16;
+	private static final int ANGLES_PER_RING = 24;
 	private static final int EXCLUSION_CHUNK_RADIUS = 5;
 	private static final TreeMap<Integer, BiomeAwareUniquePlacement> REGISTERED = new TreeMap<>();
 	private static final TreeMap<Integer, UniqueNearSpawnPlacement> NEAR_SPAWN_RESERVED = new TreeMap<>();
@@ -132,16 +132,26 @@ public final class StructureSpawnPlanner {
 				if (tooClose(accepted, chunkX, chunkZ, spacingSqr)) continue;
 
 				int quartX = QuartPos.fromBlock(chunkX * 16 + 8);
-				int quartY = QuartPos.fromBlock(64);
 				int quartZ = QuartPos.fromBlock(chunkZ * 16 + 8);
-				Holder<Biome> biome = biomeSource.getNoiseBiome(quartX, quartY, quartZ, randomState.sampler());
 
-				if (!placement.getValidBiomes().contains(biome)) continue;
+				if (!biomeMatchesColumn(placement, biomeSource, randomState, quartX, quartZ)) continue;
 				if (biomeValidFallback == null) biomeValidFallback = new ChunkPos(chunkX, chunkZ);
 				if (!overlapsOtherStructures(state, avoid, chunkX, chunkZ)) return new ChunkPos(chunkX, chunkZ);
 			}
 		}
 		return biomeValidFallback;
+	}
+
+	// Surface biomes (e.g. rocky) sit at depth 0, which for tall terrain is above y=64. Sample the realistic
+	// overworld surface band (56..200) so the placement biome is found regardless of how high the surface is;
+	// sampling sky (>200) or deep underground (<56) never returns a surface biome, so it's skipped.
+	private static boolean biomeMatchesColumn(BiomeAwareUniquePlacement placement, BiomeSource biomeSource,
+											  RandomState randomState, int quartX, int quartZ) {
+		for (int y = 200; y >= 56; y -= 16) {
+			Holder<Biome> biome = biomeSource.getNoiseBiome(quartX, QuartPos.fromBlock(y), quartZ, randomState.sampler());
+			if (placement.getValidBiomes().contains(biome)) return true;
+		}
+		return false;
 	}
 
 	private static boolean overlapsOtherStructures(ChunkGeneratorStructureState state,

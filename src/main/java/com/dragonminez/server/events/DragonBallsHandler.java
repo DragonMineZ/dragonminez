@@ -55,13 +55,7 @@ public class DragonBallsHandler {
 				BlockPos targetPos = new BlockPos(x, 0, z);
 				pending.get(star).add(targetPos);
 				LogUtil.debug(Env.SERVER, "Dragon Ball (pending) [" + star + "] assigned to " + targetPos + " for set " + setId + " (Y is a dummy value)");
-				if (isFirstSpawn) {
-					try {
-						level.getChunkAt(targetPos);
-					} catch (Exception exception) {
-						LogUtil.warn(Env.SERVER, "Immediate Dragon Ball chunk load failed at {} for set {}: {}", targetPos, setId, exception.toString());
-					}
-				}
+				if (level.isLoaded(targetPos)) generationQueue.add(() -> generateBallSafely(level, definition, star, targetPos));
 			}
 		}
 

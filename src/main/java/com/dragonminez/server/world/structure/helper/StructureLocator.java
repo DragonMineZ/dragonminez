@@ -42,18 +42,14 @@ public class StructureLocator {
 			return null;
 		}
 
-		BlockPos result = getPositionFromPlacement(level, structureKey, structureRegistry, placement);
-
-		if (result == null) {
-			HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
-			Pair<BlockPos, Holder<Structure>> searchResult = level.getChunkSource().getGenerator()
-					.findNearestMapStructure(level, holderSet, searchFrom, 100, false);
-			if (searchResult != null) {
-				result = searchResult.getFirst();
-			}
+		HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
+		Pair<BlockPos, Holder<Structure>> searchResult = level.getChunkSource().getGenerator()
+				.findNearestMapStructure(level, holderSet, searchFrom, 100, false);
+		if (searchResult != null) {
+			return searchResult.getFirst();
 		}
 
-		return result;
+		return getPositionFromPlacement(level, structureKey, structureRegistry, placement);
 	}
 
 	@Nullable

@@ -75,5 +75,20 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.add(SacredKaiBiomes.SACREDKAI_PLAINS)
 				.add(SacredKaiBiomes.SACREDKAI_HILLS)
 				.add(SacredKaiBiomes.SACREDKAI_RIVERS);
+
+		this.tag(MainTags.Biomes.IS_LAND)
+				.replace(false)
+				.addTag(BiomeTags.HAS_VILLAGE_PLAINS)
+				.addTag(BiomeTags.HAS_VILLAGE_DESERT)
+				.addTag(BiomeTags.HAS_VILLAGE_SAVANNA)
+				.addTag(BiomeTags.HAS_VILLAGE_SNOWY)
+				.addTag(BiomeTags.HAS_VILLAGE_TAIGA)
+				.addTag(BiomeTags.IS_FOREST)
+				.addTag(BiomeTags.IS_JUNGLE)
+				.addTag(BiomeTags.IS_BADLANDS)
+				.addTag(BiomeTags.IS_TAIGA)
+				.addTag(BiomeTags.IS_HILL)
+				.addTag(BiomeTags.IS_MOUNTAIN)
+				.add(OverworldBiomes.ROCKY);
 	}
 }

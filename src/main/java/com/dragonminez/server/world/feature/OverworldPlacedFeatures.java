@@ -32,7 +32,7 @@ public class OverworldPlacedFeatures {
         context.register(STONE_SPIKE_PLACED_KEY, new PlacedFeature(stoneSpikeHolder,
                 ImmutableList.<PlacementModifier>builder()
                         .add(NoiseThresholdCountPlacement.of(-0.8f, 15, 5))
-                        .add(RarityFilter.onAverageOnceEvery(40))
+                        .add(RarityFilter.onAverageOnceEvery(80))
                         .add(InSquarePlacement.spread())
                         .add(HeightmapPlacement.onHeightmap(Heightmap.Types.WORLD_SURFACE_WG))
                         .add(BiomeFilter.biome())
@@ -43,7 +43,7 @@ public class OverworldPlacedFeatures {
         context.register(ROCKY_PEAK_PLACED_KEY, new PlacedFeature(rockyPeakHolder,
 				ImmutableList.<PlacementModifier>builder()
 						.add(NoiseThresholdCountPlacement.of(-0.8f, 4, 2))
-						.add(RarityFilter.onAverageOnceEvery(14))
+						.add(RarityFilter.onAverageOnceEvery(32))
 						.add(InSquarePlacement.spread())
 						.add(HeightmapPlacement.onHeightmap(Heightmap.Types.WORLD_SURFACE_WG))
 						.add(BiomeFilter.biome())
@@ -54,7 +54,7 @@ public class OverworldPlacedFeatures {
         context.register(KARST_PILLAR_PLACED_KEY, new PlacedFeature(karstPillarHolder,
 				ImmutableList.<PlacementModifier>builder()
 						.add(NoiseThresholdCountPlacement.of(-0.8f, 6, 2))
-						.add(RarityFilter.onAverageOnceEvery(12))
+						.add(RarityFilter.onAverageOnceEvery(28))
 						.add(InSquarePlacement.spread())
 						.add(HeightmapPlacement.onHeightmap(Heightmap.Types.WORLD_SURFACE_WG))
 						.add(BiomeFilter.biome())
@@ -65,7 +65,7 @@ public class OverworldPlacedFeatures {
         context.register(ROCKY_CLIFF_PLACED_KEY, new PlacedFeature(rockyCliffHolder,
 				ImmutableList.<PlacementModifier>builder()
 						.add(NoiseThresholdCountPlacement.of(-0.8f, 4, 2))
-						.add(RarityFilter.onAverageOnceEvery(8))
+						.add(RarityFilter.onAverageOnceEvery(18))
 						.add(InSquarePlacement.spread())
 						.add(HeightmapPlacement.onHeightmap(Heightmap.Types.WORLD_SURFACE_WG))
 						.add(BiomeFilter.biome())

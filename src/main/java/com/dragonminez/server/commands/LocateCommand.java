@@ -3,6 +3,7 @@ package com.dragonminez.server.commands;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.dimension.SacredKaiDimension;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import com.dragonminez.server.world.structure.helper.StructureLocator;
 import com.mojang.brigadier.CommandDispatcher;
@@ -24,13 +25,20 @@ import java.util.Map;
 
 public class LocateCommand {
 
-	private static final Map<String, Pair<ResourceKey<Structure>, ResourceKey<Level>>> STRUCTURE_INFO = Map.of(
-			"goku_house", Pair.of(DMZStructures.GOKU_HOUSE, Level.OVERWORLD),
-			"roshi_house", Pair.of(DMZStructures.ROSHI_HOUSE, Level.OVERWORLD),
-			"elder_guru", Pair.of(DMZStructures.ELDER_GURU, NamekDimension.NAMEK_KEY),
-			"timechamber", Pair.of(DMZStructures.TIMECHAMBER, HTCDimension.HTC_KEY),
-			"kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD),
-			"gero_lab", Pair.of(DMZStructures.GERO_LAB, Level.OVERWORLD)
+	private static final Map<String, Pair<ResourceKey<Structure>, ResourceKey<Level>>> STRUCTURE_INFO = Map.ofEntries(
+			Map.entry("goku_house", Pair.of(DMZStructures.GOKU_HOUSE, Level.OVERWORLD)),
+			Map.entry("roshi_house", Pair.of(DMZStructures.ROSHI_HOUSE, Level.OVERWORLD)),
+			Map.entry("elder_guru", Pair.of(DMZStructures.ELDER_GURU, NamekDimension.NAMEK_KEY)),
+			Map.entry("timechamber", Pair.of(DMZStructures.TIMECHAMBER, HTCDimension.HTC_KEY)),
+			Map.entry("kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD)),
+			Map.entry("gero_lab", Pair.of(DMZStructures.GERO_LAB, Level.OVERWORLD)),
+			Map.entry("cell_arena", Pair.of(DMZStructures.CELL_ARENA, Level.OVERWORLD)),
+			Map.entry("frieza_ship", Pair.of(DMZStructures.FRIEZA_SHIP, NamekDimension.NAMEK_KEY)),
+			Map.entry("piccolo_house", Pair.of(DMZStructures.PICCOLO_HOUSE, Level.OVERWORLD)),
+			Map.entry("oldkai_pillar", Pair.of(DMZStructures.OLDKAI_PILLAR, SacredKaiDimension.SACREDKAI_KEY)),
+			Map.entry("yamcha_house", Pair.of(DMZStructures.YAMCHA_HOUSE, Level.OVERWORLD)),
+			Map.entry("trunks_ship", Pair.of(DMZStructures.TRUNKS_SHIP, Level.OVERWORLD)),
+			Map.entry("babidi", Pair.of(DMZStructures.BABIDI, Level.OVERWORLD))
 	);
 
 	private static final SuggestionProvider<CommandSourceStack> SUGGESTIONS = (context, builder) ->

@@ -823,10 +823,10 @@ final class QuestDefaults {
 						},
 						rewTPS(56000)),
 				step("buu", 24, "24_sacred_world_and_z_sword.json",
-						sacredKaiReq(2060, condSkill("potentialunlock", 20)),
+						sacredKaiReq(2060, condSkill("potentialunlock", 10)),
 						new JsonObject[]{
 								objItem("dragonminez:z_sword", 1),
-								objSkill("potentialunlock", 30)
+								objSkill("ultimate", 1)
 						},
 						rewTPS(52000)),
 				step("buu", 25, "25_super_buu_returns.json",

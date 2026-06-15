@@ -11,6 +11,8 @@ import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.world.feature.OverworldFeatures;
 import com.dragonminez.server.world.feature.SacredKaiFeatures;
 import com.dragonminez.server.world.structure.placement.MainStructurePlacements;
+import com.dragonminez.server.world.structure.processor.MainStructureProcessors;
+import com.dragonminez.server.world.structure.helper.MainStructureTypes;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import software.bernie.geckolib.GeckoLib;
@@ -42,6 +44,8 @@ public class DMZCommon {
         MainEffects.register(modEventBus);
 		MainEnchants.register(modEventBus);
         MainStructurePlacements.register(modEventBus);
+		MainStructureProcessors.register(modEventBus);
+		MainStructureTypes.register(modEventBus);
 		modEventBus.addListener(ModCommonEvents::commonSetup);
 		OverworldFeatures.register(modEventBus);
 		SacredKaiFeatures.register(modEventBus);
