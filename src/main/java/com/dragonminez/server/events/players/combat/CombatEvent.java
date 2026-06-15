@@ -13,6 +13,8 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
@@ -258,27 +260,19 @@ public class CombatEvent {
 			double healingReduction = 0.0;
 			if (source.getEntity() instanceof LivingEntity sourceLiving) {
 
-				int mainHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getMainHandItem());
-				int offHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getOffhandItem());
-
-				int enchLevel = Math.max(mainHandLvl, offHandLvl);
-				double enchPen = enchLevel * 0.025;
-
 				int healMainHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.HEALING_REDUCTION.get(), sourceLiving.getMainHandItem());
 				int healOffHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.HEALING_REDUCTION.get(), sourceLiving.getOffhandItem());
 				double enchHealReduction = Math.max(healMainHandLvl, healOffHandLvl) * 0.05;
 
-				double skillPen = 0.0;
 				double skillHealReduction = 0.0;
 				if (sourceLiving instanceof Player sourcePlayer) {
 					var attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
 					if (attackerStats != null) {
-						skillPen = attackerStats.getSkills().getSkillLevel("defense_penetration") * 0.025;
 						skillHealReduction = attackerStats.getSkills().getSkillLevel("healing_reduction") * 0.02;
 					}
 				}
 
-				finalDefensePenetration = Math.min(0.50, enchPen + skillPen + passiveDefensePen[0]);
+				finalDefensePenetration = computeDefensePenetration(sourceLiving, source, passiveDefensePen[0]);
 				healingReduction = Math.min(HEALING_REDUCTION_CAP, enchHealReduction + skillHealReduction);
 			} else finalDefensePenetration = 0.0;
 
@@ -456,6 +450,9 @@ public class CombatEvent {
 					}
 				}
 			});
+		} else if (!isExcludedSource(source) && source.getEntity() instanceof LivingEntity sourceLiving) {
+			double penetration = computeDefensePenetration(sourceLiving, source, passiveDefensePen[0]);
+			if (penetration > 0.0) currentDamage[0] *= (1.0 + penetration);
 		}
 
 		if (currentDamage[0] >= 200 && currentDamage[0] >= event.getEntity().getMaxHealth() * 0.5) {
@@ -539,6 +536,38 @@ public class CombatEvent {
 			return true;
 		}
 		return false;
+	}
+
+	private static double computeDefensePenetration(LivingEntity sourceLiving, DamageSource source, double passiveDefensePen) {
+		double skillPen = 0.0;
+		if (sourceLiving instanceof Player sourcePlayer) {
+			var attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
+			if (attackerStats != null) skillPen = attackerStats.getSkills().getSkillLevel("defense_penetration") * 0.025;
+		}
+
+		double sourcePen;
+		if (MainDamageTypes.isKiblastDamage(source)) {
+			sourcePen = getKiAttackArmorPen(source);
+		} else if (MainDamageTypes.isStrikeAttackDamage(source)) {
+			sourcePen = 0.0;
+		} else {
+			int mainHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getMainHandItem());
+			int offHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getOffhandItem());
+			sourcePen = Math.max(mainHandLvl, offHandLvl) * 0.025;
+		}
+
+		return Math.min(0.50, skillPen + sourcePen + passiveDefensePen);
+	}
+
+	private static double getKiAttackArmorPen(DamageSource source) {
+		if (!(source.getDirectEntity() instanceof AbstractKiProjectile projectile)) return 0.0;
+		if (!(projectile.getOwner() instanceof Player owner)) return 0.0;
+		String techId = projectile.getTechniqueId();
+		if (techId == null || techId.isEmpty()) return 0.0;
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, owner).orElse(null);
+		if (stats == null) return 0.0;
+		TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
+		return tech instanceof KiAttackData kiData ? kiData.getActualArmorPenetration() / 100.0 : 0.0;
 	}
 
 	private static boolean isEmptyHandOrNoDamageItem(Player player) {
