@@ -298,6 +298,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			character.setCharacterClass(classes[currentClassIndex]);
 			if (currentClassIndex > 0) {
 				addRenderableWidget(createArrowButton(LEFT_PANEL_X + 18, y + 6, true, btn -> {
+					if (currentClassIndex <= 0) return;
 					currentClassIndex--;
 					character.setCharacterClass(classes[currentClassIndex]);
 					syncCharacter();
@@ -306,6 +307,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			}
 			if (currentClassIndex < classes.length - 1) {
 				addRenderableWidget(createArrowButton(LEFT_PANEL_X + LEFT_PANEL_WIDTH - 28, y + 6, false, btn -> {
+					if (currentClassIndex >= classes.length - 1) return;
 					currentClassIndex++;
 					character.setCharacterClass(classes[currentClassIndex]);
 					syncCharacter();
