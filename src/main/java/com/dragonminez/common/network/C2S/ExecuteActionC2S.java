@@ -127,6 +127,10 @@ public class ExecuteActionC2S {
 						case INSTANT_TRANSFORM -> {
 							FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
 							if (nextForm != null) {
+								if (TransformationsHelper.isOozaruForm(nextForm)) {
+									return;
+								}
+
 								String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
 
 								double mastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());

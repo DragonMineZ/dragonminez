@@ -15,7 +15,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 public class FormModeHandler implements IActionModeHandler {
 	@Override
 	public boolean canCharge(ServerPlayer player, StatsData data) {
-		return TransformationsHelper.getNextAvailableForm(data) != null;
+		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
+		if (nextForm == null) return false;
+		if (TransformationsHelper.isOozaruForm(nextForm)) {
+			return TransformationsHelper.shouldAutoChargeOozaru(player, data);
+		}
+		return true;
 	}
 
 	@Override

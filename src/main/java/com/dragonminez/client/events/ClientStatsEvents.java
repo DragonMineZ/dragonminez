@@ -3,7 +3,6 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.FlightSoundInstance;
-import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.systems.kisense.CombatIndicators;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
@@ -22,6 +21,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.*;
 import com.dragonminez.common.util.BetaWhitelist;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -92,6 +92,8 @@ public class ClientStatsEvents {
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer localPlayer = mc.player;
 
+		if (localPlayer == null) return;
+
 		if (mc.level != null && !mc.isPaused()) {
 			for (Player player : mc.level.players()) {
 				var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -121,7 +123,15 @@ public class ClientStatsEvents {
 			}
 		}
 
-		if (localPlayer == null || mc.screen != null) return;
+		if (mc.screen != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
+				if (data.getStatus().isBlocking()) {
+					data.getStatus().setBlocking(false);
+					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
+				}
+			});
+			return;
+		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
@@ -160,6 +170,11 @@ public class ClientStatsEvents {
 			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 			if (blockLockTicks > 0) blockLockTicks--;
 			if (isChargingTechnique || isDescendKeyPressed || blockLockTicks > 0) isBlockKeyDown = false;
+
+			var nextForm = TransformationsHelper.getNextAvailableForm(data);
+			boolean isOozaruNextForm = TransformationsHelper.isOozaruForm(nextForm);
+			boolean canAutoChargeOozaru = !isActionRestricted && TransformationsHelper.shouldAutoChargeOozaru(localPlayer, data);
+			boolean shouldChargeAction = isActionKeyPressed || canAutoChargeOozaru;
 
 			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
 			if ((kiWeaponActive || isChargingTechnique) && data.getStatus().isBlocking() || Minecraft.getInstance().screen != null) {
@@ -211,8 +226,11 @@ public class ClientStatsEvents {
 			}
 
 			long currentTime = System.currentTimeMillis();
+			if (isOozaruNextForm) lastTransformTapTime = 0;
 
-			if (isActionKeyPressed && !wasTransformKeyDown) {
+			if (isOozaruNextForm) {
+				lastTransformTapTime = 0;
+			} else if (isActionKeyPressed && !wasTransformKeyDown) {
 				if ((currentTime - lastTransformTapTime) <= 500) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
 					lastTransformTapTime = 0;
@@ -255,8 +273,8 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.DESCEND, isDescendKeyPressed));
 			}
 
-			if (isActionKeyPressed != data.getStatus().isActionCharging()) {
-				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.ACTION_CHARGE, isActionKeyPressed));
+			if (shouldChargeAction != data.getStatus().isActionCharging()) {
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.ACTION_CHARGE, shouldChargeAction));
 			}
 
 			boolean isDescendActionDown = isDescendKeyPressed && isActionKeyPressed;

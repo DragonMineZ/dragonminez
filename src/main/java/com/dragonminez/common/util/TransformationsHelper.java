@@ -3,8 +3,13 @@ package com.dragonminez.common.util;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.extras.ActionMode;
+import com.dragonminez.common.util.lists.SaiyanForms;
 
 import java.util.*;
+
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 
 public class TransformationsHelper {
 
@@ -364,6 +369,33 @@ public class TransformationsHelper {
 			return (isFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, nextFormConfig)) ? nextFormConfig : null;
 		}
 		return nextFormConfig;
+	}
+
+	public static boolean isOozaruForm(FormConfig.FormData formData) {
+		return formData != null && SaiyanForms.OOZARU.equalsIgnoreCase(formData.getName());
+	}
+
+	public static boolean shouldAutoChargeOozaru(Player player, StatsData statsData) {
+		if (player == null || statsData == null) return false;
+		if (statsData.getStatus().getSelectedAction() != ActionMode.FORM) return false;
+		if (statsData.getCharacter().hasActiveForm() || statsData.getCharacter().hasActiveStackForm()) return false;
+
+		FormConfig.FormData nextForm = getNextAvailableForm(statsData);
+		if (!isOozaruForm(nextForm)) return false;
+
+		Level playerLevel = player.level();
+		return playerLevel.isNight()
+				&& isFullMoon(playerLevel)
+				&& isLookingAtMoon(player);
+	}
+
+	private static boolean isFullMoon(Level level) {
+		long day = Math.floorDiv(level.getDayTime(), 24000L);
+		return day % 8L == 0L;
+	}
+
+	private static boolean isLookingAtMoon(Player player) {
+		return player.level().canSeeSky(player.blockPosition()) && player.getLookAngle().y > 0.95D;
 	}
 
 	public static FormConfig.FormData getNextAvailableStackForm(StatsData statsData) {
