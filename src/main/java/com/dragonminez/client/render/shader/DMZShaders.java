@@ -16,6 +16,7 @@ public class DMZShaders {
 	public static ShaderInstance auraShader;
 	public static ShaderInstance lightningShader;
 	public static ShaderInstance outlineShader;
+	public static ShaderInstance outlineMaskTexShader;
 	public static ShaderInstance ki3dShader;
 
 	@SubscribeEvent
@@ -35,6 +36,11 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask"),
 						DefaultVertexFormat.NEW_ENTITY),
 				shaderInstance -> outlineShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask_tex"),
+						DefaultVertexFormat.NEW_ENTITY),
+				shaderInstance -> outlineMaskTexShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kiattack"),

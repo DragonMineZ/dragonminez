@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.shader;
 
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexMultiConsumer;
@@ -8,6 +9,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 
 import javax.annotation.Nullable;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class TransformationMaskBufferSource implements MultiBufferSource {
@@ -19,41 +21,12 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 	private static final float NOISE_SCROLL_MIN = -1.0f;
 	private static final float NOISE_SCROLL_MAX = 1.0f;
 
-	private final MultiBufferSource.BufferSource maskBufferSource = MultiBufferSource.immediateWithBuffers(
-			Map.of(
-					ModRenderTypes.transformationMask(), new BufferBuilder(MASK_BUFFER_SIZE),
-					ModRenderTypes.transformationMaskViewOffset(), new BufferBuilder(MASK_BUFFER_SIZE),
-					ModRenderTypes.transformationParams(), new BufferBuilder(MASK_BUFFER_SIZE),
-					ModRenderTypes.transformationParamsViewOffset(), new BufferBuilder(MASK_BUFFER_SIZE)
-			),
-			new BufferBuilder(MASK_BUFFER_SIZE)
-	);
+	private final LazyMaskBuffers maskBufferSource = new LazyMaskBuffers();
 	@Nullable
 	private MultiBufferSource delegate;
 	private boolean maskCaptureEnabled = true;
 	private boolean includeOriginal = true;
-	private static final VertexConsumer EMPTY_CONSUMER = new VertexConsumer() {
-		@Override
-		public VertexConsumer vertex(double x, double y, double z) { return this; }
-		@Override
-		public VertexConsumer color(int red, int green, int blue, int alpha) { return this; }
-		@Override
-		public VertexConsumer uv(float u, float v) { return this; }
-		@Override
-		public VertexConsumer overlayCoords(int u, int v) { return this; }
-		@Override
-		public VertexConsumer uv2(int u, int v) { return this; }
-		@Override
-		public VertexConsumer normal(float x, float y, float z) { return this; }
-		@Override
-		public void endVertex() {}
-		@Override
-		public void defaultColor(int defaultR, int defaultG, int defaultB, int defaultA) {}
-		@Override
-		public void unsetDefaultColor() {}
-		@Override
-		public void vertex(float x, float y, float z, float red, float green, float blue, float alpha, float texU, float texV, int overlayUV, int lightmapUV, float normalX, float normalY, float normalZ) {}
-	};
+	private boolean forceCaptureAll = false;
 	private int packedR = 255;
 	private int packedG = 255;
 	private int packedB = 255;
@@ -66,11 +39,16 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		this.delegate = delegate;
 		this.maskCaptureEnabled = true;
 		this.includeOriginal = true;
+		this.forceCaptureAll = false;
 		return this;
 	}
 
 	public void setMaskCaptureEnabled(boolean enabled) {
 		this.maskCaptureEnabled = enabled;
+	}
+
+	public void setForceCaptureAll(boolean forceCaptureAll) {
+		this.forceCaptureAll = forceCaptureAll;
 	}
 
 	public void setIncludeOriginal(boolean includeOriginal) {
@@ -92,9 +70,9 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 
 	@Override
 	public VertexConsumer getBuffer(RenderType renderType) {
-		if (!this.maskCaptureEnabled) {
+		if (!this.maskCaptureEnabled && !this.forceCaptureAll) {
 			if (this.delegate == null || !this.includeOriginal) {
-				return EMPTY_CONSUMER;
+				return new EmptyVertexConsumer();
 			}
 			return this.delegate.getBuffer(renderType);
 		}
@@ -129,6 +107,50 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		this.delegate = null;
 		this.maskCaptureEnabled = true;
 		this.includeOriginal = true;
+		this.forceCaptureAll = false;
+	}
+
+	private static final class LazyMaskBuffers {
+		private final Map<RenderType, BufferBuilder> builders = new LinkedHashMap<>();
+
+		VertexConsumer getBuffer(RenderType renderType) {
+			BufferBuilder builder = this.builders.computeIfAbsent(renderType, type -> new BufferBuilder(MASK_BUFFER_SIZE));
+			if (!builder.building()) {
+				builder.begin(renderType.mode(), renderType.format());
+			}
+			return builder;
+		}
+
+		void endBatch() {
+			for (Map.Entry<RenderType, BufferBuilder> entry : this.builders.entrySet()) {
+				if (entry.getValue().building()) {
+					entry.getKey().end(entry.getValue(), RenderSystem.getVertexSorting());
+				}
+			}
+		}
+	}
+
+	private static final class EmptyVertexConsumer implements VertexConsumer {
+		@Override
+		public VertexConsumer vertex(double x, double y, double z) { return this; }
+		@Override
+		public VertexConsumer color(int red, int green, int blue, int alpha) { return this; }
+		@Override
+		public VertexConsumer uv(float u, float v) { return this; }
+		@Override
+		public VertexConsumer overlayCoords(int u, int v) { return this; }
+		@Override
+		public VertexConsumer uv2(int u, int v) { return this; }
+		@Override
+		public VertexConsumer normal(float x, float y, float z) { return this; }
+		@Override
+		public void endVertex() {}
+		@Override
+		public void defaultColor(int defaultR, int defaultG, int defaultB, int defaultA) {}
+		@Override
+		public void unsetDefaultColor() {}
+		@Override
+		public void vertex(float x, float y, float z, float red, float green, float blue, float alpha, float texU, float texV, int overlayUV, int lightmapUV, float normalX, float normalY, float normalZ) {}
 	}
 
 	private static int packChannel(float primary, float secondary) {

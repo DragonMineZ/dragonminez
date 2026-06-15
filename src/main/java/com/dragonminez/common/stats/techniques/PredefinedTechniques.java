@@ -36,7 +36,7 @@ public class PredefinedTechniques {
         registerKi("makkanko", "technique.dragonminez.makkankosanpo", "Piccolo", KiAttackData.KiType.BEAM, 0.75F, 0xFFE53B, 0xC43BFF, 0.8F, 2.0F, 10, "ki.makkako");
         registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFFF00, 0xFFFF00, 0.4F, 1.5F, 10, "ki.barrage");
 		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 3.00F, 0xFFFF00, 0xFFFF00, 15.0F, 0.0F, 10, "ki.explosion");
-		registerKi("soul_punisher", "technique.dragonminez.soul_punisher", "Gogeta", KiAttackData.KiType.MEDIUM_BALL, 3.00F, 0x30FFF1, 0x00F8FF, 5.0F, 0.5F, 10, "ki.large_ball");
+		registerKi("soul_punisher", "technique.dragonminez.soul_punisher", "Gogeta", KiAttackData.KiType.MEDIUM_BALL, 3.00F, 0x30FFF1, 0x00F8FF, 5.0F, 0.5F, 10, "ki.kienzan");
 		registerStrike("skp.meteor", 1.25f, 40);
 		registerStrike("skp.dragon_fist", 2.5f, 50);
 		registerStrike("skp.deadly_dance_vegetto", 1.5f, 40);

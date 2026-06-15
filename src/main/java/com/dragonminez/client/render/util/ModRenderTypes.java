@@ -3,6 +3,9 @@ package com.dragonminez.client.render.util;
 import com.dragonminez.client.events.ModClientEvents;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.shader.TransformationMaskRenderState;
+import com.dragonminez.mixin.client.CompositeRenderTypeAccessor;
+import com.dragonminez.mixin.client.CompositeStateAccessor;
+import com.dragonminez.mixin.client.TextureStateShardInvoker;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -13,6 +16,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 public class ModRenderTypes extends RenderType {
@@ -98,6 +104,10 @@ public class ModRenderTypes extends RenderType {
     }
 
     private static final RenderStateShard.ShaderStateShard TRANSFORMATION_MASK_SHADER = new RenderStateShard.ShaderStateShard(() -> DMZShaders.outlineShader);
+    private static final RenderStateShard.ShaderStateShard TRANSFORMATION_MASK_TEX_SHADER = new RenderStateShard.ShaderStateShard(() -> DMZShaders.outlineMaskTexShader);
+
+    private static final Map<ResourceLocation, RenderType> TEXTURED_MASK_CACHE = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> TEXTURED_MASK_VIEW_OFFSET_CACHE = new HashMap<>();
 
     private static final RenderStateShard.OutputStateShard TRANSFORMATION_MASK_TARGET = new RenderStateShard.OutputStateShard(
             "transformation_mask_target",
@@ -305,10 +315,51 @@ public class ModRenderTypes extends RenderType {
     }
 
     public static RenderType transformationMask(RenderType sourceRenderType) {
-        if (sourceRenderType != null && sourceRenderType.toString().contains(VIEW_OFFSET_LAYERING_TOKEN)) {
+        ResourceLocation texture = resolveSourceTexture(sourceRenderType);
+        boolean viewOffset = sourceRenderType != null && sourceRenderType.toString().contains(VIEW_OFFSET_LAYERING_TOKEN);
+        if (texture != null) {
+            Map<ResourceLocation, RenderType> cache = viewOffset ? TEXTURED_MASK_VIEW_OFFSET_CACHE : TEXTURED_MASK_CACHE;
+            return cache.computeIfAbsent(texture, t -> buildTexturedMask(t, viewOffset));
+        }
+        if (viewOffset) {
             return TRANSFORMATION_MASK_VIEW_OFFSET;
         }
         return TRANSFORMATION_MASK;
+    }
+
+    @Nullable
+    private static ResourceLocation resolveSourceTexture(@Nullable RenderType sourceRenderType) {
+        if (!(sourceRenderType instanceof CompositeRenderTypeAccessor accessor)) return null;
+        RenderType.CompositeState state = accessor.dmz$state();
+        if (state == null) return null;
+        RenderStateShard.EmptyTextureStateShard textureState = ((CompositeStateAccessor) (Object) state).dmz$textureState();
+        if (textureState == null) return null;
+        return ((TextureStateShardInvoker) (Object) textureState).dmz$cutoutTexture().orElse(null);
+    }
+
+    private static RenderType buildTexturedMask(ResourceLocation texture, boolean viewOffset) {
+        CompositeState.CompositeStateBuilder builder = CompositeState.builder()
+                .setShaderState(TRANSFORMATION_MASK_TEX_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(NO_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                .setLightmapState(NO_LIGHTMAP)
+                .setOverlayState(NO_OVERLAY)
+                .setWriteMaskState(COLOR_WRITE)
+                .setOutputState(TRANSFORMATION_MASK_TARGET);
+        if (viewOffset) {
+            builder.setLayeringState(VIEW_OFFSET_Z_LAYERING);
+        }
+        return create(
+                "transformation_mask_tex",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                1536,
+                false,
+                false,
+                builder.createCompositeState(false)
+        );
     }
 
     public static RenderType transformationParams(RenderType sourceRenderType) {

@@ -176,11 +176,12 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 				this.renderingMaskPass = true;
 				maskBufferSource.wrap(bufferSource);
 				maskBufferSource.setIncludeOriginal(false);
-				maskBufferSource.setMaskCaptureEnabled(false);
+				maskBufferSource.setForceCaptureAll(true);
 				super.render(entity, entityYaw, partialTick, poseStack, maskBufferSource, packedLight);
 			} finally {
 				this.renderingMaskPass = false;
 				maskBufferSource.setIncludeOriginal(true);
+				maskBufferSource.setForceCaptureAll(false);
 				maskBufferSource.setMaskCaptureEnabled(true);
 			}
 		}
@@ -198,25 +199,12 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-		TransformationMaskBufferSource maskBufferSource = bufferSource instanceof TransformationMaskBufferSource mask ? mask : null;
-
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
-			boolean captureInMask = this.renderingMaskPass && (renderLayer instanceof DMZSkinLayer<?> || renderLayer instanceof DMZHairLayer<?> || renderLayer instanceof DMZRacePartsLayer<?>);
-			if (this.renderingMaskPass && !captureInMask) {
+			if (this.renderingMaskPass && renderLayer instanceof DMZAuraLayer<?>) {
 				continue;
 			}
 
-			if (maskBufferSource != null) {
-				maskBufferSource.setMaskCaptureEnabled(captureInMask);
-			}
-
-			try {
-				renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-			} finally {
-				if (maskBufferSource != null) {
-					maskBufferSource.setMaskCaptureEnabled(true);
-				}
-			}
+			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
 	}
 

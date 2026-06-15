@@ -29,11 +29,6 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
     private static final ResourceLocation TEXTURE_KI_BLOCK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_block1.png");
     private static final ResourceLocation TEXTURE_KI_BLOCK2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_block2.png");
-    private static final ResourceLocation TEXTURE_NOVA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_nova.png");
-    private static final ResourceLocation TEXTURE_NOVA2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_nova_2.png");
-    private static final ResourceLocation TEXTURE_NOVA_FIRE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_novafire.png");
-    private static final ResourceLocation TEXTURE_NOVA_FIRE2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_novafire_2.png");
-    private static final ResourceLocation TEXTURE_NOVA_FIRE3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_novafire_3.png");
     private static final ResourceLocation TEXTURE_KI_SPARKS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle1.png");
     private static final ResourceLocation TEXTURE_KI_SPARKS2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle2.png");
     private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");

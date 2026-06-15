@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class CombatAnimationResolver {
-    private static final ResourceLocation BASE_ANIMATION_FILE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/base.animation.json");
+    private static final ResourceLocation BASE_ANIMATION_FILE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/combat.animation.json");
 
     private static final Set<String> AVAILABLE_RAW = new HashSet<>();
 
