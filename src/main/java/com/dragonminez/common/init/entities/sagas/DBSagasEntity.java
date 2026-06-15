@@ -94,7 +94,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         GALICK_GUN(2, SkillRole.RANGED_TRAVEL),
         MAKANKOSAPPO(3, SkillRole.HITSCAN),
         KI_LASER(4, SkillRole.HITSCAN),
-        KI_EXPLOSION(5, SkillRole.GUARD_BREAK),
+        KI_EXPLOSION(5, SkillRole.AOE_BURST),
         KI_BARRIER(6, SkillRole.DEFENSIVE),
         OOZARU_ROAR(7, SkillRole.AOE_BURST),
         GENERIC_KI_WAVE(8, SkillRole.RANGED_TRAVEL),
@@ -103,13 +103,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         KI_SMALL(11, SkillRole.PROJECTILE_FAST),
         BLUE_HURRICANE(12, SkillRole.AOE_BURST),
         TRIPLE_LASER(13, SkillRole.HITSCAN),
-        KIENZAN(14, SkillRole.ZONING),
+        KIENZAN(14, SkillRole.HITSCAN),
         DEATH_BALL(15, SkillRole.GUARD_BREAK),
         MASENKO(16, SkillRole.RANGED_TRAVEL),
         BIG_BANG(17, SkillRole.GUARD_BREAK),
         FINAL_FLASH(18, SkillRole.RANGED_TRAVEL),
-        MAJIN_CANDY(19, SkillRole.HITSCAN),
-        KI_AIR_VOLLEY(20, SkillRole.PROJECTILE_FAST);
+        MAJIN_CANDY(19, SkillRole.ZONING),
+        KI_AIR_VOLLEY(20, SkillRole.ZONING);
 
         private final int id;
         private final SkillRole role;
@@ -225,11 +225,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private boolean meleeAllowed = true;
 
-    private boolean canDash = false;
-    private int dashCooldownMax = 0;
     private int currentDashCooldown = 0;
     private int dashTicks = 0;
     private static final int DASH_DURATION = 7;
+    private static final int DASH_COOLDOWN = 80;
     private static final double DASH_SPEED_MULTIPLIER = 2.6D;
 
     private boolean wasTargetCasting = false;
@@ -450,14 +449,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return this.comboEnabled && this.currentComboCooldown <= 0;
     }
 
-    public void setDash(boolean active, int cooldown) {
-        this.canDash = active;
-        this.dashCooldownMax = cooldown;
-        this.currentDashCooldown = 0;
-    }
-
     public boolean isDashReady() {
-        return this.canDash && this.currentDashCooldown <= 0 && this.dashTicks <= 0;
+        return this.aiTier != AiTier.SIMPLE && this.currentDashCooldown <= 0 && this.dashTicks <= 0;
     }
 
     public void setLocomotionMode(LocomotionMode mode) {
@@ -496,7 +489,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private void tryDash(LivingEntity target) {
         if (!this.isDashReady() || target == null) return;
         this.dashTicks = DASH_DURATION;
-        this.currentDashCooldown = this.dashCooldownMax;
+        this.currentDashCooldown = DASH_COOLDOWN;
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed * DASH_SPEED_MULTIPLIER);
         this.getNavigation().moveTo(target, 1.0D);
         if (this.level() instanceof ServerLevel serverLevel) {
@@ -643,7 +636,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.canUseWildSense && this.currentWildSenseCooldown > 0) this.currentWildSenseCooldown--;
                     if (this.comboEnabled && this.currentComboCooldown > 0) this.currentComboCooldown--;
                     if (this.canUseZanzoken && this.currentZanzokenCooldown > 0) this.currentZanzokenCooldown--;
-                    if (this.canDash && this.currentDashCooldown > 0) this.currentDashCooldown--;
+                    if (this.currentDashCooldown > 0) this.currentDashCooldown--;
 
                     for (KiSkill skill : this.skillPool) {
                         if (skill.currentCooldown > 0) {
@@ -1453,16 +1446,24 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             newEntity.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
             newEntity.setTarget(this.getTarget());
 
+            double scaledMaxHealth = this.getMaxHealth() * 1.5D;
+            if (newEntity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
+                newEntity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(scaledMaxHealth);
+            }
+
+            newEntity.setKiBlastDamage(this.getKiBlastDamage() * 1.5F);
+            if (newEntity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
+                newEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5D);
+            }
+
             if (fullHealth) {
                 newEntity.setHealth(newEntity.getMaxHealth());
             } else {
                 newEntity.setHealth(newEntity.getMaxHealth() / 2.0F);
             }
 
-            newEntity.setKiBlastDamage(this.getKiBlastDamage() * 1.5F);
-            if (newEntity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
-                newEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue() * 1.5D);
-            }
+            newEntity.setAiTier(this.getAiTier());
+            newEntity.getPersistentData().putBoolean("dmz_stats_configured", true);
 
 			if (this.getPersistentData().contains("dmz_is_hardmode")) {
 				boolean isHardMode = this.getPersistentData().getBoolean("dmz_is_hardmode");

@@ -24,7 +24,6 @@ public class SagaVegetaEntity{
             this.setDBZStyle(0);
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setDash(true, 80);
 
             this.setAllowedCombos(120, ComboType.AIR);
 

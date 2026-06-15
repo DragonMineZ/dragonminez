@@ -63,7 +63,7 @@ public class SagaGinyuForcesEntity {
             this.setEvade(true, 120);
             this.setWildSense(true, 200);
 
-            this.addKiSkill(KiSkillType.BLUE_HURRICANE, 100, 5.0F, 0xFF3BEA, 0xE23BFF);
+            this.addKiSkill(KiSkillType.BLUE_HURRICANE, 400, 5.0F, 0xFF3BEA, 0xE23BFF);
 
         }
 
