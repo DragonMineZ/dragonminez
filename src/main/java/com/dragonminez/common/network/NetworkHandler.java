@@ -402,6 +402,12 @@ public class NetworkHandler {
 				.consumerMainThread(PartyInviteToastS2C::handle)
 				.add();
 
+		net.messageBuilder(QuestActionFeedbackS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(QuestActionFeedbackS2C::new)
+				.encoder(QuestActionFeedbackS2C::encode)
+				.consumerMainThread(QuestActionFeedbackS2C::handle)
+				.add();
+
 		net.messageBuilder(SyncWeaponRegistryS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(SyncWeaponRegistryS2C::new)
 				.encoder(SyncWeaponRegistryS2C::encode)

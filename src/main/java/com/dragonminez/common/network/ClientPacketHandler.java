@@ -110,6 +110,19 @@ public class ClientPacketHandler {
 		));
 	}
 
+	public static void handleQuestActionFeedback(Component message) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) {
+			return;
+		}
+		mc.getToasts().addToast(new StoryToast(
+				Component.translatable("message.dragonminez.quest.start.failed_title"),
+				message,
+				StoryToast.Tone.FAILURE
+		));
+		mc.player.sendSystemMessage(message);
+	}
+
 	public static void handlePlayerAnimationsSyncPacket(UUID playerUUID, boolean isFlying) {
 		var clientLevel = Minecraft.getInstance().level;
 		if (clientLevel == null) return;

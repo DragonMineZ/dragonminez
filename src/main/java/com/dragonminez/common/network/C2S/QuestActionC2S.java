@@ -1,5 +1,9 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.QuestActionFeedbackS2C;
 import com.dragonminez.common.quest.QuestService;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
@@ -49,13 +53,22 @@ public class QuestActionC2S {
 				return;
 			}
 
-			Component failure = switch (actionType) {
-				case START -> QuestService.startQuest(player, questId, isHardMode);
-				case TURN_IN -> QuestService.turnInQuest(player, questId, npcId);
-			};
+			try {
+				Component failure = switch (actionType) {
+					case START -> QuestService.startQuest(player, questId, isHardMode);
+					case TURN_IN -> QuestService.turnInQuest(player, questId, npcId);
+				};
 
-			if (failure != null) {
-				player.sendSystemMessage(failure.copy().withStyle(ChatFormatting.RED));
+				if (failure != null) {
+					NetworkHandler.sendToPlayer(new QuestActionFeedbackS2C(
+							failure.copy().withStyle(ChatFormatting.RED)), player);
+				}
+			} catch (Exception exception) {
+				LogUtil.error(Env.SERVER, "Failed to handle quest action " + actionType + " for quest '"
+						+ questId + "' requested by " + player.getGameProfile().getName(), exception);
+				NetworkHandler.sendToPlayer(new QuestActionFeedbackS2C(
+						Component.translatable("message.dragonminez.quest.start.unavailable")
+								.withStyle(ChatFormatting.RED)), player);
 			}
 		});
 		context.setPacketHandled(true);
