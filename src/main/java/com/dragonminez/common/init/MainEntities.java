@@ -795,7 +795,7 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaBuuEntity.MiniBuuEntity>> MINI_BUU =
             ENTITY_TYPES.register("mini_buu",
                     () -> EntityType.Builder.of(SagaBuuEntity.MiniBuuEntity::new, MobCategory.MONSTER)
-                            .sized(0.7f, 1.5f)
+                            .sized(0.4f, 0.9f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "mini_buu").toString()));
     public static final RegistryObject<EntityType<SagaBuuEntity.SuperBuuEntity>> SAGA_SUPERBUU=
             ENTITY_TYPES.register("saga_superbuu",

@@ -21,36 +21,8 @@ public class MerusLaserItem extends Item {
         if (!pLevel.isClientSide) {
 
             KiBlastEntity kiBlast = new KiBlastEntity(pLevel, pPlayer);
-            KiWaveEntity kiWave = new KiWaveEntity(pLevel, pPlayer);
-            KiLaserEntity kilaser = new KiLaserEntity(pLevel, pPlayer);
-            KiExplosionEntity kiexp = new KiExplosionEntity(pLevel, pPlayer);
-            KiDiskEntity kidisc = new KiDiskEntity(pLevel, pPlayer);
-            KiBarrierEntity kibarrier = new KiBarrierEntity(pLevel, pPlayer);
-            SPDragonFistEntity dragonFist = new SPDragonFistEntity(pLevel, pPlayer);
-            SPMajinCandyEntity laser = new SPMajinCandyEntity(pLevel, pPlayer);
 
             kiBlast.setupKiBlast(pPlayer, 10.0f,  2.5f, 0x00FFFF, 0x78FFFF, 1.0f, 5);
-
-            //kiBlast.setupKiBlast(pPlayer,10,0.5f, 0xFF004A, 2.5f, 100);
-            //kiBlast.setupKiLargeBlast(pPlayer,10,2.2f, 0x00FFFF, 4.0f, 100);
-            //kiBlast.setupInvertedKiBlast(pPlayer,10,0.5f, 0x362440, 0xFFFFFF, 1.5f, 100);
-            //kiBlast.setupKiSouls(pPlayer,10,0.5f, 0xFFFFFF, 100);
-            //kiBlast.setupKiGenki(pPlayer,10,0.8f, 100);
-            //kiBlast.setupKiNova(pPlayer,10,0.6f, 100);
-            //kiBlast.setupKiDeathBall(pPlayer,10,2.0f, 0xA927F5, 100);
-            //kiBlast.setupSokidan(pPlayer,10,0.5f, 0xFFEF26, 1.0f, 100);
-            //kiBlast.setupKiVolley(pPlayer, 10, 1.4f, 0xFFFFFF, 40);
-            //kiWave.setupKiHame(pPlayer, 10.0f, 2.0f, 1.0f, 100);
-            //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 1.5f, 100);
-            //kiWave.setupFinalFlash(pPlayer, 10.0f, 1.0f, 2.5f, 100);
-            //kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 1.0f, 100);
-            //kidisc.setupKiDisk(pPlayer, 10.0f, 2.0f, 0xF5E027, 2.5f, 100);
-            //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 100);
-            //kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f, 100);
-            //kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
-            //kibarrier.setupKiBarrier(pPlayer, 0x43FF00, 0xF2FF00, 100);
-            //dragonFist.setupDragonFist(pPlayer, 0.5f, 0, 50);
-            //laser.setupCandyBeam(pPlayer, 10.0F, 1.0F, 20);
 
             //kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 1.5f, 0.5F);
 
