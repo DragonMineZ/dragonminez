@@ -256,7 +256,9 @@ public final class MainItems {
 	public static final RegistryObject<Item> KIKONO_STICK = regItem("kikono_stick");
 
 	// WEIGHTS
-	public static final RegistryObject<Item> WEIGHT_ITEM = ITEM_REGISTER.register("weight_item", () -> new WeightItem(properties.stacksTo(1)));
+	public static final RegistryObject<Item> WEIGHT_TURTLE_SHELL = ITEM_REGISTER.register("weight_turtle_shell", () -> new WeightItem(new Item.Properties().stacksTo(1), WeightItem.WeightType.TURTLE_SHELL));
+	public static final RegistryObject<Item> WORKOUT_WEIGHTS = ITEM_REGISTER.register("workout_weights", () -> new WeightItem(new Item.Properties().stacksTo(1), WeightItem.WeightType.WORKOUT_WEIGHTS));
+	public static final RegistryObject<Item> WEIGHT_PICCOLO_CAPE = ITEM_REGISTER.register("weight_piccolo_cape", () -> new WeightItem(new Item.Properties().stacksTo(1), WeightItem.WeightType.PICCOLO_CAPE));
 
 	// HERRAMIENTAS
 	public static final RegistryObject<Item> PATTERN_GETE = regItem("pattern_gete");

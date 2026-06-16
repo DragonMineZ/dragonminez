@@ -8,6 +8,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -31,8 +32,6 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import top.theillusivec4.curios.api.CuriosApi;
 
-
-
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
 	private static final ResourceLocation RACES_PARTS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/raceparts.png");
@@ -48,6 +47,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation BRAVE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/brave_sword.png");
 	private static final ResourceLocation POWER_POLE_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
 	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/power_pole.png");
+
+	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
+	private static final ResourceLocation WEIGHTED_ITEMS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
 
 	public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
@@ -68,7 +70,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		String anchor = playerBone.getName();
-		if (!"head".equals(anchor) && !"body".equals(anchor)) return;
+		boolean isLimb = "right_arm".equals(anchor) || "left_arm".equals(anchor)
+				|| "right_leg".equals(anchor) || "left_leg".equals(anchor);
+		if (!"head".equals(anchor) && !"body".equals(anchor) && !isLimb) return;
 
 		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
 
@@ -89,6 +93,14 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
+
+		if (isLimb) {
+			if (!animatable.isSpectator() && !stats.getCharacter().isOozaruCached()) {
+				renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+			}
+			return;
+		}
+
 		float tintProgress = AuraTintTracker.get(animatable.getId());
 
 		BakedGeoModel playerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
@@ -99,7 +111,12 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			if ("head".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
 				renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
 				renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-			} else renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
+			} else {
+				renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
+				if ("body".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
+					renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+				}
+			}
 		}
 
 		bufferSource.getBuffer(renderType);
@@ -453,6 +470,51 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			syncTargetBoneAndParents(bone, playerModel);
 			renderTargetedBone(bone, poseStack, bufferSource, animatable, accRenderType, 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight);
 		});
+	}
+
+	private void renderWeightedItems(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String anchor, float partialTick, int packedLight, float alpha) {
+		ItemStack weightStack = getRenderableCurio(animatable, "weights", 0);
+		if (weightStack.isEmpty() || !(weightStack.getItem() instanceof WeightItem weightItem)) return;
+
+		BakedGeoModel weightModel = getGeoModel().getBakedModel(WEIGHTED_ITEMS_MODEL);
+		if (weightModel == null) return;
+
+		RenderType type = RenderType.entityCutoutNoCull(WEIGHTED_ITEMS_TEXTURE);
+
+		switch (weightItem.getWeightType()) {
+			case TURTLE_SHELL -> {
+				if ("body".equals(anchor)) {
+					renderWeightBone(weightModel, "turtleweight", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+				}
+			}
+			case WORKOUT_WEIGHTS -> {
+				switch (anchor) {
+					case "right_arm" -> renderWeightBone(weightModel, "right_arm_glove", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+					case "left_arm" -> renderWeightBone(weightModel, "left_arm_glove", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+					case "right_leg" -> renderWeightBone(weightModel, "right_leg_glove", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+					case "left_leg" -> renderWeightBone(weightModel, "left_leg_glove", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+				}
+			}
+			case PICCOLO_CAPE -> {
+				switch (anchor) {
+					case "body" -> {
+						GeoBone capeBone = weightModel.getBone("cape").orElse(null);
+						boolean wasHidden = capeBone != null && capeBone.isHidden();
+						if (capeBone != null) capeBone.setHidden(true);
+
+						renderWeightBone(weightModel, "piccoloweight_middle", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+
+						if (capeBone != null) capeBone.setHidden(wasHidden);
+					}
+					case "right_arm" -> renderWeightBone(weightModel, "piccoloweight_right", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+					case "left_arm" -> renderWeightBone(weightModel, "piccoloweight_left", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+				}
+			}
+		}
+	}
+
+	private void renderWeightBone(BakedGeoModel weightModel, String boneName, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, RenderType type, float partialTick, int packedLight, float alpha) {
+		weightModel.getBone(boneName).ifPresent(bone -> renderTargetedBone(bone, poseStack, bufferSource, animatable, type, 1.0f, 1.0f, 1.0f, alpha, partialTick, packedLight));
 	}
 
 	private void renderSword(PoseStack poseStack, T animatable, GeoBone playerBodyBone, MultiBufferSource bufferSource, float partialTick, int packedLight) {

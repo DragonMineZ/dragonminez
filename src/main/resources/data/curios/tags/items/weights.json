@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
-    "dragonminez:weight_item"
+    "dragonminez:weight_turtle_shell",
+    "dragonminez:weight_gloves",
+    "dragonminez:weight_piccolo_cape"
   ]
 }

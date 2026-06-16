@@ -259,6 +259,11 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.KI_BATTERY);
 		simpleItem(MainItems.ANTI_KI_CLOAK);
 
+		//Pesos
+		simpleItem(MainItems.WEIGHT_TURTLE_SHELL);
+		simpleItem(MainItems.WORKOUT_WEIGHTS);
+		simpleItem(MainItems.WEIGHT_PICCOLO_CAPE);
+
 		//Bloques (MainBlocks)
 		simpleBlockItem(MainBlocks.NAMEK_BLOCK);
 		simpleBlockItem(MainBlocks.NAMEK_DIRT);

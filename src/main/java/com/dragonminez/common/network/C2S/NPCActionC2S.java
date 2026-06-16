@@ -210,7 +210,7 @@ public class NPCActionC2S {
 
 	private static void giveWeight(ServerPlayer player, int value, String messageKey) {
 		int weight = Math.max(1, Math.min(MAX_WEIGHT_REQUEST, value));
-		ItemStack weightStack = new ItemStack(MainItems.WEIGHT_ITEM.get());
+		ItemStack weightStack = new ItemStack(MainItems.WEIGHT_PICCOLO_CAPE.get());
 		WeightItem.setWeight(weightStack, weight);
 		player.addItem(weightStack);
 		player.sendSystemMessage(Component.translatable(messageKey, weight));
