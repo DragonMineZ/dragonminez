@@ -107,6 +107,8 @@ public class TechniqueDispatcher {
                     medBall.setupSoulPunisherPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
                 } else if ("fake_moon".equals(data.getId())) {
                     medBall.setupFakeMoonPlayer(owner, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
+                } else if ("sokidan".equals(data.getId())) {
+                    medBall.setupSokidanPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
                 } else {
                     medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                 }

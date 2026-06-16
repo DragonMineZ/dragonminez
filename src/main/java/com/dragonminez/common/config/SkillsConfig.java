@@ -48,6 +48,7 @@ public class SkillsConfig {
 		kiSkills.add("supernova_cooler");
 		kiSkills.add("big_bang");
 		kiSkills.add("burning_attack");
+		kiSkills.add("sokidan");
 		kiSkills.add("final_flash");
 		kiSkills.add("kamehameha");
 		kiSkills.add("galick_gun");
@@ -72,6 +73,7 @@ public class SkillsConfig {
         skills.put("emperor_death_beam", new SkillCosts(List.of(5000)));
 		skills.put("big_bang", new SkillCosts(List.of(4000)));
 		skills.put("burning_attack", new SkillCosts(List.of(3500)));
+		skills.put("sokidan", new SkillCosts(List.of(4000)));
 		skills.put("ki_barrage", new SkillCosts(List.of(1000)));
 		skills.put("spiritbomb", new SkillCosts(List.of(10000)));
 		skills.put("supernova", new SkillCosts(List.of(12000)));
@@ -366,8 +368,16 @@ public class SkillsConfig {
 		friezaSkills.add("death_beam");
 		friezaSkills.add("emperor_death_beam");
 		friezaSkills.add("supernova");
-		friezaSkills.add("healing_reduction");
 		friezaSkills.add("kienzan_doble");
+		friezaSkills.add("fly");
+		friezaSkills.add("jump");
+		friezaSkills.add("sprint");
+		friezaSkills.add("kisense");
+		friezaSkills.add("meditation");
+		friezaSkills.add("potentialunlock");
+		friezaSkills.add("instant_transmission");
+		friezaSkills.add("deadly_dance");
+		friezaSkills.add("meteor");
 		skillOfferings.put("frieza", friezaSkills);
 
 		List<String> trunksSkills = new ArrayList<>();
@@ -383,12 +393,20 @@ public class SkillsConfig {
 		cellSkills.add("galick_gun");
 		cellSkills.add("masenko");
 		cellSkills.add("death_beam");
+		cellSkills.add("kicontrol");
+		cellSkills.add("kimanipulation");
+		cellSkills.add("ki_infusion");
+		cellSkills.add("kiprotection");
 		cellSkills.add("defense_penetration");
 		cellSkills.add("healing_reduction");
+		cellSkills.add("kiboost");
+		cellSkills.add("deadly_dance");
+		cellSkills.add("meteor");
 		skillOfferings.put("cell", cellSkills);
 
 		List<String> yamchaSkills = new ArrayList<>();
 		yamchaSkills.add("wolf_fang");
+		yamchaSkills.add("sokidan");
 		yamchaSkills.add("kamehameha");
 		yamchaSkills.add("ki_barrage");
 		yamchaSkills.add("kicontrol");

@@ -25,6 +25,7 @@ public class PredefinedTechniques {
 		registerKi("supernova_cooler", "technique.dragonminez.supernova_cooler", "Cooler", KiAttackData.KiType.GIANT_BALL, 3.50F, 0xFFAA00, 0xFFAA00, 5.5F, 0.5F, 10, "ki.large_ball");
 		registerKi("big_bang", "technique.dragonminez.big_bang", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 2.00F, 0x4FF7FF, 0x4FF7FF, 2.0F, 1.5F, 10, "ki.bigbang");
 		registerKi("burning_attack", "technique.dragonminez.burning_attack", "Trunks", KiAttackData.KiType.MEDIUM_BALL, 1.50F, 0xFFAA00, 0xFFAA00, 1.5F, 1.5F, 10, "ki.masenko");
+		registerKi("sokidan", "technique.dragonminez.sokidan", "Yamcha", KiAttackData.KiType.MEDIUM_BALL, 1.25F, 0x4FA9FF, 0x4FA9FF, 1.5F, 1.0F, 12, "ki.bigbang");
 		registerKi("final_flash", "technique.dragonminez.final_flash", "Vegeta", KiAttackData.KiType.WAVE, 2.50F, 0xFF9900, 0xFF9900, 1.5F, 1.2F, 10, "ki.finalflash");
 		registerKi("kamehameha", "technique.dragonminez.kamehameha", "Goku", KiAttackData.KiType.WAVE, 2.00F, 0x4FF7FF, 0x4FF7FF, 1.0F, 1.2F, 10, "ki.kameha");
 		registerKi("galick_gun", "technique.dragonminez.galick_gun", "Vegeta", KiAttackData.KiType.WAVE, 2.00F, 0xCE10E3, 0xAE10E3, 1.0F, 1.2F, 10, "ki.galick");
