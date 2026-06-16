@@ -16,13 +16,18 @@ import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.Set;
 
 public final class NpcDispositionService {
 	public static final String NPC_ALIGNMENT_TAG = "DmzNpcAlignment";
 	public static final String NPC_RELATION_OVERRIDE_TAG = "DmzNpcRelationOverride";
 
-	private NpcDispositionService() {
-	}
+	private static final Set<String> GOOD_ALIGNED_MASTERS = Set.of("goku", "gohan", "kingkai", "oldkai", "roshi", "krillin");
+	private static final Set<String> EVIL_ALIGNED_MASTERS = Set.of("cell", "frieza");
+	private static final int GOOD_ALIGNMENT_MIN = 61;
+	private static final int EVIL_ALIGNMENT_MAX = 40;
+
+	private NpcDispositionService() {}
 
 	public static boolean isInteractiveNpc(Entity entity) {
 		if (entity instanceof QuestNPCEntity) {
@@ -84,14 +89,18 @@ public final class NpcDispositionService {
 			return Component.translatable("message.dragonminez.npc.unavailable");
 		}
 
-		TargetHelper.Relation relation = getRelation(player, npc);
-		if (relation == TargetHelper.Relation.HOSTILE) {
-			return Component.translatable("message.dragonminez.npc.hostile");
-		}
-
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) {
 			return Component.translatable("message.dragonminez.npc.unavailable");
+		}
+
+		if (npc instanceof MastersEntity master && master.getMasterName() != null && !master.getMasterName().isBlank()) {
+			return masterAlignmentBlocker(data, master.getMasterName());
+		}
+
+		TargetHelper.Relation relation = getRelation(player, npc);
+		if (relation == TargetHelper.Relation.HOSTILE) {
+			return Component.translatable("message.dragonminez.npc.hostile");
 		}
 		return getAlignmentBlocker(data, resolveNpcKey(npc));
 	}
@@ -107,20 +116,30 @@ public final class NpcDispositionService {
 			return Component.translatable("message.dragonminez.npc.unavailable");
 		}
 
-		String npcKey = normalizeNpcKey(npcId);
-		if (data.getPlayerQuestData().isNpcHostile(npcKey)
-				|| data.getPlayerQuestData().isNpcHostile("master_" + npcKey)
-				|| data.getPlayerQuestData().isNpcHostile("npc_" + npcKey)) {
-			return Component.translatable("message.dragonminez.npc.hostile");
-		}
-		return getAlignmentBlocker(data, npcKey);
+		return masterAlignmentBlocker(data, npcId);
 	}
 
 	public static void markHostile(ServerPlayer player, Entity npc) {
 		if (player == null || npc == null || !isInteractiveNpc(npc)) {
 			return;
 		}
+		if (npc instanceof MastersEntity) {
+			return;
+		}
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getPlayerQuestData().markNpcHostile(resolveHostilityKey(npc)));
+	}
+
+	@Nullable
+	private static Component masterAlignmentBlocker(StatsData data, String masterName) {
+		String key = normalizeNpcKey(masterName);
+		int alignment = data.getResources().getAlignment();
+		if (GOOD_ALIGNED_MASTERS.contains(key) && alignment < GOOD_ALIGNMENT_MIN) {
+			return Component.translatable("message.dragonminez.npc.alignment_too_low", GOOD_ALIGNMENT_MIN);
+		}
+		if (EVIL_ALIGNED_MASTERS.contains(key) && alignment > EVIL_ALIGNMENT_MAX) {
+			return Component.translatable("message.dragonminez.npc.alignment_too_high", EVIL_ALIGNMENT_MAX);
+		}
+		return null;
 	}
 
 	public static String resolveNpcKey(Entity entity) {

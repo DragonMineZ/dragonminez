@@ -68,6 +68,8 @@ public class MasterTextScreen extends Screen {
 				case "gero" -> initGero(buttonX, buttonY, stats);
 				case "toribot" -> initToribot(buttonX, buttonY, stats);
 				case "piccolo" -> initPiccolo(buttonX, buttonY, stats);
+				case "roshi" -> initWeightService(buttonX, buttonY, "roshi");
+				case "kingkai" -> initWeightService(buttonX, buttonY, "kingkai");
 				case "oldkai" -> initOldKai(buttonX, buttonY, stats);
 				case "babidi" -> initBabidi(buttonX, buttonY, stats);
 			}
@@ -416,6 +418,46 @@ public class MasterTextScreen extends Screen {
 					.onPress(b -> {
 						secondFunc = true;
 						this.currentDialogue = tr("gui.dragonminez.lines.piccolo.weight_prompt", Minecraft.getInstance().player.getName());
+						refreshButtons();
+					})
+					.build());
+		}
+	}
+
+	private void initWeightService(int x, int y, String name) {
+		if (secondFunc) {
+			weightBox = new EditBox(this.font, this.width / 2 - 60, y - 28, 120, 16, Component.empty());
+			weightBox.setMaxLength(6);
+			weightBox.setFilter(s -> s.matches("\\d*"));
+			this.addRenderableWidget(weightBox);
+			this.setInitialFocus(weightBox);
+
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.button.weight.confirm"))
+					.onPress(b -> {
+						int weight = parseWeight(weightBox.getValue());
+						if (weight > 0) {
+							NetworkHandler.sendToServer(new NPCActionC2S(name, 2, weight));
+							this.onClose();
+						}
+					})
+					.build());
+		} else {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.button.weight"))
+					.onPress(b -> {
+						secondFunc = true;
+						this.currentDialogue = tr("gui.dragonminez.lines." + name + ".weight_prompt", Minecraft.getInstance().player.getName());
 						refreshButtons();
 					})
 					.build());

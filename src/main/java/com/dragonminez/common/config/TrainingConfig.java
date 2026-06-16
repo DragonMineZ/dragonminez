@@ -83,7 +83,7 @@ public class TrainingConfig {
 	@Getter
 	@NoArgsConstructor
 	public static class ControlConfig extends MinigameSettings {
-		{ masterName = "roshi"; }
+		{ masterName = "krillin"; }
 
 		private int holdDurationTicks = 100;
 		private int levelTimeLimitTicks = 300;
@@ -113,7 +113,7 @@ public class TrainingConfig {
 	@Getter
 	@NoArgsConstructor
 	public static class PrecisionConfig extends MinigameSettings {
-		{ masterName = "kingkai"; }
+		{ masterName = "trunks"; }
 
 		private int outerRingRadius = 40;
 		private int targetRadius = 14;

@@ -72,6 +72,8 @@ public class NPCActionC2S {
 					case "popo" -> handlePopo(player, data, packet.actionId);
 					case "gero" -> handleGero(player, data, packet.actionId);
 					case "piccolo" -> handlePiccolo(player, data, packet.actionId, packet.value);
+					case "roshi" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.roshi.weight_given"); }
+					case "kingkai" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.kingkai.weight_given"); }
 					case "oldkai" -> handleOldKai(player, data, packet.actionId);
 					case "babidi" -> handleBabidi(player, data, packet.actionId);
 				}
@@ -202,12 +204,16 @@ public class NPCActionC2S {
 			data.getResources().setCurrentEnergy(data.getMaxEnergy());
 			data.getResources().setCurrentStamina(data.getMaxStamina());
 		} else if (action == 2) {
-			int weight = Math.max(1, Math.min(MAX_WEIGHT_REQUEST, value));
-			ItemStack weightStack = new ItemStack(MainItems.WEIGHT_ITEM.get());
-			WeightItem.setWeight(weightStack, weight);
-			player.addItem(weightStack);
-			player.sendSystemMessage(Component.translatable("message.dragonminez.piccolo.weight_given", weight));
+			giveWeight(player, value, "message.dragonminez.piccolo.weight_given");
 		}
+	}
+
+	private static void giveWeight(ServerPlayer player, int value, String messageKey) {
+		int weight = Math.max(1, Math.min(MAX_WEIGHT_REQUEST, value));
+		ItemStack weightStack = new ItemStack(MainItems.WEIGHT_ITEM.get());
+		WeightItem.setWeight(weightStack, weight);
+		player.addItem(weightStack);
+		player.sendSystemMessage(Component.translatable(messageKey, weight));
 	}
 
 	private static void handleOldKai(ServerPlayer player, StatsData data, int action) {
