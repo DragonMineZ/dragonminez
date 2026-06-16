@@ -359,7 +359,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public String getAuraType() {return this.entityData.get(AURA_TYPE);}
     public void setAuraType(String type) {this.entityData.set(AURA_TYPE, type);}
     public float getScale() {
-        return this.isKid() ? 0.7F : 1.0F;
+        if (this.isKid()) {
+            return 0.7F;
+        }
+
+        float customScale = this.entityData.get(SCALE_VAL);
+
+        if (customScale > 0.0F) {
+            return customScale;
+        } else {
+            return 1.0F;
+        }
     }
 
     public void setScaleVal(float scale) {
