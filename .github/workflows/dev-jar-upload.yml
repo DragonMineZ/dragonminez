@@ -52,7 +52,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Generate data for jar
-        run: ./gradlew runData --build-cache
+        run: ./gradlew runData
 
       - name: Build dev jar
         run: ./gradlew build --build-cache
@@ -86,6 +86,12 @@ jobs:
               problems.append("no generated worldgen/structure JSONs found")
           for path in structures:
               data = json.loads(path.read_text(encoding="utf-8"))
+              # Only vanilla's "minecraft:jigsaw" type is bound to vanilla's codec
+              # range. Custom structure types (e.g. dragonminez:tall_jigsaw) are
+              # decoded by their own mod-registered codec, which may legitimately
+              # allow a wider range, so they're exempt from this check.
+              if data.get("type") != "minecraft:jigsaw":
+                  continue
               distance = data.get("max_distance_from_center", 80)
               if not 1 <= distance <= 128:
                   problems.append(f"{path}: max_distance_from_center {distance} outside vanilla range [1, 128]")
