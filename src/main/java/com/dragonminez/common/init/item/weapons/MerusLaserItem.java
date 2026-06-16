@@ -29,7 +29,8 @@ public class MerusLaserItem extends Item {
             SPDragonFistEntity dragonFist = new SPDragonFistEntity(pLevel, pPlayer);
             SPMajinCandyEntity laser = new SPMajinCandyEntity(pLevel, pPlayer);
 
-            kiBlast.setupKiSmall(pPlayer, 7.2f, 1.5f, 0x00FFFF);
+            kiBlast.setupKiBlast(pPlayer, 10.0f,  2.5f, 0x00FFFF, 0x78FFFF, 1.0f, 5);
+
             //kiBlast.setupKiBlast(pPlayer,10,0.5f, 0xFF004A, 2.5f, 100);
             //kiBlast.setupKiLargeBlast(pPlayer,10,2.2f, 0x00FFFF, 4.0f, 100);
             //kiBlast.setupInvertedKiBlast(pPlayer,10,0.5f, 0x362440, 0xFFFFFF, 1.5f, 100);
@@ -50,6 +51,9 @@ public class MerusLaserItem extends Item {
             //kibarrier.setupKiBarrier(pPlayer, 0x43FF00, 0xF2FF00, 100);
             //dragonFist.setupDragonFist(pPlayer, 0.5f, 0, 50);
             //laser.setupCandyBeam(pPlayer, 10.0F, 1.0F, 20);
+
+            //kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 1.5f, 0.5F);
+
         }
 
 
