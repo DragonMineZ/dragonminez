@@ -202,6 +202,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ultimate = new FormConfig.FormData();
 		ultimate.setName(StackForms.ULTIMATE);
 		ultimate.setUnlockOnSkillLevel(1);
+		ultimate.setAuraColor("#FFFFFF");
 		ultimate.setKeepBaseFormHeadBones(true);
 		ultimate.setCustomModel("");
 		ultimate.setStrMultiplier(2.0);
