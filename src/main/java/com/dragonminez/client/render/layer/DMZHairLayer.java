@@ -313,13 +313,14 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private void applyKaiokenToRgb(float[] rgb, int phase) {
-		float intensity = Math.min(0.6f, phase * 0.1f);
+		float intensity = Math.min(0.6f, phase * 0.1f) * AuraTintTracker.darkTintScale(rgb);
 		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + (1.0f * intensity), 0, 1);
 		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity), 0, 1);
 		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity), 0, 1);
 	}
 
 	private void applyAuraTintToRgb(float[] rgb, float[] auraRgb, float intensity) {
+		intensity *= AuraTintTracker.darkTintScale(rgb);
 		rgb[0] = rgb[0] * (1.0f - intensity) + (auraRgb[0] * intensity);
 		rgb[1] = rgb[1] * (1.0f - intensity) + (auraRgb[1] * intensity);
 		rgb[2] = rgb[2] * (1.0f - intensity) + (auraRgb[2] * intensity);

@@ -475,6 +475,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			if (this.currentKaiokenPhase > 0) intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
 			else intensity = 0.2f * this.currentTintProgress;
 
+			intensity *= AuraTintTracker.darkTintScale(r, g, b);
 			if (intensity > 0.001f) {
 				r = r * (1.0f - intensity) + (this.currentAuraColor[0] * intensity);
 				g = g * (1.0f - intensity) + (this.currentAuraColor[1] * intensity);
@@ -600,13 +601,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private void applyKaiokenToRgb(float[] rgb, int phase) {
-		float intensity = Math.min(0.6f, phase * 0.1f);
+		float intensity = Math.min(0.6f, phase * 0.1f) * AuraTintTracker.darkTintScale(rgb);
 		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + intensity, 0.0f, 1.0f);
 		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity), 0.0f, 1.0f);
 		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity), 0.0f, 1.0f);
 	}
 
 	private void applyAuraTintToRgb(float[] rgb, float[] auraRgb, float intensity) {
+		intensity *= AuraTintTracker.darkTintScale(rgb);
 		rgb[0] = rgb[0] * (1.0f - intensity) + (auraRgb[0] * intensity);
 		rgb[1] = rgb[1] * (1.0f - intensity) + (auraRgb[1] * intensity);
 		rgb[2] = rgb[2] * (1.0f - intensity) + (auraRgb[2] * intensity);

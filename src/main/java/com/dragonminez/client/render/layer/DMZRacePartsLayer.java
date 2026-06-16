@@ -366,6 +366,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	private float[] applyAuraTint(float r, float g, float b, int kaiokenPhase, float[] auraColor, float tintProgress) {
 		float intensity = kaiokenPhase > 0 ? Math.min(0.6f, kaiokenPhase * 0.1f) : 0.4f * tintProgress;
+		intensity *= AuraTintTracker.darkTintScale(r, g, b);
 
 		if (intensity <= 0.001f) return new float[]{r, g, b};
 
