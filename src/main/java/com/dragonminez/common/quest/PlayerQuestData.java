@@ -70,6 +70,13 @@ public class PlayerQuestData {
     @Getter
     private String trackedQuestId = null;
 
+    /**
+     * Whether story quests started by this player (or the party they lead) use hard mode..
+     */
+    @Getter
+    @Setter
+    private boolean hardModeEnabled = false;
+
     /** Active party identifier for synchronized story progress. */
     @Getter
     private UUID activePartyId = null;
@@ -184,6 +191,7 @@ public class PlayerQuestData {
         startRequirementTimings.clear();
         hostileNpcKeys.clear();
         trackedQuestId = null;
+        hardModeEnabled = false;
     }
 
     /**
@@ -463,6 +471,8 @@ public class PlayerQuestData {
             tag.putString("trackedQuestId", trackedQuestId);
         }
 
+        tag.putBoolean("hardModeEnabled", hardModeEnabled);
+
         if (!hostileNpcKeys.isEmpty()) {
             ListTag hostileNpcs = new ListTag();
             for (String npcKey : hostileNpcKeys) {
@@ -480,6 +490,7 @@ public class PlayerQuestData {
         startRequirementTimings.clear();
         hostileNpcKeys.clear();
         trackedQuestId = null;
+        hardModeEnabled = false;
 
         ListTag questList = tag.getList("quests", Tag.TAG_COMPOUND);
         for (int i = 0; i < questList.size(); i++) {
@@ -506,6 +517,10 @@ public class PlayerQuestData {
         if (tag.contains("trackedQuestId", Tag.TAG_STRING)) {
             String tracked = tag.getString("trackedQuestId");
             if (!tracked.isBlank()) trackedQuestId = tracked;
+        }
+
+        if (tag.contains("hardModeEnabled", Tag.TAG_BYTE)) {
+            hardModeEnabled = tag.getBoolean("hardModeEnabled");
         }
 
         if (tag.contains("hostileNpcKeys", Tag.TAG_LIST)) {

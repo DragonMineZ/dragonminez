@@ -30,7 +30,6 @@ public class GeneralUserConfig {
 	private Integer energyBarPosY = 10;
 	private Integer staminaBarPosX = 10;
 	private Integer staminaBarPosY = 10;
-	private Boolean storyHardDifficulty = false;
 	private Boolean cameraMovementDuringFlight = true;
 	private Boolean liveCrowdinTranslations = true;
 	private Boolean showAccumulativeDamage = true;

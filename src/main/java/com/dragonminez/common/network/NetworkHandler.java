@@ -183,6 +183,12 @@ public class NetworkHandler {
 				.consumerMainThread(SetTrackedQuestC2S::handle)
 				.add();
 
+		net.messageBuilder(ToggleStoryHardModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ToggleStoryHardModeC2S::new)
+				.encoder(ToggleStoryHardModeC2S::encode)
+				.consumerMainThread(ToggleStoryHardModeC2S::handle)
+				.add();
+
 		net.messageBuilder(CreatePartyC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CreatePartyC2S::new)
 				.encoder(CreatePartyC2S::encode)

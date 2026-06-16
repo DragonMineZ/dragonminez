@@ -143,10 +143,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.INT, userConfig.getStaminaBarPosY(), -1000, 2000,
 				v -> userConfig.setStaminaBarPosY(v.intValue())));
 
-		configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
-				ConfigType.BOOLEAN, userConfig.getStoryHardDifficulty() ? 1 : 0, 0, 1,
-				v -> userConfig.setStoryHardDifficulty(v > 0)));
-
 		configOptions.add(new ConfigOption("config.cameraMovementDuringFlight",
 				ConfigType.BOOLEAN, userConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
 				v -> userConfig.setCameraMovementDuringFlight(v > 0)));

@@ -7,7 +7,6 @@ import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.client.util.TextUtil;
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
 import com.dragonminez.common.network.C2S.ClaimAllQuestRewardsC2S;
@@ -17,6 +16,7 @@ import com.dragonminez.common.network.C2S.LeavePartyC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.C2S.RejectPartyInviteC2S;
 import com.dragonminez.common.network.C2S.SetTrackedQuestC2S;
+import com.dragonminez.common.network.C2S.ToggleStoryHardModeC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
@@ -75,6 +75,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private int tickCount = 0;
 	private int pendingRefreshTicks = 0;
 	private long lastRenderTime = 0;
+
+	private static final long HARD_MODE_TOGGLE_COOLDOWN_MS = 500L;
+	private int hardModeHitX, hardModeHitY, hardModeHitW, hardModeHitH;
+	private boolean hardModeToggleable = false;
+	private long lastHardModeToggle = 0;
 
 	private TexturedTextButton actionButton;
 	private TexturedTextButton claimAllButton;
@@ -747,8 +752,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					} else {
-						boolean isHard = ConfigManager.getUserConfig().getStoryHardDifficulty();
-						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, isHard, ""));
+						// Hard mode is resolved server-side from the shared party preference.
+						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, false, ""));
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					}
@@ -1087,7 +1092,66 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		String zoomText = (int) (zoom * 100) + "%";
 		TextUtil.drawStringWithBorder(graphics, this.font, txt(zoomText), 6, tree.bottom() - 12, 0xFF888888);
 
+		renderHardModeIndicator(graphics, tree, mouseX, mouseY);
+
 		graphics.disableScissor();
+	}
+
+	private void renderHardModeIndicator(GuiGraphics graphics, PanelRect tree, int mouseX, int mouseY) {
+		boolean enabled = statsData != null && statsData.getPlayerQuestData().isHardModeEnabled();
+		hardModeToggleable = canToggleHardMode();
+
+		Component label = tr("gui.dragonminez.quest_tree.hardmode.label");
+		Component state = enabled
+				? tr("gui.dragonminez.quest_tree.hardmode.on")
+				: tr("gui.dragonminez.quest_tree.hardmode.off");
+
+		int labelWidth = this.font.width(label);
+		int totalWidth = labelWidth + 3 + this.font.width(state);
+		int x = tree.right() - totalWidth - 6;
+		int y = tree.y + 6;
+		int stateX = x + labelWidth + 3;
+
+		hardModeHitX = x;
+		hardModeHitY = y - 1;
+		hardModeHitW = totalWidth;
+		hardModeHitH = this.font.lineHeight + 1;
+
+		boolean hovered = hardModeToggleable
+				&& mouseX >= hardModeHitX && mouseX <= hardModeHitX + hardModeHitW
+				&& mouseY >= hardModeHitY && mouseY <= hardModeHitY + hardModeHitH;
+
+		int labelColor = hovered ? 0xFFFFFFFF : 0xFFAAAAAA;
+		int stateColor = enabled
+				? (hovered ? 0xFFFF8080 : 0xFFFF5555)
+				: (hovered ? 0xFF88DD88 : 0xFF66BB66);
+
+		TextUtil.drawStringWithBorder(graphics, this.font, label, x, y, labelColor);
+		TextUtil.drawStringWithBorder(graphics, this.font, state, stateX, y, stateColor);
+	}
+
+	private boolean canToggleHardMode() {
+		if (statsData == null) return false;
+		return !statsData.getPlayerQuestData().isInParty() || isLocalPartyLeader();
+	}
+
+	private boolean handleHardModeToggleClick(double uiMouseX, double uiMouseY) {
+		if (!hardModeToggleable) return false;
+		if (uiMouseX < hardModeHitX || uiMouseX > hardModeHitX + hardModeHitW
+				|| uiMouseY < hardModeHitY || uiMouseY > hardModeHitY + hardModeHitH) {
+			return false;
+		}
+
+		long now = System.currentTimeMillis();
+		if (now - lastHardModeToggle < HARD_MODE_TOGGLE_COOLDOWN_MS) {
+			return true;
+		}
+		lastHardModeToggle = now;
+
+		boolean enabled = statsData != null && statsData.getPlayerQuestData().isHardModeEnabled();
+		NetworkHandler.sendToServer(new ToggleStoryHardModeC2S(!enabled));
+		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
+		return true;
 	}
 
 	private void renderBackgroundGrid(GuiGraphics graphics, PanelRect tree) {
@@ -2351,6 +2415,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		if (button != 0) return false;
+
+		if (handleHardModeToggleClick(uiMouseX, uiMouseY)) {
+			return true;
+		}
 
 		if (handleNavigatorClick(uiMouseX, uiMouseY)) {
 			return true;

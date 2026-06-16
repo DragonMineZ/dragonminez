@@ -272,8 +272,8 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 	private void handleQuestAction(EntryType actionType, String questId) {
 		if (actionType == EntryType.OFFER) {
-			boolean isHard = ConfigManager.getUserConfig().getStoryHardDifficulty();
-			NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, questId, isHard, ""));
+			// Hard mode is resolved server-side.
+			NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, questId, false, ""));
 		} else if (actionType == EntryType.TURN_IN)
 			NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.TURN_IN, questId, false, npcId));
 
