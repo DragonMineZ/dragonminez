@@ -29,7 +29,7 @@ public class MerusLaserItem extends Item {
             SPDragonFistEntity dragonFist = new SPDragonFistEntity(pLevel, pPlayer);
             SPMajinCandyEntity laser = new SPMajinCandyEntity(pLevel, pPlayer);
 
-            //kiBlast.setupKiSmall(pPlayer, 7.2f, 1.5f, 0x00FFFF);
+            kiBlast.setupKiSmall(pPlayer, 7.2f, 1.5f, 0x00FFFF);
             //kiBlast.setupKiBlast(pPlayer,10,0.5f, 0xFF004A, 2.5f, 100);
             //kiBlast.setupKiLargeBlast(pPlayer,10,2.2f, 0x00FFFF, 4.0f, 100);
             //kiBlast.setupInvertedKiBlast(pPlayer,10,0.5f, 0x362440, 0xFFFFFF, 1.5f, 100);
@@ -46,7 +46,7 @@ public class MerusLaserItem extends Item {
             //kidisc.setupKiDisk(pPlayer, 10.0f, 2.0f, 0xF5E027, 2.5f, 100);
             //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 100);
             //kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f, 100);
-            kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
+            //kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
             //kibarrier.setupKiBarrier(pPlayer, 0x43FF00, 0xF2FF00, 100);
             //dragonFist.setupDragonFist(pPlayer, 0.5f, 0, 50);
             //laser.setupCandyBeam(pPlayer, 10.0F, 1.0F, 20);
