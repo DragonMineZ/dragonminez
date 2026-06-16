@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.BiomeTagsProvider;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraftforge.common.data.ExistingFileHelper;
@@ -89,6 +90,36 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.IS_TAIGA)
 				.addTag(BiomeTags.IS_HILL)
 				.addTag(BiomeTags.IS_MOUNTAIN)
-				.add(OverworldBiomes.ROCKY);
+				.add(OverworldBiomes.ROCKY)
+				.addOptionalTag(forge("is_plains"))
+				.addOptionalTag(forge("is_desert"))
+				.addOptionalTag(forge("is_sandy"))
+				.addOptionalTag(forge("is_snowy"))
+				.addOptionalTag(forge("is_swamp"))
+				.addOptionalTag(forge("is_mountain"))
+				.addOptionalTag(forge("is_plateau"))
+				.addOptionalTag(forge("is_slope"))
+				.addOptionalTag(forge("is_peak"))
+				.addOptionalTag(forge("is_lush"))
+				.addOptionalTag(forge("is_coniferous"));
+
+		this.tag(MainTags.Biomes.IS_MOUNTAINLIKE)
+				.replace(false)
+				.addTag(BiomeTags.IS_MOUNTAIN)
+				.addOptionalTag(forge("is_mountain"));
+
+		this.tag(MainTags.Biomes.IS_PLAINSLIKE)
+				.replace(false)
+				.addTag(BiomeTags.HAS_VILLAGE_PLAINS)
+				.addOptionalTag(forge("is_plains"));
+
+		this.tag(MainTags.Biomes.IS_DESERTLIKE)
+				.replace(false)
+				.addTag(BiomeTags.HAS_VILLAGE_DESERT)
+				.addOptionalTag(forge("is_desert"));
+	}
+
+	private static ResourceLocation forge(String path) {
+		return ResourceLocation.fromNamespaceAndPath("forge", path);
 	}
 }

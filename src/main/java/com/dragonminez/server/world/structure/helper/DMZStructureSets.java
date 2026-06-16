@@ -16,7 +16,6 @@ import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
@@ -34,8 +33,6 @@ public class DMZStructureSets {
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod");
 
-	private static final TagKey<Biome> VILLAGE_PLAINS_TAG = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("minecraft", "has_structure/village_plains"));
-
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -48,7 +45,7 @@ public class DMZStructureSets {
 						1.0f,
 						12345678,
 						Optional.empty(),
-						biomes.getOrThrow(VILLAGE_PLAINS_TAG)
+						biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE)
 				)
 		));
 
@@ -119,7 +116,7 @@ public class DMZStructureSets {
 						1.0f,
 						18273645,
 						Optional.empty(),
-						biomes.getOrThrow(BiomeTags.IS_MOUNTAIN)
+						biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE)
 				)
 		));
 
@@ -131,7 +128,7 @@ public class DMZStructureSets {
 						1.0f,
 						13572468,
 						Optional.empty(),
-						biomes.getOrThrow(BiomeTags.HAS_VILLAGE_PLAINS)
+						biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE)
 				)
 		));
 
@@ -155,7 +152,7 @@ public class DMZStructureSets {
 						1.0f,
 						36925814,
 						Optional.empty(),
-						biomes.getOrThrow(BiomeTags.IS_MOUNTAIN)
+						biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE)
 				)
 		));
 
@@ -179,7 +176,7 @@ public class DMZStructureSets {
 						1.0f,
 						55114477,
 						Optional.empty(),
-						biomes.getOrThrow(BiomeTags.HAS_VILLAGE_DESERT)
+						biomes.getOrThrow(MainTags.Biomes.IS_DESERTLIKE)
 				)
 		));
 

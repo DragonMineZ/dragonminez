@@ -110,7 +110,7 @@ public class DMZStructures {
 
 		context.register(GERO_LAB, new JigsawStructure(
 				new Structure.StructureSettings(
-						biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME),
+						biomes.getOrThrow(MainTags.Biomes.IS_LAND),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
@@ -124,7 +124,7 @@ public class DMZStructures {
 
 		context.register(BABIDI, new TallJigsawStructure(
 				new Structure.StructureSettings(
-						biomes.getOrThrow(BiomeTags.IS_MOUNTAIN),
+						biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
@@ -169,7 +169,7 @@ public class DMZStructures {
 
 		context.register(PICCOLO_HOUSE, new JigsawStructure(
 				new Structure.StructureSettings(
-						biomes.getOrThrow(BiomeTags.IS_MOUNTAIN),
+						biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
