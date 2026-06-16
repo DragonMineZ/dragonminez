@@ -85,7 +85,8 @@ public final class QuestService {
 		}
 
 		return StatsProvider.get(StatsCapability.INSTANCE, controller)
-				.map(data -> startQuest(requester, controller, resolved, data, isHardMode))
+				.map(data -> startQuest(requester, controller, resolved, data,
+						data.getPlayerQuestData().isHardModeEnabled()))
 				.orElse(Component.translatable("message.dragonminez.quest.start.unavailable"));
 	}
 
@@ -624,10 +625,14 @@ public final class QuestService {
 		}
 
 		for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
+			if (member.getUUID().equals(controller.getUUID())) {
+				continue;
+			}
+
 			Component blocker = StatsProvider.get(StatsCapability.INSTANCE, member)
 					.map(data -> restartingFailed
-							? QuestAvailabilityChecker.describeStartRequirementFailure(quest, questKey, member, data)
-							: QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, member, data))
+							? QuestAvailabilityChecker.describeNonPositionalStartRequirementFailure(quest, questKey, member, data)
+							: QuestAvailabilityChecker.describeNonPositionalStartBlocker(quest, questKey, member, data))
 					.orElse(Component.translatable("message.dragonminez.quest.start.unavailable"));
 			if (blocker == null) {
 				continue;

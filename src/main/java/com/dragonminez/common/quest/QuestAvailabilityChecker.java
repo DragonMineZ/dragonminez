@@ -17,7 +17,7 @@ public class QuestAvailabilityChecker {
 	public static boolean isAvailable(Quest quest, StatsData statsData) {
 		if (quest == null || statsData == null) return false;
 		if (!quest.hasPrerequisites()) return true;
-		return evaluate(quest.getPrerequisites(), new EvaluationContext(statsData, statsData.getPlayer(), null), false);
+		return evaluate(quest.getPrerequisites(), new EvaluationContext(statsData, statsData.getPlayer(), null), EvalOptions.STRICT);
 	}
 
 	public static boolean areStartRequirementsMet(Quest quest, String questKey, Player player, StatsData statsData) {
@@ -28,7 +28,7 @@ public class QuestAvailabilityChecker {
 		if (!player.level().isClientSide) {
 			primeStartRequirementTiming(quest, questKey, player, statsData);
 		}
-		return evaluate(quest.getStartRequirements(), new EvaluationContext(statsData, player, questKey), false);
+		return evaluate(quest.getStartRequirements(), new EvaluationContext(statsData, player, questKey), EvalOptions.STRICT);
 	}
 
 	public static boolean primeStartRequirementTiming(Quest quest, String questKey, Player player, StatsData statsData) {
@@ -38,7 +38,7 @@ public class QuestAvailabilityChecker {
 		if (!containsTimeCondition(quest.getStartRequirements())) return false;
 
 		EvaluationContext context = new EvaluationContext(statsData, player, questKey);
-		if (!evaluate(quest.getStartRequirements(), context, true)) {
+		if (!evaluate(quest.getStartRequirements(), context, EvalOptions.PRIME_TIMING)) {
 			return false;
 		}
 
@@ -50,20 +50,11 @@ public class QuestAvailabilityChecker {
 	}
 
 	public static Component describeAvailabilityFailure(Quest quest, StatsData statsData) {
-		if (quest == null || statsData == null || !quest.hasPrerequisites()) {
-			return null;
-		}
-		return describeFailure(quest.getPrerequisites(), new EvaluationContext(statsData, statsData.getPlayer(), null), false);
+		return describeAvailabilityFailure(quest, statsData, EvalOptions.STRICT);
 	}
 
 	public static Component describeStartRequirementFailure(Quest quest, String questKey, Player player, StatsData statsData) {
-		if (quest == null || statsData == null || !quest.hasStartRequirements() || player == null) {
-			return null;
-		}
-		if (!player.level().isClientSide) {
-			primeStartRequirementTiming(quest, questKey, player, statsData);
-		}
-		return describeFailure(quest.getStartRequirements(), new EvaluationContext(statsData, player, questKey), false);
+		return describeStartRequirementFailure(quest, questKey, player, statsData, EvalOptions.STRICT, true);
 	}
 
 	public static Component describeQuestStartBlocker(Quest quest, String questKey, Player player, StatsData statsData) {
@@ -72,6 +63,36 @@ public class QuestAvailabilityChecker {
 			return availabilityFailure;
 		}
 		return describeStartRequirementFailure(quest, questKey, player, statsData);
+	}
+
+	public static Component describeNonPositionalStartBlocker(Quest quest, String questKey, Player player, StatsData statsData) {
+		Component availabilityFailure = describeAvailabilityFailure(quest, statsData, EvalOptions.NON_POSITIONAL);
+		if (availabilityFailure != null) {
+			return availabilityFailure;
+		}
+		return describeStartRequirementFailure(quest, questKey, player, statsData, EvalOptions.NON_POSITIONAL, false);
+	}
+
+	public static Component describeNonPositionalStartRequirementFailure(Quest quest, String questKey, Player player, StatsData statsData) {
+		return describeStartRequirementFailure(quest, questKey, player, statsData, EvalOptions.NON_POSITIONAL, false);
+	}
+
+	private static Component describeAvailabilityFailure(Quest quest, StatsData statsData, EvalOptions options) {
+		if (quest == null || statsData == null || !quest.hasPrerequisites()) {
+			return null;
+		}
+		return describeFailure(quest.getPrerequisites(), new EvaluationContext(statsData, statsData.getPlayer(), null), options);
+	}
+
+	private static Component describeStartRequirementFailure(Quest quest, String questKey, Player player, StatsData statsData,
+															 EvalOptions options, boolean primeTiming) {
+		if (quest == null || statsData == null || !quest.hasStartRequirements() || player == null) {
+			return null;
+		}
+		if (primeTiming && !player.level().isClientSide) {
+			primeStartRequirementTiming(quest, questKey, player, statsData);
+		}
+		return describeFailure(quest.getStartRequirements(), new EvaluationContext(statsData, player, questKey), options);
 	}
 
 	static boolean matchesAlignmentCondition(QuestPrerequisites.Condition condition, int alignment) {
@@ -129,30 +150,30 @@ public class QuestAvailabilityChecker {
 		return false;
 	}
 
-	private static boolean evaluate(QuestPrerequisites prereqs, EvaluationContext context, boolean ignoreTimeConditions) {
+	private static boolean evaluate(QuestPrerequisites prereqs, EvaluationContext context, EvalOptions options) {
 		if (prereqs == null || prereqs.conditions().isEmpty()) return true;
 
 		if (prereqs.operator() == QuestPrerequisites.Operator.AND) {
 			for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
-				if (!evaluateCondition(condition, context, ignoreTimeConditions)) return false;
+				if (!evaluateCondition(condition, context, options)) return false;
 			}
 			return true;
 		}
 
 		for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
-			if (evaluateCondition(condition, context, ignoreTimeConditions)) return true;
+			if (evaluateCondition(condition, context, options)) return true;
 		}
 		return false;
 	}
 
-	private static Component describeFailure(QuestPrerequisites prereqs, EvaluationContext context, boolean ignoreTimeConditions) {
+	private static Component describeFailure(QuestPrerequisites prereqs, EvaluationContext context, EvalOptions options) {
 		if (prereqs == null || prereqs.conditions().isEmpty()) {
 			return null;
 		}
 
 		if (prereqs.operator() == QuestPrerequisites.Operator.AND) {
 			for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
-				Component failure = describeConditionFailure(condition, context, ignoreTimeConditions);
+				Component failure = describeConditionFailure(condition, context, options);
 				if (failure != null) {
 					return failure;
 				}
@@ -162,7 +183,7 @@ public class QuestAvailabilityChecker {
 
 		Component firstFailure = null;
 		for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
-			Component failure = describeConditionFailure(condition, context, ignoreTimeConditions);
+			Component failure = describeConditionFailure(condition, context, options);
 			if (failure == null) {
 				return null;
 			}
@@ -173,15 +194,15 @@ public class QuestAvailabilityChecker {
 		return firstFailure;
 	}
 
-	private static Component describeConditionFailure(QuestPrerequisites.Condition condition, EvaluationContext context, boolean ignoreTimeConditions) {
+	private static Component describeConditionFailure(QuestPrerequisites.Condition condition, EvaluationContext context, EvalOptions options) {
 		if (condition == null) return Component.translatable("message.dragonminez.quest.start.unavailable");
 		if (condition.isNestedGroup()) {
-			return describeFailure(condition.getNested(), context, ignoreTimeConditions);
+			return describeFailure(condition.getNested(), context, options);
 		}
 		if (condition.getType() == null) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
-		if (evaluateCondition(condition, context, ignoreTimeConditions)) {
+		if (evaluateCondition(condition, context, options)) {
 			return null;
 		}
 		Component base = QuestTextFormatter.describeRequirement(condition, context.toRequirementContext());
@@ -222,12 +243,13 @@ public class QuestAvailabilityChecker {
 		};
 	}
 
-	private static boolean evaluateCondition(QuestPrerequisites.Condition condition, EvaluationContext context, boolean ignoreTimeConditions) {
+	private static boolean evaluateCondition(QuestPrerequisites.Condition condition, EvaluationContext context, EvalOptions options) {
 		if (condition == null) return false;
 		if (condition.isNestedGroup()) {
-			return evaluate(condition.getNested(), context, ignoreTimeConditions);
+			return evaluate(condition.getNested(), context, options);
 		}
 		if (condition.getType() == null) return false;
+		if (options.isAutoSatisfied(condition.getType())) return true;
 
 		StatsData data = context.data();
 		PlayerQuestData pqd = data.getPlayerQuestData();
@@ -279,7 +301,6 @@ public class QuestAvailabilityChecker {
 				yield QuestLocationHelper.isInDimension(level, dimensionId);
 			}
 			case TIME -> {
-				if (ignoreTimeConditions) yield true;
 				if (context.questKey() == null || context.questKey().isBlank()) yield false;
 
 				QuestPrerequisites.TimeMode timeMode = condition.getTimeMode();
@@ -313,6 +334,26 @@ public class QuestAvailabilityChecker {
 				yield playerClass != null && playerClass.equalsIgnoreCase(requiredClass);
 			}
 		};
+	}
+
+	private record EvalOptions(boolean ignoreTime, boolean ignorePositional) {
+		static final EvalOptions STRICT = new EvalOptions(false, false);
+		static final EvalOptions PRIME_TIMING = new EvalOptions(true, false);
+		static final EvalOptions NON_POSITIONAL = new EvalOptions(false, true);
+
+		boolean isAutoSatisfied(QuestPrerequisites.ConditionType type) {
+			if (type == null) return false;
+			if (ignorePositional) {
+				switch (type) {
+					case BIOME, DIMENSION, STRUCTURE, TIME -> {
+						return true;
+					}
+					default -> {
+					}
+				}
+			}
+			return ignoreTime && type == QuestPrerequisites.ConditionType.TIME;
+		}
 	}
 
 	private record EvaluationContext(StatsData data, Player player, String questKey) {
