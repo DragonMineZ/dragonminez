@@ -11,6 +11,11 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.GenericDirtMessageScreen;
+import net.minecraft.client.gui.screens.LevelLoadingScreen;
+import net.minecraft.client.gui.screens.ProgressScreen;
+import net.minecraft.client.gui.screens.ReceivingLevelScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.ResourceLocation;
@@ -29,9 +34,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public final class SkinCacheManager {
     public enum State { OK, NO_PREMIUM, NO_SKIN, TIMEOUT }
@@ -55,6 +60,9 @@ public final class SkinCacheManager {
     private static final int READ_TIMEOUT_MS = 6000;
     private static final long THROTTLE_DELAY_MS = 150L;
 
+    private static final int MAX_CONCURRENT_DOWNLOADS = 2;
+    private static final long GATE_POLL_MS = 500L;
+
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type INDEX_TYPE = new TypeToken<HashMap<String, CacheEntry>>() {}.getType();
 
@@ -62,9 +70,12 @@ public final class SkinCacheManager {
     private static final Map<String, ResourceLocation> registered = new ConcurrentHashMap<>();
     private static final Set<String> inFlight = ConcurrentHashMap.newKeySet();
 
-    private static ExecutorService downloadExecutor;
+    private static final BlockingQueue<Task> downloadQueue = new LinkedBlockingQueue<>();
+
     private static Path cacheDir;
     private static boolean initialized;
+
+    private record Task(String username, boolean force) {}
 
     private SkinCacheManager() {}
 
@@ -72,11 +83,7 @@ public final class SkinCacheManager {
         if (initialized) return;
         initialized = true;
 
-        downloadExecutor = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r, "DMZ-SkinCache");
-            t.setDaemon(true);
-            return t;
-        });
+        startWorkers();
 
         try {
             cacheDir = Minecraft.getInstance().gameDirectory.toPath().resolve(CACHE_DIR_NAME);
@@ -116,20 +123,60 @@ public final class SkinCacheManager {
     }
 
     private static void queueResolve(String username, boolean forceRecheck) {
+        if (username == null || username.isEmpty()) return;
         String key = username.toLowerCase();
         if (!inFlight.add(key)) return;
-        downloadExecutor.submit(() -> {
+        downloadQueue.add(new Task(username, forceRecheck));
+    }
+
+    private static void startWorkers() {
+        for (int i = 0; i < MAX_CONCURRENT_DOWNLOADS; i++) {
+            Thread t = new Thread(SkinCacheManager::workerLoop, "DMZ-SkinCache-" + (i + 1));
+            t.setDaemon(true);
+            t.start();
+        }
+    }
+
+    private static void workerLoop() {
+        while (true) {
+            Task task;
             try {
-                resolveBlocking(username, forceRecheck);
+                task = downloadQueue.take();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            String key = task.username().toLowerCase();
+            try {
+                awaitDownloadableState();
+                resolveBlocking(task.username(), task.force());
                 Thread.sleep(THROTTLE_DELAY_MS);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
+                return;
             } catch (Exception e) {
-                LogUtil.error(Env.CLIENT, "SkinCache: error resolving {}: {}", username, e.getMessage());
+                LogUtil.error(Env.CLIENT, "SkinCache: error resolving {}: {}", task.username(), e.getMessage());
             } finally {
                 inFlight.remove(key);
             }
-        });
+        }
+    }
+
+    private static void awaitDownloadableState() throws InterruptedException {
+        while (!canDownloadNow()) {
+            Thread.sleep(GATE_POLL_MS);
+        }
+    }
+
+    private static boolean canDownloadNow() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null) return false;
+        if (mc.getOverlay() != null) return false;
+        Screen screen = mc.screen;
+        return !(screen instanceof LevelLoadingScreen
+                || screen instanceof ReceivingLevelScreen
+                || screen instanceof ProgressScreen
+                || screen instanceof GenericDirtMessageScreen);
     }
 
     private static void resolveBlocking(String username, boolean forceRecheck) {
