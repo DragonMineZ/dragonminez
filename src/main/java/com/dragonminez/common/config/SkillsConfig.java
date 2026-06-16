@@ -59,6 +59,8 @@ public class SkillsConfig {
         kiSkills.add("emperor_death_beam");
 		kiSkills.add("ki_barrage");
 		kiSkills.add("final_explosion");
+		kiSkills.add("soul_punisher");
+		kiSkills.add("fake_moon");
 
 		skills.put("kamehameha", new SkillCosts(List.of(2000)));
 		skills.put("galick_gun", new SkillCosts(List.of(2000)));
@@ -76,6 +78,8 @@ public class SkillsConfig {
 		skills.put("supernova_cooler", new SkillCosts(List.of(15000)));
 		skills.put("final_explosion", new SkillCosts(List.of(20000)));
 		skills.put("final_flash", new SkillCosts(List.of(5000)));
+		skills.put("soul_punisher", new SkillCosts(List.of(25000)));
+		skills.put("fake_moon", new SkillCosts(List.of(3000)));
 
 		strikeSkills.add("meteor");
 		strikeSkills.add("dragon_fist");
@@ -326,7 +330,12 @@ public class SkillsConfig {
 		vegetaSkills.add("defense_penetration");
 		vegetaSkills.add("potentialunlock");
 		vegetaSkills.add("deadly_dance_vegetto");
+		vegetaSkills.add("fake_moon");
 		skillOfferings.put("vegeta", vegetaSkills);
+
+		List<String> oldKaiSkills = new ArrayList<>();
+		oldKaiSkills.add("soul_punisher");
+		skillOfferings.put("oldkai", oldKaiSkills);
 
 		List<String> gohanSkills = new ArrayList<>();
 		gohanSkills.add("masenko");

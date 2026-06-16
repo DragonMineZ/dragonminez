@@ -23,6 +23,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import org.joml.Matrix4f;
 
 public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
@@ -84,13 +85,27 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
             switch (renderType) {
                 case 4:
-                    renderLegacyBlockModel(stack, entity, immediateBuffer, ageInTicks, coreColor, borderColor, packedLight);
-                    stack.translate(0, 0.35, 0);
-                    renderCastigadorGrande(stack, immediateBuffer, ageInTicks, borderColor);
-                    renderCastigadorSpikes(stack, immediateBuffer, ageInTicks, ColorUtils.rgbIntToFloat(0xFF96FF));
-                    renderCastigadorGrande(stack, immediateBuffer, ageInTicks, ColorUtils.rgbIntToFloat(0xFF579E));
-                    renderCastigadorSpikes(stack, immediateBuffer, ageInTicks, ColorUtils.rgbIntToFloat(0x70FF7D));
-                    renderCastigadorGrande(stack, immediateBuffer, ageInTicks, ColorUtils.rgbIntToFloat(0x70F5FF));
+                    float[] soulWhite = ColorUtils.rgbIntToFloat(0xFFFFFF);
+                    stack.pushPose();
+                    stack.scale(0.15F, 0.15F, 0.15F);
+                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, soulWhite, soulWhite, soulWhite, 1.0F, ageInTicks, true, null);
+                    stack.popPose();
+                    stack.pushPose();
+                    stack.scale(0.4F, 0.4F, 0.4F);
+                    renderSoulPunisherSpots(stack, immediateBuffer, ageInTicks);
+                    renderCastigadorSpikes(stack, immediateBuffer, ageInTicks, soulWhite);
+                    stack.popPose();
+                    break;
+                case 11:
+                    float[] moonCore = coreColor;
+                    float[] moonOutline = outlineColor;
+                    stack.pushPose();
+                    stack.scale(0.5F, 0.5F, 0.5F);
+                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, moonCore, moonCore, moonOutline, 1.0F, ageInTicks, true, null);
+                    float moonPulse = 1.12F + (float) Math.sin(ageInTicks * 0.1F) * 0.08F;
+                    stack.scale(moonPulse, moonPulse, moonPulse);
+                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, moonCore, moonOutline, moonOutline, 0.25F, ageInTicks, false, null);
+                    stack.popPose();
                     break;
                 case 6:
                     applyJitter(stack, ageInTicks, 0.01F);
@@ -130,7 +145,13 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                     break;
             }
 
+            PoseStack modelViewStack = RenderSystem.getModelViewStack();
+            modelViewStack.pushPose();
+            modelViewStack.setIdentity();
+            RenderSystem.applyModelViewMatrix();
             immediateBuffer.endBatch();
+            modelViewStack.popPose();
+            RenderSystem.applyModelViewMatrix();
 
             ShaderInstance shader = DMZShaders.ki3dShader;
             if (shader != null) shader.clear();
@@ -200,17 +221,17 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
     private void renderCastigadorSpikes(PoseStack poseStack, MultiBufferSource buffer, float ageInTicks, float[] colorRGB) {
         float rotationTime = ageInTicks * 3.55F;
-        float rawSin = net.minecraft.util.Mth.sin(ageInTicks * 0.1F);
+        float rawSin = Mth.sin(ageInTicks * 0.1F);
         float normalizedFade = (rawSin + 1.0F) / 2.0F;
         float fade = 0.4F + (normalizedFade * 0.6F);
-        float intensity = 0.6F;
+        float intensity = 0.4F;
 
         int r = (int)(colorRGB[0] * 255.0F);
         int g = (int)(colorRGB[1] * 255.0F);
         int b = (int)(colorRGB[2] * 255.0F);
         int alpha = (int)(155.0F * fade);
 
-        net.minecraft.util.RandomSource randomsource = net.minecraft.util.RandomSource.create(432L);
+        RandomSource randomsource = RandomSource.create(432L);
         VertexConsumer vertexconsumer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
 
         for(int i = 0; (float)i < (intensity + intensity * intensity) / 2.0F * 60.0F; ++i) {
@@ -240,43 +261,40 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         }
     }
 
-    private void renderCastigadorGrande(PoseStack poseStack, MultiBufferSource buffer, float ageInTicks, float[] colorRGB) {
-        float rotationTime = ageInTicks * 0.35F;
-        float rawSin = net.minecraft.util.Mth.sin(ageInTicks * 0.1F);
-        float normalizedFade = (rawSin + 1.0F) / 2.0F;
-        float fade = 0.4F + (normalizedFade * 0.6F);
-        float intensity = 0.6F;
-
-        int r = (int)(colorRGB[0] * 255.0F);
-        int g = (int)(colorRGB[1] * 255.0F);
-        int b = (int)(colorRGB[2] * 255.0F);
-        int alpha = (int)(55.0F);
-
-        net.minecraft.util.RandomSource randomsource = net.minecraft.util.RandomSource.create(432L);
+    private void renderSoulPunisherSpots(PoseStack poseStack, MultiBufferSource buffer, float ageInTicks) {
         VertexConsumer vertexconsumer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
+        RandomSource posRandom = RandomSource.create(91L);
+        int timeSeed = (int) (ageInTicks * 2.0F);
+        int spotCount = 30;
 
-        for(int i = 0; (float)i < (intensity + intensity * intensity) / 2.0F * 60.0F; ++i) {
+        for (int i = 0; i < spotCount; i++) {
+            float px = (posRandom.nextFloat() * 2.0F - 1.0F) * 0.42F;
+            float py = (posRandom.nextFloat() * 2.0F - 1.0F) * 0.42F;
+            float pz = (posRandom.nextFloat() * 2.0F - 1.0F) * 0.42F;
+            float blobSize = 0.10F + posRandom.nextFloat() * 0.08F;
+
+            RandomSource colorRandom = RandomSource.create((long) i * 9781L + (long) timeSeed * 131L);
+            int r = colorRandom.nextInt(256);
+            int g = colorRandom.nextInt(256);
+            int b = colorRandom.nextInt(256);
+
             poseStack.pushPose();
-            poseStack.mulPose(Axis.XP.rotationDegrees(randomsource.nextFloat() * 360.0F));
-            poseStack.mulPose(Axis.YP.rotationDegrees(randomsource.nextFloat() * 360.0F));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(randomsource.nextFloat() * 360.0F));
-            poseStack.mulPose(Axis.XP.rotationDegrees(randomsource.nextFloat() * 360.0F));
-            poseStack.mulPose(Axis.YP.rotationDegrees(randomsource.nextFloat() * 360.0F));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(randomsource.nextFloat() * 360.0F + rotationTime * 90.0F));
+            poseStack.translate(px, py, pz);
+            poseStack.mulPose(Axis.XP.rotationDegrees(colorRandom.nextFloat() * 360.0F));
+            poseStack.mulPose(Axis.YP.rotationDegrees(colorRandom.nextFloat() * 360.0F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(colorRandom.nextFloat() * 360.0F));
 
-            float width = randomsource.nextFloat() * 1.2F;
-            float length = randomsource.nextFloat() * 0.2F;
             org.joml.Matrix4f matrix4f = poseStack.last().pose();
 
-            vertex01(vertexconsumer, matrix4f, alpha, r, g, b);
-            vertex2(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
-            vertex3(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
-            vertex01(vertexconsumer, matrix4f, alpha, r, g, b);
-            vertex3(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
-            vertex4(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
-            vertex01(vertexconsumer, matrix4f, alpha, r, g, b);
-            vertex4(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
-            vertex2(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
+            vertex01(vertexconsumer, matrix4f, 255, r, g, b);
+            vertex2(vertexconsumer, matrix4f, blobSize, blobSize, r, g, b, 255);
+            vertex3(vertexconsumer, matrix4f, blobSize, blobSize, r, g, b, 255);
+            vertex01(vertexconsumer, matrix4f, 255, r, g, b);
+            vertex3(vertexconsumer, matrix4f, blobSize, blobSize, r, g, b, 255);
+            vertex4(vertexconsumer, matrix4f, blobSize, blobSize, r, g, b, 255);
+            vertex01(vertexconsumer, matrix4f, 255, r, g, b);
+            vertex4(vertexconsumer, matrix4f, blobSize, blobSize, r, g, b, 255);
+            vertex2(vertexconsumer, matrix4f, blobSize, blobSize, r, g, b, 255);
 
             poseStack.popPose();
         }

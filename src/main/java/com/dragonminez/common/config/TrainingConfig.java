@@ -101,7 +101,7 @@ public class TrainingConfig {
 	@Getter
 	@NoArgsConstructor
 	public static class MemoryConfig extends MinigameSettings {
-		{ masterName = "piccolo"; }
+		{ masterName = "gohan"; }
 
 		private int baseSequenceLength = 3;
 		private int sequenceLengthPerLevel = 1;

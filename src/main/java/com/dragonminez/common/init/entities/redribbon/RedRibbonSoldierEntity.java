@@ -66,7 +66,7 @@ public class RedRibbonSoldierEntity extends RedRibbonEntity {
 
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData, @Nullable CompoundTag pDataTag) {
-        rerollSkinOwner();
+        if (getSkinOwner().isEmpty()) rerollSkinOwner();
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData, pDataTag);
     }
 }

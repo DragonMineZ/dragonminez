@@ -103,7 +103,13 @@ public class TechniqueDispatcher {
                 break;
             case MEDIUM_BALL:
                 KiBlastEntity medBall = new KiBlastEntity(level, owner);
-                medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+                if ("soul_punisher".equals(data.getId())) {
+                    medBall.setupSoulPunisherPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
+                } else if ("fake_moon".equals(data.getId())) {
+                    medBall.setupFakeMoonPlayer(owner, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
+                } else {
+                    medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+                }
                 medBall.setColorOutline(data.getColorOutline());
                 medBall.setKiType(kiTypeOrdinal);
                 medBall.setTechniqueId(data.getId());

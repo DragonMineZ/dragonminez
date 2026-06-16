@@ -44,7 +44,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			"textures/gui/menu/menunpc.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
-	private static final Set<String> TEXT_MASTERS = Set.of("karin", "guru", "dende", "enma", "baba", "popo", "gero", "toribot", "oldkai", "babidi");
+	private static final Set<String> TEXT_MASTERS = Set.of("karin", "guru", "dende", "enma", "baba", "popo", "gero", "toribot", "babidi");
 	private static final Set<String> SERVICE_MASTERS = Set.of("piccolo", "oldkai", "babidi");
 
 	private static final int MAX_VISIBLE = 7;

@@ -1,11 +1,14 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.particles.KiSheddingParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
@@ -31,6 +34,14 @@ import java.util.List;
 public class KiBlastEntity extends AbstractKiProjectile {
 
     private boolean hasSpawnedSplash = false;
+
+    public static final int RENDER_SOUL_PUNISHER = 4;
+    public static final int RENDER_FAKE_MOON = 11;
+    private static final double FAKE_MOON_CLIMB_BLOCKS = 30.0D;
+    private static final double FAKE_MOON_CLIMB_SPEED = 1.0D;
+    private static final int FAKE_MOON_GLOW_TICKS = 20 * 20;
+    private transient double fakeMoonStartY = Double.NaN;
+    private transient int fakeMoonFrozenTick = -1;
 
     private boolean isDetonating = false;
     private float currentDetonationRadius = 0.0F;
@@ -89,6 +100,53 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
         this.setupKiBlastPlayer(owner, damage, speed, color, color, 0xFFFFFF, size);
+    }
+
+    public void setupSoulPunisherPlayer(LivingEntity owner, float damage, float speed, int color, int colorOutline, float size) {
+        this.setOwner(owner);
+        this.setKiRenderType(RENDER_SOUL_PUNISHER);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, color, colorOutline);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(100);
+        this.setCastOffsets(0.0f, 0.0F, 2.0F);
+        updatePositionRelativeToOwner(owner);
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
+    public void setupFakeMoonPlayer(LivingEntity owner, float speed, int color, int colorOutline, float size) {
+        this.setOwner(owner);
+        this.setKiRenderType(RENDER_FAKE_MOON);
+        this.setSize(size);
+        this.setKiDamage(0.0F);
+        this.setKiSpeed(speed);
+        this.setColors(color, color, colorOutline);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(60);
+        this.setCastOffsets(0.0F, 0.5F, 0.5F);
+        updatePositionRelativeToOwner(owner);
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
+    private boolean isSoulPunisher() {
+        return "soul_punisher".equals(this.getTechniqueId());
+    }
+
+    private float soulPunisherDamage(Entity target, float baseDamage) {
+        boolean reduced = false;
+        if (target instanceof Player targetPlayer) {
+            var resolved = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).resolve();
+            if (resolved.isPresent() && resolved.get().getResources().getAlignment() >= 41) reduced = true;
+        }
+        if (!reduced && this.getOwner() instanceof Player ownerPlayer
+                && TargetHelper.getRelation(ownerPlayer, target) == TargetHelper.Relation.NEUTRAL) {
+            reduced = true;
+        }
+        return reduced ? baseDamage * 0.25F : baseDamage;
     }
 
     public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
@@ -702,6 +760,31 @@ public class KiBlastEntity extends AbstractKiProjectile {
             return;
         }
 
+        if (type == RENDER_FAKE_MOON) {
+            if (!this.level().isClientSide) {
+                if (this.isFiring()) {
+                    if (Double.isNaN(this.fakeMoonStartY)) this.fakeMoonStartY = this.getY();
+                    if (this.fakeMoonFrozenTick < 0) {
+                        if (this.getY() - this.fakeMoonStartY < FAKE_MOON_CLIMB_BLOCKS) {
+                            this.setDeltaMovement(0.0D, FAKE_MOON_CLIMB_SPEED, 0.0D);
+                        } else {
+                            this.setDeltaMovement(0.0D, 0.0D, 0.0D);
+                            this.fakeMoonFrozenTick = this.tickCount;
+                            this.setParked(true);
+                        }
+                    } else {
+                        this.setDeltaMovement(0.0D, 0.0D, 0.0D);
+                        if (this.tickCount - this.fakeMoonFrozenTick >= FAKE_MOON_GLOW_TICKS) {
+                            this.discard();
+                        }
+                    }
+                } else {
+                    this.setDeltaMovement(0.0D, 0.0D, 0.0D);
+                }
+            }
+            return;
+        }
+
         if (!isCasting && this.isParked() && ownerEntity instanceof LivingEntity owner) {
             Vec3 eyePos = owner.getEyePosition();
             Vec3 look = owner.getLookAngle();
@@ -740,13 +823,14 @@ public class KiBlastEntity extends AbstractKiProjectile {
                     }
                 }
 
-                if (this.tickCount % 10 == 0) {
+                if (!this.isSoulPunisher() && this.tickCount % 10 == 0) {
                     pulseAreaDamage();
                 }
             }
 
             if (this.tickCount >= this.getMaxLife()) {
-                this.explodeAndDie();
+                if (this.isSoulPunisher()) this.discard();
+                else this.explodeAndDie();
                 return;
             }
         }
@@ -902,6 +986,32 @@ public class KiBlastEntity extends AbstractKiProjectile {
             return;
         }
 
+        if (this.getKiRenderType() == RENDER_FAKE_MOON) {
+            return;
+        }
+
+        if (this.isSoulPunisher()) {
+            if (!this.level().isClientSide) {
+                Entity targetEntity = pResult.getEntity();
+                if (this.shouldDamage(targetEntity)) {
+                    float dealt = this.soulPunisherDamage(targetEntity, this.getKiDamage());
+                    boolean wasHit = this.applyDamageOrHeal(targetEntity, dealt);
+                    if (wasHit) {
+                        this.onSuccessfulHit(targetEntity);
+                        if (this.level() instanceof ServerLevel serverLevel) {
+                            serverLevel.sendParticles(
+                                    MainParticles.KI_SPLASH_WAVE.get(),
+                                    targetEntity.getX(), targetEntity.getY() + (targetEntity.getBbHeight() / 2.0), targetEntity.getZ(),
+                                    0, (double) this.getColorBorder(), (double) this.getSize(), 0.0D, 1.0D
+                            );
+                        }
+                    }
+                }
+                this.discard();
+            }
+            return;
+        }
+
         super.onHitEntity(pResult);
 
         if (!this.level().isClientSide) {
@@ -954,6 +1064,15 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         int type = this.getKiRenderType();
+        if (type == RENDER_FAKE_MOON) {
+            return;
+        }
+
+        if (this.isSoulPunisher()) {
+            if (!this.level().isClientSide) this.discard();
+            return;
+        }
+
         if (type == 5 || type == 6) {
         } else {
             super.onHitBlock(pResult);

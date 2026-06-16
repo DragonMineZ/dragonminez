@@ -2,6 +2,7 @@ package com.dragonminez.common.util;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.lists.SaiyanForms;
@@ -10,6 +11,8 @@ import java.util.*;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public class TransformationsHelper {
 
@@ -384,9 +387,10 @@ public class TransformationsHelper {
 		if (!isOozaruForm(nextForm)) return false;
 
 		Level playerLevel = player.level();
-		return playerLevel.isNight()
+		boolean realMoon = playerLevel.isNight()
 				&& isFullMoon(playerLevel)
 				&& isLookingAtMoon(player);
+		return realMoon || isLookingAtFakeMoon(player);
 	}
 
 	private static boolean isFullMoon(Level level) {
@@ -396,6 +400,22 @@ public class TransformationsHelper {
 
 	private static boolean isLookingAtMoon(Player player) {
 		return player.level().canSeeSky(player.blockPosition()) && player.getLookAngle().y > 0.95D;
+	}
+
+	private static boolean isLookingAtFakeMoon(Player player) {
+		Level level = player.level();
+		Vec3 eye = player.getEyePosition();
+		Vec3 look = player.getLookAngle().normalize();
+		double range = 200.0D;
+		Vec3 end = eye.add(look.scale(range));
+		AABB searchBox = player.getBoundingBox().expandTowards(look.scale(range)).inflate(3.0D);
+
+		for (KiBlastEntity ki : level.getEntitiesOfClass(KiBlastEntity.class, searchBox)) {
+			if (ki.getKiRenderType() != KiBlastEntity.RENDER_FAKE_MOON || !ki.isParked()) continue;
+			AABB hitbox = ki.getBoundingBox().inflate(2.0D);
+			if (hitbox.clip(eye, end).isPresent()) return true;
+		}
+		return false;
 	}
 
 	public static FormConfig.FormData getNextAvailableStackForm(StatsData statsData) {
