@@ -13,6 +13,8 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.BlockItem;
@@ -553,6 +555,15 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Override
 	public void dragonminez$playMeleeAnimation(String animationName, boolean isOffhand, float speedMultiplier) {
+		AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
+		boolean isLocal = self == Minecraft.getInstance().player;
+		boolean vanillaFirstPerson = Minecraft.getInstance().options.getCameraType().isFirstPerson() && !FirstPersonManager.shouldRenderFirstPerson(self);
+		if (isLocal && vanillaFirstPerson) {
+			this.dragonminez$currentMeleeAnim = null;
+			this.dragonminez$isOffhandAttack = isOffhand;
+			return;
+		}
+
 		String resolved = CombatAnimationResolver.resolveAttack(animationName, isOffhand);
 		this.dragonminez$currentMeleeAnim = resolved.isEmpty() ? "fallback" : resolved;
 		this.dragonminez$currentMeleeSpeed = Math.max(0.15F, speedMultiplier);

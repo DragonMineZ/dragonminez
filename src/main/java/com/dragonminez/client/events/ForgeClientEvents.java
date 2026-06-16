@@ -12,6 +12,7 @@ import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
@@ -21,7 +22,9 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.mixin.client.MinecraftAccessor;
+import com.dragonminez.mixin.common.LivingEntityAccessor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.util.Mth;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
@@ -156,7 +159,10 @@ public class ForgeClientEvents {
 		}
 
 		if (mc.options.keyAttack.isDown()) {
-			if (mc.player.getAttackStrengthScale(0.5F) >= 1.0F) {
+			float cappedDelay = PlayerAttackHelper.getAttackCooldownTicksCapped(mc.player);
+			int ticker = ((LivingEntityAccessor) mc.player).getAttackStrengthTicker();
+			float cooldownProgress = Mth.clamp((ticker + 0.5F) / cappedDelay, 0.0F, 1.0F);
+			if (cooldownProgress >= 1.0F) {
 				((MinecraftAccessor) mc).setAttackCooldown(0);
 			}
 		}

@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.skills.Skills;
 import net.minecraft.util.Mth;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraftforge.common.ForgeMod;
@@ -68,10 +69,13 @@ public class PlayerAttackHelper {
         return false;
     }
 
+    public static final double MIN_ATTACK_SPEED = 0.25;
+
     public static float getAttackCooldownTicksCapped(Player player) {
         float intervalCap = ConfigManager.getCombatConfig().getAttackIntervalCap();
-        float rawDelay = player.getCurrentItemAttackStrengthDelay();
-        if (!Float.isFinite(rawDelay) || rawDelay <= 0.0F) rawDelay = intervalCap;
+        double attackSpeed = player.getAttributeValue(Attributes.ATTACK_SPEED);
+        if (!Double.isFinite(attackSpeed) || attackSpeed < MIN_ATTACK_SPEED) attackSpeed = MIN_ATTACK_SPEED;
+        float rawDelay = (float) (1.0 / attackSpeed * 20.0);
         float capped = Math.max(rawDelay, intervalCap);
         return Math.max(2.0f, Mth.clamp(capped, intervalCap, 200.0F));
     }
