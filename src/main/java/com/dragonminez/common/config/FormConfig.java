@@ -41,6 +41,8 @@ public class FormConfig {
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
 		private String bodyColor3 = "";
+		private String extraFormLayer = "";
+		private String extraFormColor = "";
 		private String hairType = "";
 		private String forcedHairCode = "";
 		private String hairColor = "";
@@ -97,6 +99,7 @@ public class FormConfig {
 		private transient float[] rgbEye1Color;
 		private transient float[] rgbEye2Color;
 		private transient float[] rgbAuraColor;
+		private transient float[] rgbExtraFormColor;
 
 		public Double getStrMultiplier() {
 			return Math.max(0.01, strMultiplier);
@@ -235,6 +238,14 @@ public class FormConfig {
 			return !bodyColor1.isEmpty() || !bodyColor2.isEmpty() || !bodyColor3.isEmpty();
 		}
 
+		public String getExtraFormLayer() {
+			return extraFormLayer != null ? extraFormLayer.trim() : "";
+		}
+
+		public boolean hasExtraFormLayer() {
+			return !getExtraFormLayer().isEmpty();
+		}
+
 		public Boolean hasDefinedHairType() {
 			return hairType != null && !hairType.isEmpty();
 		}
@@ -313,6 +324,11 @@ public class FormConfig {
 		public float[] getRgbAuraColor() {
 			if (rgbAuraColor == null && auraColor != null && !auraColor.isEmpty()) rgbAuraColor = com.dragonminez.client.util.ColorUtils.hexToRgb(auraColor);
 			return rgbAuraColor;
+		}
+
+		public float[] getRgbExtraFormColor() {
+			if (rgbExtraFormColor == null && extraFormColor != null && !extraFormColor.isEmpty()) rgbExtraFormColor = com.dragonminez.client.util.ColorUtils.hexToRgb(extraFormColor);
+			return rgbExtraFormColor;
 		}
 
 		@Setter

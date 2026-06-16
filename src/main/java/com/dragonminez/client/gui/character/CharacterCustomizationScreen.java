@@ -9,6 +9,7 @@ import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.hair.HairRenderer;
+import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.client.util.TextureCounter;
@@ -126,12 +127,14 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		private final String activeForm;
 		private final String activeStackFormGroup;
 		private final String activeStackForm;
+		private final boolean androidUpgraded;
 
-		private ActiveFormSnapshot(String activeFormGroup, String activeForm, String activeStackFormGroup, String activeStackForm) {
+		private ActiveFormSnapshot(String activeFormGroup, String activeForm, String activeStackFormGroup, String activeStackForm, boolean androidUpgraded) {
 			this.activeFormGroup = activeFormGroup;
 			this.activeForm = activeForm;
 			this.activeStackFormGroup = activeStackFormGroup;
 			this.activeStackForm = activeStackForm;
+			this.androidUpgraded = androidUpgraded;
 		}
 	}
 
@@ -758,7 +761,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 320.0D);
 
-		InventoryScreen.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, pose, cameraOrientation, player);
+		DMZSkinLayer.PREVIEW_MODE = previewApplied;
+		try {
+			InventoryScreen.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, pose, cameraOrientation, player);
+		} finally {
+			DMZSkinLayer.PREVIEW_MODE = false;
+		}
 
 		if (tab == TabId.AURA_CLASS) {
 			RenderSystem.enableBlend();
@@ -1497,7 +1505,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 					currentCharacter.getActiveFormGroup(),
 					currentCharacter.getActiveForm(),
 					currentCharacter.getActiveStackFormGroup(),
-					currentCharacter.getActiveStackForm()
+					currentCharacter.getActiveStackForm(),
+					stats.getStatus().isAndroidUpgraded()
 			);
 		});
 		return snapshot[0];
@@ -1512,6 +1521,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				currentCharacter.clearActiveForm();
 			} else {
 				currentCharacter.setActiveForm(option.groupName, option.formName);
+				if ("androidforms".equalsIgnoreCase(option.groupName)) stats.getStatus().setAndroidUpgraded(true);
 			}
 			currentCharacter.clearActiveStackForm();
 		});
@@ -1523,6 +1533,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			Character currentCharacter = stats.getCharacter();
 			currentCharacter.setActiveForm(snapshot.activeFormGroup, snapshot.activeForm);
 			currentCharacter.setActiveStackForm(snapshot.activeStackFormGroup, snapshot.activeStackForm);
+			stats.getStatus().setAndroidUpgraded(snapshot.androidUpgraded);
 		});
 	}
 
@@ -1831,7 +1842,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 320.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, pose, cameraOrientation, player);
+		DMZSkinLayer.PREVIEW_MODE = previewApplied;
+		try {
+			InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, pose, cameraOrientation, player);
+		} finally {
+			DMZSkinLayer.PREVIEW_MODE = false;
+		}
 		graphics.pose().popPose();
 		graphics.disableScissor();
 

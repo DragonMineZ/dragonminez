@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 
 public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	public static boolean PREVIEW_MODE = false;
@@ -54,8 +53,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private float currentTintProgress = 0.0f;
 	private float[] currentAuraColor = new float[]{1.0f, 1.0f, 1.0f};
 
+	private static final String SSJ4_FUR_LAYER = "ssj4fur";
+
 	private float currentSsj4Alpha = 0.0f;
-	private String currentSsj4Key = null;
 	private float[] currentSsj4Color = null;
 
 	public DMZSkinLayer(GeoRenderer<T> entityRendererIn) {
@@ -85,27 +85,35 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		this.currentKaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
 
 		Ssj4Overlay ssj4 = resolveSsj4Overlay(stats);
-		String ssj4Key = ssj4 != null ? ssj4.key() : null;
 		float[] ssj4Color = ssj4 != null ? ssj4.color() : null;
 		float ssj4Target = ssj4 != null ? ssj4.target() : 0.0f;
-		if (PREVIEW_MODE) {
-			this.currentSsj4Alpha = ssj4Target;
-			this.currentSsj4Key = ssj4Key;
-			this.currentSsj4Color = ssj4Color;
-		} else {
-			this.currentSsj4Alpha = Ssj4FadeTracker.update(playerId, gameTime, ssj4Target, ssj4Key, ssj4Color);
-			this.currentSsj4Key = ssj4Key != null ? ssj4Key : Ssj4FadeTracker.lastKey(playerId);
-			this.currentSsj4Color = ssj4Color != null ? ssj4Color : Ssj4FadeTracker.lastColor(playerId);
-		}
 
 		float alpha = player.isSpectator() ? 0.15f : 1.0f;
 		TransformationMaskBufferSource maskBuffer = bufferSource instanceof TransformationMaskBufferSource mask ? mask : null;
 
-		BiConsumer<ResourceLocation, float[]> geoConsumer = (texture, color) -> renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
+		List<BodyLayerFadeTracker.FadingLayer> fadingLayers = new ArrayList<>();
+		SkinGathererProvider.BodyLayerSink geoConsumer = new SkinGathererProvider.BodyLayerSink() {
+			@Override
+			public void base(ResourceLocation texture, float[] color) {
+				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
+			}
+
+			@Override
+			public void fading(String layerId, ResourceLocation texture, float[] color) {
+				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color));
+			}
+		};
 
 		SkinGathererProvider.INSTANCE.gatherBodyLayers(player, stats, partialTick, geoConsumer);
-		renderSsj4Fur(model, poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay, alpha);
+		if (ssj4 != null) {
+			ResourceLocation furTex = getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + ssj4.key() + "_layer1.png"));
+			fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(SSJ4_FUR_LAYER, furTex, ssj4.color(), ssj4.target()));
+		}
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(player, stats, partialTick, geoConsumer);
+		renderFadingBodyLayers(model, poseStack, animatable, bufferSource, playerId, gameTime, fadingLayers, partialTick, packedLight, packedOverlay, alpha);
+
+		this.currentSsj4Alpha = PREVIEW_MODE ? ssj4Target : BodyLayerFadeTracker.getProgress(playerId, SSJ4_FUR_LAYER);
+		this.currentSsj4Color = ssj4Color != null ? ssj4Color : BodyLayerFadeTracker.getColor(playerId, SSJ4_FUR_LAYER);
 
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(false);
 		renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
@@ -566,14 +574,22 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		return b2;
 	}
 
-	private void renderSsj4Fur(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, float partialTick, int packedLight, int packedOverlay, float baseAlpha) {
-		if (this.currentSsj4Alpha <= 0.001f || this.currentSsj4Key == null || this.currentSsj4Color == null) return;
+	private void renderFadingBodyLayers(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int entityId, long gameTime, List<BodyLayerFadeTracker.FadingLayer> activeLayers, float partialTick, int packedLight, int packedOverlay, float baseAlpha) {
+		List<BodyLayerFadeTracker.RenderEntry> toRender;
+		if (PREVIEW_MODE) {
+			toRender = new ArrayList<>();
+			for (BodyLayerFadeTracker.FadingLayer l : activeLayers) toRender.add(new BodyLayerFadeTracker.RenderEntry(l.texture(), l.color(), l.target()));
+		} else {
+			toRender = BodyLayerFadeTracker.update(entityId, gameTime, activeLayers);
+		}
 
-		float furAlpha = baseAlpha * this.currentSsj4Alpha;
-		ResourceLocation tex = getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + this.currentSsj4Key + "_layer1.png"));
-		RenderType renderType = furAlpha < 1.0f ? RenderType.entityTranslucent(tex) : RenderType.entityCutoutNoCull(tex);
-		float[] color = this.currentSsj4Color;
-		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, furAlpha, true);
+		for (BodyLayerFadeTracker.RenderEntry entry : toRender) {
+			float a = baseAlpha * entry.alpha();
+			if (a <= 0.001f) continue;
+			float[] color = entry.color();
+			RenderType renderType = a < 1.0f ? RenderType.entityTranslucent(entry.texture()) : RenderType.entityCutoutNoCull(entry.texture());
+			renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, a, true);
+		}
 	}
 
 	private void renderFadingColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha) {

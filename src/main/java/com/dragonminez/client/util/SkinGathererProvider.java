@@ -26,6 +26,17 @@ public class SkinGathererProvider {
 
 	public static SkinGathererProvider INSTANCE = new SkinGathererProvider();
 
+	public interface BodyLayerSink extends BiConsumer<ResourceLocation, float[]> {
+		@Override
+		default void accept(ResourceLocation texture, float[] color) {
+			base(texture, color);
+		}
+
+		void base(ResourceLocation texture, float[] color);
+
+		void fading(String layerId, ResourceLocation texture, float[] color);
+	}
+
 	private static final Map<String, ResourceLocation> TEXTURE_CACHE = new ConcurrentHashMap<>();
 
 	private static final float[] WHITE_COLOR = {1.0f, 1.0f, 1.0f};
@@ -35,6 +46,16 @@ public class SkinGathererProvider {
 
 	public static ResourceLocation getCachedTexture(String path) {
 		return TEXTURE_CACHE.computeIfAbsent(path, p -> ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, p));
+	}
+
+	private void emitFadingLayer(BiConsumer<ResourceLocation, float[]> consumer, String layerId, ResourceLocation texture, float[] color) {
+		if (consumer instanceof BodyLayerSink sink) sink.fading(layerId, texture, color);
+		else consumer.accept(texture, color);
+	}
+
+	private ResourceLocation resolveConfiguredTexture(String path) {
+		if (path.contains(":")) return ResourceLocation.tryParse(path);
+		return getCachedTexture(path);
 	}
 
 	public void gatherBodyLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
@@ -98,6 +119,17 @@ public class SkinGathererProvider {
 				if (nextForm.getRgbBodyColor2() != null) b2 = DMZSkinLayer.lerpColor(factor, b2, nextForm.getRgbBodyColor2());
 				if (nextForm.getRgbBodyColor3() != null) b3 = DMZSkinLayer.lerpColor(factor, b3, nextForm.getRgbBodyColor3());
 				if (nextForm.getRgbHairColor() != null) hair = DMZSkinLayer.lerpColor(factor, hair, nextForm.getRgbHairColor());
+			}
+		}
+
+		FormConfig.FormData extraLayerForm = null;
+		if (hasStackForm && character.getActiveStackFormData().hasExtraFormLayer()) extraLayerForm = character.getActiveStackFormData();
+		else if (hasForm && character.getActiveFormData().hasExtraFormLayer()) extraLayerForm = character.getActiveFormData();
+		if (extraLayerForm != null) {
+			ResourceLocation extraTex = resolveConfiguredTexture(extraLayerForm.getExtraFormLayer());
+			if (extraTex != null) {
+				float[] extraColor = extraLayerForm.getRgbExtraFormColor() != null ? extraLayerForm.getRgbExtraFormColor() : WHITE_COLOR;
+				emitFadingLayer(consumer, "extraform", DMZSkinLayer.getSafeTexture(extraTex), extraColor);
 			}
 		}
 
@@ -165,7 +197,7 @@ public class SkinGathererProvider {
 		if (!canBeUpgraded || !stats.getStatus().isAndroidUpgraded()) return;
 
 		String androidPath = character.getGender().equals(Character.GENDER_FEMALE) ? "textures/entity/races/female_android.png" : "textures/entity/races/male_android.png";
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(androidPath)), WHITE_COLOR);
+		emitFadingLayer(consumer, "android", DMZSkinLayer.getSafeTexture(getCachedTexture(androidPath)), WHITE_COLOR);
 	}
 
 	public void gatherTattooLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
@@ -264,8 +296,8 @@ public class SkinGathererProvider {
             prefix = folder + "metalcore_";
             fallbackPrefix = folder + "metalcore_";
 
-            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), ColorUtils.hexToRgb("#9BA377"));
-            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), ColorUtils.hexToRgb("#20211A"));
+            emitFadingLayer(consumer, "metalcore_1", DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), ColorUtils.hexToRgb("#9BA377"));
+            emitFadingLayer(consumer, "metalcore_2", DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), ColorUtils.hexToRgb("#20211A"));
 
         }
 	}

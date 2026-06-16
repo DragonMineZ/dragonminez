@@ -7,8 +7,8 @@ import com.dragonminez.client.model.KiClawlanceModel;
 import com.dragonminez.client.model.KiWeaponModelLoader;
 import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.layer.BodyLayerFadeTracker;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
-import com.dragonminez.client.render.layer.Ssj4FadeTracker;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.SkinGathererProvider;
@@ -48,6 +48,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jspecify.annotations.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -140,9 +143,18 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
 		boolean forceVanilla = (raceConfig != null && raceConfig.getUseVanillaSkin());
 
-		java.util.function.BiConsumer<ResourceLocation, float[]> layerConsumer = (texture, color) -> {
-			applyKaiokenTint(color, kaiokenPhase, colorBuffer);
-			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, texture, colorBuffer);
+		final List<BodyLayerFadeTracker.FadingLayer> fadingLayers = new ArrayList<>();
+		SkinGathererProvider.BodyLayerSink layerConsumer = new SkinGathererProvider.BodyLayerSink() {
+			@Override
+			public void base(ResourceLocation texture, float[] color) {
+				applyKaiokenTint(color, kaiokenPhase, colorBuffer);
+				renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, texture, colorBuffer);
+			}
+
+			@Override
+			public void fading(String layerId, ResourceLocation texture, float[] color) {
+				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color));
+			}
 		};
 
 		if (forceVanilla) {
@@ -151,9 +163,10 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		} else {
 			float pt = Minecraft.getInstance().getFrameTime();
 			SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
-			renderSsj4HandFur(pPoseStack, pBuffer, pCombinedLight, pPlayer, stats, pRendererArm, kaiokenPhase);
+			addSsj4HandFur(stats, fadingLayers);
 			SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
 			SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
+			renderFadingHandLayers(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm, kaiokenPhase, fadingLayers);
 		}
 
 		renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm);
@@ -243,23 +256,21 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         }
     }
 
-	private void renderSsj4HandFur(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, StatsData stats, ModelPart arm, int kaiokenPhase) {
+	private void addSsj4HandFur(StatsData stats, List<BodyLayerFadeTracker.FadingLayer> out) {
 		DMZSkinLayer.Ssj4Overlay ssj4 = DMZSkinLayer.resolveSsj4Overlay(stats);
-		String key = ssj4 != null ? ssj4.key() : null;
-		float[] color = ssj4 != null ? ssj4.color() : null;
-		float target = ssj4 != null ? ssj4.target() : 0.0F;
+		if (ssj4 == null) return;
+		ResourceLocation tex = DMZSkinLayer.getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + ssj4.key() + "_layer1.png"));
+		out.add(new BodyLayerFadeTracker.FadingLayer("ssj4fur", tex, ssj4.color(), ssj4.target()));
+	}
 
+	private void renderFadingHandLayers(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, ModelPart arm, int kaiokenPhase, List<BodyLayerFadeTracker.FadingLayer> active) {
 		int id = player.getId();
 		long gameTime = player.level().getGameTime();
-		float furAlpha = Ssj4FadeTracker.update(id, gameTime, target, key, color);
-
-		String furKey = key != null ? key : Ssj4FadeTracker.lastKey(id);
-		float[] furColor = color != null ? color : Ssj4FadeTracker.lastColor(id);
-		if (furAlpha <= 0.001F || furKey == null || furColor == null) return;
-
-		applyKaiokenTint(furColor, kaiokenPhase, colorBuffer);
-		ResourceLocation tex = SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + furKey + "_layer1.png");
-		renderPart(ps, buffer, light, arm, tex, colorBuffer, furAlpha);
+		for (BodyLayerFadeTracker.RenderEntry entry : BodyLayerFadeTracker.update(id, gameTime, active)) {
+			if (entry.alpha() <= 0.001F) continue;
+			applyKaiokenTint(entry.color(), kaiokenPhase, colorBuffer);
+			renderPart(ps, buffer, light, arm, entry.texture(), colorBuffer, entry.alpha());
+		}
 	}
 
 	private void renderPart(PoseStack stack, MultiBufferSource buffer, int light, ModelPart part, ResourceLocation texture, float[] rgb) {
