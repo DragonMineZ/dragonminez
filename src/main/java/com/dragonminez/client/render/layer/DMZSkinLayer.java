@@ -181,7 +181,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 		}
 
-		final float[] hairTint = applyColorTint(finalTint, stats);
+		float[] publishedHair = DMZHairLayer.getPublishedHairBaseColor(player.getId(), player.level().getGameTime());
+		final float[] hairTint = publishedHair != null ? publishedHair : applyColorTint(finalTint, stats);
 
 		model.getBone("head").ifPresent(headBone -> {
 			float originalZ = headBone.getPosZ();
@@ -479,16 +480,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha, boolean applyTransformationTint) {
 		if (applyTransformationTint) {
-			float intensity;
-			if (this.currentKaiokenPhase > 0) intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
-			else intensity = 0.2f * this.currentTintProgress;
-
-			intensity *= AuraTintTracker.darkTintScale(r, g, b);
-			if (intensity > 0.001f) {
-				r = r * (1.0f - intensity) + (this.currentAuraColor[0] * intensity);
-				g = g * (1.0f - intensity) + (this.currentAuraColor[1] * intensity);
-				b = b * (1.0f - intensity) + (this.currentAuraColor[2] * intensity);
-			}
+			float[] rgb = {r, g, b};
+			tintInPlace(rgb);
+			r = rgb[0];
+			g = rgb[1];
+			b = rgb[2];
 		}
 
 		poseStack.pushPose();
@@ -600,20 +596,19 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private float[] applyColorTint(float[] rgb, StatsData stats) {
 		if (rgb == null || rgb.length < 3) return rgb;
-
-		int phase = TransformationsHelper.getKaiokenPhase(stats);
-		if (phase <= 0 && this.currentTintProgress <= 0.0f) return rgb;
+		if (this.currentKaiokenPhase <= 0 && this.currentTintProgress <= 0.0f) return rgb;
 
 		float[] tinted = rgb.clone();
-		if (phase > 0) {
-			applyKaiokenToRgb(tinted, phase);
-		} else {
-			float intensity = 0.2f * this.currentTintProgress;
-			float[] auraRgb = getTopAuraColor(stats);
-			applyAuraTintToRgb(tinted, auraRgb, intensity);
-		}
-
+		tintInPlace(tinted);
 		return tinted;
+	}
+
+	private void tintInPlace(float[] rgb) {
+		if (this.currentKaiokenPhase > 0) {
+			applyKaiokenToRgb(rgb, this.currentKaiokenPhase);
+		} else if (this.currentTintProgress > 0.0f) {
+			applyAuraTintToRgb(rgb, this.currentAuraColor, 0.2f * this.currentTintProgress);
+		}
 	}
 
 	private void applyKaiokenToRgb(float[] rgb, int phase) {

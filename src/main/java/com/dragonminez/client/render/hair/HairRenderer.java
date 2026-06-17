@@ -35,7 +35,7 @@ public class HairRenderer {
 	private static final ResourceLocation HAIR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/hair.png");
 	private static final HairFace[] FACES = HairFace.values();
 
-	public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hairFrom, CustomHair hairTo, float transitionFactor, Character character, StatsData stats, AbstractClientPlayer player, float[] rgbFrom, float[] rgbTo, float partialTick, int packedLight, int packedOverlay, float baseAlpha, float physicsLodMultiplier) {
+	public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hairFrom, CustomHair hairTo, float transitionFactor, Character character, StatsData stats, AbstractClientPlayer player, float[] rgbFrom, float[] rgbTo, boolean forceColorFrom, boolean forceColorTo, float partialTick, int packedLight, int packedOverlay, float baseAlpha, float physicsLodMultiplier) {
 		if (hairFrom == null) hairFrom = new CustomHair();
 		if (hairTo == null) hairTo = hairFrom;
 
@@ -119,7 +119,7 @@ public class HairRenderer {
 				int strandId;
 
 				if (useFromOnly) {
-					float[] fromRgb = s1.hasCustomColor() ? s1.getRgbColor() : rgbFrom;
+					float[] fromRgb = (!forceColorFrom && s1.hasCustomColor()) ? s1.getRgbColor() : rgbFrom;
 					tempRgb[0] = fromRgb[0];
 					tempRgb[1] = fromRgb[1];
 					tempRgb[2] = fromRgb[2];
@@ -139,7 +139,7 @@ public class HairRenderer {
 					length = s1.getLength();
 					strandId = s1.getId();
 				} else if (useToOnly) {
-					float[] toRgb = s2.hasCustomColor() ? s2.getRgbColor() : rgbTo;
+					float[] toRgb = (!forceColorTo && s2.hasCustomColor()) ? s2.getRgbColor() : rgbTo;
 					tempRgb[0] = toRgb[0];
 					tempRgb[1] = toRgb[1];
 					tempRgb[2] = toRgb[2];
@@ -161,7 +161,7 @@ public class HairRenderer {
 				} else {
 					HairStrand colorFrom = v1 ? s1 : s2;
 					HairStrand colorTo = v2 ? s2 : s1;
-					fillInterpolatedRgb(colorFrom, colorTo, transitionFactor, rgbFrom, rgbTo, tempRgb);
+					fillInterpolatedRgb(colorFrom, colorTo, transitionFactor, rgbFrom, rgbTo, forceColorFrom, forceColorTo, tempRgb);
 
 					float fromRotX = v1 ? s1.getRotationX() : (s2 != null ? s2.getRotationX() : 0.0f);
 					float fromRotY = v1 ? s1.getRotationY() : (s2 != null ? s2.getRotationY() : 0.0f);
@@ -231,12 +231,12 @@ public class HairRenderer {
 		}
 	}
 
-	private static void fillInterpolatedRgb(HairStrand s1, HairStrand s2, float factor, float[] globalRgbFrom, float[] globalRgbTo, float[] out) {
+	private static void fillInterpolatedRgb(HairStrand s1, HairStrand s2, float factor, float[] globalRgbFrom, float[] globalRgbTo, boolean forceColorFrom, boolean forceColorTo, float[] out) {
 		float[] effectiveFrom = globalRgbFrom;
-		if (s1 != null && s1.hasCustomColor()) effectiveFrom = s1.getRgbColor();
+		if (!forceColorFrom && s1 != null && s1.hasCustomColor()) effectiveFrom = s1.getRgbColor();
 
 		float[] effectiveTo = globalRgbTo;
-		if (s2 != null && s2.hasCustomColor()) effectiveTo = s2.getRgbColor();
+		if (!forceColorTo && s2 != null && s2.hasCustomColor()) effectiveTo = s2.getRgbColor();
 
 		if (factor <= 0.0f) {
 			out[0] = effectiveFrom[0];
