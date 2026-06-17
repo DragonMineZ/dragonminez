@@ -127,6 +127,12 @@ public class SagaMoviesEntity {
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
         }
+
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_slug";
+        }
     }
 
     public static class SlugGiantEntity extends DBSagasEntity {
@@ -153,6 +159,12 @@ public class SagaMoviesEntity {
 
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
+        }
+
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_slug";
         }
     }
 
@@ -264,6 +276,12 @@ public class SagaMoviesEntity {
 
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
+        }
+
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_cooler";
         }
     }
 
