@@ -54,13 +54,14 @@ public final class KiBloomRenderer {
 		if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("bloomMode").set(0.0f);
 
 		RenderSystem.enableCull();
-		RenderSystem.depthMask(true);
 		RenderSystem.disableBlend();
 
 		main.bindWrite(false);
 
 		bloomChain.process(partialTick);
 		main.bindWrite(false);
+
+		RenderSystem.depthMask(true);
 	}
 
 	private static PostChain ensureChain(Minecraft mc, RenderTarget main) {
