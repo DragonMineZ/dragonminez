@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities;
 
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.alignment.NpcDispositionService;
@@ -9,15 +10,17 @@ import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -35,7 +38,10 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
-	@Getter
+    private static final EntityDataAccessor<Float> SCALE_VAL = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.FLOAT);
+
+
+    @Getter
 	protected String masterName = null;
 
 	protected MastersEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
@@ -114,7 +120,37 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	public void checkDespawn() {
 	}
 
-	@Override
+    public void setScaleVal(float scale) {
+        this.entityData.set(SCALE_VAL, scale);
+    }
+
+    public float getScale() {
+        float customScale = this.entityData.get(SCALE_VAL);
+        return customScale > 0.0F ? customScale : 1.0F;
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(SCALE_VAL, 1.0F);
+
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putFloat("EntityScale", this.entityData.get(SCALE_VAL));
+
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        if (pCompound.contains("EntityScale")) {this.setScaleVal(pCompound.getFloat("EntityScale"));} else {this.setScaleVal(1.0F);}
+
+    }
+
+    @Override
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
 		if (pHand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
 

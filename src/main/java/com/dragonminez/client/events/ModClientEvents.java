@@ -23,6 +23,7 @@ import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.SkinCacheManager;
 import com.dragonminez.client.util.TextureCounter;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
@@ -206,36 +207,13 @@ public class ModClientEvents {
         // Quest NPC — single renderer for all data-driven quest NPCs | usa un renderer genérico para los NPCs de misiones, después usa gráficos.json para asignar modelos/texturas específicos a cada npcId
         event.registerEntityRenderer(MainEntities.QUEST_NPC.get(), QuestNPCRenderer::new);
 
-        //SAIBAMANS
+        for (var sagaEntity : MainEntities.getSagaEntities()) {
+            event.registerEntityRenderer((EntityType) sagaEntity.get(), context -> new DBSagasRenderer(context));
+        }
+
         regRender(event, SagaSaibamanRenderer::new,
                 MainEntities.SAGA_SAIBAMAN, MainEntities.SAGA_SAIBAMAN2, MainEntities.SAGA_SAIBAMAN3,
                 MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6);
-
-        // SAGAS
-        regRender(event, DBSagasRenderer::new,
-                MainEntities.SAGA_GOKU_EARLY, MainEntities.SAGA_GOKU_EARLY_NOWEIGHTS, MainEntities.SAGA_PICCOLO_EARLY, MainEntities.SAGA_TIEN_EARLY, MainEntities.SAGA_YAMCHA,
-                MainEntities.SAGA_RADITZ, MainEntities.SAGA_NAPPA, MainEntities.SAGA_VEGETA, MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU, MainEntities.SAGA_CHAOZ,
-                MainEntities.SAGA_FRIEZA_SOLDIER, MainEntities.SAGA_FRIEZA_SOLDIER2, MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER,
-                MainEntities.SAGA_CUI, MainEntities.SAGA_DODORIA, MainEntities.SAGA_VEGETA_NAMEK, MainEntities.SAGA_ZARBON, MainEntities.SAGA_ZARBON_TRANSF,
-                MainEntities.SAGA_GULDO, MainEntities.SAGA_RECOOME, MainEntities.SAGA_BURTER, MainEntities.SAGA_JEICE, MainEntities.SAGA_GINYU, MainEntities.SAGA_GINYU_GOKU, MainEntities.SAGA_NAIL,
-                MainEntities.SAGA_FREEZER_FIRST, MainEntities.SAGA_FREEZER_SECOND, MainEntities.SAGA_FREEZER_THIRD, MainEntities.SAGA_FREEZER_BASE, MainEntities.SAGA_FREEZER_FP,
-                MainEntities.SAGA_GOKU_MID_BASE, MainEntities.SAGA_GOKU_MID_SSJ, MainEntities.SAGA_KID_GOHAN, MainEntities.SAGA_KRILLIN,
-                MainEntities.SAGA_MECHA_FRIEZA, MainEntities.SAGA_KING_COLD, MainEntities.SAGA_DRGERO, MainEntities.SAGA_A19, MainEntities.SAGA_A18, MainEntities.SAGA_A17, MainEntities.SAGA_A16,
-                MainEntities.SAGA_CELL_IMPERFECT, MainEntities.SAGA_PICCOLO_KAMI,  MainEntities.SAGA_VEGETA_MID, MainEntities.SAGA_VEGETA_MID_SSJ, MainEntities.SAGA_VEGETA_MID_SSG2,
-                MainEntities.SAGA_FUTURE_TRUNKS_KID_BASE, MainEntities.SAGA_FUTURE_TRUNKS_KID_SSJ, MainEntities.SAGA_FUTURE_TRUNKS_BASE, MainEntities.SAGA_FUTURE_TRUNKS_SSJ,
-                MainEntities.SAGA_FUTURE_TRUNKS_SSG3, MainEntities.SAGA_GOHAN_MID_BASE, MainEntities.SAGA_GOHAN_MID_SSJ, MainEntities.SAGA_GOHAN_MID_SSJ2, MainEntities.SAGA_FUTURE_GOHAN_BASE, MainEntities.SAGA_FUTURE_GOHAN_SSJ,
-                MainEntities.SAGA_CELL_SEMIPERFECT, MainEntities.SAGA_CELL_PERFECT, MainEntities.SAGA_CELL_SUPERPERFECT, MainEntities.SAGA_CELL_JR,
-                MainEntities.SAGA_GOKU_END_BASE, MainEntities.SAGA_GOKU_END_SSJ, MainEntities.SAGA_GOKU_END_SSJ2, MainEntities.SAGA_GOKU_END_SSJ3,
-                MainEntities.SAGA_VEGETA_END_BASE, MainEntities.SAGA_VEGETA_END_SSJ, MainEntities.SAGA_VEGETA_END_SSJ2, MainEntities.SAGA_VEGETA_MAJIN,
-                MainEntities.SAGA_GOHAN_END_BASE, MainEntities.SAGA_GOHAN_END_SSJ, MainEntities.SAGA_GOHAN_END_SSJ2, MainEntities.SAGA_GOHAN_END_ULTIMATE,
-                MainEntities.SAGA_GOTEN, MainEntities.SAGA_GOTEN_SSJ, MainEntities.SAGA_KID_TRUNKS, MainEntities.SAGA_KID_TRUNKS_SSJ,  MainEntities.SAGA_VIDEL,  MainEntities.SAGA_BULMA,
-                MainEntities.SAGA_GOTENKS, MainEntities.SAGA_GOTENKS_SSJ, MainEntities.SAGA_GOTENKS_SSJ3,
-                MainEntities.SAGA_SHIN, MainEntities.SAGA_KIBITO, MainEntities.SAGA_SPOPOVITCH, MainEntities.SAGA_PUIPUI, MainEntities.SAGA_YAKON, MainEntities.SAGA_DABURA,
-                MainEntities.SAGA_BABIDI, MainEntities.SAGA_BUU_FAT, MainEntities.SAGA_EVILBUU, MainEntities.SAGA_SUPERBUU,  MainEntities.SAGA_SUPERBUU_PICCOLO,
-                MainEntities.SAGA_SUPERBUU_GOTENKS, MainEntities.SAGA_SUPERBUU_GOHAN, MainEntities.SAGA_KIDBUU, MainEntities.MINI_BUU,
-                MainEntities.SHADOW_DUMMY);
-
-
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);

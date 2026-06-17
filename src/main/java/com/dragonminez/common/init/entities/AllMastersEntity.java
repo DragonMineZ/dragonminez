@@ -7,6 +7,22 @@ import net.minecraft.world.level.Level;
 
 public class AllMastersEntity {
 
+    public static class MasterBeerus extends MastersEntity {
+        public MasterBeerus(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "beerus";
+        }
+    }
+
+    public static class MasterWhis extends MastersEntity {
+        public MasterWhis(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "whis";
+        }
+    }
+
     public static class MasterPiccolo extends MastersEntity {
         public MasterPiccolo(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
@@ -36,6 +52,7 @@ public class AllMastersEntity {
             super(pEntityType, pLevel);
             this.setPersistenceRequired();
             this.masterName = "oldkai";
+            this.setScaleVal(0.8f);
         }
     }
 
@@ -44,6 +61,7 @@ public class AllMastersEntity {
             super(pEntityType, pLevel);
             this.setPersistenceRequired();
             this.masterName = "cell";
+            this.setScaleVal(1.1f);
         }
     }
 
@@ -60,6 +78,7 @@ public class AllMastersEntity {
             super(pEntityType, pLevel);
             this.setPersistenceRequired();
             this.masterName = "frieza";
+            this.setScaleVal(0.9f);
         }
     }
 
@@ -84,6 +103,7 @@ public class AllMastersEntity {
             super(pEntityType, pLevel);
             this.setPersistenceRequired();
             this.masterName = "krillin";
+            this.setScaleVal(0.8f);
         }
     }
 

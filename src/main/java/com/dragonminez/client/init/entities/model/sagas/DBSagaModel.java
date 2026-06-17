@@ -2,6 +2,7 @@ package com.dragonminez.client.init.entities.model.sagas;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -11,24 +12,43 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
+
+    private static final Map<ResourceLocation, Boolean> RESOURCE_CACHE = new HashMap<>();
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/sagas/" + animatable.getGeckolibModelName() + ".geo.json");
+        ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/sagas/" + animatable.getGeckolibModelName() + ".geo.json");
+
+        boolean exists = RESOURCE_CACHE.computeIfAbsent(original, this::resourceExists);
+        return exists ? original : ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/robotxv.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-
         int variant = animatable.getTextureVariant();
 
-        // Si la variante es 0 no tiene sufijo
         String variantSuffix = (variant == 0) ? "" : "_" + variant;
+        ResourceLocation variantTexture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + variantSuffix + ".png");
 
-        //saga_piccolo.png (si es 0) o saga_piccolo_1.png (si es 1)
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + variantSuffix + ".png");
+        boolean variantExists = RESOURCE_CACHE.computeIfAbsent(variantTexture, this::resourceExists);
+        if (variantExists) {
+            return variantTexture;
+        }
+
+        if (variant > 0) {
+            ResourceLocation baseTexture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + ".png");
+            boolean baseExists = RESOURCE_CACHE.computeIfAbsent(baseTexture, this::resourceExists);
+            if (baseExists) {
+                return baseTexture;
+            }
+        }
+
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/robotxv.png");
     }
 
     @Override
@@ -48,4 +68,7 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
         }
     }
 
+    private boolean resourceExists(ResourceLocation location) {
+        return Minecraft.getInstance().getResourceManager().getResource(location).isPresent();
+    }
 }
