@@ -104,6 +104,7 @@ public class ConfigCommand {
 		try {
 			ConfigManager.reloadSpecificConfig(configFile);
 			String jsonPayload = ConfigManager.getSpecificConfigJson(configFile);
+			if (jsonPayload == null || jsonPayload.isBlank()) return;
 
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(configFile, jsonPayload), player);

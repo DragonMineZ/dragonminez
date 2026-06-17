@@ -74,6 +74,7 @@ public class ReloadCommand {
 				if (scope.includesConfig()) {
 					for (String file : availableConfigs) {
 						String jsonPayload = ConfigManager.getSpecificConfigJson(file);
+						if (jsonPayload == null || jsonPayload.isBlank()) continue;
 						NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload), player);
 					}
 

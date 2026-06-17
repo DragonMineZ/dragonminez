@@ -91,6 +91,7 @@ public class ConfigManager {
 			RACE_FORMS.clear();
 			LOADED_RACES.clear();
 			STACK_FORMS.clear();
+			CACHED_CONFIG_FILES.clear();
 			AnimationCache.clear();
 
 			loadGeneralConfigs();
@@ -607,13 +608,17 @@ public class ConfigManager {
 	}
 
 	public static RaceStatsConfig getRaceStats(String raceName) {
-		if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(raceName.toLowerCase())) return SERVER_SYNCED_STATS.get(raceName.toLowerCase());
-		return RACE_STATS.getOrDefault(raceName.toLowerCase(), RACE_STATS.get("human"));
+		String key = raceName != null ? raceName.toLowerCase() : "human";
+		if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(key)) return SERVER_SYNCED_STATS.get(key);
+		RaceStatsConfig config = RACE_STATS.getOrDefault(key, RACE_STATS.get("human"));
+		return config != null ? config : createDefaultStatsConfig();
 	}
 
 	public static RaceCharacterConfig getRaceCharacter(String raceName) {
-		if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase())) return SERVER_SYNCED_CHARACTER.get(raceName.toLowerCase());
-		return RACE_CHARACTER.getOrDefault(raceName.toLowerCase(), RACE_CHARACTER.get("human"));
+		String key = raceName != null ? raceName.toLowerCase() : "human";
+		if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(key)) return SERVER_SYNCED_CHARACTER.get(key);
+		RaceCharacterConfig config = RACE_CHARACTER.getOrDefault(key, RACE_CHARACTER.get("human"));
+		return config != null ? config : createDefaultCharacterConfig(key, false);
 	}
 
 	public static List<String> getLoadedRaces() {
@@ -807,10 +812,14 @@ public class ConfigManager {
 	}
 
 	public static String getSpecificConfigJson(String configFilePath) {
-		try { return Files.readString(CONFIG_DIR.resolve(configFilePath + ".json")); }
-		catch (IOException e) {
+		Path path = CONFIG_DIR.resolve(configFilePath + ".json");
+		if (!Files.exists(path)) return null;
+		try {
+			String content = Files.readString(path);
+			return (content == null || content.isBlank()) ? null : content;
+		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Could not read config for sync: " + configFilePath);
-			return "{}";
+			return null;
 		}
 	}
 

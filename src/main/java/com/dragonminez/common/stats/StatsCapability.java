@@ -80,6 +80,7 @@ public class StatsCapability {
 			List<String> availableConfigs = ConfigManager.getAvailableConfigFiles();
 			for (String file : availableConfigs) {
 				String jsonPayload = ConfigManager.getSpecificConfigJson(file);
+				if (jsonPayload == null || jsonPayload.isBlank()) continue;
 				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload), serverPlayer);
 			}
 			NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), serverPlayer);
