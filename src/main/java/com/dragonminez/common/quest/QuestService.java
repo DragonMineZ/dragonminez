@@ -84,10 +84,12 @@ public final class QuestService {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 
-		return StatsProvider.get(StatsCapability.INSTANCE, controller)
-				.map(data -> startQuest(requester, controller, resolved, data,
-						data.getPlayerQuestData().isHardModeEnabled()))
-				.orElse(Component.translatable("message.dragonminez.quest.start.unavailable"));
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, controller).resolve().orElse(null);
+		if (data == null) {
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+		return startQuest(requester, controller, resolved, data,
+				data.getPlayerQuestData().isHardModeEnabled());
 	}
 
 	@Nullable
@@ -102,9 +104,11 @@ public final class QuestService {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 
-		return StatsProvider.get(StatsCapability.INSTANCE, controller)
-				.map(data -> turnInQuest(requester, controller, resolved, data, npcId))
-				.orElse(Component.translatable("message.dragonminez.quest.start.unavailable"));
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, controller).resolve().orElse(null);
+		if (data == null) {
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+		return turnInQuest(requester, controller, resolved, data, npcId);
 	}
 
 	public static void claimRewards(ServerPlayer requester, String questKey) {
@@ -629,11 +633,15 @@ public final class QuestService {
 				continue;
 			}
 
-			Component blocker = StatsProvider.get(StatsCapability.INSTANCE, member)
-					.map(data -> restartingFailed
-							? QuestAvailabilityChecker.describeNonPositionalStartRequirementFailure(quest, questKey, member, data)
-							: QuestAvailabilityChecker.describeNonPositionalStartBlocker(quest, questKey, member, data))
-					.orElse(Component.translatable("message.dragonminez.quest.start.unavailable"));
+			// A null describe*() result legitimately means "member is fine"; only an absent
+			// capability should map to the unavailable message. LazyOptional.map can't model
+			// that distinction (it NPEs on a null mapper return), so resolve explicitly.
+			StatsData memberData = StatsProvider.get(StatsCapability.INSTANCE, member).resolve().orElse(null);
+			Component blocker = memberData == null
+					? Component.translatable("message.dragonminez.quest.start.unavailable")
+					: (restartingFailed
+							? QuestAvailabilityChecker.describeNonPositionalStartRequirementFailure(quest, questKey, member, memberData)
+							: QuestAvailabilityChecker.describeNonPositionalStartBlocker(quest, questKey, member, memberData));
 			if (blocker == null) {
 				continue;
 			}

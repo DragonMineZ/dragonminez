@@ -1,6 +1,5 @@
 package com.dragonminez.common.init.entities;
 
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.alignment.NpcDispositionService;
@@ -38,7 +37,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
-    private static final EntityDataAccessor<Float> SCALE_VAL = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> SCALE_VAL = SynchedEntityData.defineId(MastersEntity.class, EntityDataSerializers.FLOAT);
 
 
     @Getter
