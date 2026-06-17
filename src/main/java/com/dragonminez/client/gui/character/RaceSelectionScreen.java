@@ -579,7 +579,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		if (isDraggingModel) {
 			double uiMouseX = toUiX(mouseX);
 			double deltaX = uiMouseX - lastMouseX;
-			playerRotation += (float)(deltaX * 0.8);
+			playerRotation -= (float)(deltaX * 0.8);
 			lastMouseX = uiMouseX;
 			return true;
 		}

@@ -16,7 +16,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class GeneralServerConfig {
-	public static final int CURRENT_VERSION = 5;
+	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
 	private int configVersion;
@@ -37,7 +37,7 @@ public class GeneralServerConfig {
 		private Integer dbSpawnRange = 1000;
 		private Integer dragonBallSets = 1;
 		private Integer structureMinDistanceFromSpawn = 0;
-		private Integer structureMaxDistanceFromSpawn = 8000;
+		private Integer structureMaxDistanceFromSpawn = 4000;
 		private Integer structureMinDistanceBetween = 250;
 
 		public Integer getDBSpawnRange() {

@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 public class TrainingConfig {
-	public static final int CURRENT_VERSION = 5;
+	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
 	private int configVersion;

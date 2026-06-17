@@ -462,6 +462,13 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onLevelLoad(LevelEvent.Load event) {
 		if (event.getLevel() instanceof ServerLevel serverLevel) {
+			try {
+				var chunkSource = serverLevel.getChunkSource();
+				com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.prewarm(
+						serverLevel.getSeed(), chunkSource.randomState(), chunkSource.getGeneratorState());
+			} catch (Throwable ignored) {
+			}
+
 			if (serverLevel.dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
 				LogUtil.info(Env.SERVER, "LevelEvent.Load: Detected Otherworld dimension load, attempting to load regions.");
 				OtherworldRegionLoader.loadPreGeneratedRegions(serverLevel.getServer());
@@ -472,6 +479,7 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public void onServerStopping(ServerStoppingEvent event) {
 		StorageManager.shutdown();
+		com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.reset();
 	}
 
 	@SubscribeEvent
