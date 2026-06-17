@@ -179,6 +179,13 @@ public class ConfigManager {
 		Files.createDirectories(formsPath);
 
 		RaceCharacterConfig characterConfig = loadAndValidate(racePath.resolve("character.json"), RaceCharacterConfig.class, () -> createDefaultCharacterConfig(raceName, isDefault), RaceCharacterConfig::getConfigVersion, RaceCharacterConfig::setConfigVersion, RaceCharacterConfig.CURRENT_VERSION, null);
+
+		if (skillsConfig != null && characterConfig.normalizeFormSkillKeys(skillsConfig.getFormSkills())) {
+			LogUtil.warn(Env.COMMON, "Normalized legacy form-skill keys in character.json for race '{}'", raceName);
+			try { LOADER.saveConfig(racePath.resolve("character.json"), characterConfig); } catch (Exception e) {
+				LogUtil.error(Env.COMMON, "Failed to save normalized character.json for race '{}': {}", raceName, e.getMessage());
+			}
+		}
 		RaceStatsConfig statsConfig = loadAndValidate(racePath.resolve("stats.json"), RaceStatsConfig.class, ConfigManager::createDefaultStatsConfig, RaceStatsConfig::getConfigVersion, RaceStatsConfig::setConfigVersion, RaceStatsConfig.CURRENT_VERSION, null);
 
 		Map<String, FormConfig> raceForms = new HashMap<>();

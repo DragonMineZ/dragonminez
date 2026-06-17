@@ -322,7 +322,7 @@ public class ClientStatsEvents {
 		boolean ctrlHeld = Screen.hasControlDown();
 
 		boolean[] downNow = new boolean[TECHNIQUE_VISIBLE_SLOTS];
-		boolean altHeld = KeyBinds.SECOND_FUNCTION_KEY.isDown() || Screen.hasAltDown();
+		boolean altHeld = KeyBinds.isSecondFunctionDown();
 		long window = Minecraft.getInstance().getWindow().getWindow();
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
 			InputConstants.Key key = KeyBinds.TECHNIQUE_SLOTS[i].getKey();
@@ -506,7 +506,7 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onMovementInput(MovementInputUpdateEvent event) {
-		boolean techMenu = KeyBinds.SECOND_FUNCTION_KEY.isDown() || Screen.hasAltDown();
+		boolean techMenu = KeyBinds.isSecondFunctionDown();
 		if (techMenu) {
 			event.getInput().shiftKeyDown = false;
 			event.getEntity().setSprinting(false);

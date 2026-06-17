@@ -81,7 +81,7 @@ public class FlySkillEvent {
 			LocalPlayer player = mc.player;
 
 			if (player != null && mc.screen == null) {
-				if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
+				if (KeyBinds.isSecondFunctionDown()) {
 					StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 						if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned()) return;
 						Skill flySkill = data.getSkills().getSkill("fly");
