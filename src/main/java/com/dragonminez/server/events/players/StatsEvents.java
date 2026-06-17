@@ -660,6 +660,13 @@ public class StatsEvents {
 	}
 
 	@SubscribeEvent
+	public static void onLivingAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker.hasEffect(MainEffects.STUN.get()))
+			event.setCanceled(true);
+	}
+
+	@SubscribeEvent
 	public static void onPlayerInteract(PlayerInteractEvent event) {
 		if (event.getLevel().isClientSide) return;
 		if (event.getEntity() == null) return;
