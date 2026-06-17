@@ -48,7 +48,8 @@ public class MainEntities {
         return List.of(
                 MASTER_KARIN, MASTER_GOKU, MASTER_KAIOSAMA, MASTER_ROSHI, MASTER_URANAI, MASTER_ENMA, MASTER_DENDE,
                 MASTER_GERO, MASTER_POPO, MASTER_GURU, MASTER_TORIBOT, MASTER_PICCOLO, MASTER_GOHAN, MASTER_BABIDI,
-                MASTER_OLDKAI, MASTER_CELL, MASTER_VEGETA, MASTER_FRIEZA, MASTER_TRUNKS, MASTER_YAMCHA, MASTER_KRILLIN
+                MASTER_OLDKAI, MASTER_CELL, MASTER_VEGETA, MASTER_FRIEZA, MASTER_TRUNKS, MASTER_YAMCHA, MASTER_KRILLIN,
+                MASTER_BEERUS, MASTER_WHIS
         );
     }
 
@@ -145,12 +146,12 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<AllMastersEntity.MasterBabidi>> MASTER_BABIDI =
             ENTITY_TYPES.register("master_babidi",
                     () -> EntityType.Builder.of(AllMastersEntity.MasterBabidi::new, MobCategory.CREATURE)
-                            .sized(0.8f, 1.2f)
+                            .sized(0.6f, 1.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_babidi").toString()));
     public static final RegistryObject<EntityType<AllMastersEntity.MasterOldKai>> MASTER_OLDKAI =
             ENTITY_TYPES.register("master_oldkai",
                     () -> EntityType.Builder.of(AllMastersEntity.MasterOldKai::new, MobCategory.CREATURE)
-                            .sized(0.8f, 1.8f)
+                            .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_oldkai").toString()));
     public static final RegistryObject<EntityType<AllMastersEntity.MasterCell>> MASTER_CELL =
             ENTITY_TYPES.register("master_cell",
@@ -180,9 +181,18 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<AllMastersEntity.MasterKrillin>> MASTER_KRILLIN =
             ENTITY_TYPES.register("master_krillin",
                     () -> EntityType.Builder.of(AllMastersEntity.MasterKrillin::new, MobCategory.CREATURE)
-                            .sized(0.8f, 1.8f)
+                            .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_krillin").toString()));
-
+    public static final RegistryObject<EntityType<AllMastersEntity.MasterBeerus>> MASTER_BEERUS =
+            ENTITY_TYPES.register("master_beerus",
+                    () -> EntityType.Builder.of(AllMastersEntity.MasterBeerus::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_beerus").toString()));
+    public static final RegistryObject<EntityType<AllMastersEntity.MasterWhis>> MASTER_WHIS =
+            ENTITY_TYPES.register("master_whis",
+                    () -> EntityType.Builder.of(AllMastersEntity.MasterWhis::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_whis").toString()));
 
     public static final RegistryObject<EntityType<Dino1Entity>> DINOSAUR1 =
             ENTITY_TYPES.register("dino1",
