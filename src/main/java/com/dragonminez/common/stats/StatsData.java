@@ -926,6 +926,13 @@ public class StatsData {
 	}
 
 	private int getInitialTotalStats() {
+		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
+		return baseStats.getStrength() + baseStats.getStrikePower() +
+				baseStats.getResistance() + baseStats.getVitality() +
+				baseStats.getKiPower() + baseStats.getEnergy();
+	}
+
+	private RaceStatsConfig.BaseStats getInitialBaseStats() {
 		String raceName = character.getRaceName();
 		String characterClass = character.getCharacterClass();
 
@@ -934,10 +941,63 @@ public class StatsData {
 		RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
 		if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
+		return baseStats;
+	}
 
-		return baseStats.getStrength() + baseStats.getStrikePower() +
-				baseStats.getResistance() + baseStats.getVitality() +
-				baseStats.getKiPower() + baseStats.getEnergy();
+	public int getInitialStatValue(String statName) {
+		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
+		return switch (statName.toUpperCase()) {
+			case "STR" -> baseStats.getStrength();
+			case "SKP" -> baseStats.getStrikePower();
+			case "RES" -> baseStats.getResistance();
+			case "VIT" -> baseStats.getVitality();
+			case "PWR" -> baseStats.getKiPower();
+			case "ENE" -> baseStats.getEnergy();
+			default -> 5;
+		};
+	}
+
+	public int getPendingAttributePoints() {
+		return resources.getPendingAttributePoints();
+	}
+
+	public int relocateStats(ServerPlayer serverPlayer) {
+		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
+
+		int gained = 0;
+		gained += Math.max(0, stats.getStrength() - baseStats.getStrength());
+		gained += Math.max(0, stats.getStrikePower() - baseStats.getStrikePower());
+		gained += Math.max(0, stats.getResistance() - baseStats.getResistance());
+		gained += Math.max(0, stats.getVitality() - baseStats.getVitality());
+		gained += Math.max(0, stats.getKiPower() - baseStats.getKiPower());
+		gained += Math.max(0, stats.getEnergy() - baseStats.getEnergy());
+
+		if (gained <= 0) return 0;
+
+		float oldHealthBonus = getHealthBonus();
+
+		stats.setStrength(baseStats.getStrength());
+		stats.setStrikePower(baseStats.getStrikePower());
+		stats.setResistance(baseStats.getResistance());
+		stats.setVitality(baseStats.getVitality());
+		stats.setKiPower(baseStats.getKiPower());
+		stats.setEnergy(baseStats.getEnergy());
+
+		float newHealthBonus = getHealthBonus();
+		if (newHealthBonus < oldHealthBonus) {
+			var attribute = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
+			if (attribute != null) {
+				attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+				attribute.addPermanentModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION));
+			}
+			if (serverPlayer.getHealth() > serverPlayer.getMaxHealth()) serverPlayer.setHealth(serverPlayer.getMaxHealth());
+		}
+
+		resources.setCurrentEnergy(Math.min(resources.getCurrentEnergy(), getMaxEnergy()));
+		resources.setCurrentStamina(Math.min(resources.getCurrentStamina(), getMaxStamina()));
+
+		resources.addPendingAttributePoints(gained);
+		return gained;
 	}
 
 	private long getConfiguredMaxTotalStatsRaw() {
@@ -1211,6 +1271,7 @@ public class StatsData {
 
 		getStatus().reset();
 		getResources().reset();
+		getResources().setPendingAttributePoints(0);
 		getResources().setPowerRelease(0);
 		getSkills().setSkillActive("kisense", false);
 		getPlayerQuestData().resetAll();

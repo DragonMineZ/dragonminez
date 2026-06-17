@@ -68,6 +68,14 @@ public class StatsCommand {
 												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
 												.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), EntityArgument.getPlayers(ctx, "targets"), "remove"))))))
 
+				// relocate [targets]
+				.then(Commands.literal("relocate")
+						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF, DMZPermissions.STATS_RESET_OTHERS))
+						.executes(ctx -> relocateStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException())))
+						.then(Commands.argument("targets", EntityArgument.players())
+								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
+								.executes(ctx -> relocateStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets")))))
+
 				// reset [targets] [keepPercentage] [keepSkills]
 				.then(Commands.literal("reset")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF, DMZPermissions.STATS_RESET_OTHERS))
@@ -196,6 +204,29 @@ public class StatsCommand {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.multiple", targets.size()), log);
 		}
 		return targets.size();
+	}
+
+	private static int relocateStats(CommandSourceStack source, Collection<ServerPlayer> targets) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
+
+		int successCount = 0;
+		for (ServerPlayer player : targets) {
+			var result = StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+				int gained = data.relocateStats(player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				return gained;
+			}).orElse(0);
+			if (result > 0) successCount++;
+		}
+
+		if (targets.size() == 1) {
+			ServerPlayer single = targets.iterator().next();
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.relocate.success", single.getName().getString()), log);
+		} else {
+			int finalSuccess = successCount;
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.relocate.multiple", finalSuccess), log);
+		}
+		return successCount;
 	}
 
 	private static boolean isValidStat(String stat) {
