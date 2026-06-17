@@ -86,7 +86,10 @@ public class FlySkillEvent {
 						if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned()) return;
 						Skill flySkill = data.getSkills().getSkill("fly");
 						Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
-						if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0) return;
+						if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0) {
+							player.displayClientMessage(Component.translatable("message.dragonminez.flight.no_kicontrol"), true);
+							return;
+						}
 						NetworkHandler.sendToServer(new FlightModeC2S());
 						player.playSound(MainSounds.UI_MENU_SWITCH.get(), 0.7F, 1.0F);
 					});
@@ -98,11 +101,21 @@ public class FlySkillEvent {
 				lastFlyKeyPressTime = currentTime;
 
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-					if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned() || data.getResources().getPowerRelease() < 5) return;
+					if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned()) return;
 
 					Skill flySkill = data.getSkills().getSkill("fly");
 					Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
-					if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0 || data.getResources().getPowerRelease() < 5) return;
+					boolean flyActive = flySkill != null && flySkill.isActive();
+
+					if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0) {
+						if (!flyActive) player.displayClientMessage(Component.translatable("message.dragonminez.flight.no_kicontrol"), true);
+						return;
+					}
+
+					if (!flyActive && data.getResources().getPowerRelease() < 5) {
+						player.displayClientMessage(Component.translatable("message.dragonminez.flight.low_power_release"), true);
+						return;
+					}
 
 					int flyLevel = flySkill.getLevel();
 					double energyCostPercent = getActivationEnergyPercent(flyLevel);

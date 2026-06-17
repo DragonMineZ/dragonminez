@@ -335,6 +335,18 @@ public class TransformationsHelper {
 	}
 
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
+		FormConfig.FormData nextFormConfig = getNextFormCandidate(statsData);
+		if (nextFormConfig == null) return null;
+
+		String race = statsData.getCharacter().getRaceName();
+		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		FormConfig config = ConfigManager.getFormGroup(race, group);
+		if (config == null) return null;
+
+		return (isFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, nextFormConfig)) ? nextFormConfig : null;
+	}
+
+	public static FormConfig.FormData getNextFormCandidate(StatsData statsData) {
 		String race = statsData.getCharacter().getRaceName();
 		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
 		if (group == null || group.isEmpty()) return null;
@@ -351,11 +363,9 @@ public class TransformationsHelper {
 		if (requiresSaiyanTail && !statsData.getCharacter().isHasSaiyanTail()) return null;
 
 		String currentFormName = statsData.getCharacter().getActiveForm();
-		String nextFormName;
 		FormConfig.FormData nextFormConfig = null;
 		if (currentFormName == null || currentFormName.isEmpty()) {
-			nextFormName = statsData.getCharacter().getSelectedForm();
-			nextFormConfig = config.getForm(nextFormName);
+			nextFormConfig = config.getForm(statsData.getCharacter().getSelectedForm());
 		} else {
 			boolean foundCurrent = false;
 			for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
@@ -368,10 +378,19 @@ public class TransformationsHelper {
 				break;
 			}
 		}
-		if (nextFormConfig != null) {
-			return (isFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, nextFormConfig)) ? nextFormConfig : null;
-		}
 		return nextFormConfig;
+	}
+
+	public static boolean isNextFormMasteryBlocked(StatsData statsData) {
+		FormConfig.FormData candidate = getNextFormCandidate(statsData);
+		if (candidate == null) return false;
+
+		String race = statsData.getCharacter().getRaceName();
+		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		FormConfig config = ConfigManager.getFormGroup(race, group);
+		if (config == null) return false;
+
+		return isFormUnlocked(statsData, config.getFormType(), candidate.getUnlockOnSkillLevel()) && !meetsMasteryRequisite(statsData, candidate);
 	}
 
 	public static boolean isOozaruForm(FormConfig.FormData formData) {
