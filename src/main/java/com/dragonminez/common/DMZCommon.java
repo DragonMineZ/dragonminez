@@ -38,6 +38,7 @@ public class DMZCommon {
 		MainSounds.register(modEventBus);
 		MainTabs.register(modEventBus);
         MainEntities.register(modEventBus);
+        MainVillagers.register(modEventBus);
         MainParticles.register(modEventBus);
 		MainRecipes.register(modEventBus);
 		MainMenus.register(modEventBus);
