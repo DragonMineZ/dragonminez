@@ -1,5 +1,7 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
@@ -97,6 +99,10 @@ public class StatsCapability {
 				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
 				TransformationsHelper.ensureSelectedFormDefault(data);
 				TransformationsHelper.ensureSelectedStackFormDefault(data);
+				java.util.Map<String, String> repairedSkills = data.getSkills().repairSkillNames();
+				if (!repairedSkills.isEmpty()) {
+					repairedSkills.forEach((oldName, newName) -> LogUtil.info(Env.SERVER, "Repaired skill for {}: '{}' -> '{}'", serverPlayer.getGameProfile().getName(), oldName, newName));
+				}
 				data.getSkills().setSkillActive("kisense", false);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});

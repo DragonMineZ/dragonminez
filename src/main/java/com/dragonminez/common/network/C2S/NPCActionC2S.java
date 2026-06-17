@@ -17,6 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
@@ -72,8 +73,8 @@ public class NPCActionC2S {
 					case "popo" -> handlePopo(player, data, packet.actionId);
 					case "gero" -> handleGero(player, data, packet.actionId);
 					case "piccolo" -> handlePiccolo(player, data, packet.actionId, packet.value);
-					case "roshi" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.roshi.weight_given"); }
-					case "kingkai" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.kingkai.weight_given"); }
+					case "roshi" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.roshi.weight_given", MainItems.WEIGHT_TURTLE_SHELL.get()); }
+					case "kingkai" -> { if (packet.actionId == 2) giveWeight(player, packet.value, "message.dragonminez.kingkai.weight_given", MainItems.WORKOUT_WEIGHTS.get()); }
 					case "oldkai" -> handleOldKai(player, data, packet.actionId);
 					case "babidi" -> handleBabidi(player, data, packet.actionId);
 				}
@@ -204,13 +205,13 @@ public class NPCActionC2S {
 			data.getResources().setCurrentEnergy(data.getMaxEnergy());
 			data.getResources().setCurrentStamina(data.getMaxStamina());
 		} else if (action == 2) {
-			giveWeight(player, value, "message.dragonminez.piccolo.weight_given");
+			giveWeight(player, value, "message.dragonminez.piccolo.weight_given", MainItems.WEIGHT_PICCOLO_CAPE.get());
 		}
 	}
 
-	private static void giveWeight(ServerPlayer player, int value, String messageKey) {
+	private static void giveWeight(ServerPlayer player, int value, String messageKey, Item itemStack) {
 		int weight = Math.max(1, Math.min(MAX_WEIGHT_REQUEST, value));
-		ItemStack weightStack = new ItemStack(MainItems.WEIGHT_PICCOLO_CAPE.get());
+		ItemStack weightStack = new ItemStack(itemStack);
 		WeightItem.setWeight(weightStack, weight);
 		player.addItem(weightStack);
 		player.sendSystemMessage(Component.translatable(messageKey, weight));

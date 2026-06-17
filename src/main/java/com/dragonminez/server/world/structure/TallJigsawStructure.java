@@ -95,6 +95,10 @@ public class TallJigsawStructure extends Structure {
 				this.maxDepth, start, this.useExpansionHack, Optional.empty(), this.maxDistanceFromCenter);
 	}
 
+	public int getMinStartY() {
+		return this.minStartY;
+	}
+
 	@Override
 	public StructureType<?> type() {
 		return MainStructureTypes.TALL_JIGSAW.get();
