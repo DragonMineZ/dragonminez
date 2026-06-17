@@ -38,6 +38,8 @@ import net.minecraftforge.registries.RegistryObject;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
 
+import java.util.List;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModCommonEvents {
 
@@ -67,42 +69,31 @@ public class ModCommonEvents {
 			event.put(entity.get(), DragonWishEntity.createAttributes().build());
 		}
 
-        // SAIBAMANS
-        regAttr(event, SagaSaibamanEntity.createAttributes().build(),
+        var saibamans = List.of(
                 MainEntities.SAGA_SAIBAMAN, MainEntities.SAGA_SAIBAMAN2, MainEntities.SAGA_SAIBAMAN3,
-                MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6);
-        // SOLDADOS DE FRIEZA Y MORO
-        regAttr(event, SagaFriezaSoldier01Entity.createAttributes().build(),
+                MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6
+        );
+        var soldiers = List.of(
                 MainEntities.SAGA_FRIEZA_SOLDIER, MainEntities.SAGA_FRIEZA_SOLDIER2,
-                MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER);
+                MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER
+        );
+        var ozarus = List.of(
+                MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU
+        );
 
-        // SAGA ESPECIALES
-        event.put(MainEntities.SAGA_OZARU_VEGETA.get(), SagaOzaruEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_OZARU.get(), SagaOzaruEntity.createAttributes().build());
+        for (var saibaman : saibamans) event.put((EntityType<? extends LivingEntity>) saibaman.get(), SagaSaibamanEntity.createAttributes().build());
+        for (var soldier : soldiers) event.put((EntityType<? extends LivingEntity>) soldier.get(), SagaFriezaSoldier01Entity.createAttributes().build());
+        for (var ozaru : ozarus) event.put((EntityType<? extends LivingEntity>) ozaru.get(), SagaOzaruEntity.createAttributes().build());
 
-        // SAGAS
-        regAttr(event, DBSagasEntity.createAttributes().build(),
-                MainEntities.SAGA_GOKU_EARLY, MainEntities.SAGA_GOKU_EARLY_NOWEIGHTS, MainEntities.SAGA_PICCOLO_EARLY, MainEntities.SAGA_TIEN_EARLY, MainEntities.SAGA_YAMCHA,
-                MainEntities.SAGA_RADITZ, MainEntities.SAGA_NAPPA, MainEntities.SAGA_VEGETA, MainEntities.SAGA_CHAOZ,
-                MainEntities.SAGA_CUI, MainEntities.SAGA_DODORIA, MainEntities.SAGA_VEGETA_NAMEK, MainEntities.SAGA_ZARBON, MainEntities.SAGA_ZARBON_TRANSF,
-                MainEntities.SAGA_GULDO, MainEntities.SAGA_RECOOME, MainEntities.SAGA_JEICE, MainEntities.SAGA_BURTER, MainEntities.SAGA_GINYU, MainEntities.SAGA_GINYU_GOKU, MainEntities.SAGA_NAIL,
-                MainEntities.SAGA_FREEZER_FIRST, MainEntities.SAGA_FREEZER_SECOND, MainEntities.SAGA_FREEZER_THIRD, MainEntities.SAGA_FREEZER_BASE, MainEntities.SAGA_FREEZER_FP,
-                MainEntities.SAGA_GOKU_MID_BASE, MainEntities.SAGA_GOKU_MID_SSJ, MainEntities.SAGA_KID_GOHAN, MainEntities.SAGA_KRILLIN,
-                MainEntities.SAGA_MECHA_FRIEZA, MainEntities.SAGA_KING_COLD, MainEntities.SAGA_DRGERO, MainEntities.SAGA_A19, MainEntities.SAGA_A18, MainEntities.SAGA_A17, MainEntities.SAGA_A16,
-                MainEntities.SAGA_CELL_IMPERFECT, MainEntities.SAGA_PICCOLO_KAMI, MainEntities.SAGA_VEGETA_MID, MainEntities.SAGA_VEGETA_MID_SSJ, MainEntities.SAGA_VEGETA_MID_SSG2,
-                MainEntities.SAGA_FUTURE_TRUNKS_KID_BASE, MainEntities.SAGA_FUTURE_TRUNKS_KID_SSJ, MainEntities.SAGA_FUTURE_TRUNKS_BASE, MainEntities.SAGA_FUTURE_TRUNKS_SSJ,
-                MainEntities.SAGA_FUTURE_TRUNKS_SSG3, MainEntities.SAGA_GOHAN_MID_BASE, MainEntities.SAGA_GOHAN_MID_SSJ, MainEntities.SAGA_GOHAN_MID_SSJ2, MainEntities.SAGA_FUTURE_GOHAN_BASE, MainEntities.SAGA_FUTURE_GOHAN_SSJ,
-                MainEntities.SAGA_CELL_SEMIPERFECT, MainEntities.SAGA_CELL_PERFECT, MainEntities.SAGA_CELL_SUPERPERFECT, MainEntities.SAGA_CELL_JR,
-                MainEntities.SAGA_GOKU_END_BASE, MainEntities.SAGA_GOKU_END_SSJ, MainEntities.SAGA_GOKU_END_SSJ2, MainEntities.SAGA_GOKU_END_SSJ3,
-                MainEntities.SAGA_VEGETA_END_BASE, MainEntities.SAGA_VEGETA_END_SSJ, MainEntities.SAGA_VEGETA_END_SSJ2, MainEntities.SAGA_VEGETA_MAJIN,
-                MainEntities.SAGA_GOHAN_END_BASE, MainEntities.SAGA_GOHAN_END_SSJ, MainEntities.SAGA_GOHAN_END_SSJ2, MainEntities.SAGA_GOHAN_END_ULTIMATE,
-                MainEntities.SAGA_GOTEN, MainEntities.SAGA_GOTEN_SSJ, MainEntities.SAGA_KID_TRUNKS, MainEntities.SAGA_KID_TRUNKS_SSJ,  MainEntities.SAGA_VIDEL,  MainEntities.SAGA_BULMA,
-                MainEntities.SAGA_GOTENKS, MainEntities.SAGA_GOTENKS_SSJ, MainEntities.SAGA_GOTENKS_SSJ3,
-                MainEntities.SAGA_SHIN, MainEntities.SAGA_KIBITO, MainEntities.SAGA_SPOPOVITCH, MainEntities.SAGA_PUIPUI, MainEntities.SAGA_YAKON, MainEntities.SAGA_DABURA,
-                MainEntities.SAGA_BABIDI, MainEntities.SAGA_BUU_FAT, MainEntities.SAGA_EVILBUU, MainEntities.SAGA_SUPERBUU,  MainEntities.SAGA_SUPERBUU_PICCOLO,
-                MainEntities.SAGA_SUPERBUU_GOTENKS, MainEntities.SAGA_SUPERBUU_GOHAN, MainEntities.SAGA_KIDBUU, MainEntities.MINI_BUU,
-                MainEntities.SHADOW_DUMMY);
 
+        AttributeSupplier defaultSagaAttributes = DBSagasEntity.createAttributes().build();
+
+        for (var sagaEntity : MainEntities.getSagaEntities()) {
+            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity)) {
+                continue;
+            }
+            event.put((EntityType<? extends LivingEntity>) sagaEntity.get(), defaultSagaAttributes);
+        }
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());
