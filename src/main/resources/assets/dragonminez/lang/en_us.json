@@ -547,6 +547,8 @@
   "gui.action.dragonminez.zero_release": "To 0% Release",
   "gui.dragonminez.lines.karin.name": "Master Korin",
   "gui.dragonminez.lines.karin.main": "Welcome to Korin Tower, %s! Train hard and you will become stronger! Do you need anything from me?",
+  "gui.dragonminez.lines.karin.idle": "Hm? Another visitor? Few have the strength to climb all the way up here. The Senzu Beans are looking particularly ripe today, if you were wondering.",
+  "gui.dragonminez.lines.karin.training": "Alright, I'll help you train. But don't expect it to be easy — I didn't teach Goku everything he knows by going soft on him, after all.",
   "gui.dragonminez.button.karin.nimbus": "Flying Nimbus",
   "gui.dragonminez.button.karin.senzu": "Senzu Beans",
   "gui.dragonminez.lines.guru.name": "Elder Guru",
@@ -561,6 +563,8 @@
   "command.dragonminez.tech.remove_multiple": "Removed Ki technique %s from %s players.",
   "gui.dragonminez.lines.dende.name": "Dende",
   "gui.dragonminez.lines.dende.main": "Hello %s, I am Dende, the Guardian of Earth. How can I assist you today?",
+  "gui.dragonminez.lines.dende.heal": "Your wounds look serious. Let me help... There. The Dragon Balls blessed me with healing, and I'll use it as long as this planet needs protecting.",
+  "gui.dragonminez.lines.dende.idle": "Guardian duties keep me quite busy, but I'll always make time for those who protect this planet. It's what Kami himself would have wanted for all of us.",
   "gui.dragonminez.button.dende.heal": "Heal",
   "gui.dragonminez.button.dende.reset": "Reset Stats",
   "gui.dragonminez.button.dende.remove_tail": "Remove Tail",
@@ -568,10 +572,14 @@
   "gui.dragonminez.lines.enma.name": "King Yemma",
   "gui.dragonminez.lines.enma.main": "Welcome to the Otherworld, %s. I am King Yemma, the overseer of souls. Do you want to come back to Earth?",
   "gui.dragonminez.lines.enma.revive": "You need to talk to Fortuneteller Baba to be revived first!",
+  "gui.dragonminez.lines.enma.idle": "Hmm. Another soul before my desk. Do you have any idea how much paperwork passes through the Otherworld daily? Even death doesn't slow the queue down.",
+  "gui.dragonminez.lines.enma.denied": "Your record does not warrant a second chance at this time. Even Vegeta had to earn his way back. My decision is final. Next!",
   "gui.dragonminez.button.enma.earth": "Return to Earth",
   "gui.dragonminez.lines.baba.name": "Fortuneteller Baba",
   "gui.dragonminez.lines.baba.main": "Greetings %s, I am Fortuneteller Baba. I can help you return to the world of the living. You need to wait %d more seconds before being able to revive.",
   "gui.dragonminez.lines.baba.revived": "§dFortuneteller Baba§r: You have been revived! Go back to §eKing Yemma§r to return to Earth.",
+  "gui.dragonminez.lines.baba.idle": "Ohohoho! The spirits are swirling around you today... I sense great destiny — or perhaps great foolishness. Hard to tell with you living types, dearie!",
+  "gui.dragonminez.lines.baba.wait": "The spirits still need time to prepare the ritual, dear. Come back in %d more seconds. Even the dead cannot be rushed into these things!",
   "gui.dragonminez.button.baba.revive": "Revive",
   "gui.dragonminez.lines.popo.name": "Mr Popo",
   "gui.dragonminez.lines.popo.main": "Welcome back to Kami's Lookout, %s. Can I help you with something? Maybe do you want to train or change your haircut?",
@@ -591,6 +599,8 @@
   "gui.dragonminez.button.gero.cancel": "I'm not sure",
   "gui.dragonminez.lines.toribot.name": "Toribot",
   "gui.dragonminez.lines.toribot.main": "Beep boop! I am Toribot, thanks for visiting me! It's kinda lonely here with King Kai...",
+  "gui.dragonminez.lines.toribot.idle": "Beep boop! Another character wandering around in my universe... Funny how that works, isn't it? I drew all of this up myself, you know. Every last bit.",
+  "gui.dragonminez.lines.toribot.training": "Sure, I'll help you train! After all, I invented the entire power-scaling system in the first place. Nobody knows it better than I do. Beep boop!",
   "gui.dragonminez.lines.piccolo.name": "Piccolo",
   "gui.dragonminez.lines.piccolo.main": "What is it, %s? If you need to recover or carry some extra burden for your training, I can help. Speak.",
   "gui.dragonminez.lines.piccolo.weight_prompt": "How much weight do you want, %s? Type a number. Don't blame me if you can barely move afterwards.",
@@ -1758,22 +1768,70 @@
   "gui.dragonminez.npc.skills": "Skills",
   "gui.dragonminez.npc.services": "Services",
   "gui.dragonminez.title.now_playing": "Now Playing:",
-  "dialogue.dragonminez.story.sidequest.roshi.offer": "Ah, a new student! I have some training for you... Are you ready?",
-  "dialogue.dragonminez.story.sidequest.roshi.in_progress": "Keep training, you're not done yet!",
-  "dialogue.dragonminez.story.sidequest.roshi.complete": "Well done! You've completed the training. Here's your reward!",
-  "dialogue.dragonminez.story.sidequest.roshi.idle": "Come back when you're stronger.",
-  "dialogue.dragonminez.story.sidequest.goku.offer": "Hey! I've got a challenge for you. Wanna try it?",
-  "dialogue.dragonminez.story.sidequest.goku.in_progress": "Keep going! You're almost there!",
-  "dialogue.dragonminez.story.sidequest.goku.complete": "Amazing! You did great! Here, you've earned this!",
-  "dialogue.dragonminez.story.sidequest.goku.idle": "Hey there! Come fight with me sometime!",
-  "dialogue.dragonminez.story.sidequest.bulma.offer": "I need some help with a project. Can you gather some materials for me?",
-  "dialogue.dragonminez.story.sidequest.bulma.in_progress": "Have you found what I need yet?",
-  "dialogue.dragonminez.story.sidequest.bulma.complete": "Perfect! Just what I needed. Thank you!",
-  "dialogue.dragonminez.story.sidequest.bulma.idle": "I'm working on something big... come back later.",
+  "dialogue.dragonminez.story.sidequest.roshi.offer": "Listen carefully — I founded the Turtle School for a reason. Before Goku could fly, he was delivering milk at full sprint with a boulder on his back. My training has forged the greatest warriors this world has ever seen. Think you're ready to begin?",
+  "dialogue.dragonminez.story.sidequest.roshi.in_progress": "The Kamehameha took me fifty years to perfect. Your impatience is already showing. Slow down, breathe, and feel every movement. Real strength comes from knowing your limits — and then shattering them completely.",
+  "dialogue.dragonminez.story.sidequest.roshi.complete": "Ha! You remind me of Goku when he was young — sharp instincts, stubborn spirit. I've trained warriors who went on to save this entire planet. You might just be walking down that same road, kid.",
+  "dialogue.dragonminez.story.sidequest.roshi.idle": "Even an old master never truly stops learning. I may look like I'm just sitting here, but every movement around me is a lesson. The Turtle School survives because wisdom outlasts raw power every single time.",
+  "dialogue.dragonminez.story.sidequest.goku.offer": "Hey, I've been thinking — training alone only gets you so far. Piccolo, Vegeta, Hit... every great fight I've had taught me something new. How about it? Let's push each other past our limits!",
+  "dialogue.dragonminez.story.sidequest.goku.in_progress": "That's it, don't hold back! When I fought Frieza on Namek I didn't have time to second-guess myself. Push through the pain — that's where real growth actually starts, I promise you that!",
+  "dialogue.dragonminez.story.sidequest.goku.complete": "Yeah! That's what I'm talking about! You've got real fighting spirit. You know, Whis says the key to Ultra Instinct is letting the body move without the mind interfering. Honestly, you're already starting to get there!",
+  "dialogue.dragonminez.story.sidequest.goku.idle": "Man, I'm starving... Hey, if you're ever up for a spar later just say the word! Chi-Chi says I train too much, but honestly I don't think there's really such a thing as too much training.",
+  "dialogue.dragonminez.story.sidequest.bulma.offer": "Okay, look — I'm in the middle of something critical and I need specific materials I can't exactly just grab myself. I built the Dragon Radar AND a time machine, so trust me, I know exactly what I'm doing. I just need the parts.",
+  "dialogue.dragonminez.story.sidequest.bulma.in_progress": "You're not back yet? I'm trying to cross-reference Frieza's scouter readings with the energy signatures I recorded on Namek. This research could change everything — but only if you bring me what I asked for!",
+  "dialogue.dragonminez.story.sidequest.bulma.complete": "Finally! These are perfect. I knew I could count on you. Once I finish this prototype it'll make the Dragon Radar look like a children's toy. Don't worry, I'll credit you in the footnotes... probably.",
+  "dialogue.dragonminez.story.sidequest.bulma.idle": "Vegeta's training again, the boys are off somewhere as usual, and here I am making scientific breakthroughs that nobody appreciates. The Capsule Corporation didn't build itself, you know.",
   "dialogue.dragonminez.story.sidequest.generic_npc.offer": "I could use your help with something...",
   "dialogue.dragonminez.story.sidequest.generic_npc.in_progress": "How's it going with that task?",
   "dialogue.dragonminez.story.sidequest.generic_npc.complete": "Thank you so much for your help!",
   "dialogue.dragonminez.story.sidequest.generic_npc.idle": "Hello there, traveler.",
+  "dialogue.dragonminez.story.sidequest.krillin.offer": "Hey there! You look pretty strong. How'd you like to help me train? Master Roshi always said the best way to get stronger is to push yourself with worthy opponents!",
+  "dialogue.dragonminez.story.sidequest.krillin.in_progress": "Not bad! I can already tell you're getting better. Just remember — size doesn't matter if you've got heart and determination. I learned that the hard way!",
+  "dialogue.dragonminez.story.sidequest.krillin.complete": "Wow, you really came through! You've got the same fighting spirit as Goku. Android 18 would be impressed... actually, don't tell her I said that.",
+  "dialogue.dragonminez.story.sidequest.krillin.idle": "Man, it's peaceful when there's no world-ending threat around. Though I guess that's when the real training happens, right? Gotta stay sharp!",
+  "dialogue.dragonminez.story.sidequest.yamcha.offer": "I've been thinking... you look like you could handle a real challenge. Help me prove I'm still a capable fighter? The Wolf Fang Fist isn't just some old trick!",
+  "dialogue.dragonminez.story.sidequest.yamcha.in_progress": "Y-You're taking this seriously? That's actually pretty awesome of you. Keep it up and maybe people will finally stop underestimating us both!",
+  "dialogue.dragonminez.story.sidequest.yamcha.complete": "Ha! I knew it! You came through perfectly! Finally, someone who believes in me! Maybe the tide is turning for ol' Yamcha after all. Don't count me out!",
+  "dialogue.dragonminez.story.sidequest.yamcha.idle": "Just hanging here, thinking about my next move. The desert taught me patience, and the Z-Fighters taught me never to give up. I'm still standing!",
+  "dialogue.dragonminez.story.sidequest.tien.offer": "I sense strong potential within you. I have a task requiring discipline and focus — the same focus needed to master the Tri-Beam. Will you accept this challenge?",
+  "dialogue.dragonminez.story.sidequest.tien.in_progress": "Your determination is evident. The path of a true martial artist is not easy, but your resolve mirrors that of a warrior worthy of respect. Keep going.",
+  "dialogue.dragonminez.story.sidequest.tien.complete": "Excellent. You have proven yourself worthy. Your spirit burns as bright as the Tri-Beam itself. Chiaotzu would be glad to know someone like you fights alongside us.",
+  "dialogue.dragonminez.story.sidequest.tien.idle": "Meditation... clarity of purpose... these are the true foundations of strength. I left the Crane School to forge my own path. You should find yours too.",
+  "dialogue.dragonminez.story.sidequest.chi_chi.offer": "If you're going to be around Gohan and the others, you better prove you've got what it takes! Show me you're responsible enough to handle a real challenge!",
+  "dialogue.dragonminez.story.sidequest.chi_chi.in_progress": "Hmph! You're actually doing it! Maybe there's hope for you yet. But don't think this gets you out of studying — fighting alone won't get you anywhere!",
+  "dialogue.dragonminez.story.sidequest.chi_chi.complete": "Well, I have to admit, you've impressed me. You've got the strength AND the determination to see things through. That's what really matters in a person!",
+  "dialogue.dragonminez.story.sidequest.chi_chi.idle": "Goku's out training again... The boys better be keeping up with their studies while he's gone. Honestly, that man never sits still for a moment!",
+  "dialogue.dragonminez.story.sidequest.videl.offer": "I've been watching you. You've got real potential. How about you team up with me on something? I need someone I can actually count on to get it done.",
+  "dialogue.dragonminez.story.sidequest.videl.in_progress": "Not bad! You're keeping up better than I expected. Gohan taught me that true strength comes from protecting others, not just raw power. Remember that.",
+  "dialogue.dragonminez.story.sidequest.videl.complete": "You did it! I knew you had it in you. This is what it means to be a real fighter — dedication, heart, and someone willing to believe in your abilities.",
+  "dialogue.dragonminez.story.sidequest.videl.idle": "Pan's growing up so fast. I hope the world stays safe enough for her. People like you out there protecting it... that makes a real difference.",
+  "dialogue.dragonminez.story.sidequest.piccolo.offer": "Your power remains undisciplined. Train with me and you may survive what is coming. Refuse, and you will be no use to anyone when it truly matters.",
+  "dialogue.dragonminez.story.sidequest.piccolo.in_progress": "Push harder. Pain is weakness leaving the body. Nail and Kami pushed through far worse before we became who we are now. You can handle this.",
+  "dialogue.dragonminez.story.sidequest.piccolo.complete": "Hmph. Adequate. Your growth is... acceptable. You may yet be worthy of standing alongside the guardians of this world. Do not let that go to your head.",
+  "dialogue.dragonminez.story.sidequest.piccolo.idle": "I have no time for idle conversation. Unless you wish to train, come back when you have something useful to say or a reason worth my attention.",
+  "dialogue.dragonminez.story.sidequest.gohan.offer": "I sense great potential in you — but potential means nothing without purpose. Will you help me? I know from experience exactly what is at stake for this world.",
+  "dialogue.dragonminez.story.sidequest.gohan.in_progress": "I believe in you. Even I had to learn that hiding our power doesn't make us weak — it's how we choose to use it that truly defines us as warriors.",
+  "dialogue.dragonminez.story.sidequest.gohan.complete": "You've grown stronger. More importantly, you've learned to balance power with wisdom. Elder Kai would say your hidden power is finally beginning to awaken.",
+  "dialogue.dragonminez.story.sidequest.gohan.idle": "It's peaceful today. I hope it stays that way. If you ever need anything, just ask — I'm always here for those willing to stand up for this world.",
+  "dialogue.dragonminez.story.sidequest.vegeta.offer": "Listen up! I have a task that demands true Saiyan strength. Prove to me you are not worthless, and perhaps I will acknowledge your existence, warrior.",
+  "dialogue.dragonminez.story.sidequest.vegeta.in_progress": "Hmph. Not bad for a weakling. You're finally showing some spine. Don't disappoint me now — I will not tolerate mediocrity from someone I'm actually watching.",
+  "dialogue.dragonminez.story.sidequest.vegeta.complete": "Impressive. You've shown real backbone. Perhaps you'll amount to something after all. You have earned the acknowledgment of the Prince of all Saiyans.",
+  "dialogue.dragonminez.story.sidequest.vegeta.idle": "I'm training. Every second I stand idle, Kakarot pulls further ahead. If you have nothing useful to say, walk away and don't interrupt my focus.",
+  "dialogue.dragonminez.story.sidequest.trunks.offer": "I've fought through a timeline ravaged by Androids and Goku Black to protect the future. Help me with this — I need someone I can truly trust right now.",
+  "dialogue.dragonminez.story.sidequest.trunks.in_progress": "You're doing great! I've faced far worse in the future I came from, so I know you can push through this. What happens here matters more than you know.",
+  "dialogue.dragonminez.story.sidequest.trunks.complete": "Outstanding! You've got the warrior's spirit. In my darkest timeline, people like you were all that kept hope alive. Thank you — more than you realize.",
+  "dialogue.dragonminez.story.sidequest.trunks.idle": "Everything feels so peaceful here... so different from the future I came from. It's surreal to just exist without constant danger pressing down on you.",
+  "dialogue.dragonminez.story.sidequest.namek_elder.offer": "Young one, I sense purpose in your journey. Our people have long been guardians of the Dragon Balls. Perhaps helping us will illuminate your own path forward.",
+  "dialogue.dragonminez.story.sidequest.namek_elder.in_progress": "Patience and compassion are the true strength of those who walk beside the Dragon Balls. You are on the right path. Continue forward with honor and care.",
+  "dialogue.dragonminez.story.sidequest.namek_elder.complete": "Your heart is pure. The Dragon Balls respond to worthy souls — as Porunga himself would attest. Our village is grateful beyond words for your aid.",
+  "dialogue.dragonminez.story.sidequest.namek_elder.idle": "The winds of Namek carry ancient wisdom. Sit with me if you wish. A quiet moment and shared words can be as powerful as any battle ever fought.",
+  "dialogue.dragonminez.story.sidequest.popo.offer": "Welcome to Kami's Lookout. You sense potential in yourself. Good. Prove it. I have a task that requires far more than just raw strength alone.",
+  "dialogue.dragonminez.story.sidequest.popo.in_progress": "Your progress is... noted. The Lookout has watched warriors far greater than you struggle with far less. Do not slow down. Not even for a moment.",
+  "dialogue.dragonminez.story.sidequest.popo.complete": "Impressive. You have earned the respect of those who watch over this world from above. Return when you wish to grow stronger still. I will be here.",
+  "dialogue.dragonminez.story.sidequest.popo.idle": "I am always here. Waiting. Watching. I was here before Kami arrived. I was here before the last Guardian. I will be here long after you are gone.",
+  "dialogue.dragonminez.story.sidequest.kingkai.offer": "Hiya! Made it across Snake Way — no small feat! I have a task for you, ha ha! And yes, you'll have to listen to at least one of my jokes as payment!",
+  "dialogue.dragonminez.story.sidequest.kingkai.in_progress": "Keep pushing! The Kaioken doesn't come easy either, you know! Goku nearly passed out from it the first time. You're doing better already, ha ha!",
+  "dialogue.dragonminez.story.sidequest.kingkai.complete": "You did it! You're ready to face the galaxy! ...Get it? Galaxy? Ha ha ha! Seriously though — Goku would be genuinely proud of your effort today!",
+  "dialogue.dragonminez.story.sidequest.kingkai.idle": "Bubbles! Gregory! Where'd my guests go? ...Oh well. Say, wanna hear a joke? A Saiyan walked all the way down Snake Way and said, 'Wow, that was long!'",
   "command.dragonminez.skills.unknown_skill": "§e[DMZ-Skills]§r §cUnknown skill: %s",
   "command.dragonminez.skills.set_success": "§e[DMZ-Skills]§r Set skill '%s' to level %s for %s",
   "command.dragonminez.skills.set_multiple": "§e[DMZ-Skills]§r Set skill '%s' to level %s for %d players.",
@@ -1811,258 +1869,172 @@
   "dmz.quest.interact.obj": "Interact with %s",
   "dmz.quest.summon_dragon.obj": "Summon %s",
   "dmz.quest.skill.obj": "Reach %s level %s",
-
   "dmz.quest.saiyan1.name": "Defeat Raditz",
   "dmz.quest.saiyan1.desc": "Raditz has come for Gohan in the plains. Defeat the invader and survive the opening strike of the Saiyan threat.",
-
   "dmz.quest.saiyan2.name": "Wilderness Training",
   "dmz.quest.saiyan2.desc": "Gohan's survival training begins in the wild. Hunt a dinosaur and prove you can endure the months before the Saiyans arrive.",
-
   "dmz.quest.saiyan3.name": "Kill the Saibamen",
   "dmz.quest.saiyan3.desc": "The Saiyan invasion begins with planted monsters. Wipe out the Saibamen before the real warriors take the field.",
-
   "dmz.quest.saiyan4.name": "Hold Against Nappa",
   "dmz.quest.saiyan4.desc": "Nappa is tearing through the battlefield. Hold the line and bring him down.",
-
   "dmz.quest.saiyan5.name": "Face Vegeta",
   "dmz.quest.saiyan5.desc": "With Nappa gone, the Saiyan prince steps in. Challenge Vegeta on the rocky battlefield.",
-
   "dmz.quest.saiyan6.name": "Defeat Oozaru Vegeta",
   "dmz.quest.saiyan6.desc": "Vegeta has transformed into a Great Ape. Finish the fight before the giant crushes Earth.",
-
   "dmz.quest.saiyan7.name": "Prepare for Namek",
   "dmz.quest.saiyan7.desc": "The next hope is on Namek. Speak with Bulma once the repaired ship is ready.",
-
   "dmz.quest.saiyan8.name": "Head to Namek",
   "dmz.quest.saiyan8.desc": "Leave Earth behind and travel to Namek before Frieza's forces claim the Dragon Balls.",
-
   "dmz.saga.frieza_saga": "Frieza Saga",
-
   "dmz.quest.frieza1.name": "Landing on Namek",
   "dmz.quest.frieza1.desc": "You've reached Namek, but Frieza's patrols already control the Ajissa Plains. Secure a foothold before the real battles begin.",
-
   "dmz.quest.frieza2.name": "Cui's Pursuit",
   "dmz.quest.frieza2.desc": "Cui has tracked the resistance to Namek. Drop him before he can report back to Frieza.",
-
   "dmz.quest.frieza3.name": "Defend the Namekians",
   "dmz.quest.frieza3.desc": "Frieza's army is raiding Namekian settlements across the Ajissa Plains. Hold the line and protect the survivors.",
-
   "dmz.quest.frieza4.name": "The Cruel Dodoria",
   "dmz.quest.frieza4.desc": "Dodoria is sweeping the Ajissa Plains and leaving nothing behind. Hunt him down and end the massacre.",
-
   "dmz.quest.frieza5.name": "Zarbon's True Form",
   "dmz.quest.frieza5.desc": "Zarbon's elegance hides a far uglier power. Survive his transformation and finish the fight.",
-
   "dmz.quest.frieza6.name": "The Saiyan Prince",
   "dmz.quest.frieza6.desc": "Vegeta is carving his own path across Namek in search of power. Confront the prince before he gets ahead of everyone else.",
-
   "dmz.quest.frieza7.name": "Ginyu Force: Guldo",
   "dmz.quest.frieza7.desc": "The Ginyu Force has landed. Start by crushing Guldo before the squad overwhelms the battlefield.",
-
   "dmz.quest.frieza8.name": "Recoome's Rampage",
   "dmz.quest.frieza8.desc": "Recoome is all power and no restraint. Stop him before the entire front collapses.",
-
   "dmz.quest.frieza9.name": "Burter and Jeice",
   "dmz.quest.frieza9.desc": "Burter and Jeice are fighting as a pair. Break the duo before Captain Ginyu joins the battle himself.",
-
   "dmz.quest.frieza10.name": "Captain Ginyu",
   "dmz.quest.frieza10.desc": "Captain Ginyu has entered the fight. Take down the leader of the Ginyu Force before his tricks turn the battle upside down.",
-
   "dmz.quest.frieza11.name": "Body Change Chaos",
   "dmz.quest.frieza11.desc": "Ginyu has stolen Goku's body and turned the battlefield into chaos. End the confusion before Frieza arrives.",
-
   "dmz.quest.frieza12.name": "Frieza, First Form",
   "dmz.quest.frieza12.desc": "The tyrant himself has finally entered the battle. Stand against Frieza's first form and survive the opening clash.",
-
   "dmz.quest.frieza13.name": "Frieza's Rising Horror",
   "dmz.quest.frieza13.desc": "Frieza refuses to stay in one shape. Survive his second and third forms before he reaches his true body.",
-
   "dmz.quest.frieza14.name": "Final Form Frieza",
   "dmz.quest.frieza14.desc": "Frieza's final form is deceptively calm and infinitely more dangerous. Fight through the terror and force him back.",
-
   "dmz.quest.frieza15.name": "100% Full Power",
   "dmz.quest.frieza15.desc": "Frieza is done holding back. Face his full power and end the fight before Namek dies with him.",
-
   "dmz.quest.frieza16.name": "Escape the Collapsing World",
   "dmz.quest.frieza16.desc": "Namek is collapsing around you. Get out before the planet takes everyone down with it.",
-
   "dmz.saga.android_saga": "Android Saga",
-
   "dmz.quest.android1.name": "Mecha Frieza",
   "dmz.quest.android1.desc": "Frieza has returned to Earth rebuilt as a machine. Stop him before Earth repeats Namek's fate.",
-
   "dmz.quest.android2.name": "King Cold",
   "dmz.quest.android2.desc": "King Cold has stepped onto the battlefield himself. Bring down the emperor before his rule reaches Earth.",
-
   "dmz.quest.android3.name": "Warning from the Future",
   "dmz.quest.android3.desc": "A mysterious warrior has changed the invasion's outcome. Speak with Trunks and learn what is coming.",
-
   "dmz.quest.android4.name": "Three Years of Preparation",
   "dmz.quest.android4.desc": "The Androids are still coming. Spend the waiting period training until your body is ready for what Trunks warned about.",
-
   "dmz.quest.android5.name": "Android 19",
   "dmz.quest.android5.desc": "The first android drains energy from anyone careless enough to fight head-on. Take 19 down fast.",
-
   "dmz.quest.android6.name": "Dr. Gero",
   "dmz.quest.android6.desc": "The creator of the Androids is on the move. Stop Dr. Gero before he can unleash something worse.",
-
   "dmz.quest.android7.name": "Track the Androids",
   "dmz.quest.android7.desc": "The real Androids vanished into the mountains after Gero's defeat. Search the range and pick up their trail.",
-
   "dmz.quest.android8.name": "Android 18",
   "dmz.quest.android8.desc": "Android 18 fights with cold confidence and overwhelming force. Survive her assault before the pair moves on.",
-
   "dmz.quest.android9.name": "Android 17",
   "dmz.quest.android9.desc": "Android 17 is reckless, cruel, and stronger than expected. Bring him down before he tears through the world.",
-
   "dmz.quest.android10.name": "Cell Emerges",
   "dmz.quest.android10.desc": "A bio-android from another timeline is feeding on the living. Hunt Imperfect Cell before he reaches the Androids.",
-
   "dmz.quest.android11.name": "Semi-Perfect Cell",
   "dmz.quest.android11.desc": "Cell has absorbed 17 and evolved into a stronger form. Stand against Semi-Perfect Cell before he reaches 18.",
-
   "dmz.quest.android12.name": "Beyond Super Saiyan",
   "dmz.quest.android12.desc": "The Cell Games are coming. Push beyond your current limits before Cell proves his perfect power.",
-
   "dmz.quest.android13.name": "Perfect Cell",
   "dmz.quest.android13.desc": "Cell has achieved perfection and opened the Cell Games. Face him in the arena that decides Earth's fate.",
-
   "dmz.quest.android14.name": "Cell Juniors",
   "dmz.quest.android14.desc": "Cell's children are tearing through the fighters. Destroy them before the arena collapses.",
-
   "dmz.quest.android15.name": "Super Perfect Cell",
   "dmz.quest.android15.desc": "Cell has returned stronger after Goku's sacrifice. End the fight for good before he destroys everything left standing.",
-
   "dmz.saga.future_saga": "Future Saga",
-
   "dmz.quest.future1.name": "A Future in Ruins",
   "dmz.quest.future1.desc": "Future Trunks asks you to hear what became of his timeline after the Androids won. Speak with him and prepare to step into that nightmare.",
-
   "dmz.quest.future2.name": "Resistance Training",
   "dmz.quest.future2.desc": "Train on the plains with Future Trunks and Future Gohan. Their world has no room for hesitation.",
-
   "dmz.quest.future3.name": "Androids of the Future",
   "dmz.quest.future3.desc": "Android 17 and Android 18 are tearing through the ruined plains. Fight them before their destruction spreads any further.",
-
   "dmz.quest.future4.name": "Future Gohan's Last Stand",
   "dmz.quest.future4.desc": "Future Gohan pushes himself into Super Saiyan for one final battle. Face him and carry his resolve forward.",
-
   "dmz.quest.future5.name": "Mountain Ambush",
   "dmz.quest.future5.desc": "The Androids have retreated into the mountains. Track them down and end the hunt on their chosen ground.",
-
   "dmz.quest.future6.name": "Imperfect Cell of the Future",
   "dmz.quest.future6.desc": "A younger Imperfect Cell is stalking the plains, feeding on what remains of the future. Destroy him before he escapes into another timeline.",
-
   "dmz.quest.future7.name": "Future Restored",
   "dmz.quest.future7.desc": "The future has a chance to heal. Report back to Trunks and close this optional saga.",
-
   "dmz.saga.buu_saga": "Buu Saga",
-
   "dmz.quest.buu1.name": "Train with Goten and Gohan",
   "dmz.quest.buu1.desc": "Peace never lasts. Train on the plains with Goten and Gohan before the next threat reveals itself.",
-
   "dmz.quest.buu2.name": "Gravity Device Components",
   "dmz.quest.buu2.desc": "A full gravity device will need serious machinery. Gather Kikono station parts, a fuel generator, and enough cabling to support the training load.",
-
   "dmz.quest.buu3.name": "Trunks and Vegeta Training",
   "dmz.quest.buu3.desc": "Train with Trunks and Vegeta under harsher conditions. Vegeta will not accept weak preparation.",
-
   "dmz.quest.buu4.name": "Enter the World Tournament",
   "dmz.quest.buu4.desc": "The World Martial Arts Tournament is underway. Speak with Shin and step into the tournament path.",
-
   "dmz.quest.buu5.name": "Tournament: Goten",
   "dmz.quest.buu5.desc": "Your first tournament bout is against Goten. Do not underestimate him because of his size.",
-
   "dmz.quest.buu6.name": "Tournament: Trunks",
   "dmz.quest.buu6.desc": "Kid Trunks enters with a Saiyan's pride and a champion's confidence. Defeat him in the tournament ring.",
-
   "dmz.quest.buu7.name": "Tournament: Krillin",
   "dmz.quest.buu7.desc": "Krillin brings years of experience into the tournament. Break through his technique and keep advancing.",
-
   "dmz.quest.buu8.name": "Tournament: Shin",
   "dmz.quest.buu8.desc": "Shin's calm hides a deeper purpose. Face him and learn why he is watching the tournament so closely.",
-
   "dmz.quest.buu9.name": "Tournament: Spopovich",
   "dmz.quest.buu9.desc": "Spopovich fights with unnatural strength. Defeat him before his stolen energy serves Babidi's plan.",
-
   "dmz.quest.buu10.name": "Find Babidi's Ship",
   "dmz.quest.buu10.desc": "Shin tracks Babidi's energy to a rocky wasteland. Follow the signal and find the entrance to the wizard's lair.",
-
   "dmz.quest.buu11.name": "Babidi's Guard: Pui Pui",
   "dmz.quest.buu11.desc": "Pui Pui guards the first level of Babidi's ship. Drop him and keep moving before the seal weakens.",
-
   "dmz.quest.buu12.name": "Babidi's Guard: Yakon",
   "dmz.quest.buu12.desc": "Yakon feeds on energy and darkness. Keep your power under control and bring the monster down.",
-
   "dmz.quest.buu13.name": "Dabura, King of Demons",
   "dmz.quest.buu13.desc": "Dabura stands between you and Babidi's plan. Survive his demonic power and cut through the ship's last defense.",
-
   "dmz.quest.buu14.name": "Majin Buu Awakens",
   "dmz.quest.buu14.desc": "Fat Buu has awakened. The innocent smile hides power that can erase the world.",
-
   "dmz.quest.buu15.name": "Goku and Vegeta Clash",
   "dmz.quest.buu15.desc": "Goku and Majin Vegeta's battle is feeding the disaster. Survive both warriors and force the battle back toward Buu.",
-
   "dmz.quest.buu16.name": "Buu's Second Rampage",
   "dmz.quest.buu16.desc": "Fat Buu is still loose and growing harder to contain. Fight him again before the damage becomes permanent.",
-
   "dmz.quest.buu17.name": "Stop Babidi",
   "dmz.quest.buu17.desc": "Babidi thinks he can control the monster he released. End the wizard's influence before he steers Buu toward more destruction.",
-
   "dmz.quest.buu18.name": "Super Saiyan 3",
   "dmz.quest.buu18.desc": "Goku reveals a power beyond Super Saiyan 2 on the plains. Stand against Super Saiyan 3 and learn what the next battles demand.",
-
   "dmz.quest.buu19.name": "Beach Training with Gotenks",
   "dmz.quest.buu19.desc": "Gotenks needs field experience away from the cities. Meet him at the beach and test the fusion's raw power.",
-
   "dmz.quest.buu20.name": "Evil Buu",
   "dmz.quest.buu20.desc": "Buu's evil has split into its own body. Face Evil Buu before the innocent side is consumed.",
-
   "dmz.quest.buu21.name": "Krillin and Android 18",
   "dmz.quest.buu21.desc": "Krillin and Android 18 test your readiness for the chaos ahead. Train against them together on the plains.",
-
   "dmz.quest.buu22.name": "Super Buu in the Time Chamber",
   "dmz.quest.buu22.desc": "Super Buu has reached the Hyperbolic Time Chamber. Fight him in that isolated space before he breaks loose.",
-
   "dmz.quest.buu23.name": "Gotenks at Full Power",
   "dmz.quest.buu23.desc": "Gotenks brings Super Saiyan 3 power to the rocky wasteland. Prove you can survive that pressure before facing Buu again.",
-
   "dmz.quest.buu24.name": "The Z Sword and Ultimate Power",
   "dmz.quest.buu24.desc": "Travel to the sacred lands, carry the Z Sword, and reach the Potential Unlock level needed to awaken ultimate power.",
-
   "dmz.quest.buu25.name": "Super Buu Returns",
   "dmz.quest.buu25.desc": "Super Buu has returned stronger and more focused. Challenge him in the rocky wasteland.",
-
   "dmz.quest.buu26.name": "Super Buu Gotenks",
   "dmz.quest.buu26.desc": "Buu has absorbed Gotenks and stolen his explosive power. Bring down the fused monster before the timer runs out.",
-
   "dmz.quest.buu27.name": "Super Buu Gohan",
   "dmz.quest.buu27.desc": "Buu has absorbed Gohan and reached a terrifying new peak. Survive the power of Super Buu Gohan.",
-
   "dmz.quest.buu28.name": "Face Vegetto",
   "dmz.quest.buu28.desc": "Vegetto's combined power is overwhelming. Fight through Goku and Vegeta's fused pressure and prepare for the final rescue.",
-
   "dmz.quest.buu29.name": "Return to the Sacred World",
   "dmz.quest.buu29.desc": "The final battle moves to the sacred world. Reach the sacred village before Kid Buu arrives.",
-
   "dmz.quest.buu30.name": "Kid Buu",
   "dmz.quest.buu30.desc": "Kid Buu is pure destruction with no restraint. Fight him on sacred ground and hold him back.",
-
   "dmz.quest.buu31.name": "Goku's Final Stand",
   "dmz.quest.buu31.desc": "Goku pushes Super Saiyan 3 to its limit. Face him and buy the time needed for one last chance.",
-
   "dmz.quest.buu32.name": "Vegeta's Final Stand",
   "dmz.quest.buu32.desc": "Vegeta steps in with Super Saiyan 2 resolve. Stand beside his defiance and test yourself against it.",
-
   "dmz.quest.buu33.name": "Satan and Majin Buu",
   "dmz.quest.buu33.desc": "Majin Buu's friendship with Mr. Satan becomes the world's unlikely hope. Hold the line with Buu while that hope takes shape.",
-
   "dmz.quest.buu34.name": "Destroy Kid Buu",
   "dmz.quest.buu34.desc": "This is the final clash. Destroy Kid Buu before his chaos reaches Earth again.",
-
   "dmz.quest.buu35.name": "Return to Earth",
   "dmz.quest.buu35.desc": "The battle is over. Return to Earth and close the Buu Saga.",
-
   "dmz.saga.movies_saga": "Movies Saga",
   "dmz.quest.movies1.name": "Kami's Lookout Warning",
   "dmz.quest.movies1.desc": "Dende senses Garlic Jr.'s return. Go to Kami's Lookout and speak with him before the threat spreads.",
@@ -2144,7 +2116,6 @@
   "dmz.quest.movies39.desc": "Hildegarn is complete and tearing through the plains. Defeat the full monster.",
   "dmz.quest.movies40.name": "Super Hildegarn",
   "dmz.quest.movies40.desc": "Hildegarn reaches its final power. End the Dragon Fist crisis with one last battle.",
-  "//": "SIDE QUESTS § TRAINING",
   "dmz.sidequest.roshi_basic.name": "Roshi's Basic Training",
   "dmz.sidequest.roshi_basic.desc": "Master Roshi has agreed to train you, but first you must prove your worth. Find Kame House and show your combat skills.",
   "dmz.sidequest.endurance.name": "Endurance Training",
@@ -2153,7 +2124,6 @@
   "dmz.sidequest.weighted.desc": "It's time to train with weighted gear. Defeat powerful foes and gather materials for your training equipment.",
   "dmz.sidequest.gravity.name": "Gravity Chamber",
   "dmz.sidequest.gravity.desc": "You've earned access to intense gravity training. Venture into dangerous territory and prove you can handle extreme conditions.",
-  "//": "SIDE QUESTS § EXPLORATION",
   "dmz.sidequest.explorer.name": "World Explorer",
   "dmz.sidequest.explorer.desc": "A warrior must know the land they protect. Explore the different biomes of the world.",
   "dmz.sidequest.earth_landmarks.name": "Earth Landmarks",
@@ -2162,15 +2132,12 @@
   "dmz.sidequest.namek_explorer.desc": "You've reached Namek! Explore this alien world and discover the villages of the Namekian people.",
   "dmz.sidequest.sacred_lands.name": "The Sacred Lands",
   "dmz.sidequest.sacred_lands.desc": "The Namekian elders speak of a sacred village hidden on this world. Find it and uncover its secrets.",
-  "//": "SIDE QUESTS § COMBAT",
   "dmz.sidequest.monster_hunter.name": "Monster Hunter",
   "dmz.sidequest.monster_hunter.desc": "The world is filled with dangerous creatures. Prove yourself as a monster hunter by eliminating various threats.",
   "dmz.sidequest.nether_warrior.name": "Nether Warrior",
   "dmz.sidequest.nether_warrior.desc": "The Nether holds powerful enemies. Only a true warrior can survive its fiery depths.",
   "dmz.sidequest.dball_hunter.name": "Red Ribbon Outpost",
   "dmz.sidequest.dball_hunter.desc": "An outpost is stirring up trouble in the countryside. Track it down and clear out the raiders.",
-
-  "//": "SIDE QUESTS § TRAINING & SAIYAN SAGA",
   "dmz.sidequest.krillin_sparring.name": "Krillin's Sparring Match",
   "dmz.sidequest.krillin_sparring.desc": "Krillin wants a sparring partner to prepare for the incoming Saiyan threat. Show him you can hold your own against the local monsters.",
   "dmz.sidequest.tien_mountain.name": "Mountain Training",
@@ -2179,32 +2146,22 @@
   "dmz.sidequest.piccolo_survival.desc": "Piccolo believes in training through pure survival. Venture into the forest and prove your combat skills against waves of hostile creatures.",
   "dmz.sidequest.gohan_survival.name": "Gohan's Survival Kit",
   "dmz.sidequest.gohan_survival.desc": "Piccolo left young Gohan alone in the wilderness to toughen him up. The boy could use some supplies & bring him food and a weapon.",
-
-  "//": "SIDE QUESTS § TRAINING & ANDROID SAGA",
   "dmz.sidequest.vegeta_pride.name": "Vegeta's Pride Training",
   "dmz.sidequest.vegeta_pride.desc": "Vegeta demands you keep up with his training regimen. Enter the Hyperbolic Time Chamber and fight the deadliest enemies to prove you're worthy of a Saiyan's respect.",
   "dmz.sidequest.gohan_timechamber.name": "Gohan's Time Chamber Training",
   "dmz.sidequest.gohan_timechamber.desc": "Gohan is training inside the Hyperbolic Time Chamber to unlock his hidden potential. Help him prepare by gathering supplies and clearing out phantom threats.",
-
-  "//": "SIDE QUESTS - TRAINING - BUU SAGA",
   "dmz.sidequest.kaiosama_buu.name": "Kaiosama's Warning",
   "dmz.sidequest.kaiosama_buu.desc": "King Kai senses a sleeping evil behind the tournament. Speak with him before Babidi's plan reaches Earth.",
   "dmz.sidequest.old_kai_ritual.name": "Old Kai's Ritual",
   "dmz.sidequest.old_kai_ritual.desc": "The Z Sword has revealed a stranger path to hidden power. Bring the sword to the sacred village, speak with King Kai, and complete the ritual to awaken your ultimate potential.",
-
-  "//": "SIDE QUESTS § EXPLORATION & FRIEZA SAGA",
   "dmz.sidequest.krillin_scout.name": "Namek Reconnaissance",
   "dmz.sidequest.krillin_scout.desc": "Krillin asks you to scout the Ajissa Plains for safe routes through Frieza's territory. Find a Namekian village and report back.",
   "dmz.sidequest.namek_farewell.name": "Namek's Farewell",
   "dmz.sidequest.namek_farewell.desc": "Before Namek's fate is sealed, the Namekian Elder asks you to visit the Sacred Lands one last time and pay your respects to this dying world.",
-
-  "//": "SIDE QUESTS § EXPLORATION & ANDROID SAGA",
   "dmz.sidequest.trunks_warning.name": "Trunks' Warning",
   "dmz.sidequest.trunks_warning.desc": "A mysterious warrior from the future warns you about the Android threat. Investigate Dr. Gero's laboratory to uncover his plans before it's too late.",
   "dmz.sidequest.piccolo_kami.name": "Piccolo's Resolve",
   "dmz.sidequest.piccolo_kami.desc": "Piccolo contemplates fusing with Kami to gain the power needed to fight the Androids. Visit Kami's Lookout and help him find the clarity he needs.",
-
-  "//": "SIDE QUESTS § COMBAT & SAIYAN SAGA",
   "dmz.sidequest.yamcha_bandit.name": "Desert Wolf's Grudge",
   "dmz.sidequest.yamcha_bandit.desc": "Yamcha's old desert hideout has been overrun by bandits. He asks you to clear them out & for old times' sake.",
   "dmz.sidequest.farmer_rr.name": "Red Ribbon Remnants",
@@ -2217,46 +2174,32 @@
   "dmz.sidequest.tien_cell.desc": "Tien senses a dark energy spreading across the plains. Help him investigate by eliminating the creatures Cell has been absorbing from.",
   "dmz.sidequest.videl_defense.name": "City Defense",
   "dmz.sidequest.videl_defense.desc": "Cell Juniors are wreaking havoc everywhere! Videl asks for your help defending the innocent from these miniature terrors.",
-
-  "//": "SIDE QUESTS § STORY & SAIYAN SAGA",
   "dmz.sidequest.chiaotzu_rescue.name": "Chiaotzu's Rescue",
   "dmz.sidequest.chiaotzu_rescue.desc": "Chiaotzu went missing while training near a Nether portal. Tien is worried sick & venture into the Nether, gather what you need, and bring his friend back safely.",
   "dmz.sidequest.scholar_lore.name": "Saiyan Legacy",
   "dmz.sidequest.scholar_lore.desc": "Bulma has heard rumors of alien technology on Earth. Investigate the crash site near Goku's home and the rocky wastelands where the Saiyans landed.",
-
-  "//": "SIDE QUESTS § STORY & FRIEZA SAGA",
   "dmz.sidequest.piccolo_arrival.name": "Piccolo's Arrival",
   "dmz.sidequest.piccolo_arrival.desc": "Piccolo has finally arrived on Planet Namek. He needs you to create a distraction by drawing out Frieza's soldiers while he powers up.",
   "dmz.sidequest.goku_healing.name": "Defending the Healing Pod",
   "dmz.sidequest.goku_healing.desc": "Goku is recovering in a healing pod after his battle with the Ginyu Force. Frieza's soldiers are closing in & defend the area at all costs!",
   "dmz.sidequest.goku_farewell.name": "Goku's Final Farewell",
   "dmz.sidequest.goku_farewell.desc": "With Cell defeated, Goku has one last wish & visit Kami's Lookout together one more time. This may be the last chance to say goodbye.",
-
-  "//": "SIDE QUESTS - STORY - FUTURE SAGA",
   "dmz.sidequest.future_gohan_cure.name": "Medicine for the Future",
   "dmz.sidequest.future_gohan_cure.desc": "Future Gohan is badly wounded after the Androids' attack. Gather golden apples and a Senzu Bean, then report back to Trunks.",
-
-  "//": "SIDE QUESTS § COLLECTION & SAIYAN SAGA",
   "dmz.sidequest.bulma_radar.name": "Radar Upgrade",
   "dmz.sidequest.bulma_radar.desc": "Bulma needs specific materials to improve the Dragon Radar's range. Gather redstone, copper, and gold for her & she'll make it worth your while.",
   "dmz.sidequest.collect_dballs.name": "Summon Shenron",
   "dmz.sidequest.collect_dballs.desc": "Bulma's radar is ready. Find the seven Earth Dragon Balls, bring them together, summon Shenron, and report back.",
   "dmz.sidequest.chichi_provisions.name": "Provisions for Battle",
   "dmz.sidequest.chichi_provisions.desc": "Krillin is preparing a feast for the warriors before the final battle against the Saiyans. Help gather enough food to feed everyone.",
-
-  "//": "SIDE QUESTS § COLLECTION & FRIEZA SAGA",
   "dmz.sidequest.bulma_namek.name": "Namekian Research",
   "dmz.sidequest.bulma_namek.desc": "Bulma needs Namekian materials to tune a radar for this alien world. Collect Kikono shards and cloth so the search can begin.",
   "dmz.sidequest.merchant_artifacts.name": "Alien Artifacts",
   "dmz.sidequest.merchant_artifacts.desc": "Bulma discovered rare alien materials on Namek. Retrieve Kikono shards and diamonds for her & she promises a legendary weapon in return.",
   "dmz.sidequest.gohan_namek_db.name": "Summon Porunga",
   "dmz.sidequest.gohan_namek_db.desc": "The Namekian Elder entrusts you with the village's greatest hope. Find the seven Namekian Dragon Balls, summon Porunga, and return safely.",
-
-  "//": "SIDE QUESTS § COLLECTION & ANDROID SAGA",
   "dmz.sidequest.bulma_gero.name": "Gero's Blueprints",
   "dmz.sidequest.bulma_gero.desc": "Bulma needs data from Dr. Gero's laboratory to understand the Androids' weaknesses. Search the lab and bring back redstone circuits and Kikono components.",
-
-  "//": "SIDE QUESTS - COLLECTION - BUU SAGA",
   "dmz.sidequest.buu_dragon_balls.name": "Dragon Balls for the Final Battle",
   "dmz.sidequest.buu_dragon_balls.desc": "Bulma wants the Earth Dragon Balls ready before Buu's threat gets worse. Summon Shenron and return to her with the result.",
 
@@ -2336,8 +2279,6 @@
   "dmz.sidequest.bulma_emergency_teleport_device.name": "Emergency Recall",
   "dmz.sidequest.bulma_emergency_teleport_device.desc": "Bulma builds an emergency recall system. Gather ender pearls, obsidian and redstone blocks.",
   "dmz.sidequest.reward.gete_enchant_book": "Gete-tech Enchanted Book",
-
-  "//": "SIDE QUESTS § CATEGORIES",
   "gui.dragonminez.story.sidequests.category.training": "Training",
   "gui.dragonminez.story.sidequests.category.exploration": "Exploration",
   "gui.dragonminez.story.sidequests.category.combat": "Combat",
@@ -2546,7 +2487,6 @@
   "advancements.dragonminez.kaiosama.description": "Reach the King Kai's Planet in the Otherworld, crossing Snake Way.",
   "advancements.dragonminez.patriarca.title": "The Eldest Namek",
   "advancements.dragonminez.patriarca.description": "Reach the Grand Elder Guru's House in Namek.",
-  "//": "MISC",
   "attribute.dragonminez.dmz_health": "DMZ Health",
   "attribute.name.generic.armor": "\uE001 Armor",
   "attribute.name.generic.armor_toughness": "\uE002 Armor Toughness",
