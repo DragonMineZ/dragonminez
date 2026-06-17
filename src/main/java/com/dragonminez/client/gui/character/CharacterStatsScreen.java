@@ -1296,6 +1296,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				}
 			}
 
+			int idealWeight = statsData.getTpIdealWeight();
+			if (idealWeight > 0) {
+				boolean onTarget = totalWeight == idealWeight;
+				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.ideal_weight",
+						numberFormatter.format(idealWeight)).withStyle(onTarget ? ChatFormatting.GREEN : ChatFormatting.GOLD));
+			}
+
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(),
 					title, desc, extras, 0xFF7722);
 		}

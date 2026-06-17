@@ -1071,6 +1071,29 @@ public class StatsData {
 		return peak * Math.exp(exponent) + 1.0;
 	}
 
+	public int getTpIdealWeight() {
+		var gravityConfig = ConfigManager.getServerConfig().getGravity();
+		if (!gravityConfig.getTpEnabled()) return 0;
+
+		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
+		if (gravityMultiplier <= 0.0) return 0;
+
+		int currentBaseLevel = getLevel();
+		int totalBaseStats = stats.getTotalStats();
+		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
+
+		double boostedTotal = stats.getStrength() * getTotalMultiplier("STR")
+				+ stats.getStrikePower() * getTotalMultiplier("SKP")
+				+ stats.getResistance() * getTotalMultiplier("RES")
+				+ stats.getVitality() * getTotalMultiplier("VIT")
+				+ stats.getKiPower() * getTotalMultiplier("PWR")
+				+ stats.getEnergy() * getTotalMultiplier("ENE");
+
+		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
+		double idealWeight = relativeLevel / (2.0 * gravityMultiplier);
+		return (int) Math.max(0, Math.round(idealWeight));
+	}
+
 	public int getGravityTotalWeight() {
 		return GravityLogic.getTotalWeight(player);
 	}
