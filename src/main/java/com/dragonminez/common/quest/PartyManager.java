@@ -313,9 +313,87 @@ public final class PartyManager {
         return leader != null ? leader : player;
     }
 
-    public static void forceJoinParty(ServerPlayer leader, ServerPlayer member) {
-        leaveParty(member);
-        joinLeaderParty(leader, member);
+    public static void beginFusionParty(ServerPlayer leader, ServerPlayer partner) {
+        snapshotFusionParty(leader);
+        snapshotFusionParty(partner);
+
+        boolean leaderInParty = isInParty(leader);
+        boolean partnerInParty = isInParty(partner);
+
+        if (leaderInParty) {
+            joinPartyForFusion(partner, getPartyId(leader), false);
+        } else if (partnerInParty) {
+            joinPartyForFusion(leader, getPartyId(partner), false);
+        } else {
+            UUID partyId = getOrCreateParty(leader);
+            joinPartyForFusion(partner, partyId, false);
+        }
+    }
+
+    public static void endFusionParty(ServerPlayer player) {
+        StatsData data = getStatsData(player);
+        if (data == null) return;
+        var status = data.getStatus();
+        if (!status.isFusionPartyManaged()) return;
+
+        UUID prevPartyId = status.getFusionPrevPartyId();
+        boolean prevLeader = status.isFusionPrevPartyLeader();
+
+        // Clear markers up front so a re-entrant end call cannot double-process.
+        status.setFusionPartyManaged(false);
+        status.setFusionPrevPartyId(null);
+        status.setFusionPrevPartyLeader(false);
+
+        UUID currentPartyId = getPartyId(player);
+        if (Objects.equals(currentPartyId, prevPartyId)) return; // host kept their party; nothing moved
+
+        if (prevPartyId == null) {
+            leaveParty(player);
+        } else {
+            joinPartyForFusion(player, prevPartyId, prevLeader);
+        }
+    }
+
+    private static void snapshotFusionParty(ServerPlayer player) {
+        StatsData data = getStatsData(player);
+        if (data == null) return;
+        var status = data.getStatus();
+        UUID partyId = getPartyId(player);
+        status.setFusionPrevPartyId(partyId);
+        status.setFusionPrevPartyLeader(partyId != null && isPartyLeader(player));
+        status.setFusionPartyManaged(true);
+    }
+
+    private static void joinPartyForFusion(ServerPlayer mover, UUID targetPartyId, boolean restoreLeadership) {
+        if (targetPartyId == null) return;
+        if (targetPartyId.equals(getPartyId(mover))) return;
+
+        leaveParty(mover);
+
+        MinecraftServer server = mover.getServer();
+        PartySavedData data = PartySavedData.get(server);
+        PartySavedData.PartyInstance party = data.getParty(targetPartyId);
+        if (party == null) return; // original party dissolved while fused; mover stays solo
+
+        getQuestData(mover).savePartyQuestBackup();
+        data.addPlayerToParty(targetPartyId, mover.getUUID());
+        addToMinecraftTeam(server, targetPartyId, mover);
+        updateTeamFriendlyFire(server, targetPartyId, party.isPvpEnabled());
+
+        if (restoreLeadership) {
+            party.setLeaderId(mover.getUUID());
+            data.setDirty();
+            for (UUID id : party.getMembers()) {
+                if (id.equals(mover.getUUID())) continue;
+                ServerPlayer other = server.getPlayerList().getPlayer(id);
+                if (other != null) syncQuestProgress(mover, other);
+            }
+        } else {
+            ServerPlayer leader = server.getPlayerList().getPlayer(party.getLeaderId());
+            if (leader != null && !leader.getUUID().equals(mover.getUUID())) syncQuestProgress(leader, mover);
+        }
+
+        syncPartyToOnlineMembers(server, party);
     }
 
     @SubscribeEvent

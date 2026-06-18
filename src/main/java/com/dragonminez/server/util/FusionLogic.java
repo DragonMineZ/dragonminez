@@ -131,7 +131,7 @@ public class FusionLogic {
 
 		mixAppearance(lData, pData);
 		calculateAndApplyStats(lData, pData, type, lvl1, lvl2);
-		PartyManager.forceJoinParty(leader, partner);
+		PartyManager.beginFusionParty(leader, partner);
 
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
@@ -168,7 +168,7 @@ public class FusionLogic {
 			if (leaderData.getStatus().getOriginalAppearance() != null) leaderData.getCharacter().loadAppearance(leaderData.getStatus().getOriginalAppearance());
 			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 			if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
-			PartyManager.leaveParty(leaderRef);
+			PartyManager.endFusionParty(leaderRef);
 			leaderData.getStatus().setFusionPartnerUUID(null);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
 		}
@@ -184,7 +184,7 @@ public class FusionLogic {
 			partnerRef.stopRiding();
 			partnerRef.setGameMode(GameType.SURVIVAL);
 			if (partnerRef.hasEffect(MainEffects.FUSED.get())) partnerRef.removeEffect(MainEffects.FUSED.get());
-			PartyManager.leaveParty(partnerRef);
+			PartyManager.endFusionParty(partnerRef);
 			partnerData.getStatus().setFusionPartnerUUID(null);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
 		}
