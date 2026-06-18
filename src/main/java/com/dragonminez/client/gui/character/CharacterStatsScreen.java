@@ -1387,6 +1387,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			if (potionEffect > 1.0) {
 				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", formatUpToOneDecimal(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE));
 			}
+
+			double mutantTp = statsData.getMutantTpMultiplier();
+			if (mutantTp > 1.0) {
+				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant", formatUpToOneDecimal(mutantTp)).withStyle(ChatFormatting.DARK_PURPLE));
+			}
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0x7CFDD6);
 		}
 	}
@@ -1396,7 +1401,6 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		extras.add(tr("gui.dragonminez.character_stats.shift_hint").withStyle(ChatFormatting.DARK_GRAY));
 	}
 
-	// Whether the player has Ki Infusion / Ki Manipulation contributions worth showing on attack tooltips.
 	private boolean hasAttackSkillInfo() {
 		var skills = statsData.getSkills();
 		if (skills.hasSkill("ki_infusion") && skills.getSkillLevel("ki_infusion") > 0) return true;

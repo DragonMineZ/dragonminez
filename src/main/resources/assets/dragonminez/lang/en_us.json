@@ -214,6 +214,8 @@
   "gui.dragonminez.character_stats.tp_multiplier.tooltip.htc": "HTC: x%s",
   "gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity": "Gravity: x%s",
   "gui.dragonminez.character_stats.tp_multiplier.tooltip.weight": "Weights (Bell): x%s",
+  "gui.dragonminez.character_stats.tp_multiplier.tooltip.effect": "Effect: x%s",
+  "gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant": "Mutant: x%s",
   "gui.dragonminez.character_stats.gravity": "Gravity",
   "gui.dragonminez.character_stats.gravity.tooltip.environmental": "Environmental: %sg",
   "gui.dragonminez.character_stats.gravity.tooltip.weight_load": "Weight Load: %s kg (+%sg)",
