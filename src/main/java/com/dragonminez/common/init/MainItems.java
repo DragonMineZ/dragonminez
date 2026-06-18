@@ -232,10 +232,29 @@ public final class MainItems {
 	// WHIS
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> WHIS_ARMOR = fullArmorNoHelmetSet("whis_armor", "whis");
 
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> XENO_GOKU_ARMOR = fullArmorNoHelmetSet("xeno_goku_armor", "xeno_goku");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> XENO_GOKU_PATREON_ARMOR = fullArmorNoHelmetSet("xeno_goku_patreon_armor", "xeno_goku_patreon");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> A20_ARMOR = fullArmorSet("a20_armor", "a20");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> GERO_ARMOR = fullArmorNoHelmetSet("gero_armor", "gero");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> SUBARU_NATSUKI_ARMOR = fullArmorNoHelmetSet("subaru_natsuki_armor", "subaru_natsuki");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> DANIEL_NATSUKI_ARMOR = fullArmorCapeNoHelmetSet("daniel_natsuki_armor", "daniel_natsuki");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> GREAT_SAIYAMAN_2_ARMOR = fullArmorCapeSet("great_saiyaman_2_armor", "great_saiyaman_2");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> CHAOZ_ARMOR = fullArmorSet("chaoz_armor", "chaoz");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> SUPER_BUU_ARMOR = fullArmorNoHelmetSet("super_buu_armor", "super_buu");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> CAPSULE_CORP_ARMOR = fullArmorNoHelmetSet("capsule_corp_armor", "capsule_corp");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> A13_ARMOR = fullArmorNoHelmetSet("a13_armor", "a13");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> A14_ARMOR = fullArmorNoHelmetSet("a14_armor", "a14");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> KIBITO_ARMOR = fullArmorNoHelmetSet("kibito_armor", "kibito");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> RADITZ_ARMOR = fullArmorNoHelmetSet("raditz_armor", "raditz_armor");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> COOLER_SOLDIER_ARMOR = fullArmorNoHelmetSet("cooler_soldier_armor", "cooler_soldier");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> SLUG_ARMOR = fullArmorSet("slug_armor", "slug");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> EVIL_BUU_ARMOR = fullArmorNoHelmetSet("evil_buu_armor", "evil_buu");
 
-	//INVENCIBLE
+
+    //INVENCIBLE
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> INVENCIBLE_ARMOR = fullArmorSet("invencible_armor", "invencible");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> INVENCIBLE_BLUE_ARMOR = fullArmorSet("invencible_blue_armor", "invencible_blue");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> THRAGG_ARMOR = fullArmorNoHelmetSet("thragg_armor", "thragg");
 
 	//LÍQUIDOS
 	public static final RegistryObject<Item> HEALING_BUCKET = ITEM_REGISTER.register("healing_liquid_bucket",
