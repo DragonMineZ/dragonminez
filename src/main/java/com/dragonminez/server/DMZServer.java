@@ -32,6 +32,9 @@ public class DMZServer {
 		ConfigCommand.register(dispatcher);
 		WeightCommand.register(dispatcher);
 		RaidCommand.register(dispatcher);
+		AlignmentCommand.register(dispatcher);
+		TailCommand.register(dispatcher);
+		HaloCommand.register(dispatcher);
 
 		LogUtil.info(Env.SERVER, "DragonMineZ Commands Registered");
 	}

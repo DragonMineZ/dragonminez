@@ -258,7 +258,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                 }
             }
 
-			if (!stats.getStatus().isAlive()) {
+			if (!stats.getStatus().isAlive() || stats.getStatus().isForceHalo()) {
 				GeoBone haloBone = partsModel.getBone("halo").orElse(null);
 
 				if (haloBone != null) {

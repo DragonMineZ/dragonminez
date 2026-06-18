@@ -21,6 +21,7 @@ public class Status {
 	public static final int FLIGHT_COMBAT = 1;
 
 	private boolean isAlive;
+	private boolean forceHalo;
 	private boolean isHasCreatedCharacter;
 	private boolean isAuraActive;
 	private boolean isActionCharging;
@@ -59,6 +60,7 @@ public class Status {
 
 	public Status() {
 		this.isAlive = true;
+		this.forceHalo = false;
 		this.isHasCreatedCharacter = false;
 		this.isAuraActive = false;
 		this.isActionCharging = false;
@@ -97,6 +99,7 @@ public class Status {
 
 	public void reset() {
 		this.isAlive = true;
+		this.forceHalo = false;
 		this.isHasCreatedCharacter = false;
 		this.isAuraActive = false;
 		this.isActionCharging = false;
@@ -155,6 +158,7 @@ public class Status {
 	public CompoundTag save() {
 		CompoundTag tag = new CompoundTag();
 		tag.putBoolean("IsAlive", isAlive);
+		tag.putBoolean("ForceHalo", forceHalo);
 		tag.putBoolean("HasCreatedChar", isHasCreatedCharacter);
 		tag.putBoolean("AuraActive", isAuraActive);
 		tag.putBoolean("Transforming", isActionCharging);
@@ -198,6 +202,7 @@ public class Status {
 
 	public void load(CompoundTag tag) {
 		this.isAlive = tag.getBoolean("IsAlive");
+		this.forceHalo = tag.getBoolean("ForceHalo");
 		this.isHasCreatedCharacter = tag.getBoolean("HasCreatedChar");
 		this.isAuraActive = tag.getBoolean("AuraActive");
 		this.isActionCharging = tag.getBoolean("Transforming");
@@ -244,6 +249,7 @@ public class Status {
 
 	public void copyFrom(Status other) {
 		this.isAlive = other.isAlive;
+		this.forceHalo = other.forceHalo;
 		this.isHasCreatedCharacter = other.isHasCreatedCharacter;
 		this.isAuraActive = other.isAuraActive;
 		this.isActionCharging = other.isActionCharging;
