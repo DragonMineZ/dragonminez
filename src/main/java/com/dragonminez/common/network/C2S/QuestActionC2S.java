@@ -16,6 +16,7 @@ import java.util.function.Supplier;
 public class QuestActionC2S {
 	public enum ActionType {
 		START,
+		RESUMMON,
 		TURN_IN
 	}
 
@@ -56,6 +57,7 @@ public class QuestActionC2S {
 			try {
 				Component failure = switch (actionType) {
 					case START -> QuestService.startQuest(player, questId, isHardMode);
+					case RESUMMON -> QuestService.resummonQuest(player, questId);
 					case TURN_IN -> QuestService.turnInQuest(player, questId, npcId);
 				};
 

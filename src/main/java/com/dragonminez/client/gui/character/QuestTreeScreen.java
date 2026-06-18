@@ -22,6 +22,7 @@ import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.QuestPrerequisites;
 import com.dragonminez.common.quest.Saga;
@@ -678,6 +679,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean isClaimAction = false;
 		boolean isTrackAction = false;
 		boolean isStartAction = false;
+		boolean isResummonAction = false;
 		List<Component> tooltipLines = List.of();
 
 		if (isCompleted) {
@@ -705,6 +707,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			buttonActive = true;
 			isStartAction = true;
 		} else if (questData.getQuestStatus(selectedKey) == PlayerQuestData.QuestStatus.ACCEPTED
+				&& hasRemainingQuestSpawns(questData, selectedKey, selectedQuest)
+				&& isResummonReady(selectedKey)) {
+			buttonText = tr("gui.dragonminez.quests.start");
+			buttonActive = true;
+			isResummonAction = true;
+		} else if (questData.getQuestStatus(selectedKey) == PlayerQuestData.QuestStatus.ACCEPTED
 				&& !selectedKey.equals(questData.getTrackedQuestId())) {
 			buttonText = tr("gui.dragonminez.quests.track");
 			isTrackAction = true;
@@ -726,6 +734,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		boolean finalIsClaimAction = isClaimAction;
 		boolean finalIsTrackAction = isTrackAction;
+		boolean finalIsResummonAction = isResummonAction;
 		PanelRect right = getRightPanelRect();
 		int buttonX = right.x + (right.width - 74) / 2;
 		int buttonY = right.bottom() - 28;
@@ -751,9 +760,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						questData.setTrackedQuestId(selectedKey);
 						btn.visible = false;
 						pendingRefreshTicks = 5;
+					} else if (finalIsResummonAction) {
+						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.RESUMMON, selectedKey, false, ""));
+						startResummonCooldown(selectedKey);
+						btn.visible = false;
+						pendingRefreshTicks = 5;
 					} else {
 						// Hard mode is resolved server-side from the shared party preference.
 						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, false, ""));
+						startResummonCooldown(selectedKey);
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					}
@@ -918,6 +933,35 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				.build();
 		this.addRenderableWidget(button);
 		return button;
+	}
+
+	private static final long RESUMMON_COOLDOWN_MS = 60_000L;
+	private static final Map<String, Long> resummonReadyAt = new HashMap<>();
+
+	public static void clearResummonCooldowns() {
+		resummonReadyAt.clear();
+	}
+
+	private boolean isResummonReady(String questKey) {
+		Long readyAt = resummonReadyAt.get(questKey);
+		return readyAt == null || System.currentTimeMillis() >= readyAt;
+	}
+
+	private void startResummonCooldown(String questKey) {
+		resummonReadyAt.put(questKey, System.currentTimeMillis() + RESUMMON_COOLDOWN_MS);
+	}
+
+	private boolean hasRemainingQuestSpawns(PlayerQuestData questData, String questKey, Quest quest) {
+		if (quest == null || questData == null) return false;
+		List<QuestObjective> objectives = quest.getObjectives();
+		for (int i = 0; i < objectives.size(); i++) {
+			if (!(objectives.get(i) instanceof KillObjective killObjective)) continue;
+			if (killObjective.getSpawnMode() != KillObjective.SpawnMode.QUEST) continue;
+			int progress = questData.getObjectiveProgress(questKey, i);
+			int required = quest.getObjectiveRequired(questData, questKey, i);
+			if (progress < required) return true;
+		}
+		return false;
 	}
 
 	private boolean canStartQuest(Quest quest) {
