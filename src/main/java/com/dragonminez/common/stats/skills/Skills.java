@@ -108,7 +108,8 @@ public class Skills {
 		for (String key : skillMap.keySet()) if (!validNames.contains(key)) invalidKeys.add(key);
 
 		for (String badKey : invalidKeys) {
-			String canonical = findClosestSkill(badKey, validNames);
+			String canonical = resolveCanonicalAlias(badKey, validNames);
+			if (canonical == null) canonical = findClosestSkill(badKey, validNames);
 			if (canonical == null || canonical.equals(badKey)) continue;
 
 			Skill legacy = skillMap.remove(badKey);
@@ -130,6 +131,13 @@ public class Skills {
 			renamed.put(badKey, canonical);
 		}
 		return renamed;
+	}
+
+	private static String resolveCanonicalAlias(String input, Set<String> candidates) {
+		if (input == null || input.isEmpty()) return null;
+		if (candidates.contains(input + "s")) return input + "s";
+		if (input.endsWith("s") && candidates.contains(input.substring(0, input.length() - 1))) return input.substring(0, input.length() - 1);
+		return null;
 	}
 
 	private static String findClosestSkill(String input, Set<String> candidates) {

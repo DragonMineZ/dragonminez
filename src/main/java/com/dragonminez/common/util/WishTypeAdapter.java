@@ -28,6 +28,7 @@ public class WishTypeAdapter implements JsonSerializer<Wish>, JsonDeserializer<W
 			case "skill" -> new GsonBuilder().create().fromJson(json, SkillWish.class);
 			case "passivereset" -> new GsonBuilder().create().fromJson(json, PassiveResetWish.class);
 			case "recustomize" -> new GsonBuilder().create().fromJson(json, ReCustomizeWish.class);
+			case "relocatestats" -> new GsonBuilder().create().fromJson(json, RelocateStatsWish.class);
 			default -> throw new JsonParseException("Unknown wish type: " + type);
 		};
 	}

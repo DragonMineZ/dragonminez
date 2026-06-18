@@ -48,6 +48,7 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> STAMINA_REGEN = EFFECTS.register("stamina_regen", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x45B35E));
 	public static final RegistryObject<MobEffect> TP_GAIN = EFFECTS.register("tp_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF29B38));
 	public static final RegistryObject<MobEffect> MASTERY_GAIN = EFFECTS.register("mastery_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x9B59D0));
+	public static final RegistryObject<MobEffect> MUTANT = EFFECTS.register("mutant", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xB14CE0));
 
     public static void register(IEventBus eventBus) { EFFECTS.register(eventBus); }
 }

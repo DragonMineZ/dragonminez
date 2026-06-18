@@ -7,9 +7,11 @@ import com.dragonminez.server.world.biome.OverworldBiomes;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.dimension.SacredKaiDimension;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.FrameType;
+import net.minecraft.advancements.RequirementsStrategy;
 import net.minecraft.advancements.critereon.*;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -22,10 +24,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -90,8 +95,14 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.INVENCIBLE_ARMOR.get(ArmorItem.Type.HELMET).get(),
 									MainItems.INVENCIBLE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
 									MainItems.INVENCIBLE_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-									MainItems.INVENCIBLE_ARMOR.get(ArmorItem.Type.BOOTS).get())
-					).save(consumer, "dragonminez:invincible");
+									MainItems.INVENCIBLE_ARMOR.get(ArmorItem.Type.BOOTS).get()))
+					.addCriterion("invincible_blue",
+							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.INVENCIBLE_BLUE_ARMOR.get(ArmorItem.Type.HELMET).get(),
+									MainItems.INVENCIBLE_BLUE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+									MainItems.INVENCIBLE_BLUE_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
+									MainItems.INVENCIBLE_BLUE_ARMOR.get(ArmorItem.Type.BOOTS).get()))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:invincible");
 
 			Advancement kamilookout = Advancement.Builder.advancement()
 					.parent(root)
@@ -109,7 +120,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).save(consumer, "dragonminez:kamilookout");
 
 			Advancement gokuhouse = Advancement.Builder.advancement()
-					.parent(kamilookout)
+					.parent(root)
 					.display(
 							MainBlocks.DBALL4_BLOCK.get(),
 							Component.translatable("advancements.dragonminez.gokuhouse.title"),
@@ -124,9 +135,9 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).save(consumer, "dragonminez:gokuhouse");
 
 			Advancement roshihouse = Advancement.Builder.advancement()
-					.parent(kamilookout)
+					.parent(root)
 					.display(
-							Blocks.SAND,
+							MainItems.WEIGHT_TURTLE_SHELL.get(),
 							Component.translatable("advancements.dragonminez.roshihouse.title"),
 							Component.translatable("advancements.dragonminez.roshihouse.description"),
 							null, FrameType.GOAL, true, true, false
@@ -218,16 +229,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							Component.translatable("advancements.dragonminez.patriarca.title"),
 							Component.translatable("advancements.dragonminez.patriarca.description"),
 							null, FrameType.GOAL, true, true, false
-					).addCriterion("patriarca",
-							PlayerTrigger.TriggerInstance.located(
-									EntityPredicate.Builder.entity()
-											.of(EntityType.PLAYER)
-											.located(LocationPredicate.Builder.location()
-													.setX(MinMaxBounds.Doubles.between(2147482, 2147483))
-													.setY(MinMaxBounds.Doubles.between(2147482, 2147483))
-													.setZ(MinMaxBounds.Doubles.between(2147482, 2147483))
-													.build()
-											).build())
+					).addCriterion("patriarca", inStructure("elder_guru")
 					).save(consumer, "dragonminez:patriarca");
 
 			Advancement radarnamek = Advancement.Builder.advancement()
@@ -310,11 +312,13 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							Component.translatable("advancements.dragonminez.gokuarmor.title"),
 							Component.translatable("advancements.dragonminez.gokuarmor.description"),
 							null, FrameType.TASK, true, true, false
-					).addCriterion("gokuarmor",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.GOKU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-									MainItems.GOKU_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-									MainItems.GOKU_ARMOR.get(ArmorItem.Type.BOOTS).get())
-					).save(consumer, "dragonminez:gokuarmor");
+					).addCriterion("gokuarmor", armorOf(MainItems.GOKU_ARMOR))
+					.addCriterion("gokuarmor_kid", armorOf(MainItems.GOKU_KID_ARMOR))
+					.addCriterion("gokuarmor_super", armorOf(MainItems.GOKU_SUPER_ARMOR))
+					.addCriterion("gokuarmor_gt", armorOf(MainItems.GOKU_GT_ARMOR))
+					.addCriterion("gokuarmor_yardrat", armorOf(MainItems.YARDRAT_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:gokuarmor");
 
 			Advancement gotenarmor = Advancement.Builder.advancement()
 					.parent(patternz)
@@ -323,11 +327,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							Component.translatable("advancements.dragonminez.gotenarmor.title"),
 							Component.translatable("advancements.dragonminez.gotenarmor.description"),
 							null, FrameType.TASK, true, true, false
-					).addCriterion("gotenarmor",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.GOTEN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-									MainItems.GOTEN_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-									MainItems.GOTEN_ARMOR.get(ArmorItem.Type.BOOTS).get())
-					).save(consumer, "dragonminez:gotenarmor");
+					).addCriterion("gotenarmor", armorOf(MainItems.GOTEN_ARMOR))
+					.addCriterion("gotenarmor_super", armorOf(MainItems.GOTEN_SUPER_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:gotenarmor");
 
 			Advancement futuregohanarmor = Advancement.Builder.advancement()
 					.parent(patternz)
@@ -349,11 +352,12 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							Component.translatable("advancements.dragonminez.vegetaarmor.title"),
 							Component.translatable("advancements.dragonminez.vegetaarmor.description"),
 							null, FrameType.TASK, true, true, false
-					).addCriterion("vegetaarmor",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.VEGETA_SAIYAN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-									MainItems.VEGETA_SAIYAN_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-									MainItems.VEGETA_SAIYAN_ARMOR.get(ArmorItem.Type.BOOTS).get())
-					).save(consumer, "dragonminez:vegetaarmor");
+					).addCriterion("vegetaarmor", armorOf(MainItems.VEGETA_SAIYAN_ARMOR))
+					.addCriterion("vegetaarmor_namek", armorOf(MainItems.VEGETA_NAMEK_ARMOR))
+					.addCriterion("vegetaarmor_z", armorOf(MainItems.VEGETA_Z_ARMOR))
+					.addCriterion("vegetaarmor_gt", armorOf(MainItems.VEGETA_GT_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:vegetaarmor");
 
 			Advancement vegettoarmor = Advancement.Builder.advancement()
 					.parent(patternz)
@@ -388,11 +392,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							Component.translatable("advancements.dragonminez.demonbluegiarmor.title"),
 							Component.translatable("advancements.dragonminez.demonbluegiarmor.description"),
 							null, FrameType.TASK, true, true, false
-					).addCriterion("demonbluegiarmor",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.DEMON_GI_BLUE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-									MainItems.DEMON_GI_BLUE_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-									MainItems.DEMON_GI_BLUE_ARMOR.get(ArmorItem.Type.BOOTS).get())
-					).save(consumer, "dragonminez:demonbluegiarmor");
+					).addCriterion("demonbluegiarmor", armorOf(MainItems.DEMON_GI_BLUE_ARMOR))
+					.addCriterion("demonbluegiarmor_gohan_super", armorOf(MainItems.GOHAN_SUPER_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:demonbluegiarmor");
 
 			Advancement bardockarmor = Advancement.Builder.advancement()
 					.parent(patternz)
@@ -401,11 +404,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							Component.translatable("advancements.dragonminez.bardockarmor.title"),
 							Component.translatable("advancements.dragonminez.bardockarmor.description"),
 							null, FrameType.TASK, true, true, false
-					).addCriterion("bardockarmor",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.BARDOCK_DBZ_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-									MainItems.BARDOCK_DBZ_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-									MainItems.BARDOCK_DBZ_ARMOR.get(ArmorItem.Type.BOOTS).get())
-					).save(consumer, "dragonminez:bardockarmor");
+					).addCriterion("bardockarmor", armorOf(MainItems.BARDOCK_DBZ_ARMOR))
+					.addCriterion("bardockarmor_super", armorOf(MainItems.BARDOCK_SUPER_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:bardockarmor");
 
 			Advancement turlesarmor = Advancement.Builder.advancement()
 					.parent(patternz)
@@ -440,11 +442,11 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							Component.translatable("advancements.dragonminez.trunksarmor.title"),
 							Component.translatable("advancements.dragonminez.trunksarmor.description"),
 							null, FrameType.TASK, true, true, false
-					).addCriterion("trunksarmor",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.TRUNKS_Z_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-									MainItems.TRUNKS_Z_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-									MainItems.TRUNKS_Z_ARMOR.get(ArmorItem.Type.BOOTS).get())
-					).save(consumer, "dragonminez:trunksarmor");
+					).addCriterion("trunksarmor", armorOf(MainItems.TRUNKS_Z_ARMOR))
+					.addCriterion("trunksarmor_super", armorOf(MainItems.TRUNKS_SUPER_ARMOR))
+					.addCriterion("trunksarmor_kid", armorOf(MainItems.TRUNKS_KID_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:trunksarmor");
 
 			Advancement brolyarmor = Advancement.Builder.advancement()
 					.parent(patternsuper)
@@ -453,11 +455,10 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							Component.translatable("advancements.dragonminez.brolyarmor.title"),
 							Component.translatable("advancements.dragonminez.brolyarmor.description"),
 							null, FrameType.TASK, true, true, false
-					).addCriterion("brolyarmor",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.BROLY_SUPER_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-									MainItems.BROLY_SUPER_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-									MainItems.BROLY_SUPER_ARMOR.get(ArmorItem.Type.BOOTS).get())
-					).save(consumer, "dragonminez:brolyarmor");
+					).addCriterion("brolyarmor", armorOf(MainItems.BROLY_SUPER_ARMOR))
+					.addCriterion("brolyarmor_z", armorOf(MainItems.BROLY_Z_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:brolyarmor");
 
 			Advancement shinarmor = Advancement.Builder.advancement()
 					.parent(patternz)
@@ -549,6 +550,361 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.GAS_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
 									MainItems.GAS_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:gasarmor");
+
+			Advancement sacredkai = Advancement.Builder.advancement()
+					.parent(root)
+					.display(
+							MainBlocks.SACRED_PLANET_GRASS_BLOCK.get(),
+							Component.translatable("advancements.dragonminez.sacredkai.title"),
+							Component.translatable("advancements.dragonminez.sacredkai.description"),
+							null, FrameType.CHALLENGE, true, true, false
+					).addCriterion("sacredkai",
+							ChangeDimensionTrigger.TriggerInstance.changedDimensionTo(SacredKaiDimension.SACREDKAI_KEY)
+					).save(consumer, "dragonminez:sacredkai");
+
+			Advancement gerolab = Advancement.Builder.advancement()
+					.parent(rockybiome)
+					.display(
+							MainItems.A16_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.gerolab.title"),
+							Component.translatable("advancements.dragonminez.gerolab.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("gerolab", inStructure("gero_lab")
+					).save(consumer, "dragonminez:gerolab");
+
+			Advancement babidi = Advancement.Builder.advancement()
+					.parent(root)
+					.display(
+							net.minecraft.world.level.block.Blocks.SPAWNER,
+							Component.translatable("advancements.dragonminez.babidi.title"),
+							Component.translatable("advancements.dragonminez.babidi.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("babidi", inStructure("babidi")
+					).save(consumer, "dragonminez:babidi");
+
+			Advancement cellarena = Advancement.Builder.advancement()
+					.parent(root)
+					.display(
+							net.minecraft.world.level.block.Blocks.QUARTZ_BLOCK,
+							Component.translatable("advancements.dragonminez.cellarena.title"),
+							Component.translatable("advancements.dragonminez.cellarena.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("cellarena", inStructure("cell_arena")
+					).save(consumer, "dragonminez:cellarena");
+
+			Advancement piccolohouse = Advancement.Builder.advancement()
+					.parent(root)
+					.display(
+							MainItems.WEIGHT_PICCOLO_CAPE.get(),
+							Component.translatable("advancements.dragonminez.piccolohouse.title"),
+							Component.translatable("advancements.dragonminez.piccolohouse.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("piccolohouse", inStructure("piccolo_house")
+					).save(consumer, "dragonminez:piccolohouse");
+
+			Advancement yamchahouse = Advancement.Builder.advancement()
+					.parent(root)
+					.display(
+							Blocks.SAND,
+							Component.translatable("advancements.dragonminez.yamchahouse.title"),
+							Component.translatable("advancements.dragonminez.yamchahouse.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("yamchahouse", inStructure("yamcha_house")
+					).save(consumer, "dragonminez:yamchahouse");
+
+			Advancement trunksship = Advancement.Builder.advancement()
+					.parent(root)
+					.display(
+							MainItems.TRUNKS_Z_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.trunksship.title"),
+							Component.translatable("advancements.dragonminez.trunksship.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("trunksship", inStructure("trunks_ship")
+					).save(consumer, "dragonminez:trunksship");
+
+			Advancement vegetapod = Advancement.Builder.advancement()
+					.parent(rockybiome)
+					.display(
+							MainItems.NAVE_SAIYAN_ITEM.get(),
+							Component.translatable("advancements.dragonminez.vegetapod.title"),
+							Component.translatable("advancements.dragonminez.vegetapod.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("vegetapod", inStructure("vegeta_pod")
+					).save(consumer, "dragonminez:vegetapod");
+
+			Advancement friezaship = Advancement.Builder.advancement()
+					.parent(namekdim)
+					.display(
+							net.minecraft.world.level.block.Blocks.IRON_BLOCK,
+							Component.translatable("advancements.dragonminez.friezaship.title"),
+							Component.translatable("advancements.dragonminez.friezaship.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("friezaship", inStructure("frieza_ship")
+					).save(consumer, "dragonminez:friezaship");
+
+			Advancement oldkaipillar = Advancement.Builder.advancement()
+					.parent(sacredkai)
+					.display(
+							MainBlocks.SACRED_CHRYSANTHEMUM_FLOWER.get(),
+							Component.translatable("advancements.dragonminez.oldkaipillar.title"),
+							Component.translatable("advancements.dragonminez.oldkaipillar.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("oldkaipillar", inStructure("oldkai_pillar")
+					).save(consumer, "dragonminez:oldkaipillar");
+
+			Advancement greatsaiyamanarmor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.GREAT_SAIYAMAN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.greatsaiyamanarmor.title"),
+							Component.translatable("advancements.dragonminez.greatsaiyamanarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("greatsaiyamanarmor", armorOf(MainItems.GREAT_SAIYAMAN_ARMOR)
+					).save(consumer, "dragonminez:greatsaiyamanarmor");
+
+			Advancement piccoloarmor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.PICCOLO_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.piccoloarmor.title"),
+							Component.translatable("advancements.dragonminez.piccoloarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("piccoloarmor", armorOf(MainItems.PICCOLO_ARMOR)
+					).save(consumer, "dragonminez:piccoloarmor");
+
+			Advancement majinbuuarmor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.MAJIN_BUU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.majinbuuarmor.title"),
+							Component.translatable("advancements.dragonminez.majinbuuarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("majinbuuarmor", armorOf(MainItems.MAJIN_BUU_ARMOR)
+					).save(consumer, "dragonminez:majinbuuarmor");
+
+			Advancement vegetabuuarmor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.VEGETA_BUU_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.vegetabuuarmor.title"),
+							Component.translatable("advancements.dragonminez.vegetabuuarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("vegetabuuarmor", armorOf(MainItems.VEGETA_BUU_ARMOR)
+					).save(consumer, "dragonminez:vegetabuuarmor");
+
+			Advancement a16armor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.A16_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.a16armor.title"),
+							Component.translatable("advancements.dragonminez.a16armor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("a16armor", armorOf(MainItems.A16_ARMOR)
+					).save(consumer, "dragonminez:a16armor");
+
+			Advancement a17armor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.A17_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.a17armor.title"),
+							Component.translatable("advancements.dragonminez.a17armor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("a17armor", armorOf(MainItems.A17_ARMOR))
+					.addCriterion("a17armor_super", armorOf(MainItems.A17_SUPER_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:a17armor");
+
+			Advancement a18armor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.A18_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.a18armor.title"),
+							Component.translatable("advancements.dragonminez.a18armor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("a18armor", armorOf(MainItems.A18_ARMOR))
+					.addCriterion("a18armor_kame", armorOf(MainItems.A18_KAME_ARMOR))
+					.addCriterion("a18armor_tournament", armorOf(MainItems.A18_TOURNAMENT_ARMOR))
+					.addCriterion("a18armor_cell", armorOf(MainItems.A18_CELL_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:a18armor");
+
+			Advancement orangehigharmor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.ORANGE_HIGH_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.orangehigharmor.title"),
+							Component.translatable("advancements.dragonminez.orangehigharmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("orangehigharmor", armorOf(MainItems.ORANGE_HIGH_ARMOR)
+					).save(consumer, "dragonminez:orangehigharmor");
+
+			Advancement videlarmor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.VIDEL_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.videlarmor.title"),
+							Component.translatable("advancements.dragonminez.videlarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("videlarmor", armorOf(MainItems.VIDEL_ARMOR)
+					).save(consumer, "dragonminez:videlarmor");
+
+			Advancement narukearmor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.NARUKE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.narukearmor.title"),
+							Component.translatable("advancements.dragonminez.narukearmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("narukearmor", armorOf(MainItems.NARUKE_ARMOR)
+					).save(consumer, "dragonminez:narukearmor");
+
+			Advancement strongestarmor = Advancement.Builder.advancement()
+					.parent(patternz)
+					.display(
+							MainItems.STRONGEST_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.strongestarmor.title"),
+							Component.translatable("advancements.dragonminez.strongestarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("strongestarmor", armorOf(MainItems.STRONGEST_ARMOR)
+					).save(consumer, "dragonminez:strongestarmor");
+
+			Advancement gokuwhisarmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.GOKU_WHIS_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.gokuwhisarmor.title"),
+							Component.translatable("advancements.dragonminez.gokuwhisarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("gokuwhisarmor", armorOf(MainItems.GOKU_WHIS_ARMOR)
+					).save(consumer, "dragonminez:gokuwhisarmor");
+
+			Advancement vegetasuperarmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.VEGETA_SUPER_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.vegetasuperarmor.title"),
+							Component.translatable("advancements.dragonminez.vegetasuperarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("vegetasuperarmor", armorOf(MainItems.VEGETA_SUPER_ARMOR))
+					.addCriterion("vegetasuperarmor_whis", armorOf(MainItems.VEGETA_WHIS_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:vegetasuperarmor");
+
+			Advancement gammasarmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.GAMMA1_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.gammasarmor.title"),
+							Component.translatable("advancements.dragonminez.gammasarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("gammasarmor", armorOf(MainItems.GAMMA1_ARMOR))
+					.addCriterion("gammasarmor_2", armorOf(MainItems.GAMMA2_ARMOR))
+					.requirements(RequirementsStrategy.OR)
+					.save(consumer, "dragonminez:gammasarmor");
+
+			Advancement granolaarmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.GRANOLA_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.granolaarmor.title"),
+							Component.translatable("advancements.dragonminez.granolaarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("granolaarmor", armorOf(MainItems.GRANOLA_ARMOR)
+					).save(consumer, "dragonminez:granolaarmor");
+
+			Advancement age1000armor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.AGE1000_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.age1000armor.title"),
+							Component.translatable("advancements.dragonminez.age1000armor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("age1000armor", armorOf(MainItems.AGE1000_ARMOR)
+					).save(consumer, "dragonminez:age1000armor");
+
+			Advancement ginearmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.GINE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.ginearmor.title"),
+							Component.translatable("advancements.dragonminez.ginearmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("ginearmor", armorOf(MainItems.GINE_ARMOR)
+					).save(consumer, "dragonminez:ginearmor");
+
+			Advancement kalearmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.KALE_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.kalearmor.title"),
+							Component.translatable("advancements.dragonminez.kalearmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("kalearmor", armorOf(MainItems.KALE_ARMOR)
+					).save(consumer, "dragonminez:kalearmor");
+
+			Advancement cauliflaarmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.CAULIFLA_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.cauliflaarmor.title"),
+							Component.translatable("advancements.dragonminez.cauliflaarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("cauliflaarmor", armorOf(MainItems.CAULIFLA_ARMOR)
+					).save(consumer, "dragonminez:cauliflaarmor");
+
+			Advancement beerusarmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.BEERUS_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.beerusarmor.title"),
+							Component.translatable("advancements.dragonminez.beerusarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("beerusarmor", armorOf(MainItems.BEERUS_ARMOR)
+					).save(consumer, "dragonminez:beerusarmor");
+
+			Advancement keflaarmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.KEFLA_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.keflaarmor.title"),
+							Component.translatable("advancements.dragonminez.keflaarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("keflaarmor", armorOf(MainItems.KEFLA_ARMOR)
+					).save(consumer, "dragonminez:keflaarmor");
+
+			Advancement majin21armor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.MAJIN21_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.majin21armor.title"),
+							Component.translatable("advancements.dragonminez.majin21armor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("majin21armor", armorOf(MainItems.MAJIN21_ARMOR)
+					).save(consumer, "dragonminez:majin21armor");
+
+			Advancement whisarmor = Advancement.Builder.advancement()
+					.parent(patternsuper)
+					.display(
+							MainItems.WHIS_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
+							Component.translatable("advancements.dragonminez.whisarmor.title"),
+							Component.translatable("advancements.dragonminez.whisarmor.description"),
+							null, FrameType.TASK, true, true, false
+					).addCriterion("whisarmor", armorOf(MainItems.WHIS_ARMOR)
+					).save(consumer, "dragonminez:whisarmor");
+		}
+
+		private static PlayerTrigger.TriggerInstance inStructure(String id) {
+			return PlayerTrigger.TriggerInstance.located(
+					LocationPredicate.inStructure(
+							ResourceKey.create(Registries.STRUCTURE,
+									ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id))));
+		}
+
+		private static InventoryChangeTrigger.TriggerInstance armorOf(Map<ArmorItem.Type, RegistryObject<Item>> set) {
+			return InventoryChangeTrigger.TriggerInstance.hasItems(
+					set.get(ArmorItem.Type.CHESTPLATE).get(),
+					set.get(ArmorItem.Type.LEGGINGS).get(),
+					set.get(ArmorItem.Type.BOOTS).get());
 		}
 	}
 }

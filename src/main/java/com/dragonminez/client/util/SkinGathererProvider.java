@@ -201,13 +201,16 @@ public class SkinGathererProvider {
 	}
 
 	public void gatherTattooLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
-		if (stats.getEffects() != null && stats.getEffects().hasEffect("majin")) {
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/majinm.png")), WHITE_COLOR);
-		}
 		int tattooType = stats.getCharacter().getTattooType();
 		if (tattooType == 0) return;
 
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tattoos/tattoo_" + tattooType + ".png")), WHITE_COLOR);
+	}
+
+	public void gatherEffectLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
+		if (stats.getEffects() != null && stats.getEffects().hasEffect("majin")) {
+			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/majinm.png")), WHITE_COLOR);
+		}
 	}
 
 	protected void resolveBodyHumanSaiyan(Character character, String key, float[] bodyColor, float[] bodyColor2, float[] bodyColor3, BiConsumer<ResourceLocation, float[]> consumer) {

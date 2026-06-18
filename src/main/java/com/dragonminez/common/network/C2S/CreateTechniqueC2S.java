@@ -99,6 +99,12 @@ public class CreateTechniqueC2S {
 				KiAttackData technique = new KiAttackData();
 				technique.setName((name == null || name.trim().isEmpty()) ? "New Skill" : name.trim());
 				technique.setAuthor(player.getName().getString());
+				technique.setId(com.dragonminez.common.stats.techniques.TechniqueData.generateId(technique.getAuthor(), technique.getName()));
+
+				if (data.getTechniques().getUnlockedTechniques().containsKey(technique.getId())) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					return;
+				}
 
 				KiAttackData.KiType parsedType;
 				try {

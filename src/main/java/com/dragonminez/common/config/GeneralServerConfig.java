@@ -27,6 +27,7 @@ public class GeneralServerConfig {
 	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
 	private StorageConfig storage = new StorageConfig();
 	private GravityConfig gravity = new GravityConfig();
+	private MutantConfig mutant = new MutantConfig();
 
 	@Getter
 	@NoArgsConstructor
@@ -717,6 +718,63 @@ public class GeneralServerConfig {
 		private static double clampNonNeg(Double value, double fallback) {
 			if (value == null) return fallback;
 			return Math.max(0.0, value);
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class MutantConfig {
+		private Boolean enabled = true;
+		private Integer rollIntervalMinutes = 30;
+		private Integer playersPerRoll = 1;
+		private Double chance = 0.20;
+		private Integer maxHolders = 1;
+		private String legendaryGroupName = "legendaryforms";
+		private Double tpGainMultiplier = 1.25;
+		private Double masteryGainMultiplier = 1.50;
+		private Double powerBonusReductionNoSkill = 0.67;
+		private Double powerBonusBoostWithSkill = 0.33;
+
+		public Boolean getEnabled() {
+			return enabled == null || enabled;
+		}
+
+		public Integer getRollIntervalMinutes() {
+			return Math.max(1, rollIntervalMinutes != null ? rollIntervalMinutes : 30);
+		}
+
+		public Integer getPlayersPerRoll() {
+			return Math.max(1, playersPerRoll != null ? playersPerRoll : 1);
+		}
+
+		public Double getChance() {
+			Double value = chance != null ? chance : 0.20;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Integer getMaxHolders() {
+			return Math.max(0, maxHolders != null ? maxHolders : 1);
+		}
+
+		public String getLegendaryGroupName() {
+			return legendaryGroupName != null && !legendaryGroupName.isEmpty() ? legendaryGroupName : "legendaryforms";
+		}
+
+		public Double getTpGainMultiplier() {
+			return Math.max(0.0, tpGainMultiplier != null ? tpGainMultiplier : 1.25);
+		}
+
+		public Double getMasteryGainMultiplier() {
+			return Math.max(0.0, masteryGainMultiplier != null ? masteryGainMultiplier : 1.50);
+		}
+
+		public Double getPowerBonusReductionNoSkill() {
+			Double value = powerBonusReductionNoSkill != null ? powerBonusReductionNoSkill : 0.33;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getPowerBonusBoostWithSkill() {
+			return Math.max(0.0, powerBonusBoostWithSkill != null ? powerBonusBoostWithSkill : 0.33);
 		}
 	}
 }

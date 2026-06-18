@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.util.MutantManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -155,6 +156,7 @@ public class CreateCharacterC2S {
 					data.getCharacter().setSelectedStackForm(TransformationsHelper.getFirstAvailableStackForm(data));
 					player.refreshDimensions();
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					MutantManager.runLottery(player.getServer());
 				}
 			});
 		});

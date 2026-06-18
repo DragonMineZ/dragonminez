@@ -42,7 +42,7 @@ public class TechniqueHotbarHUD {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
 
-		boolean altHeld = KeyBinds.SECOND_FUNCTION_KEY.isDown() || net.minecraft.client.gui.screens.Screen.hasAltDown();
+		boolean altHeld = KeyBinds.isSecondFunctionDown();
 		if (!altHeld) return;
 
 		boolean ctrlHeld = net.minecraft.client.gui.screens.Screen.hasControlDown();

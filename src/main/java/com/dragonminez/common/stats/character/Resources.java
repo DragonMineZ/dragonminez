@@ -20,6 +20,7 @@ public class Resources {
     private int actionCharge;
     private int alignment;
     private float trainingPoints;
+    private int pendingAttributePoints;
     private int racialSkillCount;
     private Player player;
     private transient StatsData statsData;
@@ -32,6 +33,7 @@ public class Resources {
         this.actionCharge = 0;
         this.alignment = 100;
         this.trainingPoints = 0;
+        this.pendingAttributePoints = 0;
         this.racialSkillCount = 0;
     }
 
@@ -84,6 +86,14 @@ public class Resources {
         float clamped = Math.max(0, Math.min(Float.MAX_VALUE - 1, points));
         this.trainingPoints = truncateToInt(clamped);
     }
+
+    public void setPendingAttributePoints(int points) {
+        this.pendingAttributePoints = Math.max(0, points);
+    }
+
+    public void addPendingAttributePoints(int amount) { setPendingAttributePoints(pendingAttributePoints + amount); }
+
+    public void removePendingAttributePoints(int amount) { setPendingAttributePoints(pendingAttributePoints - amount); }
 
     public void setRacialSkillCount(int count) {
         this.racialSkillCount = Math.max(0, count);
@@ -148,6 +158,7 @@ public class Resources {
         tag.putInt("FormRelease", actionCharge);
         tag.putInt("Alignment", alignment);
         tag.putFloat("TrainingPointsF", trainingPoints);
+        tag.putInt("PendingAttributePoints", pendingAttributePoints);
         tag.putInt("ZenkaiCount", racialSkillCount);
         return tag;
     }
@@ -169,6 +180,8 @@ public class Resources {
         if (tag.contains("TrainingPointsF", 5)) this.trainingPoints = tag.getFloat("TrainingPointsF");
         else this.trainingPoints = tag.getInt("TrainingPoints");
 
+        this.pendingAttributePoints = tag.getInt("PendingAttributePoints");
+
         this.racialSkillCount = tag.getInt("ZenkaiCount");
     }
 
@@ -180,6 +193,7 @@ public class Resources {
         this.actionCharge = other.actionCharge;
         this.alignment = other.alignment;
         this.trainingPoints = other.trainingPoints;
+        this.pendingAttributePoints = other.pendingAttributePoints;
         this.racialSkillCount = other.racialSkillCount;
     }
 }

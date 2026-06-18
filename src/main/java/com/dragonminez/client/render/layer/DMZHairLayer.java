@@ -33,12 +33,17 @@ import software.bernie.geckolib.util.RenderUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private final Map<Integer, Float> progressMap = new HashMap<>();
 	private final Map<Integer, CustomHair> fadeTargetHairMap = new HashMap<>();
 	private final Map<Integer, float[]> fadeTargetRgbMap = new HashMap<>();
+	private final Map<Integer, Boolean> fadeTargetForceMap = new HashMap<>();
 	private final Map<Integer, Long> lastSeenMsMap = new HashMap<>();
+
+	private static final Map<Integer, float[]> PUBLISHED_BASE_COLOR = new ConcurrentHashMap<>();
+	private static final Map<Integer, Long> PUBLISHED_BASE_TIME = new ConcurrentHashMap<>();
 	private static final double PHYSICS_LOD_NEAR_DISTANCE_SQR = 24.0 * 24.0;
 	private static final double PHYSICS_LOD_FAR_DISTANCE_SQR = 48.0 * 48.0;
 	private static final float FADE_OUT_RATE = 0.05f;
@@ -109,9 +114,14 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			rgbFrom = getRgbForStackForm(character.getActiveStackFormGroup(), character.getActiveStackForm(), rgbFrom);
 		}
 
+		boolean overrideFrom = false;
+		if (character.hasActiveForm() && character.getActiveFormData() != null && Boolean.TRUE.equals(character.getActiveFormData().hasHairColorOverride())) overrideFrom = true;
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && Boolean.TRUE.equals(character.getActiveStackFormData().hasHairColorOverride())) overrideFrom = true;
+
 		CustomHair hairTo = hairFrom;
 		float[] rgbTo = rgbFrom;
 		float factor = 0.0f;
+		boolean forceTo = overrideFrom;
 
 		int entityId = animatable.getId();
 		long nowMs = System.currentTimeMillis();
@@ -155,8 +165,10 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 				hairTo = targetHair;
 				rgbTo = nextForm.hasHairColorOverride() ? targetRgb : rgbFrom;
+				forceTo = nextForm.hasHairColorOverride() || overrideFrom;
 				fadeTargetHairMap.put(entityId, hairTo);
 				fadeTargetRgbMap.put(entityId, rgbTo);
+				fadeTargetForceMap.put(entityId, forceTo);
 				factor = curHairProgress;
 			}
 		} else if (curHairProgress > 0.0f) {
@@ -171,6 +183,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 					float[] fadeRgb = fadeTargetRgbMap.get(entityId);
 					hairTo = fadeTarget;
 					rgbTo = fadeRgb != null ? fadeRgb : rgbFrom;
+					forceTo = fadeTargetForceMap.getOrDefault(entityId, overrideFrom);
 					factor = curHairProgress;
 				}
 			} else clearHairTracking(entityId);
@@ -209,8 +222,10 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 		float physicsLodMultiplier = getPhysicsLodMultiplier(animatable);
 
+		publishHairBaseColor(entityId, gameTime, rgbFrom, rgbTo, factor);
+
 		poseStack.pushPose();
-		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, partialTick, packedLight, packedOverlay, alpha, physicsLodMultiplier);
+		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, overrideFrom, forceTo, partialTick, packedLight, packedOverlay, alpha, physicsLodMultiplier);
 		poseStack.popPose();
 	}
 
@@ -239,6 +254,24 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		progressMap.remove(entityId);
 		fadeTargetHairMap.remove(entityId);
 		fadeTargetRgbMap.remove(entityId);
+		fadeTargetForceMap.remove(entityId);
+	}
+
+	public static float[] getPublishedHairBaseColor(int entityId, long gameTime) {
+		Long t = PUBLISHED_BASE_TIME.get(entityId);
+		if (t == null || gameTime - t > 2L) return null;
+		return PUBLISHED_BASE_COLOR.get(entityId);
+	}
+
+	private void publishHairBaseColor(int entityId, long gameTime, float[] rgbFrom, float[] rgbTo, float factor) {
+		float smooth = factor;
+		if (smooth > 0.0001f && smooth < 0.9999f) smooth = smooth * smooth * (3.0f - 2.0f * smooth);
+		float[] color;
+		if (smooth <= 0.0001f) color = rgbFrom.clone();
+		else if (smooth >= 0.9999f) color = rgbTo.clone();
+		else color = new float[]{Mth.lerp(smooth, rgbFrom[0], rgbTo[0]), Mth.lerp(smooth, rgbFrom[1], rgbTo[1]), Mth.lerp(smooth, rgbFrom[2], rgbTo[2])};
+		PUBLISHED_BASE_COLOR.put(entityId, color);
+		PUBLISHED_BASE_TIME.put(entityId, gameTime);
 	}
 
 	private void cleanupStaleTracking(long nowMs) {

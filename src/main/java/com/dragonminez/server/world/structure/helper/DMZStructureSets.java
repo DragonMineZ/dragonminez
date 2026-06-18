@@ -152,7 +152,7 @@ public class DMZStructureSets {
 						1.0f,
 						36925814,
 						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE)
+						biomes.getOrThrow(MainTags.Biomes.IS_LAND)
 				)
 		));
 

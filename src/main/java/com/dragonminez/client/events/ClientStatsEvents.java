@@ -12,6 +12,7 @@ import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.particles.AuraParticle;
 import com.dragonminez.common.init.particles.DivineParticle;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
@@ -235,6 +236,15 @@ public class ClientStatsEvents {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
 					lastTransformTapTime = 0;
 				} else lastTransformTapTime = currentTime;
+
+				if (data.getStatus().getSelectedAction() == ActionMode.FORM && TransformationsHelper.isNextFormMasteryBlocked(data)) {
+					FormConfig.FormData blocked = TransformationsHelper.getNextFormCandidate(data);
+					if (blocked != null) {
+						String group = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
+						Component formName = Component.translatable("race.dragonminez." + character.getRaceName() + ".form." + group + "." + blocked.getName());
+						localPlayer.displayClientMessage(Component.translatable("message.dragonminez.form.no_mastery", blocked.getUnlockOnMastery().intValue(), formName), true);
+					}
+				}
 			}
 			wasTransformKeyDown = isActionKeyPressed;
 
@@ -312,7 +322,7 @@ public class ClientStatsEvents {
 		boolean ctrlHeld = Screen.hasControlDown();
 
 		boolean[] downNow = new boolean[TECHNIQUE_VISIBLE_SLOTS];
-		boolean altHeld = KeyBinds.SECOND_FUNCTION_KEY.isDown() || Screen.hasAltDown();
+		boolean altHeld = KeyBinds.isSecondFunctionDown();
 		long window = Minecraft.getInstance().getWindow().getWindow();
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
 			InputConstants.Key key = KeyBinds.TECHNIQUE_SLOTS[i].getKey();
@@ -496,7 +506,7 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onMovementInput(MovementInputUpdateEvent event) {
-		boolean techMenu = KeyBinds.SECOND_FUNCTION_KEY.isDown() || Screen.hasAltDown();
+		boolean techMenu = KeyBinds.isSecondFunctionDown();
 		if (techMenu) {
 			event.getInput().shiftKeyDown = false;
 			event.getEntity().setSprinting(false);

@@ -551,7 +551,26 @@ public class StatsData {
 		};
 
 		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
-		return applyMasteryStatBonus(formData, baseMult, mastery);
+		double result = applyMasteryStatBonus(formData, baseMult, mastery);
+		return applyMutantFormPowerModifier(currentFormGroup, result);
+	}
+
+	private double applyMutantFormPowerModifier(String groupName, double multiplier) {
+		if (multiplier <= 1.0) return multiplier;
+		if (!effects.hasEffect("mutant")) return multiplier;
+
+		var mutantConfig = ConfigManager.getServerConfig() != null ? ConfigManager.getServerConfig().getMutant() : null;
+		if (mutantConfig == null) return multiplier;
+
+		String legendaryGroup = mutantConfig.getLegendaryGroupName();
+		if (groupName == null || !groupName.equalsIgnoreCase(legendaryGroup)) return multiplier;
+
+		boolean hasSkill = skills.getSkillLevel("legendaryforms") > 0;
+		double factor = hasSkill
+				? 1.0 + mutantConfig.getPowerBonusBoostWithSkill()
+				: 1.0 - mutantConfig.getPowerBonusReductionNoSkill();
+
+		return 1.0 + (multiplier - 1.0) * factor;
 	}
 
 	private double getBaseFormMultiplier(FormConfig.FormData formData, String statName) {
@@ -926,6 +945,13 @@ public class StatsData {
 	}
 
 	private int getInitialTotalStats() {
+		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
+		return baseStats.getStrength() + baseStats.getStrikePower() +
+				baseStats.getResistance() + baseStats.getVitality() +
+				baseStats.getKiPower() + baseStats.getEnergy();
+	}
+
+	private RaceStatsConfig.BaseStats getInitialBaseStats() {
 		String raceName = character.getRaceName();
 		String characterClass = character.getCharacterClass();
 
@@ -934,10 +960,63 @@ public class StatsData {
 		RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
 		if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
+		return baseStats;
+	}
 
-		return baseStats.getStrength() + baseStats.getStrikePower() +
-				baseStats.getResistance() + baseStats.getVitality() +
-				baseStats.getKiPower() + baseStats.getEnergy();
+	public int getInitialStatValue(String statName) {
+		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
+		return switch (statName.toUpperCase()) {
+			case "STR" -> baseStats.getStrength();
+			case "SKP" -> baseStats.getStrikePower();
+			case "RES" -> baseStats.getResistance();
+			case "VIT" -> baseStats.getVitality();
+			case "PWR" -> baseStats.getKiPower();
+			case "ENE" -> baseStats.getEnergy();
+			default -> 5;
+		};
+	}
+
+	public int getPendingAttributePoints() {
+		return resources.getPendingAttributePoints();
+	}
+
+	public int relocateStats(ServerPlayer serverPlayer) {
+		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
+
+		int gained = 0;
+		gained += Math.max(0, stats.getStrength() - baseStats.getStrength());
+		gained += Math.max(0, stats.getStrikePower() - baseStats.getStrikePower());
+		gained += Math.max(0, stats.getResistance() - baseStats.getResistance());
+		gained += Math.max(0, stats.getVitality() - baseStats.getVitality());
+		gained += Math.max(0, stats.getKiPower() - baseStats.getKiPower());
+		gained += Math.max(0, stats.getEnergy() - baseStats.getEnergy());
+
+		if (gained <= 0) return 0;
+
+		float oldHealthBonus = getHealthBonus();
+
+		stats.setStrength(baseStats.getStrength());
+		stats.setStrikePower(baseStats.getStrikePower());
+		stats.setResistance(baseStats.getResistance());
+		stats.setVitality(baseStats.getVitality());
+		stats.setKiPower(baseStats.getKiPower());
+		stats.setEnergy(baseStats.getEnergy());
+
+		float newHealthBonus = getHealthBonus();
+		if (newHealthBonus < oldHealthBonus) {
+			var attribute = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
+			if (attribute != null) {
+				attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+				attribute.addPermanentModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION));
+			}
+			if (serverPlayer.getHealth() > serverPlayer.getMaxHealth()) serverPlayer.setHealth(serverPlayer.getMaxHealth());
+		}
+
+		resources.setCurrentEnergy(Math.min(resources.getCurrentEnergy(), getMaxEnergy()));
+		resources.setCurrentStamina(Math.min(resources.getCurrentStamina(), getMaxStamina()));
+
+		resources.addPendingAttributePoints(gained);
+		return gained;
 	}
 
 	private long getConfiguredMaxTotalStatsRaw() {
@@ -1071,6 +1150,29 @@ public class StatsData {
 		return peak * Math.exp(exponent) + 1.0;
 	}
 
+	public int getTpIdealWeight() {
+		var gravityConfig = ConfigManager.getServerConfig().getGravity();
+		if (!gravityConfig.getTpEnabled()) return 0;
+
+		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
+		if (gravityMultiplier <= 0.0) return 0;
+
+		int currentBaseLevel = getLevel();
+		int totalBaseStats = stats.getTotalStats();
+		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
+
+		double boostedTotal = stats.getStrength() * getTotalMultiplier("STR")
+				+ stats.getStrikePower() * getTotalMultiplier("SKP")
+				+ stats.getResistance() * getTotalMultiplier("RES")
+				+ stats.getVitality() * getTotalMultiplier("VIT")
+				+ stats.getKiPower() * getTotalMultiplier("PWR")
+				+ stats.getEnergy() * getTotalMultiplier("ENE");
+
+		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
+		double idealWeight = relativeLevel / (2.0 * gravityMultiplier);
+		return (int) Math.max(0, Math.round(idealWeight));
+	}
+
 	public int getGravityTotalWeight() {
 		return GravityLogic.getTotalWeight(player);
 	}
@@ -1080,8 +1182,14 @@ public class StatsData {
 		return PotionEffectHelper.getMultiplierFromEffect(player, MainEffects.TP_GAIN.get(), "tp_gain");
 	}
 
+	public double getMutantTpMultiplier() {
+		if (!effects.hasEffect("mutant")) return 1.0;
+		var mutantConfig = ConfigManager.getServerConfig() != null ? ConfigManager.getServerConfig().getMutant() : null;
+		return mutantConfig != null ? mutantConfig.getTpGainMultiplier() : 1.0;
+	}
+
 	public double getTpTotalMultiplier() {
-		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier();
+		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier() * getMutantTpMultiplier();
 	}
 
 	public int calculateTPGain(int baseTP) {
@@ -1188,6 +1296,7 @@ public class StatsData {
 
 		getStatus().reset();
 		getResources().reset();
+		getResources().setPendingAttributePoints(0);
 		getResources().setPowerRelease(0);
 		getSkills().setSkillActive("kisense", false);
 		getPlayerQuestData().resetAll();

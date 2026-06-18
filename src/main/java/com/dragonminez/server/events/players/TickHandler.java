@@ -1110,6 +1110,7 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new KiChargeStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MajinStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
+		STATUS_EFFECT_HANDLERS.add(new MutantStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new MajinReviveHandler());

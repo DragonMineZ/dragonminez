@@ -52,6 +52,35 @@ public class RaceCharacterConfig {
 		formSkillsCosts.put(form, new ArrayList<>(Arrays.asList(costs)));
 	}
 
+	public boolean normalizeFormSkillKeys(Collection<String> canonicalFormSkills) {
+		if (formSkillsCosts == null || formSkillsCosts.isEmpty() || canonicalFormSkills == null || canonicalFormSkills.isEmpty()) return false;
+
+		Set<String> canonical = new HashSet<>();
+		for (String name : canonicalFormSkills) if (name != null) canonical.add(name.toLowerCase());
+
+		Map<String, List<Integer>> normalized = new LinkedHashMap<>();
+		boolean changed = false;
+		for (Map.Entry<String, List<Integer>> entry : formSkillsCosts.entrySet()) {
+			String key = entry.getKey();
+			String target = key;
+			if (key != null) {
+				String lower = key.toLowerCase();
+				if (!canonical.contains(lower) && canonical.contains(lower + "s")) {
+					target = lower + "s";
+					changed = true;
+				}
+			}
+			List<Integer> existing = normalized.get(target);
+			if (existing == null || existing.isEmpty()) normalized.put(target, entry.getValue());
+		}
+
+		if (changed) {
+			formSkillsCosts.clear();
+			formSkillsCosts.putAll(normalized);
+		}
+		return changed;
+	}
+
 	public Boolean hasCustomModel() {
 		return this.customModel != null && !this.customModel.isEmpty();
 	}

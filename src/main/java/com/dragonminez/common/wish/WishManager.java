@@ -133,6 +133,7 @@ public class WishManager {
 		defaultWishes.add(new ItemWish("wish.shenron.saiyanship.name", "wish.shenron.saiyanship.desc", "dragonminez:saiyan_ship", 1));
 		defaultWishes.add(new PassiveResetWish("wish.shenron.racialskillreset.name", "wish.shenron.racialskillreset.desc"));
 		defaultWishes.add(new ReCustomizeWish("wish.shenron.customization.name", "wish.shenron.customization.desc"));
+		defaultWishes.add(new RelocateStatsWish("wish.shenron.relocatestats.name", "wish.shenron.relocatestats.desc"));
 
 		List<Tuple<String, Integer>> materials = new ArrayList<>();
 		materials.add(new Tuple<>("dragonminez:kikono_shard", 32));

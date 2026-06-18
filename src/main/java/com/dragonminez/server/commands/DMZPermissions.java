@@ -49,6 +49,8 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> TECH_REMOVE_OTHERS = register("dmztech.remove.others", "Allows removing ki techniques from other players.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> TECH_LIST_SELF = register("dmztech.list.self", "Allows listing your own ki techniques.", (player, uuid, context) -> true);
 	public static final PermissionNode<Boolean> TECH_LIST_OTHERS = register("dmztech.list.others", "Allows listing other players' ki techniques.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TECH_EXP_SELF = register("dmztech.experience.self", "Allows changing the experience of your own ki techniques.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TECH_EXP_OTHERS = register("dmztech.experience.others", "Allows changing the experience of other players' ki techniques.", (player, uuid, context) -> false);
 
 	// Bonus
 	public static final PermissionNode<Boolean> BONUS_ADD_SELF = register("dmzbonus.add.self", "Allows adding bonus stats to yourself.", (player, uuid, context) -> false);
@@ -79,10 +81,21 @@ public class DMZPermissions {
 	// Quests
 	public static final PermissionNode<Boolean> QUEST_LIST_SELF = register("dmzquest.list.self", "Allows listing your own quest progress.", (player, uuid, context) -> true);
 	public static final PermissionNode<Boolean> QUEST_LIST_OTHERS = register("dmzquest.list.others", "Allows listing other players' quest progress.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_INFO = register("dmzquest.info", "Allows viewing quest metadata.", (player, uuid, context) -> true);
+	public static final PermissionNode<Boolean> QUEST_START_SELF = register("dmzquest.start.self", "Allows force-starting quests for yourself.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_START_OTHERS = register("dmzquest.start.others", "Allows force-starting quests for other players.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_FINISH_SELF = register("dmzquest.finish.self", "Allows finishing quests for yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_FINISH_OTHERS = register("dmzquest.finish.others", "Allows finishing quests for other players.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_FAIL_SELF = register("dmzquest.fail.self", "Allows force-failing quests for yourself.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_FAIL_OTHERS = register("dmzquest.fail.others", "Allows force-failing quests for other players.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_RESET_SELF = register("dmzquest.reset.self", "Allows resetting quests for yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_RESET_OTHERS = register("dmzquest.reset.others", "Allows resetting quests for other players.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_TRACK_SELF = register("dmzquest.track.self", "Allows setting your own tracked quest.", (player, uuid, context) -> true);
+	public static final PermissionNode<Boolean> QUEST_TRACK_OTHERS = register("dmzquest.track.others", "Allows setting other players' tracked quest.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_STARTSAGA_SELF = register("dmzquest.startsaga.self", "Allows force-starting all quests in a saga for yourself.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_STARTSAGA_OTHERS = register("dmzquest.startsaga.others", "Allows force-starting all quests in a saga for other players.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_FINISHSAGA_SELF = register("dmzquest.finishsaga.self", "Allows finishing all quests in a saga for yourself.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> QUEST_FINISHSAGA_OTHERS = register("dmzquest.finishsaga.others", "Allows finishing all quests in a saga for other players.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_RESETSAGA_SELF = register("dmzquest.resetsaga.self", "Allows resetting saga progress for yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> QUEST_RESETSAGA_OTHERS = register("dmzquest.resetsaga.others", "Allows resetting saga progress for other players.", (player, uuid, context) -> false);
 

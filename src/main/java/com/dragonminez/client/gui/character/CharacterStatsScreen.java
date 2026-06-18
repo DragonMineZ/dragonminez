@@ -138,7 +138,6 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		graphics.pose().pushPose();
 		graphics.pose().translate(leftOffset, 0, 0);
 		renderStatsInfo(graphics, uiMouseX - leftOffset, uiMouseY);
-		renderTPCost(graphics);
 		graphics.pose().popPose();
 
 		graphics.pose().pushPose();
@@ -160,11 +159,14 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		boolean maxByLevel = ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats();
 		float availableTPs = statsData.getResources().getTrainingPoints();
-		int tpCost = statsData.calculateRecursiveCost(tpMultiplier, maxStats);
+		int pendingAP = statsData.getPendingAttributePoints();
+		int freeCount = Math.min(pendingAP, tpMultiplier);
+		int tpCost = statsData.calculateRecursiveCost(tpMultiplier, maxStats) - statsData.calculateRecursiveCost(freeCount, maxStats);
 		int remainingTotal = statsData.getRemainingAssignableStats();
 
+		boolean hasAP = pendingAP >= 1;
 		boolean hasEnoughTPs = availableTPs >= tpCost;
-		boolean canGrowAnyStat = hasEnoughTPs && (!maxByLevel || remainingTotal > 0);
+		boolean canGrowAnyStat = (hasAP || hasEnoughTPs) && (!maxByLevel || remainingTotal > 0);
 
 		multiplierButton = new CustomTextureButton.Builder()
 				.position(buttonX, startY + 86)
@@ -297,21 +299,6 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double mitigationReductionPct = Mth.clamp(mitigationReduction * 100.0, 0.0, 100.0);
 
 		return new double[]{mitigationReductionPct, transformDivider, enchReduction * 100.0};
-	}
-
-	private void renderTPCost(GuiGraphics graphics) {
-		if (statsData == null) return;
-
-		int centerY = getUiHeight() / 2;
-		int tpcY = centerY + 73;
-
-		int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
-		int tpCost = statsData.calculateRecursiveCost(tpMultiplier, maxStats);
-
-		Component tpcValue = txt(numberFormatter.format(tpCost));
-
-		TextUtil.drawStringWithBorder(graphics, this.font, tpcValue, 75, tpcY, 0xFFCE41, 0x000000);
-		TextUtil.drawStringWithBorder(graphics, this.font, txt("x" + tpMultiplier), 75, tpcY + 10, 0x2BFFE2, 0x000000);
 	}
 
 	private void renderMenuPanels(GuiGraphics graphics, int leftOffset, int rightOffset, int topOffset) {
@@ -651,8 +638,48 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			}
 		}
 
-		Component tpcComponent = tr("gui.dragonminez.character_stats.tpc").withStyle(style -> style.withBold(true));
-		TextUtil.drawStringWithBorder(graphics, this.font, tpcComponent, 42, statY + 76, 0x2BFFE2, 0x000000);
+		int pendingAP = statsData.getPendingAttributePoints();
+		boolean showAP = pendingAP > 0;
+		int bottomY = statY + 76;
+		int bottomValueX = 75;
+
+		Component bottomLabel = (showAP
+				? tr("gui.dragonminez.character_stats.ap")
+				: tr("gui.dragonminez.character_stats.tpc")).withStyle(style -> style.withBold(true));
+		int labelColor = showAP ? 0xB36BFF : 0x2BFFE2;
+		TextUtil.drawStringWithBorder(graphics, this.font, bottomLabel, 42, bottomY, labelColor, 0x000000);
+
+		int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
+		int tpCost = statsData.calculateRecursiveCost(tpMultiplier, maxStats);
+		Component bottomValue = showAP ? txt(numberFormatter.format(pendingAP)) : txt(numberFormatter.format(tpCost));
+		int valueColor = showAP ? 0xFFFF00 : 0xFFCE41;
+		TextUtil.drawStringWithBorder(graphics, this.font, bottomValue, bottomValueX, bottomY, valueColor, 0x000000);
+		TextUtil.drawStringWithBorder(graphics, this.font, txt("x" + tpMultiplier), bottomValueX, bottomY + 10, 0x2BFFE2, 0x000000);
+
+		if (mouseX >= 42 && mouseX <= bottomValueX + font.width(bottomValue) && mouseY >= bottomY && mouseY <= bottomY + font.lineHeight) {
+			List<Component> desc = new ArrayList<>();
+			List<Component> extras = new ArrayList<>();
+			Component title;
+			int color;
+			if (showAP) {
+				title = tr("gui.dragonminez.character_stats.ap").withStyle(ChatFormatting.LIGHT_PURPLE);
+				color = 0xB36BFF;
+				desc.add(tr("gui.dragonminez.character_stats.ap.desc"));
+				extras.add(tr("gui.dragonminez.character_stats.ap.pending", numberFormatter.format(pendingAP)).withStyle(ChatFormatting.YELLOW));
+			} else {
+				title = tr("gui.dragonminez.character_stats.tpc").withStyle(ChatFormatting.AQUA);
+				color = 0x2BFFE2;
+				desc.add(tr("gui.dragonminez.character_stats.tpc.desc"));
+				if (hasShiftDown()) {
+					extras.add(tr("gui.dragonminez.character_stats.tpc.formula1").withStyle(ChatFormatting.GRAY));
+					extras.add(tr("gui.dragonminez.character_stats.tpc.formula2").withStyle(ChatFormatting.GRAY));
+					extras.add(tr("gui.dragonminez.character_stats.tpc.formula3").withStyle(ChatFormatting.GRAY));
+				} else {
+					appendAdvancedHint(extras, true);
+				}
+			}
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, color);
+		}
 	}
 
 	private void appendDynamicGrowthProgress(List<Component> extras, String statName, int currentStat) {
@@ -1294,6 +1321,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_bell",
 							formatUpToOneDecimal(weightBell)).withStyle(ChatFormatting.AQUA));
 				}
+			}
+
+			int idealWeight = statsData.getTpIdealWeight();
+			if (idealWeight > 0) {
+				boolean onTarget = totalWeight == idealWeight;
+				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.ideal_weight",
+						numberFormatter.format(idealWeight)).withStyle(onTarget ? ChatFormatting.GREEN : ChatFormatting.GOLD));
 			}
 
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(),

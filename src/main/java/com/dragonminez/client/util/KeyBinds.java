@@ -3,6 +3,7 @@ package com.dragonminez.client.util;
 import com.dragonminez.Reference;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
@@ -93,6 +94,19 @@ public class KeyBinds {
 				keyCode,
 				minigame ? MINIGAMES_CATEGORY : DMZ_CATEGORY
 		);
+	}
+
+	public static boolean isSecondFunctionDown() {
+		return isPhysicallyDown(SECOND_FUNCTION_KEY);
+	}
+
+	public static boolean isPhysicallyDown(KeyMapping mapping) {
+		InputConstants.Key key = mapping.getKey();
+		if (key.getType() != InputConstants.Type.KEYSYM || key.getValue() == InputConstants.UNKNOWN.getValue()) {
+			return mapping.isDown();
+		}
+		long window = Minecraft.getInstance().getWindow().getWindow();
+		return InputConstants.isKeyDown(window, key.getValue());
 	}
 
     public static void registerAll(RegisterKeyMappingsEvent event) {

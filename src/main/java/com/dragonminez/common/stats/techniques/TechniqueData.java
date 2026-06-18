@@ -4,6 +4,7 @@ import com.dragonminez.common.stats.StatsData;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
+import java.util.Locale;
 import java.util.UUID;
 
 @Getter
@@ -32,4 +33,17 @@ public abstract class TechniqueData {
 	public abstract double getCalculatedCost(StatsData statsData);
 
 	public void addExperience(int amount) { this.experience += amount; }
+
+	public static String generateId(String author, String name) {
+		String a = sanitizeIdPart(author);
+		String n = sanitizeIdPart(name);
+		if (a.isEmpty()) a = "player";
+		if (n.isEmpty()) n = "skill";
+		return a + "_" + n;
+	}
+
+	private static String sanitizeIdPart(String value) {
+		if (value == null) return "";
+		return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
+	}
 }

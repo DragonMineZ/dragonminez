@@ -17,9 +17,22 @@ public class FormConfig {
 	private String formType = "superforms";
 	private Map<String, FormData> forms = new LinkedHashMap<>();
 
+	public String getGroupName() {
+		return groupName != null ? groupName : "";
+	}
+
+	public String getFormType() {
+		return formType != null ? formType : "superforms";
+	}
+
+	public Map<String, FormData> getForms() {
+		return forms != null ? forms : Collections.emptyMap();
+	}
+
 	public FormData getForm(String formName) {
-		for (FormData formData : forms.values()) {
-			if (formData.getName().equalsIgnoreCase(formName)) return formData;
+		if (formName == null) return null;
+		for (FormData formData : getForms().values()) {
+			if (formData != null && formData.getName() != null && formData.getName().equalsIgnoreCase(formName)) return formData;
 		}
 		return null;
 	}

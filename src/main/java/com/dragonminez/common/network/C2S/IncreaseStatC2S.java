@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -47,36 +48,40 @@ public class IncreaseStatC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				String statNameStr = msg.statType.name();
 
+				int pendingAP = data.getResources().getPendingAttributePoints();
 				float availableTPs = data.getResources().getTrainingPoints();
-				if (availableTPs <= 0) return;
+				if (pendingAP <= 0 && availableTPs <= 0) return;
 
 				int maxStats = data.getConfiguredMaxValue();
-				boolean maxByLevel = ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats();
-				int statsCanIncrease;
 
-				if (maxByLevel) {
-					statsCanIncrease = Math.min(msg.multiplier, data.getRemainingAssignableStats());
-				} else {
-					int currentStat = data.getCurrentStatValue(statNameStr);
-					statsCanIncrease = Math.min(msg.multiplier, Math.max(0, maxStats - currentStat));
-				}
-
-				statsCanIncrease = data.getMaxAllowedIncreaseForStat(statNameStr, statsCanIncrease);
+				int statsCanIncrease = data.getMaxAllowedIncreaseForStat(statNameStr, msg.multiplier);
 				if (statsCanIncrease <= 0) return;
 
-				int statsToIncrease = data.calculateStatIncrease(statsCanIncrease, availableTPs, maxStats);
+				int apToUse = Math.min(pendingAP, statsCanIncrease);
+				boolean changed = false;
+				if (apToUse > 0) {
+					increaseStat(data, player, statNameStr, apToUse);
+					data.getResources().removePendingAttributePoints(apToUse);
+					changed = true;
+				}
 
-				if (statsToIncrease <= 0) return;
+				int remaining = statsCanIncrease - apToUse;
+				if (remaining > 0 && availableTPs > 0) {
+					int remainingCap = data.getMaxAllowedIncreaseForStat(statNameStr, remaining);
+					if (remainingCap > 0) {
+						int tpStats = data.calculateStatIncrease(remainingCap, availableTPs, maxStats);
+						if (tpStats > 0) {
+							int tpCost = data.calculateRecursiveCost(tpStats, maxStats);
+							if (tpCost <= availableTPs) {
+								increaseStat(data, player, statNameStr, tpStats);
+								data.getResources().removeTrainingPoints(tpCost);
+								changed = true;
+							}
+						}
+					}
+				}
 
-				int finalIncrease = data.getMaxAllowedIncreaseForStat(statNameStr, statsToIncrease);
-				if (finalIncrease <= 0) return;
-
-				int tpCost = data.calculateRecursiveCost(finalIncrease, maxStats);
-
-				if (tpCost > availableTPs) return;
-
-				increaseStat(data, player, statNameStr, finalIncrease);
-				data.getResources().removeTrainingPoints(tpCost);
+				if (changed) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		});
 		ctx.get().setPacketHandled(true);

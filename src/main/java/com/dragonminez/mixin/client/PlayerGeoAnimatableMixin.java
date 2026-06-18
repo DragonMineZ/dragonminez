@@ -283,6 +283,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique
 	private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+		if (player.isSleeping()) {
+			dragonminez$attackAnimTicks = 0;
+			dragonminez$currentMeleeAnim = null;
+			return PlayState.STOP;
+		}
 		if (player.tickCount != dragonminez$lastAttackTickRun) {
 			dragonminez$lastAttackTickRun = player.tickCount;
 			if (dragonminez$attackAnimTicks > 0) dragonminez$attackAnimTicks--;
@@ -322,6 +327,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	private <T extends GeoAnimatable> PlayState miningPredicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 		AnimationController<T> ctl = state.getController();
+		if (player.isSleeping()) {
+			dragonminez$miningAnimTicks = 0;
+			return PlayState.STOP;
+		}
 		boolean hasMiningSwing = player.attackAnim > 0.0F || player.swinging || player.swingTime > 0;
 
 		if (player.tickCount != dragonminez$lastMiningTickRun) {

@@ -169,7 +169,7 @@ public class DMZStructures {
 
 		context.register(PICCOLO_HOUSE, new JigsawStructure(
 				new Structure.StructureSettings(
-						biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE),
+						biomes.getOrThrow(MainTags.Biomes.IS_LAND),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE

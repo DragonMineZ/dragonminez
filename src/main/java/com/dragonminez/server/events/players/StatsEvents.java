@@ -32,6 +32,7 @@ import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.util.MutantManager;
 import com.dragonminez.server.util.PotionEffectHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -331,6 +332,7 @@ public class StatsEvents {
 					addAlignment[0] = true;
 				else removeAlignment[0] = true;
 				if (victimData.getStatus().isHasCreatedCharacter()) {
+					if (victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME) && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
 					victimData.getEffects().removeAllEffects();
 					victimData.getSecondaryStatEffects().clear();
 					victimData.getStatus().setChargingKi(false);
@@ -657,6 +659,13 @@ public class StatsEvents {
 	public static void onPlayerAttack(AttackEntityEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onLivingAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker.hasEffect(MainEffects.STUN.get()))
+			event.setCanceled(true);
 	}
 
 	@SubscribeEvent
