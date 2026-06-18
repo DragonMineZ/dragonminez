@@ -120,6 +120,24 @@ public class DMZPermissions {
 	// Weights
 	public static final PermissionNode<Boolean> WEIGHT_GIVE = register("dmzweight.give", "Allows giving Weight items.", (player, uuid, context) -> false);
 
+	// Alignment
+	public static final PermissionNode<Boolean> ALIGNMENT_SET_SELF = register("dmzalignment.set.self", "Allows setting your own alignment.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> ALIGNMENT_SET_OTHERS = register("dmzalignment.set.others", "Allows setting other players' alignment.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> ALIGNMENT_ADD_SELF = register("dmzalignment.add.self", "Allows adding to your own alignment.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> ALIGNMENT_ADD_OTHERS = register("dmzalignment.add.others", "Allows adding to other players' alignment.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> ALIGNMENT_REMOVE_SELF = register("dmzalignment.remove.self", "Allows removing your own alignment.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> ALIGNMENT_REMOVE_OTHERS = register("dmzalignment.remove.others", "Allows removing other players' alignment.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> ALIGNMENT_INFO_SELF = register("dmzalignment.info.self", "Allows viewing your own alignment.", (player, uuid, context) -> true);
+	public static final PermissionNode<Boolean> ALIGNMENT_INFO_OTHERS = register("dmzalignment.info.others", "Allows viewing other players' alignment.", (player, uuid, context) -> false);
+
+	// Tail
+	public static final PermissionNode<Boolean> TAIL_SELF = register("dmztail.self", "Allows cutting/growing your own tail.", (player, uuid, context) -> true);
+	public static final PermissionNode<Boolean> TAIL_OTHERS = register("dmztail.others", "Allows cutting/growing other players' tails.", (player, uuid, context) -> false);
+
+	// Halo
+	public static final PermissionNode<Boolean> HALO_SELF = register("dmzhalo.self", "Allows toggling your own halo.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> HALO_OTHERS = register("dmzhalo.others", "Allows toggling other players' halos.", (player, uuid, context) -> false);
+
 	public static void init() {}
 
 	private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {
