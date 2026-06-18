@@ -220,7 +220,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
         this.setOwner(owner);
         this.setKiRenderType(5);
-        this.setSize(5.0F);
+        this.setSize(7.0F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0xC4FFFD, 0x00F8FF, colorOutline);
@@ -1090,7 +1090,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         if ((type == 5 || type == 6) && !this.level().isClientSide) {
             this.isDetonating = true;
-            this.maxDetonationRadius = (this.getSize() / 2.0F) * 2.5F;
+            this.maxDetonationRadius = (this.getSize() / 2.0F) * 4.5F;
             this.currentDetonationRadius = 0.0F;
             this.setDeltaMovement(0, 0, 0);
 
@@ -1120,7 +1120,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             return;
         }
 
-        float explosionRadius = (this.getSize() / 2.0F) * 1.2F;
+        float explosionRadius = (this.getSize() / 2.0F) * 2.2F;
         float visualParticleSize = explosionRadius * 1.8F;
 
         AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(explosionRadius);
@@ -1200,7 +1200,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private boolean destroyBlocksInPath() {
         boolean hitSomething = false;
-        float eatRadius = this.getSize() / 2.0f;
+        float eatRadius = this.getSize() * 1.4f;
         int bRad = Math.round(eatRadius);
         BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
         Level level = this.level();

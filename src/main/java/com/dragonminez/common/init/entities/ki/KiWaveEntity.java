@@ -610,7 +610,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private boolean destroyBlocksAtTip(Vec3 tipPos) {
         boolean hitSomething = false;
-        float eatRadius = this.getSize() * 1.5F;
+        float eatRadius = this.getSize() * 2.5F;
         int bRad = Math.round(eatRadius);
         BlockPos center = BlockPos.containing(tipPos);
         Level level = this.level();
@@ -744,7 +744,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private void explodeAndDie(Vec3 pos) {
-        float explosionRadius = this.getSize() * 2.5F;
+        float explosionRadius = this.getSize() * 4.5F;
 
         AABB damageArea = new AABB(pos, pos).inflate(explosionRadius);
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
@@ -772,7 +772,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 }
             }
 
-            float visualParticleSize = explosionRadius * 1.8F;
+            float visualParticleSize = explosionRadius * 2.4F;
             if (this.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(
                         MainParticles.KI_EXPLOSION.get(),
