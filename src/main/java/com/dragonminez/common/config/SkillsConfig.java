@@ -340,6 +340,7 @@ public class SkillsConfig {
 		skillOfferings.put("oldkai", oldKaiSkills);
 
 		List<String> gohanSkills = new ArrayList<>();
+		gohanSkills.add("kiboost");
 		gohanSkills.add("masenko");
 		gohanSkills.add("makkanko");
 		gohanSkills.add("kamehameha");
@@ -381,6 +382,7 @@ public class SkillsConfig {
 		skillOfferings.put("frieza", friezaSkills);
 
 		List<String> trunksSkills = new ArrayList<>();
+		trunksSkills.add("kiboost");
 		trunksSkills.add("burning_attack");
 		trunksSkills.add("galick_gun");
 		trunksSkills.add("ki_barrage");

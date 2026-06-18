@@ -2350,6 +2350,7 @@
   "skill.dragonminez.fly": "Fly",
   "skill.dragonminez.fly.desc": "Control your Ki to Fly! Jump and press the Fly Key mid-air to Fly, level up the skill to increase your speed.",
   "message.dragonminez.flight.no_kicontrol": "§cYou need the Ki Control skill to do that.",
+  "message.dragonminez.flight.no_fly": "§cYou need the Fly skill to do that.",
   "message.dragonminez.flight.low_power_release": "§cYou need to increase your Power Release to do that.",
   "dragonminez.flight.mode.switched.combat": "You fly mode has changed to: Combat Fly",
   "dragonminez.flight.mode.switched.search": "You fly mode has changed to: Search Fly",

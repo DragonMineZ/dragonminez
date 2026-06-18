@@ -5,6 +5,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.quest.PartyManager;
@@ -205,6 +206,11 @@ public class TPGainEvents {
 		return newTp == 0 && multiplier > 0 ? 1 : newTp;
 	}
 
+	private static boolean isPlayerOwnedShadow(Entity entity) {
+		return entity instanceof ShadowDummyEntity
+				&& entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW);
+	}
+
 	private static boolean dropTps(Entity entity) {
 		List<Class<?>> enemyList = List.of(
 				Monster.class,
@@ -220,6 +226,7 @@ public class TPGainEvents {
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
+		if (isPlayerOwnedShadow(event.getEntity())) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
 			if (dropTps(event.getEntity())) {
@@ -238,6 +245,7 @@ public class TPGainEvents {
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public static void onEntityHit(LivingHurtEvent event) {
 		if (event.getEntity().level().isClientSide) return;
+		if (isPlayerOwnedShadow(event.getEntity())) return;
 
 		if (event.getSource().getEntity() instanceof Player attacker) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
@@ -263,6 +271,8 @@ public class TPGainEvents {
 		Entity directEntity = source.getDirectEntity();
 		float damage = event.getAmount();
 		if (damage <= 0.0F) return;
+
+		if (isPlayerOwnedShadow(target) || isPlayerOwnedShadow(sourceEntity)) return;
 
 		if (sourceEntity instanceof ServerPlayer attacker && !attacker.is(target)) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {

@@ -155,9 +155,6 @@ public class StatsEvents {
 			});
 
 			if (totalWeight[0] > 0) {
-				// Stat debuff uses raw weight (not gravity-amplified) because gravity already has
-				// its own separate stat-reduction channel (applyStatReduction / "Gravity" bonus).
-				// Gravity amplification is intentional only for the TP bell-curve in TPGainEvents.
 				int effectiveWeight = totalWeight[0];
 
 				int currentBaseLevel = data.getLevel();
