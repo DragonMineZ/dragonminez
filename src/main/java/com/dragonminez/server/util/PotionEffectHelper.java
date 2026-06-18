@@ -1,5 +1,6 @@
 package com.dragonminez.server.util;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEffects;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -25,7 +26,14 @@ public final class PotionEffectHelper {
 
 	public static double applyMasteryGainMultiplier(LivingEntity entity, double baseValue) {
 		double multiplier = getMultiplierFromEffect(entity, MainEffects.MASTERY_GAIN.get(), "mastery_gain");
-		return baseValue * multiplier;
+		return baseValue * multiplier * getMutantMasteryMultiplier(entity);
+	}
+
+	private static double getMutantMasteryMultiplier(LivingEntity entity) {
+		if (entity == null || !entity.hasEffect(MainEffects.MUTANT.get())) return 1.0D;
+		var serverConfig = ConfigManager.getServerConfig();
+		if (serverConfig == null || serverConfig.getMutant() == null) return 1.0D;
+		return serverConfig.getMutant().getMasteryGainMultiplier();
 	}
 
 	public static double getMultiplierFromEffect(LivingEntity entity, MobEffect effect, String effectName) {

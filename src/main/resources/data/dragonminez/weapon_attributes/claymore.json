@@ -20,7 +20,7 @@
         "damage_multiplier": 1,
         "angle": 0,
         "upswing": 0.5,
-        "animation": "combat.two_handed_stab_left",
+        "animation": "combat.two_handed_stab_right",
         "swing_sound": {
           "id": "dragonminez:claymore_stab"
         }

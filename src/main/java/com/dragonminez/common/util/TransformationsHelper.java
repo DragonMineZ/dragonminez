@@ -100,7 +100,7 @@ public class TransformationsHelper {
 		String formType = formConfig.getFormType();
 
 		for (FormConfig.FormData formData : formConfig.getForms().values()) {
-			if (isFormUnlocked(statsData, formType, formData.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, formData)) {
+			if (hasFormSkillAccess(statsData, groupName, formType, formData.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, formData)) {
 				unlockedForms.add(formData);
 			}
 		}
@@ -135,6 +135,20 @@ public class TransformationsHelper {
 
 	private static boolean isFormUnlocked(StatsData statsData, String formType, int requiredLevel) {
 		return statsData.getSkills().isUnlockedAtLevel(getSkillNameForType(formType), requiredLevel);
+	}
+
+	public static boolean hasMutantLegendaryAccess(StatsData statsData, String groupName) {
+		if (statsData == null || groupName == null) return false;
+		if (!statsData.getEffects().hasEffect("mutant")) return false;
+		String legendaryGroup = "legendaryforms";
+		if (ConfigManager.getServerConfig() != null && ConfigManager.getServerConfig().getMutant() != null) {
+			legendaryGroup = ConfigManager.getServerConfig().getMutant().getLegendaryGroupName();
+		}
+		return groupName.equalsIgnoreCase(legendaryGroup);
+	}
+
+	private static boolean hasFormSkillAccess(StatsData statsData, String groupName, String formType, int requiredLevel) {
+		return hasMutantLegendaryAccess(statsData, groupName) || isFormUnlocked(statsData, formType, requiredLevel);
 	}
 
 	private static boolean isStackFormUnlocked(StatsData statsData, String formType, int requiredLevel) {
@@ -203,7 +217,7 @@ public class TransformationsHelper {
 		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return null;
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> isFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
+				.filter(f -> hasFormSkillAccess(statsData, group, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getName).orElse(null);
@@ -217,7 +231,7 @@ public class TransformationsHelper {
 		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return -1;
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
-				.filter(f -> isFormUnlocked(statsData, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
+				.filter(f -> hasFormSkillAccess(statsData, group, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
@@ -295,7 +309,7 @@ public class TransformationsHelper {
 			int[] reqLevels = config.getForms().values().stream()
 					.filter(f -> meetsMasteryRequisite(statsData, f))
 					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
-					.filter(req -> isFormUnlocked(statsData, formConfig.getFormType(), req))
+					.filter(req -> hasFormSkillAccess(statsData, groupKey, formConfig.getFormType(), req))
 					.sorted()
 					.toArray();
 
@@ -343,7 +357,7 @@ public class TransformationsHelper {
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return null;
 
-		return (isFormUnlocked(statsData, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, nextFormConfig)) ? nextFormConfig : null;
+		return (hasFormSkillAccess(statsData, group, config.getFormType(), nextFormConfig.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, nextFormConfig)) ? nextFormConfig : null;
 	}
 
 	public static FormConfig.FormData getNextFormCandidate(StatsData statsData) {
@@ -390,7 +404,7 @@ public class TransformationsHelper {
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return false;
 
-		return isFormUnlocked(statsData, config.getFormType(), candidate.getUnlockOnSkillLevel()) && !meetsMasteryRequisite(statsData, candidate);
+		return hasFormSkillAccess(statsData, group, config.getFormType(), candidate.getUnlockOnSkillLevel()) && !meetsMasteryRequisite(statsData, candidate);
 	}
 
 	public static boolean isOozaruForm(FormConfig.FormData formData) {

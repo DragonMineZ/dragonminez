@@ -551,7 +551,26 @@ public class StatsData {
 		};
 
 		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
-		return applyMasteryStatBonus(formData, baseMult, mastery);
+		double result = applyMasteryStatBonus(formData, baseMult, mastery);
+		return applyMutantFormPowerModifier(currentFormGroup, result);
+	}
+
+	private double applyMutantFormPowerModifier(String groupName, double multiplier) {
+		if (multiplier <= 1.0) return multiplier;
+		if (!effects.hasEffect("mutant")) return multiplier;
+
+		var mutantConfig = ConfigManager.getServerConfig() != null ? ConfigManager.getServerConfig().getMutant() : null;
+		if (mutantConfig == null) return multiplier;
+
+		String legendaryGroup = mutantConfig.getLegendaryGroupName();
+		if (groupName == null || !groupName.equalsIgnoreCase(legendaryGroup)) return multiplier;
+
+		boolean hasSkill = skills.getSkillLevel("legendaryforms") > 0;
+		double factor = hasSkill
+				? 1.0 + mutantConfig.getPowerBonusBoostWithSkill()
+				: 1.0 - mutantConfig.getPowerBonusReductionNoSkill();
+
+		return 1.0 + (multiplier - 1.0) * factor;
 	}
 
 	private double getBaseFormMultiplier(FormConfig.FormData formData, String statName) {
@@ -1163,8 +1182,14 @@ public class StatsData {
 		return PotionEffectHelper.getMultiplierFromEffect(player, MainEffects.TP_GAIN.get(), "tp_gain");
 	}
 
+	public double getMutantTpMultiplier() {
+		if (!effects.hasEffect("mutant")) return 1.0;
+		var mutantConfig = ConfigManager.getServerConfig() != null ? ConfigManager.getServerConfig().getMutant() : null;
+		return mutantConfig != null ? mutantConfig.getTpGainMultiplier() : 1.0;
+	}
+
 	public double getTpTotalMultiplier() {
-		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier();
+		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier() * getMutantTpMultiplier();
 	}
 
 	public int calculateTPGain(int baseTP) {

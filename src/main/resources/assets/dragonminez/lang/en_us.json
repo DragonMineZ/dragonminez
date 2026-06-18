@@ -2727,6 +2727,8 @@
   "effect.dragonminez.stamina_regen": "Stamina Regeneration",
   "effect.dragonminez.tp_gain": "TP Multiplier",
   "effect.dragonminez.mastery_gain": "Mastery Multiplier",
+  "effect.dragonminez.mutant": "Mutant",
+  "message.dragonminez.mutant.gained": "§dYour genes have awakened... You are a Mutant!",
   "gui.dragonminez.tutorial.title": "Tutorial",
   "gui.dragonminez.quests.requirement.race": "Must be %s class",
   "gui.dragonminez.quests.requirement.class": "Must have %s class"

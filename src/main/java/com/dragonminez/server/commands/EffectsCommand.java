@@ -5,6 +5,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.util.MutantManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -21,7 +22,7 @@ import java.util.List;
 
 public class EffectsCommand {
 	private static final SuggestionProvider<CommandSourceStack> EFFECT_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(List.of("mightfruit", "majin"), builder);
+			SharedSuggestionProvider.suggest(List.of("mightfruit", "majin", "mutant"), builder);
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzeffect")
@@ -62,10 +63,14 @@ public class EffectsCommand {
 		}
 
 		int durationInTicks = duration == -1 ? -1 : duration * 20;
+		boolean isMutant = effectName.equalsIgnoreCase(MutantManager.EFFECT_NAME);
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.getEffects().addEffect(effectName, power, durationInTicks);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				if (isMutant) MutantManager.grant(player, data);
+				else {
+					data.getEffects().addEffect(effectName, power, durationInTicks);
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				}
 			});
 		}
 
@@ -81,11 +86,15 @@ public class EffectsCommand {
 
 	private static int removeEffect(CommandSourceStack source, Collection<ServerPlayer> targets, String effectName) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
+		boolean isMutant = effectName.equalsIgnoreCase(MutantManager.EFFECT_NAME);
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (data.getEffects().hasEffect(effectName)) {
-					data.getEffects().removeEffect(effectName);
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					if (isMutant) MutantManager.revoke(player, data);
+					else {
+						data.getEffects().removeEffect(effectName);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					}
 				}
 			});
 		}
@@ -101,6 +110,9 @@ public class EffectsCommand {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getEffects().hasEffect(MutantManager.EFFECT_NAME)) {
+					MutantManager.revoke(player, data);
+				}
 				data.getEffects().clear();
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
@@ -115,13 +127,12 @@ public class EffectsCommand {
 
 	private static double getEffectPower(String effectName) {
 		var serverConfig = ConfigManager.getServerConfig();
-		if (serverConfig == null) {
-			return 0.0;
-		}
+		if (serverConfig == null) return 0.0;
 
 		return switch (effectName.toLowerCase()) {
 			case "mightfruit" -> serverConfig.getGameplay().getMightFruitPower();
 			case "majin" -> serverConfig.getGameplay().getMajinPower();
+			case "mutant" -> 1.0;
 			default -> 0.0;
 		};
 	}
