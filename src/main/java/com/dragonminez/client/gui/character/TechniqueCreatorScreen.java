@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.CreateTechniqueC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -388,19 +389,43 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		}
 
 		float[] normalized = KiAttackData.normalizeStatsForType(creatorType, creatorDamage, creatorSize, creatorSpeed, creatorArmorPen);
-		float[] values = KiAttackData.previewDerivedValues(
-				creatorType, creatorUtility,
-				normalized[0], normalized[1], normalized[2], Math.round(normalized[3]),
-				creatorSecondaryType, creatorSecondaryIntensity, creatorSecondaryDuration
-		);
 		creatorDamage = normalized[0];
 		creatorSize = normalized[1];
 		creatorSpeed = normalized[2];
 		creatorArmorPen = Math.round(normalized[3]);
-		kiCost = values[0];
-		tpCost = values[1];
-		creatorCast = (int) values[2];
-		creatorCooldown = (int) values[3];
+
+		KiAttackData preview = buildPreviewTechnique(normalized);
+		preview.calculateDerivedValues();
+
+		tpCost = Math.max(0, Math.round(preview.getTpCost()));
+		creatorCast = preview.getActualCastTime();
+		creatorCooldown = preview.getCooldown();
+		kiCost = computePreviewKiCost(preview);
+	}
+
+	private KiAttackData buildPreviewTechnique(float[] normalized) {
+		KiAttackData ki = new KiAttackData();
+		ki.setKiType(creatorType);
+		ki.setUtility(allowsUtility(creatorType) ? creatorUtility : KiAttackData.Utility.DAMAGE);
+		ki.setDamageMultiplier(normalized[0]);
+		ki.setSize(normalized[1]);
+		ki.setSpeed(normalized[2]);
+		ki.setArmorPenetration(Math.round(normalized[3]));
+		ki.setSecondaryEffectType(creatorSecondaryType);
+		if (creatorSecondaryType != KiAttackData.SecondaryEffectType.NONE) {
+			ki.setAffectedStat(creatorAffectedStat);
+			ki.setSecondaryIntensity(creatorSecondaryIntensity);
+			ki.setSecondaryDuration(creatorSecondaryDuration);
+		}
+		return ki;
+	}
+
+	private float computePreviewKiCost(KiAttackData preview) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return 0f;
+		final float[] cost = {0f};
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> cost[0] = (float) preview.getCalculatedCost(data));
+		return cost[0];
 	}
 
 	private void updateUtilityArrowsVisibility() {
@@ -522,6 +547,19 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		String defaultName = tr("gui.dragonminez.skills.new_skill").getString();
 		String finalName = creatorName == null ? defaultName : creatorName.trim();
 		if (finalName.isEmpty()) finalName = defaultName;
+
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player != null) {
+			String generatedId = com.dragonminez.common.stats.techniques.TechniqueData.generateId(mc.player.getName().getString(), finalName);
+			boolean duplicate = StatsProvider.get(StatsCapability.INSTANCE, mc.player)
+					.map(data -> data.getTechniques().getUnlockedTechniques().containsKey(generatedId))
+					.orElse(false);
+			if (duplicate) {
+				mc.player.displayClientMessage(tr("gui.dragonminez.skills.creator.duplicate", finalName), true);
+				return;
+			}
+		}
+
 		NetworkHandler.INSTANCE.sendToServer(new CreateTechniqueC2S(
 				finalName,
 				creatorType.name(),
@@ -728,7 +766,10 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> value[0] = data.getKiDamage());
 			baseKiDamage = value[0];
 		}
-		return String.format(Locale.US, "%.1f", baseKiDamage * creatorDamage);
+		double configDamage = Math.max(0.0, ConfigManager.getTechniqueConfig().getKiTypeConfig(creatorType).getDamageMultiplier());
+		boolean heal = creatorUtility == KiAttackData.Utility.HEAL && allowsUtility(creatorType);
+		double output = heal ? KiAttackData.HEAL_OUTPUT_FACTOR : 1.0;
+		return String.format(Locale.US, "%.1f", baseKiDamage * creatorDamage * configDamage * output);
 	}
 
 	@Override

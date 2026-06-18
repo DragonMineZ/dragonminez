@@ -8,6 +8,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
@@ -19,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TechCommand {
 
@@ -33,6 +35,15 @@ public class TechCommand {
 		java.util.List<String> all = new java.util.ArrayList<>(validTechs);
 		all.addAll(validStrike);
 		return SharedSuggestionProvider.suggest(all, builder);
+	};
+
+	private static final SuggestionProvider<CommandSourceStack> UNLOCKED_TECH_SUGGESTIONS = (ctx, builder) -> {
+		ServerPlayer player = ctx.getSource().getPlayer();
+		if (player == null) return builder.buildFuture();
+		java.util.List<String> ids = new java.util.ArrayList<>();
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data ->
+				ids.addAll(data.getTechniques().getUnlockedTechniques().keySet()));
+		return SharedSuggestionProvider.suggest(ids, builder);
 	};
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -54,7 +65,27 @@ public class TechCommand {
 								.then(Commands.argument("targets", EntityArgument.players())
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.TECH_REMOVE_OTHERS))
 										.executes(ctx -> removeTechnique(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "technique"))))))
+
+				.then(Commands.literal("experience")
+						.requires(source -> DMZPermissions.check(source, DMZPermissions.TECH_EXP_SELF, DMZPermissions.TECH_EXP_OTHERS))
+						.then(experienceMode("add", ExperienceMode.ADD))
+						.then(experienceMode("set", ExperienceMode.SET))
+						.then(experienceMode("remove", ExperienceMode.REMOVE)))
 		);
+	}
+
+	private enum ExperienceMode { ADD, SET, REMOVE }
+
+	private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> experienceMode(String literal, ExperienceMode mode) {
+		return Commands.literal(literal)
+				.then(Commands.argument("technique", StringArgumentType.string()).suggests(UNLOCKED_TECH_SUGGESTIONS)
+						.then(Commands.argument("amount", IntegerArgumentType.integer(0))
+								.executes(ctx -> experienceTechnique(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()),
+										StringArgumentType.getString(ctx, "technique"), IntegerArgumentType.getInteger(ctx, "amount"), mode))
+								.then(Commands.argument("targets", EntityArgument.players())
+										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.TECH_EXP_OTHERS))
+										.executes(ctx -> experienceTechnique(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"),
+												StringArgumentType.getString(ctx, "technique"), IntegerArgumentType.getInteger(ctx, "amount"), mode)))));
 	}
 
 	private static int addTechnique(CommandSourceStack source, Collection<ServerPlayer> targets, String techniqueId) {
@@ -118,6 +149,37 @@ public class TechCommand {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.tech.remove_multiple", techniqueId, targets.size()), log);
 		}
 		return targets.size();
+	}
+
+	private static int experienceTechnique(CommandSourceStack source, Collection<ServerPlayer> targets, String techniqueId, int amount, ExperienceMode mode) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
+
+		AtomicInteger applied = new AtomicInteger();
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				var tech = data.getTechniques().getUnlockedTechniques().get(techniqueId);
+				if (tech == null) return;
+				switch (mode) {
+					case ADD -> tech.addExperience(tech.getExperience() + amount);
+					case SET -> tech.setExperience(amount);
+					case REMOVE -> tech.setExperience(Math.max(0, tech.getExperience() - amount));
+				}
+				applied.incrementAndGet();
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+			});
+		}
+
+		if (applied.get() == 0) {
+			source.sendFailure(Component.translatable("command.dragonminez.tech.unknown_technique", techniqueId));
+			return 0;
+		}
+
+		if (applied.get() == 1) {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.tech.experience_success", techniqueId, targets.iterator().next().getName().getString()), log);
+		} else {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.tech.experience_multiple", techniqueId, applied.get()), log);
+		}
+		return applied.get();
 	}
 
 	private static boolean isUnknownTechnique(String id) {

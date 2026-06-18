@@ -49,6 +49,8 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> TECH_REMOVE_OTHERS = register("dmztech.remove.others", "Allows removing ki techniques from other players.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> TECH_LIST_SELF = register("dmztech.list.self", "Allows listing your own ki techniques.", (player, uuid, context) -> true);
 	public static final PermissionNode<Boolean> TECH_LIST_OTHERS = register("dmztech.list.others", "Allows listing other players' ki techniques.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TECH_EXP_SELF = register("dmztech.experience.self", "Allows changing the experience of your own ki techniques.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TECH_EXP_OTHERS = register("dmztech.experience.others", "Allows changing the experience of other players' ki techniques.", (player, uuid, context) -> false);
 
 	// Bonus
 	public static final PermissionNode<Boolean> BONUS_ADD_SELF = register("dmzbonus.add.self", "Allows adding bonus stats to yourself.", (player, uuid, context) -> false);

@@ -526,32 +526,6 @@ public class KiAttackData extends TechniqueData {
 		setSecondaryDuration(tag.getInt("SecondaryDuration"));
 	}
 
-	public static float[] previewDerivedValues(KiType type, Utility util, float damage, float size, float speed, int armorPen) {
-		return previewDerivedValues(type, util, damage, size, speed, armorPen, SecondaryEffectType.NONE, 0f, 0);
-	}
-
-	public static float[] previewDerivedValues(KiType type, Utility util, float damage, float size, float speed, int armorPen,
-											   SecondaryEffectType secondaryType, float secondaryIntensity, int secondaryDuration) {
-		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
-		Utility resolvedUtil = util != null ? util : Utility.DAMAGE;
-
-		float[] normalized = normalizeStatsForType(resolvedType, damage, size, speed, armorPen);
-		float complexity = getWeightedComplexity(normalized[0], sizeComplexityRatio(resolvedType, normalized[1]), normalized[2], Math.round(normalized[3]));
-
-		float typeMult = getTypeMultiplier(resolvedType);
-		float utilMult = getUtilityMultiplier(resolvedUtil);
-		boolean validSecondary = (secondaryType == SecondaryEffectType.BUFF && resolvedUtil == Utility.HEAL)
-				|| (secondaryType == SecondaryEffectType.DEBUFF && resolvedUtil == Utility.DAMAGE);
-		float secMult = 1f + SECONDARY_COST_FACTOR * secondaryCostWeight(validSecondary ? secondaryType : SecondaryEffectType.NONE, secondaryIntensity, secondaryDuration);
-
-		float kiCost = Math.max(5, (float) ((10.0 + complexity * 40.0) * typeMult * utilMult * secMult * largeOverloadKiMultiplier(resolvedType, normalized[0])));
-		float tpCostVal = Math.max(10, Math.round((80.0f + complexity * 200.0f) * typeMult * utilMult * secMult));
-		float castVal = ConfigManager.getTechniqueConfig().getKiTypeConfig(resolvedType).getCastTimeTicks();
-		float cdVal = Math.max(10, Math.min(600, Math.round(computeDerivedCooldown(resolvedType, resolvedUtil, complexity, 0) * secMult)));
-
-		return new float[]{kiCost, tpCostVal, castVal, cdVal};
-	}
-
 	public static float[] normalizeStatsForType(KiType type, float damage, float size, float speed, int armorPen) {
 		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
 		float normalizedDamage = Mth.clamp(damage, getMinDamageForType(resolvedType), getMaxDamageForType(resolvedType));
