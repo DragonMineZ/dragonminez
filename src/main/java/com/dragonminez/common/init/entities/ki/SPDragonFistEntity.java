@@ -72,6 +72,12 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
         this.setYRot(yaw);
         this.setXRot(pitch);
 
+        // Spawn the entity at the owner's position so it is tracked/synced correctly from tick 0.
+        // Without this it is added at (0,0,0), outside client tracking range, and never reaches the client.
+        Vec3 spawnPos = owner.position().add(Vec3.directionFromRotation(pitch, yaw).normalize().scale(1.5D));
+        this.setPos(spawnPos.x, owner.getY(), spawnPos.z);
+        this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
+
         this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), MainSounds.DRAGON_FIST.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
         if (!this.level().isClientSide) {

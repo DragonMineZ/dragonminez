@@ -51,6 +51,11 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
 
         this.setMaxLife(30);
 
+        // Spawn the entity at the owner's position so it is tracked/synced correctly from tick 0.
+        // Without this it is added at (0,0,0), outside client tracking range, and never reaches the client.
+        this.setPos(owner.getX(), owner.getY(), owner.getZ());
+        this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
+
         this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), MainSounds.OOZARU_FIST.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
         if (!this.level().isClientSide) {
