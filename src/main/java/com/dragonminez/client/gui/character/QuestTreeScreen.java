@@ -7,6 +7,8 @@ import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
 import com.dragonminez.common.network.C2S.ClaimAllQuestRewardsC2S;
@@ -80,6 +82,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private static final long HARD_MODE_TOGGLE_COOLDOWN_MS = 500L;
 	private int hardModeHitX, hardModeHitY, hardModeHitW, hardModeHitH;
 	private boolean hardModeToggleable = false;
+	private boolean hardModeIndicatorShown = false;
 	private long lastHardModeToggle = 0;
 
 	private TexturedTextButton actionButton;
@@ -1084,7 +1087,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			renderConfirmOverlay(graphics, uiMouseX, uiMouseY);
 		}
 		if (!invitePopupOpen && !confirmOverlayOpen) {
-			if (!renderActionButtonTooltip(graphics, uiMouseX, uiMouseY)) {
+			if (!renderHardModeTooltip(graphics, uiMouseX, uiMouseY)
+					&& !renderActionButtonTooltip(graphics, uiMouseX, uiMouseY)) {
 				renderRewardTooltips(graphics, uiMouseX, uiMouseY);
 			}
 		}
@@ -1092,6 +1096,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderTreeCanvas(GuiGraphics graphics, int mouseX, int mouseY) {
+		hardModeIndicatorShown = false;
 		if (currentLayout == null || availableSagas.isEmpty()) {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font,
 					tr("gui.dragonminez.quest_tree.no_sagas"),
@@ -1144,6 +1149,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void renderHardModeIndicator(GuiGraphics graphics, PanelRect tree, int mouseX, int mouseY) {
 		boolean enabled = statsData != null && statsData.getPlayerQuestData().isHardModeEnabled();
 		hardModeToggleable = canToggleHardMode();
+		hardModeIndicatorShown = true;
 
 		Component label = tr("gui.dragonminez.quest_tree.hardmode.label");
 		Component state = enabled
@@ -1153,7 +1159,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int labelWidth = this.font.width(label);
 		int totalWidth = labelWidth + 3 + this.font.width(state);
 		int x = tree.right() - totalWidth - 6;
-		int y = tree.y + 6;
+		int y = tree.bottom() - 12;
 		int stateX = x + labelWidth + 3;
 
 		hardModeHitX = x;
@@ -1161,17 +1167,54 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		hardModeHitW = totalWidth;
 		hardModeHitH = this.font.lineHeight + 1;
 
-		boolean hovered = hardModeToggleable
-				&& mouseX >= hardModeHitX && mouseX <= hardModeHitX + hardModeHitW
+		boolean hovered = mouseX >= hardModeHitX && mouseX <= hardModeHitX + hardModeHitW
 				&& mouseY >= hardModeHitY && mouseY <= hardModeHitY + hardModeHitH;
+		boolean highlight = hovered && hardModeToggleable;
 
 		int labelColor = hovered ? 0xFFFFFFFF : 0xFFAAAAAA;
 		int stateColor = enabled
-				? (hovered ? 0xFFFF8080 : 0xFFFF5555)
-				: (hovered ? 0xFF88DD88 : 0xFF66BB66);
+				? (highlight ? 0xFFFF8080 : 0xFFFF5555)
+				: (highlight ? 0xFF88DD88 : 0xFF66BB66);
 
 		TextUtil.drawStringWithBorder(graphics, this.font, label, x, y, labelColor);
 		TextUtil.drawStringWithBorder(graphics, this.font, state, stateX, y, stateColor);
+	}
+
+	private boolean renderHardModeTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+		if (!hardModeIndicatorShown || statsData == null) return false;
+		if (mouseX < hardModeHitX || mouseX > hardModeHitX + hardModeHitW
+				|| mouseY < hardModeHitY || mouseY > hardModeHitY + hardModeHitH) {
+			return false;
+		}
+
+		boolean enabled = statsData.getPlayerQuestData().isHardModeEnabled();
+		EntitiesConfig.HardModeSettings hardMode = ConfigManager.getEntitiesConfig().getHardModeSettings();
+		String hpMult = formatMultiplier(hardMode.getHpMultiplier());
+		String damageMult = formatMultiplier(hardMode.getDamageMultiplier());
+
+		Component title = tr("gui.dragonminez.quest_tree.hardmode.tooltip.title").withStyle(ChatFormatting.BOLD);
+		List<Component> desc = new ArrayList<>();
+		desc.add(tr("gui.dragonminez.quest_tree.hardmode.tooltip.desc").withStyle(ChatFormatting.GRAY));
+		desc.add(tr("gui.dragonminez.quest_tree.hardmode.tooltip.scope").withStyle(ChatFormatting.GRAY));
+		desc.add(tr("gui.dragonminez.quest_tree.hardmode.tooltip.stats", hpMult, damageMult).withStyle(ChatFormatting.AQUA));
+		if (hardModeToggleable) {
+			desc.add((enabled
+					? tr("gui.dragonminez.quest_tree.hardmode.tooltip.toggle_off")
+					: tr("gui.dragonminez.quest_tree.hardmode.tooltip.toggle_on"))
+					.withStyle(ChatFormatting.DARK_GRAY));
+		} else if (statsData.getPlayerQuestData().isInParty()) {
+			desc.add(tr("gui.dragonminez.quest_tree.hardmode.tooltip.leader_only").withStyle(ChatFormatting.DARK_GRAY));
+		}
+
+		TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, null, 0xFFFFFF);
+		return true;
+	}
+
+	private static String formatMultiplier(double value) {
+		if (value == Math.rint(value) && !Double.isInfinite(value)) {
+			return Long.toString((long) value);
+		}
+		return Double.toString(value);
 	}
 
 	private boolean canToggleHardMode() {
