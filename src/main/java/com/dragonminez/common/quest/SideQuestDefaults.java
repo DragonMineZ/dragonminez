@@ -976,7 +976,7 @@ final class SideQuestDefaults {
 				new JsonObject[]{
 						rewTPS(15000),
 						rewCommand(
-								"give %player% minecraft:enchanted_book{StoredEnchantments:[{id:\"dragonminez:ki_conductivity\",lvl:2},{id:\"dragonminez:gravity_forged\",lvl:2},{id:\"dragonminez:gete_plating\",lvl:2}]} 1",
+								"give %player% minecraft:enchanted_book{StoredEnchantments:[{id:\"dragonminez:ki_conductivity\",lvl:2},{id:\"dragonminez:gravity_forged\",lvl:2}]} 1",
 								"dmz.sidequest.reward.gete_enchant_book")
 				}));
 
