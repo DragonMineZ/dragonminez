@@ -1505,7 +1505,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				character.clearActiveForm();
 				character.clearActiveStackForm();
 
-				if (ConfigManager.getSkillsConfig().getStackSkills().contains(selectedFormName)) character.setActiveStackForm(selectedFormGroup, selectedFormName);
+				if (ConfigManager.getStackFormGroup(selectedFormGroup) != null) character.setActiveStackForm(selectedFormGroup, selectedFormName);
 				else character.setActiveForm(selectedFormGroup, selectedFormName);
 
 				status = stats.getStatus();
