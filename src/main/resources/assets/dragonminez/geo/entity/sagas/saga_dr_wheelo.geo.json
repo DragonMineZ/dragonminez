@@ -74,7 +74,7 @@
 					]
 				},
 				{
-					"name": "tail1bio",
+					"name": "tail1",
 					"parent": "body",
 					"pivot": [0, 18.15926, 8.30583],
 					"cubes": [
@@ -82,40 +82,40 @@
 					]
 				},
 				{
-					"name": "tail2bio",
-					"parent": "tail1bio",
+					"name": "tail2",
+					"parent": "tail1",
 					"pivot": [0, 17.90044, 13.07175],
 					"cubes": [
 						{"origin": [-1.5, 15.40044, 12.77175], "size": [3, 4.5, 7], "inflate": 0.05, "uv": [0, 15]}
 					]
 				},
 				{
-					"name": "tail3bio",
-					"parent": "tail2bio",
+					"name": "tail3",
+					"parent": "tail2",
 					"pivot": [0, 17.76576, 19.63302],
 					"cubes": [
 						{"origin": [-1.5, 15.76576, 18.53302], "size": [3, 3.75, 7], "uv": [0, 2]}
 					]
 				},
 				{
-					"name": "tail4bio",
-					"parent": "tail3bio",
+					"name": "tail4",
+					"parent": "tail3",
 					"pivot": [0, 17.76576, 24.63302],
 					"cubes": [
 						{"origin": [-1.4, 16.16576, 24.03302], "size": [2.75, 3, 7], "uv": [0, 43]}
 					]
 				},
 				{
-					"name": "tail5bio",
-					"parent": "tail4bio",
+					"name": "tail5",
+					"parent": "tail4",
 					"pivot": [0, 17.76576, 29.63302],
 					"cubes": [
 						{"origin": [-1.25, 16.26576, 29.53302], "size": [2.5, 2.75, 7], "uv": [0, 54]}
 					]
 				},
 				{
-					"name": "tail6bio",
-					"parent": "tail5bio",
+					"name": "tail6",
+					"parent": "tail5",
 					"pivot": [0, 17.76576, 36.13302],
 					"cubes": [
 						{"origin": [-1.2, 16.61576, 35.78302], "size": [2.25, 2.25, 7], "uv": [0, 64]}

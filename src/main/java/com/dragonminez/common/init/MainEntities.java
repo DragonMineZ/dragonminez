@@ -903,49 +903,49 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaMoviesEntity.TurlesEntity>> SAGA_TURLES =
             ENTITY_TYPES.register("saga_turles",
                     () -> EntityType.Builder.of(SagaMoviesEntity.TurlesEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_turles").toString()));
 
     // Lord Slug
     public static final RegistryObject<EntityType<SagaMoviesEntity.SlugSoldierEntity>> SAGA_SLUG_SOLDIER =
             ENTITY_TYPES.register("saga_slug_soldier",
                     () -> EntityType.Builder.of(SagaMoviesEntity.SlugSoldierEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_slug_soldier").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.SlugEntity>> SAGA_SLUG =
             ENTITY_TYPES.register("saga_slug",
                     () -> EntityType.Builder.of(SagaMoviesEntity.SlugEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.2f)
+                            .sized(0.7f, 2.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_slug").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.SlugGiantEntity>> SAGA_SLUG_GIANT =
             ENTITY_TYPES.register("saga_slug_giant",
                     () -> EntityType.Builder.of(SagaMoviesEntity.SlugGiantEntity::new, MobCategory.MONSTER)
-                            .sized(2.8f, 6.5f)
+                            .sized(2.8f, 7.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_slug_giant").toString()));
 
     // Cooler
     public static final RegistryObject<EntityType<SagaMoviesEntity.CoolerSoldierEntity>> SAGA_SALZA =
             ENTITY_TYPES.register("saga_salza",
                     () -> EntityType.Builder.of(SagaMoviesEntity.CoolerSoldierEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.8f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_salza").toString()));
 
     public static final RegistryObject<EntityType<SagaMoviesEntity.CoolerSoldierEntity>> SAGA_DORE =
             ENTITY_TYPES.register("saga_dore",
                     () -> EntityType.Builder.of(SagaMoviesEntity.CoolerSoldierEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_dore").toString()));
 
     public static final RegistryObject<EntityType<SagaMoviesEntity.CoolerSoldierEntity>> SAGA_NEIZ =
             ENTITY_TYPES.register("saga_neiz",
                     () -> EntityType.Builder.of(SagaMoviesEntity.CoolerSoldierEntity::new, MobCategory.MONSTER)
-                            .sized(0.5f, 1.6f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_neiz").toString()));
 
     public static final RegistryObject<EntityType<SagaMoviesEntity.CoolerEntity>> SAGA_COOLER =
             ENTITY_TYPES.register("saga_cooler",
                     () -> EntityType.Builder.of(SagaMoviesEntity.CoolerEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cooler").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.Cooler5TAEntity>> SAGA_COOLER_5TA =
             ENTITY_TYPES.register("saga_cooler_5ta",
@@ -967,51 +967,51 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaMoviesEntity.MechaCoolerCoreEntity>> SAGA_MECHA_COOLER_CORE =
             ENTITY_TYPES.register("saga_mecha_cooler_core",
                     () -> EntityType.Builder.of(SagaMoviesEntity.MechaCoolerCoreEntity::new, MobCategory.MONSTER)
-                            .sized(3.0f, 4.0f)
+                            .sized(3.0f, 7.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_mecha_cooler_core").toString()));
 
     // Super Android 13
     public static final RegistryObject<EntityType<SagaMoviesEntity.A14Entity>> SAGA_A14 =
             ENTITY_TYPES.register("saga_a14",
                     () -> EntityType.Builder.of(SagaMoviesEntity.A14Entity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a14").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.A15Entity>> SAGA_A15 =
             ENTITY_TYPES.register("saga_a15",
                     () -> EntityType.Builder.of(SagaMoviesEntity.A15Entity::new, MobCategory.MONSTER)
-                            .sized(0.5f, 1.3f)
+                            .sized(0.6f, 1.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a15").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.A13Entity>> SAGA_A13 =
             ENTITY_TYPES.register("saga_a13",
                     () -> EntityType.Builder.of(SagaMoviesEntity.A13Entity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a13").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.SuperA13Entity>> SAGA_SUPER_A13 =
             ENTITY_TYPES.register("saga_super_a13",
                     () -> EntityType.Builder.of(SagaMoviesEntity.SuperA13Entity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.2f)
+                            .sized(1.0f, 2.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_super_a13").toString()));
 
     // Broly (Z)
     public static final RegistryObject<EntityType<SagaMoviesEntity.ParagusEntity>> SAGA_PARAGUS =
             ENTITY_TYPES.register("saga_paragus",
                     () -> EntityType.Builder.of(SagaMoviesEntity.ParagusEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_paragus").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BrolyBaseEntity>> SAGA_BROLY_BASE =
             ENTITY_TYPES.register("saga_broly_base",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BrolyBaseEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_broly_base").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BrolySSJRestringidoEntity>> SAGA_BROLY_SSJ_RESTRICTED =
             ENTITY_TYPES.register("saga_broly_ssj_restricted",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BrolySSJRestringidoEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.0f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_broly_ssj_restricted").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BrolySSJEntity>> SAGA_BROLY_SSJ =
             ENTITY_TYPES.register("saga_broly_ssj",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BrolySSJEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.1f)
+                            .sized(0.6f, 2.1f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_broly_ssj").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BrolySSJLegendarioEntity>> SAGA_BROLY_LSSJ =
             ENTITY_TYPES.register("saga_broly_lssj",

@@ -145,7 +145,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
-        if (pCompound.contains("EntityScale")) {this.setScaleVal(pCompound.getFloat("EntityScale"));} else {this.setScaleVal(1.0F);}
+        if (pCompound.contains("EntityScale")) {this.setScaleVal(pCompound.getFloat("EntityScale"));}
 
     }
 

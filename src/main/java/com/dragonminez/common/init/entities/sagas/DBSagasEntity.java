@@ -1208,7 +1208,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (pCompound.contains("ComboTimer")) this.comboTimer = pCompound.getInt("ComboTimer");
         if (pCompound.contains("CurrentComboId")) {this.entityData.set(CURRENT_COMBO_ID, pCompound.getInt("CurrentComboId"));}
 
-        if (pCompound.contains("EntityScale")) {this.setScaleVal(pCompound.getFloat("EntityScale"));} else {this.setScaleVal(1.0F);}
+        if (pCompound.contains("EntityScale")) {this.setScaleVal(pCompound.getFloat("EntityScale"));}
 
         if (pCompound.contains("isKid")) {
             this.setisKid(pCompound.getBoolean("isKid"));

@@ -36,6 +36,7 @@ public class SagaMoviesEntity {
             this.setAuraColor(0x99112A);
             this.setKiBlastSpeed(1.4F);
             this.setZanzoken(true, 100);
+            this.setScaleVal(1.2f);
             this.setAllowedCombos(150, ComboType.AIR);
             this.addKiSkill(KiSkillType.KI_BARRIER, 200, 2.3F, 0xCC3ED6, 0x8B1094);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 170, 1.0F, 0xCC3ED6, 0x8B1094);
@@ -52,6 +53,7 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 100);
             this.setLightning(true);
+            this.setScaleVal(1.5f);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 170, 1.0F, 0xCC3ED6, 0x8B1094);
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xCC3ED6, 0x8B1094);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.4D);
@@ -112,6 +114,7 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0x22BD94);
             this.setKiBlastSpeed(2.0f);
+            this.setScaleVal(1.2f);
 
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK, ComboType.GUM_PUNCH);
 
@@ -376,7 +379,6 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0x22BD94);
             this.setKiBlastSpeed(2.2f);
-            this.setScaleVal(1.2f);
             this.setCanFly(true);
 
             this.setAllowedCombos(120, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
