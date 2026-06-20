@@ -1,4 +1,5 @@
-package com.dragonminez.common.init.armor.client.model;
+package com.dragonminez.common.init.armor.client.model;// Made with Blockbench 5.1.4
+
 import com.dragonminez.Reference;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -8,7 +9,6 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 public class ArmorBaseModel extends HumanoidModel<LivingEntity> {
@@ -40,17 +40,19 @@ public class ArmorBaseModel extends HumanoidModel<LivingEntity> {
 
 		PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 16).addBox(-4.0F, 0.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(0.2F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-		PartDefinition cube_r1 = body.addOrReplaceChild("cube_r1", CubeListBuilder.create().texOffs(51, 50).mirror().addBox(-1.0F, -2.0F, -2.0F, 1.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offsetAndRotation(4.3F, 10.25F, 0.0F, 0.0F, 0.0F, -0.1309F));
+		PartDefinition cube_r1 = body.addOrReplaceChild("cube_r1", CubeListBuilder.create().texOffs(3, 56).addBox(-2.0F, -2.0F, -1.0F, 5.0F, 7.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-0.5F, 10.9F, -1.65F, -0.2618F, 0.0F, 0.0F));
 
-		PartDefinition cube_r2 = body.addOrReplaceChild("cube_r2", CubeListBuilder.create().texOffs(51, 50).addBox(-2.0F, -2.0F, -2.0F, 1.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-2.35F, 10.65F, 0.0F, 0.0F, 0.0F, 0.1309F));
+		PartDefinition cube_r2 = body.addOrReplaceChild("cube_r2", CubeListBuilder.create().texOffs(51, 50).mirror().addBox(-1.0F, -2.0F, -2.0F, 1.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offsetAndRotation(4.8F, 10.25F, 0.0F, 0.0F, 0.0F, -0.1309F));
+
+		PartDefinition cube_r3 = body.addOrReplaceChild("cube_r3", CubeListBuilder.create().texOffs(51, 50).addBox(-2.0F, -2.0F, -2.0F, 1.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-2.85F, 10.65F, 0.0F, 0.0F, 0.0F, 0.1309F));
 
 		PartDefinition right_arm = partdefinition.addOrReplaceChild("right_arm", CubeListBuilder.create().texOffs(40, 16).addBox(-3.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.18F)), PartPose.offset(-5.0F, 2.0F, 0.0F));
 
-		PartDefinition cube_r3 = right_arm.addOrReplaceChild("cube_r3", CubeListBuilder.create().texOffs(42, 37).addBox(-2.0F, -2.0F, -2.0F, 6.0F, 4.0F, 5.0F, new CubeDeformation(0.1F)), PartPose.offsetAndRotation(-2.7F, -0.75F, -0.5F, 0.0F, 0.0F, 0.1309F));
+		PartDefinition cube_r4 = right_arm.addOrReplaceChild("cube_r4", CubeListBuilder.create().texOffs(42, 37).addBox(-2.0F, -2.0F, -2.0F, 6.0F, 4.0F, 5.0F, new CubeDeformation(0.1F)), PartPose.offsetAndRotation(-2.7F, -0.75F, -0.5F, 0.0F, 0.0F, 0.1309F));
 
 		PartDefinition left_arm = partdefinition.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(32, 48).addBox(-1.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.18F)), PartPose.offset(5.0F, 2.0F, 0.0F));
 
-		PartDefinition cube_r4 = left_arm.addOrReplaceChild("cube_r4", CubeListBuilder.create().texOffs(25, 33).addBox(-1.0F, -2.0F, -2.5F, 6.0F, 4.0F, 5.0F, new CubeDeformation(0.1F)), PartPose.offsetAndRotation(-0.25F, -0.35F, 0.0F, 0.0F, 0.0F, -0.1309F));
+		PartDefinition cube_r5 = left_arm.addOrReplaceChild("cube_r5", CubeListBuilder.create().texOffs(25, 33).addBox(-1.0F, -2.0F, -2.5F, 6.0F, 4.0F, 5.0F, new CubeDeformation(0.1F)), PartPose.offsetAndRotation(-0.25F, -0.35F, 0.0F, 0.0F, 0.0F, -0.1309F));
 
 		PartDefinition right_leg = partdefinition.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 16).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.18F)), PartPose.offset(-1.9F, 12.0F, 0.0F));
 
@@ -66,7 +68,7 @@ public class ArmorBaseModel extends HumanoidModel<LivingEntity> {
         super.setupAnim(pEntity, pLimbSwing, pLimbSwingAmount, pAgeInTicks, pNetHeadYaw, pHeadPitch);
     }
 
-	@Override
+    @Override
 	public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
 		head.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
 		body.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
