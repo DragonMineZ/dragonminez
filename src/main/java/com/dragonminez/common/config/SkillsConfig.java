@@ -341,6 +341,7 @@ public class SkillsConfig {
 
 		List<String> gohanSkills = new ArrayList<>();
 		gohanSkills.add("kiboost");
+		gohanSkills.add("kiprotection");
 		gohanSkills.add("masenko");
 		gohanSkills.add("makkanko");
 		gohanSkills.add("kamehameha");
@@ -383,6 +384,7 @@ public class SkillsConfig {
 
 		List<String> trunksSkills = new ArrayList<>();
 		trunksSkills.add("kiboost");
+		trunksSkills.add("kiprotection");
 		trunksSkills.add("burning_attack");
 		trunksSkills.add("galick_gun");
 		trunksSkills.add("ki_barrage");

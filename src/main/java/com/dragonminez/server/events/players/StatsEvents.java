@@ -436,7 +436,7 @@ public class StatsEvents {
 						}
 
 						if (attackerData.getCharacter().hasActiveStackForm()) {
-							FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveFormData();
+							FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveStackFormData();
 							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
 								String stackForm = attackerData.getCharacter().getActiveStackForm();
@@ -465,7 +465,7 @@ public class StatsEvents {
 						}
 
 						if (victimData.getCharacter().hasActiveStackForm()) {
-							FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveFormData();
+							FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveStackFormData();
 							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
 								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
 								String stackForm = victimData.getCharacter().getActiveStackForm();

@@ -96,8 +96,6 @@
   "enchantment.dragonminez.ki_conductivity.desc": "Gete-tech armor: boosts your ki/energy regeneration rate.",
   "enchantment.dragonminez.gravity_forged": "Gravity Forged",
   "enchantment.dragonminez.gravity_forged.desc": "Gete-tech armor: reduces incoming knockback by 15% per level.",
-  "enchantment.dragonminez.gete_plating": "Gete Plating",
-  "enchantment.dragonminez.gete_plating.desc": "Gete-tech armor: reduces incoming damage by 4% per level (up to 20%).",
   "//": "TOOLTIP",
   "tooltip.dragonminez.shift_expand": "[Shift] to Expand",
   "tooltip.dragonminez.two_handed": "Two-Handed",

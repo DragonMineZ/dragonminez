@@ -49,8 +49,6 @@ public class MainEnchants {
 	public static final RegistryObject<Enchantment> GRAVITY_FORGED = ENCHANTMENTS.register("gravity_forged",
 			() -> new GeteArmorEnchantment(Enchantment.Rarity.RARE, 4));
 
-	public static final RegistryObject<Enchantment> GETE_PLATING = ENCHANTMENTS.register("gete_plating",
-			() -> new GeteArmorEnchantment(Enchantment.Rarity.RARE, 4));
 
 	public static class WeaponPenetrationEnchantment extends Enchantment {
 		protected WeaponPenetrationEnchantment(Rarity rarity, EquipmentSlot... slots) {
