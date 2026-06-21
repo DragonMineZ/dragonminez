@@ -723,7 +723,21 @@ public class StoryCommand {
 				npc.setNpcTexture(textureOverride);
 			}
 
+			// Make command-spawned quest NPCs durable so they don't vanish.
+			// setPersistenceRequired() is also set in the constructor, but we re-assert it here so the
+			// NPC is guaranteed to survive chunk unloads, the mob cap, and world reloads (it is saved to
+			// disk and excluded from despawn). setInvulnerable(true) blocks foe/environmental damage —
+			// fall, fire, explosions, GENERIC, mob attacks — that could otherwise destroy the NPC. The
+			// out-of-world and /kill damage types still bypass invulnerability, so admins keep control
+			// (and the 'questnpc remove' command uses discard(), which is unaffected).
+			npc.setPersistenceRequired();
+			npc.setInvulnerable(true);
+			npc.setHealth(npc.getMaxHealth());
+
 			npc.setPos(player.getX(), player.getY(), player.getZ());
+			// Anchor the NPC to its spawn spot so it returns here if it ever gets shoved away
+			// (Y is ignored, so changes to the blocks beneath it won't fight the anchor).
+			npc.setHomePosition(player.getX(), player.getZ());
 			player.serverLevel().addFreshEntity(npc);
 
 			context.getSource().sendSuccess(() -> Component.literal("Spawned quest NPC '" + npcId + "'."), true);

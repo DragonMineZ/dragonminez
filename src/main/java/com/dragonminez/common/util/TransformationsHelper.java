@@ -59,7 +59,6 @@ public class TransformationsHelper {
 
 			String formType = formConfig.getFormType() != null ? formConfig.getFormType().toLowerCase(Locale.ROOT) : "";
 			if (formType.equalsIgnoreCase("android")) continue;
-			if (!typeOrderIndex.isEmpty() && !typeOrderIndex.containsKey(formType)) continue;
 
 			for (FormConfig.FormData formData : formConfig.getForms().values()) {
 				if (formData == null) continue;

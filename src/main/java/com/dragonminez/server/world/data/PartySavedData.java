@@ -81,6 +81,10 @@ public class PartySavedData extends SavedData {
 		return partyId != null ? parties.get(partyId) : null;
 	}
 
+	public PartyInstance getParty(UUID partyId) {
+		return partyId != null ? parties.get(partyId) : null;
+	}
+
 	public PartyInstance createParty(UUID leaderId) {
 		UUID partyId = UUID.randomUUID();
 		PartyInstance party = new PartyInstance(partyId, leaderId, new ArrayList<>(List.of(leaderId)), false);

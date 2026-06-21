@@ -155,9 +155,6 @@ public class StatsEvents {
 			});
 
 			if (totalWeight[0] > 0) {
-				// Stat debuff uses raw weight (not gravity-amplified) because gravity already has
-				// its own separate stat-reduction channel (applyStatReduction / "Gravity" bonus).
-				// Gravity amplification is intentional only for the TP bell-curve in TPGainEvents.
 				int effectiveWeight = totalWeight[0];
 
 				int currentBaseLevel = data.getLevel();
@@ -439,7 +436,7 @@ public class StatsEvents {
 						}
 
 						if (attackerData.getCharacter().hasActiveStackForm()) {
-							FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveFormData();
+							FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveStackFormData();
 							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
 								String stackForm = attackerData.getCharacter().getActiveStackForm();
@@ -468,7 +465,7 @@ public class StatsEvents {
 						}
 
 						if (victimData.getCharacter().hasActiveStackForm()) {
-							FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveFormData();
+							FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveStackFormData();
 							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
 								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
 								String stackForm = victimData.getCharacter().getActiveStackForm();

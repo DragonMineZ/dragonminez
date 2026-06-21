@@ -43,6 +43,9 @@ public class Status {
 	private UUID fusionPartnerUUID;
 	private int fusionTimer;
 	private String fusionType;
+	private boolean fusionPartyManaged;
+	private UUID fusionPrevPartyId;
+	private boolean fusionPrevPartyLeader;
 	private CompoundTag originalAppearance;
 	private boolean androidUpgraded;
 	private boolean renderKatana;
@@ -82,6 +85,9 @@ public class Status {
 		this.fusionPartnerUUID = null;
 		this.fusionTimer = 0;
 		this.fusionType = "";
+		this.fusionPartyManaged = false;
+		this.fusionPrevPartyId = null;
+		this.fusionPrevPartyLeader = false;
 		this.originalAppearance = new CompoundTag();
 		this.androidUpgraded = false;
 		this.renderKatana = false;
@@ -121,6 +127,9 @@ public class Status {
 		this.fusionPartnerUUID = null;
 		this.fusionTimer = 0;
 		this.fusionType = "";
+		this.fusionPartyManaged = false;
+		this.fusionPrevPartyId = null;
+		this.fusionPrevPartyLeader = false;
 		this.originalAppearance = new CompoundTag();
 		this.androidUpgraded = false;
 		this.renderKatana = false;
@@ -180,6 +189,9 @@ public class Status {
 		if (fusionPartnerUUID != null) tag.putUUID("FusionPartnerUUID", fusionPartnerUUID);
 		tag.putInt("FusionTimer", fusionTimer);
 		tag.putString("FusionType", fusionType);
+		tag.putBoolean("FusionPartyManaged", fusionPartyManaged);
+		if (fusionPrevPartyId != null) tag.putUUID("FusionPrevPartyId", fusionPrevPartyId);
+		tag.putBoolean("FusionPrevPartyLeader", fusionPrevPartyLeader);
 		tag.put("OriginalAppearance", originalAppearance);
 		tag.putBoolean("AndroidUpgraded", androidUpgraded);
 		tag.putBoolean("RenderKatana", renderKatana);
@@ -226,6 +238,9 @@ public class Status {
 		else this.fusionPartnerUUID = null;
 		this.fusionTimer = tag.getInt("FusionTimer");
 		this.fusionType = tag.getString("FusionType");
+		this.fusionPartyManaged = tag.getBoolean("FusionPartyManaged");
+		this.fusionPrevPartyId = tag.hasUUID("FusionPrevPartyId") ? tag.getUUID("FusionPrevPartyId") : null;
+		this.fusionPrevPartyLeader = tag.getBoolean("FusionPrevPartyLeader");
 		if (tag.contains("OriginalAppearance")) this.originalAppearance = tag.getCompound("OriginalAppearance");
 		else this.originalAppearance = new CompoundTag();
 		this.androidUpgraded = tag.getBoolean("AndroidUpgraded");
@@ -271,6 +286,9 @@ public class Status {
 		this.fusionPartnerUUID = other.fusionPartnerUUID;
 		this.fusionTimer = other.fusionTimer;
 		this.fusionType = other.fusionType;
+		this.fusionPartyManaged = other.fusionPartyManaged;
+		this.fusionPrevPartyId = other.fusionPrevPartyId;
+		this.fusionPrevPartyLeader = other.fusionPrevPartyLeader;
 		this.originalAppearance = other.originalAppearance.copy();
 		this.androidUpgraded = other.androidUpgraded;
 		this.renderKatana = other.renderKatana;

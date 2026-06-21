@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
+import com.dragonminez.client.gui.character.QuestTreeScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
@@ -57,6 +58,13 @@ public class ForgeClientEvents {
 				}
 			}
 		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerClone(ClientPlayerNetworkEvent.Clone event) {
+		// Fired when the local player entity is rebuilt: respawn after death and dimension change.
+		// Lets the quest tree's "Start" button be clickable again without waiting out the cooldown.
+		QuestTreeScreen.clearResummonCooldowns();
 	}
 
 	@SubscribeEvent

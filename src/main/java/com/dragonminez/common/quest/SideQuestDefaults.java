@@ -45,6 +45,7 @@ final class SideQuestDefaults {
 		createCollectionCategory(sideQuestDir);
 		createBulmaTechCategory(sideQuestDir);
 		createBulmaErrandsCategory(sideQuestDir);
+		createMoviesCategory(sideQuestDir);
 	}
 
 	// ---- Helpers ----
@@ -975,7 +976,7 @@ final class SideQuestDefaults {
 				new JsonObject[]{
 						rewTPS(15000),
 						rewCommand(
-								"give %player% minecraft:enchanted_book{StoredEnchantments:[{id:\"dragonminez:ki_conductivity\",lvl:2},{id:\"dragonminez:gravity_forged\",lvl:2},{id:\"dragonminez:gete_plating\",lvl:2}]} 1",
+								"give %player% minecraft:enchanted_book{StoredEnchantments:[{id:\"dragonminez:ki_conductivity\",lvl:2},{id:\"dragonminez:gravity_forged\",lvl:2}]} 1",
 								"dmz.sidequest.reward.gete_enchant_book")
 				}));
 
@@ -1203,6 +1204,153 @@ final class SideQuestDefaults {
 				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("buu_saga", 8)),
 				new JsonObject[]{ objItem("minecraft:ender_pearl", 12), objItem("minecraft:obsidian", 8), objItem("minecraft:redstone_block", 3), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(35000) }));
+	}
+
+	// ========================================================================================
+	// ===== Movies Saga Side-Quests =====
+	// ========================================================================================
+	//
+	// Gated on Movies-saga story progress (sagaId "movies_saga", 40 story quests). The Movies
+	// saga itself unlocks after buu_saga 35. Sidequests cover the movie villains — Garlic Jr.,
+	// Dr. Wheelo, Turles, Lord Slug, Cooler, the Big Gete Star, the cold androids, Bojack's crew,
+	// and the Otherworld chaos (Janemba / Pikkon rematch).
+
+	private static void createMoviesCategory(Path baseDir) {
+		Path dir = baseDir.resolve("movies");
+
+		// --- Garlic Jr. arc ---
+
+		writeQuestFile(dir, "dende_lookout_vigil.json", sidequest(
+				"dende_lookout_vigil", "dmz.sidequest.dende_lookout_vigil.name", "dmz.sidequest.dende_lookout_vigil.desc",
+				"story", false, "dende", "dende",
+				prereqs("AND", condSaga("movies_saga", 1)),
+				requirements("AND", condStructure("dragonminez:kamilookout")),
+				new JsonObject[]{
+						objStructure("dragonminez:kamilookout"),
+						objTalkTo("dende")
+				},
+				new JsonObject[]{ rewTPS(15000) }));
+
+		writeQuestFile(dir, "garlic_jr_spice_boys.json", sidequest(
+				"garlic_jr_spice_boys", "dmz.sidequest.garlic_jr_spice_boys.name", "dmz.sidequest.garlic_jr_spice_boys.desc",
+				"combat", false, "popo", "popo",
+				prereqs("AND", condSaga("movies_saga", 3)),
+				requirements("AND", condBiome("dragonminez:rocky")),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_garlick_jr", 3),
+						objTalkTo("popo")
+				},
+				new JsonObject[]{ rewTPS(18000) }));
+
+		// --- Dr. Wheelo arc ---
+
+		writeQuestFile(dir, "wheelo_frozen_rescue.json", sidequest(
+				"wheelo_frozen_rescue", "dmz.sidequest.wheelo_frozen_rescue.name", "dmz.sidequest.wheelo_frozen_rescue.desc",
+				"collection", true, "bulma", "bulma",
+				prereqs("AND", condSaga("movies_saga", 6)),
+				requirements("AND", condBiome("minecraft:snowy_plains")),
+				new JsonObject[]{
+						objItem("dragonminez:gete_scrap", 4),
+						objItem("minecraft:redstone", 24),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(22000) }));
+
+		// --- Turles arc ---
+
+		writeQuestFile(dir, "turles_tree_sapling.json", sidequest(
+				"turles_tree_sapling", "dmz.sidequest.turles_tree_sapling.name", "dmz.sidequest.turles_tree_sapling.desc",
+				"collection", true, "piccolo", "piccolo",
+				prereqs("AND", condSaga("movies_saga", 10)),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_turles", 1),
+						objItem("minecraft:oak_sapling", 12),
+						objItem("minecraft:apple", 16),
+						objTalkTo("piccolo")
+				},
+				new JsonObject[]{ rewTPS(28000) }));
+
+		// --- Lord Slug arc ---
+
+		writeQuestFile(dir, "slug_aftermath.json", sidequest(
+				"slug_aftermath", "dmz.sidequest.slug_aftermath.name", "dmz.sidequest.slug_aftermath.desc",
+				"combat", false, "namek_elder", "namek_elder",
+				prereqs("AND", condSaga("movies_saga", 13)),
+				requirements("AND", condBiome("minecraft:plains")),
+				new JsonObject[]{
+						objKill("dragonminez:saga_slug_soldier", 20),
+						objTalkTo("namek_elder")
+				},
+				new JsonObject[]{ rewTPS(32000) }));
+
+		// --- Cooler arc ---
+
+		writeQuestFile(dir, "cooler_squadron_mopup.json", sidequest(
+				"cooler_squadron_mopup", "dmz.sidequest.cooler_squadron_mopup.name", "dmz.sidequest.cooler_squadron_mopup.desc",
+				"combat", true, "krillin", "krillin",
+				prereqs("AND", condSaga("movies_saga", 16)),
+				new JsonObject[]{
+						objKill("dragonminez:saga_salza", 4),
+						objKill("dragonminez:saga_dore", 4),
+						objKill("dragonminez:saga_neiz", 4)
+				},
+				new JsonObject[]{ rewTPS(38000) }));
+
+		// --- Big Gete Star arc ---
+
+		writeQuestFile(dir, "big_gete_salvage.json", sidequest(
+				"big_gete_salvage", "dmz.sidequest.big_gete_salvage.name", "dmz.sidequest.big_gete_salvage.desc",
+				"collection", true, "bulma", "bulma",
+				prereqs("AND", condSaga("movies_saga", 19)),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_gete_robot", 8),
+						objItem("dragonminez:gete_scrap", 8),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(45000), rewItem("dragonminez:gete_ingot", 4) }));
+
+		// --- Cold androids arc (Androids 13/14/15) ---
+
+		writeQuestFile(dir, "android_cold_parts.json", sidequest(
+				"android_cold_parts", "dmz.sidequest.android_cold_parts.name", "dmz.sidequest.android_cold_parts.desc",
+				"collection", true, "bulma", "bulma",
+				prereqs("AND", condSaga("movies_saga", 22)),
+				requirements("AND", condBiome("minecraft:snowy_plains")),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_a14", 1),
+						objQuestKill("dragonminez:saga_a15", 1),
+						objItem("dragonminez:gete_scrap", 6),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(52000), rewItem("dragonminez:gete_ingot", 3) }));
+
+		// --- Bojack arc ---
+
+		writeQuestFile(dir, "bojack_tournament_cleanup.json", sidequest(
+				"bojack_tournament_cleanup", "dmz.sidequest.bojack_tournament_cleanup.name", "dmz.sidequest.bojack_tournament_cleanup.desc",
+				"combat", true, "gohan", "gohan",
+				prereqs("AND", condSaga("movies_saga", 29)),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_zangya", 1),
+						objQuestKill("dragonminez:saga_bido", 1),
+						objQuestKill("dragonminez:saga_bujin", 1),
+						objQuestKill("dragonminez:saga_gokua", 1),
+						objTalkTo("gohan")
+				},
+				new JsonObject[]{ rewTPS(65000) }));
+
+		// --- Otherworld arc (Pikkon / Janemba) ---
+
+		writeQuestFile(dir, "otherworld_pikkon_rematch.json", sidequest(
+				"otherworld_pikkon_rematch", "dmz.sidequest.otherworld_pikkon_rematch.name", "dmz.sidequest.otherworld_pikkon_rematch.desc",
+				"combat", false, "kingkai", "kingkai",
+				prereqs("AND", condSaga("movies_saga", 37)),
+				requirements("AND", condDimension("dragonminez:otherworld")),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_paikuhan", 1),
+						objTalkTo("kingkai")
+				},
+				new JsonObject[]{ rewTPS(90000), rewItem("dragonminez:senzu_bean", 3) }));
 	}
 }
 

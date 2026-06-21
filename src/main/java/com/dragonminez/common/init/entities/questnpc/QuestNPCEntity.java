@@ -41,9 +41,51 @@ public class QuestNPCEntity extends MastersEntity {
 	private static final EntityDataAccessor<String> NPC_TEXTURE =
 			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
 
+	/** Squared horizontal distance (in blocks) the NPC may drift from home before it is pulled back. */
+	private static final double HOME_DRIFT_THRESHOLD_SQR = 1.0D;
+
+	private boolean hasHome = false;
+	private double homeX;
+	private double homeZ;
+
 	public QuestNPCEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);
 		this.setPersistenceRequired();
+	}
+
+	// ---- Home anchoring ----
+
+	/**
+	 * Anchors this NPC to a fixed horizontal position. If it ever drifts away (knockback, water/piston
+	 * push, another mod, etc.) it is snapped back to (homeX, homeZ). The Y coordinate is intentionally
+	 * ignored: we keep the NPC's current Y so changes to the blocks underneath it don't fight the anchor.
+	 */
+	public void setHomePosition(double x, double z) {
+		this.homeX = x;
+		this.homeZ = z;
+		this.hasHome = true;
+	}
+
+	public boolean hasHome() {
+		return this.hasHome;
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (this.level().isClientSide || !this.hasHome) {
+			return;
+		}
+
+		double dx = this.getX() - this.homeX;
+		double dz = this.getZ() - this.homeZ;
+		if (dx * dx + dz * dz > HOME_DRIFT_THRESHOLD_SQR) {
+			// Snap back horizontally, keeping current Y (ignore Y per design).
+			this.getNavigation().stop();
+			this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+			this.hasImpulse = true;
+			this.moveTo(this.homeX, this.getY(), this.homeZ, this.getYRot(), this.getXRot());
+		}
 	}
 
 	@Override
@@ -137,6 +179,11 @@ public class QuestNPCEntity extends MastersEntity {
 		if (texture != null && !texture.isEmpty()) {
 			tag.putString("QuestNpcTexture", texture);
 		}
+		if (this.hasHome) {
+			tag.putBoolean("QuestNpcHasHome", true);
+			tag.putDouble("QuestNpcHomeX", this.homeX);
+			tag.putDouble("QuestNpcHomeZ", this.homeZ);
+		}
 	}
 
 	@Override
@@ -150,6 +197,9 @@ public class QuestNPCEntity extends MastersEntity {
 		}
 		if (tag.contains("QuestNpcTexture")) {
 			setNpcTexture(tag.getString("QuestNpcTexture"));
+		}
+		if (tag.getBoolean("QuestNpcHasHome")) {
+			setHomePosition(tag.getDouble("QuestNpcHomeX"), tag.getDouble("QuestNpcHomeZ"));
 		}
 	}
 

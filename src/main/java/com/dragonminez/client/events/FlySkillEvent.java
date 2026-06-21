@@ -86,8 +86,12 @@ public class FlySkillEvent {
 						if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned()) return;
 						Skill flySkill = data.getSkills().getSkill("fly");
 						Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
-						if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0) {
+						if (kiControlSkill == null || kiControlSkill.getLevel() <= 0) {
 							player.displayClientMessage(Component.translatable("message.dragonminez.flight.no_kicontrol"), true);
+							return;
+						}
+						if (flySkill == null || flySkill.getLevel() <= 0) {
+							player.displayClientMessage(Component.translatable("message.dragonminez.flight.no_fly"), true);
 							return;
 						}
 						NetworkHandler.sendToServer(new FlightModeC2S());
@@ -107,8 +111,12 @@ public class FlySkillEvent {
 					Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
 					boolean flyActive = flySkill != null && flySkill.isActive();
 
-					if (flySkill == null || kiControlSkill == null || flySkill.getLevel() <= 0 || kiControlSkill.getLevel() <= 0) {
+					if (kiControlSkill == null || kiControlSkill.getLevel() <= 0) {
 						if (!flyActive) player.displayClientMessage(Component.translatable("message.dragonminez.flight.no_kicontrol"), true);
+						return;
+					}
+					if (flySkill == null || flySkill.getLevel() <= 0) {
+						if (!flyActive) player.displayClientMessage(Component.translatable("message.dragonminez.flight.no_fly"), true);
 						return;
 					}
 

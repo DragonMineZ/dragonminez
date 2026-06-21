@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 // Es como el QuestRegistry.java pero en vez de ser puras tecnicalidades, ahora usa cosas de MC directamente. Este es como
 // el "bridge" para los packets.
@@ -35,6 +37,9 @@ public final class QuestService {
 	public static final String QUEST_OWNER_TAG = "dmz_quest_owner";
 	public static final String SAGA_ID_TAG = "dmz_saga_id";
 	public static final String QUEST_TEAM_TAG = "dmz_quest_team";
+
+	private static final long RESUMMON_MIN_INTERVAL_MS = 1500L;
+	private static final Map<UUID, Long> resummonAntiSpam = new ConcurrentHashMap<>();
 
 	private QuestService() {
 	}
@@ -90,6 +95,50 @@ public final class QuestService {
 		}
 		return startQuest(requester, controller, resolved, data,
 				data.getPlayerQuestData().isHardModeEnabled());
+	}
+
+	/**
+	 * Re-spawns only the still-missing quest-spawned kill enemies for an already-accepted quest.
+	 * Backs the "Start" button reappearing in the quest tree: progress already made is honoured,
+	 * so a "kill 3 / kill 5" objective with 2 / 3 done re-summons just 1 and 2.
+	 */
+	@Nullable
+	public static Component resummonQuest(ServerPlayer requester, String questKey) {
+		ResolvedQuest resolved = resolveQuest(questKey);
+		if (resolved == null) {
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+
+		ServerPlayer controller = PartyManager.resolveQuestController(requester);
+		if (controller == null) {
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, controller).resolve().orElse(null);
+		if (data == null) {
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+
+		PlayerQuestData pqd = data.getPlayerQuestData();
+		if (pqd.getQuestStatus(questKey) != PlayerQuestData.QuestStatus.ACCEPTED) {
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+
+		long now = System.currentTimeMillis();
+		Long last = resummonAntiSpam.get(requester.getUUID());
+		if (last != null && now - last < RESUMMON_MIN_INTERVAL_MS) {
+			return null;
+		}
+		resummonAntiSpam.put(requester.getUUID(), now);
+
+		int partySize = PartyManager.getAllPartyMembers(controller).size();
+		try {
+			spawnKillObjectives(requester, resolved, pqd, partySize, pqd.isQuestHardMode(questKey));
+		} catch (Exception exception) {
+			LogUtil.error(Env.SERVER, "Failed to re-summon kill objectives for quest '" + questKey
+					+ "' requested by " + requester.getGameProfile().getName(), exception);
+		}
+		return null;
 	}
 
 	@Nullable
