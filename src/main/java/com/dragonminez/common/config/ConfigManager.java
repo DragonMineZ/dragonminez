@@ -818,6 +818,19 @@ public class ConfigManager {
 		}
 	}
 
+	public static boolean saveRawConfig(String configFilePath, String json) {
+		try {
+			JsonElement parsed = JsonParser.parseString(json);
+			Path path = CONFIG_DIR.resolve(configFilePath + ".json");
+			if (!Files.exists(path)) return false;
+			Files.writeString(path, GSON.toJson(parsed));
+			return true;
+		} catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Error saving raw config '{}': {}", configFilePath, e.getMessage());
+			return false;
+		}
+	}
+
 	public static String getSpecificConfigJson(String configFilePath) {
 		Path path = CONFIG_DIR.resolve(configFilePath + ".json");
 		if (!Files.exists(path)) return null;
