@@ -509,6 +509,12 @@ public class SagaMoviesEntity {
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
         }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_broly_base";
+        }
+
     }
 
     public static class ParagusEntity extends DBSagasEntity {
@@ -547,7 +553,6 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xFFEA57);
             this.setKiBlastSpeed(2.2f);
-            this.setScaleVal(1.4f);
 
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
 
@@ -625,6 +630,7 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0x75B4FF);
             this.setKiBlastSpeed(1.6f);
+            this.setScaleVal(1.2f);
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 200, 1.0F, 0x75B4FF, 0x3081E3);
             this.setWildSense(true, 100);
@@ -639,7 +645,7 @@ public class SagaMoviesEntity {
             this.setCanFly(true);
             this.setDBZStyle(0);
             this.setAuraColor(0x75B4FF);
-            this.setScaleVal(1.2f);
+            this.setScaleVal(1.3f);
             this.setKiBlastSpeed(1.5f);
             this.setAllowedCombos(120, ComboType.AIR, ComboType.BASIC);
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.2F, 0x75B4FF, 0x3081E3);
@@ -670,6 +676,7 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0x5EF24E);
             this.setKiBlastSpeed(2.0f);
+            this.setScaleVal(1.2f);
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 300, 1.2F, 0x5EF24E, 0x2DDE18);
             this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 250, 0.8F, 0x5EF24E, 0x2DDE18);
@@ -711,7 +718,7 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0x7D8A2E);
             this.setKiBlastSpeed(1.5f);
-            this.setScaleVal(1.2f);
+            this.setScaleVal(1.4f);
             this.setAllowedCombos(120, ComboType.BASIC);
             this.addKiSkill(KiSkillType.KI_SMALL, 100, 1.2F, 0x7D8A2E, 0x4F591A);
 
@@ -721,6 +728,12 @@ public class SagaMoviesEntity {
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.80D);
         }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_bio_broly";
+        }
+
     }
 
     public static class BioBrolyGiganteEntity extends DBSagasEntity {
@@ -739,6 +752,11 @@ public class SagaMoviesEntity {
             this.setWildSense(true, 150);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.22D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_bio_broly";
         }
     }
 
@@ -767,7 +785,7 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xFFD700);
             this.setKiBlastSpeed(1.8f);
-            this.setScaleVal(3.0f);
+            this.setScaleVal(5.0f);
             this.setAllowedCombos(100, ComboType.BASIC, ComboType.GUM_PUNCH);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 150, 1.5F, 0xFFD700, 0xCCAC00);
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);

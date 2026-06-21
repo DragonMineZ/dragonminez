@@ -1016,34 +1016,34 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaMoviesEntity.BrolySSJLegendarioEntity>> SAGA_BROLY_LSSJ =
             ENTITY_TYPES.register("saga_broly_lssj",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BrolySSJLegendarioEntity::new, MobCategory.MONSTER)
-                            .sized(0.9f, 2.4f)
+                            .sized(1.0f, 2.7f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_broly_lssj").toString()));
 
     // Bojack
     public static final RegistryObject<EntityType<SagaMoviesEntity.ZangyaEntity>> SAGA_ZANGYA =
             ENTITY_TYPES.register("saga_zangya",
                     () -> EntityType.Builder.of(SagaMoviesEntity.ZangyaEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.7f)
+                            .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_zangya").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.GokuaEntity>> SAGA_GOKUA =
             ENTITY_TYPES.register("saga_gokua",
                     () -> EntityType.Builder.of(SagaMoviesEntity.GokuaEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.9f)
+                            .sized(0.6f, 2.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gokua").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BidoEntity>> SAGA_BIDO =
             ENTITY_TYPES.register("saga_bido",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BidoEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.1f)
+                            .sized(0.8f, 2.3f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_bido").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BujinEntity>> SAGA_BUJIN =
             ENTITY_TYPES.register("saga_bujin",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BujinEntity::new, MobCategory.MONSTER)
-                            .sized(0.5f, 1.5f)
+                            .sized(0.5f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_bujin").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BojackEntity>> SAGA_BOJACK =
             ENTITY_TYPES.register("saga_bojack",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BojackEntity::new, MobCategory.MONSTER)
-                            .sized(0.7f, 2.0f)
+                            .sized(0.7f, 2.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_bojack").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BojackFullPowerEntity>> SAGA_BOJACK_FP =
             ENTITY_TYPES.register("saga_bojack_fp",
@@ -1055,29 +1055,29 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaMoviesEntity.BioBrolyEntity>> SAGA_BIO_BROLY =
             ENTITY_TYPES.register("saga_bio_broly",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BioBrolyEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 2.2f)
+                            .sized(0.8f, 2.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_bio_broly").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.BioBrolyGiganteEntity>> SAGA_BIO_BROLY_GIANT =
             ENTITY_TYPES.register("saga_bio_broly_giant",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BioBrolyGiganteEntity::new, MobCategory.MONSTER)
-                            .sized(2.8f, 6.5f)
+                            .sized(2.8f, 7.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_bio_broly_giant").toString()));
 
     // Janemba & Paikuhan
     public static final RegistryObject<EntityType<SagaMoviesEntity.PaikuhanEntity>> SAGA_PAIKUHAN =
             ENTITY_TYPES.register("saga_paikuhan",
                     () -> EntityType.Builder.of(SagaMoviesEntity.PaikuhanEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.8f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_paikuhan").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.JanembaGordoEntity>> SAGA_JANEMBA_FAT =
             ENTITY_TYPES.register("saga_janemba_fat",
                     () -> EntityType.Builder.of(SagaMoviesEntity.JanembaGordoEntity::new, MobCategory.MONSTER)
-                            .sized(2.5f, 4.0f)
+                            .sized(3.0f, 7.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_janemba_fat").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.SuperJanembaEntity>> SAGA_SUPER_JANEMBA =
             ENTITY_TYPES.register("saga_super_janemba",
                     () -> EntityType.Builder.of(SagaMoviesEntity.SuperJanembaEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.9f)
+                            .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_super_janemba").toString()));
 
     // Hirudegarn
