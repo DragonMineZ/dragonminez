@@ -32,6 +32,7 @@ public class DeleteTechniqueC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					data.getTechniques().removeTechnique(techniqueId);
+					data.getSkills().removeSkill(techniqueId);
 					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 				});
 			}
