@@ -83,7 +83,7 @@ public class FlySkillEvent {
 			if (player != null && mc.screen == null) {
 				if (KeyBinds.isSecondFunctionDown()) {
 					StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-						if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned()) return;
+						if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) return;
 						Skill flySkill = data.getSkills().getSkill("fly");
 						Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
 						if (kiControlSkill == null || kiControlSkill.getLevel() <= 0) {
@@ -105,7 +105,7 @@ public class FlySkillEvent {
 				lastFlyKeyPressTime = currentTime;
 
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-					if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned()) return;
+					if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) return;
 
 					Skill flySkill = data.getSkills().getSkill("fly");
 					Skill kiControlSkill = data.getSkills().getSkill("kicontrol");

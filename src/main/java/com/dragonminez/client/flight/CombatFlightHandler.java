@@ -43,6 +43,15 @@ public class CombatFlightHandler {
 	private static long lastImpulseTime = 0;
 
 	public static void handle(LocalPlayer player, StatsData data) {
+		if (data.getStatus().isStunned()) {
+			velocity = Vec3.ZERO;
+			burstVelocity = Vec3.ZERO;
+			sustainedDir = -1;
+			player.setDeltaMovement(0, -1.5, 0);
+			player.fallDistance = 0F;
+			return;
+		}
+
 		CombatConfig config = ConfigManager.getCombatConfig();
 		int flyLevel = data.getSkills().getSkillLevel("fly");
 		float speedScale = getFlySpeedScale(player);

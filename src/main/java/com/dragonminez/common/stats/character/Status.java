@@ -33,7 +33,7 @@ public class Status {
 	private long lastBlockTime;
 	private long lastHurtTime;
 	private boolean friendlyFistEnabled;
-	private boolean isStunned;
+	private boolean stunEffect;
 	private boolean isKnockedDown;
 	private ActionMode selectedAction;
 	private String kiWeaponType;
@@ -75,7 +75,7 @@ public class Status {
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
 		this.friendlyFistEnabled = false;
-		this.isStunned = false;
+		this.stunEffect = false;
 		this.isKnockedDown = false;
 		this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = "blade";
@@ -117,7 +117,7 @@ public class Status {
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
 		this.friendlyFistEnabled = false;
-		this.isStunned = false;
+		this.stunEffect = false;
 		this.isKnockedDown = false;
 		this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = "blade";
@@ -143,6 +143,10 @@ public class Status {
 		this.activeShadowDummyUUID = null;
 		this.shadowDummyPercent = 0;
 		this.shadowDummyKillCount = 0;
+	}
+
+	public boolean isStunned() {
+		return stunEffect || isKnockedDown || isStrikeLocked;
 	}
 
 	public void validateKiWeaponType() {
@@ -179,7 +183,7 @@ public class Status {
 		tag.putLong("LastBlockTime", lastBlockTime);
 		tag.putLong("LastHurtTime", lastHurtTime);
 		tag.putBoolean("FriendlyFistEnabled", friendlyFistEnabled);
-		tag.putBoolean("IsStunned", isStunned);
+		tag.putBoolean("IsStunned", stunEffect);
 		tag.putBoolean("IsKnockedDown", isKnockedDown);
 		tag.putInt("SelectedAction", selectedAction.ordinal());
 		tag.putString("KiWeaponType", kiWeaponType);
@@ -226,7 +230,7 @@ public class Status {
 		this.lastBlockTime = tag.getLong("LastBlockTime");
 		this.lastHurtTime = tag.getLong("LastHurtTime");
 		this.friendlyFistEnabled = tag.getBoolean("FriendlyFistEnabled");
-		this.isStunned = tag.getBoolean("IsStunned");
+		this.stunEffect = tag.getBoolean("IsStunned");
 		this.isKnockedDown = tag.getBoolean("IsKnockedDown");
 		if (tag.contains("SelectedAction")) this.selectedAction = ActionMode.values()[tag.getInt("SelectedAction")];
 		else this.selectedAction = ActionMode.FORM;
@@ -276,7 +280,7 @@ public class Status {
 		this.lastBlockTime = other.lastBlockTime;
 		this.lastHurtTime = other.lastHurtTime;
 		this.friendlyFistEnabled = other.friendlyFistEnabled;
-		this.isStunned = other.isStunned;
+		this.stunEffect = other.stunEffect;
 		this.isKnockedDown = other.isKnockedDown;
 		this.selectedAction = other.selectedAction;
 		this.kiWeaponType = other.kiWeaponType;

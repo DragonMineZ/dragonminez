@@ -57,8 +57,7 @@ public class TechniqueChargeC2S {
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()
-						|| data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown()) {
+				if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) {
 					data.getTechniques().clearTechniqueCharge();
 					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 					return;

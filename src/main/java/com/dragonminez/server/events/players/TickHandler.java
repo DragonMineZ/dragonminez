@@ -115,7 +115,7 @@ public class TickHandler {
 				data.getStatus().setActionCharging(false);
 				data.getTechniques().clearTechniqueCharge();
 				data.getResources().setActionCharge(0);
-				if (!data.getStatus().isStunned()) data.getStatus().setStunned(true);
+				if (!data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
 
 				data.getCooldowns().tick();
 				data.getEffects().tick();
@@ -136,7 +136,7 @@ public class TickHandler {
 				data.getEffects().tick();
 				data.getSecondaryStatEffects().tick();
 				clearExpiredKnockdown(data);
-				if (data.getStatus().isStunned()) data.getStatus().setStunned(false);
+				if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 			}
 
 			handleTechniqueCharge(serverPlayer, data);
@@ -148,7 +148,7 @@ public class TickHandler {
 			int meditationLevel = data.getSkills().getSkillLevel("meditation");
 
 			double currentRegenMod = 1.0;
-			boolean isGuardBroken = data.getStatus().isStunned() || data.getResources().getCurrentPoise() <= 0;
+			boolean isGuardBroken = data.getStatus().isStunEffect() || data.getResources().getCurrentPoise() <= 0;
 			boolean isFastFly = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting();
 			boolean isBlocking = data.getStatus().isBlocking();
 			boolean isAttacking = serverPlayer.swingTime > 0;
@@ -607,7 +607,7 @@ public class TickHandler {
 	}
 
 	private static void regeneratePoise(StatsData data, double meditationBonus) {
-		if (data.getCooldowns().hasCooldown(Cooldowns.POISE_CD) || data.getStatus().isBlocking() || data.getStatus().isStunned())
+		if (data.getCooldowns().hasCooldown(Cooldowns.POISE_CD) || data.getStatus().isBlocking() || data.getStatus().isStunEffect())
 			return;
 
 		float currentPoise = data.getResources().getCurrentPoise();

@@ -48,8 +48,6 @@ public class KiBlastC2S {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (data.getCooldowns().hasCooldown(Cooldowns.KI_BLAST_CD)) return;
 					if (data.getStatus().isStunned()) return;
-					if (data.getStatus().isStrikeLocked()) return;
-					if (data.getStatus().isKnockedDown()) return;
 					if (!data.getSkills().hasSkill("kicontrol")) return;
 					int baseCost = ConfigManager.getCombatConfig().getBaselineFormDrain();
 

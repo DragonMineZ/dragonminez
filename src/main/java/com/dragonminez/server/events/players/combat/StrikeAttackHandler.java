@@ -61,7 +61,7 @@ public class StrikeAttackHandler {
 		if (player.level().isClientSide) return;
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			if (!stats.getStatus().isHasCreatedCharacter()) return;
-			if (stats.getStatus().isStunned() || stats.getStatus().isStrikeLocked() || stats.getStatus().isKnockedDown()) return;
+			if (stats.getStatus().isStunned()) return;
 			if (PENDING.containsKey(player.getUUID()) || ACTIVE.containsKey(player.getUUID())) return;
 
 			TechniqueData selected = stats.getTechniques().getSelectedTechnique();

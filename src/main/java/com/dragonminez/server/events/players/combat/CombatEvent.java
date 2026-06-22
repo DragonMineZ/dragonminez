@@ -323,7 +323,7 @@ public class CombatEvent {
 
 					if (!techActive && ConfigManager.getCombatConfig().getEnableBlocking()) {
 						Entity sourceEntity = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
-						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && sourceEntity != null) {
+						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunEffect() && sourceEntity != null) {
 							Vec3 targetLook = victim.getLookAngle();
 							Vec3 sourceLoc = sourceEntity.position();
 							Vec3 targetLoc = victim.position();
@@ -376,7 +376,7 @@ public class CombatEvent {
 										}
 										if (MainDamageTypes.isStrikeAttackDamage(source)) {
 											applyStrikeCounterGuardBreak(sourceEntity);
-											boolean isGuardBrokenTmp = victimData.getStatus().isStunned() && victimData.getResources().getCurrentPoise() <= 0;
+											boolean isGuardBrokenTmp = victimData.getStatus().isStunEffect() && victimData.getResources().getCurrentPoise() <= 0;
 											double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp, finalDefensePenetration);
 											if (!(estimatedPostMitigation <= 0.0)) victimData.getResources().removeStamina((float) (estimatedPostMitigation * 0.5));
 										}
@@ -423,7 +423,7 @@ public class CombatEvent {
 									}
 
 									if (victim instanceof ServerPlayer sPlayer) {
-										boolean isGuardBrokenTmp = victimData.getStatus().isStunned() && victimData.getResources().getCurrentPoise() <= 0;
+										boolean isGuardBrokenTmp = victimData.getStatus().isStunEffect() && victimData.getResources().getCurrentPoise() <= 0;
 										double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp, finalDefensePenetration);
 										float finalDmg = (float) (estimatedPostMitigation * blockMultiplier);
 
@@ -586,7 +586,7 @@ public class CombatEvent {
 						victim.getPersistentData().getDouble("dmz_defense_pen") : 0.0;
 
 				StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(stats -> {
-					boolean isGuardBroken = stats.getStatus().isStunned() && stats.getResources().getCurrentPoise() <= 0;
+					boolean isGuardBroken = stats.getStatus().isStunEffect() && stats.getResources().getCurrentPoise() <= 0;
 					double postMitigation = stats.calculatePostMitigationDamage(rawDamage, isGuardBroken, defensePenetration);
 
 					if (victim.getPersistentData().contains("dmz_block_multiplier")) {

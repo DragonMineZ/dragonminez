@@ -68,7 +68,7 @@ public class CombatAttackRequestC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-					if (stats.getStatus().isStrikeLocked()) return;
+					if (stats.getStatus().isStunned()) return;
 					processAttackRequest(player, this);
 				});
 			}

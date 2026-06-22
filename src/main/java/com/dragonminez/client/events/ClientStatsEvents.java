@@ -144,7 +144,7 @@ public class ClientStatsEvents {
 
 			Character character = data.getCharacter();
 
-			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown();
+			boolean isStunned = data.getStatus().isStunned();
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
@@ -431,8 +431,8 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			boolean isStunned = data.getStatus().isStunned() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown();
-			if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStrikeLocked()) return;
+			boolean isStunned = data.getStatus().isStunned();
+			if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || isStunned) return;
 
 			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();
 			if (isDashKeyDown && !wasDashKeyDown && !isStunned) {
@@ -514,8 +514,8 @@ public class ClientStatsEvents {
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
-			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStrikeLocked()
-					|| data.getStatus().isKnockedDown() || data.getStatus().isStunned() || data.getStatus().isActionCharging()) {
+			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
+					|| data.getStatus().isActionCharging()) {
 				event.getInput().forwardImpulse = 0;
 				event.getInput().leftImpulse = 0;
 				event.getInput().jumping = false;

@@ -40,7 +40,7 @@ public class MovementSkillsHandler {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 
-			isStunned[0] = data.getStatus().isStunned() || data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown();
+			isStunned[0] = data.getStatus().isStunned();
 			var flySkill = data.getSkills().getSkill("fly");
 			isFlying[0] = flySkill != null && flySkill.isActive();
 

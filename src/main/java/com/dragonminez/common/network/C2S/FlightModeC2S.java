@@ -36,7 +36,7 @@ public class FlightModeC2S {
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isHasCreatedCharacter()) return;
-				if (data.getStatus().isStrikeLocked() || data.getStatus().isKnockedDown() || data.getStatus().isStunned()) return;
+				if (data.getStatus().isStunned()) return;
 
 				Skill flySkill = data.getSkills().getSkill("fly");
 				Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
