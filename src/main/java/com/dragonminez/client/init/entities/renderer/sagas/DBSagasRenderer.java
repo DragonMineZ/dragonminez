@@ -6,7 +6,8 @@ import com.dragonminez.client.init.entities.renderer.sagas.layer.ItemInHandLayer
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
-import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.client.render.util.IrisCompat;
+import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.sagas.*;
@@ -63,34 +64,52 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         boolean showLightning = entity.isLightning();
 
         if (showAura || showLightning) {
-            Minecraft mc = Minecraft.getInstance();
-
-            poseStack.pushPose();
-
-            if (showAura) {
-                if (entity.onGround()) {
-                    poseStack.pushPose();
-                    poseStack.translate(0.0, 0.05, 0.0);
-                    renderPulseAura(entity, poseStack, mc, partialTick);
-                    poseStack.popPose();
-                }
-
-                poseStack.pushPose();
-                executeAuraShaderDraw(entity, poseStack, mc, partialTick);
-                poseStack.popPose();
+            if (IrisCompat.isShaderPackInUse()) {
+                Matrix4f captured = new Matrix4f(poseStack.last().pose());
+                float pt = partialTick;
+                boolean drawAura = showAura;
+                boolean drawLightning = showLightning;
+                PlayerEffectQueue.addEntityEffect(() -> drawEffects(entity, captured, pt, drawAura, drawLightning));
+            } else {
+                drawEffectsInline(entity, poseStack, partialTick, showAura, showLightning);
             }
-
-            if (showLightning) {
-                poseStack.pushPose();
-                executeLightningShaderDraw(entity, poseStack, partialTick);
-                poseStack.popPose();
-            }
-
-            poseStack.popPose();
         }
 
         poseStack.popPose();
 
+    }
+
+    private void drawEffects(T entity, Matrix4f baseMatrix, float partialTick, boolean showAura, boolean showLightning) {
+        PoseStack poseStack = new PoseStack();
+        poseStack.last().pose().set(baseMatrix);
+        drawEffectsInline(entity, poseStack, partialTick, showAura, showLightning);
+    }
+
+    private void drawEffectsInline(T entity, PoseStack poseStack, float partialTick, boolean showAura, boolean showLightning) {
+        Minecraft mc = Minecraft.getInstance();
+
+        poseStack.pushPose();
+
+        if (showAura) {
+            if (entity.onGround()) {
+                poseStack.pushPose();
+                poseStack.translate(0.0, 0.05, 0.0);
+                renderPulseAura(entity, poseStack, mc, partialTick);
+                poseStack.popPose();
+            }
+
+            poseStack.pushPose();
+            executeAuraShaderDraw(entity, poseStack, mc, partialTick);
+            poseStack.popPose();
+        }
+
+        if (showLightning) {
+            poseStack.pushPose();
+            executeLightningShaderDraw(entity, poseStack, partialTick);
+            poseStack.popPose();
+        }
+
+        poseStack.popPose();
     }
 
     @Override
@@ -164,8 +183,8 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         shader.safeGetUniform("alp1").set(alphaCurve * 0.6f);
 
-        RenderType pulseRender = ModRenderTypes.getCustomAura(crossTex);
-        pulseRender.setupRenderState();
+        RenderType pulseRender = AuraRenderer.auraType(crossTex);
+        AuraRenderer.customSetup(pulseRender, crossTex, shader);
 
         shader.apply();
 
@@ -173,7 +192,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         mesh.bind();
         mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
 
-        pulseRender.clearRenderState();
+        AuraRenderer.customClear(pulseRender);
         VertexBuffer.unbind();
         shader.clear();
 
@@ -229,25 +248,26 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             shader.safeGetUniform("alp1").set(1.0f - crossFactor);
             shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
 
-            RenderType mainRender = ModRenderTypes.getCustomAura(mainTex);
-            mainRender.setupRenderState();
+            RenderType mainRender = AuraRenderer.auraType(mainTex);
+            AuraRenderer.customSetup(mainRender, mainTex, shader);
             shader.apply();
             mesh.bind();
             mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-            mainRender.clearRenderState();
+            AuraRenderer.customClear(mainRender);
 
             poseStack.pushPose();
             float sparkingPulse = 1.0f + (float) Math.sin((animatable.tickCount + partialTick) * 0.2f) * 0.05f;
             poseStack.scale(0.8f * sparkingPulse, 0.65f * sparkingPulse, 0.8f * sparkingPulse);
             poseStack.translate(0.0, -0.25, 0.0);
 
-            RenderType sparkingRender = ModRenderTypes.getCustomAura(sparkingTex);
-            sparkingRender.setupRenderState();
+            RenderType sparkingRender = AuraRenderer.auraType(sparkingTex);
+            AuraRenderer.customSetup(sparkingRender, sparkingTex, shader);
             shader.safeGetUniform("alp1").set((1.0f - crossFactor) * 0.8f);
             shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
             shader.apply();
+            mesh.bind();
             mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-            sparkingRender.clearRenderState();
+            AuraRenderer.customClear(sparkingRender);
             poseStack.popPose();
 
             poseStack.popPose();
@@ -268,14 +288,14 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             shader.safeGetUniform("alp1").set(crossFactor);
             shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
 
-            RenderType crossRender = ModRenderTypes.getCustomAura(crossTex);
-            crossRender.setupRenderState();
+            RenderType crossRender = AuraRenderer.auraType(crossTex);
+            AuraRenderer.customSetup(crossRender, crossTex, shader);
             shader.apply();
 
             VertexBuffer groundMesh = AuraMeshFactory.getGroundQuad();
             groundMesh.bind();
             groundMesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-            crossRender.clearRenderState();
+            AuraRenderer.customClear(crossRender);
 
             poseStack.popPose();
         }
@@ -312,8 +332,9 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         shader.safeGetUniform("power").set(3.0f);
         shader.safeGetUniform("divis").set(1.0f);
 
-        RenderType renderType = ModRenderTypes.getCustomLightning(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png"));
-        renderType.setupRenderState();
+        ResourceLocation lightningTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+        RenderType renderType = AuraRenderer.lightningType(lightningTex);
+        AuraRenderer.customSetup(renderType, lightningTex, shader);
 
         shader.apply();
         VertexBuffer mesh = AuraRenderer.getLightningMesh();
@@ -345,6 +366,6 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         VertexBuffer.unbind();
         shader.clear();
-        renderType.clearRenderState();
+        AuraRenderer.customClear(renderType);
     }
 }
