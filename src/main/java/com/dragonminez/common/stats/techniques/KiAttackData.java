@@ -140,7 +140,14 @@ public class KiAttackData extends TechniqueData {
 	public float getActualSize() { return size; }
 	public int getActualArmorPenetration() { return Math.min(100, armorPenetration); }
 	public int getActualCastTime() { return getBaseChargeTicks(); }
-	public int getActualCooldown() { return cooldown * KI_TIME_MULTIPLIER; }
+	public static final float COOLDOWN_LEVEL_REDUCTION = 0.025f;
+	public static final float COOLDOWN_MAX_REDUCTION = 0.5f;
+
+	public float getCooldownLevelMultiplier() {
+		return Math.max(1.0f - COOLDOWN_MAX_REDUCTION, 1.0f - Math.max(0, cooldownLevel) * COOLDOWN_LEVEL_REDUCTION);
+	}
+
+	public int getActualCooldown() { return Math.round(cooldown * KI_TIME_MULTIPLIER * getCooldownLevelMultiplier()); }
 
 	public boolean isInstantCast() {
 		return kiType == KiType.SMALL_BALL || kiType == KiType.LASER;
@@ -211,9 +218,9 @@ public class KiAttackData extends TechniqueData {
 		int baseMin = Math.max(0, cfg.getMinXPCost());
 		double multiplier = Math.max(0.0, cfg.getXpCostMultiplier());
 
-		float initialDamage = Math.max(0.0f, this.damageMultiplier - (this.damageLevel * 0.1f));
+		float initialDamage = Math.max(0.0f, this.damageMultiplier - (this.damageLevel * 0.05f));
 		float initialSize = Math.max(0.0f, this.size - (this.sizeLevel * 0.1f));
-		float initialSpeed = Math.max(0.0f, this.speed - (this.speedLevel * 0.1f));
+		float initialSpeed = Math.max(0.0f, this.speed - (this.speedLevel * 0.05f));
 		int initialArmorPen = Math.max(0, this.armorPenetration - this.armorPenLevel);
 
 		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
@@ -306,14 +313,14 @@ public class KiAttackData extends TechniqueData {
 		this.tpCost = Math.max(10, Math.round(tpBase));
 
 		if (!PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
-			float initialDamage = Math.max(0.0f, normalized[0] - (damageLevel * 0.1f));
+			float initialDamage = Math.max(0.0f, normalized[0] - (damageLevel * 0.05f));
 			float initialSize = Math.max(0.0f, normalized[1] - (sizeLevel * 0.1f));
-			float initialSpeed = Math.max(0.0f, normalized[2] - (speedLevel * 0.1f));
+			float initialSpeed = Math.max(0.0f, normalized[2] - (speedLevel * 0.05f));
 			int initialArmorPen = Math.max(0, Math.round(normalized[3]) - armorPenLevel);
 
 			float initialComplexity = getWeightedComplexity(initialDamage, sizeComplexityRatio(resolvedType, initialSize), initialSpeed, initialArmorPen);
 			this.castTime = 0;
-			int rawCooldown = computeDerivedCooldown(resolvedType, resolvedUtil, initialComplexity, cooldownLevel);
+			int rawCooldown = computeDerivedCooldown(resolvedType, resolvedUtil, initialComplexity);
 			this.cooldown = Math.max(10, Math.min(600, Math.round(rawCooldown * secondaryCostMultiplier())));
 		}
 	}
@@ -593,19 +600,19 @@ public class KiAttackData extends TechniqueData {
 	public static float getMinDamageForType(KiType type) {
 		if (isLargeDamageTier(type)) return 1.0f;
 		if (isMediumDamageTier(type)) return 0.5f;
-		return 0.25f;
+		return 0.20f;
 	}
 
 	public static float getMaxDamageForType(KiType type) {
-		if (isLargeDamageTier(type)) return 2.5f;
-		if (isMediumDamageTier(type)) return 1.5f;
-		return 0.75f;
+		if (isLargeDamageTier(type)) return 2.0f;
+		if (isMediumDamageTier(type)) return 1.0f;
+		return 0.40f;
 	}
 
 	public static float getDefaultDamageForType(KiType type) {
 		if (isLargeDamageTier(type)) return 1.5f;
-		if (isMediumDamageTier(type)) return 1.0f;
-		return 0.5f;
+		if (isMediumDamageTier(type)) return 0.75f;
+		return 0.30f;
 	}
 
 	public static float getMinSpeedForType(KiType type) {
@@ -666,7 +673,7 @@ public class KiAttackData extends TechniqueData {
 		return 0;
 	}
 
-	private static int computeDerivedCooldown(KiType type, Utility util, float initialComplexity, int cooldownLevel) {
+	private static int computeDerivedCooldown(KiType type, Utility util, float initialComplexity) {
 		KiType resolved = type != null ? type : KiType.SMALL_BALL;
 		float typeMult = getTypeMultiplier(resolved);
 		float utilMult = getUtilityMultiplier(util != null ? util : Utility.DAMAGE);
@@ -675,7 +682,6 @@ public class KiAttackData extends TechniqueData {
 			default -> 1.0f;
 		};
 		float base = (20.0f + initialComplexity * 4.0f) * typeMult * utilMult * cdTypeMult;
-		float reduced = base * Math.max(0.1f, 1.0f - (Math.max(0, cooldownLevel) * 0.05f));
-		return Math.max(10, Math.min(600, Math.round(reduced)));
+		return Math.max(10, Math.min(600, Math.round(base)));
 	}
 }

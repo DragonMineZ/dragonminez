@@ -48,10 +48,10 @@ public class UpgradeTechniqueC2S {
 							switch (statType) {
 								case "damage" -> {
 									if (tech instanceof KiAttackData ki) {
-										ki.setDamageMultiplier(ki.getDamageMultiplier() + 0.1f);
+										ki.setDamageMultiplier(ki.getDamageMultiplier() + 0.05f);
 										ki.setDamageLevel(ki.getDamageLevel() + 1);
 									} else if (tech instanceof StrikeAttackData st) {
-										st.setDamageMultiplier(st.getDamageMultiplier() + 0.1f);
+										st.setDamageMultiplier(st.getDamageMultiplier() + 0.075f);
 										st.setDamageLevel(st.getDamageLevel() + 1);
 									}
 								}
@@ -63,7 +63,7 @@ public class UpgradeTechniqueC2S {
 								}
 								case "speed" -> {
 									if (tech instanceof KiAttackData ki) {
-										ki.setSpeed(ki.getSpeed() + 0.1f);
+										ki.setSpeed(ki.getSpeed() + 0.05f);
 										ki.setSpeedLevel(ki.getSpeedLevel() + 1);
 									}
 								}
