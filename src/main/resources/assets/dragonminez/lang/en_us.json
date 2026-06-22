@@ -2648,6 +2648,8 @@
   "item.dragonminez.saiyan_ship.tooltip": "§7This Ship from Saiyan Race can take you to other planets.",
   "item.dragonminez.black_nimbus.tooltip": "§7This cloud is only for those with a pure evil heart.",
   "item.dragonminez.flying_nimbus.tooltip": "§7This cloud is only for those with a pure heart.",
+  "message.dragonminez.nimbus.not_pure": "§7The cloud rejects you. Only those with a pure heart can ride it.",
+  "message.dragonminez.black_nimbus.not_evil": "§7The cloud rejects you. Only those with an evil heart can ride it.",
   "item.dragonminez.dball_radar.tooltip": "§7Let's go catch the Dragon Balls!",
   "item.dragonminez.namekdball_radar.tooltip": "§7Let's go catch the Namekian Dragon Balls!",
   "item.dragonminez.fused_dball_radar.tooltip": "§7Bulma fused an Earth and a Namek radar — it tracks the Dragon Balls of both worlds.",

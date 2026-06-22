@@ -3,6 +3,8 @@ package com.dragonminez.common.init.entities;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -150,6 +152,14 @@ public class BlackNimbusEntity extends Mob implements GeoEntity {
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!this.level().isClientSide) {
+            int alignment = StatsProvider.get(StatsCapability.INSTANCE, player)
+                    .map(data -> data.getResources().getAlignment())
+                    .orElse(100);
+            if (alignment >= 67) {
+                player.displayClientMessage(
+                        net.minecraft.network.chat.Component.translatable("message.dragonminez.black_nimbus.not_evil"), true);
+                return InteractionResult.SUCCESS;
+            }
             if (!player.isPassenger()) {
                 player.startRiding(this);
             }

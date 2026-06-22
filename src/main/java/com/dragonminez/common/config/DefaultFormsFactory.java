@@ -789,7 +789,7 @@ public class DefaultFormsFactory {
 		ssj4d.setEye1Color("#83073F");
 		ssj4d.setEye2Color("#83073F");
 		ssj4d.setAuraColor("#FFD633");
-        ssj4d.setModelScaling(new Float[]{1.4f, 1.4f, 1.4f});
+        ssj4d.setModelScaling(new Float[]{1.2f, 1.2f, 1.2f});
         ssj4d.setStrMultiplier(3.75);
 		ssj4d.setSkpMultiplier(3.75);
 		ssj4d.setDefMultiplier(2.5);
