@@ -82,6 +82,7 @@ public class TechniqueConfig {
 		private int xpGainPerKill = 3;
 		private double kiCostMultiplier = 1.0;
 		private double damageMultiplier = 1.0;
+		private double destructionMultiplier = 1.0;
 		private int castTimeTicks = 30;
 
 		public static TechniqueTypeConfig defaults() {

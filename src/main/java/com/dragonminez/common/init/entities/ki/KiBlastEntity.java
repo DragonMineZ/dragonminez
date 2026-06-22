@@ -1135,11 +1135,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             BlockPos center = BlockPos.containing(this.getX(), centerY, this.getZ());
 
-            int blockRadius = Math.round(explosionRadius);
+            float destructionRadius = this.scaledDestructionRadius(explosionRadius);
+            int blockRadius = Math.round(destructionRadius);
             for (int x = -blockRadius; x <= blockRadius; x++) {
                 for (int y = -blockRadius; y <= blockRadius; y++) {
                     for (int z = -blockRadius; z <= blockRadius; z++) {
-                        if (x * x + y * y + z * z <= explosionRadius * explosionRadius) {
+                        if (x * x + y * y + z * z <= destructionRadius * destructionRadius) {
                             BlockPos targetPos = center.offset(x, y, z);
                             if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
                                 this.setKiBlockToAir(targetPos, 2);
@@ -1171,12 +1172,16 @@ public class KiBlastEntity extends AbstractKiProjectile {
         float prevRadius = this.currentDetonationRadius;
         this.currentDetonationRadius += 2.0F;
 
-        int bRad = Math.round(this.currentDetonationRadius);
+        float destructionMult = (float) this.getDestructionMultiplier();
+        float scaledRadius = this.currentDetonationRadius * destructionMult;
+        float scaledPrevRadius = prevRadius * destructionMult;
+
+        int bRad = Math.round(scaledRadius);
         BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
         Level level = this.level();
 
-        float radSq = this.currentDetonationRadius * this.currentDetonationRadius;
-        float prevRadSq = prevRadius * prevRadius;
+        float radSq = scaledRadius * scaledRadius;
+        float prevRadSq = scaledPrevRadius * scaledPrevRadius;
 
         for (int x = -bRad; x <= bRad; x++) {
             for (int y = -bRad; y <= bRad; y++) {
@@ -1200,7 +1205,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private boolean destroyBlocksInPath() {
         boolean hitSomething = false;
-        float eatRadius = this.getSize() * 1.4f;
+        float eatRadius = this.scaledDestructionRadius(this.getSize() * 1.4f);
         int bRad = Math.round(eatRadius);
         BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
         Level level = this.level();

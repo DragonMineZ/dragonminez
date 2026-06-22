@@ -273,6 +273,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     private void createCrater(float radius) {
         if (this.level().isClientSide) return;
 
+        radius = this.scaledDestructionRadius(radius);
         BlockPos center = this.blockPosition();
 
         int r = (int) Math.ceil(radius);

@@ -528,7 +528,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.level().addParticle(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
         this.level().playSound(null, pos.x, pos.y, pos.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0F, 0.7F);
         Level.ExplosionInteraction interaction = this.getKiExplosionInteraction(BlockPos.containing(pos));
-        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, pos.x, pos.y, pos.z, radius, false, interaction, false);
+        float blastRadius = this.scaledDestructionRadius(radius);
+        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, pos.x, pos.y, pos.z, blastRadius, false, interaction, false);
         this.discard();
     }
 }

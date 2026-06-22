@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainGameRules;
@@ -280,6 +281,20 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     protected boolean canKiDestroyBlock(BlockPos pos) {
         return MainGameRules.canKiGrief(this.level(), pos, this.getKiGriefingSource());
+    }
+
+    public double getDestructionMultiplier() {
+        KiAttackData.KiType type;
+        try {
+            type = KiAttackData.KiType.valueOf(this.getKiType().name());
+        } catch (IllegalArgumentException e) {
+            type = KiAttackData.KiType.SMALL_BALL;
+        }
+        return Math.max(0.0, ConfigManager.getTechniqueConfig().getKiTypeConfig(type).getDestructionMultiplier());
+    }
+
+    protected float scaledDestructionRadius(float baseRadius) {
+        return (float) (baseRadius * this.getDestructionMultiplier());
     }
 
     protected boolean destroyKiBlock(BlockPos pos, boolean dropBlock) {
