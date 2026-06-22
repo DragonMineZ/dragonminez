@@ -12,7 +12,7 @@ import net.minecraft.world.level.Level;
 
 public class BlasterCannonItem extends Item {
 	public BlasterCannonItem( ) {
-		super(new Properties().stacksTo(1));
+		super(new Properties().stacksTo(1).defaultDurability(200));
 	}
 
     @Override
@@ -26,6 +26,7 @@ public class BlasterCannonItem extends Item {
 //            kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.5F);
 
             pLevel.addFreshEntity(kiBlast);
+            itemstack.hurtAndBreak(1, pPlayer, (player) -> player.broadcastBreakEvent(pHand));
         }
 
 
