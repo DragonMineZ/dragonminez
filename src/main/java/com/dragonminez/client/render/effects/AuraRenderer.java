@@ -56,15 +56,15 @@ public class AuraRenderer {
 	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
 	private static VertexBuffer cachedLightningMesh;
 
-	private static RenderType auraType(ResourceLocation texture) {
+	public static RenderType auraType(ResourceLocation texture) {
 		return IrisCompat.isShaderPackInUse() ? ModRenderTypes.getCustomAuraCompat(texture) : ModRenderTypes.getCustomAura(texture);
 	}
 
-	private static RenderType lightningType(ResourceLocation texture) {
+	public static RenderType lightningType(ResourceLocation texture) {
 		return IrisCompat.isShaderPackInUse() ? ModRenderTypes.getCustomLightningCompat(texture) : ModRenderTypes.getCustomLightning(texture);
 	}
 
-	private static void customSetup(RenderType type, ResourceLocation texture, ShaderInstance shader) {
+	public static void customSetup(RenderType type, ResourceLocation texture, ShaderInstance shader) {
 		if (IrisCompat.isShaderPackInUse()) {
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
@@ -80,7 +80,7 @@ public class AuraRenderer {
 		}
 	}
 
-	private static void customClear(RenderType type) {
+	public static void customClear(RenderType type) {
 		if (IrisCompat.isShaderPackInUse()) {
 			RenderSystem.enableDepthTest();
 			RenderSystem.depthMask(true);
@@ -328,14 +328,14 @@ public class AuraRenderer {
 	}
 
 	private static float[] getModelScale(StatsData stats) {
-		float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
+		float sX, sY, sZ;
 		var character = stats.getCharacter();
 
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			sX = character.getActiveStackFormData().getModelScaling()[0];
-			sY = character.getActiveStackFormData().getModelScaling()[1];
-			sZ = character.getActiveStackFormData().getModelScaling()[2];
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
+		// Mirror DMZPlayerRenderer: the actual player model is scaled by the active form's modelScaling
+		// (or the base race scaling), and the stack form never changes the model size. Reading the stack
+		// form here made a giant form (Oozaru) + a normal-scale stack form (Kaioken) collapse the whole
+		// aura back to default size, because this scale feeds getAuraScale() for every layer.
+		if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			sX = character.getActiveFormData().getModelScaling()[0];
 			sY = character.getActiveFormData().getModelScaling()[1];
 			sZ = character.getActiveFormData().getModelScaling()[2];

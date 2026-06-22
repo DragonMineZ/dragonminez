@@ -35,6 +35,7 @@ public class PlayerEffectsRenderHandler {
 			PlayerEffectQueue.getAndClearWeapons();
 			PlayerEffectQueue.getAndClearFirstPersonAuras();
 			PlayerEffectQueue.getAndClearKiAttacks();
+			PlayerEffectQueue.getAndClearEntityEffects();
 		}
 	}
 
@@ -54,6 +55,7 @@ public class PlayerEffectsRenderHandler {
 				PlayerEffectQueue.getAndClearWeapons();
 				PlayerEffectQueue.getAndClearFirstPersonAuras();
 				PlayerEffectQueue.getAndClearKiAttacks();
+				PlayerEffectQueue.getAndClearEntityEffects();
 
 				TransformationPostShaderManager.setShaderpackMainPass(true);
 			} else if (stage == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
@@ -130,6 +132,10 @@ public class PlayerEffectsRenderHandler {
 		AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);
 		AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS);
 		AuraRenderer.processSparks(poseStack, projectionMatrix, isFirstPerson);
+
+		var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();
+		for (var task : entityEffects) task.render();
+
 		AuraRenderer.cleanCaches(CURRENT_FRAME_PLAYERS);
 	}
 }

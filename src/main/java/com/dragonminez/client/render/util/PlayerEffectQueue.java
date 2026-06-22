@@ -10,6 +10,7 @@ import java.util.List;
 
 public class PlayerEffectQueue {
 	public interface KiRenderTask { void render(PoseStack poseStack, Matrix4f projectionMatrix); }
+	public interface DeferredEffectTask { void render(); }
 
 	public record AuraRenderEntry(AbstractClientPlayer player, BakedGeoModel playerModel, Matrix4f poseMatrix, float partialTick, int packedLight) {}
 	public record WeaponRenderEntry(AbstractClientPlayer player, BakedGeoModel playerModel, Matrix4f poseMatrix, String weaponType, float[] color, float partialTick, int packedLight) {}
@@ -21,6 +22,7 @@ public class PlayerEffectQueue {
 	private static final List<SparkRenderEntry> SPARK_QUEUE = new ArrayList<>();
 	private static final List<FirstPersonAuraEntry> FIRST_PERSON_AURA_QUEUE = new ArrayList<>();
 	private static final List<KiRenderTask> KI_ATTACK_QUEUE = new ArrayList<>();
+	private static final List<DeferredEffectTask> ENTITY_EFFECT_QUEUE = new ArrayList<>();
 
 	public static synchronized void addAura(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, float partialTick, int packedLight) {
 		AURA_QUEUE.add(new AuraRenderEntry(player, playerModel, new Matrix4f(currentStack.last().pose()), partialTick, packedLight));
@@ -40,6 +42,10 @@ public class PlayerEffectQueue {
 
 	public static synchronized void addKiAttack(KiRenderTask task) {
 		KI_ATTACK_QUEUE.add(task);
+	}
+
+	public static synchronized void addEntityEffect(DeferredEffectTask task) {
+		ENTITY_EFFECT_QUEUE.add(task);
 	}
 
 	public static synchronized List<AuraRenderEntry> getAndClearAuras() {
@@ -74,6 +80,13 @@ public class PlayerEffectQueue {
 		if (KI_ATTACK_QUEUE.isEmpty()) return new ArrayList<>();
 		List<KiRenderTask> copy = new ArrayList<>(KI_ATTACK_QUEUE);
 		KI_ATTACK_QUEUE.clear();
+		return copy;
+	}
+
+	public static synchronized List<DeferredEffectTask> getAndClearEntityEffects() {
+		if (ENTITY_EFFECT_QUEUE.isEmpty()) return new ArrayList<>();
+		List<DeferredEffectTask> copy = new ArrayList<>(ENTITY_EFFECT_QUEUE);
+		ENTITY_EFFECT_QUEUE.clear();
 		return copy;
 	}
 }
