@@ -63,6 +63,11 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private float currentScroll = 0;
 	private float maxScroll = 0;
 
+	private float targetDescScroll = 0;
+	private float currentDescScroll = 0;
+	private float maxDescScroll = 0;
+	private boolean isDraggingDescScroll = false;
+
 	private final Map<SkillCategory, ClippableTextureButton> categoryButtons = new LinkedHashMap<>();
 	private final List<SkillCategory> activeCategories = new ArrayList<>();
 	private float buttonRevealProgress = 0.0f;
@@ -527,22 +532,31 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.already_learned"), panelX + 72, startY + 24, 0xFF55AA55);
 		}
 
-		List<String> wrappedDesc = wrapText(description);
+		List<String> wrappedDesc = wrapText(description, 120);
+
 		int descY = startY + 70;
-		for (String line : wrappedDesc) {
-			TextUtil.drawStringWithBorder(graphics, this.font, txt(line), panelX + 13, descY, 0xFFCCCCCC);
-			descY += 12;
-		}
+		int boxX = panelX + 13;
+		int boxW = 130;
+		int lineHeight = this.font.lineHeight + 2;
+		int viewHeight = 6 * lineHeight;
+		int totalContentHeight = wrappedDesc.size() * lineHeight;
+
+		maxDescScroll = Math.max(0, totalContentHeight - viewHeight);
+		targetDescScroll = Mth.clamp(targetDescScroll, 0, maxDescScroll);
+		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		currentDescScroll = Mth.lerp(tickDelta * 0.4f, currentDescScroll, targetDescScroll);
+
+		TextUtil.renderScrollableText(graphics, this.font, wrappedDesc, boxX, descY, boxW, viewHeight, currentDescScroll, maxDescScroll, 0xFFCCCCCC);
 	}
 
-	private List<String> wrapText(String text) {
+	private List<String> wrapText(String text, int maxWidth) {
 		List<String> lines = new ArrayList<>();
 		String[] words = text.split(" ");
 		StringBuilder currentLine = new StringBuilder();
 
 		for (String word : words) {
 			String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
-			if (font.width(testLine) <= 130) {
+			if (font.width(testLine) <= maxWidth) {
 				if (!currentLine.isEmpty()) currentLine.append(" ");
 				currentLine.append(word);
 			} else {
@@ -564,11 +578,23 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
+		int scrollAmount = (int) Math.signum(delta);
+
 		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 && uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
-			int scrollAmount = (int) Math.signum(delta);
 			targetScroll = Mth.clamp(targetScroll - (scrollAmount * SKILL_ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
+
+		int rightPanelX = getUiWidth() - 158;
+		int descBoxX = rightPanelX + 10;
+		int descBoxY = leftPanelY + 110;
+		int descBoxW = 136;
+		int descBoxH = 6 * 12;
+		if (uiMouseX >= descBoxX && uiMouseX <= descBoxX + descBoxW && uiMouseY >= descBoxY && uiMouseY <= descBoxY + descBoxH) {
+			targetDescScroll = Mth.clamp(targetDescScroll - (scrollAmount * 12 * 2), 0, maxDescScroll);
+			return true;
+		}
+
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
@@ -595,12 +621,24 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			return true;
 		}
 
+		int rightPanelX = getUiWidth() - 158;
+		int descBoxY = leftPanelY + 110;
+		int descBoxH = 6 * 12;
+		int descScrollBarX = rightPanelX + 140;
+		if (maxDescScroll > 0 && uiMouseX >= descScrollBarX - 5 && uiMouseX <= descScrollBarX + 10 && uiMouseY >= descBoxY && uiMouseY <= descBoxY + descBoxH) {
+			isDraggingDescScroll = true;
+			targetDescScroll = calculateScrollPercent(uiMouseY, descBoxY, descBoxH) * maxDescScroll;
+			return true;
+		}
+
 		List<String> skillNames = getVisibleSkillNames();
 		if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 100 && uiMouseY >= startY && uiMouseY <= startY + viewHeight) {
 			int index = (int) ((uiMouseY - startY + currentScroll) / SKILL_ITEM_HEIGHT);
 
 			if (index >= 0 && index < skillNames.size()) {
 				selectedSkill = skillNames.get(index);
+				targetDescScroll = 0;
+				currentDescScroll = 0;
 				refreshButtons();
 				return true;
 			}
@@ -619,6 +657,14 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			targetScroll = calculateScrollPercent(uiMouseY, startY, viewHeight) * maxScroll;
 			return true;
 		}
+		if (isDraggingDescScroll && maxDescScroll > 0) {
+			double uiMouseY = toUiY(mouseY);
+			int descBoxY = (getUiHeight() / 2 - 105) + 110;
+			int descBoxH = 6 * 12;
+
+			targetDescScroll = calculateScrollPercent(uiMouseY, descBoxY, descBoxH) * maxDescScroll;
+			return true;
+		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
@@ -626,6 +672,10 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if (isDraggingScroll) {
 			isDraggingScroll = false;
+			return true;
+		}
+		if (isDraggingDescScroll) {
+			isDraggingDescScroll = false;
 			return true;
 		}
 		return super.mouseReleased(mouseX, mouseY, button);
