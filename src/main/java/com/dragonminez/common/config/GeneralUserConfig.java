@@ -19,6 +19,7 @@ public class GeneralUserConfig {
 	private Boolean hideHudNumbers = false;
 	private Integer xenoverseHudPosX = 5;
 	private Integer xenoverseHudPosY = 5;
+	private Float xenoverseHudScale = 1.0f;
 	private Boolean advancedDescription = true;
 	private Boolean advancedDescriptionPercentage = true;
 	private Boolean alternativeHud = false;
@@ -42,6 +43,19 @@ public class GeneralUserConfig {
 	public Float getMenuScaleMultiplier() {
 		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
 		return menuScaleMultiplier;
+	}
+
+	public Float getXenoverseHudScale() {
+		if (xenoverseHudScale == null || !Float.isFinite(xenoverseHudScale) || xenoverseHudScale <= 0.0f) xenoverseHudScale = 1.0f;
+		return xenoverseHudScale;
+	}
+
+	public void setXenoverseHudScale(Float xenoverseHudScale) {
+		if (xenoverseHudScale == null || !Float.isFinite(xenoverseHudScale) || xenoverseHudScale <= 0.0f) {
+			this.xenoverseHudScale = 1.0f;
+			return;
+		}
+		this.xenoverseHudScale = xenoverseHudScale;
 	}
 
 	public Boolean getTechniqueHotbarRightSide() {

@@ -99,6 +99,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.INT, userConfig.getXenoverseHudPosY(), -1000, 2000,
 				v -> userConfig.setXenoverseHudPosY(v.intValue())));
 
+		configOptions.add(new ConfigOption("config.xenoverseHudScale",
+				ConfigType.FLOAT, userConfig.getXenoverseHudScale(), 0.5f, 2.5f,
+				v -> userConfig.setXenoverseHudScale(v)));
+
 		configOptions.add(new ConfigOption("config.advancedDescription",
 				ConfigType.BOOLEAN, userConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
 				v -> userConfig.setAdvancedDescription(v > 0)));
@@ -410,7 +414,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
 		} else if (option.type == ConfigType.FLOAT) {
 			float step;
-			if ("config.menuScaleMultiplier".equals(option.key)) {
+			if ("config.menuScaleMultiplier".equals(option.key) || "config.xenoverseHudScale".equals(option.key)) {
 				step = isShiftDown ? 0.25f : 0.05f;
 			} else {
 				step = isShiftDown ? 1.0f : 0.1f;

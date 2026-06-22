@@ -95,7 +95,8 @@ public class XenoverseHUD {
 				float baseScale = 2.25f;
 				float baseWidth = 184.0f;
 				float maxAllowedWidth = width * 0.50f;
-				float finalScale = Math.min(baseScale, maxAllowedWidth / baseWidth);
+				float userScale = ConfigManager.getUserConfig().getXenoverseHudScale();
+				float finalScale = Math.min(baseScale * userScale, maxAllowedWidth / baseWidth);
 
 				int anchorX = ConfigManager.getUserConfig().getXenoverseHudPosX();
 				int anchorY = ConfigManager.getUserConfig().getXenoverseHudPosY();
