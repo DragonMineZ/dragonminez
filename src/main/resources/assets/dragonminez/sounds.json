@@ -323,6 +323,14 @@
       {
         "name": "dragonminez:menu_music-37",
         "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-38",
+        "stream": true
+      },
+      {
+        "name": "dragonminez:menu_music-39",
+        "stream": true
       }
     ]
   },
@@ -655,6 +663,24 @@
     "sounds": [
       {
         "name": "dragonminez:menu_music-37",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_38": {
+    "subtitle": "sounds.dragonminez.menu_music_38",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-38",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_39": {
+    "subtitle": "sounds.dragonminez.menu_music_39",
+    "sounds": [
+      {
+        "name": "dragonminez:menu_music-39",
         "stream": true
       }
     ]

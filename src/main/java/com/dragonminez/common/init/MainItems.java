@@ -358,6 +358,8 @@ public final class MainItems {
 	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_35 = regMusicDisc("music_disc_menu_music_35", MainSounds.MENU_MUSIC_35, 4900);
 	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_36 = regMusicDisc("music_disc_menu_music_36", MainSounds.MENU_MUSIC_36, 2720);
 	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_37 = regMusicDisc("music_disc_menu_music_37", MainSounds.MENU_MUSIC_37, 3180);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_38 = regMusicDisc("music_disc_menu_music_38", MainSounds.MENU_MUSIC_38, 5560);
+	public static final RegistryObject<Item> MUSIC_DISC_MENU_MUSIC_39 = regMusicDisc("music_disc_menu_music_39", MainSounds.MENU_MUSIC_39, 5880);
 
 	//KIKONO STATION/ARMOR CRAFTING PATTERNS
 	public static final RegistryObject<Item> ARMOR_CRAFTING_KIT = ITEM_REGISTER.register("armor_crafting_kit",

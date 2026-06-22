@@ -110,6 +110,8 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> MENU_MUSIC_35 = registerSoundEvent("menu_music_35");
 	public static final RegistryObject<SoundEvent> MENU_MUSIC_36 = registerSoundEvent("menu_music_36");
 	public static final RegistryObject<SoundEvent> MENU_MUSIC_37 = registerSoundEvent("menu_music_37");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_38 = registerSoundEvent("menu_music_38");
+	public static final RegistryObject<SoundEvent> MENU_MUSIC_39 = registerSoundEvent("menu_music_39");
 
 	public static final RegistryObject<SoundEvent> AURA_START = registerSoundEvent("aura_start");
 	public static final RegistryObject<SoundEvent> KI_CHARGE_LOOP = registerSoundEvent("ki_charge_loop");
