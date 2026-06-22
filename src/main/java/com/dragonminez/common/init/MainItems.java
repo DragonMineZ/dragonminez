@@ -237,7 +237,7 @@ public final class MainItems {
     public static final Map<ArmorItem.Type, RegistryObject<Item>> A20_ARMOR = fullArmorSet("a20_armor", "a20");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> GERO_ARMOR = fullArmorNoHelmetSet("gero_armor", "gero");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> SUBARU_NATSUKI_ARMOR = fullArmorNoHelmetSet("subaru_natsuki_armor", "subaru_natsuki");
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> DANIEL_NATSUKI_ARMOR = fullArmorCapeNoHelmetSet("daniel_natsuki_armor", "daniel_natsuki");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> SUBARU_NATSUKI_ARC6_ARMOR = fullArmorCapeNoHelmetSet("subaru_natsuki_arc6_armor", "subaru_natsuki_arc6");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> GREAT_SAIYAMAN_2_ARMOR = fullArmorCapeSet("great_saiyaman_2_armor", "great_saiyaman_2");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> CHAOZ_ARMOR = fullArmorSet("chaoz_armor", "chaoz");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> SUPER_BUU_ARMOR = fullArmorNoHelmetSet("super_buu_armor", "super_buu");
@@ -425,6 +425,23 @@ public final class MainItems {
 	public static final RegistryObject<Item> PATTERN_VEGETA_GT = regItem("pattern_vegeta_gt");
 	public static final RegistryObject<Item> PATTERN_VIDEL = regItem("pattern_videl");
 	public static final RegistryObject<Item> PATTERN_WHIS = regItem("pattern_whis");
+	public static final RegistryObject<Item> PATTERN_XENO_GOKU = regItem("pattern_xeno_goku");
+	public static final RegistryObject<Item> PATTERN_XENO_GOKU_PATREON = regItem("pattern_xeno_goku_patreon");
+	public static final RegistryObject<Item> PATTERN_A20 = regItem("pattern_a20");
+	public static final RegistryObject<Item> PATTERN_GERO = regItem("pattern_gero");
+	public static final RegistryObject<Item> PATTERN_GREAT_SAIYAMAN_2 = regItem("pattern_great_saiyaman_2");
+	public static final RegistryObject<Item> PATTERN_CHAOZ = regItem("pattern_chaoz");
+	public static final RegistryObject<Item> PATTERN_SUPER_BUU = regItem("pattern_super_buu");
+	public static final RegistryObject<Item> PATTERN_CAPSULE_CORP = regItem("pattern_capsule_corp");
+	public static final RegistryObject<Item> PATTERN_A13 = regItem("pattern_a13");
+	public static final RegistryObject<Item> PATTERN_A14 = regItem("pattern_a14");
+	public static final RegistryObject<Item> PATTERN_KIBITO = regItem("pattern_kibito");
+	public static final RegistryObject<Item> PATTERN_RADITZ = regItem("pattern_raditz");
+	public static final RegistryObject<Item> PATTERN_COOLER_SOLDIER = regItem("pattern_cooler_soldier");
+	public static final RegistryObject<Item> PATTERN_SLUG = regItem("pattern_slug");
+	public static final RegistryObject<Item> PATTERN_EVIL_BUU = regItem("pattern_evil_buu");
+	public static final RegistryObject<Item> PATTERN_KING_VEGETA = regItem("pattern_king_vegeta");
+	public static final RegistryObject<Item> PATTERN_VERGIL = regItem("pattern_vergil");
 
 	//DRAGON BALLS
 	private static final Map<String, Map<Integer, RegistryObject<Item>>> DRAGON_BALL_BLOCK_ITEMS = registerDragonBallBlockItems();
