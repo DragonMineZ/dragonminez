@@ -7,6 +7,7 @@ in vec3 Normal;
 
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
+uniform float localPosMode;
 
 out vec3 vNormal;
 out vec3 vViewDir;
@@ -19,6 +20,10 @@ void main() {
 
     vNormal = normalize(mat3(ModelViewMat) * Normal);
     vViewDir = normalize(-viewPos.xyz);
-    vLocalPos = Position;
+    if (localPosMode > 0.5) {
+        vLocalPos = vec3(Color.r * 2.0 - 1.0, Color.g * 2.0 - 1.0, Color.b);
+    } else {
+        vLocalPos = Position;
+    }
     vUv = UV0;
 }

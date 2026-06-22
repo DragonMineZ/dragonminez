@@ -20,6 +20,7 @@
     { "name": "bloomMode", "type": "float", "count": 1, "values": [0.0] },
     { "name": "globalAlpha", "type": "float", "count": 1, "values": [1.0] },
     { "name": "shapeMode", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "localPosMode", "type": "float", "count": 1, "values": [0.0] },
     { "name": "zCut", "type": "float", "count": 1, "values": [-1.0] },
     { "name": "zCutFar", "type": "float", "count": 1, "values": [2.0] }
   ]

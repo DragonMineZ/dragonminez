@@ -3,6 +3,7 @@ package com.dragonminez.client.init.entities.renderer.ki;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.KiMeshFactory;
+import com.dragonminez.client.render.util.KiSpiralMesh;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
@@ -153,6 +154,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
             return;
         }
 
+        Matrix4f beamBase = new Matrix4f(poseStack.last().pose());
+
         VertexBuffer cylinderMesh = KiMeshFactory.getCylinderMesh();
         cylinderMesh.bind();
 
@@ -163,35 +166,18 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         shader.apply();
         cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
+        VertexBuffer.unbind();
 
-        poseStack.pushPose();
-        float twistSpeed = ageInTicks * 30.0F;
-        poseStack.mulPose(Axis.ZP.rotationDegrees(-twistSpeed));
+        float twistRad = (float) Math.toRadians(-(ageInTicks * 30.0F));
+        Matrix4f spiralMV = new Matrix4f(beamBase).rotateZ(twistRad);
 
-        float radius = width * 1.5f;
-        float aroGrosor = width * 0.4f;
-        float twistsPerBlock = 0.6F;
-        int density = 45;
-        int totalSegments = Math.max(1, (int) (length * density));
-        float segVisualLength = (length / totalSegments) * 1.5F;
-
-        for (int i = 0; i < totalSegments; i++) {
-            float currentZ = i * (length / totalSegments);
-            float angle1 = i * (length / totalSegments) * (360.0F * twistsPerBlock);
-
-            poseStack.pushPose();
-            poseStack.translate(0.0D, 0.0D, currentZ);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(angle1));
-            poseStack.translate(0.0D, radius, 0.0D);
-            poseStack.scale(aroGrosor, aroGrosor, segVisualLength);
-
-            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-            shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
-            shader.apply();
-            cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-            poseStack.popPose();
-        }
-        poseStack.popPose();
+        VertexBuffer spiralMesh = KiSpiralMesh.get(2, entity.getSize(), length,
+                width * 1.5f, width * 0.4f, 0.0f, 0.6f, false);
+        spiralMesh.bind();
+        shader.safeGetUniform("localPosMode").set(1.0f);
+        shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
+        spiralMesh.drawWithShader(spiralMV, proj, shader);
+        shader.safeGetUniform("localPosMode").set(0.0f);
         VertexBuffer.unbind();
 
         VertexBuffer sphereMesh = KiMeshFactory.getSphereMesh();
@@ -258,6 +244,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
             return;
         }
 
+        Matrix4f beamBase = new Matrix4f(poseStack.last().pose());
+
         VertexBuffer cylinderMesh = KiMeshFactory.getCylinderMesh();
         cylinderMesh.bind();
 
@@ -268,45 +256,19 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         shader.apply();
         cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
+        VertexBuffer.unbind();
 
-        poseStack.pushPose();
-        float twistSpeed = ageInTicks * 30.0F;
-        poseStack.mulPose(Axis.ZP.rotationDegrees(-twistSpeed));
+        float twistRad = (float) Math.toRadians(-(ageInTicks * 30.0F));
+        Matrix4f spiralMV = new Matrix4f(beamBase).rotateZ(twistRad);
 
-        float radius = width * 2.0f;
         float aroGrosor = width * 0.5f;
-        float twistsPerBlock = 0.9F;
-        int density = 45;
-        int totalSegments = Math.max(1, (int) (length * density));
-        float segVisualLength = (length / totalSegments) * 1.8F;
-
-        for (int i = 0; i < totalSegments; i++) {
-            float currentZ = i * (length / totalSegments);
-            float angle1 = i * (length / totalSegments) * (360.0F * twistsPerBlock);
-
-            poseStack.pushPose();
-            poseStack.translate(0.0D, 0.0D, currentZ);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(angle1));
-            poseStack.translate(0.0D, radius, 0.0D);
-            poseStack.scale(aroGrosor * 1.3f, aroGrosor * 1.3f, segVisualLength);
-            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-            shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
-            shader.apply();
-            cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-            poseStack.popPose();
-
-            poseStack.pushPose();
-            poseStack.translate(0.0D, 0.0D, currentZ);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(angle1 + 180.0f));
-            poseStack.translate(0.0D, radius, 0.0D);
-            poseStack.scale(aroGrosor, aroGrosor, segVisualLength);
-            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-            shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
-            shader.apply();
-            cylinderMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-            poseStack.popPose();
-        }
-        poseStack.popPose();
+        VertexBuffer spiralMesh = KiSpiralMesh.get(1, entity.getSize(), length,
+                width * 2.0f, aroGrosor * 1.3f, aroGrosor, 0.9f, true);
+        spiralMesh.bind();
+        shader.safeGetUniform("localPosMode").set(1.0f);
+        shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
+        spiralMesh.drawWithShader(spiralMV, proj, shader);
+        shader.safeGetUniform("localPosMode").set(0.0f);
         VertexBuffer.unbind();
 
         VertexBuffer sphereMesh = KiMeshFactory.getSphereMesh();
