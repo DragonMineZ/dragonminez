@@ -138,6 +138,8 @@ public class FusionLogic {
 	}
 
 	public static void endFusion(ServerPlayer player, StatsData data, boolean forcedByDeath) {
+		if (!data.getStatus().isFused()) return;
+
 		boolean isLeader = data.getStatus().isFusionLeader();
 		UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 

@@ -605,13 +605,13 @@ public class Character {
 	}
 
 	public void loadAppearance(CompoundTag tag) {
-		if (tag.contains("BodyColor")) this.bodyColor = tag.getString("BodyColor");
-		if (tag.contains("BodyColor2")) this.bodyColor2 = tag.getString("BodyColor2");
-		if (tag.contains("BodyColor3")) this.bodyColor3 = tag.getString("BodyColor3");
-		if (tag.contains("HairColor")) this.hairColor = tag.getString("HairColor");
-		if (tag.contains("Eye1Color")) this.eye1Color = tag.getString("Eye1Color");
-		if (tag.contains("Eye2Color")) this.eye2Color = tag.getString("Eye2Color");
-		if (tag.contains("AuraColor")) this.auraColor = tag.getString("AuraColor");
+		if (tag.contains("BodyColor")) setBodyColor(tag.getString("BodyColor"));
+		if (tag.contains("BodyColor2")) setBodyColor2(tag.getString("BodyColor2"));
+		if (tag.contains("BodyColor3")) setBodyColor3(tag.getString("BodyColor3"));
+		if (tag.contains("HairColor")) setHairColor(tag.getString("HairColor"));
+		if (tag.contains("Eye1Color")) setEye1Color(tag.getString("Eye1Color"));
+		if (tag.contains("Eye2Color")) setEye2Color(tag.getString("Eye2Color"));
+		if (tag.contains("AuraColor")) setAuraColor(tag.getString("AuraColor"));
 	}
 
 	public void copyFrom(Character other) {
