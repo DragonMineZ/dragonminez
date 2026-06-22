@@ -796,7 +796,7 @@ public class StrikeAttackHandler {
 		if (!isFinalHit) if (target.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, target.getHealth() - 1.0F);
 
 		playStrikeHitAnimation(target);
-		target.hurt(MainDamageTypes.strikeAttack(player.level(), player), (float) damage);
+		target.hurt(MainDamageTypes.strikeAttack(player.level(), player, techniqueId), (float) damage);
 		RECENTLY_DAMAGED.put(player.getUUID(), new RecentHit(target.getUUID(), System.currentTimeMillis()));
 
 		double finalDamage = damage;
