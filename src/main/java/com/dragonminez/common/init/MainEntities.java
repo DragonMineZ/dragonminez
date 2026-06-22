@@ -96,7 +96,7 @@ public class MainEntities {
                 SAGA_HIRUDEGARN, SAGA_SUPER_HIRUDEGARN,
 
                 // EXTRA
-                SHADOW_DUMMY
+                SHADOW_DUMMY, MINI_BUU
         );
     }
 
