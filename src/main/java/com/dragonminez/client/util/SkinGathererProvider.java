@@ -145,21 +145,7 @@ public class SkinGathererProvider {
 
 		boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("ssj4gt") || logicKey.equals("ssj4d") || raceName.equals("saiyan");
 		boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
-
-		if ((isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
-			float[] tailColor;
-			if (hasStackForm && character.getActiveStackFormData().getRgbBodyColor2() != null) {
-				tailColor = character.getActiveStackFormData().getRgbBodyColor2();
-			} else if (hasForm && character.getActiveFormData().getRgbBodyColor2() != null) {
-				tailColor = character.getActiveFormData().getRgbBodyColor2();
-			} else if (character.getRgbBodyColor2() != null) {
-				tailColor = character.getRgbBodyColor2();
-			} else {
-				tailColor = DEFAULT_TAIL_COLOR;
-			}
-			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tail1.png")), tailColor);
-		}
-
+		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && character.isHasSaiyanTail();
 
 		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("ssj4d")
                 || logicKey.equals("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
@@ -191,6 +177,15 @@ public class SkinGathererProvider {
                 }
             }
         }
+
+		if (renderSaiyanTail) {
+			float[] tailColor;
+			if (hasStackForm && character.getActiveStackFormData().getRgbBodyColor2() != null) tailColor = character.getActiveStackFormData().getRgbBodyColor2();
+			else if (hasForm && character.getActiveFormData().getRgbBodyColor2() != null) tailColor = character.getActiveFormData().getRgbBodyColor2();
+			else if (character.getRgbBodyColor2() != null) tailColor = character.getRgbBodyColor2();
+			else tailColor = DEFAULT_TAIL_COLOR;
+			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tail1.png")), tailColor);
+		}
     }
 
 	public void gatherAndroidLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
