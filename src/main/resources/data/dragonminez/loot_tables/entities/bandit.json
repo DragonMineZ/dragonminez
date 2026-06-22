@@ -7,7 +7,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "dragonminez:raw_baby_dino_meat",
+          "name": "minecraft:beef",
           "functions": [
             {
               "function": "minecraft:set_count",
@@ -45,5 +45,5 @@
       ]
     }
   ],
-  "random_sequence": "dragonminez:entities/dinokid"
+  "random_sequence": "dragonminez:entities/bandit"
 }
