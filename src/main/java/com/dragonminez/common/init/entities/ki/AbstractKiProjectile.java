@@ -334,6 +334,19 @@ public abstract class AbstractKiProjectile extends Projectile {
         }
     }
 
+    public void applyTechniqueSecondaryEffect(Entity target) {
+        if (this.level().isClientSide) return;
+        if (!(this.getOwner() instanceof Player player)) return;
+        String techId = this.getTechniqueId();
+        if (techId == null || techId.isEmpty()) return;
+        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+            TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
+            if (tech instanceof KiAttackData kiAttackData) {
+                this.applySecondaryEffect(target, kiAttackData, stats);
+            }
+        });
+    }
+
     private void applySecondaryEffect(Entity target, KiAttackData kiAttack, StatsData casterStats) {
         if (!kiAttack.hasValidSecondaryEffect()) return;
         if (!(target instanceof LivingEntity living)) return;

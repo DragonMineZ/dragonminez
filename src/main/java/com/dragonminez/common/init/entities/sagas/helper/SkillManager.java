@@ -59,6 +59,7 @@ public class SkillManager {
         REGISTRY.put(6, (user, target, dmg) -> {
             KiBarrierEntity barrier = new KiBarrierEntity(user.level(), user);
             barrier.setupKiBarrier(user, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 37);
+            barrier.setKiDamage(dmg);
         });
 
         // 7. OOZARU ROAR

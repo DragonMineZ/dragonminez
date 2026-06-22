@@ -571,9 +571,9 @@ public class ForgeCommonEvents {
 		List<KiBarrierEntity> barriers = victim.level().getEntitiesOfClass(KiBarrierEntity.class, searchArea);
 
 		for (KiBarrierEntity barrier : barriers) {
-			if (barrier.getOwner() == victim) {
+			if (barrier.isActive() && barrier.protects(victim)) {
 				event.setCanceled(true);
-				victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+				barrier.absorbDamage(event.getAmount(), event.getSource().getEntity());
 				return;
 			}
 		}
