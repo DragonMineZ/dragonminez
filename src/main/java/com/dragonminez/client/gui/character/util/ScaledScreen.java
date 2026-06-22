@@ -23,6 +23,10 @@ public abstract class ScaledScreen extends Screen {
 	private int uiWidth;
 	private int uiHeight;
 
+	private int cachedGuiWidth = -1;
+	private int cachedGuiHeight = -1;
+	private float cachedMultiplier = Float.NaN;
+
 	protected ScaledScreen(Component title) {
 		super(title);
 	}
@@ -36,22 +40,29 @@ public abstract class ScaledScreen extends Screen {
 		}
 
 		Window window = this.minecraft.getWindow();
-		float newScale = calculateUiScale(window);
-		if (newScale <= 0.0f || Float.isNaN(newScale) || Float.isInfinite(newScale)) {
-			newScale = 1.0f;
-		}
-
-		uiScale = newScale;
 		int currentWidth = window.getGuiScaledWidth();
 		int currentHeight = window.getGuiScaledHeight();
+		float multiplier = getMenuScaleMultiplier();
+
+		if (currentWidth == cachedGuiWidth && currentHeight == cachedGuiHeight && multiplier == cachedMultiplier) return;
+
+		float newScale = calculateUiScale(window, multiplier);
+		if (newScale <= 0.0f || Float.isNaN(newScale) || Float.isInfinite(newScale)) newScale = 1.0f;
+
+
+		uiScale = newScale;
 		uiWidth = Math.max(1, Math.round(currentWidth / uiScale));
 		uiHeight = Math.max(1, Math.round(currentHeight / uiScale));
+
+		cachedGuiWidth = currentWidth;
+		cachedGuiHeight = currentHeight;
+		cachedMultiplier = multiplier;
 	}
 
-	private float calculateUiScale(Window window) {
+	private float calculateUiScale(Window window, float multiplier) {
 		float availableScale = getAvailableScale(window);
 		float dynamicScale = (float) Math.sqrt(availableScale);
-		float desiredScale = dynamicScale * getMenuScaleMultiplier();
+		float desiredScale = dynamicScale * multiplier;
 		return clamp(desiredScale, 1.0f, availableScale);
 	}
 

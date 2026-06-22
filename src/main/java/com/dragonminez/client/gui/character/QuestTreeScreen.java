@@ -35,9 +35,14 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -48,6 +53,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.joml.Matrix4f;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -130,6 +136,27 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private float targetObjScroll = 0;
 	private float currentObjScroll = 0;
 	private float objMaxScroll = 0;
+
+	private List<String> frameObjLinesCache = null;
+	private Quest frameObjLinesQuest = null;
+	private int frameObjLinesWidth = Integer.MIN_VALUE;
+
+	private List<String> frameTitleLines = null;
+	private Quest frameTitleQuest = null;
+	private int frameTitleWidth = Integer.MIN_VALUE;
+
+	private List<String> frameRewardsLines = null;
+	private Quest frameRewardsQuest = null;
+	private int frameRewardsWidth = Integer.MIN_VALUE;
+
+	private final Map<Quest, NodeVisibility> nodeVisibilityCache = new HashMap<>();
+	private final Map<Quest, QuestNodeStatus> nodeStatusCache = new HashMap<>();
+
+	private Saga sideBranchCacheSaga = null;
+	private Map<String, List<Quest>> sideBranchCache = null;
+
+	private final List<NodeRender> nodeRenders = new ArrayList<>();
+	private final List<ConnRender> connRenders = new ArrayList<>();
 
 	private final List<RewardHitbox> rewardHitboxes = new ArrayList<>();
 	private final Map<String, Long> sectionLastReveal = new HashMap<>();
@@ -223,6 +250,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private record DetailPanelLayout(int titleH, int rewardsH, int descH, int objectivesH) {
+	}
+
+	private record NodeRender(Quest quest, int pixelX, int pixelY, boolean blurred, boolean sidequest,
+	                          QuestNodeStatus status, int bgColor, int borderColor,
+	                          Component iconComp, int iconColor, int iconOffsetX,
+	                          Component bottomLabel, int bottomLabelColor, int bottomLabelOffsetX) {
+	}
+
+	private record ConnRender(int baseX1, int baseY1, int baseX2, int baseY2, int color) {
 	}
 
 	@Override
@@ -430,7 +466,145 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		lastPanAnimNanos = System.nanoTime();
 	}
 
+	private void invalidateNodeCaches() {
+		nodeVisibilityCache.clear();
+		nodeStatusCache.clear();
+		sideBranchCacheSaga = null;
+		sideBranchCache = null;
+	}
+
+	private void rebuildTreeRenderData() {
+		nodeRenders.clear();
+		connRenders.clear();
+		if (currentLayout == null) return;
+
+		for (QuestTreeLayoutHelper.NodeConnection conn : currentLayout.getConnections()) {
+			ConnRender cr = buildConnRender(conn);
+			if (cr != null) connRenders.add(cr);
+		}
+		for (QuestTreeLayoutHelper.NodePosition node : currentLayout.getNodes()) {
+			NodeRender nr = buildNodeRender(node);
+			if (nr != null) nodeRenders.add(nr);
+		}
+	}
+
+	private ConnRender buildConnRender(QuestTreeLayoutHelper.NodeConnection conn) {
+		NodeVisibility fromVis = getNodeVisibility(conn.getFrom().getQuest());
+		NodeVisibility toVis = getNodeVisibility(conn.getTo().getQuest());
+		if (fromVis == NodeVisibility.HIDDEN || toVis == NodeVisibility.HIDDEN) return null;
+
+		int x1 = conn.getFrom().getPixelX() + (NODE_SIZE / 2);
+		int y1 = conn.getFrom().getPixelY() + (NODE_SIZE / 2);
+		int x2 = conn.getTo().getPixelX() + (NODE_SIZE / 2);
+		int y2 = conn.getTo().getPixelY() + (NODE_SIZE / 2);
+
+		int color = 0xFF444444;
+		if (statsData != null && !availableSagas.isEmpty()) {
+			Saga saga = availableSagas.get(currentSagaIndex);
+			PlayerQuestData pqd = statsData.getPlayerQuestData();
+			if (isQuestCompleted(pqd, saga, conn.getFrom().getQuest())
+					&& isQuestCompleted(pqd, saga, conn.getTo().getQuest())) {
+				color = 0xFF00AA00;
+			}
+		}
+		if (fromVis == NodeVisibility.BLURRED || toVis == NodeVisibility.BLURRED) {
+			color = 0x55444444;
+		}
+		return new ConnRender(x1, y1, x2, y2, color);
+	}
+
+	private NodeRender buildNodeRender(QuestTreeLayoutHelper.NodePosition node) {
+		NodeVisibility vis = getNodeVisibility(node.getQuest());
+		if (vis == NodeVisibility.HIDDEN) return null;
+		boolean blurred = vis == NodeVisibility.BLURRED;
+		QuestNodeStatus status = getNodeStatus(node.getQuest());
+
+		int bgColor;
+		int borderColor;
+		if (blurred) {
+			bgColor = 0x55555555;
+			borderColor = 0x55333333;
+		} else {
+			switch (status) {
+				case COMPLETED, CLAIMABLE -> {
+					bgColor = 0xFF00CC00;
+					borderColor = 0xFF009900;
+				}
+				case ACTIVE -> {
+					bgColor = 0xFF3399FF;
+					borderColor = 0xFF2266CC;
+				}
+				case AVAILABLE -> {
+					bgColor = 0xFFFFCC00;
+					borderColor = 0xFFCC9900;
+				}
+				default -> {
+					bgColor = 0xFF555555;
+					borderColor = 0xFF333333;
+				}
+			}
+		}
+
+		String icon;
+		int iconColor;
+		boolean bold;
+		if (blurred) {
+			icon = "?";
+			iconColor = 0x55999999;
+			bold = false;
+		} else {
+			switch (status) {
+				case COMPLETED, CLAIMABLE -> {
+					icon = "✓";
+					iconColor = 0xFF55FF55;
+					bold = true;
+				}
+				case ACTIVE -> {
+					icon = "!";
+					iconColor = 0xFFFFFF00;
+					bold = true;
+				}
+				case AVAILABLE -> {
+					icon = "?";
+					iconColor = 0xFFFFFFFF;
+					bold = false;
+				}
+				default -> {
+					icon = "✕";
+					iconColor = 0xFFFF5555;
+					bold = true;
+				}
+			}
+		}
+		Component iconComp = bold ? Component.literal(icon).withStyle(ChatFormatting.BOLD) : Component.literal(icon);
+		int iconOffsetX = (NODE_SIZE - this.font.width(icon)) / 2;
+
+		Component bottomLabel;
+		int bottomLabelColor;
+		int bottomLabelOffsetX;
+		if (blurred) {
+			String hiddenLabel = "???";
+			bottomLabel = txt(hiddenLabel);
+			bottomLabelColor = 0x55888888;
+			bottomLabelOffsetX = (NODE_SIZE - this.font.width(hiddenLabel)) / 2;
+		} else if (node.isSidequest()) {
+			bottomLabel = null;
+			bottomLabelColor = 0;
+			bottomLabelOffsetX = 0;
+		} else {
+			String questNum = String.valueOf(node.getQuest().getId());
+			bottomLabel = txt(questNum);
+			bottomLabelColor = 0xFFCCCCCC;
+			bottomLabelOffsetX = (NODE_SIZE - this.font.width(questNum)) / 2;
+		}
+
+		return new NodeRender(node.getQuest(), node.getPixelX(), node.getPixelY(), blurred, node.isSidequest(),
+				status, bgColor, borderColor, iconComp, iconColor, iconOffsetX,
+				bottomLabel, bottomLabelColor, bottomLabelOffsetX);
+	}
+
 	private void rebuildNavigatorEntries() {
+		invalidateNodeCaches();
 		navigatorEntries.clear();
 		Map<String, Saga> loadedSagas = new LinkedHashMap<>();
 		for (Saga saga : availableSagas) {
@@ -473,9 +647,19 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int totalNavHeight = navigatorEntries.size() * 13;
 		navMaxScroll = Math.max(0, totalNavHeight - usableHeight);
 		targetNavScroll = Math.max(0, Math.min(targetNavScroll, navMaxScroll));
+
+		rebuildTreeRenderData();
 	}
 
 	private Map<String, List<Quest>> buildSideBranchesForSaga(Saga saga) {
+		if (sideBranchCache != null && sideBranchCacheSaga == saga) return sideBranchCache;
+		Map<String, List<Quest>> result = computeSideBranchesForSaga(saga);
+		sideBranchCache = result;
+		sideBranchCacheSaga = saga;
+		return result;
+	}
+
+	private Map<String, List<Quest>> computeSideBranchesForSaga(Saga saga) {
 		Map<String, List<Quest>> byParent = new LinkedHashMap<>();
 		if (currentLayout == null || saga == null) return byParent;
 
@@ -769,7 +953,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					} else {
-						// Hard mode is resolved server-side from the shared party preference.
 						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, false, ""));
 						startResummonCooldown(selectedKey);
 						btn.visible = false;
@@ -1068,6 +1251,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		syncClaimAllButtonPosition();
 		syncPartyButtonPositions();
 		rewardHitboxes.clear();
+		frameObjLinesCache = null;
+		frameTitleLines = null;
+		frameRewardsLines = null;
 
 		renderTreeCanvas(graphics, uiMouseX, uiMouseY);
 		renderEnemyPreview(graphics, uiMouseX, uiMouseY, dt);
@@ -1121,15 +1307,26 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int zoomedMouseX = (int) (mouseX / zoom);
 		int zoomedMouseY = (int) (mouseY / zoom);
 
-		for (QuestTreeLayoutHelper.NodeConnection conn : currentLayout.getConnections()) {
-			renderConnection(graphics, conn);
-		}
+		int panOffX = (int) (panX / zoom);
+		int panOffY = (int) (panY / zoom);
+		float viewRight = getUiWidth() / zoom;
+		float viewBottom = getUiHeight() / zoom;
+
+		renderConnections(graphics, panOffX, panOffY, viewRight, viewBottom);
 
 		Quest hoveredQuest = null;
-		for (QuestTreeLayoutHelper.NodePosition node : currentLayout.getNodes()) {
-			boolean isHovered = isNodeHovered(node, zoomedMouseX, zoomedMouseY);
-			if (isHovered) hoveredQuest = node.getQuest();
-			renderNode(graphics, node, isHovered);
+		for (NodeRender node : nodeRenders) {
+			int x = node.pixelX() + panOffX;
+			int y = node.pixelY() + panOffY;
+			// Cull nodes outside the viewport (with margin for labels/badges).
+			if (x + NODE_SIZE + 18 < 0 || x - 18 > viewRight
+					|| y + NODE_SIZE + 20 < 0 || y - 18 > viewBottom) {
+				continue;
+			}
+			boolean isHovered = zoomedMouseX >= x && zoomedMouseX <= x + NODE_SIZE
+					&& zoomedMouseY >= y && zoomedMouseY <= y + NODE_SIZE;
+			if (isHovered) hoveredQuest = node.quest();
+			renderNode(graphics, node, x, y, isHovered);
 		}
 
 		graphics.pose().popPose();
@@ -1259,8 +1456,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (!enemyPreview.isActive()) return;
 
 		PanelRect base = getBaseLeftPanelRect();
-		// As the saga navigator slides in (mouse near the left edge), fade the preview out
-		// so the navigator visually superposes the same left-hand area.
 		float visibility = 1.0f - leftPanelRevealProgress;
 		enemyPreview.render(graphics, this.font, base.x, base.y, base.width, base.height,
 				mouseX, mouseY, dt, visibility);
@@ -1550,24 +1745,47 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return new DetailPanelLayout(titleH, rewardsH, descH, objectivesH);
 	}
 
-	private int estimateTitleSectionHeight(int width) {
-		int lineHeight = getDetailLineHeight();
+	// Title/rewards text is wrapped both to size the section and to draw it (twice per
+	// frame). These memos resolve it once per frame, reused by estimate + render.
+	private List<String> titleLines(int width) {
+		if (frameTitleLines != null && frameTitleQuest == selectedQuest && frameTitleWidth == width) {
+			return frameTitleLines;
+		}
 		String title = LocalizationUtil.localizedOrReadableText(selectedQuest.getTitle());
 		List<String> lines = limitLinesWithEllipsis(wrapText(title, width - 10), 2, width - 10);
-		return Math.max(32, 16 + (lines.size() * lineHeight) + 8);
+		frameTitleLines = lines;
+		frameTitleQuest = selectedQuest;
+		frameTitleWidth = width;
+		return lines;
+	}
+
+	private List<String> rewardsLines(int width, String questKey) {
+		if (frameRewardsLines != null && frameRewardsQuest == selectedQuest && frameRewardsWidth == width) {
+			return frameRewardsLines;
+		}
+		String visibleRewardsText = resolveTypewriterText(questKey, "rewards", buildRewardsText(selectedQuest.getRewards()));
+		List<String> lines = wrapText(visibleRewardsText, width - 36);
+		frameRewardsLines = lines;
+		frameRewardsQuest = selectedQuest;
+		frameRewardsWidth = width;
+		return lines;
+	}
+
+	private int estimateTitleSectionHeight(int width) {
+		int lineHeight = getDetailLineHeight();
+		return Math.max(32, 16 + (titleLines(width).size() * lineHeight) + 8);
 	}
 
 	private int estimateRewardsSectionHeight(int width, String questKey) {
 		if (selectedQuest.getRewards().isEmpty()) return 28;
-		String visibleRewardsText = resolveTypewriterText(questKey, "rewards", buildRewardsText(selectedQuest.getRewards()));
-		List<String> lines = wrapText(visibleRewardsText, width - 36);
+		List<String> lines = rewardsLines(width, questKey);
 		int rows = Math.max(selectedQuest.getRewards().size(), lines.size());
 		return 24 + (rows * getRewardRowHeight()) + 6;
 	}
 
 	private int estimateObjectivesSectionHeight(int width, Saga saga) {
 		if (!selectedQuest.hasStartRequirements() && selectedQuest.getObjectives().isEmpty()) return 28;
-		List<String> objectiveLines = buildObjectiveRenderLines(saga, width - 30);
+		List<String> objectiveLines = objectiveRenderLines(saga, width - 30);
 		return 24 + (objectiveLines.size() * getDetailLineHeight()) + 6;
 	}
 
@@ -1576,11 +1794,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 		int lineHeight = getDetailLineHeight();
 
-		List<String> wrappedTitle = limitLinesWithEllipsis(
-				wrapText(LocalizationUtil.localizedOrReadableText(selectedQuest.getTitle()), width - 10),
-				2,
-				width - 10
-		);
+		List<String> wrappedTitle = titleLines(width);
 
 		int titleStartY = y + 6;
 		for (String line : wrappedTitle) {
@@ -1611,16 +1825,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return;
 		}
 
-		String rawRewardsText = buildRewardsText(rewards);
-		String visibleRewardsText = resolveTypewriterText(questKey, "rewards", rawRewardsText);
-
 		int iconSize = 16;
 		int startY = y + 18;
 		int rowHeight = getRewardRowHeight();
 		int maxRows = Math.max(1, (height - 22) / rowHeight);
 		int rows = Math.min(rewards.size(), maxRows);
 
-		List<String> wrapped = wrapText(visibleRewardsText, width - 36);
+		List<String> wrapped = rewardsLines(width, questKey);
 		int wrappedIdx = 0;
 
 		for (int i = 0; i < rows; i++) {
@@ -1667,7 +1878,28 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		currentDescScroll += (targetDescScroll - currentDescScroll) * (float)(1.0 - Math.exp(-15.0f * dt));
 
 		graphics.enableScissor(toScreenCoord(x + 4), toScreenCoord(y + 18), toScreenCoord(x + width - 6), toScreenCoord(y + height - 2));
-		TextUtil.renderScrollableText(graphics, this.font, lines, x + 6, y + 18, width - 12, viewHeight, currentDescScroll, descMaxScroll, 0xFFCCCCCC);
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(0, -currentDescScroll, 0);
+		int descOriginY = y + 18;
+		for (int i = 0; i < lines.size(); i++) {
+			float lineY = descOriginY + (i * lineHeight);
+			if (lineY + lineHeight >= descOriginY + currentDescScroll
+					&& lineY <= descOriginY + viewHeight + currentDescScroll) {
+				TextUtil.drawStringWithBorder(graphics, this.font, txt(lines.get(i)), x + 6, (int) lineY, 0xFFCCCCCC);
+			}
+		}
+		graphics.pose().popPose();
+
+		if (descMaxScroll > 0) {
+			int scrollBarX = x + width - 10;
+			graphics.fill(scrollBarX, descOriginY, scrollBarX + 3, descOriginY + viewHeight, 0xFF333333);
+			float scrollPercent = currentDescScroll / descMaxScroll;
+			int indicatorHeight = Math.max(10, (int) ((float) viewHeight / totalContentHeight * viewHeight));
+			int indicatorY = descOriginY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
+			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
+		}
+
 		graphics.disableScissor();
 	}
 
@@ -1684,7 +1916,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				y + 4,
 				0xFFFFD700);
 
-		List<String> lines = buildObjectiveRenderLines(saga, width - 30);
+		List<String> lines = objectiveRenderLines(saga, width - 30);
 		if (lines.isEmpty()) {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt("-"), x + 8, y + 18, 0xFF999999);
 			return;
@@ -1724,6 +1956,19 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			int indicatorY = contentY + (int) ((contentH - indicatorHeight) * scrollPercent);
 			graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
 		}
+	}
+
+	private List<String> objectiveRenderLines(Saga saga, int textWidth) {
+		if (frameObjLinesCache != null
+				&& frameObjLinesQuest == selectedQuest
+				&& frameObjLinesWidth == textWidth) {
+			return frameObjLinesCache;
+		}
+		List<String> lines = buildObjectiveRenderLines(saga, textWidth);
+		frameObjLinesCache = lines;
+		frameObjLinesQuest = selectedQuest;
+		frameObjLinesWidth = textWidth;
+		return lines;
 	}
 
 	private List<String> buildObjectiveRenderLines(Saga saga, int textWidth) {
@@ -1988,89 +2233,82 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return builder.toString();
 	}
 
-	private void renderConnection(GuiGraphics graphics, QuestTreeLayoutHelper.NodeConnection conn) {
-		float zPanX = panX / zoom;
-		float zPanY = panY / zoom;
-
-		NodeVisibility fromVis = getNodeVisibility(conn.getFrom().getQuest());
-		NodeVisibility toVis = getNodeVisibility(conn.getTo().getQuest());
-		if (fromVis == NodeVisibility.HIDDEN || toVis == NodeVisibility.HIDDEN) return;
-
-		int x1 = (int) (conn.getFrom().getPixelX() + zPanX) + (NODE_SIZE / 2);
-		int y1 = (int) (conn.getFrom().getPixelY() + zPanY) + (NODE_SIZE / 2);
-		int x2 = (int) (conn.getTo().getPixelX() + zPanX) + (NODE_SIZE / 2);
-		int y2 = (int) (conn.getTo().getPixelY() + zPanY) + (NODE_SIZE / 2);
-
-		int color = 0xFF444444;
-		if (statsData != null && !availableSagas.isEmpty()) {
-			Saga saga = availableSagas.get(currentSagaIndex);
-			PlayerQuestData pqd = statsData.getPlayerQuestData();
-			boolean fromCompleted = isQuestCompleted(pqd, saga, conn.getFrom().getQuest());
-			boolean toCompleted = isQuestCompleted(pqd, saga, conn.getTo().getQuest());
-			if (fromCompleted && toCompleted) {
-				color = 0xFF00AA00;
+	private void renderConnections(GuiGraphics graphics, int panOffX, int panOffY, float viewRight, float viewBottom) {
+		// Axis-aligned connections (the saga backbone) are cheap filled rects.
+		for (ConnRender conn : connRenders) {
+			int x1 = conn.baseX1() + panOffX;
+			int y1 = conn.baseY1() + panOffY;
+			int x2 = conn.baseX2() + panOffX;
+			int y2 = conn.baseY2() + panOffY;
+			if (y1 != y2 && x1 != x2) continue;
+			if (Math.max(x1, x2) < 0 || Math.min(x1, x2) > viewRight
+					|| Math.max(y1, y2) < 0 || Math.min(y1, y2) > viewBottom) {
+				continue;
+			}
+			if (y1 == y2) {
+				graphics.fill(Math.min(x1, x2) - 1, y1 - 1, Math.max(x1, x2) + 1, y1 + 1, conn.color());
+			} else {
+				graphics.fill(x1 - 1, Math.min(y1, y2) - 1, x1 + 1, Math.max(y1, y2) + 1, conn.color());
 			}
 		}
 
-		if (fromVis == NodeVisibility.BLURRED || toVis == NodeVisibility.BLURRED) {
-			color = 0x55444444;
-		}
-
-		drawThickLine(graphics, x1, y1, x2, y2, 2, color);
-	}
-
-	private void drawThickLine(GuiGraphics graphics, int x1, int y1, int x2, int y2, int thickness, int color) {
-		int dx = Math.abs(x2 - x1);
-		int dy = Math.abs(y2 - y1);
-		int steps = Math.max(1, Math.max(dx, dy));
-		int half = Math.max(0, thickness / 2);
-
-		for (int i = 0; i <= steps; i++) {
-			float t = i / (float) steps;
-			int x = Math.round(x1 + (x2 - x1) * t);
-			int y = Math.round(y1 + (y2 - y1) * t);
-			graphics.fill(x - half, y - half, x + half + 1, y + half + 1, color);
-		}
-	}
-
-	private void renderNode(GuiGraphics graphics, QuestTreeLayoutHelper.NodePosition node, boolean isHovered) {
-		NodeVisibility vis = getNodeVisibility(node.getQuest());
-		if (vis == NodeVisibility.HIDDEN) return;
-
-		float zPanX = panX / zoom;
-		float zPanY = panY / zoom;
-		int x = (int) (node.getPixelX() + zPanX);
-		int y = (int) (node.getPixelY() + zPanY);
-		boolean isBlurred = vis == NodeVisibility.BLURRED;
-
-		QuestNodeStatus status = getNodeStatus(node.getQuest());
-		int bgColor;
-		int borderColor;
-		if (isBlurred) {
-			bgColor = 0x55555555;
-			borderColor = 0x55333333;
-		} else {
-			switch (status) {
-				case COMPLETED, CLAIMABLE -> {
-					bgColor = 0xFF00CC00;
-					borderColor = 0xFF009900;
-				}
-				case ACTIVE -> {
-					bgColor = 0xFF3399FF;
-					borderColor = 0xFF2266CC;
-				}
-				case AVAILABLE -> {
-					bgColor = 0xFFFFCC00;
-					borderColor = 0xFFCC9900;
-				}
-				default -> {
-					bgColor = 0xFF555555;
-					borderColor = 0xFF333333;
-				}
+		// Diagonal branches were drawn pixel-by-pixel (one graphics.fill per pixel ≈ 71%
+		// of the whole menu render). Draw them all as single rotated quads in one batch.
+		BufferBuilder buf = Tesselator.getInstance().getBuilder();
+		Matrix4f mat = graphics.pose().last().pose();
+		boolean began = false;
+		for (ConnRender conn : connRenders) {
+			int x1 = conn.baseX1() + panOffX;
+			int y1 = conn.baseY1() + panOffY;
+			int x2 = conn.baseX2() + panOffX;
+			int y2 = conn.baseY2() + panOffY;
+			if (y1 == y2 || x1 == x2) continue;
+			if (Math.max(x1, x2) < 0 || Math.min(x1, x2) > viewRight
+					|| Math.max(y1, y2) < 0 || Math.min(y1, y2) > viewBottom) {
+				continue;
 			}
+			if (!began) {
+				// Flush the pending GuiGraphics batch (grid, title, backbone fills) so the
+				// raw quad draw below layers on top of them instead of under.
+				graphics.flush();
+				RenderSystem.enableBlend();
+				RenderSystem.defaultBlendFunc();
+				RenderSystem.disableCull();
+				RenderSystem.setShader(GameRenderer::getPositionColorShader);
+				buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+				began = true;
+			}
+			appendLineQuad(buf, mat, x1, y1, x2, y2, 2.0f, conn.color());
 		}
+		if (began) {
+			Tesselator.getInstance().end();
+			RenderSystem.enableCull();
+			RenderSystem.disableBlend();
+		}
+	}
 
-		boolean isSelected = selectedQuest != null && sameQuestIdentity(selectedQuest, node.getQuest());
+	private void appendLineQuad(BufferBuilder buf, Matrix4f mat, int x1, int y1, int x2, int y2, float thickness, int color) {
+		float dx = x2 - x1;
+		float dy = y2 - y1;
+		float len = (float) Math.sqrt(dx * dx + dy * dy);
+		if (len < 1.0e-4f) return;
+		float h = thickness / 2.0f;
+		float nx = -dy / len * h;
+		float ny = dx / len * h;
+		float a = ((color >>> 24) & 0xFF) / 255.0f;
+		float r = ((color >> 16) & 0xFF) / 255.0f;
+		float g = ((color >> 8) & 0xFF) / 255.0f;
+		float b = (color & 0xFF) / 255.0f;
+		buf.vertex(mat, x1 + nx, y1 + ny, 0.0f).color(r, g, b, a).endVertex();
+		buf.vertex(mat, x2 + nx, y2 + ny, 0.0f).color(r, g, b, a).endVertex();
+		buf.vertex(mat, x2 - nx, y2 - ny, 0.0f).color(r, g, b, a).endVertex();
+		buf.vertex(mat, x1 - nx, y1 - ny, 0.0f).color(r, g, b, a).endVertex();
+	}
+
+	private void renderNode(GuiGraphics graphics, NodeRender node, int x, int y, boolean isHovered) {
+		boolean isBlurred = node.blurred();
+
+		boolean isSelected = selectedQuest != null && sameQuestIdentity(selectedQuest, node.quest());
 		if (isSelected && !isBlurred) {
 			graphics.fill(x - 2, y - 2, x + NODE_SIZE + 2, y + NODE_SIZE + 2, 0xAAFFFFFF);
 		}
@@ -2079,59 +2317,24 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			graphics.fill(x - 1, y - 1, x + NODE_SIZE + 1, y + NODE_SIZE + 1, 0x66FFFFFF);
 		}
 
-		graphics.fill(x, y, x + NODE_SIZE, y + NODE_SIZE, borderColor);
-		graphics.fill(x + 1, y + 1, x + NODE_SIZE - 1, y + NODE_SIZE - 1, bgColor);
+		graphics.fill(x, y, x + NODE_SIZE, y + NODE_SIZE, node.borderColor());
+		graphics.fill(x + 1, y + 1, x + NODE_SIZE - 1, y + NODE_SIZE - 1, node.bgColor());
 
-		String icon;
-		int iconColor;
-		if (isBlurred) {
-			icon = "?";
-			iconColor = 0x55999999;
-		} else {
-			iconColor = 0xFFFFFFFF;
-			switch (status) {
-				case COMPLETED, CLAIMABLE -> {
-					icon = "✓";
-					iconColor = 0xFF55FF55;
-				}
-				case ACTIVE -> {
-					icon = "!";
-					iconColor = 0xFFFFFF00;
-				}
-				case AVAILABLE -> icon = "?";
-				default -> {
-					icon = "✕";
-					iconColor = 0xFFFF5555;
-				}
-			}
-		}
-
-		int iconX = x + (NODE_SIZE - this.font.width(icon)) / 2;
+		int iconX = x + node.iconOffsetX();
 		int iconY = y + (NODE_SIZE - 8) / 2;
-		if ("✓".equals(icon) || "✕".equals(icon) || "!".equals(icon) || "-".equals(icon)) {
-			graphics.drawString(this.font, Component.literal(icon).withStyle(ChatFormatting.BOLD), iconX, iconY, iconColor, false);
-		} else {
-			graphics.drawString(this.font, icon, iconX, iconY, iconColor, false);
+		graphics.drawString(this.font, node.iconComp(), iconX, iconY, node.iconColor(), false);
+
+		if (!isBlurred && node.sidequest()) {
+			int badgeX = x - 4;
+			int badgeY = y - 4;
+			graphics.fill(badgeX, badgeY, badgeX + 8, badgeY + 8, 0xFF6644AA);
+			graphics.drawString(this.font, "S", badgeX + 1, badgeY, 0xFFFFFFFF, false);
+		} else if (node.bottomLabel() != null) {
+			TextUtil.drawStringWithBorder(graphics, this.font, node.bottomLabel(),
+					x + node.bottomLabelOffsetX(), y + NODE_SIZE + 2, node.bottomLabelColor());
 		}
 
-		if (!isBlurred) {
-			if (node.isSidequest()) {
-				int badgeX = x - 4;
-				int badgeY = y - 4;
-				graphics.fill(badgeX, badgeY, badgeX + 8, badgeY + 8, 0xFF6644AA);
-				graphics.drawString(this.font, "S", badgeX + 1, badgeY, 0xFFFFFFFF, false);
-			} else {
-				String questNum = String.valueOf(node.getQuest().getId());
-				int numX = x + (NODE_SIZE - this.font.width(questNum)) / 2;
-				TextUtil.drawStringWithBorder(graphics, this.font, txt(questNum), numX, y + NODE_SIZE + 2, 0xFFCCCCCC);
-			}
-		} else {
-			String hiddenLabel = "???";
-			int numX = x + (NODE_SIZE - this.font.width(hiddenLabel)) / 2;
-			TextUtil.drawStringWithBorder(graphics, this.font, txt(hiddenLabel), numX, y + NODE_SIZE + 2, 0x55888888);
-		}
-
-		if (status == QuestNodeStatus.CLAIMABLE && !isBlurred) {
+		if (node.status() == QuestNodeStatus.CLAIMABLE && !isBlurred) {
 			float pulse = (float) (Math.sin(System.currentTimeMillis() / 350.0) * 0.5 + 0.5);
 			float alpha = 0.3f + pulse * 0.7f;
 			RenderSystem.enableBlend();
@@ -2778,6 +2981,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private NodeVisibility getNodeVisibility(Quest quest) {
+		NodeVisibility cached = nodeVisibilityCache.get(quest);
+		if (cached != null) return cached;
+		NodeVisibility computed = computeNodeVisibility(quest);
+		nodeVisibilityCache.put(quest, computed);
+		return computed;
+	}
+
+	private NodeVisibility computeNodeVisibility(Quest quest) {
 		if (statsData == null || availableSagas.isEmpty()) return NodeVisibility.HIDDEN;
 		Saga saga = availableSagas.get(currentSagaIndex);
 		PlayerQuestData pqd = statsData.getPlayerQuestData();
@@ -2836,6 +3047,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private QuestNodeStatus getNodeStatus(Quest quest) {
+		QuestNodeStatus cached = nodeStatusCache.get(quest);
+		if (cached != null) return cached;
+		QuestNodeStatus computed = computeNodeStatus(quest);
+		nodeStatusCache.put(quest, computed);
+		return computed;
+	}
+
+	private QuestNodeStatus computeNodeStatus(Quest quest) {
 		if (statsData == null || availableSagas.isEmpty()) return QuestNodeStatus.LOCKED;
 
 		Saga saga = availableSagas.get(currentSagaIndex);

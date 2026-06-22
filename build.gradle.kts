@@ -99,11 +99,6 @@ repositories {
         url = uri("https://modmaven.dev")
     }
     maven {
-        name = "luck-repo"
-        url = uri("https://repo.lucko.me/")
-        content { includeModule("me.lucko", "spark-api") }
-    }
-    maven {
         name = "Illusive Soulworks maven"
         url = uri("https://maven.theillusivec4.top/")
     }
@@ -206,7 +201,7 @@ dependencies {
     compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge-api:$jeiVersion"))
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
-    runtimeOnly(fg.deobf("me.lucko:spark-api:0.1-SNAPSHOT"))
+    runtimeOnly(fg.deobf("curse.maven:spark-361579:4738952"))
 
     // Client-only visual/testing mods must stay off dedicated server and data runs.
     // Huge Structure Blocks in particular mixes into JigsawStructure's codec and

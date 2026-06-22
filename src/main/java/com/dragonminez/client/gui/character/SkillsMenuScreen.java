@@ -840,10 +840,24 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private void drawThickLine(GuiGraphics graphics, int x1, int y1, int x2, int y2, int thickness, int color) {
+		int half = Math.max(0, thickness / 2);
+
+		if (y1 == y2) {
+			int left = Math.min(x1, x2);
+			int right = Math.max(x1, x2);
+			graphics.fill(left - half, y1 - half, right + half + 1, y1 + half + 1, color);
+			return;
+		}
+		if (x1 == x2) {
+			int top = Math.min(y1, y2);
+			int bottom = Math.max(y1, y2);
+			graphics.fill(x1 - half, top - half, x1 + half + 1, bottom + half + 1, color);
+			return;
+		}
+
 		int dx = Math.abs(x2 - x1);
 		int dy = Math.abs(y2 - y1);
 		int steps = Math.max(1, Math.max(dx, dy));
-		int half = Math.max(0, thickness / 2);
 
 		for (int i = 0; i <= steps; i++) {
 			float t = i / (float) steps;
