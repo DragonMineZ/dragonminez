@@ -53,6 +53,13 @@ public class SkinGathererProvider {
 		else consumer.accept(texture, color);
 	}
 
+	private void emitExtraFormLayer(BiConsumer<ResourceLocation, float[]> consumer, String layerId, FormConfig.FormData form) {
+		ResourceLocation extraTex = resolveConfiguredTexture(form.getExtraFormLayer());
+		if (extraTex == null) return;
+		float[] extraColor = form.getRgbExtraFormColor() != null ? form.getRgbExtraFormColor() : WHITE_COLOR;
+		emitFadingLayer(consumer, layerId, DMZSkinLayer.getSafeTexture(extraTex), extraColor);
+	}
+
 	private ResourceLocation resolveConfiguredTexture(String path) {
 		if (path.contains(":")) return ResourceLocation.tryParse(path);
 		return getCachedTexture(path);
@@ -122,15 +129,11 @@ public class SkinGathererProvider {
 			}
 		}
 
-		FormConfig.FormData extraLayerForm = null;
-		if (hasStackForm && character.getActiveStackFormData().hasExtraFormLayer()) extraLayerForm = character.getActiveStackFormData();
-		else if (hasForm && character.getActiveFormData().hasExtraFormLayer()) extraLayerForm = character.getActiveFormData();
-		if (extraLayerForm != null) {
-			ResourceLocation extraTex = resolveConfiguredTexture(extraLayerForm.getExtraFormLayer());
-			if (extraTex != null) {
-				float[] extraColor = extraLayerForm.getRgbExtraFormColor() != null ? extraLayerForm.getRgbExtraFormColor() : WHITE_COLOR;
-				emitFadingLayer(consumer, "extraform", DMZSkinLayer.getSafeTexture(extraTex), extraColor);
-			}
+		if (hasForm && character.getActiveFormData().hasExtraFormLayer()) {
+			emitExtraFormLayer(consumer, "extraform_form", character.getActiveFormData());
+		}
+		if (hasStackForm && character.getActiveStackFormData().hasExtraFormLayer()) {
+			emitExtraFormLayer(consumer, "extraform_stack", character.getActiveStackFormData());
 		}
 
 		boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
