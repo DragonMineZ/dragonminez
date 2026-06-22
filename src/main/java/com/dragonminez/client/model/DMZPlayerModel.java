@@ -255,6 +255,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         CoreGeoBone head = this.getAnimationProcessor().getBone("head");
         CoreGeoBone waist = this.getAnimationProcessor().getBone("waist");
+        CoreGeoBone root = this.getAnimationProcessor().getBone("root");
         CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
         CoreGeoBone leftArm = this.getAnimationProcessor().getBone("left_arm");
 
@@ -266,9 +267,11 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
             float waistRotX = (waist != null) ? waist.getRotX() : 0.0F;
             float waistRotY = (waist != null) ? waist.getRotY() : 0.0F;
+            float rootRotX = (root != null) ? root.getRotX() : 0.0F;
+            float rootRotY = (root != null) ? root.getRotY() : 0.0F;
 
-            head.setRotX(lookPitchRad - waistRotX);
-            head.setRotY(lookYawRad - waistRotY);
+            head.setRotX(lookPitchRad - waistRotX - rootRotX);
+            head.setRotY(lookYawRad - waistRotY - rootRotY);
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {

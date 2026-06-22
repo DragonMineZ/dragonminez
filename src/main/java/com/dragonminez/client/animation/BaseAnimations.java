@@ -10,8 +10,15 @@ public class BaseAnimations {
 	public static final RawAnimation RUN = RawAnimation.begin().thenLoop("base.run");
 	public static final RawAnimation ATTACK = RawAnimation.begin().thenPlay("base.attack1");
 	public static final RawAnimation ATTACK2 = RawAnimation.begin().thenPlay("base.attack2");
-	public static final RawAnimation FLY = RawAnimation.begin().thenLoop("base.fly");
+	public static final RawAnimation FLY_IDLE = RawAnimation.begin().thenLoop("base.fly_idle");
+	public static final RawAnimation FLY_FRONT = RawAnimation.begin().thenLoop("base.fly_front");
+	public static final RawAnimation FLY_BACK = RawAnimation.begin().thenLoop("base.fly_back");
+	public static final RawAnimation FLY_RIGHT = RawAnimation.begin().thenLoop("base.fly_right");
+	public static final RawAnimation FLY_LEFT = RawAnimation.begin().thenLoop("base.fly_left");
 	public static final RawAnimation FLY_FAST = RawAnimation.begin().thenLoop("base.fly_fast");
+	public static final RawAnimation CLIMB = RawAnimation.begin().thenLoop("base.climb");
+	public static final RawAnimation LANDING = RawAnimation.begin().thenPlay("base.landing");
+	public static final RawAnimation EAT = RawAnimation.begin().thenLoop("base.eat");
 	public static final RawAnimation JUMP = RawAnimation.begin().thenPlay("base.jump");
 	public static final RawAnimation SWIMMING = RawAnimation.begin().thenLoop("base.swimming");
 	public static final RawAnimation CROUCHING = RawAnimation.begin().thenLoop("base.crouching");

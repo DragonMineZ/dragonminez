@@ -178,7 +178,8 @@ public class ClientStatsEvents {
 			boolean shouldChargeAction = isActionKeyPressed || canAutoChargeOozaru;
 
 			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
-			if ((kiWeaponActive || isChargingTechnique) && data.getStatus().isBlocking() || Minecraft.getInstance().screen != null) {
+			boolean handsEmpty = localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty();
+			if ((kiWeaponActive || isChargingTechnique) && data.getStatus().isBlocking() || Minecraft.getInstance().screen != null || (data.getStatus().isBlocking() && !handsEmpty)) {
 				data.getStatus().setBlocking(false);
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
 			} else if (isBlockKeyDown != data.getStatus().isBlocking() && !PlayerAttackHelper.isKiWeaponActive(localPlayer)) {

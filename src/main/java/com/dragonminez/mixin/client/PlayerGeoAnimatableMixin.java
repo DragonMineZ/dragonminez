@@ -16,11 +16,16 @@ import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
+import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -45,6 +50,18 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private boolean dragonminez$isMovingState = false;
 	@Unique private int dragonminez$lastTickCount = -1;
 	@Unique private static final int STOPPED_THRESHOLD_TICKS = 3;
+	@Unique private double dragonminez$horizSpeed = 0.0;
+	@Unique private boolean dragonminez$wasAirborne = false;
+	@Unique private float dragonminez$maxFallDistance = 0.0F;
+	@Unique private boolean dragonminez$landingTriggered = false;
+	@Unique private int dragonminez$landingTicks = 0;
+	@Unique private boolean dragonminez$wasEating = false;
+	@Unique private static final double WALK_SPEED_BASELINE = 0.2158;
+	@Unique private static final double RUN_SPEED_BASELINE = 0.2806;
+	@Unique private static final int LANDING_ANIM_TICKS = 13;
+	@Unique private static final float FALL_TRIGGER_DISTANCE = 2.0F;
+	@Unique private static final double LANDING_LEAD_TICKS = 7.0;
+	@Unique private static final double LANDING_RAY_DISTANCE = 7.0;
 	@Unique private int dragonminez$lastDashTickRun = -1;
 	@Unique private int dragonminez$dashAnimTicks = 0;
 	@Unique private int dragonminez$lastAttackTickRun = -1;
@@ -80,6 +97,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (Double.isNaN(dragonminez$lastPosX)) {
 			dragonminez$lastPosX = player.getX();
 			dragonminez$lastPosZ = player.getZ();
+			dragonminez$wasAirborne = !player.onGround();
 			return false;
 		}
 
@@ -89,6 +107,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		dragonminez$lastPosX = player.getX();
 		dragonminez$lastPosZ = player.getZ();
+		dragonminez$horizSpeed = Math.sqrt(distanceSq);
+
+		dragonminez$updateLanding(player);
 
 		boolean isCurrentlyMoving = distanceSq > 0.0001;
 
@@ -105,6 +126,83 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		return dragonminez$isMovingState;
 	}
 
+	@Unique
+	private void dragonminez$updateLanding(AbstractClientPlayer player) {
+		boolean onGround = player.onGround();
+
+		if (!onGround) {
+			dragonminez$maxFallDistance = Math.max(dragonminez$maxFallDistance, player.fallDistance);
+			double descentSpeed = -player.getDeltaMovement().y;
+			if (!dragonminez$landingTriggered
+					&& dragonminez$maxFallDistance >= FALL_TRIGGER_DISTANCE
+					&& descentSpeed > 0.1
+					&& dragonminez$groundClearance(player) / descentSpeed <= LANDING_LEAD_TICKS) {
+				dragonminez$landingTicks = LANDING_ANIM_TICKS;
+				dragonminez$landingTriggered = true;
+			}
+		} else {
+			dragonminez$maxFallDistance = 0.0F;
+			dragonminez$landingTriggered = false;
+		}
+
+		dragonminez$wasAirborne = !onGround;
+		if (dragonminez$landingTicks > 0) dragonminez$landingTicks--;
+	}
+
+	@Unique
+	private double dragonminez$groundClearance(AbstractClientPlayer player) {
+		Vec3 start = new Vec3(player.getX(), player.getBoundingBox().minY, player.getZ());
+		Vec3 end = start.add(0.0, -LANDING_RAY_DISTANCE, 0.0);
+		HitResult hit = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+		if (hit.getType() == HitResult.Type.MISS) return Double.MAX_VALUE;
+		return start.y - hit.getLocation().y;
+	}
+
+	@Unique
+	private float dragonminez$movementSpeedFactor(double baseline) {
+		return (float) Mth.clamp(dragonminez$horizSpeed / baseline, 0.6, 1.8);
+	}
+
+	@Unique
+	private RawAnimation dragonminez$resolveFlyAnimation(AbstractClientPlayer player) {
+		Minecraft mc = Minecraft.getInstance();
+
+		if (player == mc.player) {
+			boolean forward = mc.options.keyUp.isDown();
+			boolean back = mc.options.keyDown.isDown();
+			boolean left = mc.options.keyLeft.isDown();
+			boolean right = mc.options.keyRight.isDown();
+
+			if (forward) return FLY_FRONT;
+			if (back) return FLY_BACK;
+			if (left) return FLY_LEFT;
+			if (right) return FLY_RIGHT;
+			return FLY_IDLE;
+		}
+
+		Vec3 motion = player.getDeltaMovement();
+		double horizontal = motion.horizontalDistance();
+		if (horizontal < 0.04) return FLY_IDLE;
+
+		float yawRad = player.yBodyRot * Mth.DEG_TO_RAD;
+		double sin = Mth.sin(yawRad);
+		double cos = Mth.cos(yawRad);
+		double forwardComp = -motion.x * sin + motion.z * cos;
+		double rightComp = -motion.x * cos - motion.z * sin;
+
+		if (Math.abs(forwardComp) >= Math.abs(rightComp)) {
+			return forwardComp >= 0 ? FLY_FRONT : FLY_BACK;
+		}
+		return rightComp >= 0 ? FLY_RIGHT : FLY_LEFT;
+	}
+
+	@Unique
+	private static boolean dragonminez$isEatingFood(AbstractClientPlayer player) {
+		if (!player.isUsingItem()) return false;
+		UseAnim anim = player.getUseItem().getUseAnimation();
+		return anim == UseAnim.EAT || anim == UseAnim.DRINK;
+	}
+
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
 		registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
@@ -116,11 +214,32 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
 		registrar.add(new AnimationController<>(this, "pose_controller", 4, this::posePredicate));
 		registrar.add(new AnimationController<>(this, "ki_controller", 4, this::kiPredicate));
+		registrar.add(new AnimationController<>(this, "eat_controller", 3, this::eatPredicate));
+	}
+
+	@Unique
+	private <T extends GeoAnimatable> PlayState eatPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+		AnimationController<T> ctl = state.getController();
+
+		if (dragonminez$isEatingFood(player)) {
+			if (!dragonminez$wasEating) {
+				ctl.setAnimation(EAT);
+				ctl.forceAnimationReset();
+				dragonminez$wasEating = true;
+			}
+			return PlayState.CONTINUE;
+		}
+
+		dragonminez$wasEating = false;
+		return PlayState.STOP;
 	}
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+
+		state.getController().setAnimationSpeed(1.0D);
 
 		if (dragonminez$currentKiAnim != null && dragonminez$kiAnimHold) {
 			if (!dragonminez$currentKiAnim.equals(dragonminez$lastKiAnim)) {
@@ -188,16 +307,22 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (flySkillActive || player.isFallFlying() || animatable.dragonminez$isFlying() || player.getAbilities().flying) {
 			if (FlySkillEvent.getInstance().isFlyingFast(player)) return state.setAndContinue(FLY_FAST);
-			return state.setAndContinue(FLY);
+			return state.setAndContinue(dragonminez$resolveFlyAnimation(player));
 		}
+
+		if (player.onClimbable() && !player.onGround()) return state.setAndContinue(CLIMB);
+
+		if (dragonminez$landingTicks > 0 && !player.isCrouching()) return state.setAndContinue(LANDING);
 
 		if (player.onGround()) {
 			if (player.isCrouching()) {
 				if (isMoving) return state.setAndContinue(CROUCHING_WALK);
 				return state.setAndContinue(CROUCHING);
 			} else if (isMoving && player.isSprinting()) {
+				state.getController().setAnimationSpeed(dragonminez$movementSpeedFactor(RUN_SPEED_BASELINE));
 				return state.setAndContinue(RUN);
 			} else if (isMoving) {
+				state.getController().setAnimationSpeed(dragonminez$movementSpeedFactor(WALK_SPEED_BASELINE));
 				if (isOozaru) return state.setAndContinue(WALK_OOZARU);
 				return state.setAndContinue(WALK);
 			} else {
@@ -205,6 +330,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 				return state.setAndContinue(IDLE);
 			}
 		}
+
+		if (player.getDeltaMovement().y < -0.08) return state.setAndContinue(FLY_IDLE);
 
 		return state.setAndContinue(JUMP);
 	}
@@ -327,7 +454,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	private <T extends GeoAnimatable> PlayState miningPredicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 		AnimationController<T> ctl = state.getController();
-		if (player.isSleeping()) {
+		if (player.isSleeping() || dragonminez$isEatingFood(player)) {
 			dragonminez$miningAnimTicks = 0;
 			return PlayState.STOP;
 		}
@@ -494,7 +621,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		boolean hasBlockInMainHand = mainHand.getItem() instanceof BlockItem;
 		boolean hasBlockInOffHand = offHand.getItem() instanceof BlockItem;
-		boolean hasPlaceActionFrame = player.isUsingItem() || player.swinging || player.swingTime > 0;
+		boolean hasPlaceActionFrame = (player.isUsingItem() && !dragonminez$isEatingFood(player)) || player.swinging || player.swingTime > 0;
 
 		return (hasBlockInMainHand || hasBlockInOffHand) && hasPlaceActionFrame;
 	}
