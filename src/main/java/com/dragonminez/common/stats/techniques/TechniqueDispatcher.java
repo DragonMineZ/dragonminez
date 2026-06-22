@@ -108,11 +108,12 @@ public class TechniqueDispatcher {
                 } else if ("fake_moon".equals(data.getId())) {
                     medBall.setupFakeMoonPlayer(owner, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
                 } else if ("sokidan".equals(data.getId())) {
-                    medBall.setupSokidanPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
+                    medBall.setupSokidanPlayer(owner, realDamage, data.getSpeed(), 0xF7F723, 0xF7B736, data.getSize());
+                    medBall.setColors(0xFCFC5D, 0xF7F723, 0xF7B736);
                 } else {
                     medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                 }
-                medBall.setColorOutline(data.getColorOutline());
+                medBall.setColorOutline("sokidan".equals(data.getId()) ? 0xF7B736 : data.getColorOutline());
                 medBall.setKiType(kiTypeOrdinal);
                 medBall.setTechniqueId(data.getId());
                 medBall.setArmorPenetration(data.getArmorPenetration());
