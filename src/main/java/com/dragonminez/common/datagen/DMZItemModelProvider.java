@@ -178,6 +178,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.A20_ARMOR);
 		generateArmorSetModels(MainItems.A13_ARMOR);
 		generateArmorSetModels(MainItems.SUPER_BUU_ARMOR);
+		generateArmorSetModels(MainItems.KIBITO_ARMOR);
+		generateArmorSetModels(MainItems.SLUG_ARMOR);
+		//generateArmorSetModels(MainItems.EVIL_BUU_ARMOR);
 
         //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);

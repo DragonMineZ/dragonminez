@@ -25,7 +25,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final int CONFIG_VERSION = 7;
+	public static final int CONFIG_VERSION = 8;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);

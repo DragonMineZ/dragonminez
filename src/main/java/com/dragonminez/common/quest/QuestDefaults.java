@@ -358,36 +358,36 @@ final class QuestDefaults {
 				step("saiyan", 1, "01_defeat_raditz.json",
 						earthReq(1, condBiome("minecraft:plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_raditz", 1, 1000, 64, 130, 1)
+								objKill("dragonminez:saga_raditz", 1, 450, 22, 55, 1)
 						},
 						rewTPS(2400), rewItem("dragonminez:broken_scouter", 1)),
 				step("saiyan", 2, "02_survive_wilderness_training.json",
 						earthReq(8, condBiome("minecraft:plains")),
 						new JsonObject[]{
-								objKill("dragonminez:dino1", 1, 2000, 20, 0)
+								objKill("dragonminez:dino1", 1, 900, 12, 0)
 						},
 						rewTPS(3600), rewItem("dragonminez:cooked_dino_meat", 8)),
 				step("saiyan", 3, "03_kill_the_saibamans.json",
 						earthReq(15, condBiome("minecraft:plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_saibaman1", 6, 800, 50, 100, 1)
+								objKill("dragonminez:saga_saibaman1", 6, 520, 33, 65, 1)
 						},
 						rewTPS(5000)),
 				step("saiyan", 4, "04_hold_against_nappa.json",
 						earthReq(22, condBiome("minecraft:plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_nappa", 1, 1500, 90, 200, 2)
+								objKill("dragonminez:saga_nappa", 1, 975, 59, 130, 2)
 						}, rewTPS(6000)),
 				step("saiyan", 5, "05_face_vegeta.json",
 						earthReq(30, condBiome("dragonminez:rocky")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_vegeta", 1, 2400, 140, 300, 2)
+								objKill("dragonminez:saga_vegeta", 1, 1560, 91, 195, 2)
 						},
 						rewTPS(7000)),
 				step("saiyan", 6, "06_defeat_oozaru_vegeta.json",
 						earthReq(40, condBiome("dragonminez:rocky")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_ozaruvegeta", 1, 5000, 280, 400, 3)
+								objKill("dragonminez:saga_ozaruvegeta", 1, 3250, 182, 260, 3)
 						},
 						rewTPS(8000)),
 				step("saiyan", 7, "07_prepare_for_namek.json",

@@ -52,17 +52,17 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_DEEPSLATE_DIAMOND.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_GOLD.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_REDSTONE.get())
-				.add(MainBlocks.NAMEK_DEEPSLATE_EMERALD.get());
-
-		this.tag(BlockTags.NEEDS_DIAMOND_TOOL)
+				.add(MainBlocks.NAMEK_DEEPSLATE_EMERALD.get())
 				.add(MainBlocks.GRAVITY_DEVICE.get());
 
-		this.tag(Tags.Blocks.NEEDS_NETHERITE_TOOL)
-				.add(MainBlocks.GETE_ORE.get())
-				.add(MainBlocks.GETE_BLOCK.get())
+		this.tag(BlockTags.NEEDS_DIAMOND_TOOL)
 				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
 				.add(MainBlocks.KIKONO_BLOCK.get())
 				.add(MainBlocks.KIKONO_STATION.get());
+
+		this.tag(Tags.Blocks.NEEDS_NETHERITE_TOOL)
+				.add(MainBlocks.GETE_ORE.get())
+				.add(MainBlocks.GETE_BLOCK.get());
 
 		//this.tag(MainTags.Blocks.NEEDS_GETE_TOOL)
 		//		.add(MainBlocks.INVISIBLE_LADDER_BLOCK.get());

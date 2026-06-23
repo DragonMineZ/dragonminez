@@ -418,6 +418,7 @@ public class DefaultFormsFactory {
 		shiyoken.setSkpMultiplier(4.25);
 		shiyoken.setDefMultiplier(4.25);
 		shiyoken.setPwrMultiplier(4.25);
+		shiyoken.setEnergyDrain(0.22);
 		shiyoken.setHairType("base");
         shiyoken.setAuraColor("#A10000");
         shiyoken.setHasLightnings(true);
@@ -435,6 +436,7 @@ public class DefaultFormsFactory {
 		shin_shiyoken.setSkpMultiplier(4.85);
 		shin_shiyoken.setDefMultiplier(4.85);
 		shin_shiyoken.setPwrMultiplier(4.85);
+		shin_shiyoken.setEnergyDrain(0.28);
 		shin_shiyoken.setHairType("base");
         shin_shiyoken.setAuraColor("#A10000");
         shin_shiyoken.setHasLightnings(true);
@@ -459,6 +461,7 @@ public class DefaultFormsFactory {
         chou_shiyoken.setSkpMultiplier(5.5);
         chou_shiyoken.setDefMultiplier(5.5);
         chou_shiyoken.setPwrMultiplier(5.5);
+		chou_shiyoken.setEnergyDrain(0.34);
         chou_shiyoken.setHairType("base");
         chou_shiyoken.setAuraColor("#A10000");
         chou_shiyoken.setHasLightnings(true);
@@ -688,7 +691,7 @@ public class DefaultFormsFactory {
 		ssg3.setDefMultiplier(1.8);
 		ssg3.setPwrMultiplier(2.75);
 		ssg3.setSpeedMultiplier(0.7);
-		ssg3.setEnergyDrain(0.28);
+		ssg3.setEnergyDrain(0.48);
 		ssg3.setStaminaDrainMultiplier(3.5);
 		ssg3.setAttackSpeed(0.75);
 		ssg3.setHairType("ssj");
@@ -843,6 +846,7 @@ public class DefaultFormsFactory {
 		ikari.setSkpMultiplier(4.25);
 		ikari.setDefMultiplier(4.25);
 		ikari.setPwrMultiplier(4.25);
+		ikari.setEnergyDrain(0.1);
         ikari.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
         ikari.setHairType("ssj");
 		setDefaultMasteryValues(ikari);
@@ -865,6 +869,7 @@ public class DefaultFormsFactory {
 		ssjHybrid.setSkpMultiplier(4.75);
 		ssjHybrid.setDefMultiplier(4.75);
 		ssjHybrid.setPwrMultiplier(4.75);
+		ssjHybrid.setEnergyDrain(0.16);
         ssjHybrid.setModelScaling(new Float[]{1.15f, 1.15f, 1.15f});
         ssjHybrid.setHairType("ssj");
 		setDefaultMasteryValues(ssjHybrid);
@@ -886,6 +891,7 @@ public class DefaultFormsFactory {
 		ssjFullPower.setSkpMultiplier(5.5);
 		ssjFullPower.setDefMultiplier(5.5);
 		ssjFullPower.setPwrMultiplier(5.5);
+		ssjFullPower.setEnergyDrain(0.26);
         ssjFullPower.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
         ssjFullPower.setHairType("ssj2");
 		setDefaultMasteryValues(ssjFullPower);
@@ -983,6 +989,7 @@ public class DefaultFormsFactory {
 		evilNamek.setSkpMultiplier(4.25);
 		evilNamek.setDefMultiplier(4.25);
 		evilNamek.setPwrMultiplier(4.25);
+		evilNamek.setEnergyDrain(0.18);
         evilNamek.setAuraColor("#570B0B");
         evilNamek.setEye1Color("#FFFFFF");
         evilNamek.setEye2Color("#FFFFFF");
@@ -1006,6 +1013,7 @@ public class DefaultFormsFactory {
 		evilGiant.setDefMultiplier(4.875);
 		evilGiant.setPwrMultiplier(4.875);
 		evilGiant.setSpeedMultiplier(0.75);
+		evilGiant.setEnergyDrain(0.27);
         evilGiant.setAuraColor("#570B0B");
         evilGiant.setEye1Color("#9E092F");
         evilGiant.setEye2Color("#9E092F");
@@ -1035,6 +1043,7 @@ public class DefaultFormsFactory {
 		buffedNamek.setSkpMultiplier(5.5);
 		buffedNamek.setDefMultiplier(5.5);
 		buffedNamek.setPwrMultiplier(5.5);
+		buffedNamek.setEnergyDrain(0.24);
         buffedNamek.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
         buffedNamek.setAuraColor("#570B0B");
         buffedNamek.setEye1Color("#9E092F");
@@ -1189,6 +1198,7 @@ public class DefaultFormsFactory {
 		metal.setSkpMultiplier(4.875);
 		metal.setDefMultiplier(4.875);
 		metal.setPwrMultiplier(4.875);
+		metal.setEnergyDrain(-0.05);
         metal.setBodyColor1("#B8FFF0");
         metal.setBodyColor2("#CCFDFF");
         metal.setBodyColor3("#B8FFF0");
@@ -1209,6 +1219,7 @@ public class DefaultFormsFactory {
 		metalCore.setSkpMultiplier(5.5);
 		metalCore.setDefMultiplier(5.5);
 		metalCore.setPwrMultiplier(5.5);
+		metalCore.setEnergyDrain(-0.1);
 		metalCore.setHairType("base");
 		metalCore.setAttackSpeed(0.25);
         metalCore.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
@@ -1501,6 +1512,7 @@ public class DefaultFormsFactory {
 		xeno.setSkpMultiplier(4.3);
 		xeno.setDefMultiplier(4.3);
 		xeno.setPwrMultiplier(4.3);
+		xeno.setEnergyDrain(0.06);
         xeno.setAuraColor("#2C0A4A");
         xeno.setHasLightnings(true);
         xeno.setLightningColor("#340063");
@@ -1523,6 +1535,7 @@ public class DefaultFormsFactory {
 		xenoFP.setSkpMultiplier(4.8);
 		xenoFP.setDefMultiplier(4.8);
 		xenoFP.setPwrMultiplier(4.8);
+		xenoFP.setEnergyDrain(0.16);
         xenoFP.setAuraColor("#2C0A4A");
         xenoFP.setHasLightnings(true);
         xenoFP.setLightningColor("#340063");
@@ -1544,6 +1557,7 @@ public class DefaultFormsFactory {
 		xenoMax.setSkpMultiplier(5.5);
 		xenoMax.setDefMultiplier(5.5);
 		xenoMax.setPwrMultiplier(5.5);
+		xenoMax.setEnergyDrain(0.22);
         xenoMax.setAuraColor("#2C0A4A");
         xenoMax.setHasLightnings(true);
         xenoMax.setLightningColor("#340063");
