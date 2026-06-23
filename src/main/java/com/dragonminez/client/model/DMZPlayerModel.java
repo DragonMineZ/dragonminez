@@ -245,7 +245,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
-        boolean skipHead = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
+        boolean transfAnimPlaying = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
+        boolean actuallyTransforming = StatsProvider.get(StatsCapability.INSTANCE, animatable)
+                .map(data -> data.getStatus().isActionCharging()).orElse(false);
+        boolean skipHead = transfAnimPlaying && actuallyTransforming;
 
         float partialTick = animationState.getPartialTick();
         float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
@@ -270,8 +273,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             float rootRotX = (root != null) ? root.getRotX() : 0.0F;
             float rootRotY = (root != null) ? root.getRotY() : 0.0F;
 
-            head.setRotX(lookPitchRad - waistRotX - rootRotX);
-            head.setRotY(lookYawRad - waistRotY - rootRotY);
+            head.setRotX(Mth.clamp(lookPitchRad - waistRotX - rootRotX, -Mth.HALF_PI, Mth.HALF_PI));
+            head.setRotY(Mth.clamp(lookYawRad - waistRotY - rootRotY, -Mth.HALF_PI, Mth.HALF_PI));
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
@@ -341,8 +344,12 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void applyMolangQueries(T animatable, double animTime) {
         super.applyMolangQueries(animatable, animTime);
-        boolean skipHead = animatable instanceof IPlayerAnimatable pa && (pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.")
+        boolean headAnimPlaying = animatable instanceof IPlayerAnimatable pa && (pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.")
                 || pa.dragonminez$getCurrentPlayingAnimation().startsWith("ki."));
+        boolean actuallyBusy = StatsProvider.get(StatsCapability.INSTANCE, animatable)
+                .map(data -> data.getStatus().isActionCharging() || data.getStatus().isChargingKi()).orElse(false)
+                || (animatable instanceof IPlayerAnimatable pa2 && pa2.dragonminez$isShootingKi());
+        boolean skipHead = headAnimPlaying && actuallyBusy;
 
         MolangParser parser = MolangParser.INSTANCE;
 
