@@ -535,7 +535,6 @@ public class GeneralServerConfig {
 	@Getter
 	@NoArgsConstructor
 	public static class GravityConfig {
-		// --- Gravity sources ---
 		private Boolean enabled = true;
 		private Map<String, Double> gravityPerWorld = defaultGravityPerWorld();
 		private Double defaultWorldGravity = 1.0;
@@ -543,27 +542,20 @@ public class GeneralServerConfig {
 		private Double npcGravityRange = 100.0;
 		private Boolean machineGravityEnabled = true;
 
-		// --- Weight -> load ---
-		private Double weightGravityDivisor = 1000.0;
-
-		// --- Resistance (effective stats) ---
 		private Double resistanceStatDivisorRatio = 0.9;
 		private Double resistanceScale = 100.0;
 
-		// --- Stat reduction ---
 		private Boolean statReductionEnabled = true;
 		private String[] affectedStats = {"STR", "SKP", "PWR", "DEF", "STM"};
 		private Double statReductionPerGravity = 0.01;
 		private Double minStatReduction = 0.0;
 		private Double maxStatReduction = 0.9;
 
-		// --- Movement / attack penalties ---
 		private Double hardStopThreshold = 75.0;
 		private Double maxMovementPenalty = 0.95;
 		private Double maxAttackPenalty = 0.9;
 		private Double penaltyCurveFactor = 1.6;
 
-		// --- Physical gravity ---
 		private Boolean physicalEnabled = true;
 		private Double maxJumpPenalty = 0.95;
 		private Double extraFallPerGravity = 0.02;
@@ -578,7 +570,6 @@ public class GeneralServerConfig {
 
 		private Double consumptionPerGravity = 0.04;
 
-		// --- Gravity Device machine ---
 		private Integer deviceMinRoomSize = 5;
 		private Integer deviceMaxRoomSize = 25;
 		private Integer deviceMaxGravity = 1000;
@@ -622,10 +613,6 @@ public class GeneralServerConfig {
 
 		public Boolean getMachineGravityEnabled() {
 			return machineGravityEnabled == null || machineGravityEnabled;
-		}
-
-		public Double getWeightGravityDivisor() {
-			return Math.max(1.0, weightGravityDivisor != null ? weightGravityDivisor : 1000.0);
 		}
 
 		public Double getResistanceStatDivisorRatio() {

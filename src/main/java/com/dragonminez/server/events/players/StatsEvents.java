@@ -155,7 +155,8 @@ public class StatsEvents {
 			});
 
 			if (totalWeight[0] > 0) {
-				int effectiveWeight = totalWeight[0];
+				double gravityMultiplier = GravityLogic.getGravityMultiplier(serverPlayer);
+				int effectiveWeight = (int) (totalWeight[0] * gravityMultiplier);
 
 				int currentBaseLevel = data.getLevel();
 				int totalBaseStats = data.getStats().getTotalStats();

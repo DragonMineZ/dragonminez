@@ -216,7 +216,7 @@
   "gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant": "Mutant: x%s",
   "gui.dragonminez.character_stats.gravity": "Gravity",
   "gui.dragonminez.character_stats.gravity.tooltip.environmental": "Environmental: %sg",
-  "gui.dragonminez.character_stats.gravity.tooltip.weight_load": "Weight Load: %s kg (+%sg)",
+  "gui.dragonminez.character_stats.gravity.tooltip.weight_load": "Weight Load: %s kg → %s kg",
   "gui.dragonminez.character_stats.gravity.tooltip.net": "Net Gravity: %sg",
   "gui.dragonminez.character_stats.gravity.tooltip.stat_penalty": "Stat Penalty: -%s%%",
   "gui.dragonminez.character_stats.gravity.tooltip.tp_bonus": "TP Bonus: x%s",

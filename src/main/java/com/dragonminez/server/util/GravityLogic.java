@@ -25,8 +25,6 @@ public class GravityLogic {
 	public static final UUID GRAVITY_SPEED_UUID = UUID.fromString("019c3047-cd2f-7af4-a3cd-5bca51dd3588");
 	private static final UUID GRAVITY_ATTACK_SPEED_UUID = UUID.fromString("019c3047-4e91-74e1-ac87-d4ea8e463688");
 
-	public static final ThreadLocal<Boolean> IGNORE_WEIGHT = ThreadLocal.withInitial(() -> false);
-
 	private static final Map<UUID, Double> NPC_GRAVITY_CACHE = new HashMap<>();
 	private static final Map<UUID, Long> NPC_GRAVITY_TICK = new HashMap<>();
 	private static final Map<UUID, String> NPC_GRAVITY_DIM = new HashMap<>();
@@ -52,20 +50,6 @@ public class GravityLogic {
 		if (machineGravity > gravity) gravity = machineGravity;
 
 		return Math.max(0.0, gravity);
-	}
-
-	public static double getRawGravity(Player player) {
-		double gravity = getGravityMultiplier(player);
-
-		if (!IGNORE_WEIGHT.get()) {
-			int totalWeight = getTotalWeight(player);
-			if (totalWeight > 0) {
-				double effectiveWeight = totalWeight * gravity;
-				gravity += effectiveWeight / cfg().getWeightGravityDivisor();
-			}
-		}
-
-		return gravity;
 	}
 
 	private static double getResistance(Player player) {
