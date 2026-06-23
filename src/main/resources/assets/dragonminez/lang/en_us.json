@@ -2005,6 +2005,8 @@
   "command.dragonminez.mastery.set.success": "§e[DMZ-Mastery]§r Set mastery to %d for the form '%s - %s' for %s.",
   "command.dragonminez.mastery.add.multiple": "§e[DMZ-Mastery]§r Added %d mastery for the form '%s - %s' to %d players.",
   "command.dragonminez.mastery.set.multiple": "§e[DMZ-Mastery]§r Set mastery to %d for the form '%s - %s' for %d players.",
+  "command.dragonminez.mastery.no_active_form": "§c[DMZ-Mastery]§r %s has no active form right now.",
+  "command.dragonminez.mastery.no_active_stack": "§c[DMZ-Mastery]§r %s has no active stack form right now.",
   "command.dragonminez.reload.start": "§e[DMZ-Reload]§r Starting Reload...",
   "command.dragonminez.reload.success": "§e[DMZ-Reload]§r Reload completed successfully!",
   "command.dragonminez.reload.sync": "§e[DMZ-Reload]§r %d players had their data synchronized.",
