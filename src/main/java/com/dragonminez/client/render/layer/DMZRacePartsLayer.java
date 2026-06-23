@@ -40,13 +40,13 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation SCOUTER_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/scouter.geo.json");
 
 	private static final ResourceLocation YAJIROBE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
-	private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/yajirobe_katana.png");
+	private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
 	private static final ResourceLocation Z_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/z_sword.geo.json");
-	private static final ResourceLocation Z_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/z_sword.png");
+	private static final ResourceLocation Z_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/z_sword.png");
 	private static final ResourceLocation BRAVE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
-	private static final ResourceLocation BRAVE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/brave_sword.png");
+	private static final ResourceLocation BRAVE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/brave_sword.png");
 	private static final ResourceLocation POWER_POLE_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
-	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/power_pole.png");
+	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/power_pole.png");
 
 	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
 	private static final ResourceLocation WEIGHTED_ITEMS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
@@ -136,21 +136,21 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
 		if (raceConfig == null) return;
 
-        String formCustomModel = "";
-        boolean hasStackForm = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
-        boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
+		String formCustomModel = "";
+		boolean hasStackForm = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
+		boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
 
-        if (hasStackForm && character.getActiveStackFormData().hasCustomModel()) {
-            formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
-        } else if (hasForm && character.getActiveFormData().hasCustomModel()) {
-            formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
-        }
+		if (hasStackForm && character.getActiveStackFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+		} else if (hasForm && character.getActiveFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
+		}
 
-        String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
-        String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-        if (key.isEmpty()) key = race;
+		String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
+		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (key.isEmpty()) key = race;
 
-        String logicKey = key;
+		String logicKey = key;
 
 		BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
 		if (partsModel == null) return;
@@ -188,77 +188,77 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			boolean extraHeadBonesEnabled = character.areExtraHeadBonesEnabled();
 			String activeBone = character.getRenderableHeadBone();
 
-            if (extraHeadBonesEnabled && activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
-                for (String boneName : activeBone.split("\\+")) {
-                    if (boneName.isEmpty() || boneName.equals("hair")) continue;
-                    GeoBone targetBone = partsModel.getBone(boneName).orElse(null);
-                    boolean fromPlayerModel = false;
-                    if (targetBone == null) {
-                        targetBone = playerModel.getBone(boneName).orElse(null);
-                        fromPlayerModel = true;
-                    }
-                    if (targetBone != null) {
-                        if (!fromPlayerModel) {
-                            syncTargetBoneAndParents(targetBone, playerModel);
-                        }
+			if (extraHeadBonesEnabled && activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
+				for (String boneName : activeBone.split("\\+")) {
+					if (boneName.isEmpty() || boneName.equals("hair")) continue;
+					GeoBone targetBone = partsModel.getBone(boneName).orElse(null);
+					boolean fromPlayerModel = false;
+					if (targetBone == null) {
+						targetBone = playerModel.getBone(boneName).orElse(null);
+						fromPlayerModel = true;
+					}
+					if (targetBone != null) {
+						if (!fromPlayerModel) {
+							syncTargetBoneAndParents(targetBone, playerModel);
+						}
 
-                        float[] colorToTint = accessoryColor;
+						float[] colorToTint = accessoryColor;
 
-                        if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")) {
-                            colorToTint = resolveBodyColor1(stats);
-                        }
+						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")) {
+							colorToTint = resolveBodyColor1(stats);
+						}
 
-                        float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], phase, topAuraColor, tintProgress);
+						float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], phase, topAuraColor, tintProgress);
 
-                        if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) {
-                            tintedColor = ColorUtils.hexToRgb("#1A1A1A");
-                        }
+						if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) {
+							tintedColor = ColorUtils.hexToRgb("#1A1A1A");
+						}
 
-                        renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-                    }
-                }
-            }
+						renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					}
+				}
+			}
 
-            if (extraHeadBonesEnabled && (race.equals("namekian") || logicKey.equals("namekian_orange") || logicKey.equals("namekian_buffed"))) {
+			if (extraHeadBonesEnabled && (race.equals("namekian") || logicKey.equals("namekian_orange") || logicKey.equals("namekian_buffed"))) {
 
-                GeoBone antennaBone = partsModel.getBone("antennas1").orElse(null);
-                boolean antennaFromPlayerModel = false;
+				GeoBone antennaBone = partsModel.getBone("antennas1").orElse(null);
+				boolean antennaFromPlayerModel = false;
 
-                if (antennaBone == null) {
-                    antennaBone = playerModel.getBone("antennas1").orElse(null);
-                    antennaFromPlayerModel = true;
-                }
+				if (antennaBone == null) {
+					antennaBone = playerModel.getBone("antennas1").orElse(null);
+					antennaFromPlayerModel = true;
+				}
 
-                if (antennaBone != null) {
-                    if (!antennaFromPlayerModel) {
-                        syncTargetBoneAndParents(antennaBone, playerModel);
-                    }
-                    float[] antennaColor = resolveBodyColor1(stats);
-                    float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], phase, topAuraColor, tintProgress);
-                    renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-                }
-            }
+				if (antennaBone != null) {
+					if (!antennaFromPlayerModel) {
+						syncTargetBoneAndParents(antennaBone, playerModel);
+					}
+					float[] antennaColor = resolveBodyColor1(stats);
+					float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], phase, topAuraColor, tintProgress);
+					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+				}
+			}
 
-            if (extraHeadBonesEnabled && race.equals("majin")) {
-                float[] majinBodyColor = resolveBodyColor1(stats);
+			if (extraHeadBonesEnabled && race.equals("majin")) {
+				float[] majinBodyColor = resolveBodyColor1(stats);
 
-                GeoBone earsBone = partsModel.getBone("ears3").orElse(null);
-                boolean earsFromPlayerModel = false;
+				GeoBone earsBone = partsModel.getBone("ears3").orElse(null);
+				boolean earsFromPlayerModel = false;
 
-                if (earsBone == null) {
-                    earsBone = playerModel.getBone("ears3").orElse(null);
-                    earsFromPlayerModel = true;
-                }
+				if (earsBone == null) {
+					earsBone = playerModel.getBone("ears3").orElse(null);
+					earsFromPlayerModel = true;
+				}
 
-                if (earsBone != null) {
-                    if (!earsFromPlayerModel) {
-                        syncTargetBoneAndParents(earsBone, playerModel);
-                    }
+				if (earsBone != null) {
+					if (!earsFromPlayerModel) {
+						syncTargetBoneAndParents(earsBone, playerModel);
+					}
 
-                    float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], phase, topAuraColor, tintProgress);
-                    renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-                }
-            }
+					float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], phase, topAuraColor, tintProgress);
+					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+				}
+			}
 
 			if (!stats.getStatus().isAlive() || stats.getStatus().isForceHalo()) {
 				GeoBone haloBone = partsModel.getBone("halo").orElse(null);

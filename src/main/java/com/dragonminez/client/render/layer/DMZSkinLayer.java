@@ -119,6 +119,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
 		SkinGathererProvider.INSTANCE.gatherTattooLayers(player, stats, partialTick, geoConsumer);
 		SkinGathererProvider.INSTANCE.gatherEffectLayers(player, stats, partialTick, geoConsumer);
+		renderWounds(model, poseStack, animatable, bufferSource, player, partialTick, packedLight, packedOverlay, alpha);
 		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(true);
 	}
@@ -587,6 +588,27 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			RenderType renderType = a < 1.0f ? RenderType.entityTranslucent(entry.texture()) : RenderType.entityCutoutNoCull(entry.texture());
 			renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, a, true);
 		}
+	}
+
+	private void renderWounds(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, AbstractClientPlayer player, float partialTick, int packedLight, int packedOverlay, float alpha) {
+		float maxHealth = player.getMaxHealth();
+		if (maxHealth <= 0.0f) return;
+		float healthRatio = Mth.clamp(player.getHealth() / maxHealth, 0.0f, 1.0f);
+
+		float woundsAlpha = Mth.clamp((0.75f - healthRatio) / (0.75f - 0.50f), 0.0f, 1.0f);
+		float grievousAlpha = Mth.clamp((0.40f - healthRatio) / (0.40f - 0.20f), 0.0f, 1.0f);
+
+		if (woundsAlpha > 0.001f) {
+			renderWoundLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/wounds.png", partialTick, packedLight, packedOverlay, alpha * woundsAlpha);
+		}
+		if (grievousAlpha > 0.001f) {
+			renderWoundLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/grievous_wounds.png", partialTick, packedLight, packedOverlay, alpha * grievousAlpha);
+		}
+	}
+
+	private void renderWoundLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float partialTick, int packedLight, int packedOverlay, float alpha) {
+		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(loc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
 	}
 
 	private void renderFadingColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha) {
