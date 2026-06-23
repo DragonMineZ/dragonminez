@@ -53,6 +53,7 @@ public class ClientPacketHandler {
 					throw new RuntimeException(e);
 				}
 				player.refreshDimensions();
+				player.refreshDisplayName();
 			});
 		}
 	}

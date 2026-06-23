@@ -409,6 +409,25 @@ public class ForgeCommonEvents {
 		}
 	}
 
+	private static String fusionDisplayName(Player player) {
+		return StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(data -> data.getStatus().isFused() ? data.getStatus().getFusionName() : null)
+				.filter(name -> name != null && !name.isEmpty())
+				.orElse(null);
+	}
+
+	@SubscribeEvent
+	public static void onPlayerNameFormat(PlayerEvent.NameFormat event) {
+		String fusionName = fusionDisplayName(event.getEntity());
+		if (fusionName != null) event.setDisplayname(Component.literal(fusionName));
+	}
+
+	@SubscribeEvent
+	public static void onPlayerTabListNameFormat(PlayerEvent.TabListNameFormat event) {
+		String fusionName = fusionDisplayName(event.getEntity());
+		if (fusionName != null) event.setDisplayName(Component.literal(fusionName));
+	}
+
 	@SubscribeEvent
 	public static void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) DragonBallsHandler.syncRadarForPlayer(player);
