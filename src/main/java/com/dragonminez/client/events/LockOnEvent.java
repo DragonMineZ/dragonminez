@@ -42,6 +42,11 @@ public class LockOnEvent {
 		Player player = mc.player;
 		if (player == null) return;
 
+		if (com.dragonminez.client.systems.taiyoken.TaiyokenBlindState.isActive()) {
+			unlock();
+			return;
+		}
+
 		if (lockedTarget != null) {
 			unlock();
 			return;
@@ -73,6 +78,11 @@ public class LockOnEvent {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null || lockedTarget == null) return;
+
+		if (com.dragonminez.client.systems.taiyoken.TaiyokenBlindState.isActive()) {
+			unlock();
+			return;
+		}
 
 		scanTickCounter++;
 		if (scanTickCounter >= 5) {

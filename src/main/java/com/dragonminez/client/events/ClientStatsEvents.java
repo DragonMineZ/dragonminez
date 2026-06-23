@@ -355,7 +355,12 @@ public class ClientStatsEvents {
 					int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
 					NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
 					net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.StrikeAttack(player, targetId));
-				} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) { if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(ki.getKiType())) continue; var lockedKiTarget = LockOnEvent.getLockedTarget(); int kiTargetId = lockedKiTarget != null ? lockedKiTarget.getId() : -1;
+				} else if (t instanceof KiAttackData && "taiyoken".equals(id)) {
+						if (data.getCooldowns().hasCooldown("TechniqueCooldown_taiyoken")) continue;
+						techniques.selectSlot(i);
+						NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(i));
+						NetworkHandler.sendToServer(new TaiyokenCastC2S());
+					} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) { if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(ki.getKiType())) continue; var lockedKiTarget = LockOnEvent.getLockedTarget(); int kiTargetId = lockedKiTarget != null ? lockedKiTarget.getId() : -1;
 					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i, kiTargetId));
 					else {
 						activeChargeSlot = i;

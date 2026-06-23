@@ -34,6 +34,12 @@ public class GeneralUserConfig {
 	private Boolean cameraMovementDuringFlight = true;
 	private Boolean liveCrowdinTranslations = true;
 	private Boolean showAccumulativeDamage = true;
+	private Boolean taiyokenInvertPalette = false;
+
+	public Boolean getTaiyokenInvertPalette() {
+		if (taiyokenInvertPalette == null) taiyokenInvertPalette = false;
+		return taiyokenInvertPalette;
+	}
 
 	public Boolean getShowAccumulativeDamage() {
 		if (showAccumulativeDamage == null) showAccumulativeDamage = true;

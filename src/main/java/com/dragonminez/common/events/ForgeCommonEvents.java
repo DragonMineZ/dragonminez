@@ -411,7 +411,7 @@ public class ForgeCommonEvents {
 
 	private static String fusionDisplayName(Player player) {
 		return StatsProvider.get(StatsCapability.INSTANCE, player)
-				.map(data -> data.getStatus().isFused() ? data.getStatus().getFusionName() : null)
+				.map(data -> data.getStatus().isFused() ? data.getStatus().getFusionName() : "")
 				.filter(name -> name != null && !name.isEmpty())
 				.orElse(null);
 	}

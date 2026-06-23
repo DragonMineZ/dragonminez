@@ -1271,6 +1271,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Override
     public void setTarget(LivingEntity pTarget) {
         if (pTarget != null && this.isQuestTeammate(pTarget)) return;
+        if (pTarget != null && this.getPersistentData().getLong("dmz_taiyoken_blind_until") > this.level().getGameTime()) return;
         super.setTarget(pTarget);
     }
 

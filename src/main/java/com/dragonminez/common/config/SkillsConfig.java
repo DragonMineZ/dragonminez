@@ -62,6 +62,7 @@ public class SkillsConfig {
 		kiSkills.add("final_explosion");
 		kiSkills.add("soul_punisher");
 		kiSkills.add("fake_moon");
+		kiSkills.add("taiyoken");
 
 		skills.put("kamehameha", new SkillCosts(List.of(2000)));
 		skills.put("galick_gun", new SkillCosts(List.of(2000)));
@@ -82,6 +83,7 @@ public class SkillsConfig {
 		skills.put("final_flash", new SkillCosts(List.of(5000)));
 		skills.put("soul_punisher", new SkillCosts(List.of(25000)));
 		skills.put("fake_moon", new SkillCosts(List.of(3000)));
+		skills.put("taiyoken", new SkillCosts(List.of(2000)));
 
 		strikeSkills.add("meteor");
 		strikeSkills.add("dragon_fist");
@@ -303,6 +305,7 @@ public class SkillsConfig {
 		roshiSkills.add("meditation");
 		roshiSkills.add("kicontrol");
 		roshiSkills.add("kamehameha");
+		roshiSkills.add("taiyoken");
 		skillOfferings.put("roshi", roshiSkills);
 
 		List<String> gokuSkills = new ArrayList<>();
@@ -364,6 +367,7 @@ public class SkillsConfig {
 		krillinSkills.add("kienzan_doble");
 		krillinSkills.add("ki_barrage");
 		krillinSkills.add("deadly_dance");
+		krillinSkills.add("taiyoken");
 		skillOfferings.put("krillin", krillinSkills);
 
 		List<String> friezaSkills = new ArrayList<>();

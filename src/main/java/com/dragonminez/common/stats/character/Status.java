@@ -43,6 +43,7 @@ public class Status {
 	private UUID fusionPartnerUUID;
 	private int fusionTimer;
 	private String fusionType;
+	private String fusionName;
 	private boolean fusionPartyManaged;
 	private UUID fusionPrevPartyId;
 	private boolean fusionPrevPartyLeader;
@@ -85,6 +86,7 @@ public class Status {
 		this.fusionPartnerUUID = null;
 		this.fusionTimer = 0;
 		this.fusionType = "";
+		this.fusionName = "";
 		this.fusionPartyManaged = false;
 		this.fusionPrevPartyId = null;
 		this.fusionPrevPartyLeader = false;
@@ -127,6 +129,7 @@ public class Status {
 		this.fusionPartnerUUID = null;
 		this.fusionTimer = 0;
 		this.fusionType = "";
+		this.fusionName = "";
 		this.fusionPartyManaged = false;
 		this.fusionPrevPartyId = null;
 		this.fusionPrevPartyLeader = false;
@@ -193,6 +196,7 @@ public class Status {
 		if (fusionPartnerUUID != null) tag.putUUID("FusionPartnerUUID", fusionPartnerUUID);
 		tag.putInt("FusionTimer", fusionTimer);
 		tag.putString("FusionType", fusionType);
+		tag.putString("FusionName", fusionName);
 		tag.putBoolean("FusionPartyManaged", fusionPartyManaged);
 		if (fusionPrevPartyId != null) tag.putUUID("FusionPrevPartyId", fusionPrevPartyId);
 		tag.putBoolean("FusionPrevPartyLeader", fusionPrevPartyLeader);
@@ -242,6 +246,7 @@ public class Status {
 		else this.fusionPartnerUUID = null;
 		this.fusionTimer = tag.getInt("FusionTimer");
 		this.fusionType = tag.getString("FusionType");
+		this.fusionName = tag.getString("FusionName");
 		this.fusionPartyManaged = tag.getBoolean("FusionPartyManaged");
 		this.fusionPrevPartyId = tag.hasUUID("FusionPrevPartyId") ? tag.getUUID("FusionPrevPartyId") : null;
 		this.fusionPrevPartyLeader = tag.getBoolean("FusionPrevPartyLeader");
@@ -290,6 +295,7 @@ public class Status {
 		this.fusionPartnerUUID = other.fusionPartnerUUID;
 		this.fusionTimer = other.fusionTimer;
 		this.fusionType = other.fusionType;
+		this.fusionName = other.fusionName;
 		this.fusionPartyManaged = other.fusionPartyManaged;
 		this.fusionPrevPartyId = other.fusionPrevPartyId;
 		this.fusionPrevPartyLeader = other.fusionPrevPartyLeader;

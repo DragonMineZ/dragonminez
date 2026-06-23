@@ -267,6 +267,12 @@ public class NetworkHandler {
 				.consumerMainThread(com.dragonminez.common.network.C2S.StrikeAttackC2S::handle)
 				.add();
 
+		net.messageBuilder(TaiyokenCastC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TaiyokenCastC2S::new)
+				.encoder(TaiyokenCastC2S::toBytes)
+				.consumerMainThread(TaiyokenCastC2S::handle)
+				.add();
+
 		net.messageBuilder(CombatAttackRequestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CombatAttackRequestC2S::new)
 				.encoder(CombatAttackRequestC2S::encode)
@@ -430,6 +436,12 @@ public class NetworkHandler {
 				.decoder(TriggerImpactFrameS2C::new)
 				.encoder(TriggerImpactFrameS2C::encode)
 				.consumerMainThread(TriggerImpactFrameS2C::handle)
+				.add();
+
+		net.messageBuilder(TaiyokenBlindS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TaiyokenBlindS2C::new)
+				.encoder(TaiyokenBlindS2C::encode)
+				.consumerMainThread(TaiyokenBlindS2C::handle)
 				.add();
 
 		net.messageBuilder(SyncSpacePodDestinationsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
