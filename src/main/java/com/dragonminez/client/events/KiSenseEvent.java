@@ -98,6 +98,8 @@ public class KiSenseEvent {
 		float scale = 0.025F;
 		poseStack.scale(-scale, -scale, scale);
 
+		RenderSystem.disableDepthTest();
+
 		float topY;
 		if (entity instanceof Player target) {
 			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, target).orElse(null);
@@ -114,6 +116,8 @@ public class KiSenseEvent {
 
 		renderBPLabel(poseStack, entity, topY);
 		renderIndicators(poseStack, entity, partialTick, lod, topY);
+
+		RenderSystem.enableDepthTest();
 
 		poseStack.popPose();
 	}
@@ -331,14 +335,14 @@ public class KiSenseEvent {
 		poseStack.pushPose();
 		poseStack.translate(0.0F, 0.0F, -0.02F);
 		Matrix4f matrix = poseStack.last().pose();
-		mc.font.drawInBatch(text, textX + 1, textY, borderColor, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, light);
-		mc.font.drawInBatch(text, textX - 1, textY, borderColor, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, light);
-		mc.font.drawInBatch(text, textX, textY + 1, borderColor, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, light);
-		mc.font.drawInBatch(text, textX, textY - 1, borderColor, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, light);
+		mc.font.drawInBatch(text, textX + 1, textY, borderColor, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
+		mc.font.drawInBatch(text, textX - 1, textY, borderColor, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
+		mc.font.drawInBatch(text, textX, textY + 1, borderColor, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
+		mc.font.drawInBatch(text, textX, textY - 1, borderColor, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
 
 		poseStack.translate(0.0F, 0.0F, -0.02F);
 		Matrix4f matrixFront = poseStack.last().pose();
-		mc.font.drawInBatch(text, textX, textY, color, false, matrixFront, bufferSource, Font.DisplayMode.NORMAL, 0, light);
+		mc.font.drawInBatch(text, textX, textY, color, false, matrixFront, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
 		poseStack.popPose();
 	}
 
