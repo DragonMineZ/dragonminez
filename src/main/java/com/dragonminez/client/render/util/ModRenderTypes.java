@@ -301,6 +301,25 @@ public class ModRenderTypes extends RenderType {
                         .createCompositeState(false));
     }
 
+    private static final RenderType GOO_BLOB = create(
+            "dmz_goo_blob",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.TRIANGLES,
+            4096,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getPositionColorShader))
+                    .setTransparencyState(NO_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .createCompositeState(false)
+    );
+
+    /** Opaque, vertex-coloured, double-sided geometry used for the Majin absorption gum blob. */
+    public static RenderType gooBlob() { return GOO_BLOB; }
+
     public static RenderType glow(ResourceLocation pLocation) { return GLOW.apply(pLocation); }
     public static RenderType glow_ki(ResourceLocation pLocation) { return GLOW_KI.apply(pLocation); }
     public static RenderType energy(ResourceLocation pLocation) { return ENERGY.apply(pLocation); }
