@@ -4,12 +4,14 @@ import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.block.custom.KikonoStationBlock;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
@@ -89,7 +91,8 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		//this.dropSelf(MainBlocks.GETE_FURNACE.get());
 		this.dropSelf(MainBlocks.GETE_ORE.get());
 		this.dropSelf(MainBlocks.TIME_CHAMBER_BLOCK.get());
-		this.dropSelf(MainBlocks.KIKONO_STATION.get());
+		this.add(MainBlocks.KIKONO_STATION.get(),
+				block -> createSinglePropConditionTable(block, KikonoStationBlock.HALF, DoubleBlockHalf.LOWER));
 		this.dropSelf(MainBlocks.ENERGY_CABLE.get());
 		this.dropSelf(MainBlocks.FUEL_GENERATOR.get());
 
