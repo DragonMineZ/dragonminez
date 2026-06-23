@@ -53,6 +53,8 @@ import java.util.Map;
 public class CombatEvent {
 	private static final Map<String, Long> LAST_PLAYER_HIT_GUARD_MS = new HashMap<>();
 	public static final String DMZ_LAST_ATTACKER_ID_TAG = "dmz_last_attacker_id";
+	public static final String DMZ_LAST_HIT_TARGET_ID_TAG = "dmz_last_hit_target_id";
+	public static final String DMZ_LAST_HIT_TARGET_TIME_TAG = "dmz_last_hit_target_time";
 
 	private static final double HEALING_REDUCTION_CAP = 0.40;
 	private static final int HEALING_REDUCTION_DURATION_TICKS = 120;
@@ -123,6 +125,9 @@ public class CombatEvent {
 				return;
 			}
 			LAST_PLAYER_HIT_GUARD_MS.put(hitKey, now);
+
+			attacker.getPersistentData().putInt(DMZ_LAST_HIT_TARGET_ID_TAG, livingTarget.getId());
+			attacker.getPersistentData().putLong(DMZ_LAST_HIT_TARGET_TIME_TAG, now);
 
 			boolean isPunchMachine = event.getEntity() instanceof PunchMachineEntity;
 

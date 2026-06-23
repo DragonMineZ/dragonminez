@@ -2,12 +2,15 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.ITTeleportHelper;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.events.players.combat.DashHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -64,7 +67,14 @@ public class InstantTransmissionTravelToPlayerC2S {
 					if (!RequestITTargetsC2S.isValidExternalTarget(player, data, selfBp, target, targetData, maxRange)) return;
 				}
 
-				teleportTo(player, target);
+					int kiCost = DashHandler.getFlyDashKiCost() * 5;
+					if (!player.isCreative() && !player.isSpectator()) {
+						if (data.getResources().getCurrentEnergy() < kiCost) return;
+						data.getResources().removeEnergy(kiCost);
+						NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
+					}
+
+					teleportTo(player, target);
 			});
 		});
 		ctx.get().setPacketHandled(true);

@@ -29,6 +29,11 @@ import net.minecraftforge.common.MinecraftForge;
 
 public class DashHandler {
 
+	public static int getFlyDashKiCost() {
+		int baseDrain = ConfigManager.getCombatConfig().getBaselineFormDrain();
+		return (int) Math.ceil(baseDrain * 0.12);
+	}
+
 	public static void handleDash(ServerPlayer player, float xInput, float zInput, boolean isDoubleDash) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;

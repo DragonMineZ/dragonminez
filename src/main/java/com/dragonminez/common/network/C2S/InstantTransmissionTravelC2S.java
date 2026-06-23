@@ -1,15 +1,16 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.combat.DashHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -53,6 +54,13 @@ public class InstantTransmissionTravelC2S {
 					ServerLevel targetLevel = player.server.getLevel(targetKey);
 
 					if (targetLevel == null) return;
+
+					int kiCost = DashHandler.getFlyDashKiCost() * 5;
+					if (!player.isCreative() && !player.isSpectator()) {
+						if (data.getResources().getCurrentEnergy() < kiCost) return;
+						data.getResources().removeEnergy(kiCost);
+						NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
+					}
 
 					if (player.isVehicle()) player.stopRiding();
 
