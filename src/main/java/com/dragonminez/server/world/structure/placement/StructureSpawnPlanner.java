@@ -222,7 +222,7 @@ public final class StructureSpawnPlanner {
 
 		if (!notFound.isEmpty() && !isStale(epoch)) {
 			resolveTail(holder, notFound, structureBiomes, structureMinHeights, structureNames, cache,
-					maxRing, spacingSqr, accepted, state, avoid, epoch);
+					minRing, maxRing, spacingSqr, accepted, state, avoid, epoch);
 		}
 		return notFound;
 	}
@@ -262,9 +262,10 @@ public final class StructureSpawnPlanner {
 									Map<Integer, HolderSet<Biome>> structureBiomes,
 									Map<Integer, Integer> structureMinHeights, Map<Integer, String> structureNames,
 									SampleCache cache,
-									int maxRing, double spacingSqr, List<ChunkPos> accepted,
+									int minRing, int maxRing, double spacingSqr, List<ChunkPos> accepted,
 									ChunkGeneratorStructureState state, List<Holder<StructureSet>> avoid, int epoch) {
 		int absoluteCap = maxRing + TAIL_EXTRA_RINGS;
+		int fineScanMax = Math.min(maxRing, minRing + ABSOLUTE_SCAN_CAP_RINGS);
 
 		for (BiomeAwareUniquePlacement placement : notFound) {
 			if (isStale(epoch)) return;
@@ -274,7 +275,7 @@ public final class StructureSpawnPlanner {
 			int minHeight = structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE);
 
 			ChunkPos found = null;
-			int from = maxRing + 1;
+			int from = fineScanMax + 1;
 			while (found == null && from <= absoluteCap) {
 				if (isStale(epoch)) return;
 				int to = Math.min(from + RING_STEP - 1, absoluteCap);
