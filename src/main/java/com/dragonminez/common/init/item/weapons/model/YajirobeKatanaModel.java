@@ -13,7 +13,7 @@ public class YajirobeKatanaModel extends GeoModel<YajirobeKatanaItem> {
 
     @Override
     public ResourceLocation getTextureResource(YajirobeKatanaItem animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/yajirobe_katana.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
     }
 
     @Override

@@ -13,7 +13,7 @@ public class ZSwordModel extends GeoModel<ZSwordItem> {
 
     @Override
     public ResourceLocation getTextureResource(ZSwordItem animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/z_sword.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/z_sword.png");
     }
 
     @Override

@@ -55,6 +55,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private static final String SSJ4_FUR_LAYER = "ssj4fur";
 
+	private static final int WOUND_OPACITY_PASSES = 4;
+
 	private float currentSsj4Alpha = 0.0f;
 	private float[] currentSsj4Color = null;
 
@@ -608,7 +610,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderWoundLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float partialTick, int packedLight, int packedOverlay, float alpha) {
 		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
-		renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(loc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
+		RenderType renderType = RenderType.entityTranslucent(loc);
+		for (int pass = 0; pass < WOUND_OPACITY_PASSES; pass++) {
+			renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
+		}
 	}
 
 	private void renderFadingColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha) {

@@ -13,7 +13,7 @@ public class PowerPoleModel extends GeoModel<PowerPoleItem> {
 
     @Override
     public ResourceLocation getTextureResource(PowerPoleItem animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/power_pole.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/power_pole.png");
     }
 
     @Override
