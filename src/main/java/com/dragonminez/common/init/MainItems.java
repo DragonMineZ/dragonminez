@@ -245,7 +245,7 @@ public final class MainItems {
     public static final Map<ArmorItem.Type, RegistryObject<Item>> A13_ARMOR = fullArmorNoHelmetSet("a13_armor", "a13");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> A14_ARMOR = fullArmorNoHelmetSet("a14_armor", "a14");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> KIBITO_ARMOR = fullArmorNoHelmetSet("kibito_armor", "kibito");
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> RADITZ_ARMOR = fullArmorNoHelmetSet("raditz_armor", "raditz_armor");
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> RADITZ_ARMOR = fullArmorNoHelmetSet("raditz_armor", "raditz");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> COOLER_SOLDIER_ARMOR = fullArmorNoHelmetSet("cooler_soldier_armor", "cooler_soldier");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> SLUG_ARMOR = fullArmorSet("slug_armor", "slug");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> EVIL_BUU_ARMOR = fullArmorNoHelmetSet("evil_buu_armor", "evil_buu");
