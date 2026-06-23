@@ -1054,5 +1054,11 @@
     "sounds": [
       "dragonminez:wand_swing"
     ]
+  },
+  "majin_absorb": {
+    "subtitle": "sounds.dragonminez.majin_absorb",
+    "sounds": [
+      "dragonminez:majin_absorb"
+    ]
   }
 }

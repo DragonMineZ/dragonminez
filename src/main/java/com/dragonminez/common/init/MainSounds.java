@@ -119,6 +119,7 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> TP_SHORT = registerSoundEvent("tp_short");
 	public static final RegistryObject<SoundEvent> ABSORB1 = registerSoundEvent("absorb1");
 	public static final RegistryObject<SoundEvent> ABSORB2 = registerSoundEvent("absorb2");
+    public static final RegistryObject<SoundEvent> MAJIN_ABSORB = registerSoundEvent("majin_absorb");
     public static final RegistryObject<SoundEvent> TRANSFORM_ON = registerSoundEvent("transform_on");
 	public static final RegistryObject<SoundEvent> TRANSFORM_OFF = registerSoundEvent("transform_off");
     public static final RegistryObject<SoundEvent> FUSION = registerSoundEvent("fusion");
