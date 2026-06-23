@@ -88,6 +88,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					}
 				}
 			}
+			bufferSource.getBuffer(renderType);
 			return;
 		}
 
@@ -98,6 +99,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			if (!animatable.isSpectator() && !stats.getCharacter().isOozaruCached()) {
 				renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
 			}
+			bufferSource.getBuffer(renderType);
 			return;
 		}
 
