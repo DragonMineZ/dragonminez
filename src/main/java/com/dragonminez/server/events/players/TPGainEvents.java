@@ -277,14 +277,27 @@ public class TPGainEvents {
 		if (sourceEntity instanceof ServerPlayer attacker && !attacker.is(target)) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				DynamicGrowthService.markCombat(attackerData);
-				double damageXp = DynamicGrowthService.practiceDamageXp(attacker, target, damage);
 				if (isKiDamage(source, directEntity)) {
+					double damageXp = DynamicGrowthService.practiceDamageXp(attacker, target, damage);
 					DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.PWR, damageXp, target);
 				} else if (isPlayerMeleeDamage(source, attacker)) {
-					DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.STR, damageXp, target);
-					if (attackerData.getSkills().isSkillActive("kimanipulation")) {
+					var pdata = attacker.getPersistentData();
+					double growthDamage = pdata.contains("dmz_growth_melee_damage") ? pdata.getDouble("dmz_growth_melee_damage") : damage;
+					boolean kiWeaponInUse = pdata.getBoolean("dmz_growth_ki_weapon");
+					boolean kiInfuseActive = pdata.getBoolean("dmz_growth_ki_infuse");
+					pdata.remove("dmz_growth_melee_damage");
+					pdata.remove("dmz_growth_ki_weapon");
+					pdata.remove("dmz_growth_ki_infuse");
+
+					double growthXp = DynamicGrowthService.practiceDamageXp(attacker, target, (float) growthDamage);
+					if (kiWeaponInUse) {
+						DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.PWR, growthXp, target);
+					} else if (kiInfuseActive) {
+						DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.STR, growthXp, target);
 						double pwrShare = ConfigManager.getServerConfig().getDynamicGrowth().getKiWeaponMeleePwrShare();
-						DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.PWR, damageXp * pwrShare, target);
+						DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.PWR, growthXp * pwrShare, target);
+					} else {
+						DynamicGrowthService.award(attacker, attackerData, DynamicGrowthStat.STR, growthXp, target);
 					}
 				}
 			});

@@ -206,6 +206,11 @@ public class CombatEvent {
 				if (isEmptyHandOrNoDamageItem(attacker)) currentDamage[0] = finalDmzDamage;
 				else currentDamage[0] = baseDamage + finalDmzDamage;
 
+				double normalMeleeDamage = currentDamage[0];
+				double kiWeaponBonus = 0.0;
+				double kiInfuseBonus = 0.0;
+				boolean kiWeaponInUse = false;
+
 				boolean kiWeaponActive = attackerData.getSkills().isSkillActive("kimanipulation");
 				int kiWeaponLevel = attackerData.getSkills().getSkillLevel("kimanipulation");
 				float kiWeaponMult = kiWeaponLevel * 0.1f;
@@ -213,16 +218,19 @@ public class CombatEvent {
 					String weaponType = attackerData.getStatus().getKiWeaponType();
 					var kiCfg = ConfigManager.getCombatConfig().getKiWeaponConfig(weaponType);
 					if (kiCfg != null) {
+						kiWeaponInUse = true;
 						int kiCost = (int) Math.round(kiCfg.getBaseKiCost() + ConfigManager.getCombatConfig().getBaselineFormDrain() * kiCfg.getKiScalingCost());
 						if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
-							currentDamage[0] = currentDamage[0] + kiCfg.getBaseDamage() + (attackerData.getKiDamage() * kiCfg.getKiScalingDamage() * kiWeaponMult);
+							kiWeaponBonus = kiCfg.getBaseDamage() + (attackerData.getKiDamage() * kiCfg.getKiScalingDamage() * kiWeaponMult);
+							currentDamage[0] = currentDamage[0] + kiWeaponBonus;
 						}
 						if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
 					}
 				}
 
 				int kiInfusionLevel = attackerData.getSkills().getSkillLevel("ki_infusion");
-				if (kiInfusionLevel > 0 && attackerData.getSkills().isSkillActive("ki_infusion")) {
+				boolean kiInfuseActive = kiInfusionLevel > 0 && attackerData.getSkills().isSkillActive("ki_infusion");
+				if (kiInfuseActive) {
 					float maxKi = attackerData.getMaxEnergy();
 					double baseCost = ConfigManager.getCombatConfig().getKiInfusionBaseCostPct();
 					double maxCost = ConfigManager.getCombatConfig().getKiInfusionMaxCostPct();
@@ -232,11 +240,16 @@ public class CombatEvent {
 					int kiCostInfusion = (int) (maxKi * (costPct / 100.0));
 
 					if (attackerData.getResources().getCurrentEnergy() >= kiCostInfusion) {
-						double bonusDmg = maxKi * (damageMult * kiInfusionLevel);
-						currentDamage[0] += bonusDmg;
+						kiInfuseBonus = maxKi * (damageMult * kiInfusionLevel);
+						currentDamage[0] += kiInfuseBonus;
 						if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCostInfusion);
 					}
 				}
+
+				double growthMeleeDamage = kiWeaponInUse ? (kiWeaponBonus + kiInfuseBonus) : (normalMeleeDamage + kiInfuseBonus);
+				attacker.getPersistentData().putDouble("dmz_growth_melee_damage", growthMeleeDamage);
+				attacker.getPersistentData().putBoolean("dmz_growth_ki_weapon", kiWeaponInUse);
+				attacker.getPersistentData().putBoolean("dmz_growth_ki_infuse", kiInfuseActive);
 
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout() && event.getEntity() instanceof Player) {
 					attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
