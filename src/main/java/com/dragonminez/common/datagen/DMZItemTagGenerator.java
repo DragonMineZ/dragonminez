@@ -124,6 +124,11 @@ public class DMZItemTagGenerator extends ItemTagsProvider {
 				.add(MainBlocks.NAMEK_SACRED_LOG.get().asItem())
 				.add(MainBlocks.NAMEK_STRIPPED_SACRED_LOG.get().asItem());
 
+		this.tag(MainTags.Items.WEIGHTED_ITEMS)
+				.add(MainItems.WEIGHT_TURTLE_SHELL.get())
+				.add(MainItems.WORKOUT_WEIGHTS.get())
+				.add(MainItems.WEIGHT_PICCOLO_CAPE.get());
+
 //		this.tag(ItemTags.SWORDS)
 //				.add(MainItems.BACULO_SAGRADO.get())
 //				.add(MainItems.TRUNKS_SWORD.get())

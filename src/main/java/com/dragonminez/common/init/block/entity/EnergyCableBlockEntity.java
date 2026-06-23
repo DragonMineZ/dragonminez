@@ -27,7 +27,7 @@ import software.bernie.geckolib.util.RenderUtils;
 public class EnergyCableBlockEntity extends BlockEntity implements GeoBlockEntity {
 	private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
 
-	private final StarEnergyStorage energyStorage = new StarEnergyStorage(50, 5) {
+	private final StarEnergyStorage energyStorage = new StarEnergyStorage(150, 15) {
 		@Override
 		public int receiveEnergy(int maxReceive, boolean simulate) {
 			int received = super.receiveEnergy(maxReceive, simulate);

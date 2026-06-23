@@ -50,7 +50,7 @@ public final class MainTabs {
 							if (item.getId().getPath().startsWith("namek_"))
 								if (!item.getId().getPath().contains("spawn_egg"))
 									output.accept(item.get().asItem());
-							if (item.getId().getPath().startsWith("sacred_") && (!item.getId().getPath().endsWith("_flower")))
+							if (item.getId().getPath().startsWith("sacred_") && !(item.getId().getPath().contains("sacred_planet")) && (!item.getId().getPath().endsWith("_flower")))
 								output.accept(item.get().asItem());
 							if (item.getId().getPath().endsWith("_flower") && (!item.getId().getPath().startsWith("potted_") && (!item.getId().getPath().contains("lotus"))))
 								output.accept(item.get().asItem());

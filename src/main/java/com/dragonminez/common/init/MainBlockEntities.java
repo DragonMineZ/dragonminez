@@ -49,6 +49,12 @@ public final class MainBlockEntities {
 							MainBlocks.FUEL_GENERATOR.get()
 					).build(null));
 
+	public static final RegistryObject<BlockEntityType<GravityDeviceBlockEntity>> GRAVITY_DEVICE_BE =
+			BLOCK_ENTITY_TYPES_REGISTER.register("gravity_device", () ->
+					BlockEntityType.Builder.of(GravityDeviceBlockEntity::new,
+							MainBlocks.GRAVITY_DEVICE.get()
+					).build(null));
+
 	public static final RegistryObject<BlockEntityType<EnergyCableBlockEntity>> ENERGY_CABLE_BE =
 			BLOCK_ENTITY_TYPES_REGISTER.register("energy_cable", () ->
 					BlockEntityType.Builder.of(EnergyCableBlockEntity::new,

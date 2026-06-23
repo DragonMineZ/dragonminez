@@ -7,6 +7,7 @@ import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.dragonball.DragonRadarRecipeDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainTags;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.*;
 import net.minecraft.resources.ResourceLocation;
@@ -62,6 +63,19 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 		oreSmelting(pWriter, Cobre, RecipeCategory.MISC, Items.COPPER_INGOT, 0.7f, 200, "copper_ingot");
 		oreBlasting(pWriter, Carbon, RecipeCategory.MISC, Items.COAL, 0.1f, 100, "coal");
 		oreSmelting(pWriter, Carbon, RecipeCategory.MISC, Items.COAL, 0.1f, 200, "coal");
+
+		// Gravity Device: a WeightedItem + 2 iron blocks + anvil + Earth radar CPU + redstone repeaters
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainBlocks.GRAVITY_DEVICE.get())
+				.pattern("RWR")
+				.pattern("ICI")
+				.pattern("RAR")
+				.define('R', Items.REPEATER)
+				.define('W', Ingredient.of(MainTags.Items.WEIGHTED_ITEMS))
+				.define('I', Items.IRON_BLOCK)
+				.define('C', MainItems.T1_RADAR_CPU.get())
+				.define('A', Items.ANVIL)
+				.unlockedBy("has_radar_cpu", has(MainItems.T1_RADAR_CPU.get()))
+				.save(pWriter);
 
 		// Gete tech: premium capsules (base capsule + Gete ingot) ...
 		geteCapsule(pWriter, MainItems.RED_CAPSULE.get(), MainItems.GETE_RED_CAPSULE.get(), "gete_red_capsule");

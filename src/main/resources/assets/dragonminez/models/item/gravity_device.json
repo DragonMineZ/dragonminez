@@ -1,0 +1,116 @@
+{
+	"parent": "builtin/entity",
+	"textures": {
+		"particle": "dragonminez:block/custom/gravitydevice"
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				-159.91,
+				41.76,
+				175.09
+			],
+			"scale": [
+				0.25,
+				0.25,
+				0.25
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				-159.90999999999985,
+				41.76000000000022,
+				175.09000000000015
+			],
+			"scale": [
+				0.25,
+				0.25,
+				0.25
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				-180,
+				60.5,
+				-180
+			],
+			"scale": [
+				0.25,
+				0.25,
+				0.25
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				-180,
+				60.5,
+				-180
+			],
+			"scale": [
+				0.25,
+				0.25,
+				0.25
+			]
+		},
+		"ground": {
+			"scale": [
+				0.25,
+				0.25,
+				0.25
+			]
+		},
+		"gui": {
+			"rotation": [
+				-180,
+				27.5,
+				-180
+			],
+			"translation": [
+				0.25,
+				-3.75,
+				0
+			],
+			"scale": [
+				0.45,
+				0.45,
+				0.45
+			]
+		},
+		"head": {
+			"scale": [
+				0.25,
+				0.25,
+				0.25
+			]
+		},
+		"fixed": {
+			"translation": [
+				0,
+				-3.5,
+				0
+			],
+			"scale": [
+				0.45,
+				0.45,
+				0.45
+			]
+		},
+		"on_shelf": {
+			"rotation": [
+				180,
+				27.5,
+				180
+			],
+			"translation": [
+				0.25,
+				-3.5,
+				0
+			],
+			"scale": [
+				0.45,
+				0.45,
+				0.45
+			]
+		}
+	}
+}

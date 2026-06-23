@@ -237,6 +237,16 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> ENERGY_CABLE = registerBlock("energy_cable",
 			() -> new EnergyCableBlock(BlockBehaviour.Properties.copy(Blocks.WHITE_WOOL)
 					.mapColor(MapColor.STONE).noOcclusion()));
+	public static final RegistryObject<Block> GRAVITY_DEVICE = registerGravityDevice();
+
+	private static RegistryObject<Block> registerGravityDevice() {
+		RegistryObject<Block> block = BLOCK_REGISTER.register("gravity_device",
+				() -> new GravityDeviceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+						.mapColor(MapColor.METAL).requiresCorrectToolForDrops().strength(5.0F, 6.0F).noOcclusion()));
+		MainItems.ITEM_REGISTER.register("gravity_device",
+				() -> new com.dragonminez.common.init.item.GravityDeviceItem(block.get(), new Item.Properties()));
+		return block;
+	}
 
 	//Plantas Namek 1
 	public static final RegistryObject<Block> NAMEK_GRASS = registerBlock("namek_grass",

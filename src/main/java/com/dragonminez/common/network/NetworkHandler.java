@@ -321,6 +321,12 @@ public class NetworkHandler {
 				.consumerMainThread(BeamClashInputC2S::handle)
 				.add();
 
+		net.messageBuilder(GravityDeviceUpdateC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(GravityDeviceUpdateC2S::new)
+				.encoder(GravityDeviceUpdateC2S::encode)
+				.consumerMainThread(GravityDeviceUpdateC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */
@@ -466,6 +472,12 @@ public class NetworkHandler {
 				.decoder(OpenITMenuS2C::new)
 				.encoder(OpenITMenuS2C::encode)
 				.consumerMainThread(OpenITMenuS2C::handle)
+				.add();
+
+		net.messageBuilder(GravityZoneSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(GravityZoneSyncS2C::new)
+				.encoder(GravityZoneSyncS2C::encode)
+				.consumerMainThread(GravityZoneSyncS2C::handle)
 				.add();
 	}
 

@@ -95,6 +95,7 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 				block -> createSinglePropConditionTable(block, KikonoStationBlock.HALF, DoubleBlockHalf.LOWER));
 		this.dropSelf(MainBlocks.ENERGY_CABLE.get());
 		this.dropSelf(MainBlocks.FUEL_GENERATOR.get());
+		this.dropSelf(MainBlocks.GRAVITY_DEVICE.get());
 
 
 		//Bloques que Dropean otros items

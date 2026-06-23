@@ -11,6 +11,7 @@ import com.dragonminez.client.gui.tooltip.*;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.EnergyCableBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.FuelGeneratorBlockRenderer;
+import com.dragonminez.client.init.blocks.renderer.GravityDeviceBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.KikonoStationBlockRenderer;
 import com.dragonminez.client.init.entities.model.ki.*;
 import com.dragonminez.client.init.entities.renderer.*;
@@ -28,6 +29,7 @@ import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
+import com.dragonminez.client.init.menu.screens.GravityDeviceScreen;
 import com.dragonminez.client.init.menu.screens.KikonoStationScreen;
 import com.dragonminez.common.init.particles.*;
 import com.dragonminez.server.world.dimension.CustomSpecialEffects;
@@ -139,6 +141,7 @@ public class ModClientEvents {
 			BlockEntityRenderers.register(MainBlockEntities.ENERGY_CABLE_BE.get(), EnergyCableBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.KIKONO_STATION_BE.get(), KikonoStationBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.FUEL_GENERATOR_BE.get(), FuelGeneratorBlockRenderer::new);
+			BlockEntityRenderers.register(MainBlockEntities.GRAVITY_DEVICE_BE.get(), GravityDeviceBlockRenderer::new);
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_AJISSA_LOG.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_STRIPPED_AJISSA_LOG.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_SACRED_LOG.get(), RenderType.cutout());
@@ -148,6 +151,7 @@ public class ModClientEvents {
 			//MENÚS
 			MenuScreens.register(MainMenus.KIKONO_STATION_MENU.get(), KikonoStationScreen::new);
 			MenuScreens.register(MainMenus.FUEL_GENERATOR_MENU.get(), FuelGeneratorScreen::new);
+			MenuScreens.register(MainMenus.GRAVITY_DEVICE_MENU.get(), GravityDeviceScreen::new);
 
 			// Fluids
 			ItemBlockRenderTypes.setRenderLayer(MainFluids.SOURCE_NAMEK.get(), RenderType.translucent());

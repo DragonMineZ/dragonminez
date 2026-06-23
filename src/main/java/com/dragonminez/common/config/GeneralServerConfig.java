@@ -578,6 +578,14 @@ public class GeneralServerConfig {
 
 		private Double consumptionPerGravity = 0.04;
 
+		// --- Gravity Device machine ---
+		private Integer deviceMinRoomSize = 5;
+		private Integer deviceMaxRoomSize = 25;
+		private Integer deviceMaxGravity = 1000;
+		private Integer deviceEnergyCapacity = 20000;
+		private Double deviceEnergyPerGravityPerSecond = 1.0;
+		private Double deviceShaderGravityForMax = 60.0;
+
 		private static Map<String, Double> defaultGravityPerWorld() {
 			Map<String, Double> map = new LinkedHashMap<>();
 			map.put("minecraft:overworld", 1.0);
@@ -713,6 +721,32 @@ public class GeneralServerConfig {
 
 		public Double getConsumptionPerGravity() {
 			return clampNonNeg(consumptionPerGravity, 0.04);
+		}
+
+		public Integer getDeviceMinRoomSize() {
+			return Math.max(1, deviceMinRoomSize != null ? deviceMinRoomSize : 5);
+		}
+
+		public Integer getDeviceMaxRoomSize() {
+			int min = getDeviceMinRoomSize();
+			int max = deviceMaxRoomSize != null ? deviceMaxRoomSize : 25;
+			return Math.max(min, max);
+		}
+
+		public Integer getDeviceMaxGravity() {
+			return Math.max(1, deviceMaxGravity != null ? deviceMaxGravity : 1000);
+		}
+
+		public Integer getDeviceEnergyCapacity() {
+			return Math.max(1, deviceEnergyCapacity != null ? deviceEnergyCapacity : 20000);
+		}
+
+		public Double getDeviceEnergyPerGravityPerSecond() {
+			return clampNonNeg(deviceEnergyPerGravityPerSecond, 1.0);
+		}
+
+		public Double getDeviceShaderGravityForMax() {
+			return Math.max(1.0, deviceShaderGravityForMax != null ? deviceShaderGravityForMax : 60.0);
 		}
 
 		private static double clampNonNeg(Double value, double fallback) {

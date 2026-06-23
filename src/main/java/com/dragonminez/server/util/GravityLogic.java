@@ -127,7 +127,12 @@ public class GravityLogic {
 
 	private static double getMachineGravity(Player player) {
 		if (!cfg().getMachineGravityEnabled()) return 0.0;
-		return 0.0;
+		return GravityDeviceManager.getGravityFor(player);
+	}
+
+	/** Raw machine gravity (Gravity Device zones only) affecting the player; drives the red shader. */
+	public static double getMachineGravityFor(Player player) {
+		return getMachineGravity(player);
 	}
 
 	public static int getTotalWeight(Player player) {
@@ -229,6 +234,19 @@ public class GravityLogic {
 		}
 
 		applyStatReduction(player, pGravity, config);
+		syncMachineGravity(player);
+	}
+
+	private static final Map<UUID, Float> LAST_MACHINE_GRAVITY = new HashMap<>();
+
+	private static void syncMachineGravity(ServerPlayer player) {
+		float machineGravity = (float) getMachineGravity(player);
+		float last = LAST_MACHINE_GRAVITY.getOrDefault(player.getUUID(), -1.0f);
+		if (Math.abs(machineGravity - last) >= 0.5f) {
+			LAST_MACHINE_GRAVITY.put(player.getUUID(), machineGravity);
+			com.dragonminez.common.network.NetworkHandler.sendToPlayer(
+					new com.dragonminez.common.network.S2C.GravityZoneSyncS2C(machineGravity), player);
+		}
 	}
 
 	private static void applyStatReduction(ServerPlayer player, double pGravity, GeneralServerConfig.GravityConfig config) {
@@ -256,6 +274,7 @@ public class GravityLogic {
 		NPC_GRAVITY_CACHE.remove(playerId);
 		NPC_GRAVITY_TICK.remove(playerId);
 		NPC_GRAVITY_DIM.remove(playerId);
+		LAST_MACHINE_GRAVITY.remove(playerId);
 	}
 
 	public static double getConsumptionMultiplier(Player player) {
