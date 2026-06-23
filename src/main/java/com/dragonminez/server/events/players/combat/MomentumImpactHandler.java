@@ -86,11 +86,6 @@ public class MomentumImpactHandler {
 					player.getPersistentData().putDouble("dmz_momentum_z", dz);
 				}
 			}
-
-			boolean wasFlying = player.getPersistentData().getBoolean("dmz_was_flying");
-			if (!wasOnGround && isGrounded && wasFlying && speed >= MOMENTUM_SPEED_THRESHOLD && dy < -0.4) {
-				triggerLandingAOE(player, speed);
-			}
 		}
 
 		player.getPersistentData().putDouble("dmz_last_x", currentPos.x);
@@ -150,30 +145,6 @@ public class MomentumImpactHandler {
 	public static void registerCollisionImpact(LivingEntity victim, CollisionImpactType type, float extraDamage, Vec3 momentumDir) {
 		long expiryMs = System.currentTimeMillis() + 1200L;
 		COLLISION_IMPACTS.put(victim.getUUID(), new CollisionImpactContext(type, expiryMs, victim.getY(), extraDamage, momentumDir));
-	}
-
-	private static void triggerLandingAOE(ServerPlayer player, double impactSpeed) {
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			double ratio = Mth.clamp((impactSpeed - MOMENTUM_SPEED_THRESHOLD) / (MOMENTUM_MAX_SPEED - MOMENTUM_SPEED_THRESHOLD), 0.0, 1.0);
-			double aoeDamage = data.getMeleeDamage() * (0.15 + (0.35 * ratio));
-
-			AABB aoeBox = player.getBoundingBox().inflate(3.5);
-			List<LivingEntity> targets = player.level().getEntitiesOfClass(LivingEntity.class, aoeBox, e -> e != player && e.isAlive());
-
-			for (LivingEntity target : targets) {
-				target.hurt(player.damageSources().playerAttack(player), (float) aoeDamage);
-				Vec3 push = target.position().subtract(player.position()).normalize().scale(1.2);
-				target.setDeltaMovement(target.getDeltaMovement().add(push.x, 0.4, push.z));
-				target.hurtMarked = true;
-			}
-
-			if (player.level() instanceof ServerLevel serverLevel) {
-				createCrater(serverLevel, player.blockPosition(), 2.0, player);
-				spawnRockImpactCircle(serverLevel, player.position(), 3.5);
-				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.5f, 0.05f, 2, true), player);
-				serverLevel.playSound(null, player.blockPosition(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 1.5f, 0.8f);
-			}
-		});
 	}
 
 	private static void createCrater(ServerLevel level, BlockPos center, double radius, LivingEntity source) {
