@@ -147,7 +147,11 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> COOLER_SOLDIER_ARMOR = fullArmorNoHelmetSet("cooler_soldier_armor", "cooler_soldier");
 	// DEMON GI (AZUL)
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> DEMON_GI_BLUE_ARMOR = fullArmorNoHelmetSet("demon_gi_blue_armor", "demon_gi_gohan");
+	// DRAGON CLAN
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> DRAGON_CLAN_ARMOR = fullArmorNoHelmetSet("dragon_clan_armor", "dragon_clan");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> EVIL_BUU_ARMOR = fullArmorNoHelmetSet("evil_buu_armor", "evil_buu");
+	// FIGHTER
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> FIGHTER_ARMOR = fullArmorNoHelmetSet("fighter_armor", "fighter");
 	// FUSED ZAMASU
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> FUSION_ZAMASU_ARMOR = fullArmorNoHelmetSet("fusion_zamasu_armor", "fzamasu_gi");
 	// FUTURE GOHAN
@@ -199,6 +203,10 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> MAJIN21_ARMOR = fullArmorNoHelmetSet("majin21_armor", "majin21");
 	// MAJIN BUU
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> MAJIN_BUU_ARMOR = fullArmorCapeNoHelmetSet("majin_buu_armor", "majinbuu_gi");
+	// MIGHTY MAJIN
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> MIGHTY_MAJIN_ARMOR = fullArmorNoHelmetSet("mighty_majin_armor", "mighty_majin");
+	// MYSTIC
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> MYSTIC_ARMOR = fullArmorNoHelmetSet("mystic_armor", "mystic");
 	// NARUKE ARMOR
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> NARUKE_ARMOR = fullArmorNoHelmetSet("naruke_armor", "naruke");
 	// ORANGE STAR HIGH SCHOOL UNIFORM
@@ -246,8 +254,12 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> VERGIL_ARMOR = fullArmorNoHelmetSet("vergil_armor", "vergil");
 	// VIDEL
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> VIDEL_ARMOR = fullArmorNoHelmetSet("videl_armor", "videl");
+	// WARRIOR CLAN
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> WARRIOR_CLAN_ARMOR = fullArmorNoHelmetSet("warrior_clan_armor", "warrior_clan");
 	// WHIS
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> WHIS_ARMOR = fullArmorNoHelmetSet("whis_armor", "whis");
+	// WONDER MAJIN
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> WONDER_MAJIN_ARMOR = fullArmorNoHelmetSet("wonder_majin_armor", "wonder_majin");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> XENO_GOKU_ARMOR = fullArmorNoHelmetSet("xeno_goku_armor", "xeno_goku");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> XENO_GOKU_PATREON_ARMOR = fullArmorNoHelmetSet("xeno_goku_patreon_armor", "xeno_goku_patreon");
 	// YARDRAT
@@ -386,7 +398,9 @@ public final class MainItems {
 	public static final RegistryObject<Item> PATTERN_CAULIFLA = regItem("pattern_caulifla");
 	public static final RegistryObject<Item> PATTERN_CHAOZ = regItem("pattern_chaoz");
 	public static final RegistryObject<Item> PATTERN_COOLER_SOLDIER = regItem("pattern_cooler_soldier");
+	public static final RegistryObject<Item> PATTERN_DRAGON_CLAN = regItem("pattern_dragon_clan");
 	public static final RegistryObject<Item> PATTERN_EVIL_BUU = regItem("pattern_evil_buu");
+	public static final RegistryObject<Item> PATTERN_FIGHTER = regItem("pattern_fighter");
 	public static final RegistryObject<Item> PATTERN_FUSION_ZAMASU = regItem("pattern_fusionzamasu");
 	public static final RegistryObject<Item> PATTERN_FUTURE_GOHAN = regItem("pattern_future_gohan");
 	public static final RegistryObject<Item> PATTERN_GAMMA1 = regItem("pattern_gamma1");
@@ -414,6 +428,8 @@ public final class MainItems {
 	public static final RegistryObject<Item> PATTERN_KING_VEGETA = regItem("pattern_king_vegeta");
 	public static final RegistryObject<Item> PATTERN_MAJIN21 = regItem("pattern_majin21");
 	public static final RegistryObject<Item> PATTERN_MAJIN_BUU = regItem("pattern_majin_buu");
+	public static final RegistryObject<Item> PATTERN_MIGHTY_MAJIN = regItem("pattern_mighty_majin");
+	public static final RegistryObject<Item> PATTERN_MYSTIC = regItem("pattern_mystic");
 	public static final RegistryObject<Item> PATTERN_ORANGE_HIGH = regItem("pattern_orange_high");
 	public static final RegistryObject<Item> PATTERN_PICCOLO = regItem("pattern_piccolo");
 	public static final RegistryObject<Item> PATTERN_PRIDE_TROOPS = regItem("pattern_pride_troops");
@@ -436,7 +452,9 @@ public final class MainItems {
 	public static final RegistryObject<Item> PATTERN_VEGETTO = regItem("pattern_vegetto");
 	public static final RegistryObject<Item> PATTERN_VERGIL = regItem("pattern_vergil");
 	public static final RegistryObject<Item> PATTERN_VIDEL = regItem("pattern_videl");
+	public static final RegistryObject<Item> PATTERN_WARRIOR_CLAN = regItem("pattern_warrior_clan");
 	public static final RegistryObject<Item> PATTERN_WHIS = regItem("pattern_whis");
+	public static final RegistryObject<Item> PATTERN_WONDER_MAJIN = regItem("pattern_wonder_majin");
 	public static final RegistryObject<Item> PATTERN_XENO_GOKU = regItem("pattern_xeno_goku");
 	public static final RegistryObject<Item> PATTERN_XENO_GOKU_PATREON = regItem("pattern_xeno_goku_patreon");
 	public static final RegistryObject<Item> PATTERN_YARDRAT = regItem("pattern_yardrat");

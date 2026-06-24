@@ -130,7 +130,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.CAULIFLA_ARMOR);
 		generateArmorSetModels(MainItems.CHAOZ_ARMOR);
 		generateArmorSetModels(MainItems.DEMON_GI_BLUE_ARMOR);
+		generateArmorSetModels(MainItems.DRAGON_CLAN_ARMOR);
 		generateArmorSetModels(MainItems.EVIL_BUU_ARMOR);
+		generateArmorSetModels(MainItems.FIGHTER_ARMOR);
 		generateArmorSetModels(MainItems.FUSION_ZAMASU_ARMOR);
 		generateArmorSetModels(MainItems.FUTURE_GOHAN_ARMOR);
 		generateArmorSetModels(MainItems.GAMMA1_ARMOR);
@@ -157,6 +159,8 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.KING_VEGETA_ARMOR);
 		generateArmorSetModels(MainItems.MAJIN21_ARMOR);
 		generateArmorSetModels(MainItems.MAJIN_BUU_ARMOR);
+		generateArmorSetModels(MainItems.MIGHTY_MAJIN_ARMOR);
+		generateArmorSetModels(MainItems.MYSTIC_ARMOR);
 		generateArmorSetModels(MainItems.NARUKE_ARMOR);
 		generateArmorSetModels(MainItems.ORANGE_HIGH_ARMOR);
 		generateArmorSetModels(MainItems.PICCOLO_ARMOR);
@@ -179,7 +183,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.VEGETA_Z_ARMOR);
 		generateArmorSetModels(MainItems.VEGETTO_ARMOR);
 		generateArmorSetModels(MainItems.VIDEL_ARMOR);
+		generateArmorSetModels(MainItems.WARRIOR_CLAN_ARMOR);
 		generateArmorSetModels(MainItems.WHIS_ARMOR);
+		generateArmorSetModels(MainItems.WONDER_MAJIN_ARMOR);
 		generateArmorSetModels(MainItems.XENO_GOKU_ARMOR);
 		generateArmorSetModels(MainItems.YARDRAT_ARMOR);
 		generateArmorSetModels(MainItems.ZAMASU_ARMOR);
@@ -208,7 +214,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		patternItem(MainItems.PATTERN_BROLY_Z);
 		patternItem(MainItems.PATTERN_CAULIFLA);
 		patternItem(MainItems.PATTERN_CHAOZ);
+		patternItem(MainItems.PATTERN_DRAGON_CLAN);
 		patternItem(MainItems.PATTERN_EVIL_BUU);
+		patternItem(MainItems.PATTERN_FIGHTER);
 		patternItem(MainItems.PATTERN_FUSION_ZAMASU);
 		patternItem(MainItems.PATTERN_FUTURE_GOHAN);
 		patternItem(MainItems.PATTERN_GAMMA1);
@@ -234,6 +242,8 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		patternItem(MainItems.PATTERN_KIBITO);
 		patternItem(MainItems.PATTERN_MAJIN21);
 		patternItem(MainItems.PATTERN_MAJIN_BUU);
+		patternItem(MainItems.PATTERN_MIGHTY_MAJIN);
+		patternItem(MainItems.PATTERN_MYSTIC);
 		patternItem(MainItems.PATTERN_ORANGE_HIGH);
 		patternItem(MainItems.PATTERN_PICCOLO);
 		patternItem(MainItems.PATTERN_PRIDE_TROOPS);
@@ -254,7 +264,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		patternItem(MainItems.PATTERN_VEGETA_Z);
 		patternItem(MainItems.PATTERN_VEGETTO);
 		patternItem(MainItems.PATTERN_VIDEL);
+		patternItem(MainItems.PATTERN_WARRIOR_CLAN);
 		patternItem(MainItems.PATTERN_WHIS);
+		patternItem(MainItems.PATTERN_WONDER_MAJIN);
 		patternItem(MainItems.PATTERN_XENO_GOKU);
 		patternItem(MainItems.PATTERN_YARDRAT);
 		patternItem(MainItems.PATTERN_ZAMASU);
