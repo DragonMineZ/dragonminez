@@ -284,7 +284,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             float rootRotY = (root != null) ? root.getRotY() : 0.0F;
 
             head.setRotX(Mth.clamp(lookPitchRad - waistRotX - rootRotX, -Mth.HALF_PI, Mth.HALF_PI));
-            head.setRotY(Mth.clamp(lookYawRad - waistRotY - rootRotY, -Mth.HALF_PI, Mth.HALF_PI));
+            head.setRotY(lookYawRad - waistRotY - rootRotY);
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
