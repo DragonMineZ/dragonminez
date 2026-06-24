@@ -191,32 +191,10 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 		var character = stats.getCharacter();
 		if (character == null) return 1.0F;
 
-		Float[] baseScale = character.getModelScaling();
-		if (baseScale == null || baseScale.length < 3) return 1.0F;
+		Float[] resolved = character.getResolvedModelScaling();
+		if (resolved == null || resolved.length < 3) return 1.0F;
 
-		float sx = baseScale[0];
-		float sy = baseScale[1];
-		float sz = baseScale[2];
-
-		if (character.hasActiveForm()) {
-			var form = character.getActiveFormData();
-			if (form != null && form.getModelScaling() != null && form.getModelScaling().length >= 3) {
-				sx *= form.getModelScaling()[0];
-				sy *= form.getModelScaling()[1];
-				sz *= form.getModelScaling()[2];
-			}
-		}
-
-		if (character.hasActiveStackForm()) {
-			var form = character.getActiveStackFormData();
-			if (form != null && form.getModelScaling() != null && form.getModelScaling().length >= 3) {
-				sx *= form.getModelScaling()[0];
-				sy *= form.getModelScaling()[1];
-				sz *= form.getModelScaling()[2];
-			}
-		}
-
-		float uniform = (sx + sy + sz) / 3.0F;
+		float uniform = (resolved[0] + resolved[1] + resolved[2]) / 3.0F;
 		return Math.max(0.25F, Math.min(uniform, 8.0F));
 	}
 }

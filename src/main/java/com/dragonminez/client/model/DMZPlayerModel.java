@@ -96,10 +96,16 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             String playerModelName = player.getModelName();
 
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+            var activeStackFormData = character.getActiveStackFormData();
             var activeFormData = character.getActiveFormData();
-            String activeCustomModel = (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty())
-                    ? activeFormData.getCustomModel().toLowerCase()
-                    : "";
+            String activeCustomModel;
+            if (activeStackFormData != null && Boolean.TRUE.equals(activeStackFormData.hasCustomModel()) && !activeStackFormData.getCustomModel().isEmpty()) {
+                activeCustomModel = activeStackFormData.getCustomModel().toLowerCase();
+            } else if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
+                activeCustomModel = activeFormData.getCustomModel().toLowerCase();
+            } else {
+                activeCustomModel = "";
+            }
             String raceCustomModel = (raceConfig != null && raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : "";
             String fallbackCustomModel = this.customModel != null ? this.customModel.toLowerCase() : "";
             String formKey = currentForm != null ? currentForm.toLowerCase() : "";

@@ -76,14 +76,8 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             String race = character.getRaceName().toLowerCase();
             String gender = character.getGender().toLowerCase();
 
-            var raceConfig = ConfigManager.getRaceCharacter(race);
             var bodyType = character.getBodyType();
-            String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-            String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
-                    ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
-
-            String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-            if (logicKey.isEmpty()) logicKey = race;
+            String logicKey = character.getRenderLogicKey();
             if (logicKey.equals("candy")) return null;
 
             if (boneName.equals("armorBody") || boneName.equals("armor_body")) {

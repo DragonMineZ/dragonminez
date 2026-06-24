@@ -228,17 +228,8 @@ public class Character {
 	public void updateOozaruCache() {
 		String raceName = this.getRaceName().toLowerCase();
 		String currentForm = this.getActiveForm();
-		var activeFormConfig = this.getActiveFormData();
 
-		var raceConfig = ConfigManager.getRaceCharacter(raceName);
-		String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-		String formCustomModel = (this.hasActiveForm() && activeFormConfig != null && activeFormConfig.hasCustomModel())
-				? activeFormConfig.getCustomModel().toLowerCase() : "";
-
-		String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (logicKey.isEmpty()) {
-			logicKey = raceName;
-		}
+		String logicKey = getRenderLogicKey();
 
 		this.oozaruCached = logicKey.startsWith("oozaru") ||
 				(raceName.equals("saiyan") && (Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.OOZARU) || Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.GOLDEN_OOZARU)));
@@ -306,9 +297,64 @@ public class Character {
 	public Float[] getModelScaling() {
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
 		if (raceConfig != null) {
-			return raceConfig.getDefaultModelScaling();
+			return safeModelScaling(raceConfig.getDefaultModelScaling());
 		}
 		return new Float[]{0.9375f, 0.9375f, 0.9375f};
+	}
+
+	private static Float[] safeModelScaling(Float[] scaling) {
+		if (scaling == null || scaling.length < 3 || scaling[0] == null || scaling[1] == null || scaling[2] == null) {
+			return new Float[]{0.9375f, 0.9375f, 0.9375f};
+		}
+		return scaling;
+	}
+
+	public Float[] getResolvedModelScaling() {
+		if (isOozaruCached()) {
+			FormConfig.FormData form = getActiveFormData();
+			if (form != null) return safeModelScaling(form.getModelScaling());
+			FormConfig.FormData stack = getActiveStackFormData();
+			if (stack != null) return safeModelScaling(stack.getModelScaling());
+			return safeModelScaling(getModelScaling());
+		}
+
+		Float[] base = safeModelScaling(getModelScaling());
+		float sx = base[0], sy = base[1], sz = base[2];
+
+		FormConfig.FormData stack = getActiveStackFormData();
+		if (stack != null) {
+			Float[] s = safeModelScaling(stack.getModelScaling());
+			sx *= s[0]; sy *= s[1]; sz *= s[2];
+		}
+
+		FormConfig.FormData form = getActiveFormData();
+		if (form != null) {
+			Float[] s = safeModelScaling(form.getModelScaling());
+			sx *= s[0]; sy *= s[1]; sz *= s[2];
+		}
+
+		return new Float[]{sx, sy, sz};
+	}
+
+	public String getResolvedCustomModel() {
+		FormConfig.FormData stack = getActiveStackFormData();
+		if (stack != null && Boolean.TRUE.equals(stack.hasCustomModel())) {
+			return stack.getCustomModel().toLowerCase();
+		}
+		FormConfig.FormData form = getActiveFormData();
+		if (form != null && Boolean.TRUE.equals(form.hasCustomModel())) {
+			return form.getCustomModel().toLowerCase();
+		}
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
+		if (raceConfig != null && raceConfig.getCustomModel() != null) {
+			return raceConfig.getCustomModel().toLowerCase();
+		}
+		return "";
+	}
+
+	public String getRenderLogicKey() {
+		String key = getResolvedCustomModel();
+		return key.isEmpty() ? getRaceName().toLowerCase() : key;
 	}
 
 	public CompoundTag save() {

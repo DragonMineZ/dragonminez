@@ -420,17 +420,9 @@ public class RaceSelectionScreen extends ScaledScreen {
 		final float[] inverseScale = {1.0f};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			var character = stats.getCharacter();
-			var activeForm = character.getActiveFormData();
 
-			float currentScale;
-			if (activeForm != null) {
-				Float[] formScaling = activeForm.getModelScaling();
-				Float[] charScaling = character.getModelScaling();
-				currentScale = (formScaling[0] * charScaling[0] + formScaling[1] * charScaling[1]) / 2.0f;
-			} else {
-				Float[] charScaling = character.getModelScaling();
-				currentScale = (charScaling[0] + charScaling[1]) / 2.0f;
-			}
+			Float[] resolved = character.getResolvedModelScaling();
+			float currentScale = (resolved[0] + resolved[1]) / 2.0f;
 
 			if (currentScale > 1.0f) inverseScale[0] = 0.9375f / currentScale;
 		});

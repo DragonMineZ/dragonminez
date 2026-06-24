@@ -83,28 +83,15 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));
 		var character = stats.getCharacter();
-		var activeForm = character.getActiveFormData();
 		String race = character.getRaceName().toLowerCase();
 		String currentForm = character.getActiveForm();
 
-		var raceConfig = ConfigManager.getRaceCharacter(race);
-		String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-		String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-				? activeForm.getCustomModel().toLowerCase() : "";
+		String logicKey = character.getRenderLogicKey();
 
-		String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (logicKey.isEmpty()) logicKey = race;
-
-		float configScaleX, configScaleY, configScaleZ;
-		if (activeForm != null) {
-			configScaleX = activeForm.getModelScaling()[0];
-			configScaleY = activeForm.getModelScaling()[1];
-			configScaleZ = activeForm.getModelScaling()[2];
-		} else {
-			configScaleX = character.getModelScaling()[0];
-			configScaleY = character.getModelScaling()[1];
-			configScaleZ = character.getModelScaling()[2];
-		}
+		Float[] resolved = character.getResolvedModelScaling();
+		float configScaleX = resolved[0];
+		float configScaleY = resolved[1];
+		float configScaleZ = resolved[2];
 
 		float scalingX, scalingY, scalingZ;
 

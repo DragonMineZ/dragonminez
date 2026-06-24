@@ -546,22 +546,10 @@ public class ClientStatsEvents {
 	}
 
 	private static float[] getBodyScale(StatsData stats) {
-		float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
 		var character = stats.getCharacter();
 
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			sX = character.getActiveStackFormData().getModelScaling()[0];
-			sY = character.getActiveStackFormData().getModelScaling()[1];
-			sZ = character.getActiveStackFormData().getModelScaling()[2];
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			sX = character.getActiveFormData().getModelScaling()[0];
-			sY = character.getActiveFormData().getModelScaling()[1];
-			sZ = character.getActiveFormData().getModelScaling()[2];
-		} else {
-			sX = character.getModelScaling()[0];
-			sY = character.getModelScaling()[1];
-			sZ = character.getModelScaling()[2];
-		}
+		Float[] resolved = character.getResolvedModelScaling();
+		float sX = resolved[0], sY = resolved[1], sZ = resolved[2];
 
 		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
 		if (currentForm.contains("ozaru")) {

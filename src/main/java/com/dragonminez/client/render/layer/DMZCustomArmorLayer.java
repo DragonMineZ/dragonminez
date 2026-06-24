@@ -178,13 +178,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         String gender = character.getGender().toLowerCase();
         int bodyType = character.getBodyType(); // Asegúrate de obtener el bodyType
 
-        var raceConfig = ConfigManager.getRaceCharacter(raceName);
-        String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
-                ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
-
-        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-        if (logicKey.isEmpty()) logicKey = raceName;
+        String logicKey = character.getRenderLogicKey();
 
         ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
         boolean isVanilla = itemKey != null && "minecraft".equals(itemKey.getNamespace());
