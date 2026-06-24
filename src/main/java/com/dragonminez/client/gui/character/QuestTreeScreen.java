@@ -7,8 +7,6 @@ import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.client.util.TextUtil;
-import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
 import com.dragonminez.common.network.C2S.ClaimAllQuestRewardsC2S;
@@ -18,7 +16,8 @@ import com.dragonminez.common.network.C2S.LeavePartyC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.C2S.RejectPartyInviteC2S;
 import com.dragonminez.common.network.C2S.SetTrackedQuestC2S;
-import com.dragonminez.common.network.C2S.ToggleStoryHardModeC2S;
+import com.dragonminez.common.network.C2S.SetStoryDifficultyC2S;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
@@ -948,12 +947,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					} else if (finalIsResummonAction) {
-						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.RESUMMON, selectedKey, false, ""));
+						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.RESUMMON, selectedKey, ""));
 						startResummonCooldown(selectedKey);
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					} else {
-						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, false, ""));
+						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, ""));
 						startResummonCooldown(selectedKey);
 						btn.visible = false;
 						pendingRefreshTicks = 5;
@@ -1318,7 +1317,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		for (NodeRender node : nodeRenders) {
 			int x = node.pixelX() + panOffX;
 			int y = node.pixelY() + panOffY;
-			// Cull nodes outside the viewport (with margin for labels/badges).
 			if (x + NODE_SIZE + 18 < 0 || x - 18 > viewRight
 					|| y + NODE_SIZE + 20 < 0 || y - 18 > viewBottom) {
 				continue;
@@ -1344,14 +1342,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderHardModeIndicator(GuiGraphics graphics, PanelRect tree, int mouseX, int mouseY) {
-		boolean enabled = statsData != null && statsData.getPlayerQuestData().isHardModeEnabled();
+		Difficulty difficulty = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
 		hardModeToggleable = canToggleHardMode();
 		hardModeIndicatorShown = true;
 
-		Component label = tr("gui.dragonminez.quest_tree.hardmode.label");
-		Component state = enabled
-				? tr("gui.dragonminez.quest_tree.hardmode.on")
-				: tr("gui.dragonminez.quest_tree.hardmode.off");
+		Component label = tr("gui.dragonminez.quest_tree.difficulty.label");
+		Component state = difficultyLabel(difficulty);
 
 		int labelWidth = this.font.width(label);
 		int totalWidth = labelWidth + 3 + this.font.width(state);
@@ -1369,9 +1365,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean highlight = hovered && hardModeToggleable;
 
 		int labelColor = hovered ? 0xFFFFFFFF : 0xFFAAAAAA;
-		int stateColor = enabled
-				? (highlight ? 0xFFFF8080 : 0xFFFF5555)
-				: (highlight ? 0xFF88DD88 : 0xFF66BB66);
+		int stateColor = difficultyColor(difficulty, highlight);
 
 		TextUtil.drawStringWithBorder(graphics, this.font, label, x, y, labelColor);
 		TextUtil.drawStringWithBorder(graphics, this.font, state, stateX, y, stateColor);
@@ -1384,27 +1378,45 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return false;
 		}
 
-		boolean enabled = statsData.getPlayerQuestData().isHardModeEnabled();
-		EntitiesConfig.HardModeSettings hardMode = ConfigManager.getEntitiesConfig().getHardModeSettings();
-		String hpMult = formatMultiplier(hardMode.getHpMultiplier());
-		String damageMult = formatMultiplier(hardMode.getDamageMultiplier());
+		Difficulty difficulty = statsData.getPlayerQuestData().getDifficulty();
+		String hpMult = formatMultiplier(difficulty.hpMultiplier());
+		String damageMult = formatMultiplier(difficulty.damageMultiplier());
+		String tpMult = formatMultiplier(difficulty.tpMultiplier());
+		String rewardMult = formatMultiplier(difficulty.questRewardMultiplier());
 
-		Component title = tr("gui.dragonminez.quest_tree.hardmode.tooltip.title").withStyle(ChatFormatting.BOLD);
+		Component title = tr("gui.dragonminez.quest_tree.difficulty.tooltip.title").withStyle(ChatFormatting.BOLD);
 		List<Component> desc = new ArrayList<>();
-		desc.add(tr("gui.dragonminez.quest_tree.hardmode.tooltip.desc").withStyle(ChatFormatting.GRAY));
-		desc.add(tr("gui.dragonminez.quest_tree.hardmode.tooltip.scope").withStyle(ChatFormatting.GRAY));
-		desc.add(tr("gui.dragonminez.quest_tree.hardmode.tooltip.stats", hpMult, damageMult).withStyle(ChatFormatting.AQUA));
+		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.current",
+				difficultyLabel(difficulty)).withStyle(ChatFormatting.GRAY));
+		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.desc").withStyle(ChatFormatting.GRAY));
+		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.scope").withStyle(ChatFormatting.GRAY));
+		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.independent").withStyle(ChatFormatting.GRAY));
+		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.stats", hpMult, damageMult).withStyle(ChatFormatting.AQUA));
+		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.rewards", tpMult, rewardMult).withStyle(ChatFormatting.AQUA));
 		if (hardModeToggleable) {
-			desc.add((enabled
-					? tr("gui.dragonminez.quest_tree.hardmode.tooltip.toggle_off")
-					: tr("gui.dragonminez.quest_tree.hardmode.tooltip.toggle_on"))
-					.withStyle(ChatFormatting.DARK_GRAY));
+			desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.cycle").withStyle(ChatFormatting.DARK_GRAY));
 		} else if (statsData.getPlayerQuestData().isInParty()) {
-			desc.add(tr("gui.dragonminez.quest_tree.hardmode.tooltip.leader_only").withStyle(ChatFormatting.DARK_GRAY));
+			desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.leader_only").withStyle(ChatFormatting.DARK_GRAY));
 		}
 
 		TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, null, 0xFFFFFF);
 		return true;
+	}
+
+	private Component difficultyLabel(Difficulty difficulty) {
+		return switch (difficulty) {
+			case EASY -> tr("gui.dragonminez.quest_tree.difficulty.easy");
+			case NORMAL -> tr("gui.dragonminez.quest_tree.difficulty.normal");
+			case HARD -> tr("gui.dragonminez.quest_tree.difficulty.hard");
+		};
+	}
+
+	private int difficultyColor(Difficulty difficulty, boolean highlight) {
+		return switch (difficulty) {
+			case EASY -> highlight ? 0xFF88DD88 : 0xFF66BB66;
+			case NORMAL -> highlight ? 0xFFFFFF88 : 0xFFEEDD55;
+			case HARD -> highlight ? 0xFFFF8080 : 0xFFFF5555;
+		};
 	}
 
 	private static String formatMultiplier(double value) {
@@ -1432,8 +1444,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 		lastHardModeToggle = now;
 
-		boolean enabled = statsData != null && statsData.getPlayerQuestData().isHardModeEnabled();
-		NetworkHandler.sendToServer(new ToggleStoryHardModeC2S(!enabled));
+		Difficulty current = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
+		Difficulty next = switch (current) {
+			case EASY -> Difficulty.NORMAL;
+			case NORMAL -> Difficulty.HARD;
+			case HARD -> Difficulty.EASY;
+		};
+		NetworkHandler.sendToServer(new SetStoryDifficultyC2S(next));
 		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
 		return true;
 	}

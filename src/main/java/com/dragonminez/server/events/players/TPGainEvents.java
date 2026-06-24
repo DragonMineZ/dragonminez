@@ -66,7 +66,8 @@ public class TPGainEvents {
 		if (data == null) return;
 		
 		int modifiedBaseTp = applyWeights(player, data, baseTP);
-		int finalTP = data.calculateTPGain(modifiedBaseTp);
+		double difficultyMult = data.getPlayerQuestData().getDifficulty().tpMultiplier();
+		int finalTP = (int) Math.max(0, Math.round(data.calculateTPGain(modifiedBaseTp) * difficultyMult));
 
 		if (!event.getShareWithParty()) {
 			IS_SHARING_TP.set(true);

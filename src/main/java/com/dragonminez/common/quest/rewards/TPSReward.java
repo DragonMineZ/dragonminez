@@ -18,7 +18,14 @@ public class TPSReward extends QuestReward {
 
 	@Override
 	public void giveReward(ServerPlayer player) {
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getResources().addTrainingPoints(amount, false));
+		giveReward(player, 1.0);
+	}
+
+	@Override
+	public void giveReward(ServerPlayer player, double rewardMultiplier) {
+		int scaled = (int) Math.max(0, Math.round(amount * rewardMultiplier));
+		if (scaled <= 0) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getResources().addTrainingPoints(scaled, false));
 	}
 
 	@Override

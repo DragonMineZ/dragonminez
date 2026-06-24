@@ -3,6 +3,7 @@ package com.dragonminez.common.quest;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 
 @Getter
 public abstract class QuestReward {
@@ -15,6 +16,10 @@ public abstract class QuestReward {
 	}
 
 	public abstract void giveReward(net.minecraft.server.level.ServerPlayer player);
+
+	public void giveReward(ServerPlayer player, double rewardMultiplier) {
+		giveReward(player);
+	}
 
 	public abstract Component getDescription();
 

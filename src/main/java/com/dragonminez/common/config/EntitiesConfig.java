@@ -15,24 +15,7 @@ public class EntitiesConfig {
 	@Setter
 	private int configVersion;
 
-	private HardModeSettings hardModeSettings = new HardModeSettings();
 	private Map<String, EntityStats> defaultEntityStats = new HashMap<>();
-
-	@Setter
-	@Getter
-	@NoArgsConstructor
-	public static class HardModeSettings {
-		private Double hpMultiplier = 3.0;
-		private Double damageMultiplier = 2.0;
-
-		public Double getHpMultiplier() {
-			return Math.max(1, hpMultiplier);
-		}
-
-		public Double getDamageMultiplier() {
-			return Math.max(1, damageMultiplier);
-		}
-	}
 
 	@Setter
 	@Getter

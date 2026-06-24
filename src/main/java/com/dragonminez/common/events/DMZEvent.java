@@ -2,6 +2,7 @@ package com.dragonminez.common.events;
 
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.dragonball.DragonDefinition;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.stats.StatsData;
@@ -277,11 +278,11 @@ public abstract class DMZEvent extends Event {
 	@Getter
 	@Cancelable
 	public static class QuestStartEvent extends QuestLifecycleEvent {
-		private boolean hardMode;
+		private Difficulty difficulty;
 
-		public QuestStartEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, boolean hardMode) {
+		public QuestStartEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, Difficulty difficulty) {
 			super(player, questKey, saga, quest, partyMembers);
-			this.hardMode = hardMode;
+			this.difficulty = difficulty;
 		}
 
 	}

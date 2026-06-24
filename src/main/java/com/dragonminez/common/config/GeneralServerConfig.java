@@ -108,6 +108,15 @@ public class GeneralServerConfig {
 		private Double partyTpShareRatio = 0.5;
 		private Integer instantTransmissionPlayerRangePerLevel = 200;
 
+		private Double easyModeHPMultiplier = 0.75;
+		private Double easyModeDamageMultiplier = 0.5;
+		private Double easyModeTPMultiplier = 1.25;
+		private Double easyModeQuestRewardMultiplier = 1.0;
+		private Double hardModeHPMultiplier = 2.0;
+		private Double hardModeDamageMultiplier = 1.5;
+		private Double hardModeTPMultiplier = 1.25;
+		private Double hardModeQuestRewardMultiplier = 1.25;
+
 		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
 				"dragonminez:invencible_armor_helmet",
 				"dragonminez:invencible_blue_armor_helmet"
@@ -219,6 +228,38 @@ public class GeneralServerConfig {
 
 		public Boolean getUltimateFormFixedValue() {
 			return ultimateFormFixedValue != null && ultimateFormFixedValue;
+		}
+
+		public Double getEasyModeHPMultiplier() {
+			return Math.max(0.0, easyModeHPMultiplier != null ? easyModeHPMultiplier : 0.75);
+		}
+
+		public Double getEasyModeDamageMultiplier() {
+			return Math.max(0.0, easyModeDamageMultiplier != null ? easyModeDamageMultiplier : 0.5);
+		}
+
+		public Double getEasyModeTPMultiplier() {
+			return Math.max(0.0, easyModeTPMultiplier != null ? easyModeTPMultiplier : 1.25);
+		}
+
+		public Double getEasyModeQuestRewardMultiplier() {
+			return Math.max(0.0, easyModeQuestRewardMultiplier != null ? easyModeQuestRewardMultiplier : 1.0);
+		}
+
+		public Double getHardModeHPMultiplier() {
+			return Math.max(0.0, hardModeHPMultiplier != null ? hardModeHPMultiplier : 2.0);
+		}
+
+		public Double getHardModeDamageMultiplier() {
+			return Math.max(0.0, hardModeDamageMultiplier != null ? hardModeDamageMultiplier : 1.5);
+		}
+
+		public Double getHardModeTPMultiplier() {
+			return Math.max(0.0, hardModeTPMultiplier != null ? hardModeTPMultiplier : 1.25);
+		}
+
+		public Double getHardModeQuestRewardMultiplier() {
+			return Math.max(0.0, hardModeQuestRewardMultiplier != null ? hardModeQuestRewardMultiplier : 1.25);
 		}
 	}
 

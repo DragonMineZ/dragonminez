@@ -1476,9 +1476,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             newEntity.setAiTier(this.getAiTier());
             newEntity.getPersistentData().putBoolean("dmz_stats_configured", true);
 
-			if (this.getPersistentData().contains("dmz_is_hardmode")) {
-				boolean isHardMode = this.getPersistentData().getBoolean("dmz_is_hardmode");
-				newEntity.getPersistentData().putBoolean("dmz_is_hardmode", isHardMode);
+			if (this.getPersistentData().contains("dmz_difficulty")) {
+				newEntity.getPersistentData().putString("dmz_difficulty", this.getPersistentData().getString("dmz_difficulty"));
 			}
 
 			if (this.getPersistentData().contains("dmz_saga_id")) {

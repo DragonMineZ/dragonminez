@@ -10,6 +10,7 @@ import net.minecraft.nbt.Tag;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -71,11 +72,18 @@ public class PlayerQuestData {
     private String trackedQuestId = null;
 
     /**
-     * Whether story quests started by this player (or the party they lead) use hard mode..
+     * Active story difficulty for this player (or the party they lead). Drives enemy scaling and
+     * reward/TP multipliers, and selects which quest tree is currently live.
      */
     @Getter
-    @Setter
-    private boolean hardModeEnabled = false;
+    private Difficulty difficulty = Difficulty.NORMAL;
+
+    /**
+     * Snapshots of the quest trees for every difficulty other than {@link #difficulty}.
+     * The active difficulty's tree lives in the working-set fields above; switching difficulty
+     * swaps the working set with the matching snapshot so each difficulty keeps independent progress.
+     */
+    private final Map<Difficulty, CompoundTag> difficultyStates = new EnumMap<>(Difficulty.class);
 
     /** Active party identifier for synchronized story progress. */
     @Getter
@@ -183,15 +191,36 @@ public class PlayerQuestData {
     }
 
     /**
-     * Resets all quest progress.
+     * Switches the active story difficulty, swapping the live quest tree with the stored snapshot
+     * for the target difficulty (or a fresh, empty tree if none exists yet). Progress on the
+     * previous difficulty is preserved so returning to it later resumes where it was left off.
+     */
+    public void setDifficulty(Difficulty newDifficulty) {
+        if (newDifficulty == null || newDifficulty == difficulty) return;
+        difficultyStates.put(difficulty, serializeCoreQuestState());
+        CompoundTag next = difficultyStates.remove(newDifficulty);
+        difficulty = newDifficulty;
+        clearActiveQuestState();
+        if (next != null) {
+            deserializeCoreQuestState(next);
+        }
+    }
+
+    /**
+     * Resets all quest progress across every difficulty.
      */
     public void resetAll() {
+        clearActiveQuestState();
+        difficultyStates.clear();
+        difficulty = Difficulty.NORMAL;
+    }
+
+    private void clearActiveQuestState() {
         quests.clear();
         sagaUnlockState.clear();
         startRequirementTimings.clear();
         hostileNpcKeys.clear();
         trackedQuestId = null;
-        hardModeEnabled = false;
     }
 
     /**
@@ -288,13 +317,13 @@ public class PlayerQuestData {
         return progress != null ? progress.getObjectiveRequired(objectiveIndex, fallbackRequired) : fallbackRequired;
     }
 
-    public void setQuestHardMode(String questId, boolean hardMode) {
-        getOrCreateProgress(questId).setHardMode(hardMode);
+    public void setQuestDifficulty(String questId, Difficulty difficulty) {
+        getOrCreateProgress(questId).setDifficulty(difficulty != null ? difficulty : Difficulty.NORMAL);
     }
 
-    public boolean isQuestHardMode(String questId) {
+    public Difficulty getQuestDifficulty(String questId) {
         QuestProgress progress = quests.get(questId);
-        return progress != null && progress.isHardMode();
+        return progress != null ? progress.getDifficulty() : Difficulty.NORMAL;
     }
 
     public int getQuestFailureCount(String questId) {
@@ -414,7 +443,7 @@ public class PlayerQuestData {
     }
 
     public void savePartyQuestBackup() {
-        this.partyQuestBackup = serializeCoreQuestState();
+        this.partyQuestBackup = serializeFullQuestState();
     }
 
     public boolean hasPartyQuestBackup() {
@@ -423,7 +452,7 @@ public class PlayerQuestData {
 
     public void restorePartyQuestBackup() {
         if (hasPartyQuestBackup()) {
-            deserializeCoreQuestState(partyQuestBackup);
+            deserializeFullQuestState(partyQuestBackup);
         }
     }
 
@@ -431,8 +460,15 @@ public class PlayerQuestData {
         this.partyQuestBackup = null;
     }
 
+    /**
+     * Adopts another player's (the party leader's) live quest tree and difficulty. The member's own
+     * per-difficulty trees are dropped here because they are preserved in the party backup and
+     * restored when leaving the party.
+     */
     public void copyQuestStateFrom(PlayerQuestData other) {
         if (other == null) return;
+        this.difficulty = other.difficulty;
+        this.difficultyStates.clear();
         deserializeCoreQuestState(other.serializeCoreQuestState());
     }
 
@@ -471,8 +507,6 @@ public class PlayerQuestData {
             tag.putString("trackedQuestId", trackedQuestId);
         }
 
-        tag.putBoolean("hardModeEnabled", hardModeEnabled);
-
         if (!hostileNpcKeys.isEmpty()) {
             ListTag hostileNpcs = new ListTag();
             for (String npcKey : hostileNpcKeys) {
@@ -485,12 +519,7 @@ public class PlayerQuestData {
     }
 
     private void deserializeCoreQuestState(CompoundTag tag) {
-        quests.clear();
-        sagaUnlockState.clear();
-        startRequirementTimings.clear();
-        hostileNpcKeys.clear();
-        trackedQuestId = null;
-        hardModeEnabled = false;
+        clearActiveQuestState();
 
         ListTag questList = tag.getList("quests", Tag.TAG_COMPOUND);
         for (int i = 0; i < questList.size(); i++) {
@@ -519,10 +548,6 @@ public class PlayerQuestData {
             if (!tracked.isBlank()) trackedQuestId = tracked;
         }
 
-        if (tag.contains("hardModeEnabled", Tag.TAG_BYTE)) {
-            hardModeEnabled = tag.getBoolean("hardModeEnabled");
-        }
-
         if (tag.contains("hostileNpcKeys", Tag.TAG_LIST)) {
             ListTag hostileNpcs = tag.getList("hostileNpcKeys", Tag.TAG_STRING);
             for (int i = 0; i < hostileNpcs.size(); i++) {
@@ -531,6 +556,49 @@ public class PlayerQuestData {
                     hostileNpcKeys.add(npcKey);
                 }
             }
+        }
+    }
+
+    /**
+     * Serializes the active difficulty plus the quest tree of every difficulty (active + snapshots).
+     */
+    private CompoundTag serializeFullQuestState() {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("difficulty", difficulty.name());
+
+        CompoundTag states = new CompoundTag();
+        for (Map.Entry<Difficulty, CompoundTag> entry : difficultyStates.entrySet()) {
+            states.put(entry.getKey().name(), entry.getValue().copy());
+        }
+        states.put(difficulty.name(), serializeCoreQuestState());
+        tag.put("difficultyStates", states);
+
+        return tag;
+    }
+
+    /**
+     * Restores the per-difficulty quest trees written by {@link #serializeFullQuestState()},
+     * transparently migrating the legacy single-tree + {@code hardModeEnabled} layout.
+     */
+    private void deserializeFullQuestState(CompoundTag tag) {
+        difficultyStates.clear();
+
+        if (tag.contains("difficultyStates", Tag.TAG_COMPOUND)) {
+            CompoundTag states = tag.getCompound("difficultyStates");
+            for (String key : states.getAllKeys()) {
+                if (!states.contains(key, Tag.TAG_COMPOUND)) continue;
+                difficultyStates.put(Difficulty.fromName(key), states.getCompound(key).copy());
+            }
+
+            difficulty = Difficulty.fromName(tag.getString("difficulty"));
+            CompoundTag active = difficultyStates.remove(difficulty);
+            clearActiveQuestState();
+            if (active != null) {
+                deserializeCoreQuestState(active);
+            }
+        } else {
+            difficulty = tag.getBoolean("hardModeEnabled") ? Difficulty.HARD : Difficulty.NORMAL;
+            deserializeCoreQuestState(tag);
         }
     }
 
@@ -551,7 +619,7 @@ public class PlayerQuestData {
      * Serializes all quest progress to NBT.
      */
     public CompoundTag serializeNBT() {
-        CompoundTag tag = serializeCoreQuestState();
+        CompoundTag tag = serializeFullQuestState();
 
         CompoundTag partyTag = new CompoundTag();
         if (activePartyId != null) {
@@ -584,7 +652,7 @@ public class PlayerQuestData {
      * Deserializes quest progress from NBT.
      */
     public void deserializeNBT(CompoundTag tag) {
-        deserializeCoreQuestState(tag);
+        deserializeFullQuestState(tag);
 
         activePartyId = null;
         partyLeaderId = null;
@@ -645,7 +713,7 @@ public class PlayerQuestData {
         private int failureCount = 0;
         @Getter
         @Setter
-        private boolean hardMode = false;
+        private Difficulty difficulty = Difficulty.NORMAL;
 
         public QuestProgress(String questId) {
             this.questId = questId;
@@ -702,7 +770,7 @@ public class PlayerQuestData {
             }
             tag.put("objectiveRequirements", objectiveRequirementsTag);
             tag.putInt("failureCount", failureCount);
-            tag.putBoolean("hardMode", hardMode);
+            tag.putString("difficulty", difficulty.name());
 
             CompoundTag rewardsTag = new CompoundTag();
             for (Map.Entry<Integer, Boolean> entry : rewardsClaimed.entrySet()) {
@@ -735,8 +803,10 @@ public class PlayerQuestData {
             if (tag.contains("failureCount", Tag.TAG_INT)) {
                 progress.failureCount = tag.getInt("failureCount");
             }
-            if (tag.contains("hardMode", Tag.TAG_BYTE)) {
-                progress.hardMode = tag.getBoolean("hardMode");
+            if (tag.contains("difficulty", Tag.TAG_STRING)) {
+                progress.difficulty = Difficulty.fromName(tag.getString("difficulty"));
+            } else if (tag.contains("hardMode", Tag.TAG_BYTE)) {
+                progress.difficulty = tag.getBoolean("hardMode") ? Difficulty.HARD : Difficulty.NORMAL;
             }
 
             CompoundTag rewardsTag = tag.getCompound("rewards");
