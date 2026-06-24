@@ -119,8 +119,8 @@ public class TrainingConfig {
 		private int targetRadius = 14;
 		private double baseRingSpeed = 0.7;
 		private double ringSpeedPerLevel = 0.18;
-		private int spawnIntervalTicks = 8;
-		private int maxCircles = 4;
+		private int spawnIntervalTicks = 12;
+		private int maxCircles = 3;
 		private int perfectWindow = 4;
 		private int goodWindow = 11;
 		private int perfectPoints = 2;
@@ -129,7 +129,7 @@ public class TrainingConfig {
 		private int fadeOutTicks = 20;
 		private int startingScore = 6;
 		private double burstChance = 0.5;
-		private int levelUpScoreBase = 12;
+		private int levelUpScoreBase = 10;
 		private int levelUpScorePerLevel = 8;
 		private int loseMissThreshold = 5;
 		private int loseMissWindow = 10;
