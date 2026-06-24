@@ -236,7 +236,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         final boolean isModelEmpty = customModelValue.isEmpty();
-        final String finalFaceKey = isModelEmpty ? raceName : customModelValue;
+        final String finalFaceKey = isModelEmpty
+                ? (SkinGathererProvider.isBuiltInRace(raceName) ? raceName : "human")
+                : customModelValue;
 
         boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
         if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
@@ -317,12 +319,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		hair = applyColorTint(hair, stats);
 		b2 = applyColorTint(b2, stats);
 
-		if (!faceKey.equals("human") && !faceKey.equals("saiyan") && !faceKey.equals("ssj4d") && !faceKey.equals("ssj4gt") && !faceKey.equals("buffed")
-				&& !faceKey.equals("namekian") && !faceKey.equals("namekian_orange") && !faceKey.equals("namekian_buffed")
-				&& !faceKey.startsWith("frostdemon") && !faceKey.startsWith("bioandroid")
-				&& !faceKey.startsWith("majin") && !faceKey.startsWith("janemba_super") && !faceKey.startsWith("janemba_fat")
-                && !faceKey.startsWith("4arms")) {
+		String family = SkinGathererProvider.modelFamily(faceKey);
 
+		if (family.equals("custom")) {
 			var rConfig = ConfigManager.getRaceCharacter(race);
 			if (rConfig != null && Boolean.TRUE.equals(rConfig.getIsLayered())) {
 				renderCustomFace(model, poseStack, animatable, bufferSource, character, faceKey, race, eye1, eye2, skin, hair, pt, pl, po, alpha);
@@ -330,15 +329,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			return;
 		}
 
-		switch (race) {
-			case "human", "saiyan" ->
+		switch (family) {
+			case "human" ->
 					renderHumanFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
 			case "namekian" ->
 					renderNamekianFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, pt, pl, po, alpha);
 			case "frostdemon" ->
-					renderFrostFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, skin, b2, pt, pl, po, alpha);
+					renderFrostFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, family, eye1, eye2, skin, b2, pt, pl, po, alpha);
 			case "bioandroid" ->
-					renderBioFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, pt, pl, po, alpha);
+					renderBioFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, family, eye1, eye2, pt, pl, po, alpha);
 			case "majin" ->
 					renderMajinFace(model, poseStack, animatable, bufferSource, character, faceKey, eye1, eye2, skin, b2, pt, pl, po, alpha);
 		}

@@ -122,8 +122,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             );
 
             return MODEL_RESOLUTION_CACHE.computeIfAbsent(stateKey, ignored -> {
-                boolean isMale = gender.equals("male") || gender.equals("hombre");
-                boolean isSlimSkin = playerModelName.equals("slim");
+                boolean isMale = gender.equals(Character.GENDER_MALE);
+                boolean isSlimSkin = playerModelName.contains("slim");
                 boolean isBaseForm = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
 
                 if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
@@ -173,6 +173,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             // HUMAN & SAIYAN
             case "human":
             case "saiyan":
+                if (!isMale) return MAJIN_SLIM;
+                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
+                return BASE_DEFAULT;
             case "oozaru": return OOZARU;
             case "ssj4gt":
                 if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
@@ -215,6 +218,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "frostdemon_metalcore": return FROSTDEMON_METALCORE;
 
             // BIOANDROID
+            case "bioandroid": return BIO_ANDROID;
             case "bioandroid_base": return BIO_ANDROID;
             case "bioandroid_semi": return BIO_ANDROID_SEMI;
             case "bioandroid_perfect": return BIO_ANDROID_PERFECT;
