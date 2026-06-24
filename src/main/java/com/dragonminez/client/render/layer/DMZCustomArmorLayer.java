@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.util.ArmorTextureResolver;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
@@ -214,6 +215,10 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         else if (logicKey.equals("janemba_fat")) {
             shouldRender = true;
             isMajinGordoTarget = true;
+        }
+        else if (gender.equals(Character.GENDER_FEMALE)
+                && SkinGathererProvider.modelFamily(logicKey).equals("custom")) {
+            if (isDbzArmor) shouldRender = true;
         }
 
         return new ArmorRenderContext(shouldRender, isSlimTarget, isOozaruTarget, isMajinGordoTarget, isDbzArmor);

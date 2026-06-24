@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
@@ -93,10 +94,11 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
 
                 boolean isRestrictedMajin = isMajin && bodyType != 2;
+                boolean isFemaleCustom = gender.equals(Character.GENDER_FEMALE) && SkinGathererProvider.modelFamily(logicKey).equals("custom");
 
                 if (isRestrictedMajin || isFemaleHumanOrSaiyan || isOozaru) {
                     if (!isArmored) return null;
-                } else if (isBuffed) {
+                } else if (isBuffed || isFemaleCustom) {
                     if (isDbzArmor) return null;
                 }
             }
