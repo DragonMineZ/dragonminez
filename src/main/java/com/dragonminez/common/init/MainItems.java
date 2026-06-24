@@ -215,7 +215,7 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> PICCOLO_ARMOR = fullArmorCapeSet("piccolo_armor", "piccolo_gi");
 	// TROPAS DEL ORGULLO
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> PRIDE_TROOPS_ARMOR = fullArmorNoHelmetSet("pride_troops_armor", "pride_troper");
-	public static final Map<ArmorItem.Type, RegistryObject<Item>> RADITZ_ARMOR = fullArmorNoHelmetSet("raditz_armor", "raditz_armor");
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> RADITZ_ARMOR = fullArmorNoHelmetSet("raditz_armor", "raditz");
 	// SHIN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> SHIN_ARMOR = fullArmorNoHelmetSet("shin_armor", "kaioshin");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> SLUG_ARMOR = fullArmorSet("slug_armor", "slug");
