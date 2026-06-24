@@ -90,11 +90,11 @@ public class TrainingConfig {
 		private int barWidth = 200;
 		private int baseZoneWidth = 60;
 		private int zoneWidthDecreasePerLevel = 6;
-		private int minZoneWidth = 18;
+		private int minZoneWidth = 24;
 		private double baseZoneSpeed = 1.2;
-		private double zoneSpeedPerLevel = 0.35;
-		private double markerSpeed = 2.6;
-		private double baseProgressLossPerTick = 0.8;
+		private double zoneSpeedPerLevel = 0.3;
+		private double markerSpeed = 2.75;
+		private double baseProgressLossPerTick = 0.12;
 		private double progressLossPerLevel = 0.25;
 	}
 

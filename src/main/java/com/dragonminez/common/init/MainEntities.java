@@ -88,7 +88,7 @@ public class MainEntities {
                 // PELÍCULAS
                 SAGA_GARLICK_JR, SAGA_GARLICK_JR_TRANSFORMED, SAGA_DR_WHEELO, SAGA_TURLES,
                 SAGA_SLUG_SOLDIER, SAGA_SLUG, SAGA_SLUG_GIANT,
-                SAGA_DORE, SAGA_SALZA, SAGA_NEIZ, SAGA_COOLER, SAGA_COOLER_5TA, SAGA_GETE_ROBOT, SAGA_MECHA_COOLER, SAGA_MECHA_COOLER_CORE,
+                SAGA_DORE, SAGA_SALZA, SAGA_NEIZ, SAGA_COOLER, SAGA_COOLER_5TA, SAGA_GETE_ROBOT, SAGA_METAL_COOLER, SAGA_METAL_COOLER_CORE,
                 SAGA_A14, SAGA_A15, SAGA_A13, SAGA_SUPER_A13,
                 SAGA_PARAGUS, SAGA_BROLY_BASE, SAGA_BROLY_SSJ_RESTRICTED, SAGA_BROLY_SSJ, SAGA_BROLY_LSSJ,
                 SAGA_ZANGYA, SAGA_GOKUA, SAGA_BIDO, SAGA_BUJIN, SAGA_BOJACK, SAGA_BOJACK_FP,
@@ -959,16 +959,16 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaMoviesEntity.GeteRobotEntity::new, MobCategory.MONSTER)
                             .sized(0.9f, 2.4f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gete_robot").toString()));
-    public static final RegistryObject<EntityType<SagaMoviesEntity.MechaCoolerEntity>> SAGA_MECHA_COOLER =
-            ENTITY_TYPES.register("saga_mecha_cooler",
-                    () -> EntityType.Builder.of(SagaMoviesEntity.MechaCoolerEntity::new, MobCategory.MONSTER)
+    public static final RegistryObject<EntityType<SagaMoviesEntity.MetalCoolerEntity>> SAGA_METAL_COOLER =
+            ENTITY_TYPES.register("saga_metal_cooler",
+                    () -> EntityType.Builder.of(SagaMoviesEntity.MetalCoolerEntity::new, MobCategory.MONSTER)
                             .sized(0.8f, 2.0f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_mecha_cooler").toString()));
-    public static final RegistryObject<EntityType<SagaMoviesEntity.MechaCoolerCoreEntity>> SAGA_MECHA_COOLER_CORE =
-            ENTITY_TYPES.register("saga_mecha_cooler_core",
-                    () -> EntityType.Builder.of(SagaMoviesEntity.MechaCoolerCoreEntity::new, MobCategory.MONSTER)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_metal_cooler").toString()));
+    public static final RegistryObject<EntityType<SagaMoviesEntity.MetalCoolerCoreEntity>> SAGA_METAL_COOLER_CORE =
+            ENTITY_TYPES.register("saga_metal_cooler_core",
+                    () -> EntityType.Builder.of(SagaMoviesEntity.MetalCoolerCoreEntity::new, MobCategory.MONSTER)
                             .sized(3.0f, 7.5f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_mecha_cooler_core").toString()));
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_metal_cooler_core").toString()));
 
     // Super Android 13
     public static final RegistryObject<EntityType<SagaMoviesEntity.A14Entity>> SAGA_A14 =
