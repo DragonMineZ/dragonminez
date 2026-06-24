@@ -9,11 +9,15 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.*;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
@@ -39,8 +43,9 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 
 		poseStack.pushPose();
 
-		if (useCombatPlacement(bone, animatable)) RenderUtils.translateToPivotPoint(poseStack, bone);
-		else RenderUtils.translateAndRotateMatrixForBone(poseStack, bone);
+		float combatWeight = combatPlacementWeight(bone, animatable);
+		RenderUtils.translateToPivotPoint(poseStack, bone);
+		rotateBoneScaled(poseStack, bone, 1.0F - combatWeight);
 
 		renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 
@@ -99,9 +104,9 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 		poseStack.pushPose();
 
 		boolean isCombatAnim = isCombatAnim(animatable);
-		boolean cancelGripForThisBone = useCombatPlacement(bone, animatable);
+		float gripWeight = 1.0F - combatPlacementWeight(bone, animatable);
 
-		if (!cancelGripForThisBone) {
+		if (gripWeight > 0.0F) {
 			boolean isUsing = animatable.isUsingItem() && animatable.getUseItem() == stack;
 			String weaponType = resolveWeaponType(stack);
 			WeaponGripProfile profile = WeaponGripProfile.resolve(stack.getItem(), isUsing, weaponType);
@@ -109,9 +114,9 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 			boolean applyAsLeft = isLeft;
 			if (!isCombatAnim && animatable.getMainArm() == HumanoidArm.LEFT) applyAsLeft = !isLeft;
 
-			profile.apply(poseStack, applyAsLeft);
+			applyGripEased(poseStack, profile, applyAsLeft, gripWeight);
 
-			if (!isCombatAnim && animatable.getMainArm() == HumanoidArm.LEFT) poseStack.translate(0.1, 0, 0);
+			if (!isCombatAnim && animatable.getMainArm() == HumanoidArm.LEFT) poseStack.translate(0.1 * gripWeight, 0, 0);
 		}
 
 		float itemScale = resolveItemScale(animatable);
@@ -130,16 +135,48 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 	}
 
 	private boolean useCombatPlacement(GeoBone bone, T animatable) {
-		if (!isCombatAnim(animatable)) return false;
+		return combatPlacementWeight(bone, animatable) > 0.5F;
+	}
+
+	private float combatPlacementWeight(GeoBone bone, T animatable) {
+		if (!(animatable instanceof IPlayerAnimatable playerAnim)) return 0.0F;
+
+		float weight = playerAnim.dragonminez$getCombatPlacementWeight();
+		if (weight <= 0.0F) return 0.0F;
 
 		String name = bone.getName();
 		boolean isRight = name.equals(RIGHT_GRIP);
 		boolean isLeft = name.equals(LEFT_GRIP);
-		if (!isRight && !isLeft) return false;
+		if (!isRight && !isLeft) return 0.0F;
 
 		boolean boneIsOffhand = (isRight && animatable.getMainArm() == HumanoidArm.LEFT) || (isLeft && animatable.getMainArm() == HumanoidArm.RIGHT);
-		boolean isOffhandAttack = animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isAttackingWithOffhand();
-		return boneIsOffhand == isOffhandAttack;
+		boolean isOffhandAttack = playerAnim.dragonminez$isAttackingWithOffhand();
+		return boneIsOffhand == isOffhandAttack ? weight : 0.0F;
+	}
+
+	private void rotateBoneScaled(PoseStack poseStack, GeoBone bone, float scale) {
+		if (scale <= 0.0F) return;
+		if (bone.getRotZ() != 0) poseStack.mulPose(Axis.ZP.rotation(bone.getRotZ() * scale));
+		if (bone.getRotY() != 0) poseStack.mulPose(Axis.YP.rotation(bone.getRotY() * scale));
+		if (bone.getRotX() != 0) poseStack.mulPose(Axis.XP.rotation(bone.getRotX() * scale));
+	}
+
+	private void applyGripEased(PoseStack poseStack, WeaponGripProfile profile, boolean isLeft, float weight) {
+		if (weight >= 1.0F) {
+			profile.apply(poseStack, isLeft);
+			return;
+		}
+
+		PoseStack temp = new PoseStack();
+		profile.apply(temp, isLeft);
+		Matrix4f matrix = temp.last().pose();
+
+		Vector3f translation = matrix.getTranslation(new Vector3f());
+		Quaternionf rotation = matrix.getNormalizedRotation(new Quaternionf());
+		Quaternionf eased = new Quaternionf().slerp(rotation, weight);
+
+		poseStack.translate(translation.x * weight, translation.y * weight, translation.z * weight);
+		poseStack.mulPose(eased);
 	}
 
 	private String resolveWeaponType(ItemStack stack) {

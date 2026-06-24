@@ -725,6 +725,13 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Override
+	public float dragonminez$getCombatPlacementWeight() {
+		if (dragonminez$attackAnimTicks > 0) return 1.0F;
+		if (dragonminez$combatGraceFrames > 0) return Math.min(1.0F, dragonminez$combatGraceFrames / 8.0F);
+		return 0.0F;
+	}
+
+	@Override
 	public void dragonminez$playKiAnimation(String animationName, boolean hold) {
 		this.dragonminez$currentKiAnim = animationName;
 		this.dragonminez$kiAnimHold = hold;
