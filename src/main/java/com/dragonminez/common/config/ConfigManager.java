@@ -711,6 +711,7 @@ public class ConfigManager {
 		try (Stream<Path> stream = Files.walk(CONFIG_DIR)) {
 			stream.filter(Files::isRegularFile)
 					.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
 					.forEach(p -> {
 						String relativePath = CONFIG_DIR.relativize(p).toString().replace("\\", "/");
 						CACHED_CONFIG_FILES.add(relativePath.substring(0, relativePath.length() - 5));
