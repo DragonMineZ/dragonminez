@@ -62,9 +62,9 @@ public class CombatConfig {
 	private Integer combatFlyImpulseCooldownTicks = 25;
 
 	private Map<String, KiWeaponConfig> kiWeaponsConfig = new HashMap<>() {{
-		put("blade", new KiWeaponConfig(0.0, 1.0, 0.0, 0.05, -2.4, "#FFFFFF", "dragonminez:sword"));
-		put("scythe", new KiWeaponConfig(0.0, 1.5, 0.0, 0.075, -3.0, "#FFFFFF", "dragonminez:scythe"));
-		put("clawlance", new KiWeaponConfig(0.0, 2.0, 0.0, 0.125, -2.6, "#FFFFFF", "dragonminez:trident"));
+		put("blade", new KiWeaponConfig(0.0, 0.25, 0.0, 0.075, -2.4, "#FFFFFF", "dragonminez:sword"));
+		put("scythe", new KiWeaponConfig(0.0, 0.45, 0.0, 0.105, -2.8, "#FFFFFF", "dragonminez:scythe"));
+		put("clawlance", new KiWeaponConfig(0.0, 0.65, 0.0, 0.175, -2.6, "#FFFFFF", "dragonminez:trident"));
 	}};
 
 	private Float upswingMultiplier = 0.5F;

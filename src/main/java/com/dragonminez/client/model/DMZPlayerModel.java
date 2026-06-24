@@ -96,10 +96,16 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             String playerModelName = player.getModelName();
 
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+            var activeStackFormData = character.getActiveStackFormData();
             var activeFormData = character.getActiveFormData();
-            String activeCustomModel = (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty())
-                    ? activeFormData.getCustomModel().toLowerCase()
-                    : "";
+            String activeCustomModel;
+            if (activeStackFormData != null && Boolean.TRUE.equals(activeStackFormData.hasCustomModel()) && !activeStackFormData.getCustomModel().isEmpty()) {
+                activeCustomModel = activeStackFormData.getCustomModel().toLowerCase();
+            } else if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
+                activeCustomModel = activeFormData.getCustomModel().toLowerCase();
+            } else {
+                activeCustomModel = "";
+            }
             String raceCustomModel = (raceConfig != null && raceConfig.hasCustomModel()) ? raceConfig.getCustomModel().toLowerCase() : "";
             String fallbackCustomModel = this.customModel != null ? this.customModel.toLowerCase() : "";
             String formKey = currentForm != null ? currentForm.toLowerCase() : "";
@@ -116,8 +122,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             );
 
             return MODEL_RESOLUTION_CACHE.computeIfAbsent(stateKey, ignored -> {
-                boolean isMale = gender.equals("male") || gender.equals("hombre");
-                boolean isSlimSkin = playerModelName.equals("slim");
+                boolean isMale = gender.equals(Character.GENDER_MALE);
+                boolean isSlimSkin = playerModelName.contains("slim");
                 boolean isBaseForm = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
 
                 if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
@@ -167,6 +173,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             // HUMAN & SAIYAN
             case "human":
             case "saiyan":
+                if (!isMale) return MAJIN_SLIM;
+                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
+                return BASE_DEFAULT;
             case "oozaru": return OOZARU;
             case "ssj4gt":
                 if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
@@ -209,6 +218,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "frostdemon_metalcore": return FROSTDEMON_METALCORE;
 
             // BIOANDROID
+            case "bioandroid": return BIO_ANDROID;
             case "bioandroid_base": return BIO_ANDROID;
             case "bioandroid_semi": return BIO_ANDROID_SEMI;
             case "bioandroid_perfect": return BIO_ANDROID_PERFECT;
@@ -245,7 +255,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
-        boolean skipHead = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
+        boolean transfAnimPlaying = animatable instanceof IPlayerAnimatable pa && pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.");
+        boolean actuallyTransforming = StatsProvider.get(StatsCapability.INSTANCE, animatable)
+                .map(data -> data.getStatus().isActionCharging()).orElse(false);
+        boolean skipHead = transfAnimPlaying && actuallyTransforming;
 
         float partialTick = animationState.getPartialTick();
         float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
@@ -270,8 +283,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             float rootRotX = (root != null) ? root.getRotX() : 0.0F;
             float rootRotY = (root != null) ? root.getRotY() : 0.0F;
 
-            head.setRotX(lookPitchRad - waistRotX - rootRotX);
-            head.setRotY(lookYawRad - waistRotY - rootRotY);
+            head.setRotX(Mth.clamp(lookPitchRad - waistRotX - rootRotX, -Mth.HALF_PI, Mth.HALF_PI));
+            head.setRotY(Mth.clamp(lookYawRad - waistRotY - rootRotY, -Mth.HALF_PI, Mth.HALF_PI));
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
@@ -341,8 +354,12 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void applyMolangQueries(T animatable, double animTime) {
         super.applyMolangQueries(animatable, animTime);
-        boolean skipHead = animatable instanceof IPlayerAnimatable pa && (pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.")
+        boolean headAnimPlaying = animatable instanceof IPlayerAnimatable pa && (pa.dragonminez$getCurrentPlayingAnimation().startsWith("transf.")
                 || pa.dragonminez$getCurrentPlayingAnimation().startsWith("ki."));
+        boolean actuallyBusy = StatsProvider.get(StatsCapability.INSTANCE, animatable)
+                .map(data -> data.getStatus().isActionCharging() || data.getStatus().isChargingKi()).orElse(false)
+                || (animatable instanceof IPlayerAnimatable pa2 && pa2.dragonminez$isShootingKi());
+        boolean skipHead = headAnimPlaying && actuallyBusy;
 
         MolangParser parser = MolangParser.INSTANCE;
 

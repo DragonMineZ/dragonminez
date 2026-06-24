@@ -22,27 +22,23 @@ public class QuestActionC2S {
 
 	private final ActionType actionType;
 	private final String questId;
-	private final boolean isHardMode;
 	private final String npcId;
 
-	public QuestActionC2S(ActionType actionType, String questId, boolean isHardMode, String npcId) {
+	public QuestActionC2S(ActionType actionType, String questId, String npcId) {
 		this.actionType = actionType;
 		this.questId = questId;
-		this.isHardMode = isHardMode;
 		this.npcId = npcId != null ? npcId : "";
 	}
 
 	public QuestActionC2S(FriendlyByteBuf buffer) {
 		this.actionType = buffer.readEnum(ActionType.class);
 		this.questId = buffer.readUtf();
-		this.isHardMode = buffer.readBoolean();
 		this.npcId = buffer.readUtf();
 	}
 
 	public void encode(FriendlyByteBuf buffer) {
 		buffer.writeEnum(actionType);
 		buffer.writeUtf(questId);
-		buffer.writeBoolean(isHardMode);
 		buffer.writeUtf(npcId);
 	}
 
@@ -56,7 +52,7 @@ public class QuestActionC2S {
 
 			try {
 				Component failure = switch (actionType) {
-					case START -> QuestService.startQuest(player, questId, isHardMode);
+					case START -> QuestService.startQuest(player, questId);
 					case RESUMMON -> QuestService.resummonQuest(player, questId);
 					case TURN_IN -> QuestService.turnInQuest(player, questId, npcId);
 				};

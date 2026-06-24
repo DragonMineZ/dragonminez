@@ -145,7 +145,7 @@ public class FusionLogic {
 	}
 
 	public static void endFusion(ServerPlayer player, StatsData data, boolean forcedByDeath) {
-		if (!data.getStatus().isFused()) return;
+		if (!data.getStatus().isFused() && data.getStatus().getFusionPartnerUUID() == null) return;
 
 		boolean isLeader = data.getStatus().isFusionLeader();
 		UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
@@ -154,53 +154,51 @@ public class FusionLogic {
 		ServerPlayer leaderRef = isLeader ? player : otherPlayer;
 		ServerPlayer partnerRef = isLeader ? otherPlayer : player;
 
-		StatsData leaderData = null;
-		if (leaderRef != null) {
-			if (isLeader) leaderData = data;
-			else leaderData = StatsProvider.get(StatsCapability.INSTANCE, leaderRef).orElse(null);
-		}
+		StatsData leaderData = isLeader ? data : (leaderRef != null ? StatsProvider.get(StatsCapability.INSTANCE, leaderRef).orElse(null) : null);
+		StatsData partnerData = !isLeader ? data : (partnerRef != null ? StatsProvider.get(StatsCapability.INSTANCE, partnerRef).orElse(null) : null);
 
-		StatsData partnerData = null;
-		if (partnerRef != null) {
-			if (!isLeader) partnerData = data;
-			else partnerData = StatsProvider.get(StatsCapability.INSTANCE, partnerRef).orElse(null);
-		}
-
-		if (leaderRef != null && leaderData != null) {
+		if (leaderData != null) {
 			leaderData.getBonusStats().removeAllBonuses("FusionBonus");
 
-			leaderData.getStatus().setFused(false);
-			leaderData.getStatus().setFusionLeader(false);
-			leaderData.getStatus().setFusionPartnerUUID(null);
-			leaderData.getStatus().setFusionTimer(0);
-			leaderData.getStatus().setFusionName("");
+			CompoundTag original = leaderData.getStatus().getOriginalAppearance();
+			if (original != null && !original.isEmpty()) leaderData.getCharacter().loadAppearance(original);
 
-			if (leaderData.getStatus().getOriginalAppearance() != null) leaderData.getCharacter().loadAppearance(leaderData.getStatus().getOriginalAppearance());
 			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
-			if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
-			PartyManager.endFusionParty(leaderRef);
-			leaderData.getStatus().setFusionPartnerUUID(null);
-			refreshNames(leaderRef);
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
+
+			clearFusionState(leaderData);
+
+			if (leaderRef != null) {
+				if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
+				PartyManager.endFusionParty(leaderRef);
+				refreshNames(leaderRef);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
+			}
 		}
 
-		if (partnerRef != null && partnerData != null) {
-			partnerData.getStatus().setFused(false);
-			partnerData.getStatus().setFusionLeader(false);
-			partnerData.getStatus().setFusionPartnerUUID(null);
-			partnerData.getStatus().setFusionTimer(0);
-			partnerData.getStatus().setFusionName("");
-
+		if (partnerData != null) {
 			if ("METAMORU".equals(partnerData.getStatus().getFusionType())) partnerData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 
-			partnerRef.stopRiding();
-			partnerRef.setGameMode(GameType.SURVIVAL);
-			if (partnerRef.hasEffect(MainEffects.FUSED.get())) partnerRef.removeEffect(MainEffects.FUSED.get());
-			PartyManager.endFusionParty(partnerRef);
-			partnerData.getStatus().setFusionPartnerUUID(null);
-			refreshNames(partnerRef);
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
+			clearFusionState(partnerData);
+
+			if (partnerRef != null) {
+				partnerRef.stopRiding();
+				partnerRef.setGameMode(GameType.SURVIVAL);
+				if (partnerRef.hasEffect(MainEffects.FUSED.get())) partnerRef.removeEffect(MainEffects.FUSED.get());
+				PartyManager.endFusionParty(partnerRef);
+				refreshNames(partnerRef);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
+			}
 		}
+	}
+
+	private static void clearFusionState(StatsData data) {
+		data.getStatus().setFused(false);
+		data.getStatus().setFusionLeader(false);
+		data.getStatus().setFusionPartnerUUID(null);
+		data.getStatus().setFusionTimer(0);
+		data.getStatus().setFusionName("");
+		data.getStatus().setFusionType("");
+		data.getStatus().setOriginalAppearance(new CompoundTag());
 	}
 
 	private static void calculateAndApplyStats(StatsData l, StatsData p, String type, int lvl1, int lvl2) {

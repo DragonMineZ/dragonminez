@@ -42,17 +42,7 @@ public class BoneVisibilityHandler {
 		boolean isNamekian = race.equals("namekian");
 		boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
 
-		var raceConfig = ConfigManager.getRaceCharacter(race);
-		String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-		String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
-				? character.getActiveFormData().getCustomModel().toLowerCase() : "";
-
-		String tempLogicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (tempLogicKey.isEmpty()) {
-			tempLogicKey = race;
-		}
-
-		final String logicKey = tempLogicKey;
+		final String logicKey = character.getRenderLogicKey();
 
 
 		boolean isSpectator = player.isSpectator();

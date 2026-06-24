@@ -12,6 +12,7 @@ import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.world.dimension.SacredKaiDimension;
@@ -46,10 +47,9 @@ public class EntitiesEvents {
 		if (event.getLevel().isClientSide() || !(event.getEntity() instanceof LivingEntity entity)) return;
 		if (entity.getPersistentData().getBoolean("dmz_stats_configured")) return;
 
-		boolean isHardMode = entity.getPersistentData().getBoolean("dmz_is_hardmode");
-		EntitiesConfig.HardModeSettings hardSettings = ConfigManager.getEntitiesConfig().getHardModeSettings();
-		double hpMult = isHardMode ? hardSettings.getHpMultiplier() : 1.0;
-		double dmgMult = isHardMode ? hardSettings.getDamageMultiplier() : 1.0;
+		Difficulty difficulty = Difficulty.fromName(entity.getPersistentData().getString("dmz_difficulty"));
+		double hpMult = difficulty.hpMultiplier();
+		double dmgMult = difficulty.damageMultiplier();
 
 		boolean isQuestEntity = entity.getPersistentData().contains("dmz_quest_hp");
 

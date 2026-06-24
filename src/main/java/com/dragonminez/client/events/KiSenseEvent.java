@@ -332,18 +332,15 @@ public class KiSenseEvent {
 		int borderColor = withAlpha(0x000000, alpha);
 		int light = 15728880;
 
-		poseStack.pushPose();
-		poseStack.translate(0.0F, 0.0F, -0.02F);
 		Matrix4f matrix = poseStack.last().pose();
 		mc.font.drawInBatch(text, textX + 1, textY, borderColor, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
 		mc.font.drawInBatch(text, textX - 1, textY, borderColor, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
 		mc.font.drawInBatch(text, textX, textY + 1, borderColor, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
 		mc.font.drawInBatch(text, textX, textY - 1, borderColor, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
+		bufferSource.endBatch();
 
-		poseStack.translate(0.0F, 0.0F, -0.02F);
-		Matrix4f matrixFront = poseStack.last().pose();
-		mc.font.drawInBatch(text, textX, textY, color, false, matrixFront, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
-		poseStack.popPose();
+		mc.font.drawInBatch(text, textX, textY, color, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, 0, light);
+		bufferSource.endBatch();
 	}
 
 	private static int withAlpha(int rgb, float alpha) {

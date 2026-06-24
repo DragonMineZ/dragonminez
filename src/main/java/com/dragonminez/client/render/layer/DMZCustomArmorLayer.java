@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.util.ArmorTextureResolver;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
@@ -178,13 +179,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         String gender = character.getGender().toLowerCase();
         int bodyType = character.getBodyType(); // Asegúrate de obtener el bodyType
 
-        var raceConfig = ConfigManager.getRaceCharacter(raceName);
-        String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
-                ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
-
-        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-        if (logicKey.isEmpty()) logicKey = raceName;
+        String logicKey = character.getRenderLogicKey();
 
         ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
         boolean isVanilla = itemKey != null && "minecraft".equals(itemKey.getNamespace());
@@ -220,6 +215,10 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         else if (logicKey.equals("janemba_fat")) {
             shouldRender = true;
             isMajinGordoTarget = true;
+        }
+        else if (gender.equals(Character.GENDER_FEMALE)
+                && SkinGathererProvider.modelFamily(logicKey).equals("custom")) {
+            if (isDbzArmor) shouldRender = true;
         }
 
         return new ArmorRenderContext(shouldRender, isSlimTarget, isOozaruTarget, isMajinGordoTarget, isDbzArmor);

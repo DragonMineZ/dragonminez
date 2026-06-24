@@ -78,7 +78,7 @@ public final class QuestService {
 	}
 
 	@Nullable
-	public static Component startQuest(ServerPlayer requester, String questKey, boolean isHardMode) {
+	public static Component startQuest(ServerPlayer requester, String questKey) {
 		ResolvedQuest resolved = resolveQuest(questKey);
 		if (resolved == null) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
@@ -94,7 +94,7 @@ public final class QuestService {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 		return startQuest(requester, controller, resolved, data,
-				data.getPlayerQuestData().isHardModeEnabled());
+				data.getPlayerQuestData().getDifficulty());
 	}
 
 	/**
@@ -133,7 +133,7 @@ public final class QuestService {
 
 		int partySize = PartyManager.getAllPartyMembers(controller).size();
 		try {
-			spawnKillObjectives(requester, resolved, pqd, partySize, pqd.isQuestHardMode(questKey));
+			spawnKillObjectives(requester, resolved, pqd, partySize, pqd.getQuestDifficulty(questKey));
 		} catch (Exception exception) {
 			LogUtil.error(Env.SERVER, "Failed to re-summon kill objectives for quest '" + questKey
 					+ "' requested by " + requester.getGameProfile().getName(), exception);
@@ -303,18 +303,18 @@ public final class QuestService {
 		return new NPCQuestOptions(offerableQuestIds, turnInQuestIds, inProgressQuestIds);
 	}
 
-	public static void spawnKillObjectivesForQuest(ServerPlayer requester, String questKey, int partySize, boolean isHardMode) {
+	public static void spawnKillObjectivesForQuest(ServerPlayer requester, String questKey, int partySize, Difficulty difficulty) {
 		ResolvedQuest resolved = resolveQuest(questKey);
 		if (resolved == null) {
 			return;
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, requester).ifPresent(data ->
-				spawnKillObjectives(requester, resolved, data.getPlayerQuestData(), partySize, isHardMode));
+				spawnKillObjectives(requester, resolved, data.getPlayerQuestData(), partySize, difficulty));
 	}
 
 	private static Component startQuest(ServerPlayer requester, ServerPlayer controller, ResolvedQuest resolved,
-									 StatsData data, boolean isHardMode) {
+									 StatsData data, Difficulty difficulty) {
 		PlayerQuestData pqd = data.getPlayerQuestData();
 		String questKey = resolved.questKey();
 		Quest quest = resolved.quest();
@@ -356,7 +356,7 @@ public final class QuestService {
 				resolved.saga(),
 				quest,
 				partyMembers,
-				isHardMode
+				difficulty
 		);
 		if (MinecraftForge.EVENT_BUS.post(startEvent)) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
@@ -365,11 +365,11 @@ public final class QuestService {
 		int partySize = partyMembers.size();
 		pqd.acceptQuest(questKey);
 		quest.initializeObjectiveRequirements(pqd, questKey, partySize);
-		pqd.setQuestHardMode(questKey, startEvent.isHardMode());
+		pqd.setQuestDifficulty(questKey, startEvent.getDifficulty());
 		pqd.setTrackedQuestId(questKey);
 
 		try {
-			spawnKillObjectives(requester, resolved, pqd, partySize, startEvent.isHardMode());
+			spawnKillObjectives(requester, resolved, pqd, partySize, startEvent.getDifficulty());
 		} catch (Exception exception) {
 			LogUtil.error(Env.SERVER, "Failed to spawn kill objectives for quest '" + questKey
 					+ "' started by " + requester.getGameProfile().getName(), exception);
@@ -545,6 +545,7 @@ public final class QuestService {
 		ResolvedQuest resolved = resolveQuest(questKey);
 		Saga saga = resolved != null ? resolved.saga() : null;
 		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(rewardTarget);
+		double rewardMultiplier = pqd.getDifficulty().questRewardMultiplier();
 		for (int i = 0; i < rewards.size(); i++) {
 			if (pqd.isRewardClaimed(questKey, i)) {
 				continue;
@@ -560,7 +561,7 @@ public final class QuestService {
 			if (MinecraftForge.EVENT_BUS.post(rewardEvent)) {
 				continue;
 			}
-			rewards.get(i).giveReward(rewardTarget);
+			rewards.get(i).giveReward(rewardTarget, rewardMultiplier);
 			pqd.claimReward(questKey, i);
 			anyClaimed = true;
 		}
@@ -582,7 +583,7 @@ public final class QuestService {
 	}
 
 	private static void spawnKillObjectives(ServerPlayer requester, ResolvedQuest resolved, PlayerQuestData pqd,
-											int partySize, boolean isHardMode) {
+											int partySize, Difficulty difficulty) {
 		Quest quest = resolved.quest();
 		String questKey = resolved.questKey();
 
@@ -600,7 +601,6 @@ public final class QuestService {
 			totalToSpawn += Math.max(0, required - currentProgress);
 		}
 
-		// Si la quest invoca a mas de un enemigo a la vez, todos comparten equipo para no danarse entre si.
 		String questTeam = totalToSpawn > 1
 				? questKey + "@" + requester.getStringUUID() + "@" + System.nanoTime()
 				: null;
@@ -638,8 +638,8 @@ public final class QuestService {
 				double offsetZ = (Math.random() - 0.5) * spawnRadius;
 				entity.setPos(requester.getX() + offsetX, requester.getY(), requester.getZ() + offsetZ);
 
-				if (isHardMode) {
-					entity.getPersistentData().putBoolean("dmz_is_hardmode", true);
+				if (difficulty != null && difficulty != Difficulty.NORMAL) {
+					entity.getPersistentData().putString("dmz_difficulty", difficulty.name());
 				}
 				if (resolved.saga() != null) {
 					entity.getPersistentData().putString(SAGA_ID_TAG, resolved.saga().getId());

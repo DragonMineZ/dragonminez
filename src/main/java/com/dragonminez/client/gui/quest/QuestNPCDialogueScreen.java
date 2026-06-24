@@ -271,15 +271,10 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	}
 
 	private void handleQuestAction(EntryType actionType, String questId) {
-		if (actionType == EntryType.OFFER) {
-			// Hard mode is resolved server-side.
-			NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, questId, false, ""));
-		} else if (actionType == EntryType.TURN_IN)
-			NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.TURN_IN, questId, false, npcId));
+		if (actionType == EntryType.OFFER) NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, questId, ""));
+		else if (actionType == EntryType.TURN_IN) NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.TURN_IN, questId, npcId));
 
-		if (Minecraft.getInstance().player != null) {
-			Minecraft.getInstance().player.playSound(MainSounds.UI_MENU_SWITCH.get());
-		}
+		if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.playSound(MainSounds.UI_MENU_SWITCH.get());
 		this.onClose();
 	}
 

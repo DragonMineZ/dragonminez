@@ -3,8 +3,8 @@
 	"credit": "Made with Blockbench",
 	"texture_size": [64, 64],
 	"textures": {
-		"0": "dragonminez:item/armas/blaster_cannon_layer",
-		"particle": "dragonminez:item/armas/blaster_cannon_layer"
+		"0": "dragonminez:item/weapons/blaster_cannon_layer",
+		"particle": "dragonminez:item/weapons/blaster_cannon_layer"
 	},
 	"elements": [
 		{

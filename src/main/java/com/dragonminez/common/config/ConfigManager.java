@@ -25,7 +25,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final int CONFIG_VERSION = 8;
+	public static final int CONFIG_VERSION = 9;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
@@ -262,10 +262,7 @@ public class ConfigManager {
 
 	private static EntitiesConfig createDefaultEntitiesConfig() {
 		EntitiesConfig config = new EntitiesConfig();
-		EntitiesConfig.HardModeSettings hardMode = config.getHardModeSettings();
 		Map<String, EntitiesConfig.EntityStats> statsMap = config.getDefaultEntityStats();
-		hardMode.setHpMultiplier(3.0);
-		hardMode.setDamageMultiplier(2.0);
 
 		addDefaultEntityStats(statsMap, MainEntities.DINO_KID, 30.0, 4.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR1, 100.0, 8.0, 0.0);
@@ -714,6 +711,7 @@ public class ConfigManager {
 		try (Stream<Path> stream = Files.walk(CONFIG_DIR)) {
 			stream.filter(Files::isRegularFile)
 					.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
 					.forEach(p -> {
 						String relativePath = CONFIG_DIR.relativize(p).toString().replace("\\", "/");
 						CACHED_CONFIG_FILES.add(relativePath.substring(0, relativePath.length() - 5));

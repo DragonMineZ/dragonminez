@@ -1292,14 +1292,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			List<Component> desc = new ArrayList<>();
 			double envGravity = statsData.getGravityEnvironmentalMultiplier();
 			int totalWeight = statsData.getGravityTotalWeight();
-			double weightGravityDivisor = ConfigManager.getServerConfig().getGravity().getWeightGravityDivisor();
-			double weightContrib = totalWeight > 0 ? (totalWeight * envGravity) / weightGravityDivisor : 0.0;
+			long effectiveWeight = (long) (totalWeight * envGravity);
 
 			desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.environmental",
 					formatUpToOneDecimal(envGravity)).withStyle(ChatFormatting.YELLOW));
 			if (totalWeight > 0) {
 				desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_load",
-						totalWeight, formatUpToOneDecimal(weightContrib)).withStyle(ChatFormatting.YELLOW));
+						numberFormatter.format(totalWeight), numberFormatter.format(effectiveWeight)).withStyle(ChatFormatting.YELLOW));
 			}
 
 			List<Component> extras = new ArrayList<>();

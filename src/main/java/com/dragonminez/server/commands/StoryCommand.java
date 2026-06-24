@@ -706,7 +706,7 @@ public class StoryCommand {
 
 	private static int spawnQuestNPC(CommandContext<CommandSourceStack> context, String modelOverride, String textureOverride) {
 		try {
-			String npcId = StringArgumentType.getString(context, "npcId");
+			String npcId = StringArgumentType.getString(context, "npcId").toLowerCase();
 			ServerPlayer player = context.getSource().getPlayerOrException();
 
 			QuestNPCEntity npc = MainEntities.QUEST_NPC.get().create(player.level());
@@ -715,12 +715,12 @@ public class StoryCommand {
 				return 0;
 			}
 
-			npc.setNpcId(npcId);
+			npc.setNpcId(npcId.toLowerCase());
 			if (modelOverride != null && !modelOverride.isEmpty()) {
-				npc.setNpcModel(modelOverride);
+				npc.setNpcModel(modelOverride.toLowerCase());
 			}
 			if (textureOverride != null && !textureOverride.isEmpty()) {
-				npc.setNpcTexture(textureOverride);
+				npc.setNpcTexture(textureOverride.toLowerCase());
 			}
 
 			// Make command-spawned quest NPCs durable so they don't vanish.

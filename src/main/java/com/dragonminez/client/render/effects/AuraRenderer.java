@@ -328,23 +328,8 @@ public class AuraRenderer {
 	}
 
 	private static float[] getModelScale(StatsData stats) {
-		float sX, sY, sZ;
-		var character = stats.getCharacter();
-
-		// Mirror DMZPlayerRenderer: the actual player model is scaled by the active form's modelScaling
-		// (or the base race scaling), and the stack form never changes the model size. Reading the stack
-		// form here made a giant form (Oozaru) + a normal-scale stack form (Kaioken) collapse the whole
-		// aura back to default size, because this scale feeds getAuraScale() for every layer.
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			sX = character.getActiveFormData().getModelScaling()[0];
-			sY = character.getActiveFormData().getModelScaling()[1];
-			sZ = character.getActiveFormData().getModelScaling()[2];
-		} else {
-			sX = character.getModelScaling()[0];
-			sY = character.getModelScaling()[1];
-			sZ = character.getModelScaling()[2];
-		}
-		return new float[]{sX, sY, sZ};
+		Float[] resolved = stats.getCharacter().getResolvedModelScaling();
+		return new float[]{resolved[0], resolved[1], resolved[2]};
 	}
 
 	private static float[] getBodyScale(StatsData stats) {

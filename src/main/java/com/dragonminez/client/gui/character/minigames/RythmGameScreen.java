@@ -149,11 +149,14 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	}
 
 	private Direction randomDirUnlocked() {
+		long window = Minecraft.getInstance().getWindow().getWindow();
 		Direction[] all = Direction.values();
 		int start = random.nextInt(all.length);
 		for (int i = 0; i < all.length; i++) {
 			Direction d = all[(start + i) % all.length];
-			if (!holdLockedDirections.contains(d)) return d;
+			if (holdLockedDirections.contains(d)) continue;
+			if (isHeld(window, d)) continue;
+			return d;
 		}
 		return null;
 	}

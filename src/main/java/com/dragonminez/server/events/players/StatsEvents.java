@@ -4,7 +4,6 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
-import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.GeneralServerConfig.FoodConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
@@ -41,8 +40,6 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -155,7 +152,8 @@ public class StatsEvents {
 			});
 
 			if (totalWeight[0] > 0) {
-				int effectiveWeight = totalWeight[0];
+				double gravityMultiplier = GravityLogic.getGravityMultiplier(serverPlayer);
+				int effectiveWeight = (int) (totalWeight[0] * gravityMultiplier);
 
 				int currentBaseLevel = data.getLevel();
 				int totalBaseStats = data.getStats().getTotalStats();
@@ -800,14 +798,8 @@ public class StatsEvents {
 				AttributeInstance reachAttr = serverPlayer.getAttribute(ForgeMod.BLOCK_REACH.get());
 				AttributeInstance entityReachAttr = serverPlayer.getAttribute(ForgeMod.ENTITY_REACH.get());
 
-				Float[] scaling = data.getCharacter().getModelScaling();
-				if (scaling == null || scaling.length < 2) scaling = new Float[]{0.9375f, 0.9375f, 0.9375f};
+				Float[] scaling = data.getCharacter().getResolvedModelScaling();
 				float currentScaleY = scaling[1];
-
-				if (data.getCharacter().hasActiveForm()) {
-					FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-					if (activeForm != null) currentScaleY *= activeForm.getModelScaling()[1];
-				}
 
 				final float BASE_SCALE = 0.9375f;
 				final float BASE_HEIGHT = 1.8F;
@@ -927,29 +919,14 @@ public class StatsEvents {
 
         StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
             var character = data.getCharacter();
-            var activeForm = character.getActiveFormData();
             String currentForm = character.getActiveForm();
             String race = character.getRaceName().toLowerCase();
 
-            var raceConfig = ConfigManager.getRaceCharacter(race);
-            String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-            String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-                    ? activeForm.getCustomModel().toLowerCase() : "";
+            String logicKey = character.getRenderLogicKey();
 
-            String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-            if (logicKey.isEmpty()) {
-                logicKey = race;
-            }
-
-            float configScaleX, configScaleY;
-
-            if (activeForm != null) {
-                configScaleX = activeForm.getModelScaling()[0];
-                configScaleY = activeForm.getModelScaling()[1];
-            } else {
-                configScaleX = character.getModelScaling()[0];
-                configScaleY = character.getModelScaling()[1];
-            }
+            Float[] resolved = character.getResolvedModelScaling();
+            float configScaleX = resolved[0];
+            float configScaleY = resolved[1];
 
             float scalingX = configScaleX;
             float scalingY = configScaleY;

@@ -19,12 +19,34 @@ import net.minecraft.util.Mth;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 public class SkinGathererProvider {
 
 	public static SkinGathererProvider INSTANCE = new SkinGathererProvider();
+
+	private static final Set<String> BUILTIN_RACES = Set.of(
+			"human", "saiyan", "namekian", "majin", "frostdemon", "bioandroid"
+	);
+
+	public static boolean isBuiltInRace(String race) {
+		return race != null && BUILTIN_RACES.contains(race.toLowerCase());
+	}
+
+	public static String modelFamily(String key) {
+		if (key == null || key.isEmpty()) return "human";
+		String k = key.toLowerCase();
+		if (k.startsWith("oozaru")) return "oozaru";
+		if (k.startsWith("namekian")) return "namekian";
+		if (k.startsWith("frostdemon")) return "frostdemon";
+		if (k.startsWith("bioandroid")) return "bioandroid";
+		if (k.startsWith("majin") || k.startsWith("janemba")) return "majin";
+		if (k.equals("human") || k.equals("saiyan") || k.equals("ssj4d") || k.equals("ssj4gt")
+				|| k.equals("buffed") || k.equals("4arms")) return "human";
+		return "custom";
+	}
 
 	public interface BodyLayerSink extends BiConsumer<ResourceLocation, float[]> {
 		@Override
@@ -87,7 +109,7 @@ public class SkinGathererProvider {
 		}
 
 		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (key.isEmpty()) key = raceName;
+		if (key.isEmpty()) key = isBuiltInRace(raceName) ? raceName : "human";
 
 		String logicKey = key;
 		if (key.equals("human_slim") || key.equals("majin_slim") || key.equals("base_slim")) {

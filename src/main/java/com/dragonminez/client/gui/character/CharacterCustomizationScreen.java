@@ -1440,19 +1440,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		final float[] currentVisualScale = {0.9375f};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			Character localCharacter = stats.getCharacter();
-			var activeForm = localCharacter.getActiveFormData();
 
-			float scaleX;
-			float scaleY;
-			if (activeForm != null) {
-				Float[] formScaling = activeForm.getModelScaling();
-				scaleX = getSafeScaleValue(formScaling, 0, 0.9375f);
-				scaleY = getSafeScaleValue(formScaling, 1, 0.9375f);
-			} else {
-				Float[] characterScaling = localCharacter.getModelScaling();
-				scaleX = getSafeScaleValue(characterScaling, 0, 0.9375f);
-				scaleY = getSafeScaleValue(characterScaling, 1, 0.9375f);
-			}
+			Float[] resolved = localCharacter.getResolvedModelScaling();
+			float scaleX = getSafeScaleValue(resolved, 0, 0.9375f);
+			float scaleY = getSafeScaleValue(resolved, 1, 0.9375f);
 
 			currentVisualScale[0] = Math.max(0.1f, (scaleX + scaleY) / 2.0f);
 		});

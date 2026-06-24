@@ -2,7 +2,6 @@ package com.dragonminez.client.render.firstperson.dto;
 
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -31,24 +30,22 @@ public class FirstPersonManager {
 		final float[][] scaling = {{BASE_SCALE, BASE_SCALE, BASE_SCALE}};
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			Float[] modelScaling = data.getCharacter().getModelScaling();
+			var character = data.getCharacter();
+
+			Float[] modelScaling = character.getModelScaling();
 			if (modelScaling != null && modelScaling.length >= 2) {
 				scaling[0][0] = modelScaling[0];
 				scaling[0][1] = modelScaling[1];
 			}
 
-			if (data.getCharacter().hasActiveForm()) {
-				FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-				if (activeForm != null) {
-					String formName = activeForm.getName().toLowerCase();
-					if (!formName.contains("ozaru")) {
-						Float[] formScaling = activeForm.getModelScaling();
-						scaling[0][0] = formScaling[0];
-						scaling[0][1] = formScaling[1];
-					}
+			if (character.isOozaruCached()) {
+				BASE_OFFSET_Z[0] = 1.3F;
+			} else {
+				Float[] resolved = character.getResolvedModelScaling();
+				if (resolved != null && resolved.length >= 2) {
+					scaling[0][0] = resolved[0];
+					scaling[0][1] = resolved[1];
 				}
-
-				if (activeForm != null && activeForm.getName().contains("ozaru")) BASE_OFFSET_Z[0] = 1.3F;
 			}
 		});
 
