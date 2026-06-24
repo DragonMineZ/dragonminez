@@ -81,6 +81,25 @@ public class QuestEnemyPreview {
 		return !targets.isEmpty();
 	}
 
+	public boolean hasMultipleTargets() {
+		return targets.size() > 1;
+	}
+
+	/**
+	 * Manually advance to the next kill target. Used when the player clicks the model
+	 * to flip between a quest's multiple enemies (e.g. Trunks ↔ Gohan). Resets the
+	 * auto-cycle timer so the just-selected target gets its full dwell time.
+	 *
+	 * @return true if there was more than one target to cycle through.
+	 */
+	public boolean advanceTarget() {
+		if (targets.size() <= 1) return false;
+		currentIndex = (currentIndex + 1) % targets.size();
+		cycleTimer = 0;
+		hoverProgress = 0.0f;
+		return true;
+	}
+
 	/**
 	 * Rebind the preview to the given quest. Only SAGA (main) quests with at least one
 	 * KILL objective produce an active preview; everything else clears it.
@@ -154,9 +173,10 @@ public class QuestEnemyPreview {
 				withAlpha(0xFFD9A441, alpha));
 
 		if (targets.size() > 1) {
-			Component counter = txt((currentIndex + 1) + "/" + targets.size());
+			Component counter = txt("‹ " + (currentIndex + 1) + "/" + targets.size() + " ›");
+			int counterColor = hovered ? 0xFFFFE08A : 0xFFBBBBBB;
 			TextUtil.drawStringWithBorder(graphics, font, counter,
-					regionX + regionW - font.width(counter) - 6, regionY + 6, withAlpha(0xFFBBBBBB, alpha));
+					regionX + regionW - font.width(counter) - 82, regionY + 18, withAlpha(counterColor, alpha));
 		}
 
 		// rotating model
