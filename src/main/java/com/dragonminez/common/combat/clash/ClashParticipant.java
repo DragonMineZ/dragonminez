@@ -160,11 +160,11 @@ public class ClashParticipant {
 
     /** 1.0 at the center of the sweet-spot, tapering to 0 at its edges, 0 outside. */
     public static float scoreEfficiency(float phase) {
-        if (phase < BeamClash.SWEET_LOW || phase > BeamClash.SWEET_HIGH) return 0.0f;
+        if (phase < BeamClash.SWEET_LOW || phase > BeamClash.SWEET_HIGH) return BeamClash.OFF_SPOT_EFFICIENCY;
         float center = (BeamClash.SWEET_LOW + BeamClash.SWEET_HIGH) * 0.5f;
         float half = (BeamClash.SWEET_HIGH - BeamClash.SWEET_LOW) * 0.5f;
         float closeness = 1.0f - Math.abs(phase - center) / half;
-        return Math.max(0.0f, closeness);
+        return BeamClash.OFF_SPOT_EFFICIENCY + (1.0f - BeamClash.OFF_SPOT_EFFICIENCY) * Math.max(0.0f, closeness);
     }
 
     private void addBurst(float efficiency) {
