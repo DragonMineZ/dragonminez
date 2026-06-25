@@ -87,10 +87,10 @@ public class SoundClientHandler {
             long nextPlayTime = LIGHTNING_TIMERS.getOrDefault(playerId, 0L);
 
             if (currentTime >= nextPlayTime) {
-                float volume = 0.3F;
+                float volume = 0.2F;
                 float pitch = 0.9F + player.getRandom().nextFloat() * 0.2F;
 
-                mc.level.playSound(mc.player, player.getX(), player.getY(), player.getZ(),
+                mc.level.playSound(null, player.getX(), player.getY(), player.getZ(),
                         MainSounds.KI_SPARKS.get(),
                         SoundSource.PLAYERS,
                         volume,
