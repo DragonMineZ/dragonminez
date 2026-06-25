@@ -8,9 +8,10 @@ import net.minecraft.world.phys.Vec3;
 
 public class BeamClash {
 
-    public static final float SWEEP_RATE = 0.025f;
+    public static final float SWEEP_RATE = 0.010f;
     public static final float SWEET_LOW = 0.78f;
     public static final float SWEET_HIGH = 0.96f;
+    public static final float OFF_SPOT_EFFICIENCY = 0.18f;
     public static final float BURST_PER_PERFECT_PRESS = 0.7f;
     public static final float MOMENTUM_DECAY = 0.96f;
 
@@ -27,7 +28,7 @@ public class BeamClash {
 
     private final ClashParticipant a;
     private final ClashParticipant b;
-    private float biasT = 0.5f;
+    private float biasT;
     private int age = 0;
     @Getter
     private boolean ended = false;
