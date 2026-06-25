@@ -253,9 +253,9 @@ public class SagaMoviesEntity {
         }
     }
 
-    public static class MechaCoolerEntity extends DBSagasEntity {
+    public static class MetalCoolerEntity extends DBSagasEntity {
 
-        public MechaCoolerEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+        public MetalCoolerEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
             this.setCanFly(true);
@@ -288,9 +288,9 @@ public class SagaMoviesEntity {
         }
     }
 
-    public static class MechaCoolerCoreEntity extends DBSagasEntity {
+    public static class MetalCoolerCoreEntity extends DBSagasEntity {
 
-        public MechaCoolerCoreEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+        public MetalCoolerCoreEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
             this.setDBZStyle(0);

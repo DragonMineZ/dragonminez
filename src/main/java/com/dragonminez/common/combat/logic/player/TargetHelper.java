@@ -3,6 +3,7 @@ package com.dragonminez.common.combat.logic.player;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.init.entities.AllMastersEntity;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.quest.PartyManager;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.TamableAnimal;
@@ -71,6 +72,7 @@ public class TargetHelper {
 
     public static boolean canAttack(Player attacker, Entity target, double maxRange) {
         Relation relation = getRelation(attacker, target);
+        if (target instanceof MastersEntity) return false;
         return switch (relation) {
             case FRIENDLY -> false;
             case HOSTILE -> true;

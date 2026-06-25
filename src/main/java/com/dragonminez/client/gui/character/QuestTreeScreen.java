@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
 import com.dragonminez.common.network.C2S.ClaimAllQuestRewardsC2S;
@@ -143,10 +144,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private List<String> frameTitleLines = null;
 	private Quest frameTitleQuest = null;
 	private int frameTitleWidth = Integer.MIN_VALUE;
-
-	private List<String> frameRewardsLines = null;
-	private Quest frameRewardsQuest = null;
-	private int frameRewardsWidth = Integer.MIN_VALUE;
 
 	private final Map<Quest, NodeVisibility> nodeVisibilityCache = new HashMap<>();
 	private final Map<Quest, QuestNodeStatus> nodeStatusCache = new HashMap<>();
@@ -1252,7 +1249,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		rewardHitboxes.clear();
 		frameObjLinesCache = null;
 		frameTitleLines = null;
-		frameRewardsLines = null;
 
 		renderTreeCanvas(graphics, uiMouseX, uiMouseY);
 		renderEnemyPreview(graphics, uiMouseX, uiMouseY, dt);
@@ -1776,28 +1772,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return lines;
 	}
 
-	private List<String> rewardsLines(int width, String questKey) {
-		if (frameRewardsLines != null && frameRewardsQuest == selectedQuest && frameRewardsWidth == width) {
-			return frameRewardsLines;
-		}
-		String visibleRewardsText = resolveTypewriterText(questKey, "rewards", buildRewardsText(selectedQuest.getRewards()));
-		List<String> lines = wrapText(visibleRewardsText, width - 36);
-		frameRewardsLines = lines;
-		frameRewardsQuest = selectedQuest;
-		frameRewardsWidth = width;
-		return lines;
-	}
-
 	private int estimateTitleSectionHeight(int width) {
 		int lineHeight = getDetailLineHeight();
 		return Math.max(32, 16 + (titleLines(width).size() * lineHeight) + 8);
 	}
 
 	private int estimateRewardsSectionHeight(int width, String questKey) {
-		if (selectedQuest.getRewards().isEmpty()) return 28;
-		List<String> lines = rewardsLines(width, questKey);
-		int rows = Math.max(selectedQuest.getRewards().size(), lines.size());
-		return 24 + (rows * getRewardRowHeight()) + 6;
+		List<QuestReward> rewards = getDisplayRewards(selectedQuest);
+		if (rewards.isEmpty()) return 28;
+		return 24 + (rewards.size() * getRewardRowHeight()) + 6;
 	}
 
 	private int estimateObjectivesSectionHeight(int width, Saga saga) {
@@ -1836,7 +1819,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				y + 4,
 				0xFFFFD700);
 
-		List<QuestReward> rewards = selectedQuest.getRewards();
+		List<QuestReward> rewards = getDisplayRewards(selectedQuest);
 		if (rewards.isEmpty()) {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt("-"), x + 8, y + 18, 0xFF999999);
 			return;
@@ -1848,31 +1831,68 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int maxRows = Math.max(1, (height - 22) / rowHeight);
 		int rows = Math.min(rewards.size(), maxRows);
 
-		List<String> wrapped = rewardsLines(width, questKey);
-		int wrappedIdx = 0;
+		String fullText = buildRewardsText(rewards);
+		int revealedChars = resolveTypewriterText(questKey, "rewards", fullText).length();
+		int consumedChars = 0;
 
 		for (int i = 0; i < rows; i++) {
 			QuestReward reward = rewards.get(i);
+			String desc = reward.getDescription().getString();
+
+			if (consumedChars >= revealedChars && i > 0) break;
+			int rowVisible = Math.max(0, revealedChars - consumedChars);
+			consumedChars += desc.length() + 1;
+
 			int iconX = x + 8;
 			int rowY = startY + (i * rowHeight);
 			int iconY = rowY + Math.max(0, (rowHeight - iconSize) / 2);
 
-			Component tooltip = reward.getDescription();
-			ItemStack stack = null;
+			ItemStack iconStack = rewardIconStack(reward);
+			ItemStack tooltipStack = reward.getType() == QuestReward.RewardType.ITEM ? iconStack : null;
 
-			if (reward instanceof ItemReward itemReward) {
-				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemReward.getItemId()));
-				stack = new ItemStack(item, Math.max(1, itemReward.getCount()));
-				graphics.renderItem(stack, iconX, iconY);
+			if (iconStack != null) {
+				graphics.renderItem(iconStack, iconX, iconY);
 			} else {
 				graphics.blit(REWARD_GENERIC_ICON, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
 			}
 
-			rewardHitboxes.add(new RewardHitbox(iconX, iconY, iconSize, stack, tooltip));
+			rewardHitboxes.add(new RewardHitbox(iconX, iconY, iconSize, tooltipStack, reward.getDescription()));
 
-			String line = wrappedIdx < wrapped.size() ? wrapped.get(wrappedIdx++) : "";
+			String visibleDesc = rowVisible >= desc.length() ? desc : desc.substring(0, rowVisible);
+			String line = fitSingleLineEllipsis(visibleDesc, width - 36);
 			int textY = rowY + Math.max(0, (rowHeight - getDetailLineHeight()) / 2);
 			TextUtil.drawStringWithBorder(graphics, this.font, txt(line), x + 28, textY, 0xFFCCCCCC);
+		}
+	}
+
+	private List<QuestReward> getDisplayRewards(Quest quest) {
+		List<QuestReward> shown = new ArrayList<>();
+		if (quest == null) return shown;
+		for (QuestReward reward : quest.getRewards()) {
+			if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
+			shown.add(reward);
+		}
+		return shown;
+	}
+
+	private ItemStack rewardIconStack(QuestReward reward) {
+		switch (reward.getType()) {
+			case ITEM -> {
+				if (reward instanceof ItemReward itemReward) {
+					Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemReward.getItemId()));
+					return new ItemStack(item, Math.max(1, itemReward.getCount()));
+				}
+				return null;
+			}
+			case TPS -> {
+				return new ItemStack(MainItems.RED_CAPSULE.get());
+			}
+			case SKILL -> {
+				return new ItemStack(MainItems.GETE_BLUE_CAPSULE.get());
+			}
+			default -> {
+				return null;
+			}
 		}
 	}
 
@@ -2731,6 +2751,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return true;
 		}
 
+		if (handleEnemyPreviewClick(uiMouseX, uiMouseY)) {
+			return true;
+		}
+
 		if (getLeftPanelRect().contains(uiMouseX, uiMouseY) || getRightPanelRect().contains(uiMouseX, uiMouseY)) {
 			return false;
 		}
@@ -2763,6 +2787,16 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		treePressMoved = false;
 		treePressStartX = uiMouseX;
 		treePressStartY = uiMouseY;
+		return true;
+	}
+
+	private boolean handleEnemyPreviewClick(double uiMouseX, double uiMouseY) {
+		if (!enemyPreview.isActive() || !enemyPreview.hasMultipleTargets()) return false;
+		if (leftPanelRevealProgress > 0.4f) return false;
+		if (!enemyPreview.isHovering((int) uiMouseX, (int) uiMouseY)) return false;
+		if (enemyPreview.advanceTarget()) {
+			Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
+		}
 		return true;
 	}
 

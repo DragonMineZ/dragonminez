@@ -94,11 +94,11 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
 
                 boolean isRestrictedMajin = isMajin && bodyType != 2;
-                boolean isFemaleCustom = gender.equals(Character.GENDER_FEMALE) && SkinGathererProvider.modelFamily(logicKey).equals("custom");
+                boolean isCustomModel = SkinGathererProvider.modelFamily(logicKey).equals("custom");
 
                 if (isRestrictedMajin || isFemaleHumanOrSaiyan || isOozaru) {
                     if (!isArmored) return null;
-                } else if (isBuffed || isFemaleCustom) {
+                } else if (isBuffed || isCustomModel) {
                     if (isDbzArmor) return null;
                 }
             }

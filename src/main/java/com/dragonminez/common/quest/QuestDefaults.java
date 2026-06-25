@@ -1016,13 +1016,13 @@ final class QuestDefaults {
 				step("movies", 18, "18_metal_cooler.json",
 						namekReq(380, condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_mecha_cooler", 1, 35700, 1658, 2678, 3)
+								objKill("dragonminez:saga_metal_cooler", 1, 35700, 1658, 2678, 3)
 						},
 						rewTPS(368000)),
 				step("movies", 19, "19_metal_cooler_core.json",
 						namekReq(400, condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_mecha_cooler_core", 1, 43350, 2040, 3213, 3)
+								objKill("dragonminez:saga_metal_cooler_core", 1, 43350, 2040, 3213, 3)
 						},
 						rewTPS(416000)),
 				step("movies", 20, "20_androids_in_the_ice.json",
@@ -1061,7 +1061,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objKill("dragonminez:saga_broly_lssj", 1, 246000, 11700, 18600, 3)
 						},
-						rewTPS(472000)),
+						rewTPS(315000), rewSkill("legendaryforms", 1)),
 				step("movies", 26, "26_bojack_allies.json",
 						earthReq(1560, condBiome("minecraft:plains")),
 						new JsonObject[]{
@@ -1118,7 +1118,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objKill("dragonminez:saga_bio_broly_giant", 1, 480000, 23400, 37500, 3)
 						},
-						rewTPS(456000)),
+						rewTPS(305000), rewSkill("legendaryforms", 2)),
 				step("movies", 35, "35_otherworld_tournament.json",
 						dimensionReq("dragonminez:otherworld", 2360),
 						new JsonObject[]{
@@ -1154,7 +1154,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objKill("dragonminez:saga_super_hirudegarn", 1, 660000, 32400, 51600, 3)
 						},
-						rewTPS(600000))
+						rewTPS(400000), rewSkill("legendaryforms", 3))
 		);
 	}
 }

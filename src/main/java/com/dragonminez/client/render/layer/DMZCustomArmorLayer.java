@@ -216,8 +216,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             shouldRender = true;
             isMajinGordoTarget = true;
         }
-        else if (gender.equals(Character.GENDER_FEMALE)
-                && SkinGathererProvider.modelFamily(logicKey).equals("custom")) {
+        else if (SkinGathererProvider.modelFamily(logicKey).equals("custom")) {
             if (isDbzArmor) shouldRender = true;
         }
 
