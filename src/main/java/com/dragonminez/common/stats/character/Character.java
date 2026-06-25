@@ -318,22 +318,30 @@ public class Character {
 			return safeModelScaling(getModelScaling());
 		}
 
-		Float[] base = safeModelScaling(getModelScaling());
-		float sx = base[0], sy = base[1], sz = base[2];
-
-		FormConfig.FormData stack = getActiveStackFormData();
-		if (stack != null) {
-			Float[] s = safeModelScaling(stack.getModelScaling());
-			sx *= s[0]; sy *= s[1]; sz *= s[2];
-		}
-
 		FormConfig.FormData form = getActiveFormData();
-		if (form != null) {
-			Float[] s = safeModelScaling(form.getModelScaling());
-			sx *= s[0]; sy *= s[1]; sz *= s[2];
-		}
+		FormConfig.FormData stack = getActiveStackFormData();
 
-		return new Float[]{sx, sy, sz};
+		if (form == null && stack == null) return safeModelScaling(getModelScaling());
+		if (form != null && stack == null) return safeModelScaling(form.getModelScaling());
+		if (form == null && stack != null) return safeModelScaling(stack.getModelScaling());
+
+		Float[] formScale = safeModelScaling(form.getModelScaling());
+		Float[] stackScale = safeModelScaling(stack.getModelScaling());
+
+		return new Float[]{
+				resolveAxis(formScale[0], stackScale[0]),
+				resolveAxis(formScale[1], stackScale[1]),
+				resolveAxis(formScale[2], stackScale[2])
+		};
+	}
+
+	private float resolveAxis(float formVal, float stackVal) {
+		if (formVal == 0.9375f && stackVal == 0.9375f) return 0.9375f;
+
+		if (formVal == 0.9375f) return stackVal;
+		if (stackVal == 0.9375f) return formVal;
+
+		return formVal * stackVal;
 	}
 
 	public String getResolvedCustomModel() {
