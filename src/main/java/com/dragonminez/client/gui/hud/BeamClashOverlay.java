@@ -30,7 +30,7 @@ public class BeamClashOverlay {
 	private static final int YOU_LABEL = 0xFF7FE0FF;
 	private static final int FOE_LABEL = 0xFFFF6B61;
 	private static final int FOE_FILL = 0xE0443B;
-	private static final int SWEET_BASE = 0x0038E04B; // RGB only; alpha supplied by the pulse
+	private static final int SWEET_GREEN = 0x38E04B;
 	private static final int KNOB = 0xFFFFFFFF;
 
 	public static final IGuiOverlay HUD_BEAM_CLASH = (forgeGui, guiGraphics, partialTicks, width, height) -> {
@@ -81,12 +81,13 @@ public class BeamClashOverlay {
 
 		// --- sweep bar ---
 		drawBarFrame(guiGraphics, barX, sweepY);
-		// pulsing sweet-spot
-		int sweetX1 = barX + Math.round(BAR_W * sweetLow);
-		int sweetX2 = barX + Math.round(BAR_W * sweetHigh);
-		float pulse = 0.55f + 0.45f * Mth.sin((System.currentTimeMillis() % 1000L) / 1000.0f * Mth.TWO_PI);
-		int sweetAlpha = (int) (0x40 + pulse * 0x70) << 24;
-		guiGraphics.fill(sweetX1, sweepY, sweetX2, sweepY + BAR_H, SWEET_BASE | sweetAlpha);
+		int sweetPx0 = Math.round(BAR_W * sweetLow);
+		int sweetPxW = Math.round(BAR_W * sweetHigh) - sweetPx0;
+		setColor(SWEET_GREEN);
+		drawBarFill(guiGraphics, barX, sweepY, sweetPx0, sweetPxW);
+		resetColor();
+		int sweetX1 = barX + sweetPx0;
+		int sweetX2 = sweetX1 + sweetPxW;
 		guiGraphics.fill(sweetX1, sweepY, sweetX1 + 1, sweepY + BAR_H, 0xFF38E04B);
 		guiGraphics.fill(sweetX2 - 1, sweepY, sweetX2, sweepY + BAR_H, 0xFF38E04B);
 

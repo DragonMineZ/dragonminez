@@ -31,6 +31,7 @@ public class ClashParticipant {
     private float meterPhase;     // sweeps 0 -> 1 repeatedly
     private float prevMeterPhase;
     private float momentum;       // recent struggle intensity, decays each tick
+    private int idleTicks;        // ticks since this side last pressed
 
     public ClashParticipant(AbstractKiProjectile beam, LivingEntity owner) {
         this.beam = beam;
@@ -69,6 +70,10 @@ public class ClashParticipant {
 
     public float momentum() {
         return momentum;
+    }
+
+    public int idleTicks() {
+        return idleTicks;
     }
 
     /** Origin of the beam (fixed while firing, since the owner is movement-locked). */
@@ -114,6 +119,7 @@ public class ClashParticipant {
         this.prevMeterPhase = this.meterPhase;
         this.meterPhase += BeamClash.SWEEP_RATE;
         this.momentum *= BeamClash.MOMENTUM_DECAY;
+        this.idleTicks++;
 
         boolean wrapped = false;
         if (this.meterPhase >= 1.0f) {
@@ -134,6 +140,7 @@ public class ClashParticipant {
         if (crossedCenter) {
             float jitter = 0.7f + owner.getRandom().nextFloat() * 0.3f;
             addBurst(npcAccuracy * jitter);
+            this.idleTicks = 0;
         }
     }
 
@@ -145,6 +152,7 @@ public class ClashParticipant {
     public void registerPlayerPress() {
         float efficiency = scoreEfficiency(this.meterPhase);
         addBurst(efficiency);
+        this.idleTicks = 0;
         // Consume the sweep regardless of accuracy.
         this.meterPhase = 0.0f;
         this.prevMeterPhase = 0.0f;
