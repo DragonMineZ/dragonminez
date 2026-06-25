@@ -46,6 +46,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private static final float MAX_RANGE = 300.0F; // uff
 
+    private float calcWaveForwardOffset(LivingEntity owner) {
+        return (owner.getBbWidth() / 2.0F) + 0.2F;
+    }
+
+    private float calcWaveCenterOffsetY(LivingEntity owner) {
+        return 0.0F;
+    }
+
     public KiWaveEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
@@ -116,8 +124,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(castTime);
         this.setMaxLife(castTime*2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
-        this.setCastOffsets(0F, -0.2F, 0.4F);
-        updatePositionRelativeToOwner(owner, true);
+        this.setCastOffsets(0.4F, calcWaveCenterOffsetY(owner), calcWaveForwardOffset(owner));
+        updatePositionRelativeToOwner(owner, false);
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
@@ -264,8 +272,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setColors(0xFFFD55, 0xFFFD55, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
-        this.setCastWave(40);
-        this.setCastOffsets(0.0F, 0.3F, 0.4F);
+        this.setCastWave(50);
+        this.setCastOffsets(0.0F, 0.3F, 2.5F);
         updatePositionRelativeToOwner(owner, false);
         
     }
@@ -388,7 +396,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
             newPos = hitboxCenter.add(offset);
         } else {
-            newPos = hitboxCenter.add(look.scale(2.0D));
+            newPos = hitboxCenter.add(look.scale(2.5D));
         }
 
         this.setPos(newPos.x, newPos.y, newPos.z);
