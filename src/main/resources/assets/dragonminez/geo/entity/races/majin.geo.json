@@ -118,7 +118,7 @@
 				{
 					"name": "right_hand_item",
 					"parent": "right_arm",
-					"pivot": [-6.5, 11, 0],
+					"pivot": [-6, 14, 0],
 					"locators": {
 						"locator": [-6.5, 11, 0]
 					}
@@ -142,7 +142,7 @@
 				{
 					"name": "left_hand_item",
 					"parent": "left_arm",
-					"pivot": [6.5, 11, 0],
+					"pivot": [6, 14, 0],
 					"locators": {
 						"locator2": [6.5, 11, 0]
 					}

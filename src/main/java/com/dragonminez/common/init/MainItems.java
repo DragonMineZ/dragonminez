@@ -149,7 +149,7 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> DEMON_GI_BLUE_ARMOR = fullArmorNoHelmetSet("demon_gi_blue_armor", "demon_gi_gohan");
 	// DRAGON CLAN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> DRAGON_CLAN_ARMOR = fullArmorNoHelmetSet("dragon_clan_armor", "dragon_clan");
-	public static final Map<ArmorItem.Type, RegistryObject<Item>> EVIL_BUU_ARMOR = fullArmorNoHelmetSet("evil_buu_armor", "evil_buu");
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> EVIL_BUU_ARMOR = fullArmorCapeNoHelmetSet("evil_buu_armor", "evil_buu");
 	// FIGHTER
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> FIGHTER_ARMOR = fullArmorNoHelmetSet("fighter_armor", "fighter");
 	// FUSED ZAMASU
