@@ -147,7 +147,9 @@ public class TransformationsHelper {
 	}
 
 	private static boolean hasFormSkillAccess(StatsData statsData, String groupName, String formType, int requiredLevel) {
-		return hasMutantLegendaryAccess(statsData, groupName) || isFormUnlocked(statsData, formType, requiredLevel);
+		int effectiveRequiredLevel = requiredLevel;
+		if (hasMutantLegendaryAccess(statsData, groupName)) effectiveRequiredLevel = Math.max(0, requiredLevel - 1);
+		return isFormUnlocked(statsData, formType, effectiveRequiredLevel);
 	}
 
 	private static boolean isStackFormUnlocked(StatsData statsData, String formType, int requiredLevel) {
@@ -194,7 +196,9 @@ public class TransformationsHelper {
 
 		List<String> preferredTypes = new ArrayList<>();
 		if (statsData.getSkills().getSkillLevel("superforms") > 0) preferredTypes.add("superforms");
-		if (statsData.getSkills().getSkillLevel("legendaryforms") > 0) preferredTypes.add("legendaryforms");
+
+		if (statsData.getSkills().getSkillLevel("legendaryforms") > 0 || statsData.getEffects().hasEffect("mutant")) preferredTypes.add("legendaryforms");
+
 		if (statsData.getSkills().getSkillLevel("godforms") > 0) preferredTypes.add("godforms");
 		if (statsData.getSkills().getSkillLevel("androidforms") > 0) preferredTypes.add("androidforms");
 
