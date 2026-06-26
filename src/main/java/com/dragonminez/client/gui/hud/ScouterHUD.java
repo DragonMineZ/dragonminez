@@ -44,7 +44,7 @@ public class ScouterHUD {
 
 	private static int scanTimer = 0;
 	private static int strongestEntityID = -1;
-	private static int cachedBP = 0;
+	private static double cachedBP = 0;
 	private static final double SCAN_RANGE = 50.0;
 	private static final int BP_LIMIT = 150000000;
 
@@ -76,17 +76,17 @@ public class ScouterHUD {
 	private static void performSmartScan(Player player) {
 		Entity currentTarget = player.level().getEntity(strongestEntityID);
 		boolean cachedIsAlive = (currentTarget instanceof LivingEntity living && living.isAlive());
-		int thresholdBP = cachedIsAlive ? cachedBP : -1;
+		double thresholdBP = cachedIsAlive ? cachedBP : -1;
 
 		AABB searchBox = player.getBoundingBox().inflate(SCAN_RANGE);
 		List<LivingEntity> entities = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
 				e -> e != player && e.isAlive());
 
 		LivingEntity newStrongest = null;
-		int maxFoundBP = thresholdBP;
+		double maxFoundBP = thresholdBP;
 
 		for (LivingEntity entity : entities) {
-			int bp = getEntityBP(entity);
+			double bp = getEntityBP(entity);
 
 			if (bp > BP_LIMIT) {
 				damageScouter(player);
@@ -117,12 +117,12 @@ public class ScouterHUD {
 				.orElse(false);
 	}
 
-	private static int getEntityBP(LivingEntity entity) {
+	private static double getEntityBP(LivingEntity entity) {
 		try {
 			if (entity instanceof Player player) {
 				if (isCloaked(player)) return 0;
 				var cap = StatsProvider.get(StatsCapability.INSTANCE, player);
-				if (cap.isPresent()) return cap.map(StatsData::getBattlePower).orElse(0);
+				if (cap.isPresent()) return cap.map(StatsData::getBattlePower).orElse(0.0f);
 			}
 			if (entity instanceof IBattlePower bpEntity) return bpEntity.getBattlePower();
 		} catch (Exception e) {
@@ -161,7 +161,7 @@ public class ScouterHUD {
 			double distToFocus = (focusedEntity != null) ? mc.player.distanceTo(focusedEntity) : Double.MAX_VALUE;
 
 			if (focusedEntity != null && distToFocus <= 20) {
-				int bp = getEntityBP(focusedEntity);
+				double bp = getEntityBP(focusedEntity);
 
 				if (bp > BP_LIMIT) {
 					damageScouter(mc.player);
@@ -294,7 +294,7 @@ public class ScouterHUD {
 		gui.blit(texture, 53, -15, uX, 98, w, 5, 128, 128);
 	}
 
-	private static String formatBP(int bp) {
+	private static String formatBP(double bp) {
 		if (bp < 10000) return String.valueOf(bp);
 		if (bp < 1000000) return String.format("%.1fk", bp / 1000.0f).replace(",", ".");
 		return String.format("%.1fm", bp / 1000000.0f).replace(",", ".");

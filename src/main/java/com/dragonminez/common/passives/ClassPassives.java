@@ -4,7 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.config.RaceStatsConfig.Passive;
 import com.dragonminez.common.passives.handlers.BerserkerPassive;
-import com.dragonminez.common.passives.handlers.EnchanterPassive;
+import com.dragonminez.common.passives.handlers.ClericPassive;
 import com.dragonminez.common.passives.handlers.MartialArtistPassive;
 import com.dragonminez.common.passives.handlers.PaladinPassive;
 import com.dragonminez.common.passives.handlers.SpiritualistPassive;
@@ -28,7 +28,7 @@ public final class ClassPassives {
 		register(new BerserkerPassive());
 		register(new PaladinPassive());
 		register(new TankPassive());
-		register(new EnchanterPassive());
+		register(new ClericPassive());
 	}
 
 	private ClassPassives() {}

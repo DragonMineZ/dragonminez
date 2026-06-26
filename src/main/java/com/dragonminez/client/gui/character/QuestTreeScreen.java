@@ -137,6 +137,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private float currentObjScroll = 0;
 	private float objMaxScroll = 0;
 
+	private float targetRewardsScroll = 0;
+	private float currentRewardsScroll = 0;
+	private float rewardsMaxScroll = 0;
+
 	private List<String> frameObjLinesCache = null;
 	private Quest frameObjLinesQuest = null;
 	private int frameObjLinesWidth = Integer.MIN_VALUE;
@@ -246,6 +250,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private record DetailPanelLayout(int titleH, int rewardsH, int descH, int objectivesH) {
+	}
+
+	private record RewardBlock(QuestReward reward, List<String> lines, int height) {
 	}
 
 	private record NodeRender(Quest quest, int pixelX, int pixelY, boolean blurred, boolean sidequest,
@@ -1718,7 +1725,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int objectivesY = descY + layout.descH();
 
 		renderTopSection(graphics, innerX, innerY, innerW, layout.titleH(), status);
-		renderRewardsSection(graphics, innerX, rewardsY, innerW, layout.rewardsH(), questKey, mouseX, mouseY);
+		renderRewardsSection(graphics, innerX, rewardsY, innerW, layout.rewardsH(), questKey, mouseX, mouseY, dt);
 		renderDescriptionSection(graphics, innerX, descY, innerW, layout.descH(), questKey, dt);
 		renderObjectivesSection(graphics, innerX, objectivesY, innerW, layout.objectivesH(), saga, dt);
 	}
@@ -1778,9 +1785,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private int estimateRewardsSectionHeight(int width, String questKey) {
-		List<QuestReward> rewards = getDisplayRewards(selectedQuest);
-		if (rewards.isEmpty()) return 28;
-		return 24 + (rewards.size() * getRewardRowHeight()) + 6;
+		List<RewardBlock> blocks = buildRewardBlocks(width);
+		if (blocks.isEmpty()) return 28;
+		int content = 0;
+		for (RewardBlock block : blocks) content += block.height();
+		return 22 + content + 4;
 	}
 
 	private int estimateObjectivesSectionHeight(int width, Saga saga) {
@@ -1809,7 +1818,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				getStatusColor(status));
 	}
 
-	private void renderRewardsSection(GuiGraphics graphics, int x, int y, int width, int height, String questKey, int mouseX, int mouseY) {
+	private void renderRewardsSection(GuiGraphics graphics, int x, int y, int width, int height, String questKey, int mouseX, int mouseY, float dt) {
 		graphics.fill(x, y, x + width, y + height, 0x44111122);
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
@@ -1819,50 +1828,102 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				y + 4,
 				0xFFFFD700);
 
-		List<QuestReward> rewards = getDisplayRewards(selectedQuest);
-		if (rewards.isEmpty()) {
+		List<RewardBlock> blocks = buildRewardBlocks(width);
+		if (blocks.isEmpty()) {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt("-"), x + 8, y + 18, 0xFF999999);
 			return;
 		}
 
 		int iconSize = 16;
-		int startY = y + 18;
-		int rowHeight = getRewardRowHeight();
-		int maxRows = Math.max(1, (height - 22) / rowHeight);
-		int rows = Math.min(rewards.size(), maxRows);
+		int lineHeight = getDetailLineHeight();
+		int originY = y + 18;
+		int viewHeight = Math.max(iconSize, height - 22);
 
-		String fullText = buildRewardsText(rewards);
+		int totalContentHeight = 0;
+		for (RewardBlock block : blocks) totalContentHeight += block.height();
+
+		rewardsMaxScroll = Math.max(0, totalContentHeight - viewHeight);
+		targetRewardsScroll = Mth.clamp(targetRewardsScroll, 0, rewardsMaxScroll);
+		currentRewardsScroll += (targetRewardsScroll - currentRewardsScroll) * (float) (1.0 - Math.exp(-15.0f * dt));
+
+		String fullText = buildRewardsText(getDisplayRewards(selectedQuest));
 		int revealedChars = resolveTypewriterText(questKey, "rewards", fullText).length();
+
+		graphics.enableScissor(toScreenCoord(x + 2), toScreenCoord(originY),
+				toScreenCoord(x + width - 2), toScreenCoord(y + height - 2));
+		graphics.pose().pushPose();
+		graphics.pose().translate(0, -currentRewardsScroll, 0);
+
+		int blockTop = originY;
 		int consumedChars = 0;
-
-		for (int i = 0; i < rows; i++) {
-			QuestReward reward = rewards.get(i);
+		for (RewardBlock block : blocks) {
+			QuestReward reward = block.reward();
 			String desc = reward.getDescription().getString();
-
-			if (consumedChars >= revealedChars && i > 0) break;
 			int rowVisible = Math.max(0, revealedChars - consumedChars);
 			consumedChars += desc.length() + 1;
 
-			int iconX = x + 8;
-			int rowY = startY + (i * rowHeight);
-			int iconY = rowY + Math.max(0, (rowHeight - iconSize) / 2);
+			boolean blockVisible = (blockTop + block.height()) >= originY + currentRewardsScroll
+					&& blockTop <= originY + viewHeight + currentRewardsScroll;
 
-			ItemStack iconStack = rewardIconStack(reward);
-			ItemStack tooltipStack = reward.getType() == QuestReward.RewardType.ITEM ? iconStack : null;
+			if (blockVisible) {
+				int iconX = x + 8;
+				ItemStack iconStack = rewardIconStack(reward);
+				ItemStack tooltipStack = reward.getType() == QuestReward.RewardType.ITEM ? iconStack : null;
 
-			if (iconStack != null) {
-				graphics.renderItem(iconStack, iconX, iconY);
-			} else {
-				graphics.blit(REWARD_GENERIC_ICON, iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+				if (iconStack != null) {
+					graphics.renderItem(iconStack, iconX, blockTop);
+				} else {
+					graphics.blit(REWARD_GENERIC_ICON, iconX, blockTop, 0, 0, iconSize, iconSize, iconSize, iconSize);
+				}
+
+				rewardHitboxes.add(new RewardHitbox(iconX, (int) (blockTop - currentRewardsScroll), iconSize,
+						tooltipStack, reward.getDescription()));
+
+				int charsLeft = rowVisible;
+				int textY = blockTop;
+				for (String fullLine : block.lines()) {
+					String shownLine;
+					if (charsLeft >= fullLine.length()) {
+						shownLine = fullLine;
+						charsLeft -= fullLine.length();
+					} else {
+						shownLine = fullLine.substring(0, Math.max(0, charsLeft));
+						charsLeft = 0;
+					}
+					TextUtil.drawStringWithBorder(graphics, this.font, txt(shownLine), x + 28, textY, 0xFFCCCCCC);
+					textY += lineHeight;
+				}
 			}
 
-			rewardHitboxes.add(new RewardHitbox(iconX, iconY, iconSize, tooltipStack, reward.getDescription()));
-
-			String visibleDesc = rowVisible >= desc.length() ? desc : desc.substring(0, rowVisible);
-			String line = fitSingleLineEllipsis(visibleDesc, width - 36);
-			int textY = rowY + Math.max(0, (rowHeight - getDetailLineHeight()) / 2);
-			TextUtil.drawStringWithBorder(graphics, this.font, txt(line), x + 28, textY, 0xFFCCCCCC);
+			blockTop += block.height();
 		}
+
+		graphics.pose().popPose();
+		graphics.disableScissor();
+
+		if (rewardsMaxScroll > 0) {
+			int scrollBarX = x + width - 6;
+			graphics.fill(scrollBarX, originY, scrollBarX + 3, originY + viewHeight, 0xFF333333);
+			float scrollPercent = currentRewardsScroll / rewardsMaxScroll;
+			int indicatorHeight = Math.max(10, (int) ((float) viewHeight / totalContentHeight * viewHeight));
+			int indicatorY = originY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
+			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
+		}
+	}
+
+	private List<RewardBlock> buildRewardBlocks(int width) {
+		List<RewardBlock> blocks = new ArrayList<>();
+		int textWidth = Math.max(20, width - 40);
+		int iconSize = 16;
+		int lineHeight = getDetailLineHeight();
+		for (QuestReward reward : getDisplayRewards(selectedQuest)) {
+			List<String> lines = wrapText(reward.getDescription().getString(), textWidth);
+			if (lines.isEmpty()) lines = List.of("");
+			int textBlockH = lines.size() * lineHeight;
+			int blockH = Math.max(iconSize + 2, textBlockH) + 4;
+			blocks.add(new RewardBlock(reward, lines, blockH));
+		}
+		return blocks;
 	}
 
 	private List<QuestReward> getDisplayRewards(Quest quest) {
@@ -2918,6 +2979,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return true;
 		}
 
+		PanelRect rewardsRect = getRewardsSectionRect();
+		if (rewardsRect != null && rewardsRect.contains(uiMouseX, uiMouseY)) {
+			targetRewardsScroll = Mth.clamp(targetRewardsScroll - (scrollAmount * getDetailLineHeight() * 2), 0, rewardsMaxScroll);
+			return true;
+		}
+
 		PanelRect objectivesRect = getObjectivesSectionRect();
 		if (objectivesRect != null && objectivesRect.contains(uiMouseX, uiMouseY)) {
 			targetObjScroll = Mth.clamp(targetObjScroll - (scrollAmount * getDetailLineHeight() * 2), 0, objMaxScroll);
@@ -2957,6 +3024,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		selectedQuest = quest;
 		currentObjScroll = 0;
 		objMaxScroll = 0;
+		currentRewardsScroll = 0;
+		targetRewardsScroll = 0;
+		rewardsMaxScroll = 0;
 		resetTypewriterForSelectedQuest();
 		persistSelection();
 		refreshButtons();
@@ -2982,6 +3052,22 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int descY = rewardsY + layout.rewardsH();
 		int objectivesY = descY + layout.descH();
 		return new PanelRect(innerX, objectivesY, innerW, layout.objectivesH());
+	}
+
+	private PanelRect getRewardsSectionRect() {
+		if (selectedQuest == null || statsData == null || availableSagas.isEmpty()) {
+			return null;
+		}
+
+		PanelRect panel = getRightPanelRect();
+		Saga saga = availableSagas.get(currentSagaIndex);
+		String questKey = questProgressKey(saga, selectedQuest);
+		int innerX = panel.x + 10;
+		int innerY = panel.y + 10;
+		int innerW = panel.width - 20;
+		int innerH = panel.height - 40;
+		DetailPanelLayout layout = computeDetailPanelLayout(innerW, innerH, questKey, saga);
+		return new PanelRect(innerX, innerY + layout.titleH(), innerW, layout.rewardsH());
 	}
 
 	private PanelRect getDescriptionSectionRect() {
@@ -3304,9 +3390,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return Math.max(10, this.font.lineHeight + 1);
 	}
 
-	private int getRewardRowHeight() {
-		return Math.max(18, getDetailLineHeight() + 6);
-	}
 
 	private void drawJustifiedTextBlock(GuiGraphics graphics, List<String> lines, int x, int y, int width, int maxLines, int lineHeight, int color) {
 		int count = Math.min(maxLines, lines.size());

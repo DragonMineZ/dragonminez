@@ -63,7 +63,7 @@ public class RequestITTargetsC2S {
 					listedPlayers.add(member.getUUID());
 				}
 
-				long selfBp = data.getBattlePowerExact();
+				double selfBp = data.getBattlePowerExact();
 				int rangePerLevel = ConfigManager.getServerConfig().getGameplay().getInstantTransmissionPlayerRangePerLevel();
 				double maxRange = (double) rangePerLevel * skillLevel;
 
@@ -83,14 +83,14 @@ public class RequestITTargetsC2S {
 		ctx.get().setPacketHandled(true);
 	}
 
-	public static boolean isValidExternalTarget(ServerPlayer self, StatsData selfData, long selfBp, ServerPlayer target, StatsData targetData, double maxRange) {
+	public static boolean isValidExternalTarget(ServerPlayer self, StatsData selfData, double selfBp, ServerPlayer target, StatsData targetData, double maxRange) {
 		if (!target.level().dimension().equals(self.level().dimension())) return false;
 		if (self.position().distanceTo(target.position()) > maxRange) return false;
 		if (target.isCreative() || target.isSpectator()) return false;
 		if (TransformationsHelper.isInstantTransmissionBlocked(selfData, targetData)) return false;
 		if (targetData.getStatus().isFused() && !targetData.getStatus().isFusionLeader()) return false;
 
-		long targetBp = targetData.getBattlePowerExact();
-		return targetBp >= (long) (selfBp * BP_LOWER_RATIO) && targetBp <= (long) (selfBp * BP_UPPER_RATIO);
+		double targetBp = targetData.getBattlePowerExact();
+		return targetBp >= (selfBp * BP_LOWER_RATIO) && targetBp <= (selfBp * BP_UPPER_RATIO);
 	}
 }

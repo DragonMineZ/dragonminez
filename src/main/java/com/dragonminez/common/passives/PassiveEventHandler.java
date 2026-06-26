@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -95,7 +96,7 @@ public class PassiveEventHandler {
 		if (event.getEntity().level().isClientSide) return;
 
 		if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
-			applyPaladinLifesteal(attacker, event.getAmount());
+			applyPaladinLifesteal(attacker, event.getEntity(), event.getAmount());
 		}
 
 		if (!redirecting && event.getEntity() instanceof ServerPlayer victim) {
@@ -103,15 +104,24 @@ public class PassiveEventHandler {
 		}
 	}
 
-	private static void applyPaladinLifesteal(ServerPlayer member, float damageDealt) {
+	private static void applyPaladinLifesteal(ServerPlayer member, LivingEntity victim, float damageDealt) {
 		if (damageDealt <= 0.0f) return;
+
+		if (damageDealt < victim.getMaxHealth() * 0.01f) return;
+
 		ServerPlayer paladin = findPartyPaladin(member, null);
 		if (paladin == null) return;
+
 		double pct = ClassPassives.value(paladinData(paladin), "lifestealPct", 0.15);
 		if (pct > 0.0) paladin.heal((float) (damageDealt * pct));
 	}
 
 	private static void applyPaladinRedirect(ServerPlayer victim, LivingHurtEvent event) {
+		boolean hasRaw = victim.getPersistentData().contains("dmz_raw_damage");
+		double raw = hasRaw ? victim.getPersistentData().getDouble("dmz_raw_damage") : event.getAmount();
+
+		if (raw < victim.getMaxHealth() * 0.01f) return;
+
 		ServerPlayer paladin = findPartyPaladin(victim, victim);
 		if (paladin == null) return;
 		if (event.getSource().getEntity() == paladin) return;
@@ -119,8 +129,6 @@ public class PassiveEventHandler {
 		double pct = ClassPassives.value(paladinData(paladin), "redirectPct", 0.15);
 		if (pct <= 0.0) return;
 
-		boolean hasRaw = victim.getPersistentData().contains("dmz_raw_damage");
-		double raw = hasRaw ? victim.getPersistentData().getDouble("dmz_raw_damage") : event.getAmount();
 		double redirect = raw * pct;
 		if (redirect <= 0.0) return;
 
@@ -142,9 +150,12 @@ public class PassiveEventHandler {
 	private static ServerPlayer findPartyPaladin(ServerPlayer member, ServerPlayer exclude) {
 		List<ServerPlayer> party = PartyManager.getAllPartyMembers(member);
 		if (party == null || party.size() <= 1) return null;
+
 		for (ServerPlayer candidate : party) {
 			if (candidate == exclude) continue;
 			if (!candidate.isAlive() || candidate.level() != member.level()) continue;
+			if (candidate.distanceToSqr(member) > 2500.0) continue;
+
 			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, candidate).orElse(null);
 			if (data != null && ClassPassives.is(data, "paladin")) return candidate;
 		}

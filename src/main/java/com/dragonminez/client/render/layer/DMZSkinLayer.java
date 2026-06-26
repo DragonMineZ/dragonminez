@@ -242,7 +242,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
         if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
-        boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.equals("ssj4d") || finalFaceKey.equals("ssj4gt") || finalFaceKey.equals("buffed") || finalFaceKey.equals("4arms");
+        boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.contains("ssj4d") || finalFaceKey.contains("ssj4gt") || finalFaceKey.equals("buffed") || finalFaceKey.equals("4arms");
         if (isHumanoidModel && bodyType == 0) return;
 
         model.getBone("head").ifPresent(headBone -> {
@@ -556,7 +556,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private static boolean isSsj4Model(String model) {
-		return model.equals("ssj4d") || model.equals("ssj4gt");
+		return model.contains("ssj4d") || model.contains("ssj4gt");
 	}
 
 	private static float[] resolveSsj4OverlayColor(Character character, FormConfig.FormData chargeTarget, float chargeFraction) {

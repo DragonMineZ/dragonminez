@@ -5,10 +5,10 @@ import com.dragonminez.common.passives.IClassPassive;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 
-public class EnchanterPassive implements IClassPassive {
+public class ClericPassive implements IClassPassive {
 
 	@Override
-	public String classKey() { return "enchanter"; }
+	public String classKey() { return "cleric"; }
 
 	private boolean isHealBuff(KiAttackData ki) {
 		return ki != null

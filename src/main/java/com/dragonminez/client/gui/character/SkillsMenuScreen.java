@@ -440,7 +440,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private boolean shouldShowTechniqueUpgradeButton(TechniqueData tech, String statName) {
 		if (!hasEnoughTechniqueXpForUpgrade(tech, statName)) return false;
 		if (tech instanceof KiAttackData kiAttackData) return kiAttackData.canUpgradeStat(statName);
-		return "damage".equals(statName) || "cast".equals(statName) || "cooldown".equals(statName);
+		return "damage".equals(statName) || "cooldown".equals(statName);
 	}
 
 	private boolean hasEnoughTechniqueXpForUpgrade(TechniqueData tech, String statName) {

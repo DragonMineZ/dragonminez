@@ -41,6 +41,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private final Map<Integer, float[]> fadeTargetRgbMap = new HashMap<>();
 	private final Map<Integer, Boolean> fadeTargetForceMap = new HashMap<>();
 	private final Map<Integer, Long> lastSeenMsMap = new HashMap<>();
+	private final Map<Integer, Float> kiChargeProgressMap = new HashMap<>();
 
 	private static final Map<Integer, float[]> PUBLISHED_BASE_COLOR = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> PUBLISHED_BASE_TIME = new ConcurrentHashMap<>();
@@ -222,10 +223,20 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 		float physicsLodMultiplier = getPhysicsLodMultiplier(animatable);
 
+		boolean isCharging = stats.getStatus().isChargingKi() || stats.getStatus().isPermanentAura() || (stats.getStatus().isActionCharging() && hairTo != null && hairTo != hairFrom);
+		float kiChargeProgress = kiChargeProgressMap.getOrDefault(entityId, 0.0f);
+		float dt = Minecraft.getInstance().getDeltaFrameTime();
+
+		if (isCharging) kiChargeProgress = Math.min(1.0f, kiChargeProgress + dt * 0.25f);
+		else kiChargeProgress = Math.max(0.0f, kiChargeProgress - dt * 0.15f);
+
+		if (kiChargeProgress > 0.0f) kiChargeProgressMap.put(entityId, kiChargeProgress);
+		else kiChargeProgressMap.remove(entityId);
+
 		publishHairBaseColor(entityId, gameTime, rgbFrom, rgbTo, factor);
 
 		poseStack.pushPose();
-		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, overrideFrom, forceTo, partialTick, packedLight, packedOverlay, alpha, physicsLodMultiplier);
+		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, overrideFrom, forceTo, partialTick, packedLight, packedOverlay, alpha, physicsLodMultiplier, kiChargeProgress);
 		poseStack.popPose();
 	}
 

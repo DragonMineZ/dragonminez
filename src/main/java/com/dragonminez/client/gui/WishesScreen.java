@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.network.C2S.GrantWishC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -10,9 +11,7 @@ import com.dragonminez.common.wish.WishManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -23,11 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class WishesScreen extends Screen {
+public class WishesScreen extends ScaledScreen {
 
 	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static final int PANEL_WIDTH = 141;
 	private static final int PANEL_HEIGHT = 213;
@@ -57,11 +55,11 @@ public class WishesScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		this.guiLeft = (this.width - PANEL_WIDTH) / 2;
-		this.guiTop = (this.height - PANEL_HEIGHT) / 2;
+		this.guiLeft = (getUiWidth() - PANEL_WIDTH) / 2;
+		this.guiTop = (getUiHeight() - PANEL_HEIGHT) / 2;
 
 		this.confirmButton = new TexturedTextButton.Builder()
-				.position(guiLeft + (PANEL_WIDTH - 80) / 2, guiTop + PANEL_HEIGHT - 35)
+				.position(guiLeft + (PANEL_WIDTH - 80) / 2, getUiHeight() - 30)
 				.size(74, 20)
 				.texture(BUTTON_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -83,21 +81,28 @@ public class WishesScreen extends Screen {
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		this.renderBackground(graphics);
 
+		int uiMouseX = (int) toUiX(mouseX);
+		int uiMouseY = (int) toUiY(mouseY);
+
+		beginUiScale(graphics);
+
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
 				tr("gui.dragonminez.wishes_title", selectedIndices.size(), maxWishesToSelect),
-				this.width / 2, guiTop + 18, 0xFFFFD700);
+				getUiWidth() / 2, guiTop + 18, 0xFFFFD700);
 
-		renderWishesList(graphics, mouseX, mouseY);
+		renderWishesList(graphics, uiMouseX, uiMouseY);
 
-		super.render(graphics, mouseX, mouseY, partialTick);
+		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
-		renderTooltip(graphics, mouseX, mouseY);
+		renderTooltip(graphics, uiMouseX, uiMouseY);
+
+		endUiScale(graphics);
 	}
 
-	private void renderWishesList(GuiGraphics graphics, int mouseX, int mouseY) {
+	private void renderWishesList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
@@ -109,7 +114,12 @@ public class WishesScreen extends Screen {
 		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
 		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
 
-		graphics.enableScissor(listLeft, listTop, listLeft + listWidth, listTop + viewHeight);
+		int scLeft = toScreenCoord(listLeft);
+		int scTop = toScreenCoord(listTop);
+		int scRight = toScreenCoord(listLeft + listWidth);
+		int scBottom = toScreenCoord(listTop + viewHeight);
+
+		graphics.enableScissor(scLeft, scTop, scRight, scBottom);
 		graphics.pose().pushPose();
 		graphics.pose().translate(0, -currentScroll, 0);
 
@@ -119,8 +129,8 @@ public class WishesScreen extends Screen {
 			if (itemY + ITEM_HEIGHT >= listTop + currentScroll && itemY <= listTop + viewHeight + currentScroll) {
 				Wish wish = availableWishes.get(i);
 				boolean isSelected = selectedIndices.contains(i);
-				boolean isHovered = mouseX >= listLeft && mouseX < listLeft + listWidth &&
-						mouseY >= itemY - currentScroll && mouseY < itemY + ITEM_HEIGHT - currentScroll;
+				boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
+						uiMouseY >= itemY - currentScroll && uiMouseY < itemY + ITEM_HEIGHT - currentScroll;
 
 				int color;
 				if (isSelected) color = 0x80D4AF37;
@@ -156,25 +166,25 @@ public class WishesScreen extends Screen {
 		}
 	}
 
-	private void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+	private void renderTooltip(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
 		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY <= listTop + viewHeight) {
-			int relativeY = (int) (mouseY - listTop + currentScroll);
+		if (uiMouseX >= listLeft && uiMouseX < listLeft + listWidth && uiMouseY >= listTop && uiMouseY <= listTop + viewHeight) {
+			int relativeY = (int) (uiMouseY - listTop + currentScroll);
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < availableWishes.size()) {
 				Wish wish = availableWishes.get(index);
-				graphics.renderTooltip(this.font, tr(wish.getDescription()), mouseX, mouseY);
+				graphics.renderTooltip(this.font, tr(wish.getDescription()), uiMouseX, uiMouseY);
 			}
 		}
 	}
 
-	private float calculateScrollPercent(double mouseY, int startY, int viewHeight) {
-		float percent = (float)(mouseY - startY) / viewHeight;
+	private float calculateScrollPercent(double uiY, int startY, int viewHeight) {
+		float percent = (float)(uiY - startY) / viewHeight;
 		return Mth.clamp(percent, 0.0f, 1.0f);
 	}
 
@@ -182,20 +192,23 @@ public class WishesScreen extends Screen {
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (super.mouseClicked(mouseX, mouseY, button)) return true;
 
+		double uiX = toUiX(mouseX);
+		double uiY = toUiY(mouseY);
+
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
 		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (maxScroll > 0 && mouseX >= listLeft + listWidth && mouseX <= guiLeft + PANEL_WIDTH &&
-				mouseY >= listTop && mouseY <= listTop + viewHeight) {
+		if (maxScroll > 0 && uiX >= listLeft + listWidth && uiX <= guiLeft + PANEL_WIDTH &&
+				uiY >= listTop && uiY <= listTop + viewHeight) {
 			this.isScrolling = true;
-			targetScroll = calculateScrollPercent(mouseY, listTop, viewHeight) * maxScroll;
+			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
 			return true;
 		}
 
-		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY <= listTop + viewHeight) {
-			int relativeY = (int) (mouseY - listTop + currentScroll);
+		if (uiX >= listLeft && uiX < listLeft + listWidth && uiY >= listTop && uiY <= listTop + viewHeight) {
+			int relativeY = (int) (uiY - listTop + currentScroll);
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < availableWishes.size()) {
@@ -228,9 +241,10 @@ public class WishesScreen extends Screen {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (isScrolling && maxScroll > 0) {
+			double uiY = toUiY(mouseY);
 			int listTop = guiTop + 35;
 			int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-			targetScroll = calculateScrollPercent(mouseY, listTop, viewHeight) * maxScroll;
+			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -255,13 +269,5 @@ public class WishesScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
-	}
-
-	public MutableComponent tr(String key, Object... args) {
-		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
-	}
-
-	public MutableComponent txt(String text) {
-		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }

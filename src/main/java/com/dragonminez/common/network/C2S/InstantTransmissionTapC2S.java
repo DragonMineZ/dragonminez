@@ -68,7 +68,7 @@ public class InstantTransmissionTapC2S {
 						finalTarget = recentHit;
 					} else if (!candidates.isEmpty()) {
 						finalTarget = candidates.stream()
-								.max(Comparator.comparingLong(InstantTransmissionTapC2S::entityPower)).orElse(null);
+								.max(Comparator.comparingDouble(InstantTransmissionTapC2S::entityPower)).orElse(null);
 					}
 				}
 
@@ -116,7 +116,7 @@ public class InstantTransmissionTapC2S {
 		return level.getEntity(id) instanceof LivingEntity le && le.isAlive() ? le : null;
 	}
 
-	private static long entityPower(LivingEntity entity) {
+	private static double entityPower(LivingEntity entity) {
 		if (entity instanceof ServerPlayer sp) {
 			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, sp).orElse(null);
 			if (data != null) return data.getBattlePowerExact();

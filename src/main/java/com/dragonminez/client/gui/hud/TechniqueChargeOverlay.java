@@ -63,7 +63,7 @@ public class TechniqueChargeOverlay {
 			guiGraphics.pose().pushPose();
 			guiGraphics.pose().translate(x, y, 0);
 			guiGraphics.pose().scale(scale, scale, 1.0f);
-			guiGraphics.blit(CHARGE_HUD_TEXTURE, 0, 0, 0, 0, 148, 14, 256, 256);
+			guiGraphics.blit(CHARGE_HUD_TEXTURE, 0, 0, 0, 0, 145, 14, 256, 256);
 
 			int kiColor = kiAttack.getColorExterior();
 			float r = ((kiColor >> 16) & 0xFF) / 255.0f;

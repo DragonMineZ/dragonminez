@@ -606,8 +606,8 @@ public class GeneralServerConfig {
 		private Boolean tpEnabled = true;
 		private Double tpPeakMultiplier = 2.0;
 		private Double tpCurveWidth = 7.0;
-		private Double tpGravityBonusPerGravity = 0.05;
-		private Double masteryBonusPerGravity = 0.1;
+		private Double tpGravityBonusPerGravity = 0.025;
+		private Double masteryBonusPerGravity = 0.0025;
 
 		private Double consumptionPerGravity = 0.04;
 
@@ -688,7 +688,7 @@ public class GeneralServerConfig {
 		}
 
 		public Double getHardStopThreshold() {
-			return clampNonNeg(hardStopThreshold, 75.0);
+			return clampNonNeg(hardStopThreshold, 50.0);
 		}
 
 		public Double getMaxMovementPenalty() {

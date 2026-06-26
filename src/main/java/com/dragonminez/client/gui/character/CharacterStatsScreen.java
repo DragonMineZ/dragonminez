@@ -722,7 +722,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int y = centerY + 54;
 
 		boolean androidUpgraded = statsData.getStatus().isAndroidUpgraded();
-		long bp = statsData.getBattlePowerExact();
+		double bp = statsData.getBattlePowerExact();
 		String displayedBp = androidUpgraded ? "???" : formatBattlePower(bp);
 
 		Component label = tr("gui.dragonminez.character_stats.power_level");
@@ -743,11 +743,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		}
 	}
 
-	private boolean shouldUseCompactForBp(long bp) {
+	private boolean shouldUseCompactForBp(double bp) {
 		return bp > 9_999_999L;
 	}
 
-	private String formatBattlePower(long bp) {
+	private String formatBattlePower(double bp) {
 		if (!shouldUseCompactForBp(bp)) return numberFormatter.format(bp);
 
 		final String[] suffixes = {"M", "B", "T", "Qa", "Qi"};

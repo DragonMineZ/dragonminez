@@ -295,8 +295,12 @@ public class KiSenseEvent {
 
 	private static void renderBPLabel(PoseStack poseStack, LivingEntity entity, float topY) {
 		Minecraft mc = Minecraft.getInstance();
-		int bp = KiSenseScan.getCachedBP(entity.getId());
-		String bpStr = bp >= Integer.MAX_VALUE ? "BP: ???" : "BP: " + String.format("%,d", bp).replace(",", ".");
+		float bp = KiSenseScan.getCachedBP(entity.getId());
+
+		boolean isPlayer = entity instanceof Player;
+		boolean isMaxed = isPlayer ? bp >= Float.MAX_VALUE : bp >= Integer.MAX_VALUE;
+
+		String bpStr = isMaxed ? "BP: ???" : "BP: " + String.format("%,.0f", bp).replace(",", ".");
 		MutableComponent text = txt(bpStr);
 
 		MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
