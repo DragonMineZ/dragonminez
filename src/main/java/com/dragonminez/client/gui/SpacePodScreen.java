@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.TravelToPlanetC2S;
@@ -12,10 +13,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -27,12 +26,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class SpacePodScreen extends Screen {
+public class SpacePodScreen extends ScaledScreen {
 
 	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation ICONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/spaceshipicons.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static final int PANEL_WIDTH = 141;
 	private static final int PANEL_HEIGHT = 213;
@@ -63,13 +61,13 @@ public class SpacePodScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		this.guiLeft = (this.width - PANEL_WIDTH) / 2;
-		this.guiTop = (this.height - PANEL_HEIGHT) / 2;
+		this.guiLeft = (getUiWidth() - PANEL_WIDTH) / 2;
+		this.guiTop = (getUiHeight() - PANEL_HEIGHT) / 2;
 
 		loadDestinations();
 
 		this.travelButton = new TexturedTextButton.Builder()
-				.position(guiLeft + (PANEL_WIDTH - 80) / 2, guiTop + PANEL_HEIGHT - 35)
+				.position(guiLeft + (PANEL_WIDTH - 80) / 2, getUiHeight() - 30)
 				.size(74, 20)
 				.texture(BUTTON_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -124,19 +122,26 @@ public class SpacePodScreen extends Screen {
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		this.renderBackground(graphics);
 
+		int uiMouseX = (int) toUiX(mouseX);
+		int uiMouseY = (int) toUiY(mouseY);
+
+		beginUiScale(graphics);
+
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
 				tr("gui.dragonminez.spacepod.title"),
-				this.width / 2, guiTop + 18, 0xFFFFD700);
+				getUiWidth() / 2, guiTop + 18, 0xFFFFD700);
 
-		renderPlanetList(graphics, mouseX, mouseY);
+		renderPlanetList(graphics, uiMouseX, uiMouseY);
 
-		super.render(graphics, mouseX, mouseY, partialTick);
+		super.render(graphics, uiMouseX, uiMouseY, partialTick);
+
+		endUiScale(graphics);
 	}
 
-	private void renderPlanetList(GuiGraphics graphics, int mouseX, int mouseY) {
+	private void renderPlanetList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
@@ -148,7 +153,12 @@ public class SpacePodScreen extends Screen {
 		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
 		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
 
-		graphics.enableScissor(listLeft, listTop, listLeft + listWidth, listTop + viewHeight);
+		int scLeft = toScreenCoord(listLeft);
+		int scTop = toScreenCoord(listTop);
+		int scRight = toScreenCoord(listLeft + listWidth);
+		int scBottom = toScreenCoord(listTop + viewHeight);
+
+		graphics.enableScissor(scLeft, scTop, scRight, scBottom);
 		graphics.pose().pushPose();
 		graphics.pose().translate(0, -currentScroll, 0);
 
@@ -160,8 +170,8 @@ public class SpacePodScreen extends Screen {
 				boolean isSelected = (i == selectedIndex);
 
 				if (dest.unlocked) {
-					boolean isHovered = mouseX >= listLeft && mouseX < listLeft + listWidth &&
-							mouseY >= itemY - currentScroll && mouseY < itemY + ITEM_HEIGHT - currentScroll;
+					boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
+							uiMouseY >= itemY - currentScroll && uiMouseY < itemY + ITEM_HEIGHT - currentScroll;
 
 					int color = isSelected ? 0x80D4AF37 : (isHovered ? 0x80555555 : 0x00000000);
 					graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
@@ -229,8 +239,8 @@ public class SpacePodScreen extends Screen {
 		graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
 	}
 
-	private float calculateScrollPercent(double mouseY, int startY, int viewHeight) {
-		float percent = (float)(mouseY - startY) / viewHeight;
+	private float calculateScrollPercent(double uiY, int startY, int viewHeight) {
+		float percent = (float)(uiY - startY) / viewHeight;
 		return Mth.clamp(percent, 0.0f, 1.0f);
 	}
 
@@ -238,20 +248,23 @@ public class SpacePodScreen extends Screen {
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (super.mouseClicked(mouseX, mouseY, button)) return true;
 
+		double uiX = toUiX(mouseX);
+		double uiY = toUiY(mouseY);
+
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
 		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (maxScroll > 0 && mouseX >= listLeft + listWidth && mouseX <= guiLeft + PANEL_WIDTH &&
-				mouseY >= listTop && mouseY <= listTop + viewHeight) {
+		if (maxScroll > 0 && uiX >= listLeft + listWidth && uiX <= guiLeft + PANEL_WIDTH &&
+				uiY >= listTop && uiY <= listTop + viewHeight) {
 			this.isScrolling = true;
-			targetScroll = calculateScrollPercent(mouseY, listTop, viewHeight) * maxScroll;
+			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
 			return true;
 		}
 
-		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY <= listTop + viewHeight) {
-			int relativeY = (int) (mouseY - listTop + currentScroll);
+		if (uiX >= listLeft && uiX < listLeft + listWidth && uiY >= listTop && uiY <= listTop + viewHeight) {
+			int relativeY = (int) (uiY - listTop + currentScroll);
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < destinations.size()) {
@@ -294,9 +307,10 @@ public class SpacePodScreen extends Screen {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (isScrolling && maxScroll > 0) {
+			double uiY = toUiY(mouseY);
 			int listTop = guiTop + 35;
 			int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-			targetScroll = calculateScrollPercent(mouseY, listTop, viewHeight) * maxScroll;
+			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -305,14 +319,6 @@ public class SpacePodScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
-	}
-
-	public MutableComponent tr(String key, Object... args) {
-		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
-	}
-
-	public MutableComponent txt(String text) {
-		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 
 	private static class PlanetDestination {
