@@ -25,7 +25,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final int CONFIG_VERSION = 9;
+	public static final int CONFIG_VERSION = 12;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
@@ -501,29 +501,29 @@ public class ConfigManager {
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
 
-		setupInitialStats(config.getClassStats("warrior"), 15, 5, 10, 10, 5, 5, 7.0, 0.08, 4.0, 0.04, 12.0, 0.12);
+		setupInitialStats(config.getClassStats("warrior"), 10, 0, 5, 5, 0, 0, 7.0, 0.08, 4.0, 0.04, 12.0, 0.12);
 		setupScalingStats(config.getClassStats("warrior"), 1.6, 1.0, 2.0, 1.6, 1.8, 0.5, 1.5);
 
-		setupInitialStats(config.getClassStats("spiritualist"), 5, 5, 5, 5, 15, 15, 2.0, 0.02, 8.0, 0.10, 5.0, 0.05);
+		setupInitialStats(config.getClassStats("spiritualist"), 0, 0, 0, 0, 10, 10, 2.0, 0.02, 8.0, 0.10, 5.0, 0.05);
 		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 1.3, 0.7, 1.4, 1.9, 3.7);
 
-		setupInitialStats(config.getClassStats("martialartist"), 5, 15, 5, 15, 5, 5, 6.0, 0.07, 4.0, 0.04, 9.0, 0.09);
+		setupInitialStats(config.getClassStats("martialartist"), 0, 10, 0, 10, 0, 0, 6.0, 0.07, 4.0, 0.04, 9.0, 0.09);
 		setupScalingStats(config.getClassStats("martialartist"), 1.0, 1.8, 1.5, 1.3, 2.2, 0.6, 1.6);
 
-		setupInitialStats(config.getClassStats("berserker"), 15, 5, 5, 15, 5, 5, 4.0, 0.05, 2.0, 0.02, 14.0, 0.13);
+		setupInitialStats(config.getClassStats("berserker"), 10, 0, 0, 10, 0, 0, 4.0, 0.05, 2.0, 0.02, 14.0, 0.13);
 		setupScalingStats(config.getClassStats("berserker"), 1.9, 0.8, 1.5, 1.1, 3.0, 0.4, 1.3);
 
-		setupInitialStats(config.getClassStats("paladin"), 5, 10, 15, 10, 5, 5, 8.0, 0.09, 4.0, 0.04, 8.0, 0.08);
+		setupInitialStats(config.getClassStats("paladin"), 0, 5, 10, 5, 0, 0, 8.0, 0.09, 4.0, 0.04, 8.0, 0.08);
 		setupScalingStats(config.getClassStats("paladin"), 1.0, 1.2, 2.8, 1.2, 2.0, 0.6, 1.2);
 
-		setupInitialStats(config.getClassStats("tank"), 5, 5, 15, 15, 5, 5, 9.0, 0.10, 5.0, 0.05, 9.0, 0.09);
+		setupInitialStats(config.getClassStats("tank"), 0, 0, 10, 10, 0, 0, 9.0, 0.10, 5.0, 0.05, 9.0, 0.09);
 		setupScalingStats(config.getClassStats("tank"), 0.8, 0.7, 3.2, 1.5, 2.5, 0.5, 0.8);
 		config.getClassStats("tank").setTpGainMultiplier(1.25);
 
-		setupInitialStats(config.getClassStats("enchanter"), 5, 5, 10, 5, 5, 20, 2.0, 0.02, 12.0, 0.12, 16.0, 0.12);
-		setupScalingStats(config.getClassStats("enchanter"), 0.5, 0.5, 1.4, 2.6, 1.2, 0.8, 3.0);
-		config.getClassStats("enchanter").setTpGainMultiplier(1.25);
-		config.getClassStats("enchanter").setTpCostMultiplier(0.9);
+		setupInitialStats(config.getClassStats("cleric"), 0, 0, 5, 0, 0, 15, 2.0, 0.02, 12.0, 0.12, 16.0, 0.12);
+		setupScalingStats(config.getClassStats("cleric"), 0.5, 0.5, 1.4, 2.6, 1.2, 0.8, 3.0);
+		config.getClassStats("cleric").setTpGainMultiplier(1.25);
+		config.getClassStats("cleric").setTpCostMultiplier(0.9);
 		setupDefaultPassives(config);
 		return config;
 	}
@@ -571,11 +571,11 @@ public class ConfigManager {
 		tank.put("lowHpMultiplier", 2.0);
 		setupPassive(config.getClassStats("tank"), tank);
 
-		Map<String, Double> enchanter = new HashMap<>();
-		enchanter.put("cdPrimary", 0.20);
-		enchanter.put("cdSecondary", 0.15);
-		enchanter.put("durationBonus", 0.25);
-		setupPassive(config.getClassStats("enchanter"), enchanter);
+		Map<String, Double> cleric = new HashMap<>();
+		cleric.put("cdPrimary", 0.20);
+		cleric.put("cdSecondary", 0.15);
+		cleric.put("durationBonus", 0.25);
+		setupPassive(config.getClassStats("cleric"), cleric);
 	}
 
 	private static void setupPassive(RaceStatsConfig.ClassStats classStats, Map<String, Double> values) {

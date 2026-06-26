@@ -836,10 +836,10 @@ public class StatsData {
 	}
 
 	public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
-										   int hairId, CustomHair customHair,
-										   int bodyType, int eyesType, int noseType, int mouthType, int tattooType, float boobScale,
-									   String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
-										   String eye1Color, String eye2Color, String auraColor) {
+	                                       int hairId, CustomHair customHair,
+	                                       int bodyType, int eyesType, int noseType, int mouthType, int tattooType, float boobScale,
+	                                       String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
+	                                       String eye1Color, String eye2Color, String auraColor) {
 		character.setRace(raceName);
 		character.setGender(gender);
 		character.setCharacterClass(characterClass);
@@ -867,9 +867,9 @@ public class StatsData {
 
 		if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
 
-		boolean hasDefaultStats = stats.getStrength() <= 5 && stats.getStrikePower() <= 5 &&
-				stats.getResistance() <= 5 && stats.getVitality() <= 5 &&
-				stats.getKiPower() <= 5 && stats.getEnergy() <= 5;
+		boolean hasDefaultStats = stats.getStrength() == 0 && stats.getStrikePower() == 0 &&
+				stats.getResistance() == 0 && stats.getVitality() == 0 &&
+				stats.getKiPower() == 0 && stats.getEnergy() == 0;
 
 		if (hasDefaultStats) {
 			stats.setStrength(baseStats.getStrength());
@@ -883,7 +883,7 @@ public class StatsData {
 		resources.setCurrentEnergy(getMaxEnergy());
 		resources.setCurrentStamina(getMaxStamina());
 		resources.setCurrentPoise(getMaxPoise());
-		resources.setPowerRelease(5);
+		resources.setPowerRelease(0);
 		resources.setAlignment(100);
 		character.setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(this));
 
@@ -961,19 +961,6 @@ public class StatsData {
 
 		if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
 		return baseStats;
-	}
-
-	public int getInitialStatValue(String statName) {
-		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
-		return switch (statName.toUpperCase()) {
-			case "STR" -> baseStats.getStrength();
-			case "SKP" -> baseStats.getStrikePower();
-			case "RES" -> baseStats.getResistance();
-			case "VIT" -> baseStats.getVitality();
-			case "PWR" -> baseStats.getKiPower();
-			case "ENE" -> baseStats.getEnergy();
-			default -> 5;
-		};
 	}
 
 	public int getPendingAttributePoints() {
@@ -1272,21 +1259,21 @@ public class StatsData {
 			float currentTPs = getResources().getTrainingPoints();
 			float newTPs = (currentTPs * keepPercentage) / 100;
 
-			currentStats.setStrength(Math.max(5, newStr));
-			currentStats.setStrikePower(Math.max(5, newSkp));
-			currentStats.setResistance(Math.max(5, newRes));
-			currentStats.setVitality(Math.max(5, newVit));
-			currentStats.setKiPower(Math.max(5, newPwr));
-			currentStats.setEnergy(Math.max(5, newEne));
+			currentStats.setStrength(Math.max(0, newStr));
+			currentStats.setStrikePower(Math.max(0, newSkp));
+			currentStats.setResistance(Math.max(0, newRes));
+			currentStats.setVitality(Math.max(0, newVit));
+			currentStats.setKiPower(Math.max(0, newPwr));
+			currentStats.setEnergy(Math.max(0, newEne));
 
 			getResources().setTrainingPoints(newTPs);
 		} else {
-			currentStats.setStrength(5);
-			currentStats.setStrikePower(5);
-			currentStats.setResistance(5);
-			currentStats.setVitality(5);
-			currentStats.setKiPower(5);
-			currentStats.setEnergy(5);
+			currentStats.setStrength(0);
+			currentStats.setStrikePower(0);
+			currentStats.setResistance(0);
+			currentStats.setVitality(0);
+			currentStats.setKiPower(0);
+			currentStats.setEnergy(0);
 			getResources().setTrainingPoints(0);
 		}
 

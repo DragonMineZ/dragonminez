@@ -101,7 +101,7 @@ public class StatsCommand {
 		int value;
 		int maxValue = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		try {
-			if (amountStr.equalsIgnoreCase("min")) value = 5;
+			if (amountStr.equalsIgnoreCase("min")) value = 0;
 			else value = Integer.parseInt(amountStr);
 		} catch (NumberFormatException e) {
 			source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_number", amountStr));
@@ -157,7 +157,7 @@ public class StatsCommand {
 		int current = data.getCurrentStatValue(stat);
 		switch (mode) {
 			case "set" -> {
-				int target = Math.max(5, value);
+				int target = Math.max(0, value);
 				if (target <= current) {
 					data.getStats().setStat(stat, target);
 				} else {

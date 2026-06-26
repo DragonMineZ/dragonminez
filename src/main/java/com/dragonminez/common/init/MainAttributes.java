@@ -12,12 +12,12 @@ public class MainAttributes {
     public static final DeferredRegister<Attribute> ATTRIBUTES =
         DeferredRegister.create(ForgeRegistries.ATTRIBUTES, Reference.MOD_ID);
 
-    public static final RegistryObject<Attribute> STRENGTH = registerMainStat("strength", "attribute.dragonminez.strength", 5.0);
-    public static final RegistryObject<Attribute> STRIKE_POWER = registerMainStat("strike_power", "attribute.dragonminez.strike_power", 5.0);
-    public static final RegistryObject<Attribute> RESISTANCE = registerMainStat("resistance", "attribute.dragonminez.resistance", 5.0);
-    public static final RegistryObject<Attribute> VITALITY = registerMainStat("vitality", "attribute.dragonminez.vitality", 5.0);
-    public static final RegistryObject<Attribute> KI_POWER = registerMainStat("ki_power", "attribute.dragonminez.ki_power", 5.0);
-    public static final RegistryObject<Attribute> ENERGY = registerMainStat("energy", "attribute.dragonminez.energy", 5.0);
+    public static final RegistryObject<Attribute> STRENGTH = registerMainStat("strength", "attribute.dragonminez.strength", 0.0);
+    public static final RegistryObject<Attribute> STRIKE_POWER = registerMainStat("strike_power", "attribute.dragonminez.strike_power", 0.0);
+    public static final RegistryObject<Attribute> RESISTANCE = registerMainStat("resistance", "attribute.dragonminez.resistance", 0.0);
+    public static final RegistryObject<Attribute> VITALITY = registerMainStat("vitality", "attribute.dragonminez.vitality", 0.0);
+    public static final RegistryObject<Attribute> KI_POWER = registerMainStat("ki_power", "attribute.dragonminez.ki_power", 0.0);
+    public static final RegistryObject<Attribute> ENERGY = registerMainStat("energy", "attribute.dragonminez.energy", 0.0);
 
     public static final RegistryObject<Attribute> MAX_ENERGY = register("max_energy", "attribute.dragonminez.max_energy", 20.0, 0.0, 2000000000.0);
     public static final RegistryObject<Attribute> MAX_STAMINA = register("max_stamina", "attribute.dragonminez.max_stamina", 20.0, 0.0, 2000000000.0);

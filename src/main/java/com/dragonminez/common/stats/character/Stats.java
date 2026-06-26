@@ -20,14 +20,10 @@ public class Stats {
     }
 
     private int clampStatValue(int value) {
-        int min = 5;
+        int min = 0;
         int capped = Math.max(min, value);
-        if (ConfigManager.getServerConfig() == null || ConfigManager.getServerConfig().getGameplay() == null) {
-            return capped;
-        }
-        if (ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats()) {
-            return capped;
-        }
+        if (ConfigManager.getServerConfig() == null || ConfigManager.getServerConfig().getGameplay() == null) return capped;
+        if (ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats()) return capped;
         int max = ConfigManager.getServerConfig().getGameplay().getMaxValue();
         return Math.min(capped, max);
     }
@@ -55,27 +51,27 @@ public class Stats {
     }
 
     public int getStrength() {
-        return getAttributeBaseValue(MainAttributes.STRENGTH.get(), 5);
+        return getAttributeBaseValue(MainAttributes.STRENGTH.get(), 0);
     }
 
     public int getStrikePower() {
-        return getAttributeBaseValue(MainAttributes.STRIKE_POWER.get(), 5);
+        return getAttributeBaseValue(MainAttributes.STRIKE_POWER.get(), 0);
     }
 
     public int getResistance() {
-        return getAttributeBaseValue(MainAttributes.RESISTANCE.get(), 5);
+        return getAttributeBaseValue(MainAttributes.RESISTANCE.get(), 0);
     }
 
     public int getVitality() {
-        return getAttributeBaseValue(MainAttributes.VITALITY.get(), 5);
+        return getAttributeBaseValue(MainAttributes.VITALITY.get(), 0);
     }
 
     public int getKiPower() {
-        return getAttributeBaseValue(MainAttributes.KI_POWER.get(), 5);
+        return getAttributeBaseValue(MainAttributes.KI_POWER.get(), 0);
     }
 
     public int getEnergy() {
-        return getAttributeBaseValue(MainAttributes.ENERGY.get(), 5);
+        return getAttributeBaseValue(MainAttributes.ENERGY.get(), 0);
     }
 
     public void setStrength(int value) {
