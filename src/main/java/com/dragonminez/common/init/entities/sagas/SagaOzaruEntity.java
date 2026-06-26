@@ -17,10 +17,12 @@ public class SagaOzaruEntity extends DBSagasEntity{
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(180000);
 		}
+        this.setScaleVal(1.8f);
         this.setKiBlastSpeed(1.5f);
-        this.setDBZStyle(2);
-        this.addKiSkill(KiSkillType.OOZARU_BEAM, 200, 1.5F, 0xC523DE, 0XAF23DE);
-        this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);
+        this.setDBZStyle(4);
+        this.addKiSkill(KiSkillType.OOZARU_BEAM, 250, 1.5F, 0xC523DE, 0XAF23DE);
+        this.addKiSkill(KiSkillType.OOZARU_ROAR, 500, 15.5F);
+        this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(0.25D);
 
     }
 

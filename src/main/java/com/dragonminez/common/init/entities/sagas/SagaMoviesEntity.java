@@ -144,10 +144,10 @@ public class SagaMoviesEntity {
             super(pEntityType, pLevel);
 
             this.setCanFly(true);
-            this.setDBZStyle(0);
+            this.setDBZStyle(2);
             this.setAuraColor(0x22BD94);
             this.setKiBlastSpeed(2.0f);
-            this.setScaleVal(4.0f);
+            this.setScaleVal(6.0f);
 
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK, ComboType.GUM_PUNCH);
 
@@ -293,10 +293,10 @@ public class SagaMoviesEntity {
         public MetalCoolerCoreEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
-            this.setDBZStyle(0);
+            this.setDBZStyle(2);
             this.setAuraColor(0x22BD94);
             this.setKiBlastSpeed(2.2f);
-            this.setScaleVal(4.0f);
+            this.setScaleVal(6.0f);
             this.setLightning(true);
 
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
@@ -740,10 +740,10 @@ public class SagaMoviesEntity {
         public BioBrolyGiganteEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
             this.setCanFly(false);
-            this.setDBZStyle(0);
+            this.setDBZStyle(2);
             this.setAuraColor(0x3DF54A);
             this.setKiBlastSpeed(2.0f);
-            this.setScaleVal(4.0f);
+            this.setScaleVal(6.0f);
 
             this.setAllowedCombos(150, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
             this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300, 1.0F, 0x3DF54A, 0x0FBF1B);
@@ -785,7 +785,7 @@ public class SagaMoviesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xFFD700);
             this.setKiBlastSpeed(1.8f);
-            this.setScaleVal(5.0f);
+            this.setScaleVal(8.0f);
             this.setAllowedCombos(100, ComboType.BASIC, ComboType.GUM_PUNCH);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 150, 1.5F, 0xFFD700, 0xCCAC00);
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);
@@ -822,11 +822,11 @@ public class SagaMoviesEntity {
         public HirudegarnEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
             this.setCanFly(false);
-            this.setDBZStyle(0);
+            this.setDBZStyle(3);
             this.setAuraColor(0x38104D);
             this.setKiBlastSpeed(1.5f);
-            this.setScaleVal(4.0f); // Masivo
-            this.setAllowedCombos(100, ComboType.BASIC);
+            this.setScaleVal(2.5f); // Masivo
+//            this.setAllowedCombos(100, ComboType.BASIC);
             this.addKiSkill(KiSkillType.KI_SMALL, 150, 2.0F, 0x38104D, 0x1B0726);
             this.addKiSkill(KiSkillType.OOZARU_BEAM, 300, 1.5F, 0x38104D, 0x1B0726);
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);
@@ -842,11 +842,11 @@ public class SagaMoviesEntity {
         public SuperHirudegarnEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
             this.setCanFly(true);
-            this.setDBZStyle(0);
+            this.setDBZStyle(3);
             this.setAuraColor(0x38104D);
             this.setKiBlastSpeed(2.2f);
-            this.setScaleVal(4.0f);
-            this.setAllowedCombos(120, ComboType.AIR, ComboType.BASIC);
+            this.setScaleVal(2.5f);
+//            this.setAllowedCombos(120, ComboType.AIR, ComboType.BASIC);
             this.addKiSkill(KiSkillType.KI_SMALL, 150, 2.0F, 0x38104D, 0x1B0726);
             this.addKiSkill(KiSkillType.OOZARU_BEAM, 300, 1.5F, 0x38104D, 0x1B0726);
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);
@@ -856,6 +856,12 @@ public class SagaMoviesEntity {
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
+        }
+
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_hirudegarn";
         }
     }
 
