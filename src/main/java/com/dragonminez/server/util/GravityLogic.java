@@ -77,7 +77,12 @@ public class GravityLogic {
 	}
 
 	public static double getBonusGravity(Player player) {
-		return getNetGravity(player);
+		double netGravity = getNetGravity(player);
+		GeneralServerConfig.GravityConfig config = cfg();
+
+		if (netGravity >= config.getHardStopThreshold()) return 0.0;
+
+		return netGravity;
 	}
 
 	public static double getPenalizationGravity(Player player) {

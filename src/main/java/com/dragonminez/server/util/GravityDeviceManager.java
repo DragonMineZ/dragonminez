@@ -8,11 +8,6 @@ import net.minecraft.world.phys.AABB;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Server-side registry of active Gravity Device zones. Each active device publishes the
- * axis-aligned bounds of its sealed room together with the gravity it enforces; players
- * standing inside a zone receive that gravity through {@link GravityLogic#getMachineGravity}.
- */
 public final class GravityDeviceManager {
 
 	private record Zone(String dimension, AABB bounds, double gravity) {}
@@ -33,9 +28,6 @@ public final class GravityDeviceManager {
 		ZONES.remove(key(level, pos));
 	}
 
-	/**
-	 * @return the strongest machine gravity currently affecting the given player, or 0 if none.
-	 */
 	public static double getGravityFor(Player player) {
 		if (ZONES.isEmpty()) return 0.0;
 		String dim = player.level().dimension().location().toString();
