@@ -165,7 +165,7 @@ public class SkinGathererProvider {
 			return;
 		}
 
-		boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("ssj4gt") || logicKey.equals("ssj4d") || raceName.equals("saiyan");
+		boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d") || raceName.equals("saiyan");
 		boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && character.isHasSaiyanTail();
 
