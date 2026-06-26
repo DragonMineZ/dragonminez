@@ -110,36 +110,32 @@ public class TickHandler {
 
 			if (serverPlayer.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight(serverPlayer, data);
 
-			if (serverPlayer.hasEffect(MainEffects.STUN.get()) || data.getStatus().isStunned()) {
+			boolean isStunned = serverPlayer.hasEffect(MainEffects.STUN.get()) || data.getStatus().isStunned();
+
+			if (isStunned) {
 				data.getStatus().setChargingKi(false);
 				data.getStatus().setActionCharging(false);
 				data.getTechniques().clearTechniqueCharge();
 				data.getResources().setActionCharge(0);
 				if (!data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
+			} else if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 
-				data.getCooldowns().tick();
-				data.getEffects().tick();
-				data.getSecondaryStatEffects().tick();
-				clearExpiredKnockdown(data);
+			data.getCooldowns().tick();
+			data.getEffects().tick();
+			data.getSecondaryStatEffects().tick();
+			clearExpiredKnockdown(data);
 
+			for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
+				handler.onPlayerTick(serverPlayer, data);
+				handler.handleStatusEffects(serverPlayer, data);
+			}
+			if (tickCounter % 20 == 0) {
 				for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
-					handler.onPlayerTick(serverPlayer, data);
-					handler.handleStatusEffects(serverPlayer, data);
-				}
-				if (tickCounter % 20 == 0) for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS)
 					handler.onPlayerSecond(serverPlayer, data);
-				if (serverPlayer.tickCount % SYNC_INTERVAL == 0)
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-				return;
-			} else {
-				data.getCooldowns().tick();
-				data.getEffects().tick();
-				data.getSecondaryStatEffects().tick();
-				clearExpiredKnockdown(data);
-				if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
+				}
 			}
 
-			handleTechniqueCharge(serverPlayer, data);
+			if (!isStunned) handleTechniqueCharge(serverPlayer, data);
 
 			boolean shouldRegen = tickCounter >= REGEN_INTERVAL && !serverPlayer.isDeadOrDying();
 			boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
@@ -219,10 +215,6 @@ public class TickHandler {
 				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
 			}
 
-			// Holding the action key sets isActionCharging client-side without validating
-			// the action. Clear it here when the selected action is not actually possible
-			// so the aura, the transformation animation and the movement lock (all keyed on
-			// isActionCharging) never trigger on an impossible action.
 			if (data.getStatus().isActionCharging() && !canChargeSelectedAction(serverPlayer, data)) {
 				data.getStatus().setActionCharging(false);
 				if (data.getResources().getActionCharge() > 0) data.getResources().setActionCharge(0);
@@ -303,11 +295,6 @@ public class TickHandler {
 				} else if (!data.getStatus().getPothalaColor().isEmpty()) data.getStatus().setPothalaColor("");
 			}
 
-			for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
-				handler.onPlayerTick(serverPlayer, data);
-				handler.handleStatusEffects(serverPlayer, data);
-			}
-
 			if (tickCounter % 20 == 0) {
 				handleActionCharge(serverPlayer, data);
 				handleActiveFormDrains(serverPlayer, data);
@@ -325,15 +312,10 @@ public class TickHandler {
 					data.getCharacter().setActiveForm("androidforms", "androidbase");
 					serverPlayer.refreshDimensions();
 				}
-
-				for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
-					handler.onPlayerSecond(serverPlayer, data);
-				}
 			}
 
 			if (shouldSync) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 		});
-
 	}
 
     @SubscribeEvent
