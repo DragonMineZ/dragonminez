@@ -27,11 +27,11 @@ public final class KiSenseScan {
 
 	private static final Set<Integer> COMBAT_ENTITIES = new HashSet<>();
 	private static final Set<Integer> SEARCH_ENTITIES = new HashSet<>();
-	private static final Map<Integer, Integer> SENSED_BP = new HashMap<>();
-	private static final Map<Integer, Integer> CACHED_BP = new HashMap<>();
+	private static final Map<Integer, Float> SENSED_BP = new HashMap<>();
+	private static final Map<Integer, Float> CACHED_BP = new HashMap<>();
 
 	private static int scanTickCounter = 0;
-	private static int cachedMyBP = 0;
+	private static float cachedMyBP = 0f;
 	private static boolean firstScanDone = false;
 	private static boolean suppressAlerts = false;
 
@@ -45,12 +45,12 @@ public final class KiSenseScan {
 		return SEARCH_ENTITIES;
 	}
 
-	public static int getMyBP() {
+	public static float getMyBP() {
 		return cachedMyBP;
 	}
 
-	public static int getCachedBP(int entityId) {
-		return CACHED_BP.getOrDefault(entityId, 0);
+	public static float getCachedBP(int entityId) {
+		return CACHED_BP.getOrDefault(entityId, 0f);
 	}
 
 	public static void forceRescan() {
@@ -133,7 +133,7 @@ public final class KiSenseScan {
 			if (!canTarget(entity, data)) continue;
 
 			double dist = player.distanceTo(entity);
-			int bp = getEntityBP(entity);
+			float bp = getEntityBP(entity);
 			CACHED_BP.put(entity.getId(), bp);
 
 			if (dist <= searchRange) {
@@ -157,8 +157,8 @@ public final class KiSenseScan {
 		suppressAlerts = false;
 	}
 
-	private static boolean shouldAlert(Player player, LivingEntity entity, int bp) {
-		Integer old = SENSED_BP.get(entity.getId());
+	private static boolean shouldAlert(Player player, LivingEntity entity, float bp) {
+		Float old = SENSED_BP.get(entity.getId());
 		boolean threatening = bp > cachedMyBP;
 		boolean entered = old == null;
 		boolean surged = old != null && bp > old * TRANSFORM_ALERT_FACTOR;
@@ -172,15 +172,18 @@ public final class KiSenseScan {
 		return inFrustum && player.hasLineOfSight(entity);
 	}
 
-	public static int getEntityBP(LivingEntity entity) {
+	public static float getEntityBP(LivingEntity entity) {
 		try {
 			if (entity instanceof Player player) {
-				if (isCloaked(player)) return 0;
-				return StatsProvider.get(StatsCapability.INSTANCE, player).map(StatsData::getBattlePower).orElse(0);
+				if (isCloaked(player)) return 0f;
+				return StatsProvider.get(StatsCapability.INSTANCE, player).map(StatsData::getBattlePower).orElse(0f);
 			}
-			if (entity instanceof IBattlePower bpEntity) return bpEntity.getBattlePower();
+			if (entity instanceof IBattlePower bpEntity) {
+				float entityBp = (float) bpEntity.getBattlePower();
+				return Math.min(entityBp, Integer.MAX_VALUE);
+			}
 		} catch (Exception ignored) {}
-		return 0;
+		return 0f;
 	}
 
 	private static boolean isCloaked(Player target) {

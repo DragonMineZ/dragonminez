@@ -143,13 +143,13 @@ public class StatsData {
 	private static final double BP_REF_VALUE = 5_000_000_000.0;
 	private static final double BP_CURVE_EXPONENT = 2.8;
 
-	public int getBattlePower() {
-		long exact = getBattlePowerExact();
-		return exact > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) exact;
+	public float getBattlePower() {
+		double exact = getBattlePowerExact();
+		return exact >= Float.MAX_VALUE ? Float.MAX_VALUE : (float) exact;
 	}
 
-	public long getBattlePowerExact() {
-		if (status.isAndroidUpgraded()) return Integer.MAX_VALUE;
+	public double getBattlePowerExact() {
+		if (status.isAndroidUpgraded()) return Float.MAX_VALUE;
 
 		double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
 
@@ -159,12 +159,12 @@ public class StatsData {
 				+ stats.getVitality() * getStatScaling("VIT") * getTotalMultiplier("VIT")
 				+ stats.getKiPower() * getStatScaling("PWR") * getTotalMultiplier("PWR")) * releaseMultiplier;
 
-		if (Double.isNaN(rawPower) || rawPower <= 0) return 0L;
+		if (Double.isNaN(rawPower) || rawPower <= 0) return 0.0;
 
 		double bp = BP_REF_VALUE * Math.pow(rawPower / K, BP_CURVE_EXPONENT);
 
-		if (Double.isNaN(bp) || bp <= 0) return 0L;
-		return (long) Math.min(bp, (double) Long.MAX_VALUE);
+		if (Double.isNaN(bp) || bp <= 0) return 0.0;
+		return bp;
 	}
 
 	private double getSecondaryAttributeValue(net.minecraft.world.entity.ai.attributes.Attribute attribute, double fallback) {

@@ -75,7 +75,7 @@ public final class KiSenseAuraRenderer {
 		ShaderInstance shader = DMZShaders.auraShader;
 		if (shader == null) return;
 
-		int myBP = KiSenseScan.getMyBP();
+		double myBP = KiSenseScan.getMyBP();
 		if (myBP <= 0) myBP = Math.max(1, myData.getBattlePower());
 
 		ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/kakarot_cross.png");
@@ -99,7 +99,7 @@ public final class KiSenseAuraRenderer {
 			double dist = mc.player.distanceTo(living);
 			boolean lod = dist > LOD_DISTANCE;
 
-			int bp = KiSenseScan.getCachedBP(id);
+			double bp = KiSenseScan.getCachedBP(id);
 			double ratio = bp / (double) Math.max(1, myBP);
 			float[][] colors = auraColors(living, ratio);
 			float[] border = colors[0];

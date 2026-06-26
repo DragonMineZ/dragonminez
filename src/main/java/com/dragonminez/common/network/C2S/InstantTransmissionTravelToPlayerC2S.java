@@ -61,7 +61,7 @@ public class InstantTransmissionTravelToPlayerC2S {
 				if (PartyManager.areInSameParty(player, target)) {
 					if (!sameDimension && skillLevel < CROSS_DIMENSION_SKILL_LEVEL) return;
 				} else {
-					long selfBp = data.getBattlePowerExact();
+					double selfBp = data.getBattlePowerExact();
 					int rangePerLevel = ConfigManager.getServerConfig().getGameplay().getInstantTransmissionPlayerRangePerLevel();
 					double maxRange = (double) rangePerLevel * skillLevel;
 					if (!RequestITTargetsC2S.isValidExternalTarget(player, data, selfBp, target, targetData, maxRange)) return;
