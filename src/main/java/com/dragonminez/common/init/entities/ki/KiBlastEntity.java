@@ -78,6 +78,16 @@ public class KiBlastEntity extends AbstractKiProjectile {
         return this.getKiRenderType() == 0 ? ClashRole.MINOR : ClashRole.NONE;
     }
 
+    private float calcCenterOffsetY(float sphereSize) {
+        return -(sphereSize / 2.0F);
+    }
+
+    private float calcForwardOffset(LivingEntity owner, float sphereSize) {
+        float ownerHalfWidth = owner.getBbWidth() / 2.0F;
+        float sphereRadius = sphereSize / 2.0F;
+        return ownerHalfWidth + sphereRadius + 0.1F;
+    }
+
     public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setOwner(owner);
         this.setKiRenderType(1);
@@ -88,8 +98,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(100);
-        this.setCastOffsets(0.0f, 0.0F, 2.0F);
+        this.setCastOffsets(0.0f, calcCenterOffsetY(size) + 0.5f, calcForwardOffset(owner, size));
         updatePositionRelativeToOwner(owner);
+
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
         
     }
@@ -256,6 +267,24 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed) {
         this.setupKiNovaPlayer(owner, damage, speed, 0x800E0E);
     }
+
+    public void setupKiNovaCoolerPlayer(LivingEntity owner, float damage, float speed) {
+        this.setOwner(owner);
+        this.setKiRenderType(6);
+        this.setSize(5.0F);
+        this.setKiSpeed(speed);
+        this.setKiDamage(damage);
+        this.setColors(0xFF3866, 0xA3143A, 0x4A0316);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(100);
+        this.setCastOffsets(0.0F, 2.5F, 0.0F);
+        updatePositionRelativeToOwner(owner);
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+
+    }
+
+
 
     public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
         this.setOwner(owner);
@@ -941,19 +970,19 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private void updatePositionRelativeToOwner(LivingEntity owner) {
         Vec3 look = owner.getLookAngle();
-        Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
-        Vec3 up = right.cross(look).normalize();
+        Vec3 worldUp = new Vec3(0, 1, 0);
+        Vec3 right = look.cross(worldUp).normalize();
 
+        // Usar worldUp directamente en vez de right.cross(look)
         Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
-                .add(up.scale(this.entityData.get(OFFSET_Y)))
+                .add(worldUp.scale(this.entityData.get(OFFSET_Y)))  // <-- cambio aquí
                 .add(look.scale(this.entityData.get(OFFSET_Z)));
 
         double centerX = owner.getX();
         double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
         double centerZ = owner.getZ();
-        Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
 
-        Vec3 newPos = hitboxCenter.add(offset);
+        Vec3 newPos = new Vec3(centerX, centerY, centerZ).add(offset);
         this.setPos(newPos.x, newPos.y, newPos.z);
 
         this.setYRot(owner.getYRot());

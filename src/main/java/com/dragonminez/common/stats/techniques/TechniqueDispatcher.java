@@ -126,8 +126,10 @@ public class TechniqueDispatcher {
                 KiBlastEntity giantBall = new KiBlastEntity(level, owner);
                 if ("spiritbomb".equals(data.getId())) {
                     giantBall.setupKiGenkiPlayer(owner, realDamage, data.getSpeed());
-                } else if ("supernova".equals(data.getId()) || "supernova_cooler".equals(data.getId())) {
+                } else if ("supernova".equals(data.getId())) {
                     giantBall.setupKiNovaPlayer(owner, realDamage, data.getSpeed());
+                } else if ("supernova_cooler".equals(data.getId())) {
+                    giantBall.setupKiNovaCoolerPlayer(owner, realDamage, data.getSpeed());
                 } else if ("death_ball".equals(data.getId())) {
                     giantBall.setupKiDeathBallPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior());
                     giantBall.setColorOutline(data.getColorOutline());

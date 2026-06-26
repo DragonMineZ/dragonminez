@@ -6,36 +6,29 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * Live state for a single beam clash between two firing beams. The clash point sits
- * on the segment between the two beam origins at fraction {@link #biasT} (0 = side A's
- * origin, 1 = side B's origin). Each tick the meters advance, momentum + ki stats are
- * blended into a net force, and the clash point drifts toward the weaker side. When it
- * reaches a side's origin (or the duration cap is hit) that side loses.
- */
 public class BeamClash {
 
-    // --- QTE meter tuning ---
-    public static final float SWEEP_RATE = 0.025f;             // phase units per tick (~2s left→right at 20 tps)
-    public static final float SWEET_LOW = 0.78f;               // sweet-spot window near the top of the sweep
+    public static final float SWEEP_RATE = 0.010f;
+    public static final float SWEET_LOW = 0.78f;
     public static final float SWEET_HIGH = 0.96f;
-    public static final float BURST_PER_PERFECT_PRESS = 0.7f;  // momentum from a centered press
-    public static final float MOMENTUM_DECAY = 0.96f;          // slow decay so a good rhythm accumulates a lead
+    public static final float OFF_SPOT_EFFICIENCY = 0.18f;
+    public static final float BURST_PER_PERFECT_PRESS = 0.7f;
+    public static final float MOMENTUM_DECAY = 0.96f;
 
-    // --- tug-of-war tuning ---
-    private static final float DRIFT_PER_TICK = 0.013f;        // biasT change per unit net force
-    private static final float DAMAGE_WEIGHT = 0.8f;           // technique damage dominates the struggle
-    private static final float QTE_WEIGHT = 0.2f;              // button timing is a secondary push
-    private static final float EDGE = 0.10f;                   // biasT within EDGE of an origin = that side loses
-    private static final int MIN_DURATION = 110;               // no one can win before ~5.5s
-    private static final int MAX_DURATION = 400;               // hard cap (~20s) before damage decides
-    private static final int WINNER_BREAKTHROUGH_TICKS = 60;   // life granted to the winning beam to surge through
+    private static final float DRIFT_PER_TICK = 0.005f;
+    private static final float STR_FLOOR = 0.6f;
+    private static final float STR_SPAN = 0.8f;
+    private static final float MIN_TRACTION = 0.35f;
+    private static final float WIN_THRESHOLD = 0.8f;
+    private static final int IDLE_DISSOLVE_TICKS = 100;
+    private static final int MAX_DURATION = 600;
+    private static final int WINNER_BREAKTHROUGH_TICKS = 60;
 
     public enum Result { ONGOING, A_WINS, B_WINS, DISSOLVED }
 
     private final ClashParticipant a;
     private final ClashParticipant b;
-    private float biasT = 0.5f;
+    private float biasT;
     private int age = 0;
     @Getter
     private boolean ended = false;
@@ -43,11 +36,7 @@ public class BeamClash {
     public BeamClash(ClashParticipant a, ClashParticipant b) {
         this.a = a;
         this.b = b;
-        // Start the clash point where the beams actually met (geometry), clamped near center
-        // so neither side opens already near a loss. Damage + QTE then drive it from there.
-        float lenA = Math.max(0.1f, a.beam().getClashBeamLength());
-        float lenB = Math.max(0.1f, b.beam().getClashBeamLength());
-        this.biasT = Mth.clamp(lenA / (lenA + lenB), 0.35f, 0.65f);
+        this.biasT = 0.5f;
     }
 
     public ClashParticipant a() {
@@ -89,28 +78,30 @@ public class BeamClash {
         a.tickMeter();
         b.tickMeter();
 
-        // Damage term: relative technique strength, in [-1, 1] (+ favors A). This dominates,
-        // so the stronger attack always pulls ahead and ultimately wins.
         double pa = a.statPower();
         double pb = b.statPower();
-        float dmgTerm = (float) ((pa - pb) / (pa + pb));
+        float strengthA = (float) (pa / (pa + pb));
+        float strengthB = 1.0f - strengthA;
 
-        float qteTerm = Mth.clamp(a.momentum() - b.momentum(), -1.0f, 1.0f);
+        float tracA = Mth.clamp(2.0f * biasT, MIN_TRACTION, 1.0f);
+        float tracB = Mth.clamp(2.0f * (1.0f - biasT), MIN_TRACTION, 1.0f);
 
-        float netForce = DAMAGE_WEIGHT * dmgTerm + QTE_WEIGHT * qteTerm;
+        float pushA = a.momentum() * (STR_FLOOR + STR_SPAN * strengthA) * tracA;
+        float pushB = b.momentum() * (STR_FLOOR + STR_SPAN * strengthB) * tracB;
 
-        // Positive net force pushes the clash point toward B (biasT -> 1), i.e. A is winning.
-        biasT += DRIFT_PER_TICK * netForce;
+        biasT += DRIFT_PER_TICK * (pushA - pushB);
         biasT = Mth.clamp(biasT, 0.0f, 1.0f);
 
-        // Keep both beams locked to meet exactly at the clash point and prevent expiry.
         applyLock();
 
-        if (age < MIN_DURATION) return Result.ONGOING;
-
-        if (biasT >= 1.0f - EDGE) return Result.A_WINS;
-        if (biasT <= EDGE) return Result.B_WINS;
-        if (age >= MAX_DURATION) return biasT >= 0.5f ? Result.A_WINS : Result.B_WINS;
+        if (biasT >= WIN_THRESHOLD) return Result.A_WINS;
+        if (biasT <= 1.0f - WIN_THRESHOLD) return Result.B_WINS;
+        if (Math.min(a.idleTicks(), b.idleTicks()) >= IDLE_DISSOLVE_TICKS) return Result.DISSOLVED;
+        if (age >= MAX_DURATION) {
+            if (biasT > 0.5f) return Result.A_WINS;
+            if (biasT < 0.5f) return Result.B_WINS;
+            return Result.DISSOLVED;
+        }
         return Result.ONGOING;
     }
 

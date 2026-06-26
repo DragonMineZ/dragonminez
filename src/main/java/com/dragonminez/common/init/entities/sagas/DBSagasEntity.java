@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.clash.BeamClashManager;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.MainParticles;
@@ -641,6 +642,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
             if (!this.isTransforming()) {
 
+                boolean clashing = BeamClashManager.isClashing(this.getUUID());
+
                 if (!this.isCasting() && !this.isComboing()) {
                     if (this.canEvade && this.currentEvadeTimer > 0) this.currentEvadeTimer--;
                     if (this.canUseWildSense && this.currentWildSenseCooldown > 0) this.currentWildSenseCooldown--;
@@ -735,7 +738,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     }
                 }
 
-                if (this.aiTier == AiTier.SIMPLE && this.canUseWildSense && this.currentWildSenseCooldown <= 0 && this.getTarget() != null && !this.isCasting() && !this.isComboing()) {
+                if (this.aiTier == AiTier.SIMPLE && this.canUseWildSense && this.currentWildSenseCooldown <= 0 && this.getTarget() != null && !this.isCasting() && !this.isComboing() && !clashing) {
                     this.performTeleport(this.getTarget());
                     this.currentWildSenseCooldown = this.wildSenseCooldownMax;
                 }
@@ -763,7 +766,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.isComboing()) {
                         this.comboTimer++;
                         handleComboLogic();
-                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null) {
+                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null && !clashing) {
                         if (this.distanceTo(this.getTarget()) < 6.0D) {
                             this.startComboAuto();
                         }
@@ -778,7 +781,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     } else {
                         if (this.decisionCooldown > 0) this.decisionCooldown--;
                         if (this.decisionCooldown <= 0 && !this.isCasting() && !this.isComboing()
-                                && !this.isZanzoken() && !this.isEvading()) {
+                                && !this.isZanzoken() && !this.isEvading() && !clashing) {
                             this.decisionCooldown = DECISION_INTERVAL;
                             this.runBrainDecision();
                         }
@@ -885,6 +888,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             return false;
         }
 
+        if (BeamClashManager.isClashing(this.getUUID())) {
+            return false;
+        }
+
         if (this.getTarget() == null || this.distanceTo(this.getTarget()) <= 4.0D) {
             return false;
         }
@@ -898,6 +905,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void startSkill(KiSkill skill) {
         if (skill == null) return;
+        if (BeamClashManager.isClashing(this.getUUID())) return;
         this.currentPoolSkillSize = skill.size;
         this.currentPoolColorMain = skill.colorMain;
         this.currentPoolColorBorder = skill.colorBorder;
@@ -1421,6 +1429,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void startCasting(int type) {
+        if (BeamClashManager.isClashing(this.getUUID())) return;
         this.setCasting(true);
         this.setSkillType(type);
         this.castTimer = 0;
