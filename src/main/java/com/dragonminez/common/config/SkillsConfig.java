@@ -12,10 +12,10 @@ import java.util.Map;
 
 @Getter
 public class SkillsConfig {
-	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private int configVersion;
+	private double configVersion;
 
 	private final List<String> kiSkills = new ArrayList<>();
 	private final List<String> formSkills = new ArrayList<>();

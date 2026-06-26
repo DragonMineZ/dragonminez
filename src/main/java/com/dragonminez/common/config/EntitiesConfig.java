@@ -10,10 +10,10 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class EntitiesConfig {
-	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private int configVersion;
+	private double configVersion;
 
 	private Map<String, EntityStats> defaultEntityStats = new HashMap<>();
 

@@ -16,10 +16,10 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class GeneralServerConfig {
-	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private int configVersion;
+	private double configVersion;
 
 	private WorldGenConfig worldGen = new WorldGenConfig();
 	private GameplayConfig gameplay = new GameplayConfig();

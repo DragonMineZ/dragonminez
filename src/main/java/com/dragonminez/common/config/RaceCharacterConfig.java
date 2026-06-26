@@ -10,9 +10,9 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 public class RaceCharacterConfig {
-	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
-	private int configVersion;
+	private double configVersion;
 
 	private String raceName;
 	private Boolean hasGender = true;

@@ -21,11 +21,11 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import java.util.function.ToIntFunction;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final int CONFIG_VERSION = 12;
+	public static final double CONFIG_VERSION = 21.0;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
@@ -117,7 +117,7 @@ public class ConfigManager {
 		}
 	}
 
-	private static <T> T loadAndValidate(Path path, Class<T> clazz, Supplier<T> defaultProvider, ToIntFunction<T> versionGetter, BiConsumer<T, Integer> versionSetter, int currentVersion, String templateName) {
+	private static <T> T loadAndValidate(Path path, Class<T> clazz, Supplier<T> defaultProvider, ToDoubleFunction<T> versionGetter, BiConsumer<T, Double> versionSetter, double currentVersion, String templateName) {
 		boolean overwrite = false;
 		String reason = "";
 		T config = null;
@@ -125,9 +125,9 @@ public class ConfigManager {
 		if (Files.exists(path)) {
 			try {
 				config = LOADER.loadConfig(path, clazz);
-				int version = versionGetter.applyAsInt(config);
+				double version = versionGetter.applyAsDouble(config);
 				if (version < currentVersion) {
-					reason = version == 0 ? "Missing config version" : "Outdated version (" + version + " < " + currentVersion + ")";
+					reason = version == 0.0 ? "Missing config version" : "Outdated version (" + version + " < " + currentVersion + ")";
 					overwrite = true;
 				}
 			} catch (Exception e) {
@@ -141,7 +141,7 @@ public class ConfigManager {
 				try {
 					LOADER.saveDefaultFromTemplate(path, templateName);
 					config = LOADER.loadConfig(path, clazz);
-					if (versionGetter.applyAsInt(config) < currentVersion) overwrite = true;
+					if (versionGetter.applyAsDouble(config) < currentVersion) overwrite = true;
 				} catch (Exception e) {
 					reason = "Template loading failed: " + e.getMessage();
 				}

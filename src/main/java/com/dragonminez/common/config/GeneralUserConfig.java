@@ -7,10 +7,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GeneralUserConfig {
-	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private int configVersion;
+	private double configVersion;
 
 	private Boolean firstPersonAnimated = true;
 	private boolean impactFramesEnabled = false;

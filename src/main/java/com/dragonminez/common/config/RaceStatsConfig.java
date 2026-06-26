@@ -12,10 +12,10 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class RaceStatsConfig {
-	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private int configVersion;
+	private double configVersion;
 
 	private final Map<String, ClassStats> classes = new HashMap<>();
 

@@ -10,8 +10,8 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 public class FormConfig {
-	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
-	private int configVersion;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	private double configVersion;
 
 	private String groupName;
 	private String formType = "superforms";

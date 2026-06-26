@@ -11,10 +11,10 @@ import java.util.Map;
 
 @Getter
 public class TechniqueConfig {
-	public static final int CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private int configVersion;
+	private double configVersion;
 
 	@SerializedName("KiAttacks")
 	private final Map<String, TechniqueTypeConfig> kiAttacks = new HashMap<>();
