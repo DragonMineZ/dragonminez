@@ -35,7 +35,7 @@ public class HairRenderer {
 	private static final ResourceLocation HAIR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/hair.png");
 	private static final HairFace[] FACES = HairFace.values();
 
-	public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hairFrom, CustomHair hairTo, float transitionFactor, Character character, StatsData stats, AbstractClientPlayer player, float[] rgbFrom, float[] rgbTo, boolean forceColorFrom, boolean forceColorTo, float partialTick, int packedLight, int packedOverlay, float baseAlpha, float physicsLodMultiplier) {
+	public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hairFrom, CustomHair hairTo, float transitionFactor, Character character, StatsData stats, AbstractClientPlayer player, float[] rgbFrom, float[] rgbTo, boolean forceColorFrom, boolean forceColorTo, float partialTick, int packedLight, int packedOverlay, float baseAlpha, float physicsLodMultiplier, float chargeProgress) {
 		if (hairFrom == null) hairFrom = new CustomHair();
 		if (hairTo == null) hairTo = hairFrom;
 
@@ -72,7 +72,7 @@ public class HairRenderer {
 			inertiaForward = Mth.clamp(fwd * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaSide = Mth.clamp(-side * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaLift = Mth.clamp(vert * gain, -INERTIA_MAX, INERTIA_MAX);
-			if (stats.getStatus().isChargingKi()) inertiaLift -= KI_CHARGE_LIFT * physicsLodMultiplier;
+			if (chargeProgress > 0.0f) inertiaLift += KI_CHARGE_LIFT * physicsLodMultiplier * chargeProgress;
 		}
 
 		if (!useFromOnly && !useToOnly) {
@@ -221,7 +221,7 @@ public class HairRenderer {
 				VertexConsumer strandBuffer = bufferSource.getBuffer(currentAlpha < 1.0f ? translucentType : opaqueType);
 				renderStrandInterpolated(poseStack, strandBuffer,
 						staticPos, tempRgb[0], tempRgb[1], tempRgb[2], packedLight, packedOverlay,
-						time, movementIntensity, isCharging,
+						time, movementIntensity, chargeProgress,
 						inertiaForward, inertiaSide, inertiaLift,
 						lerpRotX, lerpRotY, lerpRotZ,
 						lerpScaleX, lerpScaleY, lerpScaleZ, lerpStretch,
@@ -257,7 +257,7 @@ public class HairRenderer {
 	}
 
 	private static void renderStrandInterpolated(PoseStack poseStack, VertexConsumer strandBuffer, Vector3f pos, float r, float g, float b, int packedLight, int packedOverlay,
-	                                             float time, float moveIntensity, boolean isCharging,
+	                                             float time, float moveIntensity, float chargeProgress,
 	                                             float inertiaForward, float inertiaSide, float inertiaLift,
 	                                             float rotX, float rotY, float rotZ,
 	                                             float scaleX, float scaleY, float scaleZ, float stretchFactor,
@@ -268,14 +268,22 @@ public class HairRenderer {
 		poseStack.translate(pos.x * UNIT_SCALE, pos.y * UNIT_SCALE, pos.z * UNIT_SCALE);
 
 		float offset = (id * 13.0f);
-		float swaySpeed = isCharging ? 0.8f : (moveIntensity > 0.5f ? 0.4f : 0.05f);
-		float swayAmount = (isCharging ? 3.0f : (moveIntensity > 0.5f ? 5.0f : 0.6f)) * physicsLodMultiplier;
 
-		float animRotX = (time == 0) ? 0 : Mth.sin((time + offset) * swaySpeed) * swayAmount;
-		float animRotZ = (time == 0) ? 0 : Mth.cos((time + offset) * swaySpeed * 0.7f) * (swayAmount * 0.5f);
+		float baseSwaySpeed = moveIntensity > 0.5f ? 0.4f : 0.05f;
+		float baseSwayAmount = (moveIntensity > 0.5f ? 5.0f : 0.6f) * physicsLodMultiplier;
 
-		if (isCharging && time != 0) {
-			float chargeLift = Mth.abs(Mth.sin(time * 0.5f)) * 5.0f * physicsLodMultiplier;
+		float targetSwaySpeed = 0.8f;
+		float targetSwayAmount = 3.0f * physicsLodMultiplier;
+
+		float currentSwaySpeed = Mth.lerp(chargeProgress, baseSwaySpeed, targetSwaySpeed);
+		float currentSwayAmount = Mth.lerp(chargeProgress, baseSwayAmount, targetSwayAmount);
+		float phase = (time + offset) * currentSwaySpeed;
+
+		float animRotX = (time == 0) ? 0 : Mth.sin(phase) * currentSwayAmount;
+		float animRotZ = (time == 0) ? 0 : Mth.cos(phase * 0.7f) * (currentSwayAmount * 0.5f);
+
+		if (chargeProgress > 0.0f && time != 0) {
+			float chargeLift = Mth.abs(Mth.sin(time * 0.5f)) * 5.0f * physicsLodMultiplier * chargeProgress;
 			curveX += chargeLift;
 		}
 
@@ -310,12 +318,21 @@ public class HairRenderer {
 
 				float segCurveX = curveX;
 				float segCurveZ = curveZ;
+
 				if (time != 0) {
 					float tip = (float) i / length;
 					float seg = tip * physicsLodMultiplier;
-					float microPhase = (time * swaySpeed) + offset + i * SEGMENT_PHASE;
-					segCurveX += Mth.sin(microPhase) * MICRO_SWAY * seg + (inertiaForward - inertiaLift) * seg;
-					segCurveZ += Mth.cos(microPhase * 0.7f) * MICRO_SWAY * 0.5f * seg + inertiaSide * seg;
+
+					float altCurrentSwaySpeed = Mth.lerp(chargeProgress, baseSwaySpeed, targetSwaySpeed);
+					float microPhase = (time * altCurrentSwaySpeed) + offset + i * SEGMENT_PHASE;
+
+					float waveX = Mth.sin(microPhase);
+					float waveZ = Mth.cos(microPhase * 0.7f);
+
+					float altCurrentSwayAmount = Mth.lerp(chargeProgress, baseSwayAmount, targetSwayAmount);
+
+					segCurveX += waveX * MICRO_SWAY * altCurrentSwayAmount * seg + (inertiaForward - inertiaLift) * seg;
+					segCurveZ += waveZ * MICRO_SWAY * 0.5f * altCurrentSwayAmount * seg + inertiaSide * seg;
 				}
 
 				applyRotation(poseStack, segCurveX, curveY, segCurveZ);
