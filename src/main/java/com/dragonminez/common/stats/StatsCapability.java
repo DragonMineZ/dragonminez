@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -29,6 +30,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class StatsCapability {
@@ -87,7 +90,7 @@ public class StatsCapability {
 
 			MinecraftServer server = serverPlayer.getServer();
 			if (server != null && !QuestStructureHints.isResolved()) {
-				java.util.UUID playerId = serverPlayer.getUUID();
+				UUID playerId = serverPlayer.getUUID();
 				QuestStructureHints.ensureResolvedAsync(server).thenRun(() -> server.execute(() -> {
 					ServerPlayer online = server.getPlayerList().getPlayer(playerId);
 					if (online != null) NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), online);
@@ -100,7 +103,13 @@ public class StatsCapability {
 				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
 				TransformationsHelper.ensureSelectedFormDefault(data);
 				TransformationsHelper.ensureSelectedStackFormDefault(data);
-				java.util.Map<String, String> repairedSkills = data.getSkills().repairSkillNames();
+
+				data.getStatus().setStrikeLocked(false);
+				data.getStatus().setStunEffect(false);
+				data.getStatus().setKnockedDown(false);
+				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+
+				Map<String, String> repairedSkills = data.getSkills().repairSkillNames();
 				if (!repairedSkills.isEmpty()) {
 					repairedSkills.forEach((oldName, newName) -> LogUtil.info(Env.SERVER, "Repaired skill for {}: '{}' -> '{}'", serverPlayer.getGameProfile().getName(), oldName, newName));
 				}
@@ -124,6 +133,10 @@ public class StatsCapability {
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
 				data.getResources().setCurrentStamina(data.getMaxStamina());
+				data.getStatus().setStrikeLocked(false);
+				data.getStatus().setStunEffect(false);
+				data.getStatus().setKnockedDown(false);
+				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -135,6 +148,12 @@ public class StatsCapability {
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				markCurrentDimensionVisited(serverPlayer, data);
 				data.getSkills().setSkillActive("kisense", false);
+
+				data.getStatus().setStrikeLocked(false);
+				data.getStatus().setStunEffect(false);
+				data.getStatus().setKnockedDown(false);
+				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}

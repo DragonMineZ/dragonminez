@@ -1,8 +1,10 @@
 package com.dragonminez.client.util;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.stats.character.Character;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -39,7 +41,7 @@ public class TextureCounter {
 
     public static int getMaxBodyTypes(String race, String gender) {
         String normalizedRace = normalizeRace(race);
-        String genderNormalized = (gender.equals("female") || gender.equals("mujer")) ? "female" : "male";
+        String genderNormalized = gender.equals(Character.GENDER_FEMALE) ? "female" : "male";
         String key = normalizedRace + "_" + genderNormalized;
         if (BODY_TYPE_CACHE.containsKey(key)) return BODY_TYPE_CACHE.get(key);
         int count = countBodyTextures(normalizedRace, genderNormalized);
@@ -107,17 +109,20 @@ public class TextureCounter {
             return count > 0 ? count - 1 : -1;
         } else if (isCustomLayered) {
             String model = (config.getCustomModel() != null && !config.getCustomModel().isEmpty()) ? config.getCustomModel() : race;
-            String genSuffix = Boolean.TRUE.equals(config.getHasGender()) ? ((gender.equals("female") || gender.equals("mujer")) ? "_female" : "_male") : "";
+            String genSuffix = Boolean.TRUE.equals(config.getHasGender()) ? (gender.equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
 
-            for (int i = 0; i <= 100; i++) {
+            int startIndex = Boolean.TRUE.equals(config.getUseVanillaSkin()) ? 1 : 0;
+
+            for (int i = startIndex; i <= 100; i++) {
                 String basePath = "textures/entity/races/" + race + "/" + model + genSuffix + "_" + i + "_layer1.png";
                 ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath);
                 if (resourceManager.getResource(location).isPresent()) count++;
                 else break;
             }
-            return count > 0 ? count - 1 : -1;
+
+            return count > 0 ? (Boolean.TRUE.equals(config.getUseVanillaSkin()) ? count : count - 1) : -1;
         } else {
-            boolean usesVanillaSkin = race.equals("human") || race.equals("saiyan");
+            boolean usesVanillaSkin = race.equals("human") || race.equals("saiyan") || (config != null && Boolean.TRUE.equals(config.getUseVanillaSkin()));
             int startIndex = usesVanillaSkin ? 1 : 0;
 
             String basePath = getBasePathForBodyType(race, gender);
@@ -181,7 +186,7 @@ public class TextureCounter {
         RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
         if (config != null && !Boolean.TRUE.equals(config.getIsLayered())) {
             String model = (config.getCustomModel() != null && !config.getCustomModel().isEmpty()) ? config.getCustomModel() : race;
-            String genSuffix = Boolean.TRUE.equals(config.getHasGender()) ? ((gender.equals("female") || gender.equals("mujer")) ? "_female" : "_male") : "";
+            String genSuffix = Boolean.TRUE.equals(config.getHasGender()) ? (gender.equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
             return "textures/entity/races/" + race + "/" + model + genSuffix + "_";
         }
         return "textures/entity/races/" + race + "/bodytype_";
@@ -195,5 +200,6 @@ public class TextureCounter {
         NOSE_TYPE_CACHE.clear();
         MOUTH_TYPE_CACHE.clear();
         TATTOO_TYPE_CACHE.clear();
+        DMZSkinLayer.clearValidatedTexturesCache();
     }
 }

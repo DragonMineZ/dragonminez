@@ -87,10 +87,10 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                 boolean isFemaleHumanOrSaiyan = (race.equals("human") || race.equals("saiyan")) && gender.equals(Character.GENDER_FEMALE);
                 boolean isOozaru = character.isOozaruCached() || logicKey.contains("oozaru");
 
-                boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
-                        || logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra") || logicKey.startsWith("ssj4d") || logicKey.startsWith("ssj4gt")
-                        || logicKey.startsWith("frostdemon_fifth") || logicKey.startsWith("frostdemon_metalcore") || logicKey.startsWith("namekian_buffed")
-                        || logicKey.startsWith("4arms") || logicKey.startsWith("bioandroid_xeno") || logicKey.equals("janemba_super");
+                boolean isBuffed = logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
+                        || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("ssj4d") || logicKey.contains("ssj4gt")
+                        || logicKey.contains("frostdemon_fifth") || logicKey.contains("frostdemon_metalcore") || logicKey.contains("namekian_buffed")
+                        || logicKey.contains("4arms") || logicKey.contains("bioandroid_xeno") || logicKey.contains("janemba_super");
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
 
                 boolean isRestrictedMajin = isMajin && bodyType != 2;

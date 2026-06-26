@@ -43,7 +43,7 @@ public class SkinGathererProvider {
 		if (k.startsWith("frostdemon")) return "frostdemon";
 		if (k.startsWith("bioandroid")) return "bioandroid";
 		if (k.startsWith("majin") || k.startsWith("janemba")) return "majin";
-		if (k.equals("human") || k.equals("saiyan") || k.equals("ssj4d") || k.equals("ssj4gt")
+		if (k.equals("human") || k.equals("saiyan") || k.contains("ssj4d") || k.contains("ssj4gt")
 				|| k.equals("buffed") || k.equals("4arms")) return "human";
 		return "custom";
 	}
@@ -170,33 +170,39 @@ public class SkinGathererProvider {
 		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && character.isHasSaiyanTail();
 
 		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
-                || logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
+				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
 
 		if (isHumanoid && bodyType == 0) {
 			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
+		} else if (isHumanoid) {
+			resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
 		} else {
             switch (logicKey) {
-                case "human", "saiyan", "ssj4gt", "ssj4d", "buffed", "4arms" -> resolveBodyHumanSaiyan(character, logicKey, b1, b2, b3, consumer);
                 case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
                 case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_fat","janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
                 case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
                 case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
-                default -> {
-                    boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
-                    String genSuffix = hasGender ? ((character.getGender().equalsIgnoreCase("female") || character.getGender().equalsIgnoreCase("mujer")) ? "_female" : "_male") : "";
+				default -> {
+					boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
+					String genSuffix = hasGender ? (character.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
 
-                    if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
-                        String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
-                        String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
+					if (Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) {
+						consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
+						break;
+					}
 
-                        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-                        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
-                        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
-                    } else {
-                        ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
-                        consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
-                    }
-                }
+					if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
+						String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
+						String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
+
+						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
+						consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
+					} else {
+						ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
+						consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
+					}
+				}
             }
         }
 
@@ -237,7 +243,7 @@ public class SkinGathererProvider {
 		int bodyType = character.getBodyType();
         var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
         String gender = character.getGender().toLowerCase().trim();
-        String genderPart = (gender.equals("female") || gender.equals("mujer")) ? "_female" : "_male";
+        String genderPart = (gender.equals(Character.GENDER_FEMALE)) ? "_female" : "_male";
 		String path = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + ".png";
 		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0.png";
 
@@ -336,7 +342,6 @@ public class SkinGathererProvider {
 
         int bodyType = character.getBodyType();
 
-        // Validaciones seguras
         String currentForm = character.getActiveForm() != null ? character.getActiveForm() : "";
         String formGroup = character.getActiveFormGroup() != null ? character.getActiveFormGroup() : "";
         boolean legendaryGroup = formGroup.equals("legendaryforms");
@@ -385,7 +390,7 @@ public class SkinGathererProvider {
 
         String currentForm = character.getActiveForm();
         String gender = character.getGender().toLowerCase().trim();
-        String genderSuffix = (gender.equals("female") || gender.equals("mujer")) ? "female" : "male";
+        String genderSuffix = gender.equals(Character.GENDER_FEMALE) ? "female" : "male";
         String phase;
 
         if (Objects.equals(currentForm, MajinForms.KID) || key.equals("majin_kid")) phase = "kid";

@@ -6,6 +6,7 @@ import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.util.lists.MajinForms;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -35,7 +36,7 @@ public class BoneVisibilityHandler {
 		String currentForm = character.getActiveForm();
 		int bodyType = character.getBodyType();
 
-		boolean isFemale = gender.equals("female") || gender.equals("mujer") || bodyType == 1;
+		boolean isFemale = gender.equals(Character.GENDER_FEMALE) || bodyType == 1;
 		boolean isMajin = race.equals("majin");
 		boolean isSaiyan = race.equals("saiyan");
 		boolean isHuman = race.equals("human");

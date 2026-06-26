@@ -223,7 +223,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 		float physicsLodMultiplier = getPhysicsLodMultiplier(animatable);
 
-		boolean isCharging = stats.getStatus().isChargingKi() || stats.getStatus().isPermanentAura() || (stats.getStatus().isActionCharging() && hairTo != null && hairTo != hairFrom);
+		boolean isCharging = stats.getStatus().isChargingKi() || stats.getStatus().isPermanentAura() || (stats.getStatus().isActionCharging() && (!stats.getStatus().getSelectedAction().equals(ActionMode.STACK) && !stats.getStatus().getSelectedAction().equals(ActionMode.FORM)));
 		float kiChargeProgress = kiChargeProgressMap.getOrDefault(entityId, 0.0f);
 		float dt = Minecraft.getInstance().getDeltaFrameTime();
 

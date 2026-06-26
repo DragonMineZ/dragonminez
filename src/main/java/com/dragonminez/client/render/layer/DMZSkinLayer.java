@@ -215,45 +215,64 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		});
 	}
 
-    private void renderFace(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay, float alpha) {
-        var character = stats.getCharacter();
-        String raceName = character.getRaceName().toLowerCase();
-        String currentForm = character.getActiveForm();
-        int bodyType = character.getBodyType();
+	private void renderFace(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay, float alpha) {
+		var character = stats.getCharacter();
+		String raceName = character.getRaceName().toLowerCase();
+		String currentForm = character.getActiveForm();
+		int bodyType = character.getBodyType();
 
-        String customModelValue = "";
-        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().hasCustomModel()) {
-            customModelValue = character.getActiveStackFormData().getCustomModel().toLowerCase();
-        } else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel()) {
-            customModelValue = character.getActiveFormData().getCustomModel().toLowerCase();
-        }
+		String customModelValue = "";
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().hasCustomModel()) {
+			customModelValue = character.getActiveStackFormData().getCustomModel().toLowerCase();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel()) {
+			customModelValue = character.getActiveFormData().getCustomModel().toLowerCase();
+		}
 
-        if (customModelValue.isEmpty()) {
-            var raceConfig = ConfigManager.getRaceCharacter(raceName);
-            if (raceConfig != null && raceConfig.getCustomModel() != null && !raceConfig.getCustomModel().isEmpty()) {
-                customModelValue = raceConfig.getCustomModel().toLowerCase();
-            }
-        }
+		if (customModelValue.isEmpty()) {
+			var raceConfig = ConfigManager.getRaceCharacter(raceName);
+			if (raceConfig != null && raceConfig.getCustomModel() != null && !raceConfig.getCustomModel().isEmpty()) {
+				customModelValue = raceConfig.getCustomModel().toLowerCase();
+			}
+		}
 
-        final boolean isModelEmpty = customModelValue.isEmpty();
-        final String finalFaceKey = isModelEmpty
-                ? (SkinGathererProvider.isBuiltInRace(raceName) ? raceName : "human")
-                : customModelValue;
+		final boolean isModelEmpty = customModelValue.isEmpty();
+		final String finalFaceKey = isModelEmpty
+				? (SkinGathererProvider.isBuiltInRace(raceName) ? raceName : "human")
+				: customModelValue;
 
-        boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
-        if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
-        boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.contains("ssj4d") || finalFaceKey.contains("ssj4gt") || finalFaceKey.equals("buffed") || finalFaceKey.equals("4arms");
-        if (isHumanoidModel && bodyType == 0) return;
+		boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
+		if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
 
-        model.getBone("head").ifPresent(headBone -> {
-            List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
-            try {
-                dispatchFaceRender(model, poseStack, animatable, bufferSource, stats, character, finalFaceKey, isModelEmpty, raceName, partialTick, packedLight, packedOverlay, alpha);
-            } finally {
-                restoreHiddenBones(hiddenBones);
-            }
-        });
-    }
+		boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.contains("ssj4d") || finalFaceKey.contains("ssj4gt") || finalFaceKey.equals("buffed") || finalFaceKey.equals("4arms");
+		if (isHumanoidModel && bodyType == 0) return;
+
+		var raceConfig = ConfigManager.getRaceCharacter(raceName);
+		if (raceConfig != null && Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) return;
+
+		model.getBone("head").ifPresent(headBone -> {
+			float originalZ = headBone.getPosZ();
+			float originalSX = headBone.getScaleX();
+			float originalSY = headBone.getScaleY();
+			float originalSZ = headBone.getScaleZ();
+
+			float faceInflation = 0.002f;
+			headBone.setPosZ(originalZ - faceInflation);
+			headBone.setScaleX(originalSX + faceInflation);
+			headBone.setScaleY(originalSY + faceInflation);
+			headBone.setScaleZ(originalSZ + faceInflation);
+
+			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
+			try {
+				dispatchFaceRender(model, poseStack, animatable, bufferSource, stats, character, finalFaceKey, isModelEmpty, raceName, partialTick, packedLight, packedOverlay, alpha);
+			} finally {
+				restoreHiddenBones(hiddenBones);
+				headBone.setPosZ(originalZ);
+				headBone.setScaleX(originalSX);
+				headBone.setScaleY(originalSY);
+				headBone.setScaleZ(originalSZ);
+			}
+		});
+	}
 
 	private void dispatchFaceRender(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, StatsData stats, Character character, String faceKey, boolean isModelEmpty, String race, float pt, int pl, int po, float alpha) {
 
@@ -549,7 +568,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (!activeSsj4 && !chargingSsj4) return null;
 
-		String key = activeSsj4 ? activeModel : targetModel;
+		String key = activeSsj4 ? activeModel.contains("ssj4gt") ? "ssj4gt" : "ssj4d" : targetModel.contains("ssj4gt") ? "ssj4gt" : "ssj4d";
 		float target = activeSsj4 ? 1.0f : chargeFraction;
 		float[] color = resolveSsj4OverlayColor(character, chargingSsj4 ? nextForm : null, chargeFraction);
 		return new Ssj4Overlay(key, color, target);
@@ -689,6 +708,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	public static ResourceLocation getSafeTexture(ResourceLocation originalLoc) {
 		return VALIDATED_TEXTURES_CACHE.computeIfAbsent(originalLoc, loc -> {
+			System.out.println("Validating texture: " + loc);
 			if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) return loc;
 			return BLANK_TEXTURE;
 		});
@@ -696,8 +716,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	public static ResourceLocation getSafeTexture(ResourceLocation originalLoc, ResourceLocation fallbackLoc) {
 		return VALIDATED_TEXTURES_CACHE.computeIfAbsent(originalLoc, loc -> {
+			System.out.println("Searched for texture " + originalLoc);
 			if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) return loc;
 			return fallbackLoc;
 		});
+	}
+
+	public static void clearValidatedTexturesCache() {
+		VALIDATED_TEXTURES_CACHE.clear();
 	}
 }

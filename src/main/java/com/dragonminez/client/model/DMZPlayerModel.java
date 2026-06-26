@@ -229,6 +229,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         String suffix = (customRaceGender != null && !customRaceGender.isEmpty()) ? "_" + customRaceGender : "";
         ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + modelName + suffix + ".geo.json");
+        System.out.println("Searching for loc: " + customLoc);
 
         if (fileExists(customLoc)) return customLoc;
         return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
@@ -325,7 +326,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         float factor = StatsProvider.get(StatsCapability.INSTANCE, animatable).map(data -> {
             Character c = data.getCharacter();
             String gender = c.getGender() != null ? c.getGender().toLowerCase() : "";
-            boolean isFemale = gender.equals("female") || gender.equals("mujer") || c.getBodyType() == 1;
+            boolean isFemale = gender.equals(Character.GENDER_FEMALE) || c.getBodyType() == 1;
             return isFemale ? Mth.clamp(c.getBoobScale(), 0.75f, 1.25f) : 1.0f;
         }).orElse(1.0f);
 

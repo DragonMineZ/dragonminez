@@ -141,7 +141,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 		String raceName = stats.getCharacter().getRaceName().toLowerCase();
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
-		boolean forceVanilla = (raceConfig != null && raceConfig.getUseVanillaSkin());
 
 		final List<BodyLayerFadeTracker.FadingLayer> fadingLayers = new ArrayList<>();
 		SkinGathererProvider.BodyLayerSink layerConsumer = new SkinGathererProvider.BodyLayerSink() {
@@ -157,18 +156,13 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 			}
 		};
 
-		if (forceVanilla) {
-			applyKaiokenTint(WHITE_COLOR, kaiokenPhase, colorBuffer);
-			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), colorBuffer);
-		} else {
-			float pt = Minecraft.getInstance().getFrameTime();
-			SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
-			addSsj4HandFur(stats, fadingLayers);
-			SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
-			SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
-			SkinGathererProvider.INSTANCE.gatherEffectLayers(pPlayer, stats, pt, layerConsumer);
-			renderFadingHandLayers(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm, kaiokenPhase, fadingLayers);
-		}
+		float pt = Minecraft.getInstance().getFrameTime();
+		SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
+		addSsj4HandFur(stats, fadingLayers);
+		SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
+		SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
+		SkinGathererProvider.INSTANCE.gatherEffectLayers(pPlayer, stats, pt, layerConsumer);
+		renderFadingHandLayers(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm, kaiokenPhase, fadingLayers);
 
 		renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm);
 	}

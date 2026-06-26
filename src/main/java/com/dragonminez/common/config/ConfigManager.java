@@ -345,6 +345,8 @@ public class ConfigManager {
 	}
 
 	private static void setupHumanCharacter(RaceCharacterConfig config) {
+		config.setUseVanillaSkin(true);
+		config.setIsLayered(true);
 		config.setRacialSkill("human");
 		config.setHeadBones(new String[]{"hair"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
@@ -368,6 +370,8 @@ public class ConfigManager {
 	}
 
 	private static void setupSaiyanCharacter(RaceCharacterConfig config) {
+		config.setUseVanillaSkin(true);
+		config.setIsLayered(true);
 		config.setRacialSkill("saiyan");
 		config.setHeadBones(new String[]{"hair"});
 		config.setHasSaiyanTail(true);
@@ -392,6 +396,7 @@ public class ConfigManager {
 
 	private static void setupNamekianCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("namekian");
+		config.setIsLayered(true);
 		config.setHeadBones(new String[]{"ears1", "ears2", "ears3"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
@@ -414,6 +419,7 @@ public class ConfigManager {
 
 	private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("frostdemon");
+		config.setIsLayered(true);
 		config.setHeadBones(new String[]{"horns1"});
 		config.setDefaultModelScaling(new Float[]{0.7375f, 0.7375f, 0.7375f});
 		config.setDefaultBodyType(0);
@@ -436,6 +442,7 @@ public class ConfigManager {
 
 	private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("bioandroid");
+		config.setIsLayered(true);
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
@@ -457,6 +464,7 @@ public class ConfigManager {
 
 	private static void setupMajinCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("majin");
+		config.setIsLayered(true);
 		config.setHeadBones(new String[]{"majin1"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
@@ -478,6 +486,8 @@ public class ConfigManager {
 	}
 
 	private static void setupDefaultCharacter(RaceCharacterConfig config) {
+		config.setUseVanillaSkin(true);
+		config.setIsLayered(true);
 		config.setRacialSkill("human");
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);

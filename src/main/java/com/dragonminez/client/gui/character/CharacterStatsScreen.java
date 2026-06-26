@@ -722,7 +722,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int y = centerY + 54;
 
 		boolean androidUpgraded = statsData.getStatus().isAndroidUpgraded();
-		double bp = statsData.getBattlePowerExact();
+		long bp = (long) statsData.getBattlePowerExact();
 		String displayedBp = androidUpgraded ? "???" : formatBattlePower(bp);
 
 		Component label = tr("gui.dragonminez.character_stats.power_level");
@@ -738,7 +738,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int textWidth = font.width(label) + font.width(separator) + font.width(value);
 		if (!androidUpgraded && shouldUseCompactForBp(bp) && mouseX >= labelX && mouseX <= labelX + textWidth && mouseY >= y && mouseY <= y + font.lineHeight) {
 			List<Component> tooltip = new ArrayList<>();
-			tooltip.add(txt(numberFormatter.format(bp)).withStyle(ChatFormatting.YELLOW));
+			tooltip.add(txt(String.valueOf(bp)).withStyle(ChatFormatting.YELLOW));
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), null, tooltip, null, 0xFFFF00);
 		}
 	}
