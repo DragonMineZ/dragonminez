@@ -4,6 +4,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class DBSagasAnimations {
 
+    // DEFAULT = DBZSTYLE 0
     public static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("idle");
     public static final RawAnimation ANIM_WALK = RawAnimation.begin().thenLoop("walk");
     public static final RawAnimation ANIM_RUN = RawAnimation.begin().thenLoop("run1");
@@ -12,6 +13,7 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_ATTACK3 = RawAnimation.begin().thenPlay("attack3_1");
     public static final RawAnimation ANIM_TRANSFORMATION1 = RawAnimation.begin().thenPlay("transformation_1");
 
+    // KICKS = DBZSTYLE 1
     public static final RawAnimation ANIM_IDLE_2 = RawAnimation.begin().thenLoop("idle2");
     public static final RawAnimation ANIM_WALK_2 = RawAnimation.begin().thenLoop("walk2");
     public static final RawAnimation ANIM_RUN_2 = RawAnimation.begin().thenLoop("run2");
@@ -20,6 +22,7 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_ATTACK3_2 = RawAnimation.begin().thenPlay("attack3_2");
     public static final RawAnimation ANIM_TRANSFORMATION2 = RawAnimation.begin().thenPlay("transformation_2");
 
+    // FIGHTER = DBZSTYLE 2
     public static final RawAnimation ANIM_IDLE_3 = RawAnimation.begin().thenLoop("idle3");
     public static final RawAnimation ANIM_WALK_3 = RawAnimation.begin().thenLoop("walk3");
     public static final RawAnimation ANIM_RUN_3 = RawAnimation.begin().thenLoop("run3");
@@ -28,8 +31,30 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_ATTACK3_3 = RawAnimation.begin().thenPlay("attack3_3");
     public static final RawAnimation ANIM_TRANSFORMATION3 = RawAnimation.begin().thenPlay("transformation_3");
 
+    // HILDEGARN = DBZSTYLE 3
+    public static final RawAnimation ANIM_IDLE_4 = RawAnimation.begin().thenLoop("idle4");
+    public static final RawAnimation ANIM_WALK_4 = RawAnimation.begin().thenLoop("walk4");
+    public static final RawAnimation ANIM_RUN_4 = RawAnimation.begin().thenLoop("run4");
+    public static final RawAnimation ANIM_ATTACK1_4 = RawAnimation.begin().thenPlay("attack1_4");
+    public static final RawAnimation ANIM_ATTACK2_4 = RawAnimation.begin().thenPlay("attack2_4");
+    public static final RawAnimation ANIM_ATTACK3_4 = RawAnimation.begin().thenPlay("attack3_4");
+    public static final RawAnimation ANIM_TRANSFORMATION4 = RawAnimation.begin().thenPlay("transformation_3");
+
+    // OOZARU = DBZSTYLE 4
+    public static final RawAnimation ANIM_IDLE_5 = RawAnimation.begin().thenLoop("idle5");
+    public static final RawAnimation ANIM_WALK_5 = RawAnimation.begin().thenLoop("walk5");
+    public static final RawAnimation ANIM_RUN_5 = RawAnimation.begin().thenLoop("run5");
+    public static final RawAnimation ANIM_ATTACK1_5 = RawAnimation.begin().thenPlay("attack1_4");
+    public static final RawAnimation ANIM_ATTACK2_5 = RawAnimation.begin().thenPlay("attack2_4");
+    public static final RawAnimation ANIM_ATTACK3_5 = RawAnimation.begin().thenPlay("attack3_4");
+    public static final RawAnimation ANIM_TRANSFORMATION5 = RawAnimation.begin().thenPlay("transformation_1");
+
+    // DEFAULT
     public static final RawAnimation ANIM_FLY = RawAnimation.begin().thenLoop("fly");
     public static final RawAnimation ANIM_FLY_FAST = RawAnimation.begin().thenLoop("fly_fast");
+    // HILDEGARN
+    public static final RawAnimation ANIM_FLY4 = RawAnimation.begin().thenLoop("fly_idle4");
+    public static final RawAnimation ANIM_FLY_FAST4 = RawAnimation.begin().thenLoop("fly_fast4");
 
     public static final RawAnimation ANIM_EVADE = RawAnimation.begin().thenPlay("evasion1");
     public static final RawAnimation ANIM_KIWAVE = RawAnimation.begin().thenPlay("ki_finalflash");

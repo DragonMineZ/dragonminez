@@ -14,7 +14,12 @@ public class DBSagasAnimationHandler {
     public static <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
-        if (entity.isEvading() || entity.isCasting() || entity.isComboing() || entity.isZanzoken()) {
+        if (entity.isEvading() || entity.isComboing()) {
+            event.getController().setAnimationSpeed(1.0D);
+            return PlayState.STOP;
+        }
+
+        if (entity.isCasting() && entity.getSkillType() != 9) {
             event.getController().setAnimationSpeed(1.0D);
             return PlayState.STOP;
         }
@@ -34,8 +39,10 @@ public class DBSagasAnimationHandler {
         if (entity.isFlying()) {
             double currentSpeedSqr = entity.getDeltaMovement().x * entity.getDeltaMovement().x + entity.getDeltaMovement().z * entity.getDeltaMovement().z;
             if (currentSpeedSqr > 0.15D) {
+                if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST4);
                 return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST);
             }
+            if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_FLY4);
             return event.setAndContinue(DBSagasAnimations.ANIM_FLY);
         }
 
@@ -55,10 +62,14 @@ public class DBSagasAnimationHandler {
             if (runAnim) {
                 if (style == 1) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_2);
                 if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_3);
+                if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_4);
+                if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_5);
                 return event.setAndContinue(DBSagasAnimations.ANIM_RUN);
             } else {
                 if (style == 1) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_2);
                 if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_3);
+                if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_4);
+                if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_5);
                 return event.setAndContinue(DBSagasAnimations.ANIM_WALK);
             }
         }
@@ -66,6 +77,8 @@ public class DBSagasAnimationHandler {
         // Idle
         if (style == 1) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_2);
         if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_3);
+        if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_4);
+        if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_5);
         return event.setAndContinue(DBSagasAnimations.ANIM_IDLE);
     }
 
@@ -152,6 +165,15 @@ public class DBSagasAnimationHandler {
                 if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_3);
                 else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_3);
                 else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_3);
+            } else if (style == 3) {
+                if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_4);
+                else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_4);
+                else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_4);
+            } else if (style == 4) {
+                if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_5);
+                else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_5);
+                else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_5);
+
             } else {
                 if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1);
                 else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2);
@@ -173,7 +195,13 @@ public class DBSagasAnimationHandler {
 
     public static <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
-        if (entity.isEvading() || entity.isZanzoken()) {
+
+        if (entity.isZanzoken()) {
+            event.getController().forceAnimationReset();
+            return PlayState.STOP;
+        }
+
+        if (entity.isEvading()) {
             return event.setAndContinue(DBSagasAnimations.ANIM_EVADE);
         }
 
