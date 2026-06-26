@@ -647,6 +647,8 @@ public class CombatEvent {
 
 								stats.getStatus().setKnockedDown(true);
 								stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20);
+								stats.getCharacter().clearActiveForm();
+								stats.getCharacter().clearActiveStackForm();
 
 								if (victim instanceof ServerPlayer serverPlayer) {
 									NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);

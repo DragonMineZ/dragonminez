@@ -110,7 +110,7 @@ public class TickHandler {
 
 			if (serverPlayer.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight(serverPlayer, data);
 
-			if (serverPlayer.hasEffect(MainEffects.STUN.get())) {
+			if (serverPlayer.hasEffect(MainEffects.STUN.get()) || data.getStatus().isStunned()) {
 				data.getStatus().setChargingKi(false);
 				data.getStatus().setActionCharging(false);
 				data.getTechniques().clearTechniqueCharge();
