@@ -10,9 +10,11 @@ import net.minecraft.nbt.CompoundTag;
 @Getter
 @Setter
 public class StrikeAttackData extends TechniqueData {
+	public static final float LEVEL_MODIFIER_STEP = 0.025f;
+	public static final float MAX_MODIFIER_LIMIT = 0.5f;
+
 	private float damageMultiplier;
 	private int damageLevel;
-	private int castTimeLevel;
 	private int cooldownLevel;
 	private String animationId;
 	private int durationTicks;
@@ -23,21 +25,33 @@ public class StrikeAttackData extends TechniqueData {
 		this.cooldown = Math.max(0, cfg.getCooldownTicks());
 	}
 
+	public float getDamageLevelMultiplier() {
+		return 1.0f + Math.min(MAX_MODIFIER_LIMIT, Math.max(0, damageLevel) * LEVEL_MODIFIER_STEP);
+	}
+
+	public float getReductionLevelMultiplier(int level) {
+		return Math.max(1.0f - MAX_MODIFIER_LIMIT, 1.0f - Math.max(0, level) * LEVEL_MODIFIER_STEP);
+	}
+
+	public float getActualDamageMultiplier() {
+		return this.damageMultiplier * getDamageLevelMultiplier();
+	}
+
 	public int getActualCastTime() {
-		return Math.max(0, Math.round(castTime * Math.max(0.1f, 1.0f - (Math.max(0, castTimeLevel) * 0.05f))));
+		return Math.max(0, castTime);
 	}
 
 	public int getActualCooldown() {
 		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
 		int base = Math.max(0, cfg.getCooldownTicks());
-		return Math.max(1, Math.round(base * Math.max(0.1f, 1.0f - (Math.max(0, cooldownLevel) * 0.05f))));
+		return Math.max(1, Math.round(base * getReductionLevelMultiplier(cooldownLevel)));
 	}
 
 	public int getUpgradeXpCost(String statName) {
 		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
 		int baseMin = Math.max(0, cfg.getMinXPCost());
 		double multiplier = Math.max(0.0, cfg.getXpCostMultiplier());
-		int totalUpgrades = Math.max(0, damageLevel) + Math.max(0, castTimeLevel) + Math.max(0, cooldownLevel);
+		int totalUpgrades = Math.max(0, damageLevel) + Math.max(0, cooldownLevel);
 		int scaledBase = (int) Math.round(baseMin * multiplier);
 		int upgradeExtra = (int) Math.round(totalUpgrades * Math.max(0.0, baseMin * (multiplier - 1.0)));
 		int computed = Math.max(0, scaledBase + upgradeExtra);
@@ -59,7 +73,7 @@ public class StrikeAttackData extends TechniqueData {
 	}
 
 	public boolean canUpgradeStat(String statName) {
-		return "damage".equals(statName) || "cast".equals(statName) || "cooldown".equals(statName);
+		return "damage".equals(statName) || "cooldown".equals(statName);
 	}
 
 	public StrikeAttackData() { super(); }
@@ -78,7 +92,6 @@ public class StrikeAttackData extends TechniqueData {
 		tag.putFloat("TpCost", this.tpCost);
 		tag.putFloat("DamageMultiplier", this.damageMultiplier);
 		tag.putInt("DamageLevel", this.damageLevel);
-		tag.putInt("CastTimeLevel", this.castTimeLevel);
 		tag.putInt("CooldownLevel", this.cooldownLevel);
 		tag.putString("AnimationId", this.animationId != null ? this.animationId : "");
 		tag.putInt("DurationTicks", this.durationTicks);
@@ -97,7 +110,6 @@ public class StrikeAttackData extends TechniqueData {
 		this.tpCost = tag.contains("TpCost") ? tag.getFloat("TpCost") : 0;
 		this.damageMultiplier = tag.getFloat("DamageMultiplier");
 		this.damageLevel = tag.getInt("DamageLevel");
-		this.castTimeLevel = tag.getInt("CastTimeLevel");
 		this.cooldownLevel = tag.getInt("CooldownLevel");
 		this.animationId = tag.getString("AnimationId");
 		this.durationTicks = tag.contains("DurationTicks") ? tag.getInt("DurationTicks") : 60;
@@ -109,8 +121,8 @@ public class StrikeAttackData extends TechniqueData {
 	@Override
 	public double getCalculatedCost(StatsData statsData) {
 		TechniqueConfig.StrikeAttackConfig cfg = ConfigManager.getTechniqueConfig().getStrikeConfig(this.id);
-		double baseDamage = statsData.getStrikeDamageNoForms() * this.damageMultiplier * Math.max(0.0, cfg.getDamageMultiplier());
+		double baseDamage = statsData.getStrikeDamageNoForms() * getActualDamageMultiplier() * Math.max(0.0, cfg.getDamageMultiplier());
 		double costMult = Math.max(0.0, cfg.getKiCostMultiplier());
-		return Math.max(5.0, (baseDamage * 0.35 * costMult) /2);
+		return Math.max(5.0, (baseDamage * 0.35 * costMult) / 2);
 	}
 }

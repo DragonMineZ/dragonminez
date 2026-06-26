@@ -79,7 +79,6 @@ public class UpgradeTechniqueC2S {
 								}
 								case "cast" -> {
 									if (tech instanceof KiAttackData ki) ki.setCastTimeLevel(ki.getCastTimeLevel() + 1);
-									else if (tech instanceof StrikeAttackData st) st.setCastTimeLevel(st.getCastTimeLevel() + 1);
 								}
 							}
 							if (tech instanceof KiAttackData ki) ki.calculateDerivedValues();
