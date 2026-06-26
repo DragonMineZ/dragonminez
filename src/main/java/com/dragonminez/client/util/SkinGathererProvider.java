@@ -169,8 +169,8 @@ public class SkinGathererProvider {
 		boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && character.isHasSaiyanTail();
 
-		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("ssj4d")
-                || logicKey.equals("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
+		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
+                || logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
 
 		if (isHumanoid && bodyType == 0) {
 			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);
