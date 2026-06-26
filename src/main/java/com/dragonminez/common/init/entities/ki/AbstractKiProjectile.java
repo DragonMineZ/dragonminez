@@ -250,7 +250,9 @@ public abstract class AbstractKiProjectile extends Projectile {
     public boolean applyDamageOrHeal(Entity target, float amount) {
         if (target instanceof LivingEntity livingTarget) {
             if (this.isHeal()) {
-                if (livingTarget.getHealth() < livingTarget.getMaxHealth()) {
+                if ((livingTarget.getHealth() < livingTarget.getMaxHealth() && this.getOwner() instanceof Player playerOwner
+                        && TargetHelper.getRelation(playerOwner, target) == TargetHelper.Relation.FRIENDLY) ||
+                        (livingTarget.getHealth() < livingTarget.getMaxHealth() && target.isAlliedTo(this.getOwner()))) {
                     livingTarget.heal(amount);
                     return true;
                 }
