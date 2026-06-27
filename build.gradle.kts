@@ -185,14 +185,14 @@ dependencies {
 
     // Database libraries
 
-    jarJar("org.mariadb.jdbc:mariadb-java-client:[3.5.8,)") {
+    jarJar("org.mariadb.jdbc:mariadb-java-client:[3.5.9,)") {
         jarJar.ranged(
             this,
             "[3.5.7,)"
         )
     }
     jarJar("com.zaxxer:HikariCP:[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }
-    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.9")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
