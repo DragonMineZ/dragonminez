@@ -88,13 +88,24 @@ public class FusionLogic {
 	}
 
 	public static void executePothala(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
+		if (lData.getStatus().isFused() || pData.getStatus().isFused() ||
+				lData.getStatus().getFusionPartnerUUID() != null || pData.getStatus().getFusionPartnerUUID() != null) return;
+
 		int lvl1 = lData.getStats().getTotalStats();
 		int lvl2 = pData.getStats().getTotalStats();
 
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.POTHALA);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
-		boolean isGreenPothala = leader.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("green");
+		boolean isGreenPothala = CuriosApi.getCuriosInventory(leader).map(inv -> {
+			var handler = inv.getCurios().get("head_tech");
+			if (handler != null) {
+				ItemStack stack = handler.getStacks().getStackInSlot(0);
+				return !stack.isEmpty() && stack.getItem().getDescriptionId().contains("green");
+			}
+			return false;
+		}).orElse(false);
+
 		lData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
 		pData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
 
