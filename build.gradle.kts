@@ -184,6 +184,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.46")
 
     // Database libraries
+
     jarJar("org.mariadb.jdbc:mariadb-java-client:[3.5.8,)") {
         jarJar.ranged(
             this,
