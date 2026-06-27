@@ -142,6 +142,8 @@ Copyright © 2026 GeckoThePecko. Consulta el archivo [`THIRD_PARTY_LICENSES`](TH
 - [KyoSleep](https://github.com/KyoSleep1) | *Programador*
 - JotaJoestar | *Modelador y Animador*
 - Toji71_ | *Constructor*
+- ZoneMC | *Texturas*
+- Darkeryr | *Texturas*
 
 ---
 
