@@ -87,7 +87,9 @@ public class TextureCounter {
 
         boolean isNativeLayered = race.equals("namekian") || race.equals("frostdemon") || race.equals("bioandroid");
         RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
-        boolean isCustomLayered = !isNativeLayered && config != null && Boolean.TRUE.equals(config.getIsLayered());
+
+        boolean isHumanoid = race.equals("human") || race.equals("saiyan");
+        boolean isCustomLayered = !isNativeLayered && !isHumanoid && config != null && Boolean.TRUE.equals(config.getIsLayered());
 
         if (race.equals("majin")) {
             for (int i = 0; i <= 100; i++) {
@@ -140,11 +142,13 @@ public class TextureCounter {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
         int count = 0;
 
-        String raceFolder = race.equals("human") || race.equals("saiyan") ? "humansaiyan" : race;
+        boolean isHumanoid = race.equals("human") || race.equals("saiyan");
+        String raceFolder = isHumanoid ? "humansaiyan" : race;
         String prefix = raceFolder + "_";
 
         RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
-        boolean isCustomLayered = config != null && Boolean.TRUE.equals(config.getIsLayered()) && !race.equals("namekian") && !race.equals("frostdemon") && !race.equals("bioandroid") && !race.equals("majin");
+
+        boolean isCustomLayered = !isHumanoid && config != null && Boolean.TRUE.equals(config.getIsLayered()) && !race.equals("namekian") && !race.equals("frostdemon") && !race.equals("bioandroid") && !race.equals("majin");
 
         if (isCustomLayered) {
             raceFolder = race;
