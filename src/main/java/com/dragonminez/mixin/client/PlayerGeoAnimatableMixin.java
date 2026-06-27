@@ -59,7 +59,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private static final double WALK_SPEED_BASELINE = 0.2158;
 	@Unique private static final double RUN_SPEED_BASELINE = 0.2806;
 	@Unique private static final int LANDING_ANIM_TICKS = 13;
-	@Unique private static final float FALL_TRIGGER_DISTANCE = 2.0F;
+	@Unique private static final float FALL_TRIGGER_DISTANCE = 4.5F;
 	@Unique private static final double LANDING_LEAD_TICKS = 7.0;
 	@Unique private static final double LANDING_RAY_DISTANCE = 7.0;
 	@Unique private int dragonminez$lastDashTickRun = -1;

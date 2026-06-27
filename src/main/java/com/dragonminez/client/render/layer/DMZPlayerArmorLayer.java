@@ -93,7 +93,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                         || logicKey.contains("4arms") || logicKey.contains("bioandroid_xeno") || logicKey.contains("janemba_super");
                 boolean isDbzArmor = stack.getItem() instanceof DbzArmorTextured;
 
-                boolean isRestrictedMajin = isMajin && bodyType != 2;
+				boolean isRestrictedMajin = (isMajin && bodyType != 2) || logicKey.equals("janemba_fat");
                 boolean isCustomModel = SkinGathererProvider.modelFamily(logicKey).equals("custom");
 
                 if (isRestrictedMajin || isFemaleHumanOrSaiyan || isOozaru) {
