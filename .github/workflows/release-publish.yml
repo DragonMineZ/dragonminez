@@ -155,7 +155,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Publish to Modrinth
-        uses: cloudnode-pro/modrinth-publish@v2.3.4
+        uses: cloudnode-pro/modrinth-publish@v2.5.0
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
           project: ${{ vars.MODRINTH_PROJECT_ID }}
