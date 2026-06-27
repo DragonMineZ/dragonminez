@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -40,6 +41,13 @@ public class UpdateStatC2S {
             if (player == null) return;
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                    if (player.hasEffect(MainEffects.STUN.get()) && msg.statusKey != StatAction.BLOCK) {
+                      if (msg.statusKey == StatAction.CHARGE_KI && data.getStatus().isChargingKi()) data.getStatus().setChargingKi(false);
+                      if (msg.statusKey == StatAction.DESCEND && data.getStatus().isDescending()) data.getStatus().setDescending(false);
+                      if (msg.statusKey == StatAction.ACTION_CHARGE && data.getStatus().isActionCharging()) data.getStatus().setActionCharging(false);
+                      return;
+                    }
+
                 switch (msg.statusKey) {
 					case CHARGE_KI:
                         if (data.getStatus().isChargingKi() != msg.value) data.getStatus().setChargingKi(msg.value);

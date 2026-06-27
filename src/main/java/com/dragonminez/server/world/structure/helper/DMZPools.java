@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.data.worldgen.Pools;
@@ -11,6 +12,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorList;
 
 public class DMZPools {
 	public static final ResourceKey<StructureTemplatePool> GOKU_HOUSE = createKey("goku_house"),
@@ -18,10 +20,22 @@ public class DMZPools {
 			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout"),
 			GERO_LAB = createKey("gero_lab"),
 			GERO_LAB_STAIRS = createKey("gero_lab/stairs"),
-			GERO_LAB_UNDERGROUND = createKey("gero_lab/underground");
+			GERO_LAB_UNDERGROUND = createKey("gero_lab/underground"),
+			BABIDI = createKey("babidi"),
+			BABIDI_TOP = createKey("babidi/top"),
+			BABIDI_BOTTOM = createKey("babidi/bottom"),
+			CELL_ARENA = createKey("cell_arena"),
+			FRIEZA_SHIP = createKey("frieza_ship"),
+			PICCOLO_HOUSE = createKey("piccolo_house"),
+			OLDKAI_PILLAR = createKey("oldkai_pillar"),
+			YAMCHA_HOUSE = createKey("yamcha_house"),
+			TRUNKS_SHIP = createKey("trunks_ship"),
+			VEGETA_POD = createKey("vegeta_pod");
 
 	public static void bootstrap(BootstapContext<StructureTemplatePool> context) {
 		Holder<StructureTemplatePool> empty = context.lookup(Registries.TEMPLATE_POOL).getOrThrow(Pools.EMPTY);
+		HolderGetter<StructureProcessorList> processors = context.lookup(Registries.PROCESSOR_LIST);
+		Holder<StructureProcessorList> foundation = processors.getOrThrow(DMZProcessorLists.FOUNDATION);
 
 		context.register(GOKU_HOUSE, new StructureTemplatePool(
 				empty,
@@ -68,6 +82,66 @@ public class DMZPools {
 		context.register(GERO_LAB_UNDERGROUND, new StructureTemplatePool(
 				empty,
 				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:gero_lab_underground"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(BABIDI, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:babidi_surface"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(BABIDI_TOP, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:babidi_top"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(BABIDI_BOTTOM, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:babidi_bottom"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(CELL_ARENA, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:cell_arena", foundation), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(FRIEZA_SHIP, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:frieza_ship"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(PICCOLO_HOUSE, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:piccolo_house", foundation), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(OLDKAI_PILLAR, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:oldkai_pillar", foundation), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(YAMCHA_HOUSE, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:yamcha_house", foundation), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(TRUNKS_SHIP, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:trunks_ship"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(VEGETA_POD, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:vegeta_pod"), 1)),
 				StructureTemplatePool.Projection.RIGID
 		));
 	}

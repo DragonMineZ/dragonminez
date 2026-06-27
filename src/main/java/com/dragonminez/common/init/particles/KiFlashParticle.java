@@ -50,8 +50,7 @@ public class KiFlashParticle extends TextureSheetParticle {
         if (this.targetEntity instanceof AbstractKiProjectile kiBall) {
 
             if (!this.colorSet) {
-                int colorHex = kiBall.getColorBorde();
-                float[] rgb = ColorUtils.rgbIntToFloat(colorHex);
+                float[] rgb = kiBall.getRgbColorBorder();
                 this.rCol = rgb[0];
                 this.gCol = rgb[1];
                 this.bCol = rgb[2];

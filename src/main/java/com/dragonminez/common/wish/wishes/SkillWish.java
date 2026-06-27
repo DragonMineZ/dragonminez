@@ -1,7 +1,7 @@
 package com.dragonminez.common.wish.wishes;
 
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
@@ -23,7 +23,7 @@ public class SkillWish extends Wish {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 			data.getSkills().setSkillLevel(skill, level);
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 		});
 	}
 

@@ -11,4 +11,10 @@ public class FrostDemonForms {
 	public static final String FINAL_FORM = "final";
 	public static final String FULLPOWER = "fullpower";
 	public static final String FIFTH_FORM = "fifth";
+
+	// Legendary Forms group
+	public static final String GROUP_LEGENDARYFORMS = "legendaryforms";
+	public static final String MECHA = "mecha";
+	public static final String METAL = "metal";
+	public static final String METAL_CORE = "metalcore";
 }

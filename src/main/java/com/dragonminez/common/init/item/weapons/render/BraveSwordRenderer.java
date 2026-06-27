@@ -1,6 +1,6 @@
 package com.dragonminez.common.init.item.weapons.render;
 
-import com.dragonminez.common.init.item.BraveSwordItem;
+import com.dragonminez.common.init.item.weapons.BraveSwordItem;
 import com.dragonminez.common.init.item.weapons.model.BraveSwordModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

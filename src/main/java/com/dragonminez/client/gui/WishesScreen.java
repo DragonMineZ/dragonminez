@@ -2,6 +2,8 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.network.C2S.GrantWishC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.wish.Wish;
@@ -9,8 +11,8 @@ import com.dragonminez.common.wish.WishManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -20,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class WishesScreen extends Screen {
+public class WishesScreen extends ScaledScreen {
 
 	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
@@ -36,14 +38,15 @@ public class WishesScreen extends Screen {
 	private final List<Integer> selectedIndices = new ArrayList<>();
 
 	private int guiLeft, guiTop;
-	private int scrollOffset = 0;
-	private int maxScroll = 0;
+	private float targetScroll = 0;
+	private float currentScroll = 0;
+	private float maxScroll = 0;
 	private boolean isScrolling = false;
 
 	private TexturedTextButton confirmButton;
 
 	public WishesScreen(String dragonType, int wishCount) {
-		super(Component.literal("Wishes"));
+		super(Component.literal("Wishes").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 		this.dragonType = dragonType;
 		this.maxWishesToSelect = wishCount;
 		this.availableWishes = WishManager.getClientWishes(dragonType);
@@ -52,18 +55,16 @@ public class WishesScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		this.guiLeft = (this.width - PANEL_WIDTH) / 2;
-		this.guiTop = (this.height - PANEL_HEIGHT) / 2;
-
-		this.maxScroll = Math.max(0, this.availableWishes.size() - MAX_VISIBLE_ITEMS);
+		this.guiLeft = (getUiWidth() - PANEL_WIDTH) / 2;
+		this.guiTop = (getUiHeight() - PANEL_HEIGHT) / 2;
 
 		this.confirmButton = new TexturedTextButton.Builder()
-				.position(guiLeft + (PANEL_WIDTH - 80) / 2, guiTop + PANEL_HEIGHT - 35)
+				.position(guiLeft + (PANEL_WIDTH - 80) / 2, getUiHeight() - 30)
 				.size(74, 20)
 				.texture(BUTTON_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.customization.select"))
+				.message(tr("gui.dragonminez.customization.select"))
 				.onPress(btn -> confirmWishes())
 				.build();
 
@@ -80,100 +81,134 @@ public class WishesScreen extends Screen {
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		this.renderBackground(graphics);
 
+		int uiMouseX = (int) toUiX(mouseX);
+		int uiMouseY = (int) toUiY(mouseY);
+
+		beginUiScale(graphics);
+
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
-		drawCenteredStringWithBorder(graphics,
-				Component.translatable("gui.dragonminez.wishes_title", selectedIndices.size(), maxWishesToSelect),
-				this.width / 2, guiTop + 18, 0xFFFFD700);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.wishes_title", selectedIndices.size(), maxWishesToSelect),
+				getUiWidth() / 2, guiTop + 18, 0xFFFFD700);
 
-		renderWishesList(graphics, mouseX, mouseY);
+		renderWishesList(graphics, uiMouseX, uiMouseY);
 
-		super.render(graphics, mouseX, mouseY, partialTick);
+		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
-		renderTooltip(graphics, mouseX, mouseY);
+		renderTooltip(graphics, uiMouseX, uiMouseY);
+
+		endUiScale(graphics);
 	}
 
-	private void renderWishesList(GuiGraphics graphics, int mouseX, int mouseY) {
+	private void renderWishesList(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
-		int listHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+		int totalHeight = availableWishes.size() * ITEM_HEIGHT;
 
-		graphics.enableScissor(listLeft, listTop, listLeft + listWidth, listTop + listHeight);
+		maxScroll = Math.max(0, totalHeight - viewHeight);
+		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
+		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
+
+		int scLeft = toScreenCoord(listLeft);
+		int scTop = toScreenCoord(listTop);
+		int scRight = toScreenCoord(listLeft + listWidth);
+		int scBottom = toScreenCoord(listTop + viewHeight);
+
+		graphics.enableScissor(scLeft, scTop, scRight, scBottom);
+		graphics.pose().pushPose();
+		graphics.pose().translate(0, -currentScroll, 0);
 
 		for (int i = 0; i < availableWishes.size(); i++) {
-			int itemY = listTop + (i * ITEM_HEIGHT) - (scrollOffset * ITEM_HEIGHT);
+			int itemY = listTop + (i * ITEM_HEIGHT);
 
-			if (itemY + ITEM_HEIGHT < listTop || itemY > listTop + listHeight) continue;
+			if (itemY + ITEM_HEIGHT >= listTop + currentScroll && itemY <= listTop + viewHeight + currentScroll) {
+				Wish wish = availableWishes.get(i);
+				boolean isSelected = selectedIndices.contains(i);
+				boolean isHovered = uiMouseX >= listLeft && uiMouseX < listLeft + listWidth &&
+						uiMouseY >= itemY - currentScroll && uiMouseY < itemY + ITEM_HEIGHT - currentScroll;
 
-			Wish wish = availableWishes.get(i);
-			boolean isSelected = selectedIndices.contains(i);
-			boolean isHovered = mouseX >= listLeft && mouseX < listLeft + listWidth &&
-					mouseY >= itemY && mouseY < itemY + ITEM_HEIGHT;
+				int color;
+				if (isSelected) color = 0x80D4AF37;
+				else if (isHovered) color = 0x80555555;
+				else color = 0x00000000;
 
-			int color;
-			if (isSelected) color = 0x80D4AF37;
-			else if (isHovered) color = 0x80555555;
-			else color = 0x00000000;
+				graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
 
-			graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
+				TextUtil.drawStringWithBorder(graphics, this.font, tr(wish.getName()), listLeft + 5, itemY + 6, 0xFFFFFF);
 
-			drawStringWithBorder(graphics, Component.translatable(wish.getName()), listLeft + 5, itemY + 6, 0xFFFFFF);
-
-			if (isSelected) {
-				graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
+				if (isSelected) {
+					graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
+				}
 			}
 		}
 
+		graphics.pose().popPose();
 		graphics.disableScissor();
 
 		if (maxScroll > 0) {
 			int scrollBarX = guiLeft + PANEL_WIDTH - 12;
 			int scrollBarY = listTop;
-			int scrollBarHeight = listHeight;
 
-			graphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + scrollBarHeight, 0xFF333333);
+			graphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + viewHeight, 0xFF333333);
 
-			int totalItems = availableWishes.size();
-			float scrollPercent = (float) scrollOffset / maxScroll;
-			float visiblePercent = (float) MAX_VISIBLE_ITEMS / totalItems;
+			float scrollPercent = currentScroll / maxScroll;
+			float visiblePercent = (float) viewHeight / totalHeight;
 
-			int indicatorHeight = Math.max(20, (int) (scrollBarHeight * visiblePercent));
-			int indicatorY = scrollBarY + (int) ((scrollBarHeight - indicatorHeight) * scrollPercent);
+			int indicatorHeight = Math.max(20, (int) (viewHeight * visiblePercent));
+			int indicatorY = scrollBarY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
 
 			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
 		}
 	}
 
-	private void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+	private void renderTooltip(GuiGraphics graphics, int uiMouseX, int uiMouseY) {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
-		int listBottom = listTop + (MAX_VISIBLE_ITEMS * ITEM_HEIGHT);
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY < listBottom) {
-			int relativeY = mouseY - listTop + (scrollOffset * ITEM_HEIGHT);
+		if (uiMouseX >= listLeft && uiMouseX < listLeft + listWidth && uiMouseY >= listTop && uiMouseY <= listTop + viewHeight) {
+			int relativeY = (int) (uiMouseY - listTop + currentScroll);
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < availableWishes.size()) {
 				Wish wish = availableWishes.get(index);
-				graphics.renderTooltip(this.font, Component.translatable(wish.getDescription()), mouseX, mouseY);
+				graphics.renderTooltip(this.font, tr(wish.getDescription()), uiMouseX, uiMouseY);
 			}
 		}
+	}
+
+	private float calculateScrollPercent(double uiY, int startY, int viewHeight) {
+		float percent = (float)(uiY - startY) / viewHeight;
+		return Mth.clamp(percent, 0.0f, 1.0f);
 	}
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (super.mouseClicked(mouseX, mouseY, button)) return true;
 
+		double uiX = toUiX(mouseX);
+		double uiY = toUiY(mouseY);
+
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
-		int listBottom = listTop + (MAX_VISIBLE_ITEMS * ITEM_HEIGHT);
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY < listBottom) {
-			int relativeY = (int) mouseY - listTop + (scrollOffset * ITEM_HEIGHT);
+		if (maxScroll > 0 && uiX >= listLeft + listWidth && uiX <= guiLeft + PANEL_WIDTH &&
+				uiY >= listTop && uiY <= listTop + viewHeight) {
+			this.isScrolling = true;
+			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
+			return true;
+		}
+
+		if (uiX >= listLeft && uiX < listLeft + listWidth && uiY >= listTop && uiY <= listTop + viewHeight) {
+			int relativeY = (int) (uiY - listTop + currentScroll);
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < availableWishes.size()) {
@@ -185,19 +220,13 @@ public class WishesScreen extends Screen {
 			}
 		}
 
-		if (maxScroll > 0 && mouseX >= listLeft + listWidth && mouseX <= guiLeft + PANEL_WIDTH) {
-			this.isScrolling = true;
-			return true;
-		}
-
 		return false;
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		if (maxScroll > 0) {
-			int scroll = (int) -Math.signum(delta);
-			this.scrollOffset = Mth.clamp(this.scrollOffset + scroll, 0, maxScroll);
+			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -212,10 +241,10 @@ public class WishesScreen extends Screen {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (isScrolling && maxScroll > 0) {
-			int listHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-			float scrollPerPixel = (float) maxScroll / listHeight;
-
-			this.scrollOffset = Mth.clamp(this.scrollOffset + (int) (dragY * scrollPerPixel * 5), 0, maxScroll);
+			double uiY = toUiY(mouseY);
+			int listTop = guiTop + 35;
+			int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+			targetScroll = calculateScrollPercent(uiY, listTop, viewHeight) * maxScroll;
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -235,21 +264,6 @@ public class WishesScreen extends Screen {
 			}
 		}
 		confirmButton.visible = selectedIndices.size() == maxWishesToSelect;
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - (textWidth / 2);
-		drawStringWithBorder(graphics, text, x, y, textColor);
 	}
 
 	@Override

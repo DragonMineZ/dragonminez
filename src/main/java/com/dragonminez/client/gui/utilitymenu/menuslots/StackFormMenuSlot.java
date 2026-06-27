@@ -7,7 +7,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ExecuteActionC2S;
 import com.dragonminez.common.network.C2S.SwitchActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.ActionMode;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.ChatFormatting;
@@ -15,17 +15,6 @@ import net.minecraft.network.chat.Component;
 
 public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
 	private boolean hasAvailableStackForm(StatsData statsData) {
-		var skillConfig = ConfigManager.getSkillsConfig();
-		boolean hasStackSkill = false;
-		for (String formSkill : skillConfig.getStackSkills()) {
-			if (statsData.getSkills().getSkillLevel(formSkill) > 0) {
-				hasStackSkill = true;
-				break;
-			}
-		}
-
-		if (!hasStackSkill) return false;
-
 		String firstGroup = TransformationsHelper.getGroupWithFirstAvailableStackForm(statsData);
 		String firstForm = TransformationsHelper.getFirstAvailableStackForm(statsData);
 		return firstGroup != null && !firstGroup.isEmpty() && firstForm != null && !firstForm.isEmpty();
@@ -80,12 +69,7 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
 		}
 
 		boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.STACK;
-		if (wasActive && statsData.getCharacter().hasActiveStackForm()) {
-			if (TransformationsHelper.canStackDescend(statsData)) {
-				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
-				playToggleSound(false);
-			}
-		} else if (!wasActive) {
+		if (!wasActive) {
 			NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.STACK));
 			playToggleSound(true);
 		} else {

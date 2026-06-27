@@ -4,25 +4,35 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 @Setter
 @Getter
 @NoArgsConstructor
 public class FormConfig {
-	public static final int CURRENT_VERSION = 3;
-	private int configVersion;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	private double configVersion;
 
 	private String groupName;
-	private String formType = "super";
+	private String formType = "superforms";
 	private Map<String, FormData> forms = new LinkedHashMap<>();
 
+	public String getGroupName() {
+		return groupName != null ? groupName : "";
+	}
+
+	public String getFormType() {
+		return formType != null ? formType : "superforms";
+	}
+
+	public Map<String, FormData> getForms() {
+		return forms != null ? forms : Collections.emptyMap();
+	}
+
 	public FormData getForm(String formName) {
-		for (FormData formData : forms.values()) {
-			if (formData.getName().equalsIgnoreCase(formName)) {
-				return formData;
-			}
+		if (formName == null) return null;
+		for (FormData formData : getForms().values()) {
+			if (formData != null && formData.getName() != null && formData.getName().equalsIgnoreCase(formName)) return formData;
 		}
 		return null;
 	}
@@ -37,15 +47,22 @@ public class FormConfig {
 	public static class FormData {
 		private String name = "";
 		private Integer unlockOnSkillLevel = 0;
+		private String formCombo = "";
 		private String customModel = "";
+		private boolean keepBaseFormHeadBones = false;
+		private String transformationAnimation = "transf.generic";
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
 		private String bodyColor3 = "";
+		private String extraFormLayer = "";
+		private String extraFormColor = "";
 		private String hairType = "";
 		private String forcedHairCode = "";
 		private String hairColor = "";
 		private String eye1Color = "";
 		private String eye2Color = "";
+		private String auraType = "kakarot";
+		private Integer auraLayer = 0;
 		private String auraColor = "";
 		private Boolean hasLightnings = false;
 		private String lightningColor = "";
@@ -64,15 +81,38 @@ public class FormConfig {
 		private Double healthDrain = 0.0;
 		private Double attackSpeed = 1.0;
 		private Double maxMastery = 100.0;
-		private Double masteryPerHit = 0.01;
-		private Double masteryPerDamageReceived = 0.01;
-		private Double statMultPerMasteryPoint = 0.02;
-		private Double costDecreasePerMasteryPoint = 0.02;
-		private Double passiveMasteryGainEveryFiveSeconds = 0.001;
+		private Double masteryPerHitDealt = 0.01;
+		private Double masteryPerHitReceived = 0.01;
+		private Double passiveMasteryEveryFiveSeconds = 0.001;
+		private Double maxCostMultiplier = 0.5;
+		private Double maxStatsMultiplier = 1.25;
+		private String formRequisite = "";
+		private Double unlockOnMastery = 0.0;
+		private Double stackOnMastery = 0.0;
+		private Double instantTransformOnMastery = 40.0;
+		private Double allowAlwaysTransformOnMastery = 0.0;
+		private Double directTransformIfUsedOnMastery = 0.0;
 		private Boolean formStackable = true;
 		private Double stackDrainMultiplier = 2.0;
 		private Boolean canAlwaysTransform = false;
-		private Boolean directTransformation = false;
+		private Boolean directTransformationIfUsed = false;
+		private List<String> incompatibleWith = new ArrayList<>(List.of("ultimate.ultimate"));
+		private List<String> shareMasteryWith = new ArrayList<>();
+		private Double shareMasteryMultiplier = 1.0;
+		private OutlineShaderConfig outlineShader = new OutlineShaderConfig();
+
+		private List<TriggerItemCost> triggerItemCosts = new ArrayList<>();
+		private List<DurationItemCost> durationItemCosts = new ArrayList<>();
+		private List<MobEffectConfig> mobEffects = new ArrayList<>();
+
+		private transient float[] rgbBodyColor1;
+		private transient float[] rgbBodyColor2;
+		private transient float[] rgbBodyColor3;
+		private transient float[] rgbHairColor;
+		private transient float[] rgbEye1Color;
+		private transient float[] rgbEye2Color;
+		private transient float[] rgbAuraColor;
+		private transient float[] rgbExtraFormColor;
 
 		public Double getStrMultiplier() {
 			return Math.max(0.01, strMultiplier);
@@ -126,24 +166,69 @@ public class FormConfig {
 			return Math.max(0.1, attackSpeed);
 		}
 
-		public Double getMasteryPerHit() {
-			return Math.max(0, masteryPerHit);
+		public Double getMasteryPerHitDealt() {
+			return Math.max(0, masteryPerHitDealt);
 		}
 
-		public Double getMasteryPerDamageReceived() {
-			return Math.max(0, masteryPerDamageReceived);
+		public Double getMasteryPerHitReceived() {
+			return Math.max(0, masteryPerHitReceived);
 		}
 
-		public Double getStatMultPerMasteryPoint() {
-			return Math.max(0, statMultPerMasteryPoint);
+		public Double getPassiveMasteryEveryFiveSeconds() {
+			return Math.max(0, passiveMasteryEveryFiveSeconds);
 		}
 
-		public Double getCostDecreasePerMasteryPoint() {
-			return Math.max(0, costDecreasePerMasteryPoint);
+		public Double getMaxCostMultiplier() {
+			return Math.max(0, maxCostMultiplier);
 		}
 
-		public Double getPassiveMasteryGainEveryFiveSeconds() {
-			return Math.max(0, passiveMasteryGainEveryFiveSeconds);
+		public Double getMaxStatsMultiplier() {
+			return Math.max(0, maxStatsMultiplier);
+		}
+
+		public String getFormRequisite() {
+			return formRequisite != null ? formRequisite.trim() : "";
+		}
+
+		public Double getUnlockOnMastery() {
+			return Math.max(0, unlockOnMastery);
+		}
+
+		public Double getStackOnMastery() {
+			return Math.max(0, stackOnMastery);
+		}
+
+		public Double getInstantTransformOnMastery() {
+			return Math.max(0, instantTransformOnMastery);
+		}
+
+		public Double getAllowAlwaysTransformOnMastery() {
+			return Math.max(0, allowAlwaysTransformOnMastery);
+		}
+
+		public Double getDirectTransformIfUsedOnMastery() {
+			return Math.max(0, directTransformIfUsedOnMastery);
+		}
+
+		public List<String> getIncompatibleWith() {
+			return incompatibleWith != null ? incompatibleWith : Collections.emptyList();
+		}
+
+		public List<String> getShareMasteryWith() {
+			return shareMasteryWith != null ? shareMasteryWith : Collections.emptyList();
+		}
+
+		public Double getShareMasteryMultiplier() {
+			return Math.max(0, shareMasteryMultiplier);
+		}
+
+		public boolean isIncompatibleWith(String groupId, String formId) {
+			if (groupId == null || formId == null) return false;
+			String key = (groupId + "." + formId).toLowerCase();
+			for (String entry : getIncompatibleWith()) {
+				if (entry != null && entry.trim().toLowerCase().equals(key)) return true;
+			}
+			return false;
 		}
 
 		public Double getStackDrainMultiplier() {
@@ -154,8 +239,24 @@ public class FormConfig {
 			return customModel != null && !customModel.isEmpty();
 		}
 
+		public boolean hasTransformationAnimation() {
+			return transformationAnimation != null && !transformationAnimation.trim().isEmpty();
+		}
+
+		public String getTransformationAnimation() {
+			return transformationAnimation != null ? transformationAnimation.trim() : "";
+		}
+
 		public Boolean hasBodyColorOverride() {
 			return !bodyColor1.isEmpty() || !bodyColor2.isEmpty() || !bodyColor3.isEmpty();
+		}
+
+		public String getExtraFormLayer() {
+			return extraFormLayer != null ? extraFormLayer.trim() : "";
+		}
+
+		public boolean hasExtraFormLayer() {
+			return !getExtraFormLayer().isEmpty();
 		}
 
 		public Boolean hasDefinedHairType() {
@@ -176,6 +277,228 @@ public class FormConfig {
 
 		public Boolean hasAuraColorOverride() {
 			return auraColor != null && !auraColor.isEmpty();
+		}
+
+		public OutlineShaderConfig getOutlineShader() {
+			return outlineShader != null ? outlineShader : new OutlineShaderConfig();
+		}
+
+		public List<MobEffectConfig> getMobEffects() {
+			return mobEffects != null ? mobEffects : Collections.emptyList();
+		}
+
+
+		public List<TriggerItemCost> getTriggerItemCosts() {
+			return triggerItemCosts != null ? triggerItemCosts : Collections.emptyList();
+		}
+
+		public List<DurationItemCost> getDurationItemCosts() {
+			return durationItemCosts != null ? durationItemCosts : Collections.emptyList();
+		}
+
+		public boolean hasTriggerItemCosts() {
+			return triggerItemCosts != null && !triggerItemCosts.isEmpty();
+		}
+
+		public boolean hasDurationItemCosts() {
+			return durationItemCosts != null && !durationItemCosts.isEmpty();
+		}
+
+		public float[] getRgbBodyColor1() {
+			if (rgbBodyColor1 == null && bodyColor1 != null && !bodyColor1.isEmpty()) rgbBodyColor1 = com.dragonminez.client.util.ColorUtils.hexToRgb(bodyColor1);
+			return rgbBodyColor1;
+		}
+
+		public float[] getRgbBodyColor2() {
+			if (rgbBodyColor2 == null && bodyColor2 != null && !bodyColor2.isEmpty()) rgbBodyColor2 = com.dragonminez.client.util.ColorUtils.hexToRgb(bodyColor2);
+			return rgbBodyColor2;
+		}
+
+		public float[] getRgbBodyColor3() {
+			if (rgbBodyColor3 == null && bodyColor3 != null && !bodyColor3.isEmpty()) rgbBodyColor3 = com.dragonminez.client.util.ColorUtils.hexToRgb(bodyColor3);
+			return rgbBodyColor3;
+		}
+
+		public float[] getRgbHairColor() {
+			if (rgbHairColor == null && hairColor != null && !hairColor.isEmpty()) rgbHairColor = com.dragonminez.client.util.ColorUtils.hexToRgb(hairColor);
+			return rgbHairColor;
+		}
+
+		public float[] getRgbEye1Color() {
+			if (rgbEye1Color == null && eye1Color != null && !eye1Color.isEmpty()) rgbEye1Color = com.dragonminez.client.util.ColorUtils.hexToRgb(eye1Color);
+			return rgbEye1Color;
+		}
+
+		public float[] getRgbEye2Color() {
+			if (rgbEye2Color == null && eye2Color != null && !eye2Color.isEmpty()) rgbEye2Color = com.dragonminez.client.util.ColorUtils.hexToRgb(eye2Color);
+			return rgbEye2Color;
+		}
+
+		public float[] getRgbAuraColor() {
+			if (rgbAuraColor == null && auraColor != null && !auraColor.isEmpty()) rgbAuraColor = com.dragonminez.client.util.ColorUtils.hexToRgb(auraColor);
+			return rgbAuraColor;
+		}
+
+		public float[] getRgbExtraFormColor() {
+			if (rgbExtraFormColor == null && extraFormColor != null && !extraFormColor.isEmpty()) rgbExtraFormColor = com.dragonminez.client.util.ColorUtils.hexToRgb(extraFormColor);
+			return rgbExtraFormColor;
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class MobEffectConfig {
+			private String effectId = "";
+			private Integer amplifier = 0;
+			private Integer durationTicks = -1;
+			private Boolean ambient = false;
+			private Boolean visible = true;
+			private Boolean showIcon = true;
+
+			public String getEffectId() {
+				return effectId != null ? effectId.trim() : "";
+			}
+
+			public int getAmplifier() {
+				return Math.max(0, amplifier != null ? amplifier : 0);
+			}
+
+			public int getDurationTicks() {
+				return durationTicks != null ? durationTicks : -1;
+			}
+
+			public boolean isPersistent() {
+				return getDurationTicks() < 0;
+			}
+
+			public boolean isAmbient() {
+				return Boolean.TRUE.equals(ambient);
+			}
+
+			public boolean isVisible() {
+				return visible == null || visible;
+			}
+
+			public boolean isShowIcon() {
+				return showIcon == null || showIcon;
+			}
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class TriggerItemCost {
+			private String itemId = "";
+			private String itemTag = "";
+			private String nbt = "";
+			private Integer count = 1;
+			private Boolean consume = true;
+
+			public String getItemId() {
+				return itemId != null ? itemId.trim() : "";
+			}
+
+			public String getItemTag() {
+				return itemTag != null ? itemTag.trim() : "";
+			}
+
+			public String getNbt() {
+				return nbt != null ? nbt.trim() : "";
+			}
+
+			public int getCount() {
+				return Math.max(1, count != null ? count : 1);
+			}
+
+			public boolean isConsume() {
+				return consume == null || consume;
+			}
+
+			public boolean hasItemId() {
+				return !getItemId().isEmpty();
+			}
+
+			public boolean hasItemTag() {
+				return !getItemTag().isEmpty();
+			}
+
+			public boolean hasNbt() {
+				return !getNbt().isEmpty();
+			}
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class DurationItemCost {
+			private String itemId = "";
+			private String itemTag = "";
+			private String nbt = "";
+			private Integer durationSeconds = 1;
+
+			public String getItemId() {
+				return itemId != null ? itemId.trim() : "";
+			}
+
+			public String getItemTag() {
+				return itemTag != null ? itemTag.trim() : "";
+			}
+
+			public String getNbt() {
+				return nbt != null ? nbt.trim() : "";
+			}
+
+			public int getDurationSeconds() {
+				return Math.max(1, durationSeconds != null ? durationSeconds : 1);
+			}
+
+			public boolean hasItemId() {
+				return !getItemId().isEmpty();
+			}
+
+			public boolean hasItemTag() {
+				return !getItemTag().isEmpty();
+			}
+
+			public boolean hasNbt() {
+				return !getNbt().isEmpty();
+			}
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class OutlineShaderConfig {
+			private Boolean enabled = false;
+			private String primaryColor = "#7FFFFF";
+			private String secondaryColor = "#7FFFFF";
+			private Double noiseScale = 4.0;
+			private Double colorMixSpeed = 0.7;
+			private Double outlineThickness = 1.5;
+
+			public boolean isEnabled() {
+				return Boolean.TRUE.equals(enabled);
+			}
+
+			public String getPrimaryColor() {
+				return primaryColor != null && !primaryColor.isEmpty() ? primaryColor : "#7FFFFF";
+			}
+
+			public String getSecondaryColor() {
+				return secondaryColor != null && !secondaryColor.isEmpty() ? secondaryColor : "#FFD970";
+			}
+
+			public double getNoiseScale() {
+				return Math.max(0.01, noiseScale != null ? noiseScale : 4.0);
+			}
+
+			public double getColorMixSpeed() {
+				return Math.max(0.0, colorMixSpeed != null ? colorMixSpeed : 0.7);
+			}
+
+			public double getOutlineThickness() {
+				return Math.max(0.0, outlineThickness != null ? outlineThickness : 1.5);
+			}
 		}
 	}
 }

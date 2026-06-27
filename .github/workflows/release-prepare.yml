@@ -1,0 +1,112 @@
+name: DragonMineZ Release Prepare
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - gradle.properties
+      - CHANGELOG.md
+      - release-notes/**
+      - scripts/release/**
+      - .github/workflows/release-prepare.yml
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  prepare:
+    name: Prepare release candidate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Read release metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(grep '^mod_version=' gradle.properties | cut -d= -f2-)"
+          lower_version="$(printf '%s' "$version" | tr '[:upper:]' '[:lower:]')"
+          stable="true"
+          if [[ "$lower_version" == *alpha* || "$lower_version" == *beta* ]]; then
+            stable="false"
+            echo "::notice::Skipping release preparation for non-stable version '${version}'."
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "stable=${stable}" >> "$GITHUB_OUTPUT"
+          echo "artifact=build/libs/dragonminez-${version}.jar" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK 17 Temurin
+        if: steps.metadata.outputs.stable == 'true'
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup Gradle
+        if: steps.metadata.outputs.stable == 'true'
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          dependency-graph: generate-and-submit
+          artifact-retention-days: 2
+
+      - name: Make gradlew executable
+        if: steps.metadata.outputs.stable == 'true'
+        run: chmod +x ./gradlew
+
+      - name: Build release jar
+        if: steps.metadata.outputs.stable == 'true'
+        run: ./gradlew build
+
+      - name: Build release manifest
+        if: steps.metadata.outputs.stable == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          changelog_args=()
+          if [[ -f "release-notes/${{ steps.metadata.outputs.version }}.md" ]]; then
+            changelog_args+=(--changelog-file "release-notes/${{ steps.metadata.outputs.version }}.md")
+          elif [[ -f CHANGELOG.md ]]; then
+            changelog_args+=(--changelog-file CHANGELOG.md)
+          fi
+
+          python3 -m scripts.release.prepare_release \
+            --artifact "${{ steps.metadata.outputs.artifact }}" \
+            --manifest release-manifest.json \
+            --bot-payload release-bot-payload.json \
+            --require-stable \
+            "${changelog_args[@]}"
+
+      - name: Upload release manifest
+        if: steps.metadata.outputs.stable == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dragonminez-release-manifest-${{ steps.metadata.outputs.version }}
+          path: |
+            release-manifest.json
+            release-bot-payload.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Notify Discord bot
+        if: steps.metadata.outputs.stable == 'true'
+        env:
+          RELEASE_WEBHOOK_SECRET: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          webhook_url="https://release-bot.dragonminez.com/dmz-release"
+          : "${RELEASE_WEBHOOK_SECRET:?DMZ_RELEASE_BOT_WEBHOOK_SECRET secret is required}"
+
+          curl --fail-with-body \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --header "X-DMZ-Release-Bot-Secret: ${RELEASE_WEBHOOK_SECRET}" \
+            --data @release-bot-payload.json \
+            "$webhook_url"

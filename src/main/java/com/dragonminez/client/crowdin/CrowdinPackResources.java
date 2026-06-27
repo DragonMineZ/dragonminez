@@ -47,6 +47,8 @@ public class CrowdinPackResources implements PackResources {
 	@Nullable
 	@Override
 	public IoSupplier<InputStream> getResource(PackType type, ResourceLocation location) {
+		if (!CrowdinManager.isLiveTranslationsEnabled()) return null;
+
 		if (type == PackType.CLIENT_RESOURCES &&
 				location.getNamespace().equals(Reference.MOD_ID) &&
 				location.getPath().startsWith("lang/")) {

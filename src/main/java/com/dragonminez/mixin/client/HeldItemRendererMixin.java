@@ -2,6 +2,7 @@ package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.render.DMZRenderHand;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.config.ConfigManager;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -52,11 +53,13 @@ public class HeldItemRendererMixin {
             boolean isRight = pSide == net.minecraft.world.entity.HumanoidArm.RIGHT;
             float f = isRight ? 1.0F : -1.0F;
 
+            float swingProgress = ((Minecraft_DMZ) Minecraft.getInstance()).getSwingProgress();
+            float equippedProgress = Math.min(pEquippedProgress, swingProgress);
             float f1 = Mth.sqrt(pSwingProgress);
             float f2 = -0.3F * Mth.sin(f1 * (float)Math.PI);
             float f3 = 0.4F * Mth.sin(f1 * ((float)Math.PI * 2F));
             float f4 = -0.4F * Mth.sin(pSwingProgress * (float)Math.PI);
-            pPoseStack.translate(f * (f2 + 0.64000005F), f3 + -0.6F + pEquippedProgress * -0.6F, f4 + -0.71999997F);
+            pPoseStack.translate(f * (f2 + 0.64000005F), f3 + -0.6F + equippedProgress * -0.6F, f4 + -0.71999997F);
             pPoseStack.mulPose(Axis.YP.rotationDegrees(f * 45.0F));
             float f5 = Mth.sin(pSwingProgress * pSwingProgress * (float)Math.PI);
             float f6 = Mth.sin(f1 * (float)Math.PI);

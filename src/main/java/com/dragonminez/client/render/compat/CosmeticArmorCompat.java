@@ -25,8 +25,7 @@ public final class CosmeticArmorCompat {
 			isSkinArmor = caStacksClass.getMethod("isSkinArmor", int.class);
 
 			loaded = true;
-		} catch (Exception ignored) {
-		}
+		} catch (Exception ignored) {}
 		LOADED = loaded;
 	}
 

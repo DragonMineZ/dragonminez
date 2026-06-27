@@ -12,8 +12,8 @@ import lombok.Getter;
 public class TalkToObjective extends QuestObjective {
 	private final String npcId;
 
-	public TalkToObjective(String description, String npcId) {
-		super(ObjectiveType.TALK_TO, description, 1);
+	public TalkToObjective(String npcId) {
+		super(ObjectiveType.TALK_TO, 1);
 		this.npcId = npcId;
 	}
 

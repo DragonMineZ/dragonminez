@@ -1,0 +1,8 @@
+{
+  "parent": "dragonminez:sword",
+  "attributes": {
+    "crit_chance": 0.10,
+    "crit_damage": 0.15
+  }
+}
+

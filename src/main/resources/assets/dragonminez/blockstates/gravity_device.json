@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "dragonminez:block/gravitydevice" },
+    "facing=east": { "model": "dragonminez:block/gravitydevice", "y": 90 },
+    "facing=south": { "model": "dragonminez:block/gravitydevice", "y": 180 },
+    "facing=west": { "model": "dragonminez:block/gravitydevice", "y": 270 }
+  }
+}

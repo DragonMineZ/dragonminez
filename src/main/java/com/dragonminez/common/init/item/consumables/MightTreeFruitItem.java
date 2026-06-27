@@ -1,0 +1,67 @@
+package com.dragonminez.common.init.item.consumables;
+
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+
+import java.util.List;
+
+public class MightTreeFruitItem extends Item {
+    private static final int HUNGER = 2;
+    private static final float SATURATION = 20;
+    private static final int EFFECT_DURATION_TICKS = 20 * 60;
+
+    public MightTreeFruitItem() {
+        super(new Properties().stacksTo(6).food(
+                new FoodProperties.Builder()
+                        .nutrition(HUNGER)
+                        .saturationMod(SATURATION)
+                        .alwaysEat()
+                        .build()
+        ));
+    }
+
+    @Override
+    public @NotNull Component getName(@NotNull ItemStack pStack) {
+        return Component.translatable("item.dragonminez.might_tree_fruit");
+    }
+
+    @Override
+    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
+        pTooltipComponents.add(Component.translatable("item.dragonminez.might_tree_fruit.tooltip").withStyle(ChatFormatting.GRAY));
+    }
+
+    @Override
+    public @NonNull ItemStack finishUsingItem(@NonNull ItemStack pStack, Level pLevel, @NonNull LivingEntity pLivingEntity) {
+        if (!pLevel.isClientSide && pLivingEntity instanceof ServerPlayer player) {
+            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                double effectPower = ConfigManager.getServerConfig().getGameplay().getMightFruitPower();
+                data.getEffects().addEffect("mightfruit", effectPower, EFFECT_DURATION_TICKS);
+            });
+
+            player.getFoodData().eat(HUNGER, SATURATION);
+            player.displayClientMessage(Component.translatable("item.dragonminez.might_tree_fruit.use"), true);
+
+            if (player.isCreative()) {
+                pStack.shrink(0);
+            } else {
+                pStack.shrink(1);
+            }
+        }
+
+        return pStack;
+    }
+}
+

@@ -1,8 +1,10 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.stats.Skill;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
+import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -13,22 +15,26 @@ import java.util.function.Supplier;
 
 public class FlyToggleC2S {
 
-    private final boolean fromGround;
+    private final boolean enable;
+    private final boolean isBurst;
 
-    public FlyToggleC2S(boolean fromGround) {
-        this.fromGround = fromGround;
+    public FlyToggleC2S(boolean enable, boolean isBurst) {
+        this.enable = enable;
+        this.isBurst = isBurst;
     }
 
     public FlyToggleC2S(FriendlyByteBuf buf) {
-        this.fromGround = buf.readBoolean();
+        this.enable = buf.readBoolean();
+        this.isBurst = buf.readBoolean();
     }
 
     public static void encode(FlyToggleC2S msg, FriendlyByteBuf buf) {
-        buf.writeBoolean(msg.fromGround);
+        buf.writeBoolean(msg.enable);
+        buf.writeBoolean(msg.isBurst);
     }
 
     public static FlyToggleC2S decode(FriendlyByteBuf buf) {
-        return new FlyToggleC2S(buf.readBoolean());
+        return new FlyToggleC2S(buf);
     }
 
     public static void handle(FlyToggleC2S msg, Supplier<NetworkEvent.Context> ctx) {
@@ -40,23 +46,35 @@ public class FlyToggleC2S {
                 Skill flySkill = data.getSkills().getSkill("fly");
                 if (flySkill == null || flySkill.getLevel() <= 0) return;
 
+                if (flySkill.isActive() == msg.enable) return;
+
                 int flyLevel = flySkill.getLevel();
-                int maxEnergy = data.getMaxEnergy();
 
                 double energyCostPercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
-                int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
+                int energyCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * energyCostPercent);
 
-                if (!flySkill.isActive()) {
-                    if (data.getResources().getCurrentEnergy() < energyCost) {
-                        return;
+                int totalCost = energyCost;
+                int burstCost = 0;
+
+                if (msg.enable && msg.isBurst && flyLevel >= 5) {
+                    burstCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * 0.75);
+                    totalCost += burstCost;
+                }
+
+                if (msg.enable) {
+                    if (!player.isCreative() && !player.isSpectator() && data.getResources().getCurrentEnergy() < totalCost) return;
+
+                    if (!player.isCreative() && !player.isSpectator() && msg.isBurst && burstCost > 0) {
+                        data.getResources().removeEnergy(burstCost);
+                        NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
                     }
                 }
 
-                flySkill.setActive(!flySkill.isActive());
+                flySkill.setActive(msg.enable);
 
                 if (flySkill.isActive()) {
                     player.getAbilities().mayfly = true;
-                    player.getAbilities().flying = true;
+                    player.getAbilities().flying = false;
                     player.onUpdateAbilities();
                 } else {
                     if (!player.isCreative() && !player.isSpectator()) {
@@ -66,7 +84,7 @@ public class FlyToggleC2S {
                     }
                 }
 
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
             });
         });
         ctx.get().setPacketHandled(true);

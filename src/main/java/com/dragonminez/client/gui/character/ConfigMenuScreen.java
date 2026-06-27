@@ -1,8 +1,11 @@
 package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
+import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
@@ -10,13 +13,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +37,11 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private int scrollOffset = 0;
 	private int maxScroll = 0;
 	private boolean isDraggingScroll = false;
+	private int holdTicks = 0;
+	private int heldConfigIndex = -1;
+	private int heldDelta = 0;
 
-	private GeneralUserConfig.HudConfig hudConfig;
+	private GeneralUserConfig userConfig;
 	private final List<ConfigOption> configOptions = new ArrayList<>();
 	private final List<CustomTextureButton> decreaseButtons = new ArrayList<>();
 	private final List<CustomTextureButton> increaseButtons = new ArrayList<>();
@@ -57,82 +61,110 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	private void loadConfig() {
-		hudConfig = ConfigManager.getUserConfig().getHud();
+		userConfig = ConfigManager.getUserConfig();
 	}
 
 	private void initializeConfigOptions() {
 		configOptions.clear();
 
 		configOptions.add(new ConfigOption("config.firstPersonAnimated",
-				ConfigType.BOOLEAN, hudConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
-				v -> hudConfig.setFirstPersonAnimated(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
+				v -> userConfig.setFirstPersonAnimated(v > 0)));
+		
+		configOptions.add(new ConfigOption("config.impactFramesEnabled",
+				ConfigType.BOOLEAN, userConfig.isImpactFramesEnabled() ? 1 : 0, 0, 1,
+				v -> userConfig.setImpactFramesEnabled(v > 0)));
+
+		configOptions.add(new ConfigOption("config.taiyokenInvertPalette",
+				ConfigType.BOOLEAN, userConfig.getTaiyokenInvertPalette() ? 1 : 0, 0, 1,
+				v -> userConfig.setTaiyokenInvertPalette(v > 0)));
+
+		configOptions.add(new ConfigOption("config.showAccumulativeDamage",
+				ConfigType.BOOLEAN, userConfig.getShowAccumulativeDamage() ? 1 : 0, 0, 1,
+				v -> userConfig.setShowAccumulativeDamage(v > 0)));
+
+		configOptions.add(new ConfigOption("config.techniqueHotbarRightSide",
+				ConfigType.BOOLEAN, userConfig.getTechniqueHotbarRightSide() ? 1 : 0, 0, 1,
+				v -> userConfig.setTechniqueHotbarRightSide(v > 0)));
+
+		configOptions.add(new ConfigOption("config.alwaysVisibleHudValues",
+				ConfigType.BOOLEAN, userConfig.getAlwaysVisibleHudValues() ? 1 : 0, 0, 1,
+				v -> userConfig.setAlwaysVisibleHudValues(v > 0)));
+
+		configOptions.add(new ConfigOption("config.hideHudNumbers",
+				ConfigType.BOOLEAN, userConfig.getHideHudNumbers() ? 1 : 0, 0, 1,
+				v -> userConfig.setHideHudNumbers(v > 0)));
 
 		configOptions.add(new ConfigOption("config.xenoverseHudPosX",
-				ConfigType.INT, hudConfig.getXenoverseHudPosX(), -1000, 2000,
-				v -> hudConfig.setXenoverseHudPosX(v.intValue())));
+				ConfigType.INT, userConfig.getXenoverseHudPosX(), -1000, 2000,
+				v -> userConfig.setXenoverseHudPosX(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.xenoverseHudPosY",
-				ConfigType.INT, hudConfig.getXenoverseHudPosY(), -1000, 2000,
-				v -> hudConfig.setXenoverseHudPosY(v.intValue())));
+				ConfigType.INT, userConfig.getXenoverseHudPosY(), -1000, 2000,
+				v -> userConfig.setXenoverseHudPosY(v.intValue())));
+
+		configOptions.add(new ConfigOption("config.xenoverseHudScale",
+				ConfigType.FLOAT, userConfig.getXenoverseHudScale(), 0.5f, 2.5f,
+				v -> userConfig.setXenoverseHudScale(v)));
 
 		configOptions.add(new ConfigOption("config.advancedDescription",
-				ConfigType.BOOLEAN, hudConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
-				v -> hudConfig.setAdvancedDescription(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
+				v -> userConfig.setAdvancedDescription(v > 0)));
 
 		configOptions.add(new ConfigOption("config.advancedDescriptionPercentage",
-				ConfigType.BOOLEAN, hudConfig.getAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
-				v -> hudConfig.setAdvancedDescriptionPercentage(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
+				v -> userConfig.setAdvancedDescriptionPercentage(v > 0)));
 
 		configOptions.add(new ConfigOption("config.alternativeHud",
-				ConfigType.BOOLEAN, hudConfig.getAlternativeHud() ? 1 : 0, 0, 1,
-				v -> hudConfig.setAlternativeHud(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getAlternativeHud() ? 1 : 0, 0, 1,
+				v -> userConfig.setAlternativeHud(v > 0)));
 
 		configOptions.add(new ConfigOption("config.hexagonStatsDisplay",
-				ConfigType.BOOLEAN, hudConfig.getHexagonStatsDisplay() ? 1 : 0, 0, 1,
-				v -> hudConfig.setHexagonStatsDisplay(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getHexagonStatsDisplay() ? 1 : 0, 0, 1,
+				v -> userConfig.setHexagonStatsDisplay(v > 0)));
 
 		configOptions.add(new ConfigOption("config.menuScaleMultiplier",
-				ConfigType.FLOAT, hudConfig.getMenuScaleMultiplier(), 0.75f, 2.5f,
-				v -> hudConfig.setMenuScaleMultiplier(v)));
+				ConfigType.FLOAT, userConfig.getMenuScaleMultiplier(), 0.75f, 2.5f,
+				v -> userConfig.setMenuScaleMultiplier(v)));
 
 		configOptions.add(new ConfigOption("config.healthBarPosX",
-				ConfigType.INT, hudConfig.getHealthBarPosX(), -1000, 2000,
-				v -> hudConfig.setHealthBarPosX(v.intValue())));
+				ConfigType.INT, userConfig.getHealthBarPosX(), -1000, 2000,
+				v -> userConfig.setHealthBarPosX(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.healthBarPosY",
-				ConfigType.INT, hudConfig.getHealthBarPosY(), -1000, 2000,
-				v -> hudConfig.setHealthBarPosY(v.intValue())));
+				ConfigType.INT, userConfig.getHealthBarPosY(), -1000, 2000,
+				v -> userConfig.setHealthBarPosY(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.energyBarPosX",
-				ConfigType.INT, hudConfig.getEnergyBarPosX(), -1000, 2000,
-				v -> hudConfig.setEnergyBarPosX(v.intValue())));
+				ConfigType.INT, userConfig.getEnergyBarPosX(), -1000, 2000,
+				v -> userConfig.setEnergyBarPosX(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.energyBarPosY",
-				ConfigType.INT, hudConfig.getEnergyBarPosY(), -1000, 2000,
-				v -> hudConfig.setEnergyBarPosY(v.intValue())));
+				ConfigType.INT, userConfig.getEnergyBarPosY(), -1000, 2000,
+				v -> userConfig.setEnergyBarPosY(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.staminaBarPosX",
-				ConfigType.INT, hudConfig.getStaminaBarPosX(), -1000, 2000,
-				v -> hudConfig.setStaminaBarPosX(v.intValue())));
+				ConfigType.INT, userConfig.getStaminaBarPosX(), -1000, 2000,
+				v -> userConfig.setStaminaBarPosX(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.staminaBarPosY",
-				ConfigType.INT, hudConfig.getStaminaBarPosY(), -1000, 2000,
-				v -> hudConfig.setStaminaBarPosY(v.intValue())));
-
-		configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
-				ConfigType.BOOLEAN, hudConfig.getStoryHardDifficulty() ? 1 : 0, 0, 1,
-				v -> hudConfig.setStoryHardDifficulty(v > 0)));
+				ConfigType.INT, userConfig.getStaminaBarPosY(), -1000, 2000,
+				v -> userConfig.setStaminaBarPosY(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.cameraMovementDuringFlight",
-				ConfigType.BOOLEAN, hudConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
-				v -> hudConfig.setCameraMovementDuringFlight(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
+				v -> userConfig.setCameraMovementDuringFlight(v > 0)));
+
+		configOptions.add(new ConfigOption("config.liveCrowdinTranslations",
+				ConfigType.BOOLEAN, userConfig.getLiveCrowdinTranslations() ? 1 : 0, 0, 1,
+				v -> userConfig.setLiveCrowdinTranslations(v > 0)));
 	}
 
 	private void initConfigButtons() {
 		clearConfigButtons();
 		LivingEntity player = this.minecraft.player;
 
-		int rightPanelX = getUiWidth() - 163;
+		int rightPanelX = getRightPanelX() - 5;
 		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 		int startY = rightPanelY + 35;
@@ -165,7 +197,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 						.texture(STAT_BUTTONS)
 						.textureCoords(142, 0, 142, 10)
 						.textureSize(10, 10)
-						.onPress(button -> modifyConfigValue(index, -1))
+						.onPress(button -> {
+							modifyConfigValue(index, -1);
+							heldConfigIndex = index;
+							heldDelta = -1;
+							holdTicks = 0;
+						})
 						.build();
 				decreaseButtons.add(decreaseBtn);
 				this.addRenderableWidget(decreaseBtn);
@@ -176,7 +213,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 						.texture(STAT_BUTTONS)
 						.textureCoords(0, 0, 0, 10)
 						.textureSize(10, 10)
-						.onPress(button -> modifyConfigValue(index, 1))
+						.onPress(button -> {
+							modifyConfigValue(index, 1);
+							heldConfigIndex = index;
+							heldDelta = 1;
+							holdTicks = 0;
+						})
 						.build();
 				increaseButtons.add(increaseBtn);
 				this.addRenderableWidget(increaseBtn);
@@ -185,15 +227,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	private void clearConfigButtons() {
-		for (CustomTextureButton btn : decreaseButtons) {
-			this.removeWidget(btn);
-		}
-		for (CustomTextureButton btn : increaseButtons) {
-			this.removeWidget(btn);
-		}
-		for (SwitchButton btn : switchButtons) {
-			this.removeWidget(btn);
-		}
+		for (CustomTextureButton btn : decreaseButtons) this.removeWidget(btn);
+		for (CustomTextureButton btn : increaseButtons) this.removeWidget(btn);
+		for (SwitchButton btn : switchButtons) this.removeWidget(btn);
 		decreaseButtons.clear();
 		increaseButtons.clear();
 		switchButtons.clear();
@@ -203,6 +239,13 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public void tick() {
 		super.tick();
 		tickCount++;
+
+		if (heldConfigIndex != -1) {
+			holdTicks++;
+			if (holdTicks > 10 && holdTicks % 2 == 0) {
+				modifyConfigValue(heldConfigIndex, heldDelta);
+			}
+		}
 	}
 
 	private void updateConfigsList() {
@@ -211,29 +254,67 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
-		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
-		renderLeftPanel(graphics, uiMouseX, uiMouseY);
-		renderRightPanel(graphics, uiMouseX, uiMouseY);
+		applyZoom(graphics, partialTick);
+
+		int leftOffset = getLeftPanelSwitchOffset(partialTick);
+		graphics.pose().pushPose();
+		graphics.pose().translate(leftOffset, 0, 0);
+		renderLeftPanel(graphics, uiMouseX - leftOffset, uiMouseY);
+		graphics.pose().popPose();
+
+		int rightOffset = getRightPanelSwitchOffset(partialTick);
+		updateRightPanelButtonOffsets(rightOffset);
+		graphics.pose().pushPose();
+		graphics.pose().translate(rightOffset, 0, 0);
+		renderRightPanel(graphics, uiMouseX - rightOffset, uiMouseY);
+		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
 	}
 
+	private void updateRightPanelButtonOffsets(int rightOffset) {
+		int rightPanelX = getRightPanelX() - 5;
+		int decreaseX = rightPanelX + 25 + rightOffset;
+		int increaseX = rightPanelX + 108 + rightOffset;
+		int switchX = rightPanelX + 65 + rightOffset;
+
+		for (CustomTextureButton btn : decreaseButtons) {
+			btn.setX(decreaseX);
+		}
+		for (CustomTextureButton btn : increaseButtons) {
+			btn.setX(increaseX);
+		}
+		for (SwitchButton btn : switchButtons) {
+			btn.setX(switchX);
+		}
+	}
+
+	// The two panels are centered side by side (no player model on this screen),
+	// so both X anchors are derived from the screen center.
+	private int getLeftPanelX() {
+		return getUiWidth() / 2 - 143;
+	}
+
+	private int getRightPanelX() {
+		return getUiWidth() / 2 + 2;
+	}
+
 	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-		int leftPanelX = 12;
+		int leftPanelX = getLeftPanelX();
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, leftPanelX, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, leftPanelX + 17, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
 				leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
 
 		renderConfigsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
@@ -258,9 +339,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			ConfigOption option = configOptions.get(i);
 			int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
 
-			String displayName = Component.translatable("gui.dragonminez." + option.key).getString();
+			String displayName = tr("gui.dragonminez." + option.key).getString();
 
-			drawStringWithBorder(graphics, Component.literal(displayName),
+			TextUtil.drawStringWithBorder(graphics, this.font, txt(displayName),
 					(int) ((panelX + 15) / 0.75f), (int) (itemY / 0.75f) + 6, 0xFFFFFFFF);
 		}
 
@@ -268,7 +349,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.disableScissor();
 
 		if (maxScroll > 0) {
-			int scrollBarX = panelX + 140;
+			int scrollBarX = panelX + 128;
 			int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
 			int totalItems = configOptions.size();
 
@@ -284,15 +365,15 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-		int rightPanelX = getUiWidth() - 158;
+		int rightPanelX = getRightPanelX();
 		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, rightPanelX, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, rightPanelX + 17, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
 				rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
 
 		renderConfigValues(graphics, rightPanelX, rightPanelY);
@@ -317,7 +398,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 				graphics.pose().pushPose();
 				graphics.pose().scale(0.75f, 0.75f, 0.75f);
-				drawCenteredStringWithBorder(graphics, Component.literal(valueText),
+				TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(valueText),
 						(int) ((panelX + 69) / 0.75f), (int) ((itemY + 5) / 0.75f), 0xFFFFFFFF);
 				graphics.pose().popPose();
 			}
@@ -337,7 +418,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
 		} else if (option.type == ConfigType.FLOAT) {
 			float step;
-			if ("config.menuScaleMultiplier".equals(option.key)) {
+			if ("config.menuScaleMultiplier".equals(option.key) || "config.xenoverseHudScale".equals(option.key)) {
 				step = isShiftDown ? 0.25f : 0.05f;
 			} else {
 				step = isShiftDown ? 1.0f : 0.1f;
@@ -349,7 +430,16 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		option.setter.accept(option.value);
 
 		if ("config.menuScaleMultiplier".equals(option.key)) {
-			rebuildWidgets();
+			rebuildWidgetsWithoutTransition();
+		}
+
+		if ("config.liveCrowdinTranslations".equals(option.key) && this.minecraft != null) {
+			if (userConfig.getLiveCrowdinTranslations()) {
+				CrowdinManager.fetchLanguage(this.minecraft.options.languageCode);
+			} else {
+				CrowdinManager.clearCache();
+			}
+			this.minecraft.reloadResourcePacks();
 		}
 	}
 
@@ -357,12 +447,16 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int leftPanelX = 12;
+		int leftPanelX = getLeftPanelX();
+		int rightPanelX = getRightPanelX();
 		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
+		int panelY = centerY - 105;
 
-		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
-				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
+		boolean overLeft = uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148;
+		boolean overRight = uiMouseX >= rightPanelX && uiMouseX <= rightPanelX + 148;
+
+		if ((overLeft || overRight) &&
+				uiMouseY >= panelY + 40 && uiMouseY <= panelY + 219) {
 
 			int scrollAmount = (int) Math.signum(delta);
 			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - scrollAmount));
@@ -376,7 +470,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int leftPanelX = 12;
+		int leftPanelX = getLeftPanelX();
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
@@ -411,63 +505,13 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		heldConfigIndex = -1;
+
 		if (isDraggingScroll) {
 			isDraggingScroll = false;
 			return true;
 		}
 		return super.mouseReleased(mouseX, mouseY, button);
-	}
-
-	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
-		LivingEntity player = this.minecraft.player;
-		if (player == null) return;
-
-		int adjustedScale = getAdjustedModelScale(scale);
-
-		float xRotation = (float) Math.atan((y - mouseY) / 40.0F);
-		float yRotation = (float) Math.atan((x - mouseX) / 40.0F);
-
-		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
-		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float) Math.PI / 180F));
-		pose.mul(cameraOrientation);
-
-		float yBodyRotO = player.yBodyRot;
-		float yRotO = player.getYRot();
-		float xRotO = player.getXRot();
-		float yHeadRotO = player.yHeadRotO;
-		float yHeadRot = player.yHeadRot;
-
-		player.yBodyRot = 180.0F + yRotation * 20.0F;
-		player.setYRot(180.0F + yRotation * 40.0F);
-		player.setXRot(-xRotation * 20.0F);
-		player.yHeadRot = player.getYRot();
-		player.yHeadRotO = player.getYRot();
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
-		graphics.pose().popPose();
-
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - (textWidth / 2);
-		drawStringWithBorder(graphics, text, x, y, textColor);
 	}
 
 	@Override

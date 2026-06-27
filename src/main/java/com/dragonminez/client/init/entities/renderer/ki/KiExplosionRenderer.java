@@ -1,75 +1,85 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
-import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
-import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.client.render.shader.DMZShaders;
+import com.dragonminez.client.render.util.KiMeshFactory;
+import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
+import com.mojang.blaze3d.vertex.VertexBuffer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import org.joml.Matrix4f;
 
 public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
 
-    private static final ResourceLocation TEXTURE_BORDER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1_border.png");
-    private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1.png");
-
-    private final KiBallPlaneModel model;
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
 
     public KiExplosionRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
-
-        this.model = new KiBallPlaneModel(pContext.bakeLayer(KiBallPlaneModel.LAYER_LOCATION));
     }
 
     @Override
     public void render(KiExplosionEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        poseStack.pushPose();
+        Matrix4f basePose = new Matrix4f(poseStack.last().pose());
 
-        poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
-        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+        PlayerEffectQueue.addKiAttack((stack, proj) -> {
+            stack.pushPose();
+            stack.last().pose().set(basePose);
 
-        poseStack.translate(0.0D, 0.5D, 0.0D);
+            float ageInTicks = entity.tickCount + partialTick;
+            boolean isFiring = entity.isFiring();
 
-        float growTime = (float) KiExplosionEntity.GROW_TIME;
-        float ageInTicks = entity.tickCount + partialTick;
-        float progress = Mth.clamp(ageInTicks / growTime, 0.0F, 1.0F);
-        float maxRadius = entity.getMaxRadius();
-        float currentScale = maxRadius * 2.0F * progress;
+            float scale;
+            if (!isFiring) {
+                scale = entity.getSize();
+            } else {
+                int activeTicks = entity.tickCount - entity.getFireTick();
+                scale = entity.getSize() + (activeTicks * 0.4f);
+                float limit = Math.max(entity.getMaxRadius(), entity.getSize() * 5.0f);
+                if (scale > limit) {
+                    scale = limit;
+                }
+            }
 
-        poseStack.scale(currentScale, currentScale, currentScale);
+            float[] coreColor = entity.getRgbColorMain();
+            float[] borderColor = entity.getRgbColorBorder();
+            float[] outlineColor = entity.getRgbColorOutline();
 
-        poseStack.translate(0.0D, -0.5D, 0.0D);
+            ShaderInstance shader = DMZShaders.ki3dShader;
+            if (shader != null) {
+                shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
+                shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
+                shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
+                shader.safeGetUniform("time").set(ageInTicks / 20.0f);
+                shader.safeGetUniform("ProjMat").set(proj);
 
-        this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
+                VertexBuffer mesh = KiMeshFactory.getSphereMesh();
+                mesh.bind();
 
-        // RENDER CORE
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
-        this.model.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY,
-                auraColor[0], auraColor[1], auraColor[2], 1.0F);
+                stack.pushPose();
+                stack.translate(0.0D, entity.getBbHeight() / 2.0D, 0.0D);
+                stack.scale(scale, scale, scale);
 
-        poseStack.pushPose();
-        poseStack.translate(0, 0, -0.05F);
-        float[] coreColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
-        VertexConsumer coreBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_BORDER));
-        this.model.renderToBuffer(poseStack, coreBuffer, 15728880, OverlayTexture.NO_OVERLAY,
-                coreColor[0], coreColor[1], coreColor[2], 1.0F);
-        poseStack.popPose();
+                shader.safeGetUniform("ModelViewMat").set(stack.last().pose());
+                shader.safeGetUniform("alphaMult").set(0.65f);
+                shader.apply();
+                mesh.drawWithShader(stack.last().pose(), proj, shader);
 
-        poseStack.popPose();
-        //super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
+                stack.popPose();
+                VertexBuffer.unbind();
+                shader.clear();
+            }
+
+            stack.popPose();
+        });
     }
 
     @Override
     public ResourceLocation getTextureLocation(KiExplosionEntity pEntity) {
-        return TEXTURE_BORDER;
+        return TEXTURE;
     }
 }

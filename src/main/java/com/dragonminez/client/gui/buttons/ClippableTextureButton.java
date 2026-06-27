@@ -22,10 +22,10 @@ public class ClippableTextureButton extends Button {
     private final int textureWidth;
     private final int textureHeight;
     private final boolean clipping;
-    private final int scissorX1;
-    private final int scissorY1;
-    private final int scissorX2;
-    private final int scissorY2;
+    private int scissorX1;
+    private int scissorY1;
+    private int scissorX2;
+    private int scissorY2;
     private final SoundEvent sound;
 
     public ClippableTextureButton(int x, int y, int width, int height, ResourceLocation texture,
@@ -47,6 +47,13 @@ public class ClippableTextureButton extends Button {
         this.scissorX2 = scissorX2;
         this.scissorY2 = scissorY2;
         this.sound = sound;
+    }
+
+    public void setScissorRect(int x1, int y1, int x2, int y2) {
+        this.scissorX1 = x1;
+        this.scissorY1 = y1;
+        this.scissorX2 = x2;
+        this.scissorY2 = y2;
     }
 
     @Override

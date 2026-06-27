@@ -1,16 +1,19 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
-import com.dragonminez.common.stats.ActionMode;
+import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
-import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -18,6 +21,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -26,9 +30,9 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import top.theillusivec4.curios.api.CuriosApi;
 
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
-
 	private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
 	private static final ResourceLocation RACES_PARTS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/raceparts.png");
 
@@ -36,13 +40,16 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation SCOUTER_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/scouter.geo.json");
 
 	private static final ResourceLocation YAJIROBE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
-	private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/yajirobe_katana.png");
+	private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/yajirobe_katana.png");
 	private static final ResourceLocation Z_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/z_sword.geo.json");
-	private static final ResourceLocation Z_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/z_sword.png");
+	private static final ResourceLocation Z_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/z_sword.png");
 	private static final ResourceLocation BRAVE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
-	private static final ResourceLocation BRAVE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/brave_sword.png");
+	private static final ResourceLocation BRAVE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/brave_sword.png");
 	private static final ResourceLocation POWER_POLE_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
-	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/power_pole.png");
+	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/power_pole.png");
+
+	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
+	private static final ResourceLocation WEIGHTED_ITEMS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/weighted_items.png");
 
 	public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
@@ -50,216 +57,327 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 
-		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
-		if (stats == null) return;
-
-		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
-
-		renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight, alpha);
-
-		if (!animatable.isSpectator()) {
-			renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-			renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-			renderSword(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-		}
-
+		int playerId = animatable.getId();
+		long gameTime = animatable.level().getGameTime();
+		boolean shouldFadeIn = stats.getStatus().isChargingKi()
+				|| stats.getStatus().isAuraActive()
+				|| stats.getStatus().isPermanentAura();
+		AuraTintTracker.update(playerId, gameTime, shouldFadeIn);
 	}
 
-	private void renderRaceParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, float partialTick, int packedLight, float alpha) {
+	@Override
+	public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		String anchor = playerBone.getName();
+		boolean isLimb = "right_arm".equals(anchor) || "left_arm".equals(anchor)
+				|| "right_leg".equals(anchor) || "left_leg".equals(anchor);
+		if (!"head".equals(anchor) && !"body".equals(anchor) && !isLimb) return;
+
+		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+
+		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) {
+			var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
+			if ("body".equals(anchor) && !animatable.isSpectator() && stats.getStatus().isHasCreatedCharacter()) {
+				boolean isOozaru = stats.getCharacter().getActiveForm() != null && stats.getCharacter().getActiveForm().contains("ozaru");
+				if (!isOozaru && stats.getStatus().isRenderKatana()) {
+					BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);
+					if (yajirobeModel != null) {
+						RenderType type = RenderType.entityCutoutNoCull(YAJIROBE_SWORD_TEXTURE);
+						renderWeaponFromBodyAnchor(yajirobeModel, "katana", playerBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+					}
+				}
+			}
+			bufferSource.getBuffer(renderType);
+			return;
+		}
+
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
+		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
+
+		if (isLimb) {
+			if (!animatable.isSpectator() && !stats.getCharacter().isOozaruCached()) {
+				renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+			}
+			bufferSource.getBuffer(renderType);
+			return;
+		}
+
+		float tintProgress = AuraTintTracker.get(animatable.getId());
+
+		BakedGeoModel playerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
+
+		renderRacePartsForAnchor(poseStack, animatable, playerModel, bufferSource, stats, anchor, partialTick, packedLight, alpha, tintProgress);
+
+		if (!animatable.isSpectator()) {
+			if ("head".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
+				renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+				renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+			} else {
+				renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
+				if ("body".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
+					renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+				}
+			}
+		}
+
+		bufferSource.getBuffer(renderType);
+	}
+
+	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
+		var character = stats.getCharacter();
+		var isAlive = stats.getStatus().isAlive();
+		String race = character.getRaceName().toLowerCase();
+		String currentForm = character.getActiveForm();
+
+		boolean isOozaru = currentForm != null && currentForm.toLowerCase().contains("oozaru");
+		if (isOozaru) return;
+
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+		if (raceConfig == null) return;
+
+		String formCustomModel = "";
+		boolean hasStackForm = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
+		boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
+
+		if (hasStackForm && character.getActiveStackFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveStackFormData().getCustomModel().toLowerCase();
+		} else if (hasForm && character.getActiveFormData().hasCustomModel()) {
+			formCustomModel = character.getActiveFormData().getCustomModel().toLowerCase();
+		}
+
+		String raceCustomModel = raceConfig.getCustomModel() != null ? raceConfig.getCustomModel().toLowerCase() : "";
+		String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (key.isEmpty()) key = race;
+
+		String logicKey = key;
+
 		BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
 		if (partsModel == null) return;
 
-		resetModelParts(partsModel);
-		float[] renderColor = setupPartsAndColor(partsModel, stats);
+		RenderType partsRenderType = RenderType.entityTranslucent(RACES_PARTS_TEXTURE);
+		int phase = TransformationsHelper.getKaiokenPhase(stats);
+		float[] topAuraColor = getTopAuraColor(stats);
 
-		if (renderColor != null) {
-			syncModelToPlayer(partsModel, playerModel);
-			RenderType partsRenderType = RenderType.entityTranslucent(RACES_PARTS_TEXTURE);
+		float[] accessoryColor = character.getRgbHairColor();
 
-			int phase = TransformationsHelper.getKaiokenPhase(stats);
-			float[] tintedColor = applyKaiokenTint(renderColor[0], renderColor[1], renderColor[2], phase);
-
-			poseStack.pushPose();
-			getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
-					bufferSource.getBuffer(partsRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-					tintedColor[0], tintedColor[1], tintedColor[2], alpha);
-			poseStack.popPose();
+		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getHairColor().isEmpty()) {
+			accessoryColor = character.getActiveFormData().getRgbHairColor();
 		}
-	}
-
-	private float[] setupPartsAndColor(BakedGeoModel partsModel, StatsData stats) {
-		var character = stats.getCharacter();
-		String race = character.getRaceName().toLowerCase();
-		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
-		String currentStackForm = character.getActiveStackForm() != null ? character.getActiveStackForm().toLowerCase() : "";
-		boolean hasForm = (character.hasActiveForm() && !currentForm.equals("base") && !currentForm.isEmpty());
-		boolean hasStackForm = (character.hasActiveStackForm() && !currentStackForm.equals("base") && !currentStackForm.isEmpty());
-
-		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
-		String raceCustomModel = (raceConfig != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-		String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
-				? character.getActiveFormData().getCustomModel().toLowerCase() : "";
-
-		String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (logicKey.isEmpty()) logicKey = race;
-
-		float[] colorBody1 = ColorUtils.hexToRgb(character.getBodyColor());
-		float[] colorBody2 = ColorUtils.hexToRgb(character.getBodyColor2());
-
-		if (hasForm && character.getActiveFormData() != null) {
-			String formBody = character.getActiveFormData().getBodyColor1();
-			if (formBody != null && !formBody.isEmpty()) colorBody1 = ColorUtils.hexToRgb(formBody);
-
-			String formBody2 = character.getActiveFormData().getBodyColor2();
-			if (formBody2 != null && !formBody2.isEmpty()) colorBody2 = ColorUtils.hexToRgb(formBody2);
-		} else if (hasStackForm && character.getActiveStackFormData() != null) {
-			String formBody = character.getActiveStackFormData().getBodyColor1();
-			if (formBody != null && !formBody.isEmpty()) colorBody1 = ColorUtils.hexToRgb(formBody);
-
-			String formBody2 = character.getActiveStackFormData().getBodyColor2();
-			if (formBody2 != null && !formBody2.isEmpty()) colorBody2 = ColorUtils.hexToRgb(formBody2);
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getHairColor().isEmpty()) {
+			accessoryColor = character.getActiveStackFormData().getRgbHairColor();
 		}
 
 		if (stats.getStatus().isActionCharging()) {
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
 				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
-				if (nextForm != null) {
-					float factor = net.minecraft.util.Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-
-					if (nextForm.getBodyColor1() != null && !nextForm.getBodyColor1().isEmpty()) {
-						float[] targetBody = ColorUtils.hexToRgb(nextForm.getBodyColor1());
-						colorBody1 = new float[]{
-								net.minecraft.util.Mth.lerp(factor, colorBody1[0], targetBody[0]),
-								net.minecraft.util.Mth.lerp(factor, colorBody1[1], targetBody[1]),
-								net.minecraft.util.Mth.lerp(factor, colorBody1[2], targetBody[2])
-						};
-					}
-
-					if (nextForm.getBodyColor2() != null && !nextForm.getBodyColor2().isEmpty()) {
-						float[] targetBody2 = ColorUtils.hexToRgb(nextForm.getBodyColor2());
-						colorBody2 = new float[]{
-								net.minecraft.util.Mth.lerp(factor, colorBody2[0], targetBody2[0]),
-								net.minecraft.util.Mth.lerp(factor, colorBody2[1], targetBody2[1]),
-								net.minecraft.util.Mth.lerp(factor, colorBody2[2], targetBody2[2])
-						};
-					}
+				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
+					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
 				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-				if (nextForm != null) {
-					float factor = net.minecraft.util.Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-
-					if (nextForm.getBodyColor1() != null && !nextForm.getBodyColor1().isEmpty()) {
-						float[] targetBody = ColorUtils.hexToRgb(nextForm.getBodyColor1());
-						colorBody1 = new float[]{
-								net.minecraft.util.Mth.lerp(factor, colorBody1[0], targetBody[0]),
-								net.minecraft.util.Mth.lerp(factor, colorBody1[1], targetBody[1]),
-								net.minecraft.util.Mth.lerp(factor, colorBody1[2], targetBody[2])
-						};
-					}
-
-					if (nextForm.getBodyColor2() != null && !nextForm.getBodyColor2().isEmpty()) {
-						float[] targetBody2 = ColorUtils.hexToRgb(nextForm.getBodyColor2());
-						colorBody2 = new float[]{
-								net.minecraft.util.Mth.lerp(factor, colorBody2[0], targetBody2[0]),
-								net.minecraft.util.Mth.lerp(factor, colorBody2[1], targetBody2[1]),
-								net.minecraft.util.Mth.lerp(factor, colorBody2[2], targetBody2[2])
-						};
-					}
+				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
+					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
 				}
 			}
 		}
 
-		boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || race.equals("saiyan");
-		boolean isOozaru = logicKey.equals("oozaru") || currentForm.contains("oozaru");
-		boolean hasSaiyanTail = raceConfig != null && ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
+		if (anchor.equals("head")) {
+			boolean extraHeadBonesEnabled = character.areExtraHeadBonesEnabled();
+			String activeBone = character.getRenderableHeadBone();
 
-		if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && !isOozaru && character.isHasSaiyanTail()) {
-			setupSaiyanParts(partsModel);
+			if (extraHeadBonesEnabled && activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
+				for (String boneName : activeBone.split("\\+")) {
+					if (boneName.isEmpty() || boneName.equals("hair")) continue;
+					GeoBone targetBone = partsModel.getBone(boneName).orElse(null);
+					boolean fromPlayerModel = false;
+					if (targetBone == null) {
+						targetBone = playerModel.getBone(boneName).orElse(null);
+						fromPlayerModel = true;
+					}
+					if (targetBone != null) {
+						if (!fromPlayerModel) {
+							syncTargetBoneAndParents(targetBone, playerModel);
+						}
 
-			boolean hasBodyColor2 = character.getBodyColor2() != null && !character.getBodyColor2().isEmpty();
-			return (hasBodyColor2 || hasForm || hasStackForm || stats.getStatus().isActionCharging())
-					? colorBody2
-					: ColorUtils.hexToRgb("#572117");
-		}
+						float[] colorToTint = accessoryColor;
 
-		if (logicKey.equals("namekian") || logicKey.equals("namekian_orange")) {
-			setupNamekianParts(partsModel, character.getHairId());
-			return colorBody1;
-		}
+						if (character.getRaceName().equals("majin") || character.getRaceName().equals("namekian")) {
+							colorToTint = resolveBodyColor1(stats);
+						}
 
-		if (logicKey.startsWith("majin") || race.equals("majin")) {
-			setupMajinParts(partsModel, character.getGender().toLowerCase(), character.getHairId());
-			return colorBody1;
-		}
+						float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], phase, topAuraColor, tintProgress);
 
-		if (logicKey.startsWith("frostdemon")) {
-			boolean isSpecialForm = currentForm.equals(FrostDemonForms.FINAL_FORM) ||
-					currentForm.equals(FrostDemonForms.FULLPOWER) ||
-					currentForm.equals(FrostDemonForms.THIRD_FORM) ||
-					logicKey.equals("frostdemon_fifth") ||
-					logicKey.equals("frostdemon_third") ||
-					logicKey.equals("frostdemon_final") ||
-                    logicKey.equals("frostdemon_fp") ||
-					currentForm.contains("fifth");
+						if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) {
+							tintedColor = ColorUtils.hexToRgb("#1A1A1A");
+						}
 
-			if (isSpecialForm) {
-				return null;
+						renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					}
+				}
 			}
 
-			boolean isSecondForm = currentForm.equals(FrostDemonForms.SECOND_FORM);
+			if (extraHeadBonesEnabled && (race.equals("namekian") || logicKey.equals("namekian_orange") || logicKey.equals("namekian_buffed"))) {
 
-			if (isSecondForm) {
-				partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
-			} else {
-				partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
+				GeoBone antennaBone = partsModel.getBone("antennas1").orElse(null);
+				boolean antennaFromPlayerModel = false;
+
+				if (antennaBone == null) {
+					antennaBone = playerModel.getBone("antennas1").orElse(null);
+					antennaFromPlayerModel = true;
+				}
+
+				if (antennaBone != null) {
+					if (!antennaFromPlayerModel) {
+						syncTargetBoneAndParents(antennaBone, playerModel);
+					}
+					float[] antennaColor = resolveBodyColor1(stats);
+					float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], phase, topAuraColor, tintProgress);
+					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+				}
 			}
 
-			return ColorUtils.rgbIntToFloat(0x1A1A1A);
+			if (extraHeadBonesEnabled && race.equals("majin")) {
+				float[] majinBodyColor = resolveBodyColor1(stats);
+
+				GeoBone earsBone = partsModel.getBone("ears3").orElse(null);
+				boolean earsFromPlayerModel = false;
+
+				if (earsBone == null) {
+					earsBone = playerModel.getBone("ears3").orElse(null);
+					earsFromPlayerModel = true;
+				}
+
+				if (earsBone != null) {
+					if (!earsFromPlayerModel) {
+						syncTargetBoneAndParents(earsBone, playerModel);
+					}
+
+					float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], phase, topAuraColor, tintProgress);
+					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+				}
+			}
+
+			if (!stats.getStatus().isAlive() || stats.getStatus().isForceHalo()) {
+				GeoBone haloBone = partsModel.getBone("halo").orElse(null);
+
+				if (haloBone != null) {
+					syncTargetBoneAndParents(haloBone, playerModel);
+
+					float[] haloColor = ColorUtils.hexToRgb("#FFF461");
+
+					renderTargetedBone(haloBone, poseStack, bufferSource, animatable,
+							ModRenderTypes.energy(RACES_PARTS_TEXTURE),
+							haloColor[0], haloColor[1], haloColor[2], 0.75f, partialTick, packedLight);
+				}
+			}
 		}
 
-		return null;
+		if (anchor.equals("body")) {
+			boolean isSaiyanLogic = race.equals("saiyan");
+			boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
+
+			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
+				partsModel.getBone("tailenrolled").ifPresent(targetBone -> {
+					syncTargetBoneAndParents(targetBone, playerModel);
+					float[] tailColor = ColorUtils.hexToRgb("#572117");
+
+					if (character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()) {
+						tailColor = character.getRgbBodyColor2();
+					}
+					if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
+						tailColor = character.getActiveFormData().getRgbBodyColor2();
+					}
+					if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
+						tailColor = character.getActiveStackFormData().getRgbBodyColor2();
+					}
+
+					if (stats.getStatus().isActionCharging()) {
+						if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+							var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
+								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
+							}
+						} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+							var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
+								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
+							}
+						}
+					}
+
+					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], phase, topAuraColor, tintProgress);
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+				});
+			}
+		}
 	}
 
+	private void renderTargetedBone(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float alpha, float partialTick, int packedLight) {
+		VertexConsumer buffer = bufferSource.getBuffer(renderType);
+		getRenderer().renderRecursively(poseStack, animatable, targetBone, renderType, bufferSource, buffer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
+	}
 
-	private float[] applyKaiokenTint(float r, float g, float b, int phase) {
-		if (phase <= 0) return new float[]{r, g, b};
+	private float[] resolveBodyColor1(StatsData stats) {
+		var character = stats.getCharacter();
+		float[] color = character.getRgbBodyColor();
 
-		float intensity = Math.min(0.6f, phase * 0.1f);
+		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor1().isEmpty()) {
+			color = character.getActiveFormData().getRgbBodyColor1();
+		}
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor1().isEmpty()) {
+			color = character.getActiveStackFormData().getRgbBodyColor1();
+		}
 
-		float newR = r * (1.0f - intensity) + (intensity);
-		float newG = g * (1.0f - intensity);
-		float newB = b * (1.0f - intensity);
+		if (stats.getStatus().isActionCharging()) {
+			float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+				if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
+					color = DMZSkinLayer.lerpColor(factor, color, nextForm.getRgbBodyColor1());
+				}
+			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+				if (nextForm != null && !nextForm.getBodyColor1().isEmpty()) {
+					color = DMZSkinLayer.lerpColor(factor, color, nextForm.getRgbBodyColor1());
+				}
+			}
+		}
+
+		return color;
+	}
+
+	private float[] getTopAuraColor(StatsData stats) {
+		var character = stats.getCharacter();
+		float[] color = character.getRgbAuraColor();
+
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null && !character.getActiveFormData().getAuraColor().isEmpty()) {
+			color = character.getActiveFormData().getRgbAuraColor();
+		}
+
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null && !character.getActiveStackFormData().getAuraColor().isEmpty()) {
+			color = character.getActiveStackFormData().getRgbAuraColor();
+		}
+
+		return color;
+	}
+
+	private float[] applyAuraTint(float r, float g, float b, int kaiokenPhase, float[] auraColor, float tintProgress) {
+		float intensity = kaiokenPhase > 0 ? Math.min(0.6f, kaiokenPhase * 0.1f) : 0.4f * tintProgress;
+		intensity *= AuraTintTracker.darkTintScale(r, g, b);
+
+		if (intensity <= 0.001f) return new float[]{r, g, b};
+
+		float newR = r * (1.0f - intensity) + (auraColor[0] * intensity);
+		float newG = g * (1.0f - intensity) + (auraColor[1] * intensity);
+		float newB = b * (1.0f - intensity) + (auraColor[2] * intensity);
 
 		return new float[]{newR, newG, newB};
 	}
-
-	private void setupSaiyanParts(BakedGeoModel partsModel) {
-		partsModel.getBone("tailenrolled").ifPresent(this::showBoneChain);
-	}
-
-	private void setupNamekianParts(BakedGeoModel partsModel, int hairType) {
-		partsModel.getBone("antenas").ifPresent(this::showBoneChain);
-		if (hairType <= 2) {
-			partsModel.getBone("orejas" + (hairType + 1)).ifPresent(this::showBoneChain);
-		}
-	}
-
-
-    private void setupMajinParts(BakedGeoModel partsModel, String gender, int hairType) {
-        String genderLower = gender.toLowerCase();
-        boolean isFemale = genderLower.contains("female") || genderLower.contains("mujer");
-
-        if (!isFemale) {
-            partsModel.getBone("colamajin").ifPresent(this::showBoneChain);
-        }
-
-        String earName = isFemale ? "orejas3" :
-                (hairType == 0 ? "orejas3" : (hairType == 1 ? "orejas1" : "orejas2"));
-
-        partsModel.getBone(earName).ifPresent(this::showBoneChain);
-    }
 
 	private void syncModelToPlayer(BakedGeoModel partsModel, BakedGeoModel playerModel) {
 		for (GeoBone partBone : partsModel.topLevelBones()) {
@@ -268,55 +386,41 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
-		sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
-			destBone.setRotX(sourceBone.getRotX());
-			destBone.setRotY(sourceBone.getRotY());
-			destBone.setRotZ(sourceBone.getRotZ());
-			destBone.setPosX(sourceBone.getPosX());
-			destBone.setPosY(sourceBone.getPosY());
-			destBone.setPosZ(sourceBone.getPosZ());
-			destBone.setPivotX(sourceBone.getPivotX());
-			destBone.setPivotY(sourceBone.getPivotY());
-			destBone.setPivotZ(sourceBone.getPivotZ());
-			destBone.setScaleX(sourceBone.getScaleX());
-			destBone.setScaleY(sourceBone.getScaleY());
-			destBone.setScaleZ(sourceBone.getScaleZ());
-		});
-
+		sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> copyBoneData(sourceBone, destBone));
 		for (GeoBone child : destBone.getChildBones()) {
 			syncBoneRecursively(child, sourceModel);
 		}
 	}
 
-	private void resetModelParts(BakedGeoModel model) {
-		for (GeoBone bone : model.topLevelBones()) {
-			setHiddenRecursive(bone, true);
+	private void syncTargetBoneAndParents(GeoBone destBone, BakedGeoModel sourceModel) {
+		GeoBone currentDest = destBone;
+		while (currentDest != null) {
+			final GeoBone finalDest = currentDest;
+			sourceModel.getBone(finalDest.getName()).ifPresent(sourceBone -> copyBoneData(sourceBone, finalDest));
+			currentDest = currentDest.getParent();
 		}
 	}
 
-	private void showBoneChain(GeoBone bone) {
-		bone.setHidden(false);
-		for (GeoBone child : bone.getChildBones()) {
-			setHiddenRecursive(child, false);
-		}
-		GeoBone parent = bone.getParent();
-		while (parent != null) {
-			parent.setHidden(false);
-			parent = parent.getParent();
-		}
+	private void copyBoneData(GeoBone source, GeoBone dest) {
+		dest.setRotX(source.getRotX());
+		dest.setRotY(source.getRotY());
+		dest.setRotZ(source.getRotZ());
+		dest.setPosX(source.getPosX());
+		dest.setPosY(source.getPosY());
+		dest.setPosZ(source.getPosZ());
+		dest.setPivotX(source.getPivotX());
+		dest.setPivotY(source.getPivotY());
+		dest.setPivotZ(source.getPivotZ());
+		dest.setScaleX(source.getScaleX());
+		dest.setScaleY(source.getScaleY());
+		dest.setScaleZ(source.getScaleZ());
 	}
-
-	private void setHiddenRecursive(GeoBone bone, boolean hidden) {
-		bone.setHidden(hidden);
-		for (GeoBone child : bone.getChildBones()) {
-			setHiddenRecursive(child, hidden);
-		}
-	}
-
 
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		boolean hasPothalaRight = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_right");
-		boolean hasPothalaLeft = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_left");
+		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
+
+		boolean hasPothalaRight = headTechStack.getItem().getDescriptionId().contains("pothala_right");
+		boolean hasPothalaLeft = headTechStack.getItem().getDescriptionId().contains("pothala_left");
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
@@ -328,87 +432,106 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel accModel = getGeoModel().getBakedModel(ACCESORIES_MODEL);
 		if (accModel == null) return;
 
-		resetModelParts(accModel);
-
-		if (hasPothalaRight) accModel.getBone("pothala_right").ifPresent(this::showBoneChain);
-		if (hasPothalaLeft) accModel.getBone("pothala_left").ifPresent(this::showBoneChain);
-
-		if (isFused) {
-			accModel.getBone("pothala_right").ifPresent(this::showBoneChain);
-			accModel.getBone("pothala_left").ifPresent(this::showBoneChain);
-		}
-
-		syncModelToPlayer(accModel, playerModel);
-
 		String pothalaColor = stats.getStatus().getPothalaColor().contains("green") ? "green" : "yellow";
 		RenderType accRenderType = RenderType.entityCutoutNoCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + pothalaColor + "pothala.png"));
 
-		poseStack.pushPose();
-		getRenderer().reRender(accModel, poseStack, bufferSource, animatable, accRenderType,
-				bufferSource.getBuffer(accRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-				1.0f, 1.0f, 1.0f, 1.0f);
-		poseStack.popPose();
+		if (hasPothalaRight || isFused) {
+			accModel.getBone("pothala_right").ifPresent(bone -> {
+				syncTargetBoneAndParents(bone, playerModel);
+				renderTargetedBone(bone, poseStack, bufferSource, animatable, accRenderType, 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight);
+			});
+		}
+
+		if (hasPothalaLeft || isFused) {
+			accModel.getBone("pothala_left").ifPresent(bone -> {
+				syncTargetBoneAndParents(bone, playerModel);
+				renderTargetedBone(bone, poseStack, bufferSource, animatable, accRenderType, 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight);
+			});
+		}
 	}
 
 	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
+		if (headTechStack.isEmpty()) return;
 
-		ItemStack headStack = animatable.getItemBySlot(EquipmentSlot.HEAD);
-		Item headItem = headStack.getItem();
-
+		Item item = headTechStack.getItem();
 		String color = null;
 
-		if (headItem == MainItems.GREEN_SCOUTER.get()) {
-			color = "green";
-		} else if (headItem == MainItems.RED_SCOUTER.get()) {
-			color = "red";
-		} else if (headItem == MainItems.BLUE_SCOUTER.get()) {
-			color = "blue";
-		} else if (headItem == MainItems.PURPLE_SCOUTER.get()) {
-			color = "purple";
-		}
+		if (item == MainItems.GREEN_SCOUTER.get()) color = "green";
+		else if (item == MainItems.RED_SCOUTER.get()) color = "red";
+		else if (item == MainItems.BLUE_SCOUTER.get()) color = "blue";
+		else if (item == MainItems.PURPLE_SCOUTER.get()) color = "purple";
 
 		if (color == null) return;
 
 		BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
 		if (accModel == null) return;
 
-		resetModelParts(accModel);
+		RenderType accRenderType = RenderType.entityTranslucentCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
 
-		accModel.getBone("radar").ifPresent(this::showBoneChain);
-
-		syncModelToPlayer(accModel, playerModel);
-
-		RenderType accRenderType = RenderType.entityTranslucent(
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png")
-		);
-
-		poseStack.pushPose();
-		getRenderer().reRender(accModel, poseStack, bufferSource, animatable, accRenderType,
-				bufferSource.getBuffer(accRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-				1.0f, 1.0f, 1.0f, 1.0f);
-		poseStack.popPose();
+		accModel.getBone("radar").ifPresent(bone -> {
+			syncTargetBoneAndParents(bone, playerModel);
+			renderTargetedBone(bone, poseStack, bufferSource, animatable, accRenderType, 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight);
+		});
 	}
 
-	private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+	private void renderWeightedItems(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String anchor, float partialTick, int packedLight, float alpha) {
+		ItemStack weightStack = getRenderableCurio(animatable, "weights", 0);
+		if (weightStack.isEmpty() || !(weightStack.getItem() instanceof WeightItem weightItem)) return;
+
+		BakedGeoModel weightModel = getGeoModel().getBakedModel(WEIGHTED_ITEMS_MODEL);
+		if (weightModel == null) return;
+
+		RenderType type = RenderType.entityCutoutNoCull(WEIGHTED_ITEMS_TEXTURE);
+
+		switch (weightItem.getWeightType()) {
+			case TURTLE_SHELL -> {
+				if ("body".equals(anchor)) {
+					renderWeightBone(weightModel, "turtleweight", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+				}
+			}
+			case WORKOUT_WEIGHTS -> {
+				switch (anchor) {
+					case "right_arm" -> renderWeightBone(weightModel, "right_arm_glove", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+					case "left_arm" -> renderWeightBone(weightModel, "left_arm_glove", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+					case "right_leg" -> renderWeightBone(weightModel, "right_leg_glove", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+					case "left_leg" -> renderWeightBone(weightModel, "left_leg_glove", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+				}
+			}
+			case PICCOLO_CAPE -> {
+				switch (anchor) {
+					case "body" -> {
+						GeoBone capeBone = weightModel.getBone("cape").orElse(null);
+						boolean wasHidden = capeBone != null && capeBone.isHidden();
+						if (capeBone != null) capeBone.setHidden(true);
+
+						renderWeightBone(weightModel, "piccoloweight_middle", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+
+						if (capeBone != null) capeBone.setHidden(wasHidden);
+					}
+					case "right_arm" -> renderWeightBone(weightModel, "piccoloweight_right", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+					case "left_arm" -> renderWeightBone(weightModel, "piccoloweight_left", poseStack, animatable, bufferSource, type, partialTick, packedLight, alpha);
+				}
+			}
+		}
+	}
+
+	private void renderWeightBone(BakedGeoModel weightModel, String boneName, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, RenderType type, float partialTick, int packedLight, float alpha) {
+		weightModel.getBone(boneName).ifPresent(bone -> renderTargetedBone(bone, poseStack, bufferSource, animatable, type, 1.0f, 1.0f, 1.0f, alpha, partialTick, packedLight));
+	}
+
+	private void renderSword(PoseStack poseStack, T animatable, GeoBone playerBodyBone, MultiBufferSource bufferSource, float partialTick, int packedLight) {
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
 
 		if (!stats.getStatus().isHasCreatedCharacter()) return;
-		if (stats.getCharacter().getActiveFormData() != null && stats.getCharacter().getActiveForm().contains("ozaru"))
-			return;
+		if (stats.getCharacter().getActiveFormData() != null && stats.getCharacter().getActiveForm().contains("ozaru")) return;
 
 		if (stats.getStatus().isRenderKatana()) {
 			BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);
 			if (yajirobeModel != null) {
 				RenderType type = RenderType.entityCutoutNoCull(YAJIROBE_SWORD_TEXTURE);
-
-				syncModelToPlayer(yajirobeModel, playerModel);
-
-				poseStack.pushPose();
-				getRenderer().reRender(yajirobeModel, poseStack, bufferSource, animatable, type,
-						bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-						1.0f, 1.0f, 1.0f, 1.0f);
-				poseStack.popPose();
+				renderWeaponFromBodyAnchor(yajirobeModel, "katana", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
 			}
 		}
 
@@ -418,50 +541,71 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			BakedGeoModel powerpole = getGeoModel().getBakedModel(POWER_POLE_MODEL);
 			if (powerpole != null) {
 				RenderType type = RenderType.entityCutoutNoCull(POWER_POLE_TEXTURE);
-
-				syncModelToPlayer(powerpole, playerModel);
-
-				poseStack.pushPose();
-				getRenderer().reRender(powerpole, poseStack, bufferSource, animatable, type,
-						bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-						1.0f, 1.0f, 1.0f, 1.0f);
-				poseStack.popPose();
+				renderWeaponFromBodyAnchor(powerpole, "baculo", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
 			}
 		} else if (stats.getStatus().getBackWeapon().equals(MainItems.Z_SWORD.get().getDescriptionId())) {
 			BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
 			if (zModel != null) {
 				RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
-
-				syncModelToPlayer(zModel, playerModel);
-
-				poseStack.pushPose();
-				getRenderer().reRender(zModel, poseStack, bufferSource, animatable, type,
-						bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-						1.0f, 1.0f, 1.0f, 1.0f);
-				poseStack.popPose();
+				renderWeaponFromBodyAnchor(zModel, "espada", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
 			}
 		} else if (stats.getStatus().getBackWeapon().equals(MainItems.BRAVE_SWORD.get().getDescriptionId())) {
 			BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
 			if (braveModel != null) {
 				RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
-
-				for (GeoBone bone : braveModel.topLevelBones()) {
-					setHiddenRecursive(bone, false);
-				}
-
-				syncModelToPlayer(braveModel, playerModel);
-
-				poseStack.pushPose();
-
-				float scale = 0.9f;
-				poseStack.scale(scale, scale, scale);
-
-				getRenderer().reRender(braveModel, poseStack, bufferSource, animatable, type,
-						bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-						1.0f, 1.0f, 1.0f, 1.0f);
-				poseStack.popPose();
+				renderWeaponFromBodyAnchor(braveModel, "espadatrunks", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 0.9f);
 			}
 		}
 	}
 
+	private void renderWeaponFromBodyAnchor(BakedGeoModel weaponModel, String anchorBoneName, GeoBone playerBodyBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType type, float partialTick, int packedLight, float scale) {
+		GeoBone weaponAnchor = weaponModel.getBone(anchorBoneName).orElse(null);
+		if (weaponAnchor == null) return;
+
+		syncBoneAndParentsByHierarchy(weaponAnchor.getParent(), playerBodyBone);
+
+		poseStack.pushPose();
+		if (scale != 1.0f) poseStack.scale(scale, scale, scale);
+
+		VertexConsumer vertexConsumer = bufferSource.getBuffer(type);
+		getRenderer().renderRecursively(poseStack, animatable, weaponAnchor, type, bufferSource, vertexConsumer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
+
+		poseStack.popPose();
+	}
+
+	private void syncBoneAndParentsByHierarchy(GeoBone destBone, GeoBone sourceBone) {
+		GeoBone currentDest = destBone;
+		GeoBone currentSource = sourceBone;
+		while (currentDest != null && currentSource != null) {
+			copyBoneData(currentSource, currentDest);
+			currentDest = currentDest.getParent();
+			currentSource = currentSource.getParent();
+		}
+	}
+
+	private void renderFullWeapon(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType type, float partialTick, int packedLight, float scale) {
+		poseStack.pushPose();
+		if (scale != 1.0f) poseStack.scale(scale, scale, scale);
+
+		VertexConsumer vertexConsumer = bufferSource.getBuffer(type);
+		for (GeoBone bone : model.topLevelBones()) {
+			if (!bone.isHidden()) {
+				getRenderer().renderRecursively(poseStack, animatable, bone, type, bufferSource, vertexConsumer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
+			}
+		}
+
+		poseStack.popPose();
+	}
+
+	private ItemStack getRenderableCurio(T animatable, String slotId, int index) {
+		var inventory = CuriosApi.getCuriosInventory(animatable).orElse(null);
+		if (inventory == null) return ItemStack.EMPTY;
+
+		var stacksHandler = inventory.getCurios().get(slotId);
+		if (stacksHandler == null) return ItemStack.EMPTY;
+
+		if (!stacksHandler.getRenders().get(index)) return ItemStack.EMPTY;
+
+		return stacksHandler.getStacks().getStackInSlot(index);
+	}
 }

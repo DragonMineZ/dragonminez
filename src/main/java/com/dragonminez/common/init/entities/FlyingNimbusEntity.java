@@ -3,6 +3,8 @@ package com.dragonminez.common.init.entities;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -26,6 +28,13 @@ import software.bernie.geckolib.core.object.PlayState;
 public class FlyingNimbusEntity extends Mob implements GeoEntity {
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+
+    private static final int BOOST_DURATION = 45;
+    private static final double BOOST_INITIAL = 7.2D;
+    private static final double BOOST_SUSTAIN = 0.65D;
+    private int boostTicks = 0;
+    private double boostStrength = 0.0D;
+    private boolean boostKeyWasDown = false;
 
     public FlyingNimbusEntity(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -73,29 +82,73 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
             );
         }
     }
+
+    /** Estela densa de partículas emitida por detrás de la nube durante el impulso. */
+    private void spawnBoostTrail(int colorHex) {
+        Vec3 back = new Vec3(0, 0, 1).yRot((float) -Math.toRadians(this.getYRot())).scale(-1.0D);
+        int count = 18;
+        for (int i = 0; i < count; i++) {
+            double spread = 0.7D;
+            double ox = (this.random.nextDouble() - 0.5D) * spread;
+            double oy = (this.random.nextDouble() - 0.5D) * spread;
+            double oz = (this.random.nextDouble() - 0.5D) * spread;
+            double dist = 0.5D + this.random.nextDouble() * 1.2D;
+
+            double spawnX = this.getX() + back.x * dist + ox;
+            double spawnY = this.getY() + 1.0D + oy;
+            double spawnZ = this.getZ() + back.z * dist + oz;
+
+            this.level().addParticle(
+                    MainParticles.KINTON.get(),
+                    spawnX, spawnY, spawnZ,
+                    colorHex, 0, 0
+            );
+        }
+    }
+
+    /** Estallido radial tipo explosión en el momento de acelerar, centrado por detrás de la nube. */
+    private void spawnBoostBurst(int colorHex) {
+        Vec3 back = new Vec3(0, 0, 1).yRot((float) -Math.toRadians(this.getYRot())).scale(-1.0D);
+        double centerX = this.getX() + back.x * 0.8D;
+        double centerY = this.getY() + 1.0D;
+        double centerZ = this.getZ() + back.z * 0.8D;
+
+        int count = 60;
+        for (int i = 0; i < count; i++) {
+            // Dispersión esférica para dar sensación de explosión
+            double radius = this.random.nextDouble() * 1.6D;
+            double theta = this.random.nextDouble() * Math.PI * 2.0D;
+            double phi = (this.random.nextDouble() - 0.5D) * Math.PI;
+
+            double spawnX = centerX + Math.cos(theta) * Math.cos(phi) * radius;
+            double spawnY = centerY + Math.sin(phi) * radius;
+            double spawnZ = centerZ + Math.sin(theta) * Math.cos(phi) * radius;
+
+            this.level().addParticle(
+                    MainParticles.KINTON.get(),
+                    spawnX, spawnY, spawnZ,
+                    colorHex, 0, 0
+            );
+        }
+    }
+
     @Override
     public void travel(Vec3 pTravelVector) {
         if (this.isAlive()) {
-            if (this.getControllingPassenger() instanceof Player passenger) {
+            Entity controllingPassenger = this.getControllingPassenger();
+            if (controllingPassenger instanceof Player passenger) {
                 this.setYRot(passenger.getYRot());
                 this.yRotO = this.getYRot();
                 this.setXRot(passenger.getXRot() * 0.5F);
                 this.setRot(this.getYRot(), this.getXRot());
                 this.yBodyRot = this.getYRot();
-                this.yHeadRot = this.getYRot();
-
 
                 double speed = this.getAttributeValue(Attributes.FLYING_SPEED) * 0.5D;
                 double verticalSpeed = 0;
 
-                // Control Vertical (Cliente)
                 if (this.level().isClientSide) {
-                    if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) {
-                        verticalSpeed = 0.4;
-                    }
-                    else if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
-                        verticalSpeed = -0.4;
-                    }
+                    if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) verticalSpeed = 0.4;
+                    else if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) verticalSpeed = -0.4;
                 }
 
                 float forwardInput = passenger.zza;
@@ -108,16 +161,41 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
                     moveVector = moveVector.normalize().scale(speed);
                 }
 
+                if (this.level().isClientSide) {
+                    boolean keyDown = KeyBinds.DASH_KEY.isDown();
+                    if (keyDown && !this.boostKeyWasDown && this.boostTicks <= 0) {
+                        this.boostTicks = BOOST_DURATION;
+                        this.boostStrength = BOOST_INITIAL;
+                        spawnBoostBurst(0xFFF852);
+                    }
+                    this.boostKeyWasDown = keyDown;
+
+                    if (this.boostTicks > 0) {
+                        this.boostTicks--;
+                        // El empujón brusco decae rápido hacia una velocidad sostenida
+                        this.boostStrength = BOOST_SUSTAIN + (this.boostStrength - BOOST_SUSTAIN) * 0.80D;
+                    } else if (this.boostStrength > 0.01D) {
+                        // Desaceleración fluida de vuelta a la velocidad normal
+                        this.boostStrength *= 0.88D;
+                        if (this.boostStrength < 0.01D) this.boostStrength = 0.0D;
+                    }
+
+                    if (this.boostStrength > 0.05D) {
+                        spawnBoostTrail(0xFFF852);
+                    }
+                }
+
+                // Empuje hacia adelante mientras el nitro está activo
+                if (this.boostStrength > 0.01D) {
+                    Vec3 forward = new Vec3(0, 0, 1).yRot((float) -Math.toRadians(this.getYRot()));
+                    moveVector = moveVector.add(forward.scale(this.boostStrength));
+                }
+
                 this.setDeltaMovement(moveVector.x, verticalSpeed, moveVector.z);
                 this.move(net.minecraft.world.entity.MoverType.SELF, this.getDeltaMovement());
-
                 return;
             }
         }
-
-        Vec3 currentMotion = this.getDeltaMovement();
-        this.setDeltaMovement(currentMotion.x * 0.9, -0.07, currentMotion.z * 0.9);
-
         super.travel(pTravelVector);
     }
 
@@ -131,25 +209,36 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
         return 0.9D;
     }
 
-	@Override
-	public void positionRider(Entity passenger, MoveFunction callback) {
-		if (this.hasPassenger(passenger)) {
-			double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
-			Vec3 vec3 = (new Vec3(0.0D, 0.0D, 0.0D)).yRot(-this.getYRot() * ((float)Math.PI / 180F) - ((float)Math.PI / 2F));
-			callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
-			if (passenger instanceof LivingEntity livingPassenger) {
-				livingPassenger.yBodyRot = this.getYRot();
-				livingPassenger.setYHeadRot(livingPassenger.getYHeadRot());
-			}
-		}
-	}
+    @Override
+    public void positionRider(Entity passenger, MoveFunction callback) {
+        if (this.hasPassenger(passenger)) {
+            int index = this.getPassengers().indexOf(passenger);
+
+            float xOffset = 0.0f;
+            float zOffset = (index == 0) ? 0.4F : -0.4F;
+
+            double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
+
+            float yaw = -this.getYRot() * ((float)Math.PI / 180F);
+            Vec3 vec3 = (new Vec3(xOffset, 0.0D, zOffset)).yRot(yaw);
+
+            callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
+
+        }
+    }
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!this.level().isClientSide) {
-            if (!player.isPassenger()) {
-                player.startRiding(this);
+            int alignment = StatsProvider.get(StatsCapability.INSTANCE, player)
+                    .map(data -> data.getResources().getAlignment())
+                    .orElse(0);
+            if (alignment <= 66) {
+                player.displayClientMessage(
+                        net.minecraft.network.chat.Component.translatable("message.dragonminez.nimbus.not_pure"), true);
+                return InteractionResult.SUCCESS;
             }
+            player.startRiding(this);
         }
         return InteractionResult.SUCCESS;
     }
@@ -179,6 +268,11 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
         controllerRegistrar.add(new AnimationController<>(this, "controller", 0, this::predicate));
+    }
+
+    @Override
+    protected boolean canAddPassenger(Entity pPassenger) {
+        return this.getPassengers().size() < 2;
     }
 
     private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> tAnimationState) {

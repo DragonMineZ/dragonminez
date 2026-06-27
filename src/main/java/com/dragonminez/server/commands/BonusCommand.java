@@ -2,10 +2,11 @@ package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -26,10 +27,10 @@ import java.util.Set;
 public class BonusCommand {
 
 	private static final SuggestionProvider<CommandSourceStack> STAT_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE", "ALL"), builder);
+			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "DEF", "STM", "VIT", "PWR", "ENE", "ALL"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> OPERATOR_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(Set.of("+", "-", "*"), builder);
+			SharedSuggestionProvider.suggest(Set.of("+", "-", "x", "\"*\""), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> BONUS_NAME_SUGGESTIONS = (ctx, builder) -> {
 		try {
@@ -44,9 +45,7 @@ public class BonusCommand {
 					ListTag list = tag.getList(stat, 10);
 					for (int i = 0; i < list.size(); i++) {
 						CompoundTag bonusTag = list.getCompound(i);
-						if (bonusTag.contains("Name")) {
-							bonusNames.add(bonusTag.getString("Name"));
-						}
+						if (bonusTag.contains("Name")) bonusNames.add(bonusTag.getString("Name"));
 					}
 				}
 				return SharedSuggestionProvider.suggest(bonusNames, builder);
@@ -60,17 +59,19 @@ public class BonusCommand {
 		dispatcher.register(Commands.literal("dmzbonus")
 				.requires(source -> DMZPermissions.check(source, DMZPermissions.BONUS_ADD_SELF, DMZPermissions.BONUS_ADD_OTHERS))
 
-				// add <stat> <operation> <value> <bonusName> [targets]
+				// add <stat> <operation> <value> <bonusName> [applyMultipliers] [targets]
 				.then(Commands.literal("add")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.BONUS_ADD_SELF, DMZPermissions.BONUS_ADD_OTHERS))
 						.then(Commands.argument("stat", StringArgumentType.word()).suggests(STAT_SUGGESTIONS)
 								.then(Commands.argument("operation", StringArgumentType.string()).suggests(OPERATOR_SUGGESTIONS)
 										.then(Commands.argument("value", DoubleArgumentType.doubleArg())
 												.then(Commands.argument("bonusName", StringArgumentType.word())
-														.executes(ctx -> addBonus(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "operation"), DoubleArgumentType.getDouble(ctx, "value"), StringArgumentType.getString(ctx, "bonusName"), List.of(ctx.getSource().getPlayerOrException())))
-														.then(Commands.argument("targets", EntityArgument.players())
-																.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.BONUS_ADD_OTHERS))
-																.executes(ctx -> addBonus(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "operation"), DoubleArgumentType.getDouble(ctx, "value"), StringArgumentType.getString(ctx, "bonusName"), EntityArgument.getPlayers(ctx, "targets")))))))))
+														.executes(ctx -> addBonus(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "operation"), DoubleArgumentType.getDouble(ctx, "value"), StringArgumentType.getString(ctx, "bonusName"), false, List.of(ctx.getSource().getPlayerOrException())))
+														.then(Commands.argument("applyMultipliers", BoolArgumentType.bool())
+																.executes(ctx -> addBonus(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "operation"), DoubleArgumentType.getDouble(ctx, "value"), StringArgumentType.getString(ctx, "bonusName"), BoolArgumentType.getBool(ctx, "applyMultipliers"), List.of(ctx.getSource().getPlayerOrException())))
+																.then(Commands.argument("targets", EntityArgument.players())
+																		.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.BONUS_ADD_OTHERS))
+																		.executes(ctx -> addBonus(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "operation"), DoubleArgumentType.getDouble(ctx, "value"), StringArgumentType.getString(ctx, "bonusName"), BoolArgumentType.getBool(ctx, "applyMultipliers"), EntityArgument.getPlayers(ctx, "targets"))))))))))
 
 				// remove <stat> <bonusName> [targets]
 				.then(Commands.literal("remove")
@@ -93,9 +94,12 @@ public class BonusCommand {
 		);
 	}
 
-	private static int addBonus(CommandSourceStack source, String stat, String operation, double value, String bonusName, Collection<ServerPlayer> targets) {
+	private static int addBonus(CommandSourceStack source, String stat, String operation, double value, String bonusName, boolean applyMultipliers, Collection<ServerPlayer> targets) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
+
+		if (operation.equalsIgnoreCase("x")) operation = "*";
+
 
 		if (!isValidStat(finalStat) && !finalStat.equals("ALL")) {
 			source.sendFailure(Component.translatable("command.dragonminez.bonus.invalid_stat"));
@@ -103,23 +107,17 @@ public class BonusCommand {
 		}
 
 		for (ServerPlayer player : targets) {
+			final String finalOp = operation;
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (finalStat.equals("ALL")) {
-					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) {
-						data.getBonusStats().addBonus(s, bonusName, operation, value);
-					}
-				} else {
-					data.getBonusStats().addBonus(finalStat, bonusName, operation, value);
-				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					for (String s : new String[]{"STR", "SKP", "DEF", "STM", "VIT", "PWR", "ENE"}) data.getBonusStats().addBonus(s, bonusName, finalOp, value, applyMultipliers);
+				} else data.getBonusStats().addBonusSplit(finalStat, bonusName, finalOp, value, applyMultipliers);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
 
-		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.add.success", bonusName, finalStat, targets.iterator().next().getName().getString()), log);
-		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.add.multiple", bonusName, targets.size(), finalStat), log);
-		}
+		if (targets.size() == 1) source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.add.success", bonusName, finalStat, targets.iterator().next().getName().getString()), log);
+		else source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.add.multiple", bonusName, targets.size(), finalStat), log);
 		return targets.size();
 	}
 
@@ -134,16 +132,14 @@ public class BonusCommand {
 
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.getBonusStats().removeBonus(finalStat, bonusName);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				data.getBonusStats().removeBonusSplit(finalStat, bonusName);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
 
-		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.remove.success", bonusName, finalStat, targets.iterator().next().getName().getString()), log);
-		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.remove.multiple", bonusName, targets.size(), finalStat), log);
-		}
+		if (targets.size() == 1) source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.remove.success", bonusName, finalStat, targets.iterator().next().getName().getString()), log);
+		else source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.remove.multiple", bonusName, targets.size(), finalStat), log);
+
 		return targets.size();
 	}
 
@@ -158,24 +154,18 @@ public class BonusCommand {
 
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (finalStat.equals("ALL")) {
-					data.getBonusStats().clearAllStats();
-				} else {
-					data.getBonusStats().clearAll(finalStat);
-				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				if (finalStat.equals("ALL")) data.getBonusStats().clearAllStats();
+				else data.getBonusStats().clearAllSplit(finalStat);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
 
-		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.success", finalStat, targets.iterator().next().getName().getString()), log);
-		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.multiple", finalStat, targets.size()), log);
-		}
+		if (targets.size() == 1) source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.success", finalStat, targets.iterator().next().getName().getString()), log);
+		else source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.multiple", finalStat, targets.size()), log);
 		return targets.size();
 	}
 
 	private static boolean isValidStat(String stat) {
-		return Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE").contains(stat);
+		return Set.of("STR", "SKP", "DEF", "STM", "VIT", "PWR", "ENE").contains(stat);
 	}
 }

@@ -1,5 +1,6 @@
 package com.dragonminez.server.util;
 
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -9,7 +10,8 @@ import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
-import com.dragonminez.common.stats.Cooldowns;
+import com.dragonminez.common.init.entities.sagas.SagaPiccoloEntity;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -23,7 +25,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RacialSkillLogic {
 
@@ -34,8 +35,12 @@ public class RacialSkillLogic {
 			RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 
 			if (target == null) return;
-			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative()
-					&& !(target instanceof MastersEntity) && !(target instanceof PunchMachineEntity)) {
+			if (target instanceof MastersEntity || target instanceof PunchMachineEntity) return;
+
+			TargetHelper.Relation relation = TargetHelper.getRelation(player, target);
+			if (relation == TargetHelper.Relation.FRIENDLY) return;
+
+			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative()) {
 				player.displayClientMessage(Component.translatable("message.dragonminez.racial.target_too_strong"), true);
 				return;
 			}
@@ -47,7 +52,6 @@ public class RacialSkillLogic {
 				default -> {
 				}
 			}
-
 		});
 	}
 
@@ -64,12 +68,12 @@ public class RacialSkillLogic {
 		boolean isValidTarget = false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
-			AtomicBoolean isNamek = new AtomicBoolean(false);
-			StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(tData ->
-					isNamek.set(tData.getCharacter().getRaceName().equals("namekian")));
-			isValidTarget = isNamek.get();
+			isValidTarget = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer)
+					.map(tData -> tData.getCharacter().getRaceName().equals("namekian"))
+					.orElse(false);
 		} else if (config.getNamekianAssimilationOnNamekNpcs()) {
-			isValidTarget = (target instanceof NamekWarriorEntity || target instanceof NamekTraderEntity);
+			isValidTarget = (target instanceof NamekWarriorEntity || target instanceof NamekTraderEntity ||
+					(target.getName().getString().contains("Piccolo") && !(target instanceof MastersEntity)));
 		}
 
 		if (!isValidTarget) {
@@ -83,7 +87,7 @@ public class RacialSkillLogic {
 		for (String statKey : statsToBoost) {
 			int currentStat = getStatValue(data, statKey);
 			int bonus = (int) Math.max(1, currentStat * boostMult);
-			data.getBonusStats().addBonus(statKey, "Assimilation_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
+			data.getBonusStats().addBonusSplit(statKey, "Assimilation_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 		}
 
 		finalizeKill(player, data, target, config.getNamekianAssimilationHealthRegen());
@@ -110,7 +114,7 @@ public class RacialSkillLogic {
 				for (String stat : stats) {
 					int targetStatVal = getStatValue(targetData, stat);
 					int bonus = (int) Math.max(1, targetStatVal * ratio);
-					data.getBonusStats().addBonus(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
+					data.getBonusStats().addBonusSplit(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 				}
 			});
 			success = true;
@@ -120,7 +124,7 @@ public class RacialSkillLogic {
 			String[] mobBonuses = config.getMajinAbsorptionBoosts();
 
 			for (String stat : mobBonuses) {
-				data.getBonusStats().addBonus(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
+				data.getBonusStats().addBonusSplit(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 			}
 			success = true;
 		}
@@ -202,13 +206,9 @@ public class RacialSkillLogic {
 		if (target.getHealth() > maxDmg) return false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
-			AtomicBoolean levelCheck = new AtomicBoolean(false);
-			StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
-				if (targetData.getLevel() < playerData.getLevel()) {
-					levelCheck.set(true);
-				}
-			});
-			return levelCheck.get();
+			return StatsProvider.get(StatsCapability.INSTANCE, targetPlayer)
+					.map(targetData -> targetData.getLevel() < playerData.getLevel())
+					.orElse(false);
 		}
 
 		return true;

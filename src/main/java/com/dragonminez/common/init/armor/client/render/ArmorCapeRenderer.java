@@ -1,15 +1,16 @@
 package com.dragonminez.common.init.armor.client.render;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.client.model.ArmorCapeModel;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoArmorRenderer;
 
 public class ArmorCapeRenderer extends GeoArmorRenderer<DbzArmorCapeItem> {
@@ -18,32 +19,22 @@ public class ArmorCapeRenderer extends GeoArmorRenderer<DbzArmorCapeItem> {
     }
 
     @Override
+    public void renderCubesOfBone(PoseStack poseStack, GeoBone bone, VertexConsumer buffer, int packedLight,
+                                  int packedOverlay, float red, float green, float blue, float alpha) {
+        String name = bone.getName();
+        if (name == null || !name.startsWith("cape")) return;
+        super.renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+    }
+
+    @Override
     public ResourceLocation getTextureLocation(DbzArmorCapeItem animatable) {
-        ItemStack stack = this.getCurrentStack();
-
+        String modId = animatable.getModId();
         String itemId = animatable.getItemId();
-        boolean isDamageOn = animatable.isDamageOn();
 
-        if (itemId.contains("pothala") || itemId.contains("scouter")) return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/blank.png");
+        if (itemId.contains("pothala") || itemId.contains("scouter"))
+            return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/blank.png");
 
-        String basePath = "textures/armor/" + itemId;
-
-        EquipmentSlot slot = this.getCurrentSlot();
-        boolean isLegs = slot == EquipmentSlot.LEGS;
-
-        String suffix = isLegs ? "_layer2.png" : "_layer1.png";
-
-        if (isDamageOn) {
-            int maxDamage = stack.getMaxDamage();
-            int currentDamage = stack.getDamageValue();
-            boolean isDamaged = currentDamage > maxDamage / 2;
-
-            if (isDamaged) {
-                suffix = isLegs ? "_damaged_layer2.png" : "_damaged_layer1.png";
-            }
-        }
-
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + suffix);
+        return ArmorTextureResolver.resolve(modId, itemId, this.getCurrentSlot(), this.getCurrentStack());
     }
 
     @Override

@@ -1,6 +1,9 @@
 package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallSetAssetDefinition;
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -23,6 +26,7 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		blockWithItem(MainBlocks.NAMEK_DIRT);
 		grassBlock(MainBlocks.NAMEK_GRASS_BLOCK);
 		grassBlock(MainBlocks.NAMEK_SACRED_GRASS_BLOCK);
+		grassBlock(MainBlocks.SACRED_PLANET_GRASS_BLOCK);
 		blockWithItem(MainBlocks.NAMEK_STONE);
 		blockWithItem(MainBlocks.NAMEK_COBBLESTONE);
 		blockWithItem(MainBlocks.ROCKY_DIRT);
@@ -114,6 +118,20 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		stairsBlock(((StairBlock) MainBlocks.ROCKY_COBBLESTONE_STAIRS.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()));
 		slabBlock(((SlabBlock) MainBlocks.ROCKY_COBBLESTONE_SLAB.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()));
 		wallBlock(((WallBlock) MainBlocks.ROCKY_COBBLESTONE_WALL.get()), blockTexture(MainBlocks.ROCKY_COBBLESTONE.get()));
+
+		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
+			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
+			for (var entry : MainBlocks.getDragonBallBlocks(setDefinition.getId()).entrySet()) {
+				int star = entry.getKey();
+				RegistryObject<Block> block = entry.getValue();
+				if (assets != null && assets.getFlatTexturePathForStar(star).isPresent()) {
+					ResourceLocation texture = ResourceLocation.parse(assets.getFlatTexturePathForStar(star).get());
+					simpleBlockWithItem(block.get(), models().cubeAll(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), texture));
+				} else {
+					blockWithItem(block);
+				}
+			}
+		}
 	}
 
 	private void blockWithItem(RegistryObject<Block> blockRegistryObject) {

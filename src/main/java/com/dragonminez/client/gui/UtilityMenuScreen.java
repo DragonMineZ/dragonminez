@@ -1,18 +1,23 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.Reference;
 import com.dragonminez.client.gui.utilitymenu.ButtonInfo;
 import com.dragonminez.client.gui.utilitymenu.IUtilityMenuSlot;
 import com.dragonminez.client.gui.utilitymenu.menuslots.*;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -25,22 +30,26 @@ public class UtilityMenuScreen extends Screen {
 	private static final List<IUtilityMenuSlot> MENU_SLOTS = new ArrayList<>();
 	private static final List<IUtilityMenuSlot> ADDON_SLOTS = new ArrayList<>();
 	private static final int[][] POSITIONS = {
-			{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {2, -1}, // Top Row (Index 0-4)
-			{-2, 0}, {-1, 0}, {1, 0}, {2, 0}, // Middle Row (Index 5-9)
-			{-2, 1}, {-1, 1}, {0, 1}, {1, 1}, {2, 1}  // Bottom Row (Index 10-14)
+			{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {2, -1},
+			{-2, 0}, {-1, 0}, {1, 0}, {2, 0},
+			{-2, 1}, {-1, 1}, {0, 1}, {1, 1}, {2, 1}
 	};
 
 	private static final long ANIMATION_DURATION = 100;
 	private static final int BUTTON_WIDTH = 90;
 	private static final int BUTTON_HEIGHT = 70;
 	private static final int GAP = 5;
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	private static long utilityMenuReopenBlockedUntilMs = 0L;
 
 	private final long openTime;
+	private boolean closing = false;
+	private long closeStartTime = -1L;
 	private StatsData statsData;
 
 
 	public UtilityMenuScreen() {
-		super(Component.literal("Menu"));
+		super(Component.literal("Menu").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 		this.openTime = System.currentTimeMillis();
 	}
 
@@ -61,8 +70,16 @@ public class UtilityMenuScreen extends Screen {
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (statsData == null) return;
 
-		long elapsed = System.currentTimeMillis() - openTime;
-		float scale = Math.min(1.0f, (float) elapsed / ANIMATION_DURATION);
+		long now = System.currentTimeMillis();
+		float scale;
+		if (closing) {
+			long closeElapsed = now - closeStartTime;
+			float closeProgress = Math.min(1.0f, (float) closeElapsed / ANIMATION_DURATION);
+			scale = Math.max(0.0f, 1.0f - closeProgress);
+		} else {
+			long elapsed = now - openTime;
+			scale = Math.min(1.0f, (float) elapsed / ANIMATION_DURATION);
+		}
 
 		PoseStack pose = graphics.pose();
 		pose.pushPose();
@@ -82,6 +99,10 @@ public class UtilityMenuScreen extends Screen {
 	private boolean isSlotVisible(int index) {
 		IUtilityMenuSlot slot = MENU_SLOTS.get(index);
 		if (slot == null) return false;
+		if (index == 5) {
+			if (statsData == null) return false;
+			return statsData.getSkills().hasSkill("kiprotection") || statsData.getSkills().hasSkill("ki_infusion");
+		}
 		if (index == 6 || index == 7) return true;
 		return !(slot instanceof EmptyMenuSlot);
 	}
@@ -117,7 +138,7 @@ public class UtilityMenuScreen extends Screen {
 					int titleY = y + 10;
 
 					for (FormattedCharSequence line : titleLines) {
-						this.drawCenteredStringWithBorder(graphics, line, x + BUTTON_WIDTH / 2, titleY, 0xFFFFFF, 0x000000);
+						TextUtil.drawCenteredStringWithBorder(graphics, this.font, line, x + BUTTON_WIDTH / 2, titleY, 0xFFFFFF, 0x000000);
 						titleY += font.lineHeight;
 					}
 
@@ -140,6 +161,22 @@ public class UtilityMenuScreen extends Screen {
 						graphics.drawCenteredString(font, line, x + BUTTON_WIDTH / 2, descY, descColor);
 						descY += font.lineHeight;
 					}
+
+					if (menuSlot.hasRightClickAction(statsData)) {
+						PoseStack pose = graphics.pose();
+						pose.pushPose();
+
+						float textScale = 0.85f;
+						pose.scale(textScale, textScale, 1.0f);
+
+						int rcX = (int) ((x + BUTTON_WIDTH / 2) / textScale);
+						int rcY = (int) ((y + BUTTON_HEIGHT - 12) / textScale);
+
+						Component rightClickText = Component.translatable("gui.dragonminez.right_click").withStyle(ChatFormatting.GRAY);
+						graphics.drawCenteredString(font, rightClickText, rcX, rcY, 0xFFFF55);
+
+						pose.popPose();
+					}
 				}
 			}
 		}
@@ -155,6 +192,7 @@ public class UtilityMenuScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (closing) return true;
 		if (statsData == null) return super.mouseClicked(mouseX, mouseY, button);
 
 		int centerX = this.width / 2;
@@ -186,24 +224,42 @@ public class UtilityMenuScreen extends Screen {
 	}
 
 	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		int utilityMenuKeyCode = KeyBinds.UTILITY_MENU.getKey().getValue();
+		if (keyCode == utilityMenuKeyCode) return true;
+		if (keyCode == 256) {
+			onClose();
+			return true;
+		}
+		return super.keyPressed(keyCode, scanCode, modifiers);
+	}
+
+	@Override
 	public void tick() {
 		super.tick();
-		Minecraft mc = Minecraft.getInstance();
-		boolean isMenuKeyDown = InputConstants.isKeyDown(mc.getWindow().getWindow(), KeyBinds.UTILITY_MENU.getKey().getValue());
-		if (!isMenuKeyDown) this.onClose();
+		if (closing && System.currentTimeMillis() - closeStartTime >= ANIMATION_DURATION) {
+			forceClose();
+		}
 	}
 
-	public void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int color, int borderColor) {
-		drawCenteredStringWithBorder(graphics, text.getVisualOrderText(), x, y, color, borderColor);
+	@Override
+	public void onClose() {
+		startClosingAnimation();
 	}
 
-	public void drawCenteredStringWithBorder(GuiGraphics graphics, FormattedCharSequence text, int x, int y, int color, int borderColor) {
-		int width = font.width(text);
-		graphics.drawString(font, text, x - width / 2 - 1, y, borderColor, false);
-		graphics.drawString(font, text, x - width / 2 + 1, y, borderColor, false);
-		graphics.drawString(font, text, x - width / 2, y - 1, borderColor, false);
-		graphics.drawString(font, text, x - width / 2, y + 1, borderColor, false);
-		graphics.drawString(font, text, x - width / 2, y, color, false);
+	public void startClosingAnimation() {
+		if (closing) return;
+		closing = true;
+		closeStartTime = System.currentTimeMillis();
+	}
+
+	private void forceClose() {
+		if (this.minecraft == null) return;
+		this.minecraft.setScreen(null);
+	}
+
+	public static boolean isUtilityMenuReopenBlocked() {
+		return System.currentTimeMillis() < utilityMenuReopenBlockedUntilMs;
 	}
 
 	public static void initMenuSlots() {
@@ -216,15 +272,16 @@ public class UtilityMenuScreen extends Screen {
 			MENU_SLOTS.set(3, new FusionMenuSlot());
 
 			// Middle Row
-			MENU_SLOTS.set(6, new EmptyMenuSlot());
-			MENU_SLOTS.set(7, new SkillsMenuSlot());
+			MENU_SLOTS.set(5, new CombatSkillsMenuSlot());
+			MENU_SLOTS.set(6, new PassiveSkillsMenuSlot());
+			MENU_SLOTS.set(7, new MovementSkillsMenuSlot());
 
 			// Bottom Row
 			MENU_SLOTS.set(10, new KiManipulationMenuSlot());
 			MENU_SLOTS.set(11, new RacialActionMenuSlot());
 			MENU_SLOTS.set(12, new DescendFormMenuSlot());
 
-			int[] addonIndices = {0, 4, 5, 8, 9, 13};
+			int[] addonIndices = {0, 4, 8, 9, 13};
 			int currentAddon = 0;
 
 			for (int index : addonIndices) {
@@ -238,5 +295,13 @@ public class UtilityMenuScreen extends Screen {
 
 	public static void addMenuSlot(IUtilityMenuSlot menuSlot) {
 		ADDON_SLOTS.add(menuSlot);
+	}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }

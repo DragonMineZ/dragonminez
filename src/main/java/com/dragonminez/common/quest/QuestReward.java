@@ -1,28 +1,25 @@
 package com.dragonminez.common.quest;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 
+@Getter
 public abstract class QuestReward {
 	private final RewardType type;
+	@Setter
 	private DifficultyType difficultyType = DifficultyType.ALL;
 
 	public QuestReward(RewardType type) {
 		this.type = type;
 	}
 
-	public RewardType getType() {
-		return type;
-	}
-
-	public DifficultyType getDifficultyType() {
-		return difficultyType;
-	}
-
-	public void setDifficultyType(DifficultyType difficultyType) {
-		this.difficultyType = difficultyType;
-	}
-
 	public abstract void giveReward(net.minecraft.server.level.ServerPlayer player);
+
+	public void giveReward(ServerPlayer player, double rewardMultiplier) {
+		giveReward(player);
+	}
 
 	public abstract Component getDescription();
 
@@ -30,7 +27,10 @@ public abstract class QuestReward {
 		ITEM,
 		COMMAND,
 		TPS,
-		SKILL
+		SKILL,
+		ALIGNMENT,
+		TRANSFORMATION,
+		KI_TECHNIQUE
 	}
 
 	public enum DifficultyType {

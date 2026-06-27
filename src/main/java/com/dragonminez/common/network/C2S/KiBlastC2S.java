@@ -1,13 +1,12 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
-import com.dragonminez.common.stats.Cooldowns;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -50,10 +49,10 @@ public class KiBlastC2S {
 					if (data.getCooldowns().hasCooldown(Cooldowns.KI_BLAST_CD)) return;
 					if (data.getStatus().isStunned()) return;
 					if (!data.getSkills().hasSkill("kicontrol")) return;
-					GeneralServerConfig config = ConfigManager.getServerConfig();
-					int baseCost = config != null ? config.getCombat().getBaselineFormDrain() : 200;
+					int baseCost = ConfigManager.getCombatConfig().getBaselineFormDrain();
 
 					int cost = (int) (data.getMaxEnergy() * 0.02 + 0.1 * baseCost);
+					if (player.isCreative()) cost = 0;
 					if (data.getResources().getCurrentEnergy() < cost) return;
 					data.getResources().removeEnergy(cost);
 
@@ -69,7 +68,7 @@ public class KiBlastC2S {
 							)
 					);
 
-					float damage = (float) (data.getKiDamage() * Math.max(0.5f, (0.05f * data.getSkills().getSkillLevel("kicontrol"))));
+					float damage = (float) (data.getKiDamage() * (0.5f + (0.05f * data.getSkills().getSkillLevel("kimanipulation"))));
 
 					KiBlastEntity kiBlast = new KiBlastEntity(player.level(), player);
 					kiBlast.setup(player, damage, 0.5F, 1.5f, msg.colorMain, msg.colorBorder);

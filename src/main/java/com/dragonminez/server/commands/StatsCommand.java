@@ -7,7 +7,6 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
-import com.dragonminez.server.util.FusionLogic;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -18,6 +17,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.Collection;
@@ -29,7 +29,7 @@ public class StatsCommand {
 			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE", "ALL"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> VALUE_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(List.of("max", "100", "500", "1000", "5000", "10000"), builder);
+			SharedSuggestionProvider.suggest(List.of("100", "500", "1000", "5000", "10000", "min"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> PERCENTAGE_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(List.of("10", "25", "50", "75"), builder);
@@ -68,20 +68,25 @@ public class StatsCommand {
 												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
 												.executes(ctx -> modifyStats(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "amount"), EntityArgument.getPlayers(ctx, "targets"), "remove"))))))
 
-				// reset [keepPercentage] [targets]
+				// relocate [targets]
+				.then(Commands.literal("relocate")
+						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF, DMZPermissions.STATS_RESET_OTHERS))
+						.executes(ctx -> relocateStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException())))
+						.then(Commands.argument("targets", EntityArgument.players())
+								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
+								.executes(ctx -> relocateStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets")))))
+
+				// reset [targets] [keepPercentage] [keepSkills]
 				.then(Commands.literal("reset")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF, DMZPermissions.STATS_RESET_OTHERS))
 						.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), null, false))
-						.then(Commands.argument("keepPercentage", StringArgumentType.word()).suggests(PERCENTAGE_SUGGESTIONS)
-								.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "keepPercentage"), false))
-								.then(Commands.argument("keepSkills", BoolArgumentType.bool())
-										.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "keepPercentage"), BoolArgumentType.getBool(ctx, "keepSkills")))
-										.then(Commands.argument("targets", EntityArgument.players())
-												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
-												.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage"), BoolArgumentType.getBool(ctx, "keepSkills"))))))
 						.then(Commands.argument("targets", EntityArgument.players())
 								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
-								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), null, false))))
+								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), null, false))
+								.then(Commands.argument("keepPercentage", StringArgumentType.word()).suggests(PERCENTAGE_SUGGESTIONS)
+										.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage"), false))
+										.then(Commands.argument("keepSkills", BoolArgumentType.bool())
+												.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage"), BoolArgumentType.getBool(ctx, "keepSkills")))))))
 		);
 	}
 
@@ -94,10 +99,9 @@ public class StatsCommand {
 		}
 
 		int value;
-		int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+		int maxValue = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		try {
-			if (amountStr.equalsIgnoreCase("max")) value = MAX_STAT_VALUE;
-			else if (amountStr.equalsIgnoreCase("min")) value = 5;
+			if (amountStr.equalsIgnoreCase("min")) value = 0;
 			else value = Integer.parseInt(amountStr);
 		} catch (NumberFormatException e) {
 			source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_number", amountStr));
@@ -107,23 +111,30 @@ public class StatsCommand {
 		int successCount = 0;
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				float oldMaxHealth = data.getMaxHealth();
-				int oldMaxEnergy = data.getMaxEnergy();
-				int oldMaxStamina = data.getMaxStamina();
+				float oldHealthBonus = data.getHealthBonus();
+				float oldMaxEnergy = data.getMaxEnergy();
+				float oldMaxStamina = data.getMaxStamina();
 
 				if (finalStat.equals("ALL")) {
-					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) {
-						applyModification(data, s, value, mode);
+					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) applyModification(data, s, value, mode);
+				} else applyModification(data, finalStat, value, mode);
+
+
+				float newHealthBonus = data.getHealthBonus();
+				float healthDiff = newHealthBonus - oldHealthBonus;
+
+				if (healthDiff > 0) {
+					var attribute = player.getAttribute(Attributes.MAX_HEALTH);
+					if (attribute != null) {
+						attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+						attribute.addPermanentModifier(new AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADDITION));
 					}
-				} else {
-					applyModification(data, finalStat, value, mode);
+					player.heal(healthDiff);
 				}
 
-				float newMaxHealth = data.getMaxHealth();
-				if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
-				int newMaxEnergy = data.getMaxEnergy();
+				float newMaxEnergy = data.getMaxEnergy();
 				if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
-				int newMaxStamina = data.getMaxStamina();
+				float newMaxStamina = data.getMaxStamina();
 				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
@@ -143,10 +154,21 @@ public class StatsCommand {
 	}
 
 	private static void applyModification(StatsData data, String stat, int value, String mode) {
-		int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+		int current = data.getCurrentStatValue(stat);
 		switch (mode) {
-			case "set" -> data.getStats().setStat(stat, Math.min(value, MAX_STAT_VALUE));
-			case "add" -> data.getStats().addStat(stat, value);
+			case "set" -> {
+				int target = Math.max(0, value);
+				if (target <= current) {
+					data.getStats().setStat(stat, target);
+				} else {
+					int increase = data.getMaxAllowedIncreaseForStat(stat, target - current);
+					data.getStats().setStat(stat, current + increase);
+				}
+			}
+			case "add" -> {
+				int increase = data.getMaxAllowedIncreaseForStat(stat, value);
+				if (increase > 0) data.getStats().addStat(stat, increase);
+			}
 			case "remove" -> data.getStats().removeStat(stat, value);
 		}
 	}
@@ -171,57 +193,7 @@ public class StatsCommand {
 
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				var stats = data.getStats();
-
-				if (finalKeepPercentage != null) {
-					int newStr = (stats.getStrength() * finalKeepPercentage) / 100;
-					int newSkp = (stats.getStrikePower() * finalKeepPercentage) / 100;
-					int newRes = (stats.getResistance() * finalKeepPercentage) / 100;
-					int newVit = (stats.getVitality() * finalKeepPercentage) / 100;
-					int newPwr = (stats.getKiPower() * finalKeepPercentage) / 100;
-					int newEne = (stats.getEnergy() * finalKeepPercentage) / 100;
-					int currentTPs = data.getResources().getTrainingPoints();
-					int newTPs = (currentTPs * finalKeepPercentage) / 100;
-
-					stats.setStrength(Math.max(5, newStr));
-					stats.setStrikePower(Math.max(5, newSkp));
-					stats.setResistance(Math.max(5, newRes));
-					stats.setVitality(Math.max(5, newVit));
-					stats.setKiPower(Math.max(5, newPwr));
-					stats.setEnergy(Math.max(5, newEne));
-
-					data.getResources().setTrainingPoints(newTPs);
-				} else {
-					stats.setStrength(5);
-					stats.setStrikePower(5);
-					stats.setResistance(5);
-					stats.setVitality(5);
-					stats.setKiPower(5);
-					stats.setEnergy(5);
-					data.getResources().setTrainingPoints(0);
-				}
-
-				if (data.getStatus().isFused()) FusionLogic.endFusion(player, data, false);
-				data.getResources().setRacialSkillCount(0);
-				data.getResources().setPowerRelease(0);
-				data.getStatus().setAndroidUpgraded(false);
-				data.getStatus().setInKaioPlanet(false);
-
-				if (!keepSkills) {
-					data.getSkills().removeAllSkills();
-					data.getEffects().removeAllEffects();
-				}
-
-				data.getCooldowns().clearCooldowns();
-				data.getBonusStats().clearAllStats();
-				data.getCharacter().clearActiveForm();
-				data.getCharacter().clearActiveStackForm();
-				data.getStatus().setHasCreatedCharacter(false);
-
-				player.refreshDimensions();
-				player.setHealth(20.0F);
-				player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
-				player.setHealth(20.0F);
+				data.resetPlayerProgress(player, finalKeepPercentage, keepSkills, false);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		}
@@ -232,6 +204,29 @@ public class StatsCommand {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.multiple", targets.size()), log);
 		}
 		return targets.size();
+	}
+
+	private static int relocateStats(CommandSourceStack source, Collection<ServerPlayer> targets) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
+
+		int successCount = 0;
+		for (ServerPlayer player : targets) {
+			var result = StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+				int gained = data.relocateStats(player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				return gained;
+			}).orElse(0);
+			if (result > 0) successCount++;
+		}
+
+		if (targets.size() == 1) {
+			ServerPlayer single = targets.iterator().next();
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.relocate.success", single.getName().getString()), log);
+		} else {
+			int finalSuccess = successCount;
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.relocate.multiple", finalSuccess), log);
+		}
+		return successCount;
 	}
 
 	private static boolean isValidStat(String stat) {

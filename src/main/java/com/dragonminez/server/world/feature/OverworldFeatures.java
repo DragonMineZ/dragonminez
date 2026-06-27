@@ -17,6 +17,12 @@ public class OverworldFeatures {
     public static final RegistryObject<Feature<NoneFeatureConfiguration>> ROCKY_PEAK = FEATURES.register("rocky_peak",
             () -> new RockyPeakFeature(NoneFeatureConfiguration.CODEC));
 
+    public static final RegistryObject<Feature<NoneFeatureConfiguration>> KARST_PILLAR = FEATURES.register("karst_pillar",
+            () -> new KarstPillarFeature(NoneFeatureConfiguration.CODEC));
+
+    public static final RegistryObject<Feature<NoneFeatureConfiguration>> ROCKY_CLIFF = FEATURES.register("rocky_cliff",
+            () -> new RockyCliffFeature(NoneFeatureConfiguration.CODEC));
+
     public static void register(IEventBus eventBus) {
 		FEATURES.register(eventBus);
 	}

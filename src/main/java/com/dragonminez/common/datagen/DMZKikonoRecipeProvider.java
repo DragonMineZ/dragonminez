@@ -58,6 +58,37 @@ public class DMZKikonoRecipeProvider {
 		buildArmorNoHelmetSet("majin_buu", MainItems.MAJIN_BUU_ARMOR, MainItems.PATTERN_MAJIN_BUU.get());
 		buildArmorNoHelmetSet("gamma1", MainItems.GAMMA1_ARMOR, MainItems.PATTERN_GAMMA1.get());
 		buildArmorNoHelmetSet("gamma2", MainItems.GAMMA2_ARMOR, MainItems.PATTERN_GAMMA2.get());
+		buildArmorNoHelmetSet("pride_troops", MainItems.PRIDE_TROOPS_ARMOR, MainItems.PATTERN_PRIDE_TROOPS.get());
+		buildArmorNoHelmetSet("a16", MainItems.A16_ARMOR, MainItems.PATTERN_A16.get());
+		buildArmorNoHelmetSet("a17", MainItems.A17_ARMOR, MainItems.PATTERN_A17.get());
+		buildArmorNoHelmetSet("a18", MainItems.A18_ARMOR, MainItems.PATTERN_A18.get());
+		buildArmorNoHelmetSet("orange_high", MainItems.ORANGE_HIGH_ARMOR, MainItems.PATTERN_ORANGE_HIGH.get());
+		buildArmorNoHelmetSet("granola", MainItems.GRANOLA_ARMOR, MainItems.PATTERN_GRANOLA.get());
+		buildArmorNoHelmetSet("age1000", MainItems.AGE1000_ARMOR, MainItems.PATTERN_AGE1000.get());
+		buildArmorNoHelmetSet("gine", MainItems.GINE_ARMOR, MainItems.PATTERN_GINE.get());
+		buildArmorNoHelmetSet("kale", MainItems.KALE_ARMOR, MainItems.PATTERN_KALE.get());
+		buildArmorNoHelmetSet("caulifla", MainItems.CAULIFLA_ARMOR, MainItems.PATTERN_CAULIFLA.get());
+		buildArmorNoHelmetSet("a17_super", MainItems.A17_SUPER_ARMOR, MainItems.PATTERN_A17_SUPER.get());
+		buildArmorNoHelmetSet("a18_kame", MainItems.A18_KAME_ARMOR, MainItems.PATTERN_A18_KAME.get());
+		buildArmorNoHelmetSet("a18_tournament", MainItems.A18_TOURNAMENT_ARMOR, MainItems.PATTERN_A18_TOURNAMENT.get());
+		buildArmorNoHelmetSet("a18_cell", MainItems.A18_CELL_ARMOR, MainItems.PATTERN_A18_CELL.get());
+		buildArmorNoHelmetSet("beerus", MainItems.BEERUS_ARMOR, MainItems.PATTERN_BEERUS.get());
+		buildArmorNoHelmetSet("goku_whis", MainItems.GOKU_WHIS_ARMOR, MainItems.PATTERN_GOKU_WHIS.get());
+		buildArmorNoHelmetSet("kefla", MainItems.KEFLA_ARMOR, MainItems.PATTERN_KEFLA.get());
+		buildArmorNoHelmetSet("majin21", MainItems.MAJIN21_ARMOR, MainItems.PATTERN_MAJIN21.get());
+		buildArmorNoHelmetSet("vegeta_whis", MainItems.VEGETA_WHIS_ARMOR, MainItems.PATTERN_VEGETA_WHIS.get());
+		buildArmorNoHelmetSet("vegeta_gt", MainItems.VEGETA_GT_ARMOR, MainItems.PATTERN_VEGETA_GT.get());
+		buildArmorNoHelmetSet("videl", MainItems.VIDEL_ARMOR, MainItems.PATTERN_VIDEL.get());
+		buildArmorNoHelmetSet("whis", MainItems.WHIS_ARMOR, MainItems.PATTERN_WHIS.get());
+		buildToolSetNoSword("gete",
+				MainItems.GETE_PICKAXE.get(),
+				MainItems.GETE_AXE.get(),
+				MainItems.GETE_SHOVEL.get(),
+				MainItems.GETE_HOE.get(),
+				MainItems.PATTERN_GETE.get(),
+				MainItems.GETE_INGOT.get(),
+				MainItems.KIKONO_STICK.get()
+		);
 	}
 
 	protected void buildFullArmorSet(String name, Map<ArmorItem.Type, RegistryObject<Item>> armorSet, Item pattern) {
@@ -71,6 +102,13 @@ public class DMZKikonoRecipeProvider {
 		buildChestplateRecipes(name, armorSet.get(ArmorItem.Type.CHESTPLATE).get(), pattern);
 		buildLeggingsRecipes(name, armorSet.get(ArmorItem.Type.LEGGINGS).get(), pattern);
 		buildBootsRecipes(name, armorSet.get(ArmorItem.Type.BOOTS).get(), pattern);
+	}
+
+	protected void buildToolSetNoSword(String name, Item pickaxe, Item axe, Item shovel, Item hoe, Item pattern, Item material, Item stick) {
+		buildPickaxeRecipes(name, pickaxe, pattern, material, stick);
+		buildAxeRecipes(name, axe, pattern, material, stick);
+		buildShovelRecipes(name, shovel, pattern, material, stick);
+		buildHoeRecipes(name, hoe, pattern, material, stick);
 	}
 
 	protected void buildFullToolSet(String name, Item pickaxe, Item axe, Item sword, Item shovel, Item hoe, Item scythe, Item pattern, Item material, Item stick) {
@@ -98,24 +136,6 @@ public class DMZKikonoRecipeProvider {
 				.time(200)
 				.energy(1000)
 				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name + "_armor_helmet"));
-	}
-
-	protected void buildCapeRecipes(String name, Item output, Item pattern) {
-		KikonoRecipeBuilder.kikonize(output)
-				.pattern(pattern)
-				.template(Items.IRON_CHESTPLATE)
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_STRING.get())
-				.input(MainItems.KIKONO_STRING.get())
-				.input(MainItems.KIKONO_STRING.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.input(MainItems.KIKONO_CLOTH.get())
-				.time(200)
-				.energy(1000)
-				.save(this.consumer, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name + "_armor_cape"));
 	}
 
 	protected void buildChestplateRecipes(String name, Item output, Item pattern) {

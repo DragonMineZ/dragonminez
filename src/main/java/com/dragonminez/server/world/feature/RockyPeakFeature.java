@@ -4,16 +4,25 @@ import com.dragonminez.common.init.MainBlocks;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
 public class RockyPeakFeature extends Feature<NoneFeatureConfiguration> {
+
     public RockyPeakFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
+    }
+
+    protected BlockState capState() {
+        return MainBlocks.ROCKY_DIRT.get().defaultBlockState();
+    }
+
+    protected void decorateTop(WorldGenLevel level, BlockPos capPos, RandomSource random) {
     }
 
     @Override
@@ -22,34 +31,63 @@ public class RockyPeakFeature extends Feature<NoneFeatureConfiguration> {
         WorldGenLevel level = context.level();
         RandomSource random = context.random();
 
-        int height = random.nextInt(20) + 25;
-        int baseRadius = random.nextInt(3) + 6;
+        if (FeatureUtil.isInsideDmzStructure(level, pos)) return false;
+        if (!level.getBlockState(pos.below()).isSolid()) return false;
 
-        if (!level.getBlockState(pos.below()).isSolid()) {
-            return false;
-        }
+        boolean tall = random.nextInt(4) != 0;
+        int height = tall ? 30 + random.nextInt(30) : 16 + random.nextInt(14);
+        double sharpness = tall ? 1.6 : 2.0;
 
-        for (int y = 0; y < height; y++) {
-            float progress = (float) y / height;
-            float currentRadius;
+        float semiMajor = 4.0F + random.nextFloat() * 8.0F;
+        float semiMinor = semiMajor * (0.74F + random.nextFloat() * 0.22F);
+        double rot = random.nextDouble() * Math.PI;
+        double cosR = Math.cos(rot);
+        double sinR = Math.sin(rot);
 
-            if (progress < 0.85f) {
-                currentRadius = baseRadius - (progress * 1.5f);
-            } else {
-                currentRadius = Math.max(4.0F, baseRadius - 2.0f);
-            }
+        int lobes = 2 + random.nextInt(3);
+        double phase = random.nextDouble() * Math.PI * 2.0;
+        float wobble = 0.05F + random.nextFloat() * 0.08F;
 
-            int loopRadius = (int) Math.ceil(currentRadius);
+        BlockState stone = MainBlocks.ROCKY_STONE.get().defaultBlockState();
+        BlockState cobble = MainBlocks.ROCKY_COBBLESTONE.get().defaultBlockState();
+        BlockState cap = capState();
 
-            for (int x = -loopRadius; x <= loopRadius; x++) {
-                for (int z = -loopRadius; z <= loopRadius; z++) {
-                    if (x * x + z * z <= (currentRadius * currentRadius) + random.nextFloat() * 2.0F) {
-                        BlockPos placePos = pos.offset(x, y, z);
+        int maxReach = Mth.ceil(semiMajor) + 2;
+        int topY = height - 1;
 
-                        if (level.isEmptyBlock(placePos) || level.getBlockState(placePos).is(BlockTags.REPLACEABLE)) {
-                            level.setBlock(placePos, MainBlocks.ROCKY_STONE.get().defaultBlockState(), 2);
-                        }
-                    }
+        float tipRadius = 2.0F;
+        float tipNd = Math.min(0.5F, tipRadius / semiMajor);
+
+        for (int x = -maxReach; x <= maxReach; x++) {
+            for (int z = -maxReach; z <= maxReach; z++) {
+                double lx = x * cosR + z * sinR;
+                double lz = -x * sinR + z * cosR;
+                double angle = Math.atan2(lz, lx);
+                double threshold = 1.0 + Math.cos(angle * lobes + phase) * wobble;
+
+                double nd = Math.sqrt((lx * lx) / (semiMajor * semiMajor) + (lz * lz) / (semiMinor * semiMinor)) / Math.sqrt(Math.max(0.0001, threshold));
+                if (nd > 1.0) continue;
+                float maxT;
+                if (nd <= tipNd) maxT = 1.0F;
+                else {
+                    double body = (nd - tipNd) / (1.0 - tipNd);
+                    maxT = (float) (1.0 - Math.pow(body, 1.0 / sharpness));
+                }
+                int colTop = Math.min(topY, Mth.floor(maxT * topY));
+
+                for (int y = 0; y <= colTop; y++) {
+                    BlockPos placePos = pos.offset(x, y, z);
+                    if (!level.isEmptyBlock(placePos) && !level.getBlockState(placePos).is(BlockTags.REPLACEABLE)) continue;
+
+
+                    BlockState toPlace;
+                    if (y == colTop) toPlace = cap;
+                    else if (((y % 4) == 0 || (y % 7) == 0) && random.nextInt(4) != 0) toPlace = cobble;
+                    else toPlace = stone;
+                    level.setBlock(placePos, toPlace, 2);
+
+                    if (y == 0) FeatureUtil.groundColumn(level, placePos, stone);
+                    if (y == colTop) decorateTop(level, placePos, random);
                 }
             }
         }

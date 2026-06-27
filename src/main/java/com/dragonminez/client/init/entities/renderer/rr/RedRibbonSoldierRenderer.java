@@ -1,8 +1,8 @@
 package com.dragonminez.client.init.entities.renderer.rr;
 
-import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.rr.RedRibbonModel;
-import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
+import com.dragonminez.client.render.layer.RedRibbonOutfitLayer;
+import com.dragonminez.client.util.SkinCacheManager;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -16,11 +16,12 @@ public class RedRibbonSoldierRenderer<T extends RedRibbonSoldierEntity> extends 
     public RedRibbonSoldierRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new RedRibbonModel<>());
         this.shadowRadius = 0.4f;
+        addRenderLayer(new RedRibbonOutfitLayer<>(this));
     }
 
     @Override
     public ResourceLocation getTextureLocation(T animatable) {
-        return animatable.getCurrentTexture();
+        return SkinCacheManager.resolveTexture(animatable.getSkinOwner());
     }
 
     @Override

@@ -1,0 +1,214 @@
+package com.dragonminez.common.stats.techniques;
+
+import lombok.Getter;
+import lombok.Setter;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import java.util.HashMap;
+import java.util.Map;
+
+public class Techniques {
+	public static final int SLOT_COUNT = 8;
+
+	@Getter
+	private final Map<String, TechniqueData> unlockedTechniques = new HashMap<>();
+	private final String[] equippedSlots = new String[SLOT_COUNT];
+	private int selectedSlot = 0;
+	private String chargingTechniqueId = "";
+	private float techniqueChargePercent = 0.0f;
+	@Setter
+	private boolean techniqueCharging = false;
+	@Setter
+	private boolean chargeHolding = false;
+
+	@Getter
+	@Setter
+	private transient int homingTargetId = -1;
+
+	public Techniques() {
+		for (int i = 0; i < SLOT_COUNT; i++) equippedSlots[i] = "";
+	}
+
+	public void unlockTechnique(TechniqueData data) {
+		unlockedTechniques.put(data.getId(), data);
+	}
+
+	public void equipTechnique(int slotIndex, String techniqueId) {
+		if (slotIndex >= 0 && slotIndex < SLOT_COUNT && unlockedTechniques.containsKey(techniqueId)) {
+			equippedSlots[slotIndex] = techniqueId;
+		}
+	}
+
+	public void removeTechnique(String techniqueId) {
+		unlockedTechniques.remove(techniqueId);
+		for (int i = 0; i < SLOT_COUNT; i++) {
+			if (equippedSlots[i].equals(techniqueId)) {
+				equippedSlots[i] = "";
+				if (selectedSlot == i) selectedSlot = 0;
+			}
+		}
+		if (chargingTechniqueId.equals(techniqueId)) clearTechniqueCharge();
+	}
+
+	public void selectSlot(int slotIndex) {
+		if (slotIndex >= 0 && slotIndex < SLOT_COUNT) {
+			this.selectedSlot = slotIndex;
+		}
+	}
+
+	public TechniqueData getSelectedTechnique() {
+		String id = equippedSlots[selectedSlot];
+		return id.isEmpty() ? null : unlockedTechniques.get(id);
+	}
+
+	public String[] getEquippedSlots() {
+		return this.equippedSlots;
+	}
+
+	public String getChargingTechniqueId() {
+		return chargingTechniqueId;
+	}
+
+	public float getTechniqueChargePercent() {
+		return techniqueChargePercent;
+	}
+
+	public boolean isTechniqueCharging() {
+		return techniqueCharging;
+	}
+
+	public boolean isTechniqueChargeActive() {
+		return !chargingTechniqueId.isEmpty() && techniqueChargePercent > 0.0f;
+	}
+
+	public void startTechniqueCharge(String techniqueId) {
+		if (techniqueId == null || techniqueId.isEmpty()) return;
+		if (!techniqueId.equals(this.chargingTechniqueId)) {
+			this.chargingTechniqueId = techniqueId;
+			this.techniqueChargePercent = 0.0f;
+		}
+		this.techniqueCharging = true;
+		this.chargeHolding = true;
+	}
+
+	public void setTechniqueChargePercent(float percent) {
+		this.techniqueChargePercent = Math.max(0.0f, Math.min(200.0f, percent));
+	}
+
+	public boolean isChargeHolding() {
+		return chargeHolding;
+	}
+
+	public void clearTechniqueCharge() {
+		this.chargingTechniqueId = "";
+		this.techniqueChargePercent = 0.0f;
+		this.techniqueCharging = false;
+		this.chargeHolding = false;
+		this.homingTargetId = -1;
+	}
+
+	public void clearAllTechniques() {
+		this.unlockedTechniques.clear();
+		for (int i = 0; i < this.equippedSlots.length; i++) {
+			this.equippedSlots[i] = "";
+		}
+		this.selectedSlot = 0;
+		clearTechniqueCharge();
+	}
+
+	public int getSelectedSlot() {
+		return this.selectedSlot;
+	}
+
+	public void equipOrSwapTechnique(int slotIndex, String techniqueId) {
+		if (slotIndex < 0 || slotIndex >= SLOT_COUNT) return;
+
+		int existingSlot = -1;
+		for (int i = 0; i < SLOT_COUNT; i++) {
+			if (equippedSlots[i].equals(techniqueId)) {
+				existingSlot = i;
+				break;
+			}
+		}
+
+		if (existingSlot != -1) {
+			String temp = equippedSlots[slotIndex];
+			equippedSlots[slotIndex] = techniqueId;
+			equippedSlots[existingSlot] = temp;
+		} else equippedSlots[slotIndex] = techniqueId;
+	}
+
+	public void addExperienceToSelected(int amount) {
+		TechniqueData active = getSelectedTechnique();
+		if (active != null) active.addExperience(amount);
+	}
+
+	public void addExperienceToTechnique(String id, int amount) {
+		if (unlockedTechniques.containsKey(id)) {
+			unlockedTechniques.get(id).addExperience(amount);
+		}
+	}
+
+	public CompoundTag save() {
+		CompoundTag tag = new CompoundTag();
+		tag.putInt("SelectedSlot", selectedSlot);
+		tag.putString("ChargingTechniqueId", chargingTechniqueId);
+		tag.putFloat("TechniqueChargePercent", techniqueChargePercent);
+		tag.putBoolean("TechniqueCharging", techniqueCharging);
+		tag.putBoolean("ChargeHolding", chargeHolding);
+
+		CompoundTag slotsTag = new CompoundTag();
+		for (int i = 0; i < SLOT_COUNT; i++) {
+			slotsTag.putString("Slot" + i, equippedSlots[i]);
+		}
+		tag.put("EquippedSlots", slotsTag);
+
+		ListTag unlockedTag = new ListTag();
+		for (TechniqueData tech : unlockedTechniques.values()) {
+			CompoundTag techTag = tech.save();
+			techTag.putString("TechClassType", tech instanceof KiAttackData ? "KI" : "STRIKE");
+			unlockedTag.add(techTag);
+		}
+		tag.put("UnlockedTechniques", unlockedTag);
+
+		return tag;
+	}
+
+	public void load(CompoundTag tag) {
+		this.selectedSlot = tag.getInt("SelectedSlot");
+		this.chargingTechniqueId = tag.getString("ChargingTechniqueId");
+		this.techniqueChargePercent = Math.max(0.0f, Math.min(200.0f, tag.getFloat("TechniqueChargePercent")));
+		this.techniqueCharging = tag.getBoolean("TechniqueCharging");
+		this.chargeHolding = tag.getBoolean("ChargeHolding");
+
+		CompoundTag slotsTag = tag.getCompound("EquippedSlots");
+		for (int i = 0; i < SLOT_COUNT; i++) {
+			this.equippedSlots[i] = slotsTag.getString("Slot" + i);
+		}
+
+		this.unlockedTechniques.clear();
+		ListTag unlockedTag = tag.getList("UnlockedTechniques", 10);
+		for (int i = 0; i < unlockedTag.size(); i++) {
+			CompoundTag techTag = unlockedTag.getCompound(i);
+			String type = techTag.getString("TechClassType");
+			TechniqueData tech = type.equals("KI") ? new KiAttackData() : new StrikeAttackData();
+			tech.load(techTag);
+			this.unlockedTechniques.put(tech.getId(), tech);
+		}
+	}
+
+	public void copyFrom(Techniques other) {
+		this.selectedSlot = other.selectedSlot;
+		this.chargingTechniqueId = other.chargingTechniqueId;
+		this.techniqueChargePercent = other.techniqueChargePercent;
+		this.techniqueCharging = other.techniqueCharging;
+		this.chargeHolding = other.chargeHolding;
+		System.arraycopy(other.equippedSlots, 0, this.equippedSlots, 0, SLOT_COUNT);
+		this.unlockedTechniques.clear();
+		for (Map.Entry<String, TechniqueData> entry : other.unlockedTechniques.entrySet()) {
+			TechniqueData clone = entry.getValue() instanceof KiAttackData ? new KiAttackData() : new StrikeAttackData();
+			clone.load(entry.getValue().save());
+			this.unlockedTechniques.put(entry.getKey(), clone);
+		}
+	}
+}

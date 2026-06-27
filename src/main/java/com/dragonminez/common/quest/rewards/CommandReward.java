@@ -1,21 +1,19 @@
 package com.dragonminez.common.quest.rewards;
 
 import com.dragonminez.common.quest.QuestReward;
+import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 public class CommandReward extends QuestReward {
+	@Getter
 	private final String command;
-	private String translationKey;
+	private final String translationKey;
 
 	public CommandReward(String command, String translationKey) {
 		super(RewardType.COMMAND);
 		this.command = command;
 		this.translationKey = translationKey;
-	}
-
-	public String getCommand() {
-		return command;
 	}
 
 	@Override

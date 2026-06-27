@@ -6,18 +6,21 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.PartyManager;
-import com.dragonminez.common.stats.Cooldowns;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.awt.*;
 import java.util.UUID;
@@ -34,8 +37,8 @@ public class FusionLogic {
 			return false;
 		}
 
-		int lvl1 = getPlayerPowerLevel(lData);
-		int lvl2 = getPlayerPowerLevel(pData);
+		int lvl1 = lData.getStats().getTotalStats();
+		int lvl2 = pData.getStats().getTotalStats();
 
 		double threshold = ConfigManager.getServerConfig().getGameplay().getMetamoruFusionThreshold();
 		if (threshold > 0) {
@@ -85,18 +88,27 @@ public class FusionLogic {
 	}
 
 	public static void executePothala(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
-		int lvl1 = getPlayerPowerLevel(lData);
-		int lvl2 = getPlayerPowerLevel(pData);
+		if (lData.getStatus().isFused() || pData.getStatus().isFused() ||
+				lData.getStatus().getFusionPartnerUUID() != null || pData.getStatus().getFusionPartnerUUID() != null) return;
+
+		int lvl1 = lData.getStats().getTotalStats();
+		int lvl2 = pData.getStats().getTotalStats();
 
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.POTHALA);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
-		boolean isGreenPothala = leader.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("green");
+		boolean isGreenPothala = CuriosApi.getCuriosInventory(leader).map(inv -> {
+			var handler = inv.getCurios().get("head_tech");
+			if (handler != null) {
+				ItemStack stack = handler.getStacks().getStackInSlot(0);
+				return !stack.isEmpty() && stack.getItem().getDescriptionId().contains("green");
+			}
+			return false;
+		}).orElse(false);
+
 		lData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
 		pData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
 
-		removeEarring(leader);
-		removeEarring(partner);
 		int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
 
 		applyFusion(leader, partner, lData, pData, "POTHALA", lvl1, lvl2);
@@ -105,6 +117,8 @@ public class FusionLogic {
 		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
 		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
 		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
+		damageEarring(leader);
+		damageEarring(partner);
 	}
 
 	private static void applyFusion(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData, String type, int lvl1, int lvl2) {
@@ -122,19 +136,28 @@ public class FusionLogic {
 		pData.getStatus().setFusionPartnerUUID(leader.getUUID());
 		pData.getStatus().setFusionType(type);
 
+		String fusionName = buildFusionName(leader.getGameProfile().getName(), partner.getGameProfile().getName(), type);
+		lData.getStatus().setFusionName(fusionName);
+		pData.getStatus().setFusionName(fusionName);
+
 		partner.setGameMode(GameType.SPECTATOR);
 		partner.teleportTo(leader.getX(), leader.getY(), leader.getZ());
 		partner.startRiding(leader, true);
 
+		refreshNames(leader);
+		refreshNames(partner);
+
 		mixAppearance(lData, pData);
 		calculateAndApplyStats(lData, pData, type, lvl1, lvl2);
-		PartyManager.forceJoinParty(leader, partner);
+		PartyManager.beginFusionParty(leader, partner);
 
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 	}
 
 	public static void endFusion(ServerPlayer player, StatsData data, boolean forcedByDeath) {
+		if (!data.getStatus().isFused() && data.getStatus().getFusionPartnerUUID() == null) return;
+
 		boolean isLeader = data.getStatus().isFusionLeader();
 		UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 
@@ -142,49 +165,51 @@ public class FusionLogic {
 		ServerPlayer leaderRef = isLeader ? player : otherPlayer;
 		ServerPlayer partnerRef = isLeader ? otherPlayer : player;
 
-		StatsData leaderData = null;
-		if (leaderRef != null) {
-			if (isLeader) leaderData = data;
-			else leaderData = StatsProvider.get(StatsCapability.INSTANCE, leaderRef).orElse(null);
-		}
+		StatsData leaderData = isLeader ? data : (leaderRef != null ? StatsProvider.get(StatsCapability.INSTANCE, leaderRef).orElse(null) : null);
+		StatsData partnerData = !isLeader ? data : (partnerRef != null ? StatsProvider.get(StatsCapability.INSTANCE, partnerRef).orElse(null) : null);
 
-		StatsData partnerData = null;
-		if (partnerRef != null) {
-			if (!isLeader) partnerData = data;
-			else partnerData = StatsProvider.get(StatsCapability.INSTANCE, partnerRef).orElse(null);
-		}
-
-		if (leaderRef != null && leaderData != null) {
+		if (leaderData != null) {
 			leaderData.getBonusStats().removeAllBonuses("FusionBonus");
 
-			leaderData.getStatus().setFused(false);
-			leaderData.getStatus().setFusionLeader(false);
-			leaderData.getStatus().setFusionPartnerUUID(null);
-			leaderData.getStatus().setFusionTimer(0);
+			CompoundTag original = leaderData.getStatus().getOriginalAppearance();
+			if (original != null && !original.isEmpty()) leaderData.getCharacter().loadAppearance(original);
 
-			if (leaderData.getStatus().getOriginalAppearance() != null) leaderData.getCharacter().loadAppearance(leaderData.getStatus().getOriginalAppearance());
 			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
-			if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
-			PartyManager.leaveParty(leaderRef);
-			leaderData.getStatus().setFusionPartnerUUID(null);
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
+
+			clearFusionState(leaderData);
+
+			if (leaderRef != null) {
+				if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
+				PartyManager.endFusionParty(leaderRef);
+				refreshNames(leaderRef);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
+			}
 		}
 
-		if (partnerRef != null && partnerData != null) {
-			partnerData.getStatus().setFused(false);
-			partnerData.getStatus().setFusionLeader(false);
-			partnerData.getStatus().setFusionPartnerUUID(null);
-			partnerData.getStatus().setFusionTimer(0);
-
+		if (partnerData != null) {
 			if ("METAMORU".equals(partnerData.getStatus().getFusionType())) partnerData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 
-			partnerRef.stopRiding();
-			partnerRef.setGameMode(GameType.SURVIVAL);
-			if (partnerRef.hasEffect(MainEffects.FUSED.get())) partnerRef.removeEffect(MainEffects.FUSED.get());
-			PartyManager.leaveParty(partnerRef);
-			partnerData.getStatus().setFusionPartnerUUID(null);
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
+			clearFusionState(partnerData);
+
+			if (partnerRef != null) {
+				partnerRef.stopRiding();
+				partnerRef.setGameMode(GameType.SURVIVAL);
+				if (partnerRef.hasEffect(MainEffects.FUSED.get())) partnerRef.removeEffect(MainEffects.FUSED.get());
+				PartyManager.endFusionParty(partnerRef);
+				refreshNames(partnerRef);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
+			}
 		}
+	}
+
+	private static void clearFusionState(StatsData data) {
+		data.getStatus().setFused(false);
+		data.getStatus().setFusionLeader(false);
+		data.getStatus().setFusionPartnerUUID(null);
+		data.getStatus().setFusionTimer(0);
+		data.getStatus().setFusionName("");
+		data.getStatus().setFusionType("");
+		data.getStatus().setOriginalAppearance(new CompoundTag());
 	}
 
 	private static void calculateAndApplyStats(StatsData l, StatsData p, String type, int lvl1, int lvl2) {
@@ -202,7 +227,7 @@ public class FusionLogic {
 
 		for (String stat : statsToBoost) {
 			int partnerStatValue = getStatValue(p, stat);
-			l.getBonusStats().addBonus(stat, "FusionBonus", "+", partnerStatValue * finalMult);
+			l.getBonusStats().addBonusSplit(stat, "FusionBonus", "+", partnerStatValue * finalMult, true);
 		}
 	}
 
@@ -216,6 +241,36 @@ public class FusionLogic {
 			case "ENE" -> data.getStats().getEnergy();
 			default -> 0;
 		};
+	}
+
+	private static void refreshNames(ServerPlayer player) {
+		if (player == null) return;
+		player.refreshDisplayName();
+		player.refreshTabListName();
+	}
+
+	private static String buildFusionName(String leaderName, String partnerName, String type) {
+		if (leaderName == null || leaderName.isEmpty()) return partnerName;
+		if (partnerName == null || partnerName.isEmpty()) return leaderName;
+
+		int cmp = Character.toLowerCase(leaderName.charAt(0)) - Character.toLowerCase(partnerName.charAt(0));
+		if (cmp == 0) cmp = leaderName.compareToIgnoreCase(partnerName);
+		String alphaFirst = cmp <= 0 ? leaderName : partnerName;
+		String alphaSecond = cmp <= 0 ? partnerName : leaderName;
+
+		String first;
+		String second;
+		if ("POTHALA".equals(type)) {
+			first = alphaSecond;
+			second = alphaFirst;
+		} else {
+			first = alphaFirst;
+			second = alphaSecond;
+		}
+
+		String head = first.substring(0, (first.length() + 1) / 2);
+		String tail = second.substring((second.length() + 1) / 2);
+		return head + tail;
 	}
 
 	private static void mixAppearance(StatsData l, StatsData p) {
@@ -243,12 +298,18 @@ public class FusionLogic {
 		} catch (Exception e) { return c1; }
 	}
 
-	private static int getPlayerPowerLevel(StatsData data) {
-		return data.getStats().getTotalStats();
-	}
+	private static void damageEarring(ServerPlayer player) {
+		CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
+			var handler = inv.getCurios().get("head_tech");
+			if (handler != null) {
+				ItemStack stack = handler.getStacks().getStackInSlot(0);
 
-	private static void removeEarring(ServerPlayer player) {
-		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (head.getItem().getDescriptionId().contains("pothala")) player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+				if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {
+					stack.hurtAndBreak(1, player, (entity) -> {});
+
+					if (stack.isEmpty()) handler.getStacks().setStackInSlot(0, ItemStack.EMPTY);
+				}
+			}
+		});
 	}
 }

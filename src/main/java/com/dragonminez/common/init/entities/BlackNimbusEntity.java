@@ -3,6 +3,8 @@ package com.dragonminez.common.init.entities;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -29,6 +31,13 @@ import software.bernie.geckolib.core.object.PlayState;
 public class BlackNimbusEntity extends Mob implements GeoEntity {
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+
+    private static final int BOOST_DURATION = 45;
+    private static final double BOOST_INITIAL = 7.2D;
+    private static final double BOOST_SUSTAIN = 0.65D;
+    private int boostTicks = 0;
+    private double boostStrength = 0.0D;
+    private boolean boostKeyWasDown = false;
 
     public BlackNimbusEntity(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -76,6 +85,53 @@ public class BlackNimbusEntity extends Mob implements GeoEntity {
             );
         }
     }
+
+    private void spawnBoostTrail(int colorHex) {
+        Vec3 back = new Vec3(0, 0, 1).yRot((float) -Math.toRadians(this.getYRot())).scale(-1.0D);
+        int count = 18;
+        for (int i = 0; i < count; i++) {
+            double spread = 0.7D;
+            double ox = (this.random.nextDouble() - 0.5D) * spread;
+            double oy = (this.random.nextDouble() - 0.5D) * spread;
+            double oz = (this.random.nextDouble() - 0.5D) * spread;
+            double dist = 0.5D + this.random.nextDouble() * 1.2D;
+
+            double spawnX = this.getX() + back.x * dist + ox;
+            double spawnY = this.getY() + 1.0D + oy;
+            double spawnZ = this.getZ() + back.z * dist + oz;
+
+            this.level().addParticle(
+                    MainParticles.KINTON.get(),
+                    spawnX, spawnY, spawnZ,
+                    colorHex, 0, 0
+            );
+        }
+    }
+
+    private void spawnBoostBurst(int colorHex) {
+        Vec3 back = new Vec3(0, 0, 1).yRot((float) -Math.toRadians(this.getYRot())).scale(-1.0D);
+        double centerX = this.getX() + back.x * 0.8D;
+        double centerY = this.getY() + 1.0D;
+        double centerZ = this.getZ() + back.z * 0.8D;
+
+        int count = 60;
+        for (int i = 0; i < count; i++) {
+            double radius = this.random.nextDouble() * 1.6D;
+            double theta = this.random.nextDouble() * Math.PI * 2.0D;
+            double phi = (this.random.nextDouble() - 0.5D) * Math.PI;
+
+            double spawnX = centerX + Math.cos(theta) * Math.cos(phi) * radius;
+            double spawnY = centerY + Math.sin(phi) * radius;
+            double spawnZ = centerZ + Math.sin(theta) * Math.cos(phi) * radius;
+
+            this.level().addParticle(
+                    MainParticles.KINTON.get(),
+                    spawnX, spawnY, spawnZ,
+                    colorHex, 0, 0
+            );
+        }
+    }
+
     @Override
     public void travel(Vec3 pTravelVector) {
         if (this.isAlive()) {
@@ -109,6 +165,37 @@ public class BlackNimbusEntity extends Mob implements GeoEntity {
 
                 if (moveVector.lengthSqr() > 1.0E-7D) {
                     moveVector = moveVector.normalize().scale(speed);
+                }
+
+                // Nitro: gestión del impulso temporal (cliente, igual que el control vertical)
+                if (this.level().isClientSide) {
+                    boolean keyDown = KeyBinds.DASH_KEY.isDown();
+                    if (keyDown && !this.boostKeyWasDown && this.boostTicks <= 0) {
+                        this.boostTicks = BOOST_DURATION;
+                        this.boostStrength = BOOST_INITIAL;
+                        spawnBoostBurst(0x272d67); // estallido de explosión al acelerar
+                    }
+                    this.boostKeyWasDown = keyDown;
+
+                    if (this.boostTicks > 0) {
+                        this.boostTicks--;
+                        // El empujón brusco decae rápido hacia una velocidad sostenida
+                        this.boostStrength = BOOST_SUSTAIN + (this.boostStrength - BOOST_SUSTAIN) * 0.80D;
+                    } else if (this.boostStrength > 0.01D) {
+                        // Desaceleración fluida de vuelta a la velocidad normal
+                        this.boostStrength *= 0.88D;
+                        if (this.boostStrength < 0.01D) this.boostStrength = 0.0D;
+                    }
+
+                    if (this.boostStrength > 0.05D) {
+                        spawnBoostTrail(0x272d67);
+                    }
+                }
+
+                // Empuje hacia adelante mientras el nitro está activo
+                if (this.boostStrength > 0.01D) {
+                    Vec3 forward = new Vec3(0, 0, 1).yRot((float) -Math.toRadians(this.getYRot()));
+                    moveVector = moveVector.add(forward.scale(this.boostStrength));
                 }
 
                 this.setDeltaMovement(moveVector.x, verticalSpeed, moveVector.z);
@@ -150,6 +237,14 @@ public class BlackNimbusEntity extends Mob implements GeoEntity {
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!this.level().isClientSide) {
+            int alignment = StatsProvider.get(StatsCapability.INSTANCE, player)
+                    .map(data -> data.getResources().getAlignment())
+                    .orElse(100);
+            if (alignment >= 67) {
+                player.displayClientMessage(
+                        net.minecraft.network.chat.Component.translatable("message.dragonminez.black_nimbus.not_evil"), true);
+                return InteractionResult.SUCCESS;
+            }
             if (!player.isPassenger()) {
                 player.startRiding(this);
             }

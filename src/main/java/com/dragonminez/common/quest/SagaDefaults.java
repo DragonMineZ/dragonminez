@@ -1,0 +1,76 @@
+package com.dragonminez.common.quest;
+
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.common.config.ConfigManager;
+import com.google.gson.*;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/**
+ * Generates the default saga JSON manifest files on first run.
+ * <p>
+ * Saga manifests are lightweight files that define saga metadata and reference
+ * a quest folder (e.g. {@code "questFolder": "saga_saiyan"}). The actual quest
+ * definitions live as individual files inside {@code dragonminez/quests/<questFolder>/}.
+ * <p>
+ * Called by {@link QuestRegistry} during saga loading.
+ *
+ * @since 2.1
+ */
+final class SagaDefaults {
+
+	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
+	private SagaDefaults() {} // utility class
+
+	/**
+	 * Creates default saga manifest files if enabled in config and the files don't exist yet.
+	 */
+	static void createDefaultSagaFiles(Path sagaDir) {
+		if (!ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled()) return;
+		if (!ConfigManager.getServerConfig().getGameplay().getCreateDefaultSagas()) return;
+
+		writeSagaManifest(sagaDir, "saiyan_saga.json", "saiyan_saga", "dmz.saga.saiyan_saga", "", "saga_saiyan");
+		writeSagaManifest(sagaDir, "frieza_saga.json", "frieza_saga", "dmz.saga.frieza_saga", "saiyan_saga", "saga_frieza");
+		writeSagaManifest(sagaDir, "android_saga.json", "android_saga", "dmz.saga.android_saga", "frieza_saga", "saga_android");
+		writeSagaManifest(sagaDir, "future_saga.json", "future_saga", "dmz.saga.future_saga", "android_saga", "saga_future");
+		writeSagaManifest(sagaDir, "buu_saga.json", "buu_saga", "dmz.saga.buu_saga", "android_saga", "saga_buu");
+		writeSagaManifest(sagaDir, "movies_saga.json", "movies_saga", "dmz.saga.movies_saga", "buu_saga", "saga_movies");
+	}
+
+	/**
+	 * Writes a single saga manifest JSON file if it doesn't exist.
+	 */
+	private static void writeSagaManifest(Path sagaDir, String filename, String sagaId, String name, String previousSaga, String questFolder) {
+		Path file = sagaDir.resolve(filename);
+
+		// If file exists, skip
+		if (Files.exists(file)) return;
+
+		try {
+			Files.createDirectories(sagaDir);
+			try (Writer w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+				JsonObject root = new JsonObject();
+				root.addProperty("id", sagaId);
+				root.addProperty("name", name);
+
+				JsonObject req = new JsonObject();
+				req.addProperty("previousSaga", previousSaga);
+				root.add("requirements", req);
+
+				root.addProperty("questFolder", questFolder);
+
+				GSON.toJson(root, w);
+			}
+			LogUtil.info(Env.COMMON, "Created saga manifest: {}", filename);
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Failed to create saga manifest: {}", filename, e);
+		}
+	}
+
+}

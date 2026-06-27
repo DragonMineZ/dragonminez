@@ -110,7 +110,8 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 
 		if (isBurning) {
 			--burnTime;
-			if (burnTime % 4 == 0) {
+			// Triple generation speed (not amount): +1 on 3 of every 4 ticks instead of 1 of every 4.
+			if (burnTime % 4 != 0) {
 				int current = energyStorage.getEnergyStored();
 				int max = energyStorage.getMaxEnergyStored();
 				energyStorage.setEnergy(Math.min(current + 1, max));

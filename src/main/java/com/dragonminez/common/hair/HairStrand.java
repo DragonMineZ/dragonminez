@@ -1,5 +1,6 @@
 package com.dragonminez.common.hair;
 
+import com.dragonminez.client.util.ColorUtils;
 import net.minecraft.nbt.CompoundTag;
 
 public class HairStrand {
@@ -22,6 +23,7 @@ public class HairStrand {
     private float cubeDepth = 2.0f;
 
     private String color = null;
+    private transient float[] rgbColor;
 
     private float curveX = 0.0f;
     private float curveY = 0.0f;
@@ -104,9 +106,17 @@ public class HairStrand {
 
     public String getColor() { return color; }
     public boolean hasCustomColor() { return color != null && !color.isEmpty(); }
-    
+
+    public float[] getRgbColor() {
+        if (rgbColor == null) {
+            rgbColor = ColorUtils.hexToRgb(hasCustomColor() ? color : "#FFFFFF");
+        }
+        return rgbColor;
+    }
+
     public void setColor(String color) {
         this.color = color;
+        this.rgbColor = hasCustomColor() ? ColorUtils.hexToRgb(color) : null;
     }
 
     public int getId() { return id; }
@@ -166,8 +176,8 @@ public class HairStrand {
         this.curveY = tag.contains("cy") ? tag.getFloat("cy") : tag.getFloat("CurveY");
         this.curveZ = tag.contains("cz") ? tag.getFloat("cz") : tag.getFloat("CurveZ");
 
-		this.color = tag.contains("c") ? tag.getString("c") :
-                    (tag.contains("Color") ? tag.getString("Color") : null);
+		setColor(tag.contains("c") ? tag.getString("c") :
+                    (tag.contains("Color") ? tag.getString("Color") : null));
     }
     
     public HairStrand copy() {
@@ -187,6 +197,7 @@ public class HairStrand {
         copy.curveY = this.curveY;
         copy.curveZ = this.curveZ;
         copy.color = this.color;
+        copy.rgbColor = this.rgbColor != null ? this.rgbColor.clone() : null;
         return copy;
     }
 }

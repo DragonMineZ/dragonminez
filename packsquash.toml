@@ -1,0 +1,34 @@
+# PackSquash optimization profile for DragonMineZ bundled resources.
+# https://github.com/ComunidadAylas/PackSquash
+
+validate_pack_metadata_file = false
+automatic_minecraft_quirks_detection = false
+automatic_asset_types_mask_detection = false
+
+# Maximum-effort packing for the intermediate zip
+zip_compression_iterations = 20
+
+never_store_squash_times = true
+zip_spec_conformance_level = 'pedantic'
+
+# ---- Images: lossless ----
+['**/*.png']
+color_quantization_target = 'none'
+image_data_compression_iterations = 10
+skip_alpha_optimizations = false
+
+# ---- Audio: keep PackSquash transcode defaults (CQF 0.25) ----
+['**/*.ogg']
+transcode_ogg = true
+two_pass_vorbis_optimization_and_validation = true
+
+# ---- JSON / mcmeta: minify only, never reorder or strip keys ----
+['**/*.json']
+minify_json = true
+delete_bloat_keys = false
+sort_json_object_keys = false
+
+['**/*.mcmeta']
+minify_json = true
+delete_bloat_keys = false
+sort_json_object_keys = false

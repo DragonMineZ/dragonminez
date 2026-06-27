@@ -3,59 +3,48 @@ package com.dragonminez.common.init.block.entity;
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.block.custom.DragonBallType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.RenderUtils;
 
 public class DragonBallBlockEntity extends BlockEntity implements GeoBlockEntity {
+	private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
+	private final DragonBallType ballType;
+	private final String ballSetId;
 
-    private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
-    private final DragonBallType ballType;
-    private final boolean isNamekian;
+	public DragonBallBlockEntity(BlockPos pos, BlockState state, DragonBallType ballType, String ballSetId) {
+		super(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), pos, state);
+		this.ballType = ballType;
+		this.ballSetId = ballSetId;
+	}
 
-    public DragonBallBlockEntity(BlockPos pPos, BlockState pBlockState, DragonBallType ballType, boolean isNamekian) {
-        super(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), pPos, pBlockState);
-        this.ballType = ballType;
-        this.isNamekian = isNamekian;
-    }
+	public DragonBallType getBallType() {
+		return ballType;
+	}
 
-    public DragonBallType getBallType() {
-        return ballType;
-    }
+	public String getBallSetId() {
+		return ballSetId;
+	}
 
-    public boolean isNamekian() {
-        return isNamekian;
-    }
+	public boolean isNamekian() {
+		return "namek".equals(ballSetId);
+	}
 
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
-        controllerRegistrar.add(new AnimationController<>(this, "controller", 0, this::predicate));
-    }
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return cache;
+	}
 
-    private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> tAnimationState) {
-        String animationName = getAnimationName();
-        tAnimationState.getController().setAnimation(RawAnimation.begin().then(animationName, Animation.LoopType.LOOP));
-        return PlayState.CONTINUE;
-    }
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
+	}
 
-    private String getAnimationName() {
-        return "animation.dball1.idle";
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return cache;
-    }
-
-    @Override
-    public double getTick(Object blockEntity) {
-        return RenderUtils.getCurrentTick();
-    }
+	@Override
+	public double getTick(Object blockEntity) {
+		return RenderUtils.getCurrentTick();
+	}
 }
-

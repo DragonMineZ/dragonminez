@@ -1,13 +1,21 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.server.events.players.TickHandler;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.network.S2C.SyncSagasS2C;
+import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
-import com.dragonminez.common.quest.QuestData;
-import com.dragonminez.common.quest.SagaManager;
+import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.world.structure.helper.QuestStructureHints;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -20,6 +28,10 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class StatsCapability {
@@ -40,9 +52,7 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
 		if (event.getObject() instanceof Player player) {
-			if (!player.getCapability(INSTANCE).isPresent()) {
-				event.addCapability(StatsProvider.ID, new StatsProvider(player));
-			}
+			if (!player.getCapability(INSTANCE).isPresent()) event.addCapability(StatsProvider.ID, new StatsProvider(player));
 		}
 	}
 
@@ -52,16 +62,14 @@ public class StatsCapability {
 		Player original = event.getOriginal();
 		original.reviveCaps();
 
+		TickHandler.registerForceKillGrace(player.getUUID());
 		StatsProvider.get(INSTANCE, player).ifPresent(newData -> {
 			StatsProvider.get(INSTANCE, original).ifPresent(oldData -> {
 				newData.copyFrom(oldData);
 
 				if (player.level().isClientSide) {
-					if (oldData.getStatus().isHasCreatedCharacter()) {
-						CLIENT_CACHE = oldData;
-					} else if (CLIENT_CACHE != null) {
-						newData.copyFrom(CLIENT_CACHE);
-					}
+					if (oldData.getStatus().isHasCreatedCharacter()) CLIENT_CACHE = oldData;
+					else if (CLIENT_CACHE != null) newData.copyFrom(CLIENT_CACHE);
 				}
 			});
 		});
@@ -72,25 +80,40 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-			NetworkHandler.sendToPlayer(
-					new SyncServerConfigS2C(
-							ConfigManager.getServerConfig(),
-							ConfigManager.getSkillsConfig(),
-							ConfigManager.getAllForms(),
-							ConfigManager.getAllRaceStats(),
-							ConfigManager.getAllRaceCharacters(),
-							ConfigManager.getAllStackForms()
-					), serverPlayer
-			);
-			NetworkHandler.sendToPlayer(
-					new SyncSagasS2C(
-							SagaManager.getAllSagas()
-					), serverPlayer
-			);
+			List<String> availableConfigs = ConfigManager.getAvailableConfigFiles();
+			for (String file : availableConfigs) {
+				String jsonPayload = ConfigManager.getSpecificConfigJson(file);
+				if (jsonPayload == null || jsonPayload.isBlank()) continue;
+				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload), serverPlayer);
+			}
+			NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), serverPlayer);
+
+			MinecraftServer server = serverPlayer.getServer();
+			if (server != null && !QuestStructureHints.isResolved()) {
+				UUID playerId = serverPlayer.getUUID();
+				QuestStructureHints.ensureResolvedAsync(server).thenRun(() -> server.execute(() -> {
+					ServerPlayer online = server.getPlayerList().getPlayer(playerId);
+					if (online != null) NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), online);
+				}));
+			}
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-				QuestData questData = data.getQuestData();
-				if (!questData.isSagaUnlocked("saiyan_saga")) questData.unlockSaga("saiyan_saga");
+				markCurrentDimensionVisited(serverPlayer, data);
+				PlayerQuestData questData = data.getPlayerQuestData();
+				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
+				TransformationsHelper.ensureSelectedFormDefault(data);
+				TransformationsHelper.ensureSelectedStackFormDefault(data);
+
+				data.getStatus().setStrikeLocked(false);
+				data.getStatus().setStunEffect(false);
+				data.getStatus().setKnockedDown(false);
+				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+
+				Map<String, String> repairedSkills = data.getSkills().repairSkillNames();
+				if (!repairedSkills.isEmpty()) {
+					repairedSkills.forEach((oldName, newName) -> LogUtil.info(Env.SERVER, "Repaired skill for {}: '{}' -> '{}'", serverPlayer.getGameProfile().getName(), oldName, newName));
+				}
+				data.getSkills().setSkillActive("kisense", false);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -108,10 +131,13 @@ public class StatsCapability {
 	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-				serverPlayer.setHealth(serverPlayer.getMaxHealth());
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
 				data.getResources().setCurrentStamina(data.getMaxStamina());
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				data.getStatus().setStrikeLocked(false);
+				data.getStatus().setStunEffect(false);
+				data.getStatus().setKnockedDown(false);
+				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
 	}
@@ -119,7 +145,21 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer));
+			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
+				markCurrentDimensionVisited(serverPlayer, data);
+				data.getSkills().setSkillActive("kisense", false);
+
+				data.getStatus().setStrikeLocked(false);
+				data.getStatus().setStunEffect(false);
+				data.getStatus().setKnockedDown(false);
+				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			});
 		}
+	}
+
+	private static void markCurrentDimensionVisited(ServerPlayer player, StatsData data) {
+		data.getStatus().markVisitedDimension(player.serverLevel().dimension().location().toString());
 	}
 }

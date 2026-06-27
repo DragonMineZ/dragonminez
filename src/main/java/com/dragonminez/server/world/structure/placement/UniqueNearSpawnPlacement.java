@@ -30,6 +30,11 @@ public class UniqueNearSpawnPlacement extends StructurePlacement {
                                    float frequency, int salt, Optional<ExclusionZone> exclusionZone, Rotation rotation) {
         super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
         this.rotation = rotation;
+        StructureSpawnPlanner.registerReservation(this);
+    }
+
+    public int placementSalt() {
+        return this.salt();
     }
 
     public UniqueNearSpawnPlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod,
@@ -51,8 +56,8 @@ public class UniqueNearSpawnPlacement extends StructurePlacement {
 	public ChunkPos getStructureChunk(long worldSeed) {
 		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + this.salt()));
 
-		int targetChunkX = random.nextInt(50) - 25;
-		int targetChunkZ = random.nextInt(50) - 25;
+		int targetChunkX = random.nextInt(100) - 50;
+		int targetChunkZ = random.nextInt(100) - 50;
 
 		return new ChunkPos(targetChunkX, targetChunkZ);
 	}

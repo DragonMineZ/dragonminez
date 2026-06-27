@@ -1,9 +1,11 @@
 package com.dragonminez.server.events.players.statuseffect;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -56,14 +58,19 @@ public class FlyStatusHandler implements IStatusEffectHandler {
         if (player.isCreative() || player.isSpectator()) return;
 
         int flyLevel = data.getSkills().getSkillLevel("fly");
-        if (flyLevel >= data.getSkills().getMaxSkillLevel("fly")) return;
-        int maxEnergy = data.getMaxEnergy();
+        float baseCost  = (float) ConfigManager.getCombatConfig().getBaselineFormDrain() / 4;
 
-        double basePercent = player.isSprinting() ? 0.08 : 0.03;
+        double basePercent = 0.03;
         double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.005));
-        int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
+        energyCostPercent *= getFlyCostMultiplier(flyLevel);
+        boolean isSprintFlight = player.isSprinting() && player.getDeltaMovement().length() > 0.65F;
+        if (isSprintFlight) energyCostPercent *= 2.0;
+        if (data.getStatus().getFlightMode() == Status.FLIGHT_COMBAT) {
+            energyCostPercent *= ConfigManager.getCombatConfig().getCombatFlyDrainMultiplier();
+        }
+        int energyCost = (int) Math.ceil(baseCost * energyCostPercent);
 
-        int currentEnergy = data.getResources().getCurrentEnergy();
+        float currentEnergy = data.getResources().getCurrentEnergy();
 
         if (currentEnergy >= energyCost) {
             data.getResources().removeEnergy(energyCost);
@@ -74,7 +81,13 @@ public class FlyStatusHandler implements IStatusEffectHandler {
                 player.getAbilities().flying = false;
                 player.onUpdateAbilities();
             }
-            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
         }
+    }
+
+    private static float getFlyCostMultiplier(int flyLevel) {
+        int clampedLevel = Mth.clamp(flyLevel, 1, 10);
+        float t = (clampedLevel - 1) / (float) (10 - 1);
+        return Mth.lerp(t, 4.0F, 1.0F);
     }
 }

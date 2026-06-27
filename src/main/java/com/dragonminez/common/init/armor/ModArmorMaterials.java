@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.armor;
 
 import com.dragonminez.common.init.MainItems;
+import lombok.Getter;
 import net.minecraft.Util;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -12,6 +13,7 @@ import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
+import org.jspecify.annotations.NonNull;
 
 import java.util.EnumMap;
 import java.util.function.Supplier;
@@ -41,12 +43,16 @@ public enum ModArmorMaterials implements ArmorMaterial {
 		p_266653_.put(ArmorItem.Type.CHESTPLATE, 32);
 		p_266653_.put(ArmorItem.Type.HELMET, 22);
 	});
+	@Getter
 	private final String name;
 	private final int durabilityMultiplier;
 	private final EnumMap<ArmorItem.Type, Integer> protectionFunctionForType;
+	@Getter
 	private final int enchantmentValue;
 	private final SoundEvent sound;
+	@Getter
 	private final float toughness;
+	@Getter
 	private final float knockbackResistance;
 	private final LazyLoadedValue<Ingredient> repairIngredient;
 
@@ -69,28 +75,12 @@ public enum ModArmorMaterials implements ArmorMaterial {
 		return (Integer) this.protectionFunctionForType.get(pType);
 	}
 
-	public int getEnchantmentValue() {
-		return this.enchantmentValue;
-	}
-
 	public SoundEvent getEquipSound() {
 		return this.sound;
 	}
 
 	public Ingredient getRepairIngredient() {
 		return (Ingredient) this.repairIngredient.get();
-	}
-
-	public String getName() {
-		return this.name;
-	}
-
-	public float getToughness() {
-		return this.toughness;
-	}
-
-	public float getKnockbackResistance() {
-		return this.knockbackResistance;
 	}
 
 	public String getSerializedName() {

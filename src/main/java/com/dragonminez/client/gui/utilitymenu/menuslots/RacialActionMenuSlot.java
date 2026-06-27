@@ -7,7 +7,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ExecuteActionC2S;
 import com.dragonminez.common.network.C2S.SwitchActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.ActionMode;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -23,7 +23,7 @@ public class RacialActionMenuSlot extends AbstractMenuSlot implements IUtilityMe
 		String form = statsData.getCharacter().getActiveForm();
 		String racialSkill = ConfigManager.getRaceCharacter(race) == null ? "" : ConfigManager.getRaceCharacter(race).getRacialSkill();
 
-		if ("saiyan".equals(race) && (statsData.getCharacter().isHasSaiyanTail() || (form != null && form.contains("oozaru")))) {
+		if ("saiyan".equals(race) || (statsData.getCharacter().isHasSaiyanTail() || (form != null && form.contains("oozaru")))) {
 			return new ButtonInfo(
 					Component.translatable("gui.action.dragonminez.tail").withStyle(ChatFormatting.BOLD),
 					Component.translatable("gui.action.dragonminez." + (statsData.getStatus().isTailVisible())),

@@ -1,14 +1,21 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.particles.KiTrailParticle;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -21,6 +28,17 @@ import java.util.List;
 public class KiBarrierEntity extends AbstractKiProjectile {
 
     private static final EntityDataAccessor<Float> CURRENT_SIZE = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
+
+    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> FIRE_TICK = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> SHIELD_HOST = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float> BARRIER_HP = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> BARRIER_MAX_HP = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
+
+    private static final float CONTACT_DAMAGE_RATIO = 0.1F;
+    private static final float HEAL_EXPIRE_RATIO = 0.5F;
+    private static final int HEAL_BUFF_INTERVAL = 20;
 
     private static final int GROW_DURATION = 25;
     private static final int MAX_LIFESPAN = 100;
@@ -30,6 +48,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
         this.noPhysics = true;
+        this.setKiType(KiType.SHIELD);
     }
 
     public KiBarrierEntity(Level level, LivingEntity owner) {
@@ -38,81 +57,253 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         this.setNoGravity(true);
         this.noPhysics = true;
 
-        this.setPos(owner.getX(), owner.getY(), owner.getZ());
+        this.centerOnOwner();
 
-        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
-                MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+//        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+//                MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+    }
+
+    public void setupKiBarrier(LivingEntity owner, int color, int colorBorder, int colorOutline, int castTime) {
+        this.setColors(color, colorBorder, colorOutline);
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime + 100);
+        this.setSize(2.0f);
+        this.setFiring(false);
+        this.setFireTick(-1);
+        if (!this.level().isClientSide) this.level().addFreshEntity(this);
+    }
+
+    public void setupKiBarrier(LivingEntity owner, int color, int colorBorder, int castTime) {
+        this.setupKiBarrier(owner, color, colorBorder, 0xFFFFFF, castTime);
+    }
+
+    // SETUP PLAYERS
+    public void setupBarrierPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder, int colorOutline) {
+        this.setup(owner, damage, size, 0.0f, colorMain, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setFireTick(-1);
+        this.setMaxLife(99999);
+        this.setCastTime(40);
+        
+    }
+
+    public void setupBarrierPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
+        this.setupBarrierPlayer(owner, damage, size, colorMain, colorBorder, 0xFFFFFF);
+    }
+
+    public void fireHability(int finalMaxLife) {
+        this.setFiring(true);
+        this.setFireTick(this.tickCount);
+        this.setMaxLife(this.tickCount + finalMaxLife);
+
+        float hp = Math.max(1.0F, this.getKiDamage());
+        this.setBarrierMaxHp(hp);
+        this.setBarrierHp(hp);
+
+        if (!this.level().isClientSide) {
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.2F);
+        }
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
+    }
+
+    @Override
+    public int getMaxHits() {
+        return Math.max(1, this.firingWindowTicks() / 20);
     }
 
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CURRENT_SIZE, 0.1F);
+        this.entityData.define(CAST_TIME, 0);
+        this.entityData.define(IS_FIRING, false);
+        this.entityData.define(FIRE_TICK, -1);
+        this.entityData.define(SHIELD_HOST, -1);
+        this.entityData.define(BARRIER_HP, 0.0F);
+        this.entityData.define(BARRIER_MAX_HP, 0.0F);
+    }
+
+    public void setBarrierMaxHp(float hp) { this.entityData.set(BARRIER_MAX_HP, Math.max(0.0F, hp)); }
+    public float getBarrierMaxHp() { return this.entityData.get(BARRIER_MAX_HP); }
+    public void setBarrierHp(float hp) { this.entityData.set(BARRIER_HP, Math.max(0.0F, hp)); }
+    public float getBarrierHp() { return this.entityData.get(BARRIER_HP); }
+
+    public boolean isActive() {
+        return this.isFiring() && this.getBarrierHp() > 0.0F;
+    }
+
+    public boolean protects(Entity entity) {
+        LivingEntity anchor = this.getAnchor();
+        return anchor != null && anchor.is(entity);
+    }
+
+    public void absorbDamage(float amount, Entity attacker) {
+        if (this.level().isClientSide || !this.isFiring() || amount <= 0.0F) return;
+
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
+
+        float remaining = this.getBarrierHp() - amount;
+        if (remaining <= 0.0F) {
+            this.setBarrierHp(0.0F);
+            this.breakBarrier(attacker);
+        } else {
+            this.setBarrierHp(remaining);
+        }
+    }
+
+    private void breakBarrier(Entity breaker) {
+        if (!this.isHeal() && breaker != null) {
+            this.applyTechniqueSecondaryEffect(breaker);
+        }
+        this.playEndEffects(1.4F);
+        this.discard();
+    }
+
+    private void expireBarrier() {
+        if (this.isHeal()) {
+            LivingEntity anchor = this.getAnchor();
+            if (anchor != null && anchor.isAlive()) {
+                float healAmount = this.getBarrierHp() * HEAL_EXPIRE_RATIO;
+                if (healAmount > 0.0F) anchor.heal(healAmount);
+            }
+        }
+        this.playEndEffects(0.9F);
+        this.discard();
+    }
+
+    private void playEndEffects(float pitch) {
+        if (this.level().isClientSide) return;
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.PLAYERS, 1.0F, pitch);
+    }
+
+    public void setShieldHost(int id) { this.entityData.set(SHIELD_HOST, id); }
+    public int getShieldHost() { return this.entityData.get(SHIELD_HOST); }
+
+    private LivingEntity getAnchor() {
+        int hostId = this.getShieldHost();
+        if (hostId >= 0) {
+            if (this.level() instanceof ServerLevel sl && sl.getEntity(hostId) instanceof LivingEntity host && host.isAlive()) {
+                return host;
+            }
+            return null;
+        }
+        return this.getOwner() instanceof LivingEntity owner ? owner : null;
+    }
+
+    private void centerOn(LivingEntity anchor) {
+        double bodyCenterY = anchor.getY() + (anchor.getBbHeight() / 2.0D);
+        this.setPos(anchor.getX(), bodyCenterY - (this.getBbHeight() * 0.5D), anchor.getZ());
     }
 
     public float getCurrentSize() {
         return this.entityData.get(CURRENT_SIZE);
     }
-
     public void setCurrentSize(float size) {
         this.entityData.set(CURRENT_SIZE, size);
+    }
+    public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }
+    public int getCastTime() { return this.entityData.get(CAST_TIME); }
+    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
+    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
+    public int getFireTick() { return this.entityData.get(FIRE_TICK); }
+    public void setFireTick(int tick) { this.entityData.set(FIRE_TICK, tick); }
+
+
+    private void centerOnOwner() {
+        if (this.getOwner() instanceof LivingEntity owner) {
+            double bodyCenterY = owner.getY() + (owner.getBbHeight() / 2.0D);
+
+            this.setPos(owner.getX(), bodyCenterY - (this.getBbHeight() * 0.5D), owner.getZ());
+        }
     }
 
     @Override
     public void tick() {
         this.baseTick();
 
-        Entity owner = this.getOwner();
+        // AUTO-DISPARO NPCs
+        if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
+            this.fireHability(this.getMaxLife() - this.tickCount);
+        }
 
-        if (owner != null && owner.isAlive()) {
-            double ownerCenterY = owner.getY() + owner.getBbHeight() * 0.5D;
-
-            double barrierHalfHeight = this.getBbHeight() * 0.5D;
-
-            this.setPos(owner.getX(), ownerCenterY - barrierHalfHeight, owner.getZ());
-
+        LivingEntity anchor = getAnchor();
+        boolean hostMode = this.getShieldHost() >= 0;
+        if (anchor != null && anchor.isAlive()) {
+            centerOn(anchor);
+            this.setDeltaMovement(0, 0, 0);
+        } else if (hostMode && this.level().isClientSide) {
             this.setDeltaMovement(0, 0, 0);
         } else {
             if (!this.level().isClientSide) this.discard();
             return;
         }
 
-        if (!this.level().isClientSide) {
-            if (this.tickCount <= GROW_DURATION) {
-                float progress = (float) this.tickCount / (float) GROW_DURATION;
-                float newSize = 0.1F + (MAX_SIZE * progress);
-
-                this.setCurrentSize(newSize);
-                this.setSize(newSize);
-                this.refreshDimensions();
-            }
-        } else {
-            this.refreshDimensions();
-        }
+        boolean isFiring = this.isFiring();
 
         if (!this.level().isClientSide) {
-            pushEntitiesAway();
-        } else {
-            spawnBarrierParticles();
+            if (!isFiring) {
+                this.setCurrentSize(0.1F);
+            } else {
+                int activeTicks = this.tickCount - this.getFireTick();
+                float maxSize = this.getSize();
+                float progress = (float) activeTicks / 10.0F;
+                float size = Math.min(maxSize, 1.0F + (maxSize * progress));
+                this.setCurrentSize(size);
+
+                breakIncomingProjectiles();
+
+                if (this.isHeal()) {
+                    if (this.tickCount % HEAL_BUFF_INTERVAL == 0) {
+                        LivingEntity target = getAnchor();
+                        if (target != null) this.applyTechniqueSecondaryEffect(target);
+                    }
+                } else {
+                    pushEntitiesAway();
+                }
+            }
         }
 
-        if (this.tickCount >= MAX_LIFESPAN) {
-            if (!this.level().isClientSide) {
-                this.discard();
+        if (this.level().isClientSide) {
+            if (!isFiring) {
+                spawnAbsorptionParticles();
+            } else {
+                spawnBarrierParticles();
             }
+        }
+
+        if (this.tickCount >= this.getMaxLife()) {
+            if (!this.level().isClientSide) this.expireBarrier();
+        }
+    }
+
+    private void breakIncomingProjectiles() {
+        AABB area = this.getBoundingBox().inflate(0.3D);
+
+        for (Entity target : this.level().getEntities(this, area)) {
+            if (!(target instanceof Projectile projectile)) continue;
+            if (projectile instanceof AbstractKiProjectile) continue;
+            if (projectile.getOwner() != null && projectile.getOwner().is(this.getOwner())) continue;
+
+            projectile.remove(RemovalReason.DISCARDED);
         }
     }
 
     private void pushEntitiesAway() {
-        float radius = this.getCurrentSize() * 0.8F;
         AABB area = this.getBoundingBox().inflate(0.3D);
 
         List<Entity> targets = this.level().getEntities(this, area);
+        LivingEntity shieldedAnchor = getAnchor();
+        Entity shielded = shieldedAnchor != null ? shieldedAnchor : this.getOwner();
+        float contactDamage = this.getBarrierMaxHp() * CONTACT_DAMAGE_RATIO;
 
         for (Entity target : targets) {
+            if (shielded != null && target.is(shielded)) continue;
             if (target.is(this.getOwner())) continue;
-
-            if (!(target instanceof LivingEntity) && !(target instanceof Projectile)) continue;
+            if (!(target instanceof LivingEntity living)) continue;
 
             double dx = target.getX() - this.getX();
             double dz = target.getZ() - this.getZ();
@@ -123,8 +314,9 @@ public class KiBarrierEntity extends AbstractKiProjectile {
             target.setDeltaMovement(vec);
             target.hasImpulse = true;
 
-            if (target instanceof Projectile) {
-                target.remove(RemovalReason.DISCARDED);
+            if (contactDamage > 0.0F
+                    && living.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), contactDamage)) {
+                this.applyTechniqueSecondaryEffect(living);
             }
         }
     }
@@ -132,26 +324,51 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     private void spawnBarrierParticles() {
         float size = this.getCurrentSize();
         if (size < 0.2F) return;
-
         float[] rgb = ColorUtils.rgbIntToFloat(this.getColor());
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             double theta = this.random.nextDouble() * Math.PI * 2;
             double phi = this.random.nextDouble() * Math.PI;
-
             double r = size / 2.0;
 
-            double x = r * Math.sin(phi) * Math.cos(theta);
-            double y = r * Math.cos(phi);
-            double z = r * Math.sin(phi) * Math.sin(theta);
+            double dx = r * Math.sin(phi) * Math.cos(theta);
+            double dy = r * Math.cos(phi);
+            double dz = r * Math.sin(phi) * Math.sin(theta);
 
-            this.level().addParticle(
+            Particle p = Minecraft.getInstance().particleEngine.createParticle(
                     MainParticles.KI_TRAIL.get(),
-                    this.getX() + x,
-                    this.getY() + (this.getBbHeight() / 2.0) + y,
-                    this.getZ() + z,
-                    rgb[0], rgb[1], rgb[2]
+                    this.getX() + dx, this.getY() + (this.getBbHeight() / 2.0) + dy, this.getZ() + dz,
+                    dx * 0.1D, dy * 0.1D, dz * 0.1D
             );
+
+            if (p instanceof KiTrailParticle trail) {
+                trail.setKiColor(rgb[0], rgb[1], rgb[2]);
+                trail.setKiScale(size * 0.3f);
+            }
+        }
+    }
+
+    private void spawnAbsorptionParticles() {
+        float[] rgb = ColorUtils.rgbIntToFloat(this.getColor());
+        for (int i = 0; i < 3; i++) {
+            double r = 2.5D;
+            double theta = this.random.nextDouble() * Math.PI * 2;
+            double phi = Math.acos(2 * this.random.nextDouble() - 1);
+
+            double dx = r * Math.sin(phi) * Math.cos(theta);
+            double dy = r * Math.sin(phi) * Math.sin(theta);
+            double dz = r * Math.cos(phi);
+
+            Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+                    MainParticles.KI_TRAIL.get(),
+                    this.getX() + dx, this.getY() + (this.getBbHeight() * 0.5) + dy, this.getZ() + dz,
+                    -dx * 0.15, -dy * 0.15, -dz * 0.15
+            );
+
+            if (p instanceof KiTrailParticle trail) {
+                trail.setKiColor(rgb[0], rgb[1], rgb[2]);
+                trail.setKiScale(0.3f);
+            }
         }
     }
 

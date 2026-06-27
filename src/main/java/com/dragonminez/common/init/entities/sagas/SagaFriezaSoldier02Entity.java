@@ -13,7 +13,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaFriezaSoldier02Entity extends DBSagasEntity{
@@ -22,7 +21,7 @@ public class SagaFriezaSoldier02Entity extends DBSagasEntity{
     public SagaFriezaSoldier02Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 
-        this.setFlySpeed(0.35D);
+        this.setCanFly(true);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -32,21 +31,6 @@ public class SagaFriezaSoldier02Entity extends DBSagasEntity{
                 .add(Attributes.ATTACK_DAMAGE, 15.0D)
                 .add(Attributes.FOLLOW_RANGE, 12.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, false, true);
-    }
-
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        super.registerControllers(controllers);
     }
 
 }

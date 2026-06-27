@@ -4,8 +4,8 @@
 	"ambientocclusion": false,
 	"texture_size": [32, 32],
 	"textures": {
-		"0": "dragonminez:item/armas/merus_laser_layer",
-		"particle": "dragonminez:item/armas/merus_laser_layer"
+		"0": "dragonminez:item/weapons/merus_laser_layer",
+		"particle": "dragonminez:item/weapons/merus_laser_layer"
 	},
 	"elements": [
 		{

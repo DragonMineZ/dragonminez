@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.firstperson;
 
 import com.dragonminez.client.render.DMZPlayerRenderer;
+import com.dragonminez.client.render.firstperson.dto.DMZCameraBuffer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -28,8 +29,7 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
     @Override
     protected void applyRotations(T animatable, PoseStack poseStack, float ageInTicks, float rotationYaw, float partialTick) {
         final LocalPlayer localPlayer = Minecraft.getInstance().player;
-
-        if (localPlayer == null || animatable != localPlayer) {
+        if (localPlayer == null || animatable != localPlayer || !FirstPersonManager.shouldRenderFirstPerson(animatable)) {
             super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
             return;
         }
@@ -37,14 +37,18 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
         final Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         final Vec3 playerPos = localPlayer.getPosition(partialTick);
         final Vector3f offset = FirstPersonManager.offsetFirstPersonView(localPlayer);
+        final float BODY_PUSHBACK_Z = 0.25F;
 
+        final Vec3 camShift = DMZCameraBuffer.getFirstPersonShift();
+        final Vector3f modelScale = poseStack.last().pose().getScale(new Vector3f());
+
+        float invX = modelScale.x() != 0F ? 1.0F / modelScale.x() : 1.0F;
+        float invY = modelScale.y() != 0F ? 1.0F / modelScale.y() : 1.0F;
+        float invZ = modelScale.z() != 0F ? 1.0F / modelScale.z() : 1.0F;
+
+        poseStack.translate((playerPos.x - cameraPos.x - camShift.x) * invX, (playerPos.y - cameraPos.y - camShift.y) * invY, (playerPos.z - cameraPos.z - camShift.z) * invZ);
         super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
-
-        poseStack.translate(
-                (playerPos.x + offset.x) - cameraPos.x,
-                (playerPos.y + offset.y) - cameraPos.y,
-                (playerPos.z + offset.z) - cameraPos.z
-        );
+        poseStack.translate(offset.x(), 0.0D, offset.z() + BODY_PUSHBACK_Z);
     }
 
     @Override
@@ -59,20 +63,14 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
         boolean originallyHidden = bone.isHidden();
         boolean isLocalPlayer = (animatable == Minecraft.getInstance().player);
 
-        if (isLocalPlayer && bone.getName().equals("head") && FirstPersonManager.shouldRenderFirstPerson(animatable)) {
-            bone.setHidden(true);
-        }
-
+        if (isLocalPlayer && bone.getName().equals("head") && FirstPersonManager.shouldRenderFirstPerson(animatable)) bone.setHidden(true);
         super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
-
         bone.setHidden(originallyHidden);
     }
 
     @Override
     public boolean shouldRender(@NonNull T pLivingEntity, @NonNull Frustum pCamera, double pCamX, double pCamY, double pCamZ) {
-        if (pLivingEntity == Minecraft.getInstance().player) {
-            return !pLivingEntity.isSleeping();
-        }
+        if (pLivingEntity == Minecraft.getInstance().player) return !pLivingEntity.isSleeping();
         return super.shouldRender(pLivingEntity, pCamera, pCamX, pCamY, pCamZ) && !pLivingEntity.isSleeping();
     }
 }

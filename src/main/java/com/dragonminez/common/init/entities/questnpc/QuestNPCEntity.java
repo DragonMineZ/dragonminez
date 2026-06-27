@@ -1,14 +1,12 @@
 package com.dragonminez.common.init.entities.questnpc;
 
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
-import com.dragonminez.common.quest.sidequest.SideQuest;
-import com.dragonminez.common.quest.sidequest.SideQuestData;
-import com.dragonminez.common.quest.sidequest.SideQuestManager;
-import com.dragonminez.common.quest.sidequest.QuestAvailabilityChecker;
+import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -18,20 +16,18 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 /**
  * A single, generic, data-driven quest NPC entity.
  * Each instance stores an "npcId" (e.g. "bulma", "farmer_01", "young_goku") in synched entity data + NBT.
- * The model, texture, and animation are resolved dynamically from the npcId by QuestNPCModel.
+ * The model, texture, and animation are resolved dynamically by QuestNPCModel.
  * One entity type registration serves ALL quest NPCs — no need for hundreds of Java classes.
  */
 public class QuestNPCEntity extends MastersEntity {
@@ -42,9 +38,66 @@ public class QuestNPCEntity extends MastersEntity {
 	private static final EntityDataAccessor<String> NPC_MODEL =
 			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
 
+	private static final EntityDataAccessor<String> NPC_TEXTURE =
+			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
+
+	/** Squared horizontal distance (in blocks) the NPC may drift from home before it is pulled back. */
+	private static final double HOME_DRIFT_THRESHOLD_SQR = 1.0D;
+
+	private boolean hasHome = false;
+	private double homeX;
+	private double homeZ;
+
 	public QuestNPCEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);
 		this.setPersistenceRequired();
+	}
+
+	// ---- Home anchoring ----
+
+	/**
+	 * Anchors this NPC to a fixed horizontal position. If it ever drifts away (knockback, water/piston
+	 * push, another mod, etc.) it is snapped back to (homeX, homeZ). The Y coordinate is intentionally
+	 * ignored: we keep the NPC's current Y so changes to the blocks underneath it don't fight the anchor.
+	 */
+	public void setHomePosition(double x, double z) {
+		this.homeX = x;
+		this.homeZ = z;
+		this.hasHome = true;
+	}
+
+	public boolean hasHome() {
+		return this.hasHome;
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (this.level().isClientSide || !this.hasHome) {
+			return;
+		}
+
+		double dx = this.getX() - this.homeX;
+		double dz = this.getZ() - this.homeZ;
+		if (dx * dx + dz * dz > HOME_DRIFT_THRESHOLD_SQR) {
+			// Snap back horizontally, keeping current Y (ignore Y per design).
+			this.getNavigation().stop();
+			this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+			this.hasImpulse = true;
+			this.moveTo(this.homeX, this.getY(), this.homeZ, this.getYRot(), this.getXRot());
+		}
+	}
+
+	@Override
+	public boolean hurt(DamageSource source, float amount) {
+		if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC) || source.is(DamageTypes.GENERIC_KILL)) {
+			return super.hurt(source, amount);
+		}
+		if (source.getEntity() instanceof Player player && TargetHelper.getRelation(player, this) == TargetHelper.Relation.HOSTILE) {
+			return super.hurt(source, amount);
+		}
+
+		return false;
 	}
 
 	@Override
@@ -52,6 +105,7 @@ public class QuestNPCEntity extends MastersEntity {
 		super.defineSynchedData();
 		this.entityData.define(NPC_ID, "generic_npc");
 		this.entityData.define(NPC_MODEL, "");
+		this.entityData.define(NPC_TEXTURE, "");
 	}
 
 	// ---- NPC identity ----
@@ -77,6 +131,14 @@ public class QuestNPCEntity extends MastersEntity {
 		this.entityData.set(NPC_MODEL, model != null ? model : "");
 	}
 
+	public String getNpcTexture() {
+		return this.entityData.get(NPC_TEXTURE);
+	}
+
+	public void setNpcTexture(String texture) {
+		this.entityData.set(NPC_TEXTURE, texture != null ? texture : "");
+	}
+
 	/**
 	 * Returns the model key used for geo/animation resolution.
 	 * If a model override is set, use that; otherwise fall back to npcId.
@@ -84,6 +146,11 @@ public class QuestNPCEntity extends MastersEntity {
 	public String getModelKey() {
 		String model = getNpcModel();
 		return (model != null && !model.isEmpty()) ? model : getNpcId();
+	}
+
+	public String getTextureKey() {
+		String texture = getNpcTexture();
+		return (texture != null && !texture.isEmpty()) ? texture : getNpcId();
 	}
 
 	// ---- Display name ----
@@ -108,6 +175,15 @@ public class QuestNPCEntity extends MastersEntity {
 		if (model != null && !model.isEmpty()) {
 			tag.putString("QuestNpcModel", model);
 		}
+		String texture = getNpcTexture();
+		if (texture != null && !texture.isEmpty()) {
+			tag.putString("QuestNpcTexture", texture);
+		}
+		if (this.hasHome) {
+			tag.putBoolean("QuestNpcHasHome", true);
+			tag.putDouble("QuestNpcHomeX", this.homeX);
+			tag.putDouble("QuestNpcHomeZ", this.homeZ);
+		}
 	}
 
 	@Override
@@ -118,6 +194,12 @@ public class QuestNPCEntity extends MastersEntity {
 		}
 		if (tag.contains("QuestNpcModel")) {
 			setNpcModel(tag.getString("QuestNpcModel"));
+		}
+		if (tag.contains("QuestNpcTexture")) {
+			setNpcTexture(tag.getString("QuestNpcTexture"));
+		}
+		if (tag.getBoolean("QuestNpcHasHome")) {
+			setHomePosition(tag.getDouble("QuestNpcHomeX"), tag.getDouble("QuestNpcHomeZ"));
 		}
 	}
 
@@ -134,17 +216,18 @@ public class QuestNPCEntity extends MastersEntity {
 							Component.translatable("gui.dragonminez.lines.generic.createcharacter"), true);
 					return;
 				}
+				Component blocker = NpcDispositionService.getDialogueBlocker(serverPlayer, this);
+				if (blocker != null) {
+					serverPlayer.displayClientMessage(blocker, true);
+					return;
+				}
 
-				// Gather quests this NPC can offer/turn-in
-				List<String> offerableQuestIds = new ArrayList<>();
-				List<String> turnInQuestIds = new ArrayList<>();
-				List<String> inProgressQuestIds = new ArrayList<>();
-
-				collectNPCQuests(npcId, data, offerableQuestIds, turnInQuestIds, inProgressQuestIds);
+				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(npcId, data);
 
 				// Send dialogue packet to client
 				NetworkHandler.sendToPlayer(
-						new OpenQuestNPCDialogueS2C(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds),
+						new OpenQuestNPCDialogueS2C(npcId, options.offerableQuestIds(),
+								options.turnInQuestIds(), options.inProgressQuestIds(), false, getId()),
 						serverPlayer
 				);
 			});
@@ -154,57 +237,5 @@ public class QuestNPCEntity extends MastersEntity {
 
 		return InteractionResult.SUCCESS;
 	}
-
-	/**
-	 * Collects quest IDs relevant to this NPC for the given player.
-	 */
-	private static void collectNPCQuests(String npcId, StatsData data,
-										 List<String> offerable, List<String> turnIn, List<String> inProgress) {
-		SideQuestData sqData = data.getSideQuestData();
-		Map<String, SideQuest> allQuests = SideQuestManager.getAllSideQuests();
-
-		List<String> giverQuestIds = SideQuestManager.getQuestIdsByGiver(npcId);
-
-		// Quests this NPC gives
-		for (String questId : giverQuestIds) {
-			SideQuest quest = allQuests.get(questId);
-			if (quest == null) continue;
-
-			if (sqData.isQuestCompleted(questId)) continue;
-
-			if (sqData.isQuestAccepted(questId)) {
-				inProgress.add(questId);
-			} else if (QuestAvailabilityChecker.isAvailable(quest, data)) {
-				offerable.add(questId);
-			}
-		}
-
-		// Quests where this NPC is the turn-in target
-		List<String> turnInQuestIds = SideQuestManager.getQuestIdsByTurnIn(npcId);
-		for (String questId : turnInQuestIds) {
-			SideQuest quest = allQuests.get(questId);
-			if (quest == null) continue;
-
-			if (!sqData.isQuestAccepted(questId)) continue;
-			if (sqData.isQuestCompleted(questId)) continue;
-
-			// Check if all non-TALK_TO objectives are complete
-			boolean allNonTalkDone = true;
-			for (int i = 0; i < quest.getObjectives().size(); i++) {
-				var obj = quest.getObjectives().get(i);
-				if (obj.getType() == com.dragonminez.common.quest.QuestObjective.ObjectiveType.TALK_TO) continue;
-				int progress = sqData.getObjectiveProgress(questId, i);
-				if (progress < obj.getRequired()) {
-					allNonTalkDone = false;
-					break;
-				}
-			}
-
-			if (allNonTalkDone && !turnIn.contains(questId)) {
-				turnIn.add(questId);
-			}
-		}
-	}
 }
-
 

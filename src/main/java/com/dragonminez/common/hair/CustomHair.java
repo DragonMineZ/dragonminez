@@ -13,6 +13,7 @@ public class CustomHair {
 	private static final int VERSION = 5;
     public static final int FRONT_STRANDS = 4;
     public static final int SIDE_STRANDS = 16;
+    private static final Map<HairFace, Vector3f[]> BASE_POSITIONS = new EnumMap<>(HairFace.class);
 
     public enum HairFace {
         FRONT(FRONT_STRANDS, 1, 4),
@@ -29,6 +30,16 @@ public class CustomHair {
             this.maxStrands = maxStrands;
             this.rows = rows;
             this.cols = cols;
+        }
+    }
+
+    static {
+        for (HairFace face : HairFace.values()) {
+            Vector3f[] positions = new Vector3f[face.maxStrands];
+            for (int i = 0; i < face.maxStrands; i++) {
+                positions[i] = computeStrandBasePosition(face, i);
+            }
+            BASE_POSITIONS.put(face, positions);
         }
     }
 
@@ -56,7 +67,15 @@ public class CustomHair {
         }
     }
 
-	public static Vector3f getStrandBasePosition(HairFace face, int index) {
+  public static Vector3f getStrandBasePosition(HairFace face, int index) {
+    Vector3f[] cached = BASE_POSITIONS.get(face);
+    if (cached != null && index >= 0 && index < cached.length) {
+      return cached[index];
+    }
+    return new Vector3f(0, 0, 0);
+  }
+
+  private static Vector3f computeStrandBasePosition(HairFace face, int index) {
 		int row = index / face.cols;
 		int col = index % face.cols;
 

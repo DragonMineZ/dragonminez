@@ -39,5 +39,8 @@ public class DatagenManager {
 				new DMZBiomeTagGenerator(packOutput, worldGenProvider.getRegistryProvider(), existingFileHelper));
 
 		generator.addProvider(event.includeServer(), new DMZAdvancementsProvider(packOutput, lookupProvider));
+		generator.addProvider(event.includeServer(), new DMZSpacePodDestinationProvider(packOutput));
+		generator.addProvider(event.includeServer(), new DMZDragonDefinitionProvider(packOutput));
+		generator.addProvider(event.includeServer(), new DMZDragonWishProvider(packOutput));
 	}
 }

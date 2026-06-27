@@ -18,17 +18,23 @@ public class DMZServer {
 		BonusCommand.register(dispatcher);
 		EffectsCommand.register(dispatcher);
 		SkillsCommand.register(dispatcher);
+		TechCommand.register(dispatcher);
 		FormsCommand.register(dispatcher);
 		PointsCommand.register(dispatcher);
+		DebugCommand.register(dispatcher);
 		MasteryCommand.register(dispatcher);
-		StackMasteryCommand.register(dispatcher);
 		LocateCommand.register(dispatcher);
 		PartyCommand.register(dispatcher);
 		StoryCommand.register(dispatcher);
 		ReviveCommand.register(dispatcher);
 		ReloadCommand.register(dispatcher);
+		ConfigCommand.register(dispatcher);
+		WeightCommand.register(dispatcher);
+		RaidCommand.register(dispatcher);
+		AlignmentCommand.register(dispatcher);
+		TailCommand.register(dispatcher);
+		HaloCommand.register(dispatcher);
 
 		LogUtil.info(Env.SERVER, "DragonMineZ Commands Registered");
 	}
 }
-

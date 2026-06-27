@@ -1,33 +1,24 @@
 package com.dragonminez.common.quest;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
 public abstract class QuestObjective {
     private final ObjectiveType type;
-    private final String description;
+    private final int required;
     private int progress;
-    private int required;
+    @Setter
     private boolean completed;
 
-    public QuestObjective(ObjectiveType type, String description, int required) {
+    public QuestObjective(ObjectiveType type, int required) {
         this.type = type;
-        this.description = description;
         this.required = required;
         this.progress = 0;
         this.completed = false;
     }
 
-    public ObjectiveType getType() {
-        return type;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public int getProgress() {
-        return progress;
-    }
-
-    public void setProgress(int progress) {
+	public void setProgress(int progress) {
         this.progress = Math.min(progress, required);
         checkCompletion();
     }
@@ -37,19 +28,7 @@ public abstract class QuestObjective {
         checkCompletion();
     }
 
-    public int getRequired() {
-        return required;
-    }
-
-    public boolean isCompleted() {
-        return completed;
-    }
-
-    public void setCompleted(boolean completed) {
-        this.completed = completed;
-    }
-
-    private void checkCompletion() {
+	private void checkCompletion() {
         if (progress >= required) {
             completed = true;
         }
@@ -63,8 +42,11 @@ public abstract class QuestObjective {
         INTERACT,
         STRUCTURE,
         BIOME,
+        DIMENSION,
         COORDS,
-        TALK_TO
+        TALK_TO,
+        DRAGON_SUMMON,
+        SKILL
     }
 }
 

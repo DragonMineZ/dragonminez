@@ -1,11 +1,10 @@
 package com.dragonminez.common.init.entities.redribbon;
 
-import com.dragonminez.Reference;
+import com.dragonminez.common.util.BetaWhitelist;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
@@ -18,19 +17,9 @@ import net.minecraft.world.level.ServerLevelAccessor;
 
 import javax.annotation.Nullable;
 
-public class RedRibbonSoldierEntity extends RedRibbonEntity{
-
-    private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(RedRibbonSoldierEntity.class, EntityDataSerializers.INT);
-
-    public static final int VARIANT_COUNT = 6;
-
-    public static final ResourceLocation[] TEXTURES = new ResourceLocation[VARIANT_COUNT];
-
-    static {
-        for (int i = 0; i < VARIANT_COUNT; i++) {
-            TEXTURES[i] = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/redribbon_" + i + ".png");
-        }
-    }
+public class RedRibbonSoldierEntity extends RedRibbonEntity {
+    private static final EntityDataAccessor<String> SKIN_OWNER = SynchedEntityData.defineId(RedRibbonSoldierEntity.class, EntityDataSerializers.STRING);
+    private static final String NBT_SKIN_OWNER = "SkinOwner";
 
     public RedRibbonSoldierEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -44,44 +33,40 @@ public class RedRibbonSoldierEntity extends RedRibbonEntity{
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.1D);
     }
 
-
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(VARIANT, 0);
+        this.entityData.define(SKIN_OWNER, "");
     }
 
     @Override
     public void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
-        pCompound.putInt("Variant", getVariant());
+        pCompound.putString(NBT_SKIN_OWNER, getSkinOwner());
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
-        setVariant(pCompound.getInt("Variant"));
+        if (pCompound.contains(NBT_SKIN_OWNER)) setSkinOwner(pCompound.getString(NBT_SKIN_OWNER));
+        else rerollSkinOwner();
     }
 
-    public int getVariant() {
-        return this.entityData.get(VARIANT);
-    }
-    public void setVariant(int variant) {
-        this.entityData.set(VARIANT, variant);
+    public String getSkinOwner() {
+        return this.entityData.get(SKIN_OWNER);
     }
 
-    public ResourceLocation getCurrentTexture() {
-        int variant = getVariant();
-        if (variant < 0 || variant >= TEXTURES.length) {
-            variant = 0;
-        }
-        return TEXTURES[variant];
+    public void setSkinOwner(String skinOwner) {
+        this.entityData.set(SKIN_OWNER, skinOwner == null ? "" : skinOwner);
+    }
+
+    public void rerollSkinOwner() {
+        setSkinOwner(BetaWhitelist.getRandomBetatester(this.random));
     }
 
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData, @Nullable CompoundTag pDataTag) {
-        this.setVariant(this.random.nextInt(VARIANT_COUNT));
+        if (getSkinOwner().isEmpty()) rerollSkinOwner();
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData, pDataTag);
     }
-
 }

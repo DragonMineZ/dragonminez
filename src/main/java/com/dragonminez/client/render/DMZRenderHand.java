@@ -3,16 +3,20 @@ package com.dragonminez.client.render;
 import com.dragonminez.Reference;
 import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
-import com.dragonminez.client.model.KiTridentModel;
+import com.dragonminez.client.model.KiClawlanceModel;
+import com.dragonminez.client.model.KiWeaponModelLoader;
+import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
-import com.dragonminez.client.util.AuraRenderQueue;
-import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.render.layer.BodyLayerFadeTracker;
+import com.dragonminez.client.render.layer.DMZSkinLayer;
+import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
-import com.dragonminez.common.init.armor.DbzArmorCapeItem;
+import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.init.armor.DbzArmorTextured;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -45,13 +49,26 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @OnlyIn(Dist.CLIENT)
 public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
 	public static final ResourceLocation KI_WEAPON_TEX = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
 
 	public static final KiScytheModel KI_SCYTHE_MODEL = new KiScytheModel(KiScytheModel.createBodyLayer().bakeRoot());
 	public static final KiBladeModel KI_BLADE_MODEL = new KiBladeModel(KiBladeModel.createBodyLayer().bakeRoot());
-	public static final KiTridentModel KI_TRIDENT_MODEL = new KiTridentModel(KiTridentModel.createBodyLayer().bakeRoot());
+	public static final KiClawlanceModel KI_CLAWLANCE_MODEL = new KiClawlanceModel(KiClawlanceModel.createBodyLayer().bakeRoot());
+
+	private static final float KI_GEO_TX = -0.06F;
+	private static final float KI_GEO_TY = 0.1F;
+	private static final float KI_GEO_TZ = -0.2F;
+	private static final float KI_GEO_RX = 0.0F;
+	private static final float KI_GEO_RY = 15.0F;
+	private static final float KI_GEO_RZ = 0.0F;
+
+	private static final float[] WHITE_COLOR = {1.0F, 1.0F, 1.0F};
+	private final float[] colorBuffer = new float[3];
 
 	public DMZRenderHand(EntityRendererProvider.Context pContext, PlayerModel<AbstractClientPlayer> pModel) {
 		super(pContext, new PlayerModel(pContext.bakeLayer(ModelLayers.PLAYER), false), 0.4f);
@@ -103,7 +120,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		}
 
 		this.renderKiWeapon(pPoseStack, pBuffer, pCombinedLight, pPlayer, stats, HumanoidArm.LEFT);
-
 	}
 
 	private void applyBlockingTransform(PoseStack stack, float side) {
@@ -125,22 +141,28 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 		String raceName = stats.getCharacter().getRaceName().toLowerCase();
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
-		boolean forceVanilla = (raceConfig != null && raceConfig.getUseVanillaSkin());
 
-		java.util.function.BiConsumer<ResourceLocation, float[]> layerConsumer = (texture, color) -> {
-			float[] finalColor = applyKaiokenTint(color, kaiokenPhase);
-			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, texture, finalColor);
+		final List<BodyLayerFadeTracker.FadingLayer> fadingLayers = new ArrayList<>();
+		SkinGathererProvider.BodyLayerSink layerConsumer = new SkinGathererProvider.BodyLayerSink() {
+			@Override
+			public void base(ResourceLocation texture, float[] color) {
+				applyKaiokenTint(color, kaiokenPhase, colorBuffer);
+				renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, texture, colorBuffer);
+			}
+
+			@Override
+			public void fading(String layerId, ResourceLocation texture, float[] color) {
+				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color));
+			}
 		};
 
-		if (forceVanilla) {
-			float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, kaiokenPhase);
-			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), skinTint);
-		} else {
-			float pt = Minecraft.getInstance().getFrameTime();
-			SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
-			SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
-			SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
-		}
+		float pt = Minecraft.getInstance().getFrameTime();
+		SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
+		addSsj4HandFur(stats, fadingLayers);
+		SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
+		SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
+		SkinGathererProvider.INSTANCE.gatherEffectLayers(pPlayer, stats, pt, layerConsumer);
+		renderFadingHandLayers(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm, kaiokenPhase, fadingLayers);
 
 		renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm);
 	}
@@ -149,11 +171,25 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		if (!stats.getSkills().isSkillActive("kimanipulation")) return;
 		String type = stats.getStatus().getKiWeaponType();
 		if (type == null || type.equalsIgnoreCase("none")) return;
-		float[] color = getKiColor(stats);
+		float[] color = KiWeaponHelper.resolveColorForType(type, getKiColor(stats));
 		boolean isRight = arm == HumanoidArm.RIGHT;
+		String lower = type.toLowerCase();
+
+		ModelPart geoPart = KiWeaponModelLoader.get(lower);
+		if (geoPart != null) {
+			ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + lower + ".png");
+			ps.pushPose();
+			ps.translate(KI_GEO_TX, KI_GEO_TY, KI_GEO_TZ);
+			if (KI_GEO_RX != 0.0F) ps.mulPose(Axis.XP.rotationDegrees(KI_GEO_RX));
+			if (KI_GEO_RY != 0.0F) ps.mulPose(Axis.YP.rotationDegrees(KI_GEO_RY));
+			if (KI_GEO_RZ != 0.0F) ps.mulPose(Axis.ZP.rotationDegrees(KI_GEO_RZ));
+			renderKiPartTex(ps, buffer, light, geoPart, color, tex);
+			ps.popPose();
+			return;
+		}
 
 		ps.pushPose();
-		switch (type.toLowerCase()) {
+		switch (lower) {
 			case "blade" -> {
 				KI_BLADE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
 				ps.translate(isRight ? -0.02D : 0.15D, 0.1D, -0.1D);
@@ -167,57 +203,78 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 				renderKiPart(ps, buffer, light, KI_SCYTHE_MODEL.scythe_right, color);
 			}
 			case "clawlance" -> {
-				KI_TRIDENT_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
+				KI_CLAWLANCE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
 				ps.translate(isRight ? -0.05D : 0.8D, isRight ? 0.0D : 0, isRight ? -0.3D : 0.5);
 				ps.mulPose(Axis.XP.rotationDegrees(isRight ? 25.0F : -05.0F));
-				renderKiPart(ps, buffer, light, KI_TRIDENT_MODEL.trident_right, color);
+				renderKiPart(ps, buffer, light, KI_CLAWLANCE_MODEL.trident_right, color);
 			}
 		}
 		ps.popPose();
 	}
 
-	private void renderDbzArmor(PoseStack ps, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer player, ModelPart pRendererArm) {
-		ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
-		if (CosmeticArmorCompat.isLoaded()) {
-			ItemStack cosmeticStack = CosmeticArmorCompat.getCosmeticStack(player, EquipmentSlot.CHEST);
-			if (cosmeticStack != null) {
-				if (cosmeticStack.isEmpty()) return;
-				chestStack = cosmeticStack;
-			}
-		}
-		if (chestStack.isEmpty()) return;
+    private void renderDbzArmor(PoseStack ps, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer player, ModelPart pRendererArm) {
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (CosmeticArmorCompat.isLoaded()) {
+            ItemStack cosmeticStack = CosmeticArmorCompat.getCosmeticStack(player, EquipmentSlot.CHEST);
+            if (cosmeticStack != null) {
+                if (cosmeticStack.isEmpty()) return;
+                chestStack = cosmeticStack;
+            }
+        }
+        if (chestStack.isEmpty()) return;
 
-		String itemId = null;
+        String modId = Reference.MOD_ID;
+        String itemId = null;
 
-		if (chestStack.getItem() instanceof DbzArmorItem armorItem) {
-			itemId = armorItem.getItemId();
-		} else if (chestStack.getItem() instanceof DbzArmorCapeItem capeItem) {
-			itemId = capeItem.getItemId();
-		}
+        if (chestStack.getItem() instanceof DbzArmorItem dbzItem) {
+            modId = dbzItem.getModId();
+            itemId = dbzItem.getItemId();
+        } else if (chestStack.getItem() instanceof DbzArmorTextured textured) {
+            itemId = textured.getItemId();
+        }
 
-		if (itemId != null) {
-			String texturePath = "textures/armor/" + itemId + "_layer1.png";
-			ResourceLocation armorResource = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, texturePath);
+        if (itemId != null) {
+            ResourceLocation armorResource = ArmorTextureResolver.resolve(modId, itemId, EquipmentSlot.CHEST, chestStack);
 
-			ps.pushPose();
+            ps.pushPose();
 
-			boolean isRightArm = (pRendererArm == this.model.rightArm);
+            boolean isRightArm = (pRendererArm == this.model.rightArm);
 
-			float armorInflation = 1.05F;
-			ps.scale(armorInflation, armorInflation, armorInflation);
+            float armorInflation = 1.05F;
+            ps.scale(armorInflation, armorInflation, armorInflation);
 
-			ps.translate(isRightArm ? 0.02D : -0.01, 0.02D, 0.0D);
+            ps.translate(isRightArm ? 0.02D : -0.01, -0.04D, 0.0D);
 
-			renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, new float[]{1.0F, 1.0F, 1.0F});
+            renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, WHITE_COLOR);
 
-			ps.popPose();
+            ps.popPose();
+        }
+    }
 
+	private void addSsj4HandFur(StatsData stats, List<BodyLayerFadeTracker.FadingLayer> out) {
+		DMZSkinLayer.Ssj4Overlay ssj4 = DMZSkinLayer.resolveSsj4Overlay(stats);
+		if (ssj4 == null) return;
+		ResourceLocation tex = DMZSkinLayer.getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + ssj4.key() + "_layer1.png"));
+		out.add(new BodyLayerFadeTracker.FadingLayer("ssj4fur", tex, ssj4.color(), ssj4.target()));
+	}
+
+	private void renderFadingHandLayers(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, ModelPart arm, int kaiokenPhase, List<BodyLayerFadeTracker.FadingLayer> active) {
+		int id = player.getId();
+		long gameTime = player.level().getGameTime();
+		for (BodyLayerFadeTracker.RenderEntry entry : BodyLayerFadeTracker.update(id, gameTime, active)) {
+			if (entry.alpha() <= 0.001F) continue;
+			applyKaiokenTint(entry.color(), kaiokenPhase, colorBuffer);
+			renderPart(ps, buffer, light, arm, entry.texture(), colorBuffer, entry.alpha());
 		}
 	}
 
 	private void renderPart(PoseStack stack, MultiBufferSource buffer, int light, ModelPart part, ResourceLocation texture, float[] rgb) {
+		renderPart(stack, buffer, light, part, texture, rgb, 1.0F);
+	}
+
+	private void renderPart(PoseStack stack, MultiBufferSource buffer, int light, ModelPart part, ResourceLocation texture, float[] rgb, float alpha) {
 		VertexConsumer vc = buffer.getBuffer(RenderType.entityTranslucent(texture));
-		part.render(stack, vc, light, OverlayTexture.NO_OVERLAY, rgb[0], rgb[1], rgb[2], 1.0F);
+		part.render(stack, vc, light, OverlayTexture.NO_OVERLAY, rgb[0], rgb[1], rgb[2], alpha);
 	}
 
 	private ResourceLocation loc(String path) {
@@ -282,30 +339,37 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
 	}
 
-	private float[] getKiColor(StatsData stats) {
-		var character = stats.getCharacter();
-		String kiHex = character.getAuraColor();
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			String formColor = character.getActiveFormData().getAuraColor();
-			if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
-		}
-		return ColorUtils.hexToRgb(kiHex);
+	private void renderKiPartTex(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color, ResourceLocation texture) {
+		VertexConsumer vc = buffer.getBuffer(ModRenderTypes.kiblast(texture));
+		part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
 	}
 
-	private float[] applyKaiokenTint(float[] rgb, int phase) {
-		if (phase <= 0) return rgb;
+	private float[] getKiColor(StatsData stats) {
+		var character = stats.getCharacter();
+		float[] kiColor = character.getRgbAuraColor();
+		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+			float[] formColor = character.getActiveFormData().getRgbAuraColor();
+			if (formColor != null) kiColor = formColor;
+		}
+		return kiColor;
+	}
+
+	private void applyKaiokenTint(float[] source, int phase, float[] dest) {
+		if (phase <= 0) {
+			dest[0] = source[0];
+			dest[1] = source[1];
+			dest[2] = source[2];
+			return;
+		}
 
 		float intensity = Math.min(0.6f, phase * 0.1f);
-
-		float newR = rgb[0] * (1.0f - intensity) + (intensity);
-		float newG = rgb[1] * (1.0f - intensity);
-		float newB = rgb[2] * (1.0f - intensity);
-
-		return new float[]{newR, newG, newB};
+		dest[0] = source[0] * (1.0f - intensity) + intensity;
+		dest[1] = source[1] * (1.0f - intensity);
+		dest[2] = source[2] * (1.0f - intensity);
 	}
 
 	private void queueFirstPersonAura(AbstractClientPlayer player, PoseStack poseStack, int packedLight) {
 		float partialTick = Minecraft.getInstance().getFrameTime();
-		AuraRenderQueue.addFirstPersonAura(player, poseStack, partialTick, packedLight);
+		PlayerEffectQueue.addFirstPersonAura(player, poseStack, partialTick, packedLight);
 	}
 }

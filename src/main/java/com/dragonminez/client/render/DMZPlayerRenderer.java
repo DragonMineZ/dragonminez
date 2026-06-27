@@ -2,22 +2,30 @@ package com.dragonminez.client.render;
 
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
+import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.layer.*;
+import com.dragonminez.client.render.shader.TransformationPostShaderManager;
+import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
+import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.util.BoneVisibilityHandler;
+import com.dragonminez.mixin.client.GeoModelAccessor;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.SaiyanForms;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
@@ -29,20 +37,22 @@ import java.util.Objects;
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
 	protected GeoRenderLayer<T> caller = null;
-
+	private boolean renderingMaskPass = false;
 
 	public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
 		super(renderManager, model);
 
 		this.addRenderLayer(new DMZPlayerItemInHandLayer(this));
 		this.addRenderLayer(new DMZPlayerArmorLayer<>(this));
+		this.addRenderLayer(new DMZCapeLayer<>(this));
+		this.addRenderLayer(new DMZWeightCapeLayer<>(this));
 		this.addRenderLayer(new DMZCustomArmorLayer(this));
-		this.addRenderLayer(new DMZSkinLayer<>(this));
-		this.addRenderLayer(new DMZHairLayer<>(this));
 		this.addRenderLayer(new DMZRacePartsLayer(this));
 		this.addRenderLayer(new DMZWeaponsLayer<>(this));
 		this.addRenderLayer(new DMZAuraLayer<>(this));
-		//this.addRenderLayer(new DMZThirdPartyLayerForwarder<>(this));
+        this.addRenderLayer(new DMZSkinLayer<>(this));
+        this.addRenderLayer(new DMZHairLayer<>(this));
+		this.addRenderLayer(new DMZThirdPartyLayerForwarder<>(this));
 	}
 
 	public void reRender(GeoRenderLayer<T> calledFrom, BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
@@ -68,40 +78,24 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
+		((GeoModelAccessor) (Object) getGeoModel()).dmz$setLastRenderedInstance(-1L);
+
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));
 		var character = stats.getCharacter();
-		var activeForm = character.getActiveFormData();
 		String race = character.getRaceName().toLowerCase();
 		String currentForm = character.getActiveForm();
 
+		String logicKey = character.getRenderLogicKey();
 
-		var raceConfig = ConfigManager.getRaceCharacter(race);
-		String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-		String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-				? activeForm.getCustomModel().toLowerCase() : "";
-
-		String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-		if (logicKey.isEmpty()) {
-			logicKey = race;
-		}
-
-		float configScaleX, configScaleY, configScaleZ;
-		if (activeForm != null) {
-			configScaleX = activeForm.getModelScaling()[0];
-			configScaleY = activeForm.getModelScaling()[1];
-			configScaleZ = activeForm.getModelScaling()[2];
-		} else {
-			configScaleX = character.getModelScaling()[0];
-			configScaleY = character.getModelScaling()[1];
-			configScaleZ = character.getModelScaling()[2];
-		}
+		Float[] resolved = character.getResolvedModelScaling();
+		float configScaleX = resolved[0];
+		float configScaleY = resolved[1];
+		float configScaleZ = resolved[2];
 
 		float scalingX, scalingY, scalingZ;
 
-		boolean isOozaru = logicKey.startsWith("oozaru") ||
-				(race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) ||
-						Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+		boolean isOozaru = logicKey.startsWith("oozaru") || (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
 
 		if (isOozaru) {
 			scalingX = Math.max(0.1f, configScaleX - 2.8f);
@@ -115,8 +109,32 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		poseStack.pushPose();
 
-		if (FlySkillEvent.isFlyingFast()) {
-			float roll = FlightRollHandler.getRoll(partialTick);
+		boolean shaderPack = IrisCompat.isShaderPackInUse();
+		boolean captureMask = !shaderPack || TransformationPostShaderManager.isShaderpackMainPass();
+
+		TransformationPostShaderManager.MaskData maskData = captureMask ? TransformationPostShaderManager.getEntityMaskData(entity) : null;
+		TransformationMaskBufferSource maskBufferSource = null;
+		if (maskData != null) {
+			maskBufferSource = TransformationPostShaderManager.getMaskBufferSource();
+			maskBufferSource.setEntityColors(
+					maskData.primaryR(),
+					maskData.primaryG(),
+					maskData.primaryB(),
+					maskData.secondaryR(),
+					maskData.secondaryG(),
+					maskData.secondaryB()
+			);
+			maskBufferSource.setEntityNoiseAndMix(
+					maskData.noiseScale(),
+					maskData.noiseIntensity(),
+					maskData.noiseScrollX(),
+					maskData.noiseScrollY(),
+					maskData.colorMixSpeed()
+			);
+		}
+
+		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
+			float roll = entity == Minecraft.getInstance().player ? FlightRollHandler.getRoll(partialTick) : 0f;
 			float pitch = entity.getViewXRot(partialTick);
 			float pivotY = entity.getBbHeight() / 2f;
 			poseStack.translate(0, pivotY, 0);
@@ -129,7 +147,38 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		poseStack.scale(scalingX, scalingY, scalingZ);
 
+		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+
+		if (isAuraActive) {
+			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
+			GL11.glEnable(GL11.GL_STENCIL_TEST);
+			RenderSystem.stencilMask(0xFF);
+			RenderSystem.stencilFunc(GL11.GL_ALWAYS, 1, 0xFF);
+			RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
+		}
+
 		super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+
+		if (maskBufferSource != null) {
+			try {
+				this.renderingMaskPass = true;
+				maskBufferSource.wrap(bufferSource);
+				maskBufferSource.setIncludeOriginal(false);
+				maskBufferSource.setForceCaptureAll(true);
+				super.render(entity, entityYaw, partialTick, poseStack, maskBufferSource, packedLight);
+			} finally {
+				this.renderingMaskPass = false;
+				maskBufferSource.setIncludeOriginal(true);
+				maskBufferSource.setForceCaptureAll(false);
+				maskBufferSource.setMaskCaptureEnabled(true);
+			}
+		}
+
+		if (isAuraActive) {
+			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
+			GL11.glDisable(GL11.GL_STENCIL_TEST);
+			RenderSystem.stencilMask(0x00);
+		}
 
 		this.shadowRadius = 0.4f * ((scalingX + scalingZ) / 2.0f);
 
@@ -139,6 +188,10 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (this.renderingMaskPass && renderLayer instanceof DMZAuraLayer<?>) {
+				continue;
+			}
+
 			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
 	}

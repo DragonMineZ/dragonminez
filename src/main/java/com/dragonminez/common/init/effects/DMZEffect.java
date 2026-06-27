@@ -13,6 +13,10 @@ public class DMZEffect extends MobEffect {
         super(beneficial ? MobEffectCategory.BENEFICIAL : MobEffectCategory.HARMFUL, beneficial ? 0x98D982 : 0xD98282);
     }
 
+	public DMZEffect(MobEffectCategory category, int color) {
+		super(category, color);
+	}
+
     @Override
     public boolean isDurationEffectTick(int duration, int amplifier) {
         return true;

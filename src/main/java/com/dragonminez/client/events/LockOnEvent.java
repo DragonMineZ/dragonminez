@@ -1,8 +1,10 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -28,17 +30,22 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class LockOnEvent {
 	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
 	private static LivingEntity lockedTarget = null;
+	private static int scanTickCounter = 0;
 
 	public static void toggleLock() {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null) return;
+
+		if (com.dragonminez.client.systems.taiyoken.TaiyokenBlindState.isActive()) {
+			unlock();
+			return;
+		}
 
 		if (lockedTarget != null) {
 			unlock();
@@ -51,10 +58,10 @@ public class LockOnEvent {
 			int level = data.getSkills().getSkillLevel("kisense");
 			if (level <= 0) return;
 
-			double range = 5.0 + 3.0 * level;
+			double range = 15.0 + 5.0 * level;
 			if (data.getStatus().isAndroidUpgraded()) range += 10.0;
 
-			findTargetInFront(player, range).ifPresent(target -> {
+			findTargetInFront(player, range, data).ifPresent(target -> {
 				lockedTarget = target;
 				player.playSound(MainSounds.LOCKON.get());
 			});
@@ -66,44 +73,58 @@ public class LockOnEvent {
 	}
 
 	@SubscribeEvent
-	public static void onRenderTick(TickEvent.RenderTickEvent event) {
-		if (event.phase != TickEvent.Phase.START) return;
-
+	public static void onClientTick(TickEvent.ClientTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) return;
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
-
 		if (player == null || lockedTarget == null) return;
 
-		if (!lockedTarget.isAlive()) {
+		if (com.dragonminez.client.systems.taiyoken.TaiyokenBlindState.isActive()) {
 			unlock();
 			return;
 		}
 
-		AtomicBoolean shouldUnlock = new AtomicBoolean(false);
+		scanTickCounter++;
+		if (scanTickCounter >= 5) {
+			scanTickCounter = 0;
 
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			int level = data.getSkills().getSkillLevel("kisense");
-
-			if (level <= 0 || data.getSkills().getSkill("kisense") == null) {
-				shouldUnlock.set(true);
+			if (!lockedTarget.isAlive()) {
+				unlock();
 				return;
 			}
 
-			double maxRange = 5 + 2.0 * level;
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				int level = data.getSkills().getSkillLevel("kisense");
 
-			if (player.distanceTo(lockedTarget) > maxRange) {
-				shouldUnlock.set(true);
-			}
+				if (level <= 0 || data.getSkills().getSkill("kisense") == null) {
+					unlock();
+					return;
+				}
 
-			if (!player.hasLineOfSight(lockedTarget) && !data.getStatus().isAndroidUpgraded()) {
-				shouldUnlock.set(true);
-			}
-		});
+				double maxRange = 15.0 + 5.0 * level;
+				if (data.getStatus().isAndroidUpgraded()) maxRange += 10.0;
 
-		if (shouldUnlock.get()) {
-			unlock();
-			return;
+				if (player.distanceTo(lockedTarget) > maxRange) {
+					unlock();
+					return;
+				}
+
+				if (!KiSenseScan.canTarget(lockedTarget, data)) {
+					unlock();
+					return;
+				}
+
+				if (!player.hasLineOfSight(lockedTarget) && !data.getStatus().isAndroidUpgraded()) unlock();
+			});
 		}
+	}
+
+	@SubscribeEvent
+	public static void onRenderTick(TickEvent.RenderTickEvent event) {
+		if (event.phase != TickEvent.Phase.START) return;
+		Minecraft mc = Minecraft.getInstance();
+		Player player = mc.player;
+		if (player == null || lockedTarget == null) return;
 
 		float partialTick = event.renderTickTime;
 		double targetX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());
@@ -159,7 +180,8 @@ public class LockOnEvent {
 		RenderSystem.depthMask(false);
 		RenderSystem.depthFunc(GL11.GL_ALWAYS);
 
-		long time = System.currentTimeMillis();
+		boolean lod = Minecraft.getInstance().player != null && Minecraft.getInstance().player.distanceTo(lockedTarget) > 24.0;
+		long time = lod ? 0L : System.currentTimeMillis();
 		float angle1 = (time % 3600L) / 10.0f;
 		float angle2 = -((time % 7200L) / 20.0f);
 
@@ -202,14 +224,14 @@ public class LockOnEvent {
 		tesselator.end();
 	}
 
-	private static Optional<LivingEntity> findTargetInFront(Player player, double range) {
+	private static Optional<LivingEntity> findTargetInFront(Player player, double range, StatsData data) {
 		Vec3 eyePos = player.getEyePosition();
 		Vec3 viewVec = player.getViewVector(1.0F);
 		Vec3 endPos = eyePos.add(viewVec.scale(range));
 		AABB searchBox = player.getBoundingBox().expandTowards(viewVec.scale(range)).inflate(1.0D);
 
 		List<LivingEntity> list = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
-				e -> e != player && e.isAlive() && e.isPickable());
+				e -> e != player && e.isAlive() && e.isPickable() && KiSenseScan.canTarget(e, data));
 
 		LivingEntity closest = null;
 		double closestDist = range * range;
@@ -240,5 +262,9 @@ public class LockOnEvent {
 		if (f > 180.0F) f -= 360.0F;
 		if (f < -180.0F) f += 360.0F;
 		return start + amount * f;
+	}
+
+	public static LivingEntity getLockedTarget() {
+		return lockedTarget;
 	}
 }

@@ -1,105 +1,99 @@
 package com.dragonminez.common.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDataPackResources;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
-import com.dragonminez.common.init.entities.dragon.PorungaEntity;
-import com.dragonminez.common.init.entities.dragon.ShenronEntity;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.*;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.gen.OverworldSurfaceRules;
 import com.dragonminez.server.world.region.OverworldRegion;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
+import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.registries.RegistryObject;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
+
+import java.util.List;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModCommonEvents {
 
+	@SubscribeEvent
+	public static void onAddPackFinders(AddPackFindersEvent event) {
+		if (event.getPackType() == PackType.SERVER_DATA) {
+			event.addRepositorySource((packConsumer) -> {
+				Pack dragonballPack = Pack.readMetaAndCreate("dmz_dragonballs_runtime_data", Component.literal("DMZ Dragonballs Runtime Data"), true,
+					DragonBallDataPackResources::new, PackType.SERVER_DATA, Pack.Position.TOP, PackSource.BUILT_IN);
+				if (dragonballPack != null) packConsumer.accept(dragonballPack);
+			});
+		}
+	}
+
+
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
-        event.put(MainEntities.MASTER_KARIN.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_GOKU.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_KAIOSAMA.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_ROSHI.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_URANAI.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_ENMA.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_DENDE.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_GERO.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_POPO.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_GURU.get(), MastersEntity.createAttributes().build());
-        event.put(MainEntities.MASTER_TORIBOT.get(), MastersEntity.createAttributes().build());
+        // MAESTROS
+        for (var masterEntity : MainEntities.getMasterEntities()) {
+            event.put((EntityType<? extends LivingEntity>) masterEntity.get(), MastersEntity.createAttributes().build());
+        }
 
         // Quest NPC — single entity type for all data-driven quest NPCs | Usa un solo tipo de entidad para todos los NPCs de misiones basados en datos
         event.put(MainEntities.QUEST_NPC.get(), MastersEntity.createAttributes().build());
 
-		event.put(MainEntities.SHENRON.get(), ShenronEntity.createAttributes().build());
-		event.put(MainEntities.PORUNGA.get(), PorungaEntity.createAttributes().build());
+		for (var entity : MainEntities.getDragonWishEntities().values()) {
+			event.put(entity.get(), DragonWishEntity.createAttributes().build());
+		}
 
-        event.put(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_SAIBAMAN3.get(), SagaSaibamanEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_SAIBAMAN4.get(), SagaSaibamanEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_SAIBAMAN5.get(), SagaSaibamanEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_SAIBAMAN6.get(), SagaSaibamanEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_RADITZ.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_NAPPA.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_VEGETA.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_OZARU_VEGETA.get(), SagaOzaruVegetaEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FRIEZA_SOLDIER.get(), SagaFriezaSoldier01Entity.createAttributes().build());
-        event.put(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), SagaFriezaSoldier01Entity.createAttributes().build());
-        event.put(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), SagaFriezaSoldier01Entity.createAttributes().build());
-        event.put(MainEntities.SAGA_MORO_SOLDIER.get(), SagaFriezaSoldier01Entity.createAttributes().build());
-        event.put(MainEntities.SAGA_CUI.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_DODORIA.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_VEGETA_NAMEK.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_ZARBON.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_ZARBON_TRANSF.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_RECOOME.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_GULDO.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_BURTER.get(), SagaBurterEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_JEICE.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_GINYU.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_GINYU_GOKU.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FREEZER_FIRST.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FREEZER_SECOND.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FREEZER_THIRD.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FREEZER_BASE.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FREEZER_FP.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_MECHA_FRIEZA.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_KING_COLD.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_GOKU_YARDRAT.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_DRGERO.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_A19.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_A18.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_A17.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_A16.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_CELL_IMPERFECT.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_PICCOLO_KAMI.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_CELL_SEMIPERFECT.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_SUPER_VEGETA.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_TRUNKS_SSJ.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_CELL_PERFECT.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_GOHAN_SSJ.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_CELL_SUPERPERFECT.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_CELL_JR.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SHADOW_DUMMY.get(), DBSagasEntity.createAttributes().build());
+        var saibamans = List.of(
+                MainEntities.SAGA_SAIBAMAN, MainEntities.SAGA_SAIBAMAN2, MainEntities.SAGA_SAIBAMAN3,
+                MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6
+        );
+        var soldiers = List.of(
+                MainEntities.SAGA_FRIEZA_SOLDIER, MainEntities.SAGA_FRIEZA_SOLDIER2,
+                MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER
+        );
+        var ozarus = List.of(
+                MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU
+        );
+
+        for (var saibaman : saibamans) event.put((EntityType<? extends LivingEntity>) saibaman.get(), SagaSaibamanEntity.createAttributes().build());
+        for (var soldier : soldiers) event.put((EntityType<? extends LivingEntity>) soldier.get(), SagaFriezaSoldier01Entity.createAttributes().build());
+        for (var ozaru : ozarus) event.put((EntityType<? extends LivingEntity>) ozaru.get(), SagaOzaruEntity.createAttributes().build());
+
+
+        AttributeSupplier defaultSagaAttributes = DBSagasEntity.createAttributes().build();
+
+        for (var sagaEntity : MainEntities.getSagaEntities()) {
+            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity)) {
+                continue;
+            }
+            event.put((EntityType<? extends LivingEntity>) sagaEntity.get(), defaultSagaAttributes);
+        }
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());
@@ -126,6 +120,8 @@ public class ModCommonEvents {
     }
 
 	public static void commonSetup(final FMLCommonSetupEvent event) {
+		new PredefinedTechniques().init();
+
 		event.enqueueWork(() -> {
 
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.CHRYSANTHEMUM_FLOWER.getId(), MainBlocks.POTTED_CHRYSANTHEMUM_FLOWER);
@@ -143,7 +139,7 @@ public class ModCommonEvents {
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_AJISSA_SAPLING.getId(), MainBlocks.POTTED_AJISSA_SAPLING);
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_SACRED_SAPLING.getId(), MainBlocks.POTTED_SACRED_SAPLING);
 
-			Regions.register(new OverworldRegion(14)); //activa cam
+			Regions.register(new OverworldRegion(40));
 			SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, Reference.MOD_ID, OverworldSurfaceRules.makeRules());
 		});
 	}
@@ -151,11 +147,31 @@ public class ModCommonEvents {
 
     @SubscribeEvent
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
-        event.add(EntityType.PLAYER, MainAttributes.DMZ_HEALTH.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRENGTH.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRIKE_POWER.get());
+        event.add(EntityType.PLAYER, MainAttributes.RESISTANCE.get());
+        event.add(EntityType.PLAYER, MainAttributes.VITALITY.get());
+        event.add(EntityType.PLAYER, MainAttributes.KI_POWER.get());
+        event.add(EntityType.PLAYER, MainAttributes.ENERGY.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_ENERGY.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_STAMINA.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_POISE.get());
+        event.add(EntityType.PLAYER, MainAttributes.MELEE_DAMAGE.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRIKE_DAMAGE.get());
+        event.add(EntityType.PLAYER, MainAttributes.DEFENSE.get());
+		event.add(EntityType.PLAYER, MainAttributes.CRIT_CHANCE.get());
+		event.add(EntityType.PLAYER, MainAttributes.CRIT_DAMAGE.get());
     }
 
 	@SubscribeEvent
 	public void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
 		event.register(DragonBallSavedData.class);
 	}
+
+    @SafeVarargs
+    private static <T extends LivingEntity> void regAttr(EntityAttributeCreationEvent event, AttributeSupplier attributes, RegistryObject<? extends EntityType<? extends T>>... entities) {
+        for (RegistryObject<? extends EntityType<? extends T>> reg : entities) {
+            event.put(reg.get(), attributes);
+        }
+    }
 }

@@ -1,13 +1,16 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.item.DragonRadarItem;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +22,9 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class RadarRenderEvent {
@@ -27,10 +32,16 @@ public class RadarRenderEvent {
 
 	private static List<BlockPos> clientEarthPositions = new ArrayList<>();
 	private static List<BlockPos> clientNamekPositions = new ArrayList<>();
+	private static Map<String, List<BlockPos>> clientPositionsBySet = new HashMap<>();
 
-	public static void updateRadarData(List<BlockPos> earth, List<BlockPos> namek) {
+
+	public static void updateRadarData(List<BlockPos> earth, List<BlockPos> namek, Map<String, List<BlockPos>> positionsBySet) {
 		clientEarthPositions = earth;
 		clientNamekPositions = namek;
+		clientPositionsBySet = new HashMap<>();
+		if (positionsBySet != null) positionsBySet.forEach((setId, positions) -> clientPositionsBySet.put(setId, new ArrayList<>(positions)));
+		clientPositionsBySet.put("earth", earth);
+		clientPositionsBySet.put("namek", namek);
 	}
 
 	@SubscribeEvent
@@ -53,6 +64,7 @@ public class RadarRenderEvent {
 
 		var earthRadarItem = MainItems.DBALL_RADAR_ITEM.get();
 		var namekRadarItem = MainItems.NAMEKDBALL_RADAR_ITEM.get();
+		var fusedRadarItem = MainItems.FUSED_DBALL_RADAR_ITEM.get();
 
 		List<BlockPos> targets = null;
 		int range = 75;
@@ -77,6 +89,36 @@ public class RadarRenderEvent {
 			isMainHand = false;
 		}
 
+		// Fused (Bi-Dimensional) radar tracks Dragon Balls in BOTH worlds — pick the set for the
+		// current dimension. Checked before the generic fallback so it doesn't use a single ball set.
+		if (targets == null && mainHand.getItem() == fusedRadarItem) {
+			targets = isOverworld ? clientEarthPositions : clientNamekPositions;
+			range = getRadarRange(mainHand);
+			isMainHand = true;
+		} else if (targets == null && offHand.getItem() == fusedRadarItem) {
+			targets = isOverworld ? clientEarthPositions : clientNamekPositions;
+			range = getRadarRange(offHand);
+			isMainHand = false;
+		}
+
+		if (targets == null) {
+			if (mainHand.getItem() instanceof DragonRadarItem genericMainRadar) {
+				DragonRadarDefinition definition = genericMainRadar.getDefinition();
+				if (definition != null && definition.supportsDimension(level.dimension()) && definition.getBallSetId() != null) {
+					targets = clientPositionsBySet.getOrDefault(definition.getBallSetId(), List.of());
+					range = getRadarRange(mainHand);
+					isMainHand = true;
+				}
+			} else if (offHand.getItem() instanceof DragonRadarItem genericOffRadar) {
+				DragonRadarDefinition definition = genericOffRadar.getDefinition();
+				if (definition != null && definition.supportsDimension(level.dimension()) && definition.getBallSetId() != null) {
+					targets = clientPositionsBySet.getOrDefault(definition.getBallSetId(), List.of());
+					range = getRadarRange(offHand);
+					isMainHand = false;
+				}
+			}
+		}
+
 		if (targets != null) {
 			int radarSize = 140;
 			int centerX;
@@ -85,14 +127,11 @@ public class RadarRenderEvent {
 			if (isMainHand) {
 				centerX = mc.getWindow().getGuiScaledWidth() - radarSize - 10;
 			} else {
-				if (mc.getWindow().getWidth() < 1080) {
-					centerX = (mc.getWindow().getGuiScaledWidth() / 2) - radarSize - 60;
-				} else {
-					centerX = (mc.getWindow().getGuiScaledWidth() / 2) - radarSize - 310;
-				}
+				centerX = 10;
 			}
 
-			renderRadar(event.getGuiGraphics(), player, targets, range, centerX, centerY);
+			boolean showProximity = DragonRadarItem.hasCompletedQuest(player, DragonRadarItem.QUEST_PROXIMITY_HUD);
+			renderRadar(event.getGuiGraphics(), player, targets, range, centerX, centerY, showProximity);
 		}
 	}
 
@@ -101,7 +140,7 @@ public class RadarRenderEvent {
 		return (r == 0) ? 150 : r;
 	}
 
-	private static void renderRadar(GuiGraphics gui, Player player, List<BlockPos> targets, int range, int centerX, int centerY) {
+	private static void renderRadar(GuiGraphics gui, Player player, List<BlockPos> targets, int range, int centerX, int centerY, boolean showProximity) {
 		int textureW = 121;
 		int textureH = 146;
 
@@ -113,10 +152,13 @@ public class RadarRenderEvent {
 		int radarCenterX = centerX + 61;
 		int radarCenterY = centerY + 87;
 
+		double nearestDist = Double.MAX_VALUE;
+
 		for (BlockPos pos : targets) {
 			double dx = pos.getX() - player.getX();
 			double dz = pos.getZ() - player.getZ();
 			double dist = Math.sqrt(dx * dx + dz * dz);
+			if (dist < nearestDist) nearestDist = dist;
 
 			double angleToTarget = Math.atan2(dz, dx);
 			double playerYaw = Math.toRadians(player.getYRot()) + (Math.PI / 2);
@@ -150,5 +192,16 @@ public class RadarRenderEvent {
 				gui.pose().popPose();
 			}
 		}
+
+		// Proximity readout — distance to the closest Dragon Ball (Bulma "Tracker Display" upgrade).
+		if (showProximity && nearestDist != Double.MAX_VALUE) {
+			var font = Minecraft.getInstance().font;
+			Component text = Component.translatable("gui.dmzradar.nearest", (int) Math.round(nearestDist));
+			int textX = radarCenterX - font.width(text) / 2;
+			int textY = centerY + textureH - 18;
+			gui.drawString(font, text, textX, textY, 0xFFD9A441, true);
+		}
+
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 }

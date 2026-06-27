@@ -3,13 +3,15 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.crowdin.CrowdinPackResources;
+import com.dragonminez.client.dragonball.DragonBallPackResources;
+import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.gui.UtilityMenuScreen;
-import com.dragonminez.client.gui.hud.AlternativeHUD;
-import com.dragonminez.client.gui.hud.ScouterHUD;
-import com.dragonminez.client.gui.hud.XenoverseHUD;
+import com.dragonminez.client.gui.hud.*;
+import com.dragonminez.client.gui.tooltip.*;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.EnergyCableBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.FuelGeneratorBlockRenderer;
+import com.dragonminez.client.init.blocks.renderer.GravityDeviceBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.KikonoStationBlockRenderer;
 import com.dragonminez.client.init.entities.model.ki.*;
 import com.dragonminez.client.init.entities.renderer.*;
@@ -18,43 +20,89 @@ import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.*;
-import com.dragonminez.client.model.KiBladeModel;
-import com.dragonminez.client.model.KiScytheModel;
-import com.dragonminez.client.model.KiTridentModel;
+import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.SkinCacheManager;
+import com.dragonminez.client.util.TextureCounter;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
+import com.dragonminez.client.init.menu.screens.GravityDeviceScreen;
 import com.dragonminez.client.init.menu.screens.KikonoStationScreen;
 import com.dragonminez.common.init.particles.*;
 import com.dragonminez.server.world.dimension.CustomSpecialEffects;
+import com.mojang.blaze3d.platform.MacosUtil;
+import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.level.GrassColor;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.*;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.registries.RegistryObject;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ModClientEvents {
-
 	@SubscribeEvent
 	public static void registerGuiOverlays(RegisterGuiOverlaysEvent e) {
-		e.registerAboveAll("xenoversehud", XenoverseHUD.HUD_XENOVERSE);
-		e.registerAboveAll("alternativehud", AlternativeHUD.HUD_ALTERNATIVE);
-		e.registerAboveAll("scouterhud", ScouterHUD.HUD_SCOUTER);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "xenoversehud", XenoverseHUD.HUD_XENOVERSE);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "alternativehud", AlternativeHUD.HUD_ALTERNATIVE);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "technique_charge_hud", TechniqueChargeOverlay.HUD_TECHNIQUE_CHARGE);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "scouterhud", ScouterHUD.HUD_SCOUTER);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "tracked_quest_hud", TrackedQuestHUD.HUD_TRACKED_QUEST);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "techniquehud", TechniqueHotbarHUD.HUD_TECHNIQUES);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "beam_clash_hud", BeamClashOverlay.HUD_BEAM_CLASH);
+	}
+	@SubscribeEvent
+	public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
+		event.registerReloadListener(new SimplePreparableReloadListener<Void>() {
+			@Override
+			protected Void prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+				return null;
+			}
+
+			@Override
+			protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+				TextureCounter.clearCache();
+				ArmorTextureResolver.clearCache();
+				CombatAnimationResolver.reload(resourceManager);
+				SkinCacheManager.revalidate();
+			}
+		});
 	}
 
-    @SubscribeEvent
+	@SubscribeEvent
     public static void onKeyRegister(RegisterKeyMappingsEvent event) {
         KeyBinds.registerAll(event);
     }
@@ -62,26 +110,38 @@ public class ModClientEvents {
 	@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {
 		if (event.getPackType() == PackType.CLIENT_RESOURCES) {
-			String currentLang = Minecraft.getInstance().options.languageCode;
-			CrowdinManager.fetchLanguage(currentLang);
+			if (CrowdinManager.isLiveTranslationsEnabled()) {
+				String currentLang = Minecraft.getInstance().options.languageCode;
+				CrowdinManager.fetchLanguage(currentLang);
+			}
 
 			event.addRepositorySource((packConsumer) -> {
 				Pack crowdinPack = Pack.readMetaAndCreate("dmz_crowdin_ota", Component.literal("DMZ Live Translations"), true,
 						CrowdinPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
-
 				if (crowdinPack != null) packConsumer.accept(crowdinPack);
+
+				Pack dragonBallRuntimePack = Pack.readMetaAndCreate("dmz_dragonballs_runtime", Component.literal("DMZ Dragonballs Runtime Resources"), true,
+						DragonBallPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
+				if (dragonBallRuntimePack != null) packConsumer.accept(dragonBallRuntimePack);
 			});
 		}
 	}
 
+
 	@SubscribeEvent
 	public static void onClientSetup(FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
+			setCustomWindowIcon();
+
+			BetaWhitelist.reload();
+			SkinCacheManager.init();
+
 			//Bloques
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.ENERGY_CABLE_BE.get(), EnergyCableBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.KIKONO_STATION_BE.get(), KikonoStationBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.FUEL_GENERATOR_BE.get(), FuelGeneratorBlockRenderer::new);
+			BlockEntityRenderers.register(MainBlockEntities.GRAVITY_DEVICE_BE.get(), GravityDeviceBlockRenderer::new);
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_AJISSA_LOG.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_STRIPPED_AJISSA_LOG.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_SACRED_LOG.get(), RenderType.cutout());
@@ -91,6 +151,7 @@ public class ModClientEvents {
 			//MENÚS
 			MenuScreens.register(MainMenus.KIKONO_STATION_MENU.get(), KikonoStationScreen::new);
 			MenuScreens.register(MainMenus.FUEL_GENERATOR_MENU.get(), FuelGeneratorScreen::new);
+			MenuScreens.register(MainMenus.GRAVITY_DEVICE_MENU.get(), GravityDeviceScreen::new);
 
 			// Fluids
 			ItemBlockRenderTypes.setRenderLayer(MainFluids.SOURCE_NAMEK.get(), RenderType.translucent());
@@ -128,76 +189,35 @@ public class ModClientEvents {
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.POTTED_SACRED_FERN.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.POTTED_AJISSA_SAPLING.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.POTTED_SACRED_SAPLING.get(), RenderType.cutout());
+
+
+			ItemProperties.registerGeneric(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "loaded"),
+					(stack, level, entity, seed) -> {
+						return 1.0F; // Loaded items :D
+					});
         });
 
         UtilityMenuScreen.initMenuSlots();
+		Minecraft.getInstance().getMainRenderTarget().enableStencil();
 	}
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(MainEntities.MASTER_KARIN.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_GOKU.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_KAIOSAMA.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_ROSHI.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_URANAI.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_ENMA.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_DENDE.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_GERO.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_POPO.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_GURU.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_TORIBOT.get(), MasterEntityRenderer::new);
+        //MAESTROS
+        for (var masterEntity : MainEntities.getMasterEntities()) {
+            event.registerEntityRenderer((EntityType) masterEntity.get(), context -> new MasterEntityRenderer(context));
+        }
 
         // Quest NPC — single renderer for all data-driven quest NPCs | usa un renderer genérico para los NPCs de misiones, después usa gráficos.json para asignar modelos/texturas específicos a cada npcId
         event.registerEntityRenderer(MainEntities.QUEST_NPC.get(), QuestNPCRenderer::new);
 
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN3.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN4.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN5.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN6.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_RADITZ.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_NAPPA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_VEGETA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_OZARU_VEGETA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FRIEZA_SOLDIER.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_MORO_SOLDIER.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CUI.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_DODORIA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_VEGETA_NAMEK.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_ZARBON.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_ZARBON_TRANSF.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GULDO.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_RECOOME.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_BURTER.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_JEICE.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GINYU.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GINYU_GOKU.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_FIRST.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_SECOND.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_THIRD.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_BASE.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_FP.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_MECHA_FRIEZA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_KING_COLD.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GOKU_YARDRAT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_DRGERO.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_A19.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_A18.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_A17.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_A16.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_IMPERFECT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_PICCOLO_KAMI.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_SEMIPERFECT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SUPER_VEGETA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_TRUNKS_SSJ.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_PERFECT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GOHAN_SSJ.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_SUPERPERFECT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_JR.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SHADOW_DUMMY.get(), DBSagasRenderer::new);
+        for (var sagaEntity : MainEntities.getSagaEntities()) {
+            event.registerEntityRenderer((EntityType) sagaEntity.get(), context -> new DBSagasRenderer(context));
+        }
+
+        regRender(event, SagaSaibamanRenderer::new,
+                MainEntities.SAGA_SAIBAMAN, MainEntities.SAGA_SAIBAMAN2, MainEntities.SAGA_SAIBAMAN3,
+                MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
@@ -220,19 +240,23 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.ROBOT_XENOVERSE.get(), RedRibbonRenderer::new);
         event.registerEntityRenderer(MainEntities.PUNCH_MACHINE.get(), PunchMachineRenderer::new);
 
-		event.registerEntityRenderer(MainEntities.SHENRON.get(), DragonDBRenderer::new);
-		event.registerEntityRenderer(MainEntities.PORUNGA.get(), DragonDBRenderer::new);
+		for (var entity : MainEntities.getDragonWishEntities().values()) {
+			event.registerEntityRenderer(entity.get(), DragonDBRenderer::new);
+		}
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
-        event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_EXPLOSION.get(), KiExplosionRenderer::new);
-        event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPSkillsRenderer::new);
-        event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPSkillsRenderer::new);
+        event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPBlueHurricaneRenderer::new);
+        event.registerEntityRenderer(MainEntities.SP_DRAGON_FIST.get(), SPDragonFistRenderer::new);
+        event.registerEntityRenderer(MainEntities.SP_OZARU_FIST.get(), SPOzaruFistRenderer::new);
+        event.registerEntityRenderer(MainEntities.SP_MAJIN_CANDY.get(), SPMajinCandyRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_LASER.get(), KiLaserRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_WAVE.get(), KiWaveRenderer::new);
         event.registerEntityRenderer(MainEntities.MAJIN_SKILL.get(), MajinSkillRenderer::new);
-        event.registerEntityRenderer(MainEntities.KI_DISC.get(), KiDiscRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_DISC.get(), KiDiskRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_BARRIER.get(), KiBarrierRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_EXPLOSION_VISUAL.get(), KiExplosionVisualRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_AREA.get(), KiProjectileRenderer::new);
 
     }
 
@@ -244,12 +268,12 @@ public class ModClientEvents {
         e.registerLayerDefinition(KiLaserExplosionModel.LAYER_LOCATION, KiLaserExplosionModel::createBodyLayer);
         e.registerLayerDefinition(KiLaserExplosion2Model.LAYER_LOCATION, KiLaserExplosion2Model::createBodyLayer);
         e.registerLayerDefinition(KiWaveModel.LAYER_LOCATION, KiWaveModel::createBodyLayer);
+        e.registerLayerDefinition(KiWave2DModel.LAYER_LOCATION, KiWave2DModel::createBodyLayer);
+        e.registerLayerDefinition(KiWaveExplodeModel.LAYER_LOCATION, KiWaveExplodeModel::createBodyLayer);
+        e.registerLayerDefinition(KiBallModel.LAYER_LOCATION, KiBallModel::createBodyLayer);
+        e.registerLayerDefinition(KiBlockModel.LAYER_LOCATION, KiBlockModel::createBodyLayer);
 
-        e.registerLayerDefinition(KiScytheModel.LAYER_LOCATION, KiScytheModel::createBodyLayer);
-        e.registerLayerDefinition(KiBladeModel.LAYER_LOCATION, KiBladeModel::createBodyLayer);
-        e.registerLayerDefinition(KiTridentModel.LAYER_LOCATION, KiTridentModel::createBodyLayer);
         e.registerLayerDefinition(KiDiscModel.LAYER_LOCATION, KiDiscModel::createBodyLayer);
-
     }
 
     @SubscribeEvent
@@ -258,8 +282,12 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.KI_SPLASH.get(), KiSplashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_SPLASH_WAVE.get(), KiSplashWaveParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_TRAIL.get(), KiTrailParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KI_SHEDDING.get(), KiSheddingParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KI_LIGHTNING.get(), KiLightningParticle.Provider::new);
+
         event.registerSpriteSet(MainParticles.KI_EXPLOSION_FLASH.get(), KiExplosionFlashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_EXPLOSION_SPLASH.get(), KiExplosionSplashParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KI_EXPLOSION.get(), KiExplosionParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KINTON.get(), KintonParticle.Provider::new);
         event.registerSpriteSet(MainParticles.PUNCH_PARTICLE.get(), PunchParticle.Provider::new);
         event.registerSpriteSet(MainParticles.BLOCK_PARTICLE.get(), BlockParticle.Provider::new);
@@ -272,8 +300,86 @@ public class ModClientEvents {
 
     }
 
+    @SafeVarargs
+    private static <T extends Entity> void regRender(EntityRenderersEvent.RegisterRenderers event, EntityRendererProvider<T> provider, RegistryObject<? extends EntityType<? extends T>>... entities) {
+        for (RegistryObject<? extends EntityType<? extends T>> reg : entities) {
+            event.registerEntityRenderer(reg.get(), provider);
+        }
+    }
+
 	@SubscribeEvent
 	public static void registerDimensionEffects(RegisterDimensionSpecialEffectsEvent event) {
 		CustomSpecialEffects.registerSpecialEffects(event);
+	}
+
+	@SubscribeEvent
+	public static void registerBlockColors(RegisterColorHandlersEvent.Block event) {
+		event.register((state, level, pos, tintIndex) ->
+						(level != null && pos != null) ? BiomeColors.getAverageGrassColor(level, pos) : GrassColor.getDefaultColor(),
+				MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
+	}
+
+	@SubscribeEvent
+	public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
+		event.register((stack, tintIndex) -> GrassColor.get(0.5D, 1.0D),
+				MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
+	}
+
+	private static void setCustomWindowIcon() {
+		Minecraft mc = Minecraft.getInstance();
+
+		if (Minecraft.ON_OSX) {
+			try {
+				ResourceLocation macLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "icons/minecraft.icns");
+				var res = mc.getResourceManager().getResource(macLoc);
+				if (res.isPresent()) MacosUtil.loadIcon(res.get()::open);
+			} catch (Exception ignored) {}
+			return;
+		}
+
+		long windowId = mc.getWindow().getWindow();
+		String[] iconNames = {"icon_16x16.png", "icon_32x32.png", "icon_48x48.png", "icon_128x128.png", "icon_256x256.png"};
+		List<NativeImage> loadedImages = new ArrayList<>();
+
+		for (String name : iconNames) {
+			try {
+				ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "icons/" + name);
+				var resource = mc.getResourceManager().getResource(loc);
+				if (resource.isPresent()) {
+					try (InputStream is = resource.get().open()) {
+						loadedImages.add(NativeImage.read(is));
+					}
+				}
+			} catch (Exception ignored) {}
+		}
+
+		if (loadedImages.isEmpty()) return;
+		List<ByteBuffer> buffersToFree = new ArrayList<>();
+
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			GLFWImage.Buffer glfwImages = GLFWImage.malloc(loadedImages.size(), stack);
+
+			for (int i = 0; i < loadedImages.size(); i++) {
+				NativeImage image = loadedImages.get(i);
+				ByteBuffer byteBuffer = MemoryUtil.memAlloc(image.getWidth() * image.getHeight() * 4);
+				buffersToFree.add(byteBuffer);
+				byteBuffer.asIntBuffer().put(image.getPixelsRGBA());
+				glfwImages.position(i);
+				glfwImages.width(image.getWidth());
+				glfwImages.height(image.getHeight());
+				glfwImages.pixels(byteBuffer);
+			}
+			GLFW.glfwSetWindowIcon(windowId, glfwImages.position(0));
+		} finally {
+			buffersToFree.forEach(MemoryUtil::memFree);
+			loadedImages.forEach(NativeImage::close);
+		}
+	}
+
+	@SubscribeEvent
+	public static void registerTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {
+		event.register(CustomTooltipNodes.HeaderNode.class, CustomTooltipRenderers.HeaderRenderer::new);
+		event.register(CustomTooltipNodes.PaddingNode.class, CustomTooltipRenderers.PaddingRenderer::new);
+		event.register(CustomTooltipNodes.SeparatorNode.class, CustomTooltipRenderers.SeparatorRenderer::new);
 	}
 }

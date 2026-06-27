@@ -1,6 +1,11 @@
 package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
+import com.dragonminez.common.dragonball.DragonRadarAssetDefinition;
+import com.dragonminez.common.dragonball.DragonRadarDefinition;
+import com.dragonminez.common.dragonball.DragonBallSetAssetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
 import net.minecraft.data.PackOutput;
@@ -23,8 +28,15 @@ public class DMZItemModelProvider extends ItemModelProvider {
 	@Override
 	protected void registerModels() {
 		//Items (MainItems)
-		simpleItem(MainItems.DBALL_RADAR_ITEM);
-		simpleItem(MainItems.NAMEKDBALL_RADAR_ITEM);
+		for (DragonRadarDefinition radarDefinition : DragonBallDefinitions.getRadars()) {
+			DragonRadarAssetDefinition assets = radarDefinition.resolveAssetDefinition();
+			RegistryObject<Item> item = MainItems.getDragonRadarItemOrThrow(radarDefinition.getId());
+			if (assets != null && assets.getItemTexturePath().isPresent()) {
+				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getItemTexturePath().get()));
+			} else {
+				simpleItem(item);
+			}
+		}
 		simpleItem(MainItems.MIGHT_TREE_FRUIT);
 		simpleItem(MainItems.NUBE_ITEM);
 		simpleItem(MainItems.NUBE_NEGRA_ITEM);
@@ -43,20 +55,18 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.HEART_MEDICINE);
 		simpleItem(MainItems.NAMEK_WATER_BUCKET);
 		simpleItem(MainItems.HEALING_BUCKET);
-		simpleItem(MainItems.DBALL1_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL2_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL3_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL4_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL5_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL6_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL7_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL1_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL2_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL3_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL4_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL5_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL6_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL7_NAMEK_BLOCK_ITEM);
+		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
+			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
+			for (Map.Entry<Integer, RegistryObject<Item>> entry : MainItems.getDragonBallBlockItems(setDefinition.getId()).entrySet()) {
+				int star = entry.getKey();
+				RegistryObject<Item> item = entry.getValue();
+				if (assets != null && assets.getInventoryTexturePathForStar(star).isPresent()) {
+					withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getInventoryTexturePathForStar(star).get()));
+				} else {
+					simpleItem(item);
+				}
+			}
+		}
 		simpleItem(MainItems.RADAR_PIECE);
 		simpleItem(MainItems.T1_RADAR_CHIP);
 		simpleItem(MainItems.T2_RADAR_CHIP);
@@ -90,65 +100,95 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		withExistingParent(MainItems.BANDIT_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 
 		//Comidas
-		simpleItem(MainItems.COMIDA_DINO_RAW);
-		simpleItem(MainItems.COMIDA_DINO_COOKED);
+		simpleItem(MainItems.DINO_MEAT_RAW);
+		simpleItem(MainItems.DINO_MEAT_COOKED);
+		simpleItem(MainItems.BABY_DINO_MEAT_RAW);
+		simpleItem(MainItems.BABY_DINO_MEAT_COOKED);
 		simpleItem(MainItems.DINO_TAIL_RAW);
 		simpleItem(MainItems.DINO_TAIL_COOKED);
 		simpleItem(MainItems.FROG_LEGS_RAW);
 		simpleItem(MainItems.FROG_LEGS_COOKED);
 
-		//Armaduras
-		generateArmorSetModels(MainItems.GOKU_KID_ARMOR);
-		generateArmorSetModels(MainItems.GOKU_ARMOR);
-		generateArmorSetModels(MainItems.GOKU_SUPER_ARMOR);
-		generateArmorSetModels(MainItems.GOKU_GT_ARMOR);
-		generateArmorSetModels(MainItems.YARDRAT_ARMOR);
-		generateArmorSetModels(MainItems.GOTEN_ARMOR);
-		generateArmorSetModels(MainItems.GOTEN_SUPER_ARMOR);
-		generateArmorSetModels(MainItems.GOHAN_SUPER_ARMOR);
-		generateArmorSetModels(MainItems.GREAT_SAIYAMAN_ARMOR);
-		generateArmorSetModels(MainItems.FUTURE_GOHAN_ARMOR);
-		generateArmorSetModels(MainItems.VEGETA_SAIYAN_ARMOR);
-		generateArmorSetModels(MainItems.VEGETA_NAMEK_ARMOR);
-		generateArmorSetModels(MainItems.VEGETA_Z_ARMOR);
-		generateArmorSetModels(MainItems.VEGETA_BUU_ARMOR);
-		generateArmorSetModels(MainItems.VEGETA_SUPER_ARMOR);
-		generateArmorSetModels(MainItems.VEGETTO_ARMOR);
-		generateArmorSetModels(MainItems.GOGETA_ARMOR);
-		generateArmorSetModels(MainItems.PICCOLO_ARMOR);
-		generateArmorSetModels(MainItems.DEMON_GI_BLUE_ARMOR);
+		//Armaduras (DEJAR A-Z POR FAVOR Q SINO ME PIERDO XD)
+		generateArmorSetModels(MainItems.A13_ARMOR);
+		generateArmorSetModels(MainItems.A14_ARMOR);
+		generateArmorSetModels(MainItems.A16_ARMOR);
+		generateArmorSetModels(MainItems.A17_ARMOR);
+		generateArmorSetModels(MainItems.A17_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.A18_ARMOR);
+		generateArmorSetModels(MainItems.A18_CELL_ARMOR);
+		generateArmorSetModels(MainItems.A18_KAME_ARMOR);
+		generateArmorSetModels(MainItems.A18_TOURNAMENT_ARMOR);
+		generateArmorSetModels(MainItems.A20_ARMOR);
+		generateArmorSetModels(MainItems.AGE1000_ARMOR);
 		generateArmorSetModels(MainItems.BARDOCK_DBZ_ARMOR);
 		generateArmorSetModels(MainItems.BARDOCK_SUPER_ARMOR);
-		generateArmorSetModels(MainItems.TURLES_ARMOR);
-		generateArmorSetModels(MainItems.TIEN_ARMOR);
-		generateArmorSetModels(MainItems.TRUNKS_Z_ARMOR);
-		generateArmorSetModels(MainItems.TRUNKS_SUPER_ARMOR);
-		generateArmorSetModels(MainItems.TRUNKS_KID_ARMOR);
-		generateArmorSetModels(MainItems.BROLY_Z_ARMOR);
-		generateArmorSetModels(MainItems.BROLY_SUPER_ARMOR);
-		generateArmorSetModels(MainItems.SHIN_ARMOR);
+		generateArmorSetModels(MainItems.BEERUS_ARMOR);
 		generateArmorSetModels(MainItems.BLACKGOKU_ARMOR);
-		generateArmorSetModels(MainItems.ZAMASU_ARMOR);
+		generateArmorSetModels(MainItems.BROLY_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.BROLY_Z_ARMOR);
+		generateArmorSetModels(MainItems.CAULIFLA_ARMOR);
+		generateArmorSetModels(MainItems.CHAOZ_ARMOR);
+		generateArmorSetModels(MainItems.DEMON_GI_BLUE_ARMOR);
+		generateArmorSetModels(MainItems.DRAGON_CLAN_ARMOR);
+		generateArmorSetModels(MainItems.EVIL_BUU_ARMOR);
+		generateArmorSetModels(MainItems.FIGHTER_ARMOR);
 		generateArmorSetModels(MainItems.FUSION_ZAMASU_ARMOR);
-		generateArmorSetModels(MainItems.PRIDE_TROOPS_ARMOR);
-		generateArmorSetModels(MainItems.HIT_ARMOR);
-		generateArmorSetModels(MainItems.GAS_ARMOR);
-		generateArmorSetModels(MainItems.MAJIN_BUU_ARMOR);
+		generateArmorSetModels(MainItems.FUTURE_GOHAN_ARMOR);
 		generateArmorSetModels(MainItems.GAMMA1_ARMOR);
 		generateArmorSetModels(MainItems.GAMMA2_ARMOR);
+		generateArmorSetModels(MainItems.GAS_ARMOR);
+		generateArmorSetModels(MainItems.GINE_ARMOR);
+		generateArmorSetModels(MainItems.GOGETA_ARMOR);
+		generateArmorSetModels(MainItems.GOHAN_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_GT_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_KID_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_WHIS_ARMOR);
+		generateArmorSetModels(MainItems.GOTEN_ARMOR);
+		generateArmorSetModels(MainItems.GOTEN_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.GRANOLA_ARMOR);
+		generateArmorSetModels(MainItems.GREAT_SAIYAMAN_ARMOR);
+		generateArmorSetModels(MainItems.HIT_ARMOR);
 		generateArmorSetModels(MainItems.INVENCIBLE_ARMOR);
-        generateArmorSetModels(MainItems.INVENCIBLE_BLUE_ARMOR);
-        generateArmorSetModels(MainItems.NARUKE_ARMOR);
-        generateArmorSetModels(MainItems.STRONGEST_ARMOR);
-        generateArmorSetModels(MainItems.A17_ARMOR);
-        generateArmorSetModels(MainItems.A18_ARMOR);
-        generateArmorSetModels(MainItems.A16_ARMOR);
-        generateArmorSetModels(MainItems.ORANGE_HIGH_ARMOR);
-        generateArmorSetModels(MainItems.GRANOLA_ARMOR);
-        generateArmorSetModels(MainItems.AGE1000_ARMOR);
-        generateArmorSetModels(MainItems.GINE_ARMOR);
-        generateArmorSetModels(MainItems.KALE_ARMOR);
-        generateArmorSetModels(MainItems.CAULIFLA_ARMOR);
+		generateArmorSetModels(MainItems.INVENCIBLE_BLUE_ARMOR);
+		generateArmorSetModels(MainItems.KALE_ARMOR);
+		generateArmorSetModels(MainItems.KEFLA_ARMOR);
+		generateArmorSetModels(MainItems.KIBITO_ARMOR);
+		generateArmorSetModels(MainItems.KING_VEGETA_ARMOR);
+		generateArmorSetModels(MainItems.MAJIN21_ARMOR);
+		generateArmorSetModels(MainItems.MAJIN_BUU_ARMOR);
+		generateArmorSetModels(MainItems.MIGHTY_MAJIN_ARMOR);
+		generateArmorSetModels(MainItems.MYSTIC_ARMOR);
+		generateArmorSetModels(MainItems.NARUKE_ARMOR);
+		generateArmorSetModels(MainItems.ORANGE_HIGH_ARMOR);
+		generateArmorSetModels(MainItems.PICCOLO_ARMOR);
+		generateArmorSetModels(MainItems.PRIDE_TROOPS_ARMOR);
+		generateArmorSetModels(MainItems.SHIN_ARMOR);
+		generateArmorSetModels(MainItems.SLUG_ARMOR);
+		generateArmorSetModels(MainItems.STRONGEST_ARMOR);
+		generateArmorSetModels(MainItems.SUPER_BUU_ARMOR);
+		generateArmorSetModels(MainItems.TIEN_ARMOR);
+		generateArmorSetModels(MainItems.TRUNKS_KID_ARMOR);
+		generateArmorSetModels(MainItems.TRUNKS_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.TRUNKS_Z_ARMOR);
+		generateArmorSetModels(MainItems.TURLES_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_BUU_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_GT_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_NAMEK_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_SAIYAN_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_WHIS_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_Z_ARMOR);
+		generateArmorSetModels(MainItems.VEGETTO_ARMOR);
+		generateArmorSetModels(MainItems.VIDEL_ARMOR);
+		generateArmorSetModels(MainItems.WARRIOR_CLAN_ARMOR);
+		generateArmorSetModels(MainItems.WHIS_ARMOR);
+		generateArmorSetModels(MainItems.WONDER_MAJIN_ARMOR);
+		generateArmorSetModels(MainItems.XENO_GOKU_ARMOR);
+		generateArmorSetModels(MainItems.YARDRAT_ARMOR);
+		generateArmorSetModels(MainItems.ZAMASU_ARMOR);
 
         //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);
@@ -157,49 +197,101 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.ARMOR_CRAFTING_KIT);
 		simpleItem(MainItems.BLANK_PATTERN_Z);
 		simpleItem(MainItems.BLANK_PATTERN_SUPER);
-		patternItem(MainItems.PATTERN_GOKU_KID);
-		patternItem(MainItems.PATTERN_GOKU1);
-		patternItem(MainItems.PATTERN_GOKU_SUPER);
-		patternItem(MainItems.PATTERN_GOKU_GT);
-		patternItem(MainItems.PATTERN_YARDRAT);
-		patternItem(MainItems.PATTERN_GOTEN);
-		patternItem(MainItems.PATTERN_GOTEN_SUPER);
-		patternItem(MainItems.PATTERN_GOHAN_SUPER);
-		patternItem(MainItems.PATTERN_GREAT_SAIYAMAN);
-		patternItem(MainItems.PATTERN_FUTURE_GOHAN);
-		patternItem(MainItems.PATTERN_VEGETA1);
-		patternItem(MainItems.PATTERN_VEGETA2);
-		patternItem(MainItems.PATTERN_VEGETA_Z);
-		patternItem(MainItems.PATTERN_VEGETA_BUU);
-		patternItem(MainItems.PATTERN_VEGETA_SUPER);
-		patternItem(MainItems.PATTERN_VEGETTO);
-		patternItem(MainItems.PATTERN_GOGETA);
-		patternItem(MainItems.PATTERN_PICCOLO);
-		patternItem(MainItems.PATTERN_GOHAN1);
+		patternItem(MainItems.PATTERN_A13);
+		patternItem(MainItems.PATTERN_A16);
+		patternItem(MainItems.PATTERN_A17);
+		patternItem(MainItems.PATTERN_A17_SUPER);
+		patternItem(MainItems.PATTERN_A18);
+		patternItem(MainItems.PATTERN_A18_CELL);
+		patternItem(MainItems.PATTERN_A18_KAME);
+		patternItem(MainItems.PATTERN_A18_TOURNAMENT);
+		patternItem(MainItems.PATTERN_AGE1000);
 		patternItem(MainItems.PATTERN_BARDOCK1);
 		patternItem(MainItems.PATTERN_BARDOCK2);
-		patternItem(MainItems.PATTERN_TURLES);
-		patternItem(MainItems.PATTERN_TIEN);
-		patternItem(MainItems.PATTERN_TRUNKS_Z);
-		patternItem(MainItems.PATTERN_TRUNKS_SUPER);
-		patternItem(MainItems.PATTERN_TRUNKS_KID);
-		patternItem(MainItems.PATTERN_BROLY_Z);
-		patternItem(MainItems.PATTERN_BROLY_SUPER);
-		patternItem(MainItems.PATTERN_SHIN);
+		patternItem(MainItems.PATTERN_BEERUS);
 		patternItem(MainItems.PATTERN_BLACK);
-		patternItem(MainItems.PATTERN_ZAMASU);
+		patternItem(MainItems.PATTERN_BROLY_SUPER);
+		patternItem(MainItems.PATTERN_BROLY_Z);
+		patternItem(MainItems.PATTERN_CAULIFLA);
+		patternItem(MainItems.PATTERN_CHAOZ);
+		patternItem(MainItems.PATTERN_DRAGON_CLAN);
+		patternItem(MainItems.PATTERN_EVIL_BUU);
+		patternItem(MainItems.PATTERN_FIGHTER);
 		patternItem(MainItems.PATTERN_FUSION_ZAMASU);
-		patternItem(MainItems.PATTERN_PRIDE_TROOPS);
-		patternItem(MainItems.PATTERN_HIT);
-		patternItem(MainItems.PATTERN_GAS);
-		patternItem(MainItems.PATTERN_MAJIN_BUU);
+		patternItem(MainItems.PATTERN_FUTURE_GOHAN);
 		patternItem(MainItems.PATTERN_GAMMA1);
 		patternItem(MainItems.PATTERN_GAMMA2);
+		patternItem(MainItems.PATTERN_GAS);
+		patternItem(MainItems.PATTERN_GETE);
+		patternItem(MainItems.PATTERN_GINE);
+		patternItem(MainItems.PATTERN_GOGETA);
+		patternItem(MainItems.PATTERN_GOHAN1);
+		patternItem(MainItems.PATTERN_GOHAN_SUPER);
+		patternItem(MainItems.PATTERN_GOKU1);
+		patternItem(MainItems.PATTERN_GOKU_GT);
+		patternItem(MainItems.PATTERN_GOKU_KID);
+		patternItem(MainItems.PATTERN_GOKU_SUPER);
+		patternItem(MainItems.PATTERN_GOKU_WHIS);
+		patternItem(MainItems.PATTERN_GOTEN);
+		patternItem(MainItems.PATTERN_GOTEN_SUPER);
+		patternItem(MainItems.PATTERN_GRANOLA);
+		patternItem(MainItems.PATTERN_GREAT_SAIYAMAN);
+		patternItem(MainItems.PATTERN_HIT);
+		patternItem(MainItems.PATTERN_KALE);
+		patternItem(MainItems.PATTERN_KEFLA);
+		patternItem(MainItems.PATTERN_KIBITO);
+		patternItem(MainItems.PATTERN_MAJIN21);
+		patternItem(MainItems.PATTERN_MAJIN_BUU);
+		patternItem(MainItems.PATTERN_MIGHTY_MAJIN);
+		patternItem(MainItems.PATTERN_MYSTIC);
+		patternItem(MainItems.PATTERN_ORANGE_HIGH);
+		patternItem(MainItems.PATTERN_PICCOLO);
+		patternItem(MainItems.PATTERN_PRIDE_TROOPS);
+		patternItem(MainItems.PATTERN_SHIN);
+		patternItem(MainItems.PATTERN_SLUG);
+		patternItem(MainItems.PATTERN_SUPER_BUU);
+		patternItem(MainItems.PATTERN_TIEN);
+		patternItem(MainItems.PATTERN_TRUNKS_KID);
+		patternItem(MainItems.PATTERN_TRUNKS_SUPER);
+		patternItem(MainItems.PATTERN_TRUNKS_Z);
+		patternItem(MainItems.PATTERN_TURLES);
+		patternItem(MainItems.PATTERN_VEGETA1);
+		patternItem(MainItems.PATTERN_VEGETA2);
+		patternItem(MainItems.PATTERN_VEGETA_BUU);
+		patternItem(MainItems.PATTERN_VEGETA_GT);
+		patternItem(MainItems.PATTERN_VEGETA_SUPER);
+		patternItem(MainItems.PATTERN_VEGETA_WHIS);
+		patternItem(MainItems.PATTERN_VEGETA_Z);
+		patternItem(MainItems.PATTERN_VEGETTO);
+		patternItem(MainItems.PATTERN_VIDEL);
+		patternItem(MainItems.PATTERN_WARRIOR_CLAN);
+		patternItem(MainItems.PATTERN_WHIS);
+		patternItem(MainItems.PATTERN_WONDER_MAJIN);
+		patternItem(MainItems.PATTERN_XENO_GOKU);
+		patternItem(MainItems.PATTERN_YARDRAT);
+		patternItem(MainItems.PATTERN_ZAMASU);
 
 		//Minerales
 		simpleItem(MainItems.GETE_SCRAP);
 		simpleItem(MainItems.GETE_INGOT);
 		simpleItem(MainItems.KIKONO_SHARD);
+
+		//Gete Cosas
+		simpleItem(MainItems.GETE_RED_CAPSULE);
+		simpleItem(MainItems.GETE_PURPLE_CAPSULE);
+		simpleItem(MainItems.GETE_YELLOW_CAPSULE);
+		simpleItem(MainItems.GETE_GREEN_CAPSULE);
+		simpleItem(MainItems.GETE_ORANGE_CAPSULE);
+		simpleItem(MainItems.GETE_BLUE_CAPSULE);
+
+		//Bulma Cosas
+		simpleItem(MainItems.KI_BATTERY);
+		simpleItem(MainItems.ANTI_KI_CLOAK);
+
+		//Pesos
+		simpleItem(MainItems.WEIGHT_TURTLE_SHELL);
+		simpleItem(MainItems.WORKOUT_WEIGHTS);
+		simpleItem(MainItems.WEIGHT_PICCOLO_CAPE);
 
 		//Bloques (MainBlocks)
 		simpleBlockItem(MainBlocks.NAMEK_BLOCK);
@@ -284,6 +376,12 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		blockItem(MainBlocks.SACRED_FERN);
 		saplingItem(MainBlocks.NAMEK_AJISSA_SAPLING);
 
+		// Herramientas
+		handheldItem(MainItems.GETE_PICKAXE);
+		handheldItem(MainItems.GETE_AXE);
+		handheldItem(MainItems.GETE_SHOVEL);
+		handheldItem(MainItems.GETE_HOE);
+
 	}
 
 	private void simpleItem(RegistryObject<Item> item) {
@@ -342,5 +440,10 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		for (RegistryObject<Item> piece : armorSet.values()) {
 			armorItem(piece);
 		}
+	}
+	private void handheldItem(RegistryObject<Item> item) {
+		withExistingParent(item.getId().getPath(),
+				ResourceLocation.parse("item/handheld")).texture("layer0",
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
 }

@@ -9,6 +9,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.MinecraftForge;
@@ -90,11 +91,18 @@ public class StorageManager {
 		MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-			stats.load(loadedData);
-
-			if (!stats.getQuestData().isSagaUnlocked("saiyan_saga")) {
-				stats.getQuestData().unlockSaga("saiyan_saga");
+			try {
+				stats.load(loadedData);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
 			}
+
+			if (stats.getPlayerQuestData().isSagaLocked("saiyan_saga")) {
+				stats.getPlayerQuestData().setSagaUnlocked("saiyan_saga", true);
+			}
+
+			TransformationsHelper.ensureSelectedFormDefault(stats);
+			TransformationsHelper.ensureSelectedStackFormDefault(stats);
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString());

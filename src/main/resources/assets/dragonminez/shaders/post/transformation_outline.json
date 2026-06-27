@@ -1,0 +1,50 @@
+{
+  "targets": [
+    "swap",
+    "entity_mask",
+    "entity_params",
+    "colored_mask",
+    "edge_mask",
+    "h_blur"
+  ],
+  "passes": [
+    {
+      "name": "dragonminez:transformation_unpack",
+      "intarget": "entity_mask",
+      "outtarget": "colored_mask",
+      "auxtargets": [
+        { "name": "ParamsSampler", "id": "entity_params" }
+      ]
+    },
+    {
+      "name": "dragonminez:transformation_sobel",
+      "intarget": "colored_mask",
+      "outtarget": "edge_mask"
+    },
+    {
+      "name": "dragonminez:transformation_blur_h",
+      "intarget": "colored_mask",
+      "outtarget": "h_blur"
+    },
+    {
+      "name": "dragonminez:transformation_blur_v",
+      "intarget": "h_blur",
+      "outtarget": "entity_mask"
+    },
+    {
+      "name": "dragonminez:transformation_composite",
+      "intarget": "minecraft:main",
+      "outtarget": "swap",
+      "auxtargets": [
+        { "name": "ColoredMaskSampler", "id": "colored_mask" },
+        { "name": "GlowSampler", "id": "entity_mask" },
+        { "name": "EdgeSampler", "id": "edge_mask" }
+      ]
+    },
+    {
+      "name": "blit",
+      "intarget": "swap",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}

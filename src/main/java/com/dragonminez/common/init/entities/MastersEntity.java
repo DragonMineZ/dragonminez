@@ -1,19 +1,25 @@
 package com.dragonminez.common.init.entities;
 
-import com.dragonminez.client.gui.MastersSkillsScreen;
-import com.dragonminez.client.gui.character.CharacterStatsScreen;
-import com.dragonminez.client.gui.character.RaceSelectionScreen;
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.alignment.NpcDispositionService;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
+import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import net.minecraft.client.Minecraft;
+import lombok.Getter;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -21,8 +27,6 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
@@ -33,11 +37,11 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
-	protected String masterName = null;
+    private static final EntityDataAccessor<Float> SCALE_VAL = SynchedEntityData.defineId(MastersEntity.class, EntityDataSerializers.FLOAT);
 
-	public String getMasterName() {
-		return masterName;
-	}
+
+    @Getter
+	protected String masterName = null;
 
 	protected MastersEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);
@@ -98,7 +102,8 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 		controllers.add(new AnimationController<>(this, "controller", 0, event -> {
 			return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
 		}));
-	}
+        if ("frieza".equals(this.masterName)) controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
+    }
 
 	@Override
 	public AnimatableInstanceCache getAnimatableInstanceCache() {
@@ -114,20 +119,63 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	public void checkDespawn() {
 	}
 
-	@OnlyIn(Dist.CLIENT)
-	@Override
+    public void setScaleVal(float scale) {
+        this.entityData.set(SCALE_VAL, scale);
+    }
+
+    public float getScale() {
+        float customScale = this.entityData.get(SCALE_VAL);
+        return customScale > 0.0F ? customScale : 1.0F;
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(SCALE_VAL, 1.0F);
+
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putFloat("EntityScale", this.entityData.get(SCALE_VAL));
+
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        if (pCompound.contains("EntityScale")) {this.setScaleVal(pCompound.getFloat("EntityScale"));}
+
+    }
+
+    @Override
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
-		if (this.level().isClientSide && masterName != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
-				if (data.getStatus().isHasCreatedCharacter()) {
-					Minecraft mc = Minecraft.getInstance();
-					mc.setScreen(new MastersSkillsScreen(masterName, this));
-					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+		if (pHand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+
+		if (!this.level().isClientSide && pPlayer instanceof ServerPlayer serverPlayer && masterName != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+				if (!data.getStatus().isHasCreatedCharacter()) {
+					serverPlayer.displayClientMessage(
+							Component.translatable("gui.dragonminez.lines.generic.createcharacter"), true);
+					return;
 				}
+				Component blocker = NpcDispositionService.getDialogueBlocker(serverPlayer, this);
+				if (blocker != null) {
+					serverPlayer.displayClientMessage(blocker, true);
+					return;
+				}
+
+				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(masterName, data);
+				NetworkHandler.sendToPlayer(
+						new OpenQuestNPCDialogueS2C(masterName, options.offerableQuestIds(),
+								options.turnInQuestIds(), options.inProgressQuestIds(), true, getId()),
+						serverPlayer
+				);
 			});
 			return InteractionResult.SUCCESS;
 		}
 
-		return super.mobInteract(pPlayer, pHand);
+		return InteractionResult.SUCCESS;
 	}
 }

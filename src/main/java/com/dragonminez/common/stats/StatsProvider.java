@@ -48,7 +48,11 @@ public class StatsProvider implements ICapabilityProvider, INBTSerializable<Comp
 
     @Override
     public void deserializeNBT(CompoundTag nbt) {
-        data.load(nbt);
-    }
+		try {
+			data.load(nbt);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }
 

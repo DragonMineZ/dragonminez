@@ -42,6 +42,7 @@ public class ConfigLoader {
 
 		try (var stream = Files.list(formsPath)) {
 			stream.filter(path -> path.toString().endsWith(".json"))
+					.filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_"))
 					.forEach(formFile -> {
 						try {
 							FormConfig formConfig = loadConfig(formFile, FormConfig.class);
@@ -73,6 +74,7 @@ public class ConfigLoader {
 
 		try (var stream = Files.list(formsPath)) {
 			stream.filter(path -> path.toString().endsWith(".json"))
+					.filter(path -> !path.getFileName().toString().toLowerCase().startsWith("old_"))
 					.forEach(formFile -> {
 						try {
 							FormConfig formConfig = loadConfig(formFile, FormConfig.class);

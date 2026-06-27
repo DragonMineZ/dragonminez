@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube_column",
   "textures": {
-    "end": "dragonminez:block/custom/gete_debris_top",
-    "side": "dragonminez:block/custom/gete_debris_side"
+    "end": "dragonminez:block/gete_debris_top",
+    "side": "dragonminez:block/gete_debris_side"
   }
 }

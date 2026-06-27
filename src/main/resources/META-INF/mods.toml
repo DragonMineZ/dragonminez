@@ -1,17 +1,19 @@
 modLoader="javafml"
 loaderVersion="[47,)"
 license="${mod_license}"
+issueTrackerURL = "https://discord.dragonminez.com"
 
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 logoFile="dmz_logo.png"
-credits="Thanks to Toji71 for helping us with the Builds."
+credits="${mod_credits}"
 authors="${mod_authors}"
 description='''${mod_description}'''
 displayTest = "MATCH_VERSION"
-displayURL="https://discord.dragonminez.com/"
+displayURL="https://dragonminez.com/"
+updateJSONURL="https://raw.githubusercontent.com/DragonMineZ/dragonminez/main/update.json"
 
 [[mixins]]
 config="dragonminez.mixins.json"
@@ -34,13 +36,44 @@ config="dragonminez.mixins.json"
     modId="geckolib"
     mandatory=true
     versionRange="${geckolib_version_range}"
-    ordering="NONE"
+    ordering="AFTER"
     side="BOTH"
 
 [[dependencies.dragonminez]]
     modId="terrablender"
-    mandatory=false
+    mandatory=true
     versionRange="${terrablender_version_range}"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.dragonminez]]
+    modId="curios"
+    mandatory=true
+    versionRange="${curios_version_range}"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.dragonminez]]
+    modId="legendarytooltips"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+    type="incompatible"
+
+[[dependencies.dragonminez]]
+    modId="epicfight"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+    type="incompatible"
+
+[[dependencies.dragonminez]]
+    modId="bettercombat"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+    type="incompatible"
 

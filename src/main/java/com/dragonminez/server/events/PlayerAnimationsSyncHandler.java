@@ -23,6 +23,7 @@ public class PlayerAnimationsSyncHandler {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         if (!(event.player instanceof ServerPlayer)) return;
+        if (!event.player.level().isClientSide()) return;
 
         Player player = event.player;
         UUID uuid = player.getUUID();

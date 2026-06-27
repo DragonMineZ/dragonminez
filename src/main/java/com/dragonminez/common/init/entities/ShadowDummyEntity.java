@@ -1,6 +1,8 @@
 package com.dragonminez.common.init.entities;
 
+import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.particles.ParticleTypes;
@@ -15,7 +17,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.UUID;
@@ -40,98 +41,52 @@ public class ShadowDummyEntity extends DBSagasEntity {
 				.add(Attributes.ATTACK_DAMAGE, 15.0D)
 				.add(Attributes.FOLLOW_RANGE, 64.0D)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 0.6D)
-				.add(Attributes.ARMOR, 10.0D);
+				.add(Attributes.ARMOR, 10.0D)
+				.add(EntityAttributes.KI_BLAST_DAMAGE.get(), 20.0D)
+				.add(EntityAttributes.FLY_SPEED.get(), 0.35D)
+				.add(EntityAttributes.KI_BLAST_SPEED.get(), 0.6D);
 	}
 
 	public void setOwner(LivingEntity owner) {
 		this.ownerUUID = owner.getUUID();
 	}
 
-	public void copyStatsFromPlayer(ServerPlayer player) {
+	public void copyStatsFromPlayerWithPercent(ServerPlayer player, int percent) {
+		double scale = net.minecraft.util.Mth.clamp(percent, 25, 75) / 100.0;
 		this.setOwner(player);
-
-		double playerMaxHP = player.getAttributeValue(Attributes.MAX_HEALTH);
-		if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
-			this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(playerMaxHP);
-			this.setHealth((float) playerMaxHP * 2);
-		}
-
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (this instanceof IBattlePower bpEntity) bpEntity.setBattlePower(data.getBattlePower());
-			double playerDmg = data.getMeleeDamage() * 0.5;
+			double hp = player.getAttributeValue(Attributes.MAX_HEALTH) * scale;
+			if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
+				this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(hp);
+				this.setHealth((float) (hp + data.getDefense() * scale));
+			}
+			if (this instanceof IBattlePower bp) bp.setBattlePower((int) (data.getBattlePower() * scale));
 			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE))
-				this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(playerDmg);
-			float calculatedKiDamage = (float) ((float) data.getKiDamage() * 0.5);
-			this.setKiBlastDamage(calculatedKiDamage);
-			if (this.getAttributes().hasAttribute(Attributes.ARMOR))
-				this.getAttribute(Attributes.ARMOR).setBaseValue(data.getDefense() * 0.75);
+				this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(data.getMeleeDamage() * scale * 0.75);
+			this.setKiBlastDamage((float) (data.getKiDamage() * scale * 0.75));
 		});
 		this.getPersistentData().putBoolean("dmz_stats_configured", true);
 	}
 
-	@Override
-	public void tick() {
-		super.tick();
-		LivingEntity target = this.getTarget();
-		handleCommonCombatMovement(target, this.isCasting(), false);
+	public void copyStatsFromPlayer(ServerPlayer player) {
+		this.setOwner(player);
 
-		//if (ownerUUID == null) this.discard();
-
-		if (this.level().isClientSide) {
-			for (int i = 0; i < 2; i++) {
-				this.level().addParticle(
-						ParticleTypes.LARGE_SMOKE,
-						this.getRandomX(0.5D),
-						this.getRandomY(),
-						this.getRandomZ(0.5D),
-						0.0D, 0.05D, 0.0D
-				);
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			double playerMaxHP = player.getAttributeValue(Attributes.MAX_HEALTH);
+			if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
+				this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(playerMaxHP);
+				this.setHealth((float) ((float) playerMaxHP + data.getDefense() * 0.25f));
 			}
-		}
-
-		if (target != null && ownerUUID != null && target.getUUID().equals(ownerUUID)) {
-			this.setTarget(null);
-			return;
-		}
-
-		if (!this.level().isClientSide) {
-			if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-			if (target != null && target.isAlive() && !this.isCasting()) {
-				double distSqr = this.distanceToSqr(target);
-
-				if (this.teleportCooldown <= 0 && distSqr > 200.0D) {
-					performTeleport(target);
-					return;
-				}
-
-				if (this.kiBlastCooldown <= 0 && distSqr > 100.0D) startCasting(Bolita);
-			}
-
-			if (this.isCasting()) {
-				this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-				if (target != null && target.isAlive()) {
-					this.castTimer++;
-
-					if (getSkillType() == Bolita) {
-						if (this.castTimer >= 50) {
-							shootGenericKiBlast(
-									target,
-									0.8F,
-									0xFF3838,
-									0x241111,
-									0.8f
-							);
-							stopCasting();
-						}
-					}
-				} else {
-					stopCasting();
-				}
-			}
-		}
+			if (this instanceof IBattlePower bpEntity) bpEntity.setBattlePower((int) (data.getBattlePower() * 0.25f));
+			double playerDmg = data.getMeleeDamage() * 0.25;
+			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE))
+				this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(playerDmg);
+			float calculatedKiDamage = (float) ((float) data.getKiDamage() * 0.25);
+			this.setKiBlastDamage(calculatedKiDamage);
+		});
+		this.getPersistentData().putBoolean("dmz_stats_configured", true);
 	}
+
 
 	@Override
 	public void stopCasting() {
@@ -152,7 +107,7 @@ public class ShadowDummyEntity extends DBSagasEntity {
 			int skill = getSkillType();
 
 			if (skill == Bolita) {
-				return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+				return event.setAndContinue(DBSagasAnimations.ANIM_KI_FINALFLASH);
 			}
 		}
 		event.getController().forceAnimationReset();

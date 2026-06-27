@@ -1,13 +1,17 @@
 package com.dragonminez.common.datagen;
 
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.block.custom.KikonoStationBlock;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
@@ -28,20 +32,9 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 	@Override
 	protected void generate() {
 		//Dragon Balls
-		this.dropSelf(MainBlocks.DBALL1_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL2_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL3_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL4_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL5_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL6_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL7_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL1_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL2_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL3_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL4_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL5_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL6_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL7_NAMEK_BLOCK.get());
+		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
+			MainBlocks.getDragonBallBlocks(setDefinition.getId()).values().forEach(block -> this.dropSelf(block.get()));
+		}
 
 		//Maderas + Bloques "dropSelf"
 		this.dropSelf(MainBlocks.NAMEK_AJISSA_LOG.get());
@@ -98,9 +91,11 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		//this.dropSelf(MainBlocks.GETE_FURNACE.get());
 		this.dropSelf(MainBlocks.GETE_ORE.get());
 		this.dropSelf(MainBlocks.TIME_CHAMBER_BLOCK.get());
-		this.dropSelf(MainBlocks.KIKONO_STATION.get());
+		this.add(MainBlocks.KIKONO_STATION.get(),
+				block -> createSinglePropConditionTable(block, KikonoStationBlock.HALF, DoubleBlockHalf.LOWER));
 		this.dropSelf(MainBlocks.ENERGY_CABLE.get());
 		this.dropSelf(MainBlocks.FUEL_GENERATOR.get());
+		this.dropSelf(MainBlocks.GRAVITY_DEVICE.get());
 
 
 		//Bloques que Dropean otros items
@@ -150,6 +145,7 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 				block -> createLeavesDrops(block, MainBlocks.NAMEK_SACRED_SAPLING.get(), NORMAL_LEAVES_SAPLING_CHANCES));
 		this.add(MainBlocks.NAMEK_GRASS_BLOCK.get(), block -> SilkTouchBlockDrop(MainBlocks.NAMEK_GRASS_BLOCK.get(), MainBlocks.NAMEK_DIRT.get()));
 		this.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get(), block -> SilkTouchBlockDrop(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get(), MainBlocks.NAMEK_DIRT.get()));
+		this.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get(), block -> SilkTouchBlockDrop(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get(), MainBlocks.ROCKY_DIRT.get()));
 		this.add(MainBlocks.NAMEK_GRASS.get(), block -> ShearsOnlyDrop(MainBlocks.NAMEK_GRASS.get()));
 		this.add(MainBlocks.NAMEK_SACRED_GRASS.get(), block -> ShearsOnlyDrop(MainBlocks.NAMEK_SACRED_GRASS.get()));
 		this.add(MainBlocks.NAMEK_FERN.get(), block -> ShearsOnlyDrop(MainBlocks.NAMEK_FERN.get()));

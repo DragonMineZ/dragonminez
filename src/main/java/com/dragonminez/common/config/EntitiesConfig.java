@@ -10,29 +10,12 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class EntitiesConfig {
-	public static final int CURRENT_VERSION = 3;
+	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private int configVersion;
+	private double configVersion;
 
-	private HardModeSettings hardModeSettings = new HardModeSettings();
 	private Map<String, EntityStats> defaultEntityStats = new HashMap<>();
-
-	@Setter
-	@Getter
-	@NoArgsConstructor
-	public static class HardModeSettings {
-		private Double hpMultiplier = 3.0;
-		private Double damageMultiplier = 2.0;
-
-		public Double getHpMultiplier() {
-			return Math.max(1, hpMultiplier);
-		}
-
-		public Double getDamageMultiplier() {
-			return Math.max(1, damageMultiplier);
-		}
-	}
 
 	@Setter
 	@Getter

@@ -11,4 +11,10 @@ public class BioAndroidForms {
 	public static final String SUPER_PERFECT = "superperfect";
     public static final String ULTRA_PERFECT = "ultraperfect";
 
+	// Legendary Forms group
+	public static final String GROUP_LEGENDARYFORMS = "legendaryforms";
+	public static final String XENO = "xeno";
+	public static final String XENO_FP = "xenofp";
+	public static final String XENO_MAX = "xenomax";
+
 }

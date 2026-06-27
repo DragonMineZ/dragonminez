@@ -1,0 +1,354 @@
+name: DragonMineZ Dev Jar Upload
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - '**.java'
+      - 'src/main/resources/**'
+      - 'src/generated/resources/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/dev-jar-upload.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-jar-upload-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-upload:
+    name: Build and upload dev jar
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up JDK 17 Temurin
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Generate data for jar
+        run: ./gradlew runData
+
+      - name: Build dev jar
+        run: ./gradlew build --build-cache
+
+      - name: Verify generated data
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Vanilla datagen logs serialization failures but still exits 0 and even
+          # writes the offending file (DFU partial results), so the jar would ship
+          # broken JSON. Fail loudly instead.
+          log="run-data/logs/latest.log"
+          if [[ -f "$log" ]] && grep -F "Couldn't serialize element" "$log"; then
+            echo "::error::Data generation logged serialization errors (see lines above)."
+            exit 1
+          fi
+
+          # Guard against dev-mod codec patches (e.g. Huge Structure Blocks) baking
+          # values into generated worldgen JSON that vanilla rejects at load time.
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          worldgen = Path("src/generated/resources/data/dragonminez/worldgen")
+          problems = []
+
+          structures = sorted(worldgen.glob("structure/*.json"))
+          if not structures:
+              problems.append("no generated worldgen/structure JSONs found")
+          for path in structures:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              # Only vanilla's "minecraft:jigsaw" type is bound to vanilla's codec
+              # range. Custom structure types (e.g. dragonminez:tall_jigsaw) are
+              # decoded by their own mod-registered codec, which may legitimately
+              # allow a wider range, so they're exempt from this check.
+              if data.get("type") != "minecraft:jigsaw":
+                  continue
+              distance = data.get("max_distance_from_center", 80)
+              if not 1 <= distance <= 128:
+                  problems.append(f"{path}: max_distance_from_center {distance} outside vanilla range [1, 128]")
+
+          structure_sets = sorted(worldgen.glob("structure_set/*.json"))
+          if not structure_sets:
+              problems.append("no generated worldgen/structure_set JSONs found")
+          for path in structure_sets:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              frequency = data.get("placement", {}).get("frequency", 1.0)
+              if not 0.0 <= frequency <= 1.0:
+                  problems.append(f"{path}: placement frequency {frequency} outside vanilla range [0.0, 1.0]")
+
+          for problem in problems:
+              print(f"::error::{problem}")
+          if problems:
+              sys.exit(1)
+          print(f"Validated {len(structures)} structure and {len(structure_sets)} structure_set JSONs.")
+          PY
+
+      - name: Resolve dev jar
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(grep '^mod_version=' gradle.properties | cut -d= -f2-)"
+          artifact="build/libs/dragonminez-${version}.jar"
+          if [[ ! -f "$artifact" ]]; then
+            echo "::error::Expected dev jar does not exist: $artifact"
+            exit 1
+          fi
+          if [[ "$artifact" == *-slim.jar ]]; then
+            echo "::error::Refusing to upload slim jar: $artifact"
+            exit 1
+          fi
+
+          short_sha="${GITHUB_SHA::12}"
+          remote_name="dragonminez-${version}__${short_sha}.jar"
+          sha256="$(sha256sum "$artifact" | cut -d ' ' -f1)"
+
+          echo "path=${artifact}" >> "$GITHUB_OUTPUT"
+          echo "remote_name=${remote_name}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${sha256}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate deploy configuration
+        shell: bash
+        env:
+          DMZ_VPS_HOST: ${{ vars.DMZ_VPS_HOST }}
+          DMZ_VPS_PORT: ${{ vars.DMZ_VPS_PORT }}
+          DMZ_VPS_USER: ${{ secrets.DMZ_VPS_USER }}
+          DMZ_VPS_SSH_KEY: ${{ secrets.DMZ_VPS_SSH_KEY }}
+          DMZ_VPS_KNOWN_HOSTS: ${{ secrets.DMZ_VPS_KNOWN_HOSTS }}
+          DMZ_VPS_UPLOAD_DIR: ${{ secrets.DMZ_VPS_UPLOAD_DIR }}
+        run: |
+          set -euo pipefail
+
+          : "${DMZ_VPS_HOST:?DMZ_VPS_HOST repository variable is required}"
+          : "${DMZ_VPS_USER:?DMZ_VPS_USER secret is required}"
+          : "${DMZ_VPS_SSH_KEY:?DMZ_VPS_SSH_KEY secret is required}"
+          : "${DMZ_VPS_KNOWN_HOSTS:?DMZ_VPS_KNOWN_HOSTS secret is required}"
+          : "${DMZ_VPS_UPLOAD_DIR:?DMZ_VPS_UPLOAD_DIR secret is required}"
+
+          port="${DMZ_VPS_PORT:-22}"
+          if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+            echo "::error::DMZ_VPS_PORT must be numeric."
+            exit 1
+          fi
+          if [[ ! "$DMZ_VPS_HOST" =~ ^[A-Za-z0-9.-]+$ ]]; then
+            echo "::error::DMZ_VPS_HOST must be a DNS name or IPv4 address without a protocol."
+            exit 1
+          fi
+          if [[ ! "$DMZ_VPS_USER" =~ ^[A-Za-z_][A-Za-z0-9_.-]*[$]?$ ]]; then
+            echo "::error::DMZ_VPS_USER contains unsupported characters."
+            exit 1
+          fi
+          if [[ ! "$DMZ_VPS_UPLOAD_DIR" =~ ^/[A-Za-z0-9._+/@=-]+$ ]]; then
+            echo "::error::DMZ_VPS_UPLOAD_DIR must be an absolute path without spaces or shell metacharacters."
+            exit 1
+          fi
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DMZ_VPS_SSH_KEY" > ~/.ssh/dmz_deploy_key
+          chmod 600 ~/.ssh/dmz_deploy_key
+          printf '%s\n' "$DMZ_VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh-keygen -l -f ~/.ssh/known_hosts >/dev/null
+
+          lookup_host="$DMZ_VPS_HOST"
+          if [[ "$port" != "22" ]]; then
+            lookup_host="[$DMZ_VPS_HOST]:$port"
+          fi
+          if ! ssh-keygen -F "$lookup_host" -f ~/.ssh/known_hosts >/dev/null; then
+            echo "::error::DMZ_VPS_KNOWN_HOSTS does not contain an entry for ${lookup_host}."
+            exit 1
+          fi
+
+          echo "Resolved SSH upload host addresses:"
+          getent ahosts "$DMZ_VPS_HOST" || true
+          echo "Checking TCP connectivity to ${DMZ_VPS_HOST}:${port}..."
+          nc -4 -zvw 10 "$DMZ_VPS_HOST" "$port"
+
+      - name: Upload dev jar to VPS
+        shell: bash
+        env:
+          DMZ_VPS_HOST: ${{ vars.DMZ_VPS_HOST }}
+          DMZ_VPS_PORT: ${{ vars.DMZ_VPS_PORT }}
+          DMZ_VPS_USER: ${{ secrets.DMZ_VPS_USER }}
+          DMZ_VPS_UPLOAD_DIR: ${{ secrets.DMZ_VPS_UPLOAD_DIR }}
+          ARTIFACT_PATH: ${{ steps.artifact.outputs.path }}
+          REMOTE_NAME: ${{ steps.artifact.outputs.remote_name }}
+          EXPECTED_SHA256: ${{ steps.artifact.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+
+          port="${DMZ_VPS_PORT:-22}"
+          remote_tmp="${DMZ_VPS_UPLOAD_DIR}/.${REMOTE_NAME}.${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.tmp"
+          remote_final="${DMZ_VPS_UPLOAD_DIR}/${REMOTE_NAME}"
+          ssh_opts=(
+            -4
+            -i "$HOME/.ssh/dmz_deploy_key"
+            -p "$port"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+          scp_opts=(
+            -4
+            -i "$HOME/.ssh/dmz_deploy_key"
+            -P "$port"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+          remote="${DMZ_VPS_USER}@${DMZ_VPS_HOST}"
+
+          ssh "${ssh_opts[@]}" "$remote" "mkdir -p -- '$DMZ_VPS_UPLOAD_DIR'"
+          scp "${scp_opts[@]}" "$ARTIFACT_PATH" "${remote}:${remote_tmp}"
+          ssh "${ssh_opts[@]}" "$remote" "mv -f -- '$remote_tmp' '$remote_final' && chmod 0644 -- '$remote_final'"
+
+          remote_sha256="$(ssh "${ssh_opts[@]}" "$remote" "sha256sum -- '$remote_final' | cut -d ' ' -f1")"
+          if [[ "$remote_sha256" != "$EXPECTED_SHA256" ]]; then
+            echo "::error::Uploaded jar checksum mismatch."
+            exit 1
+          fi
+
+          cleanup_report="$(
+            ssh "${ssh_opts[@]}" "$remote" "python3 - '$DMZ_VPS_UPLOAD_DIR'" <<'PY'
+          from pathlib import Path
+          import sys
+
+          upload_dir = Path(sys.argv[1])
+          artifacts = sorted(
+              (
+                  path
+                  for path in upload_dir.glob("dragonminez-*__*.jar")
+                  if path.is_file()
+              ),
+              key=lambda path: (path.stat().st_mtime, path.name),
+              reverse=True,
+          )
+          removed = []
+          for path in artifacts[2:]:
+              path.unlink()
+              removed.append(path.name)
+
+          print(f"Kept {min(len(artifacts), 2)} dev jar artifact(s); removed {len(removed)} old artifact(s).")
+          for name in removed:
+              print(f"Removed old dev jar artifact: {name}")
+          PY
+          )"
+
+          echo "Uploaded ${REMOTE_NAME} to ${DMZ_VPS_UPLOAD_DIR}."
+          echo "$cleanup_report"
+
+      - name: Notify Discord bot
+        shell: bash
+        env:
+          DMZ_VPS_HOST: ${{ vars.DMZ_VPS_HOST }}
+          DMZ_VPS_PORT: ${{ vars.DMZ_VPS_PORT }}
+          DMZ_VPS_USER: ${{ secrets.DMZ_VPS_USER }}
+          RELEASE_WEBHOOK_SECRET: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_SECRET }}
+          REMOTE_NAME: ${{ steps.artifact.outputs.remote_name }}
+          SHA256: ${{ steps.artifact.outputs.sha256 }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          : "${DMZ_VPS_HOST:?DMZ_VPS_HOST repository variable is required}"
+          : "${DMZ_VPS_USER:?DMZ_VPS_USER secret is required}"
+          : "${RELEASE_WEBHOOK_SECRET:?DMZ_RELEASE_BOT_WEBHOOK_SECRET secret is required}"
+
+          payload="$(python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+
+          if event_name == "push":
+              with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as fh:
+                  event = json.load(fh)
+
+              commits = []
+              for commit in event.get("commits", []):
+                  message = commit.get("message", "")
+                  lines = message.splitlines()
+                  title = lines[0] if lines else ""
+                  description = "\n".join(lines[1:]).strip()
+
+                  item = {
+                      "sha": commit["id"],
+                      "title": title,
+                      "author": commit["author"]["name"],
+                      "url": commit["url"],
+                  }
+                  if description:
+                      item["description"] = description
+                  commits.append(item)
+          else:
+              sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+              title = subprocess.check_output(["git", "log", "-1", "--format=%s"], text=True).strip()
+              author = subprocess.check_output(["git", "log", "-1", "--format=%an"], text=True).strip()
+              commits = [{
+                  "sha": sha,
+                  "title": title,
+                  "author": author,
+                  "url": f"https://github.com/{repo}/commit/{sha}",
+              }]
+
+          print(json.dumps({
+              "remote_name": os.environ["REMOTE_NAME"],
+              "sha256": os.environ["SHA256"],
+              "workflow_run_url": os.environ["WORKFLOW_RUN_URL"],
+              "commits": commits,
+          }, separators=(",", ":")))
+          PY
+          )"
+
+          port="${DMZ_VPS_PORT:-22}"
+          ssh_opts=(
+            -4
+            -i "$HOME/.ssh/dmz_deploy_key"
+            -p "$port"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+          remote="${DMZ_VPS_USER}@${DMZ_VPS_HOST}"
+          secret_b64="$(printf '%s' "$RELEASE_WEBHOOK_SECRET" | base64 -w0)"
+
+          printf '%s' "$payload" | ssh "${ssh_opts[@]}" "$remote" \
+            "secret=\$(printf '%s' '$secret_b64' | base64 -d); \
+             curl --fail-with-body --show-error --silent \
+               -X POST \
+               -H 'Content-Type: application/json' \
+               -H \"X-DMZ-Release-Bot-Secret: \${secret}\" \
+               --data-binary @- \
+               http://127.0.0.1:8088/dmz-dev-jar"

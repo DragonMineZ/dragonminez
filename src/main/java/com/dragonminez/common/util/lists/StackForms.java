@@ -22,4 +22,8 @@ public class StackForms {
     public static final String GROUP_ULTRAEGO = "ultraego";
     public static final String ULTRAEGO_SIGN = "sign";
     public static final String ULTRAEGO_MASTERED = "mastered";
+
+    // Ultimate group
+    public static final String GROUP_ULTIMATE = "ultimate";
+    public static final String ULTIMATE = "ultimate";
 }

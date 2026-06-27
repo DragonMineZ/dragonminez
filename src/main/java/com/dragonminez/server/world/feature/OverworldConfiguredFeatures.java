@@ -11,10 +11,14 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 public class OverworldConfiguredFeatures {
 	public static final ResourceKey<ConfiguredFeature<?, ?>> STONE_SPIKE_KEY = createKey("stone_spike");
     public static final ResourceKey<ConfiguredFeature<?, ?>> ROCKY_PEAK_KEY = createKey("rocky_peak");
+    public static final ResourceKey<ConfiguredFeature<?, ?>> KARST_PILLAR_KEY = createKey("karst_pillar");
+    public static final ResourceKey<ConfiguredFeature<?, ?>> ROCKY_CLIFF_KEY = createKey("rocky_cliff");
 
 	public static void bootstrap(BootstapContext<ConfiguredFeature<?, ?>> context) {
 		context.register(STONE_SPIKE_KEY, new ConfiguredFeature<>(OverworldFeatures.STONE_SPIKE.get(), NoneFeatureConfiguration.INSTANCE));
         context.register(ROCKY_PEAK_KEY, new ConfiguredFeature<>(OverworldFeatures.ROCKY_PEAK.get(), NoneFeatureConfiguration.INSTANCE));
+        context.register(KARST_PILLAR_KEY, new ConfiguredFeature<>(OverworldFeatures.KARST_PILLAR.get(), NoneFeatureConfiguration.INSTANCE));
+        context.register(ROCKY_CLIFF_KEY, new ConfiguredFeature<>(OverworldFeatures.ROCKY_CLIFF.get(), NoneFeatureConfiguration.INSTANCE));
 	}
 
 	private static ResourceKey<ConfiguredFeature<?, ?>> createKey(String name) {

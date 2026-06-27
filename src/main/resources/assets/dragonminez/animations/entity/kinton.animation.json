@@ -6,71 +6,120 @@
 			"bones": {
 				"nubecita1": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.01", "0+math.sin(query.anim_time *200) *0.01", "0+math.sin(query.anim_time *200) *0.01"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.2", "0+math.sin(query.anim_time *90*2) *0.21", "0+math.sin(query.anim_time *90*2) *0.21"]
 					}
 				},
 				"nubecita3": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita4": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita5": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita6": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita7": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita10": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita11": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *-0.05", "0+math.sin(query.anim_time *200) *-0.05", "0+math.sin(query.anim_time *200) *-0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
 					}
 				},
 				"nubecita12": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *-0.05", "0+math.sin(query.anim_time *200) *0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita15": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *-0.05", "0+math.sin(query.anim_time *200) *-0.05", "0+math.sin(query.anim_time *200) *-0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
+					}
+				},
+				"nubecita9": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
+					}
+				},
+				"nubecita16": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
+					}
+				},
+				"nubecita17": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
+					}
+				},
+				"nubecita18": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
+					}
+				},
+				"nubecita2": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
+					}
+				},
+				"nubecita20": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
+					}
+				},
+				"nubecita21": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
 					}
 				},
 				"nubecita22": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05", "0+math.sin(query.anim_time *200) *0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita23": {
 					"position": {
-						"vector": [0, "0+math.sin(query.anim_time *200) *-0.05", 0]
+						"vector": [0, "0+math.sin(query.anim_time *90*2) *-0.25", 0]
+					}
+				},
+				"nubecita24": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
+					}
+				},
+				"nubecita25": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
+					}
+				},
+				"nubecita26": {
+					"position": {
+						"vector": ["-0-math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25", "0+math.sin(query.anim_time *90*2) *0.25"]
 					}
 				},
 				"nubecita27": {
 					"position": {
-						"vector": ["-0-math.sin(query.anim_time *200) *-0.05", "0+math.sin(query.anim_time *200) *-0.05", "0+math.sin(query.anim_time *200) *-0.05"]
+						"vector": ["-0-math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25", "0+math.sin(query.anim_time *90*2) *-0.25"]
 					}
 				}
 			}
 		}
-	},
-	"geckolib_format_version": 2
+	}
 }

@@ -42,18 +42,14 @@ public class StructureLocator {
 			return null;
 		}
 
-		BlockPos result = getPositionFromPlacement(level, structureKey, structureRegistry, placement);
-
-		if (result == null) {
-			HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
-			Pair<BlockPos, Holder<Structure>> searchResult = level.getChunkSource().getGenerator()
-					.findNearestMapStructure(level, holderSet, searchFrom, 100, false);
-			if (searchResult != null) {
-				result = searchResult.getFirst();
-			}
+		HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
+		Pair<BlockPos, Holder<Structure>> searchResult = level.getChunkSource().getGenerator()
+				.findNearestMapStructure(level, holderSet, searchFrom, 100, false);
+		if (searchResult != null) {
+			return searchResult.getFirst();
 		}
 
-		return result;
+		return getPositionFromPlacement(level, structureKey, structureRegistry, placement);
 	}
 
 	@Nullable
@@ -64,7 +60,8 @@ public class StructureLocator {
 			ChunkPos chunkPos = uniquePlacement.getStructureChunk(
 					level.getSeed(),
 					level.getChunkSource().getGenerator().getBiomeSource(),
-					level.getChunkSource().randomState()
+					level.getChunkSource().randomState(),
+					level.getChunkSource().getGeneratorState()
 			);
 			if (chunkPos != null) {
 				return new BlockPos(chunkPos.getMiddleBlockX(), 90, chunkPos.getMiddleBlockZ());
@@ -83,5 +80,21 @@ public class StructureLocator {
 
 	public static int getDistanceTo(BlockPos from, BlockPos to) {
 		return (int) Math.sqrt(from.distSqr(to));
+	}
+
+	public static boolean usesCustomPlacement(ServerLevel level, ResourceKey<Structure> structureKey) {
+		var structureSetRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
+		for (var entry : structureSetRegistry.entrySet()) {
+			StructureSet set = entry.getValue();
+			for (var structureEntry : set.structures()) {
+				if (structureEntry.structure().is(structureKey)) {
+					StructurePlacement placement = set.placement();
+					return placement instanceof BiomeAwareUniquePlacement
+							|| placement instanceof FixedStructurePlacement
+							|| placement instanceof UniqueNearSpawnPlacement;
+				}
+			}
+		}
+		return false;
 	}
 }

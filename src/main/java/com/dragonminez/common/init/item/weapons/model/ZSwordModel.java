@@ -1,8 +1,7 @@
 package com.dragonminez.common.init.item.weapons.model;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.item.YajirobeKatanaItem;
-import com.dragonminez.common.init.item.ZSwordItem;
+import com.dragonminez.common.init.item.weapons.ZSwordItem;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.model.GeoModel;
 
@@ -14,7 +13,7 @@ public class ZSwordModel extends GeoModel<ZSwordItem> {
 
     @Override
     public ResourceLocation getTextureResource(ZSwordItem animatable) {
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/z_sword.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/z_sword.png");
     }
 
     @Override

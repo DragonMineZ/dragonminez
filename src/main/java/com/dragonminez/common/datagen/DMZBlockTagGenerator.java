@@ -1,14 +1,18 @@
 package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -48,17 +52,20 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_DEEPSLATE_DIAMOND.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_GOLD.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_REDSTONE.get())
-				.add(MainBlocks.NAMEK_DEEPSLATE_EMERALD.get());
+				.add(MainBlocks.NAMEK_DEEPSLATE_EMERALD.get())
+				.add(MainBlocks.GRAVITY_DEVICE.get());
 
 		this.tag(BlockTags.NEEDS_DIAMOND_TOOL)
-		/*add.(MainBlocks.EJEMPLO.get())*/;
+				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
+				.add(MainBlocks.KIKONO_BLOCK.get())
+				.add(MainBlocks.KIKONO_STATION.get());
 
 		this.tag(Tags.Blocks.NEEDS_NETHERITE_TOOL)
 				.add(MainBlocks.GETE_ORE.get())
-				.add(MainBlocks.GETE_BLOCK.get())
-				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
-				.add(MainBlocks.KIKONO_BLOCK.get());
-				//.add(MainBlocks.KIKONO_ARMOR_STATION.get());
+				.add(MainBlocks.GETE_BLOCK.get());
+
+		//this.tag(MainTags.Blocks.NEEDS_GETE_TOOL)
+		//		.add(MainBlocks.INVISIBLE_LADDER_BLOCK.get());
 
 		this.tag(BlockTags.MINEABLE_WITH_AXE)
 				.add(MainBlocks.NAMEK_AJISSA_LOG.get())
@@ -109,20 +116,6 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.ROCKY_COBBLESTONE_SLAB.get())
 				.add(MainBlocks.ROCKY_COBBLESTONE_STAIRS.get())
 				.add(MainBlocks.ROCKY_COBBLESTONE_WALL.get())
-				.add(MainBlocks.DBALL1_BLOCK.get())
-				.add(MainBlocks.DBALL2_BLOCK.get())
-				.add(MainBlocks.DBALL3_BLOCK.get())
-				.add(MainBlocks.DBALL4_BLOCK.get())
-				.add(MainBlocks.DBALL5_BLOCK.get())
-				.add(MainBlocks.DBALL6_BLOCK.get())
-				.add(MainBlocks.DBALL7_BLOCK.get())
-				.add(MainBlocks.DBALL1_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL2_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL3_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL4_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL5_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL6_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL7_NAMEK_BLOCK.get())
 				.add(MainBlocks.NAMEK_COAL_ORE.get())
 				.add(MainBlocks.NAMEK_IRON_ORE.get())
 				.add(MainBlocks.NAMEK_COPPER_ORE.get())
@@ -142,12 +135,22 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.GETE_ORE.get())
 				.add(MainBlocks.GETE_BLOCK.get())
 				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
-				.add(MainBlocks.KIKONO_BLOCK.get());
+				.add(MainBlocks.KIKONO_BLOCK.get())
+				.add(MainBlocks.GRAVITY_DEVICE.get());
+
+
+		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
+			for (RegistryObject<Block> block : MainBlocks.getDragonBallBlocks(setDefinition.getId()).values()) {
+				this.tag(BlockTags.MINEABLE_WITH_PICKAXE).add(block.get());
+			}
+		}
 
 		this.tag(BlockTags.MINEABLE_WITH_SHOVEL)
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
-				.add(MainBlocks.NAMEK_DIRT.get());
+				.add(MainBlocks.NAMEK_DIRT.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get())
+				.add(MainBlocks.ROCKY_DIRT.get());
 
 		this.tag(BlockTags.LOGS)
 				.add(MainBlocks.NAMEK_AJISSA_LOG.get())
@@ -245,11 +248,14 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 		this.tag(BlockTags.ANIMALS_SPAWNABLE_ON)
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
-				.add(MainBlocks.NAMEK_DIRT.get());
+				.add(MainBlocks.NAMEK_DIRT.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get())
+				.add(MainBlocks.ROCKY_DIRT.get());
 
 		this.tag(BlockTags.FROGS_SPAWNABLE_ON)
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
-				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get());
+				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
 
 		this.tag(BlockTags.BEACON_BASE_BLOCKS)
 				.add(MainBlocks.GETE_BLOCK.get())
@@ -259,7 +265,8 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_DIRT.get())
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
-				.add(MainBlocks.ROCKY_DIRT.get());
+				.add(MainBlocks.ROCKY_DIRT.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get());
 
 		this.tag(BlockTags.COAL_ORES)
 				.add(MainBlocks.NAMEK_COAL_ORE.get())
@@ -325,7 +332,9 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_DIRT.get())
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
-				.add(MainBlocks.ROCKY_DIRT.get());
+				.add(MainBlocks.ROCKY_DIRT.get())
+				.add(MainBlocks.SACRED_PLANET_GRASS_BLOCK.get())
+				.add(MainBlocks.ROCKY_STONE.get());
 
 		this.tag(MainTags.Blocks.NAMEK_ALOG)
 				.add(MainBlocks.NAMEK_AJISSA_LOG.get())

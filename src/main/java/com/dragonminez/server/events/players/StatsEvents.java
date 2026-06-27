@@ -1,12 +1,16 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.config.GeneralServerConfig.FoodConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
+import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -14,21 +18,31 @@ import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.passives.PassiveEventHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.SecondaryStatEffects;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
+import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.util.MutantManager;
+import com.dragonminez.server.util.PotionEffectHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.TickEvent;
@@ -37,13 +51,16 @@ import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import top.theillusivec4.curios.api.CuriosApi;
+import com.dragonminez.common.init.item.WeightItem;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StatsEvents {
@@ -51,6 +68,63 @@ public class StatsEvents {
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
 	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
+	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
+	public static final UUID KI_WEAPON_ATTACK_SPEED_UUID = UUID.fromString("a3b1c5d7-9e2f-4a6b-8c1d-5f7e9a0b2c4d");
+
+	public static final UUID WEIGHT_MOVEMENT_SPEED_MOD_UUID = UUID.fromString("6f663f73-199f-431a-8c35-132d75a31742");
+	private static final UUID WEIGHT_ATTACK_SPEED_MOD_UUID = UUID.fromString("a1b2c3d4-e5f6-431a-8c35-132d75a31742");
+
+	private static double getWeightStatMultiplier(int level, int weight) {
+		if (weight <= 0) return 1.0;
+		double x = (double) level;
+		double w = (double) weight;
+		double penalty;
+		if (x <= 2 * w) {
+			penalty = 10.5 * (1.0 - Math.sqrt(x / (4.0 * w)));
+		} else {
+			double f2w = 10.5 * (1.0 - Math.sqrt((2.0 * w) / (4.0 * w)));
+			double innerDiv = (-w / (w + 10.0)) + 1.0;
+			double top = f2w / innerDiv;
+			double slope = -(top / (2.0 * (w + 10.0)));
+			double intercept = top;
+			double result = slope * x + intercept;
+			penalty = Math.max(0, result);
+		}
+		double multiplier = 1.0 - (penalty / 10.5);
+		return Math.max(0.001, multiplier);
+	}
+
+	private static void applyWeightAttributeModifier(Player player, net.minecraft.world.entity.ai.attributes.Attribute attribute, UUID uuid, String name, double amount) {
+		var inst = player.getAttribute(attribute);
+		if (inst != null) {
+			AttributeModifier existing = inst.getModifier(uuid);
+			if (amount == 0) {
+				if (existing != null) inst.removeModifier(uuid);
+			} else {
+				if (existing == null || Math.abs(existing.getAmount() - amount) > 0.001) {
+					if (existing != null) inst.removeModifier(uuid);
+					inst.addTransientModifier(new AttributeModifier(uuid, name, amount, AttributeModifier.Operation.MULTIPLY_BASE));
+				}
+			}
+		}
+	}
+
+	private static final Map<UUID, List<FoodRegenTask>> FOOD_REGEN_QUEUE = new ConcurrentHashMap<>();
+
+	public static class FoodRegenTask {
+		public int ticksPassed = 0;
+		public final int totalSeconds;
+		public final float hpPerSecond;
+		public final float kiPerSecond;
+		public final float staminaPerSecond;
+
+		public FoodRegenTask(int durationSeconds, float totalHp, float totalKi, float totalStam) {
+			this.totalSeconds = durationSeconds;
+			this.hpPerSecond = totalHp / (float) durationSeconds;
+			this.kiPerSecond = totalKi / (float) durationSeconds;
+			this.staminaPerSecond = totalStam / (float) durationSeconds;
+		}
+	}
 
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -61,7 +135,112 @@ public class StatsEvents {
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 
+			
+			int[] totalWeight = {0};
+			CuriosApi.getCuriosInventory(serverPlayer).ifPresent(inv -> {
+				var handler = inv.getCurios().get("weights");
+				if (handler != null) {
+					for (int i = 0; i < handler.getSlots(); i++) {
+						ItemStack stack = handler.getStacks().getStackInSlot(i);
+						if (stack.getItem() instanceof WeightItem) {
+							totalWeight[0] += WeightItem.getWeight(stack);
+						} else if (!stack.isEmpty()) {
+							totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
+						}
+					}
+				}
+			});
+
+			if (totalWeight[0] > 0) {
+				double gravityMultiplier = GravityLogic.getGravityMultiplier(serverPlayer);
+				int effectiveWeight = (int) (totalWeight[0] * gravityMultiplier);
+
+				int currentBaseLevel = data.getLevel();
+				int totalBaseStats = data.getStats().getTotalStats();
+				int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
+
+				double boostedTotal = 0;
+				boostedTotal += data.getStats().getStrength() * data.getTotalMultiplier("STR");
+				boostedTotal += data.getStats().getStrikePower() * data.getTotalMultiplier("SKP");
+				boostedTotal += data.getStats().getResistance() * data.getTotalMultiplier("RES");
+				boostedTotal += data.getStats().getVitality() * data.getTotalMultiplier("VIT");
+				boostedTotal += data.getStats().getKiPower() * data.getTotalMultiplier("PWR");
+				boostedTotal += data.getStats().getEnergy() * data.getTotalMultiplier("ENE");
+
+				double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
+
+				double multiplier = getWeightStatMultiplier((int) relativeLevel, effectiveWeight);
+
+				if (multiplier < 1.0) {
+					data.getBonusStats().addBonus("STR", "Weights", "*", multiplier);
+					data.getBonusStats().addBonus("SKP", "Weights", "*", multiplier);
+					data.getBonusStats().addBonus("PWR", "Weights", "*", multiplier);
+					data.getBonusStats().addBonus("DEF", "Weights", "*", multiplier);
+					data.getBonusStats().addBonus("STM", "Weights", "*", multiplier);
+				} else {
+					data.getBonusStats().removeBonus("STR", "Weights");
+					data.getBonusStats().removeBonus("SKP", "Weights");
+					data.getBonusStats().removeBonus("PWR", "Weights");
+					data.getBonusStats().removeBonus("DEF", "Weights");
+					data.getBonusStats().removeBonus("STM", "Weights");
+				}
+
+				double reductionModifier = multiplier - 1.0;
+				applyWeightAttributeModifier(serverPlayer, Attributes.MOVEMENT_SPEED, WEIGHT_MOVEMENT_SPEED_MOD_UUID, "Weight Speed Penalty", reductionModifier);
+				applyWeightAttributeModifier(serverPlayer, Attributes.ATTACK_SPEED, WEIGHT_ATTACK_SPEED_MOD_UUID, "Weight Attack Speed Penalty", reductionModifier);
+			} else {
+				data.getBonusStats().removeBonus("STR", "Weights");
+				data.getBonusStats().removeBonus("SKP", "Weights");
+				data.getBonusStats().removeBonus("PWR", "Weights");
+				data.getBonusStats().removeBonus("DEF", "Weights");
+				data.getBonusStats().removeBonus("STM", "Weights");
+				applyWeightAttributeModifier(serverPlayer, Attributes.MOVEMENT_SPEED, WEIGHT_MOVEMENT_SPEED_MOD_UUID, "Weight Speed Penalty", 0);
+				applyWeightAttributeModifier(serverPlayer, Attributes.ATTACK_SPEED, WEIGHT_ATTACK_SPEED_MOD_UUID, "Weight Attack Speed Penalty", 0);
+			}
+
 			applyHealthBonus(serverPlayer);
+
+			UUID playerId = serverPlayer.getUUID();
+			List<FoodRegenTask> tasks = FOOD_REGEN_QUEUE.get(playerId);
+
+			if (tasks != null && !tasks.isEmpty()) {
+				float totalHpPulse = 0f;
+				float totalKiPulse = 0f;
+				float totalStamPulse = 0f;
+
+				Iterator<FoodRegenTask> iterator = tasks.iterator();
+				while (iterator.hasNext()) {
+					FoodRegenTask task = iterator.next();
+					task.ticksPassed++;
+
+					if (task.ticksPassed % 20 == 0) {
+						totalHpPulse += task.hpPerSecond;
+						totalKiPulse += task.kiPerSecond;
+						totalStamPulse += task.staminaPerSecond;
+					}
+
+					if (task.ticksPassed >= task.totalSeconds * 20) iterator.remove();
+				}
+
+				if (totalHpPulse > 0) {
+					totalHpPulse *= (float) Math.min(1.0, data.getSecondaryStatEffects().getMultiplier(SecondaryStatEffects.HP_REGEN));
+					if (totalHpPulse > 0) {
+						PassiveEventHandler.suppressHealingBonus = true;
+						serverPlayer.heal(totalHpPulse);
+						PassiveEventHandler.suppressHealingBonus = false;
+					}
+				}
+
+				if (totalKiPulse > 0 || totalStamPulse > 0) {
+					float maxEnergy = data.getMaxEnergy();
+					float maxStamina = data.getMaxStamina();
+					float currentEnergy = data.getResources().getCurrentEnergy();
+					float currentStamina = data.getResources().getCurrentStamina();
+
+					data.getResources().setCurrentEnergy(Math.min(maxEnergy, currentEnergy + totalKiPulse));
+					data.getResources().setCurrentStamina(Math.min(maxStamina, currentStamina + totalStamPulse));
+				}
+			}
 
 			if (data.getResources().getCurrentEnergy() > data.getMaxEnergy())
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
@@ -70,12 +249,20 @@ public class StatsEvents {
 		});
 	}
 
+	@SubscribeEvent
+	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+		FOOD_REGEN_QUEUE.remove(event.getEntity().getUUID());
+		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> data.getSkills().setSkillActive("kisense", false));
+	}
+
 	public static void applyHealthBonus(ServerPlayer serverPlayer) {
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 			AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
 			if (maxHealthAttr == null) return;
 
-			float dmzHealthBonus = data.getMaxHealth();
+			float dmzHealthBonus = data.getHealthBonus();
+			if (!Float.isFinite(dmzHealthBonus) || dmzHealthBonus < 0) dmzHealthBonus = 0f;
+
 			AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
 
 			if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
@@ -112,19 +299,9 @@ public class StatsEvents {
 				player.setHealth(player.getMaxHealth());
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
 				data.getResources().setCurrentStamina(data.getMaxStamina());
+				data.getSkills().setSkillActive("kisense", false);
 			});
 		}
-	}
-
-	private static boolean dropTps(Entity entity) {
-		List<Class<?>> listaEnemigos = List.of(
-				Monster.class,
-				Animal.class,
-				Player.class,
-				FlyingMob.class,
-				Mob.class
-		);
-		return listaEnemigos.stream().anyMatch(clase -> clase.isInstance(entity));
 	}
 
 	private static boolean addsAlignment(Entity entity) {
@@ -136,66 +313,169 @@ public class StatsEvents {
 		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity;
 	}
 
-
 	@SubscribeEvent
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
-		AtomicBoolean addAlignment = new AtomicBoolean(false);
-		AtomicBoolean removeAlignment = new AtomicBoolean(false);
+		Player attacker = resolveAttackerPlayer(event.getSource().getEntity(), event.getSource().getDirectEntity());
+		if (attacker == null) return;
+		boolean[] addAlignment = new boolean[]{false};
+		boolean[] removeAlignment = new boolean[]{false};
 
 		if (event.getEntity() instanceof Player victim) {
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (victimData.getResources().getAlignment() < 50 || !victimData.getStatus().isHasCreatedCharacter())
-					addAlignment.set(true);
-				else removeAlignment.set(true);
+					addAlignment[0] = true;
+				else removeAlignment[0] = true;
 				if (victimData.getStatus().isHasCreatedCharacter()) {
+					if (victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME) && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
 					victimData.getEffects().removeAllEffects();
+					victimData.getSecondaryStatEffects().clear();
 					victimData.getStatus().setChargingKi(false);
 					victimData.getStatus().setActionCharging(false);
 					victimData.getCharacter().setActiveForm(null, null);
 					victimData.getCharacter().setActiveStackForm(null, null);
+					victimData.getSkills().setSkillActive("kisense", false);
+					FOOD_REGEN_QUEUE.remove(victim.getUUID());
 				}
 			});
 		}
 
-		if (removesAlignment(event.getEntity())) removeAlignment.set(true);
-		if (addsAlignment(event.getEntity())) addAlignment.set(true);
+		if (removesAlignment(event.getEntity())) removeAlignment[0] = true;
+		if (addsAlignment(event.getEntity())) addAlignment[0] = true;
+
+		if (event.getEntity() instanceof ShadowDummyEntity dummyEntity && attacker instanceof ServerPlayer killer) {
+			StatsProvider.get(StatsCapability.INSTANCE, killer).ifPresent(killerData -> {
+				killerData.getStatus().setShadowDummyKillCount(killerData.getStatus().getShadowDummyKillCount() + 1);
+
+				if (dummyEntity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+					String ownerStr = dummyEntity.getPersistentData().getString("dmz_kimanip_shadow");
+					if (killer.getStringUUID().equals(ownerStr)
+							&& killerData.getStatus().hasActiveShadowDummy()
+							&& killerData.getStatus().getActiveShadowDummyUUID().equals(dummyEntity.getUUID())) {
+						SummonPlayerShadowDummyC2S.removePenalties(killer, killerData);
+						killerData.getStatus().setActiveShadowDummyUUID(null);
+						killerData.getStatus().setShadowDummyPercent(0);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(killer), killer);
+					}
+				}
+			});
+		}
+
+		if (event.getEntity() instanceof ShadowDummyEntity dummyEntity && dummyEntity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+			String ownerStr = dummyEntity.getPersistentData().getString("dmz_quest_owner");
+			try {
+				java.util.UUID ownerUUID = java.util.UUID.fromString(ownerStr);
+				ServerPlayer owner = dummyEntity.getServer().getPlayerList().getPlayer(ownerUUID);
+				if (owner != null) {
+					StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(ownerData -> {
+						if (ownerData.getStatus().hasActiveShadowDummy() && ownerData.getStatus().getActiveShadowDummyUUID().equals(dummyEntity.getUUID())) {
+							SummonPlayerShadowDummyC2S.removePenalties(owner, ownerData);
+							ownerData.getStatus().setActiveShadowDummyUUID(null);
+							ownerData.getStatus().setShadowDummyPercent(0);
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
+						}
+					});
+				}
+			} catch (Exception ignored) {}
+		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 
-			if (dropTps(event.getEntity())) {
-				int tpsHealth;
-				if (event.getEntity() instanceof ShadowDummyEntity)
-					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
-				else
-					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
-				data.getResources().addTrainingPoints(tpsHealth);
-			}
-
-			if (removeAlignment.get()) {
+			if (removeAlignment[0]) {
 				data.getResources().removeAlignment(5);
-				removeAlignment.set(false);
+				removeAlignment[0] =  false;
 			}
 
-			if (addAlignment.get()) {
+			if (addAlignment[0]) {
 				data.getResources().addAlignment(2);
-				addAlignment.set(false);
+				addAlignment[0] = false;
 			}
+
+			grantTechniqueKillXp(data, event.getSource().getDirectEntity());
 		});
 	}
 
-	@SubscribeEvent
+	private static Player resolveAttackerPlayer(Entity sourceEntity, Entity directEntity) {
+		if (sourceEntity instanceof Player player) return player;
+		if (directEntity instanceof AbstractKiProjectile projectile && projectile.getOwner() instanceof Player player) return player;
+		return null;
+	}
+
+	private static void grantTechniqueKillXp(com.dragonminez.common.stats.StatsData data, Entity directEntity) {
+		if (!(directEntity instanceof AbstractKiProjectile projectile)) return;
+
+		String techniqueId = projectile.getTechniqueId();
+		if (techniqueId == null || techniqueId.isEmpty()) return;
+
+		TechniqueData techniqueData = data.getTechniques().getUnlockedTechniques().get(techniqueId);
+		if (!(techniqueData instanceof KiAttackData kiAttackData)) return;
+
+		int xpGain = kiAttackData.getXpGainPerKill();
+		if (xpGain > 0) data.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOW)
 	public static void onEntityHit(LivingHurtEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
-			if (!data.getStatus().isHasCreatedCharacter()) return;
-			int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
-			data.getResources().addTrainingPoints(baseTps);
-		});
+		if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
+			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
+				if (attackerData.getStatus().isHasCreatedCharacter()) {
+					if (event.getAmount() >= 1) {
+						if (attackerData.getCharacter().hasActiveForm()) {
+							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+								String formGroup = attackerData.getCharacter().getActiveFormGroup();
+								String formName = attackerData.getCharacter().getActiveForm();
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
+								attackerData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeForm.getMasteryPerHitDealt() * bonus));
+							}
+						}
+
+						if (attackerData.getCharacter().hasActiveStackForm()) {
+							FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveStackFormData();
+							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
+								String stackForm = attackerData.getCharacter().getActiveStackForm();
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
+								attackerData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeStackForm.getMasteryPerHitDealt() * bonus));
+							}
+						}
+					}
+				}
+				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(attacker), attacker);
+			});
+		}
+
+		if (event.getEntity() instanceof ServerPlayer victim) {
+			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
+				if (victimData.getStatus().isHasCreatedCharacter()) {
+					if (event.getAmount() >= 1) {
+						if (victimData.getCharacter().hasActiveForm()) {
+							FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
+							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
+								String formGroup = victimData.getCharacter().getActiveFormGroup();
+								String formName = victimData.getCharacter().getActiveForm();
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
+								victimData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeForm.getMasteryPerHitReceived() * bonus));
+							}
+						}
+
+						if (victimData.getCharacter().hasActiveStackForm()) {
+							FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveStackFormData();
+							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
+								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
+								String stackForm = victimData.getCharacter().getActiveStackForm();
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
+								victimData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeStackForm.getMasteryPerHitReceived() * bonus));
+							}
+						}
+					}
+				}
+				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(victim), victim);
+			});
+		}
 	}
 
 	private static final double HEAL_PERCENTAGE = 0.08;
@@ -226,11 +506,11 @@ public class StatsEvents {
 		if (player instanceof ServerPlayer serverPlayer) {
 			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 				float maxHp = player.getMaxHealth();
-				float healHp = (int) (maxHp * HEAL_PERCENTAGE);
-				int maxKi = data.getMaxEnergy();
-				int healKi = (int) (maxKi * HEAL_PERCENTAGE);
-				int maxStamina = data.getMaxStamina();
-				int healStamina = (int) (maxStamina * HEAL_PERCENTAGE);
+				float healHp = (float) (maxHp * HEAL_PERCENTAGE);
+				float maxKi = data.getMaxEnergy();
+				float healKi = (float) (maxKi * HEAL_PERCENTAGE);
+				float maxStamina = data.getMaxStamina();
+				float healStamina = (float) (maxStamina * HEAL_PERCENTAGE);
 				boolean hasCreatedChar = data.getStatus().isHasCreatedCharacter();
 
 				if (healHp > maxHp) healHp = maxHp;
@@ -262,10 +542,16 @@ public class StatsEvents {
 
 		Player player = event.getEntity();
 		ItemStack stack = event.getItemStack();
-		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		if (itemKey == null) return;
+		String itemId = itemKey.toString();
+		String namespace = itemKey.getNamespace();
 
-		Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
-		if (regens != null && regens.length >= 3) {
+		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
+		boolean isModBlacklisted = !foodConfig.getBlacklistedNamespaces().isEmpty() && foodConfig.getBlacklistedNamespaces().contains(namespace);
+		boolean isItemBlacklisted = !foodConfig.getBlacklistedItems().isEmpty() && foodConfig.getBlacklistedItems().contains(itemId);
+
+		if (!isModBlacklisted && !isItemBlacklisted) {
 			player.startUsingItem(event.getHand());
 			event.setCancellationResult(InteractionResult.CONSUME);
 		}
@@ -276,38 +562,73 @@ public class StatsEvents {
 		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
 		ItemStack stack = event.getItem();
-		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
-		Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		if (itemKey == null) return;
+		String itemId = itemKey.toString();
+		String namespace = itemKey.getNamespace();
 
-		if (regens != null && regens.length >= 3) {
+		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
+
+		boolean isModBlacklisted = !foodConfig.getBlacklistedNamespaces().isEmpty() && foodConfig.getBlacklistedNamespaces().contains(namespace);
+		boolean isItemBlacklisted = !foodConfig.getBlacklistedItems().isEmpty() && foodConfig.getBlacklistedItems().contains(itemId);
+
+		if (!isModBlacklisted && !isItemBlacklisted) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
 				boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
 
 				if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
 
+				FoodProperties foodProperties = stack.getFoodProperties(player);
+				if (foodProperties == null) return;
+
+				int foodGain = foodProperties.getNutrition();
+				float saturationGain = foodProperties.getSaturationModifier();
+
+				float healthFoodRecoveryPercentage = foodGain >= foodConfig.getMinHungerPoints()
+						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getHealthPercentageRecoveredPerHungerPoint()
+						: 0;
+				float kiFoodRecoveryPercentage = foodGain >= foodConfig.getMinHungerPoints()
+						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getKiPercentageRecoveredPerHungerPoint()
+						: 0;
+				float staminaFoodRecoveryPercentage = foodGain >= foodConfig.getMinHungerPoints()
+						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getStaminaPercentageRecoveredPerHungerPoint()
+						: 0;
+
+				float healthSaturationRecoveryPercentage = saturationGain >= foodConfig.getMinSaturationPoints()
+						? Math.min(saturationGain, foodConfig.getMaxSaturationPoints()) * foodConfig.getHealthPercentageRecoveredPerSaturationPoint()
+						: 0;
+				float kiSaturationRecoveryPercentage = saturationGain >= foodConfig.getMinSaturationPoints()
+						? Math.min(saturationGain, foodConfig.getMaxSaturationPoints()) * foodConfig.getKiPercentageRecoveredPerSaturationPoint()
+						: 0;
+				float staminaSaturationRecoveryPercentage = saturationGain >= foodConfig.getMinSaturationPoints()
+						? Math.min(saturationGain, foodConfig.getMaxSaturationPoints()) * foodConfig.getStaminaPercentageRecoveredPerSaturationPoint()
+						: 0;
+
+				float healthTotalRecoveryPercentage = healthFoodRecoveryPercentage + healthSaturationRecoveryPercentage;
+				float kiTotalRecoveryPercentage = kiFoodRecoveryPercentage + kiSaturationRecoveryPercentage;
+				float staminaTotalRecoveryPercentage = staminaFoodRecoveryPercentage + staminaSaturationRecoveryPercentage;
+
 				float maxHealth = player.getMaxHealth();
-				int maxEnergy = data.getMaxEnergy();
-				int maxStamina = data.getMaxStamina();
+				float maxEnergy = data.getMaxEnergy();
+				float maxStamina = data.getMaxStamina();
 
-				int currentEnergy = data.getResources().getCurrentEnergy();
-				int currentStamina = data.getResources().getCurrentStamina();
-
-				float healAmount = (maxHealth * regens[0]);
-				int energyAmount = (int) (maxEnergy * regens[1]);
-				int staminaAmount = (int) (maxStamina * regens[2]);
-
-				player.heal(healAmount);
-
-				int newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
-				int newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
-
-				data.getResources().setCurrentEnergy(newEnergy);
-				data.getResources().setCurrentStamina(newStamina);
+				float healAmount = (maxHealth * healthTotalRecoveryPercentage);
+				float energyAmount = (maxEnergy * kiTotalRecoveryPercentage);
+				float staminaAmount = (maxStamina * staminaTotalRecoveryPercentage);
 
 				if (isSenzu || isHeartMedicine) {
+					PassiveEventHandler.suppressHealingBonus = true;
+					player.heal(maxHealth - player.getHealth());
+					PassiveEventHandler.suppressHealingBonus = false;
+					data.getResources().setCurrentEnergy(maxEnergy);
+					data.getResources().setCurrentStamina(maxStamina);
+
 					int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
 					player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+				} else {
+					int durationSeconds = 6;
+					FOOD_REGEN_QUEUE.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new FoodRegenTask(durationSeconds, healAmount, energyAmount, staminaAmount));
 				}
 			});
 		}
@@ -318,7 +639,9 @@ public class StatsEvents {
 		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
 		ItemStack stack = event.getItem();
-		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		if (itemKey == null) return;
+		String itemId = itemKey.toString();
 
 		if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
 			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get()))
@@ -331,6 +654,13 @@ public class StatsEvents {
 	public static void onPlayerAttack(AttackEntityEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onLivingAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker.hasEffect(MainEffects.STUN.get()))
+			event.setCanceled(true);
 	}
 
 	@SubscribeEvent
@@ -357,6 +687,15 @@ public class StatsEvents {
 			entity.setDeltaMovement(0, entity.getDeltaMovement().y, 0);
 			entity.setJumping(false);
 			entity.setSprinting(false);
+			if (entity instanceof ServerPlayer serverPlayer) {
+				if (serverPlayer.getAbilities().flying) {
+					serverPlayer.getAbilities().flying = false;
+					serverPlayer.onUpdateAbilities();
+				}
+				if (serverPlayer.isFallFlying()) {
+					serverPlayer.stopFallFlying();
+				}
+			}
 
 			if (entity.getPose() != Pose.CROUCHING) entity.setPose(Pose.CROUCHING);
 
@@ -372,16 +711,86 @@ public class StatsEvents {
 				if (!data.getStatus().isHasCreatedCharacter()) return;
 
 				AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
+				AttributeInstance attackSpeedAttr = serverPlayer.getAttribute(Attributes.ATTACK_SPEED);
 				if (speedAttr != null) {
-					if (speedAttr.getModifier(FORM_SPEED_UUID) != null) speedAttr.removeModifier(FORM_SPEED_UUID);
+					double expectedBonus = 0.0;
 					if (data.getCharacter().hasActiveForm()) {
 						FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
 						if (activeForm != null) {
 							double multiplier = activeForm.getSpeedMultiplier();
-							if (multiplier != 1.0) {
-								double bonus = multiplier - 1.0;
-								speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", bonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
-							}
+							if (multiplier != 1.0) expectedBonus = multiplier - 1.0;
+						}
+					}
+
+					AttributeModifier existingSpeed = speedAttr.getModifier(FORM_SPEED_UUID);
+					double currentBonus = existingSpeed != null ? existingSpeed.getAmount() : 0.0;
+
+					if (expectedBonus != currentBonus) {
+						speedAttr.removeModifier(FORM_SPEED_UUID);
+						if (expectedBonus > 0) {
+							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+						}
+					}
+				}
+
+				if (attackSpeedAttr != null) {
+					// Ki weapons act as fake weapons: apply their configured attack speed as a flat
+					// modifier (e.g. -2.4 -> base 4.0 becomes 1.6, like a real sword). Applied before
+					// the form multiplier below so forms scale the adjusted Ki weapon speed.
+					double expectedKi = 0.0;
+					if (PlayerAttackHelper.isKiWeaponActive(serverPlayer)) {
+						var kiCfg = ConfigManager.getCombatConfig().getKiWeaponConfig(data.getStatus().getKiWeaponType());
+						if (kiCfg != null) expectedKi = kiCfg.getAttackSpeed();
+					}
+					AttributeModifier existingKi = attackSpeedAttr.getModifier(KI_WEAPON_ATTACK_SPEED_UUID);
+					double currentKi = existingKi != null ? existingKi.getAmount() : 0.0;
+					if (Math.abs(expectedKi - currentKi) > 1e-9) {
+						attackSpeedAttr.removeModifier(KI_WEAPON_ATTACK_SPEED_UUID);
+						if (expectedKi != 0.0) {
+							attackSpeedAttr.addTransientModifier(new AttributeModifier(
+									KI_WEAPON_ATTACK_SPEED_UUID,
+									"Ki Weapon Attack Speed",
+									expectedKi,
+									AttributeModifier.Operation.ADDITION
+							));
+						}
+					}
+				}
+
+				if (attackSpeedAttr != null) {
+					double expectedMultiplier = 1.0;
+					if (data.getCharacter().hasActiveForm()) {
+						FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
+						if (activeForm != null) expectedMultiplier *= activeForm.getAttackSpeed();
+					}
+					if (data.getCharacter().hasActiveStackForm()) {
+						FormConfig.FormData activeStackForm = data.getCharacter().getActiveStackFormData();
+						if (activeStackForm != null) expectedMultiplier *= activeStackForm.getAttackSpeed();
+					}
+
+					double base = attackSpeedAttr.getBaseValue();
+					double afterAdditions = base + attackSpeedAttr.getModifiers(AttributeModifier.Operation.ADDITION).stream().mapToDouble(AttributeModifier::getAmount).sum();
+					double intermediateSpeed = afterAdditions;
+					for (AttributeModifier m : attackSpeedAttr.getModifiers(AttributeModifier.Operation.MULTIPLY_BASE)) intermediateSpeed += afterAdditions * m.getAmount();
+
+					double expectedBonus;
+					if (intermediateSpeed > 0.0) {
+						double targetSpeed = Math.max(0.25, intermediateSpeed * expectedMultiplier);
+						expectedBonus = targetSpeed / intermediateSpeed - 1.0;
+					} else expectedBonus = 0.0;
+
+					AttributeModifier existingAttackSpeed = attackSpeedAttr.getModifier(FORM_ATTACK_SPEED_UUID);
+					double currentBonus = existingAttackSpeed != null ? existingAttackSpeed.getAmount() : 0.0;
+
+					if (Math.abs(expectedBonus - currentBonus) > 1e-9) {
+						attackSpeedAttr.removeModifier(FORM_ATTACK_SPEED_UUID);
+						if (expectedBonus != 0.0) {
+							attackSpeedAttr.addTransientModifier(new AttributeModifier(
+									FORM_ATTACK_SPEED_UUID,
+									"Form Attack Speed Bonus",
+									expectedBonus,
+									AttributeModifier.Operation.MULTIPLY_TOTAL
+							));
 						}
 					}
 				}
@@ -389,43 +798,33 @@ public class StatsEvents {
 				AttributeInstance reachAttr = serverPlayer.getAttribute(ForgeMod.BLOCK_REACH.get());
 				AttributeInstance entityReachAttr = serverPlayer.getAttribute(ForgeMod.ENTITY_REACH.get());
 
-				if (reachAttr != null) {
-					if (reachAttr.getModifier(FORM_REACH_UUID) != null) reachAttr.removeModifier(FORM_REACH_UUID);
-				}
-				if (entityReachAttr != null) {
-					if (entityReachAttr.getModifier(FORM_REACH_UUID) != null)
-						entityReachAttr.removeModifier(FORM_REACH_UUID);
-				}
-
-				Float[] scaling = data.getCharacter().getModelScaling();
-				if (scaling == null || scaling.length < 2) scaling = new Float[]{0.9375f, 0.9375f, 0.9375f};
-
+				Float[] scaling = data.getCharacter().getResolvedModelScaling();
 				float currentScaleY = scaling[1];
-
-				if (data.getCharacter().hasActiveForm()) {
-					FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-					if (activeForm != null) {
-						Float[] formMultiplier = activeForm.getModelScaling();
-						currentScaleY *= formMultiplier[1];
-					}
-				}
 
 				final float BASE_SCALE = 0.9375f;
 				final float BASE_HEIGHT = 1.8F;
 				final float BASE_REACH = 4.5F;
-
 				float ratioY = currentScaleY / BASE_SCALE;
-				float currentHeight = BASE_HEIGHT * ratioY;
 
+				double expectedReach = 0.0;
 				if (ratioY > 1.01f) {
-					float heightDifference = currentHeight - BASE_HEIGHT;
-					float reachBonus = heightDifference * (BASE_REACH / BASE_HEIGHT);
+					float currentHeight = BASE_HEIGHT * ratioY;
+					expectedReach = (currentHeight - BASE_HEIGHT) * (BASE_REACH / BASE_HEIGHT);
+				}
 
-					if (reachAttr != null) {
-						reachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", reachBonus, AttributeModifier.Operation.ADDITION));
+				if (reachAttr != null) {
+					AttributeModifier existingReach = reachAttr.getModifier(FORM_REACH_UUID);
+					if ((existingReach != null ? existingReach.getAmount() : 0.0) != expectedReach) {
+						reachAttr.removeModifier(FORM_REACH_UUID);
+						if (expectedReach > 0) reachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", expectedReach, AttributeModifier.Operation.ADDITION));
 					}
-					if (entityReachAttr != null) {
-						entityReachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", reachBonus, AttributeModifier.Operation.ADDITION));
+				}
+
+				if (entityReachAttr != null) {
+					AttributeModifier existingEntityReach = entityReachAttr.getModifier(FORM_REACH_UUID);
+					if ((existingEntityReach != null ? existingEntityReach.getAmount() : 0.0) != expectedReach) {
+						entityReachAttr.removeModifier(FORM_REACH_UUID);
+						if (expectedReach > 0) entityReachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", expectedReach, AttributeModifier.Operation.ADDITION));
 					}
 				}
 			});
@@ -484,105 +883,105 @@ public class StatsEvents {
 		});
 	}
 
+	private static ItemStack getHeadTechStack(ServerPlayer player) {
+		return CuriosApi.getCuriosInventory(player)
+				.map(inv -> inv.getCurios().get("head_tech"))
+				.map(handler -> handler.getStacks().getStackInSlot(0))
+				.orElse(ItemStack.EMPTY);
+	}
+
 	private static boolean hasPothala(ServerPlayer player, String side) {
-		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (side.equals("left") && (head.getItem() == MainItems.POTHALA_LEFT.get() || head.getItem() == MainItems.GREEN_POTHALA_LEFT.get()))
+		ItemStack headTech = getHeadTechStack(player);
+		if (headTech.isEmpty()) return false;
+
+		if (side.equals("left") && (headTech.getItem() == MainItems.POTHALA_LEFT.get() || headTech.getItem() == MainItems.GREEN_POTHALA_LEFT.get())) {
 			return true;
-		else
-			return side.equals("right") && (head.getItem() == MainItems.POTHALA_RIGHT.get() || head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
+		}
+		return side.equals("right") && (headTech.getItem() == MainItems.POTHALA_RIGHT.get() || headTech.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
 	}
 
 	private static boolean checkPothalaColorMatch(ServerPlayer p1, ServerPlayer p2) {
-		if (hasPothala(p1, "right") && hasPothala(p2, "left")) {
-			ItemStack p1Head = p1.getItemBySlot(EquipmentSlot.HEAD);
-			ItemStack p2Head = p2.getItemBySlot(EquipmentSlot.HEAD);
+		ItemStack p1Tech = getHeadTechStack(p1);
+		ItemStack p2Tech = getHeadTechStack(p2);
 
-			boolean p1IsGreen = (p1Head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
-			boolean p2IsGreen = (p2Head.getItem() == MainItems.GREEN_POTHALA_LEFT.get());
+		if (p1Tech.isEmpty() || p2Tech.isEmpty()) return false;
 
-			return p1IsGreen == p2IsGreen;
-		}
-		return false;
+		boolean p1IsGreen = p1Tech.getItem().getDescriptionId().contains("green");
+		boolean p2IsGreen = p2Tech.getItem().getDescriptionId().contains("green");
+
+		return p1IsGreen == p2IsGreen;
 	}
 
-	@SubscribeEvent
-	public static void onEntitySize(EntityEvent.Size event) {
-		Entity entity = event.getEntity();
-		if (!(entity instanceof Player)) return;
+    @SubscribeEvent
+    public static void onEntitySize(EntityEvent.Size event) {
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Player)) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
-			var character = data.getCharacter();
-			var activeForm = character.getActiveFormData();
-			String currentForm = character.getActiveForm();
-			String race = character.getRaceName().toLowerCase();
+        StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
+            var character = data.getCharacter();
+            String currentForm = character.getActiveForm();
+            String race = character.getRaceName().toLowerCase();
 
-			var raceConfig = ConfigManager.getRaceCharacter(race);
-			String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-			String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-					? activeForm.getCustomModel().toLowerCase() : "";
+            String logicKey = character.getRenderLogicKey();
 
-			String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-			if (logicKey.isEmpty()) {
-				logicKey = race;
-			}
+            Float[] resolved = character.getResolvedModelScaling();
+            float configScaleX = resolved[0];
+            float configScaleY = resolved[1];
 
-			float configScaleX, configScaleY;
+            float scalingX = configScaleX;
+            float scalingY = configScaleY;
 
-			if (activeForm != null) {
-				configScaleX = activeForm.getModelScaling()[0];
-				configScaleY = activeForm.getModelScaling()[1];
-			} else {
-				configScaleX = character.getModelScaling()[0];
-				configScaleY = character.getModelScaling()[1];
-			}
+            boolean isOozaru = logicKey.startsWith("oozaru") ||
+                    (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
 
-			float scalingX = configScaleX;
-			float scalingY = configScaleY;
+            if (isOozaru) {
+                float baseOozaruSize = 3.8f;
 
-			boolean isOozaru = logicKey.startsWith("oozaru") ||
-					(race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+                float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
+                float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
 
-			if (isOozaru) {
-				float baseOozaruSize = 3.8f;
+                scalingX = visualScaleX * baseOozaruSize;
+                scalingY = visualScaleY * baseOozaruSize;
+            } else {
+                scalingX = configScaleX;
+                scalingY = configScaleY;
+            }
 
-				float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
-				float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
+            Pose pose = event.getPose();
 
-				scalingX = visualScaleX * baseOozaruSize;
-				scalingY = visualScaleY * baseOozaruSize;
-			} else {
-				scalingX = configScaleX;
-				scalingY = configScaleY;
-			}
+            if (pose == Pose.DYING || pose == Pose.SLEEPING) {
+                event.setNewSize(EntityDimensions.fixed(0.2F, 0.2F));
+                event.setNewEyeHeight(0.2F);
+                return;
+            }
 
-			// scalingX = Math.min(configScaleX, 5.0f);
+            float rawWidth = 0.6F * scalingX;
+            float rawHeight = 1.9F * scalingY;
 
-			float rawWidth = 0.6F * scalingX;
-			float rawHeight = 1.9F * scalingY;
+            float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
+            float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
 
-			float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
-			float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
+            float poseHeightMultiplier = 1.0F;
+            float eyeHeightMultiplier = 1.0F;
 
-			Pose pose = event.getPose();
-			float poseHeightMultiplier = 1.0F;
-			float eyeHeightMultiplier = 1.0F;
+            if (pose == Pose.CROUCHING) {
+                poseHeightMultiplier = 1.5F / 1.8F;
+                eyeHeightMultiplier = 1.27F / 1.62F;
+            } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
+                poseHeightMultiplier = 0.6F / 1.8F;
+                eyeHeightMultiplier = 0.4F / 1.62F;
+            }
 
-			if (pose == Pose.CROUCHING) {
-				poseHeightMultiplier = 1.5F / 1.8F;
-				eyeHeightMultiplier = 1.27F / 1.62F;
-			} else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
-				poseHeightMultiplier = 0.6F / 1.8F;
-				eyeHeightMultiplier = 0.4F / 1.62F;
-			}
+            float heightConPose = finalHeight * poseHeightMultiplier;
+            float alturaSegura = Math.round(heightConPose * 10.0F) / 10.0F;
 
-			EntityDimensions newDims = EntityDimensions.fixed(finalWidth, finalHeight * poseHeightMultiplier);
-			event.setNewSize(newDims);
+            EntityDimensions newDims = EntityDimensions.fixed(finalWidth, alturaSegura);
+            event.setNewSize(newDims);
 
-			float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
-			float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
+            float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
+            float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
 
-			event.setNewEyeHeight(finalEyeHeight);
-		});
-	}
-
+            event.setNewEyeHeight(finalEyeHeight);
+        });
+    }
 }
