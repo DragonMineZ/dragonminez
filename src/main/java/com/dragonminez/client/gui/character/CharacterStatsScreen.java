@@ -800,6 +800,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				"gui.dragonminez.character_stats.max_energy"
 		};
 
+		boolean isTransformed = statsData.getCharacter().hasActiveForm() || statsData.getCharacter().hasActiveStackForm();
+
 		for (int i = 0; i < labels.length; i++) {
 			int yPos = labelStartY + (i * 12);
 			Component labelComponent = tr(labels[i]);
@@ -833,6 +835,17 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 							extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.stm").append(": ")
 									.append(txt(String.format(Locale.US, "%.1f/s", currentRegenSec)))
 									.withStyle(ChatFormatting.AQUA));
+						}
+						if (isTransformed) {
+							double stamDrain = statsData.getAdjustedStaminaDrain();
+							if (stamDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.cost", formatUpToOneDecimal(stamDrain)).withStyle(ChatFormatting.RED));
+							else if (stamDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.regen", formatUpToOneDecimal(Math.abs(stamDrain))).withStyle(ChatFormatting.GREEN));
+
+							double stamMult = statsData.getAdjustedStaminaDrainMultiplier();
+							if (stamMult != 1.0) {
+								ChatFormatting color = stamMult > 1.0 ? ChatFormatting.RED : ChatFormatting.GREEN;
+								extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.multiplier", formatUpToOneDecimal(stamMult)).withStyle(color));
+							}
 						}
 					}
 					case 3 -> {
@@ -874,6 +887,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 									.append(txt(String.format(Locale.US, "%.1f/s", currentRegenSec)))
 									.withStyle(ChatFormatting.AQUA));
 						}
+						if (isTransformed) {
+							double hpDrain = statsData.getAdjustedHealthDrain();
+							if (hpDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.cost", formatUpToOneDecimal(hpDrain)).withStyle(ChatFormatting.RED));
+							else if (hpDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.regen", formatUpToOneDecimal(Math.abs(hpDrain))).withStyle(ChatFormatting.GREEN));
+						}
 					}
 					case 5 -> {
 						desc.add(tr("gui.dragonminez.character_stats.ki_damage.tooltip1"));
@@ -890,6 +908,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 							extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.ki").append(": ")
 									.append(txt(String.format(Locale.US, "%.1f/s", currentRegenSec)))
 									.withStyle(ChatFormatting.AQUA));
+						}
+						if (isTransformed) {
+							double eneDrain = statsData.getAdjustedEnergyDrain();
+							if (eneDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.cost", formatUpToOneDecimal(eneDrain)).withStyle(ChatFormatting.RED));
+							else if (eneDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.regen", formatUpToOneDecimal(Math.abs(eneDrain))).withStyle(ChatFormatting.GREEN));
 						}
 					}
 				}
@@ -930,60 +953,6 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(formatUpToOneDecimal(health)), valueX + 15, labelStartY + 48, healthColor, 0x000000);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(formatUpToOneDecimal(kiDamage)), valueX + 15, labelStartY + 60, kiDamageColor, 0x000000);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(formatUpToOneDecimal(energy)), valueX + 15, labelStartY + 72, energyColor, 0x000000);
-	}
-
-	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
-		LivingEntity player = Minecraft.getInstance().player;
-		if (player == null) return;
-
-		int adjustedScale = getAdjustedModelScale(scale);
-
-		float xRotation = (float) Math.atan((double) ((float) y - mouseY) / 40.0F);
-		float yRotation = (float) Math.atan((double) ((float) x - mouseX) / 40.0F);
-
-		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
-		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float) Math.PI / 180F));
-		pose.mul(cameraOrientation);
-
-		float yBodyRotO = player.yBodyRot;
-		float yRotO = player.getYRot();
-		float xRotO = player.getXRot();
-		float yHeadRotO = player.yHeadRotO;
-		float yHeadRot = player.yHeadRot;
-
-		player.yBodyRot = 180.0F + yRotation * 20.0F;
-		player.setYRot(180.0F + yRotation * 40.0F);
-		player.setXRot(-xRotation * 20.0F);
-		player.yHeadRot = player.getYRot();
-		player.yHeadRotO = player.getYRot();
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
-		graphics.pose().popPose();
-
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
-	}
-
-	private void initViewSwitchButton() {
-		int centerY = getUiHeight() / 2;
-		int buttonX = getUiWidth() - 45;
-		int buttonY = centerY + 90;
-		LivingEntity player = Minecraft.getInstance().player;
-
-		viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
-			useHexagonView = !useHexagonView;
-			ConfigManager.getUserConfig().setHexagonStatsDisplay(useHexagonView);
-			ConfigManager.saveGeneralUserConfig();
-			((SwitchButton) button).toggle();
-			if (useHexagonView) player.playSound(MainSounds.SWITCH_OFF.get());
-			else player.playSound(MainSounds.SWITCH_ON.get());
-		});
-		this.addRenderableWidget(viewSwitchButton);
 	}
 
 	private void renderStatisticsInfoHexagon(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -1107,6 +1076,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int eneTextWidth = font.width(eneComponent);
 		int vitTextWidth = font.width(vitComponent);
 
+		boolean isTransformed = statsData.getCharacter().hasActiveForm() || statsData.getCharacter().hasActiveStackForm();
+
 		if (mouseX >= strX - strTextWidth / 2 && mouseX <= strX + strTextWidth / 2 && mouseY >= strY && mouseY <= strY + font.lineHeight) {
 			Component title = tr("gui.dragonminez.character_stats.str").withStyle(ChatFormatting.BOLD);
 			List<Component> desc = new ArrayList<>();
@@ -1180,6 +1151,18 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					.append(txt(formatUpToOneDecimal(stamina)))
 					.withStyle(ChatFormatting.AQUA));
 
+			if (isTransformed) {
+				double stamDrain = statsData.getAdjustedStaminaDrain();
+				if (stamDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.cost", formatUpToOneDecimal(stamDrain)).withStyle(ChatFormatting.RED));
+				else if (stamDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.regen", formatUpToOneDecimal(Math.abs(stamDrain))).withStyle(ChatFormatting.GREEN));
+
+				double stamMult = statsData.getAdjustedStaminaDrainMultiplier();
+				if (stamMult != 1.0) {
+					ChatFormatting color = stamMult > 1.0 ? ChatFormatting.RED : ChatFormatting.GREEN;
+					extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.multiplier", formatUpToOneDecimal(stamMult)).withStyle(color));
+				}
+			}
+
 			double[] pcts = getDamageReductionPercentages();
 			extras.add(txt(""));
 
@@ -1240,6 +1223,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			extras.add(tr("gui.dragonminez.character_stats.max_energy").append(": ")
 					.append(txt(formatUpToOneDecimal(energy)))
 					.withStyle(ChatFormatting.AQUA));
+
+			if (isTransformed) {
+				double eneDrain = statsData.getAdjustedEnergyDrain();
+				if (eneDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.cost", formatUpToOneDecimal(eneDrain)).withStyle(ChatFormatting.RED));
+				else if (eneDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.regen", formatUpToOneDecimal(Math.abs(eneDrain))).withStyle(ChatFormatting.GREEN));
+			}
+
 			appendMeditationInfo(extras, true);
 			appendAdvancedHint(extras, hasMeditationInfo());
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
@@ -1256,11 +1246,72 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			extras.add(tr("gui.dragonminez.character_stats.health").append(": ")
 					.append(txt(formatUpToOneDecimal(health)))
 					.withStyle(ChatFormatting.AQUA));
+
+			if (isTransformed) {
+				double hpDrain = statsData.getAdjustedHealthDrain();
+				if (hpDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.cost", formatUpToOneDecimal(hpDrain)).withStyle(ChatFormatting.RED));
+				else if (hpDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.regen", formatUpToOneDecimal(Math.abs(hpDrain))).withStyle(ChatFormatting.GREEN));
+			}
+
 			appendAdvancedHint(extras, false);
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 	}
 
+	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
+		LivingEntity player = Minecraft.getInstance().player;
+		if (player == null) return;
+
+		int adjustedScale = getAdjustedModelScale(scale);
+
+		float xRotation = (float) Math.atan((double) ((float) y - mouseY) / 40.0F);
+		float yRotation = (float) Math.atan((double) ((float) x - mouseX) / 40.0F);
+
+		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
+		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float) Math.PI / 180F));
+		pose.mul(cameraOrientation);
+
+		float yBodyRotO = player.yBodyRot;
+		float yRotO = player.getYRot();
+		float xRotO = player.getXRot();
+		float yHeadRotO = player.yHeadRotO;
+		float yHeadRot = player.yHeadRot;
+
+		player.yBodyRot = 180.0F + yRotation * 20.0F;
+		player.setYRot(180.0F + yRotation * 40.0F);
+		player.setXRot(-xRotation * 20.0F);
+		player.yHeadRot = player.getYRot();
+		player.yHeadRotO = player.getYRot();
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 150.0D);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		graphics.pose().popPose();
+
+		player.yBodyRot = yBodyRotO;
+		player.setYRot(yRotO);
+		player.setXRot(xRotO);
+		player.yHeadRotO = yHeadRotO;
+		player.yHeadRot = yHeadRot;
+	}
+
+	private void initViewSwitchButton() {
+		int centerY = getUiHeight() / 2;
+		int buttonX = getUiWidth() - 45;
+		int buttonY = centerY + 90;
+		LivingEntity player = Minecraft.getInstance().player;
+
+		viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
+			useHexagonView = !useHexagonView;
+			ConfigManager.getUserConfig().setHexagonStatsDisplay(useHexagonView);
+			ConfigManager.saveGeneralUserConfig();
+			((SwitchButton) button).toggle();
+			if (useHexagonView) player.playSound(MainSounds.SWITCH_OFF.get());
+			else player.playSound(MainSounds.SWITCH_ON.get());
+		});
+		this.addRenderableWidget(viewSwitchButton);
+	}
+	
 	private void renderGravityInfo(GuiGraphics graphics, int mouseX, int mouseY) {
 		if (statsData == null) return;
 

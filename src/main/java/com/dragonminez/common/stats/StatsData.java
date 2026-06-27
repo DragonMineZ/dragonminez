@@ -680,33 +680,19 @@ public class StatsData {
 
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
-		var powerRelease = resources.getPowerRelease() / 100.0;
 		if (formData == null && stackFormData == null) return 1.0;
 
-		double adjustedBaseDrain = 0;
+		double baseDrainMult = 1.0;
 		if (character.hasActiveForm() && formData != null) {
-			double baseDrain = formData.getStaminaDrainMultiplier();
-			if (character.hasActiveStackForm() && stackFormData != null) baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-			double costFactor = getMasteryCostFactor(formData, mastery);
-
-			if (baseDrain < 0) adjustedBaseDrain = (baseDrain / costFactor) * powerRelease;
-			else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
+			baseDrainMult = formData.getStaminaDrainMultiplier();
 		}
 
-		double adjustedStackDrain = 0;
+		double stackDrainMult = 1.0;
 		if (character.hasActiveStackForm() && stackFormData != null) {
-			double stackDrain = stackFormData.getStackDrainMultiplier();
-			if (character.hasActiveForm() && formData != null)
-				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-			double mastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-			double costFactor = getMasteryCostFactor(stackFormData, mastery);
-
-			if (stackDrain < 0) adjustedStackDrain = (stackDrain / costFactor) * powerRelease;
-			else adjustedStackDrain = (stackDrain * costFactor) * powerRelease;
+			stackDrainMult = stackFormData.getStaminaDrainMultiplier();
 		}
 
-		return Math.max(0.001, adjustedBaseDrain + adjustedStackDrain);
+		return Math.max(0.001, baseDrainMult * stackDrainMult);
 	}
 
 	public double getAdjustedEnergyDrain() {
