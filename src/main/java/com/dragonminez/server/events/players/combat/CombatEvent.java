@@ -198,7 +198,7 @@ public class CombatEvent {
 					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
 					finalDmzDamage = dmzDamage;
 				} else {
-					double staminaRatio = (double) currentStamina / staminaRequired;
+					double staminaRatio = Mth.clamp((double) currentStamina / staminaRequired, 0.0, 1.0);
 					finalDmzDamage = dmzDamage * staminaRatio;
 					if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
 				}
