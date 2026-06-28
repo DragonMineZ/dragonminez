@@ -96,6 +96,10 @@ public class PlayerQuestData {
     /** Snapshot of the current online party composition for the local player UI. */
     private final List<UUID> partyMemberIds = new ArrayList<>();
 
+    /** Synced flag mirroring the server party's PvP (friendly-fire) state for client-side relation checks. */
+    @Getter
+    private boolean partyPvpEnabled = false;
+
     /** Pending invitation shown in the quest screen. */
     @Setter
     private PartyInviteData pendingPartyInvite = null;
@@ -407,9 +411,10 @@ public class PlayerQuestData {
         return playerId != null && playerId.equals(partyLeaderId);
     }
 
-    public void setPartyState(UUID partyId, UUID leaderId, Collection<UUID> members) {
+    public void setPartyState(UUID partyId, UUID leaderId, Collection<UUID> members, boolean pvpEnabled) {
         this.activePartyId = partyId;
         this.partyLeaderId = leaderId;
+        this.partyPvpEnabled = pvpEnabled;
         this.partyMemberIds.clear();
 
         if (leaderId != null) {
@@ -427,6 +432,7 @@ public class PlayerQuestData {
     public void clearPartyState() {
         this.activePartyId = null;
         this.partyLeaderId = null;
+        this.partyPvpEnabled = false;
         this.partyMemberIds.clear();
     }
 
@@ -628,6 +634,9 @@ public class PlayerQuestData {
         if (partyLeaderId != null) {
             partyTag.putString("leaderId", partyLeaderId.toString());
         }
+        if (partyPvpEnabled) {
+            partyTag.putBoolean("pvpEnabled", true);
+        }
         if (!partyMemberIds.isEmpty()) {
             ListTag membersTag = new ListTag();
             for (UUID memberId : partyMemberIds) {
@@ -656,6 +665,7 @@ public class PlayerQuestData {
 
         activePartyId = null;
         partyLeaderId = null;
+        partyPvpEnabled = false;
         partyMemberIds.clear();
         pendingPartyInvite = null;
         partyQuestBackup = null;
@@ -669,6 +679,7 @@ public class PlayerQuestData {
             if (partyTag.contains("leaderId", Tag.TAG_STRING)) {
                 partyLeaderId = parseUuid(partyTag.getString("leaderId"));
             }
+            partyPvpEnabled = partyTag.getBoolean("pvpEnabled");
             if (partyTag.contains("members", Tag.TAG_LIST)) {
                 ListTag memberList = partyTag.getList("members", Tag.TAG_STRING);
                 for (int i = 0; i < memberList.size(); i++) {
