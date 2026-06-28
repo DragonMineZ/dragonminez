@@ -63,7 +63,8 @@ public class Resources {
     }
 
     public void setCurrentStamina(float stamina) {
-        this.currentStamina = roundToQuarter(Math.min(Math.max(0, stamina), statsData.getMaxStamina()));
+        float max = Math.max(0, statsData.getMaxStamina());
+        this.currentStamina = roundToQuarter(Math.min(Math.max(0, stamina), max));
     }
 
     public void setCurrentPoise(float poise) {

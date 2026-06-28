@@ -215,7 +215,8 @@ public class StatsData {
 		double flatBonusStm = bonusStats.calculateBonus("STM", (int) Math.round(resistance), false);
 		double multBonusStm = bonusStats.calculateBonus("STM", (int) Math.round(resistance), true);
 		double secondaryMaxStamina = getSecondaryAttributeValue(MainAttributes.MAX_STAMINA.get(), 20.0);
-		return Math.min((float) (secondaryMaxStamina + ((resistance + multBonusStm) * stmScaling * stmMult) + (flatBonusStm * stmScaling)), Float.MAX_VALUE - 1);
+		double maxStamina = secondaryMaxStamina + ((resistance + multBonusStm) * stmScaling * stmMult) + (flatBonusStm * stmScaling);
+		return Math.min((float) Math.max(0.0, maxStamina), Float.MAX_VALUE - 1);
 	}
 
 	public double getStaminaRegenPerSecond() {
