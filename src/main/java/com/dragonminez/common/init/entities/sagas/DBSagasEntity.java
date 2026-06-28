@@ -174,6 +174,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private static final EntityDataAccessor<Integer> LOCOMOTION_MODE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
+    private static final int SKILL_GRACE_TICKS = 80;
+
     protected int castTimer = 0;
     protected int transformTick = 0;
     private int chargeSoundTimer = 0;
@@ -884,6 +886,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public boolean hasSkillReady() {
+        if (this.isInSkillGracePeriod()) {
+            return false;
+        }
+
         if (this.isComboing() || this.isZanzoken()) {
             return false;
         }
@@ -1085,6 +1091,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void startCombo(int comboId) {
+        if (this.isInSkillGracePeriod()) return;
         if (this.getTarget() == null) return;
 
         int resolved = comboId;
@@ -1143,6 +1150,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void performTeleport(LivingEntity target) {
+        if (this.isInSkillGracePeriod()) return;
         Vec3 targetLook = target.getLookAngle().normalize();
 
         double distanceBehind = 1.5D;
@@ -1428,7 +1436,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.setDeltaMovement(movement.add(0, gravityDrag, 0));
     }
 
+    public boolean isInSkillGracePeriod() {
+        return this.tickCount < SKILL_GRACE_TICKS;
+    }
+
     public void startCasting(int type) {
+        if (this.isInSkillGracePeriod()) return;
         if (BeamClashManager.isClashing(this.getUUID())) return;
         this.setCasting(true);
         this.setSkillType(type);
