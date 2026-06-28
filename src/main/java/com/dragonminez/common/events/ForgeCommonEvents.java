@@ -51,6 +51,7 @@ import com.dragonminez.server.world.structure.helper.StructureLocator;
 import com.mojang.brigadier.ParseResults;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -240,13 +241,26 @@ public class ForgeCommonEvents {
 	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (!data.getStatus().isAlive()) {
+				if (!data.getStatus().isAlive() && !hasValidRespawnPoint(player)) {
 					ServerLevel otherworld = player.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 					player.teleportTo(otherworld, 0, 41, 10, 0, 0);
 				}
 				player.refreshDimensions();
 			});
 		}
+	}
+
+	private static boolean hasValidRespawnPoint(ServerPlayer player) {
+		BlockPos respawnPos = player.getRespawnPosition();
+		if (respawnPos == null) return false;
+
+		ServerLevel respawnLevel = player.getServer().getLevel(player.getRespawnDimension());
+		if (respawnLevel == null) return false;
+
+		if (player.isRespawnForced()) return true;
+
+		return ServerPlayer.findRespawnPositionAndUseSpawnBlock(
+				respawnLevel, respawnPos, player.getRespawnAngle(), false, false).isPresent();
 	}
 
 	@SubscribeEvent
