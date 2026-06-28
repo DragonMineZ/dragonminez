@@ -5,6 +5,7 @@ import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig.FoodConfig;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
@@ -36,6 +37,7 @@ import com.dragonminez.server.util.PotionEffectHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -311,6 +313,19 @@ public class StatsEvents {
 
 	private static boolean removesAlignment(Entity entity) {
 		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity;
+	}
+
+	@SubscribeEvent
+	public static void cookDropsOnKiKill(LivingDeathEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide) return;
+		if (entity.fireImmune()) return;
+
+		DamageSource source = event.getSource();
+		boolean isKiKill = MainDamageTypes.isKiblastDamage(source) || MainDamageTypes.isStrikeAttackDamage(source);
+		if (!isKiKill) return;
+
+		if (entity.getRemainingFireTicks() <= 0) entity.setRemainingFireTicks(1);
 	}
 
 	@SubscribeEvent
