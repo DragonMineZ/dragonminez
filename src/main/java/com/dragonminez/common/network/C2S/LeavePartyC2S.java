@@ -35,7 +35,11 @@ public class LeavePartyC2S {
 
             boolean leaderLeaving = PartyManager.isPartyLeader(player);
             List<ServerPlayer> members = PartyManager.getAllPartyMembers(player);
-            PartyManager.leaveParty(player);
+            // The GUI exposes this as "disband" for the leader and "leave" for members. A leader
+            // disbands the whole party (preserving everyone's shared progress and failing any
+            // in-progress quest); a member just leaves while keeping the party's progress.
+            if (leaderLeaving) PartyManager.disbandParty(player);
+            else PartyManager.leaveParty(player, true);
 
             if (leaderLeaving) {
                 player.sendSystemMessage(Component.translatable("quest.dmz.party.disbanded.self")

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
@@ -117,7 +118,8 @@ public final class PartyManager {
             PartySavedData.PartyInstance party = data.getPartyOf(serverPlayer.getUUID());
             return party != null && party.isPvpEnabled();
         }
-        return false;
+        StatsData data = getStatsData(player);
+        return data != null && data.getPlayerQuestData().isPartyPvpEnabled();
     }
 
     public static void togglePartyPvp(ServerPlayer leader) {
@@ -128,6 +130,8 @@ public final class PartyManager {
             data.setDirty();
 
             updateTeamFriendlyFire(leader.getServer(), party.getPartyId(), party.isPvpEnabled());
+            syncPartyToOnlineMembers(leader.getServer(), party);
+
             String state = party.isPvpEnabled() ? "✓" : "✕";
             ChatFormatting color = party.isPvpEnabled() ? ChatFormatting.RED : ChatFormatting.GREEN;
 
@@ -277,6 +281,10 @@ public final class PartyManager {
     }
 
     public static void leaveParty(ServerPlayer player) {
+        leaveParty(player, false);
+    }
+
+    public static void leaveParty(ServerPlayer player, boolean keepProgress) {
         PartySavedData data = PartySavedData.get(player.getServer());
         PartySavedData.PartyInstance party = data.getPartyOf(player.getUUID());
         if (party == null) return;
@@ -285,7 +293,7 @@ public final class PartyManager {
         UUID partyId = party.getPartyId();
 
         PlayerQuestData questData = getQuestData(player);
-        questData.restorePartyQuestBackup();
+        if (!keepProgress) questData.restorePartyQuestBackup();
         questData.clearPartyQuestBackup();
         questData.clearPartyState();
         syncSelf(player);
@@ -295,6 +303,26 @@ public final class PartyManager {
 
         if (isLeader && !party.getMembers().isEmpty()) transferLeadership(player, party);
         else syncPartyToOnlineMembers(player.getServer(), party);
+    }
+
+    public static void disbandParty(ServerPlayer leader) {
+        if (!isInParty(leader)) return;
+
+        List<ServerPlayer> members = getAllPartyMembers(leader);
+        syncPartyQuestState(leader);
+
+        Set<String> ongoing = getQuestData(leader).getAcceptedQuestIds();
+        if (!ongoing.isEmpty()) {
+            for (ServerPlayer member : members) {
+                PlayerQuestData memberData = getQuestData(member);
+                for (String questId : ongoing) memberData.failQuest(questId);
+            }
+        }
+
+        for (ServerPlayer member : members) {
+            if (!member.equals(leader)) leaveParty(member, true);
+        }
+        leaveParty(leader, true);
     }
 
     public static void syncPartyQuestState(ServerPlayer sourcePlayer) {
@@ -412,8 +440,11 @@ public final class PartyManager {
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-        PlayerQuestData questData = getQuestData(player);
-        if (questData.hasPendingPartyInvite()) questData.clearPendingPartyInvite();
+        StatsData statsData = getStatsData(player);
+        if (statsData != null) {
+            PlayerQuestData questData = statsData.getPlayerQuestData();
+            if (questData.hasPendingPartyInvite()) questData.clearPendingPartyInvite();
+        }
 
         PartySavedData data = PartySavedData.get(player.getServer());
         PartySavedData.PartyInstance party = data.getPartyOf(player.getUUID());
@@ -472,7 +503,7 @@ public final class PartyManager {
         for (UUID id : memberIds) {
             ServerPlayer member = server.getPlayerList().getPlayer(id);
             if (member != null) {
-                getQuestData(member).setPartyState(party.getPartyId(), party.getLeaderId(), memberIds);
+                getQuestData(member).setPartyState(party.getPartyId(), party.getLeaderId(), memberIds, party.isPvpEnabled());
                 syncSelf(member);
             }
         }

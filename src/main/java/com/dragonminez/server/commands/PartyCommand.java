@@ -150,7 +150,7 @@ public class PartyCommand {
 
         boolean leaderLeaving = PartyManager.isPartyLeader(player);
         List<ServerPlayer> members = PartyManager.getAllPartyMembers(player);
-        PartyManager.leaveParty(player);
+        PartyManager.leaveParty(player, true);
 
         if (leaderLeaving) {
             player.sendSystemMessage(Component.translatable("quest.dmz.party.disbanded.self").withStyle(ChatFormatting.YELLOW));
@@ -280,10 +280,9 @@ public class PartyCommand {
 
         for (ServerPlayer member : members) {
             member.sendSystemMessage(Component.translatable("quest.dmz.party.disbanded.self").withStyle(ChatFormatting.YELLOW));
-            if (!member.equals(player)) PartyManager.leaveParty(member);
         }
 
-        PartyManager.leaveParty(player);
+        PartyManager.disbandParty(player);
         return 1;
     }
 }
