@@ -482,13 +482,15 @@ public class StatsData {
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
 
-		double flatMitigation = baseDefense * 0.10 * Math.max(1.0, defMult);
+		double rawFlatMitigation = baseDefense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, defMult);
+		double flatAbsorbCap = incomingDamage * ConfigManager.getCombatConfig().getFlatMitigationMaxAbsorbFraction();
+		double flatMitigation = Math.min(rawFlatMitigation, flatAbsorbCap);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
 
 		int maxValue = getConfiguredMaxValue();
 		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
-		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
+		double k_factor = Math.max(100.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
 
 		double baseReduction;
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);

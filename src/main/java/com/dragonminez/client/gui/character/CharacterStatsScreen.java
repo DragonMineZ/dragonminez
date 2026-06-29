@@ -261,7 +261,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int maxValue = statsData.getConfiguredMaxValue();
 		double expectedMaxStats = statsData.isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * statsData.getStatScaling("DEF");
-		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
+		double k_factor = Math.max(100.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
 
 		double baseReduction;
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
@@ -854,7 +854,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip2", formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
 						desc.add(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN));
 
-						double flatMitigation = defense * 0.10 * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
+						double flatMitigation = defense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
 						extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
 								.append(txt(formatUpToOneDecimal(flatMitigation)))
 								.withStyle(ChatFormatting.AQUA));
@@ -1140,7 +1140,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 			List<Component> extras = new ArrayList<>();
 
-			double flatMitigation = defense * 0.10 * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
+			double flatMitigation = defense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
 			extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
 					.append(txt(formatUpToOneDecimal(flatMitigation)))
 					.withStyle(ChatFormatting.AQUA));
