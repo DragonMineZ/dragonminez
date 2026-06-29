@@ -9,12 +9,14 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import lombok.Getter;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -149,10 +151,20 @@ public class ConfigManager {
 		}
 
 		if (overwrite) {
-			if (Files.exists(path)) backupOldConfig(path);
-			if (config == null || (templateName != null && reason.contains("failed"))) config = defaultProvider.get();
+			boolean parsingError = reason.startsWith("Parsing error");
+			String oldRawJson = null;
+			if (Files.exists(path)) {
+				if (!parsingError) {
+					try { oldRawJson = Files.readString(path); }
+					catch (IOException e) { LogUtil.error(Env.COMMON, "Could not read old config '{}' for value preservation: {}", path.getFileName(), e.getMessage()); }
+				}
+				backupOldConfig(path);
+			}
+			if (!parsingError || config == null) config = defaultProvider.get();
+
 			try {
 				versionSetter.accept(config, currentVersion);
+				if (oldRawJson != null) config = mergePreservedValues(oldRawJson, config, clazz, currentVersion, versionSetter);
 				LogUtil.warn(Env.COMMON, String.format("Regenerating %s. Reason: %s", path.getFileName(), reason));
 				LOADER.saveConfig(path, config);
 			} catch (Exception e) {
@@ -160,6 +172,180 @@ public class ConfigManager {
 			}
 		}
 		return config != null ? config : defaultProvider.get();
+	}
+
+	private static <T> T mergePreservedValues(String oldRawJson, T defaultConfig, Class<T> clazz, double currentVersion, BiConsumer<T, Double> versionSetter) {
+		try {
+			JsonElement oldParsed = JsonParser.parseString(oldRawJson);
+			if (oldParsed == null || !oldParsed.isJsonObject()) return defaultConfig;
+			JsonElement newTree = GSON.toJsonTree(defaultConfig);
+			if (newTree == null || !newTree.isJsonObject()) return defaultConfig;
+
+			JsonObject oldObj = oldParsed.getAsJsonObject();
+			JsonObject newObj = newTree.getAsJsonObject();
+			int preserved = mergeMatchingValues(oldObj, newObj, clazz);
+
+			T merged = GSON.fromJson(newObj, clazz);
+			if (merged == null) return defaultConfig;
+			versionSetter.accept(merged, currentVersion);
+			if (preserved > 0) LogUtil.info(Env.COMMON, "Preserved {} user-modified value(s) from the old config", preserved);
+			return merged;
+		} catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Could not preserve old config values, falling back to defaults: {}", e.getMessage());
+			return defaultConfig;
+		}
+	}
+
+	private static int mergeMatchingValues(JsonObject oldObj, JsonObject newObj, Class<?> type) {
+		int count = 0;
+		for (String key : new ArrayList<>(newObj.keySet())) {
+			if (key.equals("configVersion") || !oldObj.has(key)) continue;
+			JsonElement oldVal = oldObj.get(key);
+			JsonElement newVal = newObj.get(key);
+			if (oldVal.isJsonNull()) continue;
+
+			Field field = findField(type, key);
+			Class<?> fieldType = field != null ? field.getType() : null;
+
+			if (fieldType != null && isMapType(fieldType) && oldVal.isJsonObject() && newVal.isJsonObject()) {
+				count += mergeMapValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), mapValueClass(field));
+			} else if (fieldType != null && isCollectionOrArray(fieldType)) {
+				if (oldVal.isJsonArray() && !valuesEqual(oldVal, newVal)) { newObj.add(key, oldVal); count++; }
+			} else if (oldVal.isJsonObject() && newVal.isJsonObject()) {
+				count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), fieldType);
+			} else if (isValueCompatible(oldVal, newVal, fieldType) && !valuesEqual(oldVal, newVal)) {
+				newObj.add(key, oldVal);
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private static int mergeMapValues(JsonObject oldMap, JsonObject newMap, Class<?> valueType) {
+		int count = 0;
+		for (String key : new ArrayList<>(newMap.keySet())) {
+			if (!oldMap.has(key)) continue;
+			JsonElement oldVal = oldMap.get(key);
+			JsonElement newVal = newMap.get(key);
+			if (oldVal.isJsonNull()) continue;
+
+			if (oldVal.isJsonObject() && newVal.isJsonObject()) {
+				if (valueType != null && !isMapType(valueType) && !isCollectionOrArray(valueType)) {
+					count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), valueType);
+				} else {
+					newMap.add(key, oldVal);
+					count++;
+				}
+			} else if (isValueCompatible(oldVal, newVal, valueType) && !valuesEqual(oldVal, newVal)) {
+				newMap.add(key, oldVal);
+				count++;
+			}
+		}
+		for (String key : oldMap.keySet()) {
+			if (!newMap.has(key)) {
+				newMap.add(key, oldMap.get(key));
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private static boolean isValueCompatible(JsonElement oldVal, JsonElement newVal, Class<?> type) {
+		if (!oldVal.isJsonPrimitive()) return false;
+		JsonPrimitive oldPrim = oldVal.getAsJsonPrimitive();
+
+		if (type == null) {
+			if (newVal == null || !newVal.isJsonPrimitive()) return false;
+			JsonPrimitive newPrim = newVal.getAsJsonPrimitive();
+			if (oldPrim.isBoolean() || newPrim.isBoolean()) return oldPrim.isBoolean() && newPrim.isBoolean();
+			if (oldPrim.isString() || newPrim.isString()) return oldPrim.isString() && newPrim.isString();
+			if (oldPrim.isNumber() && newPrim.isNumber()) return isIntegralLiteral(oldPrim) == isIntegralLiteral(newPrim);
+			return false;
+		}
+
+		if (type == boolean.class || type == Boolean.class) return oldPrim.isBoolean();
+		if (type == String.class || type == char.class || type == Character.class || type.isEnum()) return oldPrim.isString();
+		if (isIntegralType(type)) return oldPrim.isNumber() && isIntegralLiteral(oldPrim);
+		if (isDecimalType(type)) return oldPrim.isNumber();
+		return false;
+	}
+
+	private static boolean valuesEqual(JsonElement oldVal, JsonElement newVal) {
+		if (newVal == null) return false;
+		if (oldVal.isJsonPrimitive() && newVal.isJsonPrimitive()) {
+			JsonPrimitive op = oldVal.getAsJsonPrimitive();
+			JsonPrimitive np = newVal.getAsJsonPrimitive();
+			if (op.isNumber() && np.isNumber()) {
+				try { return op.getAsBigDecimal().compareTo(np.getAsBigDecimal()) == 0; }
+				catch (NumberFormatException e) { return op.getAsString().equals(np.getAsString()); }
+			}
+		}
+		return oldVal.equals(newVal);
+	}
+
+	private static boolean isIntegralLiteral(JsonPrimitive prim) {
+		if (!prim.isNumber()) return false;
+		String s = prim.getAsString();
+		return s.indexOf('.') < 0 && s.indexOf('e') < 0 && s.indexOf('E') < 0;
+	}
+
+	private static boolean isIntegralType(Class<?> type) {
+		return type == int.class || type == Integer.class || type == long.class || type == Long.class
+				|| type == short.class || type == Short.class || type == byte.class || type == Byte.class
+				|| java.math.BigInteger.class.isAssignableFrom(type);
+	}
+
+	private static boolean isDecimalType(Class<?> type) {
+		return type == double.class || type == Double.class || type == float.class || type == Float.class
+				|| java.math.BigDecimal.class.isAssignableFrom(type);
+	}
+
+	private static boolean isMapType(Class<?> type) {
+		return Map.class.isAssignableFrom(type);
+	}
+
+	private static boolean isCollectionOrArray(Class<?> type) {
+		return type.isArray() || Collection.class.isAssignableFrom(type);
+	}
+
+	private static Field findField(Class<?> type, String name) {
+		if (type == null) return null;
+		for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
+			for (Field f : c.getDeclaredFields()) {
+				if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) || f.isSynthetic()) continue;
+				if (f.getName().equals(name)) return f;
+			}
+		}
+		return null;
+	}
+
+	private static Class<?> mapValueClass(Field field) {
+		try {
+			java.lang.reflect.Type generic = field.getGenericType();
+			if (generic instanceof java.lang.reflect.ParameterizedType pt) {
+				java.lang.reflect.Type[] args = pt.getActualTypeArguments();
+				if (args.length == 2 && args[1] instanceof Class<?> c) return c;
+			}
+		} catch (Exception ignored) {}
+		return null;
+	}
+
+	private static FormConfig regenerateOutdatedForm(Path formFilePath, FormConfig defaultFormConfig, String label) {
+		LogUtil.warn(Env.COMMON, "Regenerating form '{}'. Reason: Outdated version", label);
+		String oldRaw = null;
+		if (Files.exists(formFilePath)) {
+			try { oldRaw = Files.readString(formFilePath); }
+			catch (IOException e) { LogUtil.error(Env.COMMON, "Could not read old form '{}' for value preservation: {}", formFilePath.getFileName(), e.getMessage()); }
+		}
+		backupOldConfig(formFilePath);
+		defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+		FormConfig result = oldRaw != null
+				? mergePreservedValues(oldRaw, defaultFormConfig, FormConfig.class, FormConfig.CURRENT_VERSION, FormConfig::setConfigVersion)
+				: defaultFormConfig;
+		try { LOADER.saveConfig(formFilePath, result); } catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Failed to save regenerated form '{}': {}", formFilePath.getFileName(), e.getMessage());
+		}
+		return result;
 	}
 
 	private static void loadGeneralConfigs() {
@@ -203,11 +389,8 @@ public class ConfigManager {
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
 					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
-						LogUtil.warn(Env.COMMON, "Regenerating form '{}' for race '{}'. Reason: Outdated version", defaultEntry.getKey(), raceName);
-						backupOldConfig(formFilePath);
-						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-						try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
-						raceForms.put(groupKey, defaultFormConfig);
+						FormConfig regenerated = regenerateOutdatedForm(formFilePath, defaultFormConfig, defaultEntry.getKey() + "' for race '" + raceName);
+						raceForms.put(groupKey, regenerated);
 					} else {
 						raceForms.put(groupKey, userConfig);
 					}
@@ -240,10 +423,8 @@ public class ConfigManager {
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
 					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
-						LogUtil.warn(Env.COMMON, "Regenerating stack form '{}'. Reason: Outdated version", defaultEntry.getKey());
-						backupOldConfig(formFilePath);
-						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-						try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
+						FormConfig regenerated = regenerateOutdatedForm(formFilePath, defaultFormConfig, defaultEntry.getKey());
+						finalStackForms.put(groupKey, regenerated);
 					} else {
 						finalStackForms.put(groupKey, userConfig);
 					}
