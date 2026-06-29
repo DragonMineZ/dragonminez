@@ -548,15 +548,16 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onMobSpawn(MobSpawnEvent.FinalizeSpawn event) {
 		Mob mob = event.getEntity();
-		if (mob.getType().getCategory() == MobCategory.MONSTER) {
-			List<MastersEntity> masters = mob.level().getEntitiesOfClass(MastersEntity.class,
-					new AABB(mob.blockPosition()).inflate(80));
+		if (mob.getType().getCategory() != MobCategory.MONSTER) return;
+		if (mob.level().dimension().equals(HTCDimension.HTC_KEY)) return;
 
-			if (!masters.isEmpty() && !mob.level().dimension().equals(HTCDimension.HTC_KEY)) {
-				event.setSpawnCancelled(true);
-				event.setResult(Event.Result.DENY);
-			}
-		}
+		List<MastersEntity> masters = mob.level().getEntitiesOfClass(MastersEntity.class, new AABB(mob.blockPosition()).inflate(80));
+		if (masters.isEmpty()) return;
+
+		try {
+			event.setSpawnCancelled(true);
+		} catch (Throwable ignored) {}
+		event.setResult(Event.Result.DENY);
 	}
 
 	@SubscribeEvent
