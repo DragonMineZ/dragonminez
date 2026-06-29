@@ -67,6 +67,10 @@ public class EntitiesEvents {
 			if (entity.getPersistentData().contains("dmz_quest_ai_tier") && entity instanceof DBSagasEntity sagasEntity) {
 				sagasEntity.setAiTierById(entity.getPersistentData().getInt("dmz_quest_ai_tier"));
 			}
+
+			if (entity.getPersistentData().getBoolean("dmz_quest_no_transform") && entity instanceof DBSagasEntity sagasEntity) {
+				sagasEntity.setTransformationDisabled(true);
+			}
 		} else {
 			String registryName = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString();
 			EntitiesConfig.EntityStats defaultStats = ConfigManager.getEntityStats(registryName);

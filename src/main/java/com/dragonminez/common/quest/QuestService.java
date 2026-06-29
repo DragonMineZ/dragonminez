@@ -652,6 +652,9 @@ public final class QuestService {
 				if (killObjective.getAiTier() > 0) {
 					entity.getPersistentData().putInt("dmz_quest_ai_tier", killObjective.getAiTier());
 				}
+				if (!killObjective.isCanTransform()) {
+					entity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
+				}
 
 				if (entity instanceof Mob mob) {
 					mob.setTarget(requester);
