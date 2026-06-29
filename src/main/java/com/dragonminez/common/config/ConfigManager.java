@@ -27,7 +27,7 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final double CONFIG_VERSION = 21.0;
+	public static final double CONFIG_VERSION = 21.1;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);

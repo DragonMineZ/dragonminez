@@ -31,6 +31,7 @@ import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.util.GravityStateSync;
 import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.core.BlockPos;
@@ -296,6 +297,7 @@ public class TickHandler {
 				handleActionCharge(serverPlayer, data);
 				handleActiveFormDrains(serverPlayer, data);
 				GravityLogic.tick(serverPlayer);
+				GravityStateSync.sync(serverPlayer);
 				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 					if (!data.getStatus().isAlive() && !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
 						if (!serverPlayer.isSpectator() && !serverPlayer.isCreative()) {
@@ -351,6 +353,7 @@ public class TickHandler {
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
 		GravityLogic.clearNpcGravityCache(playerId);
+		GravityStateSync.clear(playerId);
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			removeAuraLight(serverPlayer.serverLevel(), playerId);
 			clearHumanKiAccumulators(serverPlayer);

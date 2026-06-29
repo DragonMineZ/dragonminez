@@ -609,6 +609,17 @@ public class GeneralServerConfig {
 		private Double tpGravityBonusPerGravity = 0.025;
 		private Double masteryBonusPerGravity = 0.0025;
 
+		private Double tpIdealBaseDivisor = 2.0;
+		private Double gravitySensitivity = 0.5;
+		private Double tpComfortRatioLow = 0.5;
+		private Double tpIdealRatioLow = 0.75;
+		private Double tpIdealRatioHigh = 1.25;
+		private Double tpOverloadRatio = 2.0;
+		private Double tpOverloadHardRatio = 2.5;
+		private Double tpComfortMultiplier = 1.5;
+		private Double tpHeavyMultiplier = 2.5;
+		private Double maxWeightPenalty = 0.6;
+
 		private Double consumptionPerGravity = 0.04;
 
 		private Integer deviceMinRoomSize = 5;
@@ -737,6 +748,53 @@ public class GeneralServerConfig {
 
 		public Double getTpCurveWidth() {
 			return Math.max(0.0001, tpCurveWidth != null ? tpCurveWidth : 7.0);
+		}
+
+		public Double getTpIdealBaseDivisor() {
+			return Math.max(0.0001, tpIdealBaseDivisor != null ? tpIdealBaseDivisor : 2.0);
+		}
+
+		public Double getGravitySensitivity() {
+			Double value = gravitySensitivity != null ? gravitySensitivity : 0.5;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getTpComfortRatioLow() {
+			Double value = tpComfortRatioLow != null ? tpComfortRatioLow : 0.5;
+			return Math.max(0.0, value);
+		}
+
+		public Double getTpIdealRatioLow() {
+			Double value = tpIdealRatioLow != null ? tpIdealRatioLow : 0.75;
+			return Math.max(getTpComfortRatioLow(), value);
+		}
+
+		public Double getTpIdealRatioHigh() {
+			Double value = tpIdealRatioHigh != null ? tpIdealRatioHigh : 1.25;
+			return Math.max(getTpIdealRatioLow(), value);
+		}
+
+		public Double getTpOverloadRatio() {
+			Double value = tpOverloadRatio != null ? tpOverloadRatio : 2.0;
+			return Math.max(getTpIdealRatioHigh(), value);
+		}
+
+		public Double getTpOverloadHardRatio() {
+			Double value = tpOverloadHardRatio != null ? tpOverloadHardRatio : 2.5;
+			return Math.max(getTpOverloadRatio() + 0.0001, value);
+		}
+
+		public Double getTpComfortMultiplier() {
+			return Math.max(1.0, tpComfortMultiplier != null ? tpComfortMultiplier : 1.5);
+		}
+
+		public Double getTpHeavyMultiplier() {
+			return Math.max(getTpPeakMultiplier(), tpHeavyMultiplier != null ? tpHeavyMultiplier : 2.5);
+		}
+
+		public Double getMaxWeightPenalty() {
+			Double value = maxWeightPenalty != null ? maxWeightPenalty : 0.6;
+			return Math.max(0.0, Math.min(value, 1.0));
 		}
 
 		public Double getTpGravityBonusPerGravity() {

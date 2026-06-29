@@ -1098,63 +1098,15 @@ public class StatsData {
 	}
 
 	public double getGravityStatMultiplier() {
-		var config = ConfigManager.getServerConfig().getGravity();
-		if (!config.getStatReductionEnabled()) return 1.0;
-		double pGravity = GravityLogic.getPenalizationGravity(player);
-		if (pGravity <= 0) return 1.0;
-		double reduction = pGravity * config.getStatReductionPerGravity();
-		reduction = Math.max(config.getMinStatReduction(), Math.min(config.getMaxStatReduction(), reduction));
-		return 1.0 - reduction;
+		return 1.0 - GravityLogic.getStatReduction(player);
 	}
 
 	public double getTpWeightBellMultiplier() {
-		var gravityConfig = ConfigManager.getServerConfig().getGravity();
-		if (!gravityConfig.getTpEnabled()) return 1.0;
-		int totalWeight = GravityLogic.getTotalWeight(player);
-		if (totalWeight <= 0) return 1.0;
-
-		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
-		int effectiveWeight = (int) (totalWeight * gravityMultiplier);
-
-		int currentBaseLevel = getLevel();
-		int totalBaseStats = stats.getTotalStats();
-		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
-
-		double boostedTotal = stats.getStrength() * getTotalMultiplier("STR")
-				+ stats.getStrikePower() * getTotalMultiplier("SKP")
-				+ stats.getResistance() * getTotalMultiplier("RES")
-				+ stats.getVitality() * getTotalMultiplier("VIT")
-				+ stats.getKiPower() * getTotalMultiplier("PWR")
-				+ stats.getEnergy() * getTotalMultiplier("ENE");
-
-		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
-		double peak = gravityConfig.getTpPeakMultiplier();
-		double width = gravityConfig.getTpCurveWidth();
-		double exponent = -Math.pow((relativeLevel - 2.0 * effectiveWeight), 2) / (2.0 * Math.pow(width, 2));
-		return peak * Math.exp(exponent) + 1.0;
+		return GravityLogic.getWeightTpMultiplier(player);
 	}
 
 	public int getTpIdealWeight() {
-		var gravityConfig = ConfigManager.getServerConfig().getGravity();
-		if (!gravityConfig.getTpEnabled()) return 0;
-
-		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
-		if (gravityMultiplier <= 0.0) return 0;
-
-		int currentBaseLevel = getLevel();
-		int totalBaseStats = stats.getTotalStats();
-		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
-
-		double boostedTotal = stats.getStrength() * getTotalMultiplier("STR")
-				+ stats.getStrikePower() * getTotalMultiplier("SKP")
-				+ stats.getResistance() * getTotalMultiplier("RES")
-				+ stats.getVitality() * getTotalMultiplier("VIT")
-				+ stats.getKiPower() * getTotalMultiplier("PWR")
-				+ stats.getEnergy() * getTotalMultiplier("ENE");
-
-		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
-		double idealWeight = relativeLevel / (2.0 * gravityMultiplier);
-		return (int) Math.max(0, Math.round(idealWeight));
+		return GravityLogic.getIdealWeight(player);
 	}
 
 	public int getGravityTotalWeight() {

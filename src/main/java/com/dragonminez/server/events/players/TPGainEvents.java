@@ -177,32 +177,9 @@ public class TPGainEvents {
 
 		GeneralServerConfig.GravityConfig gravityConfig = ConfigManager.getServerConfig().getGravity();
 		if (!gravityConfig.getTpEnabled()) return tp;
+		if (GravityLogic.getTotalWeight(player) <= 0) return tp;
 
-		int totalWeight = GravityLogic.getTotalWeight(player);
-		if (totalWeight <= 0) return tp;
-
-		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
-		int effectiveWeight = (int) (totalWeight * gravityMultiplier);
-
-		int currentBaseLevel = data.getLevel();
-		int totalBaseStats = data.getStats().getTotalStats();
-		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
-
-		double boostedTotal = 0;
-		boostedTotal += data.getStats().getStrength() * data.getTotalMultiplier("STR");
-		boostedTotal += data.getStats().getStrikePower() * data.getTotalMultiplier("SKP");
-		boostedTotal += data.getStats().getResistance() * data.getTotalMultiplier("RES");
-		boostedTotal += data.getStats().getVitality() * data.getTotalMultiplier("VIT");
-		boostedTotal += data.getStats().getKiPower() * data.getTotalMultiplier("PWR");
-		boostedTotal += data.getStats().getEnergy() * data.getTotalMultiplier("ENE");
-
-		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
-
-		double peak = gravityConfig.getTpPeakMultiplier();
-		double width = gravityConfig.getTpCurveWidth();
-		double exponent = -Math.pow((relativeLevel - 2 * effectiveWeight), 2) / (2 * Math.pow(width, 2));
-		double multiplier = peak * Math.exp(exponent) + 1;
-
+		double multiplier = GravityLogic.getWeightTpMultiplier(player);
 		int newTp = (int) (tp * multiplier);
 		return newTp == 0 && multiplier > 0 ? 1 : newTp;
 	}
