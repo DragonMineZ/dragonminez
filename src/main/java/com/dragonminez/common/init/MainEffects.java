@@ -26,6 +26,7 @@ public class MainEffects {
 	// Placeholders, info for the player | Neutral
 	public static final RegistryObject<MobEffect> DASH_CD = EFFECTS.register("dash_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> DOUBLEDASH_CD = EFFECTS.register("doubledash_cd", DMZEffect::new);
+	public static final RegistryObject<MobEffect> TELEPORT_CD = EFFECTS.register("teleport_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> FUSED = EFFECTS.register("fused", DMZEffect::new);
 	public static final RegistryObject<MobEffect> SAIYAN_PASSIVE = EFFECTS.register("saiyan_passive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> BIOANDROID_PASSIVE = EFFECTS.register("bioandroid_passive", DMZEffect::new);

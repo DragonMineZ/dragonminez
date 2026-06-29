@@ -169,6 +169,10 @@ public class Character {
 		interactedMasters.put(id, new MasterLocation(id, name, dimension, pos));
 	}
 
+	public void removeInteractedMaster(String id) {
+		interactedMasters.remove(id);
+	}
+
 	public void setBodyColor(String hex) {
 		this.bodyColor = hex;
 		this.rgbBodyColor = ColorUtils.hexToRgb(hex);

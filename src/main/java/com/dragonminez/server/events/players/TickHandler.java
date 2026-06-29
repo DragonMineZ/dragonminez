@@ -1084,6 +1084,7 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new BioDrainHandler());
 		STATUS_EFFECT_HANDLERS.add(new DashStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new DoubleDashStatusHandler());
+		STATUS_EFFECT_HANDLERS.add(new TeleportCdStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new FlyStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new FusionStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new KiChargeStatusHandler());

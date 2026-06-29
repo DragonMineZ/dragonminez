@@ -51,6 +51,7 @@ public class CombatConfig {
 	private Integer perfectEvasionWindowMs = 200;
 	private Integer dashCooldownSeconds = 4;
 	private Integer doubleDashCooldownSeconds = 12;
+	private Integer teleportCooldownSeconds = 30;
 
 	private Boolean combatFlyAutoSwitchOnDamage = true;
 	private Integer combatFlyLockSeconds = 8;

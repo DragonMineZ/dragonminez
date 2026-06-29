@@ -309,6 +309,12 @@ public class NetworkHandler {
 				.consumerMainThread(RequestITTargetsC2S::handle)
 				.add();
 
+		net.messageBuilder(DeleteMasterC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DeleteMasterC2S::new)
+				.encoder(DeleteMasterC2S::toBytes)
+				.consumerMainThread(DeleteMasterC2S::handle)
+				.add();
+
 		net.messageBuilder(DeleteTechniqueC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(DeleteTechniqueC2S::new)
 				.encoder(DeleteTechniqueC2S::toBytes)
