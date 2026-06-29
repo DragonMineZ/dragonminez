@@ -36,6 +36,9 @@ public class CombatConfig {
 	private Double baseDamageReductionCap = 0.75;
 	private Double enchantmentDamageReductionCap = 0.85;
 	private Double defenseDecayOnGuardBreak = 0.66;
+	private Double flatMitigationFactor = 0.10;
+	private Double flatMitigationMaxAbsorbFraction = 0.5;
+	private Double defenseReductionScale = 0.25;
 
 	private Boolean enableBlocking = true;
 	private Boolean enableParrying = true;
@@ -51,6 +54,7 @@ public class CombatConfig {
 	private Integer perfectEvasionWindowMs = 200;
 	private Integer dashCooldownSeconds = 4;
 	private Integer doubleDashCooldownSeconds = 12;
+	private Integer teleportCooldownSeconds = 30;
 
 	private Boolean combatFlyAutoSwitchOnDamage = true;
 	private Integer combatFlyLockSeconds = 8;
@@ -112,6 +116,18 @@ public class CombatConfig {
 
 	public float getUpswingMultiplier() {
 		return Math.max(0.2F, Math.min(1.0F, upswingMultiplier));
+	}
+
+	public double getFlatMitigationFactor() {
+		return flatMitigationFactor != null ? Math.max(0.0, flatMitigationFactor) : 0.10;
+	}
+
+	public double getFlatMitigationMaxAbsorbFraction() {
+		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.5;
+	}
+
+	public double getDefenseReductionScale() {
+		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.25;
 	}
 
 	public KiWeaponConfig getKiWeaponConfig(String type) {

@@ -20,6 +20,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -116,6 +118,12 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		if (level != null && !level.isClientSide) {
 			GravityDeviceManager.unregister(level, worldPosition);
 		}
+	}
+
+	public void refreshRoom() {
+		recomputeRoom();
+		setChanged();
+		if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
 	}
 
 	/** Applies validated player input coming from the menu (server-side). */
@@ -248,7 +256,8 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		if (pos.equals(worldPosition)) return false;
 		BlockState state = level.getBlockState(pos);
 		if (state.getBlock() instanceof GravityDeviceBlock) return false;
-		return !state.isCollisionShapeFullBlock(level, pos);
+		if (state.getBlock() instanceof DoorBlock || state.getBlock() instanceof TrapDoorBlock) return false;
+		return state.getCollisionShape(level, pos).isEmpty();
 	}
 
 	public boolean isRoomValid() { return roomValid; }

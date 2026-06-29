@@ -161,12 +161,6 @@ public final class QuestService {
 	}
 
 	public static void claimRewards(ServerPlayer requester, String questKey) {
-		if (PartyManager.isInParty(requester) && !PartyManager.canClaimSharedRewards(requester)) {
-			requester.sendSystemMessage(Component.translatable("quest.dmz.party.reward.leader_only")
-					.withStyle(ChatFormatting.RED));
-			return;
-		}
-
 		ResolvedQuest resolved = resolveQuest(questKey);
 		if (resolved == null) {
 			return;
@@ -177,19 +171,14 @@ public final class QuestService {
 			return;
 		}
 
-		ServerPlayer controller = PartyManager.resolveQuestController(requester);
-		if (controller == null) {
-			return;
-		}
-
-		StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
+		StatsProvider.get(StatsCapability.INSTANCE, requester).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();
 			if (!pqd.isQuestCompleted(questKey)) {
 				return;
 			}
 
-			if (claimAvailableRewards(controller, resolved.quest(), questKey, pqd)) {
-				syncQuestState(controller);
+			if (claimAvailableRewards(requester, resolved.quest(), questKey, pqd)) {
+				syncQuestState(requester);
 			}
 		});
 	}
@@ -197,21 +186,10 @@ public final class QuestService {
 	/**
 	 * Claims every unclaimed reward across all completed quests for the player.
 	 * NPC-only quests are skipped (they must be claimed by talking to their NPC).
-	 * Party reward-sharing rules are respected: only the controller may claim.
+	 * Each party member claims their own rewards independently.
 	 */
 	public static void claimAllRewards(ServerPlayer requester) {
-		if (PartyManager.isInParty(requester) && !PartyManager.canClaimSharedRewards(requester)) {
-			requester.sendSystemMessage(Component.translatable("quest.dmz.party.reward.leader_only")
-					.withStyle(ChatFormatting.RED));
-			return;
-		}
-
-		ServerPlayer controller = PartyManager.resolveQuestController(requester);
-		if (controller == null) {
-			return;
-		}
-
-		StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
+		StatsProvider.get(StatsCapability.INSTANCE, requester).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();
 			boolean anyClaimed = false;
 
@@ -223,11 +201,11 @@ public final class QuestService {
 				if (resolved.quest().getClaimMode() == Quest.ClaimMode.NPC_ONLY) {
 					continue;
 				}
-				anyClaimed |= claimAvailableRewards(controller, resolved.quest(), questKey, pqd);
+				anyClaimed |= claimAvailableRewards(requester, resolved.quest(), questKey, pqd);
 			}
 
 			if (anyClaimed) {
-				syncQuestState(controller);
+				syncQuestState(requester);
 			}
 		});
 	}
@@ -402,9 +380,7 @@ public final class QuestService {
 		}
 
 		if (pqd.isQuestCompleted(questKey)) {
-			boolean anyClaimed = claimAvailableRewards(controller, quest, questKey, pqd);
-			if (anyClaimed) {
-				syncQuestState(controller);
+			if (claimRewardsForRequester(requester, quest, questKey)) {
 				return null;
 			}
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
@@ -466,7 +442,6 @@ public final class QuestService {
 
 		requester.displayClientMessage(
 				Component.translatable("command.dragonminez.story.sidequest.turned_in", questKey), false);
-		claimAvailableRewards(controller, quest, questKey, pqd);
 		NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), controller);
 
 		if (PartyManager.isInParty(controller)) {
@@ -477,6 +452,7 @@ public final class QuestService {
 			}
 		}
 		syncQuestState(controller);
+		claimRewardsForRequester(requester, quest, questKey);
 
 		return null;
 	}
@@ -535,6 +511,22 @@ public final class QuestService {
 			if (!pqd.isRewardClaimed(questKey, i)) {
 				return true;
 			}
+		}
+		return false;
+	}
+
+	private static boolean claimRewardsForRequester(ServerPlayer requester, Quest quest, String questKey) {
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, requester).resolve().orElse(null);
+		if (data == null) {
+			return false;
+		}
+		PlayerQuestData pqd = data.getPlayerQuestData();
+		if (!pqd.isQuestCompleted(questKey)) {
+			return false;
+		}
+		if (claimAvailableRewards(requester, quest, questKey, pqd)) {
+			syncQuestState(requester);
+			return true;
 		}
 		return false;
 	}
@@ -659,6 +651,9 @@ public final class QuestService {
 				}
 				if (killObjective.getAiTier() > 0) {
 					entity.getPersistentData().putInt("dmz_quest_ai_tier", killObjective.getAiTier());
+				}
+				if (!killObjective.isCanTransform()) {
+					entity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
 				}
 
 				if (entity instanceof Mob mob) {

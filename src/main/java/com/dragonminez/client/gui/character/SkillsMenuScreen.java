@@ -987,12 +987,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					TechniqueData technique = NEW_SKILL_ENTRY.equals(skillName) ? null : statsData.getTechniques().getUnlockedTechniques().get(skillName);
 					if (technique != null) {
 						String xpText = String.valueOf(technique.getExperience());
-						int xpX = panelX + 130 - this.font.width(xpText);
+						int xpX = panelX + 130 - TextUtil.width(this.font, xpText, DMZ_FONT);
 						TextUtil.drawStringWithBorder(graphics, this.font, txt(xpText), xpX, itemY + 5, color);
 					}
 				} else if (skill != null) {
 					String levelText = String.valueOf(skill.getLevel());
-					int levelX = panelX + 130 - this.font.width(levelText);
+					int levelX = panelX + 130 - TextUtil.width(this.font, levelText, DMZ_FONT);
 					TextUtil.drawStringWithBorder(graphics, this.font, txt(levelText),
 							levelX, itemY + 5, color);
 				}
@@ -1240,30 +1240,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private List<String> wrapText(String text, int maxWidth) {
-		List<String> lines = new ArrayList<>();
-		String[] words = text.split(" ");
-		StringBuilder currentLine = new StringBuilder();
-
-		for (String word : words) {
-			String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
-			if (font.width(testLine) <= maxWidth) {
-				if (currentLine.length() > 0) currentLine.append(" ");
-				currentLine.append(word);
-			} else {
-				if (currentLine.length() > 0) {
-					lines.add(currentLine.toString());
-					currentLine = new StringBuilder(word);
-				} else {
-					lines.add(word);
-				}
-			}
-		}
-
-		if (currentLine.length() > 0) {
-			lines.add(currentLine.toString());
-		}
-
-		return lines;
+		return TextUtil.wrap(this.font, text, maxWidth, DMZ_FONT);
 	}
 
 	@Override

@@ -25,10 +25,8 @@ import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -48,7 +46,7 @@ import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import top.theillusivec4.curios.api.CuriosApi;
+import com.dragonminez.common.util.CuriosUtil;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
@@ -290,7 +288,7 @@ public class ClientStatsEvents {
 
 			boolean isDescendActionDown = isDescendKeyPressed && isActionKeyPressed;
 			if (isDescendActionDown && !wasDescendActionDown && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.STACK))) {
-				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
+				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, false));
 			}
 			wasDescendActionDown = isDescendActionDown;
 
@@ -320,18 +318,15 @@ public class ClientStatsEvents {
 		var techniques = data.getTechniques();
 		boolean sessionActive = techniques.isTechniqueCharging() || techniques.isTechniqueChargeActive();
 
-		boolean ctrlHeld = Screen.hasControlDown();
+		net.minecraftforge.client.settings.KeyModifier bar1Mod = KeyBinds.TECHNIQUE_SLOTS[0].getKeyModifier();
+		net.minecraftforge.client.settings.KeyModifier bar2Mod = KeyBinds.TECHNIQUE_SLOTS[BAR_SLOTS].getKeyModifier();
+		boolean bar2DistinctHeld = bar2Mod != bar1Mod && KeyBinds.isModifierActive(bar2Mod);
 
 		boolean[] downNow = new boolean[TECHNIQUE_VISIBLE_SLOTS];
-		boolean altHeld = KeyBinds.isSecondFunctionDown();
-		long window = Minecraft.getInstance().getWindow().getWindow();
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
-			InputConstants.Key key = KeyBinds.TECHNIQUE_SLOTS[i].getKey();
-			boolean rawDown = key.getType() == InputConstants.Type.KEYSYM
-					? InputConstants.isKeyDown(window, key.getValue())
-					: KeyBinds.TECHNIQUE_SLOTS[i].isDown();
-			boolean barAllows = (i < BAR_SLOTS) ? (altHeld && !ctrlHeld) : (ctrlHeld && altHeld);
-			downNow[i] = rawDown && barAllows;
+			boolean down = KeyBinds.isChordDown(KeyBinds.TECHNIQUE_SLOTS[i]);
+			if (i < BAR_SLOTS && bar2DistinctHeld) down = false;
+			downNow[i] = down;
 		}
 
 		if (activeChargeSlot < 0) {
@@ -423,10 +418,7 @@ public class ClientStatsEvents {
 	}
 
 	private static ItemStack getScouterStack(Player player) {
-		return CuriosApi.getCuriosInventory(player)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.orElse(ItemStack.EMPTY);
+		return CuriosUtil.getFirstStack(player, "head_tech");
 	}
 
 	@SubscribeEvent
@@ -512,7 +504,7 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onMovementInput(MovementInputUpdateEvent event) {
-		boolean techMenu = KeyBinds.isSecondFunctionDown();
+		boolean techMenu = KeyBinds.isAnyTechniqueModifierDown();
 		if (techMenu) {
 			event.getInput().shiftKeyDown = false;
 			event.getEntity().setSprinting(false);

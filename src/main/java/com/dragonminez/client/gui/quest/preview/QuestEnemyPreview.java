@@ -2,6 +2,7 @@ package com.dragonminez.client.gui.quest.preview;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
@@ -55,6 +56,7 @@ public class QuestEnemyPreview {
 		final double meleeDamage;
 		final double kiDamage;
 		final int count;
+		final int textureVariant;
 
 		Target(KillObjective obj) {
 			this.entityId = obj.getEntityId();
@@ -62,6 +64,7 @@ public class QuestEnemyPreview {
 			this.meleeDamage = obj.getMeleeDamage();
 			this.kiDamage = obj.getKiDamage();
 			this.count = obj.getCount();
+			this.textureVariant = obj.getTextureVariant();
 		}
 	}
 
@@ -320,17 +323,28 @@ public class QuestEnemyPreview {
 
 	private LivingEntity getCurrentEntity() {
 		if (targets.isEmpty()) return null;
-		String id = targets.get(currentIndex).entityId;
-		if (entityCache.containsKey(id)) return entityCache.get(id);
-		if (failedIds.contains(id)) return null;
+		Target target = targets.get(currentIndex);
+		String id = target.entityId;
 
-		LivingEntity created = createDummy(id);
-		if (created != null) {
-			entityCache.put(id, created);
+		LivingEntity entity;
+		if (entityCache.containsKey(id)) {
+			entity = entityCache.get(id);
+		} else if (failedIds.contains(id)) {
+			return null;
 		} else {
-			failedIds.add(id);
+			entity = createDummy(id);
+			if (entity != null) {
+				entityCache.put(id, entity);
+			} else {
+				failedIds.add(id);
+				return null;
+			}
 		}
-		return created;
+		if (entity instanceof ITextureVariant variantEntity && target.textureVariant >= 0
+				&& variantEntity.getTextureVariant() != target.textureVariant) {
+			variantEntity.setTextureVariant(target.textureVariant);
+		}
+		return entity;
 	}
 
 	private LivingEntity createDummy(String id) {

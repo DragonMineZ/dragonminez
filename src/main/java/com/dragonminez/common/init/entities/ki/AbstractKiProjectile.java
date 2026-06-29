@@ -70,6 +70,8 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient int homingTargetId = -1;
     private transient int firingStartTick = -1;
 
+    private UUID cachedOwnerUUID;
+
     public void setHomingTarget(int targetId) {
         this.homingTargetId = targetId;
         this.firingStartTick = -1;
@@ -215,10 +217,11 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     public boolean shouldDamage(Entity target) {
         if (target == this) return false;
-        if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == this.getOwner()) return false;
-        if (target == this.getOwner() || target.is(this.getOwner())) return this.isHeal();
+        Entity owner = this.getOwner();
+        if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == owner) return false;
+        if (this.isOwner(target)) return this.isHeal();
 
-        if (this.getOwner() instanceof Player playerOwner) {
+        if (owner instanceof Player playerOwner) {
             TargetHelper.Relation relation = TargetHelper.getRelation(playerOwner, target);
 
             if (this.isHeal()) return relation == TargetHelper.Relation.FRIENDLY;
@@ -241,6 +244,36 @@ public abstract class AbstractKiProjectile extends Projectile {
         }
 
         return !this.isHeal();
+    }
+
+    @Override
+    public void setOwner(Entity owner) {
+        super.setOwner(owner);
+        if (owner != null) this.cachedOwnerUUID = owner.getUUID();
+    }
+
+    /** Owner UUID, falling back to the cached value if the live owner reference can't be resolved. */
+    public UUID getOwnerUUID() {
+        Entity owner = this.getOwner();
+        return owner != null ? owner.getUUID() : this.cachedOwnerUUID;
+    }
+
+    /** True if the entity is this projectile's caster (by reference or UUID). */
+    public boolean isOwner(Entity target) {
+        if (target == null) return false;
+        Entity owner = this.getOwner();
+        if (owner != null && (target == owner || target.is(owner))) return true;
+        UUID ownerUUID = this.cachedOwnerUUID;
+        return ownerUUID != null && target.getUUID().equals(ownerUUID);
+    }
+
+    @Override
+    protected boolean canHitEntity(Entity target) {
+        if (!super.canHitEntity(target)) return false;
+        // The caster's own attacks should never collide with them (no self-detonation/self-hit),
+        // except for healing attacks which are meant to be able to target the caster.
+        if (!this.isHeal() && this.isOwner(target)) return false;
+        return true;
     }
 
     public void playInitialSound(SoundEvent sound) {

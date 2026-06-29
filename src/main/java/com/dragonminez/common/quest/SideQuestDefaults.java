@@ -274,7 +274,6 @@ final class SideQuestDefaults {
 				"roshi_basic_training", "dmz.sidequest.roshi_basic.name", "dmz.sidequest.roshi_basic.desc",
 				"training", false, "roshi", "roshi", null,
 				new JsonObject[]{
-						objStructure("dragonminez:roshi_house"),
 						objKill("minecraft:zombie", 10),
 						objTalkTo("roshi")
 				},
@@ -747,7 +746,7 @@ final class SideQuestDefaults {
 
 		writeQuestFile(dir, "merchant_alien_artifacts.json", sidequest(
 				"merchant_alien_artifacts", "dmz.sidequest.merchant_artifacts.name", "dmz.sidequest.merchant_artifacts.desc",
-				"collection", false, "merchant_01", "merchant_01",
+				"collection", false, "bulma", "bulma",
 				prereqs("AND", condSaga("frieza_saga", 4)),
 				new JsonObject[]{
 						objItem("dragonminez:kikono_shard", 16),

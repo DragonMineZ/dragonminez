@@ -6,6 +6,7 @@ import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.CuriosUtil;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.LivingEntity;
@@ -13,7 +14,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -187,17 +187,10 @@ public final class KiSenseScan {
 	}
 
 	private static boolean isCloaked(Player target) {
-		return CuriosApi.getCuriosInventory(target)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.map(stack -> stack.getItem() == MainItems.ANTI_KI_CLOAK.get())
-				.orElse(false);
+		return CuriosUtil.getFirstStack(target, "head_tech").getItem() == MainItems.ANTI_KI_CLOAK.get();
 	}
 
 	public static ItemStack scouterStack(Player player) {
-		return CuriosApi.getCuriosInventory(player)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.orElse(ItemStack.EMPTY);
+		return CuriosUtil.getFirstStack(player, "head_tech");
 	}
 }

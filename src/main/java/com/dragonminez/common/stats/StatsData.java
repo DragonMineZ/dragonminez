@@ -350,6 +350,16 @@ public class StatsData {
 		return secondaryMeleeDamage + (((strength + multBonusStr) * strScaling * strMult) + (flatBonusStr * strScaling)) * releaseMultiplier;
 	}
 
+	public double getMeleeDamageNoMultipliers() {
+		double strength = stats.getStrength();
+		double strScaling = getStatScaling("STR");
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
+		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		return secondaryMeleeDamage + (((strength + multBonusStr) * strScaling) + (flatBonusStr * strScaling)) * releaseMultiplier;
+	}
+
 	public double getMaxStrikeDamage() {
 		double strikePower = stats.getStrikePower();
 		double strength = stats.getStrength();
@@ -472,13 +482,15 @@ public class StatsData {
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
 
-		double flatMitigation = baseDefense * 0.10 * Math.max(1.0, defMult);
+		double rawFlatMitigation = baseDefense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, defMult);
+		double flatAbsorbCap = incomingDamage * ConfigManager.getCombatConfig().getFlatMitigationMaxAbsorbFraction();
+		double flatMitigation = Math.min(rawFlatMitigation, flatAbsorbCap);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
 
 		int maxValue = getConfiguredMaxValue();
 		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
-		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
+		double k_factor = Math.max(100.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
 
 		double baseReduction;
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
@@ -1071,10 +1083,9 @@ public class StatsData {
 	}
 
 	public double getTpGravityMultiplier() {
-		if (player.level().dimension().equals(HTCDimension.HTC_KEY)) return 1.0;
 		var gravityConfig = ConfigManager.getServerConfig().getGravity();
 		if (!gravityConfig.getTpEnabled()) return 1.0;
-		double bonusGravity = GravityLogic.getBonusGravity(player);
+		double bonusGravity = GravityLogic.getTrainingBonusGravity(player);
 		if (bonusGravity <= 0) return 1.0;
 		return 1.0 + (bonusGravity * gravityConfig.getTpGravityBonusPerGravity());
 	}
@@ -1088,63 +1099,15 @@ public class StatsData {
 	}
 
 	public double getGravityStatMultiplier() {
-		var config = ConfigManager.getServerConfig().getGravity();
-		if (!config.getStatReductionEnabled()) return 1.0;
-		double pGravity = GravityLogic.getPenalizationGravity(player);
-		if (pGravity <= 0) return 1.0;
-		double reduction = pGravity * config.getStatReductionPerGravity();
-		reduction = Math.max(config.getMinStatReduction(), Math.min(config.getMaxStatReduction(), reduction));
-		return 1.0 - reduction;
+		return 1.0 - GravityLogic.getStatReduction(player);
 	}
 
 	public double getTpWeightBellMultiplier() {
-		var gravityConfig = ConfigManager.getServerConfig().getGravity();
-		if (!gravityConfig.getTpEnabled()) return 1.0;
-		int totalWeight = GravityLogic.getTotalWeight(player);
-		if (totalWeight <= 0) return 1.0;
-
-		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
-		int effectiveWeight = (int) (totalWeight * gravityMultiplier);
-
-		int currentBaseLevel = getLevel();
-		int totalBaseStats = stats.getTotalStats();
-		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
-
-		double boostedTotal = stats.getStrength() * getTotalMultiplier("STR")
-				+ stats.getStrikePower() * getTotalMultiplier("SKP")
-				+ stats.getResistance() * getTotalMultiplier("RES")
-				+ stats.getVitality() * getTotalMultiplier("VIT")
-				+ stats.getKiPower() * getTotalMultiplier("PWR")
-				+ stats.getEnergy() * getTotalMultiplier("ENE");
-
-		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
-		double peak = gravityConfig.getTpPeakMultiplier();
-		double width = gravityConfig.getTpCurveWidth();
-		double exponent = -Math.pow((relativeLevel - 2.0 * effectiveWeight), 2) / (2.0 * Math.pow(width, 2));
-		return peak * Math.exp(exponent) + 1.0;
+		return GravityLogic.getWeightTpMultiplier(player);
 	}
 
 	public int getTpIdealWeight() {
-		var gravityConfig = ConfigManager.getServerConfig().getGravity();
-		if (!gravityConfig.getTpEnabled()) return 0;
-
-		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
-		if (gravityMultiplier <= 0.0) return 0;
-
-		int currentBaseLevel = getLevel();
-		int totalBaseStats = stats.getTotalStats();
-		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
-
-		double boostedTotal = stats.getStrength() * getTotalMultiplier("STR")
-				+ stats.getStrikePower() * getTotalMultiplier("SKP")
-				+ stats.getResistance() * getTotalMultiplier("RES")
-				+ stats.getVitality() * getTotalMultiplier("VIT")
-				+ stats.getKiPower() * getTotalMultiplier("PWR")
-				+ stats.getEnergy() * getTotalMultiplier("ENE");
-
-		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
-		double idealWeight = relativeLevel / (2.0 * gravityMultiplier);
-		return (int) Math.max(0, Math.round(idealWeight));
+		return GravityLogic.getIdealWeight(player);
 	}
 
 	public int getGravityTotalWeight() {

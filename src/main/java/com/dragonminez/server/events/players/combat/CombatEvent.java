@@ -141,13 +141,18 @@ public class CombatEvent {
 
 				double baseDamage = currentDamage[0];
 				double dmzDamage = attackerData.getMeleeDamage();
+				double staminaDamage = attackerData.getMeleeDamageNoMultipliers();
 
 				var dmzPlayer = (Player_DMZ) attacker;
 				var currentAttack = dmzPlayer.getCurrentAttack();
 
 				if (currentAttack != null) {
 					dmzDamage *= currentAttack.attack().damageMultiplier();
-					if (currentAttack.isOffHand()) dmzDamage *= 0.9;
+					staminaDamage *= currentAttack.attack().damageMultiplier();
+					if (currentAttack.isOffHand()) {
+						dmzDamage *= 0.9;
+						staminaDamage *= 0.9;
+					}
 				}
 
 				DMZEvent.DamageModifyEvent modifyEvent = new DMZEvent.DamageModifyEvent(attacker, livingTarget, dmzDamage, 0.0, DMZEvent.DamageSourceType.MELEE);
@@ -182,7 +187,7 @@ public class CombatEvent {
 					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6f, 0.05f, 2, false), livingTarget);
 				}
 
-				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getCombatConfig().getStaminaConsumptionRatio());
+				int baseStaminaRequired = (int) Math.ceil(staminaDamage * ConfigManager.getCombatConfig().getStaminaConsumptionRatio());
 				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 				int staminaRequired = (int) (baseStaminaRequired * gravityMult * attackerData.getAdjustedStaminaDrainMultiplier());
 
@@ -194,14 +199,24 @@ public class CombatEvent {
 
 				if (!attackerData.getStatus().isAlive() && attacker.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) staminaRequired = 0;
 
-				if (currentStamina >= staminaRequired) {
-					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
-					finalDmzDamage = dmzDamage;
+				boolean firstHit = !attacker.getPersistentData().contains("dmz_first_hit") || attacker.getPersistentData().getBoolean("dmz_first_hit");
+				double staminaRatio;
+
+				if (firstHit) {
+					if (currentStamina >= staminaRequired) {
+						if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
+						staminaRatio = 1.0;
+					} else {
+						staminaRatio = Mth.clamp((double) currentStamina / staminaRequired, 0.0, 1.0);
+						if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
+					}
+					attacker.getPersistentData().putDouble("dmz_swing_stamina_ratio", staminaRatio);
 				} else {
-					double staminaRatio = Mth.clamp((double) currentStamina / staminaRequired, 0.0, 1.0);
-					finalDmzDamage = dmzDamage * staminaRatio;
-					if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
+					staminaRatio = attacker.getPersistentData().contains("dmz_swing_stamina_ratio")
+							? attacker.getPersistentData().getDouble("dmz_swing_stamina_ratio") : 1.0;
 				}
+
+				finalDmzDamage = dmzDamage * staminaRatio;
 
 				if (isEmptyHandOrNoDamageItem(attacker)) currentDamage[0] = finalDmzDamage;
 				else currentDamage[0] = baseDamage + finalDmzDamage;

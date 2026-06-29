@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -170,6 +171,7 @@ public class StatsSyncC2S {
 				character.setEye2Color(msg.eye2Color);
 				character.setAuraColor(msg.auraColor);
 				character.setRenderHairBase(msg.renderHairBase);
+				if (ConfigManager.getRaceCharacter(msg.raceName) != null) data.getCharacter().setHasSaiyanTail(ConfigManager.getRaceCharacter(msg.raceName).getHasSaiyanTail());
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

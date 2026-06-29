@@ -59,7 +59,7 @@ public class Character {
 	private String previousStackForm = "";
 	private boolean hasPreviousStackFormRecord = false;
 
-	private boolean hasSaiyanTail = true;
+	private boolean hasSaiyanTail = false;
 	private boolean renderHairBase = true;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
@@ -145,6 +145,7 @@ public class Character {
 			this.eye1Color = config.getDefaultEye1Color() != null ? config.getDefaultEye1Color() : "#000000";
 			this.eye2Color = config.getDefaultEye2Color() != null ? config.getDefaultEye2Color() : "#000000";
 			this.auraColor = config.getDefaultAuraColor() != null ? config.getDefaultAuraColor() : "#FFFFFF";
+			this.setHasSaiyanTail(config.getHasSaiyanTail());
 		} else {
 			this.hairId = 0;
 			this.activeHeadBone = "";
@@ -160,11 +161,16 @@ public class Character {
 			this.eye1Color = "#000000";
 			this.eye2Color = "#000000";
 			this.auraColor = "#FFFFFF";
+			this.setHasSaiyanTail(false);
 		}
 	}
 
 	public void addInteractedMaster(String id, String name, String dimension, BlockPos pos) {
 		interactedMasters.put(id, new MasterLocation(id, name, dimension, pos));
+	}
+
+	public void removeInteractedMaster(String id) {
+		interactedMasters.remove(id);
 	}
 
 	public void setBodyColor(String hex) {

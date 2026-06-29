@@ -63,7 +63,7 @@ public final class DynamicGrowthService {
 
 		xp *= cfg.getPracticeXpMultiplier();
 		xp *= cfg.getStatPracticeMultiplier(stat.key());
-		if (xp <= 0.0) return;
+		if (!Double.isFinite(xp) || xp <= 0.0) return;
 
 		growth.addPracticeXp(stat, xp);
 		processLevelUps(player, data, stat);
@@ -121,20 +121,19 @@ public final class DynamicGrowthService {
 
 	private static void processLevelUps(ServerPlayer player, StatsData data, DynamicGrowthStat stat) {
 		DynamicGrowthData growth = data.getDynamicGrowth();
-		boolean leveled = false;
 
-		while (data.getMaxAllowedIncreaseForStat(stat.key(), 1) > 0) {
-			int currentStat = data.getCurrentStatValue(stat.key());
-			int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
-			if (growth.getPracticeXp(stat) < requiredXp) break;
+		if (data.getMaxAllowedIncreaseForStat(stat.key(), 1) <= 0) return;
 
-			growth.consumePracticeXp(stat, requiredXp);
-			grantStatPoint(player, data, stat);
-			leveled = true;
-			notifyStatGain(player, stat, data.getCurrentStatValue(stat.key()));
-		}
+		int currentStat = data.getCurrentStatValue(stat.key());
+		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
+		double availableXp = growth.getPracticeXp(stat);
+		if (requiredXp <= 0 || !Double.isFinite(availableXp) || availableXp < requiredXp) return;
 
-		if (leveled) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		growth.consumePracticeXp(stat, requiredXp);
+		grantStatPoint(player, data, stat);
+		notifyStatGain(player, stat, data.getCurrentStatValue(stat.key()));
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 	}
 
 	private static void grantStatPoint(ServerPlayer player, StatsData data, DynamicGrowthStat stat) {

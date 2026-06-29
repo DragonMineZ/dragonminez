@@ -28,9 +28,10 @@ public class KillObjective extends QuestObjective {
 	private final CountMode countMode;
 	private final int textureVariant;
 	private final int aiTier;
+	private final boolean canTransform;
 
 	public KillObjective(String entityId, int count, double health, double meleeDamage, double kiDamage,
-						 SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier) {
+						 SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier, boolean canTransform) {
 		super(ObjectiveType.KILL, count);
 		this.entityId = entityId;
 		this.count = count;
@@ -41,6 +42,7 @@ public class KillObjective extends QuestObjective {
 		this.countMode = countMode != null ? countMode : CountMode.QUEST_SPAWNED_ONLY;
 		this.textureVariant = textureVariant;
 		this.aiTier = aiTier;
+		this.canTransform = canTransform;
 	}
 
 	@Override

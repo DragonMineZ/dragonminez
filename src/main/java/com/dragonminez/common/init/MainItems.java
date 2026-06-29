@@ -74,13 +74,13 @@ public final class MainItems {
 
 	//POTHALAS
 	public static final RegistryObject<Item> POTHALA_LEFT =
-			ITEM_REGISTER.register("pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
+			ITEM_REGISTER.register("pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> POTHALA_RIGHT =
-			ITEM_REGISTER.register("pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
+			ITEM_REGISTER.register("pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> GREEN_POTHALA_LEFT =
-			ITEM_REGISTER.register("green_pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
+			ITEM_REGISTER.register("green_pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> GREEN_POTHALA_RIGHT =
-			ITEM_REGISTER.register("green_pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
+			ITEM_REGISTER.register("green_pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 
 	public static final RegistryObject<Item> RED_SCOUTER =
 			ITEM_REGISTER.register("red_scouter", () -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().defaultDurability(15), DMZCuriosItem.CurioType.HEAD_TECH));

@@ -6,7 +6,9 @@ import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.entities.AllMastersEntity;
 import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.world.dimension.HTCDimension;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -34,11 +36,20 @@ public class GravityLogic {
 	}
 
 	public static double getGravityMultiplier(Player player) {
+		return computeGravity(player, true);
+	}
+
+	public static double getTrainingGravityMultiplier(Player player) {
+		boolean htc = player.level().dimension().equals(HTCDimension.HTC_KEY);
+		return computeGravity(player, !htc);
+	}
+
+	private static double computeGravity(Player player, boolean includeDimension) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.isEnabled()) return 1.0;
 
 		String dimId = player.level().dimension().location().toString();
-		double gravity = config.getWorldGravity(dimId);
+		double gravity = includeDimension ? config.getWorldGravity(dimId) : config.getDefaultWorldGravity();
 
 		double wgGravity = WorldGuardCompat.getGravity(player.level(), player.blockPosition(), player);
 		if (wgGravity > gravity) gravity = wgGravity;
@@ -89,6 +100,14 @@ public class GravityLogic {
 		return getNetGravity(player);
 	}
 
+	public static double getTrainingBonusGravity(Player player) {
+		double gravity = getTrainingGravityMultiplier(player);
+		if (gravity <= 1.0) return 0.0;
+		double net = Math.max(0.0, gravity - getResistance(player));
+		if (net >= cfg().getHardStopThreshold()) return 0.0;
+		return net;
+	}
+
 	private static double getNpcGravity(Player player) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		UUID id = player.getUUID();
@@ -114,14 +133,9 @@ public class GravityLogic {
 		return NPC_GRAVITY_CACHE.getOrDefault(id, 0.0);
 	}
 
-	private static double getMachineGravity(Player player) {
+	public static double getMachineGravity(Player player) {
 		if (!cfg().getMachineGravityEnabled()) return 0.0;
 		return GravityDeviceManager.getGravityFor(player);
-	}
-
-	/** Raw machine gravity (Gravity Device zones only) affecting the player; drives the red shader. */
-	public static double getMachineGravityFor(Player player) {
-		return getMachineGravity(player);
 	}
 
 	public static int getTotalWeight(Player player) {
@@ -140,6 +154,115 @@ public class GravityLogic {
 			}
 		});
 		return totalWeight[0];
+	}
+
+	private static double computeRelativeLevel(StatsData data) {
+		int currentBaseLevel = data.getLevel();
+		int totalBaseStats = data.getStats().getTotalStats();
+		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
+
+		double boostedTotal =
+				data.getStats().getStrength() * data.getTotalMultiplier("STR") +
+				data.getStats().getStrikePower() * data.getTotalMultiplier("SKP") +
+				data.getStats().getResistance() * data.getTotalMultiplier("RES") +
+				data.getStats().getVitality() * data.getTotalMultiplier("VIT") +
+				data.getStats().getKiPower() * data.getTotalMultiplier("PWR") +
+				data.getStats().getEnergy() * data.getTotalMultiplier("ENE");
+
+		return ((boostedTotal - initialStats) / 6.0) + 1.0;
+	}
+
+	public static int getIdealWeight(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.getTpEnabled()) return 0;
+		double gravity = getTrainingGravityMultiplier(player);
+		if (gravity <= 0.0) return 0;
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			double relativeLevel = computeRelativeLevel(data);
+			double gravityFactor = Math.max(0.0001, 1.0 + (gravity - 1.0) * config.getGravitySensitivity());
+			double ideal = relativeLevel / (config.getTpIdealBaseDivisor() * gravityFactor);
+			return (int) Math.max(0, Math.round(ideal));
+		}).orElse(0);
+	}
+
+	public static double getLoadRatio(Player player) {
+		int ideal = getIdealWeight(player);
+		if (ideal <= 0) return 0.0;
+		return (double) getTotalWeight(player) / ideal;
+	}
+
+	public static int getTrainingZone(Player player) {
+		if (getTotalWeight(player) <= 0) return 0;
+		int ideal = getIdealWeight(player);
+		if (ideal <= 0) return 0;
+		GeneralServerConfig.GravityConfig config = cfg();
+		double r = (double) getTotalWeight(player) / ideal;
+		if (r < config.getTpIdealRatioLow()) return 1;
+		if (r <= config.getTpIdealRatioHigh()) return 2;
+		if (r < config.getTpOverloadHardRatio()) return 3;
+		return 4;
+	}
+
+	public static double getWeightTpMultiplier(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.getTpEnabled()) return 1.0;
+		if (getTotalWeight(player) <= 0) return 1.0;
+		int ideal = getIdealWeight(player);
+		if (ideal <= 0) return 1.0;
+		return weightTpMultiplierForRatio((double) getTotalWeight(player) / ideal, config);
+	}
+
+	private static double weightTpMultiplierForRatio(double r, GeneralServerConfig.GravityConfig config) {
+		double comfortLow = config.getTpComfortRatioLow();
+		double idealLow = config.getTpIdealRatioLow();
+		double idealHigh = config.getTpIdealRatioHigh();
+		double overload = config.getTpOverloadRatio();
+		double overloadHard = config.getTpOverloadHardRatio();
+		double comfortMult = config.getTpComfortMultiplier();
+		double peak = config.getTpPeakMultiplier();
+		double heavyMult = config.getTpHeavyMultiplier();
+
+		if (r <= 0.0) return 1.0;
+		if (comfortLow > 0.0 && r < comfortLow) return lerp(1.0, comfortMult, r / comfortLow);
+		if (r < idealLow) return lerp(comfortMult, peak, (r - comfortLow) / (idealLow - comfortLow));
+		if (r <= idealHigh) return peak;
+		if (r <= overload) return lerp(peak, heavyMult, (r - idealHigh) / (overload - idealHigh));
+		if (r < overloadHard) return lerp(heavyMult, 1.0, (r - overload) / (overloadHard - overload));
+		return 1.0;
+	}
+
+	public static double getWeightPenaltyFactor(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.getTpEnabled()) return 0.0;
+		if (getTotalWeight(player) <= 0) return 0.0;
+		int ideal = getIdealWeight(player);
+		if (ideal <= 0) return 0.0;
+		double r = (double) getTotalWeight(player) / ideal;
+		double idealHigh = config.getTpIdealRatioHigh();
+		double overloadHard = config.getTpOverloadHardRatio();
+		if (r <= idealHigh) return 0.0;
+		double max = config.getMaxWeightPenalty();
+		if (r >= overloadHard) return max;
+		return max * (r - idealHigh) / (overloadHard - idealHigh);
+	}
+
+	public static double getStatReduction(Player player) {
+		GeneralServerConfig.GravityConfig config = cfg();
+		if (!config.getStatReductionEnabled()) return 0.0;
+		double pGravity = getPenalizationGravity(player);
+		double reduction = 0.0;
+		if (pGravity > 0) {
+			reduction = pGravity * config.getStatReductionPerGravity();
+			reduction = Math.max(config.getMinStatReduction(), Math.min(config.getMaxStatReduction(), reduction));
+		}
+		reduction = Math.min(config.getMaxStatReduction(), reduction + getWeightPenaltyFactor(player));
+		return reduction;
+	}
+
+	private static double lerp(double a, double b, double t) {
+		if (t <= 0.0) return a;
+		if (t >= 1.0) return b;
+		return a + (b - a) * t;
 	}
 
 	public static double getGeneralPenaltyFactor(double pGravity) {
@@ -193,60 +316,47 @@ public class GravityLogic {
 		movementSpeed.removeModifier(GRAVITY_SPEED_UUID);
 		attackSpeed.removeModifier(GRAVITY_ATTACK_SPEED_UUID);
 
+		double weightPenalty = getWeightPenaltyFactor(player);
+
+		double movePenalty = 0.0;
+		double attackPenalty = 0.0;
 		if (pGravity > 0) {
-			double movePenalty;
-			double attackPenalty;
-
 			if (pGravity >= config.getHardStopThreshold()) {
-				movePenalty = -config.getMaxMovementPenalty();
-				attackPenalty = -config.getMaxAttackPenalty();
+				movePenalty = config.getMaxMovementPenalty();
+				attackPenalty = config.getMaxAttackPenalty();
 			} else {
-				double generalFactor = getGeneralPenaltyFactor(pGravity);
-				movePenalty = -Math.min(config.getMaxMovementPenalty(), generalFactor);
-				double attackFactor = Math.sqrt(pGravity / 100.0);
-				attackPenalty = -Math.min(config.getMaxAttackPenalty(), attackFactor);
+				movePenalty = Math.min(config.getMaxMovementPenalty(), getGeneralPenaltyFactor(pGravity));
+				attackPenalty = Math.min(config.getMaxAttackPenalty(), Math.sqrt(pGravity / 100.0));
 			}
+		}
 
+		movePenalty = Math.min(config.getMaxMovementPenalty(), movePenalty + weightPenalty);
+		attackPenalty = Math.min(config.getMaxAttackPenalty(), attackPenalty + weightPenalty);
+
+		if (movePenalty > 0) {
 			movementSpeed.addTransientModifier(new AttributeModifier(
 					GRAVITY_SPEED_UUID,
 					"Gravity movement penalty",
-					movePenalty,
+					-movePenalty,
 					AttributeModifier.Operation.MULTIPLY_TOTAL
 			));
-
+		}
+		if (attackPenalty > 0) {
 			attackSpeed.addTransientModifier(new AttributeModifier(
 					GRAVITY_ATTACK_SPEED_UUID,
 					"Gravity attack speed penalty",
-					attackPenalty,
+					-attackPenalty,
 					AttributeModifier.Operation.MULTIPLY_TOTAL
 			));
 		}
 
-		applyStatReduction(player, pGravity, config);
-		syncMachineGravity(player);
+		applyStatReduction(player, config);
 	}
 
-	private static final Map<UUID, Float> LAST_MACHINE_GRAVITY = new HashMap<>();
-
-	private static void syncMachineGravity(ServerPlayer player) {
-		float machineGravity = (float) getMachineGravity(player);
-		float last = LAST_MACHINE_GRAVITY.getOrDefault(player.getUUID(), -1.0f);
-		if (Math.abs(machineGravity - last) >= 0.5f) {
-			LAST_MACHINE_GRAVITY.put(player.getUUID(), machineGravity);
-			com.dragonminez.common.network.NetworkHandler.sendToPlayer(
-					new com.dragonminez.common.network.S2C.GravityZoneSyncS2C(machineGravity), player);
-		}
-	}
-
-	private static void applyStatReduction(ServerPlayer player, double pGravity, GeneralServerConfig.GravityConfig config) {
+	private static void applyStatReduction(ServerPlayer player, GeneralServerConfig.GravityConfig config) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			String[] stats = config.getAffectedStats();
-
-			double reduction = 0.0;
-			if (config.getStatReductionEnabled() && pGravity > 0) {
-				reduction = pGravity * config.getStatReductionPerGravity();
-				reduction = Math.max(config.getMinStatReduction(), Math.min(config.getMaxStatReduction(), reduction));
-			}
+			double reduction = getStatReduction(player);
 
 			if (reduction <= 0.0) {
 				for (String stat : stats) data.getBonusStats().removeBonusSplit(stat, "Gravity");
@@ -258,12 +368,10 @@ public class GravityLogic {
 		});
 	}
 
-	/** Clears all per-player NPC gravity cache entries. Call on player logout. */
 	public static void clearNpcGravityCache(UUID playerId) {
 		NPC_GRAVITY_CACHE.remove(playerId);
 		NPC_GRAVITY_TICK.remove(playerId);
 		NPC_GRAVITY_DIM.remove(playerId);
-		LAST_MACHINE_GRAVITY.remove(playerId);
 	}
 
 	public static double getConsumptionMultiplier(Player player) {

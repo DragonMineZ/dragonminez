@@ -1,31 +1,51 @@
 package com.dragonminez.client.render.shader;
 
 import com.dragonminez.common.config.ConfigManager;
+import lombok.Getter;
 
-/**
- * Client-side holder for the Gravity Device machine gravity currently affecting the local
- * player. Synced from the server once per second and used to drive the red distortion shader.
- */
+
 public final class ClientGravityState {
 
 	private static volatile float machineGravity = 0.0f;
+	@Getter
+	private static volatile float environmentalGravity = 1.0f;
+	@Getter
+	private static volatile float netGravity = 0.0f;
+	@Getter
+	private static volatile float statMult = 1.0f;
+	@Getter
+	private static volatile float tpGravityMult = 1.0f;
+	@Getter
+	private static volatile int idealWeight = 0;
+	@Getter
+	private static volatile int totalWeight = 0;
+	@Getter
+	private static volatile float loadRatio = 0.0f;
+	@Getter
+	private static volatile float weightTpMult = 1.0f;
+	@Getter
+	private static volatile int zone = 0;
 
 	private ClientGravityState() {}
 
-	public static void setMachineGravity(float value) {
-		machineGravity = Math.max(0.0f, value);
+	public static void update(float machineGravity, float environmentalGravity, float netGravity,
+							  float statMult, float tpGravityMult, int idealWeight, int totalWeight,
+							  float loadRatio, float weightTpMult, int zone) {
+		ClientGravityState.machineGravity = Math.max(0.0f, machineGravity);
+		ClientGravityState.environmentalGravity = environmentalGravity;
+		ClientGravityState.netGravity = netGravity;
+		ClientGravityState.statMult = statMult;
+		ClientGravityState.tpGravityMult = tpGravityMult;
+		ClientGravityState.idealWeight = idealWeight;
+		ClientGravityState.totalWeight = totalWeight;
+		ClientGravityState.loadRatio = loadRatio;
+		ClientGravityState.weightTpMult = weightTpMult;
+		ClientGravityState.zone = zone;
 	}
 
-	public static float getMachineGravity() {
-		return machineGravity;
-	}
-
-	/** @return shader intensity in [0,1] scaled by the configured gravity-for-max value. */
 	public static float getShaderIntensity() {
 		if (machineGravity <= 0.0f) return 0.0f;
 		double forMax = ConfigManager.getServerConfig().getGravity().getDeviceShaderGravityForMax();
-		// Square-root ramp so low gravity is already clearly visible, plus a minimum floor
-		// so that any active gravity zone is immediately noticeable.
 		double curved = Math.sqrt(Math.min(1.0, machineGravity / forMax));
 		return (float) Math.min(1.0, Math.max(0.35, curved));
 	}

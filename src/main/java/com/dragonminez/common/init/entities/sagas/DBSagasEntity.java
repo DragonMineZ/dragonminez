@@ -239,6 +239,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Getter @Setter
     private boolean isAttacking = false;
 
+    @Getter @Setter
+    private boolean transformationDisabled = false;
+
     private final List<KiSkill> skillPool = new ArrayList<>();
     @Getter
     private float currentPoolSkillSize = 1.0F;
@@ -1179,6 +1182,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         pCompound.putInt("DBZStyle", this.getDBZStyle());
         pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
+        pCompound.putBoolean("TransformationDisabled", this.transformationDisabled);
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
         pCompound.putInt("AITier", this.getAiTierId());
@@ -1209,6 +1213,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (pCompound.contains("CanFly") && pCompound.getBoolean("CanFly") && this.getFlySpeed() <= 0.0D) this.setFlySpeed(0.35D);
         if (pCompound.contains("TextureVariant")) {
             this.setTextureVariant(pCompound.getInt("TextureVariant"));
+        }
+        if (pCompound.contains("TransformationDisabled")) {
+            this.transformationDisabled = pCompound.getBoolean("TransformationDisabled");
         }
         if (pCompound.contains("CanUseZanzoken")) this.canUseZanzoken = pCompound.getBoolean("CanUseZanzoken");
         if (pCompound.contains("ZanzokenCooldownMax")) this.zanzokenCooldownMax = pCompound.getInt("ZanzokenCooldownMax");
@@ -1300,7 +1307,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         boolean isAbsoluteDeath = pSource.is(DamageTypes.FELL_OUT_OF_WORLD) || pSource.is(DamageTypes.GENERIC_KILL);
 
         if (!this.level().isClientSide && pAmount >= this.getHealth()) {
-            if (this.hasTransformation() && !isAbsoluteDeath) {
+            if (this.canTransform() && !isAbsoluteDeath) {
                 this.setHealth(1.0F);
                 this.startTransformation();
                 return false;
@@ -1315,7 +1322,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (actuallyHurt && !this.level().isClientSide) {
 
-            if (this.getHealth() <= 0.0F && this.hasTransformation() && !isAbsoluteDeath) {
+            if (this.getHealth() <= 0.0F && this.canTransform() && !isAbsoluteDeath) {
                 this.setHealth(1.0F);
                 this.deathTime = 0;
                 this.startTransformation();
@@ -1323,7 +1330,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             }
 
             if (!this.isTransforming() && this.getHealth() <= (this.getMaxHealth() / 2.0F)) {
-                if (this.hasTransformation()) this.startTransformation();
+                if (this.canTransform()) this.startTransformation();
             }
 
             Entity attacker = pSource.getEntity();
@@ -1343,11 +1350,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return false;
     }
 
+    protected boolean canTransform() {
+        return this.hasTransformation() && !this.transformationDisabled;
+    }
+
     @Override
     public void die(DamageSource pCause) {
         boolean isAbsoluteDeath = pCause.is(DamageTypes.FELL_OUT_OF_WORLD) || pCause.is(DamageTypes.GENERIC_KILL);
 
-        if (this.hasTransformation() && !this.isTransforming() && !isAbsoluteDeath) {
+        if (this.canTransform() && !this.isTransforming() && !isAbsoluteDeath) {
             this.setHealth(1.0F);
             this.deathTime = 0;
             this.startTransformation();
@@ -1478,6 +1489,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
             newEntity.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
             newEntity.setTarget(this.getTarget());
+
+            newEntity.setTextureVariant(this.getTextureVariant());
+            if (this.getPersistentData().contains("dmz_quest_texture_variant")) {
+                newEntity.getPersistentData().putInt("dmz_quest_texture_variant",
+                        this.getPersistentData().getInt("dmz_quest_texture_variant"));
+            }
 
             double scaledMaxHealth = this.getMaxHealth() * 1.5D;
             if (newEntity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {

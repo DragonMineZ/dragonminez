@@ -15,6 +15,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraftforge.client.settings.KeyModifier;
 
 public class TechniqueHotbarHUD {
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
@@ -42,11 +43,16 @@ public class TechniqueHotbarHUD {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
 
-		boolean altHeld = KeyBinds.isSecondFunctionDown();
-		if (!altHeld) return;
+		KeyModifier bar1Mod = KeyBinds.TECHNIQUE_SLOTS[0].getKeyModifier();
+		KeyModifier bar2Mod = KeyBinds.TECHNIQUE_SLOTS[BAR_SLOTS].getKeyModifier();
+		boolean bar1Held = KeyBinds.isModifierActive(bar1Mod);
+		boolean bar2Held = KeyBinds.isModifierActive(bar2Mod);
 
-		boolean ctrlHeld = net.minecraft.client.gui.screens.Screen.hasControlDown();
-		int baseSlot = ctrlHeld ? BAR_SLOTS : 0;
+		int baseSlot;
+		if (bar2Held && bar2Mod != bar1Mod) baseSlot = BAR_SLOTS;
+		else if (bar1Held) baseSlot = 0;
+		else if (bar2Held) baseSlot = BAR_SLOTS;
+		else return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;

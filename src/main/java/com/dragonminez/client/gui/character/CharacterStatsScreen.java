@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -260,7 +261,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int maxValue = statsData.getConfiguredMaxValue();
 		double expectedMaxStats = statsData.isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * statsData.getStatScaling("DEF");
-		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
+		double k_factor = Math.max(100.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
 
 		double baseReduction;
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
@@ -853,7 +854,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip2", formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
 						desc.add(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN));
 
-						double flatMitigation = defense * 0.10 * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
+						double flatMitigation = defense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
 						extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
 								.append(txt(formatUpToOneDecimal(flatMitigation)))
 								.withStyle(ChatFormatting.AQUA));
@@ -1139,7 +1140,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 			List<Component> extras = new ArrayList<>();
 
-			double flatMitigation = defense * 0.10 * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
+			double flatMitigation = defense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
 			extras.add(tr("gui.dragonminez.character_stats.flat_mitigation").append(": ")
 					.append(txt(formatUpToOneDecimal(flatMitigation)))
 					.withStyle(ChatFormatting.AQUA));
@@ -1320,14 +1321,22 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int valueX = getUiWidth() - 65;
 		int y = centerY + 66;
 
-		double netGravity = statsData.getGravityPenalizationGravity();
-		double gravityStatMult = statsData.getGravityStatMultiplier();
+		double envGravity = ClientGravityState.getEnvironmentalGravity();
+		double netGravity = ClientGravityState.getNetGravity();
+		double gravityStatMult = ClientGravityState.getStatMult();
+		int totalWeight = ClientGravityState.getTotalWeight();
+		int idealWeight = ClientGravityState.getIdealWeight();
+		int zone = ClientGravityState.getZone();
+		double weightTpMult = ClientGravityState.getWeightTpMult();
+		double gravityTpBonus = ClientGravityState.getTpGravityMult();
+
 		boolean hasGravity = netGravity > 0.01;
+		boolean hasPenalty = gravityStatMult < 0.999;
 
 		Component label = tr("gui.dragonminez.character_stats.gravity");
 		TextUtil.drawStringWithBorder(graphics, this.font, label, labelX, y, hasGravity ? 0xFF7722 : 0x7CFDD6, 0x000000);
 
-		String penStr = (hasGravity && gravityStatMult < 0.999)
+		String penStr = hasPenalty
 				? " -" + formatUpToOneDecimal((1.0 - gravityStatMult) * 100.0) + "%"
 				: "";
 		Component valueComp = hasGravity
@@ -1341,48 +1350,61 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			Component title = tr("gui.dragonminez.character_stats.gravity").withStyle(ChatFormatting.GOLD);
 
 			List<Component> desc = new ArrayList<>();
-			double envGravity = statsData.getGravityEnvironmentalMultiplier();
-			int totalWeight = statsData.getGravityTotalWeight();
-			long effectiveWeight = (long) (totalWeight * envGravity);
-
 			desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.environmental",
 					formatUpToOneDecimal(envGravity)).withStyle(ChatFormatting.YELLOW));
 			if (totalWeight > 0) {
-				desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_load",
-						numberFormatter.format(totalWeight), numberFormatter.format(effectiveWeight)).withStyle(ChatFormatting.YELLOW));
+				desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight",
+						numberFormatter.format(totalWeight)).withStyle(ChatFormatting.YELLOW));
 			}
 
 			List<Component> extras = new ArrayList<>();
+			if (idealWeight > 0) {
+				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.ideal_weight",
+						numberFormatter.format(idealWeight)).withStyle(ChatFormatting.GOLD));
+			}
+			if (totalWeight > 0 && zone > 0) {
+				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.zone",
+						zoneName(zone)).withStyle(zoneColor(zone)));
+			}
 			extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.net",
 					formatUpToOneDecimal(netGravity)).withStyle(hasGravity ? ChatFormatting.RED : ChatFormatting.GREEN));
 
-			if (hasGravity) {
-				if (gravityStatMult < 0.999) {
-					extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.stat_penalty",
-							formatUpToOneDecimal((1.0 - gravityStatMult) * 100.0)).withStyle(ChatFormatting.RED));
-				}
-				double gravityTpBonus = statsData.getTpGravityMultiplier();
-				if (gravityTpBonus > 1.0) {
-					extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.tp_bonus",
-							formatUpToOneDecimal(gravityTpBonus)).withStyle(ChatFormatting.GREEN));
-				}
-				double weightBell = statsData.getTpWeightBellMultiplier();
-				if (weightBell > 1.01 && totalWeight > 0) {
-					extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_bell",
-							formatUpToOneDecimal(weightBell)).withStyle(ChatFormatting.AQUA));
-				}
+			if (hasPenalty) {
+				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.stat_penalty",
+						formatUpToOneDecimal((1.0 - gravityStatMult) * 100.0)).withStyle(ChatFormatting.RED));
 			}
-
-			int idealWeight = statsData.getTpIdealWeight();
-			if (idealWeight > 0) {
-				boolean onTarget = totalWeight == idealWeight;
-				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.ideal_weight",
-						numberFormatter.format(idealWeight)).withStyle(onTarget ? ChatFormatting.GREEN : ChatFormatting.GOLD));
+			if (gravityTpBonus > 1.0) {
+				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.tp_bonus",
+						formatUpToOneDecimal(gravityTpBonus)).withStyle(ChatFormatting.GREEN));
+			}
+			if (weightTpMult > 1.01 && totalWeight > 0) {
+				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_bell",
+						formatUpToOneDecimal(weightTpMult)).withStyle(ChatFormatting.AQUA));
 			}
 
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(),
 					title, desc, extras, 0xFF7722);
 		}
+	}
+
+	private Component zoneName(int zone) {
+		String key = switch (zone) {
+			case 1 -> "gui.dragonminez.character_stats.gravity.zone.light";
+			case 2 -> "gui.dragonminez.character_stats.gravity.zone.ideal";
+			case 3 -> "gui.dragonminez.character_stats.gravity.zone.heavy";
+			case 4 -> "gui.dragonminez.character_stats.gravity.zone.overload";
+			default -> "gui.dragonminez.character_stats.gravity.zone.none";
+		};
+		return tr(key);
+	}
+
+	private ChatFormatting zoneColor(int zone) {
+		return switch (zone) {
+			case 2 -> ChatFormatting.GREEN;
+			case 3 -> ChatFormatting.GOLD;
+			case 4 -> ChatFormatting.RED;
+			default -> ChatFormatting.GRAY;
+		};
 	}
 
 	private void renderTpMultiplierInfo(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -1423,12 +1445,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.htc", formatUpToOneDecimal(htc)).withStyle(ChatFormatting.GOLD));
 			}
 
-			double gravity = statsData.getTpGravityMultiplier();
+			double gravity = ClientGravityState.getTpGravityMult();
 			if (gravity > 1.0) {
 				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", formatUpToOneDecimal(gravity)).withStyle(ChatFormatting.GREEN));
 			}
 
-			double weightBell = statsData.getTpWeightBellMultiplier();
+			double weightBell = ClientGravityState.getWeightTpMult();
 			if (weightBell > 1.01) {
 				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.weight", formatUpToOneDecimal(weightBell)).withStyle(ChatFormatting.YELLOW));
 			}

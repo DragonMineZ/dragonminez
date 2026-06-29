@@ -36,6 +36,7 @@ import com.dragonminez.server.util.MutantManager;
 import com.dragonminez.server.util.PotionEffectHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
@@ -58,6 +59,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import com.dragonminez.common.util.CuriosUtil;
 import top.theillusivec4.curios.api.CuriosApi;
 import com.dragonminez.common.init.item.WeightItem;
 
@@ -438,13 +440,15 @@ public class StatsEvents {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
+						double damageScale = masteryDamageScale(event.getEntity(), event.getAmount());
+
 						if (attackerData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
 							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 								String formGroup = attackerData.getCharacter().getActiveFormGroup();
 								String formName = attackerData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
-								attackerData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeForm.getMasteryPerHitDealt() * bonus));
+								attackerData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeForm.getMasteryPerHitDealt() * bonus * damageScale));
 							}
 						}
 
@@ -454,7 +458,7 @@ public class StatsEvents {
 								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
 								String stackForm = attackerData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
-								attackerData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeStackForm.getMasteryPerHitDealt() * bonus));
+								attackerData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeStackForm.getMasteryPerHitDealt() * bonus * damageScale));
 							}
 						}
 					}
@@ -464,16 +468,19 @@ public class StatsEvents {
 		}
 
 		if (event.getEntity() instanceof ServerPlayer victim) {
+			boolean fromEntity = event.getSource().getEntity() instanceof LivingEntity;
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
-				if (victimData.getStatus().isHasCreatedCharacter()) {
+				if (fromEntity && victimData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
+						double damageScale = masteryDamageScale(victim, event.getAmount());
+
 						if (victimData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
 							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
 								String formGroup = victimData.getCharacter().getActiveFormGroup();
 								String formName = victimData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
-								victimData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeForm.getMasteryPerHitReceived() * bonus));
+								victimData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeForm.getMasteryPerHitReceived() * bonus * damageScale));
 							}
 						}
 
@@ -483,7 +490,7 @@ public class StatsEvents {
 								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
 								String stackForm = victimData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
-								victimData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeStackForm.getMasteryPerHitReceived() * bonus));
+								victimData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeStackForm.getMasteryPerHitReceived() * bonus * damageScale));
 							}
 						}
 					}
@@ -491,6 +498,14 @@ public class StatsEvents {
 				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(victim), victim);
 			});
 		}
+	}
+
+	private static double masteryDamageScale(LivingEntity hitEntity, double damage) {
+		double maxHp = hitEntity.getMaxHealth();
+		if (maxHp <= 0.0 || damage <= 0.0) return 1.0;
+		double pct = damage / maxHp;
+		double t = Mth.clamp((pct - 0.20) / 0.60, 0.0, 1.0);
+		return 1.0 + t * 3.0;
 	}
 
 	private static final double HEAL_PERCENTAGE = 0.08;
@@ -899,10 +914,7 @@ public class StatsEvents {
 	}
 
 	private static ItemStack getHeadTechStack(ServerPlayer player) {
-		return CuriosApi.getCuriosInventory(player)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.orElse(ItemStack.EMPTY);
+		return CuriosUtil.getFirstStack(player, "head_tech");
 	}
 
 	private static boolean hasPothala(ServerPlayer player, String side) {

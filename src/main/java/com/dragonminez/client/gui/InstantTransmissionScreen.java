@@ -1,11 +1,13 @@
 package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.ITTargetEntry;
+import com.dragonminez.common.network.C2S.DeleteMasterC2S;
 import com.dragonminez.common.network.C2S.InstantTransmissionTravelC2S;
 import com.dragonminez.common.network.C2S.InstantTransmissionTravelToPlayerC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -17,7 +19,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -51,6 +52,7 @@ public class InstantTransmissionScreen extends ScaledScreen {
 	private boolean isScrolling = false;
 
 	private TexturedTextButton travelButton;
+	private CustomTextureButton deleteButton;
 
 	public InstantTransmissionScreen(List<ITTargetEntry> entries, int skillLevel) {
 		super(Component.literal("Instant Transmission").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
@@ -78,15 +80,35 @@ public class InstantTransmissionScreen extends ScaledScreen {
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
 				.message(tr("gui.dragonminez.travel"))
-				.onPress(btn -> {
-					if (Minecraft.getInstance().player != null)
-						Minecraft.getInstance().player.playNotifySound(MainSounds.TP.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-					initiateTravel();
-				})
+				.onPress(btn -> initiateTravel())
 				.build();
 
 		this.travelButton.visible = false;
 		this.addRenderableWidget(travelButton);
+
+		this.deleteButton = new CustomTextureButton.Builder()
+				.position(guiLeft + PANEL_WIDTH - 28, getUiHeight() - 25)
+				.size(14, 11)
+				.texture(BUTTON_TEXTURE)
+				.textureCoords(10, 0, 10, 10)
+				.textureSize(10, 10)
+				.onPress(btn -> deleteSelectedMaster())
+				.build();
+
+		this.deleteButton.visible = false;
+		this.addRenderableWidget(deleteButton);
+	}
+
+	private void deleteSelectedMaster() {
+		if (selectedIndex < 0 || selectedIndex >= destinations.size()) return;
+		MasterEntry dest = destinations.get(selectedIndex);
+		if (dest.type != ITTargetEntry.Type.MASTER) return;
+
+		NetworkHandler.sendToServer(new DeleteMasterC2S(dest.id));
+		destinations.remove(selectedIndex);
+		selectedIndex = -1;
+		this.travelButton.visible = false;
+		this.deleteButton.visible = false;
 	}
 
 	private void initiateTravel() {
@@ -226,6 +248,7 @@ public class InstantTransmissionScreen extends ScaledScreen {
 		if (this.selectedIndex == index) return;
 		this.selectedIndex = index;
 		this.travelButton.visible = true;
+		this.deleteButton.visible = destinations.get(index).type == ITTargetEntry.Type.MASTER;
 	}
 
 	@Override

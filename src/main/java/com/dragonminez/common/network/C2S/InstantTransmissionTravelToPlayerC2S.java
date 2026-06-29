@@ -8,11 +8,13 @@ import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.util.ITTeleportHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.combat.DashHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -50,34 +52,64 @@ public class InstantTransmissionTravelToPlayerC2S {
 				if (skillLevel < MENU_SKILL_LEVEL) return;
 
 				ServerPlayer target = player.server.getPlayerList().getPlayer(targetId);
-				if (target == null || target.getUUID().equals(player.getUUID())) return;
+				if (target == null || target.getUUID().equals(player.getUUID())) {
+					fail(player, "not_found");
+					return;
+				}
 
 				StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, target).orElse(null);
-				if (targetData == null || !targetData.getStatus().isHasCreatedCharacter()) return;
-				if (TransformationsHelper.isInstantTransmissionBlocked(data, targetData)) return;
+				if (targetData == null || !targetData.getStatus().isHasCreatedCharacter()) {
+					fail(player, "not_found");
+					return;
+				}
+				if (TransformationsHelper.isInstantTransmissionBlocked(data, targetData)) {
+					fail(player, "blocked");
+					return;
+				}
 
 				boolean sameDimension = target.level().dimension().equals(player.level().dimension());
 
 				if (PartyManager.areInSameParty(player, target)) {
-					if (!sameDimension && skillLevel < CROSS_DIMENSION_SKILL_LEVEL) return;
+					if (!sameDimension && skillLevel < CROSS_DIMENSION_SKILL_LEVEL) {
+						fail(player, "too_far");
+						return;
+					}
 				} else {
 					double selfBp = data.getBattlePowerExact();
 					int rangePerLevel = ConfigManager.getServerConfig().getGameplay().getInstantTransmissionPlayerRangePerLevel();
 					double maxRange = (double) rangePerLevel * skillLevel;
-					if (!RequestITTargetsC2S.isValidExternalTarget(player, data, selfBp, target, targetData, maxRange)) return;
+					if (!RequestITTargetsC2S.isValidExternalTarget(player, data, selfBp, target, targetData, maxRange)) {
+						fail(player, "too_far");
+						return;
+					}
 				}
 
-					int kiCost = DashHandler.getFlyDashKiCost() * 5;
-					if (!player.isCreative() && !player.isSpectator()) {
-						if (data.getResources().getCurrentEnergy() < kiCost) return;
-						data.getResources().removeEnergy(kiCost);
-						NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
-					}
+				boolean bypassCosts = player.isCreative() || player.isSpectator();
+				if (!bypassCosts && data.getCooldowns().hasCooldown(Cooldowns.TELEPORT_CD)) {
+					fail(player, "cooldown");
+					return;
+				}
 
-					teleportTo(player, target);
+				double distance = sameDimension ? player.position().distanceTo(target.position()) : 0.0;
+				int kiCost = (DashHandler.getFlyDashKiCost() * 5) + ITTeleportHelper.extraKiCostForDistance(distance);
+				if (!bypassCosts) {
+					if (data.getResources().getCurrentEnergy() < kiCost) {
+						fail(player, "no_ki");
+						return;
+					}
+					data.getResources().removeEnergy(kiCost);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
+					ITTeleportHelper.applyTeleportCooldown(player, data);
+				}
+
+				teleportTo(player, target);
 			});
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static void fail(ServerPlayer player, String reason) {
+		player.displayClientMessage(Component.translatable("gui.dragonminez.transmission.fail." + reason), true);
 	}
 
 	private void teleportTo(ServerPlayer player, ServerPlayer target) {

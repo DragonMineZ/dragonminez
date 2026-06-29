@@ -152,7 +152,9 @@ public class QuestParser {
 				int aiTier = json.has("AITier") && !json.get("AITier").isJsonNull()
 						? json.get("AITier").getAsInt()
 						: -1;
-				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier);
+				boolean canTransform = !json.has("CanTransform") || json.get("CanTransform").isJsonNull()
+						|| json.get("CanTransform").getAsBoolean();
+				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier, canTransform);
 			}
 			case "BIOME" -> new BiomeObjective(json.get("biome").getAsString());
 			case "DIMENSION" -> new DimensionObjective(json.get("dimension").getAsString());
