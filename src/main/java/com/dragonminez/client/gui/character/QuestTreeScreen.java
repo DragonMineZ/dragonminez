@@ -1335,6 +1335,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		renderConnections(graphics, panOffX, panOffY, viewRight, viewBottom);
 
+		boolean overOverlay = getLeftPanelRect().contains(mouseX, mouseY)
+				|| getRightPanelRect().contains(mouseX, mouseY)
+				|| this.getChildAt(mouseX, mouseY).isPresent();
+
 		Quest hoveredQuest = null;
 		for (NodeRender node : nodeRenders) {
 			int x = node.pixelX() + panOffX;
@@ -1343,7 +1347,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					|| y + NODE_SIZE + 20 < 0 || y - 18 > viewBottom) {
 				continue;
 			}
-			boolean isHovered = zoomedMouseX >= x && zoomedMouseX <= x + NODE_SIZE
+			boolean isHovered = !overOverlay && zoomedMouseX >= x && zoomedMouseX <= x + NODE_SIZE
 					&& zoomedMouseY >= y && zoomedMouseY <= y + NODE_SIZE;
 			if (isHovered) hoveredQuest = node.quest();
 			renderNode(graphics, node, x, y, isHovered);
