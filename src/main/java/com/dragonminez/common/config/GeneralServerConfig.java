@@ -620,6 +620,11 @@ public class GeneralServerConfig {
 		private Double tpHeavyMultiplier = 2.5;
 		private Double maxWeightPenalty = 0.6;
 
+		private Double loadDrainComfort = 1.15;
+		private Double loadDrainIdeal = 1.3;
+		private Double loadDrainHeavy = 1.5;
+		private Double loadDrainOverload = 2.0;
+
 		private Double consumptionPerGravity = 0.04;
 
 		private Integer deviceMinRoomSize = 5;
@@ -795,6 +800,22 @@ public class GeneralServerConfig {
 		public Double getMaxWeightPenalty() {
 			Double value = maxWeightPenalty != null ? maxWeightPenalty : 0.6;
 			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getLoadDrainComfort() {
+			return Math.max(0.0, loadDrainComfort != null ? loadDrainComfort : 1.15);
+		}
+
+		public Double getLoadDrainIdeal() {
+			return Math.max(0.0, loadDrainIdeal != null ? loadDrainIdeal : 1.3);
+		}
+
+		public Double getLoadDrainHeavy() {
+			return Math.max(0.0, loadDrainHeavy != null ? loadDrainHeavy : 1.5);
+		}
+
+		public Double getLoadDrainOverload() {
+			return Math.max(0.0, loadDrainOverload != null ? loadDrainOverload : 2.0);
 		}
 
 		public Double getTpGravityBonusPerGravity() {

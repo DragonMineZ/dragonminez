@@ -688,24 +688,29 @@ public class StatsData {
 		};
 	}
 
+	public double getLoadDrainMultiplier() {
+		var g = ConfigManager.getServerConfig().getGravity();
+		return switch (GravityLogic.getTrainingZone(player)) {
+			case 1 -> g.getLoadDrainComfort();
+			case 2 -> g.getLoadDrainIdeal();
+			case 3 -> g.getLoadDrainHeavy();
+			case 4 -> g.getLoadDrainOverload();
+			default -> 1.0;
+		};
+	}
+
 	public double getAdjustedStaminaDrainMultiplier() {
-		if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 1.0;
-
-		var formData = character.getActiveFormData();
-		var stackFormData = character.getActiveStackFormData();
-		if (formData == null && stackFormData == null) return 1.0;
-
 		double baseDrainMult = 1.0;
-		if (character.hasActiveForm() && formData != null) {
-			baseDrainMult = formData.getStaminaDrainMultiplier();
-		}
-
 		double stackDrainMult = 1.0;
-		if (character.hasActiveStackForm() && stackFormData != null) {
-			stackDrainMult = stackFormData.getStaminaDrainMultiplier();
+
+		if (character.hasActiveForm() || character.hasActiveStackForm()) {
+			var formData = character.getActiveFormData();
+			var stackFormData = character.getActiveStackFormData();
+			if (character.hasActiveForm() && formData != null) baseDrainMult = formData.getStaminaDrainMultiplier();
+			if (character.hasActiveStackForm() && stackFormData != null) stackDrainMult = stackFormData.getStaminaDrainMultiplier();
 		}
 
-		return Math.max(0.001, baseDrainMult * stackDrainMult);
+		return Math.max(0.001, baseDrainMult * stackDrainMult * getLoadDrainMultiplier());
 	}
 
 	public double getAdjustedEnergyDrain() {
@@ -747,7 +752,7 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
 	}
 
 	public double getAdjustedStaminaDrain() {
@@ -789,7 +794,7 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
 	}
 
 	public double getAdjustedHealthDrain() {
@@ -831,7 +836,7 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
 	}
 
 	public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
