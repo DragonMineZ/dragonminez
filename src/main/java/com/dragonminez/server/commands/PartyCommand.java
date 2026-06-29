@@ -49,6 +49,10 @@ public class PartyCommand {
         try {
             ServerPlayer invitee = EntityArgument.getPlayer(context, "player");
             PartyManager.InviteRequestResult result = PartyManager.requestInvite(inviter, invitee);
+            if (result == PartyManager.InviteRequestResult.CANNOT_INVITE_SELF) {
+                inviter.sendSystemMessage(Component.translatable("quest.dmz.party.invite.self").withStyle(ChatFormatting.RED));
+                return 0;
+            }
             if (result != PartyManager.InviteRequestResult.INVITED) return result == PartyManager.InviteRequestResult.SUGGESTED ? 1 : 0;
 
             invitee.sendSystemMessage(Component.translatable("quest.dmz.party.invite.received", inviter.getName()));

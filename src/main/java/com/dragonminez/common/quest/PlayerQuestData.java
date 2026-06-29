@@ -473,9 +473,22 @@ public class PlayerQuestData {
      */
     public void copyQuestStateFrom(PlayerQuestData other) {
         if (other == null) return;
+
+        Map<String, Map<Integer, Boolean>> ownClaims = new HashMap<>();
+        for (Map.Entry<String, QuestProgress> entry : quests.entrySet()) {
+            Map<Integer, Boolean> claims = entry.getValue().copyRewardClaims();
+            if (!claims.isEmpty()) ownClaims.put(entry.getKey(), claims);
+        }
+
         this.difficulty = other.difficulty;
         this.difficultyStates.clear();
         deserializeCoreQuestState(other.serializeCoreQuestState());
+
+        for (QuestProgress progress : quests.values()) {
+            progress.clearRewardClaims();
+            Map<Integer, Boolean> claims = ownClaims.get(progress.getQuestId());
+            if (claims != null) progress.restoreRewardClaims(claims);
+        }
     }
 
     // ========================================================================================
@@ -753,6 +766,18 @@ public class PlayerQuestData {
 
         public boolean isRewardClaimed(int index) {
             return rewardsClaimed.getOrDefault(index, false);
+        }
+
+        public Map<Integer, Boolean> copyRewardClaims() {
+            return new HashMap<>(rewardsClaimed);
+        }
+
+        public void clearRewardClaims() {
+            rewardsClaimed.clear();
+        }
+
+        public void restoreRewardClaims(Map<Integer, Boolean> claims) {
+            if (claims != null) rewardsClaimed.putAll(claims);
         }
 
         public void markFailed() {

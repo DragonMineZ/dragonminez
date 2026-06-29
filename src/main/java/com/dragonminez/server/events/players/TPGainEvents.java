@@ -69,7 +69,7 @@ public class TPGainEvents {
 		double difficultyMult = data.getPlayerQuestData().getDifficulty().tpMultiplier();
 		int finalTP = (int) Math.max(0, Math.round(data.calculateTPGain(modifiedBaseTp) * difficultyMult));
 
-		if (!event.getShareWithParty()) {
+		if (event.getShareWithParty()) {
 			IS_SHARING_TP.set(true);
 			try {
 				if (data.getStatus().isFused() && data.getStatus().isFusionLeader()) shareWithFusionPartner(player, data, finalTP);

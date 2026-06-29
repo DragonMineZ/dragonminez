@@ -910,11 +910,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return;
 		}
 
-		if (isClaimAction && buttonActive && isInSharedPartyAsMember()) {
-			buttonText = tr("gui.dragonminez.party.leader_only");
-			buttonActive = false;
-			tooltipLines = List.of(tr("gui.dragonminez.party.leader_only"));
-		} else if (isStartAction && !canStart) {
+		if (isStartAction && !canStart) {
 			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
 		} else if (!buttonActive && tooltipLines.isEmpty()) {
 			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
@@ -971,7 +967,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private void initClaimAllButton() {
 		if (statsData == null || availableSagas.isEmpty()) return;
-		if (isInSharedPartyAsMember()) return;
 		if (!hasAnyClaimableRewards()) return;
 
 		PanelRect tree = getTreePanelRect();
@@ -2498,12 +2493,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private boolean isLocalPartyLeader() {
 		if (statsData == null || Minecraft.getInstance().player == null) return false;
 		return statsData.getPlayerQuestData().isPartyLeader(Minecraft.getInstance().player.getUUID());
-	}
-
-	private boolean isInSharedPartyAsMember() {
-		if (statsData == null) return false;
-		PlayerQuestData questData = statsData.getPlayerQuestData();
-		return questData.isInParty() && !isLocalPartyLeader();
 	}
 
 	private PlayerQuestData.PartyInviteData getVisiblePartyInvite() {

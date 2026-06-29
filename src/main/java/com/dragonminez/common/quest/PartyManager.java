@@ -179,6 +179,7 @@ public final class PartyManager {
     }
 
     public static InviteRequestResult requestInvite(ServerPlayer inviter, ServerPlayer invitee) {
+        if (inviter.getUUID().equals(invitee.getUUID())) return InviteRequestResult.CANNOT_INVITE_SELF;
         if (isInParty(invitee)) return InviteRequestResult.ALREADY_IN_PARTY;
 
         ServerPlayer resolvedLeader = isInParty(inviter) ? getPartyLeader(inviter) : inviter;
@@ -560,7 +561,7 @@ public final class PartyManager {
     }
 
     public enum InviteRequestResult {
-        INVITED, SUGGESTED, PARTY_FULL, ALREADY_IN_PARTY, NO_PERMISSION, LEVEL_GAP
+        INVITED, SUGGESTED, PARTY_FULL, ALREADY_IN_PARTY, NO_PERMISSION, LEVEL_GAP, CANNOT_INVITE_SELF
     }
 
     public enum InviteAcceptResult {
