@@ -43,8 +43,8 @@ public class SkinGathererProvider {
 		if (k.startsWith("frostdemon")) return "frostdemon";
 		if (k.startsWith("bioandroid")) return "bioandroid";
 		if (k.startsWith("majin") || k.startsWith("janemba")) return "majin";
-		if (k.equals("human") || k.equals("saiyan") || k.contains("ssj4d") || k.contains("ssj4gt")
-				|| k.equals("buffed") || k.equals("4arms")) return "human";
+		if (k.startsWith("human") || k.startsWith("saiyan") || k.contains("ssj4d") || k.contains("ssj4gt")
+				|| k.startsWith("buffed") || k.equals("4arms")) return "human";
 		return "custom";
 	}
 
