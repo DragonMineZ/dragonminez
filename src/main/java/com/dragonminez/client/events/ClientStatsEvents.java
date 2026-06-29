@@ -288,7 +288,7 @@ public class ClientStatsEvents {
 
 			boolean isDescendActionDown = isDescendKeyPressed && isActionKeyPressed;
 			if (isDescendActionDown && !wasDescendActionDown && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.STACK))) {
-				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
+				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, false));
 			}
 			wasDescendActionDown = isDescendActionDown;
 

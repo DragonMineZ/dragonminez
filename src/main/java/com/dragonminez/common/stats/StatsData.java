@@ -1083,10 +1083,9 @@ public class StatsData {
 	}
 
 	public double getTpGravityMultiplier() {
-		if (player.level().dimension().equals(HTCDimension.HTC_KEY)) return 1.0;
 		var gravityConfig = ConfigManager.getServerConfig().getGravity();
 		if (!gravityConfig.getTpEnabled()) return 1.0;
-		double bonusGravity = GravityLogic.getBonusGravity(player);
+		double bonusGravity = GravityLogic.getTrainingBonusGravity(player);
 		if (bonusGravity <= 0) return 1.0;
 		return 1.0 + (bonusGravity * gravityConfig.getTpGravityBonusPerGravity());
 	}

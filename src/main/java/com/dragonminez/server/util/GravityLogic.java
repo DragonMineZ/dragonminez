@@ -8,6 +8,7 @@ import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.world.dimension.HTCDimension;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -35,11 +36,20 @@ public class GravityLogic {
 	}
 
 	public static double getGravityMultiplier(Player player) {
+		return computeGravity(player, true);
+	}
+
+	public static double getTrainingGravityMultiplier(Player player) {
+		boolean htc = player.level().dimension().equals(HTCDimension.HTC_KEY);
+		return computeGravity(player, !htc);
+	}
+
+	private static double computeGravity(Player player, boolean includeDimension) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.isEnabled()) return 1.0;
 
 		String dimId = player.level().dimension().location().toString();
-		double gravity = config.getWorldGravity(dimId);
+		double gravity = includeDimension ? config.getWorldGravity(dimId) : config.getDefaultWorldGravity();
 
 		double wgGravity = WorldGuardCompat.getGravity(player.level(), player.blockPosition(), player);
 		if (wgGravity > gravity) gravity = wgGravity;
@@ -88,6 +98,14 @@ public class GravityLogic {
 
 	public static double getPenalizationGravity(Player player) {
 		return getNetGravity(player);
+	}
+
+	public static double getTrainingBonusGravity(Player player) {
+		double gravity = getTrainingGravityMultiplier(player);
+		if (gravity <= 1.0) return 0.0;
+		double net = Math.max(0.0, gravity - getResistance(player));
+		if (net >= cfg().getHardStopThreshold()) return 0.0;
+		return net;
 	}
 
 	private static double getNpcGravity(Player player) {
@@ -157,7 +175,7 @@ public class GravityLogic {
 	public static int getIdealWeight(Player player) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.getTpEnabled()) return 0;
-		double gravity = getGravityMultiplier(player);
+		double gravity = getTrainingGravityMultiplier(player);
 		if (gravity <= 0.0) return 0;
 		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
 			double relativeLevel = computeRelativeLevel(data);
