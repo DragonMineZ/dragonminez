@@ -25,9 +25,9 @@ public class GeneralServerConfig {
 	private GameplayConfig gameplay = new GameplayConfig();
 	private RacialSkillsConfig racialSkills = new RacialSkillsConfig();
 	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
-	private StorageConfig storage = new StorageConfig();
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
+	private StorageConfig storage = new StorageConfig();
 
 	@Getter
 	@NoArgsConstructor

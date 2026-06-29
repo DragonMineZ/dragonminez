@@ -126,7 +126,6 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
 	}
 
-	/** Applies validated player input coming from the menu (server-side). */
 	public void applyMenuInput(boolean active, int gravity) {
 		int max = cfg().getDeviceMaxGravity();
 		this.targetGravity = Math.max(1, Math.min(gravity, max));
@@ -186,10 +185,6 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 				roomMax.getX() + 1.0, roomMax.getY() + 1.0, roomMax.getZ() + 1.0);
 	}
 
-	/**
-	 * Flood-fills the open space around the device. The room is valid when it is fully sealed
-	 * by solid blocks and measures between the configured min and max size on each axis.
-	 */
 	private void recomputeRoom() {
 		if (level == null) { roomValid = false; return; }
 
