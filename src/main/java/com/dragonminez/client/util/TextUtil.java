@@ -9,6 +9,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.joml.Vector2i;
@@ -16,6 +18,35 @@ import org.joml.Vector2i;
 import java.util.*;
 
 public class TextUtil {
+    public static int width(Font font, String text, ResourceLocation fontId) {
+        return width(font, text, Style.EMPTY.withFont(fontId));
+    }
+
+    public static List<String> wrap(Font font, String text, int maxWidth, ResourceLocation fontId) {
+        return wrap(font, text, maxWidth, Style.EMPTY.withFont(fontId));
+    }
+
+    public static int width(Font font, String text, Style style) {
+        return font.width(Component.literal(text).withStyle(style));
+    }
+
+    public static List<String> wrap(Font font, String text, int maxWidth, Style style) {
+        List<String> out = new ArrayList<>();
+        if (text == null || text.isEmpty()) {
+            out.add("");
+            return out;
+        }
+        for (FormattedCharSequence seq : font.split(Component.literal(text).withStyle(style), maxWidth)) {
+            StringBuilder sb = new StringBuilder();
+            seq.accept((index, st, codePoint) -> {
+                sb.appendCodePoint(codePoint);
+                return true;
+            });
+            out.add(sb.toString());
+        }
+        if (out.isEmpty()) out.add("");
+        return out;
+    }
     public static FormattedCharSequence overrideColor(FormattedCharSequence sequence, int color) {
         return sink -> sequence.accept((index, style, codePoint) ->
                 sink.accept(index, style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color)), codePoint)

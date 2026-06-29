@@ -79,6 +79,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private static final ResourceLocation REWARD_GENERIC_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/quest/reward_generic.png");
 
+	private static final Style DMZ_STYLE = Style.EMPTY.withFont(DMZ_FONT);
+
 	private static final int NODE_SIZE = 18;
 
 	private StatsData statsData;
@@ -594,7 +596,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			String hiddenLabel = "???";
 			bottomLabel = txt(hiddenLabel);
 			bottomLabelColor = 0x55888888;
-			bottomLabelOffsetX = (NODE_SIZE - this.font.width(hiddenLabel)) / 2;
+			bottomLabelOffsetX = (NODE_SIZE - TextUtil.width(this.font, hiddenLabel, DMZ_STYLE)) / 2;
 		} else if (node.isSidequest()) {
 			bottomLabel = null;
 			bottomLabelColor = 0;
@@ -603,7 +605,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			String questNum = String.valueOf(node.getQuest().getId());
 			bottomLabel = txt(questNum);
 			bottomLabelColor = 0xFFCCCCCC;
-			bottomLabelOffsetX = (NODE_SIZE - this.font.width(questNum)) / 2;
+			bottomLabelOffsetX = (NODE_SIZE - TextUtil.width(this.font, questNum, DMZ_STYLE)) / 2;
 		}
 
 		return new NodeRender(node.getQuest(), node.getPixelX(), node.getPixelY(), blurred, node.isSidequest(),
@@ -2072,7 +2074,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			String marker = completed ? "✓ " : "✕ ";
 			String baseText = getObjectiveText(pqd, questKey, objective, i, progress);
 			marker = completed ? "+ " : "x ";
-			List<String> wrapped = wrapText(baseText, Math.max(12, textWidth - this.font.width(marker)));
+			List<String> wrapped = wrapText(baseText, Math.max(12, textWidth - TextUtil.width(this.font, marker, DMZ_STYLE)));
 			if (wrapped.isEmpty()) {
 				lines.add(marker);
 				continue;
@@ -2142,7 +2144,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void addWrappedRequirementLine(List<String> lines, String prefix, String text, int textWidth) {
-		int wrapWidth = Math.max(12, textWidth - this.font.width(prefix));
+		int wrapWidth = Math.max(12, textWidth - TextUtil.width(this.font, prefix, DMZ_STYLE));
 		List<String> wrapped = wrapText(text, wrapWidth);
 		if (wrapped.isEmpty()) {
 			lines.add(prefix.trim());
@@ -3375,79 +3377,21 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private List<String> wrapText(String text, int maxWidth) {
-		List<String> lines = new ArrayList<>();
-		if (text == null || text.isEmpty()) {
-			lines.add("");
-			return lines;
-		}
-
-		String[] paragraphs = text.split("\\n", -1);
-		for (String paragraph : paragraphs) {
-			if (paragraph.isEmpty()) {
-				lines.add("");
-				continue;
-			}
-
-			String[] words = paragraph.split(" ");
-			StringBuilder currentLine = new StringBuilder();
-			for (String word : words) {
-				if (word.isEmpty()) continue;
-
-				if (this.font.width(word) > maxWidth) {
-					if (!currentLine.isEmpty()) {
-						lines.add(currentLine.toString());
-						currentLine = new StringBuilder();
-					}
-					for (String split : splitWordToWidth(word, maxWidth)) {
-						lines.add(split);
-					}
-					continue;
-				}
-
-				String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
-				if (this.font.width(testLine) <= maxWidth) {
-					if (!currentLine.isEmpty()) currentLine.append(" ");
-					currentLine.append(word);
-				} else {
-					lines.add(currentLine.toString());
-					currentLine = new StringBuilder(word);
-				}
-			}
-			if (!currentLine.isEmpty()) lines.add(currentLine.toString());
-		}
-
-		return lines;
-	}
-
-	private List<String> splitWordToWidth(String word, int maxWidth) {
-		List<String> parts = new ArrayList<>();
-		StringBuilder current = new StringBuilder();
-		for (int i = 0; i < word.length(); i++) {
-			char c = word.charAt(i);
-			String test = current.toString() + c;
-			if (this.font.width(test) > maxWidth && !current.isEmpty()) {
-				parts.add(current.toString());
-				current = new StringBuilder().append(c);
-			} else {
-				current.append(c);
-			}
-		}
-		if (!current.isEmpty()) parts.add(current.toString());
-		return parts;
+		return TextUtil.wrap(this.font, text, maxWidth, DMZ_STYLE);
 	}
 
 	private String fitSingleLineEllipsis(String text, int maxWidth) {
 		if (text == null) return "";
-		if (this.font.width(text) <= maxWidth) return text;
+		if (TextUtil.width(this.font, text, DMZ_STYLE) <= maxWidth) return text;
 		String ellipsis = "...";
-		int ellipsisWidth = this.font.width(ellipsis);
+		int ellipsisWidth = TextUtil.width(this.font, ellipsis, DMZ_STYLE);
 		if (ellipsisWidth >= maxWidth) return ellipsis;
 
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
 			String candidate = builder.toString() + c;
-			if (this.font.width(candidate) + ellipsisWidth > maxWidth) break;
+			if (TextUtil.width(this.font, candidate, DMZ_STYLE) + ellipsisWidth > maxWidth) break;
 			builder.append(c);
 		}
 		return builder + ellipsis;
@@ -3494,9 +3438,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		int wordsWidth = 0;
-		for (String word : words) wordsWidth += this.font.width(word);
+		for (String word : words) wordsWidth += TextUtil.width(this.font, word, DMZ_STYLE);
 		int spaces = words.length - 1;
-		int baseSpace = this.font.width(" ");
+		int baseSpace = TextUtil.width(this.font, " ", DMZ_STYLE);
 		int totalBase = wordsWidth + (spaces * baseSpace);
 		if (totalBase >= width || totalBase < (int) (width * 0.75f)) {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt(trimmed), x, y, color);
@@ -3510,7 +3454,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int cursorX = x;
 		for (int i = 0; i < words.length; i++) {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt(words[i]), cursorX, y, color);
-			cursorX += this.font.width(words[i]);
+			cursorX += TextUtil.width(this.font, words[i], DMZ_STYLE);
 			if (i < spaces) {
 				cursorX += baseSpace + extraPerSpace + (i < remainder ? 1 : 0);
 			}
@@ -3657,7 +3601,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt(prefix), x, y, 0xFFCCCCCC);
 		}
 
-		int markerX = x + this.font.width(prefix);
+		int markerX = x + TextUtil.width(this.font, prefix, DMZ_STYLE);
 		drawPlainBoldStringWithBorder(graphics, marker, markerX, y, symbolColor);
 
 		if (!rest.isEmpty()) {

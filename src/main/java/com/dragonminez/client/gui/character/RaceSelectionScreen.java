@@ -431,23 +431,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 	}
 
 	private List<String> wrapText(String text, int maxWidth) {
-		List<String> lines = new ArrayList<>();
-		String[] words = text.split(" ");
-		StringBuilder currentLine = new StringBuilder();
-
-		for (String word : words) {
-			String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
-			if (this.font.width(testLine) <= maxWidth) {
-				if (!currentLine.isEmpty()) currentLine.append(" ");
-				currentLine.append(word);
-			} else {
-				if (!currentLine.isEmpty()) lines.add(currentLine.toString());
-				currentLine = new StringBuilder(word);
-			}
-		}
-
-		if (!currentLine.isEmpty()) lines.add(currentLine.toString());
-		return lines;
+		return TextUtil.wrap(this.font, text, maxWidth, DMZ_FONT);
 	}
 
 	private void applyRaceDefaults(String race) {
