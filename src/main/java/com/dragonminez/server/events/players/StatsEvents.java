@@ -59,6 +59,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import com.dragonminez.common.util.CuriosUtil;
 import top.theillusivec4.curios.api.CuriosApi;
 import com.dragonminez.common.init.item.WeightItem;
 
@@ -913,10 +914,7 @@ public class StatsEvents {
 	}
 
 	private static ItemStack getHeadTechStack(ServerPlayer player) {
-		return CuriosApi.getCuriosInventory(player)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.orElse(ItemStack.EMPTY);
+		return CuriosUtil.getFirstStack(player, "head_tech");
 	}
 
 	private static boolean hasPothala(ServerPlayer player, String side) {

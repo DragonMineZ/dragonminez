@@ -55,7 +55,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import top.theillusivec4.curios.api.CuriosApi;
+import com.dragonminez.common.util.CuriosUtil;
 
 import java.util.*;
 
@@ -277,10 +277,7 @@ public class TickHandler {
 					data.getStatus().setBackWeapon(newBackWeapon);
 				}
 
-				ItemStack headTechStack = CuriosApi.getCuriosInventory(serverPlayer)
-						.map(inv -> inv.getCurios().get("head_tech"))
-						.map(stacksHandler -> stacksHandler.getStacks().getStackInSlot(0))
-						.orElse(ItemStack.EMPTY);
+				ItemStack headTechStack = CuriosUtil.getFirstStack(serverPlayer, "head_tech");
 				String itemId = headTechStack.getDescriptionId();
 
 				boolean hasScouter = itemId.contains("scouter");

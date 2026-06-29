@@ -46,7 +46,7 @@ import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import top.theillusivec4.curios.api.CuriosApi;
+import com.dragonminez.common.util.CuriosUtil;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
@@ -418,10 +418,7 @@ public class ClientStatsEvents {
 	}
 
 	private static ItemStack getScouterStack(Player player) {
-		return CuriosApi.getCuriosInventory(player)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.orElse(ItemStack.EMPTY);
+		return CuriosUtil.getFirstStack(player, "head_tech");
 	}
 
 	@SubscribeEvent
