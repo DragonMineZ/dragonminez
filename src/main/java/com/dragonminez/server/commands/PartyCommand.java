@@ -27,7 +27,9 @@ public class PartyCommand {
                         .then(Commands.argument("player", EntityArgument.player())
                                 .executes(PartyCommand::invitePlayer)))
                 .then(Commands.literal("accept")
-                        .executes(PartyCommand::acceptInvite))
+                        .executes(context -> acceptInvite(context, false))
+                        .then(Commands.literal("confirm")
+                                .executes(context -> acceptInvite(context, true))))
                 .then(Commands.literal("reject")
                         .executes(PartyCommand::rejectInvite))
                 .then(Commands.literal("leave")
@@ -85,7 +87,7 @@ public class PartyCommand {
         }
     }
 
-    private static int acceptInvite(CommandContext<CommandSourceStack> context) {
+    private static int acceptInvite(CommandContext<CommandSourceStack> context, boolean confirmedDifficultyChange) {
         if (!(context.getSource().getEntity() instanceof ServerPlayer player)) return 0;
 
         PartyManager.PendingInvite invite = PartyManager.getPendingInvite(player);
@@ -94,7 +96,7 @@ public class PartyCommand {
             return 0;
         }
 
-        PartyManager.InviteAcceptResult result = PartyManager.acceptInvite(player);
+        PartyManager.InviteAcceptResult result = PartyManager.acceptInvite(player, confirmedDifficultyChange);
         if (result == PartyManager.InviteAcceptResult.EXPIRED) {
             player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.expired").withStyle(ChatFormatting.RED));
             return 0;
@@ -107,6 +109,24 @@ public class PartyCommand {
 
         if (result == PartyManager.InviteAcceptResult.LEVEL_GAP) {
             player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.level_gap").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        if (result == PartyManager.InviteAcceptResult.DIFFICULTY_TOO_LOW) {
+            player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.difficulty_too_low").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        if (result == PartyManager.InviteAcceptResult.DIFFICULTY_CONFIRM_REQUIRED) {
+            Component confirmButton = Component.translatable("quest.dmz.party.invite.difficulty_confirm.button")
+                    .withStyle(style -> style
+                            .withColor(ChatFormatting.GREEN)
+                            .withBold(true)
+                            .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dmzparty accept confirm"))
+                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                    Component.translatable("quest.dmz.party.invite.difficulty_confirm.hover"))));
+            player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.difficulty_confirm").withStyle(ChatFormatting.YELLOW));
+            player.sendSystemMessage(Component.literal("[").append(confirmButton).append(Component.literal("]")));
             return 0;
         }
 
@@ -154,7 +174,7 @@ public class PartyCommand {
 
         boolean leaderLeaving = PartyManager.isPartyLeader(player);
         List<ServerPlayer> members = PartyManager.getAllPartyMembers(player);
-        PartyManager.leaveParty(player, true);
+        PartyManager.leaveParty(player);
 
         if (leaderLeaving) {
             player.sendSystemMessage(Component.translatable("quest.dmz.party.disbanded.self").withStyle(ChatFormatting.YELLOW));

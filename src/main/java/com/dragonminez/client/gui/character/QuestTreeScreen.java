@@ -47,6 +47,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
@@ -85,11 +86,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private int pendingRefreshTicks = 0;
 	private long lastRenderTime = 0;
 
-	private static final long HARD_MODE_TOGGLE_COOLDOWN_MS = 500L;
 	private int hardModeHitX, hardModeHitY, hardModeHitW, hardModeHitH;
 	private boolean hardModeToggleable = false;
 	private boolean hardModeIndicatorShown = false;
-	private long lastHardModeToggle = 0;
 
 	private TexturedTextButton actionButton;
 	private TexturedTextButton claimAllButton;
@@ -140,6 +139,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private float targetRewardsScroll = 0;
 	private float currentRewardsScroll = 0;
 	private float rewardsMaxScroll = 0;
+
+	private float diffIntroScroll = 0;
+	private float diffIntroMaxScroll = 0;
+	private final float[] diffOptScroll = new float[3];
+	private final float[] diffOptMaxScroll = new float[3];
 
 	private List<String> frameObjLinesCache = null;
 	private Quest frameObjLinesQuest = null;
@@ -209,6 +213,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private enum PartyConfirmAction {
 		NONE,
 		ACCEPT_INVITE,
+		ACCEPT_INVITE_DIFFICULTY,
 		LEAVE_PARTY
 	}
 
@@ -1039,7 +1044,20 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					footer.x + (footer.width - 74) / 2,
 					footer.bottom() - 46,
 					btn -> {
-						if (questData.isInParty()) {
+						Difficulty partyDifficulty = invite.getPartyDifficulty();
+						Difficulty ownDifficulty = questData.getDifficulty();
+						if (partyDifficulty.ordinal() < ownDifficulty.ordinal()) {
+							if (Minecraft.getInstance().player != null) {
+								Minecraft.getInstance().player.displayClientMessage(
+										tr("quest.dmz.party.invite.difficulty_too_low").withStyle(ChatFormatting.RED), false);
+							}
+						} else if (partyDifficulty.ordinal() > ownDifficulty.ordinal()) {
+							requestConfirm(
+									PartyConfirmAction.ACCEPT_INVITE_DIFFICULTY,
+									tr("gui.dragonminez.party.confirm.difficulty.title"),
+									tr("gui.dragonminez.party.confirm.difficulty.body", difficultyLabel(partyDifficulty))
+							);
+						} else if (questData.isInParty()) {
 							requestConfirm(
 									PartyConfirmAction.ACCEPT_INVITE,
 									tr("gui.dragonminez.party.confirm.title"),
@@ -1269,7 +1287,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (confirmOverlayOpen) {
 			renderConfirmOverlay(graphics, uiMouseX, uiMouseY);
 		}
-		if (!invitePopupOpen && !confirmOverlayOpen) {
+		boolean difficultySelectOpen = shouldShowDifficultySelect();
+		if (difficultySelectOpen) {
+			renderDifficultySelectOverlay(graphics, uiMouseX, uiMouseY);
+		}
+		if (!invitePopupOpen && !confirmOverlayOpen && !difficultySelectOpen) {
 			if (!renderHardModeTooltip(graphics, uiMouseX, uiMouseY)
 					&& !renderActionButtonTooltip(graphics, uiMouseX, uiMouseY)) {
 				renderRewardTooltips(graphics, uiMouseX, uiMouseY);
@@ -1341,7 +1363,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private void renderHardModeIndicator(GuiGraphics graphics, PanelRect tree, int mouseX, int mouseY) {
 		Difficulty difficulty = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
-		hardModeToggleable = canToggleHardMode();
+		hardModeToggleable = false;
 		hardModeIndicatorShown = true;
 
 		Component label = tr("gui.dragonminez.quest_tree.difficulty.label");
@@ -1387,15 +1409,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.current",
 				difficultyLabel(difficulty)).withStyle(ChatFormatting.GRAY));
 		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.desc").withStyle(ChatFormatting.GRAY));
-		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.scope").withStyle(ChatFormatting.GRAY));
-		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.independent").withStyle(ChatFormatting.GRAY));
 		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.stats", hpMult, damageMult).withStyle(ChatFormatting.AQUA));
 		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.rewards", tpMult, rewardMult).withStyle(ChatFormatting.AQUA));
-		if (hardModeToggleable) {
-			desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.cycle").withStyle(ChatFormatting.DARK_GRAY));
-		} else if (statsData.getPlayerQuestData().isInParty()) {
-			desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.leader_only").withStyle(ChatFormatting.DARK_GRAY));
-		}
+		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.locked").withStyle(ChatFormatting.DARK_GRAY));
 
 		TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, null, 0xFFFFFF);
 		return true;
@@ -1422,35 +1438,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return Long.toString((long) value);
 		}
 		return Double.toString(value);
-	}
-
-	private boolean canToggleHardMode() {
-		if (statsData == null) return false;
-		return !statsData.getPlayerQuestData().isInParty() || isLocalPartyLeader();
-	}
-
-	private boolean handleHardModeToggleClick(double uiMouseX, double uiMouseY) {
-		if (!hardModeToggleable) return false;
-		if (uiMouseX < hardModeHitX || uiMouseX > hardModeHitX + hardModeHitW
-				|| uiMouseY < hardModeHitY || uiMouseY > hardModeHitY + hardModeHitH) {
-			return false;
-		}
-
-		long now = System.currentTimeMillis();
-		if (now - lastHardModeToggle < HARD_MODE_TOGGLE_COOLDOWN_MS) {
-			return true;
-		}
-		lastHardModeToggle = now;
-
-		Difficulty current = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
-		Difficulty next = switch (current) {
-			case EASY -> Difficulty.NORMAL;
-			case NORMAL -> Difficulty.HARD;
-			case HARD -> Difficulty.EASY;
-		};
-		NetworkHandler.sendToServer(new SetStoryDifficultyC2S(next));
-		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
-		return true;
 	}
 
 	private void renderBackgroundGrid(GuiGraphics graphics, PanelRect tree) {
@@ -1760,8 +1747,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return new DetailPanelLayout(titleH, rewardsH, descH, objectivesH);
 	}
 
-	// Title/rewards text is wrapped both to size the section and to draw it (twice per
-	// frame). These memos resolve it once per frame, reused by estimate + render.
 	private List<String> titleLines(int width) {
 		if (frameTitleLines != null && frameTitleQuest == selectedQuest && frameTitleWidth == width) {
 			return frameTitleLines;
@@ -2327,7 +2312,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderConnections(GuiGraphics graphics, int panOffX, int panOffY, float viewRight, float viewBottom) {
-		// Axis-aligned connections (the saga backbone) are cheap filled rects.
 		for (ConnRender conn : connRenders) {
 			int x1 = conn.baseX1() + panOffX;
 			int y1 = conn.baseY1() + panOffY;
@@ -2345,8 +2329,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 		}
 
-		// Diagonal branches were drawn pixel-by-pixel (one graphics.fill per pixel ≈ 71%
-		// of the whole menu render). Draw them all as single rotated quads in one batch.
 		BufferBuilder buf = Tesselator.getInstance().getBuilder();
 		Matrix4f mat = graphics.pose().last().pose();
 		boolean began = false;
@@ -2361,8 +2343,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				continue;
 			}
 			if (!began) {
-				// Flush the pending GuiGraphics batch (grid, title, backbone fills) so the
-				// raw quad draw below layers on top of them instead of under.
 				graphics.flush();
 				RenderSystem.enableBlend();
 				RenderSystem.defaultBlendFunc();
@@ -2604,6 +2584,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void executeConfirmAction() {
 		switch (confirmAction) {
 			case ACCEPT_INVITE -> NetworkHandler.sendToServer(new AcceptPartyInviteC2S());
+			case ACCEPT_INVITE_DIFFICULTY -> NetworkHandler.sendToServer(new AcceptPartyInviteC2S(true));
 			case LEAVE_PARTY -> NetworkHandler.sendToServer(new LeavePartyC2S());
 			case NONE -> {
 				closeTransientOverlay();
@@ -2702,6 +2683,101 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, label, rect.x + rect.width / 2, rect.y + 6, 0xFFFFFFFF);
 	}
 
+	private static final Difficulty[] DIFFICULTY_OPTIONS = { Difficulty.EASY, Difficulty.NORMAL, Difficulty.HARD };
+
+	private boolean shouldShowDifficultySelect() {
+		if (statsData == null) return false;
+		PlayerQuestData pqd = statsData.getPlayerQuestData();
+		if (pqd.isDifficultyChosen()) return false;
+		return !pqd.isInParty() || isLocalPartyLeader();
+	}
+
+	private PanelRect getDifficultySelectRect() {
+		int w = 220;
+		int h = 196;
+		return new PanelRect((getUiWidth() - w) / 2, (getUiHeight() - h) / 2, w, h);
+	}
+
+	private PanelRect getDifficultyIntroRect() {
+		PanelRect popup = getDifficultySelectRect();
+		return new PanelRect(popup.x + 10, popup.y + 16, popup.width - 20, 24);
+	}
+
+	private PanelRect getDifficultyOptionRect(int index) {
+		PanelRect popup = getDifficultySelectRect();
+		int optH = 42;
+		int x = popup.x + 12;
+		int y = popup.y + 46 + index * (optH + 5);
+		return new PanelRect(x, y, popup.width - 24, optH);
+	}
+
+	private List<String> difficultyDescriptionLines(Difficulty d, int textWidth) {
+		List<String> lines = new ArrayList<>();
+		lines.addAll(wrapText(tr("gui.dragonminez.quest_tree.difficulty.tooltip.stats",
+				formatMultiplier(d.hpMultiplier()), formatMultiplier(d.damageMultiplier())).getString(), textWidth));
+		lines.addAll(wrapText(tr("gui.dragonminez.quest_tree.difficulty.tooltip.rewards",
+				formatMultiplier(d.tpMultiplier()), formatMultiplier(d.questRewardMultiplier())).getString(), textWidth));
+		return lines;
+	}
+
+	private void renderDifficultySelectOverlay(GuiGraphics graphics, int mouseX, int mouseY) {
+		graphics.fill(0, 0, getUiWidth(), getUiHeight(), 0xAA000000);
+		PanelRect popup = getDifficultySelectRect();
+		renderSidePanelBackground(graphics, popup, false, false, true);
+
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.quest_tree.difficulty.select.title").withStyle(ChatFormatting.BOLD),
+				popup.x + popup.width / 2, popup.y + 4, 0xFFFFD700);
+
+		PanelRect intro = getDifficultyIntroRect();
+		List<String> introLines = wrapText(tr("gui.dragonminez.quest_tree.difficulty.select.intro").getString(), intro.width - 6);
+		diffIntroMaxScroll = scrollMax(introLines, intro.height);
+		diffIntroScroll = Mth.clamp(diffIntroScroll, 0, diffIntroMaxScroll);
+		graphics.enableScissor(toScreenCoord(intro.x), toScreenCoord(intro.y), toScreenCoord(intro.right()), toScreenCoord(intro.bottom()));
+		TextUtil.renderScrollableText(graphics, this.font, introLines, intro.x, intro.y, intro.width, intro.height, diffIntroScroll, diffIntroMaxScroll, 0xFFAAAAAA, Style.EMPTY.withFont(DMZ_FONT));
+		graphics.disableScissor();
+
+		for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
+			Difficulty d = DIFFICULTY_OPTIONS[i];
+			PanelRect rect = getDifficultyOptionRect(i);
+			boolean hovered = rect.contains(mouseX, mouseY);
+			graphics.fill(rect.x, rect.y, rect.right(), rect.bottom(), hovered ? 0x66FFFFFF : 0x33000000);
+			graphics.renderOutline(rect.x, rect.y, rect.width, rect.height, hovered ? 0xFFCCDDFF : 0x55444466);
+
+			TextUtil.drawStringWithBorder(graphics, this.font,
+					difficultyLabel(d).copy().withStyle(ChatFormatting.BOLD), rect.x + 6, rect.y + 4, difficultyColor(d, hovered));
+
+			int textX = rect.x + 6;
+			int textY = rect.y + 15;
+			int textW = rect.width - 12;
+			int textH = rect.bottom() - textY - 2;
+			List<String> lines = difficultyDescriptionLines(d, textW - 6);
+			diffOptMaxScroll[i] = scrollMax(lines, textH);
+			diffOptScroll[i] = Mth.clamp(diffOptScroll[i], 0, diffOptMaxScroll[i]);
+			graphics.enableScissor(toScreenCoord(textX), toScreenCoord(textY), toScreenCoord(textX + textW), toScreenCoord(textY + textH));
+			TextUtil.renderScrollableText(graphics, this.font, lines, textX, textY, textW, textH, diffOptScroll[i], diffOptMaxScroll[i], 0xFFDCE6FF, Style.EMPTY.withFont(DMZ_FONT));
+			graphics.disableScissor();
+		}
+	}
+
+	private float scrollMax(List<String> lines, int viewHeight) {
+		return Math.max(0, lines.size() * (this.font.lineHeight + 2) - viewHeight);
+	}
+
+	private boolean handleDifficultySelectClick(double uiMouseX, double uiMouseY, int button) {
+		if (!shouldShowDifficultySelect()) return false;
+		if (button != 0) return true;
+		for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
+			if (getDifficultyOptionRect(i).contains(uiMouseX, uiMouseY)) {
+				NetworkHandler.sendToServer(new SetStoryDifficultyC2S(DIFFICULTY_OPTIONS[i]));
+				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
+				pendingRefreshTicks = 5;
+				return true;
+			}
+		}
+		return true;
+	}
+
 	private PanelRect getConfirmYesRect() {
 		PanelRect popup = getConfirmRect();
 		return new PanelRect(popup.x + 18, popup.bottom() - 30, 66, 20);
@@ -2780,6 +2856,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
+		if (handleDifficultySelectClick(uiMouseX, uiMouseY, button)) {
+			return true;
+		}
 		if (handleConfirmOverlayClick(uiMouseX, uiMouseY, button)) {
 			return true;
 		}
@@ -2792,10 +2871,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		if (button != 0) return false;
-
-		if (handleHardModeToggleClick(uiMouseX, uiMouseY)) {
-			return true;
-		}
 
 		if (handleNavigatorClick(uiMouseX, uiMouseY)) {
 			return true;
@@ -2949,6 +3024,23 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (shouldShowDifficultySelect()) {
+			double dsX = toUiX(mouseX);
+			double dsY = toUiY(mouseY);
+			float step = (this.font.lineHeight + 2) * 2;
+			int dir = (int) Math.signum(delta);
+			if (getDifficultyIntroRect().contains(dsX, dsY)) {
+				diffIntroScroll = Mth.clamp(diffIntroScroll - dir * step, 0, diffIntroMaxScroll);
+				return true;
+			}
+			for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
+				if (getDifficultyOptionRect(i).contains(dsX, dsY)) {
+					diffOptScroll[i] = Mth.clamp(diffOptScroll[i] - dir * step, 0, diffOptMaxScroll[i]);
+					return true;
+				}
+			}
+			return true;
+		}
 		if (confirmOverlayOpen) {
 			return true;
 		}

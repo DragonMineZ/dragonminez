@@ -161,6 +161,10 @@ public class TextUtil {
     }
 
     public static void renderScrollableText(GuiGraphics graphics, Font font, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color) {
+        renderScrollableText(graphics, font, lines, x, y, width, height, currentScroll, maxScroll, color, net.minecraft.network.chat.Style.EMPTY);
+    }
+
+    public static void renderScrollableText(GuiGraphics graphics, Font font, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color, net.minecraft.network.chat.Style style) {
         int lineHeight = font.lineHeight + 2;
         int viewHeight = height;
         int totalContentHeight = lines.size() * lineHeight;
@@ -170,7 +174,7 @@ public class TextUtil {
 
         for (int i = 0; i < lines.size(); i++) {
             float lineY = y + (i * lineHeight);
-            if (lineY + lineHeight >= y + currentScroll && lineY <= y + viewHeight + currentScroll) drawStringWithBorder(graphics, font, Component.literal(lines.get(i)), x, (int)lineY, color);
+            if (lineY + lineHeight >= y + currentScroll && lineY <= y + viewHeight + currentScroll) drawStringWithBorder(graphics, font, Component.literal(lines.get(i)).setStyle(style), x, (int)lineY, color);
         }
 
         graphics.pose().popPose();
