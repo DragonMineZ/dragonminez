@@ -77,6 +77,7 @@ public class FlyToggleC2S {
                     player.getAbilities().flying = false;
                     player.onUpdateAbilities();
                 } else {
+                    player.resetFallDistance();
                     if (!player.isCreative() && !player.isSpectator()) {
                         player.getAbilities().mayfly = false;
                         player.getAbilities().flying = false;

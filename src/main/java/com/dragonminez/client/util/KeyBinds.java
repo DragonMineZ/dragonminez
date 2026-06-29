@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
@@ -97,7 +98,28 @@ public class KeyBinds {
 	}
 
 	public static boolean isSecondFunctionDown() {
+		InputConstants.Key key = SECOND_FUNCTION_KEY.getKey();
+		if (KeyModifier.ALT.matches(key)) return Screen.hasAltDown();
+		if (KeyModifier.CONTROL.matches(key)) return Screen.hasControlDown();
+		if (KeyModifier.SHIFT.matches(key)) return Screen.hasShiftDown();
 		return isPhysicallyDown(SECOND_FUNCTION_KEY);
+	}
+
+	public static boolean isModifierActive(KeyModifier modifier) {
+		return modifier != KeyModifier.NONE && modifier.isActive(KeyConflictContext.IN_GAME);
+	}
+
+	public static boolean isChordDown(KeyMapping mapping) {
+		KeyModifier modifier = mapping.getKeyModifier();
+		if (modifier != KeyModifier.NONE && !modifier.isActive(mapping.getKeyConflictContext())) return false;
+		return isPhysicallyDown(mapping);
+	}
+
+	public static boolean isAnyTechniqueModifierDown() {
+		for (KeyMapping slot : TECHNIQUE_SLOTS) {
+			if (isModifierActive(slot.getKeyModifier())) return true;
+		}
+		return false;
 	}
 
 	public static boolean isPhysicallyDown(KeyMapping mapping) {
