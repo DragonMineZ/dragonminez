@@ -119,11 +119,6 @@ public class GravityLogic {
 		return GravityDeviceManager.getGravityFor(player);
 	}
 
-	/** Raw machine gravity (Gravity Device zones only) affecting the player; drives the red shader. */
-	public static double getMachineGravityFor(Player player) {
-		return getMachineGravity(player);
-	}
-
 	public static int getTotalWeight(Player player) {
 		int[] totalWeight = {0};
 		CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
