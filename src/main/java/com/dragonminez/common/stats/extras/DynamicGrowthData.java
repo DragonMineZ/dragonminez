@@ -15,11 +15,14 @@ public class DynamicGrowthData {
 	private long lastCombatMs;
 
 	public double getPracticeXp(DynamicGrowthStat stat) {
-		return practiceXp.getOrDefault(stat.key(), 0.0);
+		double value = practiceXp.getOrDefault(stat.key(), 0.0);
+		return Double.isFinite(value) ? value : 0.0;
 	}
 
 	public void addPracticeXp(DynamicGrowthStat stat, double amount) {
-		practiceXp.put(stat.key(), Math.max(0.0, getPracticeXp(stat) + amount));
+		if (!Double.isFinite(amount) || amount <= 0.0) return;
+		double updated = getPracticeXp(stat) + amount;
+		practiceXp.put(stat.key(), Double.isFinite(updated) ? Math.max(0.0, updated) : 0.0);
 	}
 
 	public void consumePracticeXp(DynamicGrowthStat stat, double amount) {
