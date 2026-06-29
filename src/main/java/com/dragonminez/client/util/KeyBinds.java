@@ -18,6 +18,11 @@ public class KeyBinds {
 	private static final String MINIGAMES_CATEGORY = "key.categories.minigames." + Reference.MOD_ID;
 
 	public static final KeyMapping STATS_MENU = registerKey("stats_menu", GLFW.GLFW_KEY_V);
+	public static final KeyMapping STATS_TAB_PARTY = registerKeyUnbound("stats_tab_party");
+	public static final KeyMapping STATS_TAB_SKILLS = registerKeyUnbound("stats_tab_skills");
+	public static final KeyMapping STATS_TAB_QUESTS = registerKeyUnbound("stats_tab_quests");
+	public static final KeyMapping STATS_TAB_MINIGAMES = registerKeyUnbound("stats_tab_minigames");
+	public static final KeyMapping STATS_TAB_CONFIG = registerKeyUnbound("stats_tab_config");
 	public static final KeyMapping KI_CHARGE = registerKey("ki_charge", GLFW.GLFW_KEY_C);
 	public static final KeyMapping SECOND_FUNCTION_KEY = registerKey("second_function_key", GLFW.GLFW_KEY_LEFT_ALT);
 	public static final KeyMapping ACTION_KEY = registerKey("action_key", GLFW.GLFW_KEY_G);
@@ -62,6 +67,16 @@ public class KeyBinds {
 				minigame ? MINIGAMES_CATEGORY : DMZ_CATEGORY
         );
     }
+
+	private static KeyMapping registerKeyUnbound(String name) {
+		return new KeyMapping(
+				"key." + Reference.MOD_ID + "." + name,
+				KeyConflictContext.IN_GAME,
+				InputConstants.Type.KEYSYM,
+				InputConstants.UNKNOWN.getValue(),
+				DMZ_CATEGORY
+		);
+	}
 
 	private static KeyMapping registerKeyAlt(String name, int keyCode) {
 		return new KeyMapping(

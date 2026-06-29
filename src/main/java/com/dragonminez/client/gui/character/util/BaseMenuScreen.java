@@ -7,6 +7,7 @@ import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -14,11 +15,26 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.client.KeyMapping;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.List;
+import java.util.function.Supplier;
+
 @OnlyIn(Dist.CLIENT)
 public abstract class BaseMenuScreen extends ScaledScreen {
+
+	public record MenuTab(KeyMapping key, Supplier<Screen> factory) {}
+
+	public static final List<MenuTab> SECONDARY_TABS = List.of(
+			new MenuTab(KeyBinds.STATS_TAB_PARTY, PartyMenuScreen::new),
+			new MenuTab(KeyBinds.STATS_TAB_SKILLS, SkillsMenuScreen::new),
+			new MenuTab(KeyBinds.STATS_TAB_QUESTS, QuestTreeScreen::new),
+			new MenuTab(KeyBinds.STATS_TAB_MINIGAMES, MinigamesScreen::new),
+			new MenuTab(KeyBinds.STATS_TAB_CONFIG, ConfigMenuScreen::new)
+	);
+
 	protected static boolean GLOBAL_SWITCHING = false;
 	protected boolean isSwitchingMenu = false;
 	private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
@@ -253,6 +269,15 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 			onClose();
 			return true;
 		}
+
+		InputConstants.Key pressed = InputConstants.getKey(keyCode, scanCode);
+		for (MenuTab tab : SECONDARY_TABS) {
+			if (tab.key().isActiveAndMatches(pressed)) {
+				switchMenu(tab.factory().get());
+				return true;
+			}
+		}
+
 		return super.keyPressed(keyCode, scanCode, modifiers);
 	}
 
