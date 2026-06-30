@@ -896,6 +896,7 @@ public class GeneralServerConfig {
 		private Double masteryGainMultiplier = 1.50;
 		private Double powerBonusReductionNoSkill = 0.67;
 		private Double powerBonusBoostWithSkill = 0.33;
+		private Boolean keepMutantOnDeath = false;
 
 		public Boolean getEnabled() {
 			return enabled == null || enabled;
@@ -937,6 +938,10 @@ public class GeneralServerConfig {
 
 		public Double getPowerBonusBoostWithSkill() {
 			return Math.max(0.0, powerBonusBoostWithSkill != null ? powerBonusBoostWithSkill : 0.33);
+		}
+
+		public Boolean getKeepMutantOnDeath() {
+			return keepMutantOnDeath != null && keepMutantOnDeath;
 		}
 	}
 }

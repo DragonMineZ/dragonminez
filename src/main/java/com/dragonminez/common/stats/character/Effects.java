@@ -23,7 +23,15 @@ public class Effects {
     }
 
 	public void removeAllEffects() {
+		Effect mutant = null;
+		if (effectMap.containsKey("mutant")) {
+			var serverConfig = ConfigManager.getServerConfig();
+			if (serverConfig != null && serverConfig.getMutant().getKeepMutantOnDeath()) {
+				mutant = effectMap.get("mutant");
+			}
+		}
 		effectMap.clear();
+		if (mutant != null) effectMap.put("mutant", mutant);
 	}
 
     public boolean hasEffect(String name) {
