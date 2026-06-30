@@ -124,6 +124,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderWounds(model, poseStack, animatable, bufferSource, player, partialTick, packedLight, packedOverlay, alpha);
 		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(true);
+
+		bufferSource.getBuffer(renderType);
 	}
 
 	private float[] getTopAuraColor(StatsData stats) {
