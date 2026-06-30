@@ -64,6 +64,9 @@ public class FormConfig {
 		private String auraType = "kakarot";
 		private Integer auraLayer = 0;
 		private String auraColor = "";
+		private Integer extraAuraLayer = -1;
+		private String extraAuraColor = "#FFFFFF";
+		private String extraAuraType = "kakarot";
 		private Boolean hasLightnings = false;
 		private String lightningColor = "";
 		private Float[] modelScaling = {0.9375f, 0.9375f, 0.9375f};
@@ -114,6 +117,7 @@ public class FormConfig {
 		private transient float[] rgbEye2Color;
 		private transient float[] rgbAuraColor;
 		private transient float[] rgbExtraFormColor;
+		private transient float[] rgbExtraAuraColor;
 
 		public Double getStrMultiplier() {
 			return Math.max(0.01, strMultiplier);
@@ -284,6 +288,23 @@ public class FormConfig {
 			return auraColor != null && !auraColor.isEmpty();
 		}
 
+		public int getExtraAuraLayer() {
+			return extraAuraLayer != null ? extraAuraLayer : -1;
+		}
+
+		public boolean hasExtraAura() {
+			int layer = getExtraAuraLayer();
+			return layer >= 1 && layer <= 6;
+		}
+
+		public String getExtraAuraColor() {
+			return extraAuraColor != null && !extraAuraColor.isEmpty() ? extraAuraColor : "#FFFFFF";
+		}
+
+		public String getExtraAuraType() {
+			return extraAuraType != null && !extraAuraType.isEmpty() ? extraAuraType : "kakarot";
+		}
+
 		public OutlineShaderConfig getOutlineShader() {
 			return outlineShader != null ? outlineShader : new OutlineShaderConfig();
 		}
@@ -347,6 +368,11 @@ public class FormConfig {
 		public float[] getRgbExtraFormColor() {
 			if (rgbExtraFormColor == null && extraFormColor != null && !extraFormColor.isEmpty()) rgbExtraFormColor = com.dragonminez.client.util.ColorUtils.hexToRgb(extraFormColor);
 			return rgbExtraFormColor;
+		}
+
+		public float[] getRgbExtraAuraColor() {
+			if (rgbExtraAuraColor == null) rgbExtraAuraColor = com.dragonminez.client.util.ColorUtils.hexToRgb(getExtraAuraColor());
+			return rgbExtraAuraColor;
 		}
 
 		@Setter

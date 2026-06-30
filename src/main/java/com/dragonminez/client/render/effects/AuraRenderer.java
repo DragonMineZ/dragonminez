@@ -431,8 +431,12 @@ public class AuraRenderer {
 			normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
 		}
 
-		normalLayerId = Mth.clamp(normalLayerId, 0, 6);
-		layerMap.put(normalLayerId, new AuraLayer(normalType, normalLayerId, normalColor));
+		putShifting(layerMap, normalLayerId, new AuraLayer(normalType, normalLayerId, normalColor));
+
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasExtraAura()) {
+			var fd = character.getActiveFormData();
+			putShifting(layerMap, fd.getExtraAuraLayer(), new AuraLayer(fd.getExtraAuraType(), fd.getExtraAuraLayer(), fd.getRgbExtraAuraColor()));
+		}
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
 			var fd = character.getActiveStackFormData();
@@ -446,8 +450,11 @@ public class AuraRenderer {
 				stackColor = interpolateColor(stackHex, targetHex, chargeProgress);
 			}
 
-			stackLayerId = Mth.clamp(stackLayerId, 0, 6);
-			layerMap.put(stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
+			putShifting(layerMap, stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
+
+			if (fd.hasExtraAura()) {
+				putShifting(layerMap, fd.getExtraAuraLayer(), new AuraLayer(fd.getExtraAuraType(), fd.getExtraAuraLayer(), fd.getRgbExtraAuraColor()));
+			}
 
 		} else if (chargingStack && nextForm != null) {
 			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : "#FFFFFF";
@@ -455,13 +462,19 @@ public class AuraRenderer {
 			int stackLayerId = nextForm.getAuraLayer() != null ? nextForm.getAuraLayer() : 1;
 
 			float[] stackColor = interpolateColor(normalHex, targetHex, chargeProgress);
-			stackLayerId = Mth.clamp(stackLayerId, 0, 6);
-			layerMap.put(stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
+			putShifting(layerMap, stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
 		}
 
 		List<AuraLayer> activeLayers = new ArrayList<>(layerMap.values());
 		activeLayers.sort(Comparator.comparingInt(l -> l.layerId));
 		return activeLayers;
+	}
+
+	private static void putShifting(Map<Integer, AuraLayer> layerMap, int layerId, AuraLayer layer) {
+		layerId = Mth.clamp(layerId, 0, 6);
+		while (layerMap.containsKey(layerId) && layerId < 6) layerId++;
+		layer.layerId = layerId;
+		layerMap.put(layerId, layer);
 	}
 
 	private static float[] interpolateColor(String hexFrom, String hexTo, float factor) {
