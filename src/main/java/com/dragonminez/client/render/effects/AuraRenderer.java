@@ -384,10 +384,6 @@ public class AuraRenderer {
 
 		float chargeProgress = 0.0f;
 		if (chargingNormal || chargingStack) {
-			// Don't read actionCharge directly — it only syncs in coarse 20-tick steps so the colour used
-			// to snap to the final hue only on completion. Instead mirror the server charge rate locally:
-			// it adds (5 + max(20, mastery)) once every 20 ticks toward 100, i.e. increment/2000 of the
-			// full ramp per tick. Same formula the hair morph uses, so aura and hair stay in sync.
 			int mastery;
 			if (chargingStack) {
 				String mGroup = character.hasActiveStackForm() ? character.getActiveStackFormGroup() : character.getSelectedStackFormGroup();
@@ -396,7 +392,7 @@ public class AuraRenderer {
 				String mGroup = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
 				mastery = (int) character.getFormMasteries().getMastery(mGroup, nextForm.getName());
 			}
-			float ratePerTick = (5 + Math.max(20, mastery)) / 2000.0f;
+			float ratePerTick = (5 + Math.min(20, (int)(mastery * 0.2))) / 2000.0f;
 
 			float lastProgress = COLOR_PROGRESS_MAP.getOrDefault(entityId, 0.0f);
 			long lastTick = COLOR_TICK_MAP.getOrDefault(entityId, 0L);

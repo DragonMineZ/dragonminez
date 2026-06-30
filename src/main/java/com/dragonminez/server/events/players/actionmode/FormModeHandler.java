@@ -30,7 +30,7 @@ public class FormModeHandler implements IActionModeHandler {
 			String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
 
 			int mastery = (int) data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
-			return (5 + Math.max(20, mastery));
+			return 5 + Math.min(20, (int)(mastery * 0.2));
 		}
 		return 0;
 	}
