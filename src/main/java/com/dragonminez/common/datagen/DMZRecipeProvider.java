@@ -370,7 +370,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.pattern("OTO")
 				.pattern("OOO")
 				.define('O', Items.CRYING_OBSIDIAN)
-				.define('T', MainItems.T2_RADAR_CPU.get())
+				.define('T', MainItems.T1_RADAR_CHIP.get())
 				.unlockedBy(getHasName(Items.CRYING_OBSIDIAN), has(Items.CRYING_OBSIDIAN))
 				.group(Reference.MOD_ID).save(pWriter);
 

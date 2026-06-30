@@ -601,7 +601,7 @@ public class ConfigManager {
 	private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("frostdemon");
 		config.setIsLayered(true);
-		config.setHeadBones(new String[]{"horns1"});
+		config.setHeadBones(new String[]{"horns1", "horns2", "horns3", "horns4", "horns5"});
 		config.setDefaultModelScaling(new Float[]{0.7375f, 0.7375f, 0.7375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
@@ -646,7 +646,7 @@ public class ConfigManager {
 	private static void setupMajinCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("majin");
 		config.setIsLayered(true);
-		config.setHeadBones(new String[]{"majin1"});
+		config.setHeadBones(new String[]{"majin1", "majin2", "majin3"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
