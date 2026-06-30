@@ -20,7 +20,9 @@ public class SkillReward extends QuestReward {
 
 	@Override
 	public void giveReward(ServerPlayer player) {
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getSkills().setSkillLevel(skill, level));
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (data.getSkills().getSkillLevel(skill) < level) data.getSkills().setSkillLevel(skill, level);
+		});
 	}
 
 	@Override
