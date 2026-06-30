@@ -450,8 +450,6 @@ public class DefaultFormsFactory {
         chou_shiyokenOutline.setEnabled(true);
         chou_shiyokenOutline.setPrimaryColor("#F72D2D");
         chou_shiyokenOutline.setSecondaryColor("#7D0202");
-        chou_shiyokenOutline.setNoiseScale(1.5d);
-        chou_shiyokenOutline.setColorMixSpeed(0.2d);
         chou_shiyokenOutline.setOutlineThickness(3.7D);
         chou_shiyoken.setOutlineShader(chou_shiyokenOutline);
         chou_shiyoken.setName(HumanForms.CHOU_SHIYOKEN);
@@ -779,8 +777,6 @@ public class DefaultFormsFactory {
         ssj4dOutline.setEnabled(true);
         ssj4dOutline.setPrimaryColor("#F4FF8A");
         ssj4dOutline.setSecondaryColor("#8AFFFF");
-        ssj4dOutline.setNoiseScale(1.5d);
-        ssj4dOutline.setColorMixSpeed(0.2d);
         ssj4dOutline.setOutlineThickness(3.7D);
         ssj4d.setOutlineShader(ssj4dOutline);
         ssj4d.setName(SaiyanForms.SUPER_SAIYAN_4);
@@ -831,8 +827,6 @@ public class DefaultFormsFactory {
         ikariOutline.setEnabled(true);
         ikariOutline.setPrimaryColor("#7FFF7D");
         ikariOutline.setSecondaryColor("#F4FF7D");
-        ikariOutline.setNoiseScale(1.5d);
-        ikariOutline.setColorMixSpeed(0.2d);
         ikariOutline.setOutlineThickness(3.5D);
         ikari.setOutlineShader(ikariOutline);
 		ikari.setName(SaiyanForms.IKARI);
@@ -1032,8 +1026,6 @@ public class DefaultFormsFactory {
         buffedNamekOutline.setEnabled(true);
         buffedNamekOutline.setPrimaryColor("#9E2F2F");
         buffedNamekOutline.setSecondaryColor("#470909");
-        buffedNamekOutline.setNoiseScale(1.5d);
-        buffedNamekOutline.setColorMixSpeed(0.2d);
         buffedNamekOutline.setOutlineThickness(3.5D);
         buffedNamek.setOutlineShader(buffedNamekOutline);
 		buffedNamek.setName(NamekianForms.BUFFED_NAMEK);

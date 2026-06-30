@@ -37,7 +37,6 @@ import java.util.Objects;
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
 	protected GeoRenderLayer<T> caller = null;
-	private boolean renderingMaskPass = false;
 
 	public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
 		super(renderManager, model);
@@ -124,13 +123,6 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 					maskData.secondaryG(),
 					maskData.secondaryB()
 			);
-			maskBufferSource.setEntityNoiseAndMix(
-					maskData.noiseScale(),
-					maskData.noiseIntensity(),
-					maskData.noiseScrollX(),
-					maskData.noiseScrollY(),
-					maskData.colorMixSpeed()
-			);
 		}
 
 		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
@@ -157,22 +149,16 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
 		}
 
-		super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-
 		if (maskBufferSource != null) {
+			maskBufferSource.wrap(bufferSource);
+			maskBufferSource.setForceCaptureAll(true);
 			try {
-				this.renderingMaskPass = true;
-				maskBufferSource.wrap(bufferSource);
-				maskBufferSource.setIncludeOriginal(false);
-				maskBufferSource.setForceCaptureAll(true);
 				super.render(entity, entityYaw, partialTick, poseStack, maskBufferSource, packedLight);
 			} finally {
-				this.renderingMaskPass = false;
-				maskBufferSource.setIncludeOriginal(true);
 				maskBufferSource.setForceCaptureAll(false);
 				maskBufferSource.setMaskCaptureEnabled(true);
 			}
-		}
+		} else super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
 
 		if (isAuraActive) {
 			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
@@ -188,10 +174,6 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
-			if (this.renderingMaskPass && renderLayer instanceof DMZAuraLayer<?>) {
-				continue;
-			}
-
 			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
 	}

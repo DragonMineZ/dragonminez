@@ -477,8 +477,6 @@ public class FormConfig {
 			private Boolean enabled = false;
 			private String primaryColor = "#7FFFFF";
 			private String secondaryColor = "#7FFFFF";
-			private Double noiseScale = 4.0;
-			private Double colorMixSpeed = 0.7;
 			private Double outlineThickness = 1.5;
 
 			public boolean isEnabled() {
@@ -491,14 +489,6 @@ public class FormConfig {
 
 			public String getSecondaryColor() {
 				return secondaryColor != null && !secondaryColor.isEmpty() ? secondaryColor : "#FFD970";
-			}
-
-			public double getNoiseScale() {
-				return Math.max(0.01, noiseScale != null ? noiseScale : 4.0);
-			}
-
-			public double getColorMixSpeed() {
-				return Math.max(0.0, colorMixSpeed != null ? colorMixSpeed : 0.7);
 			}
 
 			public double getOutlineThickness() {

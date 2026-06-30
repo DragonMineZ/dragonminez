@@ -217,7 +217,7 @@ public class FusionLogic {
 
 		double minMult, maxMult;
 		if ("POTHALA".equals(type)) {
-			minMult = 2.0; maxMult = 3.0;
+			minMult = 1.75; maxMult = 2.5;
 		} else {
 			minMult = 1.25; maxMult = 2.0;
 		}
