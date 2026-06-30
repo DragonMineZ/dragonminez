@@ -47,6 +47,13 @@ public class ItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> 
                         animatable.getId()
                 );
 
+                // Rendering the item above switches the shared BufferBuilder to the item's
+                // render type and ends the entity's buffer mid-recursion. Re-fetch the entity
+                // buffer so GeckoLib's remaining bones keep writing into a valid, set-up buffer.
+                // Without this, strict GPU drivers (AMD/Intel) render the entity as garbage.
+                // This mirrors GeckoLib's own BlockAndItemGeoLayer / DMZPlayerItemInHandLayer.
+                bufferSource.getBuffer(renderType);
+
                 poseStack.popPose();
             }
         }

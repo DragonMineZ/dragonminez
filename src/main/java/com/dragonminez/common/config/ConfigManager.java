@@ -589,7 +589,7 @@ public class ConfigManager {
 		config.setDefaultBodyColor("#1FAA24");
 		config.setDefaultBodyColor2("#BB2024");
 		config.setDefaultBodyColor3("#FF86A6");
-		config.setDefaultHairColor("#1FAA24");
+		config.setDefaultHairColor("#80FF69");
 		config.setDefaultEye1Color("#222629");
 		config.setDefaultEye2Color("#222629");
 		config.setDefaultAuraColor("#7FFF00");

@@ -269,15 +269,18 @@ public class SkinGathererProvider {
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png"), getCachedTexture(basePath + "layer3.png")), WHITE_COLOR);
 	}
 
-	protected void resolveBodyNamekian(Character character, float[] c1, float[] c2, float[] c3, BiConsumer<ResourceLocation, float[]> consumer) {
-		int bodyType = character.getBodyType();
-		String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
-		String fallbackPath = "textures/entity/races/namekian/bodytype_0_";
+    protected void resolveBodyNamekian(Character character, float[] c1, float[] c2, float[] c3, BiConsumer<ResourceLocation, float[]> consumer) {
+        int bodyType = character.getBodyType();
+        var hairColor = character.getRgbHairColor();
+        String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
+        String fallbackPath = "textures/entity/races/namekian/bodytype_0_";
 
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), c1);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png"), getCachedTexture(fallbackPath + "layer2.png")), c2);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png"), getCachedTexture(fallbackPath + "layer3.png")), c3);
-	}
+        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), c1);
+
+        tryLoadOptionalLayerWithFallback(basePath + "layer2.png", fallbackPath + "layer2.png", c2, consumer);
+        tryLoadOptionalLayerWithFallback(basePath + "layer3.png", fallbackPath + "layer3.png", c3, consumer);
+        tryLoadOptionalLayerWithFallback(basePath + "layer4.png", fallbackPath + "layer4.png", hairColor, consumer);
+    }
 
 	protected void resolveBodyFrostDemon(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
 		String currentForm = character.getActiveForm();
@@ -420,6 +423,18 @@ public class SkinGathererProvider {
         ResourceLocation loc = getCachedTexture(path);
         if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
             consumer.accept(loc, color);
+        }
+    }
+
+    private void tryLoadOptionalLayerWithFallback(String path, String fallbackPath, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
+        ResourceLocation loc = getCachedTexture(path);
+        ResourceLocation fallbackLoc = getCachedTexture(fallbackPath);
+
+        if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
+            consumer.accept(loc, color);
+        }
+        else if (Minecraft.getInstance().getResourceManager().getResource(fallbackLoc).isPresent()) {
+            consumer.accept(fallbackLoc, color);
         }
     }
 }
