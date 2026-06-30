@@ -162,12 +162,35 @@ public class TransformationsHelper {
 		String req = formData.getFormRequisite();
 		double need = formData.getUnlockOnMastery();
 		if (req == null || req.isEmpty() || need <= 0.0) return true;
-		int dot = req.indexOf('.');
-		if (dot <= 0 || dot >= req.length() - 1) return true;
-		String reqGroup = req.substring(0, dot);
-		String reqForm = req.substring(dot + 1);
-		double have = statsData.getCharacter().getFormMasteries().getMastery(reqGroup, reqForm);
-		return have >= need;
+
+		boolean any = "any".equalsIgnoreCase(formData.getFormRequisiteType());
+		boolean sawValid = false;
+		boolean allMet = true;
+		for (String token : req.split(",")) {
+			String entry = token.trim();
+			if (entry.isEmpty()) continue;
+			int dot = entry.indexOf('.');
+			if (dot <= 0 || dot >= entry.length() - 1) continue;
+			String reqGroup = entry.substring(0, dot);
+			String reqForm = entry.substring(dot + 1);
+			double have = statsData.getCharacter().getFormMasteries().getMastery(reqGroup, reqForm);
+			boolean met = have >= need;
+			sawValid = true;
+			if (any) {
+				if (met) return true;
+			} else if (!met) {
+				allMet = false;
+			}
+		}
+		if (!sawValid) return true;
+		return !any && allMet;
+	}
+
+	public static boolean areFormsCompatible(FormConfig.FormData baseForm, String baseGroup, FormConfig.FormData stackForm, String stackGroup) {
+		if (baseForm == null || stackForm == null) return true;
+		if (baseForm.isIncompatibleWith(stackGroup, stackForm.getName())) return false;
+		if (stackForm.isIncompatibleWith(baseGroup, baseForm.getName())) return false;
+		return true;
 	}
 
 	private static boolean isFormSelectable(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
@@ -194,14 +217,20 @@ public class TransformationsHelper {
 		if (allGroups == null || allGroups.isEmpty()) return null;
 
 		List<String> preferredTypes = new ArrayList<>();
-		if (statsData.getSkills().getSkillLevel("superforms") > 0) preferredTypes.add("superforms");
+		List<String> allTypes = new ArrayList<>();
+		for (FormConfig config : allGroups.values()) {
+			if (config == null) continue;
+			String formType = config.getFormType();
+			if (formType == null || formType.isEmpty()) continue;
+			String lowerType = formType.toLowerCase(Locale.ROOT);
+			if (!allTypes.contains(lowerType)) allTypes.add(lowerType);
 
-		if (statsData.getSkills().getSkillLevel("legendaryforms") > 0 || statsData.getEffects().hasEffect("mutant")) preferredTypes.add("legendaryforms");
+			boolean hasSkill = statsData.getSkills().getSkillLevel(getSkillNameForType(formType)) > 0;
+			boolean mutantLegendary = lowerType.contains("legendary") && statsData.getEffects().hasEffect("mutant");
+			if ((hasSkill || mutantLegendary) && !preferredTypes.contains(lowerType)) preferredTypes.add(lowerType);
+		}
 
-		if (statsData.getSkills().getSkillLevel("godforms") > 0) preferredTypes.add("godforms");
-		if (statsData.getSkills().getSkillLevel("androidforms") > 0) preferredTypes.add("androidforms");
-
-		if (preferredTypes.isEmpty()) preferredTypes.addAll(Arrays.asList("superforms", "legendaryforms", "godforms", "androidforms"));
+		if (preferredTypes.isEmpty()) preferredTypes.addAll(allTypes);
 
 		for (String formType : preferredTypes) {
 			String group = findBestGroupByType(statsData, race, allGroups, formType);

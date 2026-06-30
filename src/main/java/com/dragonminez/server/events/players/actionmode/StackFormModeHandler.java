@@ -20,8 +20,10 @@ public class StackFormModeHandler implements IActionModeHandler {
 
 		if (data.getCharacter().hasActiveForm()) {
 			FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
-			if (activeFormData != null && (!activeFormData.getFormStackable() || !nextForm.getFormStackable())) {
-				return false;
+			if (activeFormData != null) {
+				if (!activeFormData.getFormStackable() || !nextForm.getFormStackable()) return false;
+				String stackGroup = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
+				if (!TransformationsHelper.areFormsCompatible(activeFormData, data.getCharacter().getActiveFormGroup(), nextForm, stackGroup)) return false;
 			}
 		}
 		return true;
@@ -52,6 +54,12 @@ public class StackFormModeHandler implements IActionModeHandler {
 			FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
 			if (activeFormData != null) {
 				if (!activeFormData.getFormStackable() || !nextForm.getFormStackable()) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
+					return;
+				}
+
+				String stackGroup = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
+				if (!TransformationsHelper.areFormsCompatible(activeFormData, data.getCharacter().getActiveFormGroup(), nextForm, stackGroup)) {
 					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
 					return;
 				}

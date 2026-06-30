@@ -56,8 +56,9 @@ public class FormModeHandler implements IActionModeHandler {
 				double baseMastery = data.getCharacter().getFormMasteries().getMastery(nextGroup, nextForm.getName());
 				double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(data.getCharacter().getActiveStackFormGroup(), data.getCharacter().getActiveStackForm());
 				boolean meetsStackMastery = baseMastery >= nextForm.getStackOnMastery() && stackMastery >= activeStackData.getStackOnMastery();
+				boolean compatible = TransformationsHelper.areFormsCompatible(nextForm, nextGroup, activeStackData, data.getCharacter().getActiveStackFormGroup());
 
-				if (!isFormStackable || !isStackStackable || !meetsStackMastery) {
+				if (!isFormStackable || !isStackStackable || !meetsStackMastery || !compatible) {
 					data.getCharacter().clearActiveStackForm(player);
 					player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 					player.sendSystemMessage(Component.translatable("message.dragonminez.form.stack_removed"));
