@@ -122,6 +122,27 @@ public class GeneralServerConfig {
 				"dragonminez:invencible_blue_armor_helmet"
 		));
 
+		private Map<TpSource, List<TpBoost>> tpGainBoosts = defaultTpGainBoosts();
+
+		private static Map<TpSource, List<TpBoost>> defaultTpGainBoosts() {
+			Map<TpSource, List<TpBoost>> map = new LinkedHashMap<>();
+			for (TpSource source : TpSource.values()) {
+				List<TpBoost> boosts = new ArrayList<>(Arrays.asList(
+						TpBoost.CLASS, TpBoost.RACIALSKILL, TpBoost.HTC, TpBoost.GRAVITY,
+						TpBoost.WEIGHTS, TpBoost.GLOBAL, TpBoost.POTION, TpBoost.MUTANT
+				));
+				if (source == TpSource.STORY) boosts.add(TpBoost.DIFFICULTY);
+				map.put(source, boosts);
+			}
+			return map;
+		}
+
+		public List<TpBoost> getTpGainBoosts(TpSource source) {
+			if (tpGainBoosts == null) return Arrays.asList(TpBoost.values());
+			List<TpBoost> boosts = tpGainBoosts.get(source);
+			return boosts != null ? boosts : List.of();
+		}
+
 		public Integer getReviveCooldownSeconds() {
 			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
 		}
