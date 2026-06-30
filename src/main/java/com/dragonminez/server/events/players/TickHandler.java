@@ -958,12 +958,28 @@ public class TickHandler {
 			double totalOffense = data.getMeleeDamage() + data.getStrikeDamage() + data.getKiDamage();
 			double ratioTolerance = 1.5;
 
+			double formCostMultiplier;
+			boolean hasFormMult = hasActiveForm && data.getCharacter().getActiveFormData() != null;
+			boolean hasStackMult = hasActiveStackForm && data.getCharacter().getActiveStackFormData() != null;
+			if (hasFormMult && hasStackMult) {
+				formCostMultiplier = (data.getCharacter().getActiveFormData().getMaxCostMultiplier()
+						+ data.getCharacter().getActiveStackFormData().getMaxCostMultiplier()) / 2.0;
+			} else if (hasFormMult) {
+				formCostMultiplier = data.getCharacter().getActiveFormData().getMaxCostMultiplier();
+			} else if (hasStackMult) {
+				formCostMultiplier = data.getCharacter().getActiveStackFormData().getMaxCostMultiplier();
+			} else {
+				formCostMultiplier = 1.0;
+			}
+			double offenseCostFactor = 0.75 * Math.min(1.0, formCostMultiplier);
+			double reducedOffense = totalOffense * offenseCostFactor;
+
 			double maxEnergy = data.getMaxEnergy();
 			double baseEnergyDrain = data.getAdjustedEnergyDrain();
 			double finalEnergyDrain = 0.0;
 
 			if (baseEnergyDrain > 0.0) {
-				double energyRatio = Math.max(1.0, totalOffense / Math.max(1.0, maxEnergy * ratioTolerance));
+				double energyRatio = Math.max(1.0, reducedOffense / Math.max(1.0, maxEnergy * ratioTolerance));
 
 				double formRawEneDrain = 0.0;
 				if (hasActiveForm && data.getCharacter().getActiveFormData() != null) {
@@ -973,7 +989,7 @@ public class TickHandler {
 					formRawEneDrain += Math.max(0.0, data.getCharacter().getActiveStackFormData().getEnergyDrain());
 				}
 
-				double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01);
+				double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01) * 0.75;
 				finalEnergyDrain = (baseEnergyDrain * energyRatio) + percentageEnergy;
 			}
 
@@ -982,7 +998,7 @@ public class TickHandler {
 			double finalStaminaDrain = 0.0;
 
 			if (baseStaminaDrain > 0.0) {
-				double staminaRatio = Math.max(1.0, totalOffense / Math.max(1.0, maxStamina * ratioTolerance));
+				double staminaRatio = Math.max(1.0, reducedOffense / Math.max(1.0, maxStamina * ratioTolerance));
 				double percentageStamina = maxStamina * 0.005;
 				finalStaminaDrain = (baseStaminaDrain * staminaRatio) + percentageStamina;
 			}
@@ -992,7 +1008,7 @@ public class TickHandler {
 			double finalHealthDrain = 0.0;
 
 			if (baseHealthDrain > 0.0) {
-				double healthRatio = Math.max(1.0, totalOffense / Math.max(1.0, maxHealth * ratioTolerance));
+				double healthRatio = Math.max(1.0, reducedOffense / Math.max(1.0, maxHealth * ratioTolerance));
 				double percentageHealth = maxHealth * 0.005;
 				finalHealthDrain = (baseHealthDrain * healthRatio) + percentageHealth;
 			}
