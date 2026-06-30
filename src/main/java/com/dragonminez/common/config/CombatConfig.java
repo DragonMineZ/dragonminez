@@ -84,6 +84,11 @@ public class CombatConfig {
 		put("guardvillagers:guard", TargetHelper.Relation.NEUTRAL);
 	}};
 
+	private List<String> masteryBlacklistEntities = new ArrayList<>(Arrays.asList(
+			"minecraft:silverfish",
+			"dummmmmmy:target_dummy"
+	));
+
 	private TargetHelper.Relation playerRelationToPassives = TargetHelper.Relation.HOSTILE;
 	private TargetHelper.Relation playerRelationToHostiles = TargetHelper.Relation.HOSTILE;
 	private TargetHelper.Relation playerRelationToOther = TargetHelper.Relation.HOSTILE;

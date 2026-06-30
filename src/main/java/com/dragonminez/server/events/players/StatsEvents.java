@@ -412,7 +412,7 @@ public class StatsEvents {
 		if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
-					if (event.getAmount() >= 1) {
+					if (event.getAmount() >= 1 && !isMasteryBlacklisted(event.getEntity())) {
 						double damageScale = masteryDamageScale(event.getEntity(), event.getAmount());
 
 						if (attackerData.getCharacter().hasActiveForm()) {
@@ -444,7 +444,7 @@ public class StatsEvents {
 			boolean fromEntity = event.getSource().getEntity() instanceof LivingEntity;
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (fromEntity && victimData.getStatus().isHasCreatedCharacter()) {
-					if (event.getAmount() >= 1) {
+					if (event.getAmount() >= 1 && !isMasteryBlacklisted(event.getSource().getEntity())) {
 						double damageScale = masteryDamageScale(victim, event.getAmount());
 
 						if (victimData.getCharacter().hasActiveForm()) {
@@ -471,6 +471,13 @@ public class StatsEvents {
 				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(victim), victim);
 			});
 		}
+	}
+
+	private static boolean isMasteryBlacklisted(Entity entity) {
+		if (entity == null) return false;
+		ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+		if (key == null) return false;
+		return ConfigManager.getCombatConfig().getMasteryBlacklistEntities().contains(key.toString());
 	}
 
 	private static double masteryDamageScale(LivingEntity hitEntity, double damage) {
