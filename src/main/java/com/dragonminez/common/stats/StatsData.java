@@ -141,9 +141,9 @@ public class StatsData {
 		return Math.min(allowedByTotal, remainingStat);
 	}
 
-	private static final double K = 39_000.0;
-	private static final double BP_REF_VALUE = 5_000_000_000.0;
-	private static final double BP_CURVE_EXPONENT = 2.8;
+	private static final double K = 100.0;
+	private static final double BP_REF_VALUE = 1_200.0;
+	private static final double BP_CURVE_EXPONENT = 1.2;
 
 	public float getBattlePower() {
 		double exact = getBattlePowerExact();
@@ -153,17 +153,30 @@ public class StatsData {
 	public double getBattlePowerExact() {
 		if (status.isAndroidUpgraded()) return Float.MAX_VALUE;
 
-		double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
+		double str = stats.getStrength();
+		double skp = stats.getStrikePower();
+		double res = stats.getResistance();
+		double pwr = stats.getKiPower();
 
-		double rawPower = (stats.getStrength() * getStatScaling("STR") * getTotalMultiplier("STR")
-				+ stats.getStrikePower() * getStatScaling("SKP") * getTotalMultiplier("SKP")
-				+ stats.getResistance() * getStatScaling("DEF") * getTotalMultiplier("RES")
-				+ stats.getVitality() * getStatScaling("VIT") * getTotalMultiplier("VIT")
-				+ stats.getKiPower() * getStatScaling("PWR") * getTotalMultiplier("PWR")) * releaseMultiplier;
+		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(str), true);
+		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(str), false);
+		double multBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(skp), true);
+		double flatBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(skp), false);
+		double multBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(res), true);
+		double flatBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(res), false);
+		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(pwr), true);
+		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(pwr), false);
+
+		double rawPower =
+				((str + multBonusStr) * getStatScaling("STR") * getTotalMultiplier("STR")) + (flatBonusStr * getStatScaling("STR"))
+				+ ((skp + multBonusSkp) * getStatScaling("SKP") * getTotalMultiplier("SKP")) + (flatBonusSkp * getStatScaling("SKP"))
+				+ ((res + multBonusDef) * getStatScaling("DEF") * getTotalMultiplier("RES")) + (flatBonusDef * getStatScaling("DEF"))
+				+ ((pwr + multBonusPwr) * getStatScaling("PWR") * getTotalMultiplier("PWR")) + (flatBonusPwr * getStatScaling("PWR"));
 
 		if (Double.isNaN(rawPower) || rawPower <= 0) return 0.0;
 
-		double bp = BP_REF_VALUE * Math.pow(rawPower / K, BP_CURVE_EXPONENT);
+		double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
+		double bp = BP_REF_VALUE * Math.pow(rawPower / K, BP_CURVE_EXPONENT) * releaseMultiplier;
 
 		if (Double.isNaN(bp) || bp <= 0) return 0.0;
 		return bp;
