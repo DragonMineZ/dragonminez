@@ -18,6 +18,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -175,6 +176,12 @@ public class TPGainEvents {
 				&& entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW);
 	}
 
+	private static int applyPlayerShadowTpBonus(Entity entity, int tp) {
+		if (tp <= 0 || !isPlayerOwnedShadow(entity)) return tp;
+		int pct = Mth.clamp(entity.getPersistentData().getInt("dmz_shadow_percent"), 25, 75);
+		return Math.max(1, (int) Math.round(tp * (1.0 + pct / 100.0)));
+	}
+
 	private static boolean dropTps(Entity entity) {
 		List<Class<?>> enemyList = List.of(
 				Monster.class,
@@ -190,18 +197,15 @@ public class TPGainEvents {
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
-		if (isPlayerOwnedShadow(event.getEntity())) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
 			if (dropTps(event.getEntity())) {
-				int tpsHealth;
-				if (event.getEntity() instanceof ShadowDummyEntity)
-					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
-				else
-					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
+				double ratio = ConfigManager.getServerConfig().getGameplay().getTpHealthRatio();
+				double healthMult = (event.getEntity() instanceof ShadowDummyEntity && !isPlayerOwnedShadow(event.getEntity())) ? 0.5 : 1.0;
+				int tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ratio * healthMult);
 				int killTp = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth);
 				int boostedTp = data.applyTpBoosts(TpSource.KILL, killTp);
-				int finalTp = applyGravityRoom(attacker, boostedTp);
+				int finalTp = applyPlayerShadowTpBonus(event.getEntity(), applyGravityRoom(attacker, boostedTp));
 				data.getResources().addTrainingPoints(finalTp);
 			}
 		});
@@ -210,7 +214,6 @@ public class TPGainEvents {
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public static void onEntityHit(LivingHurtEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (isPlayerOwnedShadow(event.getEntity())) return;
 
 		if (event.getSource().getEntity() instanceof Player attacker) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
@@ -218,7 +221,7 @@ public class TPGainEvents {
 					if (event.getAmount() >= 1) {
 						int baseTps = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
 						int boostedTps = attackerData.applyTpBoosts(TpSource.HIT, baseTps);
-						int finalTps = applyGravityRoom(attacker, boostedTps);
+						int finalTps = applyPlayerShadowTpBonus(event.getEntity(), applyGravityRoom(attacker, boostedTps));
 						attackerData.getResources().addTrainingPoints(finalTps);
 					}
 				}
