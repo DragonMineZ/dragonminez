@@ -145,12 +145,12 @@
 *(by @Bruneitor123)*
 
 ### DBSagas — Item In Hand Layer
-- Fixed the `ItemInHandLayer` renderer for DragonBall Saga NPC entities. Items held by story NPCs now display correctly during cutscenes and encounters.
+- Fixed the `ItemInHandLayer` renderer for DragonBall Saga NPC entities. Items held by story NPCs now display correctly.
 
 *(by @yuseix300)*
 
-### Tail Curios Slot on Other Races
-- Fixed the tail equipment slot incorrectly appearing or interfering with non-Saiyan races that do not have a tail.
+### Tail Slot on Other Races
+- Fixed the tail display slot incorrectly appearing or interfering with non-Saiyan races that do not have a tail.
 
 *(by @Shokkoh)*
 
