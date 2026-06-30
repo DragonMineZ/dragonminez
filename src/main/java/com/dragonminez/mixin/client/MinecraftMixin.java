@@ -1,11 +1,13 @@
 package com.dragonminez.mixin.client;
 
+import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.collision.TargetFinder;
 import com.dragonminez.client.events.DMZClientEvent;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
+import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.CombatAttackRequestC2S;
 import com.dragonminez.common.stats.StatsCapability;
@@ -13,6 +15,8 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.HitResult;
@@ -44,6 +48,8 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Unique private boolean isAttacking = false;
 	@Unique private boolean isAwaitingUpswing = false;
 
+	@Unique private static final float UPSWING_IMPACT_BIAS = 0.4F;
+
 	@Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$startAttack(CallbackInfoReturnable<Boolean> cir) {
 		if (player == null || screen != null) return;
@@ -72,15 +78,44 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		isAwaitingUpswing = true;
 		upswingStack = hand;
 
-		int attackCooldownTicks = Math.round(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
-		upswingTicks = (int) Math.round(attackCooldownTicks * hand.upswingRate());
-		lastSwingDuration = attackCooldownTicks;
+		float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
+		int swingAnimTicks = meleeAnimTicks(meleeAnimSpeed(cooldownTicks));
+		upswingTicks = Math.max(1, Math.round(swingAnimTicks * (float) hand.upswingRate() * UPSWING_IMPACT_BIAS));
+		lastSwingDuration = swingAnimTicks;
 		lastAttacked = 0;
 
 		((MinecraftAccessor) this).setAttackCooldown(10000);
 
 		var event = new DMZClientEvent.PlayerAttackStart(player, hand);
 		MinecraftForge.EVENT_BUS.post(event);
+
+		playLocalAttackFeedback(hand);
+	}
+
+	@Unique
+	private float meleeAnimSpeed(float cooldownTicks) {
+		float speed = 12.0F / Math.max(cooldownTicks, 0.001F);
+		return Math.max(0.55F, Math.min(1.35F, speed));
+	}
+
+	@Unique
+	private int meleeAnimTicks(float animSpeed) {
+		return Math.max(8, Math.round(12.0F / Math.max(animSpeed, 0.1F)));
+	}
+
+	@Unique
+	private void playLocalAttackFeedback(AttackHand hand) {
+		if (hand.attack() == null) return;
+
+		float animSpeedMultiplier = meleeAnimSpeed(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
+
+		((IPlayerAnimatable) player).dragonminez$playMeleeAnimation(hand.attack().animation(), hand.isOffHand(), animSpeedMultiplier);
+
+		var swingSound = hand.attack().swingSound();
+		SoundEvent soundEvent = SoundHelper.resolveSoundEvent(swingSound);
+		if (soundEvent != null) {
+			player.level().playLocalSound(player.getX(), player.getY(), player.getZ(), soundEvent, SoundSource.PLAYERS, swingSound.volume(), SoundHelper.computePitch(swingSound), false);
+		}
 	}
 
 	@Inject(method = "continueAttack", at = @At("HEAD"), cancellable = true)
