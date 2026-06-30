@@ -731,7 +731,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	public static ResourceLocation getSafeTexture(ResourceLocation originalLoc, ResourceLocation fallbackLoc) {
 		return VALIDATED_TEXTURES_CACHE.computeIfAbsent(originalLoc, loc -> {
-			System.out.println("Searched for texture " + originalLoc);
 			if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) return loc;
 			return fallbackLoc;
 		});

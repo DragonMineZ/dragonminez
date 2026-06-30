@@ -59,6 +59,14 @@ public class SecondaryStatEffects {
 		return stat != null && mods.containsKey(stat.toUpperCase());
 	}
 
+	public boolean hasOtherActiveBuff(String stat) {
+		String key = stat == null ? null : stat.toUpperCase();
+		for (Mod mod : mods.values()) {
+			if (mod.factor > 0.0 && !mod.stat.equals(key)) return true;
+		}
+		return false;
+	}
+
 	public List<Mod> getActiveModifiers() {
 		return new ArrayList<>(mods.values());
 	}
