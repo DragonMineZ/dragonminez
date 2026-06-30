@@ -1365,8 +1365,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 			List<Component> extras = new ArrayList<>();
 			if (idealWeight > 0) {
-				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.ideal_weight",
-						numberFormatter.format(idealWeight)).withStyle(ChatFormatting.GOLD));
+				var gravityCfg = ConfigManager.getServerConfig().getGravity();
+				int low = (int) Math.round(idealWeight * gravityCfg.getTpIdealRatioLow());
+				int high = (int) Math.round(idealWeight * gravityCfg.getTpIdealRatioHigh());
+				String range = numberFormatter.format(low) + " - " + numberFormatter.format(high);
+				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.ideal_weight", range).withStyle(ChatFormatting.GOLD));
 			}
 			if (totalWeight > 0 && zone > 0) {
 				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.zone",
