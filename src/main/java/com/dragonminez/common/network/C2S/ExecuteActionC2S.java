@@ -140,8 +140,10 @@ public class ExecuteActionC2S {
 
 									if (data.getResources().getCurrentEnergy() >= cost) {
 										data.getResources().removeEnergy(cost);
+										float[] resourceSnapshot = data.snapshotMultiplierResources();
 										data.getCharacter().recordPreviousForm();
 										data.getCharacter().setActiveForm(group, nextForm.getName());
+										data.restoreMultiplierGains(player, resourceSnapshot);
 										needsSync = true;
 									} else
 										player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki_instant", cost), true);

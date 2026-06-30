@@ -98,8 +98,10 @@ public class StackFormModeHandler implements IActionModeHandler {
 			if (!data.getCharacter().getStackFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
 				data.getCharacter().getStackFormsUsedBefore().putForm(group, nextForm.getName());
 			}
+			float[] resourceSnapshot = data.snapshotMultiplierResources();
 			data.getCharacter().recordPreviousStackForm();
 			data.getCharacter().setActiveStackForm(group, nextForm.getName());
+			data.restoreMultiplierGains(player, resourceSnapshot);
 			TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 			player.refreshDimensions();
 

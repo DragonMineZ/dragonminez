@@ -7,6 +7,8 @@ import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.config.TpBoost;
+import com.dragonminez.common.config.TpSource;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.character.*;
@@ -839,6 +841,28 @@ public class StatsData {
 		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
 	}
 
+	public float[] snapshotMultiplierResources() {
+		return new float[]{getMaxHealth(), getMaxEnergy(), getMaxStamina()};
+	}
+
+	public void restoreMultiplierGains(ServerPlayer player, float[] snapshot) {
+		if (snapshot == null || snapshot.length < 3) return;
+
+		StatsEvents.applyHealthBonus(player);
+
+		float newMaxHealth = getMaxHealth();
+		float healthDelta = newMaxHealth - snapshot[0];
+		if (healthDelta > 0) player.setHealth(Math.min(newMaxHealth, player.getHealth() + healthDelta));
+
+		float newMaxEnergy = getMaxEnergy();
+		float energyDelta = newMaxEnergy - snapshot[1];
+		if (energyDelta > 0) resources.setCurrentEnergy(Math.min(newMaxEnergy, resources.getCurrentEnergy() + energyDelta));
+
+		float newMaxStamina = getMaxStamina();
+		float staminaDelta = newMaxStamina - snapshot[2];
+		if (staminaDelta > 0) resources.setCurrentStamina(Math.min(newMaxStamina, resources.getCurrentStamina() + staminaDelta));
+	}
+
 	public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
 	                                       int hairId, CustomHair customHair,
 	                                       int bodyType, int eyesType, int noseType, int mouthType, int tattooType, float boobScale,
@@ -1134,9 +1158,49 @@ public class StatsData {
 		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier() * getMutantTpMultiplier();
 	}
 
+	public double getTpSourceMultiplier(TpSource source) {
+		List<TpBoost> boosts = ConfigManager.getServerConfig().getGameplay().getTpGainBoosts(source);
+		if (boosts.isEmpty()) return 1.0;
+		double additive = 1.0;
+		double multiplicative = 1.0;
+		boolean gravityEnabled = ConfigManager.getServerConfig().getGameplay() == null
+				|| ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled();
+		for (TpBoost boost : boosts) {
+			switch (boost) {
+				case CLASS -> additive += (getTpClassMultiplier() - 1.0);
+				case RACIALSKILL -> additive += (getTpFrostDemonMultiplier() - 1.0);
+				case HTC -> additive += (getTpHTCMultiplier() - 1.0);
+				case GRAVITY -> { if (gravityEnabled) additive += (getTpGravityMultiplier() - 1.0); }
+				case WEIGHTS -> multiplicative *= getTpWeightBellMultiplier();
+				case GLOBAL -> multiplicative *= getTpGlobalMultiplier();
+				case POTION -> multiplicative *= getTpPotionEffectMultiplier();
+				case MUTANT -> multiplicative *= getMutantTpMultiplier();
+				case DIFFICULTY -> multiplicative *= getDifficultyTpMultiplier();
+			}
+		}
+		return Math.max(0.0, additive) * multiplicative;
+	}
+
+	public double getDifficultyTpMultiplier() {
+		if (getPlayerQuestData() == null) return 1.0;
+		var difficulty = getPlayerQuestData().getDifficulty();
+		return difficulty != null ? difficulty.tpMultiplier() : 1.0;
+	}
+
+	public int applyTpBoosts(TpSource source, int baseTp) {
+		if (baseTp <= 0) return baseTp;
+		double mult = getTpSourceMultiplier(source);
+		int result = (int) Math.max(0.0, baseTp * mult);
+		return result == 0 && mult > 0 ? 1 : result;
+	}
+
 	public int calculateTPGain(int baseTP) {
+		return calculateTPGain(baseTP, TpSource.STORY);
+	}
+
+	public int calculateTPGain(int baseTP, TpSource source) {
 		if (baseTP <= 0) return 0;
-		double total = baseTP * getTpTotalMultiplier();
+		double total = baseTP * getTpSourceMultiplier(source);
 		return (int) Math.max(0.0, total);
 	}
 
