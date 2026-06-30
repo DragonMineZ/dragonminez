@@ -84,7 +84,8 @@ public class TransformationsHelper {
 		boolean isAndroidGroup = "androidforms".equalsIgnoreCase(groupName);
 		boolean isGodGroup = formConfig.getFormType().equalsIgnoreCase("god");
 		boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
-		boolean requiresSaiyanTail = "oozaru".equalsIgnoreCase(formConfig.getGroupName());
+		boolean isOozaruGroup = "oozaru".equalsIgnoreCase(formConfig.getGroupName());
+		boolean hasTail = statsData.getCharacter().isHasSaiyanTail();
 
 		if (isAndroidGroup && !isAndroidUpgraded) {
 			return unlockedForms;
@@ -92,13 +93,11 @@ public class TransformationsHelper {
 		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) {
 			return unlockedForms;
 		}
-		if (requiresSaiyanTail && !statsData.getCharacter().isHasSaiyanTail()) {
-			return unlockedForms;
-		}
 
 		String formType = formConfig.getFormType();
 
 		for (FormConfig.FormData formData : formConfig.getForms().values()) {
+			if (isOozaruGroup && !hasTail && isTailOnlyOozaruForm(formData.getName())) continue;
 			if (hasFormSkillAccess(statsData, groupName, formType, formData.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, formData)) {
 				unlockedForms.add(formData);
 			}
@@ -217,9 +216,11 @@ public class TransformationsHelper {
 		if (group == null) return null;
 		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), group);
 		if (config == null) return null;
-		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return null;
+		boolean isOozaruGroup1 = config.getGroupName().contains("oozaru");
+		boolean hasTail1 = statsData.getCharacter().isHasSaiyanTail();
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
+				.filter(f -> !isOozaruGroup1 || hasTail1 || !isTailOnlyOozaruForm(f.getName()))
 				.filter(f -> hasFormSkillAccess(statsData, group, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
@@ -231,9 +232,12 @@ public class TransformationsHelper {
 		if (group == null) return -1;
 		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), group);
 		if (config == null) return -1;
-		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) return -1;
+
+		boolean isOozaruGroup2 = config.getGroupName().contains("oozaru");
+		boolean hasTail2 = statsData.getCharacter().isHasSaiyanTail();
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
+				.filter(f -> !isOozaruGroup2 || hasTail2 || !isTailOnlyOozaruForm(f.getName()))
 				.filter(f -> hasFormSkillAccess(statsData, group, config.getFormType(), f.getUnlockOnSkillLevel()) && meetsMasteryRequisite(statsData, f))
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
@@ -306,10 +310,13 @@ public class TransformationsHelper {
 			String groupKey = entry.getKey();
 			FormConfig config = ConfigManager.getFormGroup(race, groupKey);
 			if (config == null || !config.getFormType().toLowerCase().contains(formType)) continue;
-			if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) continue;
+
+			boolean isOozaruGroupBest = config.getGroupName().contains("oozaru");
+			boolean hasTailBest = statsData.getCharacter().isHasSaiyanTail();
 
 			final FormConfig formConfig = config;
 			int[] reqLevels = config.getForms().values().stream()
+					.filter(f -> !isOozaruGroupBest || hasTailBest || !isTailOnlyOozaruForm(f.getName()))
 					.filter(f -> meetsMasteryRequisite(statsData, f))
 					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
 					.filter(req -> hasFormSkillAccess(statsData, groupKey, formConfig.getFormType(), req))
@@ -373,16 +380,23 @@ public class TransformationsHelper {
 		boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
 		boolean isAndroidGroup = "androidforms".equalsIgnoreCase(group);
 		boolean isGodGroup = config.getFormType().toLowerCase().contains("god");
-		boolean requiresSaiyanTail = "oozaru".equalsIgnoreCase(config.getGroupName());
+		boolean isOozaruGroupNext = "oozaru".equalsIgnoreCase(config.getGroupName());
+		boolean hasTailNext = statsData.getCharacter().isHasSaiyanTail();
 
 		if (!isAndroidUpgraded && isAndroidGroup) return null;
 		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) return null;
-		if (requiresSaiyanTail && !statsData.getCharacter().isHasSaiyanTail()) return null;
 
 		String currentFormName = statsData.getCharacter().getActiveForm();
 		FormConfig.FormData nextFormConfig = null;
 		if (currentFormName == null || currentFormName.isEmpty()) {
-			nextFormConfig = config.getForm(statsData.getCharacter().getSelectedForm());
+			FormConfig.FormData selected = config.getForm(statsData.getCharacter().getSelectedForm());
+			if (selected != null && isOozaruGroupNext && !hasTailNext && isTailOnlyOozaruForm(selected.getName())) {
+				for (FormConfig.FormData f : config.getForms().values()) {
+					if (!isTailOnlyOozaruForm(f.getName())) { nextFormConfig = f; break; }
+				}
+			} else {
+				nextFormConfig = selected;
+			}
 		} else {
 			boolean foundCurrent = false;
 			for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
@@ -390,7 +404,7 @@ public class TransformationsHelper {
 					if (entry.getKey().equalsIgnoreCase(currentFormName)) foundCurrent = true;
 					continue;
 				}
-
+				if (isOozaruGroupNext && !hasTailNext && isTailOnlyOozaruForm(entry.getValue().getName())) continue;
 				nextFormConfig = entry.getValue();
 				break;
 			}
@@ -412,6 +426,10 @@ public class TransformationsHelper {
 
 	public static boolean isOozaruForm(FormConfig.FormData formData) {
 		return formData != null && SaiyanForms.OOZARU.equalsIgnoreCase(formData.getName());
+	}
+
+	private static boolean isTailOnlyOozaruForm(String formName) {
+		return SaiyanForms.OOZARU.equals(formName) || SaiyanForms.GOLDEN_OOZARU.equals(formName);
 	}
 
 	public static boolean shouldAutoChargeOozaru(Player player, StatsData statsData) {
