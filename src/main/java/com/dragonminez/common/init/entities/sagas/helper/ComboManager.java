@@ -42,10 +42,10 @@ public class ComboManager {
 
     private static void handleBasicCombo(DBSagasEntity user, LivingEntity target, int timer) {
         if (timer == 1) {
-            teleportAndHit(user, target, target.getLookAngle().normalize(), 1.5, 3.0F, MainSounds.CRITICO1.get(), 1.4F);
+            teleportAndHit(user, target, target.getLookAngle().normalize(), 1.5, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.4F, MainSounds.CRITICO1.get(), 1.4F);
         }
         if (timer == 12) {
-            teleportAndHit(user, target, target.getLookAngle().normalize().scale(-1), 1.5, 4.0F, MainSounds.CRITICO1.get(), 1.5F);
+            teleportAndHit(user, target, target.getLookAngle().normalize().scale(-1), 1.5, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.4F, MainSounds.CRITICO1.get(), 1.5F);
         }
         if (timer == 22) {
             Vec3 targetLook = target.getLookAngle().normalize();
@@ -54,13 +54,13 @@ public class ComboManager {
             user.setDeltaMovement(0, 0, 0);
         }
         if (timer == 31) {
-            finalBlow(user, target, 10.0F, 2.5);
+            finalBlow(user, target, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.4F, 2.5);
         }
     }
 
     private static void handleAirCombo(DBSagasEntity user, LivingEntity target, int timer) {
         if (timer == 1) {
-            teleportAndHit(user, target, target.getLookAngle().normalize(), 1.5, 4.0F, MainSounds.CRITICO1.get(), 1.2F);
+            teleportAndHit(user, target, target.getLookAngle().normalize(), 1.5, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.6F, MainSounds.CRITICO1.get(), 1.2F);
             target.setDeltaMovement(0, 1.2D, 0);
             target.hasImpulse = true;
         }
@@ -72,7 +72,7 @@ public class ComboManager {
         }
         if (timer == 20) {
             target.invulnerableTime = 0;
-            target.hurt(user.damageSources().mobAttack(user), 12.0F);
+            target.hurt(user.damageSources().mobAttack(user), (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.6F);
             user.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
             user.spawnPunchParticles(target);
             target.setDeltaMovement(0, -2.5D, 0);
@@ -92,7 +92,7 @@ public class ComboManager {
         }
         if (timer == 6) {
             user.spawnPunchParticles(target);
-            target.hurt(user.damageSources().mobAttack(user), 6.0F);
+            target.hurt(user.damageSources().mobAttack(user), (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.1F);
             user.setDeltaMovement(0, 0, 0);
             target.setDeltaMovement(0, 0, 0);
         }
@@ -102,7 +102,7 @@ public class ComboManager {
             user.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
         }
         if (timer == 17) {
-            finalBlow(user, target, 12.0F, 3.0);
+            finalBlow(user, target, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.1F, 3.0);
             user.setKiCharge(false);
         }
     }
