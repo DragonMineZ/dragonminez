@@ -904,9 +904,9 @@ final class QuestDefaults {
 	// ========================================================================================
 
 	private static void createMoviesSagaQuests(Path questsDir) {
-		JsonObject prevBuu = prevQuest("buu_saga", 35);
+		JsonObject prevSaiyan = prevQuest("saiyan_saga", 1);
 
-		writeSaga(questsDir.resolve("saga_movies"), "movies_saga", "saga_movies", prevBuu,
+		writeSaga(questsDir.resolve("saga_movies"), "movies_saga", "saga_movies", prevSaiyan,
 				step("movies", 1, "01_kamis_lookout_warning.json",
 						earthReq(25),
 						new JsonObject[]{

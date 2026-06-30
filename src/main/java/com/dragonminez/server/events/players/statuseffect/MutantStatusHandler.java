@@ -12,7 +12,7 @@ public class MutantStatusHandler implements IStatusEffectHandler {
 	public void handleStatusEffects(ServerPlayer player, StatsData data) {
 		if (data.getEffects().hasEffect(MutantManager.EFFECT_NAME)) {
 			if (!player.hasEffect(MainEffects.MUTANT.get())) {
-				player.addEffect(new MobEffectInstance(MainEffects.MUTANT.get(), -1, 0, false, false, true));
+				player.addEffect(new MobEffectInstance(MainEffects.MUTANT.get(), data.getEffects().getEffectDuration(MutantManager.EFFECT_NAME), 0, false, false, true));
 			}
 		} else player.removeEffect(MainEffects.MUTANT.get());
 	}
