@@ -368,7 +368,7 @@ public class GeneralServerConfig {
 		private Boolean majinReviveSkill = true;
 		private Integer majinAbsorptionAmount = 3;
 		private Double majinAbsorptionHealthRegen = 0.30;
-		private Double majinAbsorptionStatsCopy = 0.10;
+		private Double majinAbsorptionStatsCopy = 0.04;
 		private String[] majinAbsorptionBoosts = {"STR", "SKP", "PWR"};
 		private Boolean majinAbsorptionOnMobs = true;
 		private Integer majinReviveCooldownSeconds = 3600;
