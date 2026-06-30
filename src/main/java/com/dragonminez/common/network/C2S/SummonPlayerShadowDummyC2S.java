@@ -78,20 +78,51 @@ public class SummonPlayerShadowDummyC2S {
 		ctx.get().setPacketHandled(true);
 	}
 
-	public static void clearPlayerShadowDummy(ServerPlayer player,
-			com.dragonminez.common.stats.StatsData data) {
+	public static void clearPlayerShadowDummy(ServerPlayer player, StatsData data) {
 		if (!data.getStatus().hasActiveShadowDummy()) return;
 
-		java.util.UUID dummyUUID = data.getStatus().getActiveShadowDummyUUID();
-		for (net.minecraft.world.entity.Entity e : player.serverLevel().getAllEntities()) {
-			if (e.getUUID().equals(dummyUUID)) {
+		discardDummy(player.getServer(), data.getStatus().getActiveShadowDummyUUID());
+		restoreOwner(player, data);
+	}
+
+	private static void discardDummy(net.minecraft.server.MinecraftServer server, UUID dummyUUID) {
+		if (server == null || dummyUUID == null) return;
+		for (ServerLevel level : server.getAllLevels()) {
+			net.minecraft.world.entity.Entity e = level.getEntity(dummyUUID);
+			if (e != null) {
 				e.discard();
-				break;
+				return;
 			}
 		}
+	}
+
+	private static void restoreOwner(ServerPlayer player, StatsData data) {
 		removePenalties(player, data);
 		data.getStatus().setActiveShadowDummyUUID(null);
 		data.getStatus().setShadowDummyPercent(0);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+	}
+
+	public static void dismissByDummy(ShadowDummyEntity dummy) {
+		if (!dummy.getPersistentData().getBoolean(TAG_PLAYER_SHADOW)) {
+			dummy.discard();
+			return;
+		}
+		net.minecraft.server.MinecraftServer server = dummy.getServer();
+		ServerPlayer owner = null;
+		if (server != null) {
+			try {
+				owner = server.getPlayerList().getPlayer(UUID.fromString(dummy.getPersistentData().getString("dmz_quest_owner")));
+			} catch (Exception ignored) {}
+		}
+		if (owner != null) {
+			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, owner).orElse(null);
+			if (data != null && data.getStatus().hasActiveShadowDummy()
+					&& dummy.getUUID().equals(data.getStatus().getActiveShadowDummyUUID())) {
+				restoreOwner(owner, data);
+			}
+		}
+		dummy.discard();
 	}
 
 	public static void applyPenalties(ServerPlayer player, StatsData data, int pct) {
