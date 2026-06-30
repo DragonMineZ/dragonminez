@@ -30,7 +30,7 @@ public class FormModeHandler implements IActionModeHandler {
 			String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
 
 			int mastery = (int) data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
-			return (5 + Math.max(20, mastery));
+			return 5 + Math.min(20, (int)(mastery * 0.2));
 		}
 		return 0;
 	}
@@ -56,8 +56,9 @@ public class FormModeHandler implements IActionModeHandler {
 				double baseMastery = data.getCharacter().getFormMasteries().getMastery(nextGroup, nextForm.getName());
 				double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(data.getCharacter().getActiveStackFormGroup(), data.getCharacter().getActiveStackForm());
 				boolean meetsStackMastery = baseMastery >= nextForm.getStackOnMastery() && stackMastery >= activeStackData.getStackOnMastery();
+				boolean compatible = TransformationsHelper.areFormsCompatible(nextForm, nextGroup, activeStackData, data.getCharacter().getActiveStackFormGroup());
 
-				if (!isFormStackable || !isStackStackable || !meetsStackMastery) {
+				if (!isFormStackable || !isStackStackable || !meetsStackMastery || !compatible) {
 					data.getCharacter().clearActiveStackForm(player);
 					player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 					player.sendSystemMessage(Component.translatable("message.dragonminez.form.stack_removed"));
@@ -97,8 +98,10 @@ public class FormModeHandler implements IActionModeHandler {
 			if (!data.getCharacter().getFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
 				data.getCharacter().getFormsUsedBefore().putForm(group, nextForm.getName());
 			}
+			float[] resourceSnapshot = data.snapshotMultiplierResources();
 			data.getCharacter().recordPreviousForm();
 			data.getCharacter().setActiveForm(group, nextForm.getName());
+			data.restoreMultiplierGains(player, resourceSnapshot);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.refreshDimensions();
 

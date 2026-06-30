@@ -7,6 +7,8 @@ import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.config.TpBoost;
+import com.dragonminez.common.config.TpSource;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.character.*;
@@ -139,9 +141,9 @@ public class StatsData {
 		return Math.min(allowedByTotal, remainingStat);
 	}
 
-	private static final double K = 39_000.0;
-	private static final double BP_REF_VALUE = 5_000_000_000.0;
-	private static final double BP_CURVE_EXPONENT = 2.8;
+	private static final double K = 100.0;
+	private static final double BP_REF_VALUE = 1_200.0;
+	private static final double BP_CURVE_EXPONENT = 1.2;
 
 	public float getBattlePower() {
 		double exact = getBattlePowerExact();
@@ -151,17 +153,30 @@ public class StatsData {
 	public double getBattlePowerExact() {
 		if (status.isAndroidUpgraded()) return Float.MAX_VALUE;
 
-		double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
+		double str = stats.getStrength();
+		double skp = stats.getStrikePower();
+		double res = stats.getResistance();
+		double pwr = stats.getKiPower();
 
-		double rawPower = (stats.getStrength() * getStatScaling("STR") * getTotalMultiplier("STR")
-				+ stats.getStrikePower() * getStatScaling("SKP") * getTotalMultiplier("SKP")
-				+ stats.getResistance() * getStatScaling("DEF") * getTotalMultiplier("RES")
-				+ stats.getVitality() * getStatScaling("VIT") * getTotalMultiplier("VIT")
-				+ stats.getKiPower() * getStatScaling("PWR") * getTotalMultiplier("PWR")) * releaseMultiplier;
+		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(str), true);
+		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(str), false);
+		double multBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(skp), true);
+		double flatBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(skp), false);
+		double multBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(res), true);
+		double flatBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(res), false);
+		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(pwr), true);
+		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(pwr), false);
+
+		double rawPower =
+				((str + multBonusStr) * getStatScaling("STR") * getTotalMultiplier("STR")) + (flatBonusStr * getStatScaling("STR"))
+				+ ((skp + multBonusSkp) * getStatScaling("SKP") * getTotalMultiplier("SKP")) + (flatBonusSkp * getStatScaling("SKP"))
+				+ ((res + multBonusDef) * getStatScaling("DEF") * getTotalMultiplier("RES")) + (flatBonusDef * getStatScaling("DEF"))
+				+ ((pwr + multBonusPwr) * getStatScaling("PWR") * getTotalMultiplier("PWR")) + (flatBonusPwr * getStatScaling("PWR"));
 
 		if (Double.isNaN(rawPower) || rawPower <= 0) return 0.0;
 
-		double bp = BP_REF_VALUE * Math.pow(rawPower / K, BP_CURVE_EXPONENT);
+		double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
+		double bp = BP_REF_VALUE * Math.pow(rawPower / K, BP_CURVE_EXPONENT) * releaseMultiplier;
 
 		if (Double.isNaN(bp) || bp <= 0) return 0.0;
 		return bp;
@@ -688,24 +703,29 @@ public class StatsData {
 		};
 	}
 
+	public double getLoadDrainMultiplier() {
+		var g = ConfigManager.getServerConfig().getGravity();
+		return switch (GravityLogic.getTrainingZone(player)) {
+			case 1 -> g.getLoadDrainComfort();
+			case 2 -> g.getLoadDrainIdeal();
+			case 3 -> g.getLoadDrainHeavy();
+			case 4 -> g.getLoadDrainOverload();
+			default -> 1.0;
+		};
+	}
+
 	public double getAdjustedStaminaDrainMultiplier() {
-		if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 1.0;
-
-		var formData = character.getActiveFormData();
-		var stackFormData = character.getActiveStackFormData();
-		if (formData == null && stackFormData == null) return 1.0;
-
 		double baseDrainMult = 1.0;
-		if (character.hasActiveForm() && formData != null) {
-			baseDrainMult = formData.getStaminaDrainMultiplier();
-		}
-
 		double stackDrainMult = 1.0;
-		if (character.hasActiveStackForm() && stackFormData != null) {
-			stackDrainMult = stackFormData.getStaminaDrainMultiplier();
+
+		if (character.hasActiveForm() || character.hasActiveStackForm()) {
+			var formData = character.getActiveFormData();
+			var stackFormData = character.getActiveStackFormData();
+			if (character.hasActiveForm() && formData != null) baseDrainMult = formData.getStaminaDrainMultiplier();
+			if (character.hasActiveStackForm() && stackFormData != null) stackDrainMult = stackFormData.getStaminaDrainMultiplier();
 		}
 
-		return Math.max(0.001, baseDrainMult * stackDrainMult);
+		return Math.max(0.001, baseDrainMult * stackDrainMult * getLoadDrainMultiplier());
 	}
 
 	public double getAdjustedEnergyDrain() {
@@ -747,7 +767,7 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
 	}
 
 	public double getAdjustedStaminaDrain() {
@@ -789,7 +809,7 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
 	}
 
 	public double getAdjustedHealthDrain() {
@@ -831,7 +851,29 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain());
+		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
+	}
+
+	public float[] snapshotMultiplierResources() {
+		return new float[]{getMaxHealth(), getMaxEnergy(), getMaxStamina()};
+	}
+
+	public void restoreMultiplierGains(ServerPlayer player, float[] snapshot) {
+		if (snapshot == null || snapshot.length < 3) return;
+
+		StatsEvents.applyHealthBonus(player);
+
+		float newMaxHealth = getMaxHealth();
+		float healthDelta = newMaxHealth - snapshot[0];
+		if (healthDelta > 0) player.setHealth(Math.min(newMaxHealth, player.getHealth() + healthDelta));
+
+		float newMaxEnergy = getMaxEnergy();
+		float energyDelta = newMaxEnergy - snapshot[1];
+		if (energyDelta > 0) resources.setCurrentEnergy(Math.min(newMaxEnergy, resources.getCurrentEnergy() + energyDelta));
+
+		float newMaxStamina = getMaxStamina();
+		float staminaDelta = newMaxStamina - snapshot[2];
+		if (staminaDelta > 0) resources.setCurrentStamina(Math.min(newMaxStamina, resources.getCurrentStamina() + staminaDelta));
 	}
 
 	public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
@@ -1129,9 +1171,49 @@ public class StatsData {
 		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier() * getMutantTpMultiplier();
 	}
 
+	public double getTpSourceMultiplier(TpSource source) {
+		List<TpBoost> boosts = ConfigManager.getServerConfig().getGameplay().getTpGainBoosts(source);
+		if (boosts.isEmpty()) return 1.0;
+		double additive = 1.0;
+		double multiplicative = 1.0;
+		boolean gravityEnabled = ConfigManager.getServerConfig().getGameplay() == null
+				|| ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled();
+		for (TpBoost boost : boosts) {
+			switch (boost) {
+				case CLASS -> additive += (getTpClassMultiplier() - 1.0);
+				case RACIALSKILL -> additive += (getTpFrostDemonMultiplier() - 1.0);
+				case HTC -> additive += (getTpHTCMultiplier() - 1.0);
+				case GRAVITY -> { if (gravityEnabled) additive += (getTpGravityMultiplier() - 1.0); }
+				case WEIGHTS -> multiplicative *= getTpWeightBellMultiplier();
+				case GLOBAL -> multiplicative *= getTpGlobalMultiplier();
+				case POTION -> multiplicative *= getTpPotionEffectMultiplier();
+				case MUTANT -> multiplicative *= getMutantTpMultiplier();
+				case DIFFICULTY -> multiplicative *= getDifficultyTpMultiplier();
+			}
+		}
+		return Math.max(0.0, additive) * multiplicative;
+	}
+
+	public double getDifficultyTpMultiplier() {
+		if (getPlayerQuestData() == null) return 1.0;
+		var difficulty = getPlayerQuestData().getDifficulty();
+		return difficulty != null ? difficulty.tpMultiplier() : 1.0;
+	}
+
+	public int applyTpBoosts(TpSource source, int baseTp) {
+		if (baseTp <= 0) return baseTp;
+		double mult = getTpSourceMultiplier(source);
+		int result = (int) Math.max(0.0, baseTp * mult);
+		return result == 0 && mult > 0 ? 1 : result;
+	}
+
 	public int calculateTPGain(int baseTP) {
+		return calculateTPGain(baseTP, TpSource.STORY);
+	}
+
+	public int calculateTPGain(int baseTP, TpSource source) {
 		if (baseTP <= 0) return 0;
-		double total = baseTP * getTpTotalMultiplier();
+		double total = baseTP * getTpSourceMultiplier(source);
 		return (int) Math.max(0.0, total);
 	}
 

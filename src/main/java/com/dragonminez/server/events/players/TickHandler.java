@@ -11,7 +11,9 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.*;
+import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -25,6 +27,7 @@ import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.TransformationItemCostHelper;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
@@ -296,6 +299,7 @@ public class TickHandler {
 			if (tickCounter % 20 == 0) {
 				handleActionCharge(serverPlayer, data);
 				handleActiveFormDrains(serverPlayer, data);
+				enforceShadowDummyTether(serverPlayer, data);
 				GravityLogic.tick(serverPlayer);
 				GravityStateSync.sync(serverPlayer);
 				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
@@ -328,6 +332,8 @@ public class TickHandler {
             data.getStatus().setChargingKi(false);
             data.getStatus().setActionCharging(false);
             data.getResources().setActionCharge(0);
+
+            SummonPlayerShadowDummyC2S.clearPlayerShadowDummy(serverPlayer, data);
 
             data.getTechniques().clearTechniqueCharge();
             data.getTechniques().setTechniqueChargePercent(0.0f);
@@ -365,6 +371,21 @@ public class TickHandler {
 		UUID playerId = event.getEntity().getUUID();
 		forceKillGraceByPlayer.put(playerId, FORCED_KILL_GRACE_TICKS);
 		playerTickCounters.remove(playerId);
+	}
+
+	private static final double SHADOW_DUMMY_TETHER_SQR = 100.0 * 100.0;
+
+	private static void enforceShadowDummyTether(ServerPlayer player, StatsData data) {
+		if (!data.getStatus().hasActiveShadowDummy()) return;
+
+		Entity dummy = player.serverLevel().getEntity(data.getStatus().getActiveShadowDummyUUID());
+		if (dummy instanceof ShadowDummyEntity shadow) {
+			if (player.distanceToSqr(shadow) > SHADOW_DUMMY_TETHER_SQR) {
+				SummonPlayerShadowDummyC2S.dismissByDummy(shadow);
+			}
+		} else {
+			SummonPlayerShadowDummyC2S.clearPlayerShadowDummy(player, data);
+		}
 	}
 
 	private static void clearExpiredKnockdown(StatsData data) {
@@ -559,6 +580,7 @@ public class TickHandler {
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
 				player.refreshDimensions();
+				player.sendSystemMessage(Component.translatable("message.dragonminez.form.drained_ki"), true);
 			}
 		}
 	}
@@ -912,7 +934,8 @@ public class TickHandler {
 		boolean hasActiveForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 
-		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()) {
+		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()
+				&& !SaiyanForms.SUPER_SAIYAN_4.equals(data.getCharacter().getActiveForm())) {
 			data.getCharacter().clearActiveForm(player);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
@@ -994,6 +1017,11 @@ public class TickHandler {
 				TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 				player.refreshDimensions();
+
+				String drainMessage = !hasEnoughEnergy ? "message.dragonminez.form.drained_ki"
+						: !hasEnoughStamina ? "message.dragonminez.form.drained_stamina"
+						: "message.dragonminez.form.drained_health";
+				player.sendSystemMessage(Component.translatable(drainMessage), true);
 			}
 		}
 	}

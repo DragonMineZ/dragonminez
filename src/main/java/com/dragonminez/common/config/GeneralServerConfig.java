@@ -25,9 +25,9 @@ public class GeneralServerConfig {
 	private GameplayConfig gameplay = new GameplayConfig();
 	private RacialSkillsConfig racialSkills = new RacialSkillsConfig();
 	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
-	private StorageConfig storage = new StorageConfig();
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
+	private StorageConfig storage = new StorageConfig();
 
 	@Getter
 	@NoArgsConstructor
@@ -121,6 +121,27 @@ public class GeneralServerConfig {
 				"dragonminez:invencible_armor_helmet",
 				"dragonminez:invencible_blue_armor_helmet"
 		));
+
+		private Map<TpSource, List<TpBoost>> tpGainBoosts = defaultTpGainBoosts();
+
+		private static Map<TpSource, List<TpBoost>> defaultTpGainBoosts() {
+			Map<TpSource, List<TpBoost>> map = new LinkedHashMap<>();
+			for (TpSource source : TpSource.values()) {
+				List<TpBoost> boosts = new ArrayList<>(Arrays.asList(
+						TpBoost.CLASS, TpBoost.RACIALSKILL, TpBoost.HTC, TpBoost.GRAVITY,
+						TpBoost.WEIGHTS, TpBoost.GLOBAL, TpBoost.POTION, TpBoost.MUTANT
+				));
+				if (source == TpSource.STORY) boosts.add(TpBoost.DIFFICULTY);
+				map.put(source, boosts);
+			}
+			return map;
+		}
+
+		public List<TpBoost> getTpGainBoosts(TpSource source) {
+			if (tpGainBoosts == null) return Arrays.asList(TpBoost.values());
+			List<TpBoost> boosts = tpGainBoosts.get(source);
+			return boosts != null ? boosts : List.of();
+		}
 
 		public Integer getReviveCooldownSeconds() {
 			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
@@ -620,6 +641,11 @@ public class GeneralServerConfig {
 		private Double tpHeavyMultiplier = 2.5;
 		private Double maxWeightPenalty = 0.6;
 
+		private Double loadDrainComfort = 1.15;
+		private Double loadDrainIdeal = 1.3;
+		private Double loadDrainHeavy = 1.5;
+		private Double loadDrainOverload = 2.0;
+
 		private Double consumptionPerGravity = 0.04;
 
 		private Integer deviceMinRoomSize = 5;
@@ -797,6 +823,22 @@ public class GeneralServerConfig {
 			return Math.max(0.0, Math.min(value, 1.0));
 		}
 
+		public Double getLoadDrainComfort() {
+			return Math.max(0.0, loadDrainComfort != null ? loadDrainComfort : 1.15);
+		}
+
+		public Double getLoadDrainIdeal() {
+			return Math.max(0.0, loadDrainIdeal != null ? loadDrainIdeal : 1.3);
+		}
+
+		public Double getLoadDrainHeavy() {
+			return Math.max(0.0, loadDrainHeavy != null ? loadDrainHeavy : 1.5);
+		}
+
+		public Double getLoadDrainOverload() {
+			return Math.max(0.0, loadDrainOverload != null ? loadDrainOverload : 2.0);
+		}
+
 		public Double getTpGravityBonusPerGravity() {
 			return clampNonNeg(tpGravityBonusPerGravity, 0.05);
 		}
@@ -854,6 +896,7 @@ public class GeneralServerConfig {
 		private Double masteryGainMultiplier = 1.50;
 		private Double powerBonusReductionNoSkill = 0.67;
 		private Double powerBonusBoostWithSkill = 0.33;
+		private Boolean keepMutantOnDeath = false;
 
 		public Boolean getEnabled() {
 			return enabled == null || enabled;
@@ -895,6 +938,10 @@ public class GeneralServerConfig {
 
 		public Double getPowerBonusBoostWithSkill() {
 			return Math.max(0.0, powerBonusBoostWithSkill != null ? powerBonusBoostWithSkill : 0.33);
+		}
+
+		public Boolean getKeepMutantOnDeath() {
+			return keepMutantOnDeath != null && keepMutantOnDeath;
 		}
 	}
 }

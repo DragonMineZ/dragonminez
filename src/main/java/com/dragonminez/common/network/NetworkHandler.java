@@ -502,4 +502,8 @@ public class NetworkHandler {
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
 		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
 	}
+
+	public static <MSG> void sendToTrackingEntity(MSG message, Entity entity) {
+		INSTANCE.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), message);
+	}
 }

@@ -1,11 +1,14 @@
 package com.dragonminez.mixin.client;
 
+import com.dragonminez.client.animation.IPlayerAnimatable;
+import com.dragonminez.client.collision.CollisionHelper;
 import com.dragonminez.client.collision.TargetFinder;
 import com.dragonminez.client.events.DMZClientEvent;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.player.AttackHand;
 import com.dragonminez.common.combat.util.Minecraft_DMZ;
+import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.CombatAttackRequestC2S;
 import com.dragonminez.common.stats.StatsCapability;
@@ -13,9 +16,12 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -43,6 +49,12 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Unique private int itemUseCooldown = 0;
 	@Unique private boolean isAttacking = false;
 	@Unique private boolean isAwaitingUpswing = false;
+
+	@Unique private static final float UPSWING_IMPACT_BIAS = 0.4F;
+	@Unique private static final int BLOCK_MINE_ATTACK_GRACE = 5;
+	@Unique private int lastBlockMineTick = -100;
+
+	@Unique private static final double BLOCK_MINE_TARGET_BIAS = 0.25D;
 
 	@Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$startAttack(CallbackInfoReturnable<Boolean> cir) {
@@ -72,15 +84,44 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		isAwaitingUpswing = true;
 		upswingStack = hand;
 
-		int attackCooldownTicks = Math.round(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
-		upswingTicks = (int) Math.round(attackCooldownTicks * hand.upswingRate());
-		lastSwingDuration = attackCooldownTicks;
+		float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
+		int swingAnimTicks = meleeAnimTicks(meleeAnimSpeed(cooldownTicks));
+		upswingTicks = Math.max(1, Math.round(swingAnimTicks * (float) hand.upswingRate() * UPSWING_IMPACT_BIAS));
+		lastSwingDuration = swingAnimTicks;
 		lastAttacked = 0;
 
 		((MinecraftAccessor) this).setAttackCooldown(10000);
 
 		var event = new DMZClientEvent.PlayerAttackStart(player, hand);
 		MinecraftForge.EVENT_BUS.post(event);
+
+		playLocalAttackFeedback(hand);
+	}
+
+	@Unique
+	private float meleeAnimSpeed(float cooldownTicks) {
+		float speed = 12.0F / Math.max(cooldownTicks, 0.001F);
+		return Math.max(0.55F, Math.min(1.35F, speed));
+	}
+
+	@Unique
+	private int meleeAnimTicks(float animSpeed) {
+		return Math.max(8, Math.round(12.0F / Math.max(animSpeed, 0.1F)));
+	}
+
+	@Unique
+	private void playLocalAttackFeedback(AttackHand hand) {
+		if (hand.attack() == null) return;
+
+		float animSpeedMultiplier = meleeAnimSpeed(PlayerAttackHelper.getAttackCooldownTicksCapped(player));
+
+		((IPlayerAnimatable) player).dragonminez$playMeleeAnimation(hand.attack().animation(), hand.isOffHand(), animSpeedMultiplier);
+
+		var swingSound = hand.attack().swingSound();
+		SoundEvent soundEvent = SoundHelper.resolveSoundEvent(swingSound);
+		if (soundEvent != null) {
+			player.level().playLocalSound(player.getX(), player.getY(), player.getZ(), soundEvent, SoundSource.PLAYERS, swingSound.volume(), SoundHelper.computePitch(swingSound), false);
+		}
 	}
 
 	@Inject(method = "continueAttack", at = @At("HEAD"), cancellable = true)
@@ -97,8 +138,13 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		var hand = PlayerAttackHelper.getCurrentAttack(player, comboCount);
 		boolean canUseCombat = hand != null && PlayerAttackHelper.canAttack(player) && shouldUseCombatAttack(hand);
 
-		if (!canUseCombat) return;
+		if (!canUseCombat) {
+			if (hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) lastBlockMineTick = player.tickCount;
+			return;
+		}
 		ci.cancel();
+
+		if (player.tickCount - lastBlockMineTick <= BLOCK_MINE_ATTACK_GRACE) return;
 
 		float cooldownProgress = player.getAttackStrengthScale(0.5F);
 		if (cooldownProgress >= 1.0F && !isAttacking && !isAwaitingUpswing) this.startAttack();
@@ -184,18 +230,36 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	}
 
 	@Unique
-	private boolean hasTargetsForAttack(AttackHand hand) {
-		if (hasTargetsInReach()) return true;
+	private List<Entity> collectAttackTargets(AttackHand hand) {
+		if (hasTargetsInReach()) return targetsInReach;
 		var mcDMZ = (Minecraft_DMZ) this;
 		var cursorTarget = mcDMZ.getCursorTarget();
 		var attackRange = PlayerAttackHelper.getEffectiveAttackRange(player, hand.attributes().attackRange());
-		TargetFinder.TargetResult targetResult = TargetFinder.findAttackTargetResult(player, cursorTarget, hand.attack(), attackRange);
-		return !targetResult.entities.isEmpty();
+		return TargetFinder.findAttackTargetResult(player, cursorTarget, hand.attack(), attackRange).entities;
+	}
+
+	@Unique
+	private boolean hasTargetsForAttack(AttackHand hand) {
+		return !collectAttackTargets(hand).isEmpty();
+	}
+
+	@Unique
+	private boolean hasTargetInFrontOfBlock(AttackHand hand) {
+		List<Entity> targets = collectAttackTargets(hand);
+		if (targets.isEmpty()) return false;
+
+		Vec3 eye = player.getEyePosition();
+		double blockDistance = hitResult.getLocation().distanceTo(eye);
+		for (Entity target : targets) {
+			if (CollisionHelper.distance(eye, target.getBoundingBox()) + BLOCK_MINE_TARGET_BIAS < blockDistance) return true;
+		}
+		return false;
 	}
 
 	@Unique
 	private boolean shouldUseCombatAttack(AttackHand hand) {
-		return hitResult == null || hitResult.getType() != HitResult.Type.BLOCK || hasTargetsForAttack(hand);
+		if (hitResult == null || hitResult.getType() != HitResult.Type.BLOCK) return true;
+		return hasTargetInFrontOfBlock(hand);
 	}
 
 	@Override

@@ -87,6 +87,7 @@ public class FormConfig {
 		private Double maxCostMultiplier = 0.5;
 		private Double maxStatsMultiplier = 1.25;
 		private String formRequisite = "";
+		private String formRequisiteType = "all";
 		private Double unlockOnMastery = 0.0;
 		private Double stackOnMastery = 0.0;
 		private Double instantTransformOnMastery = 40.0;
@@ -188,6 +189,10 @@ public class FormConfig {
 
 		public String getFormRequisite() {
 			return formRequisite != null ? formRequisite.trim() : "";
+		}
+
+		public String getFormRequisiteType() {
+			return "any".equalsIgnoreCase(formRequisiteType != null ? formRequisiteType.trim() : "") ? "any" : "all";
 		}
 
 		public Double getUnlockOnMastery() {

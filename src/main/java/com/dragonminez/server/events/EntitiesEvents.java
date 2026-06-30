@@ -41,6 +41,7 @@ import java.util.UUID;
 public class EntitiesEvents {
 
 	private static final double QUEST_TETHER_RANGE_SQR = 31250.0;
+	private static final double SHADOW_DUMMY_TETHER_SQR = 100.0 * 100.0;
 
 	@SubscribeEvent
 	public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
@@ -154,6 +155,14 @@ public class EntitiesEvents {
 			}
 
 			ServerPlayer player = server.getPlayerList().getPlayer(ownerUUID);
+
+			if (entity instanceof ShadowDummyEntity shadow && entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+				if (player == null || player.level() != entity.level() || entity.distanceToSqr(player) > SHADOW_DUMMY_TETHER_SQR) {
+					SummonPlayerShadowDummyC2S.dismissByDummy(shadow);
+				}
+				return;
+			}
+
 			if (player == null || player.level() != entity.level() || entity.distanceToSqr(player) > QUEST_TETHER_RANGE_SQR) {
 				entity.discard();
 			}
@@ -173,19 +182,8 @@ public class EntitiesEvents {
 			String ownerUUID = entity.getPersistentData().getString("dmz_quest_owner");
 			if (!ownerUUID.equals(uuidStr)) continue;
 
-			if (entity instanceof ShadowDummyEntity && entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
-				ServerPlayer owner = server.getPlayerList().getPlayer(playerUUID);
-				if (owner != null) {
-					StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(data -> {
-						if (data.getStatus().hasActiveShadowDummy() && data.getStatus().getActiveShadowDummyUUID().equals(entity.getUUID())) {
-							SummonPlayerShadowDummyC2S.removePenalties(owner, data);
-							data.getStatus().setActiveShadowDummyUUID(null);
-							data.getStatus().setShadowDummyPercent(0);
-							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
-						}
-					});
-				}
-				entity.discard();
+			if (entity instanceof ShadowDummyEntity shadow && shadow.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+				SummonPlayerShadowDummyC2S.dismissByDummy(shadow);
 				continue;
 			}
 

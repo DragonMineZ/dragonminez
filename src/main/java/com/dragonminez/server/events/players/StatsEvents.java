@@ -344,7 +344,7 @@ public class StatsEvents {
 					addAlignment[0] = true;
 				else removeAlignment[0] = true;
 				if (victimData.getStatus().isHasCreatedCharacter()) {
-					if (victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME) && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
+					if (!ConfigManager.getServerConfig().getMutant().getKeepMutantOnDeath() && victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME) && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
 					victimData.getEffects().removeAllEffects();
 					victimData.getSecondaryStatEffects().clear();
 					victimData.getStatus().setChargingKi(false);
@@ -361,39 +361,12 @@ public class StatsEvents {
 		if (addsAlignment(event.getEntity())) addAlignment[0] = true;
 
 		if (event.getEntity() instanceof ShadowDummyEntity dummyEntity && attacker instanceof ServerPlayer killer) {
-			StatsProvider.get(StatsCapability.INSTANCE, killer).ifPresent(killerData -> {
-				killerData.getStatus().setShadowDummyKillCount(killerData.getStatus().getShadowDummyKillCount() + 1);
-
-				if (dummyEntity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
-					String ownerStr = dummyEntity.getPersistentData().getString("dmz_kimanip_shadow");
-					if (killer.getStringUUID().equals(ownerStr)
-							&& killerData.getStatus().hasActiveShadowDummy()
-							&& killerData.getStatus().getActiveShadowDummyUUID().equals(dummyEntity.getUUID())) {
-						SummonPlayerShadowDummyC2S.removePenalties(killer, killerData);
-						killerData.getStatus().setActiveShadowDummyUUID(null);
-						killerData.getStatus().setShadowDummyPercent(0);
-						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(killer), killer);
-					}
-				}
-			});
+			StatsProvider.get(StatsCapability.INSTANCE, killer).ifPresent(killerData ->
+					killerData.getStatus().setShadowDummyKillCount(killerData.getStatus().getShadowDummyKillCount() + 1));
 		}
 
 		if (event.getEntity() instanceof ShadowDummyEntity dummyEntity && dummyEntity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
-			String ownerStr = dummyEntity.getPersistentData().getString("dmz_quest_owner");
-			try {
-				java.util.UUID ownerUUID = java.util.UUID.fromString(ownerStr);
-				ServerPlayer owner = dummyEntity.getServer().getPlayerList().getPlayer(ownerUUID);
-				if (owner != null) {
-					StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(ownerData -> {
-						if (ownerData.getStatus().hasActiveShadowDummy() && ownerData.getStatus().getActiveShadowDummyUUID().equals(dummyEntity.getUUID())) {
-							SummonPlayerShadowDummyC2S.removePenalties(owner, ownerData);
-							ownerData.getStatus().setActiveShadowDummyUUID(null);
-							ownerData.getStatus().setShadowDummyPercent(0);
-							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
-						}
-					});
-				}
-			} catch (Exception ignored) {}
+			SummonPlayerShadowDummyC2S.dismissByDummy(dummyEntity);
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {

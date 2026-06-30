@@ -28,6 +28,7 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> DOUBLEDASH_CD = EFFECTS.register("doubledash_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> TELEPORT_CD = EFFECTS.register("teleport_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> FUSED = EFFECTS.register("fused", DMZEffect::new);
+	public static final RegistryObject<MobEffect> FUSION_CD = EFFECTS.register("fusion_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> SAIYAN_PASSIVE = EFFECTS.register("saiyan_passive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> BIOANDROID_PASSIVE = EFFECTS.register("bioandroid_passive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> MAJIN_REVIVE = EFFECTS.register("majin_revive", DMZEffect::new);

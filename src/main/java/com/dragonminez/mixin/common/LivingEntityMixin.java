@@ -69,7 +69,7 @@ public abstract class LivingEntityMixin implements IBattlePower, IHealthFixable,
 			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) attackDamage = this.getAttributes().getValue(Attributes.ATTACK_DAMAGE);
 			this.battlePower = (int) (this.getMaxHealth() + attackDamage * 5);
 		}
-		return this.battlePower;
+		return Math.max(5, this.battlePower);
 	}
 
 	@Override

@@ -168,12 +168,15 @@ public class FusionLogic {
 			CompoundTag original = leaderData.getStatus().getOriginalAppearance();
 			if (original != null && !original.isEmpty()) leaderData.getCharacter().loadAppearance(original);
 
-			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
+			int fusionCdTicks = ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20;
+			boolean appliesCd = "METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath;
+			if (appliesCd) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, fusionCdTicks);
 
 			clearFusionState(leaderData);
 
 			if (leaderRef != null) {
 				if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
+				if (appliesCd) leaderRef.addEffect(new MobEffectInstance(MainEffects.FUSION_CD.get(), fusionCdTicks, 0, false, false, true));
 				PartyManager.endFusionParty(leaderRef);
 				refreshNames(leaderRef);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
@@ -181,7 +184,9 @@ public class FusionLogic {
 		}
 
 		if (partnerData != null) {
-			if ("METAMORU".equals(partnerData.getStatus().getFusionType())) partnerData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
+			int fusionCdTicks = ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20;
+			boolean appliesCd = "METAMORU".equals(partnerData.getStatus().getFusionType());
+			if (appliesCd) partnerData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, fusionCdTicks);
 
 			clearFusionState(partnerData);
 
@@ -189,6 +194,7 @@ public class FusionLogic {
 				partnerRef.stopRiding();
 				partnerRef.setGameMode(GameType.SURVIVAL);
 				if (partnerRef.hasEffect(MainEffects.FUSED.get())) partnerRef.removeEffect(MainEffects.FUSED.get());
+				if (appliesCd) partnerRef.addEffect(new MobEffectInstance(MainEffects.FUSION_CD.get(), fusionCdTicks, 0, false, false, true));
 				PartyManager.endFusionParty(partnerRef);
 				refreshNames(partnerRef);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);

@@ -398,7 +398,9 @@ public abstract class AbstractKiProjectile extends Projectile {
 
         var targetStatsOpt = StatsProvider.get(StatsCapability.INSTANCE, living).resolve();
         if (targetStatsOpt.isPresent()) {
-            targetStatsOpt.get().getSecondaryStatEffects().apply(affected.name(), factor, durationTicks);
+            var effects = targetStatsOpt.get().getSecondaryStatEffects();
+            if (isBuff && effects.hasOtherActiveBuff(affected.name())) return;
+            effects.apply(affected.name(), factor, durationTicks);
         } else if (!isBuff && EntityStatDebuffs.isSupported(affected.name())) {
             EntityStatDebuffs.applyDebuff(living, affected.name(), factor, durationTicks);
         }
@@ -439,6 +441,14 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     @Override
     public void tick() {
+        if (!this.level().isClientSide) {
+            Entity owner = this.getOwner();
+            if (owner != null && owner.level() != this.level()) {
+                this.discard();
+                return;
+            }
+        }
+
         super.tick();
         this.applyHomingSteering();
         Vec3 movement = this.getDeltaMovement();

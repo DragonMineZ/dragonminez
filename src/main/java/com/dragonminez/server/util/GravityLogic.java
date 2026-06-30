@@ -172,23 +172,28 @@ public class GravityLogic {
 		return ((boostedTotal - initialStats) / 6.0) + 1.0;
 	}
 
+	private static double trainingGravityFactor(Player player) {
+		double gravity = getTrainingGravityMultiplier(player);
+		return Math.max(0.0001, 1.0 + (gravity - 1.0) * cfg().getGravitySensitivity());
+	}
+
+	public static int getEffectiveWeight(Player player) {
+		return (int) Math.round(getTotalWeight(player) * trainingGravityFactor(player));
+	}
+
 	public static int getIdealWeight(Player player) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		if (!config.getTpEnabled()) return 0;
-		double gravity = getTrainingGravityMultiplier(player);
-		if (gravity <= 0.0) return 0;
 		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-			double relativeLevel = computeRelativeLevel(data);
-			double gravityFactor = Math.max(0.0001, 1.0 + (gravity - 1.0) * config.getGravitySensitivity());
-			double ideal = relativeLevel / (config.getTpIdealBaseDivisor() * gravityFactor);
-			return (int) Math.max(0, Math.round(ideal));
+			double capacity = computeRelativeLevel(data) / config.getTpIdealBaseDivisor();
+			return (int) Math.max(0, Math.round(capacity));
 		}).orElse(0);
 	}
 
 	public static double getLoadRatio(Player player) {
 		int ideal = getIdealWeight(player);
 		if (ideal <= 0) return 0.0;
-		return (double) getTotalWeight(player) / ideal;
+		return (double) getEffectiveWeight(player) / ideal;
 	}
 
 	public static int getTrainingZone(Player player) {
@@ -196,7 +201,7 @@ public class GravityLogic {
 		int ideal = getIdealWeight(player);
 		if (ideal <= 0) return 0;
 		GeneralServerConfig.GravityConfig config = cfg();
-		double r = (double) getTotalWeight(player) / ideal;
+		double r = (double) getEffectiveWeight(player) / ideal;
 		if (r < config.getTpIdealRatioLow()) return 1;
 		if (r <= config.getTpIdealRatioHigh()) return 2;
 		if (r < config.getTpOverloadHardRatio()) return 3;
@@ -209,7 +214,7 @@ public class GravityLogic {
 		if (getTotalWeight(player) <= 0) return 1.0;
 		int ideal = getIdealWeight(player);
 		if (ideal <= 0) return 1.0;
-		return weightTpMultiplierForRatio((double) getTotalWeight(player) / ideal, config);
+		return weightTpMultiplierForRatio((double) getEffectiveWeight(player) / ideal, config);
 	}
 
 	private static double weightTpMultiplierForRatio(double r, GeneralServerConfig.GravityConfig config) {
@@ -237,7 +242,7 @@ public class GravityLogic {
 		if (getTotalWeight(player) <= 0) return 0.0;
 		int ideal = getIdealWeight(player);
 		if (ideal <= 0) return 0.0;
-		double r = (double) getTotalWeight(player) / ideal;
+		double r = (double) getEffectiveWeight(player) / ideal;
 		double idealHigh = config.getTpIdealRatioHigh();
 		double overloadHard = config.getTpOverloadHardRatio();
 		if (r <= idealHigh) return 0.0;

@@ -225,7 +225,9 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> SUBARU_NATSUKI_ARMOR = fullArmorNoHelmetSet("subaru_natsuki_armor", "subaru_natsuki");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> SUPER_BUU_ARMOR = fullArmorNoHelmetSet("super_buu_armor", "super_buu");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> THRAGG_ARMOR = fullArmorNoHelmetSet("thragg_armor", "thragg");
-	//TIEN
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> GILGAMESH_ARMOR = fullArmorNoHelmetSet("gilgamesh_armor", "gilgamesh");
+
+    //TIEN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TIEN_ARMOR = fullArmorNoHelmetSet("tien_armor", "tenshinhan_armor");
 	//TRUNKS KID DBZ
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TRUNKS_KID_ARMOR = fullArmorNoHelmetSet("trunks_kid_armor", "trunks_gi");

@@ -14,7 +14,7 @@ public class MajinStatusHandler implements IStatusEffectHandler {
                 player.addEffect(
                         new MobEffectInstance(
                                 MainEffects.MAJIN.get(),
-                                -1,
+                                data.getEffects().getEffectDuration("majin"),
                                 0,
                                 false,
                                 false,

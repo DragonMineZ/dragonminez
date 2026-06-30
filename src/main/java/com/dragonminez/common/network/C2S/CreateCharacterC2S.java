@@ -156,6 +156,7 @@ public class CreateCharacterC2S {
 					data.getCharacter().setSelectedStackFormGroup(TransformationsHelper.getGroupWithFirstAvailableStackForm(data));
 					data.getCharacter().setSelectedStackForm(TransformationsHelper.getFirstAvailableStackForm(data));
 					player.refreshDimensions();
+					player.setHealth(player.getMaxHealth());
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					MutantManager.runLottery(player.getServer());
 				}

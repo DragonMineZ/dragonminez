@@ -20,6 +20,8 @@ public final class ClientGravityState {
 	@Getter
 	private static volatile int totalWeight = 0;
 	@Getter
+	private static volatile int effectiveWeight = 0;
+	@Getter
 	private static volatile float loadRatio = 0.0f;
 	@Getter
 	private static volatile float weightTpMult = 1.0f;
@@ -30,7 +32,7 @@ public final class ClientGravityState {
 
 	public static void update(float machineGravity, float environmentalGravity, float netGravity,
 							  float statMult, float tpGravityMult, int idealWeight, int totalWeight,
-							  float loadRatio, float weightTpMult, int zone) {
+							  int effectiveWeight, float loadRatio, float weightTpMult, int zone) {
 		ClientGravityState.machineGravity = Math.max(0.0f, machineGravity);
 		ClientGravityState.environmentalGravity = environmentalGravity;
 		ClientGravityState.netGravity = netGravity;
@@ -38,6 +40,7 @@ public final class ClientGravityState {
 		ClientGravityState.tpGravityMult = tpGravityMult;
 		ClientGravityState.idealWeight = idealWeight;
 		ClientGravityState.totalWeight = totalWeight;
+		ClientGravityState.effectiveWeight = effectiveWeight;
 		ClientGravityState.loadRatio = loadRatio;
 		ClientGravityState.weightTpMult = weightTpMult;
 		ClientGravityState.zone = zone;

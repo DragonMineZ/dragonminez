@@ -53,6 +53,7 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_DEEPSLATE_GOLD.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_REDSTONE.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_EMERALD.get())
+				.add(MainBlocks.FUEL_GENERATOR.get())
 				.add(MainBlocks.GRAVITY_DEVICE.get());
 
 		this.tag(BlockTags.NEEDS_DIAMOND_TOOL)

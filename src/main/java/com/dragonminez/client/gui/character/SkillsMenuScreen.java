@@ -12,6 +12,11 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.Saga;
+import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Status;
@@ -671,6 +676,39 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		return Integer.MAX_VALUE;
 	}
 
+	private List<Component> getQuestsGrantingForm(String formType, int requiredLevel) {
+		List<Component> refs = new ArrayList<>();
+		if (formType == null || formType.isEmpty()) return refs;
+
+		for (Saga saga : QuestRegistry.getClientSagas().values()) {
+			for (Quest quest : saga.getQuests()) {
+				if (!questGrantsFormAtLevel(quest, formType, requiredLevel)) continue;
+				Component ref = tr("gui.dragonminez.skills.quest_ref", tr(saga.getName()), quest.getId());
+				if (refs.stream().noneMatch(r -> r.getString().equals(ref.getString()))) refs.add(ref);
+			}
+		}
+
+		for (Quest quest : QuestRegistry.getClientQuests().values()) {
+			if (quest.getType() == Quest.QuestType.SAGA) continue;
+			if (quest.getTitle() == null || quest.getTitle().isEmpty()) continue;
+			if (!questGrantsFormAtLevel(quest, formType, requiredLevel)) continue;
+			Component ref = tr(quest.getTitle());
+			if (refs.stream().noneMatch(r -> r.getString().equals(ref.getString()))) refs.add(ref);
+		}
+		return refs;
+	}
+
+	private boolean questGrantsFormAtLevel(Quest quest, String formType, int requiredLevel) {
+		for (QuestReward reward : quest.getRewards()) {
+			if (reward instanceof SkillReward skillReward
+					&& formType.equalsIgnoreCase(skillReward.getSkill())
+					&& skillReward.getLevel() == requiredLevel) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (isNotAnimating()) this.renderBackground(graphics);
@@ -788,9 +826,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			int targetLevel = Math.max(0, requiredLevel - 1);
 			int cost = getUpgradeCostForTargetLevel(node.formType, targetLevel);
-			boolean isStack = ConfigManager.getSkillsConfig().getStackSkills().contains(node.formType.toLowerCase(Locale.ROOT));
 
-			if (!unlocked && canPurchaseLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost && !isStack) {
+			if (!unlocked && canPurchaseLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
 				int exX = nx + size - (int) (6 * formsZoom);
 				int exY = ny - (int) (10 * formsZoom);
 
@@ -829,8 +866,15 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			int cost = getUpgradeCostForTargetLevel(hovered.formType, targetLevel);
 
 			if (unlocked) lines.add(Component.translatable("gui.dragonminez.skills.purchased").withStyle(ChatFormatting.GREEN));
-			else if (cost == -1 || cost == Integer.MAX_VALUE) lines.add(Component.translatable("gui.dragonminez.skills.priceless").withStyle(ChatFormatting.DARK_RED));
-			else if (!isStack) {
+			else if (cost == -1 || cost == Integer.MAX_VALUE) {
+				List<Component> questTitles = getQuestsGrantingForm(hovered.formType, requiredLevel);
+				if (questTitles.isEmpty()) lines.add(Component.translatable("gui.dragonminez.skills.priceless").withStyle(ChatFormatting.DARK_RED));
+				else {
+					lines.add(Component.translatable("gui.dragonminez.skills.unlocked_by_quest").withStyle(ChatFormatting.LIGHT_PURPLE));
+					for (Component title : questTitles) lines.add(title.copy().withStyle(ChatFormatting.GRAY));
+				}
+			}
+			else {
 				lines.add(Component.translatable("gui.dragonminez.quests.rewards.tps", cost).withStyle(ChatFormatting.AQUA));
 				if (canPurchaseLevel && statsData.getResources().getTrainingPoints() >= cost) lines.add(Component.translatable("gui.dragonminez.skills.doubleclick_buy").withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC));
 			}

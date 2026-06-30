@@ -7,7 +7,9 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
+import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
@@ -651,23 +653,32 @@ public class CombatEvent {
 					if (!Float.isFinite(finalDamage) || finalDamage < 0.0f) finalDamage = 0.0f;
 
 					if (victim.getHealth() - finalDamage <= 0) {
-						if (event.getSource().getEntity() instanceof Player attacker) {
+						Entity damageSource = event.getSource().getEntity();
+						boolean shadowKnockdown = damageSource instanceof ShadowDummyEntity dummy
+								&& dummy.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW);
+						boolean friendlyKnockdown = false;
+						if (damageSource instanceof Player attacker) {
 							boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
 							boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
 									.map(data -> data.getStatus().isFriendlyFistEnabled())
 									.orElse(false);
+							friendlyKnockdown = isSamePartyPvp || isFriendlyFist;
+						}
 
-							if (isSamePartyPvp || isFriendlyFist) {
-								finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
+						if (shadowKnockdown || friendlyKnockdown) {
+							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
 
-								stats.getStatus().setKnockedDown(true);
-								stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20);
-								stats.getCharacter().clearActiveForm();
-								stats.getCharacter().clearActiveStackForm();
+							stats.getStatus().setKnockedDown(true);
+							stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20);
+							stats.getCharacter().clearActiveForm();
+							stats.getCharacter().clearActiveStackForm();
 
-								if (victim instanceof ServerPlayer serverPlayer) {
-									NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-								}
+							if (victim instanceof ServerPlayer serverPlayer) {
+								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+							}
+
+							if (shadowKnockdown) {
+								SummonPlayerShadowDummyC2S.dismissByDummy((ShadowDummyEntity) damageSource);
 							}
 						}
 					}
