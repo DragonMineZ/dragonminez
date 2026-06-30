@@ -559,6 +559,7 @@ public class TickHandler {
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
 				player.refreshDimensions();
+				player.sendSystemMessage(Component.translatable("message.dragonminez.form.drained_ki"), true);
 			}
 		}
 	}
@@ -994,6 +995,11 @@ public class TickHandler {
 				TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 				player.refreshDimensions();
+
+				String drainMessage = !hasEnoughEnergy ? "message.dragonminez.form.drained_ki"
+						: !hasEnoughStamina ? "message.dragonminez.form.drained_stamina"
+						: "message.dragonminez.form.drained_health";
+				player.sendSystemMessage(Component.translatable(drainMessage), true);
 			}
 		}
 	}
