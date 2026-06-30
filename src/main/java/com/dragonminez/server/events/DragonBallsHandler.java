@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class DragonBallsHandler {
 	private static final Queue<Runnable> generationQueue = new ConcurrentLinkedQueue<>();
+	private static final int PENDING_RESCAN_INTERVAL = 100;
+	private static int pendingRescanTimer = 0;
 
 	public static void scatterDragonBalls(ServerLevel level, String setId) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
@@ -103,9 +105,27 @@ public class DragonBallsHandler {
 	@SubscribeEvent
 	public static void onLevelTick(TickEvent.LevelTickEvent event) {
 		if (event.phase != TickEvent.Phase.END || event.level.isClientSide) return;
+		if (event.level instanceof ServerLevel level && ++pendingRescanTimer >= PENDING_RESCAN_INTERVAL) {
+			pendingRescanTimer = 0;
+			rescanPendingBalls(level);
+		}
 		while (!generationQueue.isEmpty()) {
 			Runnable task = generationQueue.poll();
 			if (task != null) task.run();
+		}
+	}
+
+	private static void rescanPendingBalls(ServerLevel level) {
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSetsForDimension(level.dimension())) {
+			Map<Integer, List<BlockPos>> pending = data.getPendingBalls(definition.getId());
+			pending.forEach((star, targets) -> {
+				for (BlockPos target : new ArrayList<>(targets)) {
+					if (level.isLoaded(target)) {
+						generationQueue.add(() -> generateBallSafely(level, definition, star, target));
+					}
+				}
+			});
 		}
 	}
 
