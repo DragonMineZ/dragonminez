@@ -1325,6 +1325,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double netGravity = ClientGravityState.getNetGravity();
 		double gravityStatMult = ClientGravityState.getStatMult();
 		int totalWeight = ClientGravityState.getTotalWeight();
+		int effectiveWeight = ClientGravityState.getEffectiveWeight();
 		int idealWeight = ClientGravityState.getIdealWeight();
 		int zone = ClientGravityState.getZone();
 		double weightTpMult = ClientGravityState.getWeightTpMult();
@@ -1353,8 +1354,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.environmental",
 					formatUpToOneDecimal(envGravity)).withStyle(ChatFormatting.YELLOW));
 			if (totalWeight > 0) {
-				desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight",
-						numberFormatter.format(totalWeight)).withStyle(ChatFormatting.YELLOW));
+				if (effectiveWeight > totalWeight) {
+					desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_load",
+							numberFormatter.format(totalWeight), numberFormatter.format(effectiveWeight)).withStyle(ChatFormatting.YELLOW));
+				} else {
+					desc.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight",
+							numberFormatter.format(totalWeight)).withStyle(ChatFormatting.YELLOW));
+				}
 			}
 
 			List<Component> extras = new ArrayList<>();

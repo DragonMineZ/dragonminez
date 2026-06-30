@@ -15,7 +15,7 @@ public final class GravityStateSync {
 
 	private record Snapshot(float machineGravity, float environmentalGravity, float netGravity,
 							float statMult, float tpGravityMult, int idealWeight, int totalWeight,
-							float loadRatio, float weightTpMult, int zone) {}
+							int effectiveWeight, float loadRatio, float weightTpMult, int zone) {}
 
 	private static final Map<UUID, Snapshot> LAST = new HashMap<>();
 
@@ -27,8 +27,8 @@ public final class GravityStateSync {
 			LAST.put(player.getUUID(), now);
 			NetworkHandler.sendToPlayer(new GravityZoneSyncS2C(
 					now.machineGravity, now.environmentalGravity, now.netGravity, now.statMult,
-					now.tpGravityMult, now.idealWeight, now.totalWeight, now.loadRatio,
-					now.weightTpMult, now.zone), player);
+					now.tpGravityMult, now.idealWeight, now.totalWeight, now.effectiveWeight,
+					now.loadRatio, now.weightTpMult, now.zone), player);
 		}
 	}
 
@@ -47,6 +47,7 @@ public final class GravityStateSync {
 				(float) tpGravityMult,
 				GravityLogic.getIdealWeight(player),
 				GravityLogic.getTotalWeight(player),
+				GravityLogic.getEffectiveWeight(player),
 				(float) GravityLogic.getLoadRatio(player),
 				(float) GravityLogic.getWeightTpMultiplier(player),
 				GravityLogic.getTrainingZone(player));
@@ -63,6 +64,7 @@ public final class GravityStateSync {
 				|| Math.abs(a.loadRatio - b.loadRatio) >= 0.02f
 				|| a.idealWeight != b.idealWeight
 				|| a.totalWeight != b.totalWeight
+				|| a.effectiveWeight != b.effectiveWeight
 				|| a.zone != b.zone;
 	}
 }

@@ -15,13 +15,14 @@ public class GravityZoneSyncS2C {
 	private final float tpGravityMult;
 	private final int idealWeight;
 	private final int totalWeight;
+	private final int effectiveWeight;
 	private final float loadRatio;
 	private final float weightTpMult;
 	private final int zone;
 
 	public GravityZoneSyncS2C(float machineGravity, float environmentalGravity, float netGravity,
 							  float statMult, float tpGravityMult, int idealWeight, int totalWeight,
-							  float loadRatio, float weightTpMult, int zone) {
+							  int effectiveWeight, float loadRatio, float weightTpMult, int zone) {
 		this.machineGravity = machineGravity;
 		this.environmentalGravity = environmentalGravity;
 		this.netGravity = netGravity;
@@ -29,6 +30,7 @@ public class GravityZoneSyncS2C {
 		this.tpGravityMult = tpGravityMult;
 		this.idealWeight = idealWeight;
 		this.totalWeight = totalWeight;
+		this.effectiveWeight = effectiveWeight;
 		this.loadRatio = loadRatio;
 		this.weightTpMult = weightTpMult;
 		this.zone = zone;
@@ -42,6 +44,7 @@ public class GravityZoneSyncS2C {
 		this.tpGravityMult = buf.readFloat();
 		this.idealWeight = buf.readVarInt();
 		this.totalWeight = buf.readVarInt();
+		this.effectiveWeight = buf.readVarInt();
 		this.loadRatio = buf.readFloat();
 		this.weightTpMult = buf.readFloat();
 		this.zone = buf.readVarInt();
@@ -55,6 +58,7 @@ public class GravityZoneSyncS2C {
 		buf.writeFloat(tpGravityMult);
 		buf.writeVarInt(idealWeight);
 		buf.writeVarInt(totalWeight);
+		buf.writeVarInt(effectiveWeight);
 		buf.writeFloat(loadRatio);
 		buf.writeFloat(weightTpMult);
 		buf.writeVarInt(zone);
@@ -63,7 +67,7 @@ public class GravityZoneSyncS2C {
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> ClientGravityState.update(
 				machineGravity, environmentalGravity, netGravity, statMult, tpGravityMult,
-				idealWeight, totalWeight, loadRatio, weightTpMult, zone));
+				idealWeight, totalWeight, effectiveWeight, loadRatio, weightTpMult, zone));
 		ctx.get().setPacketHandled(true);
 	}
 }
