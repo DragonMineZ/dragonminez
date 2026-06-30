@@ -172,13 +172,13 @@ public class GravityLogic {
 		return ((boostedTotal - initialStats) / 6.0) + 1.0;
 	}
 
-	private static double trainingGravityFactor(Player player) {
-		double gravity = getTrainingGravityMultiplier(player);
+	private static double loadGravityFactor(Player player) {
+		double gravity = getGravityMultiplier(player);
 		return Math.max(0.0001, 1.0 + (gravity - 1.0) * cfg().getGravitySensitivity());
 	}
 
 	public static int getEffectiveWeight(Player player) {
-		return (int) Math.round(getTotalWeight(player) * trainingGravityFactor(player));
+		return (int) Math.round(getTotalWeight(player) * loadGravityFactor(player));
 	}
 
 	public static int getIdealWeight(Player player) {

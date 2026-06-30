@@ -631,7 +631,7 @@ public class GeneralServerConfig {
 		private Double masteryBonusPerGravity = 0.0025;
 
 		private Double tpIdealBaseDivisor = 2.0;
-		private Double gravitySensitivity = 0.5;
+		private Double gravitySensitivity = 1.0;
 		private Double tpComfortRatioLow = 0.5;
 		private Double tpIdealRatioLow = 0.75;
 		private Double tpIdealRatioHigh = 1.25;
@@ -781,7 +781,7 @@ public class GeneralServerConfig {
 		}
 
 		public Double getGravitySensitivity() {
-			Double value = gravitySensitivity != null ? gravitySensitivity : 0.5;
+			Double value = gravitySensitivity != null ? gravitySensitivity : 1.0;
 			return Math.max(0.0, Math.min(value, 1.0));
 		}
 
