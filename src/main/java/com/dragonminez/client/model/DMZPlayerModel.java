@@ -229,7 +229,6 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         String suffix = (customRaceGender != null && !customRaceGender.isEmpty()) ? "_" + customRaceGender : "";
         ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + modelName + suffix + ".geo.json");
-        System.out.println("Searching for loc: " + customLoc);
 
         if (fileExists(customLoc)) return customLoc;
         return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
@@ -364,9 +363,14 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         MolangParser parser = MolangParser.INSTANCE;
 
-        float clampedPitch = skipHead ? 0F : -Mth.clamp(animatable.getXRot(), -85F, 85F);
+        float partialTick = Minecraft.getInstance().getFrameTime();
+        float pitch = Mth.lerp(partialTick, animatable.xRotO, animatable.getXRot());
+        float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
+        float headYaw = Mth.lerp(partialTick, animatable.yHeadRotO, animatable.yHeadRot);
 
-        float relativeYaw = -Mth.wrapDegrees(animatable.getYHeadRot() - animatable.yBodyRot);
+        float clampedPitch = skipHead ? 0F : -Mth.clamp(pitch, -85F, 85F);
+
+        float relativeYaw = -Mth.wrapDegrees(headYaw - bodyYaw);
         float clampedYaw = skipHead ? 0F : Mth.clamp(relativeYaw, -90F, 90F);
 
         parser.setValue("query.head_x_rotation", () -> (double) clampedPitch);
