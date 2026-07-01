@@ -195,7 +195,7 @@ dependencies {
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.8")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
 
     // Dev utility mods
     compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-common-api:$jeiVersion"))
