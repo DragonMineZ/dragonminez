@@ -280,9 +280,8 @@ public class AuraRenderer {
 			CachedAuraData data = entry.getValue();
 
 			if (!currentFramePlayers.contains(playerId)) {
-				Player player = (Player) mc.level.getEntity(playerId);
-
-				if (player == null || !player.isAlive()) {
+				// entity ids get reused, so a cached player id can now point at any entity (e.g. a Bat) -> guard the cast
+				if (!(mc.level.getEntity(playerId) instanceof Player player) || !player.isAlive()) {
 					it.remove();
 					continue;
 				}
