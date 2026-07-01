@@ -553,7 +553,24 @@ public class TransformationsHelper {
 		return !group.equalsIgnoreCase("") && !currentForm.equalsIgnoreCase("");
 	}
 
-	private static List<String> getSelectableFormNames(StatsData statsData, String race, String groupName) {
+	public static boolean isSelectableForm(StatsData statsData, String groupName, String formName) {
+		if (statsData == null || groupName == null || formName == null) return false;
+		String race = statsData.getCharacter().getRaceName();
+		for (String name : getSelectableFormNames(statsData, race, groupName)) {
+			if (name.equalsIgnoreCase(formName)) return true;
+		}
+		return false;
+	}
+
+	public static boolean isSelectableStackForm(StatsData statsData, String groupName, String formName) {
+		if (statsData == null || groupName == null || formName == null) return false;
+		for (String name : getSelectableStackFormNames(statsData, groupName)) {
+			if (name.equalsIgnoreCase(formName)) return true;
+		}
+		return false;
+	}
+
+	public static List<String> getSelectableFormNames(StatsData statsData, String race, String groupName) {
 		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
 		List<FormConfig.FormData> unlockedForms = getUnlockedForms(statsData, race, groupName);
 		return unlockedForms.stream()
@@ -562,7 +579,7 @@ public class TransformationsHelper {
 				.toList();
 	}
 
-	private static List<String> getSelectableStackFormNames(StatsData statsData, String groupName) {
+	public static List<String> getSelectableStackFormNames(StatsData statsData, String groupName) {
 		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
 		List<FormConfig.FormData> unlockedForms = getUnlockedStackForms(statsData, groupName);
 		return unlockedForms.stream()
