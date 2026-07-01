@@ -653,9 +653,17 @@ public class StatsData {
 				if (formData == null) continue;
 				if (formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
 
-				double average = (formData.getStrMultiplier() + formData.getSkpMultiplier()
-						+ formData.getDefMultiplier() + formData.getVitMultiplier()
-						+ formData.getPwrMultiplier() + formData.getEneMultiplier()) / 6.0;
+				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
+
+				double average = (
+						getMasteryAdjustedMultiplier(formData, "STR", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "SKP", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "DEF", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "VIT", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "PWR", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "ENE", mastery)
+				) / 6.0;
+
 				if (average > bestAverage) {
 					bestAverage = average;
 					best = formData;
@@ -663,6 +671,45 @@ public class StatsData {
 			}
 		}
 		return best;
+	}
+
+	private Object[] getBestUltimateBaseFormWithGroup() {
+		String raceName = character.getRaceName();
+		Map<String, FormConfig> groups = ConfigManager.getAllFormsForRace(raceName);
+		if (groups == null || groups.isEmpty()) return new Object[]{null, null};
+
+		FormConfig.FormData best = null;
+		String bestGroup = null;
+		double bestAverage = -1.0;
+		for (Map.Entry<String, FormConfig> entry : groups.entrySet()) {
+			String groupName = entry.getKey();
+			FormConfig group = entry.getValue();
+			if (group == null) continue;
+
+			List<FormConfig.FormData> unlocked = TransformationsHelper.getUnlockedForms(this, raceName, groupName);
+			for (FormConfig.FormData formData : unlocked) {
+				if (formData == null) continue;
+				if (formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
+
+				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
+
+				double average = (
+						getMasteryAdjustedMultiplier(formData, "STR", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "SKP", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "DEF", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "VIT", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "PWR", mastery)
+								+ getMasteryAdjustedMultiplier(formData, "ENE", mastery)
+				) / 6.0;
+
+				if (average > bestAverage) {
+					bestAverage = average;
+					best = formData;
+					bestGroup = groupName;
+				}
+			}
+		}
+		return new Object[]{bestGroup, best};
 	}
 
 	private boolean isUltimateStackFormActive() {
@@ -683,8 +730,16 @@ public class StatsData {
 		var formData = formConfig.getForm(currentForm);
 		if (formData == null) return 1.0;
 		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(currentFormGroup) && !ConfigManager.getServerConfig().getGameplay().getUltimateFormFixedValue()) {
-			FormConfig.FormData bestForm = getBestUltimateBaseForm();
-			double bestMult = bestForm != null ? getBaseFormMultiplier(bestForm, statName) : 1.0;
+			Object[] bestResult = getBestUltimateBaseFormWithGroup();
+			String bestGroup = (String) bestResult[0];
+			FormConfig.FormData bestForm = (FormConfig.FormData) bestResult[1];
+
+			double bestMult;
+			if (bestForm != null) {
+				double bestMastery = character.getFormMasteries().getMastery(bestGroup, bestForm.getName());
+				bestMult = getMasteryAdjustedMultiplier(bestForm, statName, bestMastery);
+			} else bestMult = 1.0;
+
 			double ultimateMult = getBaseFormMultiplier(formData, statName);
 			return bestMult + ultimateMult - 1.0;
 		}
