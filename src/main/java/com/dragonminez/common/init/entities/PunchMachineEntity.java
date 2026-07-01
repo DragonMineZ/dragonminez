@@ -56,7 +56,7 @@ public class PunchMachineEntity extends Mob implements GeoEntity {
 			}
 		}
 
-		if (MainDamageTypes.isStrikeAttackDamage(source)) {
+		if (MainDamageTypes.isStrikeAttackDamage(source) || MainDamageTypes.isKiblastDamage(source)) {
 			if (source.getEntity() instanceof Player player) processHit(amount, player);
 			return false;
 		}

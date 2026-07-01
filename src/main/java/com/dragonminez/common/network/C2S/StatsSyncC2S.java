@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
@@ -147,6 +148,13 @@ public class StatsSyncC2S {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+
+			if (!ConfigManager.isRaceLoaded(msg.raceName)) {
+				LogUtil.warn(com.dragonminez.Env.COMMON, "Rejected StatsSyncC2S from '{}': unknown race '{}'", player.getGameProfile().getName(), msg.raceName);
+				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data ->
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player));
+				return;
+			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				var character = data.getCharacter();

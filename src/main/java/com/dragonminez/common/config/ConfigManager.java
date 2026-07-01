@@ -10,7 +10,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import lombok.Getter;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
@@ -28,6 +27,7 @@ import java.util.stream.Stream;
 
 public class ConfigManager {
 	public static final double CONFIG_VERSION = 21.1;
+	public static final String CLIENT_ONLY_CONFIG = "general-user";
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
@@ -56,6 +56,8 @@ public class ConfigManager {
 	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
 	private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
 	private static Map<String, FormConfig> SERVER_SYNCED_STACK_FORMS;
+	private static EntitiesConfig SERVER_SYNCED_ENTITIES;
+	private static boolean serverSyncActive = false;
 
 	private static GeneralUserConfig userConfig;
 	private static GeneralServerConfig serverConfig;
@@ -63,7 +65,6 @@ public class ConfigManager {
 	private static TrainingConfig trainingConfig;
 	private static SkillsConfig skillsConfig;
 	private static TechniqueConfig techniqueConfig;
-	@Getter
 	private static EntitiesConfig entitiesConfig;
 
 	public static void initialize() {
@@ -804,21 +805,29 @@ public class ConfigManager {
 
 	public static RaceStatsConfig getRaceStats(String raceName) {
 		String key = raceName != null ? raceName.toLowerCase() : "human";
-		if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(key)) return SERVER_SYNCED_STATS.get(key);
+		if (serverSyncActive) {
+			Map<String, RaceStatsConfig> synced = SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : Collections.emptyMap();
+			RaceStatsConfig config = synced.getOrDefault(key, synced.get("human"));
+			return config != null ? config : createDefaultStatsConfig();
+		}
 		RaceStatsConfig config = RACE_STATS.getOrDefault(key, RACE_STATS.get("human"));
 		return config != null ? config : createDefaultStatsConfig();
 	}
 
 	public static RaceCharacterConfig getRaceCharacter(String raceName) {
 		String key = raceName != null ? raceName.toLowerCase() : "human";
-		if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(key)) return SERVER_SYNCED_CHARACTER.get(key);
+		if (serverSyncActive) {
+			Map<String, RaceCharacterConfig> synced = SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : Collections.emptyMap();
+			RaceCharacterConfig config = synced.getOrDefault(key, synced.get("human"));
+			return config != null ? config : createDefaultCharacterConfig(key, false);
+		}
 		RaceCharacterConfig config = RACE_CHARACTER.getOrDefault(key, RACE_CHARACTER.get("human"));
 		return config != null ? config : createDefaultCharacterConfig(key, false);
 	}
 
 	public static List<String> getLoadedRaces() {
 		List<String> races;
-		if (SERVER_SYNCED_CHARACTER != null) races = new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet());
+		if (serverSyncActive) races = SERVER_SYNCED_CHARACTER != null ? new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet()) : new ArrayList<>();
 		else races = new ArrayList<>(LOADED_RACES);
 
 		races.sort((r1, r2) -> {
@@ -839,20 +848,21 @@ public class ConfigManager {
 
 	public static List<String> getDefaultRaces() { return Arrays.asList(DEFAULT_RACES); }
 	public static boolean isRaceLoaded(String raceName) {
-		if (SERVER_SYNCED_CHARACTER != null) return SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
+		if (raceName == null) return false;
+		if (serverSyncActive) return SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
 		return LOADED_RACES.stream().anyMatch(r -> r.equalsIgnoreCase(raceName));
 	}
 	public static GeneralUserConfig getUserConfig() { return userConfig != null ? userConfig : new GeneralUserConfig(); }
 	public static GeneralServerConfig getServerConfig() {
-		if (SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
+		if (serverSyncActive) return SERVER_SYNCED_GENERAL_SERVER != null ? SERVER_SYNCED_GENERAL_SERVER : new GeneralServerConfig();
 		return serverConfig != null ? serverConfig : new GeneralServerConfig();
 	}
 	public static CombatConfig getCombatConfig() {
-		if (SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
+		if (serverSyncActive) return SERVER_SYNCED_COMBAT != null ? SERVER_SYNCED_COMBAT : new CombatConfig();
 		return combatConfig != null ? combatConfig : new CombatConfig();
 	}
 	public static TrainingConfig getTrainingConfig() {
-		if (SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
+		if (serverSyncActive) return SERVER_SYNCED_TRAINING != null ? SERVER_SYNCED_TRAINING : new TrainingConfig();
 		return trainingConfig != null ? trainingConfig : new TrainingConfig();
 	}
 	public static void saveGeneralUserConfig() {
@@ -1034,19 +1044,21 @@ public class ConfigManager {
 
 	public static void applySpecificSyncedConfig(String configFilePath, String json) {
 		try {
+			serverSyncActive = true;
 			if (configFilePath.equals("general-server")) SERVER_SYNCED_GENERAL_SERVER = GSON.fromJson(json, GeneralServerConfig.class);
 			else if (configFilePath.equals("combat")) SERVER_SYNCED_COMBAT = GSON.fromJson(json, CombatConfig.class);
 			else if (configFilePath.equals("training")) SERVER_SYNCED_TRAINING = GSON.fromJson(json, TrainingConfig.class);
 			else if (configFilePath.equals("skills")) SERVER_SYNCED_SKILLS = GSON.fromJson(json, SkillsConfig.class);
 			else if (configFilePath.equals("techniques")) SERVER_SYNCED_TECHNIQUES = GSON.fromJson(json, TechniqueConfig.class);
+			else if (configFilePath.equals("entities")) SERVER_SYNCED_ENTITIES = GSON.fromJson(json, EntitiesConfig.class);
 			else if (configFilePath.startsWith("races/")) {
 				String[] parts = configFilePath.split("/");
 				String raceName = parts[1];
 				if (parts[2].equals("stats")) {
-					if (SERVER_SYNCED_STATS == null) SERVER_SYNCED_STATS = new HashMap<>(RACE_STATS);
+					if (SERVER_SYNCED_STATS == null) SERVER_SYNCED_STATS = new HashMap<>();
 					SERVER_SYNCED_STATS.put(raceName.toLowerCase(), GSON.fromJson(json, RaceStatsConfig.class));
 				} else if (parts[2].equals("character")) {
-					if (SERVER_SYNCED_CHARACTER == null) SERVER_SYNCED_CHARACTER = new HashMap<>(RACE_CHARACTER);
+					if (SERVER_SYNCED_CHARACTER == null) SERVER_SYNCED_CHARACTER = new HashMap<>();
 					SERVER_SYNCED_CHARACTER.put(raceName.toLowerCase(), GSON.fromJson(json, RaceCharacterConfig.class));
 				} else if (parts[2].equals("forms")) {
 					if (SERVER_SYNCED_FORMS == null) SERVER_SYNCED_FORMS = new HashMap<>();
@@ -1054,7 +1066,7 @@ public class ConfigManager {
 							.put(parts[3].toLowerCase(), GSON.fromJson(json, FormConfig.class));
 				}
 			} else if (configFilePath.startsWith("forms/")) {
-				if (SERVER_SYNCED_STACK_FORMS == null) SERVER_SYNCED_STACK_FORMS = new HashMap<>(STACK_FORMS);
+				if (SERVER_SYNCED_STACK_FORMS == null) SERVER_SYNCED_STACK_FORMS = new HashMap<>();
 				SERVER_SYNCED_STACK_FORMS.put(configFilePath.split("/")[1].toLowerCase(), GSON.fromJson(json, FormConfig.class));
 			}
 		} catch (Exception e) { LogUtil.error(Env.CLIENT, "Error applying synced config: " + e.getMessage()); }
@@ -1068,23 +1080,44 @@ public class ConfigManager {
 		SERVER_SYNCED_STATS = syncedStats;
 		SERVER_SYNCED_CHARACTER = syncedCharacters;
 		SERVER_SYNCED_STACK_FORMS = syncedStackForms;
+		serverSyncActive = true;
 	}
 
-	public static void clearServerSync() {
+	private static void clearSyncedMaps() {
 		SERVER_SYNCED_GENERAL_SERVER = null;
 		SERVER_SYNCED_COMBAT = null;
 		SERVER_SYNCED_TRAINING = null;
 		SERVER_SYNCED_SKILLS = null;
 		SERVER_SYNCED_TECHNIQUES = null;
+		SERVER_SYNCED_ENTITIES = null;
 		SERVER_SYNCED_FORMS = null;
 		SERVER_SYNCED_STATS = null;
 		SERVER_SYNCED_CHARACTER = null;
 		SERVER_SYNCED_STACK_FORMS = null;
 	}
 
-	public static Map<String, RaceStatsConfig> getAllRaceStats() { return SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : new HashMap<>(RACE_STATS); }
-	public static Map<String, RaceCharacterConfig> getAllRaceCharacters() { return SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : new HashMap<>(RACE_CHARACTER); }
-	public static Map<String, Map<String, FormConfig>> getAllForms() { return SERVER_SYNCED_FORMS != null ? SERVER_SYNCED_FORMS : RACE_FORMS; }
+	public static void beginServerSyncBatch() {
+		clearSyncedMaps();
+		serverSyncActive = true;
+	}
+
+	public static void clearServerSync() {
+		clearSyncedMaps();
+		serverSyncActive = false;
+	}
+
+	public static Map<String, RaceStatsConfig> getAllRaceStats() {
+		if (serverSyncActive) return SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : new HashMap<>();
+		return new HashMap<>(RACE_STATS);
+	}
+	public static Map<String, RaceCharacterConfig> getAllRaceCharacters() {
+		if (serverSyncActive) return SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : new HashMap<>();
+		return new HashMap<>(RACE_CHARACTER);
+	}
+	public static Map<String, Map<String, FormConfig>> getAllForms() {
+		if (serverSyncActive) return SERVER_SYNCED_FORMS != null ? SERVER_SYNCED_FORMS : new HashMap<>();
+		return RACE_FORMS;
+	}
 	public static Map<String, FormConfig> getAllFormsForRace(String raceName) { return getAllForms().getOrDefault(raceName.toLowerCase(), new HashMap<>()); }
 	public static FormConfig getFormGroup(String raceName, String groupName) {
 		Map<String, FormConfig> raceForms = getAllFormsForRace(raceName);
@@ -1094,7 +1127,10 @@ public class ConfigManager {
 		FormConfig group = getFormGroup(raceName, groupName);
 		return group != null ? group.getForm(formName) : null;
 	}
-	public static Map<String, FormConfig> getAllStackForms() { return SERVER_SYNCED_STACK_FORMS != null ? SERVER_SYNCED_STACK_FORMS : STACK_FORMS; }
+	public static Map<String, FormConfig> getAllStackForms() {
+		if (serverSyncActive) return SERVER_SYNCED_STACK_FORMS != null ? SERVER_SYNCED_STACK_FORMS : new HashMap<>();
+		return STACK_FORMS;
+	}
 	public static FormConfig getStackFormGroup(String groupName) {
 		Map<String, FormConfig> stackForms = getAllStackForms();
 		return stackForms != null ? stackForms.get(groupName.toLowerCase()) : null;
@@ -1103,7 +1139,20 @@ public class ConfigManager {
 		FormConfig group = getStackFormGroup(groupName);
 		return group != null ? group.getForm(formName) : null;
 	}
-	public static SkillsConfig getSkillsConfig() { return SERVER_SYNCED_SKILLS != null ? SERVER_SYNCED_SKILLS : (skillsConfig != null ? skillsConfig : new SkillsConfig()); }
-	public static TechniqueConfig getTechniqueConfig() { return SERVER_SYNCED_TECHNIQUES != null ? SERVER_SYNCED_TECHNIQUES : (techniqueConfig != null ? techniqueConfig : new TechniqueConfig()); }
-	public static EntitiesConfig.EntityStats getEntityStats(String registryName) { return entitiesConfig != null && entitiesConfig.getDefaultEntityStats() != null ? entitiesConfig.getDefaultEntityStats().get(registryName) : null; }
+	public static SkillsConfig getSkillsConfig() {
+		if (serverSyncActive) return SERVER_SYNCED_SKILLS != null ? SERVER_SYNCED_SKILLS : new SkillsConfig();
+		return skillsConfig != null ? skillsConfig : new SkillsConfig();
+	}
+	public static TechniqueConfig getTechniqueConfig() {
+		if (serverSyncActive) return SERVER_SYNCED_TECHNIQUES != null ? SERVER_SYNCED_TECHNIQUES : new TechniqueConfig();
+		return techniqueConfig != null ? techniqueConfig : new TechniqueConfig();
+	}
+	public static EntitiesConfig getEntitiesConfig() {
+		if (serverSyncActive) return SERVER_SYNCED_ENTITIES;
+		return entitiesConfig;
+	}
+	public static EntitiesConfig.EntityStats getEntityStats(String registryName) {
+		EntitiesConfig config = getEntitiesConfig();
+		return config != null && config.getDefaultEntityStats() != null ? config.getDefaultEntityStats().get(registryName) : null;
+	}
 }

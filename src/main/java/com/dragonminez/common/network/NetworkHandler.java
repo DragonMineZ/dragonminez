@@ -105,6 +105,18 @@ public class NetworkHandler {
 				.consumerMainThread(ExecuteActionC2S::handle)
 				.add();
 
+		net.messageBuilder(SelectFormC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SelectFormC2S::new)
+				.encoder(SelectFormC2S::encode)
+				.consumerMainThread(SelectFormC2S::handle)
+				.add();
+
+		net.messageBuilder(SelectKiWeaponC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SelectKiWeaponC2S::new)
+				.encoder(SelectKiWeaponC2S::encode)
+				.consumerMainThread(SelectKiWeaponC2S::handle)
+				.add();
+
 		net.messageBuilder(UpdateCustomHairC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(UpdateCustomHairC2S::decode)
 				.encoder(UpdateCustomHairC2S::encode)
