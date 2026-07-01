@@ -26,11 +26,11 @@ public class DefaultFormsFactory {
 
 	private void setDefaultMasteryValues(FormConfig.FormData form) {
 		form.setMaxMastery(100.0);
-		form.setMasteryPerHitDealt(0.075);
-		form.setMasteryPerHitReceived(0.075);
+		form.setMasteryPerHitDealt(0.025);
+		form.setMasteryPerHitReceived(0.025);
 		form.setMaxStatsMultiplier(1.5);
-		form.setMaxCostMultiplier(0.50);
-		form.setPassiveMasteryEveryFiveSeconds(0.025);
+		form.setMaxCostMultiplier(0.75);
+		form.setPassiveMasteryEveryFiveSeconds(0.005);
 		form.setStackOnMastery(25.0);
 		form.setAuraType("kakarot");
 		form.setAuraLayer(0);

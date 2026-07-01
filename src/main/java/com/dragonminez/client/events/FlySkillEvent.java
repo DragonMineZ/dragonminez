@@ -169,6 +169,51 @@ public class FlySkillEvent {
 		}
 	}
 
+	/**
+	 * Entry point for the radial Utility Menu's Fly button: toggles flight exactly like tapping the
+	 * fly key (minus the double-tap burst), so it respects the player's flight mode, energy/skill
+	 * checks, the ground take-off hop and the graceful shutdown deceleration.
+	 */
+	public static void toggleFlightFromMenu() {
+		Minecraft mc = Minecraft.getInstance();
+		LocalPlayer player = mc.player;
+		if (player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> performStandardToggle(player, data));
+	}
+
+	public static void performStandardToggle(LocalPlayer player, StatsData data) {
+		if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) return;
+
+		Skill flySkill = data.getSkills().getSkill("fly");
+		Skill kiControlSkill = data.getSkills().getSkill("kicontrol");
+		boolean flyActive = flySkill != null && flySkill.isActive();
+
+		if (kiControlSkill == null || kiControlSkill.getLevel() <= 0) {
+			if (!flyActive) player.displayClientMessage(Component.translatable("message.dragonminez.flight.no_kicontrol"), true);
+			return;
+		}
+		if (flySkill == null || flySkill.getLevel() <= 0) {
+			if (!flyActive) player.displayClientMessage(Component.translatable("message.dragonminez.flight.no_fly"), true);
+			return;
+		}
+		if (!flyActive && data.getResources().getPowerRelease() < 5) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.flight.low_power_release"), true);
+			return;
+		}
+
+		if (!flySkill.isActive()) {
+			int flyLevel = flySkill.getLevel();
+			double energyCostPercent = getActivationEnergyPercent(flyLevel);
+			int energyCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * energyCostPercent);
+			if (data.getResources().getCurrentEnergy() < energyCost) return;
+
+			if (player.onGround()) {
+				pendingGroundActivation = true;
+				pendingGroundActivationStartTime = System.currentTimeMillis();
+			} else NetworkHandler.sendToServer(new FlyToggleC2S(true, false));
+		} else pendingFlightDisable = !pendingFlightDisable;
+	}
+
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;

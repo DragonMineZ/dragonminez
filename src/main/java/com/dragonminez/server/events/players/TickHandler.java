@@ -971,7 +971,7 @@ public class TickHandler {
 			} else {
 				formCostMultiplier = 1.0;
 			}
-			double offenseCostFactor = 0.75 * Math.min(1.0, formCostMultiplier);
+			double offenseCostFactor = Math.min(1.0, formCostMultiplier);
 			double reducedOffense = totalOffense * offenseCostFactor;
 
 			double maxEnergy = data.getMaxEnergy();

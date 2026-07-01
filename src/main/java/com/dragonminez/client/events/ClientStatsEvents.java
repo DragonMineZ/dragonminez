@@ -48,6 +48,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.dragonminez.common.util.CuriosUtil;
 
+import java.util.Locale;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
 	private static final int TECHNIQUE_VISIBLE_SLOTS = Techniques.SLOT_COUNT;
@@ -75,6 +77,8 @@ public class ClientStatsEvents {
 	private static int chargePendingTicks = 0;
 	private static final boolean[] wasSlotKeyDown = new boolean[TECHNIQUE_VISIBLE_SLOTS];
 
+	private static ActionMode lastActionMode = null;
+
 	@SubscribeEvent
 	public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
 		if (Minecraft.getInstance().player == null) return;
@@ -92,6 +96,22 @@ public class ClientStatsEvents {
 		LocalPlayer localPlayer = mc.player;
 
 		if (localPlayer == null) return;
+
+		// Announce ActionMode changes in the action bar (runs every tick, even with a menu open).
+		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) {
+				lastActionMode = null;
+				return;
+			}
+			ActionMode mode = data.getStatus().getSelectedAction();
+			if (mode != lastActionMode) {
+				if (lastActionMode != null) {
+					localPlayer.displayClientMessage(Component.translatable("actionmode.dragonminez.changed",
+							Component.translatable("actionmode.dragonminez." + mode.name().toLowerCase(Locale.ROOT))), true);
+				}
+				lastActionMode = mode;
+			}
+		});
 
 		if (mc.level != null && !mc.isPaused()) {
 			for (Player player : mc.level.players()) {

@@ -193,6 +193,24 @@ public class TransformationsHelper {
 		return true;
 	}
 
+	public static List<String> getSelectableFormNames(StatsData statsData, String race, String groupName) {
+		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
+		List<FormConfig.FormData> unlockedForms = getUnlockedForms(statsData, race, groupName);
+		return unlockedForms.stream()
+				.filter(formData -> isFormSelectable(statsData, groupName, formData, false))
+				.map(FormConfig.FormData::getName)
+				.toList();
+	}
+
+	public static List<String> getSelectableStackFormNames(StatsData statsData, String groupName) {
+		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
+		List<FormConfig.FormData> unlockedForms = getUnlockedStackForms(statsData, groupName);
+		return unlockedForms.stream()
+				.filter(formData -> isFormSelectable(statsData, groupName, formData, true))
+				.map(FormConfig.FormData::getName)
+				.toList();
+	}
+
 	private static boolean isFormSelectable(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
 		double mastery = stack
 				? statsData.getCharacter().getStackFormMasteries().getMastery(groupName, formData.getName())
@@ -570,24 +588,6 @@ public class TransformationsHelper {
 		return false;
 	}
 
-	public static List<String> getSelectableFormNames(StatsData statsData, String race, String groupName) {
-		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
-		List<FormConfig.FormData> unlockedForms = getUnlockedForms(statsData, race, groupName);
-		return unlockedForms.stream()
-				.filter(formData -> isFormSelectable(statsData, groupName, formData, false))
-				.map(FormConfig.FormData::getName)
-				.toList();
-	}
-
-	public static List<String> getSelectableStackFormNames(StatsData statsData, String groupName) {
-		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
-		List<FormConfig.FormData> unlockedForms = getUnlockedStackForms(statsData, groupName);
-		return unlockedForms.stream()
-				.filter(formData -> isFormSelectable(statsData, groupName, formData, true))
-				.map(FormConfig.FormData::getName)
-				.toList();
-	}
-
 	public static boolean ensureSelectedFormDefault(StatsData statsData) {
 		String form = statsData.getCharacter().getSelectedForm();
 		if (form != null && !form.isEmpty()) return false;
@@ -612,131 +612,6 @@ public class TransformationsHelper {
 		statsData.getCharacter().setSelectedStackFormGroup(group);
 		statsData.getCharacter().setSelectedStackForm(firstForm);
 		return true;
-	}
-
-	public static void cycleSelectedFormGroup(StatsData statsData, boolean reverse) {
-		String race = statsData.getCharacter().getRaceName();
-		Map<String, FormConfig> allGroups = ConfigManager.getAllFormsForRace(race);
-		if (allGroups.isEmpty()) return;
-
-		String selectedFormGroup = statsData.getCharacter().getSelectedFormGroup();
-		int offset = reverse ? -1 : 1;
-
-		List<String> unlockedGroups = new ArrayList<>();
-		for (String groupKey : allGroups.keySet()) {
-			if (!getSelectableFormNames(statsData, race, groupKey).isEmpty()) unlockedGroups.add(groupKey);
-		}
-
-		if (unlockedGroups.isEmpty()) {
-			statsData.getCharacter().setSelectedFormGroup("");
-			statsData.getCharacter().setSelectedForm("");
-			return;
-		}
-
-		if (selectedFormGroup == null || selectedFormGroup.isEmpty() || !unlockedGroups.contains(selectedFormGroup)) {
-			selectedFormGroup = getGroupWithFirstAvailableForm(statsData);
-			statsData.getCharacter().setSelectedFormGroup(selectedFormGroup);
-			statsData.getCharacter().setSelectedForm(getFirstAvailableForm(statsData));
-		}
-
-		List<String> unlockedFormNames = getSelectableFormNames(statsData, race, selectedFormGroup);
-		if (unlockedFormNames.isEmpty()) {
-			selectedFormGroup = getGroupWithFirstAvailableForm(statsData);
-			statsData.getCharacter().setSelectedFormGroup(selectedFormGroup);
-			statsData.getCharacter().setSelectedForm(getFirstAvailableForm(statsData));
-			unlockedFormNames = getSelectableFormNames(statsData, race, selectedFormGroup);
-			if (unlockedFormNames.isEmpty()) return;
-		}
-
-		int groupIndex = unlockedGroups.indexOf(selectedFormGroup);
-		if (groupIndex < 0) groupIndex = 0;
-
-		String selectedForm = statsData.getCharacter().getSelectedForm();
-		int currentIndex = unlockedFormNames.indexOf(selectedForm);
-		if (currentIndex < 0) {
-			currentIndex = reverse ? unlockedFormNames.size() : -1;
-		}
-
-		int nextFormIndex = currentIndex + offset;
-		if (nextFormIndex >= 0 && nextFormIndex < unlockedFormNames.size()) {
-			statsData.getCharacter().setSelectedFormGroup(selectedFormGroup);
-			statsData.getCharacter().setSelectedForm(unlockedFormNames.get(nextFormIndex));
-			return;
-		}
-
-		for (int i = 0; i < unlockedGroups.size(); i++) {
-			groupIndex = (groupIndex + offset + unlockedGroups.size()) % unlockedGroups.size();
-			String nextGroup = unlockedGroups.get(groupIndex);
-			List<String> nextGroupForms = getSelectableFormNames(statsData, race, nextGroup);
-			if (nextGroupForms.isEmpty()) continue;
-
-			int boundaryIndex = reverse ? nextGroupForms.size() - 1 : 0;
-			statsData.getCharacter().setSelectedFormGroup(nextGroup);
-			statsData.getCharacter().setSelectedForm(nextGroupForms.get(boundaryIndex));
-			return;
-		}
-	}
-
-	public static void cycleSelectedStackFormGroup(StatsData statsData, boolean reverse) {
-		Map<String, FormConfig> allGroups = ConfigManager.getAllStackForms();
-		if (allGroups.isEmpty()) return;
-
-		String selectedStackFormGroup = statsData.getCharacter().getSelectedStackFormGroup();
-		int offset = reverse ? -1 : 1;
-
-		List<String> unlockedGroups = new ArrayList<>();
-		for (String groupKey : allGroups.keySet()) {
-			if (!getSelectableStackFormNames(statsData, groupKey).isEmpty()) unlockedGroups.add(groupKey);
-		}
-
-		if (unlockedGroups.isEmpty()) {
-			statsData.getCharacter().setSelectedStackFormGroup("");
-			statsData.getCharacter().setSelectedStackForm("");
-			return;
-		}
-
-		if (selectedStackFormGroup == null || selectedStackFormGroup.isEmpty() || !unlockedGroups.contains(selectedStackFormGroup)) {
-			selectedStackFormGroup = getGroupWithFirstAvailableStackForm(statsData);
-			statsData.getCharacter().setSelectedStackFormGroup(selectedStackFormGroup);
-			statsData.getCharacter().setSelectedStackForm(getFirstAvailableStackForm(statsData));
-		}
-
-		List<String> unlockedStackFormNames = getSelectableStackFormNames(statsData, selectedStackFormGroup);
-		if (unlockedStackFormNames.isEmpty()) {
-			selectedStackFormGroup = getGroupWithFirstAvailableStackForm(statsData);
-			statsData.getCharacter().setSelectedStackFormGroup(selectedStackFormGroup);
-			statsData.getCharacter().setSelectedStackForm(getFirstAvailableStackForm(statsData));
-			unlockedStackFormNames = getSelectableStackFormNames(statsData, selectedStackFormGroup);
-			if (unlockedStackFormNames.isEmpty()) return;
-		}
-
-		int groupIndex = unlockedGroups.indexOf(selectedStackFormGroup);
-		if (groupIndex < 0) groupIndex = 0;
-
-		String selectedStackForm = statsData.getCharacter().getSelectedStackForm();
-		int currentIndex = unlockedStackFormNames.indexOf(selectedStackForm);
-		if (currentIndex < 0) {
-			currentIndex = reverse ? unlockedStackFormNames.size() : -1;
-		}
-
-		int nextFormIndex = currentIndex + offset;
-		if (nextFormIndex >= 0 && nextFormIndex < unlockedStackFormNames.size()) {
-			statsData.getCharacter().setSelectedStackFormGroup(selectedStackFormGroup);
-			statsData.getCharacter().setSelectedStackForm(unlockedStackFormNames.get(nextFormIndex));
-			return;
-		}
-
-		for (int i = 0; i < unlockedGroups.size(); i++) {
-			groupIndex = (groupIndex + offset + unlockedGroups.size()) % unlockedGroups.size();
-			String nextGroup = unlockedGroups.get(groupIndex);
-			List<String> nextGroupForms = getSelectableStackFormNames(statsData, nextGroup);
-			if (nextGroupForms.isEmpty()) continue;
-
-			int boundaryIndex = reverse ? nextGroupForms.size() - 1 : 0;
-			statsData.getCharacter().setSelectedStackFormGroup(nextGroup);
-			statsData.getCharacter().setSelectedStackForm(nextGroupForms.get(boundaryIndex));
-			return;
-		}
 	}
 
 	private static boolean isDefaultGroup(String race, String group) {
