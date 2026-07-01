@@ -76,7 +76,12 @@ public class UtilityMenuScreen extends ScaledScreen {
 	private static final int PANEL_ROW_H = 13;
 	private static final int PANEL_TITLE_H = 15;
 	private static final int PANEL_PAD = 5;
+	private static final int PANEL_SCREEN_MARGIN = 4;
+	private static final float PANEL_CLEAR_GAP = 12f;
 	private MoreNode openMore = null;
+	private float openMoreAngleDeg = 0f;
+	private int openMoreLevel = 0;
+	private Hover frozenHover = new Hover();
 	private int dragIndex = -1;
 	private boolean dragging = false;
 	private double dragStartY = 0;
@@ -150,7 +155,8 @@ public class UtilityMenuScreen extends ScaledScreen {
 		float cx = w / 2f;
 		float cy = h / 2f;
 
-		Hover hover = (closing || openMore != null) ? new Hover() : resolveHover(cx, cy, uiMouseX, uiMouseY, openScale);
+		Hover hover = closing ? new Hover()
+				: (openMore != null ? frozenHover : resolveHover(cx, cy, uiMouseX, uiMouseY, openScale));
 		currentPreview = hover.deepest != null ? hover.deepest.preview(statsData) : null;
 
 		drawBaseSectors(graphics, cx, cy, hover, openScale);
@@ -174,11 +180,35 @@ public class UtilityMenuScreen extends ScaledScreen {
 		endUiScale(graphics);
 	}
 
+	private static float radiusForLevel(int level) {
+		if (level <= 0) return (R_INNER + R_OUTER) / 2f;
+		return R_OUTER + (level - 0.5f) * CHILD_BAND;
+	}
+
 	private int[] panelBounds(float cx, float cy) {
 		int rows = openMore.options().size();
 		int height = PANEL_TITLE_H + rows * PANEL_ROW_H + PANEL_PAD;
-		int px = Math.round(cx - PANEL_WIDTH / 2f);
-		int py = Math.round(cy - height / 2f);
+
+		double rad = Math.toRadians(openMoreAngleDeg);
+		float dirX = (float) Math.cos(rad);
+		float dirY = (float) Math.sin(rad);
+
+		float clearRadius = radiusForLevel(openMoreLevel) + CHILD_BAND * 0.6f + PANEL_CLEAR_GAP;
+
+		float panelCx = cx + dirX * clearRadius;
+		float panelCy = cy + dirY * clearRadius;
+
+		int px = Math.round(panelCx - PANEL_WIDTH / 2f);
+		int py = Math.round(panelCy - height / 2f);
+
+		int uiW = getUiWidth();
+		int uiH = getUiHeight();
+
+		int maxPx = uiW - PANEL_WIDTH - PANEL_SCREEN_MARGIN;
+		int maxPy = uiH - height - PANEL_SCREEN_MARGIN;
+		px = Mth.clamp(px, PANEL_SCREEN_MARGIN, Math.max(PANEL_SCREEN_MARGIN, maxPx));
+		py = Mth.clamp(py, PANEL_SCREEN_MARGIN, Math.max(PANEL_SCREEN_MARGIN, maxPy));
+
 		return new int[]{px, py, PANEL_WIDTH, height};
 	}
 
@@ -255,7 +285,33 @@ public class UtilityMenuScreen extends ScaledScreen {
 		}
 		buildBaseNodes();
 		MoreNode refreshed = findMoreNode(categoryKey);
-		if (refreshed != null) openMore = refreshed;
+		if (refreshed != null) {
+			openMore = refreshed;
+			refreshFrozenHoverFor(refreshed);
+		}
+	}
+
+	private void refreshFrozenHoverFor(MoreNode target) {
+		Hover rebuilt = new Hover();
+		for (RadialNode base : baseNodes) {
+			if (findPathTo(base, target, rebuilt.path)) {
+				rebuilt.path.add(0, base);
+				rebuilt.deepest = target;
+				break;
+			}
+		}
+		frozenHover = rebuilt;
+	}
+
+	private boolean findPathTo(RadialNode current, RadialNode target, List<RadialNode> outPath) {
+		if (current == target) return true;
+		for (RadialNode child : current.children(statsData)) {
+			if (findPathTo(child, target, outPath)) {
+				outPath.add(0, child);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private MoreNode findMoreNode(String categoryKey) {
@@ -473,6 +529,8 @@ public class UtilityMenuScreen extends ScaledScreen {
 			chain.add(node);
 			result.deepest = node;
 			result.path.add(node);
+			result.deepestAngleDeg = baseCenter(slot);
+			result.deepestLevel = 0;
 			return result;
 		}
 
@@ -487,6 +545,8 @@ public class UtilityMenuScreen extends ScaledScreen {
 		RadialNode base = chain.get(0);
 		result.path.add(base);
 		result.deepest = base;
+		result.deepestAngleDeg = baseCenter(baseNodes.indexOf(base));
+		result.deepestLevel = 0;
 
 		float center = baseCenter(baseNodes.indexOf(base));
 		RadialNode current = base;
@@ -517,6 +577,8 @@ public class UtilityMenuScreen extends ScaledScreen {
 			center = center + (idx - (k - 1) / 2.0f) * childArcDeg(l);
 			result.path.add(child);
 			result.deepest = child;
+			result.deepestAngleDeg = center;
+			result.deepestLevel = l;
 			current = child;
 		}
 
@@ -615,6 +677,9 @@ public class UtilityMenuScreen extends ScaledScreen {
 		RadialNode node = hover.deepest;
 		if (node instanceof MoreNode more) {
 			openMore = more;
+			openMoreAngleDeg = hover.deepestAngleDeg;
+			openMoreLevel = hover.deepestLevel;
+			frozenHover = hover;
 			return true;
 		}
 		if (node != null && node.interactive(statsData) && !node.expandable(statsData)) {
@@ -708,5 +773,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 	private static final class Hover {
 		private final List<RadialNode> path = new ArrayList<>();
 		private RadialNode deepest = null;
+		private float deepestAngleDeg = 0f;
+		private int deepestLevel = 0;
 	}
 }
