@@ -33,7 +33,7 @@ public class MoreNode extends AbstractRadialNode {
 
 	@Override
 	public ResourceLocation icon(StatsData stats) {
-		return icon("radial_more");
+		return icon("more");
 	}
 
 	@Override

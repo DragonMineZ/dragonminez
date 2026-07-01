@@ -13,7 +13,7 @@ import java.util.List;
 public class MovementNode extends CategoryNode {
 
 	public MovementNode() {
-		super(Component.translatable("gui.dragonminez.radial.movement"), icon("radial_movement"));
+		super(Component.translatable("gui.dragonminez.radial.movement"), icon("movement"));
 	}
 
 	@Override
@@ -21,21 +21,21 @@ public class MovementNode extends CategoryNode {
 		List<RadialNode> out = new ArrayList<>();
 
 		out.add(new SkillToggleNode(
-				Component.translatable("skill.dragonminez.fly"), icon("radial_flight"),
+				Component.translatable("skill.dragonminez.fly"), icon("fly"),
 				s -> s.getSkills().hasSkill("fly"),
 				s -> s.getSkills().isSkillActive("fly"),
 				(s, was) -> FlySkillEvent.toggleFlightFromMenu()
 		));
 
 		out.add(new SkillToggleNode(
-				Component.translatable("skill.dragonminez.jump"), icon("radial_jump"),
+				Component.translatable("skill.dragonminez.jump"), icon("jump"),
 				s -> s.getSkills().hasSkill("jump"),
 				s -> s.getSkills().isSkillActive("jump"),
 				(s, was) -> NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, "jump", 0))
 		));
 
 		out.add(new SkillToggleNode(
-				Component.translatable("skill.dragonminez.sprint"), icon("radial_sprint"),
+				Component.translatable("skill.dragonminez.sprint"), icon("sprint"),
 				s -> s.getSkills().hasSkill("sprint"),
 				s -> s.getSkills().isSkillActive("sprint"),
 				(s, was) -> NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, "sprint", 0))

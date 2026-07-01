@@ -37,7 +37,7 @@ public class RacialSkillNode extends AbstractRadialNode {
 
 	@Override
 	public ResourceLocation icon(StatsData stats) {
-		return icon("radial_racial");
+		return icon("racial");
 	}
 
 	@Override
