@@ -1073,7 +1073,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "bulma_saiyan_biology_sample.json", sidequest(
 				"bulma_saiyan_biology_sample", "dmz.sidequest.bulma_saiyan_biology_sample.name", "dmz.sidequest.bulma_saiyan_biology_sample.desc",
 				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 6)),
-				new JsonObject[]{ objKill("dragonminez:saga_raditz", 1), objItem("minecraft:diamond", 3), objTalkTo("bulma") },
+				new JsonObject[]{ objQuestKill("dragonminez:saga_raditz", 1), objItem("minecraft:diamond", 3), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(7500) }));
 
 		writeQuestFile(dir, "bulma_energy_storage_battery.json", sidequest(
