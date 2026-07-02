@@ -207,10 +207,11 @@ final class QuestDefaults {
 	}
 
 	private static JsonObject requirements(String op, JsonObject... conditions) {
-		JsonObject[] withAlignment = new JsonObject[conditions.length + 1];
-		System.arraycopy(conditions, 0, withAlignment, 0, conditions.length);
-		withAlignment[conditions.length] = condAlignmentMin(0);
-		return prereqs(op, withAlignment);
+//		JsonObject[] withAlignment = new JsonObject[conditions.length + 1];
+//		System.arraycopy(conditions, 0, withAlignment, 0, conditions.length);
+//		withAlignment[conditions.length] = condAlignmentMin(0);
+//		return prereqs(op, withAlignment);
+		return prereqs(op, conditions);
 	}
 
 	private static JsonObject condSaga(String sagaId, int questId) {

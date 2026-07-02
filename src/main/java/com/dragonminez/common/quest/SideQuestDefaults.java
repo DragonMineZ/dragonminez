@@ -92,9 +92,10 @@ final class SideQuestDefaults {
 		if (turnIn != null) q.addProperty("turn_in", turnIn);
 		else q.add("turn_in", JsonNull.INSTANCE);
 
-		JsonObject effectiveStartRequirements = requiresGoodPath(questGiver, turnIn)
-				? withAlignmentRequirement(startRequirements)
-				: startRequirements;
+		JsonObject effectiveStartRequirements = startRequirements;
+//		JsonObject effectiveStartRequirements = requiresGoodPath(questGiver, turnIn)
+//				? withAlignmentRequirement(startRequirements)
+//				: startRequirements;
 
 		if (prerequisites != null) q.add("prerequisites", prerequisites);
 		if (effectiveStartRequirements != null) q.add("requirements", effectiveStartRequirements);
