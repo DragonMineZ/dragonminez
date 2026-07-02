@@ -1141,7 +1141,7 @@ final class QuestDefaults {
 				step("movies", 38, "38_hildegarn_half.json",
 						earthReq(2410, condBiome("minecraft:plains"), condSaga("buu_saga", 34)),
 						new JsonObject[]{
-								objKill("dragonminez:saga_hirudegarn", 1, 1225000, 51600, 46920, 2)
+								objKill("dragonminez:saga_hirudegarn_incomplete2", 1, 1225000, 51600, 46920, 2)
 						},
 						rewTPS(443800)),
 				step("movies", 39, "39_hildegarn_complete.json",
