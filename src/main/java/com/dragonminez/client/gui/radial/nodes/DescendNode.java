@@ -16,7 +16,7 @@ public class DescendNode extends AbstractRadialNode {
 
 	@Override
 	public ResourceLocation icon(StatsData stats) {
-		return icon("radial_descend");
+		return icon("descend");
 	}
 
 	@Override

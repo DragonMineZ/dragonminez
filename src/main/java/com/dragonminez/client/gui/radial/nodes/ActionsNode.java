@@ -10,7 +10,7 @@ import java.util.List;
 public class ActionsNode extends CategoryNode {
 
 	public ActionsNode() {
-		super(Component.translatable("gui.dragonminez.radial.actions"), icon("radial_actions"));
+		super(Component.translatable("gui.dragonminez.radial.actions"), icon("actions"));
 	}
 
 	@Override

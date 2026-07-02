@@ -11,7 +11,7 @@ import java.util.List;
 public class KiWeaponsNode extends CategoryNode {
 
 	public KiWeaponsNode() {
-		super(Component.translatable("gui.dragonminez.radial.kiweapons"), icon("radial_kiweapon"));
+		super(Component.translatable("gui.dragonminez.radial.kiweapons"), icon("kiweapon"));
 	}
 
 	@Override

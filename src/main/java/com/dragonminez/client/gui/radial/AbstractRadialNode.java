@@ -14,7 +14,7 @@ import java.util.Locale;
 
 public abstract class AbstractRadialNode implements RadialNode {
 
-	public static final ResourceLocation PLACEHOLDER = icon("radial_placeholder");
+	public static final ResourceLocation PLACEHOLDER = icon("placeholder");
 	public static final int GREEN = 0x2BFF00;
 	public static final int RED = 0xFF1B00;
 
@@ -39,7 +39,7 @@ public abstract class AbstractRadialNode implements RadialNode {
 	}
 
 	protected static ResourceLocation icon(String name) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/icons/" + name + ".png");
+		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/radial/" + name + ".png");
 	}
 
 	protected static ResourceLocation iconForFormType(String type) {
