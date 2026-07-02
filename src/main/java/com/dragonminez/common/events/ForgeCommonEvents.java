@@ -452,6 +452,8 @@ public class ForgeCommonEvents {
 		if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 			OtherworldRegionLoader.loadPreGeneratedRegions(event.getServer());
 		}
+
+		com.dragonminez.server.world.structure.helper.VillagePoolInjector.injectAll(event.getServer());
 	}
 
 	@SubscribeEvent
