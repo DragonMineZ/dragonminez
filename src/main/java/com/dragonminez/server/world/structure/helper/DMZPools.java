@@ -39,13 +39,13 @@ public class DMZPools {
 
 		context.register(GOKU_HOUSE, new StructureTemplatePool(
 				empty,
-				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:goku_house"), 1)),
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:goku_house", foundation), 1)),
 				StructureTemplatePool.Projection.RIGID
 		));
 
 		context.register(ROSHI_HOUSE, new StructureTemplatePool(
 				empty,
-				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:roshi_house"), 1)),
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:roshi_house", foundation), 1)),
 				StructureTemplatePool.Projection.RIGID
 		));
 
@@ -141,7 +141,7 @@ public class DMZPools {
 
 		context.register(VEGETA_POD, new StructureTemplatePool(
 				empty,
-				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:vegeta_pod"), 1)),
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:vegeta_pod", foundation), 1)),
 				StructureTemplatePool.Projection.RIGID
 		));
 	}
