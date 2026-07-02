@@ -6,6 +6,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainGameRules;
+import com.dragonminez.common.init.block.custom.DragonBallBlock;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.passives.ClassPassives;
@@ -32,6 +33,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -69,6 +71,8 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final double HOMING_TURN_RATE = 0.2;
     private transient int homingTargetId = -1;
     private transient int firingStartTick = -1;
+
+    private static final float KI_INDESTRUCTIBLE_RESISTANCE = 1000.0F;
 
     private UUID cachedOwnerUUID;
 
@@ -315,6 +319,9 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     protected boolean canKiDestroyBlock(BlockPos pos) {
+        BlockState state = this.level().getBlockState(pos);
+        if (state.getBlock() instanceof DragonBallBlock) return false;
+        if (state.getExplosionResistance(this.level(), pos, null) >= KI_INDESTRUCTIBLE_RESISTANCE) return false;
         return MainGameRules.canKiGrief(this.level(), pos, this.getKiGriefingSource());
     }
 
