@@ -42,6 +42,15 @@ public final class StructureAsyncResolver {
 		});
 	}
 
+	static void buildPlanSync(StructureSpawnPlanner.PlanHolder holder) {
+		try {
+			StructureSpawnPlanner.runBuild(holder, SEARCH_POOL);
+		} catch (Throwable t) {
+			System.err.println("[DMZ] StructureAsyncResolver sync build failed: " + t.getMessage());
+			holder.publish(java.util.Collections.emptyMap());
+		}
+	}
+
 	static void forceGenerate(ChunkGenerator generator, ChunkPos pos) {
 		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
 		if (server == null || generator == null) return;

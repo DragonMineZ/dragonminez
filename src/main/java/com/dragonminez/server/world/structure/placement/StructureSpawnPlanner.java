@@ -91,7 +91,15 @@ public final class StructureSpawnPlanner {
 		BiomeSource biomeSource = getBiomeSourceReflection(state);
 		if (biomeSource == null) return;
 		PlanHolder holder = obtainHolder(worldSeed, biomeSource, randomState, state);
-		ensureBuildStarted(holder);
+
+		if (holder.started.compareAndSet(false, true)) {
+			long startNanos = System.nanoTime();
+			StructureAsyncResolver.buildPlanSync(holder);
+			long ms = (System.nanoTime() - startNanos) / 1_000_000L;
+			LogUtil.info(Env.SERVER, "[DMZ] Structure plan resolved synchronously at level load in " + ms + "ms.");
+		} else {
+			holder.awaitReady(BUILD_AWAIT_SECONDS);
+		}
 	}
 
 	static ChunkPos getPositionFor(BiomeAwareUniquePlacement placement, long worldSeed,
@@ -210,6 +218,13 @@ public final class StructureSpawnPlanner {
 		}
 
 		holder.publish(plan);
+
+		if (generator != null) {
+			for (ChunkPos planned : plan.values()) {
+				if (isStale(epoch)) break;
+				StructureAsyncResolver.forceGenerate(generator, planned);
+			}
+		}
 
 		long buildMs = (System.nanoTime() - buildStartNanos) / 1_000_000L;
 		if (!targets.isEmpty()) {
