@@ -8,8 +8,19 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.levelgen.structure.Structure;
 
 public class MainTags {
+
+	public static class Structures {
+		/** Structures whose blocks are protected from ki-attack griefing unless the
+		 *  {@code allowKiGriefingMasterStructures} gamerule is enabled. */
+		public static final TagKey<Structure> KI_GRIEFING_PROTECTED = create("ki_griefing_protected");
+
+		private static TagKey<Structure> create(String name) {
+			return TagKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+		}
+	}
 
 	public static class EntityTypes {
 		public static final TagKey<EntityType<?>> FRIEZA_SOLDIERS = create("frieza_soldiers");
