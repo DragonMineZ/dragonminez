@@ -7,6 +7,7 @@ import com.dragonminez.common.dragonball.DragonDefinition;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.*;
+import com.dragonminez.common.init.entities.namek.CCNamekianEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
@@ -307,6 +308,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(NamekTraderEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek_trader").toString()));
+    public static final RegistryObject<EntityType<CCNamekianEntity>> CC_NAMEKIAN =
+            ENTITY_TYPES.register("cc_namekian",
+                    () -> EntityType.Builder.of(CCNamekianEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "cc_namekian").toString()));
     public static final RegistryObject<EntityType<NamekWarriorEntity>> NAMEK_WARRIOR =
             ENTITY_TYPES.register("namek_warrior",
                     () -> EntityType.Builder.of(NamekWarriorEntity::new, MobCategory.CREATURE)
