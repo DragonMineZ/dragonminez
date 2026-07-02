@@ -471,6 +471,7 @@ public class AuraRenderer {
 	}
 
 	private static void putShifting(Map<Integer, AuraLayer> layerMap, int layerId, AuraLayer layer) {
+		if (layerId < 0) return;
 		layerId = Mth.clamp(layerId, 0, 6);
 		while (layerMap.containsKey(layerId) && layerId < 6) layerId++;
 		layer.layerId = layerId;
