@@ -176,6 +176,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private static final int SKILL_GRACE_TICKS = 80;
 
+    public static final float SKILL_COOLDOWN_MULTIPLIER = 1.5F;
+    private static final int POST_CAST_LOCKOUT = 80;
+    private static final float CAST_COMMIT_CHANCE = 0.5F;
+    private int postCastCooldown = 0;
+
     protected int castTimer = 0;
     protected int transformTick = 0;
     private int chargeSoundTimer = 0;
@@ -264,7 +269,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         public KiSkill(int id, int cooldown, float size, int colorMain, int colorBorder, int colorOutline) {
             this.id = id;
-            this.cooldownMax = cooldown;
+            this.cooldownMax = Math.max(1, Math.round(cooldown * SKILL_COOLDOWN_MULTIPLIER));
             this.currentCooldown = 0;
             this.size = size;
             this.colorMain = colorMain;
@@ -655,6 +660,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.comboEnabled && this.currentComboCooldown > 0) this.currentComboCooldown--;
                     if (this.canUseZanzoken && this.currentZanzokenCooldown > 0) this.currentZanzokenCooldown--;
                     if (this.currentDashCooldown > 0) this.currentDashCooldown--;
+                    if (this.postCastCooldown > 0) this.postCastCooldown--;
 
                     for (KiSkill skill : this.skillPool) {
                         if (skill.currentCooldown > 0) {
@@ -873,7 +879,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         SagasCombatBrain.Intent intent = SagasCombatBrain.decide(ctx);
 
         switch (intent.type) {
-            case CAST -> this.startSkill(intent.skill);
+            case CAST -> {
+                if (this.random.nextFloat() < CAST_COMMIT_CHANCE) {
+                    this.startSkill(intent.skill);
+                } else {
+                    this.meleeAllowed = true;
+                    this.setLocomotionMode(LocomotionMode.RUN);
+                    if (this.dashTicks <= 0) this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
+                }
+            }
             case COMBO -> {
                 if (this.comboEnabled && this.currentComboCooldown <= 0) this.startCombo(intent.comboId);
             }
@@ -890,6 +904,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public boolean hasSkillReady() {
         if (this.isInSkillGracePeriod()) {
+            return false;
+        }
+
+        if (this.postCastCooldown > 0) {
             return false;
         }
 
@@ -1467,8 +1485,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.setCasting(false);
         this.castTimer = 0;
         this.setSkillType(0);
+        this.postCastCooldown = POST_CAST_LOCKOUT;
 
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
+    }
+
+    public boolean isSkillCastReady() {
+        return this.postCastCooldown <= 0;
     }
 
     protected boolean handleTransformationLogic(int transformTick, int duration) {
