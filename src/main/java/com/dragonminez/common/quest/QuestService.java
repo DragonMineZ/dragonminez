@@ -613,8 +613,7 @@ public final class QuestService {
 				continue;
 			}
 
-			String entityIdStr = killObjective.getEntityId();
-			EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityIdStr));
+			EntityType<?> entityType = killObjective.resolveEntityType();
 			if (entityType == null) {
 				continue;
 			}

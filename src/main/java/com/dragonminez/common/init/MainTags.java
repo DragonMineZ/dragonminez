@@ -4,11 +4,20 @@ import com.dragonminez.Reference;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 
 public class MainTags {
+
+	public static class EntityTypes {
+		public static final TagKey<EntityType<?>> FRIEZA_SOLDIERS = create("frieza_soldiers");
+
+		private static TagKey<EntityType<?>> create(String name) {
+			return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
+		}
+	}
 
 	public static class Biomes {
 		public static final TagKey<Biome> IS_NAMEK = create("is_namekworld"), IS_SACREDLAND = create("is_sacredland"), IS_HTC = create("is_htc"),

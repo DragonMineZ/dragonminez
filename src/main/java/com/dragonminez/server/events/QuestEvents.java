@@ -413,9 +413,7 @@ public class QuestEvents {
 	private static boolean matchesKillObjective(LivingEntity killedEntity, String questKey, int objectiveIndex,
 												KillObjective killObjective, List<ServerPlayer> partyMembers) {
 		try {
-			ResourceLocation targetId = ResourceLocation.parse(killObjective.getEntityId());
-			EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(targetId);
-			boolean typeMatches = requiredType != null && killedEntity.getType().equals(requiredType);
+			boolean typeMatches = killObjective.matches(killedEntity.getType());
 			boolean hasQuestTags = hasQuestSpawnTags(killedEntity);
 			boolean questTagsMatch = hasQuestTags && matchesQuestSpawnTags(killedEntity, questKey, objectiveIndex, partyMembers);
 			return acceptsKillMatch(typeMatches, questTagsMatch, killObjective.getCountMode(), hasQuestTags);

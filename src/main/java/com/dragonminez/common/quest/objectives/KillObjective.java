@@ -2,10 +2,14 @@ package com.dragonminez.common.quest.objectives;
 
 import com.dragonminez.common.quest.QuestObjective;
 import lombok.Getter;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import javax.annotation.Nullable;
 
 @Getter
 public class KillObjective extends QuestObjective {
@@ -47,13 +51,48 @@ public class KillObjective extends QuestObjective {
 
 	@Override
 	public boolean checkProgress(Object... params) {
-		if (params.length > 0 && params[0] instanceof Entity entity) {
-			EntityType<?> requiredType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId));
-			if (entity.getType().equals(requiredType)) {
-				addProgress(1);
-				return isCompleted();
-			}
+		if (params.length > 0 && params[0] instanceof Entity entity && matches(entity.getType())) {
+			addProgress(1);
+			return isCompleted();
 		}
 		return false;
+	}
+
+	public boolean isTag() {
+		return entityId != null && entityId.startsWith("#");
+	}
+
+	public boolean matches(EntityType<?> type) {
+		if (type == null || entityId == null) {
+			return false;
+		}
+		try {
+			if (isTag()) {
+				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(entityId.substring(1)));
+				return type.builtInRegistryHolder().is(tag);
+			}
+			return type.equals(ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId)));
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	@Nullable
+	public EntityType<?> resolveEntityType() {
+		try {
+			if (isTag()) {
+				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(entityId.substring(1)));
+				var tags = ForgeRegistries.ENTITY_TYPES.tags();
+				if (tags != null) {
+					for (EntityType<?> type : tags.getTag(tag)) {
+						return type;
+					}
+				}
+				return null;
+			}
+			return ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId));
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

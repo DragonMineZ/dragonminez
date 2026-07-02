@@ -14,8 +14,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -350,9 +352,7 @@ public class QuestEnemyPreview {
 	private LivingEntity createDummy(String id) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null) return null;
-		ResourceLocation rl = ResourceLocation.tryParse(id);
-		if (rl == null) return null;
-		EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(rl);
+		EntityType<?> type = resolveType(id);
 		if (type == null) return null;
 		try {
 			Entity created = type.create(mc.level);
@@ -363,6 +363,23 @@ public class QuestEnemyPreview {
 			// some entities may fail to construct client-side; fall through
 		}
 		return null;
+	}
+
+	private static EntityType<?> resolveType(String id) {
+		if (id != null && id.startsWith("#")) {
+			ResourceLocation tagId = ResourceLocation.tryParse(id.substring(1));
+			if (tagId == null) return null;
+			TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, tagId);
+			var tags = ForgeRegistries.ENTITY_TYPES.tags();
+			if (tags != null) {
+				for (EntityType<?> type : tags.getTag(tag)) {
+					return type;
+				}
+			}
+			return null;
+		}
+		ResourceLocation rl = ResourceLocation.tryParse(id);
+		return rl == null ? null : ForgeRegistries.ENTITY_TYPES.getValue(rl);
 	}
 
 	/** Discard cached dummy entities (call on screen close). */

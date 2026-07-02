@@ -219,6 +219,16 @@ public final class QuestTextFormatter {
 	}
 
 	private static Component resolveEntityName(String entityId) {
+		if (entityId != null && entityId.startsWith("#")) {
+			String path = entityId.substring(1);
+			int colon = path.indexOf(':');
+			String key = "entity.dragonminez.tag." + (colon >= 0 ? path.substring(colon + 1) : path);
+			Component translated = Component.translatable(key);
+			return translated.getString().equals(key)
+					? Component.literal(humanizeResourceIdentifier(entityId))
+					: translated;
+		}
+
 		ResourceLocation id = safeParse(entityId);
 		if (id == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
 			return Component.literal(humanizeResourceIdentifier(entityId));

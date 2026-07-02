@@ -569,7 +569,7 @@ final class SideQuestDefaults {
 				"combat", false, "guru", "guru",
 				prereqs("AND", condSaga("frieza_saga", 2)),
 				new JsonObject[]{
-						objKill("dragonminez:saga_friezasoldier01", 10),
+						objKill("#dragonminez:frieza_soldiers", 10),
 						objTalkTo("guru")
 				},
 				new JsonObject[]{ rewTPS(9000) }));
@@ -580,8 +580,7 @@ final class SideQuestDefaults {
 				prereqs("AND", condSaga("frieza_saga", 6)),
 				requirements("AND", condBiome("dragonminez:ajissa_plains")),
 				new JsonObject[]{
-						objKill("dragonminez:saga_friezasoldier01", 8),
-						objKill("dragonminez:saga_friezasoldier02", 8)
+						objKill("#dragonminez:frieza_soldiers", 16)
 				},
 				new JsonObject[]{ rewTPS(21000) }));
 
