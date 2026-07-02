@@ -142,7 +142,7 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		boolean nowRunning = false;
 
 		if (active) {
-			if (time % 40 == 0) recomputeRoom();
+			if (time % 100 == 0) recomputeRoom();
 
 			if (roomValid) {
 				double perSecond = cfg().getDeviceEnergyPerGravityPerSecond() * targetGravity;
@@ -205,17 +205,16 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 
 		for (Direction dir : Direction.values()) {
 			BlockPos n = worldPosition.relative(dir);
-			if (isPassable(n) && visited.add(n.asLong())) queue.add(n);
+			if (withinBounds(n, ox, oy, oz, maxSize) && isPassable(n) && visited.add(n.asLong())) {
+				queue.add(n);
+			} else if (!withinBounds(n, ox, oy, oz, maxSize) && isPassable(n)) {
+				invalid = true;
+			}
 		}
 
-		while (!queue.isEmpty()) {
+		while (!invalid && !queue.isEmpty()) {
 			if (visited.size() > cellCap) { invalid = true; break; }
 			BlockPos c = queue.poll();
-
-			if (Math.abs(c.getX() - ox) > maxSize || Math.abs(c.getY() - oy) > maxSize || Math.abs(c.getZ() - oz) > maxSize) {
-				invalid = true;
-				break;
-			}
 
 			if (c.getX() < minX) minX = c.getX();
 			if (c.getY() < minY) minY = c.getY();
@@ -226,10 +225,21 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 
 			for (Direction dir : Direction.values()) {
 				cursor.setWithOffset(c, dir);
+
+				if (!withinBounds(cursor, ox, oy, oz, maxSize)) {
+					if (isPassable(cursor)) {
+						invalid = true;
+						break;
+					}
+					continue;
+				}
+
 				if (isPassable(cursor) && visited.add(cursor.asLong())) {
 					queue.add(cursor.immutable());
 				}
 			}
+
+			if (invalid) break;
 		}
 
 		if (invalid || visited.isEmpty()) { roomValid = false; return; }
@@ -245,6 +255,12 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		roomValid = true;
 		roomMin = new BlockPos(minX, minY, minZ);
 		roomMax = new BlockPos(maxX, maxY, maxZ);
+	}
+
+	private static boolean withinBounds(BlockPos p, int ox, int oy, int oz, int maxSize) {
+		return Math.abs(p.getX() - ox) <= maxSize
+				&& Math.abs(p.getY() - oy) <= maxSize
+				&& Math.abs(p.getZ() - oz) <= maxSize;
 	}
 
 	private boolean isPassable(BlockPos pos) {
