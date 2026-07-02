@@ -7,12 +7,14 @@ import com.dragonminez.client.model.KiClawlanceModel;
 import com.dragonminez.client.model.KiWeaponModelLoader;
 import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.layer.AuraTintTracker;
 import com.dragonminez.client.render.layer.BodyLayerFadeTracker;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -131,7 +133,9 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 	private void renderHand(PoseStack pPoseStack, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer pPlayer, ModelPart pRendererArm, ModelPart pRendererArmwear) {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, pPlayer).orElse(new StatsData(pPlayer));
-		int kaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
+		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
+		final float[] formTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
+		final float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 
 		this.model.attackTime = 0.0F;
 		this.model.crouching = false;
@@ -146,7 +150,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		SkinGathererProvider.BodyLayerSink layerConsumer = new SkinGathererProvider.BodyLayerSink() {
 			@Override
 			public void base(ResourceLocation texture, float[] color) {
-				applyKaiokenTint(color, kaiokenPhase, colorBuffer);
+				applyFormTint(color, formTintColor, formTintIntensity, colorBuffer);
 				renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, texture, colorBuffer);
 			}
 
@@ -162,7 +166,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
 		SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
 		SkinGathererProvider.INSTANCE.gatherEffectLayers(pPlayer, stats, pt, layerConsumer);
-		renderFadingHandLayers(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm, kaiokenPhase, fadingLayers);
+		renderFadingHandLayers(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm, formTintColor, formTintIntensity, fadingLayers);
 
 		renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm);
 	}
@@ -258,12 +262,12 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		out.add(new BodyLayerFadeTracker.FadingLayer("ssj4fur", tex, ssj4.color(), ssj4.target()));
 	}
 
-	private void renderFadingHandLayers(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, ModelPart arm, int kaiokenPhase, List<BodyLayerFadeTracker.FadingLayer> active) {
+	private void renderFadingHandLayers(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, ModelPart arm, float[] formTintColor, float formTintIntensity, List<BodyLayerFadeTracker.FadingLayer> active) {
 		int id = player.getId();
 		long gameTime = player.level().getGameTime();
 		for (BodyLayerFadeTracker.RenderEntry entry : BodyLayerFadeTracker.update(id, gameTime, active)) {
 			if (entry.alpha() <= 0.001F) continue;
-			applyKaiokenTint(entry.color(), kaiokenPhase, colorBuffer);
+			applyFormTint(entry.color(), formTintColor, formTintIntensity, colorBuffer);
 			renderPart(ps, buffer, light, arm, entry.texture(), colorBuffer, entry.alpha());
 		}
 	}
@@ -354,18 +358,18 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		return kiColor;
 	}
 
-	private void applyKaiokenTint(float[] source, int phase, float[] dest) {
-		if (phase <= 0) {
+	private void applyFormTint(float[] source, float[] tint, float intensity, float[] dest) {
+		if (intensity <= 0.0f || tint == null) {
 			dest[0] = source[0];
 			dest[1] = source[1];
 			dest[2] = source[2];
 			return;
 		}
 
-		float intensity = Math.min(0.6f, phase * 0.1f);
-		dest[0] = source[0] * (1.0f - intensity) + intensity;
-		dest[1] = source[1] * (1.0f - intensity);
-		dest[2] = source[2] * (1.0f - intensity);
+		float i = Mth.clamp(intensity, 0.0f, 1.0f) * AuraTintTracker.darkTintScale(source);
+		dest[0] = Mth.clamp(source[0] * (1.0f - i) + tint[0] * i, 0.0f, 1.0f);
+		dest[1] = Mth.clamp(source[1] * (1.0f - i) + tint[1] * i, 0.0f, 1.0f);
+		dest[2] = Mth.clamp(source[2] * (1.0f - i) + tint[2] * i, 0.0f, 1.0f);
 	}
 
 	private void queueFirstPersonAura(AbstractClientPlayer player, PoseStack poseStack, int packedLight) {

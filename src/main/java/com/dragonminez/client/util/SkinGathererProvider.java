@@ -242,25 +242,12 @@ public class SkinGathererProvider {
 
 	protected void resolveBodyHumanSaiyan(Character character, String key, float[] bodyColor, float[] bodyColor2, float[] bodyColor3, BiConsumer<ResourceLocation, float[]> consumer) {
 		int bodyType = character.getBodyType();
-        var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
         String gender = character.getGender().toLowerCase().trim();
         String genderPart = (gender.equals(Character.GENDER_FEMALE)) ? "_female" : "_male";
 		String path = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + ".png";
 		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0.png";
 
-        float[] finalBodyColor = bodyColor;
-        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
-
-            float redness = 0.5F;
-
-            float newR = Math.min(1.0F, bodyColor[0] + redness);
-            float newG = bodyColor[1] * (1.0F - (redness * 0.5F));
-            float newB = bodyColor[2] * (1.0F - (redness * 0.5F));
-
-            finalBodyColor = new float[]{newR, newG, newB};
-        }
-
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), finalBodyColor);
+		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), bodyColor);
 	}
 
 	protected void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {

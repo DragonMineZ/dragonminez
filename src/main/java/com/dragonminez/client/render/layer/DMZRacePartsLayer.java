@@ -5,6 +5,7 @@ import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
@@ -156,7 +157,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (partsModel == null) return;
 
 		RenderType partsRenderType = RenderType.entityTranslucent(RACES_PARTS_TEXTURE);
-		int phase = TransformationsHelper.getKaiokenPhase(stats);
+		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
+		float[] formTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
+		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 		float[] topAuraColor = getTopAuraColor(stats);
 
 		float[] accessoryColor = character.getRgbHairColor();
@@ -208,7 +211,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 							colorToTint = resolveBodyColor1(stats);
 						}
 
-						float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], phase, topAuraColor, tintProgress);
+						float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 
 						if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) {
 							tintedColor = ColorUtils.hexToRgb("#1A1A1A");
@@ -234,7 +237,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 						syncTargetBoneAndParents(antennaBone, playerModel);
 					}
 					float[] antennaColor = resolveBodyColor1(stats);
-					float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], phase, topAuraColor, tintProgress);
+					float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				}
 			}
@@ -255,7 +258,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 						syncTargetBoneAndParents(earsBone, playerModel);
 					}
 
-					float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], phase, topAuraColor, tintProgress);
+					float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				}
 			}
@@ -310,7 +313,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 						}
 					}
 
-					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], phase, topAuraColor, tintProgress);
+					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				});
 			}
@@ -366,15 +369,17 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		return color;
 	}
 
-	private float[] applyAuraTint(float r, float g, float b, int kaiokenPhase, float[] auraColor, float tintProgress) {
-		float intensity = kaiokenPhase > 0 ? Math.min(0.6f, kaiokenPhase * 0.1f) : 0.4f * tintProgress;
+	private float[] applyAuraTint(float r, float g, float b, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
+		boolean hasFormTint = formTintIntensity > 0.0f && formTintColor != null;
+		float intensity = hasFormTint ? Mth.clamp(formTintIntensity, 0.0f, 1.0f) : 0.4f * tintProgress;
 		intensity *= AuraTintTracker.darkTintScale(r, g, b);
 
 		if (intensity <= 0.001f) return new float[]{r, g, b};
 
-		float newR = r * (1.0f - intensity) + (auraColor[0] * intensity);
-		float newG = g * (1.0f - intensity) + (auraColor[1] * intensity);
-		float newB = b * (1.0f - intensity) + (auraColor[2] * intensity);
+		float[] target = hasFormTint ? formTintColor : auraColor;
+		float newR = r * (1.0f - intensity) + (target[0] * intensity);
+		float newG = g * (1.0f - intensity) + (target[1] * intensity);
+		float newB = b * (1.0f - intensity) + (target[2] * intensity);
 
 		return new float[]{newR, newG, newB};
 	}

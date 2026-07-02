@@ -71,6 +71,8 @@ public class DefaultFormsFactory {
 		x2.setSpeedMultiplier(1.1);
 		x2.setHealthDrain(0.03);
 		x2.setAttackSpeed(1.1);
+		x2.setTintColor("#FF0000");
+		x2.setTintIntensity(0.1);
 		x2.setAuraColor("#DB182C");
 		x2.setHasLightnings(false);
 		x2.setHairType("");
@@ -93,6 +95,8 @@ public class DefaultFormsFactory {
 		x3.setSpeedMultiplier(1.2);
 		x3.setAttackSpeed(1.2);
 		x3.setHealthDrain(0.06);
+		x3.setTintColor("#FF0000");
+		x3.setTintIntensity(0.2);
 		x3.setAuraColor("#DB182C");
 		x3.setHairType("");
 		setDefaultMasteryValues(x3);
@@ -113,6 +117,8 @@ public class DefaultFormsFactory {
 		x4.setSpeedMultiplier(1.35);
 		x4.setAttackSpeed(1.35);
 		x4.setHealthDrain(0.095);
+		x4.setTintColor("#FF0000");
+		x4.setTintIntensity(0.3);
 		x4.setAuraColor("#DB182C");
 		x4.setHairType("");
 		setDefaultMasteryValues(x4);
@@ -133,6 +139,8 @@ public class DefaultFormsFactory {
 		x10.setSpeedMultiplier(1.5);
 		x10.setHealthDrain(0.11);
 		x10.setAttackSpeed(1.5);
+		x10.setTintColor("#FF0000");
+		x10.setTintIntensity(0.4);
 		x10.setAuraColor("#DB182C");
 		x10.setHairType("");
 		setDefaultMasteryValues(x10);
@@ -153,6 +161,8 @@ public class DefaultFormsFactory {
 		x20.setSpeedMultiplier(1.65);
 		x20.setHealthDrain(0.15);
 		x20.setAttackSpeed(1.65);
+		x20.setTintColor("#FF0000");
+		x20.setTintIntensity(0.5);
 		x20.setAuraColor("#DB182C");
 		x20.setHairType("");
 		setDefaultMasteryValues(x20);
@@ -173,6 +183,8 @@ public class DefaultFormsFactory {
 		x100.setSpeedMultiplier(2.0);
 		x100.setHealthDrain(0.20);
 		x100.setAttackSpeed(2.0);
+		x100.setTintColor("#FF0000");
+		x100.setTintIntensity(0.6);
 		x100.setAuraColor("#DB182C");
 		x100.setHairType("");
 		setDefaultMasteryValues(x100);
@@ -420,6 +432,8 @@ public class DefaultFormsFactory {
 		shiyoken.setPwrMultiplier(3.4);
 		shiyoken.setEnergyDrain(0.22);
 		shiyoken.setHairType("base");
+        shiyoken.setTintColor("#FF0000");
+        shiyoken.setTintIntensity(0.25);
         shiyoken.setAuraColor("#A10000");
         shiyoken.setHasLightnings(true);
         shiyoken.setLightningColor("#FF4F4F");
@@ -438,6 +452,8 @@ public class DefaultFormsFactory {
 		shin_shiyoken.setPwrMultiplier(4.3);
 		shin_shiyoken.setEnergyDrain(0.28);
 		shin_shiyoken.setHairType("base");
+        shin_shiyoken.setTintColor("#FF0000");
+        shin_shiyoken.setTintIntensity(0.25);
         shin_shiyoken.setAuraColor("#A10000");
         shin_shiyoken.setHasLightnings(true);
         shin_shiyoken.setLightningColor("#FF4F4F");
@@ -461,6 +477,8 @@ public class DefaultFormsFactory {
 		chou_shiyoken.setPwrMultiplier(5.0);
 		chou_shiyoken.setEnergyDrain(0.34);
         chou_shiyoken.setHairType("base");
+        chou_shiyoken.setTintColor("#FF0000");
+        chou_shiyoken.setTintIntensity(0.25);
         chou_shiyoken.setAuraColor("#A10000");
         chou_shiyoken.setHasLightnings(true);
         chou_shiyoken.setLightningColor("#FF4F4F");

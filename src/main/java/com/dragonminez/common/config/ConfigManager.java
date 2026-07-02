@@ -237,6 +237,8 @@ public class ConfigManager {
 					newMap.add(key, oldVal);
 					count++;
 				}
+			} else if (oldVal.isJsonArray()) {
+				if (!valuesEqual(oldVal, newVal)) { newMap.add(key, oldVal); count++; }
 			} else if (isValueCompatible(oldVal, newVal, valueType) && !valuesEqual(oldVal, newVal)) {
 				newMap.add(key, oldVal);
 				count++;
@@ -349,6 +351,32 @@ public class ConfigManager {
 		return result;
 	}
 
+	private static void upgradeUserFormFiles(Path formsDir, Map<String, FormConfig> defaultForms) {
+		if (!Files.exists(formsDir)) return;
+		Set<String> defaults = new HashSet<>();
+		for (FormConfig form : defaultForms.values()) if (form != null) defaults.add(form.getGroupName().toLowerCase());
+		try (Stream<Path> stream = Files.list(formsDir)) {
+			stream.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.forEach(p -> {
+						try {
+							FormConfig existing = LOADER.loadConfig(p, FormConfig.class);
+							if (existing == null || defaults.contains(existing.getGroupName().toLowerCase())) return;
+							if (existing.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+								LogUtil.warn(Env.COMMON, "Regenerating user form '{}'. Reason: Outdated version", p.getFileName());
+								backupOldConfig(p);
+								existing.setConfigVersion(FormConfig.CURRENT_VERSION);
+								LOADER.saveConfig(p, existing);
+							}
+						} catch (Exception e) {
+							LogUtil.error(Env.COMMON, "Failed to upgrade user form '{}': {}", p.getFileName(), e.getMessage());
+						}
+					});
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Failed to scan user forms in '{}': {}", formsDir, e.getMessage());
+		}
+	}
+
 	private static void loadGeneralConfigs() {
 		userConfig = loadAndValidate(CONFIG_DIR.resolve("general-user.json"), GeneralUserConfig.class, GeneralUserConfig::new, GeneralUserConfig::getConfigVersion, GeneralUserConfig::setConfigVersion, GeneralUserConfig.CURRENT_VERSION, null);
 		serverConfig = loadAndValidate(CONFIG_DIR.resolve("general-server.json"), GeneralServerConfig.class, GeneralServerConfig::new, GeneralServerConfig::getConfigVersion, GeneralServerConfig::setConfigVersion, GeneralServerConfig.CURRENT_VERSION, "general-server.json");
@@ -377,6 +405,7 @@ public class ConfigManager {
 
 		Map<String, FormConfig> raceForms = new HashMap<>();
 		if (isDefault) FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
+		upgradeUserFormFiles(formsPath, raceForms);
 		Map<String, FormConfig> userDiskForms = LOADER.loadRaceForms(raceName, formsPath);
 
 		if (!isDefault) {
@@ -413,6 +442,7 @@ public class ConfigManager {
 		Files.createDirectories(STACK_FORMS_DIR);
 		Map<String, FormConfig> finalStackForms = new HashMap<>();
 		if (isDefault) FORMS_FACTORY.createDefaultStackForms(STACK_FORMS_DIR, finalStackForms);
+		upgradeUserFormFiles(STACK_FORMS_DIR, finalStackForms);
 		Map<String, FormConfig> userDiskForms = LOADER.loadStackForms(STACK_FORMS_DIR);
 
 		if (isDefault) {
