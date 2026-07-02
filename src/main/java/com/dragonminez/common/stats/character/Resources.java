@@ -80,6 +80,10 @@ public class Resources {
     }
 
     public void setAlignment(int alignment) {
+        if (statsData != null && statsData.getEffects().hasEffect("majin")) {
+            this.alignment = 0;
+            return;
+        }
         this.alignment = Math.max(0, Math.min(100, alignment));
     }
 
