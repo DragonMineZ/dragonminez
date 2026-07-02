@@ -192,7 +192,16 @@ public class TickHandler {
 			boolean wasExecuting = serverPlayer.getPersistentData().getBoolean("dmz_was_executing_ki");
 
 			if (isMovementRestricted) {
-				serverPlayer.setDeltaMovement(0, serverPlayer.getDeltaMovement().y < 0 ? serverPlayer.getDeltaMovement().y : 0, 0);
+				// While a ki attack pins the player in place, only clamp the downward velocity for
+				// grounded/falling players. A player using the custom fly skill (abilities.flying is
+				// kept false, so vanilla gravity still applies) would otherwise keep sinking on the
+				// server while the client holds them hovering — dropping the attack's spawn origin
+				// down around their feet. Creative flight never sinks because it has no gravity, so
+				// mirror that here by hovering flying players in place.
+				boolean flying = data.getSkills().isSkillActive("fly");
+				double restrictedY = flying ? 0.0D : Math.min(serverPlayer.getDeltaMovement().y, 0.0D);
+				serverPlayer.setDeltaMovement(0, restrictedY, 0);
+				if (flying) serverPlayer.resetFallDistance();
 				serverPlayer.hasImpulse = true;
 				serverPlayer.setJumping(false);
 				serverPlayer.setSprinting(false);
