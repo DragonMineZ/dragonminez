@@ -34,6 +34,8 @@ public final class MainItems {
 	public static final Item.Properties properties = new Item.Properties();
 	public static final DeferredRegister<Item> ITEM_REGISTER = DeferredRegister.create(ForgeRegistries.ITEMS, Reference.MOD_ID);
 
+	public static final java.util.List<RegistryObject<Item>> MUSIC_DISCS = new java.util.ArrayList<>();
+
 	//CAPSULAS
 	public static final RegistryObject<Item> RED_CAPSULE = ITEM_REGISTER.register("red_capsule", () -> new CapsuleItem(CapsuleType.STR));
 	public static final RegistryObject<Item> PURPLE_CAPSULE = ITEM_REGISTER.register("purple_capsule", () -> new CapsuleItem(CapsuleType.SKP));
@@ -530,7 +532,9 @@ public final class MainItems {
 	}
 
 	private static RegistryObject<Item> regMusicDisc(String name, RegistryObject<SoundEvent> sound, int lengthInTicks) {
-		return ITEM_REGISTER.register(name, () -> new RecordItem(15, sound, new Item.Properties().stacksTo(1).rarity(Rarity.RARE), lengthInTicks));
+		RegistryObject<Item> disc = ITEM_REGISTER.register(name, () -> new RecordItem(15, sound, new Item.Properties().stacksTo(1).rarity(Rarity.RARE), lengthInTicks));
+		MUSIC_DISCS.add(disc);
+		return disc;
 	}
 
 	private static Map<ArmorItem.Type, RegistryObject<Item>> registerArmorSet(String name, String texture, boolean hasHelmet) {

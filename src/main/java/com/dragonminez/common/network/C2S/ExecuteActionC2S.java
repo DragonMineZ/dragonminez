@@ -78,6 +78,8 @@ public class ExecuteActionC2S {
 						case INSTANT_RELEASE -> {
 							int potentialUnlockLevel = data.getSkills().hasSkill("potentialunlock") ? data.getSkills().getSkillLevel("potentialunlock") : 0;
 							int maxRelease = 50 + (potentialUnlockLevel * 5);
+							int releaseLimit = data.getResources().getReleaseLimit();
+							if (releaseLimit > 0) maxRelease = Math.min(maxRelease, releaseLimit);
 							int currentRelease = data.getResources().getPowerRelease();
 
 							if (currentRelease < maxRelease) {
