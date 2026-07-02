@@ -105,6 +105,12 @@ public class NetworkHandler {
 				.consumerMainThread(ExecuteActionC2S::handle)
 				.add();
 
+		net.messageBuilder(SetReleaseLimitC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SetReleaseLimitC2S::new)
+				.encoder(SetReleaseLimitC2S::encode)
+				.consumerMainThread(SetReleaseLimitC2S::handle)
+				.add();
+
 		net.messageBuilder(SelectFormC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(SelectFormC2S::new)
 				.encoder(SelectFormC2S::encode)

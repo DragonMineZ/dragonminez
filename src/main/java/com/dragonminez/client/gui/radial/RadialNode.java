@@ -11,6 +11,10 @@ public interface RadialNode {
 
 	ResourceLocation icon(StatsData stats);
 
+	default String faceText(StatsData stats) {
+		return null;
+	}
+
 	default int iconTint(StatsData stats) {
 		return -1;
 	}

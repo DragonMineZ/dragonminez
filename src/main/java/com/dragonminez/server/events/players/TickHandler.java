@@ -685,6 +685,9 @@ public class TickHandler {
 		int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
 		int maxRelease = 50 + (potentialUnlockLevel * 5);
 
+		int releaseLimit = data.getResources().getReleaseLimit();
+		if (releaseLimit > 0) maxRelease = Math.min(maxRelease, releaseLimit);
+
 		int effectiveLevel = Math.min(10, potentialUnlockLevel);
 
 		float temporalMultiplier = (float) Math.pow(chargeTicks / 50.0f, 2);
