@@ -106,6 +106,8 @@ public class GeneralServerConfig {
 		private Integer partyMaxMembers = -1;
 		private Integer partyMaxLevelGap = 500;
 		private Double partyTpShareRatio = 0.5;
+		private Double enemyHealthPerPartyPlayer = 1.25;
+		private Double enemyDamagePerPartyPlayer = 1.1;
 		private Integer instantTransmissionPlayerRangePerLevel = 200;
 
 		private Double easyModeHPMultiplier = 0.75;
@@ -240,6 +242,14 @@ public class GeneralServerConfig {
 		public Double getPartyTpShareRatio() {
 			if (partyTpShareRatio == null) return 0.0;
 			return Math.max(0.0, Math.min(partyTpShareRatio, 10.0));
+		}
+
+		public Double getEnemyHealthPerPartyPlayer() {
+			return Math.max(1.0, enemyHealthPerPartyPlayer != null ? enemyHealthPerPartyPlayer : 1.25);
+		}
+
+		public Double getEnemyDamagePerPartyPlayer() {
+			return Math.max(1.0, enemyDamagePerPartyPlayer != null ? enemyDamagePerPartyPlayer : 1.1);
 		}
 
 		public Integer getInstantTransmissionPlayerRangePerLevel() {
