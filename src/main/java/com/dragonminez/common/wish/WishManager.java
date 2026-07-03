@@ -101,6 +101,7 @@ public class WishManager {
 		defaultWishes.add(new ReCustomizeWish("wish.shenron.customization.name", "wish.shenron.customization.desc"));
 		defaultWishes.add(new ChangeDifficultyWish("wish.shenron.changedifficulty.name", "wish.shenron.changedifficulty.desc"));
 		defaultWishes.add(new ResetStoryWish("wish.shenron.resetstory.name", "wish.shenron.resetstory.desc"));
+		defaultWishes.add(new CommandWish("wish.shenron.revive.name", "wish.shenron.revive.desc", "dmzrevive %player%"));
 
 		List<Tuple<String, Integer>> materials = new ArrayList<>();
 		materials.add(new Tuple<>("dragonminez:kikono_shard", 32));
@@ -135,6 +136,7 @@ public class WishManager {
 		defaultWishes.add(new RelocateStatsWish("wish.porunga.relocatestats.name", "wish.porunga.relocatestats.desc"));
 		defaultWishes.add(new ChangeDifficultyWish("wish.porunga.changedifficulty.name", "wish.porunga.changedifficulty.desc"));
 		defaultWishes.add(new ResetStoryWish("wish.porunga.resetstory.name", "wish.porunga.resetstory.desc"));
+		defaultWishes.add(new CommandWish("wish.porunga.revive.name", "wish.porunga.revive.desc", "dmzrevive %player%"));
 
 		List<Tuple<String, Integer>> materials = new ArrayList<>();
 		materials.add(new Tuple<>("dragonminez:kikono_shard", 64));

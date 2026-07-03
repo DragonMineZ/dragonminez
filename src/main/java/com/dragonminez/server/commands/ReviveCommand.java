@@ -37,6 +37,8 @@ public class ReviveCommand {
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getCooldowns().removeCooldown(Cooldowns.REVIVE_BABA);
+				data.getStatus().setTempReturnTimer(0);
+				data.getStatus().setTempReturnsUsed(0);
 				if (!data.getStatus().isAlive()) {
 					data.getStatus().setAlive(true);
 					player.setHealth(player.getMaxHealth());

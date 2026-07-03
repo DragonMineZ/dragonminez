@@ -71,6 +71,11 @@ public class GeneralServerConfig {
 		private Boolean forceCharacterCreation = true;
 		private Boolean commandOutputOnConsole = true;
 		private Integer reviveCooldownSeconds = 300;
+		private Boolean babaTempReturnEnabled = true;
+		private Integer babaTempReturnSeconds = 3600;
+		private Integer babaTempReturnLimit = 3;
+		private Boolean babaHardcoreEnabled = false;
+		private Double babaHardcoreCooldownGrowth = 0.5;
 		private Double tpGainMultiplier = 1.0;
 		private Double globalTPCostMultiplier = 1.0;
 		private Integer minTPCost = 16;
@@ -83,6 +88,7 @@ public class GeneralServerConfig {
 		private Integer tpPerItemCrafted = 1;
 		private Boolean gravityBonusEnabled = true;
 		private Double HTCTpMultiplier = 2.5;
+		private Double otherworldDeadTpMultiplier = 2.0;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
 		private CapsulesConfig capsules = new CapsulesConfig();
@@ -128,7 +134,7 @@ public class GeneralServerConfig {
 			Map<TpSource, List<TpBoost>> map = new LinkedHashMap<>();
 			for (TpSource source : TpSource.values()) {
 				List<TpBoost> boosts = new ArrayList<>(Arrays.asList(
-						TpBoost.CLASS, TpBoost.RACIALSKILL, TpBoost.HTC, TpBoost.GRAVITY,
+						TpBoost.CLASS, TpBoost.RACIALSKILL, TpBoost.HTC, TpBoost.OTHERWORLD, TpBoost.GRAVITY,
 						TpBoost.WEIGHTS, TpBoost.GLOBAL, TpBoost.POTION, TpBoost.MUTANT
 				));
 				if (source == TpSource.STORY) boosts.add(TpBoost.DIFFICULTY);
@@ -145,6 +151,30 @@ public class GeneralServerConfig {
 
 		public Integer getReviveCooldownSeconds() {
 			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		public Boolean getBabaTempReturnEnabled() {
+			return babaTempReturnEnabled != null ? babaTempReturnEnabled : true;
+		}
+
+		public Integer getBabaTempReturnSeconds() {
+			return babaTempReturnSeconds != null ? Math.max(1, babaTempReturnSeconds) : 3600;
+		}
+
+		public Integer getBabaTempReturnLimit() {
+			return babaTempReturnLimit != null ? Math.max(0, babaTempReturnLimit) : 3;
+		}
+
+		public Boolean getBabaHardcoreEnabled() {
+			return babaHardcoreEnabled != null ? babaHardcoreEnabled : false;
+		}
+
+		public Double getBabaHardcoreCooldownGrowth() {
+			return babaHardcoreCooldownGrowth != null ? Math.max(0, babaHardcoreCooldownGrowth) : 0.5;
+		}
+
+		public Double getOtherworldDeadTpMultiplier() {
+			return otherworldDeadTpMultiplier != null ? Math.max(1.0, otherworldDeadTpMultiplier) : 2.0;
 		}
 
 		public Boolean getForceCharacterCreation() {

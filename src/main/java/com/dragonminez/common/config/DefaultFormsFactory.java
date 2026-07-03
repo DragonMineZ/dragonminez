@@ -767,6 +767,7 @@ public class DefaultFormsFactory {
 		ssj3.setDefMultiplier(2.15);
 		ssj3.setPwrMultiplier(3.0);
 		ssj3.setEnergyDrain(0.34);
+		ssj3.setOtherworldTimeDrain(6.0);
 		ssj3.setHairType("ssj3");
 		setDefaultMasteryValues(ssj3);
 		ssj3.setStackDrainMultiplier(2.0);

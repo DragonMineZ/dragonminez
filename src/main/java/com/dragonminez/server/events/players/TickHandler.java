@@ -33,6 +33,7 @@ import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
+import com.dragonminez.server.util.BabaReviveService;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.GravityStateSync;
 import com.dragonminez.server.util.PotionEffectHelper;
@@ -303,7 +304,9 @@ public class TickHandler {
 				GravityLogic.tick(serverPlayer);
 				GravityStateSync.sync(serverPlayer);
 				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
-					if (!data.getStatus().isAlive() && !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
+					BabaReviveService.tickTempReturn(serverPlayer, data);
+					if (!data.getStatus().isAlive() && data.getStatus().getTempReturnTimer() <= 0
+							&& !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
 						if (!serverPlayer.isSpectator() && !serverPlayer.isCreative()) {
 							ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 							serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);

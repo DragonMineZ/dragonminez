@@ -22,6 +22,9 @@ public class Status {
 
 	private boolean isAlive;
 	private boolean forceHalo;
+	private int tempReturnTimer;
+	private int tempReturnsUsed;
+	private int deathCount;
 	private boolean isHasCreatedCharacter;
 	private boolean isAuraActive;
 	private boolean isActionCharging;
@@ -65,6 +68,9 @@ public class Status {
 	public Status() {
 		this.isAlive = true;
 		this.forceHalo = false;
+		this.tempReturnTimer = 0;
+		this.tempReturnsUsed = 0;
+		this.deathCount = 0;
 		this.isHasCreatedCharacter = false;
 		this.isAuraActive = false;
 		this.isActionCharging = false;
@@ -108,6 +114,9 @@ public class Status {
 	public void reset() {
 		this.isAlive = true;
 		this.forceHalo = false;
+		this.tempReturnTimer = 0;
+		this.tempReturnsUsed = 0;
+		this.deathCount = 0;
 		this.isHasCreatedCharacter = false;
 		this.isAuraActive = false;
 		this.isActionCharging = false;
@@ -175,6 +184,9 @@ public class Status {
 		CompoundTag tag = new CompoundTag();
 		tag.putBoolean("IsAlive", isAlive);
 		tag.putBoolean("ForceHalo", forceHalo);
+		tag.putInt("TempReturnTimer", tempReturnTimer);
+		tag.putInt("TempReturnsUsed", tempReturnsUsed);
+		tag.putInt("DeathCount", deathCount);
 		tag.putBoolean("HasCreatedChar", isHasCreatedCharacter);
 		tag.putBoolean("AuraActive", isAuraActive);
 		tag.putBoolean("Transforming", isActionCharging);
@@ -223,6 +235,9 @@ public class Status {
 	public void load(CompoundTag tag) {
 		this.isAlive = tag.getBoolean("IsAlive");
 		this.forceHalo = tag.getBoolean("ForceHalo");
+		this.tempReturnTimer = tag.getInt("TempReturnTimer");
+		this.tempReturnsUsed = tag.getInt("TempReturnsUsed");
+		this.deathCount = tag.getInt("DeathCount");
 		this.isHasCreatedCharacter = tag.getBoolean("HasCreatedChar");
 		this.isAuraActive = tag.getBoolean("AuraActive");
 		this.isActionCharging = tag.getBoolean("Transforming");
@@ -274,6 +289,9 @@ public class Status {
 	public void copyFrom(Status other) {
 		this.isAlive = other.isAlive;
 		this.forceHalo = other.forceHalo;
+		this.tempReturnTimer = other.tempReturnTimer;
+		this.tempReturnsUsed = other.tempReturnsUsed;
+		this.deathCount = other.deathCount;
 		this.isHasCreatedCharacter = other.isHasCreatedCharacter;
 		this.isAuraActive = other.isAuraActive;
 		this.isActionCharging = other.isActionCharging;

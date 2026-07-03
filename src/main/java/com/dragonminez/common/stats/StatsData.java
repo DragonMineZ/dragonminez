@@ -21,6 +21,7 @@ import com.dragonminez.common.util.lists.StackForms;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.HTCDimension;
+import com.dragonminez.server.world.dimension.OtherworldDimension;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.server.util.FusionLogic;
@@ -1179,6 +1180,12 @@ public class StatsData {
 		return ConfigManager.getServerConfig().getGameplay().getHTCTpMultiplier();
 	}
 
+	public double getTpOtherworldMultiplier() {
+		if (!player.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) return 1.0;
+		if (status.isAlive()) return 1.0;
+		return ConfigManager.getServerConfig().getGameplay().getOtherworldDeadTpMultiplier();
+	}
+
 	public double getTpGravityMultiplier() {
 		var gravityConfig = ConfigManager.getServerConfig().getGravity();
 		if (!gravityConfig.getTpEnabled()) return 1.0;
@@ -1238,6 +1245,7 @@ public class StatsData {
 				case CLASS -> additive += (getTpClassMultiplier() - 1.0);
 				case RACIALSKILL -> additive += (getTpFrostDemonMultiplier() - 1.0);
 				case HTC -> additive += (getTpHTCMultiplier() - 1.0);
+				case OTHERWORLD -> additive += (getTpOtherworldMultiplier() - 1.0);
 				case GRAVITY -> { if (gravityEnabled) additive += (getTpGravityMultiplier() - 1.0); }
 				case WEIGHTS -> multiplicative *= getTpWeightBellMultiplier();
 				case GLOBAL -> multiplicative *= getTpGlobalMultiplier();
