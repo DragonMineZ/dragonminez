@@ -18,8 +18,9 @@
 - **Majin Antenna & Frost Demon Horns:** Two new race part accessories are now available for character customization.
 - **Race Parts Textures:** Updated and expanded the race parts texture system.
 - **Broly — Texture Variants:** Broly NPC now has multiple texture variants for both his Super Saiyan and Legendary Super Saiyan forms.
+- **Form Skin Tint — `formTint` Config Field** *(Addon/Developer API)*: Forms can now specify a `tintColor` (hex) and `tintIntensity` (0.0–1.0) in their form JSON config to tint the player's skin, hair, and race parts while in that form. Replaces the old hardcoded Kaioken-only red tint. Kaioken (x2–x100), Shiyoken, Shin Shiyoken, and Chou Shiyoken all use this new system. User-defined form files are automatically version-migrated on load.
 
-*(by @yuseix300)*
+*(by @yuseix300, @Shokkoh)*
 
 ### Music Discs
 
@@ -73,9 +74,67 @@
 
 *(by @Bruneitor123)*
 
+### Raditz Sidequest — Kill Objective Fix
+- Fixed the "Saiyan Biology Sample" Bulma sidequest where the Raditz kill objective used the wrong tracking method. Kills now register correctly.
+
+*(by @Bruneitor123)*
+
 ---
 
 ## Combat & Balance
+
+### Defense System Rework
+- Overhauled how defense values are stored, computed, and displayed. Defense stats are now stored in **flat mitigation units** — the displayed value directly represents damage reduction per hit, already including your active form's DEF multiplier.
+- Existing worlds **auto-migrate on first load** (config version 21.2): all `defenseScaling` values in `stats.json` are multiplied by 0.12 and re-saved. Combat math adjusts to match, so effective damage reduction stays comparable to before.
+- The `k_factor` minimum in the post-mitigation formula changed from 100.0 to 12.0, normalizing defense behavior at all stat levels.
+- The old "transform DEF divider" (which applied a secondary reduction per form) is removed; form DEF contribution is now handled entirely through the higher `defMultiplier` values in form configs (see below).
+
+*(by @Shokkoh)*
+
+### Form DEF Multipliers Buffed
+- All form defense multipliers have been increased by approximately 25% of their bonus-over-1.0. Examples: Kaioken x100 goes 2.0 → 2.25, SSJ4 goes 2.5 → 2.875, Chou Shiyoken goes 3.1 → 3.625. This compensates for the removal of the old transform DEF divider, maintaining and slightly improving protection while in forms across all races.
+
+*(by @Shokkoh)*
+
+### Form TP Costs Rebalanced (~2.6× Increase)
+- Transformation unlock TP costs have been significantly increased across all races — approximately 2.6× across all tiers. For example, Human super forms go from 8,000 / 16,000 / 25,000 / 40,000 to 21,000 / 42,000 / 65,000 / 104,000. This makes the progression to unlocking transformations longer and more deliberate.
+
+*(by @Shokkoh)*
+
+### Health Regen Nerfed
+- Baseline HP/5 regeneration has been reduced by approximately 75% for all classes. VIT-based HP/5 scaling is also slightly reduced. Health regeneration is now much slower and should no longer trivialize recovery between engagements.
+
+*(by @Shokkoh)*
+
+### Ki/Energy Regen Buffed
+- ENE-based energy regeneration (`ep5EneScaling`) has been doubled for all classes. Players investing in the ENE stat will regenerate Ki significantly faster than before.
+
+*(by @Shokkoh)*
+
+### Meditation Skill Buffed
+- The Meditation technique now provides a 50% stronger regen bonus per level — each level grants +7.5% (was +5%) to both stamina and energy regeneration.
+
+*(by @Shokkoh)*
+
+### STR Scaling Nerfed
+- Strength stat scaling has been slightly reduced across most classes (examples: Warrior 1.6 → 1.4, Berserker 1.9 → 1.7, Martial Artist 1.0 → 0.8, Tank 0.8 → 0.6). This brings melee damage growth more in line with the overall combat system.
+
+*(by @Shokkoh)*
+
+### TP Cost Formula Rebalanced (Mid-to-Late Game)
+- The Training Points cost formula for stat purchases has been reworked for mid-to-late game. A curved formula with a "knee" at 5% of max stats replaces the old linear formula — costs scale more steeply in the late game, rewarding earlier investment.
+
+*(by @Shokkoh)*
+
+### Progression TP Gain Multiplier
+- A new **Progression TP gain multiplier** scales TP rewards based on how far along your stat progression you are. As your stat cost grows relative to the configured maximum, you receive a bonus on all TP earned — up to a configurable cap (default: +50% at max stat cost). This is visible in the TP multiplier tooltip as a new "Progression" entry. Configurable via `increaseTPGainRelativeToTPCost` in the server config (default `0.5`).
+
+*(by @Shokkoh)*
+
+### Party Mob Scaling Rework
+- Enemy scaling in party play has been changed from an exponential formula to a **linear per-player model**. Each additional party member now adds a configurable percentage to enemy HP and damage (defaults: +25% HP, +10% damage per member). New server config fields: `enemyHealthPerPartyPlayer` and `enemyDamagePerPartyPlayer`.
+
+*(by @Shokkoh)*
 
 ### Defense Formula Update
 - Adjusted the defense formula to perform more consistently across damage types — particularly against **strike attacks**, in **PvP**, and against **story bosses**. The previous formula undervalued defense against these scenarios.
@@ -132,6 +191,11 @@
 
 ## Physics & Movement
 
+### Ki Fall Damage Negation
+- Players now automatically use Ki to negate fall damage. Ki is consumed at a rate of **3 Ki per point of fall damage**. If you have enough Ki, fall damage is fully negated; if not, damage is partially reduced proportional to remaining Ki, and all remaining Ki is drained. Stats are synced to the server immediately.
+
+*(by @Shokkoh)*
+
 ### Gravity & Weight System Rework
 - Fully reworked the gravity calculation and weight handling logic. Introduced a dedicated `GravityStateSync` to properly synchronize gravity zone state from server to clients.
 - Gravity device blocks now correctly notify players entering and exiting their zone.
@@ -164,6 +228,13 @@
 ---
 
 ## UI & Controls
+
+### Defense Stats Display Overhauled
+- The defense stat panel and tooltip in the Character Stats screen have been cleaned up. The "Flat Mitigation" and "Power Divider" tooltip lines are removed — the displayed defense value now directly shows flat damage mitigation including the active form's DEF multiplier.
+- A new **"Stamina per hit"** line is now shown in both the stats list and hexagon panel.
+- TP multiplier values now display with **two decimal places** throughout the stats screen for greater precision.
+
+*(by @Shokkoh)*
 
 ### Utility Menu — Radial Rework (X Menu)
 - The utility menu (opened with X) has been completely reworked into a **radial wheel interface**. Actions and options are now organized into interactive nodes — forms, ki actions, ki weapons, movement options, racial skills — with a cleaner and more intuitive layout.
@@ -202,6 +273,36 @@
 ---
 
 ## Bug Fixes
+
+### Aura Sound — Permanent Aura State
+- Fixed aura loop sounds not playing or stopping incorrectly during **permanent aura** states. Both the aura sound handler and the aura loop sound tick now check for permanent aura in addition to the regular active aura flag. Several sound files were also updated.
+
+*(by @Shokkoh)*
+
+### Forms Not Appearing in Transformation Menu
+- Fixed certain forms not showing in the transformation selection menu. The mastery prerequisite check now correctly considers both regular form masteries and stack form masteries when determining if a form's unlock requirements are met.
+
+*(by @Shokkoh)*
+
+### Kikono Station & Fuel Generator — Drops & Required Tool
+- Fixed the Kikono Station and Fuel Generator not dropping correctly and requiring the wrong mining tool. Kikono Station now correctly requires a diamond tool. Fuel Generator is now tagged as mineable with a pickaxe. Gravity Device was moved from `needs_iron_tool` to `needs_diamond_tool`.
+
+*(by @Shokkoh)*
+
+### Particle Effects — Null Return Fix
+- Fixed a crash and visual issue where all 17 particle types (aura, ki blast, ki explosion, ki lightning, dust, rock, punch, and others) could return null during rendering, causing them to fail silently or crash the client.
+
+*(by @Shokkoh)*
+
+### Aura Layer Renderer
+- Fixed a rendering issue in the aura layer renderer that caused incorrect aura display.
+
+*(by @Shokkoh)*
+
+### Weapon Registry — Invalid Entry Handling
+- The weapon registry now handles missing or invalid weapon registrations gracefully with fallbacks, preventing potential crashes from unregistered or malformed weapon entries.
+
+*(by @Shokkoh)*
 
 ### Majin — Alignment Lock
 - Fixed a bug where Majin characters could drift away from 0 (neutral) alignment. Majins are now correctly locked at 0 alignment as intended.
