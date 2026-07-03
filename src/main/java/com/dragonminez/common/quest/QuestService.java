@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.network.S2C.SagaTitleCardS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
@@ -248,7 +249,11 @@ public final class QuestService {
 
 		for (String questId : QuestRegistry.getQuestIdsByGiver(npcId)) {
 			Quest quest = allQuests.get(questId);
-			if (quest == null || pqd.isQuestCompleted(questId)) {
+			if (quest == null) {
+				continue;
+			}
+			if (pqd.isQuestCompleted(questId)
+					&& !quest.isRepeatReady(pqd.getLastCompletedRealMs(questId), System.currentTimeMillis())) {
 				continue;
 			}
 
@@ -300,7 +305,10 @@ public final class QuestService {
 
 		PlayerQuestData.QuestStatus questStatus = pqd.getQuestStatus(questKey);
 		boolean restartingFailed = questStatus == PlayerQuestData.QuestStatus.FAILED;
-		if (pqd.isQuestCompleted(questKey) || questStatus == PlayerQuestData.QuestStatus.ACCEPTED) {
+		boolean restartingRepeat = questStatus == PlayerQuestData.QuestStatus.SUCCESS
+				&& quest.isRepeatReady(pqd.getLastCompletedRealMs(questKey), System.currentTimeMillis());
+		if ((pqd.isQuestCompleted(questKey) && !restartingRepeat)
+				|| questStatus == PlayerQuestData.QuestStatus.ACCEPTED) {
 			return Component.translatable("message.dragonminez.quest.start.already_active");
 		}
 
@@ -341,10 +349,22 @@ public final class QuestService {
 		}
 
 		int partySize = partyMembers.size();
+		if (restartingRepeat) pqd.restartCompletedQuest(questKey);
 		pqd.acceptQuest(questKey);
+		pqd.setQuestAcceptedGameTime(questKey, controller.serverLevel().getGameTime());
 		quest.initializeObjectiveRequirements(pqd, questKey, partySize);
 		pqd.setQuestDifficulty(questKey, startEvent.getDifficulty());
 		pqd.setTrackedQuestId(questKey);
+
+		if (resolved.saga() != null && isFirstSagaQuestStart(resolved.saga(), questKey, pqd)) {
+			SagaTitleCardS2C titleCard = new SagaTitleCardS2C(resolved.saga().getName());
+			NetworkHandler.sendToPlayer(titleCard, controller);
+			for (ServerPlayer member : partyMembers) {
+				if (!member.getUUID().equals(controller.getUUID())) {
+					NetworkHandler.sendToPlayer(titleCard, member);
+				}
+			}
+		}
 
 		try {
 			spawnKillObjectives(requester, resolved, pqd, partySize, startEvent.getDifficulty());
@@ -366,6 +386,16 @@ public final class QuestService {
 		}
 
 		return null;
+	}
+
+	/** True when no other quest of the saga has ever been started — i.e. this start begins the saga. */
+	private static boolean isFirstSagaQuestStart(Saga saga, String startedQuestKey, PlayerQuestData pqd) {
+		for (Quest sagaQuest : saga.getQuests()) {
+			String key = PlayerQuestData.sagaQuestKey(saga.getId(), sagaQuest.getId());
+			if (key.equals(startedQuestKey)) continue;
+			if (pqd.getQuestStatus(key) != PlayerQuestData.QuestStatus.NOT_STARTED) return false;
+		}
+		return true;
 	}
 
 	private static Component turnInQuest(ServerPlayer requester, ServerPlayer controller, ResolvedQuest resolved,

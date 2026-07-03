@@ -1,7 +1,12 @@
 package com.dragonminez.common.quest;
 
 import com.dragonminez.common.quest.objectives.BiomeObjective;
+import com.dragonminez.common.quest.objectives.CheckpointRaceObjective;
 import com.dragonminez.common.quest.objectives.CoordsObjective;
+import com.dragonminez.common.quest.objectives.DeliverObjective;
+import com.dragonminez.common.quest.objectives.EscortObjective;
+import com.dragonminez.common.quest.objectives.SparObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.objectives.DimensionObjective;
 import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
@@ -29,6 +34,11 @@ import java.util.regex.Pattern;
 public final class QuestTextFormatter {
 
 	private static final String OBJECTIVE_DEFEAT = "dmz.quest.defeat.obj";
+	private static final String OBJECTIVE_DELIVER = "dmz.quest.deliver.obj";
+	private static final String OBJECTIVE_SPAR = "dmz.quest.spar.obj";
+	private static final String OBJECTIVE_WAVES = "dmz.quest.waves.obj";
+	private static final String OBJECTIVE_ESCORT = "dmz.quest.escort.obj";
+	private static final String OBJECTIVE_CHECKPOINTS = "dmz.quest.checkpoints.obj";
 	private static final String OBJECTIVE_OBTAIN = "dmz.quest.obtain.obj";
 	private static final String OBJECTIVE_TALK_TO = "dmz.quest.talk_to.obj";
 	private static final String OBJECTIVE_GO_TO = "dmz.quest.go_to.obj";
@@ -65,8 +75,20 @@ public final class QuestTextFormatter {
 			return Component.empty();
 		}
 
+		if (objective instanceof SparObjective spar) {
+			return Component.translatable(OBJECTIVE_SPAR, resolveEntityName(spar.getEntityId()));
+		}
 		if (objective instanceof KillObjective kill) {
 			return Component.translatable(OBJECTIVE_DEFEAT, resolveEntityName(kill.getEntityId()));
+		}
+		if (objective instanceof SurviveWavesObjective waves) {
+			return Component.translatable(OBJECTIVE_WAVES, waves.getWaves(), resolveEntityName(waves.getEntityId()));
+		}
+		if (objective instanceof EscortObjective escort) {
+			return Component.translatable(OBJECTIVE_ESCORT, resolveEntityName(escort.getEntityId()));
+		}
+		if (objective instanceof CheckpointRaceObjective race) {
+			return Component.translatable(OBJECTIVE_CHECKPOINTS, race.getCheckpoints().size());
 		}
 		if (objective instanceof ItemObjective item) {
 			return Component.translatable(OBJECTIVE_OBTAIN, resolveItemName(item.getItemId()));
@@ -97,7 +119,15 @@ public final class QuestTextFormatter {
 					coords.getTargetPos().getX() + ", " + coords.getTargetPos().getY() + ", " + coords.getTargetPos().getZ()
 			));
 		}
-		return Component.literal(objective.getType() != null ? humanizeIdentifier(objective.getType().name()) : "?");
+		if (objective instanceof DeliverObjective deliver) {
+			return Component.translatable(OBJECTIVE_DELIVER,
+					resolveItemName(deliver.getItemId()), resolveNpcName(deliver.getNpcId()));
+		}
+		Component registered = QuestObjectiveRegistry.describe(objective);
+		if (registered != null) {
+			return registered;
+		}
+		return Component.literal(objective.getType() != null ? humanizeIdentifier(objective.getTypeKey()) : "?");
 	}
 
 	public static Component describeRequirement(QuestPrerequisites.Condition condition, RequirementContext context) {

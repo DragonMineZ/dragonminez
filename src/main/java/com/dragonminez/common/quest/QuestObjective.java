@@ -11,11 +11,24 @@ public abstract class QuestObjective {
     @Setter
     private boolean completed;
 
+    private String customType = null;
+
     public QuestObjective(ObjectiveType type, int required) {
         this.type = type;
         this.required = required;
         this.progress = 0;
         this.completed = false;
+    }
+
+    /** Constructor for addon-registered objective types (see QuestObjectiveRegistry). */
+    protected QuestObjective(String customType, int required) {
+        this(ObjectiveType.CUSTOM, required);
+        this.customType = customType;
+    }
+
+    /** Stable string key: the enum name for built-ins, the registered key for addon objectives. */
+    public String getTypeKey() {
+        return type == ObjectiveType.CUSTOM && customType != null ? customType : type.name();
     }
 
 	public void setProgress(int progress) {
@@ -46,7 +59,12 @@ public abstract class QuestObjective {
         COORDS,
         TALK_TO,
         DRAGON_SUMMON,
-        SKILL
+        SKILL,
+        DELIVER,
+        SURVIVE_WAVES,
+        ESCORT,
+        CHECKPOINT_RACE,
+        CUSTOM
     }
 }
 

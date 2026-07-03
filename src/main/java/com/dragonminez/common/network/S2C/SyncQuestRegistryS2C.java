@@ -4,13 +4,19 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
+import com.dragonminez.common.quest.QuestObjectiveRegistry;
 import com.dragonminez.common.quest.QuestParser;
 import com.dragonminez.common.quest.QuestPrerequisites;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.QuestRewardRegistry;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.objectives.BiomeObjective;
+import com.dragonminez.common.quest.objectives.CheckpointRaceObjective;
 import com.dragonminez.common.quest.objectives.CoordsObjective;
+import com.dragonminez.common.quest.objectives.DeliverObjective;
+import com.dragonminez.common.quest.objectives.EscortObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.objectives.DimensionObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
@@ -179,6 +185,9 @@ public class SyncQuestRegistryS2C {
 		obj.addProperty("party_scaling", quest.isPartyScaling());
 		obj.addProperty("secret", quest.isSecret());
 		obj.addProperty("claim_mode", quest.getClaimMode().name());
+		obj.addProperty("repeatable", quest.isRepeatable());
+		obj.addProperty("repeat_cooldown_seconds", quest.getRepeatCooldownSeconds());
+		obj.addProperty("time_limit_seconds", quest.getTimeLimitSeconds());
 
 		if (quest.getQuestGiver() != null) obj.addProperty("quest_giver", quest.getQuestGiver());
 		else obj.add("quest_giver", JsonNull.INSTANCE);
@@ -207,7 +216,7 @@ public class SyncQuestRegistryS2C {
 
 	private static JsonObject serializeObjective(QuestObjective objective) {
 		JsonObject obj = new JsonObject();
-		obj.addProperty("type", objective.getType().name());
+		obj.addProperty("type", objective.getTypeKey());
 
 		if (objective instanceof KillObjective kill) {
 			obj.addProperty("entity", kill.getEntityId());
@@ -242,6 +251,41 @@ public class SyncQuestRegistryS2C {
 		} else if (objective instanceof InteractObjective interact) {
 			if (interact.getEntityTypeId() != null) obj.addProperty("entity", interact.getEntityTypeId());
 			if (interact.getEntityName() != null) obj.addProperty("entityName", interact.getEntityName());
+		} else if (objective instanceof DeliverObjective deliver) {
+			obj.addProperty("item", deliver.getItemId());
+			obj.addProperty("count", deliver.getRequired());
+			obj.addProperty("npcId", deliver.getNpcId());
+		} else if (objective instanceof SurviveWavesObjective waves) {
+			obj.addProperty("entity", waves.getEntityId());
+			obj.addProperty("waves", waves.getWaves());
+			obj.addProperty("mobs_per_wave", waves.getMobsPerWave());
+			obj.addProperty("wave_delay_seconds", waves.getWaveDelaySeconds());
+			obj.addProperty("health", waves.getHealth());
+			obj.addProperty("meleeDamage", waves.getMeleeDamage());
+			obj.addProperty("kiDamage", waves.getKiDamage());
+			if (waves.getTextureVariant() >= 0) obj.addProperty("TextureVariant", waves.getTextureVariant());
+			if (waves.getAiTier() > 0) obj.addProperty("AITier", waves.getAiTier());
+			if (!waves.isCanTransform()) obj.addProperty("CanTransform", false);
+		} else if (objective instanceof EscortObjective escort) {
+			obj.addProperty("entity", escort.getEntityId());
+			obj.addProperty("x", escort.getTargetPos().getX());
+			obj.addProperty("y", escort.getTargetPos().getY());
+			obj.addProperty("z", escort.getTargetPos().getZ());
+			obj.addProperty("radius", escort.getRadius());
+			obj.addProperty("health", escort.getEscortHealth());
+		} else if (objective instanceof CheckpointRaceObjective race) {
+			obj.addProperty("radius", race.getRadius());
+			JsonArray checkpoints = new JsonArray();
+			for (var checkpoint : race.getCheckpoints()) {
+				JsonObject point = new JsonObject();
+				point.addProperty("x", checkpoint.getX());
+				point.addProperty("y", checkpoint.getY());
+				point.addProperty("z", checkpoint.getZ());
+				checkpoints.add(point);
+			}
+			obj.add("checkpoints", checkpoints);
+		} else {
+			QuestObjectiveRegistry.writeSync(objective, obj);
 		}
 
 		return obj;
@@ -258,7 +302,7 @@ public class SyncQuestRegistryS2C {
 	private static JsonObject serializeReward(QuestReward reward) {
 		JsonObject obj = new JsonObject();
 
-		String typeStr = reward.getType().name();
+		String typeStr = reward.getTypeKey();
 		if (reward.getDifficultyType() == QuestReward.DifficultyType.HARD) {
 			typeStr = "hard:" + typeStr;
 		} else if (reward.getDifficultyType() == QuestReward.DifficultyType.NORMAL) {
@@ -278,6 +322,8 @@ public class SyncQuestRegistryS2C {
 			obj.addProperty("level", skill.getLevel());
 		} else if (reward instanceof AlignmentReward alignment) {
 			obj.addProperty("amount", alignment.getAmount());
+		} else {
+			QuestRewardRegistry.writeSync(reward, obj);
 		}
 
 		return obj;

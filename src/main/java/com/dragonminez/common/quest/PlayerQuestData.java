@@ -146,8 +146,43 @@ public class PlayerQuestData {
      * @param questId the string quest ID
      */
     public void completeQuest(String questId) {
-        getOrCreateProgress(questId).setStatus(QuestStatus.SUCCESS);
+        QuestProgress progress = getOrCreateProgress(questId);
+        progress.setStatus(QuestStatus.SUCCESS);
+        progress.recordCompletion(System.currentTimeMillis());
         clearStartRequirementTiming(questId);
+    }
+
+    /**
+     * Restarts a previously completed repeatable quest back to in-progress. Objective progress
+     * and reward claims are reset; completion history (timestamp, times completed) is kept.
+     */
+    public void restartCompletedQuest(String questId) {
+        QuestProgress progress = getOrCreateProgress(questId);
+        progress.resetForRestart();
+        progress.setStatus(QuestStatus.ACCEPTED);
+        clearStartRequirementTiming(questId);
+    }
+
+    /** Real-time epoch ms of the quest's most recent completion, or 0 if never completed. */
+    public long getLastCompletedRealMs(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getLastCompletedRealMs() : 0L;
+    }
+
+    /** How many times the quest has been completed (repeatable quests can exceed 1). */
+    public int getTimesCompleted(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getTimesCompleted() : 0;
+    }
+
+    /** Game time (ticks) when the quest was last accepted, or -1 if unknown. Drives time limits. */
+    public long getQuestAcceptedGameTime(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getAcceptedGameTime() : -1L;
+    }
+
+    public void setQuestAcceptedGameTime(String questId, long gameTime) {
+        getOrCreateProgress(questId).setAcceptedGameTime(gameTime);
     }
 
     /**
@@ -708,6 +743,13 @@ public class PlayerQuestData {
         @Getter
         @Setter
         private Difficulty difficulty = Difficulty.NORMAL;
+        @Getter
+        private long lastCompletedRealMs = 0L;
+        @Getter
+        private int timesCompleted = 0;
+        @Getter
+        @Setter
+        private long acceptedGameTime = -1L;
 
         public QuestProgress(String questId) {
             this.questId = questId;
@@ -768,6 +810,9 @@ public class PlayerQuestData {
             for (Map.Entry<Integer, Integer> entry : other.objectiveRequired.entrySet()) {
                 objectiveRequired.putIfAbsent(entry.getKey(), entry.getValue());
             }
+            if (other.lastCompletedRealMs > this.lastCompletedRealMs) this.lastCompletedRealMs = other.lastCompletedRealMs;
+            if (other.timesCompleted > this.timesCompleted) this.timesCompleted = other.timesCompleted;
+            if (this.acceptedGameTime < 0) this.acceptedGameTime = other.acceptedGameTime;
         }
 
         private static int statusRank(QuestStatus status) {
@@ -781,6 +826,11 @@ public class PlayerQuestData {
 
         public void markFailed() {
             failureCount++;
+        }
+
+        public void recordCompletion(long realTimeMs) {
+            this.lastCompletedRealMs = realTimeMs;
+            this.timesCompleted++;
         }
 
         public void resetForRestart() {
@@ -806,6 +856,9 @@ public class PlayerQuestData {
             tag.put("objectiveRequirements", objectiveRequirementsTag);
             tag.putInt("failureCount", failureCount);
             tag.putString("difficulty", difficulty.name());
+            tag.putLong("lastCompletedRealMs", lastCompletedRealMs);
+            tag.putInt("timesCompleted", timesCompleted);
+            tag.putLong("acceptedGameTime", acceptedGameTime);
 
             CompoundTag rewardsTag = new CompoundTag();
             for (Map.Entry<Integer, Boolean> entry : rewardsClaimed.entrySet()) {
@@ -837,6 +890,17 @@ public class PlayerQuestData {
             }
             if (tag.contains("failureCount", Tag.TAG_INT)) {
                 progress.failureCount = tag.getInt("failureCount");
+            }
+            if (tag.contains("lastCompletedRealMs", Tag.TAG_LONG)) {
+                progress.lastCompletedRealMs = tag.getLong("lastCompletedRealMs");
+            }
+            if (tag.contains("timesCompleted", Tag.TAG_INT)) {
+                progress.timesCompleted = tag.getInt("timesCompleted");
+            }
+            if (tag.contains("acceptedGameTime", Tag.TAG_LONG)) {
+                progress.acceptedGameTime = tag.getLong("acceptedGameTime");
+            } else {
+                progress.acceptedGameTime = -1L;
             }
             if (tag.contains("difficulty", Tag.TAG_STRING)) {
                 progress.difficulty = Difficulty.fromName(tag.getString("difficulty"));

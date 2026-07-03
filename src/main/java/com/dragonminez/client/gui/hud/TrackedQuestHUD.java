@@ -7,8 +7,13 @@ import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestTextFormatter;
+import com.dragonminez.common.quest.objectives.CheckpointRaceObjective;
+import com.dragonminez.common.quest.objectives.CoordsObjective;
+import com.dragonminez.common.quest.objectives.EscortObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -52,8 +57,9 @@ public class TrackedQuestHUD {
 		List<FormattedCharSequence> wrappedTitle = font.split(toComponent(quest.getTitle()), MAX_TEXT_WIDTH);
 		if (wrappedTitle.isEmpty()) wrappedTitle = List.of(FormattedCharSequence.forward(questId, net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT)));
 
+		int timeLeftSeconds = remainingTimeSeconds(pqd, questId, quest);
 		int lineHeight = 10;
-		int lineCount = 1 + wrappedTitle.size() + objectiveLines.size();
+		int lineCount = 1 + wrappedTitle.size() + objectiveLines.size() + (timeLeftSeconds >= 0 ? 1 : 0);
 		int panelHeight = 10 + (lineCount * lineHeight) + 6;
 		int x = screenWidth - PANEL_WIDTH - 10;
 		int y = 10;
@@ -75,6 +81,31 @@ public class TrackedQuestHUD {
 			guiGraphics.drawString(font, line, x + 6, drawY, 0xCFE1FF, false);
 			drawY += lineHeight;
 		}
+
+		if (timeLeftSeconds >= 0) {
+			Component timeLine = Component.translatable("gui.dragonminez.story.hud.time_left",
+					formatSeconds(timeLeftSeconds)).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+			guiGraphics.drawString(font, timeLine, x + 6, drawY, timeLeftSeconds < 60 ? 0xFF5555 : 0xFFD700, false);
+		}
+	}
+
+	/** Remaining game-time seconds on a time-limited quest, or -1 when the quest has no limit. */
+	private static int remainingTimeSeconds(PlayerQuestData pqd, String questId, Quest quest) {
+		if (!quest.hasTimeLimit()) return -1;
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return -1;
+		long acceptedGameTime = pqd.getQuestAcceptedGameTime(questId);
+		if (acceptedGameTime < 0) return -1;
+		long remainingTicks = quest.getTimeLimitSeconds() * 20L - (mc.level.getGameTime() - acceptedGameTime);
+		return (int) Math.max(0, remainingTicks / 20);
+	}
+
+	private static String formatSeconds(int totalSeconds) {
+		int hours = totalSeconds / 3600;
+		int minutes = (totalSeconds % 3600) / 60;
+		int seconds = totalSeconds % 60;
+		if (hours > 0) return String.format("%d:%02d:%02d", hours, minutes, seconds);
+		return String.format("%d:%02d", minutes, seconds);
 	}
 
 	private static List<FormattedCharSequence> buildObjectiveLines(Font font, PlayerQuestData pqd, String questId, Quest quest) {
@@ -92,11 +123,13 @@ public class TrackedQuestHUD {
 			if (!quest.isParallelObjectives()) {
 				if (progress >= required) continue;
 				lines.addAll(splitObjectiveLine(font, objective, progress, required));
+				lines.addAll(waypointLines(font, objective, progress));
 				return lines;
 			}
 
 			if (progress < required) {
 				lines.addAll(splitObjectiveLine(font, objective, progress, required));
+				lines.addAll(waypointLines(font, objective, progress));
 			}
 		}
 
@@ -117,5 +150,44 @@ public class TrackedQuestHUD {
 
 	private static Component toComponent(String raw) {
 		return LocalizationUtil.localizedOrReadable(raw).copy().withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	/**
+	 * Live compass line for objectives with a known position: a facing-relative arrow plus
+	 * distance and cardinal direction. Supports COORDS, ESCORT destinations, and the current
+	 * CHECKPOINT_RACE checkpoint; extend here when new position-carrying objectives are added.
+	 */
+	private static List<FormattedCharSequence> waypointLines(Font font, QuestObjective objective, int progress) {
+		BlockPos target = null;
+		if (objective instanceof CoordsObjective coords) {
+			target = coords.getTargetPos();
+		} else if (objective instanceof EscortObjective escort) {
+			target = escort.getTargetPos();
+		} else if (objective instanceof CheckpointRaceObjective race) {
+			target = race.getCheckpoint(progress);
+		}
+		if (target == null) return List.of();
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return List.of();
+		double dx = target.getX() + 0.5 - mc.player.getX();
+		double dz = target.getZ() + 0.5 - mc.player.getZ();
+		int distance = (int) Math.sqrt(dx * dx + dz * dz);
+
+		double targetYaw = Math.toDegrees(Math.atan2(-dx, dz));
+		double relative = Mth.wrapDegrees(targetYaw - mc.player.getYRot());
+
+		Component text = Component.literal("   " + directionGlyph(relative, ARROWS) + " ")
+				.append(Component.translatable("gui.dragonminez.story.hud.waypoint",
+								distance, directionGlyph(targetYaw, CARDINALS))
+						.withStyle(Style.EMPTY.withFont(DMZ_FONT)));
+		return font.split(text, MAX_TEXT_WIDTH);
+	}
+
+	private static final String[] ARROWS = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖"};
+	private static final String[] CARDINALS = {"S", "SW", "W", "NW", "N", "NE", "E", "SE"};
+
+	private static String directionGlyph(double degrees, String[] sectors) {
+		int index = (int) Math.floor(((degrees % 360 + 360 + 22.5) % 360) / 45.0) % 8;
+		return sectors[index];
 	}
 }

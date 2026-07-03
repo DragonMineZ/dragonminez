@@ -1,7 +1,12 @@
 package com.dragonminez.common.quest;
 
 import com.dragonminez.common.quest.objectives.BiomeObjective;
+import com.dragonminez.common.quest.objectives.CheckpointRaceObjective;
 import com.dragonminez.common.quest.objectives.CoordsObjective;
+import com.dragonminez.common.quest.objectives.DeliverObjective;
+import com.dragonminez.common.quest.objectives.EscortObjective;
+import com.dragonminez.common.quest.objectives.SparObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.objectives.DimensionObjective;
 import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
@@ -87,8 +92,15 @@ public class QuestParser {
 		List<QuestObjective> objectives = parseObjectiveList(json);
 		List<QuestReward> rewards = parseRewardList(json);
 
-		return new Quest(numericId, stringId, type, title, description, category, parallelObjectives, partyScaling,
+		Quest quest = new Quest(numericId, stringId, type, title, description, category, parallelObjectives, partyScaling,
 				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn, secret, claimMode);
+
+		boolean repeatable = json.has("repeatable") && json.get("repeatable").getAsBoolean();
+		int repeatCooldownSeconds = json.has("repeat_cooldown_seconds") ? json.get("repeat_cooldown_seconds").getAsInt() : 0;
+		quest.setRepeatConfig(repeatable, repeatCooldownSeconds);
+		quest.setTimeLimitSeconds(json.has("time_limit_seconds") ? json.get("time_limit_seconds").getAsInt() : 0);
+
+		return quest;
 	}
 
 	private static QuestPrerequisites parseConditionsBlock(JsonObject json, String key) {
@@ -134,7 +146,7 @@ public class QuestParser {
 				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
 				yield (item != Items.AIR) ? new ItemObjective(item, count) : null;
 			}
-			case "KILL" -> {
+			case "KILL", "SPAR" -> {
 				String entityId = json.get("entity").getAsString();
 				int killCount = json.get("count").getAsInt();
 				double health = json.has("health") ? json.get("health").getAsDouble() : 20.0;
@@ -154,7 +166,9 @@ public class QuestParser {
 						: -1;
 				boolean canTransform = !json.has("CanTransform") || json.get("CanTransform").isJsonNull()
 						|| json.get("CanTransform").getAsBoolean();
-				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier, canTransform);
+				yield "SPAR".equalsIgnoreCase(type)
+						? new SparObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier, canTransform)
+						: new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier, canTransform);
 			}
 			case "BIOME" -> new BiomeObjective(json.get("biome").getAsString());
 			case "DIMENSION" -> new DimensionObjective(json.get("dimension").getAsString());
@@ -188,7 +202,50 @@ public class QuestParser {
 				int level = firstInt(json, 1, "level", "minLevel", "required");
 				yield skill != null ? new SkillObjective(skill, level) : null;
 			}
-			default -> null;
+			case "DELIVER" -> {
+				String itemId = json.get("item").getAsString();
+				int count = json.has("count") ? json.get("count").getAsInt() : 1;
+				String npcId = firstString(json, "npcId", "npc_id", "npc");
+				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+				yield (item != Items.AIR && npcId != null) ? new DeliverObjective(item, itemId, count, npcId) : null;
+			}
+			case "SURVIVE_WAVES" -> {
+				String entityId = json.get("entity").getAsString();
+				int waves = json.has("waves") ? json.get("waves").getAsInt() : 3;
+				int mobsPerWave = firstInt(json, 3, "mobs_per_wave", "mobsPerWave");
+				int waveDelaySeconds = firstInt(json, 10, "wave_delay_seconds", "waveDelaySeconds");
+				double health = json.has("health") ? json.get("health").getAsDouble() : 20.0;
+				double meleeDamage = json.has("meleeDamage") ? json.get("meleeDamage").getAsDouble() : 1.0;
+				double kiDamage = json.has("kiDamage") ? json.get("kiDamage").getAsDouble() : 1.0;
+				int textureVariant = json.has("TextureVariant") && !json.get("TextureVariant").isJsonNull()
+						? json.get("TextureVariant").getAsInt() : -1;
+				int aiTier = json.has("AITier") && !json.get("AITier").isJsonNull()
+						? json.get("AITier").getAsInt() : -1;
+				boolean canTransform = !json.has("CanTransform") || json.get("CanTransform").isJsonNull()
+						|| json.get("CanTransform").getAsBoolean();
+				yield new SurviveWavesObjective(entityId, waves, mobsPerWave, waveDelaySeconds,
+						health, meleeDamage, kiDamage, textureVariant, aiTier, canTransform);
+			}
+			case "ESCORT" -> {
+				String entityId = json.get("entity").getAsString();
+				BlockPos targetPos = new BlockPos(json.get("x").getAsInt(), json.get("y").getAsInt(), json.get("z").getAsInt());
+				int radius = json.has("radius") ? json.get("radius").getAsInt() : 6;
+				double health = json.has("health") ? json.get("health").getAsDouble() : 0.0;
+				yield new EscortObjective(entityId, targetPos, radius, health);
+			}
+			case "CHECKPOINT_RACE" -> {
+				int radius = json.has("radius") ? json.get("radius").getAsInt() : 8;
+				List<BlockPos> checkpoints = new ArrayList<>();
+				if (json.has("checkpoints") && json.get("checkpoints").isJsonArray()) {
+					for (JsonElement element : json.getAsJsonArray("checkpoints")) {
+						if (!element.isJsonObject()) continue;
+						JsonObject point = element.getAsJsonObject();
+						checkpoints.add(new BlockPos(point.get("x").getAsInt(), point.get("y").getAsInt(), point.get("z").getAsInt()));
+					}
+				}
+				yield checkpoints.isEmpty() ? null : new CheckpointRaceObjective(checkpoints, radius);
+			}
+			default -> QuestObjectiveRegistry.parse(type, json);
 		};
 	}
 
@@ -258,7 +315,7 @@ public class QuestParser {
 				KiAttackData technique = KiAttackData.importFromCode(code);
 				yield technique != null ? new KiTechniqueReward(technique) : null;
 			}
-			default -> null;
+			default -> QuestRewardRegistry.parse(type, json);
 		};
 
 		if (reward != null) {

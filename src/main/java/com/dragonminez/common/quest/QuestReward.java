@@ -11,8 +11,21 @@ public abstract class QuestReward {
 	@Setter
 	private DifficultyType difficultyType = DifficultyType.ALL;
 
+	private String customType = null;
+
 	public QuestReward(RewardType type) {
 		this.type = type;
+	}
+
+	/** Constructor for addon-registered reward types (see QuestRewardRegistry). */
+	protected QuestReward(String customType) {
+		this(RewardType.CUSTOM);
+		this.customType = customType;
+	}
+
+	/** Stable string key: the enum name for built-ins, the registered key for addon rewards. */
+	public String getTypeKey() {
+		return type == RewardType.CUSTOM && customType != null ? customType : type.name();
 	}
 
 	public abstract void giveReward(net.minecraft.server.level.ServerPlayer player);
@@ -30,7 +43,8 @@ public abstract class QuestReward {
 		SKILL,
 		ALIGNMENT,
 		TRANSFORMATION,
-		KI_TECHNIQUE
+		KI_TECHNIQUE,
+		CUSTOM
 	}
 
 	public enum DifficultyType {

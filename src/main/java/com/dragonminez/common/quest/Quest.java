@@ -53,6 +53,10 @@ public class Quest {
 	private final boolean secret;
 	private final ClaimMode claimMode;
 
+	private boolean repeatable;
+	private int repeatCooldownSeconds;
+	private int timeLimitSeconds;
+
 	/**
 	 * Universal constructor for quests.
 	 */
@@ -89,6 +93,38 @@ public class Quest {
 		this.startRequirements = startRequirements;
 		this.secret = secret;
 		this.claimMode = claimMode != null ? claimMode : ClaimMode.TREE_OR_NPC;
+	}
+
+	/** Set post-construction by the parser; DAILY quests are always repeatable. */
+	public void setRepeatConfig(boolean repeatable, int repeatCooldownSeconds) {
+		this.repeatable = repeatable;
+		this.repeatCooldownSeconds = Math.max(0, repeatCooldownSeconds);
+	}
+
+	/** Set post-construction by the parser. 0 = no time limit; counted in game time from accept. */
+	public void setTimeLimitSeconds(int timeLimitSeconds) {
+		this.timeLimitSeconds = Math.max(0, timeLimitSeconds);
+	}
+
+	public boolean hasTimeLimit() {
+		return timeLimitSeconds > 0;
+	}
+
+	public boolean isRepeatable() {
+		return repeatable || type == QuestType.DAILY;
+	}
+
+	public boolean isRepeatReady(long lastCompletedRealMs, long nowMs) {
+		if (!isRepeatable()) return false;
+		if (lastCompletedRealMs <= 0) return true;
+		if (type == QuestType.DAILY) return !isSameLocalDay(lastCompletedRealMs, nowMs);
+		return repeatCooldownSeconds <= 0 || nowMs - lastCompletedRealMs >= repeatCooldownSeconds * 1000L;
+	}
+
+	private static boolean isSameLocalDay(long aMs, long bMs) {
+		java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+		return java.time.Instant.ofEpochMilli(aMs).atZone(zone).toLocalDate()
+				.equals(java.time.Instant.ofEpochMilli(bMs).atZone(zone).toLocalDate());
 	}
 
 	public boolean hasPrerequisites() {

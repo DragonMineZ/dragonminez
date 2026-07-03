@@ -326,7 +326,9 @@ public abstract class DMZEvent extends Event {
 		public enum FailureReason {
 			PLAYER_DEATH,
 			FORCED_RESET,
-			SCRIPT
+			SCRIPT,
+			TIME_EXPIRED,
+			ESCORT_FAILED
 		}
 	}
 
