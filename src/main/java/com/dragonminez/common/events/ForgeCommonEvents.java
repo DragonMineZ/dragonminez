@@ -485,6 +485,10 @@ public class ForgeCommonEvents {
 
 	@SubscribeEvent
 	public static void onServerStarted(ServerStartedEvent event) {
+		// Resolve/persist structure positions for all loaded dimensions before anything (NPCs, players)
+		// queries them, so gameplay never races the search. Instant after the first world load.
+		com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.precomputeAndWait(event.getServer());
+
 		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 
 		if (otherworld != null) {
@@ -498,9 +502,7 @@ public class ForgeCommonEvents {
 	public static void onLevelLoad(LevelEvent.Load event) {
 		if (event.getLevel() instanceof ServerLevel serverLevel) {
 			try {
-				var chunkSource = serverLevel.getChunkSource();
-				com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.prewarm(
-						serverLevel.getSeed(), chunkSource.randomState(), chunkSource.getGeneratorState());
+				com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.onLevelLoad(serverLevel);
 			} catch (Throwable ignored) {
 			}
 

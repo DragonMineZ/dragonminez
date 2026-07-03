@@ -218,6 +218,17 @@ public class TechniqueDispatcher {
                         level.addFreshEntity(diskRight);
                         level.addFreshEntity(diskLeft);
                     }
+                } else if ("kienzan".equals(data.getId())) {
+                    KiDiskEntity disk = new KiDiskEntity(level, owner);
+                    disk.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize());
+                    disk.setColors(0xfffb7d, data.getColorExterior(), 0xFFFFFF);
+                    disk.setKiType(kiTypeOrdinal);
+                    disk.setTechniqueId(data.getId());
+                    disk.setArmorPenetration(data.getArmorPenetration());
+                    disk.setHeal(isHeal);
+                    disk.setHomingTarget(homingTargetId);
+
+                    if (!level.isClientSide) level.addFreshEntity(disk);
                 } else {
                     KiDiskEntity disk = new KiDiskEntity(level, owner);
                     disk.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize());

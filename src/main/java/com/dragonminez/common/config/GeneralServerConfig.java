@@ -41,6 +41,12 @@ public class GeneralServerConfig {
 		private Integer structureMaxDistanceFromSpawn = 4000;
 		private Integer structureMinDistanceBetween = 250;
 
+		// RandomSpread tuning (in blocks). structureSpacing is the size of the region that holds one
+		// copy of a structure (lower = you find them sooner while exploring); structureSeparation is
+		// the minimum gap kept from a region's far edge.
+		private Integer structureSpacing = 6000;
+		private Integer structureSeparation = 2000;
+
 		public Integer getDBSpawnRange() {
 			return Math.max(100, Math.min(dbSpawnRange, 6000));
 		}
@@ -63,6 +69,16 @@ public class GeneralServerConfig {
 			int value = structureMinDistanceBetween != null ? structureMinDistanceBetween : 250;
 			return Math.max(0, value);
 		}
+
+		public Integer getStructureSpacingBlocks() {
+			int value = structureSpacing != null ? structureSpacing : 6000;
+			return Math.max(256, value);
+		}
+
+		public Integer getStructureSeparationBlocks() {
+			int value = structureSeparation != null ? structureSeparation : 2000;
+			return Math.max(0, Math.min(value, getStructureSpacingBlocks() - 16));
+		}
 	}
 
 	@Getter
@@ -72,6 +88,7 @@ public class GeneralServerConfig {
 		private Boolean commandOutputOnConsole = true;
 		private Integer reviveCooldownSeconds = 300;
 		private Double tpGainMultiplier = 1.0;
+		private Double increaseTPGainRelativeToTPCost = 0.5;
 		private Double globalTPCostMultiplier = 1.0;
 		private Integer minTPCost = 16;
 		private Integer maxTPDiscount = 140;
@@ -155,6 +172,10 @@ public class GeneralServerConfig {
 
 		public Double getTpsGainMultiplier() {
 			return Math.max(0, Math.min(tpGainMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getIncreaseTPGainRelativeToTPCost() {
+			return Math.max(0.0, increaseTPGainRelativeToTPCost != null ? increaseTPGainRelativeToTPCost : 0.5);
 		}
 
 		public Double getGlobalTpCostMultiplier() {

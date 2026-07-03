@@ -136,7 +136,7 @@ public class DMZStructures {
 				false,
 				Optional.of(Heightmap.Types.WORLD_SURFACE_WG),
 				160,
-				90
+				63
 		));
 
 		context.register(CELL_ARENA, new JigsawStructure(

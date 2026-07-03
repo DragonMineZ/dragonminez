@@ -7,6 +7,7 @@ import com.dragonminez.common.dragonball.DragonDefinition;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.*;
+import com.dragonminez.common.init.entities.namek.CCNamekianEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
@@ -93,7 +94,7 @@ public class MainEntities {
                 SAGA_PARAGUS, SAGA_BROLY_BASE, SAGA_BROLY_SSJ_RESTRICTED, SAGA_BROLY_SSJ, SAGA_BROLY_LSSJ,
                 SAGA_ZANGYA, SAGA_GOKUA, SAGA_BIDO, SAGA_BUJIN, SAGA_BOJACK, SAGA_BOJACK_FP,
                 SAGA_BIO_BROLY, SAGA_BIO_BROLY_GIANT, SAGA_PAIKUHAN, SAGA_JANEMBA_FAT, SAGA_SUPER_JANEMBA,
-                SAGA_HIRUDEGARN, SAGA_SUPER_HIRUDEGARN,
+                SAGA_HIRUDEGARN, SAGA_HIRUDEGARN_INCOMPLETE_1, SAGA_HIRUDEGARN_INCOMPLETE_2, SAGA_SUPER_HIRUDEGARN,
 
                 // EXTRA
                 SHADOW_DUMMY, MINI_BUU
@@ -307,6 +308,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(NamekTraderEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek_trader").toString()));
+    public static final RegistryObject<EntityType<CCNamekianEntity>> CC_NAMEKIAN =
+            ENTITY_TYPES.register("cc_namekian",
+                    () -> EntityType.Builder.of(CCNamekianEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "cc_namekian").toString()));
     public static final RegistryObject<EntityType<NamekWarriorEntity>> NAMEK_WARRIOR =
             ENTITY_TYPES.register("namek_warrior",
                     () -> EntityType.Builder.of(NamekWarriorEntity::new, MobCategory.CREATURE)
@@ -1086,6 +1092,16 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaMoviesEntity.HirudegarnEntity::new, MobCategory.MONSTER)
                             .sized(7.5f, 12.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_hirudegarn").toString()));
+    public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN_INCOMPLETE_1 =
+            ENTITY_TYPES.register("saga_hirudegarn_incomplete1",
+                    () -> EntityType.Builder.of(SagaMoviesEntity.HirudegarnEntity::new, MobCategory.MONSTER)
+                            .sized(7.5f, 12.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_hirudegarn_incomplete1").toString()));
+    public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN_INCOMPLETE_2 =
+            ENTITY_TYPES.register("saga_hirudegarn_incomplete2",
+                    () -> EntityType.Builder.of(SagaMoviesEntity.HirudegarnEntity::new, MobCategory.MONSTER)
+                            .sized(7.5f, 12.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_hirudegarn_incomplete2").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.SuperHirudegarnEntity>> SAGA_SUPER_HIRUDEGARN =
             ENTITY_TYPES.register("saga_super_hirudegarn",
                     () -> EntityType.Builder.of(SagaMoviesEntity.SuperHirudegarnEntity::new, MobCategory.MONSTER)

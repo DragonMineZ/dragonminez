@@ -836,6 +836,11 @@ public class SagaMoviesEntity {
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.28D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
         }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_hirudegarn";
+        }
     }
 
     public static class SuperHirudegarnEntity extends DBSagasEntity {

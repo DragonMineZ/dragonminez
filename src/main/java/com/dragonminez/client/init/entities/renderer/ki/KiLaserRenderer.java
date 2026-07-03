@@ -71,8 +71,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float length = isFiring ? entity.getBeamLength() : radius;
         float ageInTicks = entity.tickCount + partialTick;
 
-        float yaw = entity.getYRot();
-        float pitch = entity.getXRot();
+        float yaw = entity.getFixedYaw();
+        float pitch = entity.getFixedPitch();
 
         ShaderInstance shader = DMZShaders.ki3dShader;
         if (shader == null) return;
@@ -114,8 +114,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float width = entity.getSize() * 0.2f;
         float length = isFiring ? entity.getBeamLength() : entity.getSize() * 0.08f;
 
-        float yaw = entity.getYRot();
-        float pitch = entity.getXRot();
+        float yaw = entity.getFixedYaw();
+        float pitch = entity.getFixedPitch();
         float ageInTicks = entity.tickCount + partialTick;
 
         float[] coreColor = entity.getRgbColorMain();
@@ -204,8 +204,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float width = entity.getSize() * 0.15f;
         float length = isFiring ? entity.getBeamLength() : entity.getSize() * 0.08f;
 
-        float yaw = entity.getYRot();
-        float pitch = entity.getXRot();
+        float yaw = entity.getFixedYaw();
+        float pitch = entity.getFixedPitch();
         float ageInTicks = entity.tickCount + partialTick;
 
         float[] coreColor = entity.getRgbColorMain();

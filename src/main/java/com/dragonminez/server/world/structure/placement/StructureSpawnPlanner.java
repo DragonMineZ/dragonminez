@@ -3,6 +3,7 @@ package com.dragonminez.server.world.structure.placement;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.server.world.data.StructurePlanSavedData;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -12,6 +13,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.QuartPos;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
@@ -31,8 +33,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,6 +51,18 @@ public final class StructureSpawnPlanner {
 	private static final int TAIL_EXTRA_RINGS = 256;
 	private static final int TAIL_CHUNK_STRIDE = 3;
 	private static final long BUILD_AWAIT_SECONDS = 5L;
+	private static final long PERSIST_AWAIT_SECONDS = 120L;
+	private static final long STARTUP_WAIT_SECONDS = 30L;
+
+	// Dedicated pool for the "wait for the plan, then persist" task. It MUST NOT be Util.backgroundExecutor(),
+	// because that pool also runs Minecraft's chunk generation ("worldgen") — blocking its threads here
+	// starved chunk loading and never recovered. These daemon threads only ever block on our own latch.
+	private static final ExecutorService PERSIST_EXECUTOR = Executors.newCachedThreadPool(runnable -> {
+		Thread thread = new Thread(runnable, "DMZ-StructurePersist");
+		thread.setDaemon(true);
+		thread.setPriority(Thread.MIN_PRIORITY);
+		return thread;
+	});
 	private static final int FLATNESS_MAX_SPREAD = 20;
 	private static final int FLATNESS_SCAN_EXTRA_RINGS = 5;
 	private static final int ABSOLUTE_SCAN_CAP_RINGS = 96;
@@ -85,21 +102,102 @@ public final class StructureSpawnPlanner {
 		return buildEpoch != planEpoch;
 	}
 
-	public static void prewarm(long worldSeed, RandomState randomState, ChunkGeneratorStructureState state) {
-		if (randomState == null || state == null) return;
+	/**
+	 * Prepares the structure plan for a dimension as it loads. If the positions were already resolved
+	 * on a previous load they are read back from the world save instantly (no search). Otherwise the
+	 * biome/terrain search runs once in the background and is persisted when it finishes, so it never
+	 * runs again for this dimension.
+	 */
+	public static void onLevelLoad(ServerLevel level) {
+		if (level == null) return;
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return;
+
+		var chunkSource = level.getChunkSource();
+		ChunkGeneratorStructureState state = chunkSource.getGeneratorState();
+		RandomState randomState = chunkSource.randomState();
+		if (state == null || randomState == null) return;
 		BiomeSource biomeSource = getBiomeSourceReflection(state);
 		if (biomeSource == null) return;
-		PlanHolder holder = obtainHolder(worldSeed, biomeSource, randomState, state);
 
-		if (holder.started.compareAndSet(false, true)) {
-			long startNanos = System.nanoTime();
-			StructureAsyncResolver.buildPlanSync(holder);
-			long ms = (System.nanoTime() - startNanos) / 1_000_000L;
-			LogUtil.info(Env.SERVER, "[DMZ] Structure plan resolved synchronously at level load in " + ms + "ms.");
-		} else {
-			holder.awaitReady(BUILD_AWAIT_SECONDS);
+		PlanHolder holder = obtainHolder(level.getSeed(), biomeSource, randomState, state);
+
+		StructurePlanSavedData saved = StructurePlanSavedData.get(level);
+		if (saved.isResolved()) {
+			// Reuse the positions computed on a previous load — instant, no search.
+			holder.started.set(true);
+			holder.publish(saved.getPositions());
+			return;
 		}
+
+		if (level.dimension().equals(Level.OVERWORLD)) {
+			// Spawn-dimension structures generate the instant the world is created — during this very
+			// load, before players exist. LevelEvent.Load runs before the spawn area is generated, so we
+			// build synchronously HERE (a one-time pause on the world-load screen, then persisted). If we
+			// deferred to the background, the spawn chunks would generate before the plan was ready and
+			// those structures (Goku's house, Babidi, …) would be permanently skipped.
+			if (holder.started.compareAndSet(false, true)) {
+				StructureAsyncResolver.buildPlanSync(holder);
+			}
+			persistWhenReady(level, holder);
+			return;
+		}
+
+		// Other dimensions (Namek, …) generate chunks only when a player travels there, long after the
+		// search was kicked off — so resolve in the background and never block.
+		ensureBuildStarted(holder);
+		persistWhenReady(level, holder);
+	}
+
+	/**
+	 * Triggers the plan (or disk-load) for every loaded dimension at server start. Only the spawn
+	 * dimension is waited on — its structures generate the instant the world is created, so its plan
+	 * must be ready first. Every other dimension (Namek, SacredKai, …) resolves in the background and
+	 * is never blocked on, so entering them never stalls the main thread or chunk loading. Instant on
+	 * later starts because results are persisted to the world save.
+	 */
+	public static void precomputeAndWait(MinecraftServer server) {
+		if (server == null) return;
+		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return;
+
+		PlanHolder overworldHolder = null;
+		for (ServerLevel level : server.getAllLevels()) {
+			try {
+				var chunkSource = level.getChunkSource();
+				ChunkGeneratorStructureState state = chunkSource.getGeneratorState();
+				RandomState randomState = chunkSource.randomState();
+				if (state == null || randomState == null) continue;
+				BiomeSource biomeSource = getBiomeSourceReflection(state);
+				if (biomeSource == null) continue;
+				onLevelLoad(level);
+				if (level.dimension().equals(Level.OVERWORLD)) {
+					overworldHolder = obtainHolder(level.getSeed(), biomeSource, randomState, state);
+				}
+			} catch (Throwable t) {
+				LogUtil.error(Env.SERVER, "[DMZ] Structure precompute failed for a level: " + t.getMessage());
+			}
+		}
+
+		if (overworldHolder != null && overworldHolder.positions == null) {
+			overworldHolder.awaitReady(STARTUP_WAIT_SECONDS);
+		}
+	}
+
+	private static void persistWhenReady(ServerLevel level, PlanHolder holder) {
+		if (!holder.persistScheduled.compareAndSet(false, true)) return;
+		CompletableFuture.runAsync(() -> {
+			holder.awaitReady(PERSIST_AWAIT_SECONDS);
+			Map<Integer, ChunkPos> resolved = holder.positions;
+			if (resolved == null) {
+				holder.persistScheduled.set(false);
+				return;
+			}
+			MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+			if (server == null) return;
+			server.execute(() -> {
+				StructurePlanSavedData saved = StructurePlanSavedData.get(level);
+				if (!saved.isResolved()) saved.setResolved(resolved);
+			});
+		}, PERSIST_EXECUTOR);
 	}
 
 	static ChunkPos getPositionFor(BiomeAwareUniquePlacement placement, long worldSeed,
@@ -110,12 +208,13 @@ public final class StructureSpawnPlanner {
 		PlanHolder holder = obtainHolder(worldSeed, biomeSource, randomState, state);
 		ensureBuildStarted(holder);
 
+		// Fully non-blocking. Blocking here stalls whichever thread runs the structure step: the main
+		// thread shows up as "Can't keep up!", and worldgen threads make chunks stop loading while you
+		// walk. If the plan isn't ready yet (only happens on a brand-new world before the startup
+		// precompute finishes), return null; the structure resolves naturally once the background search
+		// completes. Positions are persisted, so this window never happens again.
 		Map<Integer, ChunkPos> positions = holder.positions;
-		if (positions == null) {
-			holder.awaitReady(BUILD_AWAIT_SECONDS);
-			positions = holder.positions;
-			if (positions == null) return null;
-		}
+		if (positions == null) return null;
 		return positions.get(placement.placementSalt());
 	}
 
@@ -186,7 +285,14 @@ public final class StructureSpawnPlanner {
 
 		final List<BiomeAwareUniquePlacement> targets = new ArrayList<>();
 		for (BiomeAwareUniquePlacement placement : REGISTERED.values()) {
-			if (structureBiomes.get(placement.placementSalt()) != null) targets.add(placement);
+			if (structureBiomes.get(placement.placementSalt()) == null) continue;
+			// Skip structures whose valid biome cannot occur in this dimension at all. Otherwise the ring
+			// search (and especially the tail search, +256 rings) scans hundreds of thousands of columns
+			// hunting for a biome that will never appear — e.g. a rocky-biome structure "leaking" into
+			// Namek because its broad Structure.biomes tag (is_land) matches Namek land. That pins the CPU
+			// and is exactly what stalls chunk loading in Namek.
+			if (!biomeSourceHasAny(biomeSource, placement.getValidBiomes())) continue;
+			targets.add(placement);
 		}
 
 		final Map<Integer, ChunkPos> independent = new ConcurrentHashMap<>();
@@ -218,13 +324,6 @@ public final class StructureSpawnPlanner {
 		}
 
 		holder.publish(plan);
-
-		if (generator != null) {
-			for (ChunkPos planned : plan.values()) {
-				if (isStale(epoch)) break;
-				StructureAsyncResolver.forceGenerate(generator, planned);
-			}
-		}
 
 		long buildMs = (System.nanoTime() - buildStartNanos) / 1_000_000L;
 		if (!targets.isEmpty()) {
@@ -307,7 +406,6 @@ public final class StructureSpawnPlanner {
 			accepted.add(found);
 			injectResolved(holder, placement.placementSalt(), found);
 			logPlacement(structureNames, salt, found);
-			StructureAsyncResolver.forceGenerate(cache.generator, found);
 		}
 	}
 
@@ -396,6 +494,15 @@ public final class StructureSpawnPlanner {
 		long dx = (long) pos.x - CENTER_CHUNK_X;
 		long dz = (long) pos.z - CENTER_CHUNK_Z;
 		return dx * dx + dz * dz;
+	}
+
+	/** True if the dimension's biome source can ever produce one of the placement's valid biomes. */
+	private static boolean biomeSourceHasAny(BiomeSource biomeSource, HolderSet<Biome> validBiomes) {
+		if (biomeSource == null || validBiomes == null) return false;
+		for (Holder<Biome> biome : biomeSource.possibleBiomes()) {
+			if (validBiomes.contains(biome)) return true;
+		}
+		return false;
 	}
 
 	private static boolean biomePrefilter(BiomeAwareUniquePlacement placement, SampleCache cache,
@@ -588,6 +695,7 @@ public final class StructureSpawnPlanner {
 		final RandomState randomState;
 		final ChunkGeneratorStructureState state;
 		final AtomicBoolean started = new AtomicBoolean(false);
+		final AtomicBoolean persistScheduled = new AtomicBoolean(false);
 		final CountDownLatch ready = new CountDownLatch(1);
 		final Object writeLock = new Object();
 		volatile Map<Integer, ChunkPos> positions = null;
