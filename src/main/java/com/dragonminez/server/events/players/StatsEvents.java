@@ -39,6 +39,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -866,6 +867,36 @@ public class StatsEvents {
 			float reducedDistance = fallDistance - safeHeight;
 			event.setDistance(reducedDistance);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onFallDamageKiNegation(LivingHurtEvent event) {
+		if (!event.getSource().is(DamageTypes.FALL)) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+		float damage = event.getAmount();
+		if (damage <= 0) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
+
+			float currentKi = data.getResources().getCurrentEnergy();
+			if (currentKi <= 0) return;
+
+			float kiPerDamage = 3.0f;
+			float fullCost = damage * kiPerDamage;
+
+			if (currentKi >= fullCost) {
+				data.getResources().removeEnergy(fullCost);
+				event.setCanceled(true);
+			} else {
+				float negatableDamage = currentKi / kiPerDamage;
+				data.getResources().removeEnergy(currentKi);
+				event.setAmount(damage - negatableDamage);
+			}
+
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		});
 	}
 
 	@SubscribeEvent
