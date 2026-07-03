@@ -37,6 +37,8 @@ import java.util.Map;
 
 @Getter
 public class StatsData {
+	private static final double DEFENSE_FLAT_FOLD = 0.12;
+
 	private final Player player;
 	private final Stats stats;
 	private final Status status;
@@ -249,7 +251,7 @@ public class StatsData {
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
 
 		int meditationLevel = skills.getSkillLevel("meditation");
-		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.05) : 1.0;
+		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.075) : 1.0;
 
 		double adjustedStaminaDrain = getAdjustedStaminaDrain();
 		double regenMultiplier = 1.0;
@@ -308,7 +310,7 @@ public class StatsData {
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
 
 		int meditationLevel = skills.getSkillLevel("meditation");
-		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.05) : 1.0;
+		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.075) : 1.0;
 
 		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
 		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult * kiConductivityMult;
@@ -341,7 +343,7 @@ public class StatsData {
 
 	public float getMaxPoise() {
 		double secondaryMaxPoise = getSecondaryAttributeValue(MainAttributes.MAX_POISE.get(), 25.0);
-		return Math.min((float) (secondaryMaxPoise + getDefense()), Float.MAX_VALUE - 1);
+		return Math.min((float) (secondaryMaxPoise + getDefenseLegacyUnits()), Float.MAX_VALUE - 1);
 	}
 
 	public double getMaxMeleeDamage() {
@@ -497,7 +499,7 @@ public class StatsData {
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
 
-		double rawFlatMitigation = baseDefense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, defMult);
+		double rawFlatMitigation = baseDefense * Math.max(1.0, defMult);
 		double flatAbsorbCap = incomingDamage * ConfigManager.getCombatConfig().getFlatMitigationMaxAbsorbFraction();
 		double flatMitigation = Math.min(rawFlatMitigation, flatAbsorbCap);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
@@ -505,7 +507,7 @@ public class StatsData {
 		int maxValue = getConfiguredMaxValue();
 		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
-		double k_factor = Math.max(100.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
+		double k_factor = Math.max(12.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
 
 		double baseReduction;
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
@@ -515,8 +517,6 @@ public class StatsData {
 		baseReduction = Math.min(baseReduction, baseCap);
 
 		double remainingDamage = postFlatDamage * (1.0 - baseReduction);
-
-		if (defMult > 1.0) remainingDamage /= (1.0 + (defMult - 1.0) * 0.20);
 
 		int totalProtection = 0;
 		if (player != null) totalProtection = TickHandler.getTotalArmorEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
@@ -541,6 +541,80 @@ public class StatsData {
 		}
 
 		return remainingDamage * (1.0 - enchReduction);
+	}
+
+	public double getFlatMitigation() {
+		double defMult = getTotalMultiplier("DEF");
+		return getDefense() * Math.max(1.0, defMult);
+	}
+
+	public double getMaxFlatMitigation() {
+		double defMult = getTotalMultiplier("DEF");
+		return getMaxDefense() * Math.max(1.0, defMult);
+	}
+
+	public double getDefenseLegacyUnits() {
+		return getDefense() / DEFENSE_FLAT_FOLD;
+	}
+
+	public double getStaminaPerHit() {
+		double staminaDamage = getMeleeDamageNoMultipliers();
+		int baseStaminaRequired = (int) Math.ceil(staminaDamage * ConfigManager.getCombatConfig().getStaminaConsumptionRatio());
+		return baseStaminaRequired * getAdjustedStaminaDrainMultiplier();
+	}
+
+	private double getFormOffenseCostFactor() {
+		boolean hasFormMult = character.hasActiveForm() && character.getActiveFormData() != null;
+		boolean hasStackMult = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
+		double formCostMultiplier;
+		if (hasFormMult && hasStackMult) {
+			formCostMultiplier = (character.getActiveFormData().getMaxCostMultiplier()
+					+ character.getActiveStackFormData().getMaxCostMultiplier()) / 2.0;
+		} else if (hasFormMult) {
+			formCostMultiplier = character.getActiveFormData().getMaxCostMultiplier();
+		} else if (hasStackMult) {
+			formCostMultiplier = character.getActiveStackFormData().getMaxCostMultiplier();
+		} else {
+			formCostMultiplier = 1.0;
+		}
+		return Math.min(1.0, formCostMultiplier);
+	}
+
+	private double getReducedOffense() {
+		double totalOffense = getMeleeDamage() + getStrikeDamage() + getKiDamage();
+		return totalOffense * getFormOffenseCostFactor();
+	}
+
+	public double getEffectiveEnergyDrain() {
+		double base = getAdjustedEnergyDrain();
+		if (base <= 0.0) return base;
+		double maxEnergy = getMaxEnergy();
+		double energyRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxEnergy * 1.5));
+		double formRawEneDrain = 0.0;
+		if (character.hasActiveForm() && character.getActiveFormData() != null)
+			formRawEneDrain += Math.max(0.0, character.getActiveFormData().getEnergyDrain());
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null)
+			formRawEneDrain += Math.max(0.0, character.getActiveStackFormData().getEnergyDrain());
+		double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01) * 0.75;
+		return (base * energyRatio) + percentageEnergy;
+	}
+
+	public double getEffectiveStaminaDrain() {
+		double base = getAdjustedStaminaDrain();
+		if (base <= 0.0) return base;
+		double maxStamina = getMaxStamina();
+		double staminaRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxStamina * 1.5));
+		double percentageStamina = maxStamina * 0.005;
+		return (base * staminaRatio) + percentageStamina;
+	}
+
+	public double getEffectiveHealthDrain() {
+		double base = getAdjustedHealthDrain();
+		if (base <= 0.0) return base;
+		double maxHealth = getMaxHealth();
+		double healthRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxHealth * 1.5));
+		double percentageHealth = maxHealth * 0.005;
+		return (base * healthRatio) + percentageHealth;
 	}
 
 	public double getTotalMultiplier(String statName) {

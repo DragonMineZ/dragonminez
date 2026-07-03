@@ -194,6 +194,7 @@
   "gui.dragonminez.character_stats.stamina": "Stamina",
   "gui.dragonminez.character_stats.stamina.tooltip1": "Your stamina points.",
   "gui.dragonminez.character_stats.stamina.tooltip2": "Increasing Resistance increases this value by %s per point",
+  "gui.dragonminez.character_stats.stamina_per_hit": "Stamina per hit",
   "gui.dragonminez.character_stats.defense": "Defense",
   "gui.dragonminez.character_stats.defense.tooltip1": "The damage you nullify from enemies.",
   "gui.dragonminez.character_stats.defense.tooltip2": "Increasing Resistance increases this value by %s per point",

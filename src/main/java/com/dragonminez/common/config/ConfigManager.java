@@ -26,8 +26,11 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final double CONFIG_VERSION = 21.1;
+	public static final double CONFIG_VERSION = 21.2;
 	public static final String CLIENT_ONLY_CONFIG = "general-user";
+
+	private static final double DEFENSE_SCALING_FOLD = 0.12;
+	private static final double DEFENSE_SCALING_FOLD_VERSION = 21.2;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
@@ -103,6 +106,21 @@ public class ConfigManager {
 			LogUtil.info(Env.COMMON, "Configuration system reloaded successfully");
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Error reloading configuration system: {}", e.getMessage());
+		}
+	}
+
+	private static double peekConfigVersion(Path path) {
+		if (!Files.exists(path)) return -1.0;
+		try {
+			JsonElement parsed = JsonParser.parseString(Files.readString(path));
+			if (parsed == null || !parsed.isJsonObject()) return -2.0;
+			JsonObject obj = parsed.getAsJsonObject();
+			if (obj.has("configVersion") && obj.get("configVersion").isJsonPrimitive()) {
+				return obj.get("configVersion").getAsDouble();
+			}
+			return 0.0;
+		} catch (Exception e) {
+			return -2.0;
 		}
 	}
 
@@ -401,7 +419,21 @@ public class ConfigManager {
 				LogUtil.error(Env.COMMON, "Failed to save normalized character.json for race '{}': {}", raceName, e.getMessage());
 			}
 		}
-		RaceStatsConfig statsConfig = loadAndValidate(racePath.resolve("stats.json"), RaceStatsConfig.class, ConfigManager::createDefaultStatsConfig, RaceStatsConfig::getConfigVersion, RaceStatsConfig::setConfigVersion, RaceStatsConfig.CURRENT_VERSION, null);
+		Path statsPath = racePath.resolve("stats.json");
+		double previousStatsVersion = peekConfigVersion(statsPath);
+		RaceStatsConfig statsConfig = loadAndValidate(statsPath, RaceStatsConfig.class, ConfigManager::createDefaultStatsConfig, RaceStatsConfig::getConfigVersion, RaceStatsConfig::setConfigVersion, RaceStatsConfig.CURRENT_VERSION, null);
+		if (previousStatsVersion >= 0.0 && previousStatsVersion < DEFENSE_SCALING_FOLD_VERSION) {
+			for (RaceStatsConfig.ClassStats classStats : statsConfig.getClasses().values()) {
+				RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
+				if (scaling != null && scaling.getDefenseScaling() != null) {
+					scaling.setDefenseScaling(scaling.getDefenseScaling() * DEFENSE_SCALING_FOLD);
+				}
+			}
+			try { LOADER.saveConfig(statsPath, statsConfig); } catch (Exception e) {
+				LogUtil.error(Env.COMMON, "Failed to save migrated stats.json for race '{}': {}", raceName, e.getMessage());
+			}
+			LogUtil.warn(Env.COMMON, "Migrated DEF_scaling to flat-defense units for race '{}'", raceName);
+		}
 
 		Map<String, FormConfig> raceForms = new HashMap<>();
 		if (isDefault) FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
@@ -575,10 +607,10 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#222629");
 		config.setDefaultEye2Color("#222629");
 		config.setDefaultAuraColor("#7FFFFF");
-		config.setFormSkillTpCosts("superforms", new Integer[]{8000, 16000, 25000, 40000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{21000, 42000, 65000, 104000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
-		config.setFormSkillTpCosts("androidforms", new Integer[]{16000, 40000});
+		config.setFormSkillTpCosts("androidforms", new Integer[]{42000, 104000});
 	}
 
 	private static void setupSaiyanCharacter(RaceCharacterConfig config) {
@@ -601,7 +633,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#222629");
 		config.setDefaultEye2Color("#222629");
 		config.setDefaultAuraColor("#7FFFFF");
-		config.setFormSkillTpCosts("superforms", new Integer[]{5000, 8000, 12000, 16000, 20000, 25000, 30000, 40000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{13000, 21000, 31000, 42000, 52000, 65000, 78000, 104000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -624,7 +656,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#222629");
 		config.setDefaultEye2Color("#222629");
 		config.setDefaultAuraColor("#7FFF00");
-		config.setFormSkillTpCosts("superforms", new Integer[]{9000, 18000, 30000, 45000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{23000, 47000, 78000, 117000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -647,7 +679,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#FF001D");
 		config.setDefaultEye2Color("#FF001D");
 		config.setDefaultAuraColor("#5F00FF");
-		config.setFormSkillTpCosts("superforms", new Integer[]{7000, 12000, 20000, 32000, 45000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{18000, 31000, 52000, 83000, 117000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -669,7 +701,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#2E2424");
 		config.setDefaultEye2Color("#F06F6E");
 		config.setDefaultAuraColor("#1AA700");
-		config.setFormSkillTpCosts("superforms", new Integer[]{10000, 22000, 34000, 48000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{26000, 57000, 88000, 125000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -692,7 +724,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#B40000");
 		config.setDefaultEye2Color("#B40000");
 		config.setDefaultAuraColor("#FF6DFF");
-		config.setFormSkillTpCosts("superforms", new Integer[]{9000, 18000, 30000, 44000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{23000, 47000, 78000, 114000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -723,27 +755,27 @@ public class ConfigManager {
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
 
-		setupInitialStats(config.getClassStats("warrior"), 10, 0, 5, 5, 0, 0, 7.0, 0.08, 4.0, 0.04, 12.0, 0.12);
-		setupScalingStats(config.getClassStats("warrior"), 1.6, 1.0, 2.0, 1.6, 1.8, 0.5, 1.5);
+		setupInitialStats(config.getClassStats("warrior"), 10, 0, 5, 5, 0, 0, 1.75, 0.06, 4.0, 0.08, 12.0, 0.12);
+		setupScalingStats(config.getClassStats("warrior"), 1.4, 1.0, 0.24, 1.6, 1.8, 0.5, 1.5);
 
-		setupInitialStats(config.getClassStats("spiritualist"), 0, 0, 0, 0, 10, 10, 2.0, 0.02, 8.0, 0.10, 5.0, 0.05);
-		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 1.3, 0.7, 1.4, 1.9, 3.7);
+		setupInitialStats(config.getClassStats("spiritualist"), 0, 0, 0, 0, 10, 10, 0.5, 0.015, 8.0, 0.20, 5.0, 0.05);
+		setupScalingStats(config.getClassStats("spiritualist"), 0.3, 0.5, 0.156, 0.7, 1.4, 1.9, 3.7);
 
-		setupInitialStats(config.getClassStats("martialartist"), 0, 10, 0, 10, 0, 0, 6.0, 0.07, 4.0, 0.04, 9.0, 0.09);
-		setupScalingStats(config.getClassStats("martialartist"), 1.0, 1.8, 1.5, 1.3, 2.2, 0.6, 1.6);
+		setupInitialStats(config.getClassStats("martialartist"), 0, 10, 0, 10, 0, 0, 1.5, 0.0525, 4.0, 0.08, 9.0, 0.09);
+		setupScalingStats(config.getClassStats("martialartist"), 0.8, 1.8, 0.18, 1.3, 2.2, 0.6, 1.6);
 
-		setupInitialStats(config.getClassStats("berserker"), 10, 0, 0, 10, 0, 0, 4.0, 0.05, 2.0, 0.02, 14.0, 0.13);
-		setupScalingStats(config.getClassStats("berserker"), 1.9, 0.8, 1.5, 1.1, 3.0, 0.4, 1.3);
+		setupInitialStats(config.getClassStats("berserker"), 10, 0, 0, 10, 0, 0, 1.0, 0.0375, 2.0, 0.04, 14.0, 0.13);
+		setupScalingStats(config.getClassStats("berserker"), 1.7, 0.8, 0.18, 1.1, 3.0, 0.4, 1.3);
 
-		setupInitialStats(config.getClassStats("paladin"), 0, 5, 10, 5, 0, 0, 8.0, 0.09, 4.0, 0.04, 8.0, 0.08);
-		setupScalingStats(config.getClassStats("paladin"), 1.0, 1.2, 2.8, 1.2, 2.0, 0.6, 1.2);
+		setupInitialStats(config.getClassStats("paladin"), 0, 5, 10, 5, 0, 0, 2.0, 0.0675, 4.0, 0.08, 8.0, 0.08);
+		setupScalingStats(config.getClassStats("paladin"), 0.8, 1.2, 0.336, 1.2, 2.0, 0.6, 1.2);
 
-		setupInitialStats(config.getClassStats("tank"), 0, 0, 10, 10, 0, 0, 9.0, 0.10, 5.0, 0.05, 9.0, 0.09);
-		setupScalingStats(config.getClassStats("tank"), 0.8, 0.7, 3.2, 1.5, 2.5, 0.5, 0.8);
+		setupInitialStats(config.getClassStats("tank"), 0, 0, 10, 10, 0, 0, 2.25, 0.075, 5.0, 0.10, 9.0, 0.09);
+		setupScalingStats(config.getClassStats("tank"), 0.6, 0.7, 0.384, 1.5, 2.5, 0.5, 0.8);
 		config.getClassStats("tank").setTpGainMultiplier(1.25);
 
-		setupInitialStats(config.getClassStats("cleric"), 0, 0, 5, 0, 0, 15, 2.0, 0.02, 12.0, 0.12, 16.0, 0.12);
-		setupScalingStats(config.getClassStats("cleric"), 0.5, 0.5, 1.4, 2.6, 1.2, 0.8, 3.0);
+		setupInitialStats(config.getClassStats("cleric"), 0, 0, 5, 0, 0, 15, 0.5, 0.015, 12.0, 0.24, 16.0, 0.12);
+		setupScalingStats(config.getClassStats("cleric"), 0.5, 0.5, 0.168, 2.6, 1.2, 0.8, 3.0);
 		config.getClassStats("cleric").setTpGainMultiplier(1.25);
 		config.getClassStats("cleric").setTpCostMultiplier(0.9);
 		setupDefaultPassives(config);
