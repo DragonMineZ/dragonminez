@@ -39,6 +39,10 @@ import java.util.Map;
 public class StatsData {
 	private static final double DEFENSE_FLAT_FOLD = 0.12;
 
+	private static final double STAT_COST_PER_POINT = 1.25;
+	private static final double STAT_COST_LATE_KNEE_FRACTION = 0.05;
+	private static final double STAT_COST_LATE_EXPONENT = 0.7;
+
 	private final Player player;
 	private final Stats stats;
 	private final Status status;
@@ -1297,7 +1301,7 @@ public class StatsData {
 	}
 
 	public double getTpTotalMultiplier() {
-		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier() * getMutantTpMultiplier();
+		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier() * getMutantTpMultiplier() * getProgressionTpGainMultiplier();
 	}
 
 	public double getTpSourceMultiplier(TpSource source) {
@@ -1320,7 +1324,7 @@ public class StatsData {
 				case DIFFICULTY -> multiplicative *= getDifficultyTpMultiplier();
 			}
 		}
-		return Math.max(0.0, additive) * multiplicative;
+		return Math.max(0.0, additive) * multiplicative * getProgressionTpGainMultiplier();
 	}
 
 	public double getDifficultyTpMultiplier() {
@@ -1346,6 +1350,29 @@ public class StatsData {
 		return (int) Math.max(0.0, total);
 	}
 
+	private double statCostVariableComponent(int simulatedTotalStats) {
+		double totalStats = Math.max(0.0, simulatedTotalStats);
+		double knee = getConfiguredMaxTotalStats() * STAT_COST_LATE_KNEE_FRACTION;
+		if (knee <= 0.0 || totalStats <= knee) return totalStats * STAT_COST_PER_POINT;
+
+		double kneeCost = knee * STAT_COST_PER_POINT;
+		double ratio = totalStats / knee;
+		return kneeCost + (kneeCost / STAT_COST_LATE_EXPONENT) * (Math.pow(ratio, STAT_COST_LATE_EXPONENT) - 1.0);
+	}
+
+	public double getProgressionTpGainMultiplier() {
+		double strength = ConfigManager.getServerConfig().getGameplay().getIncreaseTPGainRelativeToTPCost();
+		if (strength <= 0.0) return 1.0;
+		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return 1.0;
+
+		int maxCost = getSingleStatCost(getConfiguredMaxTotalStats());
+		if (maxCost <= 0) return 1.0;
+		int currentCost = getSingleStatCost(stats.getTotalStats());
+
+		double factor = Math.max(0.0, Math.min(1.0, (double) currentCost / maxCost));
+		return 1.0 + strength * factor;
+	}
+
 	public int getSingleStatCost(int simulatedTotalStats) {
 		var dynamicGrowthConfig = ConfigManager.getServerConfig().getDynamicGrowth();
 		if (!dynamicGrowthConfig.isManualTpPurchasesEnabled()) return Integer.MAX_VALUE;
@@ -1357,7 +1384,7 @@ public class StatsData {
 		int minCost = ConfigManager.getServerConfig().getGameplay().getMinTPCost();
 		int discountThreshold = ConfigManager.getServerConfig().getGameplay().getMaxTPDiscount();
 
-		double baseCost = minCost + (simulatedTotalStats * 1.25);
+		double baseCost = minCost + statCostVariableComponent(simulatedTotalStats);
 
 		int earlyGameDiscount = 0;
 		if (simulatedTotalStats < discountThreshold) earlyGameDiscount = discountThreshold - simulatedTotalStats;

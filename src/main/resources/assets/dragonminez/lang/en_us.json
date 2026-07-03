@@ -235,6 +235,7 @@
   "gui.dragonminez.character_stats.tp_multiplier.tooltip.weight": "Weights: x%s",
   "gui.dragonminez.character_stats.tp_multiplier.tooltip.effect": "Effect: x%s",
   "gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant": "Mutant: x%s",
+  "gui.dragonminez.character_stats.tp_multiplier.tooltip.progression": "Progression: x%s",
   "gui.dragonminez.character_stats.gravity": "Gravity",
   "gui.dragonminez.character_stats.gravity.tooltip.environmental": "Environmental: %s G",
   "gui.dragonminez.character_stats.gravity.tooltip.weight_load": "Weight Load: %s kg → %s kg",
