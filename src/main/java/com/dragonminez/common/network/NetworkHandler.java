@@ -438,6 +438,24 @@ public class NetworkHandler {
 				.consumerMainThread(StoryToastS2C::handle)
 				.add();
 
+		net.messageBuilder(SagaTitleCardS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SagaTitleCardS2C::decode)
+				.encoder(SagaTitleCardS2C::encode)
+				.consumerMainThread(SagaTitleCardS2C::handle)
+				.add();
+
+		net.messageBuilder(OpenDialogueNodeS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(OpenDialogueNodeS2C::decode)
+				.encoder(OpenDialogueNodeS2C::encode)
+				.consumerMainThread(OpenDialogueNodeS2C::handle)
+				.add();
+
+		net.messageBuilder(DialogueChoiceC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DialogueChoiceC2S::decode)
+				.encoder(DialogueChoiceC2S::encode)
+				.consumerMainThread(DialogueChoiceC2S::handle)
+				.add();
+
 		net.messageBuilder(PartyInviteToastS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(PartyInviteToastS2C::new)
 				.encoder(PartyInviteToastS2C::encode)

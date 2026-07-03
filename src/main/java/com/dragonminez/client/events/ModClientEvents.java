@@ -83,6 +83,8 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "tracked_quest_hud", TrackedQuestHUD.HUD_TRACKED_QUEST);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "techniquehud", TechniqueHotbarHUD.HUD_TECHNIQUES);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "beam_clash_hud", BeamClashOverlay.HUD_BEAM_CLASH);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "baba_return_timer_hud", BabaReturnTimerHUD.HUD_BABA_RETURN);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "saga_title_card_hud", SagaTitleCardHUD.HUD_SAGA_TITLE_CARD);
 	}
 	@SubscribeEvent
 	public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
