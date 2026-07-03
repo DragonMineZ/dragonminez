@@ -31,6 +31,7 @@ import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.dragonminez.common.dragonball.DragonDefinitionReloadListener;
 import com.dragonminez.common.wish.DragonWishRegistry;
+import com.dragonminez.common.dialogue.DialogueRegistry;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
@@ -218,9 +219,17 @@ public class ForgeCommonEvents {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				endFusionIfNeeded(player);
 
+				data.getStatus().setDeathCount(data.getStatus().getDeathCount() + 1);
 				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
-					if (data.getStatus().isAlive())
-						data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
+					if (data.getStatus().isAlive() || data.getStatus().getTempReturnTimer() > 0) {
+						int cooldownSeconds = ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds();
+						if (ConfigManager.getServerConfig().getGameplay().getBabaHardcoreEnabled()) {
+							double growth = ConfigManager.getServerConfig().getGameplay().getBabaHardcoreCooldownGrowth();
+							cooldownSeconds = (int) Math.round(cooldownSeconds * (1.0 + growth * Math.max(0, data.getStatus().getDeathCount() - 1)));
+						}
+						data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, cooldownSeconds * 20);
+					}
+					data.getStatus().setTempReturnTimer(0);
 					if (data.getStatus().isHasCreatedCharacter()) data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
 				}
@@ -461,6 +470,7 @@ public class ForgeCommonEvents {
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
 		QuestRegistry.loadAll(event.getServer());
+		DialogueRegistry.loadAll(event.getServer());
 		NpcAlignmentRules.load(event.getServer());
 		NPCPlacementManager.load(event.getServer());
 

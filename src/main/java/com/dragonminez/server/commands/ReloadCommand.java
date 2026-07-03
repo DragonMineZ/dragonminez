@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.alignment.NpcAlignmentRules;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.*;
+import com.dragonminez.common.dialogue.DialogueRegistry;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -58,6 +59,7 @@ public class ReloadCommand {
 
 			if (scope.includesStory()) {
 				QuestRegistry.loadAll(server);
+				DialogueRegistry.loadAll(server);
 			}
 
 			if (scope.includesWishes()) {

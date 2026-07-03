@@ -8,6 +8,8 @@ import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.dialogue.DialogueService;
+import com.dragonminez.server.util.BabaReviveService;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -159,11 +161,17 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 							Component.translatable("gui.dragonminez.lines.generic.createcharacter"), true);
 					return;
 				}
+				if ("baba".equals(masterName) && !data.getStatus().isAlive() && BabaReviveService.isEnabled()) {
+					BabaReviveService.handleDeadInteract(serverPlayer, data);
+					return;
+				}
 				Component blocker = NpcDispositionService.getDialogueBlocker(serverPlayer, this);
 				if (blocker != null) {
 					serverPlayer.displayClientMessage(blocker, true);
 					return;
 				}
+
+				if (DialogueService.openDialogue(serverPlayer, masterName, getId())) return;
 
 				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(masterName, data);
 				NetworkHandler.sendToPlayer(

@@ -20,6 +20,13 @@ public class QuestAvailabilityChecker {
 		return evaluate(quest.getPrerequisites(), new EvaluationContext(statsData, statsData.getPlayer(), null), EvalOptions.STRICT);
 	}
 
+	/** Evaluates a standalone prerequisites tree (e.g. dialogue choice conditions) for a player. */
+	public static boolean arePrerequisitesMet(QuestPrerequisites prerequisites, StatsData statsData) {
+		if (prerequisites == null || prerequisites.conditions().isEmpty()) return true;
+		if (statsData == null) return false;
+		return evaluate(prerequisites, new EvaluationContext(statsData, statsData.getPlayer(), null), EvalOptions.STRICT);
+	}
+
 	public static boolean areStartRequirementsMet(Quest quest, String questKey, Player player, StatsData statsData) {
 		if (quest == null || statsData == null) return false;
 		if (!quest.hasStartRequirements()) return true;
