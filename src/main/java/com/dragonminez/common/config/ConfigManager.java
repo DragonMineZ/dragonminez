@@ -26,7 +26,7 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final double CONFIG_VERSION = 21.1;
+	public static final double CONFIG_VERSION = 22;
 	public static final String CLIENT_ONLY_CONFIG = "general-user";
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
