@@ -18,9 +18,12 @@
     <a href="https://www.curseforge.com/minecraft/mc-mods/geckolib" target="_blank" rel="nofollow noopener" style="text-decoration:none;">
       <strong>GeckoLib</strong>
     </a>
-    <strong>4.8.2+</strong> and
+    <strong>4.8.2+</strong>, 
     <a href="https://www.curseforge.com/minecraft/mc-mods/terrablender" target="_blank" rel="nofollow noopener" style="text-decoration:none;">
       <strong>TerraBlender</strong>
+    </a>, and 
+    <a href="https://www.curseforge.com/minecraft/mc-mods/curios" target="_blank" rel="nofollow noopener" style="text-decoration:none;">
+      <strong>Curios</strong>
     </a>
     ]--
   </p>
