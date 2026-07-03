@@ -51,7 +51,11 @@ public class DustParticle extends TextureSheetParticle {
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
             DustParticle particle = new DustParticle(level, x, y, z, xSpeed, ySpeed, zSpeed);
-            particle.pickSprite(this.spriteSet);
+            try {
+                particle.pickSprite(this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
             return particle;
         }
     }

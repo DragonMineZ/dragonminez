@@ -58,7 +58,7 @@ public class SoundClientHandler {
 
         var character = stats.getCharacter();
 
-        boolean hasAura = stats.getStatus().isAuraActive();
+        boolean hasAura = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
         boolean isPlaying = ACTIVE_AURA_SOUNDS.containsKey(playerId) && !ACTIVE_AURA_SOUNDS.get(playerId).isStopped();
 
         if (hasAura) {

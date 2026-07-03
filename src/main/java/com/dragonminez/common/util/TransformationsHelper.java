@@ -173,7 +173,9 @@ public class TransformationsHelper {
 			if (dot <= 0 || dot >= entry.length() - 1) continue;
 			String reqGroup = entry.substring(0, dot);
 			String reqForm = entry.substring(dot + 1);
-			double have = statsData.getCharacter().getFormMasteries().getMastery(reqGroup, reqForm);
+			double have = Math.max(
+					statsData.getCharacter().getFormMasteries().getMastery(reqGroup, reqForm),
+					statsData.getCharacter().getStackFormMasteries().getMastery(reqGroup, reqForm));
 			boolean met = have >= need;
 			sawValid = true;
 			if (any) {

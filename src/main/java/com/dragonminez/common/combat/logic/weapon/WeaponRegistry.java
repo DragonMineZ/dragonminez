@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -52,13 +53,13 @@ public class WeaponRegistry {
                 if (inStackAttributes.parent() == null) {
                     return inStackAttributes.attributes();
                 } else {
-                    var parentAttributes = getAttributes(ResourceLocation.parse(inStackAttributes.parent()));
+                    var parentAttributes = getAttributes(parseId(inStackAttributes.parent()));
                     if (parentAttributes != null) {
                         return WeaponAttributesHelper.override(parentAttributes, inStackAttributes.attributes());
                     }
                 }
             } else {
-                if (inStackAttributes.parent() != null) return getAttributes(ResourceLocation.parse(inStackAttributes.parent()));
+                if (inStackAttributes.parent() != null) return getAttributes(parseId(inStackAttributes.parent()));
             }
         }
 
@@ -72,6 +73,13 @@ public class WeaponRegistry {
         return registrations.get(itemId);
     }
 
+    private static ResourceLocation parseId(String id) {
+        if (id == null) return null;
+        var parsed = ResourceLocation.tryParse(id.trim().toLowerCase(Locale.ROOT));
+        if (parsed == null) LogUtil.warn(Env.COMMON, "Skipping invalid weapon attribute ResourceLocation: " + id);
+        return parsed;
+    }
+
     public static void resolveAndRegisterAttributes(ResourceLocation itemId, AttributesContainer container) {
         var resolved = resolveAttributes(itemId, container, new HashSet<>());
         if (resolved != null) register(itemId, resolved);
@@ -81,7 +89,8 @@ public class WeaponRegistry {
         if (container == null) return null;
         if (container.parent() == null) return container.attributes();
 
-        var parentId = ResourceLocation.parse(container.parent());
+        var parentId = parseId(container.parent());
+        if (parentId == null) return container.attributes();
         if (itemId != null) visiting.add(itemId);
 
         var parentAttributes = getAttributes(parentId);
@@ -151,8 +160,9 @@ public class WeaponRegistry {
                 var reader = new JsonReader(new StringReader(root.toString()));
                 var container = WeaponAttributesHelper.decode(reader);
                 if (container != null) {
-                    var itemId = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), id.getPath().substring("weapon_attributes/".length(), id.getPath().length() - ".json".length()));
-                    containers.put(itemId, container);
+                    var rawPath = id.getPath().substring("weapon_attributes/".length(), id.getPath().length() - ".json".length());
+                    var itemId = parseId(id.getNamespace() + ":" + rawPath);
+                    if (itemId != null) containers.put(itemId, container);
                 }
             } catch (Exception e) {
                 LogUtil.error(Env.COMMON, "Failed to load weapon attributes from: " + id, e);

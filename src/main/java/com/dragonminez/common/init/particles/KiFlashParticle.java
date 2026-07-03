@@ -77,7 +77,11 @@ public class KiFlashParticle extends TextureSheetParticle {
         public Provider(SpriteSet spriteSet) { this.spriteSet = spriteSet; }
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double dx, double dy, double dz) {
-            return new KiFlashParticle(level, x, y, z, dx, dy, dz, this.spriteSet);
+            try {
+                return new KiFlashParticle(level, x, y, z, dx, dy, dz, this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

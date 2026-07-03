@@ -49,7 +49,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			"armorRightLeg", "armorRightBoot"
 	};
 
-	private int currentKaiokenPhase = 0;
+	private float[] currentFormTintColor = null;
+	private float currentFormTintIntensity = 0.0f;
 	private float currentTintProgress = 0.0f;
 	private float[] currentAuraColor = new float[]{1.0f, 1.0f, 1.0f};
 
@@ -84,7 +85,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		this.currentTintProgress = tintProgress;
 		this.currentAuraColor = getTopAuraColor(stats);
-		this.currentKaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
+		FormConfig.FormData tintForm = resolveTintForm(stats);
+		this.currentFormTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
+		this.currentFormTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
 
 		Ssj4Overlay ssj4 = resolveSsj4Overlay(stats);
 		float[] ssj4Color = ssj4 != null ? ssj4.color() : null;
@@ -402,18 +405,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			renderFadingColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, this.currentSsj4Color, pt, pl, po, alpha * this.currentSsj4Alpha);
 		}
 
-        float[] finalBodyColor = skin;
-        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
-
-            float redness = 0.5F;
-
-            float newR = Math.min(1.0F, skin[0] + redness);
-            float newG = skin[1] * (1.0F - (redness * 0.5F));
-            float newB = skin[2] * (1.0F - (redness * 0.5F));
-
-            finalBodyColor = new float[]{newR, newG, newB};
-        }
-
         if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
 
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "shiyoken_eye0.png", ColorUtils.hexToRgb("#FFFFFF"), pt, pl, po, alpha, true);
@@ -421,8 +412,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         }
 
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", finalBodyColor, pt, pl, po, alpha, false);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", finalBodyColor, pt, pl, po, alpha, false);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, false);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, false);
 	}
 
 	private void renderNamekianFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float pt, int pl, int po, float alpha) {
@@ -657,9 +648,20 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
 	}
 
+	public static FormConfig.FormData resolveTintForm(StatsData stats) {
+		var character = stats.getCharacter();
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().hasTint()) {
+			return character.getActiveStackFormData();
+		}
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasTint()) {
+			return character.getActiveFormData();
+		}
+		return null;
+	}
+
 	private float[] applyColorTint(float[] rgb, StatsData stats) {
 		if (rgb == null || rgb.length < 3) return rgb;
-		if (this.currentKaiokenPhase <= 0 && this.currentTintProgress <= 0.0f) return rgb;
+		if (this.currentFormTintIntensity <= 0.0f && this.currentTintProgress <= 0.0f) return rgb;
 
 		float[] tinted = rgb.clone();
 		tintInPlace(tinted);
@@ -667,18 +669,18 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private void tintInPlace(float[] rgb) {
-		if (this.currentKaiokenPhase > 0) {
-			applyKaiokenToRgb(rgb, this.currentKaiokenPhase);
+		if (this.currentFormTintIntensity > 0.0f && this.currentFormTintColor != null) {
+			applyFormTintToRgb(rgb, this.currentFormTintColor, this.currentFormTintIntensity);
 		} else if (this.currentTintProgress > 0.0f) {
 			applyAuraTintToRgb(rgb, this.currentAuraColor, 0.2f * this.currentTintProgress);
 		}
 	}
 
-	private void applyKaiokenToRgb(float[] rgb, int phase) {
-		float intensity = Math.min(0.6f, phase * 0.1f) * AuraTintTracker.darkTintScale(rgb);
-		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + intensity, 0.0f, 1.0f);
-		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity), 0.0f, 1.0f);
-		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity), 0.0f, 1.0f);
+	private void applyFormTintToRgb(float[] rgb, float[] tint, float intensity) {
+		intensity = Mth.clamp(intensity, 0.0f, 1.0f) * AuraTintTracker.darkTintScale(rgb);
+		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + tint[0] * intensity, 0.0f, 1.0f);
+		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity) + tint[1] * intensity, 0.0f, 1.0f);
+		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity) + tint[2] * intensity, 0.0f, 1.0f);
 	}
 
 	private void applyAuraTintToRgb(float[] rgb, float[] auraRgb, float intensity) {

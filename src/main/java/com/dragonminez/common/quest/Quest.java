@@ -137,15 +137,18 @@ public class Quest {
 	}
 
 	public double getScaledKillHealth(KillObjective objective, int partySize) {
-		return scaleKillStat(objective.getHealth(), partySize, 0.85, objective.getHealth() >= 50.0 ? 5.0 : 1.0);
+		return objective.getHealth() * enemyPartyMultiplier(partySize,
+				ConfigManager.getServerConfig().getGameplay().getEnemyHealthPerPartyPlayer());
 	}
 
 	public double getScaledKillMeleeDamage(KillObjective objective, int partySize) {
-		return scaleKillStat(objective.getMeleeDamage(), partySize, 0.45, 0.25);
+		return objective.getMeleeDamage() * enemyPartyMultiplier(partySize,
+				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
 	}
 
 	public double getScaledKillKiDamage(KillObjective objective, int partySize) {
-		return scaleKillStat(objective.getKiDamage(), partySize, 0.45, 0.25);
+		return objective.getKiDamage() * enemyPartyMultiplier(partySize,
+				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
 	}
 
 	private int getScaledObjectiveRequired(QuestObjective objective, int partySize) {
@@ -173,15 +176,12 @@ public class Quest {
 		return baseRequired;
 	}
 
-	private double scaleKillStat(double baseValue, int partySize, double exponentWeight, double roundingStep) {
-		if (!partyScaling || partySize <= 1 || baseValue <= 0.0) {
-			return baseValue;
+	private double enemyPartyMultiplier(int partySize, double perPlayerMultiplier) {
+		if (!partyScaling) {
+			return 1.0;
 		}
-
-		int extraMembers = partySize - 1;
-		double configuredMultiplier = ConfigManager.getServerConfig().getGameplay().getDefaultQuestPartyMultiplier();
-		double scaled = baseValue * Math.pow(configuredMultiplier, extraMembers * exponentWeight);
-		return roundUpValue(Math.max(baseValue, scaled), roundingStep);
+		int safePartySize = Math.max(1, partySize);
+		return 1.0 + safePartySize * (perPlayerMultiplier - 1.0);
 	}
 
 	private static int resolveItemCountStep(int baseRequired) {
@@ -202,12 +202,5 @@ public class Quest {
 			return (int) Math.ceil(value);
 		}
 		return (int) (Math.ceil(value / step) * step);
-	}
-
-	private static double roundUpValue(double value, double step) {
-		if (step <= 0.0) {
-			return value;
-		}
-		return Math.ceil(value / step) * step;
 	}
 }

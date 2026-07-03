@@ -34,7 +34,7 @@ public class AuraLoopSound extends AbstractTickableSoundInstance {
 
         var stats = StatsProvider.get(StatsCapability.INSTANCE, this.player).orElse(null);
 
-        if (stats == null || !stats.getStatus().isAuraActive()) {
+        if (stats == null || !(stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura())) {
             this.stop();
             return;
         }

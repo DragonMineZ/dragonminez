@@ -69,6 +69,8 @@ public class FormConfig {
 		private String extraAuraType = "kakarot";
 		private Boolean hasLightnings = false;
 		private String lightningColor = "";
+		private String tintColor = "#FF0000";
+		private Double tintIntensity = 0.0;
 		private Float[] modelScaling = {0.9375f, 0.9375f, 0.9375f};
 		private Double strMultiplier = 1.0;
 		private Double skpMultiplier = 1.0;
@@ -118,6 +120,7 @@ public class FormConfig {
 		private transient float[] rgbAuraColor;
 		private transient float[] rgbExtraFormColor;
 		private transient float[] rgbExtraAuraColor;
+		private transient float[] rgbTintColor;
 
 		public Double getStrMultiplier() {
 			return Math.max(0.01, strMultiplier);
@@ -373,6 +376,23 @@ public class FormConfig {
 		public float[] getRgbExtraAuraColor() {
 			if (rgbExtraAuraColor == null) rgbExtraAuraColor = com.dragonminez.client.util.ColorUtils.hexToRgb(getExtraAuraColor());
 			return rgbExtraAuraColor;
+		}
+
+		public String getTintColor() {
+			return tintColor != null ? tintColor : "";
+		}
+
+		public double getTintIntensity() {
+			return tintIntensity != null ? Math.max(0.0, tintIntensity) : 0.0;
+		}
+
+		public float[] getRgbTintColor() {
+			if (rgbTintColor == null && tintColor != null && !tintColor.isEmpty()) rgbTintColor = com.dragonminez.client.util.ColorUtils.hexToRgb(tintColor);
+			return rgbTintColor;
+		}
+
+		public boolean hasTint() {
+			return getTintIntensity() > 0.0 && getRgbTintColor() != null;
 		}
 
 		@Setter

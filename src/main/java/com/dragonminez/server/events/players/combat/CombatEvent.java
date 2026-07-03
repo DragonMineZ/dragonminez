@@ -428,7 +428,7 @@ public class CombatEvent {
 											}
 										}
 									} else {
-										double defense = victimData.getDefense();
+										double defense = victimData.getDefenseLegacyUnits();
 										double reductionCap = ConfigManager.getCombatConfig().getBlockDamageReductionCap();
 										double reductionMin = ConfigManager.getCombatConfig().getBlockDamageReductionMin();
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
