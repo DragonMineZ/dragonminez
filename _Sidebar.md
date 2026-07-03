@@ -18,7 +18,9 @@
    * [Custom Races](Custom-Races)
 3. Custom Forms
    * [[Custom Forms|Custom-Forms]]
-3. Custom Models
+4. Custom Quests, Sagas & Sidequests
+   * [[Custom Quests, Sagas & Sidequests|Custom-Quests-Sagas-and-Sidequests]]
+5. Custom Models
    * [[Custom Models and Assets|Custom-Models-and-Assets]]
 
 ### Creating a Forge Add-on for DMZ
