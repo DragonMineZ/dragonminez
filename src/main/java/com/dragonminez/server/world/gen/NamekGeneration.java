@@ -157,7 +157,9 @@ public class NamekGeneration {
 				List.of(),
 				64,
 				false,
-				true,
+				false, // aquifersEnabled: off — aquifers are one of the most expensive parts of noise
+				// generation and Namek is a surface world (water comes from sea level + surface rules),
+				// so disabling them cuts chunk-gen cost with almost no visual change.
 				false,
 				false
 		));
