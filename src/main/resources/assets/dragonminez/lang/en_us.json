@@ -1035,6 +1035,7 @@
   "technique.dragonminez.super_god_fist": "Super God Fist",
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
+  "effect.dragonminez.ki_slow": "Ki Slow",
   "effect.dragonminez.stagger": "Staggered",
   "effect.dragonminez.dash_cd": "Dash",
   "effect.dragonminez.doubledash_cd": "Double Dash",

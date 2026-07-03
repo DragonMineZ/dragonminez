@@ -4,6 +4,8 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
@@ -17,13 +19,16 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.world.dimension.SacredKaiDimension;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -98,6 +103,24 @@ public class EntitiesEvents {
 		if (cow.getRandom().nextBoolean()) {
 			cow.setVariant(MushroomCow.MushroomType.BROWN);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onStunnedEntityAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide()) return;
+		if (event.getSource().getDirectEntity() instanceof LivingEntity attacker
+				&& attacker.hasEffect(MainEffects.STUN.get())) {
+			event.setCanceled(true);
+		}
+	}
+
+	private static final int KI_SLOW_DURATION_TICKS = 30;
+
+	@SubscribeEvent
+	public static void onKiHitSlow(LivingHurtEvent event) {
+		if (event.getEntity().level().isClientSide()) return;
+		if (!MainDamageTypes.isKiblastDamage(event.getSource())) return;
+		event.getEntity().addEffect(new MobEffectInstance(MainEffects.KI_SLOW.get(), KI_SLOW_DURATION_TICKS, 0, false, false, true));
 	}
 
 	private static void applyStatsToEntity(LivingEntity entity, double health, double melee, double ki) {

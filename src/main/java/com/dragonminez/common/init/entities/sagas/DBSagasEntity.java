@@ -3,6 +3,7 @@ package com.dragonminez.common.init.entities.sagas;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.clash.BeamClashManager;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -542,12 +543,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false) {
             @Override
             public boolean canUse() {
-                return DBSagasEntity.this.isMeleeAllowed() && super.canUse();
+                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && super.canUse();
             }
 
             @Override
             public boolean canContinueToUse() {
-                return DBSagasEntity.this.isMeleeAllowed() && super.canContinueToUse();
+                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && super.canContinueToUse();
             }
 
             @Override
@@ -640,6 +641,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 if (this.isCasting()) this.stopCasting();
                 if (this.isComboing()) this.stopCombo();
                 return;
+            }
+
+            if (this.isStunned()) {
+                if (this.isCasting()) this.stopCasting();
+                if (this.isComboing()) this.stopCombo();
+                this.getNavigation().stop();
             }
 
             this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming());
@@ -777,7 +784,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.isComboing()) {
                         this.comboTimer++;
                         handleComboLogic();
-                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null && !clashing) {
+                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null && !clashing && !this.isStunned()) {
                         if (this.distanceTo(this.getTarget()) < 6.0D) {
                             this.startComboAuto();
                         }
@@ -792,7 +799,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     } else {
                         if (this.decisionCooldown > 0) this.decisionCooldown--;
                         if (this.decisionCooldown <= 0 && !this.isCasting() && !this.isComboing()
-                                && !this.isZanzoken() && !this.isEvading() && !clashing) {
+                                && !this.isZanzoken() && !this.isEvading() && !clashing && !this.isStunned()) {
                             this.decisionCooldown = DECISION_INTERVAL;
                             this.runBrainDecision();
                         }
@@ -1113,6 +1120,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void startCombo(int comboId) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.isStunned()) return;
         if (this.getTarget() == null) return;
 
         int resolved = comboId;
@@ -1285,6 +1293,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return this.aiTier == AiTier.SIMPLE || this.meleeAllowed;
     }
 
+    public boolean isStunned() {
+        return this.hasEffect(MainEffects.STUN.get());
+    }
+
     public String getQuestTeam() {
         return this.getPersistentData().getString(QuestService.QUEST_TEAM_TAG);
     }
@@ -1389,6 +1401,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public boolean doHurtTarget(Entity pEntity) {
         if (this.isTransforming()) return false;
         if (this.isCasting() || this.isComboing()) return false;
+        if (this.isStunned()) return false;
         return super.doHurtTarget(pEntity);
     }
 
@@ -1471,6 +1484,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void startCasting(int type) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.isStunned()) return;
         if (BeamClashManager.isClashing(this.getUUID())) return;
         this.setCasting(true);
         this.setSkillType(type);
