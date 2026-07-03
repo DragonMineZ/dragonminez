@@ -19,6 +19,7 @@ import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.QuestTextFormatter;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
+import com.dragonminez.common.util.DMZTextPlaceholders;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
@@ -394,7 +395,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 		QuestEntry selected = questEntries.get(selectedIndex);
 
-		List<FormattedCharSequence> titleLines = this.font.split(tr(selected.quest.getTitle()).withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD), detailW);
+		List<FormattedCharSequence> titleLines = this.font.split(ph(tr(selected.quest.getTitle())).withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD), detailW);
 		int titleY = detailY;
 		for (FormattedCharSequence seq : titleLines) {
 			TextUtil.drawCenteredStringWithBorder(guiGraphics, this.font, seq, detailX + detailW / 2 - 2, titleY, 0xFFFFFF);
@@ -402,7 +403,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		}
 
 		int descY = detailY + 26;
-		List<FormattedCharSequence> descLines = this.font.split(tr(selected.quest.getDescription()).withStyle(ChatFormatting.GRAY), detailW - 8);
+		List<FormattedCharSequence> descLines = this.font.split(ph(tr(selected.quest.getDescription())).withStyle(ChatFormatting.GRAY), detailW - 8);
 		descMaxScroll = Math.max(0, descLines.size() * (this.font.lineHeight + 2) - 33);
 		descTargetScroll = Mth.clamp(descTargetScroll, 0, descMaxScroll);
 		renderScrollableFormatted(guiGraphics, descLines, detailX, descY, detailW, 33, descScroll, descMaxScroll);
@@ -578,8 +579,15 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	private MutableComponent dialogueLine() {
 		String stage = getDialogueStage();
 		String npcLine = "dialogue.dragonminez.story.sidequest." + npcId + "." + stage;
-		if (I18n.exists(npcLine)) return tr(npcLine);
-		return tr("dialogue.dragonminez.story.sidequest.generic_npc." + stage);
+		MutableComponent line = I18n.exists(npcLine) ? tr(npcLine)
+				: tr("dialogue.dragonminez.story.sidequest.generic_npc." + stage);
+		return ph(line);
+	}
+
+	private MutableComponent ph(MutableComponent component) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return component;
+		return DMZTextPlaceholders.apply(component, mc.player).copy();
 	}
 
 	private String getDialogueStage() {
