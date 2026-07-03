@@ -6,7 +6,11 @@
    * [[General Server|general-server]]
    * [[General User|general-user]]
    * [[Skills|Skills]]
+   * [[Combat|Combat]]
+   * [[Gravity System|Gravity-System]]
+   * [[Dynamic Growth|Dynamic-Growth]]
 2. [[Notice to Server Owners/Developers|Notice-to-server-owners-developers]]
+3. [[Permissions|Permissions]]
 
 ### Creating your own in DMZ
 1. Start here
@@ -22,7 +26,13 @@
    * [[Custom Quests, Sagas & Sidequests|Custom-Quests-Sagas-and-Sidequests]]
 5. Custom Wishes
    * [[Custom Wishes|Custom-Wishes]]
-6. Custom Models
+6. Custom NPCs
+   * [[NPC Placement & Alignment|NPC-Placement-and-Alignment]]
+7. Custom Space Pod Destinations
+   * [[Space Pod Destinations|Space-Pod-Destinations]]
+8. Custom Weapon Attributes
+   * [[Weapon Attributes|Weapon-Attributes]]
+9. Custom Models
    * [[Custom Models and Assets|Custom-Models-and-Assets]]
 
 ### Creating a Forge Add-on for DMZ

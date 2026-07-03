@@ -10,15 +10,15 @@ Generated the first time DMZ boots. This is where you tune balance, stats, and a
 | :-- | :-- |
 | `config/dragonminez/general-server.json` | Server-wide gameplay toggles (see [[General Server\|general-server]]). |
 | `config/dragonminez/general-user.json` | Client-side settings synced per user (see [[General User\|general-user]]). |
-| `config/dragonminez/combat.json` | Combat tuning values. |
-| `config/dragonminez/skills.json` | Skill costs/cooldowns/damage. |
-| `config/dragonminez/skill-offerings.json` | Which skills are offered/unlockable. |
+| `config/dragonminez/combat.json` | Combat tuning values (see [[Combat\|Combat]]). |
+| `config/dragonminez/skills.json` | Skill costs/cooldowns/eligibility, and per-race/master skill offerings — both live in this one file (see [[Skills\|Skills]]). |
+| `config/dragonminez/training.json` | TP-training minigame tuning (Rhythm, Control, Memory, Precision, Gravity). |
+| `config/dragonminez/techniques.json` | Ki attack and strike attack XP-cost/cooldown tuning. |
 | `config/dragonminez/entities.json` | Hard mode multipliers and per-entity base stats (see [[Entities\|Entities]]). |
 | `config/dragonminez/races/<race>/character.json` | Race identity/appearance defaults. |
 | `config/dragonminez/races/<race>/stats.json` | Race base stats and scaling per class. |
 | `config/dragonminez/races/<race>/forms/*.json` | Forms that belong only to that race. |
-| `config/dragonminez/forms/*.json` | Shared "stack" forms layered on top of a race's own forms. |
-| `config/dragonminez/wishes/*.json` | Per-dragon wish overrides (merges over datapack/dragonball-pack wishes). |
+| `config/dragonminez/forms/*.json` | Shared "stack" forms layered on top of a race's own forms (see [[Custom Forms\|Custom-Forms]]). |
 
 Reference: `ConfigManager.java` (`loadGeneralConfigs`, `loadAllRaces`, `createOrLoadStackForms`).
 
@@ -31,6 +31,9 @@ Lives inside the world save, so it's per-world, not per-instance. This is why qu
 | `dragonminez/sagas/` | Saga manifests (`questFolder` pointer + saga metadata). |
 | `dragonminez/quests/<questFolder>/` | Quest files for a saga, loaded alphabetically (`01_...json`, `02_...json`, ...). |
 | `dragonminez/sidequests/` | Standalone side quests, loaded when side quests are enabled. |
+| `dragonminez/wishes/*.json` | Per-dragon wish list overrides (see [[Custom Wishes\|Custom-Wishes]]). |
+| `dragonminez/npcs/placements.json` | Master/trainer NPC spawn positions (see [[NPC Placement & Alignment\|NPC-Placement-and-Alignment]]). |
+| `dragonminez/npcs/alignment_rules.json` | Per-NPC alignment/hostility thresholds (see [[NPC Placement & Alignment\|NPC-Placement-and-Alignment]]). |
 | `dragonminez/playerdata_json/<uuid>.json` | Player save data, only used when storage mode is `JSON`. |
 
 Reference: `QuestRegistry.loadAll(server)`.
@@ -45,11 +48,11 @@ A root next to your world/instance (not inside the world save) used for external
 
 Some systems are plain Forge/vanilla reload listeners and follow normal datapack rules instead of living in `config/` or the world save:
 
-- `dragonminez/dragonballs/` — dragon ball/wish definitions merged with the config-based overrides above.
-- `space_pod_destinations/*.json` — Space Pod destination list (`SpacePodDestinationRegistry`).
-- `weapon_attributes/*.json` — weapon attribute definitions (`WeaponRegistry`).
+- `dragonminez/dragonballs/` — dragon ball/wish definitions merged with the config-based overrides in the world save (see [[Custom Wishes\|Custom-Wishes]]).
+- `spacepod/*.json` — Space Pod destination list (see [[Space Pod Destinations\|Space-Pod-Destinations]]).
+- `weapon_attributes/*.json` — weapon attribute definitions (see [[Weapon Attributes\|Weapon-Attributes]]).
 
-These reload with `/reload` (vanilla datapack reload) or a full `/dmzreload`, not just by editing the file.
+None of these three are covered by `/dmzreload` — they need a vanilla `/reload` or a restart. See [[Reloading and updating changes|Reloading-and-updating-changes]] for the full breakdown of what `/dmzreload` does and doesn't cover.
 
 ## Assets — `assets/dragonminez/...` (resource pack territory)
 

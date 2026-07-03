@@ -29,12 +29,13 @@ After a reload, connected players are automatically resynced — you don't need 
 - `config/dragonminez/races/<race>/character.json` and `stats.json`
 - `config/dragonminez/races/<race>/forms/*.json` and `config/dragonminez/forms/*.json` (stack forms)
 - `<world save>/dragonminez/{sagas,quests,sidequests}` (with `story` or `all`)
-- `config/dragonminez/wishes/*.json` (with `wishes` or `all`)
+- `<world save>/dragonminez/wishes/*.json` (with `wishes` or `all`) — see [[Custom Wishes|Custom-Wishes]]
+- `<world save>/dragonminez/npcs/{placements.json,alignment_rules.json}` (with `config` or `all`) — see [[NPC Placement & Alignment|NPC-Placement-and-Alignment]]
 
 ## What `/dmzreload` does NOT cover
 
 - **Resource pack assets** (models, textures, animations under `assets/dragonminez/...`). These need a client resource reload (`F3+T`, or reconnecting) since they're loaded client-side, not from server config.
-- **Datapack-only reload listeners** — `dragonminez/dragonballs/*.json` (base dragon ball/wish definitions), `space_pod_destinations/*.json`, `weapon_attributes/*.json`. These follow vanilla datapack rules; use `/reload` (vanilla) or restart the server to pick them up, since they aren't wired into `/dmzreload`'s scopes.
+- **Datapack-only reload listeners** — `dragonminez/dragonballs/*.json` (base dragon ball/wish definitions), `spacepod/*.json` (see [[Space Pod Destinations|Space-Pod-Destinations]]), `weapon_attributes/*.json` (see [[Weapon Attributes|Weapon-Attributes]]). These follow vanilla datapack rules; use `/reload` (vanilla) or restart the server to pick them up, since they aren't wired into `/dmzreload`'s scopes.
 - **External dragon ball addon packs** under `<game dir>/dragonballs/` — these are merged at server start by `DragonBallPackManager`; changing them requires a restart.
 - **Storage backend switch** (`NBT` <-> `JSON` <-> `DATABASE`) — this is read at server start and reloaded by `StorageManager.reload()` under the `config` scope, but switching backends mid-session with players online is not something you should do casually; prefer doing it with the server empty.
 - **New Java code / addon jars** — obviously requires a restart.
