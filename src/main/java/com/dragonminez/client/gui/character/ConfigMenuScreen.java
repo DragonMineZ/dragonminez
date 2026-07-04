@@ -9,6 +9,11 @@ import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -158,6 +163,25 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.liveCrowdinTranslations",
 				ConfigType.BOOLEAN, userConfig.getLiveCrowdinTranslations() ? 1 : 0, 0, 1,
 				v -> userConfig.setLiveCrowdinTranslations(v > 0)));
+
+		initializeDynamicGrowthOptions();
+	}
+
+	private void initializeDynamicGrowthOptions() {
+		if (this.minecraft == null || this.minecraft.player == null) return;
+		if (!ConfigManager.getServerConfig().getDynamicGrowth().isEnabled()) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(data -> {
+			for (DynamicGrowthStat stat : DynamicGrowthStat.values()) {
+				configOptions.add(new ConfigOption("config.dynamicGrowthFor" + stat.key(),
+						ConfigType.BOOLEAN, data.getDynamicGrowth().isGrowthEnabled(stat) ? 1 : 0, 0, 1,
+						v -> {
+							boolean enabled = v > 0;
+							data.getDynamicGrowth().setGrowthEnabled(stat, enabled);
+							NetworkHandler.sendToServer(new DynamicGrowthToggleC2S(stat.key(), enabled));
+						}));
+			}
+		});
 	}
 
 	private void initConfigButtons() {

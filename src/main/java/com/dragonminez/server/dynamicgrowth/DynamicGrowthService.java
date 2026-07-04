@@ -45,6 +45,7 @@ public final class DynamicGrowthService {
 		if (!data.getStatus().isHasCreatedCharacter()) return;
 
 		DynamicGrowthData growth = data.getDynamicGrowth();
+		if (!growth.isGrowthEnabled(stat)) return;
 		long nowMs = System.currentTimeMillis();
 		double xp = baseXp;
 
