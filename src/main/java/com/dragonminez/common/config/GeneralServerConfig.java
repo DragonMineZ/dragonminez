@@ -477,10 +477,10 @@ public class GeneralServerConfig {
 
 		private Double strPracticeMultiplier = 1.0;
 		private Double skpPracticeMultiplier = 1.0;
-		private Double resPracticeMultiplier = 1.0;
-		private Double vitPracticeMultiplier = 1.0;
+		private Double resPracticeMultiplier = 1.5;
+		private Double vitPracticeMultiplier = 0.5;
 		private Double pwrPracticeMultiplier = 1.0;
-		private Double enePracticeMultiplier = 1.0;
+		private Double enePracticeMultiplier = 1.5;
 
 		private Double staminaSpentXpRatio = 0.1;
 		private Double energySpentXpRatio = 0.1;
@@ -517,10 +517,10 @@ public class GeneralServerConfig {
 			return switch (statName.toUpperCase()) {
 				case "STR" -> clampNonNeg(strPracticeMultiplier, 1.0);
 				case "SKP" -> clampNonNeg(skpPracticeMultiplier, 1.0);
-				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.0);
-				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 1.0);
+				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.5);
+				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 0.5);
 				case "PWR" -> clampNonNeg(pwrPracticeMultiplier, 1.0);
-				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.0);
+				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.5);
 				default -> 1.0;
 			};
 		}

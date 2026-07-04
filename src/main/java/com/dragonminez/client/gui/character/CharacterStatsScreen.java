@@ -700,7 +700,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
 		double currentXp = statsData.getDynamicGrowth().getPracticeXp(stat);
-		double percent = requiredXp <= 0 ? 100.0 : Math.min(100.0, currentXp / requiredXp * 100.0);
+		double percent = requiredXp <= 0 ? 100.0 : currentXp / requiredXp * 100.0;
+		if (!Double.isFinite(percent)) percent = 0.0;
+		percent = Math.max(0.0, Math.min(100.0, percent));
 		extras.add(txt("  " + String.format(Locale.US, "%.1f", currentXp) + " / " + requiredXp + " XP ("
 				+ String.format(Locale.US, "%.1f", percent) + "%)").withStyle(ChatFormatting.GREEN));
 	}

@@ -16,7 +16,11 @@ public class DynamicGrowthData {
 
 	public double getPracticeXp(DynamicGrowthStat stat) {
 		double value = practiceXp.getOrDefault(stat.key(), 0.0);
-		return Double.isFinite(value) ? value : 0.0;
+		return Double.isFinite(value) && value > 0.0 ? value : 0.0;
+	}
+
+	public void resetPracticeXp(DynamicGrowthStat stat) {
+		practiceXp.put(stat.key(), 0.0);
 	}
 
 	public void addPracticeXp(DynamicGrowthStat stat, double amount) {
@@ -106,7 +110,8 @@ public class DynamicGrowthData {
 		practiceXp.clear();
 		CompoundTag xpTag = tag.getCompound("PracticeXp");
 		for (String key : xpTag.getAllKeys()) {
-			practiceXp.put(key, xpTag.getDouble(key));
+			double value = xpTag.getDouble(key);
+			practiceXp.put(key, Double.isFinite(value) && value > 0.0 ? value : 0.0);
 		}
 	}
 
@@ -124,7 +129,7 @@ public class DynamicGrowthData {
 		for (int i = 0; i < size; i++) {
 			String key = buf.readUtf();
 			double value = buf.readDouble();
-			practiceXp.put(key, value);
+			practiceXp.put(key, Double.isFinite(value) && value > 0.0 ? value : 0.0);
 		}
 	}
 

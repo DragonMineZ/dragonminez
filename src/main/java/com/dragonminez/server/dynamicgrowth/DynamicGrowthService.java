@@ -122,12 +122,19 @@ public final class DynamicGrowthService {
 	private static void processLevelUps(ServerPlayer player, StatsData data, DynamicGrowthStat stat) {
 		DynamicGrowthData growth = data.getDynamicGrowth();
 
-		if (data.getMaxAllowedIncreaseForStat(stat.key(), 1) <= 0) return;
-
 		int currentStat = data.getCurrentStatValue(stat.key());
 		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
 		double availableXp = growth.getPracticeXp(stat);
-		if (requiredXp <= 0 || !Double.isFinite(availableXp) || availableXp < requiredXp) return;
+		boolean canIncrease = data.getMaxAllowedIncreaseForStat(stat.key(), 1) > 0;
+
+		if (!Double.isFinite(availableXp) || availableXp < 0.0
+				|| (!canIncrease && requiredXp > 0 && availableXp > requiredXp)) {
+			growth.resetPracticeXp(stat);
+			return;
+		}
+
+		if (!canIncrease) return;
+		if (requiredXp <= 0 || availableXp < requiredXp) return;
 
 		growth.consumePracticeXp(stat, requiredXp);
 		grantStatPoint(player, data, stat);
