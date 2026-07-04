@@ -826,8 +826,11 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			int targetLevel = Math.max(0, requiredLevel - 1);
 			int cost = getUpgradeCostForTargetLevel(node.formType, targetLevel);
+			boolean isStack = ConfigManager.getSkillsConfig().getStackSkills().contains(node.formType.toLowerCase(Locale.ROOT));
+			boolean isFirstStackLevel = isStack && targetLevel == 0;
 
-			if (!unlocked && canPurchaseLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
+			// For stack-type forms, the first level must never be purchasable from the menu.
+			if (!unlocked && canPurchaseLevel && !isFirstStackLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
 				int exX = nx + size - (int) (6 * formsZoom);
 				int exY = ny - (int) (10 * formsZoom);
 
@@ -864,6 +867,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			int targetLevel = Math.max(0, requiredLevel - 1);
 			int cost = getUpgradeCostForTargetLevel(hovered.formType, targetLevel);
+			boolean isFirstStackLevel = isStack && targetLevel == 0;
 
 			if (unlocked) lines.add(Component.translatable("gui.dragonminez.skills.purchased").withStyle(ChatFormatting.GREEN));
 			else if (cost == -1 || cost == Integer.MAX_VALUE) {
@@ -876,7 +880,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			}
 			else {
 				lines.add(Component.translatable("gui.dragonminez.quests.rewards.tps", cost).withStyle(ChatFormatting.AQUA));
-				if (canPurchaseLevel && statsData.getResources().getTrainingPoints() >= cost) lines.add(Component.translatable("gui.dragonminez.skills.doubleclick_buy").withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC));
+				if (canPurchaseLevel && !isFirstStackLevel && statsData.getResources().getTrainingPoints() >= cost) lines.add(Component.translatable("gui.dragonminez.skills.doubleclick_buy").withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC));
 			}
 
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), null, lines, null, 0xFFFFFF);
@@ -1427,8 +1431,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					boolean canPurchaseLevel = requiredLevel == currentLevel + 1;
 					int targetLevel = Math.max(0, requiredLevel - 1);
 					int cost = getUpgradeCostForTargetLevel(clicked.formType, targetLevel);
+					boolean isStack = ConfigManager.getSkillsConfig().getStackSkills().contains(clicked.formType.toLowerCase(Locale.ROOT));
+					boolean isFirstStackLevel = isStack && targetLevel == 0;
 
-					if (canPurchaseLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
+					if (canPurchaseLevel && !isFirstStackLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
 						NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, clicked.formType, cost));
 						updateStatsData();
 					}

@@ -141,6 +141,27 @@ public class ExecuteActionC2S {
 			return false;
 		}
 
+		if (data.getCharacter().hasActiveStackForm()) {
+			FormConfig.FormData activeStackData = data.getCharacter().getActiveStackFormData();
+
+			if (activeStackData != null) {
+				boolean isFormStackable = nextForm.getFormStackable();
+				boolean isStackStackable = activeStackData.getFormStackable();
+
+				double baseMastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
+				double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(data.getCharacter().getActiveStackFormGroup(), data.getCharacter().getActiveStackForm());
+
+				boolean meetsStackMastery = baseMastery >= nextForm.getStackOnMastery() && stackMastery >= activeStackData.getStackOnMastery();
+				boolean compatible = TransformationsHelper.areFormsCompatible(nextForm, group, activeStackData, data.getCharacter().getActiveStackFormGroup());
+
+				if (!isFormStackable || !isStackStackable || !meetsStackMastery || !compatible) {
+					data.getCharacter().clearActiveStackForm(player);
+					player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
+					player.sendSystemMessage(Component.translatable("message.dragonminez.form.stack_removed"));
+				}
+			}
+		}
+
 		double mastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
 
 		if (!player.isCreative() && mastery < nextForm.getInstantTransformOnMastery()) return false;
@@ -168,25 +189,29 @@ public class ExecuteActionC2S {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
 		if (nextForm == null) return false;
 
+		if (!nextForm.getFormStackable()) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
+			return false;
+		}
+
 		String group = data.getCharacter().hasActiveStackForm()
 				? data.getCharacter().getActiveStackFormGroup()
 				: data.getCharacter().getSelectedStackFormGroup();
 
 		if (data.getCharacter().hasActiveForm()) {
 			FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
-			if (activeFormData != null) {
-				if (!activeFormData.getFormStackable() || !nextForm.getFormStackable()
-						|| !TransformationsHelper.areFormsCompatible(activeFormData, data.getCharacter().getActiveFormGroup(), nextForm, group)) {
-					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
-					return false;
-				}
 
-				double baseMastery = data.getCharacter().getFormMasteries().getMastery(data.getCharacter().getActiveFormGroup(), data.getCharacter().getActiveForm());
-				double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
-				if (baseMastery < activeFormData.getStackOnMastery() || stackMastery < nextForm.getStackOnMastery()) {
-					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
-					return false;
-				}
+			if (activeFormData == null || !activeFormData.getFormStackable()
+					|| !TransformationsHelper.areFormsCompatible(activeFormData, data.getCharacter().getActiveFormGroup(), nextForm, group)) {
+				player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
+				return false;
+			}
+
+			double baseMastery = data.getCharacter().getFormMasteries().getMastery(data.getCharacter().getActiveFormGroup(), data.getCharacter().getActiveForm());
+			double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
+			if (baseMastery < activeFormData.getStackOnMastery() || stackMastery < nextForm.getStackOnMastery()) {
+				player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
+				return false;
 			}
 		}
 
