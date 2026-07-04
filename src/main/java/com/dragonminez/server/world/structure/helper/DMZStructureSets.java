@@ -23,13 +23,6 @@ import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement
 
 import java.util.Optional;
 
-/**
- * Each structure is placed exactly once in the world by {@link BiomeAwareUniquePlacement}, which
- * searches outward from spawn for the nearest chunk in a valid biome. The player finds e.g. Goku's
- * house when they reach that plains. Timechamber is fixed at 0,0 and Kamilookout is unique near spawn.
- * Positions are resolved lazily/asynchronously by {@link StructureSpawnPlanner} and feed
- * {@code /dmzlocate}, Capsule Corp maps and NPC anchors.
- */
 public class DMZStructureSets {
 	public static final ResourceKey<StructureSet> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),

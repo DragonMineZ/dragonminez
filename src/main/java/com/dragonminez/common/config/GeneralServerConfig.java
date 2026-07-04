@@ -41,9 +41,6 @@ public class GeneralServerConfig {
 		private Integer structureMaxDistanceFromSpawn = 4000;
 		private Integer structureMinDistanceBetween = 250;
 
-		// RandomSpread tuning (in blocks). structureSpacing is the size of the region that holds one
-		// copy of a structure (lower = you find them sooner while exploring); structureSeparation is
-		// the minimum gap kept from a region's far edge.
 		private Integer structureSpacing = 6000;
 		private Integer structureSeparation = 2000;
 
