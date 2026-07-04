@@ -200,12 +200,18 @@ public class TransformationsHelper {
 		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
 		List<FormConfig.FormData> unlockedForms = getUnlockedForms(statsData, race, groupName);
 		return unlockedForms.stream()
+				.filter(formData -> isFormSelectable(statsData, groupName, formData, false))
 				.map(FormConfig.FormData::getName)
 				.toList();
 	}
 
-	public static boolean isDirectlyAccessibleForm(StatsData statsData, String groupName, FormConfig.FormData formData) {
-		return isFormSelectable(statsData, groupName, formData, false);
+	private static boolean meetsFreeTransformMasteryFor(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
+		if (formData == null) return false;
+		if (statsData.getPlayer() != null && statsData.getPlayer().isCreative()) return true;
+		double have = stack
+				? statsData.getCharacter().getStackFormMasteries().getMastery(groupName, formData.getName())
+				: statsData.getCharacter().getFormMasteries().getMastery(groupName, formData.getName());
+		return have >= formData.getAllowFreeTransformOnMastery();
 	}
 
 	public static List<String> getSelectableStackFormNames(StatsData statsData, String groupName) {
@@ -218,21 +224,7 @@ public class TransformationsHelper {
 	}
 
 	private static boolean isFormSelectable(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
-		double mastery = stack
-				? statsData.getCharacter().getStackFormMasteries().getMastery(groupName, formData.getName())
-				: statsData.getCharacter().getFormMasteries().getMastery(groupName, formData.getName());
-
-		boolean canAlways = formData.getCanAlwaysTransform()
-				&& mastery >= formData.getAllowAlwaysTransformOnMastery();
-
-		boolean usedBefore = stack
-				? statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(groupName).contains(formData.getName())
-				: statsData.getCharacter().getFormsUsedBefore().getFormGroup(groupName).contains(formData.getName());
-		boolean directIfUsed = formData.getDirectTransformationIfUsed()
-				&& usedBefore
-				&& mastery >= formData.getDirectTransformIfUsedOnMastery();
-
-		return canAlways || directIfUsed;
+		return meetsFreeTransformMasteryFor(statsData, groupName, formData, stack);
 	}
 
 	public static String getGroupWithFirstAvailableForm(StatsData statsData) {
@@ -435,18 +427,13 @@ public class TransformationsHelper {
 		String group = getTransformTargetGroup(statsData);
 		if (group == null || group.isEmpty()) return false;
 		if (character.hasActiveForm() && group.equalsIgnoreCase(character.getActiveFormGroup())) return false;
-		FormConfig.FormData candidate = getNextFormCandidate(statsData);
-		if (candidate == null) return false;
-		return !isDirectlyAccessibleForm(statsData, group, candidate);
+		return getNextFormCandidate(statsData) != null;
 	}
 
 	public static boolean meetsFreeTransformMastery(StatsData statsData) {
-		if (statsData.getPlayer() != null && statsData.getPlayer().isCreative()) return true;
 		FormConfig.FormData candidate = getNextFormCandidate(statsData);
 		if (candidate == null) return false;
-		String group = getTransformTargetGroup(statsData);
-		double have = statsData.getCharacter().getFormMasteries().getMastery(group, candidate.getName());
-		return have >= candidate.getAllowFreeTransformOnMastery();
+		return meetsFreeTransformMasteryFor(statsData, getTransformTargetGroup(statsData), candidate, false);
 	}
 
 	public static void revertToBaseForm(ServerPlayer player, StatsData statsData) {

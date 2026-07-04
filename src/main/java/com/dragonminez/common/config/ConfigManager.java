@@ -26,7 +26,7 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final double CONFIG_VERSION = 21.2;
+	public static final double CONFIG_VERSION = 21.3;
 	public static final String CLIENT_ONLY_CONFIG = "general-user";
 
 	private static final double DEFENSE_SCALING_FOLD = 0.12;

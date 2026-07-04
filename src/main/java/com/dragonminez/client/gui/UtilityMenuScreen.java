@@ -346,9 +346,17 @@ public class UtilityMenuScreen extends ScaledScreen {
 
 	private MoreNode findMoreNode(String categoryKey) {
 		for (RadialNode base : baseNodes) {
-			for (RadialNode child : base.children(statsData)) {
-				if (child instanceof MoreNode more && more.categoryKey().equals(categoryKey)) return more;
-			}
+			MoreNode found = findMoreNodeRec(base, categoryKey);
+			if (found != null) return found;
+		}
+		return null;
+	}
+
+	private MoreNode findMoreNodeRec(RadialNode node, String categoryKey) {
+		for (RadialNode child : node.children(statsData)) {
+			if (child instanceof MoreNode more && more.categoryKey().equals(categoryKey)) return more;
+			MoreNode deep = findMoreNodeRec(child, categoryKey);
+			if (deep != null) return deep;
 		}
 		return null;
 	}
@@ -739,6 +747,10 @@ public class UtilityMenuScreen extends ScaledScreen {
 				return true;
 			}
 			openPanel(release.buildOptions(statsData), release.label(statsData), hover, true);
+			return true;
+		}
+		if (node instanceof FormSelectNode form && form.interactive(statsData)) {
+			form.onSelect(statsData);
 			return true;
 		}
 		if (node != null && node.interactive(statsData) && !node.expandable(statsData)) {

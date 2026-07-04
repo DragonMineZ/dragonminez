@@ -96,13 +96,9 @@ public class FormConfig {
 		private Double unlockOnMastery = 0.0;
 		private Double stackOnMastery = 0.0;
 		private Double instantTransformOnMastery = 40.0;
-		private Double allowAlwaysTransformOnMastery = 0.0;
-		private Double directTransformIfUsedOnMastery = 0.0;
 		private Double allowFreeTransformOnMastery = 50.0;
 		private Boolean formStackable = true;
 		private Double stackDrainMultiplier = 2.0;
-		private Boolean canAlwaysTransform = false;
-		private Boolean directTransformationIfUsed = false;
 		private List<String> incompatibleWith = new ArrayList<>(List.of("ultimate.ultimate"));
 		private List<String> shareMasteryWith = new ArrayList<>();
 		private Double shareMasteryMultiplier = 1.0;
@@ -213,14 +209,6 @@ public class FormConfig {
 
 		public Double getInstantTransformOnMastery() {
 			return Math.max(0, instantTransformOnMastery);
-		}
-
-		public Double getAllowAlwaysTransformOnMastery() {
-			return Math.max(0, allowAlwaysTransformOnMastery);
-		}
-
-		public Double getDirectTransformIfUsedOnMastery() {
-			return Math.max(0, directTransformIfUsedOnMastery);
 		}
 
 		public Double getAllowFreeTransformOnMastery() {
