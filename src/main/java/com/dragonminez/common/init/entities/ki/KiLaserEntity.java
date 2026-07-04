@@ -372,11 +372,13 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
             float fireOffsetX = 0.0F;
             float fireOffsetY = 0.0F;
+            float fireOffsetZ = 0.0F;
 
             int renderType = this.getKiRenderType();
             if (renderType == 1 || renderType == 2) {
                 fireOffsetX = 0.1F;
                 fireOffsetY = 0.5F;
+                fireOffsetZ = 0.6F;
             } else {
                 fireOffsetX = 0.0F;
                 fireOffsetY = 0.1F;
@@ -384,7 +386,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
             offset = right.scale(fireOffsetX)
                     .add(up.scale(fireOffsetY))
-                    .add(look.scale(forwardDistance));
+                    .add(look.scale(fireOffsetZ));
         }
 
         Vec3 newPos = hitboxCenter.add(offset);
