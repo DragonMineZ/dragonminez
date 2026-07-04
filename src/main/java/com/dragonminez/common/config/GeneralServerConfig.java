@@ -96,7 +96,7 @@ public class GeneralServerConfig {
 		private Integer tpPerBlockMined = 1;
 		private Integer tpPerItemCrafted = 1;
 		private Boolean gravityBonusEnabled = true;
-		private Double HTCTpMultiplier = 2.5;
+		private Double HTCTpMultiplier = 1.75;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
 		private CapsulesConfig capsules = new CapsulesConfig();

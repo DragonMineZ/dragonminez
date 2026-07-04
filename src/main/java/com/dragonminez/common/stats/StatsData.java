@@ -1217,14 +1217,22 @@ public class StatsData {
 	}
 
 	public double getTpAdditiveMultiplier() {
-		double additiveMultiplier = 1.0;
-		additiveMultiplier += (getTpClassMultiplier() - 1.0);
-		additiveMultiplier += (getTpFrostDemonMultiplier() - 1.0);
-		additiveMultiplier += (getTpHTCMultiplier() - 1.0);
-		if (ConfigManager.getServerConfig().getGameplay() != null)
-			if (ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled())
-				additiveMultiplier += (getTpGravityMultiplier() - 1.0);
-		return Math.max(0.0, additiveMultiplier);
+		double total = 1.0;
+		total += (getTpClassMultiplier() - 1.0);
+		total += (getTpFrostDemonMultiplier() - 1.0);
+		total += (getTpHTCMultiplier() - 1.0);
+		total += (getMutantTpMultiplier() - 1.0);
+		total += (getTpGlobalMultiplier() - 1.0);
+		total += (getTpPotionEffectMultiplier() - 1.0);
+		total += (getDifficultyTpMultiplier() - 1.0);
+		total += (getTpWeightBellMultiplier() - 1.0);
+
+		if (ConfigManager.getServerConfig().getGameplay() != null) {
+			if (ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled()) {
+				total += (getTpGravityMultiplier() - 1.0);
+			}
+		}
+		return Math.max(0.0, total);
 	}
 
 	public double getTpGlobalMultiplier() {
@@ -1301,30 +1309,32 @@ public class StatsData {
 	}
 
 	public double getTpTotalMultiplier() {
-		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier() * getMutantTpMultiplier() * getProgressionTpGainMultiplier();
+		double finalTotal = getTpAdditiveMultiplier();
+		finalTotal += (getProgressionTpGainMultiplier() - 1.0);
+
+		return Math.max(0.0, finalTotal);
 	}
 
 	public double getTpSourceMultiplier(TpSource source) {
 		List<TpBoost> boosts = ConfigManager.getServerConfig().getGameplay().getTpGainBoosts(source);
 		if (boosts.isEmpty()) return 1.0;
-		double additive = 1.0;
-		double multiplicative = 1.0;
-		boolean gravityEnabled = ConfigManager.getServerConfig().getGameplay() == null
-				|| ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled();
+		double total = 1.0;
+		boolean gravityEnabled = ConfigManager.getServerConfig().getGameplay() == null || ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled();
 		for (TpBoost boost : boosts) {
 			switch (boost) {
-				case CLASS -> additive += (getTpClassMultiplier() - 1.0);
-				case RACIALSKILL -> additive += (getTpFrostDemonMultiplier() - 1.0);
-				case HTC -> additive += (getTpHTCMultiplier() - 1.0);
-				case GRAVITY -> { if (gravityEnabled) additive += (getTpGravityMultiplier() - 1.0); }
-				case WEIGHTS -> multiplicative *= getTpWeightBellMultiplier();
-				case GLOBAL -> multiplicative *= getTpGlobalMultiplier();
-				case POTION -> multiplicative *= getTpPotionEffectMultiplier();
-				case MUTANT -> multiplicative *= getMutantTpMultiplier();
-				case DIFFICULTY -> multiplicative *= getDifficultyTpMultiplier();
+				case CLASS -> total += (getTpClassMultiplier() - 1.0);
+				case RACIALSKILL -> total += (getTpFrostDemonMultiplier() - 1.0);
+				case HTC -> total += (getTpHTCMultiplier() - 1.0);
+				case GRAVITY -> { if (gravityEnabled) total += (getTpGravityMultiplier() - 1.0); }
+				case WEIGHTS -> total += (getTpWeightBellMultiplier() - 1.0);
+				case GLOBAL -> total += (getTpGlobalMultiplier() - 1.0);
+				case POTION -> total += (getTpPotionEffectMultiplier() - 1.0);
+				case MUTANT -> total += (getMutantTpMultiplier() - 1.0);
+				case DIFFICULTY -> total += (getDifficultyTpMultiplier() - 1.0);
 			}
 		}
-		return Math.max(0.0, additive) * multiplicative * getProgressionTpGainMultiplier();
+		total += (getProgressionTpGainMultiplier() - 1.0);
+		return Math.max(0.0, total);
 	}
 
 	public double getDifficultyTpMultiplier() {
