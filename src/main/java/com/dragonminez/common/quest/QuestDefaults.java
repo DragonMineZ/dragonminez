@@ -14,7 +14,7 @@ import java.nio.file.Path;
 /**
  * Generates default individual quest JSON files in the unified schema.
  * <p>
- * Files use the same schema for all quest types â€” only the {@code "type"} field differs.
+ * Files use the same schema for all quest types & only the {@code "type"} field differs.
  * Filenames use a numeric prefix for ordering (e.g. {@code 01_find_roshi.json}).
  * <p>
  * <b>Unified quest schema:</b>
