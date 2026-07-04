@@ -1088,9 +1088,7 @@ public class TickHandler {
 	public static void registerStatusEffectHandlers() {
 		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioDrainHandler());
-		STATUS_EFFECT_HANDLERS.add(new DashStatusHandler());
-		STATUS_EFFECT_HANDLERS.add(new DoubleDashStatusHandler());
-		STATUS_EFFECT_HANDLERS.add(new TeleportCdStatusHandler());
+		STATUS_EFFECT_HANDLERS.add(new CooldownEffectHandler());
 		STATUS_EFFECT_HANDLERS.add(new FlyStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new FusionStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new KiChargeStatusHandler());
@@ -1098,8 +1096,6 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MutantStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
-		STATUS_EFFECT_HANDLERS.add(new BioPassiveHandler());
-		STATUS_EFFECT_HANDLERS.add(new MajinReviveHandler());
 	}
 
 	public static void registerActionModeHandler(String actionMode, IActionModeHandler actionModeHandler) {

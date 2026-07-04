@@ -21,9 +21,7 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
 
     @Override
     public void handleStatusEffects(ServerPlayer player, StatsData data) {
-        if (!data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) {
-            player.removeEffect(MainEffects.SAIYAN_PASSIVE.get());
-        }
+
     }
 
     @Override
@@ -36,7 +34,6 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
         if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getSaiyanRacialSkill() && ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("saiyan")) {
             handleSaiyanPassive(serverPlayer, data);
         } else if (SAIYAN_ZENKAI_SECONDS.containsKey(serverPlayer.getUUID())) resetSaiyanZenkaiTimer(serverPlayer);
-        if (!data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) serverPlayer.removeEffect(MainEffects.SAIYAN_PASSIVE.get());
     }
 
     private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {

@@ -2,12 +2,28 @@ package com.dragonminez.server.util;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.stats.StatsData;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 
 public final class PotionEffectHelper {
 	private PotionEffectHelper() {}
+
+	public static void syncCooldownIndicator(Player player, StatsData data, String cooldownKey, MobEffect effect) {
+		if (player == null || effect == null) return;
+
+		int remaining = data.getCooldowns().getCooldown(cooldownKey);
+		if (remaining > 0) {
+			MobEffectInstance existing = player.getEffect(effect);
+			if (existing == null || existing.getDuration() < remaining) {
+				player.addEffect(new MobEffectInstance(effect, remaining, 0, false, false, true));
+			}
+		} else if (player.hasEffect(effect)) {
+			player.removeEffect(effect);
+		}
+	}
 
 	public static double applyKiRegenMultiplier(LivingEntity entity, double baseValue) {
 		double multiplier = getMultiplierFromEffect(entity, MainEffects.KI_REGEN.get(), "ki_regen");
