@@ -25,9 +25,9 @@ public class XenoverseHUD {
 	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
 	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
-	private static volatile float currentHPBarWidth = 0;
-	private static volatile float currentKiBarWidth = 0;
-	private static volatile float currentStmBarWidth = 0;
+	private static final HudBarAnimator HP_BAR = new HudBarAnimator();
+	private static final HudBarAnimator KI_BAR = new HudBarAnimator();
+	private static final HudBarAnimator STM_BAR = new HudBarAnimator();
 	private static volatile float displayPowerRelease = 0;
 	private static volatile float lastSeenMaxHP = -1.0f;
 	private static volatile float lastSeenMaxKi = -1;
@@ -71,23 +71,23 @@ public class XenoverseHUD {
 				float currentKi = resources.getCurrentEnergy();
 				float currentStm = resources.getCurrentStamina();
 
-				float targetHPBarWidth = Mth.clamp(currentHP / maxHP, 0.0f, 1.0f) * HP_BAR_MAX_WIDTH;
-				float targetKiBarWidth = Mth.clamp(currentKi / (float) maxKi, 0.0f, 1.0f) * KI_BAR_MAX_WIDTH;
-				float targetStmBarWidth = Mth.clamp(currentStm / (float) maxStm, 0.0f, 1.0f) * STM_BAR_MAX_WIDTH;
+				float hpFraction = Mth.clamp(currentHP / maxHP, 0.0f, 1.0f);
+				float kiFraction = Mth.clamp(currentKi / (float) maxKi, 0.0f, 1.0f);
+				float stmFraction = Mth.clamp(currentStm / (float) maxStm, 0.0f, 1.0f);
 
-				if (lastSeenMaxHP != maxHP) { currentHPBarWidth = targetHPBarWidth; lastSeenMaxHP = maxHP; }
-				if (lastSeenMaxKi != maxKi) { currentKiBarWidth = targetKiBarWidth; lastSeenMaxKi = maxKi; }
-				if (lastSeenMaxStm != maxStm) { currentStmBarWidth = targetStmBarWidth; lastSeenMaxStm = maxStm; }
+				if (lastSeenMaxHP != maxHP) { HP_BAR.reset(hpFraction); lastSeenMaxHP = maxHP; }
+				if (lastSeenMaxKi != maxKi) { KI_BAR.reset(kiFraction); lastSeenMaxKi = maxKi; }
+				if (lastSeenMaxStm != maxStm) { STM_BAR.reset(stmFraction); lastSeenMaxStm = maxStm; }
 
-				currentHPBarWidth += (targetHPBarWidth - currentHPBarWidth) * LERP_SPEED * partialTicks;
-				currentKiBarWidth += (targetKiBarWidth - currentKiBarWidth) * LERP_SPEED * partialTicks;
-				currentStmBarWidth += (targetStmBarWidth - currentStmBarWidth) * LERP_SPEED * partialTicks;
+				HP_BAR.update(hpFraction);
+				KI_BAR.update(kiFraction);
+				STM_BAR.update(stmFraction);
 				displayPowerRelease += (powerRelease - displayPowerRelease) * LERP_SPEED * partialTicks;
-
-				if (Math.abs(currentHPBarWidth - targetHPBarWidth) <= 1) currentHPBarWidth = targetHPBarWidth;
-				if (Math.abs(currentKiBarWidth - targetKiBarWidth) <= 1) currentKiBarWidth = targetKiBarWidth;
-				if (Math.abs(currentStmBarWidth - targetStmBarWidth) <= 1) currentStmBarWidth = targetStmBarWidth;
 				if (Math.abs(displayPowerRelease - powerRelease) <= 1) displayPowerRelease = powerRelease;
+
+				float currentHPBarWidth = HP_BAR.frontFraction() * HP_BAR_MAX_WIDTH;
+				float currentKiBarWidth = KI_BAR.frontFraction() * KI_BAR_MAX_WIDTH;
+				float currentStmBarWidth = STM_BAR.frontFraction() * STM_BAR_MAX_WIDTH;
 
 				RenderSystem.enableBlend();
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -109,6 +109,7 @@ public class XenoverseHUD {
 
 				guiGraphics.blit(hud, 31, 13, 14, 2, 141, 9, 256, 256);
 				int hpV = (currentHP < maxHP * 0.33) ? 48 : (currentHP < maxHP * 0.66) ? 35 : 21;
+				drawHpChip(guiGraphics, 32, 15, 15, hpV, currentHPBarWidth, HP_BAR.ghostFraction() * HP_BAR_MAX_WIDTH, HP_BAR.gapType(), 5);
 				guiGraphics.blit(hud, 32, 15, 15, hpV, (int) currentHPBarWidth, 5, 256, 256);
 
 				guiGraphics.blit(hud, 28, 21, 8, 65, 118, 8, 256, 256);
@@ -156,6 +157,19 @@ public class XenoverseHUD {
 			}
 		});
 	};
+
+	private static void drawHpChip(GuiGraphics guiGraphics, int x, int y, int u, int v, float front, float ghost, HudBarAnimator.GapType gap, int height) {
+		if (gap == HudBarAnimator.GapType.NONE) return;
+		int start = Math.round(Math.min(front, ghost));
+		int end = Math.round(Math.max(front, ghost));
+		int chipWidth = end - start;
+		if (chipWidth <= 0) return;
+
+		if (gap == HudBarAnimator.GapType.DAMAGE) RenderSystem.setShaderColor(1.0f, 0.24f, 0.24f, 1.0f);
+		else RenderSystem.setShaderColor(0.34f, 1.0f, 0.42f, 1.0f);
+		guiGraphics.blit(hud, x + start, y, u + start, v, chipWidth, height, 256, 256);
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
 
 	private static void drawScaledText(GuiGraphics guiGraphics, String text, int x, int y, float scale, int color) {
 		guiGraphics.pose().pushPose();
