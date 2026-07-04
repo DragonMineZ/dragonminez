@@ -1244,7 +1244,7 @@ public class StatsData {
 	public boolean isFrostDemonTpPassiveActive() {
 		return ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 				&& ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill()
-				&& "frostdemon".equals(character.getRace());
+				&& "frostdemon".equals(ConfigManager.getRaceCharacter(character.getRace()).getRacialSkill());
 	}
 
 	public double getTpFrostDemonMultiplier() {
