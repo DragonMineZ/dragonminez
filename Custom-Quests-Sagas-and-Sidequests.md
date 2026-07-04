@@ -159,8 +159,8 @@ Both `prerequisites` (can this quest ever be unlocked) and `requirements` (can i
 | `QUEST` | `questId` (string) — a specific sidequest must be completed. |
 | `LEVEL` | `minLevel` |
 | `STAT` | `stat` (`STR`/`SKP`/`RES`/`VIT`/`PWR`/`ENE`), `minValue` |
-| `RACE` | `race` |
-| `CLASS` | `class` |
+| `RACE` | `race` (aliases: `raceName`/`race_name`) — the player's race id, case-insensitive. Built-in ids: `human`, `saiyan`, `namekian`, `frostdemon`, `bioandroid`, `majin`. **Watch out:** it's `frostdemon` (not `frieza`/`colddemon`) and `bioandroid` (not `android`/`cell`). Custom races use whatever id they register in `config/dragonminez`. |
+| `CLASS` | `class` (aliases: `className`/`class_name`/`characterClass`) — the player's class id, case-insensitive. |
 | `SKILL` | `skill`, `minLevel`* (aliases: `skillId`/`id`, `level`/`required`) |
 | `BIOME` | `biome` |
 | `DIMENSION` | `dimension` |
