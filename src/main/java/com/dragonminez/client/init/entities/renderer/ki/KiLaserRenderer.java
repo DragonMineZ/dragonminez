@@ -48,10 +48,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
 
             switch (renderType) {
                 case 1:
-                    renderKiMakkankosanpo(entity, partialTick, stack, proj, alphaMultiplier);
-                    break;
                 case 2:
-                    renderKiLaserAro(entity, partialTick, stack, proj, alphaMultiplier);
+                    renderKiMakkankosanpo(entity, partialTick, stack, proj, alphaMultiplier);
                     break;
                 default:
                     renderKiLaser(entity, partialTick, stack, proj, alphaMultiplier);
