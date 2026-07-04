@@ -37,6 +37,8 @@ public class NamekConfiguredFeatures {
 	public static final ResourceKey<ConfiguredFeature<?, ?>> NAMEK_LAPIS_ORE = registerKey("namek_lapis_ore");
 	public static final ResourceKey<ConfiguredFeature<?, ?>> NAMEK_DIAMOND_ORE = registerKey("namek_diamond_ore");
 	public static final ResourceKey<ConfiguredFeature<?, ?>> NAMEK_KIKONO_ORE = registerKey("namek_kikono_ore");
+	public static final ResourceKey<ConfiguredFeature<?, ?>> NAMEK_GETE_DEBRIS_LARGE = registerKey("namek_gete_debris_large");
+	public static final ResourceKey<ConfiguredFeature<?, ?>> NAMEK_GETE_DEBRIS_SMALL = registerKey("namek_gete_debris_small");
 
 	public static final ResourceKey<ConfiguredFeature<?, ?>> AJISSA_TREE = registerKey("namek_ajissa_tree");
 	public static final ResourceKey<ConfiguredFeature<?, ?>> SACRED_TREE = registerKey("namek_sacred_tree");
@@ -108,6 +110,13 @@ public class NamekConfiguredFeatures {
 				OreConfiguration.target(dirtReplaceables, MainBlocks.NAMEK_KIKONO_ORE.get().defaultBlockState())
 		);
 		register(context, NAMEK_KIKONO_ORE, Feature.ORE, new OreConfiguration(kikonoTargets, 8));
+
+		List<OreConfiguration.TargetBlockState> geteDebrisTargets = List.of(
+				OreConfiguration.target(stoneReplaceables, MainBlocks.GETE_ORE.get().defaultBlockState()),
+				OreConfiguration.target(deepslateReplaceables, MainBlocks.GETE_ORE.get().defaultBlockState())
+		);
+		register(context, NAMEK_GETE_DEBRIS_LARGE, Feature.SCATTERED_ORE, new OreConfiguration(geteDebrisTargets, 3, 1.0f));
+		register(context, NAMEK_GETE_DEBRIS_SMALL, Feature.SCATTERED_ORE, new OreConfiguration(geteDebrisTargets, 2, 1.0f));
 
 		register(context, AJISSA_TREE, Feature.TREE, new TreeConfiguration.TreeConfigurationBuilder(
 				BlockStateProvider.simple(MainBlocks.NAMEK_AJISSA_LOG.get()),

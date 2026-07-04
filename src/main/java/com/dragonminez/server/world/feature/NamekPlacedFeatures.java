@@ -28,6 +28,8 @@ public class NamekPlacedFeatures {
 	public static final ResourceKey<PlacedFeature> NAMEK_LAPIS_ORE_PLACED = registerKey("namek_lapis_ore_placed");
 	public static final ResourceKey<PlacedFeature> NAMEK_DIAMOND_ORE_PLACED = registerKey("namek_diamond_ore_placed");
 	public static final ResourceKey<PlacedFeature> NAMEK_KIKONO_ORE_PLACED = registerKey("namek_kikono_ore_placed");
+	public static final ResourceKey<PlacedFeature> NAMEK_GETE_DEBRIS_LARGE_PLACED = registerKey("namek_gete_debris_large_placed");
+	public static final ResourceKey<PlacedFeature> NAMEK_GETE_DEBRIS_SMALL_PLACED = registerKey("namek_gete_debris_small_placed");
 
 	public static final ResourceKey<PlacedFeature> NAMEK_PATCH_GRASS_PLAIN = registerKey("namek_patch_grass_placed");
 	public static final ResourceKey<PlacedFeature> NAMEK_PATCH_SACRED_GRASS_PLAIN = registerKey("namek_patch_sacred_grass_placed");
@@ -70,6 +72,12 @@ public class NamekPlacedFeatures {
 
 		register(context, NAMEK_KIKONO_ORE_PLACED, configured.getOrThrow(NamekConfiguredFeatures.NAMEK_KIKONO_ORE),
 				commonOrePlacement(6, HeightRangePlacement.uniform(VerticalAnchor.bottom(), VerticalAnchor.absolute(32))));
+
+		register(context, NAMEK_GETE_DEBRIS_LARGE_PLACED, configured.getOrThrow(NamekConfiguredFeatures.NAMEK_GETE_DEBRIS_LARGE),
+				commonOrePlacement(1, HeightRangePlacement.triangle(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-32))));
+
+		register(context, NAMEK_GETE_DEBRIS_SMALL_PLACED, configured.getOrThrow(NamekConfiguredFeatures.NAMEK_GETE_DEBRIS_SMALL),
+				commonOrePlacement(1, HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-32))));
 
 		register(context, AJISSA_TREE_PLACED, configured.getOrThrow(NamekConfiguredFeatures.AJISSA_TREE),
 				VegetationPlacements.treePlacement(PlacementUtils.countExtra(1, 0.1f, 1), MainBlocks.NAMEK_AJISSA_SAPLING.get()));
