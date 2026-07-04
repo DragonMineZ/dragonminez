@@ -122,7 +122,7 @@ public class TransformationsHelper {
 		return unlockedForms;
 	}
 
-	private static String getSkillNameForType(String formType) {
+	public static String getSkillNameForType(String formType) {
 		String lower = formType.toLowerCase();
 		if (lower.contains("super")) return "superforms";
 		else if (lower.contains("legendary")) return "legendaryforms";
