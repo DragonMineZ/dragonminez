@@ -166,7 +166,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed){
-        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0xA927F5);
+        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0x8B17CF);
     }
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
@@ -182,6 +182,25 @@ public class KiLaserEntity extends AbstractKiProjectile{
         updatePositionRelativeToOwner(owner);
         
     }
+
+    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
+        this.setKiRenderType(2);
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(20);
+        this.setCastOffsets(-0.2F, 0.7F, 0.5F);
+        updatePositionRelativeToOwner(owner);
+
+    }
+
+    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
+        this.setupKiBeamPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF);
+    }
+
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed) {
         this.setupKiDodonpaPlayer(owner, damage, speed, 0xFFFFFF);
@@ -337,14 +356,36 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
         Vec3 up = right.cross(look).normalize();
 
-        Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
-                .add(up.scale(this.entityData.get(OFFSET_Y)))
-                .add(look.scale(this.entityData.get(OFFSET_Z)));
-
         double centerX = owner.getX();
         double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
         double centerZ = owner.getZ();
         Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
+
+        Vec3 offset;
+
+        if (!this.isFiring()) {
+            offset = right.scale(this.entityData.get(OFFSET_X))
+                    .add(up.scale(this.entityData.get(OFFSET_Y)))
+                    .add(look.scale(this.entityData.get(OFFSET_Z)));
+        } else {
+            double forwardDistance = (owner.getBbWidth() / 2.0D) + 0.3D;
+
+            float fireOffsetX = 0.0F;
+            float fireOffsetY = 0.0F;
+
+            int renderType = this.getKiRenderType();
+            if (renderType == 1 || renderType == 2) {
+                fireOffsetX = 0.1F;
+                fireOffsetY = 0.5F;
+            } else {
+                fireOffsetX = 0.0F;
+                fireOffsetY = 0.1F;
+            }
+
+            offset = right.scale(fireOffsetX)
+                    .add(up.scale(fireOffsetY))
+                    .add(look.scale(forwardDistance));
+        }
 
         Vec3 newPos = hitboxCenter.add(offset);
         this.setPos(newPos.x, newPos.y, newPos.z);
