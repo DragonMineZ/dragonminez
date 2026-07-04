@@ -132,6 +132,36 @@ public class MasterTextScreen extends Screen {
 	}
 
 	private void initDende(int x, int y, StatsData stats) {
+		if (secondFunc) {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.button.dende.reset_confirm"))
+					.onPress(b -> {
+						NetworkHandler.sendToServer(new NPCActionC2S("dende", 2));
+						secondFunc = false;
+						this.onClose();
+					})
+					.build());
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x + 180, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.button.dende.reset_cancel"))
+					.onPress(b -> {
+						secondFunc = false;
+						this.currentDialogue = tr("gui.dragonminez.lines.dende.main", Minecraft.getInstance().player.getName());
+						refreshButtons();
+					})
+					.build());
+			return;
+		}
+
 		this.addRenderableWidget(new TexturedTextButton.Builder()
 				.position(x, y)
 				.size(74, 20)
@@ -168,8 +198,9 @@ public class MasterTextScreen extends Screen {
 				.textureSize(74, 20)
 				.message(tr("gui.dragonminez.button.dende.reset"))
 				.onPress(b -> {
-					NetworkHandler.sendToServer(new NPCActionC2S("dende", 2));
-					this.onClose();
+					secondFunc = true;
+					this.currentDialogue = tr("gui.dragonminez.lines.dende.reset_warning", Minecraft.getInstance().player.getName());
+					refreshButtons();
 				})
 				.build());
 	}

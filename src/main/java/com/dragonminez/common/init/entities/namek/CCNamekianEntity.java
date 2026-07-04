@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -49,6 +50,9 @@ public class CCNamekianEntity extends NamekTraderEntity {
 			this.offers = new MerchantOffers();
 		}
 		if (!this.offers.isEmpty()) {
+			return;
+		}
+		if (this.level() instanceof ServerLevel serverLevel && !serverLevel.getServer().isSameThread()) {
 			return;
 		}
 

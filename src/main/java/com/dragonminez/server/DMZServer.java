@@ -34,6 +34,7 @@ public class DMZServer {
 		AlignmentCommand.register(dispatcher);
 		TailCommand.register(dispatcher);
 		HaloCommand.register(dispatcher);
+		RestoreCommand.register(dispatcher);
 
 		LogUtil.info(Env.SERVER, "DragonMineZ Commands Registered");
 	}

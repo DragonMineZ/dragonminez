@@ -713,8 +713,10 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private void damageEntitiesInBeam(Vec3 start, Vec3 dir, float length) {
         Vec3 end = start.add(dir.scale(length));
-        double searchRadius = this.getSize() * 1.0;
-        AABB searchBox = new AABB(start, end).inflate(searchRadius);
+
+        double cilindroRadio = this.getSize() * 1.5D;
+
+        AABB searchBox = new AABB(start, end).inflate(cilindroRadio);
 
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
         int hitInterval = 20;
@@ -724,7 +726,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (target.is(this.getOwner())) continue;
             if (target.invulnerableTime > 0) continue;
 
-            float hitPrecision = this.getSize() / 2.0F;
+            float hitPrecision = (float) cilindroRadio;
             AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
 
             boolean intersects = targetBox.clip(start, end).isPresent() || targetBox.contains(start);

@@ -27,8 +27,6 @@ public class StructureLocator {
 		var structureRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
 		var structureSetRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
 
-		// A structure can belong to several sets (e.g. a near-spawn BiomeAware set plus a far
-		// RandomSpread set), so collect every placement and return whichever copy is closest.
 		List<StructurePlacement> placements = new ArrayList<>();
 		for (var entry : structureSetRegistry.entrySet()) {
 			StructureSet set = entry.getValue();
@@ -46,7 +44,6 @@ public class StructureLocator {
 		BlockPos best = null;
 		double bestDist = Double.MAX_VALUE;
 
-		// Vanilla search resolves RandomSpread copies (including WideRandomSpread).
 		HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
 		Pair<BlockPos, Holder<Structure>> searchResult = level.getChunkSource().getGenerator()
 				.findNearestMapStructure(level, holderSet, searchFrom, 100, false);
@@ -55,8 +52,6 @@ public class StructureLocator {
 			bestDist = searchFrom.distSqr(best);
 		}
 
-		// Custom placements (near-spawn biome search, fixed, unique-near-spawn) are invisible to the
-		// vanilla search, so probe them directly and keep the nearest overall.
 		for (StructurePlacement placement : placements) {
 			BlockPos pos = getPositionFromPlacement(level, structureKey, structureRegistry, placement);
 			if (pos == null) continue;
@@ -102,8 +97,6 @@ public class StructureLocator {
 
 	public static boolean usesCustomPlacement(ServerLevel level, ResourceKey<Structure> structureKey) {
 		var structureSetRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
-		// True if ANY set for this structure uses a custom (non-vanilla-searchable) placement, so the
-		// mod's locate path runs and considers the near-spawn copy alongside the far RandomSpread ones.
 		for (var entry : structureSetRegistry.entrySet()) {
 			StructureSet set = entry.getValue();
 			for (var structureEntry : set.structures()) {

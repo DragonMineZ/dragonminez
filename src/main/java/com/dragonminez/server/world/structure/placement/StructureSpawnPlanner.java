@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class StructureSpawnPlanner {
 	private static final int EXCLUSION_CHUNK_RADIUS = 3;
@@ -54,9 +55,6 @@ public final class StructureSpawnPlanner {
 	private static final long PERSIST_AWAIT_SECONDS = 120L;
 	private static final long STARTUP_WAIT_SECONDS = 30L;
 
-	// Dedicated pool for the "wait for the plan, then persist" task. It MUST NOT be Util.backgroundExecutor(),
-	// because that pool also runs Minecraft's chunk generation ("worldgen") — blocking its threads here
-	// starved chunk loading and never recovered. These daemon threads only ever block on our own latch.
 	private static final ExecutorService PERSIST_EXECUTOR = Executors.newCachedThreadPool(runnable -> {
 		Thread thread = new Thread(runnable, "DMZ-StructurePersist");
 		thread.setDaemon(true);
@@ -66,6 +64,7 @@ public final class StructureSpawnPlanner {
 	private static final int FLATNESS_MAX_SPREAD = 20;
 	private static final int FLATNESS_SCAN_EXTRA_RINGS = 5;
 	private static final int ABSOLUTE_SCAN_CAP_RINGS = 96;
+	private static final long SEARCH_SAMPLE_BUDGET = 120_000L;
 
 	private static final TreeMap<Integer, BiomeAwareUniquePlacement> REGISTERED = new TreeMap<>();
 	private static final TreeMap<Integer, UniqueNearSpawnPlacement> NEAR_SPAWN_RESERVED = new TreeMap<>();
@@ -102,12 +101,6 @@ public final class StructureSpawnPlanner {
 		return buildEpoch != planEpoch;
 	}
 
-	/**
-	 * Prepares the structure plan for a dimension as it loads. If the positions were already resolved
-	 * on a previous load they are read back from the world save instantly (no search). Otherwise the
-	 * biome/terrain search runs once in the background and is persisted when it finishes, so it never
-	 * runs again for this dimension.
-	 */
 	public static void onLevelLoad(ServerLevel level) {
 		if (level == null) return;
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return;
@@ -123,18 +116,12 @@ public final class StructureSpawnPlanner {
 
 		StructurePlanSavedData saved = StructurePlanSavedData.get(level);
 		if (saved.isResolved()) {
-			// Reuse the positions computed on a previous load — instant, no search.
 			holder.started.set(true);
 			holder.publish(saved.getPositions());
 			return;
 		}
 
 		if (level.dimension().equals(Level.OVERWORLD)) {
-			// Spawn-dimension structures generate the instant the world is created — during this very
-			// load, before players exist. LevelEvent.Load runs before the spawn area is generated, so we
-			// build synchronously HERE (a one-time pause on the world-load screen, then persisted). If we
-			// deferred to the background, the spawn chunks would generate before the plan was ready and
-			// those structures (Goku's house, Babidi, …) would be permanently skipped.
 			if (holder.started.compareAndSet(false, true)) {
 				StructureAsyncResolver.buildPlanSync(holder);
 			}
@@ -142,19 +129,10 @@ public final class StructureSpawnPlanner {
 			return;
 		}
 
-		// Other dimensions (Namek, …) generate chunks only when a player travels there, long after the
-		// search was kicked off — so resolve in the background and never block.
 		ensureBuildStarted(holder);
 		persistWhenReady(level, holder);
 	}
 
-	/**
-	 * Triggers the plan (or disk-load) for every loaded dimension at server start. Only the spawn
-	 * dimension is waited on — its structures generate the instant the world is created, so its plan
-	 * must be ready first. Every other dimension (Namek, SacredKai, …) resolves in the background and
-	 * is never blocked on, so entering them never stalls the main thread or chunk loading. Instant on
-	 * later starts because results are persisted to the world save.
-	 */
 	public static void precomputeAndWait(MinecraftServer server) {
 		if (server == null) return;
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return;
@@ -208,11 +186,6 @@ public final class StructureSpawnPlanner {
 		PlanHolder holder = obtainHolder(worldSeed, biomeSource, randomState, state);
 		ensureBuildStarted(holder);
 
-		// Fully non-blocking. Blocking here stalls whichever thread runs the structure step: the main
-		// thread shows up as "Can't keep up!", and worldgen threads make chunks stop loading while you
-		// walk. If the plan isn't ready yet (only happens on a brand-new world before the startup
-		// precompute finishes), return null; the structure resolves naturally once the background search
-		// completes. Positions are persisted, so this window never happens again.
 		Map<Integer, ChunkPos> positions = holder.positions;
 		if (positions == null) return null;
 		return positions.get(placement.placementSalt());
@@ -286,18 +259,15 @@ public final class StructureSpawnPlanner {
 		final List<BiomeAwareUniquePlacement> targets = new ArrayList<>();
 		for (BiomeAwareUniquePlacement placement : REGISTERED.values()) {
 			if (structureBiomes.get(placement.placementSalt()) == null) continue;
-			// Skip structures whose valid biome cannot occur in this dimension at all. Otherwise the ring
-			// search (and especially the tail search, +256 rings) scans hundreds of thousands of columns
-			// hunting for a biome that will never appear — e.g. a rocky-biome structure "leaking" into
-			// Namek because its broad Structure.biomes tag (is_land) matches Namek land. That pins the CPU
-			// and is exactly what stalls chunk loading in Namek.
 			if (!biomeSourceHasAny(biomeSource, placement.getValidBiomes())) continue;
 			targets.add(placement);
 		}
 
+		final AtomicLong sampleBudget = new AtomicLong(SEARCH_SAMPLE_BUDGET);
+
 		final Map<Integer, ChunkPos> independent = new ConcurrentHashMap<>();
 		searchIndependent(targets, structureBiomes, structureMinHeights, cache,
-				minRing, maxRing, reservedBaseline, spacingSqr, state, avoid, independent, searchPool, epoch);
+				minRing, maxRing, reservedBaseline, spacingSqr, state, avoid, independent, searchPool, epoch, sampleBudget);
 
 		Map<Integer, ChunkPos> plan = new HashMap<>();
 		List<ChunkPos> accepted = new ArrayList<>(reservedBaseline);
@@ -314,7 +284,7 @@ public final class StructureSpawnPlanner {
 			}
 			ChunkPos reconciled = searchNearest(placement, structureBiomes.get(salt), cache,
 					minRing, maxRing, accepted, spacingSqr, state, avoid,
-					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1);
+					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1, sampleBudget);
 			if (reconciled != null) {
 				plan.put(salt, reconciled);
 				accepted.add(reconciled);
@@ -334,9 +304,9 @@ public final class StructureSpawnPlanner {
 			}
 		}
 
-		if (!notFound.isEmpty() && !isStale(epoch)) {
+		if (!notFound.isEmpty() && !isStale(epoch) && sampleBudget.get() > 0) {
 			resolveTail(holder, notFound, structureBiomes, structureMinHeights, structureNames, cache,
-					maxRing, spacingSqr, accepted, state, avoid, epoch);
+					maxRing, spacingSqr, accepted, state, avoid, epoch, sampleBudget);
 		}
 		return notFound;
 	}
@@ -347,13 +317,14 @@ public final class StructureSpawnPlanner {
 	                                      int minRing, int maxRing,
 	                                      List<ChunkPos> reservedBaseline, double spacingSqr,
 	                                      ChunkGeneratorStructureState state, List<Holder<StructureSet>> avoid,
-	                                      Map<Integer, ChunkPos> out, ForkJoinPool searchPool, int epoch) {
+	                                      Map<Integer, ChunkPos> out, ForkJoinPool searchPool, int epoch,
+	                                      AtomicLong budget) {
 		Runnable work = () -> targets.parallelStream().forEach(placement -> {
 			if (isStale(epoch)) return;
 			int salt = placement.placementSalt();
 			ChunkPos found = searchNearest(placement, structureBiomes.get(salt), cache,
 					minRing, maxRing, reservedBaseline, spacingSqr, state, avoid,
-					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1);
+					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1, budget);
 			if (found != null) out.put(salt, found);
 		});
 
@@ -366,7 +337,7 @@ public final class StructureSpawnPlanner {
 				int salt = placement.placementSalt();
 				ChunkPos found = searchNearest(placement, structureBiomes.get(salt), cache,
 						minRing, maxRing, reservedBaseline, spacingSqr, state, avoid,
-						structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1);
+						structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1, budget);
 				if (found != null) out.put(salt, found);
 			}
 		}
@@ -377,11 +348,13 @@ public final class StructureSpawnPlanner {
 	                                Map<Integer, Integer> structureMinHeights, Map<Integer, String> structureNames,
 	                                SampleCache cache,
 	                                int maxRing, double spacingSqr, List<ChunkPos> accepted,
-	                                ChunkGeneratorStructureState state, List<Holder<StructureSet>> avoid, int epoch) {
+	                                ChunkGeneratorStructureState state, List<Holder<StructureSet>> avoid, int epoch,
+	                                AtomicLong budget) {
 		int absoluteCap = maxRing + TAIL_EXTRA_RINGS;
 
 		for (BiomeAwareUniquePlacement placement : notFound) {
 			if (isStale(epoch)) return;
+			if (budget.get() <= 0) return;
 			int salt = placement.placementSalt();
 			HolderSet<Biome> structBiomes = structureBiomes.get(salt);
 			if (structBiomes == null) continue;
@@ -389,11 +362,11 @@ public final class StructureSpawnPlanner {
 
 			ChunkPos found = null;
 			int from = maxRing + 1;
-			while (found == null && from <= absoluteCap) {
+			while (found == null && from <= absoluteCap && budget.get() > 0) {
 				if (isStale(epoch)) return;
 				int to = Math.min(from + RING_STEP - 1, absoluteCap);
 				found = searchNearest(placement, structBiomes, cache, from, to, accepted, spacingSqr,
-						state, avoid, minHeight, epoch, TAIL_CHUNK_STRIDE);
+						state, avoid, minHeight, epoch, TAIL_CHUNK_STRIDE, budget);
 				from = to + 1;
 			}
 
@@ -434,7 +407,7 @@ public final class StructureSpawnPlanner {
 	                              SampleCache cache, int minRing, int maxRing,
 	                              List<ChunkPos> accepted, double spacingSqr,
 	                              ChunkGeneratorStructureState state, List<Holder<StructureSet>> avoid,
-	                              int minHeight, int buildEpoch, int chunkStride) {
+	                              int minHeight, int buildEpoch, int chunkStride, AtomicLong budget) {
 		if (structureBiomes == null) return null;
 		ChunkPos bestNonOverlap = null;
 		int bestNonOverlapSpread = Integer.MAX_VALUE;
@@ -445,11 +418,15 @@ public final class StructureSpawnPlanner {
 			if (isStale(buildEpoch)) break;
 			if (ring - minRing > ABSOLUTE_SCAN_CAP_RINGS) break;
 			if (firstValidRing >= 0 && ring - firstValidRing > FLATNESS_SCAN_EXTRA_RINGS) break;
+			if (budget != null && budget.get() <= 0) break;
 			List<ChunkPos> candidates = ringChunks(ring);
 			for (int i = 0; i < candidates.size(); i++) {
 				if (chunkStride > 1 && (i % chunkStride) != 0) continue;
 				ChunkPos candidate = candidates.get(i);
 				if (tooClose(accepted, candidate.x, candidate.z, spacingSqr)) continue;
+				if (budget != null && budget.decrementAndGet() < 0) {
+					return bestNonOverlap != null ? bestNonOverlap : overlapFallback;
+				}
 				if (!biomePrefilter(placement, cache, candidate.x, candidate.z)) continue;
 				int spread = evaluateCandidate(structureBiomes, cache, candidate.x, candidate.z, minHeight);
 				if (spread < 0) continue;
@@ -496,7 +473,6 @@ public final class StructureSpawnPlanner {
 		return dx * dx + dz * dz;
 	}
 
-	/** True if the dimension's biome source can ever produce one of the placement's valid biomes. */
 	private static boolean biomeSourceHasAny(BiomeSource biomeSource, HolderSet<Biome> validBiomes) {
 		if (biomeSource == null || validBiomes == null) return false;
 		for (Holder<Biome> biome : biomeSource.possibleBiomes()) {

@@ -15,21 +15,6 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 
-/**
- * RandomSpread placement that behaves like vanilla {@link RandomSpreadStructurePlacement} but with
- * two DMZ-specific traits:
- * <ul>
- *   <li>{@code spacing}/{@code separation} are read from the server config at runtime (blocks -&gt;
- *       chunks), so owners can retune rarity without a datapack override, and they are not capped at
- *       vanilla's 4096-chunk codec limit.</li>
- *   <li>Generation is gated by {@code generateCustomStructures}, matching the other DMZ placements.</li>
- * </ul>
- * It is used for the far, repeating copies of a structure; the guaranteed copy near spawn is handled
- * separately by {@link BiomeAwareUniquePlacement}. It <b>extends</b> {@link RandomSpreadStructurePlacement}
- * on purpose: {@code ChunkGenerator.findNearestMapStructure} (used by {@code /locate}, {@code /dmzlocate}
- * and structure-map mods) only walks placements that are {@code instanceof RandomSpreadStructurePlacement},
- * so extending it keeps a custom serialized type while staying visible to that machinery.
- */
 public class WideRandomSpreadPlacement extends RandomSpreadStructurePlacement {
 	public static final Codec<WideRandomSpreadPlacement> CODEC = RecordCodecBuilder.create(instance ->
 			placementCodec(instance).and(
@@ -37,8 +22,6 @@ public class WideRandomSpreadPlacement extends RandomSpreadStructurePlacement {
 							.forGetter(RandomSpreadStructurePlacement::spreadType)
 			).apply(instance, WideRandomSpreadPlacement::new));
 
-	// Fallback spacing/separation handed to super; never actually read, since spacing()/separation()
-	// below are overridden to pull live values from the config. Kept valid (spacing > separation).
 	private static final int FALLBACK_SPACING = 1875;
 	private static final int FALLBACK_SEPARATION = 750;
 
@@ -58,13 +41,11 @@ public class WideRandomSpreadPlacement extends RandomSpreadStructurePlacement {
 		return Math.max(1, blocks >> 4);
 	}
 
-	/** Region size in chunks, derived from {@code structureSpacing} (blocks). Overrides super's field. */
 	@Override
 	public int spacing() {
 		return chunksFromBlocks(ConfigManager.getServerConfig().getWorldGen().getStructureSpacingBlocks());
 	}
 
-	/** Minimum gap in chunks kept from a region's far edge; always &lt; {@link #spacing()}. */
 	@Override
 	public int separation() {
 		int spacing = spacing();
@@ -76,11 +57,6 @@ public class WideRandomSpreadPlacement extends RandomSpreadStructurePlacement {
 		return this.salt();
 	}
 
-	/**
-	 * Deterministic chunk chosen for the region owning ({@code chunkX}, {@code chunkZ}). Fully
-	 * reimplemented (not delegated to super) because super reads its private {@code spacing} field
-	 * directly, which would ignore our config-driven {@link #spacing()}.
-	 */
 	@Override
 	public @NonNull ChunkPos getPotentialStructureChunk(long seed, int chunkX, int chunkZ) {
 		int spacing = spacing();

@@ -351,6 +351,12 @@ public class NetworkHandler {
 				.consumerMainThread(GravityDeviceUpdateC2S::handle)
 				.add();
 
+		net.messageBuilder(DynamicGrowthToggleC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DynamicGrowthToggleC2S::new)
+				.encoder(DynamicGrowthToggleC2S::encode)
+				.consumerMainThread(DynamicGrowthToggleC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */

@@ -33,14 +33,9 @@ public class DragonBallsHandler {
 	private static final int PENDING_RESCAN_INTERVAL = 100;
 	private static int pendingRescanTimer = 0;
 
-	// Lightweight radar re-sync so the client radar never goes stale (it only ships a small packet of
-	// positions — no chunk loading, no lag). Ticked from the overworld only to avoid double-counting.
 	private static final int RADAR_SYNC_INTERVAL = 100;
 	private static int radarSyncTimer = 0;
 
-	// A pending ball is placed as soon as a player is within this distance and its chunk is fully
-	// loaded, so the block appears while the player is already tracking the chunk (otherwise the place
-	// could race the chunk being sent to the client, leaving the ball invisible until a relog).
 	private static final double NEARBY_GEN_RANGE_SQR = 128.0 * 128.0;
 
 	public static void scatterDragonBalls(ServerLevel level, String setId) {

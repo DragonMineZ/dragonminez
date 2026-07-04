@@ -52,6 +52,9 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		if (!(trader.level() instanceof ServerLevel serverLevel)) {
 			return null;
 		}
+		if (!serverLevel.getServer().isSameThread()) {
+			return null;
+		}
 
 		BlockPos pos = StructureLocator.locateStructure(serverLevel, this.destination, trader.blockPosition());
 		if (pos == null) {

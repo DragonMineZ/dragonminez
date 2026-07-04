@@ -12,11 +12,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Persists the resolved unique-structure positions (placement salt -&gt; chunk) for a single
- * dimension. The expensive biome/terrain search in {@code StructureSpawnPlanner} runs once, is saved
- * here, and every later load reads it back instantly — no search, no worldgen stall.
- */
 public class StructurePlanSavedData extends SavedData {
 	private static final String NAME = "dragonminez_structure_plan";
 
@@ -27,7 +22,6 @@ public class StructurePlanSavedData extends SavedData {
 		return level.getDataStorage().computeIfAbsent(StructurePlanSavedData::load, StructurePlanSavedData::new, NAME);
 	}
 
-	/** True once the search has been run for this dimension (even if it found no structures). */
 	public boolean isResolved() {
 		return resolved;
 	}

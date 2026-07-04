@@ -110,31 +110,26 @@ public class ForgeCommonEvents {
 
 		Int2ObjectMap<List<VillagerTrades.ItemListing>> trades = event.getTrades();
 
-		// Nivel 1 (Novato)
 		trades.get(1).add(mapTrade(DMZStructures.GOKU_HOUSE, "dragonminez.goku_house",
 				new ItemStack(MainItems.DINO_MEAT_COOKED.get(), 10)));
 		trades.get(1).add(mapTrade(DMZStructures.ROSHI_HOUSE, "dragonminez.roshi_house",
 				new ItemStack(Items.COD, 8)));
 
-		// Nivel 2 (Aprendiz)
 		trades.get(2).add(mapTrade(DMZStructures.PICCOLO_HOUSE, "dragonminez.piccolo_house",
 				new ItemStack(Items.WATER_BUCKET, 1)));
 		trades.get(2).add(mapTrade(DMZStructures.YAMCHA_HOUSE, "dragonminez.yamcha_house",
 				new ItemStack(Items.BONE, 1)));
 
-		// Nivel 3 (Oficial)
 		trades.get(3).add(mapTrade(DMZStructures.KAMILOOKOUT, "dragonminez.kamilookout",
 				new ItemStack(Items.SPRUCE_SAPLING, 1)));
 		trades.get(3).add(mapTrade(DMZStructures.CELL_ARENA, "dragonminez.cell_arena",
 				new ItemStack(MainItems.T1_RADAR_CHIP.get(), 1)));
 
-		// Nivel 4 (Experto)
 		trades.get(4).add(mapTrade(DMZStructures.GERO_LAB, "dragonminez.gero_lab",
 				new ItemStack(Items.IRON_INGOT, 16)));
 		trades.get(4).add(mapTrade(DMZStructures.TRUNKS_SHIP, "dragonminez.trunks_ship",
 				new ItemStack(Items.IRON_SWORD, 1)));
 
-		// Nivel 5 (Maestro)
 		trades.get(5).add(mapTrade(DMZStructures.VEGETA_POD, "dragonminez.vegeta_pod",
 				new ItemStack(MainItems.RED_SCOUTER.get(), 1)));
 		trades.get(5).add(mapTrade(DMZStructures.BABIDI, "dragonminez.babidi",
@@ -328,7 +323,6 @@ public class ForgeCommonEvents {
 				float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
 
 				if (isCrit) {
-					//serverLevel.sendParticles(MainParticles.CRIT_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);}
 				}
 				else serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
 			}
@@ -485,8 +479,6 @@ public class ForgeCommonEvents {
 
 	@SubscribeEvent
 	public static void onServerStarted(ServerStartedEvent event) {
-		// Resolve/persist structure positions for all loaded dimensions before anything (NPCs, players)
-		// queries them, so gameplay never races the search. Instant after the first world load.
 		com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.precomputeAndWait(event.getServer());
 
 		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);

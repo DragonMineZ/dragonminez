@@ -7,6 +7,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -60,8 +61,7 @@ public class ExecuteActionC2S {
 						case FORCE_DESCEND -> {
 							if (rightClick) {
 								data.getCharacter().clearActiveStackForm(player);
-								if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-								else data.getCharacter().clearActiveForm(player);
+								TransformationsHelper.revertToBaseForm(player, data);
 							} else {
 								boolean activeStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 								boolean activeForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
@@ -95,31 +95,10 @@ public class ExecuteActionC2S {
 							}
 						}
 						case INSTANT_TRANSFORM -> {
-							FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
-							if (nextForm != null) {
-								if (TransformationsHelper.isOozaruForm(nextForm)) return;
-
-								String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
-
-								double mastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
-
-								if (player.isCreative() || mastery >= nextForm.getInstantTransformOnMastery()) {
-									int cost = (int) (data.getAdjustedEnergyDrain() * 4);
-									if (player.isCreative()) cost = 0;
-
-									if (data.getResources().getCurrentEnergy() >= cost) {
-										data.getResources().removeEnergy(cost);
-										float[] resourceSnapshot = data.snapshotMultiplierResources();
-										data.getCharacter().recordPreviousForm();
-										data.getCharacter().setActiveForm(group, nextForm.getName());
-										if (!data.getCharacter().getFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
-											data.getCharacter().getFormsUsedBefore().putForm(group, nextForm.getName());
-										}
-										data.restoreMultiplierGains(player, resourceSnapshot);
-										needsSync = true;
-									} else
-										player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki_instant", cost), true);
-								}
+							if (data.getStatus().getSelectedAction() == ActionMode.STACK) {
+								needsSync = instantTransformStackForm(player, data);
+							} else {
+								needsSync = instantTransformForm(player, data);
 							}
 						}
 						case TOGGLE_TAIL -> {
@@ -147,6 +126,93 @@ public class ExecuteActionC2S {
 		context.setPacketHandled(true);
 	}
 
+	private static boolean instantTransformForm(ServerPlayer player, StatsData data) {
+		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
+		if (nextForm == null) return false;
+		if (TransformationsHelper.isOozaruForm(nextForm)) return false;
+
+		String group = TransformationsHelper.getTransformTargetGroup(data);
+
+		if (TransformationsHelper.needsFreeTransformMastery(data) && !TransformationsHelper.meetsFreeTransformMastery(data)) {
+			String jumpRace = data.getCharacter().getRaceName();
+			Component targetName = Component.translatable("race.dragonminez." + jumpRace + ".form." + group + "." + nextForm.getName());
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.free_transform_mastery",
+					(int) Math.round(nextForm.getAllowFreeTransformOnMastery()), targetName), true);
+			return false;
+		}
+
+		double mastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
+
+		if (!player.isCreative() && mastery < nextForm.getInstantTransformOnMastery()) return false;
+
+		int cost = (int) (data.getAdjustedEnergyDrain() * 4);
+		if (player.isCreative()) cost = 0;
+
+		if (data.getResources().getCurrentEnergy() < cost) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki_instant", cost), true);
+			return false;
+		}
+
+		data.getResources().removeEnergy(cost);
+		float[] resourceSnapshot = data.snapshotMultiplierResources();
+		data.getCharacter().recordPreviousForm();
+		data.getCharacter().setActiveForm(group, nextForm.getName());
+		if (!data.getCharacter().getFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
+			data.getCharacter().getFormsUsedBefore().putForm(group, nextForm.getName());
+		}
+		data.restoreMultiplierGains(player, resourceSnapshot);
+		return true;
+	}
+
+	private static boolean instantTransformStackForm(ServerPlayer player, StatsData data) {
+		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
+		if (nextForm == null) return false;
+
+		String group = data.getCharacter().hasActiveStackForm()
+				? data.getCharacter().getActiveStackFormGroup()
+				: data.getCharacter().getSelectedStackFormGroup();
+
+		if (data.getCharacter().hasActiveForm()) {
+			FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
+			if (activeFormData != null) {
+				if (!activeFormData.getFormStackable() || !nextForm.getFormStackable()
+						|| !TransformationsHelper.areFormsCompatible(activeFormData, data.getCharacter().getActiveFormGroup(), nextForm, group)) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
+					return false;
+				}
+
+				double baseMastery = data.getCharacter().getFormMasteries().getMastery(data.getCharacter().getActiveFormGroup(), data.getCharacter().getActiveForm());
+				double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
+				if (baseMastery < activeFormData.getStackOnMastery() || stackMastery < nextForm.getStackOnMastery()) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
+					return false;
+				}
+			}
+		}
+
+		double mastery = data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
+
+		if (!player.isCreative() && mastery < nextForm.getInstantTransformOnMastery()) return false;
+
+		int cost = (int) (data.getAdjustedEnergyDrain() * 4);
+		if (player.isCreative()) cost = 0;
+
+		if (data.getResources().getCurrentEnergy() < cost) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki_instant", cost), true);
+			return false;
+		}
+
+		data.getResources().removeEnergy(cost);
+		float[] resourceSnapshot = data.snapshotMultiplierResources();
+		data.getCharacter().recordPreviousStackForm();
+		data.getCharacter().setActiveStackForm(group, nextForm.getName());
+		if (!data.getCharacter().getStackFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
+			data.getCharacter().getStackFormsUsedBefore().putForm(group, nextForm.getName());
+		}
+		data.restoreMultiplierGains(player, resourceSnapshot);
+		return true;
+	}
+
 	private static void descendForm(ServerPlayer player, StatsData data) {
 		if (data.getCharacter().isHasPreviousFormRecord()) {
 			String previousGroup = data.getCharacter().getPreviousFormGroup();
@@ -156,8 +222,7 @@ public class ExecuteActionC2S {
 				data.getCharacter().setActiveForm(previousGroup, previousForm);
 				return;
 			}
-			if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-			else data.getCharacter().clearActiveForm(player);
+			TransformationsHelper.revertToBaseForm(player, data);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			return;
 		}
@@ -166,8 +231,7 @@ public class ExecuteActionC2S {
 		if (previousForm != null) {
 			data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
 		} else {
-			if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-			else data.getCharacter().clearActiveForm(player);
+			TransformationsHelper.revertToBaseForm(player, data);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 		}
 	}

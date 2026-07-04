@@ -34,8 +34,6 @@ public final class StructureAsyncResolver {
 		});
 	}
 
-	/** Runs the search on the calling thread and blocks until it finishes. Used at world-load for the
-	 *  spawn dimension so its plan is ready before spawn chunks generate. */
 	static void buildPlanSync(StructureSpawnPlanner.PlanHolder holder) {
 		try {
 			StructureSpawnPlanner.runBuild(holder, SEARCH_POOL);

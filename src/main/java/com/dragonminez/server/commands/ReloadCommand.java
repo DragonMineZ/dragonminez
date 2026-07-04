@@ -36,7 +36,7 @@ public class ReloadCommand {
 		);
 	}
 
-	private static int executeReload(CommandSourceStack source, String rawScope) {
+	public static int executeReload(CommandSourceStack source, String rawScope) {
 		ReloadScope scope = ReloadScope.from(rawScope);
 		if (scope == null) {
 			source.sendFailure(Component.literal("Invalid reload section: " + rawScope));

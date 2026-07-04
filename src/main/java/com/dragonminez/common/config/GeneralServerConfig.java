@@ -41,9 +41,6 @@ public class GeneralServerConfig {
 		private Integer structureMaxDistanceFromSpawn = 4000;
 		private Integer structureMinDistanceBetween = 250;
 
-		// RandomSpread tuning (in blocks). structureSpacing is the size of the region that holds one
-		// copy of a structure (lower = you find them sooner while exploring); structureSeparation is
-		// the minimum gap kept from a region's far edge.
 		private Integer structureSpacing = 6000;
 		private Integer structureSeparation = 2000;
 
@@ -99,7 +96,7 @@ public class GeneralServerConfig {
 		private Integer tpPerBlockMined = 1;
 		private Integer tpPerItemCrafted = 1;
 		private Boolean gravityBonusEnabled = true;
-		private Double HTCTpMultiplier = 2.5;
+		private Double HTCTpMultiplier = 1.75;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
 		private CapsulesConfig capsules = new CapsulesConfig();
@@ -480,10 +477,10 @@ public class GeneralServerConfig {
 
 		private Double strPracticeMultiplier = 1.0;
 		private Double skpPracticeMultiplier = 1.0;
-		private Double resPracticeMultiplier = 1.0;
-		private Double vitPracticeMultiplier = 1.0;
+		private Double resPracticeMultiplier = 1.5;
+		private Double vitPracticeMultiplier = 0.5;
 		private Double pwrPracticeMultiplier = 1.0;
-		private Double enePracticeMultiplier = 1.0;
+		private Double enePracticeMultiplier = 1.5;
 
 		private Double staminaSpentXpRatio = 0.1;
 		private Double energySpentXpRatio = 0.1;
@@ -520,10 +517,10 @@ public class GeneralServerConfig {
 			return switch (statName.toUpperCase()) {
 				case "STR" -> clampNonNeg(strPracticeMultiplier, 1.0);
 				case "SKP" -> clampNonNeg(skpPracticeMultiplier, 1.0);
-				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.0);
-				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 1.0);
+				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.5);
+				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 0.5);
 				case "PWR" -> clampNonNeg(pwrPracticeMultiplier, 1.0);
-				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.0);
+				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.5);
 				default -> 1.0;
 			};
 		}

@@ -346,9 +346,17 @@ public class UtilityMenuScreen extends ScaledScreen {
 
 	private MoreNode findMoreNode(String categoryKey) {
 		for (RadialNode base : baseNodes) {
-			for (RadialNode child : base.children(statsData)) {
-				if (child instanceof MoreNode more && more.categoryKey().equals(categoryKey)) return more;
-			}
+			MoreNode found = findMoreNodeRec(base, categoryKey);
+			if (found != null) return found;
+		}
+		return null;
+	}
+
+	private MoreNode findMoreNodeRec(RadialNode node, String categoryKey) {
+		for (RadialNode child : node.children(statsData)) {
+			if (child instanceof MoreNode more && more.categoryKey().equals(categoryKey)) return more;
+			MoreNode deep = findMoreNodeRec(child, categoryKey);
+			if (deep != null) return deep;
 		}
 		return null;
 	}
@@ -395,7 +403,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 			RadialNode node = baseNodes.get(i);
 			if (!isActiveSlot(node)) continue;
 			float hoverAmt = node instanceof AbstractRadialNode a ? a.animScale : 0f;
-			drawFace(graphics, cx, cy, node, baseCenter(i), radius, ICON_BASE, hoverAmt, 1.0f, (360f / SLOTS) / 2f);
+			drawFace(graphics, cx, cy, node, baseCenter(i), radius, ICON_BASE, hoverAmt, 1.0f, (360f / SLOTS) / 2f - SECTOR_GAP_DEG / 2f);
 		}
 	}
 
@@ -426,7 +434,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 				fillSector(graphics, cx, cy, ringInner, ringOuter + grow, center - half, center + half, color);
 			} else if (t >= 0.4f) {
 				float hoverAmt = child instanceof AbstractRadialNode a ? a.animScale : 0f;
-				drawFace(graphics, cx, cy, child, center, faceRadius, ICON_CHILD, hoverAmt, t, childArcDeg(level) / 2f);
+				drawFace(graphics, cx, cy, child, center, faceRadius, ICON_CHILD, hoverAmt, t, childDrawnHalfDeg(level));
 			}
 			drawChildSectors(graphics, cx, cy, child, center, level + 1, hover, facesPass, openScale);
 		}
@@ -473,7 +481,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 		double rad = Math.toRadians(angleDeg);
 		float x = (float) (cx + Math.cos(rad) * radius);
 		float y = (float) (cy + Math.sin(rad) * radius);
-		int maxWidth = Math.max(28, Math.round(2f * radius * (float) Math.sin(Math.toRadians(sectorHalfDeg)) * 1.12f));
+		int maxWidth = Math.max(28, Math.round(2f * radius * (float) Math.sin(Math.toRadians(sectorHalfDeg))));
 		String faceText = node.faceText(statsData);
 		if (faceText != null) drawFaceText(graphics, faceText, x, y - 3f, iconBase, hoverAmt, node.labelColor(statsData), alpha);
 		else drawIcon(graphics, node.icon(statsData), x, y - 3f, iconBase, hoverAmt, node.iconTint(statsData), alpha);
@@ -739,6 +747,10 @@ public class UtilityMenuScreen extends ScaledScreen {
 				return true;
 			}
 			openPanel(release.buildOptions(statsData), release.label(statsData), hover, true);
+			return true;
+		}
+		if (node instanceof FormSelectNode form && form.interactive(statsData)) {
+			form.onSelect(statsData);
 			return true;
 		}
 		if (node != null && node.interactive(statsData) && !node.expandable(statsData)) {

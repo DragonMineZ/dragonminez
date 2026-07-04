@@ -183,13 +183,21 @@ public class TechniqueDispatcher {
                 break;
             case BEAM:
                 KiLaserEntity beam = new KiLaserEntity(level, owner);
-                beam.setupKiMakkankosanpoPlayer(owner, realDamage, data.getSpeed());
-                beam.setKiType(kiTypeOrdinal);
-                beam.setTechniqueId(data.getId());
-                beam.setArmorPenetration(data.getArmorPenetration());
-                beam.setHeal(isHeal);
+                if ("makkanko".equals(data.getId())) {
+                    beam.setupKiMakkankosanpoPlayer(owner, realDamage, data.getSpeed());
+                    beam.setKiType(kiTypeOrdinal);
+                    beam.setTechniqueId(data.getId());
+                    beam.setArmorPenetration(data.getArmorPenetration());
+                    beam.setHeal(isHeal);
+                } else {
+                    beam.setupKiBeamPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
+                    beam.setKiType(kiTypeOrdinal);
+                    beam.setTechniqueId(data.getId());
+                    beam.setArmorPenetration(data.getArmorPenetration());
+                    beam.setHeal(isHeal);
+                }
 
-                if (!level.isClientSide) level.addFreshEntity(beam);
+                    if (!level.isClientSide) level.addFreshEntity(beam);
                 break;
             case DISK:
                 if ("kienzan_doble".equals(data.getId())) {
