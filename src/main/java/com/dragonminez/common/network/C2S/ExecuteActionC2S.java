@@ -60,8 +60,7 @@ public class ExecuteActionC2S {
 						case FORCE_DESCEND -> {
 							if (rightClick) {
 								data.getCharacter().clearActiveStackForm(player);
-								if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-								else data.getCharacter().clearActiveForm(player);
+								TransformationsHelper.revertToBaseForm(player, data);
 							} else {
 								boolean activeStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 								boolean activeForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
@@ -99,7 +98,15 @@ public class ExecuteActionC2S {
 							if (nextForm != null) {
 								if (TransformationsHelper.isOozaruForm(nextForm)) return;
 
-								String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
+								String group = TransformationsHelper.getTransformTargetGroup(data);
+
+								if (TransformationsHelper.needsFreeTransformMastery(data) && !TransformationsHelper.meetsFreeTransformMastery(data)) {
+									String jumpRace = data.getCharacter().getRaceName();
+									Component targetName = Component.translatable("race.dragonminez." + jumpRace + ".form." + group + "." + nextForm.getName());
+									player.displayClientMessage(Component.translatable("message.dragonminez.form.free_transform_mastery",
+											(int) Math.round(nextForm.getAllowFreeTransformOnMastery()), targetName), true);
+									return;
+								}
 
 								double mastery = data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
 
@@ -156,8 +163,7 @@ public class ExecuteActionC2S {
 				data.getCharacter().setActiveForm(previousGroup, previousForm);
 				return;
 			}
-			if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-			else data.getCharacter().clearActiveForm(player);
+			TransformationsHelper.revertToBaseForm(player, data);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			return;
 		}
@@ -166,8 +172,7 @@ public class ExecuteActionC2S {
 		if (previousForm != null) {
 			data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
 		} else {
-			if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-			else data.getCharacter().clearActiveForm(player);
+			TransformationsHelper.revertToBaseForm(player, data);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 		}
 	}

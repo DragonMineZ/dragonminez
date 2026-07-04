@@ -9,6 +9,7 @@ import com.dragonminez.common.util.lists.SaiyanForms;
 
 import java.util.*;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -199,9 +200,12 @@ public class TransformationsHelper {
 		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
 		List<FormConfig.FormData> unlockedForms = getUnlockedForms(statsData, race, groupName);
 		return unlockedForms.stream()
-				.filter(formData -> isFormSelectable(statsData, groupName, formData, false))
 				.map(FormConfig.FormData::getName)
 				.toList();
+	}
+
+	public static boolean isDirectlyAccessibleForm(StatsData statsData, String groupName, FormConfig.FormData formData) {
+		return isFormSelectable(statsData, groupName, formData, false);
 	}
 
 	public static List<String> getSelectableStackFormNames(StatsData statsData, String groupName) {
@@ -407,12 +411,58 @@ public class TransformationsHelper {
 		return selectedGroup;
 	}
 
+	public static String getTransformTargetGroup(StatsData statsData) {
+		var character = statsData.getCharacter();
+		String selectedGroup = character.getSelectedFormGroup();
+		if (character.hasActiveForm()) {
+			if (selectedGroup != null && !selectedGroup.isEmpty() && !selectedGroup.equalsIgnoreCase(character.getActiveFormGroup())) {
+				return selectedGroup;
+			}
+			return character.getActiveFormGroup();
+		}
+		return selectedGroup;
+	}
+
+	public static boolean isCrossGroupTransform(StatsData statsData) {
+		var character = statsData.getCharacter();
+		if (!character.hasActiveForm()) return false;
+		String selectedGroup = character.getSelectedFormGroup();
+		return selectedGroup != null && !selectedGroup.isEmpty() && !selectedGroup.equalsIgnoreCase(character.getActiveFormGroup());
+	}
+
+	public static boolean needsFreeTransformMastery(StatsData statsData) {
+		var character = statsData.getCharacter();
+		String group = getTransformTargetGroup(statsData);
+		if (group == null || group.isEmpty()) return false;
+		if (character.hasActiveForm() && group.equalsIgnoreCase(character.getActiveFormGroup())) return false;
+		FormConfig.FormData candidate = getNextFormCandidate(statsData);
+		if (candidate == null) return false;
+		return !isDirectlyAccessibleForm(statsData, group, candidate);
+	}
+
+	public static boolean meetsFreeTransformMastery(StatsData statsData) {
+		if (statsData.getPlayer() != null && statsData.getPlayer().isCreative()) return true;
+		FormConfig.FormData candidate = getNextFormCandidate(statsData);
+		if (candidate == null) return false;
+		String group = getTransformTargetGroup(statsData);
+		double have = statsData.getCharacter().getFormMasteries().getMastery(group, candidate.getName());
+		return have >= candidate.getAllowFreeTransformOnMastery();
+	}
+
+	public static void revertToBaseForm(ServerPlayer player, StatsData statsData) {
+		if (statsData.getStatus().isAndroidUpgraded()) {
+			statsData.getCharacter().setActiveForm("androidforms", "androidbase");
+		} else {
+			statsData.getCharacter().clearActiveForm(player);
+		}
+	}
+
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
 		FormConfig.FormData nextFormConfig = getNextFormCandidate(statsData);
 		if (nextFormConfig == null) return null;
 
 		String race = statsData.getCharacter().getRaceName();
-		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		String group = getTransformTargetGroup(statsData);
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return null;
 
@@ -421,7 +471,7 @@ public class TransformationsHelper {
 
 	public static FormConfig.FormData getNextFormCandidate(StatsData statsData) {
 		String race = statsData.getCharacter().getRaceName();
-		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		String group = getTransformTargetGroup(statsData);
 		if (group == null || group.isEmpty()) return null;
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return null;
@@ -435,9 +485,10 @@ public class TransformationsHelper {
 		if (!isAndroidUpgraded && isAndroidGroup) return null;
 		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) return null;
 
+		boolean crossGroup = isCrossGroupTransform(statsData);
 		String currentFormName = statsData.getCharacter().getActiveForm();
 		FormConfig.FormData nextFormConfig = null;
-		if (currentFormName == null || currentFormName.isEmpty()) {
+		if (crossGroup || currentFormName == null || currentFormName.isEmpty()) {
 			FormConfig.FormData selected = config.getForm(statsData.getCharacter().getSelectedForm());
 			if (selected != null && isOozaruGroupNext && !hasTailNext && isTailOnlyOozaruForm(selected.getName())) {
 				for (FormConfig.FormData f : config.getForms().values()) {
@@ -466,7 +517,7 @@ public class TransformationsHelper {
 		if (candidate == null) return false;
 
 		String race = statsData.getCharacter().getRaceName();
-		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		String group = getTransformTargetGroup(statsData);
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return false;
 

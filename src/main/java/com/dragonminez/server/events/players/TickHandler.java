@@ -27,6 +27,7 @@ import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.TransformationItemCostHelper;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
@@ -948,7 +949,7 @@ public class TickHandler {
 
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()
 				&& !SaiyanForms.SUPER_SAIYAN_4.equals(data.getCharacter().getActiveForm())) {
-			data.getCharacter().clearActiveForm(player);
+			TransformationsHelper.revertToBaseForm(player, data);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			player.refreshDimensions();
@@ -987,7 +988,7 @@ public class TickHandler {
 				data.getCharacter().clearActiveStackForm(player);
 				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
-				data.getCharacter().clearActiveForm(player);
+				TransformationsHelper.revertToBaseForm(player, data);
 				TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 				player.refreshDimensions();
@@ -1045,7 +1046,7 @@ public class TickHandler {
 
 	private static void clearTransformationForMissingDurationItem(ServerPlayer player, StatsData data, boolean baseForm) {
 		if (baseForm) {
-			data.getCharacter().clearActiveForm(player);
+			TransformationsHelper.revertToBaseForm(player, data);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 		} else {

@@ -21,11 +21,11 @@ public final class RadialForms {
 	}
 
 	public static List<RadialNode> superForms(StatsData stats) {
-		return forms(stats, "superforms", type -> type.contains("super") || type.contains("legendary"));
+		return forms(stats, "superforms", type -> type.contains("super") || type.contains("legendary") || type.contains("android"));
 	}
 
 	public static List<RadialNode> moreForms(StatsData stats) {
-		return forms(stats, "moreforms", type -> !type.contains("super") && !type.contains("legendary"));
+		return forms(stats, "moreforms", type -> !type.contains("super") && !type.contains("legendary") && !type.contains("android"));
 	}
 
 	public static List<RadialNode> stackForms(StatsData stats) {

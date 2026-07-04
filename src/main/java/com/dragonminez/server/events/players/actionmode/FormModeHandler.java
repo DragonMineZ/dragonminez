@@ -27,7 +27,7 @@ public class FormModeHandler implements IActionModeHandler {
 	public int handleActionCharge(ServerPlayer player, StatsData data) {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
 		if (nextForm != null) {
-			String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
+			String group = TransformationsHelper.getTransformTargetGroup(data);
 
 			int mastery = (int) data.getCharacter().getFormMasteries().getMastery(group, nextForm.getName());
 			return 5 + Math.min(20, (int)(mastery * 0.2));
@@ -45,6 +45,16 @@ public class FormModeHandler implements IActionModeHandler {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
 		if (nextForm == null) return;
 
+		String targetGroup = TransformationsHelper.getTransformTargetGroup(data);
+
+		if (TransformationsHelper.needsFreeTransformMastery(data) && !TransformationsHelper.meetsFreeTransformMastery(data)) {
+			String jumpRace = data.getCharacter().getRaceName();
+			Component targetName = Component.translatable("race.dragonminez." + jumpRace + ".form." + targetGroup + "." + nextForm.getName());
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.free_transform_mastery",
+					(int) Math.round(nextForm.getAllowFreeTransformOnMastery()), targetName), true);
+			return;
+		}
+
 		if (data.getCharacter().hasActiveStackForm()) {
 			FormConfig.FormData activeStackData = data.getCharacter().getActiveStackFormData();
 
@@ -52,7 +62,7 @@ public class FormModeHandler implements IActionModeHandler {
 				boolean isFormStackable = nextForm.getFormStackable();
 				boolean isStackStackable = activeStackData.getFormStackable();
 
-				String nextGroup = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
+				String nextGroup = targetGroup;
 				double baseMastery = data.getCharacter().getFormMasteries().getMastery(nextGroup, nextForm.getName());
 				double stackMastery = data.getCharacter().getStackFormMasteries().getMastery(data.getCharacter().getActiveStackFormGroup(), data.getCharacter().getActiveStackForm());
 				boolean meetsStackMastery = baseMastery >= nextForm.getStackOnMastery() && stackMastery >= activeStackData.getStackOnMastery();
@@ -91,9 +101,7 @@ public class FormModeHandler implements IActionModeHandler {
 				player.displayClientMessage(Component.translatable("message.dragonminez.form.no_trigger_item"), true);
 				return;
 			}
-			String group = data.getCharacter().hasActiveForm() ?
-					data.getCharacter().getActiveFormGroup() :
-					data.getCharacter().getSelectedFormGroup();
+			String group = targetGroup;
 
 			if (!data.getCharacter().getFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
 				data.getCharacter().getFormsUsedBefore().putForm(group, nextForm.getName());
@@ -108,7 +116,7 @@ public class FormModeHandler implements IActionModeHandler {
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
 			String race = data.getCharacter().getRaceName();
-			Component translatedFormName = Component.translatable("race.dragonminez." + race + ".form." + data.getCharacter().getSelectedFormGroup() + "." + nextForm.getName());
+			Component translatedFormName = Component.translatable("race.dragonminez." + race + ".form." + group + "." + nextForm.getName());
 			if (data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty()) {
 				Component translatedStackFormGroup = Component.translatable("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
 				Component translatedStackFormName = Component.translatable("race.dragonminez.stack.form." + data.getCharacter().getActiveStackFormGroup() + "." + data.getCharacter().getActiveStackForm());

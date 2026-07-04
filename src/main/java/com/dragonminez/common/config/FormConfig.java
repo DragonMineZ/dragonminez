@@ -98,6 +98,7 @@ public class FormConfig {
 		private Double instantTransformOnMastery = 40.0;
 		private Double allowAlwaysTransformOnMastery = 0.0;
 		private Double directTransformIfUsedOnMastery = 0.0;
+		private Double allowFreeTransformOnMastery = 50.0;
 		private Boolean formStackable = true;
 		private Double stackDrainMultiplier = 2.0;
 		private Boolean canAlwaysTransform = false;
@@ -220,6 +221,10 @@ public class FormConfig {
 
 		public Double getDirectTransformIfUsedOnMastery() {
 			return Math.max(0, directTransformIfUsedOnMastery);
+		}
+
+		public Double getAllowFreeTransformOnMastery() {
+			return Math.max(0, allowFreeTransformOnMastery != null ? allowFreeTransformOnMastery : 50.0);
 		}
 
 		public List<String> getIncompatibleWith() {
