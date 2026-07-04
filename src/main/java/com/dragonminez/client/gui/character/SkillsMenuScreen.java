@@ -1580,21 +1580,21 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
-		}
-		graphics.pose().popPose();
+			graphics.pose().popPose();
 
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
+			player.yBodyRot = yBodyRotO;
+			player.setYRot(yRotO);
+			player.setXRot(xRotO);
+			player.yHeadRotO = yHeadRotO;
+			player.yHeadRot = yHeadRot;
 
-		if (character != null) {
-			character.clearActiveForm();
-			character.clearActiveStackForm();
-			character.setActiveForm(activeFormGroupO, activeFormO);
-			character.setActiveStackForm(activeStackFormGroupO, activeStackFormO);
-			if (androidUpgradedOverridden) status.setAndroidUpgraded(androidUpgradedO);
+			if (character != null) {
+				character.clearActiveForm();
+				character.clearActiveStackForm();
+				character.setActiveForm(activeFormGroupO, activeFormO);
+				character.setActiveStackForm(activeStackFormGroupO, activeStackFormO);
+				if (androidUpgradedOverridden) status.setAndroidUpgraded(androidUpgradedO);
+			}
 		}
 	}
 }

@@ -748,28 +748,28 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
 		try {
 			InventoryScreen.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, pose, cameraOrientation, player);
+
+			if (tab == TabId.AURA_CLASS) {
+				RenderSystem.enableBlend();
+				RenderSystem.defaultBlendFunc();
+				AuraRenderer.renderGuiAura(player, graphics.pose(), guiProjection, baseX, currentBaseY, adjustedScale, partialTick, true);
+			}
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
+
+			graphics.pose().popPose();
+
+			if (previewApplied && snapshot != null) restoreLocalPlayerFormSnapshot(player, snapshot);
+
+			player.yBodyRot = yBodyRot;
+			player.yBodyRotO = yBodyRotO;
+			player.setYRot(yRot);
+			player.yRotO = yRotO;
+			player.setXRot(xRot);
+			player.xRotO = xRotO;
+			player.yHeadRotO = yHeadRotO;
+			player.yHeadRot = yHeadRot;
 		}
-
-		if (tab == TabId.AURA_CLASS) {
-			RenderSystem.enableBlend();
-			RenderSystem.defaultBlendFunc();
-			AuraRenderer.renderGuiAura(player, graphics.pose(), guiProjection, baseX, currentBaseY, adjustedScale, partialTick, true);
-		}
-
-		graphics.pose().popPose();
-
-		if (previewApplied && snapshot != null) restoreLocalPlayerFormSnapshot(player, snapshot);
-
-		player.yBodyRot = yBodyRot;
-		player.yBodyRotO = yBodyRotO;
-		player.setYRot(yRot);
-		player.yRotO = yRotO;
-		player.setXRot(xRot);
-		player.xRotO = xRotO;
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
 	}
 
 	@Override
@@ -1492,13 +1492,17 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		PreviewFormOption option = previewFormOptions.get(previewFormIndex);
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			Character currentCharacter = stats.getCharacter();
+			currentCharacter.clearActiveForm();
+			currentCharacter.clearActiveStackForm();
 			if (option.groupName == null || option.groupName.isEmpty() || option.formName == null || option.formName.isEmpty()) {
-				currentCharacter.clearActiveForm();
+				return;
+			}
+			if (ConfigManager.getStackFormGroup(option.groupName) != null) {
+				currentCharacter.setActiveStackForm(option.groupName, option.formName);
 			} else {
 				currentCharacter.setActiveForm(option.groupName, option.formName);
 				if ("androidforms".equalsIgnoreCase(option.groupName)) stats.getStatus().setAndroidUpgraded(true);
 			}
-			currentCharacter.clearActiveStackForm();
 		});
 		return true;
 	}
@@ -1808,6 +1812,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			default -> previewY = y + 8;
 		}
 
+		try {
 		graphics.enableScissor(
 				toScreenCoord(cardX + 1),
 				toScreenCoord(cardY + 1),
@@ -1822,10 +1827,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
+			graphics.pose().popPose();
+			graphics.disableScissor();
 		}
-		graphics.pose().popPose();
-		graphics.disableScissor();
-
+		} finally {
 		if (previewApplied && snapshot != null) restoreLocalPlayerFormSnapshot(player, snapshot);
 
 		player.yBodyRot = yBodyRotO;
@@ -1848,5 +1853,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		character.setTattooType(originalTattoo);
 		character.setActiveHeadBone(originalActiveBone);
 		HairRenderer.PHYSICS_ENABLED = oldHairPhysics;
+		}
 	}
 }
