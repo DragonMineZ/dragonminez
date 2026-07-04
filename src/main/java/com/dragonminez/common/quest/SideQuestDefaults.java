@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * Generates the default side-quest JSON files in the unified schema.
  * <p>
- * Side-quests use the same schema as saga quests â€” only the {@code "type"} field
+ * Side-quests use the same schema as saga quests & only the {@code "type"} field
  * is set to {@code "SIDEQUEST"} and there is no {@code "chain"} block.
  * <p>
  * Default generation also supports optional start-only {@code "requirements"} blocks
