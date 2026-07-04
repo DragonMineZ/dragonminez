@@ -916,15 +916,15 @@ public class ConfigManager {
 	}
 	public static GeneralUserConfig getUserConfig() { return userConfig != null ? userConfig : new GeneralUserConfig(); }
 	public static GeneralServerConfig getServerConfig() {
-		if (serverSyncActive) return SERVER_SYNCED_GENERAL_SERVER != null ? SERVER_SYNCED_GENERAL_SERVER : new GeneralServerConfig();
+		if (serverSyncActive && SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
 		return serverConfig != null ? serverConfig : new GeneralServerConfig();
 	}
 	public static CombatConfig getCombatConfig() {
-		if (serverSyncActive) return SERVER_SYNCED_COMBAT != null ? SERVER_SYNCED_COMBAT : new CombatConfig();
+		if (serverSyncActive && SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
 		return combatConfig != null ? combatConfig : new CombatConfig();
 	}
 	public static TrainingConfig getTrainingConfig() {
-		if (serverSyncActive) return SERVER_SYNCED_TRAINING != null ? SERVER_SYNCED_TRAINING : new TrainingConfig();
+		if (serverSyncActive && SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
 		return trainingConfig != null ? trainingConfig : new TrainingConfig();
 	}
 	public static void saveGeneralUserConfig() {
@@ -1202,11 +1202,11 @@ public class ConfigManager {
 		return group != null ? group.getForm(formName) : null;
 	}
 	public static SkillsConfig getSkillsConfig() {
-		if (serverSyncActive) return SERVER_SYNCED_SKILLS != null ? SERVER_SYNCED_SKILLS : new SkillsConfig();
+		if (serverSyncActive && SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;
 		return skillsConfig != null ? skillsConfig : new SkillsConfig();
 	}
 	public static TechniqueConfig getTechniqueConfig() {
-		if (serverSyncActive) return SERVER_SYNCED_TECHNIQUES != null ? SERVER_SYNCED_TECHNIQUES : new TechniqueConfig();
+		if (serverSyncActive && SERVER_SYNCED_TECHNIQUES != null) return SERVER_SYNCED_TECHNIQUES;
 		return techniqueConfig != null ? techniqueConfig : new TechniqueConfig();
 	}
 	public static EntitiesConfig getEntitiesConfig() {
