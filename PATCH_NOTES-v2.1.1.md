@@ -8,8 +8,9 @@
 
 - **Capsule Corp Villager Structure:** A Capsule Corp-themed structure now spawns inside vanilla Minecraft villages, blending the Dragon Ball world into regular Minecraft exploration.
 - **Gamerule — `allowKiGriefingMasterStructures`:** Added a new gamerule that controls whether ki attacks can destroy or damage master training structures. Servers can now protect these key structures from ki attack collateral damage.
+- **Structure Spacing Server Config:** Two new server config fields let operators tune how far apart repeating structure copies spawn: `structureSpacing` (default 6000 blocks; region size — lower means you encounter structures sooner while exploring) and `structureSeparation` (default 2000 blocks; minimum buffer between placements). Both are configurable at runtime without a datapack override.
 
-*(by @yuseix300)*
+*(by @yuseix300, @Shokkoh)*
 
 ### Character Customization
 
@@ -17,6 +18,7 @@
 - **Namekian — New Eye Styles:** Added 2 new eye styles (eyes 3 & 4) with 4 color variants each for Namekian characters.
 - **Majin Antenna & Frost Demon Horns:** Two new race part accessories are now available for character customization.
 - **Race Parts Textures:** Updated and expanded the race parts texture system.
+- **BioAndroid — New Body Types:** Added 2 base body types, 2 Semi-Perfect body types, and 2 Perfect body types for the BioAndroid race, each with 5 layered textures, expanding character creation options for BioAndroid players.
 - **Broly — Texture Variants:** Broly NPC now has multiple texture variants for both his Super Saiyan and Legendary Super Saiyan forms.
 - **Form Skin Tint — `formTint` Config Field** *(Addon/Developer API)*: Forms can now specify a `tintColor` (hex) and `tintIntensity` (0.0–1.0) in their form JSON config to tint the player's skin, hair, and race parts while in that form. Replaces the old hardcoded Kaioken-only red tint. Kaioken (x2–x100), Shiyoken, Shin Shiyoken, and Chou Shiyoken all use this new system. User-defined form files are automatically version-migrated on load.
 
@@ -156,6 +158,11 @@
 
 *(by @Shokkoh)*
 
+### Ki Blast — Movement Slow Effect
+- Entities struck by a ki blast now receive the **Ki Slow** status effect for 1.5 seconds, reducing their movement speed by 90%. This creates a brief window of pressure after landing a ki projectile and makes ki combat feel more impactful.
+
+*(by @Shokkoh)*
+
 ### Ki Attacks No Longer Destroy Dragon Balls
 - Fixed ki projectiles accidentally destroying Dragon Ball entities on contact.
 
@@ -279,10 +286,33 @@
 
 *(by @Shokkoh)*
 
+### Aura Layer Renderer
+- Reworked the aura layer rendering system to support per-layer alpha. Each `AuraLayer` now carries an `alpha` value, enabling smooth fade-in transitions when charging toward a form whose aura uses a different layer slot than the current one. Previously, cross-layer aura transitions could cause an abrupt swap; the incoming layer now fades in proportionally to charge progress while the current layer remains visible.
+- Fixed the charge-state logic for stack forms: when the target form's stack layer matches the base layer, color is interpolated in-place; when it differs, the new layer blends in by alpha. Both the GUI aura and the in-world aura pulse draws now respect per-layer alpha.
+
+*(by @Shokkoh)*
+
 ### Forms Not Appearing in Transformation Menu
 - Fixed certain forms not showing in the transformation selection menu. The mastery prerequisite check now correctly considers both regular form masteries and stack form masteries when determining if a form's unlock requirements are met.
 
 *(by @Shokkoh)*
+
+### Form Preview — Head Bones & State Restoration
+- Fixed the form preview in the Character Customization and Skills screens where the player model's state (rotations, active form, stack form, pose stack) was not guaranteed to be restored if a rendering error occurred mid-frame, potentially leaving head bone positions incorrect after closing the screen.
+- All model state cleanup is now inside the `finally` block, ensuring restoration even on rendering exceptions.
+- Fixed stack form preview not being applied correctly: the preview now clears both the active form and active stack form before applying the previewed form, and correctly routes to either a regular or stack form based on the form group type.
+
+*(by @Shokkoh)*
+
+### Story Bosses — Stun Now Fully Respected
+- Fixed DBSagas boss entities not properly honoring the Stunned status effect. Stunned bosses now immediately stop navigating, cancel any in-progress cast or combo, and are blocked from initiating melee attacks, new combos, skill casts, or brain decisions until the stun expires. Stunned entities also cannot deal melee damage at all.
+
+*(by @Shokkoh)*
+
+### Quest Reward — Transformation Unlock
+- Fixed `TransformationReward` quest rewards not granting the required skill level for the rewarded form. Completing a quest that awards a transformation now also ensures the player's relevant transformation skill (e.g. `superforms`, `legendaryforms`) is set to at least the level required to access that form — preventing forms from being awarded but remaining locked.
+
+*(by @Bruneitor123)*
 
 ### Kikono Station & Fuel Generator — Drops & Required Tool
 - Fixed the Kikono Station and Fuel Generator not dropping correctly and requiring the wrong mining tool. Kikono Station now correctly requires a diamond tool. Fuel Generator is now tagged as mineable with a pickaxe. Gravity Device was moved from `needs_iron_tool` to `needs_diamond_tool`.
@@ -294,10 +324,45 @@
 
 *(by @Shokkoh)*
 
-### Aura Layer Renderer
-- Fixed a rendering issue in the aura layer renderer that caused incorrect aura display.
+### Structure Spawning & Foundation
+- Overhauled the structure spawn planning system. Structure positions are now resolved once and saved to the world data file (`dragonminez_structure_plan`) — subsequent server starts load positions from disk instantly, skipping the biome search entirely. The overworld resolves synchronously at first world creation so near-spawn structures (Goku's house, Babidi, etc.) are placed before the first spawn chunk generates; other dimensions (Namek, Sacred Kai) resolve in the background.
+- Fixed structures on the Namek dimension causing chunk generation to stall: the biome search now skips dimensions whose biome source cannot produce the required biome, preventing the ring-scan from hunting for biomes that can never appear (e.g. a rocky-biome structure search running in Namek).
+- Disabled aquifer generation for the Namek dimension (it was incorrectly enabled), reducing chunk generation cost significantly.
+- Added a total search sample budget cap to prevent the structure planner from running indefinitely on unusual world seeds.
+- Structure queries from Capsule Corp map trades and CC Namekian NPC trades now guard against off-thread access, preventing potential server-thread crashes.
+- The Dragon Ball radar now syncs to players when they change dimensions, ensuring the radar stays accurate after dimension travel.
+- Pending Dragon Balls now generate as soon as a player is within 128 blocks and the target chunk is loaded, preventing balls from being invisible until a relog.
+- Refactored `DMZStructureSets` registration to a shared `unique()` helper, reducing boilerplate and making it easier to add new structures.
+- Fixed the foundation placement on newly added structures.
 
-*(by @Shokkoh)*
+*(by @yuseix300, @Shokkoh, @Bruneitor123)*
+
+### Ki Laser — Position & Rendering
+- Fixed the position of ki laser beams while firing: the beam origin now correctly projects from in front of the caster (using a per-render-type forward offset) rather than defaulting to the entity's center.
+- Fixed render type routing: Makkankosanpo (type 1) and the new generic beam style (type 2) now map to the same renderer correctly after a routing mistake caused type 2 to fall through to the default laser.
+- Added a generic `setupKiBeamPlayer()` setup method so BEAM-type techniques defined via config use their own configured colors and offset, independent of Makkankosanpo-specific logic. Makkankosanpo's color has been adjusted to a slightly darker purple (`0x8B17CF`).
+
+*(by @yuseix300)*
+
+### Ki Wave — Hitbox
+- Enlarged the Ki Wave beam's collision cylinder radius from 1× to 1.5× the wave's size, and recalibrated the per-target hit precision to match. Ki waves now connect more reliably against targets within the visible beam area.
+
+*(by @yuseix300)*
+
+### CC Namekian Entity — Model Pivot
+- Fixed an incorrect waist bone pivot on the Capsule Corp Namekian NPC model (was `[0, 0, 0]`, corrected to `[0, 12, 0]`), resolving a visual misalignment on the entity.
+
+*(by @yuseix300)*
+
+### Zamasu Armor — Textures
+- Fixed incorrect textures on the Zamasu GI armor set (both worn layers 1 and 2).
+
+*(by @yuseix300)*
+
+### Command Autocomplete — Quest and Saga IDs
+- Fixed tab-complete suggestions for `/dmzstory` quest and saga ID arguments. Suggestions now display IDs with `.` as a separator (e.g. `saiyan_saga.1`) instead of `:`, matching the normalization already applied when the argument is parsed — so tab-completed suggestions are valid without manual quoting in the chat bar.
+
+*(by @Bruneitor123)*
 
 ### Weapon Registry — Invalid Entry Handling
 - The weapon registry now handles missing or invalid weapon registrations gracefully with fallbacks, preventing potential crashes from unregistered or malformed weapon entries.
@@ -309,11 +374,10 @@
 
 *(by @Shokkoh)*
 
-### Structure Spawning & Foundation
-- Fixed an issue where certain structures failed to spawn correctly in the world.
-- Fixed the foundation layout on newly added structures.
+### Server Config Sync — Fallback Behavior
+- Fixed config manager methods (`getServerConfig`, `getCombatConfig`, `getTrainingConfig`, `getSkillsConfig`, `getTechniqueConfig`) incorrectly falling back to fresh default configs when server sync was active but the synced config had not yet arrived. They now correctly fall back to the locally-loaded config in that window, preventing brief miscalculations of stats, combat values, or technique parameters immediately after joining a server.
 
-*(by @Bruneitor123, @Shokkoh)*
+*(by @Shokkoh)*
 
 ### Server Config Sync
 - Enforced server-side config synchronization to all clients on login and on `/dmzreload`. Stats sync packets are now batched for better performance.
