@@ -49,18 +49,17 @@ public class GravityLogic {
 		if (!config.isEnabled()) return 1.0;
 
 		String dimId = player.level().dimension().location().toString();
-		double gravity = includeDimension ? config.getWorldGravity(dimId) : config.getDefaultWorldGravity();
+		double ambient = includeDimension ? config.getWorldGravity(dimId) : config.getDefaultWorldGravity();
 
 		double wgGravity = WorldGuardCompat.getGravity(player.level(), player.blockPosition(), player);
-		if (wgGravity > gravity) gravity = wgGravity;
+		if (wgGravity > ambient) ambient = wgGravity;
 
 		double npcGravity = getNpcGravity(player);
-		if (npcGravity > gravity) gravity = npcGravity;
+		if (npcGravity > ambient) ambient = npcGravity;
 
-		double machineGravity = getMachineGravity(player);
-		if (machineGravity > gravity) gravity = machineGravity;
+		double machineExtra = Math.max(0.0, getMachineGravity(player) - 1.0);
 
-		return Math.max(0.0, gravity);
+		return Math.max(0.0, ambient + machineExtra);
 	}
 
 	private static double getResistance(Player player) {
