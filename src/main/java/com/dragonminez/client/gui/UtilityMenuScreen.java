@@ -139,6 +139,11 @@ public class UtilityMenuScreen extends ScaledScreen {
 	}
 
 	@Override
+	protected float computeDynamicScale(float availableScale) {
+		return availableScale * (2f / 3f);
+	}
+
+	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (statsData == null) return;
 
