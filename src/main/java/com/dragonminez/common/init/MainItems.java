@@ -16,6 +16,7 @@ import com.dragonminez.common.init.item.entities.SaiyanShipItem;
 import com.dragonminez.common.init.item.tools.ToolTiers;
 import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.item.weapons.*;
+import com.dragonminez.common.init.item.weapons.DimensionalSwordItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.*;
@@ -101,6 +102,8 @@ public final class MainItems {
 			ITEM_REGISTER.register("z_sword", () -> new ZSwordItem());
 	public static final RegistryObject<SwordItem> BRAVE_SWORD =
 			ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem());
+    public static final RegistryObject<SwordItem> DIMENSIONAL_SWORD =
+            ITEM_REGISTER.register("dimensional_sword", () -> new DimensionalSwordItem());
 	public static final RegistryObject<SwordItem> POWER_POLE =
 			ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
 
