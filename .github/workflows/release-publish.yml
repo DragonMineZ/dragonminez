@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - name: Checkout approved commit
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.client_payload.commit_sha || inputs.commit_sha }}
           fetch-depth: 0
