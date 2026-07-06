@@ -2,6 +2,10 @@ package com.dragonminez.client.gui.hud;
 
 import net.minecraft.util.Mth;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 public class HudBarAnimator {
 	private static final float FRONT_TAU = 0.55f;
 	private static final float GHOST_TAU = 0.32f;
@@ -14,20 +18,23 @@ public class HudBarAnimator {
 
 	public enum GapType { NONE, DAMAGE, HEAL }
 
+	private final List<Segment> segments = new ArrayList<>();
 	private boolean initialized;
 	private float target;
 	private float front;
-	private float ghost;
+	private float healGhost;
+	private float healHold;
+	private boolean healing;
 	private long lastNanos;
-	private float holdTimer;
-	private GapType gapType = GapType.NONE;
 
 	public void reset(float fraction) {
 		fraction = Mth.clamp(fraction, 0.0f, 1.0f);
 		initialized = true;
-		target = front = ghost = fraction;
-		holdTimer = 0.0f;
-		gapType = GapType.NONE;
+		target = front = fraction;
+		healGhost = fraction;
+		healHold = 0.0f;
+		healing = false;
+		segments.clear();
 		lastNanos = System.nanoTime();
 	}
 
@@ -46,35 +53,52 @@ public class HudBarAnimator {
 
 		float previous = target;
 		if (previous - fraction >= DAMAGE_THRESHOLD) {
-			gapType = GapType.DAMAGE;
-			ghost = Math.max(ghost, previous);
+			segments.add(new Segment(previous - fraction));
 			front = fraction;
-			holdTimer = DAMAGE_HOLD_SECONDS;
+			healing = false;
 		} else if (fraction - previous >= BURST_HEAL_THRESHOLD) {
-			gapType = GapType.HEAL;
-			ghost = fraction;
-			holdTimer = HEAL_HOLD_SECONDS;
+			segments.clear();
+			healing = true;
+			healGhost = fraction;
+			healHold = HEAL_HOLD_SECONDS;
 		}
 		target = fraction;
-
-		if (holdTimer > 0.0f) holdTimer -= dt;
 
 		float frontBlend = 1.0f - (float) Math.exp(-dt / FRONT_TAU);
 		float ghostBlend = 1.0f - (float) Math.exp(-dt / GHOST_TAU);
 
-		boolean frontFrozen = gapType == GapType.HEAL && holdTimer > 0.0f;
+		float previousFront = front;
+		boolean frontFrozen = healing && healHold > 0.0f;
 		if (!frontFrozen) front += (target - front) * frontBlend;
 
-		switch (gapType) {
-			case DAMAGE -> {
-				if (holdTimer <= 0.0f) ghost += (target - ghost) * ghostBlend;
-				if (ghost - front <= MIN_GAP) { ghost = front; gapType = GapType.NONE; }
+		if (healing) {
+			if (healHold > 0.0f) healHold -= dt;
+			healGhost = target;
+			if (front >= healGhost - MIN_GAP) {
+				front = healGhost;
+				healing = false;
 			}
-			case HEAL -> {
-				ghost = target;
-				if (front >= ghost - MIN_GAP) { front = ghost; gapType = GapType.NONE; }
+		} else if (!segments.isEmpty()) {
+			float frontRise = front - previousFront;
+			if (frontRise > 0.0f) consumeFromBottom(frontRise);
+			for (Iterator<Segment> it = segments.iterator(); it.hasNext(); ) {
+				Segment segment = it.next();
+				segment.age += dt;
+				if (segment.age >= DAMAGE_HOLD_SECONDS) {
+					segment.amount -= segment.amount * ghostBlend;
+					if (segment.amount <= MIN_GAP) it.remove();
+				}
 			}
-			default -> ghost = front;
+		}
+	}
+
+	private void consumeFromBottom(float amount) {
+		for (int i = segments.size() - 1; i >= 0 && amount > 0.0f; i--) {
+			Segment segment = segments.get(i);
+			float take = Math.min(segment.amount, amount);
+			segment.amount -= take;
+			amount -= take;
+			if (segment.amount <= MIN_GAP) segments.remove(i);
 		}
 	}
 
@@ -83,10 +107,23 @@ public class HudBarAnimator {
 	}
 
 	public float ghostFraction() {
-		return ghost;
+		if (healing) return healGhost;
+		float total = 0.0f;
+		for (Segment segment : segments) total += segment.amount;
+		return Mth.clamp(front + total, 0.0f, 1.0f);
 	}
 
 	public GapType gapType() {
-		return gapType;
+		if (healing) return GapType.HEAL;
+		return segments.isEmpty() ? GapType.NONE : GapType.DAMAGE;
+	}
+
+	private static final class Segment {
+		private float amount;
+		private float age;
+
+		private Segment(float amount) {
+			this.amount = amount;
+		}
 	}
 }
