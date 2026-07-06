@@ -18,6 +18,7 @@ import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.world.dimension.SacredKaiDimension;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.animal.MushroomCow;
@@ -251,9 +252,20 @@ public class EntitiesEvents {
 		if (!event.getLevel().isClientSide && event.getTarget() instanceof MastersEntity master) {
 			ServerPlayer player = (ServerPlayer) event.getEntity();
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				// Only players who know Instant Transmission can memorize a master's Ki signature.
+				if (data.getSkills().getSkillLevel("instant_transmission") < 1) return;
+
+				String masterId = master.getStringUUID();
+				boolean alreadyKnown = data.getCharacter().getInteractedMasters().containsKey(masterId);
+
 				String dimId = player.level().dimension().location().toString();
-				data.getCharacter().addInteractedMaster(master.getStringUUID(), master.getName().getString(), dimId, master.blockPosition());
+				data.getCharacter().addInteractedMaster(masterId, master.getName().getString(), dimId, master.blockPosition());
 				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
+
+				if (!alreadyKnown) {
+					player.displayClientMessage(
+							Component.translatable("message.dragonminez.instant_transmission.ki_learned", master.getName()), true);
+				}
 			});
 		}
 	}

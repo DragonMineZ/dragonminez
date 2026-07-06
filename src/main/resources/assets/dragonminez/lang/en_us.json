@@ -723,6 +723,7 @@
   "gui.dragonminez.lines.kingkai.weight_prompt": "How much weight do you want, %s? Type a number. And don't forget to laugh at my jokes!",
   "message.dragonminez.roshi.weight_given": "§aMaster Roshi: §rThere you go. %s kg of weighted gear. Now get to training!",
   "message.dragonminez.kingkai.weight_given": "§aKing Kai: §rHere. %s kg of weighted gear. Let's see you move under that!",
+  "message.dragonminez.instant_transmission.ki_learned": "§7You now know the Ki ofeb %s.",
   "gui.dragonminez.lines.oldkai.name": "Elder Kai",
   "gui.dragonminez.lines.oldkai.main": "Ah, a visitor! I am the Elder Kai. If your heart is pure and your potential ripe, I can unlock the power sleeping within you... the Ultimate.",
   "gui.dragonminez.lines.oldkai.evil": "Your heart is far too clouded with darkness. I will not draw out the power of someone like you. Begone!",
