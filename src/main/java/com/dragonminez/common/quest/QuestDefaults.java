@@ -1137,7 +1137,7 @@ final class QuestDefaults {
 						new JsonObject[]{
 								objKill("dragonminez:saga_super_janemba", 1, 1225000, 51600, 46920, 3)
 						},
-						rewTPS(437500)),
+						rewTPS(437500), rewItem("dragonminez:dimensional_sword", 1)),
 				step("movies", 38, "38_hildegarn_half.json",
 						earthReq(2410, condBiome("minecraft:plains"), condSaga("buu_saga", 34)),
 						new JsonObject[]{

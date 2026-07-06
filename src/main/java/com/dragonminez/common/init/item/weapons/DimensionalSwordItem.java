@@ -16,7 +16,7 @@ public class DimensionalSwordItem extends WeaponItem implements GeoItem {
 	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
 	public DimensionalSwordItem() {
-		super(75, -2.4f, 2600, 20, "dimensional_sword");
+		super(250, -2.4f, 2600, 20, "dimensional_sword");
 	}
 
 	@Override
