@@ -507,7 +507,11 @@ public final class QuestService {
 	}
 
 	private static boolean hasUnclaimedRewards(PlayerQuestData pqd, String questKey, Quest quest) {
-		for (int i = 0; i < quest.getRewards().size(); i++) {
+		List<QuestReward> rewards = quest.getRewards();
+		for (int i = 0; i < rewards.size(); i++) {
+			if (!rewards.get(i).isUnlockedFor(pqd.getDifficulty())) {
+				continue;
+			}
 			if (!pqd.isRewardClaimed(questKey, i)) {
 				return true;
 			}
@@ -540,6 +544,9 @@ public final class QuestService {
 		double rewardMultiplier = pqd.getDifficulty().questRewardMultiplier();
 		for (int i = 0; i < rewards.size(); i++) {
 			if (pqd.isRewardClaimed(questKey, i)) {
+				continue;
+			}
+			if (!rewards.get(i).isUnlockedFor(pqd.getDifficulty())) {
 				continue;
 			}
 			DMZEvent.QuestRewardClaimEvent rewardEvent = new DMZEvent.QuestRewardClaimEvent(
@@ -653,6 +660,33 @@ public final class QuestService {
 				}
 				if (!killObjective.isCanTransform()) {
 					entity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
+				}
+
+				// Per-quest transform tuning. Absolute values are party-scaled here (difficulty is
+				// applied later, when the new form spawns); multipliers/trigger pass through as-is.
+				Double transformHealth = quest.getScaledTransformHealth(killObjective, partySize);
+				if (transformHealth != null) {
+					entity.getPersistentData().putDouble("dmz_quest_tf_hp_abs", transformHealth);
+				}
+				Double transformMelee = quest.getScaledTransformMeleeDamage(killObjective, partySize);
+				if (transformMelee != null) {
+					entity.getPersistentData().putDouble("dmz_quest_tf_melee_abs", transformMelee);
+				}
+				Double transformKi = quest.getScaledTransformKiDamage(killObjective, partySize);
+				if (transformKi != null) {
+					entity.getPersistentData().putDouble("dmz_quest_tf_ki_abs", transformKi);
+				}
+				if (killObjective.getTransformHealthMultiplier() != null) {
+					entity.getPersistentData().putDouble("dmz_quest_tf_hp_mult", killObjective.getTransformHealthMultiplier());
+				}
+				if (killObjective.getTransformMeleeMultiplier() != null) {
+					entity.getPersistentData().putDouble("dmz_quest_tf_melee_mult", killObjective.getTransformMeleeMultiplier());
+				}
+				if (killObjective.getTransformKiMultiplier() != null) {
+					entity.getPersistentData().putDouble("dmz_quest_tf_ki_mult", killObjective.getTransformKiMultiplier());
+				}
+				if (killObjective.getTransformTriggerPercent() != null) {
+					entity.getPersistentData().putDouble("dmz_quest_tf_trigger", killObjective.getTransformTriggerPercent());
 				}
 
 				if (entity instanceof Mob mob) {

@@ -23,6 +23,19 @@ public abstract class QuestReward {
 
 	public abstract Component getDescription();
 
+	public Difficulty getMinimumDifficulty() {
+		return switch (difficultyType) {
+			case ALL -> Difficulty.EASY;
+			case NORMAL -> Difficulty.NORMAL;
+			case HARD -> Difficulty.HARD;
+		};
+	}
+
+	public boolean isUnlockedFor(Difficulty difficulty) {
+		Difficulty effective = difficulty != null ? difficulty : Difficulty.NORMAL;
+		return effective.ordinal() >= getMinimumDifficulty().ordinal();
+	}
+
 	public enum RewardType {
 		ITEM,
 		COMMAND,
