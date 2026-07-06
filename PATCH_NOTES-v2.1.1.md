@@ -56,7 +56,6 @@
 ### New Dragon Wishes
 - **Change Difficulty** — use the Dragon Balls to permanently change your story difficulty.
 - **Reset Story** — use the Dragon Balls to reset your story progress and start the saga from the beginning.
-- **Reallocate Stats** wish has been removed.
 
 *(by @Shokkoh)*
 
