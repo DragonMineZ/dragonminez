@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.combat.util.MultipartTargeting;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainEntities;
@@ -991,14 +993,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private void pulseAreaDamage() {
         AABB area = this.getBoundingBox().inflate(5.0D);
-        List<LivingEntity> nearby = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> nearby = MultipartTargeting.collectTargets(this.level(), area);
 
         Vec3 center = new Vec3(this.getX(), this.getVisualCenterY(), this.getZ());
         double radius = this.getSize() / 2.0D;
-        double radiusSq = radius * radius;
 
         for (LivingEntity target : nearby) {
-            if (target.distanceToSqr(center) <= radiusSq + 25.0D) {
+            if (MultipartTargeting.withinRadius(target, center, radius + 5.0D)) {
                 if (this.shouldDamage(target)) {
                     boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
                     if (wasHit) this.onSuccessfulHit(target);
@@ -1123,7 +1124,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             this.currentDetonationRadius = 0.0F;
             this.setDeltaMovement(0, 0, 0);
 
-            AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(this.maxDetonationRadius);            List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
+            AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(this.maxDetonationRadius);            List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), damageArea);
             for (LivingEntity target : targets) {
                 if (this.shouldDamage(target)) {
                     boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
@@ -1153,7 +1154,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         float visualParticleSize = explosionRadius * 1.8F;
 
         AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(explosionRadius);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), damageArea);
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
                 boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());

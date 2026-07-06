@@ -220,6 +220,7 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     public boolean shouldDamage(Entity target) {
+        target = TargetHelper.resolveHittable(target);
         if (target == this) return false;
         Entity owner = this.getOwner();
         if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == owner) return false;
@@ -285,6 +286,7 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     public boolean applyDamageOrHeal(Entity target, float amount) {
+        target = TargetHelper.resolveHittable(target);
         if (target instanceof LivingEntity livingTarget) {
             if (this.isHeal()) {
                 if ((livingTarget.getHealth() < livingTarget.getMaxHealth() && this.getOwner() instanceof Player playerOwner

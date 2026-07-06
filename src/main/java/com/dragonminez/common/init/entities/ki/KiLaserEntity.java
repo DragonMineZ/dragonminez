@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -519,7 +520,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 end = start.add(dir.scale(length));
         double searchRadius = this.getSize() * 0.5;
         AABB searchBox = new AABB(start, end).inflate(searchRadius);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), searchBox);
 
         int hitInterval = 10;
 
@@ -529,10 +530,16 @@ public class KiLaserEntity extends AbstractKiProjectile{
             if (target.invulnerableTime > 0) continue;
 
             float hitPrecision = this.getSize() / 3.0F;
-            AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
-            var hit = targetBox.clip(start, end);
+            boolean beamHit = false;
+            for (AABB hb : MultipartTargeting.hitBoxes(target)) {
+                AABB targetBox = hb.inflate(hitPrecision);
+                if (targetBox.clip(start, end).isPresent() || targetBox.contains(start)) {
+                    beamHit = true;
+                    break;
+                }
+            }
 
-            if (hit.isPresent() || targetBox.contains(start)) {
+            if (beamHit) {
                 boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
 
                 if (wasHit) {
@@ -556,12 +563,11 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private void explodeAndDie(Vec3 pos) {
         float radius = this.getSize();
         AABB area = new AABB(pos, pos).inflate(radius);
-        List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> entities = MultipartTargeting.collectTargets(this.level(), area);
 
         for (LivingEntity target : entities) {
             if (this.shouldDamage(target)) {
-                double dist = target.distanceToSqr(pos);
-                if (dist <= radius * radius) {
+                if (MultipartTargeting.withinRadius(target, pos, radius)) {
                     boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
                     if (wasHit) this.onSuccessfulHit(target);
                 }

@@ -147,7 +147,7 @@ public class CombatAttackRequestC2S {
 
 			boolean firstHit = true;
 			for (int id : entityIds) {
-				Entity entity = player.level().getEntity(id);
+				Entity entity = TargetHelper.getEntityOrPart(player.level(), id);
 				if (entity == null) continue;
 
 				if (!TargetHelper.isAttackableMount(entity) && player.getVehicle() == entity) continue;

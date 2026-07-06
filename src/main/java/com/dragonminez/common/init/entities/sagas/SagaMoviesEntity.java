@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -758,6 +759,26 @@ public class SagaMoviesEntity {
         public String getGeckolibModelName() {
             return "saga_bio_broly";
         }
+
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(2.5F, 5.0F);
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            // Tall, slim giant (registered 4.5x12). Tune offsets/sizes in-game.
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 4.0F, 5.0F, 0.0F, 0.0F, 2.5F),
+                    new DBSagasPart(this, "torso", 4.5F, 5.0F, 0.0F, 0.0F, 7.0F),
+                    new DBSagasPart(this, "head", 4.0F, 4.0F, 0.5F, 0.0F, 11.0F)
+            };
+        }
     }
 
     public static class PaikuhanEntity extends DBSagasEntity {
@@ -792,6 +813,26 @@ public class SagaMoviesEntity {
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.24D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.80D);
+        }
+
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(3.5F, 5.0F);
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            // Wide, fat giant (registered 7.5x12). Tune offsets/sizes in-game.
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 6.0F, 5.0F, 0.0F, 0.0F, 2.5F),
+                    new DBSagasPart(this, "torso", 7.0F, 5.0F, 0.0F, 0.0F, 7.0F),
+                    new DBSagasPart(this, "head", 5.0F, 4.0F, 0.5F, 0.0F, 11.0F)
+            };
         }
     }
 
@@ -840,6 +881,25 @@ public class SagaMoviesEntity {
         @Override
         public String getGeckolibModelName() {
             return "saga_hirudegarn";
+        }
+
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(3.0F, 5.0F);
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 5.0F, 5.0F, 0.0F, 0.0F, 2.5F),
+                    new DBSagasPart(this, "torso", 5.0F, 5.0F, 0.0F, 0.0F, 7.0F),
+                    new DBSagasPart(this, "head", 5.0F, 4.0F, 0.5F, 0.0F, 11.0F)
+            };
         }
     }
 

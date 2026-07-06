@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.particles.KiLightningParticle;
 import com.dragonminez.common.init.particles.KiSheddingParticle;
@@ -718,7 +719,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         AABB searchBox = new AABB(start, end).inflate(cilindroRadio);
 
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), searchBox);
         int hitInterval = 20;
 
         for (LivingEntity target : targets) {
@@ -727,9 +728,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (target.invulnerableTime > 0) continue;
 
             float hitPrecision = (float) cilindroRadio;
-            AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
-
-            boolean intersects = targetBox.clip(start, end).isPresent() || targetBox.contains(start);
+            boolean intersects = false;
+            for (AABB hb : MultipartTargeting.hitBoxes(target)) {
+                AABB targetBox = hb.inflate(hitPrecision);
+                if (targetBox.clip(start, end).isPresent() || targetBox.contains(start)) {
+                    intersects = true;
+                    break;
+                }
+            }
 
             if (intersects) {
                 boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
@@ -757,7 +763,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         float explosionRadius = this.getSize() * 4.5F;
 
         AABB damageArea = new AABB(pos, pos).inflate(explosionRadius);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), damageArea);
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
                 boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());

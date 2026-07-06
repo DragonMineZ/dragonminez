@@ -1,5 +1,8 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.combat.util.MultipartTargeting;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
@@ -167,7 +170,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
     @Override
     protected void onHitEntity(EntityHitResult result) {
         if (!this.level().isClientSide) {
-            Entity hitEntity = result.getEntity();
+            Entity hitEntity = TargetHelper.resolveHittable(result.getEntity());
             Entity owner = this.getOwner();
 
             if (hitEntity instanceof LivingEntity target && target != owner) {
@@ -181,7 +184,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
 
     private LivingEntity findNearestTarget(LivingEntity owner, double range) {
         AABB area = owner.getBoundingBox().inflate(range);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), area);
 
         LivingEntity nearest = null;
         double minDistance = Double.MAX_VALUE;

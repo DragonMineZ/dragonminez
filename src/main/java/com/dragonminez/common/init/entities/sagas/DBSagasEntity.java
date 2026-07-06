@@ -56,6 +56,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -64,7 +65,10 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextureVariant {
 
@@ -284,8 +288,97 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
+    private PartEntity<?>[] hitboxParts;
+    private static final UUID GLOBAL_GATE_KEY = new UUID(0L, 0L);
+    private final Map<UUID, Long> partHitGate = new HashMap<>();
+
     protected DBSagasEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        if (this.hasHitboxParts()) {
+            this.hitboxParts = this.createHitboxParts();
+            this.noCulling = true;
+            this.refreshDimensions();
+        }
+    }
+
+    public boolean hasHitboxParts() {
+        return false;
+    }
+
+    protected DBSagasPart[] createHitboxParts() {
+        return new DBSagasPart[0];
+    }
+
+    protected EntityDimensions getCoreDimensions() {
+        return null;
+    }
+
+    @Override
+    public boolean isMultipartEntity() {
+        return this.hitboxParts != null;
+    }
+
+    @Override
+    public PartEntity<?>[] getParts() {
+        return this.hitboxParts;
+    }
+
+    @Override
+    public void setId(int pId) {
+        super.setId(pId);
+        if (this.hitboxParts != null) {
+            for (int i = 0; i < this.hitboxParts.length; i++) {
+                this.hitboxParts[i].setId(pId + i + 1);
+            }
+        }
+    }
+
+    @Override
+    public EntityDimensions getDimensions(Pose pPose) {
+        if (this.hasHitboxParts()) {
+            EntityDimensions core = this.getCoreDimensions();
+            if (core != null) return core;
+        }
+        return super.getDimensions(pPose);
+    }
+
+    private void positionHitboxParts() {
+        if (this.hitboxParts == null) return;
+
+        Vec3 forward = Vec3.directionFromRotation(0.0F, this.yBodyRot);
+        Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
+
+        for (PartEntity<?> generic : this.hitboxParts) {
+            if (!(generic instanceof DBSagasPart part)) continue;
+            double cx = this.getX() + forward.x * part.forwardOffset + side.x * part.sideOffset;
+            double cz = this.getZ() + forward.z * part.forwardOffset + side.z * part.sideOffset;
+            double cy = this.getY() + part.yOffset - part.getBbHeight() / 2.0;
+
+            double prevX = part.getX(), prevY = part.getY(), prevZ = part.getZ();
+            part.setPos(cx, cy, cz);
+            part.xo = part.xOld = prevX;
+            part.yo = part.yOld = prevY;
+            part.zo = part.zOld = prevZ;
+        }
+
+        if (!this.partHitGate.isEmpty()) {
+            long now = this.level().getGameTime();
+            this.partHitGate.values().removeIf(tick -> tick < now);
+        }
+    }
+
+    public boolean receivePartDamage(DamageSource pSource, float pAmount, DBSagasPart part) {
+        if (this.isInvulnerableTo(pSource)) return false;
+
+        long now = this.level().getGameTime();
+        Entity attacker = pSource.getEntity();
+        UUID key = attacker != null ? attacker.getUUID() : GLOBAL_GATE_KEY;
+
+        Long last = this.partHitGate.get(key);
+        if (last != null && last == now) return false;
+        this.partHitGate.put(key, now);
+
+        return this.hurt(pSource, pAmount);
     }
 
     public void setSkillColors(int mainColor, int borderColor, int outlineColor) {
@@ -636,6 +729,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Override
     public void tick() {
         super.tick();
+
+        if (this.hitboxParts != null) {
+            this.positionHitboxParts();
+        }
 
         if (!this.level().isClientSide) {
 
