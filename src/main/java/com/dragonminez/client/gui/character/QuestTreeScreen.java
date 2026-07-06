@@ -1469,7 +1469,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderEnemyPreview(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
-		enemyPreview.setQuest(selectedQuest);
+		Difficulty previewDifficulty = Difficulty.NORMAL;
+		int previewPartySize = 1;
+		if (statsData != null) {
+			PlayerQuestData questData = statsData.getPlayerQuestData();
+			previewDifficulty = questData.getDifficulty();
+			previewPartySize = Math.max(1, questData.getPartyMemberIds().size());
+		}
+		enemyPreview.setQuest(selectedQuest, previewDifficulty, previewPartySize);
 		if (!enemyPreview.isActive()) return;
 
 		PanelRect base = getBaseLeftPanelRect();

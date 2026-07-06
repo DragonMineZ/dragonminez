@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestUnlocks;
@@ -51,7 +52,12 @@ public class QuestEnemyPreview {
 	private static final int FADE_TICKS = 8;    // cross-fade window when switching targets
 	private static final float HOVER_SPEED = 6.0f;
 
-	/** One kill target resolved from a quest objective. */
+	/**
+	 * One kill target resolved from a quest objective. Health/melee/ki mirror the exact
+	 * stats the enemy will spawn with: base objective values amplified by party scaling
+	 * ({@code Quest#getScaledKill*}) and by the story difficulty multipliers, matching how
+	 * {@code EntitiesEvents} configures the real entity on spawn.
+	 */
 	private static final class Target {
 		final String entityId;
 		final double health;
@@ -60,11 +66,11 @@ public class QuestEnemyPreview {
 		final int count;
 		final int textureVariant;
 
-		Target(KillObjective obj) {
+		Target(Quest quest, KillObjective obj, Difficulty difficulty, int partySize) {
 			this.entityId = obj.getEntityId();
-			this.health = obj.getHealth();
-			this.meleeDamage = obj.getMeleeDamage();
-			this.kiDamage = obj.getKiDamage();
+			this.health = quest.getScaledKillHealth(obj, partySize) * difficulty.hpMultiplier();
+			this.meleeDamage = quest.getScaledKillMeleeDamage(obj, partySize) * difficulty.damageMultiplier();
+			this.kiDamage = quest.getScaledKillKiDamage(obj, partySize) * difficulty.damageMultiplier();
 			this.count = obj.getCount();
 			this.textureVariant = obj.getTextureVariant();
 		}
@@ -75,6 +81,8 @@ public class QuestEnemyPreview {
 	private final Set<String> failedIds = new HashSet<>();
 
 	private Quest boundQuest = null;
+	private Difficulty boundDifficulty = Difficulty.NORMAL;
+	private int boundPartySize = 1;
 	private int currentIndex = 0;
 	private int cycleTimer = 0;
 	private float modelYaw = 0.0f;
@@ -108,10 +116,18 @@ public class QuestEnemyPreview {
 	/**
 	 * Rebind the preview to the given quest. Only SAGA (main) quests with at least one
 	 * KILL objective produce an active preview; everything else clears it.
+	 * <p>
+	 * Difficulty and party size feed the stat amplification so the card always shows the
+	 * enemy's real spawn stats; a change to either (with the same quest still selected)
+	 * rebuilds the targets.
 	 */
-	public void setQuest(Quest quest) {
-		if (quest == boundQuest) return;
+	public void setQuest(Quest quest, Difficulty difficulty, int partySize) {
+		if (difficulty == null) difficulty = Difficulty.NORMAL;
+		int safePartySize = Math.max(1, partySize);
+		if (quest == boundQuest && difficulty == boundDifficulty && safePartySize == boundPartySize) return;
 		boundQuest = quest;
+		boundDifficulty = difficulty;
+		boundPartySize = safePartySize;
 		targets.clear();
 		currentIndex = 0;
 		cycleTimer = 0;
@@ -121,7 +137,7 @@ public class QuestEnemyPreview {
 
 		for (QuestObjective objective : quest.getObjectives()) {
 			if (objective instanceof KillObjective kill) {
-				targets.add(new Target(kill));
+				targets.add(new Target(quest, kill, difficulty, safePartySize));
 			}
 		}
 	}
@@ -393,6 +409,8 @@ public class QuestEnemyPreview {
 		failedIds.clear();
 		targets.clear();
 		boundQuest = null;
+		boundDifficulty = Difficulty.NORMAL;
+		boundPartySize = 1;
 	}
 
 	public boolean isHovering(int mouseX, int mouseY) {
