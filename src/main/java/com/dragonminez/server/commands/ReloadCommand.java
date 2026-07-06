@@ -36,7 +36,7 @@ public class ReloadCommand {
 		);
 	}
 
-	private static int executeReload(CommandSourceStack source, String rawScope) {
+	public static int executeReload(CommandSourceStack source, String rawScope) {
 		ReloadScope scope = ReloadScope.from(rawScope);
 		if (scope == null) {
 			source.sendFailure(Component.literal("Invalid reload section: " + rawScope));
@@ -72,10 +72,13 @@ public class ReloadCommand {
 			int syncedPlayers = 0;
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 				if (scope.includesConfig()) {
+					boolean resetBatch = true;
 					for (String file : availableConfigs) {
+						if (file.equals(ConfigManager.CLIENT_ONLY_CONFIG)) continue;
 						String jsonPayload = ConfigManager.getSpecificConfigJson(file);
 						if (jsonPayload == null || jsonPayload.isBlank()) continue;
-						NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload), player);
+						NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload, resetBatch), player);
+						resetBatch = false;
 					}
 
 					StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {

@@ -18,6 +18,7 @@ public class Cooldowns {
 	public static final String DRAIN_ACTIVE = "DrainActive";
 	public static final String DASH_CD = "DashCooldown";
 	public static final String DOUBLEDASH_CD = "DoubleDashCooldown";
+	public static final String TELEPORT_CD = "TeleportCooldown";
 	public static final String DASH_ACTIVE = "DashActive";
 	public static final String KI_BLAST_CD = "KiBlastCooldown";
 	public static final String MAJIN_REVIVE_ACTIVE = "MajinReviveActive";

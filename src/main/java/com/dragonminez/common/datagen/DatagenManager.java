@@ -32,6 +32,9 @@ public class DatagenManager {
 		generator.addProvider(event.includeServer(), new DMZItemTagGenerator(packOutput, lookupProvider,
 				blockTagGenerator.contentsGetter(), existingFileHelper));
 
+		generator.addProvider(event.includeServer(),
+				new DMZEntityTypeTagGenerator(packOutput, lookupProvider, existingFileHelper));
+
 		DMZWorldGenProvider worldGenProvider = generator.addProvider(event.includeServer(),
 				new DMZWorldGenProvider(packOutput, lookupProvider));
 

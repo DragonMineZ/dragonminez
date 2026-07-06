@@ -226,6 +226,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.NAMEK_FROG.get(), NamekFrogRenderer::new);
         event.registerEntityRenderer(MainEntities.NAMEK_FROG_GINYU.get(), NamekFrogRenderer::new);
         event.registerEntityRenderer(MainEntities.NAMEK_TRADER.get(), NamekianRenderer::new);
+        event.registerEntityRenderer(MainEntities.CC_NAMEKIAN.get(), NamekianRenderer::new);
         event.registerEntityRenderer(MainEntities.NAMEK_WARRIOR.get(), NamekianWarriorRenderer::new);
         event.registerEntityRenderer(MainEntities.SABERTOOTH.get(), DinosRenderer::new);
 

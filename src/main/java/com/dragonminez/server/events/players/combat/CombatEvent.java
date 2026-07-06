@@ -1,5 +1,7 @@
 package com.dragonminez.server.events.players.combat;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
@@ -7,7 +9,9 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
+import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
@@ -141,13 +145,18 @@ public class CombatEvent {
 
 				double baseDamage = currentDamage[0];
 				double dmzDamage = attackerData.getMeleeDamage();
+				double staminaDamage = attackerData.getMeleeDamageNoMultipliers();
 
 				var dmzPlayer = (Player_DMZ) attacker;
 				var currentAttack = dmzPlayer.getCurrentAttack();
 
 				if (currentAttack != null) {
 					dmzDamage *= currentAttack.attack().damageMultiplier();
-					if (currentAttack.isOffHand()) dmzDamage *= 0.9;
+					staminaDamage *= currentAttack.attack().damageMultiplier();
+					if (currentAttack.isOffHand()) {
+						dmzDamage *= 0.9;
+						staminaDamage *= 0.9;
+					}
 				}
 
 				DMZEvent.DamageModifyEvent modifyEvent = new DMZEvent.DamageModifyEvent(attacker, livingTarget, dmzDamage, 0.0, DMZEvent.DamageSourceType.MELEE);
@@ -182,7 +191,7 @@ public class CombatEvent {
 					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6f, 0.05f, 2, false), livingTarget);
 				}
 
-				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getCombatConfig().getStaminaConsumptionRatio());
+				int baseStaminaRequired = (int) Math.ceil(staminaDamage * ConfigManager.getCombatConfig().getStaminaConsumptionRatio());
 				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 				int staminaRequired = (int) (baseStaminaRequired * gravityMult * attackerData.getAdjustedStaminaDrainMultiplier());
 
@@ -194,14 +203,24 @@ public class CombatEvent {
 
 				if (!attackerData.getStatus().isAlive() && attacker.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) staminaRequired = 0;
 
-				if (currentStamina >= staminaRequired) {
-					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
-					finalDmzDamage = dmzDamage;
+				boolean firstHit = !attacker.getPersistentData().contains("dmz_first_hit") || attacker.getPersistentData().getBoolean("dmz_first_hit");
+				double staminaRatio;
+
+				if (firstHit) {
+					if (currentStamina >= staminaRequired) {
+						if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
+						staminaRatio = 1.0;
+					} else {
+						staminaRatio = Mth.clamp((double) currentStamina / staminaRequired, 0.0, 1.0);
+						if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
+					}
+					attacker.getPersistentData().putDouble("dmz_swing_stamina_ratio", staminaRatio);
 				} else {
-					double staminaRatio = (double) currentStamina / staminaRequired;
-					finalDmzDamage = dmzDamage * staminaRatio;
-					if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
+					staminaRatio = attacker.getPersistentData().contains("dmz_swing_stamina_ratio")
+							? attacker.getPersistentData().getDouble("dmz_swing_stamina_ratio") : 1.0;
 				}
+
+				finalDmzDamage = dmzDamage * staminaRatio;
 
 				if (isEmptyHandOrNoDamageItem(attacker)) currentDamage[0] = finalDmzDamage;
 				else currentDamage[0] = baseDamage + finalDmzDamage;
@@ -411,7 +430,7 @@ public class CombatEvent {
 											}
 										}
 									} else {
-										double defense = victimData.getDefense();
+										double defense = victimData.getDefenseLegacyUnits();
 										double reductionCap = ConfigManager.getCombatConfig().getBlockDamageReductionCap();
 										double reductionMin = ConfigManager.getCombatConfig().getBlockDamageReductionMin();
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
@@ -636,25 +655,51 @@ public class CombatEvent {
 					if (!Float.isFinite(finalDamage) || finalDamage < 0.0f) finalDamage = 0.0f;
 
 					if (victim.getHealth() - finalDamage <= 0) {
-						if (event.getSource().getEntity() instanceof Player attacker) {
+						Entity damageSource = event.getSource().getEntity();
+						boolean shadowKnockdown = damageSource instanceof ShadowDummyEntity dummy
+								&& dummy.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW);
+						boolean friendlyKnockdown = false;
+						if (damageSource instanceof Player attacker) {
 							boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
 							boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
 									.map(data -> data.getStatus().isFriendlyFistEnabled())
 									.orElse(false);
+							friendlyKnockdown = isSamePartyPvp || isFriendlyFist;
+						}
 
-							if (isSamePartyPvp || isFriendlyFist) {
-								finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
+						if (shadowKnockdown || friendlyKnockdown) {
+							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
 
-								stats.getStatus().setKnockedDown(true);
-								stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20);
-								stats.getCharacter().clearActiveForm();
-								stats.getCharacter().clearActiveStackForm();
+							stats.getStatus().setKnockedDown(true);
+							stats.getCooldowns().setCooldown(Cooldowns.KNOCKDOWN_DURATION, ConfigManager.getCombatConfig().getKnockdownDurationSeconds() * 20);
+							stats.getCharacter().clearActiveForm();
+							stats.getCharacter().clearActiveStackForm();
 
-								if (victim instanceof ServerPlayer serverPlayer) {
-									NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-								}
+							if (victim instanceof ServerPlayer serverPlayer) {
+								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+							}
+
+							if (shadowKnockdown) {
+								SummonPlayerShadowDummyC2S.dismissByDummy((ShadowDummyEntity) damageSource);
 							}
 						}
+					}
+
+					Entity dmzDebugAttacker = event.getSource().getEntity();
+					if (dmzDebugAttacker instanceof LivingEntity && !(dmzDebugAttacker instanceof Player)) {
+						double dmzDebugDefense = stats.getDefense();
+						double dmzDebugMitigatedPct = rawDamage > 0.0 ? (1.0 - (finalDamage / rawDamage)) * 100.0 : 0.0;
+						LogUtil.info(Env.SERVER,
+								"[DEF-DEBUG] victim={} attacker={} type={} raw={} defense={} guardBroken={} defPen={} final={} mitigated={}%",
+								victim.getName().getString(),
+								dmzDebugAttacker.getName().getString(),
+								event.getSource().getMsgId(),
+								String.format("%.1f", rawDamage),
+								String.format("%.1f", dmzDebugDefense),
+								isGuardBroken,
+								String.format("%.2f", defensePenetration),
+								String.format("%.1f", (double) finalDamage),
+								String.format("%.1f", dmzDebugMitigatedPct));
 					}
 
 					event.setAmount(finalDamage);

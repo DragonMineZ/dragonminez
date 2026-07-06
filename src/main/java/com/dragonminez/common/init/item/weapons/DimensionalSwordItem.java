@@ -1,0 +1,47 @@
+package com.dragonminez.common.init.item.weapons;
+
+import com.dragonminez.common.init.item.weapons.render.BraveSwordRenderer;
+import com.dragonminez.common.init.item.weapons.render.DimensionalSwordRenderer;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import software.bernie.geckolib.animatable.GeoItem;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
+
+import java.util.function.Consumer;
+
+public class DimensionalSwordItem extends WeaponItem implements GeoItem {
+
+	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+
+	public DimensionalSwordItem() {
+		super(250, -2.4f, 2600, 20, "dimensional_sword");
+	}
+
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+	}
+
+	@Override
+	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+		consumer.accept(new IClientItemExtensions() {
+
+			private DimensionalSwordRenderer renderer;
+
+			@Override
+			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+				if (this.renderer == null)
+					this.renderer = new DimensionalSwordRenderer();
+
+				return this.renderer;
+
+			}
+		});
+	}
+
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return cache;
+	}
+}

@@ -13,7 +13,7 @@ void main() {
     vec2 texel = vec2(0.0, 1.0 / max(InSize.y, 1.0));
     float sampleRadius = max(0.0, BloomRadius);
     if (sampleRadius <= 0.001) {
-        fragColor = texture(DiffuseSampler, clamp(texCoord, vec2(0.0), vec2(1.0)));
+        fragColor = vec4(texture(DiffuseSampler, clamp(texCoord, vec2(0.0), vec2(1.0))).rgb, 1.0);
         return;
     }
 
@@ -33,5 +33,5 @@ void main() {
         weightSum += weight;
     }
 
-    fragColor = sum / max(weightSum, 0.0001);
+    fragColor = vec4((sum / max(weightSum, 0.0001)).rgb, 1.0);
 }

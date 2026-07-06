@@ -5,6 +5,7 @@ import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.init.entities.AllMastersEntity;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.quest.PartyManager;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
@@ -12,11 +13,25 @@ import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class TargetHelper {
+
+    public static Entity resolveHittable(Entity entity) {
+        return entity instanceof PartEntity<?> part ? part.getParent() : entity;
+    }
+
+    public static Entity getEntityOrPart(Level level, int id) {
+        if (level instanceof ServerLevel serverLevel) {
+            return serverLevel.getEntityOrPart(id);
+        }
+        return level.getEntity(id);
+    }
+
     public enum Relation {
         FRIENDLY, NEUTRAL, HOSTILE;
 
@@ -27,6 +42,7 @@ public class TargetHelper {
     }
 
     public static Relation getRelation(Player attacker, Entity target) {
+        target = resolveHittable(target);
         if (attacker == target) return Relation.FRIENDLY;
 
         if (target instanceof AllMastersEntity.MasterEnmaEntity || target instanceof AllMastersEntity.MasterUranaiEntity || target instanceof AllMastersEntity.MasterToribotEntity) {
@@ -71,6 +87,7 @@ public class TargetHelper {
     }
 
     public static boolean canAttack(Player attacker, Entity target, double maxRange) {
+        target = resolveHittable(target);
         Relation relation = getRelation(attacker, target);
         if (target instanceof MastersEntity) return false;
         return switch (relation) {

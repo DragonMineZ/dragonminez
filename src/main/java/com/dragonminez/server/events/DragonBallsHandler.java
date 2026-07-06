@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,6 +30,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class DragonBallsHandler {
 	private static final Queue<Runnable> generationQueue = new ConcurrentLinkedQueue<>();
+	private static final int PENDING_RESCAN_INTERVAL = 100;
+	private static int pendingRescanTimer = 0;
+
+	private static final int RADAR_SYNC_INTERVAL = 100;
+	private static int radarSyncTimer = 0;
+
+	private static final double NEARBY_GEN_RANGE_SQR = 128.0 * 128.0;
 
 	public static void scatterDragonBalls(ServerLevel level, String setId) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
@@ -103,14 +111,67 @@ public class DragonBallsHandler {
 	@SubscribeEvent
 	public static void onLevelTick(TickEvent.LevelTickEvent event) {
 		if (event.phase != TickEvent.Phase.END || event.level.isClientSide) return;
+		if (event.level instanceof ServerLevel level && ++pendingRescanTimer >= PENDING_RESCAN_INTERVAL) {
+			pendingRescanTimer = 0;
+			rescanPendingBalls(level);
+		}
+		if (event.level instanceof ServerLevel level && level.dimension().equals(Level.OVERWORLD)
+				&& ++radarSyncTimer >= RADAR_SYNC_INTERVAL) {
+			radarSyncTimer = 0;
+			syncRadar(level);
+		}
+		if (event.level instanceof ServerLevel level) {
+			generateNearbyPendingBalls(level);
+		}
 		while (!generationQueue.isEmpty()) {
 			Runnable task = generationQueue.poll();
 			if (task != null) task.run();
 		}
 	}
 
+	private static void generateNearbyPendingBalls(ServerLevel level) {
+		List<ServerPlayer> players = level.players();
+		if (players.isEmpty()) return;
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSetsForDimension(level.dimension())) {
+			Map<Integer, List<BlockPos>> pending = data.getPendingBalls(definition.getId());
+			pending.forEach((star, targets) -> {
+				for (BlockPos target : new ArrayList<>(targets)) {
+					if (!level.isLoaded(target)) continue;
+					for (ServerPlayer player : players) {
+						double dx = player.getX() - (target.getX() + 0.5);
+						double dz = player.getZ() - (target.getZ() + 0.5);
+						if (dx * dx + dz * dz <= NEARBY_GEN_RANGE_SQR) {
+							generationQueue.add(() -> generateBallSafely(level, definition, star, target));
+							break;
+						}
+					}
+				}
+			});
+		}
+	}
+
+	private static void rescanPendingBalls(ServerLevel level) {
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSetsForDimension(level.dimension())) {
+			Map<Integer, List<BlockPos>> pending = data.getPendingBalls(definition.getId());
+			pending.forEach((star, targets) -> {
+				for (BlockPos target : new ArrayList<>(targets)) {
+					if (level.isLoaded(target)) {
+						generationQueue.add(() -> generateBallSafely(level, definition, star, target));
+					}
+				}
+			});
+		}
+	}
+
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
+	}
+
+	@SubscribeEvent
+	public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
 	}
 

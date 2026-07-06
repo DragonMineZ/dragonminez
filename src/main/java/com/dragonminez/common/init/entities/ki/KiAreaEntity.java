@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.combat.util.MultipartTargeting;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
@@ -124,7 +126,7 @@ public class KiAreaEntity extends AbstractKiProjectile {
 
     private void applyAreaEffects(float radius) {
         AABB area = this.getBoundingBox();
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), area);
 
         for (LivingEntity target : targets) {
             if (this.isHeal()) {

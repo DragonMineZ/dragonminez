@@ -3,11 +3,11 @@ package com.dragonminez.server.world.structure.helper;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.biome.NamekBiomes;
-import com.dragonminez.server.world.biome.OverworldBiomes;
 import com.dragonminez.server.world.biome.SacredKaiBiomes;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
 import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Vec3i;
@@ -37,29 +37,10 @@ public class DMZStructureSets {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
 
-		context.register(GOKU_HOUSE, new StructureSet(
-				structures.getOrThrow(DMZStructures.GOKU_HOUSE),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						12345678,
-						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE)
-				)
-		));
-
-		context.register(ROSHI_HOUSE, new StructureSet(
-				structures.getOrThrow(DMZStructures.ROSHI_HOUSE),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						87654321,
-						Optional.empty(),
-						biomes.getOrThrow(BiomeTags.IS_OCEAN)
-				)
-		));
+		unique(context, GOKU_HOUSE, structures.getOrThrow(DMZStructures.GOKU_HOUSE),
+				12345678, biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE));
+		unique(context, ROSHI_HOUSE, structures.getOrThrow(DMZStructures.ROSHI_HOUSE),
+				87654321, biomes.getOrThrow(BiomeTags.IS_OCEAN));
 
 		context.register(TIMECHAMBER, new StructureSet(
 				structures.getOrThrow(DMZStructures.TIMECHAMBER),
@@ -73,17 +54,8 @@ public class DMZStructureSets {
 				)
 		));
 
-		context.register(ELDER_GURU, new StructureSet(
-				structures.getOrThrow(DMZStructures.ELDER_GURU),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						44332211,
-						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_SACREDLAND)
-				)
-		));
+		unique(context, ELDER_GURU, structures.getOrThrow(DMZStructures.ELDER_GURU),
+				44332211, biomes.getOrThrow(MainTags.Biomes.IS_SACREDLAND));
 
 		context.register(KAMILOOKOUT, new StructureSet(
 				structures.getOrThrow(DMZStructures.KAMILOOKOUT),
@@ -96,111 +68,37 @@ public class DMZStructureSets {
 				)
 		));
 
-		context.register(GERO_LAB, new StructureSet(
-				structures.getOrThrow(DMZStructures.GERO_LAB),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						99887766,
-						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME)
-				)
-		));
+		unique(context, GERO_LAB, structures.getOrThrow(DMZStructures.GERO_LAB),
+				99887766, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
+		unique(context, BABIDI, structures.getOrThrow(DMZStructures.BABIDI),
+				18273645, biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE));
+		unique(context, CELL_ARENA, structures.getOrThrow(DMZStructures.CELL_ARENA),
+				13572468, biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE));
+		unique(context, FRIEZA_SHIP, structures.getOrThrow(DMZStructures.FRIEZA_SHIP),
+				24681357, HolderSet.direct(biomes.getOrThrow(NamekBiomes.AJISSA_PLAINS)));
+		unique(context, PICCOLO_HOUSE, structures.getOrThrow(DMZStructures.PICCOLO_HOUSE),
+				36925814, biomes.getOrThrow(MainTags.Biomes.IS_LAND));
+		unique(context, OLDKAI_PILLAR, structures.getOrThrow(DMZStructures.OLDKAI_PILLAR),
+				41258963, HolderSet.direct(biomes.getOrThrow(SacredKaiBiomes.SACREDKAI_PLAINS)));
+		unique(context, YAMCHA_HOUSE, structures.getOrThrow(DMZStructures.YAMCHA_HOUSE),
+				55114477, biomes.getOrThrow(MainTags.Biomes.IS_DESERTLIKE));
+		unique(context, TRUNKS_SHIP, structures.getOrThrow(DMZStructures.TRUNKS_SHIP),
+				66332211, biomes.getOrThrow(MainTags.Biomes.IS_LAND));
+		unique(context, VEGETA_POD, structures.getOrThrow(DMZStructures.VEGETA_POD),
+				77889900, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
+	}
 
-		context.register(BABIDI, new StructureSet(
-				structures.getOrThrow(DMZStructures.BABIDI),
+	private static void unique(BootstapContext<StructureSet> context, ResourceKey<StructureSet> key,
+							   Holder<Structure> structure, int salt, HolderSet<Biome> validBiomes) {
+		context.register(key, new StructureSet(
+				structure,
 				new BiomeAwareUniquePlacement(
 						Vec3i.ZERO,
 						StructurePlacement.FrequencyReductionMethod.DEFAULT,
 						1.0f,
-						18273645,
+						salt,
 						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE)
-				)
-		));
-
-		context.register(CELL_ARENA, new StructureSet(
-				structures.getOrThrow(DMZStructures.CELL_ARENA),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						13572468,
-						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE)
-				)
-		));
-
-		context.register(FRIEZA_SHIP, new StructureSet(
-				structures.getOrThrow(DMZStructures.FRIEZA_SHIP),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						24681357,
-						Optional.empty(),
-						HolderSet.direct(biomes.getOrThrow(NamekBiomes.AJISSA_PLAINS))
-				)
-		));
-
-		context.register(PICCOLO_HOUSE, new StructureSet(
-				structures.getOrThrow(DMZStructures.PICCOLO_HOUSE),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						36925814,
-						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_LAND)
-				)
-		));
-
-		context.register(OLDKAI_PILLAR, new StructureSet(
-				structures.getOrThrow(DMZStructures.OLDKAI_PILLAR),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						41258963,
-						Optional.empty(),
-						HolderSet.direct(biomes.getOrThrow(SacredKaiBiomes.SACREDKAI_PLAINS))
-				)
-		));
-
-		context.register(YAMCHA_HOUSE, new StructureSet(
-				structures.getOrThrow(DMZStructures.YAMCHA_HOUSE),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						55114477,
-						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_DESERTLIKE)
-				)
-		));
-
-		context.register(TRUNKS_SHIP, new StructureSet(
-				structures.getOrThrow(DMZStructures.TRUNKS_SHIP),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						66332211,
-						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_LAND)
-				)
-		));
-
-		context.register(VEGETA_POD, new StructureSet(
-				structures.getOrThrow(DMZStructures.VEGETA_POD),
-				new BiomeAwareUniquePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						77889900,
-						Optional.empty(),
-						biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME)
+						validBiomes
 				)
 		));
 	}

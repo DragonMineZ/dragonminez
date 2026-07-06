@@ -99,6 +99,13 @@ public class ForgeClientEvents {
 
 		if (mc.screen != null) return;
 
+		for (BaseMenuScreen.MenuTab tab : BaseMenuScreen.SECONDARY_TABS) {
+			if (tab.key().consumeClick()) {
+				openMenuTab(mc, tab.factory().get());
+				return;
+			}
+		}
+
 		if (KeyBinds.SPACEPOD_MENU.consumeClick() && mc.player.isPassenger() && mc.player.getVehicle() instanceof SpacePodEntity) {
 			mc.setScreen(new SpacePodScreen());
 			mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
@@ -107,6 +114,18 @@ public class ForgeClientEvents {
         while (KeyBinds.SECOND_FUNCTION_KEY.consumeClick()) {
             NetworkHandler.sendToServer(new SokidanControlC2S());
         }
+	}
+
+	private static void openMenuTab(Minecraft mc, Screen screen) {
+		if (BaseMenuScreen.isStatsMenuReopenBlocked()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+			if (data.getStatus().isHasCreatedCharacter()) {
+				mc.setScreen(screen);
+			} else {
+				mc.setScreen(new RaceSelectionScreen(data.getCharacter()));
+			}
+			mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+		});
 	}
 
 	private static int tickCounter = 0;

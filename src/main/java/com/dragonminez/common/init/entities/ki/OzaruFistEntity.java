@@ -50,6 +50,7 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
         this.setFiring(true);
 
         this.setMaxLife(30);
+        this.setKiDamage(damage);
 
         // Spawn the entity at the owner's position so it is tracked/synced correctly from tick 0.
         // Without this it is added at (0,0,0), outside client tracking range, and never reaches the client.

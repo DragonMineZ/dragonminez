@@ -5,6 +5,7 @@ import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig.FoodConfig;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
@@ -35,7 +36,10 @@ import com.dragonminez.server.util.MutantManager;
 import com.dragonminez.server.util.PotionEffectHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -56,6 +60,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import com.dragonminez.common.util.CuriosUtil;
 import top.theillusivec4.curios.api.CuriosApi;
 import com.dragonminez.common.init.item.WeightItem;
 
@@ -314,6 +319,19 @@ public class StatsEvents {
 	}
 
 	@SubscribeEvent
+	public static void cookDropsOnKiKill(LivingDeathEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide) return;
+		if (entity.fireImmune()) return;
+
+		DamageSource source = event.getSource();
+		boolean isKiKill = MainDamageTypes.isKiblastDamage(source) || MainDamageTypes.isStrikeAttackDamage(source);
+		if (!isKiKill) return;
+
+		if (entity.getRemainingFireTicks() <= 0) entity.setRemainingFireTicks(1);
+	}
+
+	@SubscribeEvent
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		Player attacker = resolveAttackerPlayer(event.getSource().getEntity(), event.getSource().getDirectEntity());
@@ -327,7 +345,7 @@ public class StatsEvents {
 					addAlignment[0] = true;
 				else removeAlignment[0] = true;
 				if (victimData.getStatus().isHasCreatedCharacter()) {
-					if (victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME) && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
+					if (!ConfigManager.getServerConfig().getMutant().getKeepMutantOnDeath() && victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME) && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
 					victimData.getEffects().removeAllEffects();
 					victimData.getSecondaryStatEffects().clear();
 					victimData.getStatus().setChargingKi(false);
@@ -344,39 +362,12 @@ public class StatsEvents {
 		if (addsAlignment(event.getEntity())) addAlignment[0] = true;
 
 		if (event.getEntity() instanceof ShadowDummyEntity dummyEntity && attacker instanceof ServerPlayer killer) {
-			StatsProvider.get(StatsCapability.INSTANCE, killer).ifPresent(killerData -> {
-				killerData.getStatus().setShadowDummyKillCount(killerData.getStatus().getShadowDummyKillCount() + 1);
-
-				if (dummyEntity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
-					String ownerStr = dummyEntity.getPersistentData().getString("dmz_kimanip_shadow");
-					if (killer.getStringUUID().equals(ownerStr)
-							&& killerData.getStatus().hasActiveShadowDummy()
-							&& killerData.getStatus().getActiveShadowDummyUUID().equals(dummyEntity.getUUID())) {
-						SummonPlayerShadowDummyC2S.removePenalties(killer, killerData);
-						killerData.getStatus().setActiveShadowDummyUUID(null);
-						killerData.getStatus().setShadowDummyPercent(0);
-						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(killer), killer);
-					}
-				}
-			});
+			StatsProvider.get(StatsCapability.INSTANCE, killer).ifPresent(killerData ->
+					killerData.getStatus().setShadowDummyKillCount(killerData.getStatus().getShadowDummyKillCount() + 1));
 		}
 
 		if (event.getEntity() instanceof ShadowDummyEntity dummyEntity && dummyEntity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
-			String ownerStr = dummyEntity.getPersistentData().getString("dmz_quest_owner");
-			try {
-				java.util.UUID ownerUUID = java.util.UUID.fromString(ownerStr);
-				ServerPlayer owner = dummyEntity.getServer().getPlayerList().getPlayer(ownerUUID);
-				if (owner != null) {
-					StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(ownerData -> {
-						if (ownerData.getStatus().hasActiveShadowDummy() && ownerData.getStatus().getActiveShadowDummyUUID().equals(dummyEntity.getUUID())) {
-							SummonPlayerShadowDummyC2S.removePenalties(owner, ownerData);
-							ownerData.getStatus().setActiveShadowDummyUUID(null);
-							ownerData.getStatus().setShadowDummyPercent(0);
-							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
-						}
-					});
-				}
-			} catch (Exception ignored) {}
+			SummonPlayerShadowDummyC2S.dismissByDummy(dummyEntity);
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
@@ -422,14 +413,16 @@ public class StatsEvents {
 		if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
-					if (event.getAmount() >= 1) {
+					if (event.getAmount() >= 1 && !isMasteryBlacklisted(event.getEntity())) {
+						double damageScale = masteryDamageScale(event.getEntity(), event.getAmount());
+
 						if (attackerData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
 							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 								String formGroup = attackerData.getCharacter().getActiveFormGroup();
 								String formName = attackerData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
-								attackerData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeForm.getMasteryPerHitDealt() * bonus));
+								attackerData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeForm.getMasteryPerHitDealt() * bonus * damageScale));
 							}
 						}
 
@@ -439,7 +432,7 @@ public class StatsEvents {
 								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
 								String stackForm = attackerData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
-								attackerData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeStackForm.getMasteryPerHitDealt() * bonus));
+								attackerData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(attacker, activeStackForm.getMasteryPerHitDealt() * bonus * damageScale));
 							}
 						}
 					}
@@ -449,16 +442,19 @@ public class StatsEvents {
 		}
 
 		if (event.getEntity() instanceof ServerPlayer victim) {
+			boolean fromEntity = event.getSource().getEntity() instanceof LivingEntity;
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
-				if (victimData.getStatus().isHasCreatedCharacter()) {
-					if (event.getAmount() >= 1) {
+				if (fromEntity && victimData.getStatus().isHasCreatedCharacter()) {
+					if (event.getAmount() >= 1 && !isMasteryBlacklisted(event.getSource().getEntity())) {
+						double damageScale = masteryDamageScale(victim, event.getAmount());
+
 						if (victimData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
 							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
 								String formGroup = victimData.getCharacter().getActiveFormGroup();
 								String formName = victimData.getCharacter().getActiveForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
-								victimData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeForm.getMasteryPerHitReceived() * bonus));
+								victimData.getCharacter().gainMastery(formGroup, formName, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeForm.getMasteryPerHitReceived() * bonus * damageScale));
 							}
 						}
 
@@ -468,7 +464,7 @@ public class StatsEvents {
 								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
 								String stackForm = victimData.getCharacter().getActiveStackForm();
 								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * ConfigManager.getServerConfig().getGravity().getMasteryBonusPerGravity());
-								victimData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeStackForm.getMasteryPerHitReceived() * bonus));
+								victimData.getCharacter().gainMastery(stackFormGroup, stackForm, PotionEffectHelper.applyMasteryGainMultiplier(victim, activeStackForm.getMasteryPerHitReceived() * bonus * damageScale));
 							}
 						}
 					}
@@ -476,6 +472,21 @@ public class StatsEvents {
 				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(victim), victim);
 			});
 		}
+	}
+
+	private static boolean isMasteryBlacklisted(Entity entity) {
+		if (entity == null) return false;
+		ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+		if (key == null) return false;
+		return ConfigManager.getCombatConfig().getMasteryBlacklistEntities().contains(key.toString());
+	}
+
+	private static double masteryDamageScale(LivingEntity hitEntity, double damage) {
+		double maxHp = hitEntity.getMaxHealth();
+		if (maxHp <= 0.0 || damage <= 0.0) return 1.0;
+		double pct = damage / maxHp;
+		double t = Mth.clamp((pct - 0.20) / 0.60, 0.0, 1.0);
+		return 1.0 + t * 3.0;
 	}
 
 	private static final double HEAL_PERCENTAGE = 0.08;
@@ -859,6 +870,36 @@ public class StatsEvents {
 	}
 
 	@SubscribeEvent
+	public static void onFallDamageKiNegation(LivingHurtEvent event) {
+		if (!event.getSource().is(DamageTypes.FALL)) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+		float damage = event.getAmount();
+		if (damage <= 0) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
+
+			float currentKi = data.getResources().getCurrentEnergy();
+			if (currentKi <= 0) return;
+
+			float kiPerDamage = 3.0f;
+			float fullCost = damage * kiPerDamage;
+
+			if (currentKi >= fullCost) {
+				data.getResources().removeEnergy(fullCost);
+				event.setCanceled(true);
+			} else {
+				float negatableDamage = currentKi / kiPerDamage;
+				data.getResources().removeEnergy(currentKi);
+				event.setAmount(damage - negatableDamage);
+			}
+
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		});
+	}
+
+	@SubscribeEvent
 	public static void onPlayerInteractEntity(PlayerInteractEvent.EntityInteract event) {
 		if (event.getLevel().isClientSide) return;
 		if (!(event.getTarget() instanceof ServerPlayer target)) return;
@@ -884,10 +925,7 @@ public class StatsEvents {
 	}
 
 	private static ItemStack getHeadTechStack(ServerPlayer player) {
-		return CuriosApi.getCuriosInventory(player)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.orElse(ItemStack.EMPTY);
+		return CuriosUtil.getFirstStack(player, "head_tech");
 	}
 
 	private static boolean hasPothala(ServerPlayer player, String side) {

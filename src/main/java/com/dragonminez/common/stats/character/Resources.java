@@ -17,6 +17,7 @@ public class Resources {
     private float currentStamina;
     private float currentPoise;
     private int release;
+    private int releaseLimit;
     private int actionCharge;
     private int alignment;
     private float trainingPoints;
@@ -30,6 +31,7 @@ public class Resources {
         this.currentStamina = 0;
         this.currentPoise = 0;
         this.release = 5;
+        this.releaseLimit = 0;
         this.actionCharge = 0;
         this.alignment = 100;
         this.trainingPoints = 0;
@@ -42,6 +44,7 @@ public class Resources {
         this.currentStamina = 0;
         this.currentPoise = 0;
         this.release = 5;
+        this.releaseLimit = 0;
         this.actionCharge = 0;
         this.alignment = 100;
         this.racialSkillCount = 0;
@@ -63,7 +66,8 @@ public class Resources {
     }
 
     public void setCurrentStamina(float stamina) {
-        this.currentStamina = roundToQuarter(Math.min(Math.max(0, stamina), statsData.getMaxStamina()));
+        float max = Math.max(0, statsData.getMaxStamina());
+        this.currentStamina = roundToQuarter(Math.min(Math.max(0, stamina), max));
     }
 
     public void setCurrentPoise(float poise) {
@@ -74,11 +78,19 @@ public class Resources {
         this.release = Math.max(0, release);
     }
 
+    public void setReleaseLimit(int releaseLimit) {
+        this.releaseLimit = Math.max(0, releaseLimit);
+    }
+
     public void setActionCharge(int actionCharge) {
         this.actionCharge = Math.max(0, Math.min(100, actionCharge));
     }
 
     public void setAlignment(int alignment) {
+        if (statsData != null && statsData.getEffects().hasEffect("majin")) {
+            this.alignment = 0;
+            return;
+        }
         this.alignment = Math.max(0, Math.min(100, alignment));
     }
 
@@ -155,6 +167,7 @@ public class Resources {
         tag.putFloat("CurrentStamina", currentStamina);
         tag.putFloat("CurrentPoise", currentPoise);
         tag.putInt("Release", release);
+        tag.putInt("ReleaseLimit", releaseLimit);
         tag.putInt("FormRelease", actionCharge);
         tag.putInt("Alignment", alignment);
         tag.putFloat("TrainingPointsF", trainingPoints);
@@ -174,6 +187,7 @@ public class Resources {
         else this.currentPoise = tag.getInt("CurrentPoise");
 
         this.release = tag.getInt("Release");
+        this.releaseLimit = tag.getInt("ReleaseLimit");
         this.actionCharge = tag.getInt("FormRelease");
         this.alignment = tag.getInt("Alignment");
 
@@ -190,6 +204,7 @@ public class Resources {
         this.currentStamina = other.currentStamina;
         this.currentPoise = other.currentPoise;
         this.release = other.release;
+        this.releaseLimit = other.releaseLimit;
         this.actionCharge = other.actionCharge;
         this.alignment = other.alignment;
         this.trainingPoints = other.trainingPoints;

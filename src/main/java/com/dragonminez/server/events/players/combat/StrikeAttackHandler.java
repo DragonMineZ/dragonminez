@@ -18,8 +18,10 @@ import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraftforge.entity.PartEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -56,6 +58,9 @@ public class StrikeAttackHandler {
 	private static final Map<UUID, PendingStrike> PENDING = new HashMap<>();
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
 	private static final Map<UUID, RecentHit> RECENTLY_DAMAGED = new HashMap<>();
+	// When a strike locks onto a multipart giant, this remembers which hitbox part the player is
+	// fighting so the whole strike faces/aims at that part instead of the giant's feet.
+	private static final Map<UUID, Integer> STRIKE_ANCHOR_PART = new HashMap<>();
 
 	public static void requestStrike(ServerPlayer player, int preferredTargetId) {
 		if (player.level().isClientSide) return;
@@ -97,7 +102,12 @@ public class StrikeAttackHandler {
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
 			if (immediateTarget != null) {
-				teleportToTargetFront(player, immediateTarget);
+				PartEntity<?> hitPart = nearestPartInSight(player, coneRange);
+					if (hitPart != null && hitPart.getParent() == immediateTarget) {
+						teleportToPartFront(player, hitPart, immediateTarget);
+					} else {
+						teleportToTargetFront(player, immediateTarget);
+					}
 				player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
 						MainSounds.TP_SHORT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
 				startStrike(player, immediateTarget, pending);
@@ -121,6 +131,7 @@ public class StrikeAttackHandler {
 	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
 		UUID id = event.getEntity().getUUID();
 		PENDING.remove(id);
+		STRIKE_ANCHOR_PART.remove(id);
 		ActiveStrike active = ACTIVE.remove(id);
 		if (active != null && event.getEntity() instanceof ServerPlayer attacker) {
 			clearVictimStrikeLock(attacker, null, active.targetId());
@@ -195,7 +206,7 @@ public class StrikeAttackHandler {
 
 		if ("dragon_fist".equals(active.techniqueId())) {
 			if (active.ticksElapsed() == 0) {
-				faceEntity(player, target);
+				faceStrikeTarget(player, target);
 			}
 
 			if (active.ticksElapsed() == 5) {
@@ -214,7 +225,7 @@ public class StrikeAttackHandler {
 
 		if ("oozaru_fist".equals(active.techniqueId())) {
 			if (active.ticksElapsed() == 0) {
-				faceEntity(player, target);
+				faceStrikeTarget(player, target);
 			}
 
 			if (active.ticksElapsed() == 5) {
@@ -305,7 +316,7 @@ public class StrikeAttackHandler {
 			int nextTick = active.ticksElapsed() + 1;
 
 			if (nextTick < 14) {
-				faceEntity(player, target);
+				faceStrikeTarget(player, target);
 				if (target instanceof ServerPlayer targetPlayer) {
 					faceEntity(targetPlayer, player);
 				} else {
@@ -458,7 +469,7 @@ public class StrikeAttackHandler {
 			int nextTick = active.ticksElapsed() + 1;
 
 			if (nextTick < 20) {
-				faceEntity(player, target);
+				faceStrikeTarget(player, target);
 				if (target instanceof ServerPlayer targetPlayer) {
 					faceEntity(targetPlayer, player);
 				} else {
@@ -555,7 +566,7 @@ public class StrikeAttackHandler {
 
 		freezeEntity(player);
 		freezeEntity(target);
-		faceEntity(player, target);
+		faceStrikeTarget(player, target);
 		if (target instanceof ServerPlayer targetPlayer) {
 			faceEntity(targetPlayer, player);
 		}
@@ -618,7 +629,15 @@ public class StrikeAttackHandler {
 			//teleportToTargetFront(player, target);
 			setStrikeLocked(player, true);
 			setStrikeLocked(target, true);
-			faceEntity(player, target);
+
+			PartEntity<?> anchorPart = nearestPartInSight(player, CONE_RANGE_FLY);
+			if (anchorPart != null && anchorPart.getParent() == target) {
+				STRIKE_ANCHOR_PART.put(player.getUUID(), anchorPart.getId());
+			} else {
+				STRIKE_ANCHOR_PART.remove(player.getUUID());
+			}
+
+			faceStrikeTarget(player, target);
 			if (target instanceof ServerPlayer targetPlayer) {
 				faceEntity(targetPlayer, player);
 			}
@@ -628,6 +647,7 @@ public class StrikeAttackHandler {
 
 	private static void endStrike(ServerPlayer player, LivingEntity target, ActiveStrike active) {
 		ACTIVE.remove(player.getUUID());
+		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		setStrikeLocked(player, false);
 		clearVictimStrikeLock(player, target, active.targetId());
 		stopStrikeAnimation(player);
@@ -642,6 +662,7 @@ public class StrikeAttackHandler {
 
 	private static void failPending(ServerPlayer player, PendingStrike pending) {
 		PENDING.remove(player.getUUID());
+		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(pending.techniqueId());
 			int halfCooldown = Math.max(1, pending.cooldownTicks() / 2);
@@ -707,7 +728,52 @@ public class StrikeAttackHandler {
 				}
 			}
 		}
+		if (closest == null) closest = nearestPartParentInSight(player, range);
 		return Optional.ofNullable(closest);
+	}
+
+	private static LivingEntity nearestPartParentInSight(ServerPlayer player, double range) {
+		PartEntity<?> part = nearestPartInSight(player, range);
+		return part != null && part.getParent() instanceof LivingEntity parent ? parent : null;
+	}
+
+	private static PartEntity<?> nearestPartInSight(ServerPlayer player, double range) {
+		if (!(player.level() instanceof ServerLevel level)) return null;
+		Vec3 eyePos = player.getEyePosition();
+		Vec3 endPos = eyePos.add(player.getViewVector(1.0F).scale(range));
+
+		PartEntity<?> best = null;
+		double bestDist = range * range;
+		for (PartEntity<?> part : level.getPartEntities()) {
+			if (!(part.getParent() instanceof LivingEntity parent) || !parent.isAlive()) continue;
+			if (!TargetHelper.canAttack(player, parent, range)) continue;
+			if (player.distanceTo(part) > range + 8.0) continue;
+			if (!player.hasLineOfSight(part)) continue;
+
+			AABB box = part.getBoundingBox().inflate(part.getPickRadius());
+			if (box.contains(eyePos)) return part;
+
+			Optional<Vec3> hit = box.clip(eyePos, endPos);
+			if (hit.isPresent()) {
+				double dist = eyePos.distanceToSqr(hit.get());
+				if (dist < bestDist) {
+					best = part;
+					bestDist = dist;
+				}
+			}
+		}
+		return best;
+	}
+
+	private static void teleportToPartFront(ServerPlayer player, PartEntity<?> part, LivingEntity parent) {
+		Vec3 center = part.getBoundingBox().getCenter();
+		Vec3 look = parent.getLookAngle();
+		if (look.horizontalDistanceSqr() < 1.0E-6) look = player.getLookAngle();
+
+		double distance = 1.3 + part.getBbWidth() * 0.5;
+		Vec3 teleportPos = center.subtract(look.scale(distance));
+		player.teleportTo(teleportPos.x, center.y - player.getEyeHeight(), teleportPos.z);
+		player.lookAt(EntityAnchorArgument.Anchor.EYES, center);
 	}
 
 	private static void dashForward(ServerPlayer player, boolean isFlying) {
@@ -723,7 +789,7 @@ public class StrikeAttackHandler {
 
 	private static LivingEntity findConeTarget(ServerPlayer player, double range, int preferredTargetId) {
 		if (preferredTargetId > 0) {
-			LivingEntity pref = player.level().getEntity(preferredTargetId) instanceof LivingEntity l ? l : null;
+			LivingEntity pref = TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(player.level(), preferredTargetId)) instanceof LivingEntity l ? l : null;
 			if (pref != null && pref.isAlive() && player.distanceTo(pref) <= range
 					&& isInFrontCone(player, pref) && player.hasLineOfSight(pref)
 					&& TargetHelper.canAttack(player, pref, range)) {
@@ -739,7 +805,7 @@ public class StrikeAttackHandler {
 						&& isInFrontCone(player, e)
 						&& player.hasLineOfSight(e)));
 
-		if (candidates.isEmpty()) return null;
+		if (candidates.isEmpty()) return nearestPartParentInSight(player, range);
 		if (candidates.size() == 1) return candidates.get(0);
 
 		RecentHit recent = RECENTLY_DAMAGED.get(player.getUUID());
@@ -853,6 +919,20 @@ public class StrikeAttackHandler {
 		if (source == null || target == null) return;
 		source.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
 		source.setYHeadRot(source.getYRot());
+	}
+
+	/** Faces the attacker at the locked multipart hitbox (its center) when there is one, else at the target. */
+	private static void faceStrikeTarget(ServerPlayer player, LivingEntity target) {
+		Integer partId = STRIKE_ANCHOR_PART.get(player.getUUID());
+		if (partId != null) {
+			var anchor = TargetHelper.getEntityOrPart(player.level(), partId);
+			if (anchor instanceof PartEntity<?> part && part.getParent() == target) {
+				player.lookAt(EntityAnchorArgument.Anchor.EYES, part.getBoundingBox().getCenter());
+				player.setYHeadRot(player.getYRot());
+				return;
+			}
+		}
+		faceEntity(player, target);
 	}
 
 	private static void playStrikeHitAnimation(LivingEntity target) {

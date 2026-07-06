@@ -55,10 +55,13 @@ public class SetStoryDifficultyC2S {
 
 			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
 				PlayerQuestData pqd = data.getPlayerQuestData();
-				if (pqd.getDifficulty() == difficulty) {
+				boolean alreadyChosen = pqd.isDifficultyChosen();
+				boolean sameDifficulty = pqd.getDifficulty() == difficulty;
+				if (alreadyChosen && sameDifficulty) {
 					return;
 				}
 				pqd.setDifficulty(difficulty);
+				pqd.setDifficultyChosen(true);
 				PartyManager.syncPartyQuestState(controller);
 			});
 		});

@@ -123,7 +123,11 @@ public class CombatFlightHandler {
 		}
 
 		double flyFactor = GravityLogic.getFlyFactor(player);
-		if (flyFactor < 1.0) combined = combined.scale(flyFactor);
+		if (flyFactor < 1.0) {
+			velocity = velocity.scale(flyFactor);
+			burstVelocity = burstVelocity.scale(flyFactor);
+			combined = velocity.add(burstVelocity);
+		}
 
 		player.setDeltaMovement(combined);
 		player.fallDistance = 0F;

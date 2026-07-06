@@ -43,8 +43,8 @@ public class SkinGathererProvider {
 		if (k.startsWith("frostdemon")) return "frostdemon";
 		if (k.startsWith("bioandroid")) return "bioandroid";
 		if (k.startsWith("majin") || k.startsWith("janemba")) return "majin";
-		if (k.equals("human") || k.equals("saiyan") || k.contains("ssj4d") || k.contains("ssj4gt")
-				|| k.equals("buffed") || k.equals("4arms")) return "human";
+		if (k.startsWith("human") || k.startsWith("saiyan") || k.contains("ssj4d") || k.contains("ssj4gt")
+				|| k.startsWith("buffed") || k.equals("4arms")) return "human";
 		return "custom";
 	}
 
@@ -167,7 +167,8 @@ public class SkinGathererProvider {
 
 		boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.contains("ssj4gt") || logicKey.contains("ssj4d") || raceName.equals("saiyan");
 		boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
-		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && character.isHasSaiyanTail();
+		boolean isSSJ4Active = currentForm != null && (currentForm.contains("supersaiyan4") || currentForm.contains("ssj4"));
+		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && (isSSJ4Active || (stats.getStatus().isTailVisible() && character.isHasSaiyanTail()));
 
 		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
 				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
@@ -241,25 +242,12 @@ public class SkinGathererProvider {
 
 	protected void resolveBodyHumanSaiyan(Character character, String key, float[] bodyColor, float[] bodyColor2, float[] bodyColor3, BiConsumer<ResourceLocation, float[]> consumer) {
 		int bodyType = character.getBodyType();
-        var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
         String gender = character.getGender().toLowerCase().trim();
         String genderPart = (gender.equals(Character.GENDER_FEMALE)) ? "_female" : "_male";
 		String path = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + ".png";
 		String fallbackPath = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_0.png";
 
-        float[] finalBodyColor = bodyColor;
-        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
-
-            float redness = 0.5F;
-
-            float newR = Math.min(1.0F, bodyColor[0] + redness);
-            float newG = bodyColor[1] * (1.0F - (redness * 0.5F));
-            float newB = bodyColor[2] * (1.0F - (redness * 0.5F));
-
-            finalBodyColor = new float[]{newR, newG, newB};
-        }
-
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), finalBodyColor);
+		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(path), getCachedTexture(fallbackPath)), bodyColor);
 	}
 
 	protected void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
@@ -269,15 +257,18 @@ public class SkinGathererProvider {
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png"), getCachedTexture(basePath + "layer3.png")), WHITE_COLOR);
 	}
 
-	protected void resolveBodyNamekian(Character character, float[] c1, float[] c2, float[] c3, BiConsumer<ResourceLocation, float[]> consumer) {
-		int bodyType = character.getBodyType();
-		String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
-		String fallbackPath = "textures/entity/races/namekian/bodytype_0_";
+    protected void resolveBodyNamekian(Character character, float[] c1, float[] c2, float[] c3, BiConsumer<ResourceLocation, float[]> consumer) {
+        int bodyType = character.getBodyType();
+        var hairColor = character.getRgbHairColor();
+        String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
+        String fallbackPath = "textures/entity/races/namekian/bodytype_0_";
 
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), c1);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png"), getCachedTexture(fallbackPath + "layer2.png")), c2);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png"), getCachedTexture(fallbackPath + "layer3.png")), c3);
-	}
+        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(fallbackPath + "layer1.png")), c1);
+
+        tryLoadOptionalLayerWithFallback(basePath + "layer2.png", fallbackPath + "layer2.png", c2, consumer);
+        tryLoadOptionalLayerWithFallback(basePath + "layer3.png", fallbackPath + "layer3.png", c3, consumer);
+        tryLoadOptionalLayerWithFallback(basePath + "layer4.png", fallbackPath + "layer4.png", hairColor, consumer);
+    }
 
 	protected void resolveBodyFrostDemon(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
 		String currentForm = character.getActiveForm();
@@ -420,6 +411,18 @@ public class SkinGathererProvider {
         ResourceLocation loc = getCachedTexture(path);
         if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
             consumer.accept(loc, color);
+        }
+    }
+
+    private void tryLoadOptionalLayerWithFallback(String path, String fallbackPath, float[] color, BiConsumer<ResourceLocation, float[]> consumer) {
+        ResourceLocation loc = getCachedTexture(path);
+        ResourceLocation fallbackLoc = getCachedTexture(fallbackPath);
+
+        if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
+            consumer.accept(loc, color);
+        }
+        else if (Minecraft.getInstance().getResourceManager().getResource(fallbackLoc).isPresent()) {
+            consumer.accept(fallbackLoc, color);
         }
     }
 }

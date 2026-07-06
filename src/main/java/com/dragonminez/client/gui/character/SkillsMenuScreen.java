@@ -12,6 +12,11 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.Saga;
+import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Status;
@@ -163,20 +168,26 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		formNodes.clear();
 		if (statsData == null) return;
 		String race = statsData.getCharacter().getRaceName().toLowerCase(Locale.ROOT);
+		var skillsConfig = ConfigManager.getSkillsConfig();
 		List<TransformationsHelper.OrderedFormEntry> orderedForms = TransformationsHelper.getOrderedFormsForRace(race, PREVIEW_FORM_TYPE_ORDER);
 		Map<String, List<FormConfig.FormData>> groupedForms = new LinkedHashMap<>();
+		Map<String, String> groupTypes = new LinkedHashMap<>();
 
 		for (TransformationsHelper.OrderedFormEntry entry : orderedForms) {
 			if (entry.getFormData() == null) continue;
+			if (!skillsConfig.isSkillAllowedForRace(TransformationsHelper.getSkillNameForType(entry.getFormType()), race)) continue;
 			groupedForms.computeIfAbsent(entry.getGroupName(), k -> new ArrayList<>()).add(entry.getFormData());
+			groupTypes.putIfAbsent(entry.getGroupName(), entry.getFormType());
 		}
 
-		for (String stackSkill : ConfigManager.getSkillsConfig().getStackSkills()) {
+		for (String stackSkill : skillsConfig.getStackSkills()) {
+			if (!skillsConfig.isSkillAllowedForRace(stackSkill, race)) continue;
 			FormConfig stackGroup = ConfigManager.getStackFormGroup(stackSkill);
 			if (stackGroup == null) continue;
 			List<FormConfig.FormData> stackForms = new ArrayList<>(stackGroup.getForms().values());
 			if (stackForms.isEmpty()) continue;
 			groupedForms.computeIfAbsent(stackGroup.getGroupName(), k -> new ArrayList<>()).addAll(stackForms);
+			groupTypes.putIfAbsent(stackGroup.getGroupName(), stackGroup.getFormType());
 		}
 
 		int groupY = -(groupedForms.size() * 80) / 2;
@@ -184,10 +195,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		for (Map.Entry<String, List<FormConfig.FormData>> group : groupedForms.entrySet()) {
 			int formX = -(group.getValue().size() * 80) / 2;
 			String groupName = group.getKey();
-			String type = "superforms";
-			FormConfig fc = ConfigManager.getFormGroup(race, groupName);
-			if (fc == null) fc = ConfigManager.getStackFormGroup(groupName);
-			if (fc != null && fc.getFormType() != null) type = fc.getFormType();
+			String type = groupTypes.getOrDefault(groupName, "superforms");
 
 			for (FormConfig.FormData form : group.getValue()) {
 				formNodes.add(new FormNode(groupName, type, form, formX, groupY));
@@ -293,6 +301,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		Skills skills = statsData.getSkills();
 		List<String> skillNames = new ArrayList<>();
 		var skillsConfig = ConfigManager.getSkillsConfig();
+		String race = statsData.getCharacter().getRaceName();
 
 		switch (currentCategory) {
 			case SKILLS:
@@ -300,7 +309,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					if (!skillsConfig.getKiSkills().contains(name)
 							&& !skillsConfig.getStrikeSkills().contains(name)
 							&& !skillsConfig.getStackSkills().contains(name)
-							&& !skillsConfig.getFormSkills().contains(name)) {
+							&& !skillsConfig.getFormSkills().contains(name)
+							&& skillsConfig.isSkillAllowedForRace(name, race)) {
 						skillNames.add(name);
 					}
 				});
@@ -308,19 +318,20 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case KI:
 				skillNames.add(NEW_SKILL_ENTRY);
 				statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
-					if (technique instanceof KiAttackData) skillNames.add(id);
+					if (technique instanceof KiAttackData && skillsConfig.isSkillAllowedForRace(id, race)) skillNames.add(id);
 				});
 				break;
 			case FORMS:
 				skills.getAllSkills().forEach((name, skill) -> {
-					if (skillsConfig.getFormSkills().contains(name) || skillsConfig.getStackSkills().contains(name)) {
+					if ((skillsConfig.getFormSkills().contains(name) || skillsConfig.getStackSkills().contains(name))
+							&& skillsConfig.isSkillAllowedForRace(name, race)) {
 						skillNames.add(name);
 					}
 				});
 				break;
 			case STRIKE:
 				statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
-					if (technique instanceof StrikeAttackData) skillNames.add(id);
+					if (technique instanceof StrikeAttackData && skillsConfig.isSkillAllowedForRace(id, race)) skillNames.add(id);
 				});
 				break;
 		}
@@ -329,9 +340,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (skillNames.remove(NEW_SKILL_ENTRY)) skillNames.add(0, NEW_SKILL_ENTRY);
 		if (currentCategory == SkillCategory.SKILLS) {
 			int classPassiveIndex = 0;
-			String race = statsData.getCharacter().getRaceName().toLowerCase();
-			if (!race.isEmpty() && !ConfigManager.getRaceCharacter(race).getRacialSkill().isEmpty()) {
-				skillNames.add(0, "racial_" + ConfigManager.getRaceCharacter(race).getRacialSkill());
+			String raceLower = race.toLowerCase();
+			if (!raceLower.isEmpty() && !ConfigManager.getRaceCharacter(raceLower).getRacialSkill().isEmpty()) {
+				skillNames.add(0, "racial_" + ConfigManager.getRaceCharacter(raceLower).getRacialSkill());
 				classPassiveIndex = 1;
 			}
 			skillNames.add(classPassiveIndex, CLASS_PASSIVE_ENTRY);
@@ -671,6 +682,39 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		return Integer.MAX_VALUE;
 	}
 
+	private List<Component> getQuestsGrantingForm(String formType, int requiredLevel) {
+		List<Component> refs = new ArrayList<>();
+		if (formType == null || formType.isEmpty()) return refs;
+
+		for (Saga saga : QuestRegistry.getClientSagas().values()) {
+			for (Quest quest : saga.getQuests()) {
+				if (!questGrantsFormAtLevel(quest, formType, requiredLevel)) continue;
+				Component ref = tr("gui.dragonminez.skills.quest_ref", tr(saga.getName()), quest.getId());
+				if (refs.stream().noneMatch(r -> r.getString().equals(ref.getString()))) refs.add(ref);
+			}
+		}
+
+		for (Quest quest : QuestRegistry.getClientQuests().values()) {
+			if (quest.getType() == Quest.QuestType.SAGA) continue;
+			if (quest.getTitle() == null || quest.getTitle().isEmpty()) continue;
+			if (!questGrantsFormAtLevel(quest, formType, requiredLevel)) continue;
+			Component ref = tr(quest.getTitle());
+			if (refs.stream().noneMatch(r -> r.getString().equals(ref.getString()))) refs.add(ref);
+		}
+		return refs;
+	}
+
+	private boolean questGrantsFormAtLevel(Quest quest, String formType, int requiredLevel) {
+		for (QuestReward reward : quest.getRewards()) {
+			if (reward instanceof SkillReward skillReward
+					&& formType.equalsIgnoreCase(skillReward.getSkill())
+					&& skillReward.getLevel() == requiredLevel) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (isNotAnimating()) this.renderBackground(graphics);
@@ -789,8 +833,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			int targetLevel = Math.max(0, requiredLevel - 1);
 			int cost = getUpgradeCostForTargetLevel(node.formType, targetLevel);
 			boolean isStack = ConfigManager.getSkillsConfig().getStackSkills().contains(node.formType.toLowerCase(Locale.ROOT));
+			boolean isFirstStackLevel = isStack && targetLevel == 0;
 
-			if (!unlocked && canPurchaseLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost && !isStack) {
+			// For stack-type forms, the first level must never be purchasable from the menu.
+			if (!unlocked && canPurchaseLevel && !isFirstStackLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
 				int exX = nx + size - (int) (6 * formsZoom);
 				int exY = ny - (int) (10 * formsZoom);
 
@@ -827,12 +873,20 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			int targetLevel = Math.max(0, requiredLevel - 1);
 			int cost = getUpgradeCostForTargetLevel(hovered.formType, targetLevel);
+			boolean isFirstStackLevel = isStack && targetLevel == 0;
 
 			if (unlocked) lines.add(Component.translatable("gui.dragonminez.skills.purchased").withStyle(ChatFormatting.GREEN));
-			else if (cost == -1 || cost == Integer.MAX_VALUE) lines.add(Component.translatable("gui.dragonminez.skills.priceless").withStyle(ChatFormatting.DARK_RED));
-			else if (!isStack) {
+			else if (cost == -1 || cost == Integer.MAX_VALUE) {
+				List<Component> questTitles = getQuestsGrantingForm(hovered.formType, requiredLevel);
+				if (questTitles.isEmpty()) lines.add(Component.translatable("gui.dragonminez.skills.priceless").withStyle(ChatFormatting.DARK_RED));
+				else {
+					lines.add(Component.translatable("gui.dragonminez.skills.unlocked_by_quest").withStyle(ChatFormatting.LIGHT_PURPLE));
+					for (Component title : questTitles) lines.add(title.copy().withStyle(ChatFormatting.GRAY));
+				}
+			}
+			else {
 				lines.add(Component.translatable("gui.dragonminez.quests.rewards.tps", cost).withStyle(ChatFormatting.AQUA));
-				if (canPurchaseLevel && statsData.getResources().getTrainingPoints() >= cost) lines.add(Component.translatable("gui.dragonminez.skills.doubleclick_buy").withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC));
+				if (canPurchaseLevel && !isFirstStackLevel && statsData.getResources().getTrainingPoints() >= cost) lines.add(Component.translatable("gui.dragonminez.skills.doubleclick_buy").withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC));
 			}
 
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), null, lines, null, 0xFFFFFF);
@@ -987,12 +1041,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					TechniqueData technique = NEW_SKILL_ENTRY.equals(skillName) ? null : statsData.getTechniques().getUnlockedTechniques().get(skillName);
 					if (technique != null) {
 						String xpText = String.valueOf(technique.getExperience());
-						int xpX = panelX + 130 - this.font.width(xpText);
+						int xpX = panelX + 130 - TextUtil.width(this.font, xpText, DMZ_FONT);
 						TextUtil.drawStringWithBorder(graphics, this.font, txt(xpText), xpX, itemY + 5, color);
 					}
 				} else if (skill != null) {
 					String levelText = String.valueOf(skill.getLevel());
-					int levelX = panelX + 130 - this.font.width(levelText);
+					int levelX = panelX + 130 - TextUtil.width(this.font, levelText, DMZ_FONT);
 					TextUtil.drawStringWithBorder(graphics, this.font, txt(levelText),
 							levelX, itemY + 5, color);
 				}
@@ -1182,12 +1236,14 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					int zenkaiHealth = (int) Math.round((config.getSaiyanZenkaiHealthRegen() * 100));
 					int zenkaiStat = (int) Math.round((config.getSaiyanZenkaiStatBoost() * 100));
 					int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-					description = tr("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown).getString();
+					int maxUses = config.getSaiyanZenkaiAmount();
+					description = tr("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown, maxUses).getString();
 				}
 				case "racial_namekian" -> {
 					int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
 					int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-					description = tr("skill.dragonminez.racial_namekian.desc", assimHealth, assimStat).getString();
+					int maxUses = config.getNamekianAssimilationAmount();
+					description = tr("skill.dragonminez.racial_namekian.desc", assimHealth, assimStat, maxUses).getString();
 				}
 				case "racial_frostdemon" -> {
 					int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
@@ -1201,7 +1257,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				case "racial_majin" -> {
 					int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
 					int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-					description = tr("skill.dragonminez.racial_majin.desc", absHealth, absStat).getString();
+					int maxUses = config.getMajinAbsorptionAmount();
+					description = tr("skill.dragonminez.racial_majin.desc", absHealth, absStat, maxUses).getString();
 				}
 			}
 		} else description = tr("skill.dragonminez." + selectedSkill + ".desc").getString();
@@ -1240,30 +1297,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private List<String> wrapText(String text, int maxWidth) {
-		List<String> lines = new ArrayList<>();
-		String[] words = text.split(" ");
-		StringBuilder currentLine = new StringBuilder();
-
-		for (String word : words) {
-			String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
-			if (font.width(testLine) <= maxWidth) {
-				if (currentLine.length() > 0) currentLine.append(" ");
-				currentLine.append(word);
-			} else {
-				if (currentLine.length() > 0) {
-					lines.add(currentLine.toString());
-					currentLine = new StringBuilder(word);
-				} else {
-					lines.add(word);
-				}
-			}
-		}
-
-		if (currentLine.length() > 0) {
-			lines.add(currentLine.toString());
-		}
-
-		return lines;
+		return TextUtil.wrap(this.font, text, maxWidth, DMZ_FONT);
 	}
 
 	@Override
@@ -1403,8 +1437,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					boolean canPurchaseLevel = requiredLevel == currentLevel + 1;
 					int targetLevel = Math.max(0, requiredLevel - 1);
 					int cost = getUpgradeCostForTargetLevel(clicked.formType, targetLevel);
+					boolean isStack = ConfigManager.getSkillsConfig().getStackSkills().contains(clicked.formType.toLowerCase(Locale.ROOT));
+					boolean isFirstStackLevel = isStack && targetLevel == 0;
 
-					if (canPurchaseLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
+					if (canPurchaseLevel && !isFirstStackLevel && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
 						NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, clicked.formType, cost));
 						updateStatsData();
 					}
@@ -1559,21 +1595,21 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
-		}
-		graphics.pose().popPose();
+			graphics.pose().popPose();
 
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
+			player.yBodyRot = yBodyRotO;
+			player.setYRot(yRotO);
+			player.setXRot(xRotO);
+			player.yHeadRotO = yHeadRotO;
+			player.yHeadRot = yHeadRot;
 
-		if (character != null) {
-			character.clearActiveForm();
-			character.clearActiveStackForm();
-			character.setActiveForm(activeFormGroupO, activeFormO);
-			character.setActiveStackForm(activeStackFormGroupO, activeStackFormO);
-			if (androidUpgradedOverridden) status.setAndroidUpgraded(androidUpgradedO);
+			if (character != null) {
+				character.clearActiveForm();
+				character.clearActiveStackForm();
+				character.setActiveForm(activeFormGroupO, activeFormO);
+				character.setActiveStackForm(activeStackFormGroupO, activeStackFormO);
+				if (androidUpgradedOverridden) status.setAndroidUpgraded(androidUpgradedO);
+			}
 		}
 	}
 }

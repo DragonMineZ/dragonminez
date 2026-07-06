@@ -134,8 +134,11 @@ Runtime config root: `config/dragonminez`.
 
 Versioning rules:
 
-- Config classes have `CURRENT_VERSION` and a `configVersion` field.
-- Outdated, missing-version, corrupt, or unparsable default config files are moved to `old_<filename>` and regenerated.
+- Config version is a **semver String** `"X.Y.Z"` (`ConfigManager.CONFIG_VERSION`, mirrored by each class's `CURRENT_VERSION`/`configVersion`). Comparison is component-wise; any stored value that is not exactly 3 numeric components (all legacy `double`/`int` versions such as `21.0`, `21.3`, `12`) is treated as outdated and forces an upgrade. Do NOT go back to numeric versions — `21.10` as a `double` equals `21.1`.
+- Outdated, missing-version, corrupt, or unparsable default config files are moved to `oldBackup/<same relative path>/<filename>` (mirrors the normal layout) and regenerated. `oldBackup/` is excluded from config scans.
+- On regeneration, values are merged **three-way** against the previous release's defaults bundled at `resources/data/dragonminez/previousConfigs/<same relative path>` (`ConfigManager.loadBaselineObject`): if the user's value equals the old default it is upgraded to the new default (propagates balance changes); if it differs it is kept (respects user edits). New default keys are added; user-added map keys are kept. When no baseline file exists (custom races/forms, or first ever semver release) it falls back to "preserve any value differing from the new default".
+- **Per-release workflow:** before shipping, drop the previous release's generated `config/dragonminez` tree into `resources/data/dragonminez/previousConfigs/` (excluding `old_*`/`oldBackup`) so it becomes the baseline for the next upgrade, then bump `CONFIG_VERSION`.
+- The pre-`21.2` `DEFENSE_SCALING_FOLD` migration now only folds user-modified `defenseScaling` values (those that differ from the new default after merge), avoiding double-application on untouched values already reset to folded defaults.
 - Default race/form files are regenerated only when missing or invalid/outdated.
 - Unknown custom race/form files are loaded and preserved.
 - Do not remove user-defined form groups or races while regenerating defaults.

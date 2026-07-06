@@ -33,19 +33,13 @@ import java.util.UUID;
 public final class TransformationPostShaderManager {
 	private static final ResourceLocation TRANSFORMATION_EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/transformation_outline.json");
 	private static final String UNPACK_PASS_NAME = Reference.MOD_ID + ":transformation_unpack";
-	private static final String SOBEL_PASS_NAME = Reference.MOD_ID + ":transformation_sobel";
+	private static final String BLUR_H_PASS_NAME = Reference.MOD_ID + ":transformation_blur_h";
+	private static final String BLUR_V_PASS_NAME = Reference.MOD_ID + ":transformation_blur_v";
 	private static final String COMPOSITE_PASS_NAME = Reference.MOD_ID + ":transformation_composite";
 	private static final String MASK_TARGET = "entity_mask";
-	private static final String PARAMS_TARGET = "entity_params";
 
-	private static final float FIXED_EDGE_THRESHOLD = 0.16f;
-	private static final float FIXED_EDGE_STRENGTH = 1.35f;
 	private static final float FIXED_GLOW_STRENGTH = 1.35f;
 	private static final float FIXED_BLOOM_STRENGTH = 0.95f;
-
-	private static final float FIXED_NOISE_INTENSITY = 0.25f;
-	private static final float FIXED_NOISE_SCROLL_X = 0.2f;
-	private static final float FIXED_NOISE_SCROLL_Y = 0.15f;
 
 	private static final Map<UUID, TrackedShaderState> TRACKED_PLAYERS = new HashMap<>();
 	private static final Set<UUID> ACTIVE_MASK_PLAYERS = new HashSet<>();
@@ -118,12 +112,7 @@ public final class TransformationPostShaderManager {
 				uniforms.primaryB(),
 				uniforms.secondaryR(),
 				uniforms.secondaryG(),
-				uniforms.secondaryB(),
-				uniforms.noiseScale(),
-				FIXED_NOISE_INTENSITY,
-				FIXED_NOISE_SCROLL_X,
-				FIXED_NOISE_SCROLL_Y,
-				uniforms.colorMixSpeed()
+				uniforms.secondaryB()
 		);
 	}
 
@@ -136,19 +125,16 @@ public final class TransformationPostShaderManager {
 		if (postChain == null || !TRANSFORMATION_EFFECT.toString().equals(postChain.getName())) return;
 
 		RenderTarget maskTarget = postChain.getTempTarget(MASK_TARGET);
-		RenderTarget paramsTarget = postChain.getTempTarget(PARAMS_TARGET);
-		if (maskTarget == null || paramsTarget == null) return;
+		if (maskTarget == null) return;
 
 		maskTarget.clear(Minecraft.ON_OSX);
 		maskTarget.copyDepthFrom(mc.getMainRenderTarget());
-		paramsTarget.clear(Minecraft.ON_OSX);
-		paramsTarget.copyDepthFrom(mc.getMainRenderTarget());
 
-		TransformationMaskRenderState.setCurrentTargets(maskTarget, paramsTarget);
+		TransformationMaskRenderState.setCurrentTargets(maskTarget);
 		try {
 			maskBufferSource.endMaskBatch();
 		} finally {
-			TransformationMaskRenderState.setCurrentTargets(null, null);
+			TransformationMaskRenderState.setCurrentTargets(null);
 			mc.getMainRenderTarget().bindWrite(false);
 		}
 
@@ -165,19 +151,16 @@ public final class TransformationPostShaderManager {
 		if (chain == null) return;
 
 		RenderTarget maskTarget = chain.getTempTarget(MASK_TARGET);
-		RenderTarget paramsTarget = chain.getTempTarget(PARAMS_TARGET);
-		if (maskTarget == null || paramsTarget == null) return;
+		if (maskTarget == null) return;
 
 		maskTarget.clear(Minecraft.ON_OSX);
 		maskTarget.copyDepthFrom(main);
-		paramsTarget.clear(Minecraft.ON_OSX);
-		paramsTarget.copyDepthFrom(main);
 
-		TransformationMaskRenderState.setCurrentTargets(maskTarget, paramsTarget);
+		TransformationMaskRenderState.setCurrentTargets(maskTarget);
 		try {
 			maskBufferSource.endMaskBatch();
 		} finally {
-			TransformationMaskRenderState.setCurrentTargets(null, null);
+			TransformationMaskRenderState.setCurrentTargets(null);
 			main.bindWrite(false);
 		}
 
@@ -263,10 +246,8 @@ public final class TransformationPostShaderManager {
 				continue;
 			}
 
-			if (SOBEL_PASS_NAME.equals(passName)) {
-				applyUniform(effect, "OutlineThickness", activeUniformState.outlineThickness());
-				applyUniform(effect, "EdgeThreshold", FIXED_EDGE_THRESHOLD);
-				applyUniform(effect, "EdgeStrength", FIXED_EDGE_STRENGTH);
+			if (BLUR_H_PASS_NAME.equals(passName) || BLUR_V_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "BloomRadius", outlineThicknessToBlurRadius(activeUniformState.outlineThickness()));
 				continue;
 			}
 
@@ -311,7 +292,7 @@ public final class TransformationPostShaderManager {
 		ACTIVE_MASK_PLAYERS.clear();
 		activeUniformState = null;
 		maskBufferSource = new TransformationMaskBufferSource();
-		TransformationMaskRenderState.setCurrentTargets(null, null);
+		TransformationMaskRenderState.setCurrentTargets(null);
 
 		if (shaderpackChain != null) {
 			shaderpackChain.close();
@@ -366,13 +347,16 @@ public final class TransformationPostShaderManager {
 		return value != null ? value : "";
 	}
 
+	private static float outlineThicknessToBlurRadius(float outlineThickness) {
+		return Math.max(2.0f, Math.min(14.0f, outlineThickness * 3.0f));
+	}
+
 	private static void applyUniform(EffectInstance effect, String uniformName, float value) {
 		Uniform uniform = effect.getUniform(uniformName);
 		if (uniform != null) uniform.set(value);
 	}
 
-	public record MaskData(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB,
-			float noiseScale, float noiseIntensity, float noiseScrollX, float noiseScrollY, float colorMixSpeed) {}
+	public record MaskData(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB) {}
 
 	private record ResolvedShaderConfig(String signature, ShaderUniformState uniformState) {}
 
@@ -382,7 +366,7 @@ public final class TransformationPostShaderManager {
 		private ShaderUniformState uniformState;
 	}
 
-	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float noiseScale, float colorMixSpeed, float outlineThickness) {
+	private record ShaderUniformState(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, float outlineThickness) {
 		private static ShaderUniformState fromConfig(FormConfig.FormData.OutlineShaderConfig config) {
 			float[] primary = ColorUtils.hexToRgb(config.getPrimaryColor());
 			float[] secondary = ColorUtils.hexToRgb(config.getSecondaryColor());
@@ -394,8 +378,6 @@ public final class TransformationPostShaderManager {
 					secondary[0],
 					secondary[1],
 					secondary[2],
-					(float) config.getNoiseScale(),
-					(float) config.getColorMixSpeed(),
 					(float) config.getOutlineThickness()
 			);
 		}

@@ -150,7 +150,6 @@ public class KiWeaponModelLoader {
         float[] size = readVec(cube, "size", 0, 0, 0);
         int[] uv = readBoxUv(cube);
 
-        // Position relative to the part pivot; Y flipped (Bedrock Y-up -> Java Y-down).
         builder.texOffs(uv[0], uv[1]).addBox(
                 origin[0] - pivot[0],
                 pivot[1] - (origin[1] + size[1]),
@@ -158,7 +157,6 @@ public class KiWeaponModelLoader {
                 size[0], size[1], size[2], CubeDeformation.NONE);
     }
 
-    /** Geckolib cubes use per-face UV; approximate with a box UV taken from the north face / uv array. */
     private static int[] readBoxUv(JsonObject cube) {
         if (cube.has("uv")) {
             var uvElem = cube.get("uv");

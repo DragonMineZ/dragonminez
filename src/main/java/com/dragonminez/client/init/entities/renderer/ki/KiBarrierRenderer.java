@@ -5,6 +5,8 @@ import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import net.minecraft.client.Minecraft;
@@ -13,10 +15,12 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
 import org.joml.Matrix4f;
 
 public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
+    private static final float SHIELD_SURROUND_FACTOR = 1.45f;
 
     public KiBarrierRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -33,19 +37,19 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
             stack.last().pose().set(basePose);
 
             float ageInTicks = entity.tickCount + partialTick;
-            float scale = entity.getCurrentSize();
+            float scale = entity.getCurrentSize() * SHIELD_SURROUND_FACTOR * resolveAnchorModelScale(entity);
 
             float[] coreColor = entity.getRgbColorMain();
             float[] borderColor = entity.getRgbColorBorder();
             float[] outlineColor = entity.getRgbColorOutline();
 
-            float barrierAlpha = 0.85f;
+            float barrierAlpha = 0.95f;
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null
                     && mc.options.getCameraType().isFirstPerson()
                     && entity.getShieldHost() == mc.player.getId()
                     && entity.getOwner() != mc.player) {
-                barrierAlpha = 0.4f;
+                barrierAlpha = 0.6f;
             }
 
             ShaderInstance shader = DMZShaders.ki3dShader;
@@ -74,6 +78,23 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
             }
             stack.popPose();
         });
+    }
+
+    private static float resolveAnchorModelScale(KiBarrierEntity entity) {
+        LivingEntity anchor = null;
+        int hostId = entity.getShieldHost();
+        if (hostId >= 0) {
+            if (entity.level().getEntity(hostId) instanceof LivingEntity host) anchor = host;
+        } else if (entity.getOwner() instanceof LivingEntity owner) {
+            anchor = owner;
+        }
+        if (anchor == null) return 1.0f;
+
+        var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, anchor).resolve();
+        if (statsOpt.isEmpty()) return 1.0f;
+
+        Float[] resolved = statsOpt.get().getCharacter().getResolvedModelScaling();
+        return Math.max(resolved[0], Math.max(resolved[1], resolved[2]));
     }
 
     @Override

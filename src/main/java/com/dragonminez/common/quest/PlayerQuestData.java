@@ -10,7 +10,6 @@ import net.minecraft.nbt.Tag;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -79,11 +78,13 @@ public class PlayerQuestData {
     private Difficulty difficulty = Difficulty.NORMAL;
 
     /**
-     * Snapshots of the quest trees for every difficulty other than {@link #difficulty}.
-     * The active difficulty's tree lives in the working-set fields above; switching difficulty
-     * swaps the working set with the matching snapshot so each difficulty keeps independent progress.
+     * Whether this player has made their one-time difficulty choice. Until chosen, the quest
+     * tree shows the difficulty selection overlay. The change-difficulty wish resets this to
+     * {@code false} to reopen the selection without touching quest progress.
      */
-    private final Map<Difficulty, CompoundTag> difficultyStates = new EnumMap<>(Difficulty.class);
+    @Getter
+    @Setter
+    private boolean difficultyChosen = false;
 
     /** Active party identifier for synchronized story progress. */
     @Getter
@@ -96,12 +97,13 @@ public class PlayerQuestData {
     /** Snapshot of the current online party composition for the local player UI. */
     private final List<UUID> partyMemberIds = new ArrayList<>();
 
+    /** Synced flag mirroring the server party's PvP (friendly-fire) state for client-side relation checks. */
+    @Getter
+    private boolean partyPvpEnabled = false;
+
     /** Pending invitation shown in the quest screen. */
     @Setter
     private PartyInviteData pendingPartyInvite = null;
-
-    /** Personal quest state to restore when leaving a synchronized party. */
-    private CompoundTag partyQuestBackup = null;
 
     // ========================================================================================
     // Quest Progress - Accept / Complete / Reset
@@ -191,28 +193,27 @@ public class PlayerQuestData {
     }
 
     /**
-     * Switches the active story difficulty, swapping the live quest tree with the stored snapshot
-     * for the target difficulty (or a fresh, empty tree if none exists yet). Progress on the
-     * previous difficulty is preserved so returning to it later resumes where it was left off.
+     * Sets the active story difficulty. Progress is a single shared tree independent of difficulty,
+     * so this only changes the scaling/reward label.
      */
     public void setDifficulty(Difficulty newDifficulty) {
         if (newDifficulty == null || newDifficulty == difficulty) return;
-        difficultyStates.put(difficulty, serializeCoreQuestState());
-        CompoundTag next = difficultyStates.remove(newDifficulty);
         difficulty = newDifficulty;
-        clearActiveQuestState();
-        if (next != null) {
-            deserializeCoreQuestState(next);
-        }
     }
 
     /**
-     * Resets all quest progress across every difficulty.
+     * Reopens the one-time difficulty selection without touching quest progress
+     * (used by the change-difficulty Dragon wish).
+     */
+    public void requestDifficultyReselect() {
+        this.difficultyChosen = false;
+    }
+
+    /**
+     * Resets all quest progress.
      */
     public void resetAll() {
         clearActiveQuestState();
-        difficultyStates.clear();
-        difficulty = Difficulty.NORMAL;
     }
 
     private void clearActiveQuestState() {
@@ -407,9 +408,10 @@ public class PlayerQuestData {
         return playerId != null && playerId.equals(partyLeaderId);
     }
 
-    public void setPartyState(UUID partyId, UUID leaderId, Collection<UUID> members) {
+    public void setPartyState(UUID partyId, UUID leaderId, Collection<UUID> members, boolean pvpEnabled) {
         this.activePartyId = partyId;
         this.partyLeaderId = leaderId;
+        this.partyPvpEnabled = pvpEnabled;
         this.partyMemberIds.clear();
 
         if (leaderId != null) {
@@ -427,6 +429,7 @@ public class PlayerQuestData {
     public void clearPartyState() {
         this.activePartyId = null;
         this.partyLeaderId = null;
+        this.partyPvpEnabled = false;
         this.partyMemberIds.clear();
     }
 
@@ -442,34 +445,35 @@ public class PlayerQuestData {
         this.pendingPartyInvite = null;
     }
 
-    public void savePartyQuestBackup() {
-        this.partyQuestBackup = serializeFullQuestState();
-    }
-
-    public boolean hasPartyQuestBackup() {
-        return partyQuestBackup != null && !partyQuestBackup.isEmpty();
-    }
-
-    public void restorePartyQuestBackup() {
-        if (hasPartyQuestBackup()) {
-            deserializeFullQuestState(partyQuestBackup);
-        }
-    }
-
-    public void clearPartyQuestBackup() {
-        this.partyQuestBackup = null;
-    }
-
     /**
-     * Adopts another player's (the party leader's) live quest tree and difficulty. The member's own
-     * per-difficulty trees are dropped here because they are preserved in the party backup and
-     * restored when leaving the party.
+     * Forward-merges another player's (the party leader's) live quest tree into this one. Progress
+     * is only ever advanced, never rolled back: per quest the more-advanced status wins
+     * ({@code NOT_STARTED < ACCEPTED < SUCCESS}) and each objective takes the higher progress. Quests
+     * this player already has that the other lacks are left untouched. The other's difficulty is
+     * adopted. Personal reward-claim flags are preserved (claims are per-member).
      */
-    public void copyQuestStateFrom(PlayerQuestData other) {
+    public void mergeQuestStateFrom(PlayerQuestData other) {
         if (other == null) return;
+
         this.difficulty = other.difficulty;
-        this.difficultyStates.clear();
-        deserializeCoreQuestState(other.serializeCoreQuestState());
+
+        for (QuestProgress otherProgress : other.quests.values()) {
+            QuestProgress own = quests.get(otherProgress.getQuestId());
+            if (own == null) {
+                own = new QuestProgress(otherProgress.getQuestId());
+                quests.put(own.getQuestId(), own);
+            }
+            own.mergeForwardFrom(otherProgress);
+        }
+
+        for (Map.Entry<String, Boolean> entry : other.sagaUnlockState.entrySet()) {
+            if (entry.getValue()) sagaUnlockState.put(entry.getKey(), true);
+            else sagaUnlockState.putIfAbsent(entry.getKey(), false);
+        }
+
+        if (trackedQuestId == null && other.trackedQuestId != null) {
+            trackedQuestId = other.trackedQuestId;
+        }
     }
 
     // ========================================================================================
@@ -560,41 +564,31 @@ public class PlayerQuestData {
     }
 
     /**
-     * Serializes the active difficulty plus the quest tree of every difficulty (active + snapshots).
+     * Serializes the active difficulty plus the single quest tree.
      */
     private CompoundTag serializeFullQuestState() {
         CompoundTag tag = new CompoundTag();
         tag.putString("difficulty", difficulty.name());
-
-        CompoundTag states = new CompoundTag();
-        for (Map.Entry<Difficulty, CompoundTag> entry : difficultyStates.entrySet()) {
-            states.put(entry.getKey().name(), entry.getValue().copy());
-        }
-        states.put(difficulty.name(), serializeCoreQuestState());
-        tag.put("difficultyStates", states);
-
+        tag.put("questState", serializeCoreQuestState());
         return tag;
     }
 
     /**
-     * Restores the per-difficulty quest trees written by {@link #serializeFullQuestState()},
-     * transparently migrating the legacy single-tree + {@code hardModeEnabled} layout.
+     * Restores the single quest tree, transparently migrating the legacy per-difficulty
+     * {@code difficultyStates} layout (keep the active difficulty's tree) and the older
+     * single-tree + {@code hardModeEnabled} layout.
      */
     private void deserializeFullQuestState(CompoundTag tag) {
-        difficultyStates.clear();
+        clearActiveQuestState();
 
-        if (tag.contains("difficultyStates", Tag.TAG_COMPOUND)) {
-            CompoundTag states = tag.getCompound("difficultyStates");
-            for (String key : states.getAllKeys()) {
-                if (!states.contains(key, Tag.TAG_COMPOUND)) continue;
-                difficultyStates.put(Difficulty.fromName(key), states.getCompound(key).copy());
-            }
-
+        if (tag.contains("questState", Tag.TAG_COMPOUND)) {
             difficulty = Difficulty.fromName(tag.getString("difficulty"));
-            CompoundTag active = difficultyStates.remove(difficulty);
-            clearActiveQuestState();
-            if (active != null) {
-                deserializeCoreQuestState(active);
+            deserializeCoreQuestState(tag.getCompound("questState"));
+        } else if (tag.contains("difficultyStates", Tag.TAG_COMPOUND)) {
+            difficulty = Difficulty.fromName(tag.getString("difficulty"));
+            CompoundTag states = tag.getCompound("difficultyStates");
+            if (states.contains(difficulty.name(), Tag.TAG_COMPOUND)) {
+                deserializeCoreQuestState(states.getCompound(difficulty.name()));
             }
         } else {
             difficulty = tag.getBoolean("hardModeEnabled") ? Difficulty.HARD : Difficulty.NORMAL;
@@ -620,6 +614,7 @@ public class PlayerQuestData {
      */
     public CompoundTag serializeNBT() {
         CompoundTag tag = serializeFullQuestState();
+        tag.putBoolean("difficultyChosen", difficultyChosen);
 
         CompoundTag partyTag = new CompoundTag();
         if (activePartyId != null) {
@@ -627,6 +622,9 @@ public class PlayerQuestData {
         }
         if (partyLeaderId != null) {
             partyTag.putString("leaderId", partyLeaderId.toString());
+        }
+        if (partyPvpEnabled) {
+            partyTag.putBoolean("pvpEnabled", true);
         }
         if (!partyMemberIds.isEmpty()) {
             ListTag membersTag = new ListTag();
@@ -637,9 +635,6 @@ public class PlayerQuestData {
         }
         if (pendingPartyInvite != null) {
             partyTag.put("pendingInvite", pendingPartyInvite.serializeNBT());
-        }
-        if (partyQuestBackup != null && !partyQuestBackup.isEmpty()) {
-            partyTag.put("questBackup", partyQuestBackup.copy());
         }
         if (!partyTag.isEmpty()) {
             tag.put("partyState", partyTag);
@@ -653,12 +648,13 @@ public class PlayerQuestData {
      */
     public void deserializeNBT(CompoundTag tag) {
         deserializeFullQuestState(tag);
+        difficultyChosen = tag.getBoolean("difficultyChosen");
 
         activePartyId = null;
         partyLeaderId = null;
+        partyPvpEnabled = false;
         partyMemberIds.clear();
         pendingPartyInvite = null;
-        partyQuestBackup = null;
 
         if (tag.contains("partyState", Tag.TAG_COMPOUND)) {
             CompoundTag partyTag = tag.getCompound("partyState");
@@ -669,6 +665,7 @@ public class PlayerQuestData {
             if (partyTag.contains("leaderId", Tag.TAG_STRING)) {
                 partyLeaderId = parseUuid(partyTag.getString("leaderId"));
             }
+            partyPvpEnabled = partyTag.getBoolean("pvpEnabled");
             if (partyTag.contains("members", Tag.TAG_LIST)) {
                 ListTag memberList = partyTag.getList("members", Tag.TAG_STRING);
                 for (int i = 0; i < memberList.size(); i++) {
@@ -683,9 +680,6 @@ public class PlayerQuestData {
             }
             if (partyTag.contains("pendingInvite", Tag.TAG_COMPOUND)) {
                 pendingPartyInvite = PartyInviteData.deserialize(partyTag.getCompound("pendingInvite"));
-            }
-            if (partyTag.contains("questBackup", Tag.TAG_COMPOUND)) {
-                partyQuestBackup = partyTag.getCompound("questBackup").copy();
             }
         }
     }
@@ -742,6 +736,47 @@ public class PlayerQuestData {
 
         public boolean isRewardClaimed(int index) {
             return rewardsClaimed.getOrDefault(index, false);
+        }
+
+        public Map<Integer, Boolean> copyRewardClaims() {
+            return new HashMap<>(rewardsClaimed);
+        }
+
+        public void clearRewardClaims() {
+            rewardsClaimed.clear();
+        }
+
+        public void restoreRewardClaims(Map<Integer, Boolean> claims) {
+            if (claims != null) rewardsClaimed.putAll(claims);
+        }
+
+        /**
+         * Advances this progress toward {@code other} without ever regressing: the more-advanced
+         * status wins, objectives take the higher value, and missing objective requirements are
+         * adopted. Reward-claim flags are left untouched (they are personal per member).
+         */
+        public void mergeForwardFrom(QuestProgress other) {
+            if (other == null) return;
+            if (statusRank(other.status) > statusRank(this.status)) {
+                this.status = other.status;
+                this.difficulty = other.difficulty;
+            }
+            for (Map.Entry<Integer, Integer> entry : other.objectiveProgress.entrySet()) {
+                int current = objectiveProgress.getOrDefault(entry.getKey(), 0);
+                if (entry.getValue() > current) objectiveProgress.put(entry.getKey(), entry.getValue());
+            }
+            for (Map.Entry<Integer, Integer> entry : other.objectiveRequired.entrySet()) {
+                objectiveRequired.putIfAbsent(entry.getKey(), entry.getValue());
+            }
+        }
+
+        private static int statusRank(QuestStatus status) {
+            return switch (status) {
+                case NOT_STARTED -> 0;
+                case FAILED -> 1;
+                case ACCEPTED -> 2;
+                case SUCCESS -> 3;
+            };
         }
 
         public void markFailed() {
@@ -854,13 +889,15 @@ public class PlayerQuestData {
         private final UUID partyLeaderId;
         private final String inviterName;
         private final long expiresAtMs;
+        private final Difficulty partyDifficulty;
 
-        public PartyInviteData(UUID inviterUUID, UUID partyId, UUID partyLeaderId, String inviterName, long expiresAtMs) {
+        public PartyInviteData(UUID inviterUUID, UUID partyId, UUID partyLeaderId, String inviterName, long expiresAtMs, Difficulty partyDifficulty) {
             this.inviterUUID = inviterUUID;
             this.partyId = partyId;
             this.partyLeaderId = partyLeaderId;
             this.inviterName = inviterName == null ? "" : inviterName;
             this.expiresAtMs = expiresAtMs;
+            this.partyDifficulty = partyDifficulty == null ? Difficulty.NORMAL : partyDifficulty;
         }
 
         public boolean isExpired() {
@@ -874,6 +911,7 @@ public class PlayerQuestData {
             if (partyLeaderId != null) tag.putString("partyLeaderId", partyLeaderId.toString());
             if (!inviterName.isBlank()) tag.putString("inviterName", inviterName);
             tag.putLong("expiresAtMs", expiresAtMs);
+            tag.putString("partyDifficulty", partyDifficulty.name());
             return tag;
         }
 
@@ -883,7 +921,8 @@ public class PlayerQuestData {
                     parseUuid(tag.getString("partyId")),
                     parseUuid(tag.getString("partyLeaderId")),
                     tag.getString("inviterName"),
-                    tag.getLong("expiresAtMs")
+                    tag.getLong("expiresAtMs"),
+                    Difficulty.fromName(tag.getString("partyDifficulty"))
             );
         }
     }

@@ -17,6 +17,8 @@ import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StructureLocator {
 
@@ -25,31 +27,42 @@ public class StructureLocator {
 		var structureRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
 		var structureSetRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
 
-		StructurePlacement placement = null;
-
+		List<StructurePlacement> placements = new ArrayList<>();
 		for (var entry : structureSetRegistry.entrySet()) {
 			StructureSet set = entry.getValue();
 			for (var structureEntry : set.structures()) {
 				if (structureEntry.structure().is(structureKey)) {
-					placement = set.placement();
+					placements.add(set.placement());
 					break;
 				}
 			}
-			if (placement != null) break;
 		}
-
-		if (placement == null) {
+		if (placements.isEmpty()) {
 			return null;
 		}
+
+		BlockPos best = null;
+		double bestDist = Double.MAX_VALUE;
 
 		HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
 		Pair<BlockPos, Holder<Structure>> searchResult = level.getChunkSource().getGenerator()
 				.findNearestMapStructure(level, holderSet, searchFrom, 100, false);
 		if (searchResult != null) {
-			return searchResult.getFirst();
+			best = searchResult.getFirst();
+			bestDist = searchFrom.distSqr(best);
 		}
 
-		return getPositionFromPlacement(level, structureKey, structureRegistry, placement);
+		for (StructurePlacement placement : placements) {
+			BlockPos pos = getPositionFromPlacement(level, structureKey, structureRegistry, placement);
+			if (pos == null) continue;
+			double dist = searchFrom.distSqr(pos);
+			if (best == null || dist < bestDist) {
+				best = pos;
+				bestDist = dist;
+			}
+		}
+
+		return best;
 	}
 
 	@Nullable
@@ -89,9 +102,11 @@ public class StructureLocator {
 			for (var structureEntry : set.structures()) {
 				if (structureEntry.structure().is(structureKey)) {
 					StructurePlacement placement = set.placement();
-					return placement instanceof BiomeAwareUniquePlacement
+					if (placement instanceof BiomeAwareUniquePlacement
 							|| placement instanceof FixedStructurePlacement
-							|| placement instanceof UniqueNearSpawnPlacement;
+							|| placement instanceof UniqueNearSpawnPlacement) {
+						return true;
+					}
 				}
 			}
 		}

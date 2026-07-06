@@ -105,6 +105,24 @@ public class NetworkHandler {
 				.consumerMainThread(ExecuteActionC2S::handle)
 				.add();
 
+		net.messageBuilder(SetReleaseLimitC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SetReleaseLimitC2S::new)
+				.encoder(SetReleaseLimitC2S::encode)
+				.consumerMainThread(SetReleaseLimitC2S::handle)
+				.add();
+
+		net.messageBuilder(SelectFormC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SelectFormC2S::new)
+				.encoder(SelectFormC2S::encode)
+				.consumerMainThread(SelectFormC2S::handle)
+				.add();
+
+		net.messageBuilder(SelectKiWeaponC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SelectKiWeaponC2S::new)
+				.encoder(SelectKiWeaponC2S::encode)
+				.consumerMainThread(SelectKiWeaponC2S::handle)
+				.add();
+
 		net.messageBuilder(UpdateCustomHairC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(UpdateCustomHairC2S::decode)
 				.encoder(UpdateCustomHairC2S::encode)
@@ -309,6 +327,12 @@ public class NetworkHandler {
 				.consumerMainThread(RequestITTargetsC2S::handle)
 				.add();
 
+		net.messageBuilder(DeleteMasterC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DeleteMasterC2S::new)
+				.encoder(DeleteMasterC2S::toBytes)
+				.consumerMainThread(DeleteMasterC2S::handle)
+				.add();
+
 		net.messageBuilder(DeleteTechniqueC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(DeleteTechniqueC2S::new)
 				.encoder(DeleteTechniqueC2S::toBytes)
@@ -325,6 +349,12 @@ public class NetworkHandler {
 				.decoder(GravityDeviceUpdateC2S::new)
 				.encoder(GravityDeviceUpdateC2S::encode)
 				.consumerMainThread(GravityDeviceUpdateC2S::handle)
+				.add();
+
+		net.messageBuilder(DynamicGrowthToggleC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DynamicGrowthToggleC2S::new)
+				.encoder(DynamicGrowthToggleC2S::encode)
+				.consumerMainThread(DynamicGrowthToggleC2S::handle)
 				.add();
 
 		/*
@@ -495,5 +525,9 @@ public class NetworkHandler {
 
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
 		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
+	}
+
+	public static <MSG> void sendToTrackingEntity(MSG message, Entity entity) {
+		INSTANCE.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), message);
 	}
 }

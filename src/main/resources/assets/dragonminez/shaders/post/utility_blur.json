@@ -1,0 +1,24 @@
+{
+  "targets": [
+    "swap",
+    "h_blur"
+  ],
+  "passes": [
+    {
+      "name": "dragonminez:utility_blur_h",
+      "intarget": "minecraft:main",
+      "outtarget": "h_blur"
+    },
+    {
+      "name": "dragonminez:utility_blur_v",
+      "intarget": "h_blur",
+      "outtarget": "swap"
+    },
+    {
+      "name": "blit",
+      "intarget": "swap",
+      "outtarget": "minecraft:main",
+      "blend": { "func": "add", "srcrgb": "one", "dstrgb": "zero" }
+    }
+  ]
+}

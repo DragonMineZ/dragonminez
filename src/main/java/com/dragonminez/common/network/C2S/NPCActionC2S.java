@@ -17,6 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -222,6 +223,13 @@ public class NPCActionC2S {
 			if (data.getResources().getAlignment() > 61 && data.getSkills().getSkillLevel("potentialunlock") >= 10) {
 				data.getSkills().setSkillLevel("ultimate", 1);
 				player.sendSystemMessage(Component.translatable("message.dragonminez.oldkai.ultimate"));
+			}
+
+			ItemStack stack = new ItemStack(MainItems.Z_SWORD.get(), 1);
+			player.getInventory().add(stack);
+			if (!stack.isEmpty()) {
+				ItemEntity drop = player.drop(stack, false);
+				if (drop != null) drop.setNoPickUpDelay();
 			}
 		}
 	}

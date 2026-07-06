@@ -31,6 +31,11 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 	private static final String RIGHT_GRIP = "right_hand_item";
 	private static final String LEFT_GRIP = "left_hand_item";
 
+	private static final float VANILLA_SCALING = 0.9375F;
+	private static final float GIANT_SCALING = 3.8F;
+	private static final float SCALE_DAMPEN = (GIANT_SCALING / 4.0F - VANILLA_SCALING)
+			/ (float) Math.sqrt(GIANT_SCALING - VANILLA_SCALING);
+
 	public DMZPlayerItemInHandLayer(GeoRenderer<T> renderer) {
 		super(renderer);
 	}
@@ -195,6 +200,11 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 		if (resolved == null || resolved.length < 3) return 1.0F;
 
 		float uniform = (resolved[0] + resolved[1] + resolved[2]) / 3.0F;
-		return Math.max(0.25F, Math.min(uniform, 8.0F));
+		return Math.max(0.25F, Math.min(dampenScale(uniform), 8.0F));
+	}
+
+	private float dampenScale(float uniform) {
+		if (uniform <= VANILLA_SCALING) return uniform;
+		return VANILLA_SCALING + (float) Math.sqrt(uniform - VANILLA_SCALING) * SCALE_DAMPEN;
 	}
 }

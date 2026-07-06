@@ -1,0 +1,50 @@
+{
+  "configVersion": 21.0,
+  "raceName": "human",
+  "hasGender": true,
+  "useVanillaSkin": true,
+  "customModel": "",
+  "isLayered": true,
+  "headBones": [
+    "hair"
+  ],
+  "racialSkill": "human",
+  "hasSaiyanTail": false,
+  "auraType": "kakarot",
+  "defaultModelScaling": [
+    0.9375,
+    0.9375,
+    0.9375
+  ],
+  "defaultBodyType": 0,
+  "defaultHairType": 1,
+  "defaultEyesType": 0,
+  "defaultNoseType": 0,
+  "defaultMouthType": 0,
+  "defaultTattooType": 0,
+  "defaultBodyColor": "#FFD3C9",
+  "defaultBodyColor2": "#FFD3C9",
+  "defaultBodyColor3": "#FFD3C9",
+  "defaultHairColor": "#222629",
+  "defaultEye1Color": "#222629",
+  "defaultEye2Color": "#222629",
+  "defaultAuraColor": "#7FFFFF",
+  "formSkillsCosts": {
+    "legendaryforms": [
+      -1,
+      -1,
+      -1
+    ],
+    "godforms": [],
+    "superforms": [
+      8000,
+      16000,
+      25000,
+      40000
+    ],
+    "androidforms": [
+      16000,
+      40000
+    ]
+  }
+}

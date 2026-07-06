@@ -4,14 +4,22 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
+import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.gui.config.OverShoulderCameraScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +29,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
 public class ConfigMenuScreen extends BaseMenuScreen {
@@ -46,6 +55,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private final List<CustomTextureButton> decreaseButtons = new ArrayList<>();
 	private final List<CustomTextureButton> increaseButtons = new ArrayList<>();
 	private final List<SwitchButton> switchButtons = new ArrayList<>();
+	private final List<Button> actionButtons = new ArrayList<>();
 
 	public ConfigMenuScreen() {
 		super(Component.translatable("gui.dragonminez.config.title"));
@@ -158,6 +168,28 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.liveCrowdinTranslations",
 				ConfigType.BOOLEAN, userConfig.getLiveCrowdinTranslations() ? 1 : 0, 0, 1,
 				v -> userConfig.setLiveCrowdinTranslations(v > 0)));
+
+		initializeDynamicGrowthOptions();
+
+		configOptions.add(new ConfigOption("config.overShoulderCamera",
+				() -> this.minecraft.setScreen(new OverShoulderCameraScreen(this))));
+	}
+
+	private void initializeDynamicGrowthOptions() {
+		if (this.minecraft == null || this.minecraft.player == null) return;
+		if (!ConfigManager.getServerConfig().getDynamicGrowth().isEnabled()) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(data -> {
+			for (DynamicGrowthStat stat : DynamicGrowthStat.values()) {
+				configOptions.add(new ConfigOption("config.dynamicGrowthFor" + stat.key(),
+						ConfigType.BOOLEAN, data.getDynamicGrowth().isGrowthEnabled(stat) ? 1 : 0, 0, 1,
+						v -> {
+							boolean enabled = v > 0;
+							data.getDynamicGrowth().setGrowthEnabled(stat, enabled);
+							NetworkHandler.sendToServer(new DynamicGrowthToggleC2S(stat.key(), enabled));
+						}));
+			}
+		});
 	}
 
 	private void initConfigButtons() {
@@ -189,6 +221,19 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				});
 				switchButtons.add(switchBtn);
 				this.addRenderableWidget(switchBtn);
+
+			} else if (option.type == ConfigType.ACTION) {
+				TexturedTextButton actionBtn = new TexturedTextButton.Builder()
+						.position(rightPanelX + 45, itemY)
+						.size(74, 20)
+						.texture(STAT_BUTTONS)
+						.textureCoords(0, 28, 0, 48)
+						.textureSize(74, 20)
+						.message(tr("gui.dragonminez.config.open"))
+						.onPress(b -> option.action.run())
+						.build();
+				actionButtons.add(actionBtn);
+				this.addRenderableWidget(actionBtn);
 
 			} else {
 				CustomTextureButton decreaseBtn = new CustomTextureButton.Builder()
@@ -230,9 +275,11 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		for (CustomTextureButton btn : decreaseButtons) this.removeWidget(btn);
 		for (CustomTextureButton btn : increaseButtons) this.removeWidget(btn);
 		for (SwitchButton btn : switchButtons) this.removeWidget(btn);
+		for (Button btn : actionButtons) this.removeWidget(btn);
 		decreaseButtons.clear();
 		increaseButtons.clear();
 		switchButtons.clear();
+		actionButtons.clear();
 	}
 
 	@Override
@@ -293,10 +340,11 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		for (SwitchButton btn : switchButtons) {
 			btn.setX(switchX);
 		}
+		for (Button btn : actionButtons) {
+			btn.setX(decreaseX);
+		}
 	}
 
-	// The two panels are centered side by side (no player model on this screen),
-	// so both X anchors are derived from the screen center.
 	private int getLeftPanelX() {
 		return getUiWidth() / 2 - 143;
 	}
@@ -388,7 +436,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			ConfigOption option = configOptions.get(i);
 			int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
 
-			if (option.type != ConfigType.BOOLEAN) {
+			if (option.type != ConfigType.BOOLEAN && option.type != ConfigType.ACTION) {
 				String valueText;
 				if (option.type == ConfigType.FLOAT) {
 					valueText = String.format("%.2f", option.value);
@@ -523,7 +571,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	private enum ConfigType {
-		INT, FLOAT, BOOLEAN
+		INT, FLOAT, BOOLEAN, ACTION
 	}
 
 	private static class ConfigOption {
@@ -532,7 +580,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		float value;
 		float min;
 		float max;
-		java.util.function.Consumer<Float> setter;
+		Consumer<Float> setter;
+		Runnable action;
 
 		ConfigOption(String key, ConfigType type, float value, float min, float max, java.util.function.Consumer<Float> setter) {
 			this.key = key;
@@ -541,6 +590,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			this.min = min;
 			this.max = max;
 			this.setter = setter;
+		}
+
+		ConfigOption(String key, Runnable action) {
+			this.key = key;
+			this.type = ConfigType.ACTION;
+			this.action = action;
 		}
 	}
 }

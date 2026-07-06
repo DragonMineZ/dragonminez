@@ -81,10 +81,13 @@ public class StatsCapability {
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			List<String> availableConfigs = ConfigManager.getAvailableConfigFiles();
+			boolean resetBatch = true;
 			for (String file : availableConfigs) {
+				if (file.equals(ConfigManager.CLIENT_ONLY_CONFIG)) continue;
 				String jsonPayload = ConfigManager.getSpecificConfigJson(file);
 				if (jsonPayload == null || jsonPayload.isBlank()) continue;
-				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload), serverPlayer);
+				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload, resetBatch), serverPlayer);
+				resetBatch = false;
 			}
 			NetworkHandler.sendToPlayer(new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()), serverPlayer);
 

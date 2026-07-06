@@ -16,6 +16,7 @@ import com.dragonminez.common.init.item.entities.SaiyanShipItem;
 import com.dragonminez.common.init.item.tools.ToolTiers;
 import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.item.weapons.*;
+import com.dragonminez.common.init.item.weapons.DimensionalSwordItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.*;
@@ -33,6 +34,8 @@ import java.util.Map;
 public final class MainItems {
 	public static final Item.Properties properties = new Item.Properties();
 	public static final DeferredRegister<Item> ITEM_REGISTER = DeferredRegister.create(ForgeRegistries.ITEMS, Reference.MOD_ID);
+
+	public static final java.util.List<RegistryObject<Item>> MUSIC_DISCS = new java.util.ArrayList<>();
 
 	//CAPSULAS
 	public static final RegistryObject<Item> RED_CAPSULE = ITEM_REGISTER.register("red_capsule", () -> new CapsuleItem(CapsuleType.STR));
@@ -74,13 +77,13 @@ public final class MainItems {
 
 	//POTHALAS
 	public static final RegistryObject<Item> POTHALA_LEFT =
-			ITEM_REGISTER.register("pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
+			ITEM_REGISTER.register("pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> POTHALA_RIGHT =
-			ITEM_REGISTER.register("pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
+			ITEM_REGISTER.register("pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> GREEN_POTHALA_LEFT =
-			ITEM_REGISTER.register("green_pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
+			ITEM_REGISTER.register("green_pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> GREEN_POTHALA_RIGHT =
-			ITEM_REGISTER.register("green_pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(2), DMZCuriosItem.CurioType.HEAD_TECH));
+			ITEM_REGISTER.register("green_pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 
 	public static final RegistryObject<Item> RED_SCOUTER =
 			ITEM_REGISTER.register("red_scouter", () -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().defaultDurability(15), DMZCuriosItem.CurioType.HEAD_TECH));
@@ -99,6 +102,8 @@ public final class MainItems {
 			ITEM_REGISTER.register("z_sword", () -> new ZSwordItem());
 	public static final RegistryObject<SwordItem> BRAVE_SWORD =
 			ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem());
+    public static final RegistryObject<SwordItem> DIMENSIONAL_SWORD =
+            ITEM_REGISTER.register("dimensional_sword", () -> new DimensionalSwordItem());
 	public static final RegistryObject<SwordItem> POWER_POLE =
 			ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
 
@@ -225,7 +230,9 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> SUBARU_NATSUKI_ARMOR = fullArmorNoHelmetSet("subaru_natsuki_armor", "subaru_natsuki");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> SUPER_BUU_ARMOR = fullArmorNoHelmetSet("super_buu_armor", "super_buu");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> THRAGG_ARMOR = fullArmorNoHelmetSet("thragg_armor", "thragg");
-	//TIEN
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> GILGAMESH_ARMOR = fullArmorNoHelmetSet("gilgamesh_armor", "gilgamesh");
+
+    //TIEN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TIEN_ARMOR = fullArmorNoHelmetSet("tien_armor", "tenshinhan_armor");
 	//TRUNKS KID DBZ
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TRUNKS_KID_ARMOR = fullArmorNoHelmetSet("trunks_kid_armor", "trunks_gi");
@@ -528,7 +535,9 @@ public final class MainItems {
 	}
 
 	private static RegistryObject<Item> regMusicDisc(String name, RegistryObject<SoundEvent> sound, int lengthInTicks) {
-		return ITEM_REGISTER.register(name, () -> new RecordItem(15, sound, new Item.Properties().stacksTo(1).rarity(Rarity.RARE), lengthInTicks));
+		RegistryObject<Item> disc = ITEM_REGISTER.register(name, () -> new RecordItem(15, sound, new Item.Properties().stacksTo(1).rarity(Rarity.RARE), lengthInTicks));
+		MUSIC_DISCS.add(disc);
+		return disc;
 	}
 
 	private static Map<ArmorItem.Type, RegistryObject<Item>> registerArmorSet(String name, String texture, boolean hasHelmet) {

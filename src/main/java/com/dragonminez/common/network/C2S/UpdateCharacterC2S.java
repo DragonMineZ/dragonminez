@@ -149,6 +149,7 @@ public class UpdateCharacterC2S {
 				c.setEye2Color(msg.eye2Color);
 				c.setAuraColor(msg.auraColor);
 				player.refreshDimensions();
+				player.setHealth(player.getMaxHealth());
 				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
 			});
 		});

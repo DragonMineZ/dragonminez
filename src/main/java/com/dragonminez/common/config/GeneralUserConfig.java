@@ -7,10 +7,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GeneralUserConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
+	private String configVersion;
 
 	private Boolean firstPersonAnimated = true;
 	private boolean impactFramesEnabled = false;
@@ -35,6 +35,43 @@ public class GeneralUserConfig {
 	private Boolean liveCrowdinTranslations = true;
 	private Boolean showAccumulativeDamage = true;
 	private Boolean taiyokenInvertPalette = false;
+
+	private Integer overShoulderMode = 2;
+	private Boolean overShoulderLeft = false;
+	private Float overShoulderBack = 3.0f;
+	private Float overShoulderUp = 0.35f;
+	private Float overShoulderSide = 1.45f;
+	private Float overShoulderSmoothing = 0.4f;
+
+	public Integer getOverShoulderMode() {
+		if (overShoulderMode == null || overShoulderMode < 0 || overShoulderMode > 2) overShoulderMode = 2;
+		return overShoulderMode;
+	}
+
+	public Boolean getOverShoulderLeft() {
+		if (overShoulderLeft == null) overShoulderLeft = false;
+		return overShoulderLeft;
+	}
+
+	public Float getOverShoulderBack() {
+		if (overShoulderBack == null || !Float.isFinite(overShoulderBack)) overShoulderBack = 3.0f;
+		return overShoulderBack;
+	}
+
+	public Float getOverShoulderUp() {
+		if (overShoulderUp == null || !Float.isFinite(overShoulderUp)) overShoulderUp = 0.35f;
+		return overShoulderUp;
+	}
+
+	public Float getOverShoulderSide() {
+		if (overShoulderSide == null || !Float.isFinite(overShoulderSide)) overShoulderSide = 1.45f;
+		return overShoulderSide;
+	}
+
+	public Float getOverShoulderSmoothing() {
+		if (overShoulderSmoothing == null || !Float.isFinite(overShoulderSmoothing) || overShoulderSmoothing <= 0.0f) overShoulderSmoothing = 0.4f;
+		return Math.min(overShoulderSmoothing, 1.0f);
+	}
 
 	public Boolean getTaiyokenInvertPalette() {
 		if (taiyokenInvertPalette == null) taiyokenInvertPalette = false;

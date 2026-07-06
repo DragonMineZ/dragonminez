@@ -90,10 +90,9 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	@Override
 	public boolean hurt(DamageSource source, float amount) {
-		if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC) || source.is(DamageTypes.GENERIC_KILL)) {
+		if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC_KILL)) {
 			return super.hurt(source, amount);
 		}
-
 		return false;
 	}
 

@@ -8,7 +8,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.Random;
+
 public class ControlGameScreen extends BaseMinigameScreen {
+
+	private static final int DIR_CHANGE_INTERVAL_TICKS = 30;
+
+	private final Random random = new Random();
 
 	private TrainingConfig.ControlConfig cfg;
 
@@ -16,6 +22,7 @@ public class ControlGameScreen extends BaseMinigameScreen {
 	private float markerX;
 	private float zoneCenter;
 	private int zoneDir = 1;
+	private int dirChangeTimer = DIR_CHANGE_INTERVAL_TICKS;
 	private int zoneWidth;
 	private double holdProgress;
 	private int levelTicksLeft;
@@ -49,6 +56,11 @@ public class ControlGameScreen extends BaseMinigameScreen {
 		if (levelTicksLeft <= 0) {
 			endGame();
 			return;
+		}
+
+		if (--dirChangeTimer <= 0) {
+			dirChangeTimer = DIR_CHANGE_INTERVAL_TICKS;
+			if (random.nextBoolean()) zoneDir = -zoneDir;
 		}
 
 		float half = zoneWidth / 2.0f;
@@ -88,6 +100,7 @@ public class ControlGameScreen extends BaseMinigameScreen {
 		holdProgress = 0;
 		levelTicksLeft = cfg.getLevelTimeLimitTicks();
 		zoneCenter = this.width / 2.0f;
+		dirChangeTimer = DIR_CHANGE_INTERVAL_TICKS;
 	}
 
 	@Override

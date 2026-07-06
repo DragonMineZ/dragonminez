@@ -17,7 +17,6 @@ public class FirstPersonManager {
 		if (!ConfigManager.getUserConfig().getFirstPersonAnimated()) return false;
 		if (player.getMainHandItem().getItem() instanceof MapItem || player.getOffhandItem().getItem() instanceof MapItem) return false;
 		if (Minecraft.getInstance().screen instanceof ChatScreen) return Minecraft.getInstance().options.getCameraType().isFirstPerson();
-		if (Minecraft.getInstance().screen instanceof UtilityMenuScreen) return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 		if (Minecraft.getInstance().screen != null) return false;
 		return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 	}

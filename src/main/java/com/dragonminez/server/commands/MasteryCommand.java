@@ -8,6 +8,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
+import com.dragonminez.common.stats.extras.FormMasteries;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -55,7 +56,18 @@ public class MasteryCommand {
 												.executes(ctx -> setCurrentMastery(ctx, add, false))))
 								.then(Commands.literal("stack")
 										.then(Commands.argument("value", DoubleArgumentType.doubleArg())
-												.executes(ctx -> setCurrentMastery(ctx, add, true))))));
+												.executes(ctx -> setCurrentMastery(ctx, add, true)))))
+						// ALL <form|stack|all> <value>
+						.then(Commands.literal("ALL")
+								.then(Commands.literal("form")
+										.then(Commands.argument("value", DoubleArgumentType.doubleArg())
+												.executes(ctx -> setAllMastery(ctx, add, true, false))))
+								.then(Commands.literal("stack")
+										.then(Commands.argument("value", DoubleArgumentType.doubleArg())
+												.executes(ctx -> setAllMastery(ctx, add, false, true))))
+								.then(Commands.literal("all")
+										.then(Commands.argument("value", DoubleArgumentType.doubleArg())
+												.executes(ctx -> setAllMastery(ctx, add, true, true))))));
 	}
 
 	private static final SuggestionProvider<CommandSourceStack> SUGGEST_GROUPS = (context, builder) -> {
@@ -122,6 +134,45 @@ public class MasteryCommand {
 		String group = stack ? character.getActiveStackFormGroup() : character.getActiveFormGroup();
 		String form = stack ? character.getActiveStackForm() : character.getActiveForm();
 		return apply(ctx.getSource(), target, group, form, value, add, stack);
+	}
+
+	private static int setAllMastery(CommandContext<CommandSourceStack> ctx, boolean add, boolean doForms, boolean doStacks) throws CommandSyntaxException {
+		ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+		double value = DoubleArgumentType.getDouble(ctx, "value");
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
+
+		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
+			if (doForms) {
+				var masteries = data.getCharacter().getFormMasteries();
+				for (var groupEntry : ConfigManager.getAllFormsForRace(data.getCharacter().getRaceName()).entrySet()) {
+					applyGroup(masteries, groupEntry.getKey(), groupEntry.getValue(), value, add);
+				}
+			}
+			if (doStacks) {
+				var masteries = data.getCharacter().getStackFormMasteries();
+				for (var groupEntry : ConfigManager.getAllStackForms().entrySet()) {
+					applyGroup(masteries, groupEntry.getKey(), groupEntry.getValue(), value, add);
+				}
+			}
+
+			if (doForms) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
+			if (doStacks) NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(target), target);
+		});
+
+		String scope = doForms && doStacks ? "all" : (doStacks ? "stack" : "form");
+		String modeKey = add ? "add" : "set";
+		ctx.getSource().sendSuccess(() -> Component.translatable(
+				"command.dragonminez.mastery." + modeKey + ".all", value, scope, target.getName().getString()), log);
+
+		return 1;
+	}
+
+	private static void applyGroup(FormMasteries masteries, String group, FormConfig groupConfig, double value, boolean add) {
+		for (var formEntry : groupConfig.getForms().entrySet()) {
+			double maxMastery = formEntry.getValue().getMaxMastery();
+			if (add) masteries.addMastery(group, formEntry.getKey(), value, maxMastery);
+			else masteries.setMastery(group, formEntry.getKey(), value, maxMastery);
+		}
 	}
 
 	private static int apply(CommandSourceStack source, ServerPlayer target, String group, String form, double value, boolean add, boolean stack) {

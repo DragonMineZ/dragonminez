@@ -20,7 +20,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
-import top.theillusivec4.curios.api.CuriosApi;
+import com.dragonminez.common.util.CuriosUtil;
 
 import java.awt.*;
 import java.util.UUID;
@@ -97,14 +97,8 @@ public class FusionLogic {
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.POTHALA);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
-		boolean isGreenPothala = CuriosApi.getCuriosInventory(leader).map(inv -> {
-			var handler = inv.getCurios().get("head_tech");
-			if (handler != null) {
-				ItemStack stack = handler.getStacks().getStackInSlot(0);
-				return !stack.isEmpty() && stack.getItem().getDescriptionId().contains("green");
-			}
-			return false;
-		}).orElse(false);
+		ItemStack leaderHeadTech = CuriosUtil.getFirstStack(leader, "head_tech");
+		boolean isGreenPothala = !leaderHeadTech.isEmpty() && leaderHeadTech.getItem().getDescriptionId().contains("green");
 
 		lData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
 		pData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
@@ -174,12 +168,15 @@ public class FusionLogic {
 			CompoundTag original = leaderData.getStatus().getOriginalAppearance();
 			if (original != null && !original.isEmpty()) leaderData.getCharacter().loadAppearance(original);
 
-			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
+			int fusionCdTicks = ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20;
+			boolean appliesCd = "METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath;
+			if (appliesCd) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, fusionCdTicks);
 
 			clearFusionState(leaderData);
 
 			if (leaderRef != null) {
 				if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
+				if (appliesCd) leaderRef.addEffect(new MobEffectInstance(MainEffects.FUSION_CD.get(), fusionCdTicks, 0, false, false, true));
 				PartyManager.endFusionParty(leaderRef);
 				refreshNames(leaderRef);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
@@ -187,7 +184,9 @@ public class FusionLogic {
 		}
 
 		if (partnerData != null) {
-			if ("METAMORU".equals(partnerData.getStatus().getFusionType())) partnerData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
+			int fusionCdTicks = ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20;
+			boolean appliesCd = "METAMORU".equals(partnerData.getStatus().getFusionType());
+			if (appliesCd) partnerData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, fusionCdTicks);
 
 			clearFusionState(partnerData);
 
@@ -195,6 +194,7 @@ public class FusionLogic {
 				partnerRef.stopRiding();
 				partnerRef.setGameMode(GameType.SURVIVAL);
 				if (partnerRef.hasEffect(MainEffects.FUSED.get())) partnerRef.removeEffect(MainEffects.FUSED.get());
+				if (appliesCd) partnerRef.addEffect(new MobEffectInstance(MainEffects.FUSION_CD.get(), fusionCdTicks, 0, false, false, true));
 				PartyManager.endFusionParty(partnerRef);
 				refreshNames(partnerRef);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
@@ -217,7 +217,7 @@ public class FusionLogic {
 
 		double minMult, maxMult;
 		if ("POTHALA".equals(type)) {
-			minMult = 2.0; maxMult = 3.0;
+			minMult = 1.75; maxMult = 2.5;
 		} else {
 			minMult = 1.25; maxMult = 2.0;
 		}
@@ -299,17 +299,9 @@ public class FusionLogic {
 	}
 
 	private static void damageEarring(ServerPlayer player) {
-		CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
-			var handler = inv.getCurios().get("head_tech");
-			if (handler != null) {
-				ItemStack stack = handler.getStacks().getStackInSlot(0);
-
-				if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {
-					stack.hurtAndBreak(1, player, (entity) -> {});
-
-					if (stack.isEmpty()) handler.getStacks().setStackInSlot(0, ItemStack.EMPTY);
-				}
-			}
-		});
+		ItemStack stack = CuriosUtil.getFirstStack(player, "head_tech");
+		if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {
+			stack.hurtAndBreak(1, player, (entity) -> {});
+		}
 	}
 }

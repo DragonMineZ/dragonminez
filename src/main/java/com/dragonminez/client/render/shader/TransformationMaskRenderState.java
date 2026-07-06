@@ -8,26 +8,17 @@ import javax.annotation.Nullable;
 public final class TransformationMaskRenderState {
 	@Nullable
 	private static RenderTarget currentMaskTarget;
-	@Nullable
-	private static RenderTarget currentParamsTarget;
 
 	private TransformationMaskRenderState() {
 	}
 
-	public static void setCurrentTargets(@Nullable RenderTarget maskTarget, @Nullable RenderTarget paramsTarget) {
+	public static void setCurrentTargets(@Nullable RenderTarget maskTarget) {
 		currentMaskTarget = maskTarget;
-		currentParamsTarget = paramsTarget;
 	}
 
 	public static void bindMaskTarget() {
 		Minecraft mc = Minecraft.getInstance();
 		RenderTarget target = currentMaskTarget != null ? currentMaskTarget : mc.getMainRenderTarget();
-		target.bindWrite(false);
-	}
-
-	public static void bindParamsTarget() {
-		Minecraft mc = Minecraft.getInstance();
-		RenderTarget target = currentParamsTarget != null ? currentParamsTarget : mc.getMainRenderTarget();
 		target.bindWrite(false);
 	}
 

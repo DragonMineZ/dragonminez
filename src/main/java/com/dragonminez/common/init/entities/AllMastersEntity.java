@@ -168,10 +168,11 @@ public class AllMastersEntity {
         @Override
         public void tick() {
             super.tick();
-            if (this.getYRot() != 0.0F) this.setYRot(0.0F);
-            if (this.getYHeadRot() != 0.0F) this.setYHeadRot(0.0F);
-            if (this.yBodyRot != 0.0F) this.yBodyRot = 0.0F;
-            if (this.yHeadRot != 0.0F) this.yHeadRot = 0.0F;
+            // West-facing yaw (0=south, 90=west, 180=north, 270=east).
+            if (this.getYRot() != 90.0F) this.setYRot(90.0F);
+            if (this.getYHeadRot() != 90.0F) this.setYHeadRot(90.0F);
+            if (this.yBodyRot != 90.0F) this.yBodyRot = 90.0F;
+            if (this.yHeadRot != 90.0F) this.yHeadRot = 90.0F;
         }
     }
 

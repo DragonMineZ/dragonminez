@@ -75,8 +75,10 @@ public final class CombatContext {
         c.comboReady = self.isComboReady();
         c.dashReady = self.isDashReady();
 
-        for (KiSkill skill : self.getSkillPool()) {
-            if (skill.currentCooldown <= 0) c.readySkills.add(skill);
+        if (self.isSkillCastReady()) {
+            for (KiSkill skill : self.getSkillPool()) {
+                if (skill.currentCooldown <= 0) c.readySkills.add(skill);
+            }
         }
 
         if (target instanceof ServerPlayer sp) {

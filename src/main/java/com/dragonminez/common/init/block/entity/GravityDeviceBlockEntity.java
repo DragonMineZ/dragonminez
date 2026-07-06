@@ -20,6 +20,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -118,7 +120,12 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		}
 	}
 
-	/** Applies validated player input coming from the menu (server-side). */
+	public void refreshRoom() {
+		recomputeRoom();
+		setChanged();
+		if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+	}
+
 	public void applyMenuInput(boolean active, int gravity) {
 		int max = cfg().getDeviceMaxGravity();
 		this.targetGravity = Math.max(1, Math.min(gravity, max));
@@ -135,7 +142,7 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		boolean nowRunning = false;
 
 		if (active) {
-			if (time % 40 == 0) recomputeRoom();
+			if (time % 100 == 0) recomputeRoom();
 
 			if (roomValid) {
 				double perSecond = cfg().getDeviceEnergyPerGravityPerSecond() * targetGravity;
@@ -178,10 +185,6 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 				roomMax.getX() + 1.0, roomMax.getY() + 1.0, roomMax.getZ() + 1.0);
 	}
 
-	/**
-	 * Flood-fills the open space around the device. The room is valid when it is fully sealed
-	 * by solid blocks and measures between the configured min and max size on each axis.
-	 */
 	private void recomputeRoom() {
 		if (level == null) { roomValid = false; return; }
 
@@ -202,17 +205,16 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 
 		for (Direction dir : Direction.values()) {
 			BlockPos n = worldPosition.relative(dir);
-			if (isPassable(n) && visited.add(n.asLong())) queue.add(n);
+			if (withinBounds(n, ox, oy, oz, maxSize) && isPassable(n) && visited.add(n.asLong())) {
+				queue.add(n);
+			} else if (!withinBounds(n, ox, oy, oz, maxSize) && isPassable(n)) {
+				invalid = true;
+			}
 		}
 
-		while (!queue.isEmpty()) {
+		while (!invalid && !queue.isEmpty()) {
 			if (visited.size() > cellCap) { invalid = true; break; }
 			BlockPos c = queue.poll();
-
-			if (Math.abs(c.getX() - ox) > maxSize || Math.abs(c.getY() - oy) > maxSize || Math.abs(c.getZ() - oz) > maxSize) {
-				invalid = true;
-				break;
-			}
 
 			if (c.getX() < minX) minX = c.getX();
 			if (c.getY() < minY) minY = c.getY();
@@ -223,10 +225,21 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 
 			for (Direction dir : Direction.values()) {
 				cursor.setWithOffset(c, dir);
+
+				if (!withinBounds(cursor, ox, oy, oz, maxSize)) {
+					if (isPassable(cursor)) {
+						invalid = true;
+						break;
+					}
+					continue;
+				}
+
 				if (isPassable(cursor) && visited.add(cursor.asLong())) {
 					queue.add(cursor.immutable());
 				}
 			}
+
+			if (invalid) break;
 		}
 
 		if (invalid || visited.isEmpty()) { roomValid = false; return; }
@@ -244,11 +257,18 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		roomMax = new BlockPos(maxX, maxY, maxZ);
 	}
 
+	private static boolean withinBounds(BlockPos p, int ox, int oy, int oz, int maxSize) {
+		return Math.abs(p.getX() - ox) <= maxSize
+				&& Math.abs(p.getY() - oy) <= maxSize
+				&& Math.abs(p.getZ() - oz) <= maxSize;
+	}
+
 	private boolean isPassable(BlockPos pos) {
 		if (pos.equals(worldPosition)) return false;
 		BlockState state = level.getBlockState(pos);
 		if (state.getBlock() instanceof GravityDeviceBlock) return false;
-		return !state.isCollisionShapeFullBlock(level, pos);
+		if (state.getBlock() instanceof DoorBlock || state.getBlock() instanceof TrapDoorBlock) return false;
+		return state.getCollisionShape(level, pos).isEmpty();
 	}
 
 	public boolean isRoomValid() { return roomValid; }

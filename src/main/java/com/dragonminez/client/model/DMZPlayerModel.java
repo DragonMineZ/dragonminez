@@ -229,7 +229,6 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         String suffix = (customRaceGender != null && !customRaceGender.isEmpty()) ? "_" + customRaceGender : "";
         ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + modelName + suffix + ".geo.json");
-        System.out.println("Searching for loc: " + customLoc);
 
         if (fileExists(customLoc)) return customLoc;
         return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
@@ -345,7 +344,6 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         };
     }
 
-
     private boolean fileExists(ResourceLocation location) {
         return FILE_EXISTS_CACHE.computeIfAbsent(location, loc ->
                 Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()
@@ -364,10 +362,17 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         MolangParser parser = MolangParser.INSTANCE;
 
-        float clampedPitch = skipHead ? 0F : -Mth.clamp(animatable.getXRot(), -85F, 85F);
+        // In GUI screens the O-fields (yBodyRotO, xRotO) are stale world values — the screen
+        // only sets the current-tick fields. Using pt=1.0 makes lerp return the current value
+        // directly, so the O-fields are ignored and there is no jitter.
+        float pt = Minecraft.getInstance().screen != null ? 1.0f : Minecraft.getInstance().getFrameTime();
+        float pitch   = Mth.lerp(pt, animatable.xRotO,     animatable.getXRot());
+        float bodyYaw = Mth.lerp(pt, animatable.yBodyRotO, animatable.yBodyRot);
+        float headYaw = Mth.lerp(pt, animatable.yHeadRotO, animatable.yHeadRot);
 
-        float relativeYaw = -Mth.wrapDegrees(animatable.getYHeadRot() - animatable.yBodyRot);
-        float clampedYaw = skipHead ? 0F : Mth.clamp(relativeYaw, -90F, 90F);
+        float clampedPitch = skipHead ? 0F : -Mth.clamp(pitch, -85F, 85F);
+        float relativeYaw  = -Mth.wrapDegrees(headYaw - bodyYaw);
+        float clampedYaw   = skipHead ? 0F : Mth.clamp(relativeYaw, -90F, 90F);
 
         parser.setValue("query.head_x_rotation", () -> (double) clampedPitch);
         parser.setValue("query.head_y_rotation", () -> (double) clampedYaw);
@@ -375,5 +380,3 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         parser.setValue("query.head_yaw", () -> (double) clampedYaw);
     }
 }
-
-

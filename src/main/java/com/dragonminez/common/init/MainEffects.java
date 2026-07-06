@@ -22,11 +22,16 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> STUN = EFFECTS.register("stun", () ->
 			new DMZEffect(false).addAttributeModifier(Attributes.MOVEMENT_SPEED, "7107DE5E-7CE8-4030-940E-514C1F160890",
 					-1.0D, AttributeModifier.Operation.MULTIPLY_TOTAL));
+	public static final RegistryObject<MobEffect> KI_SLOW = EFFECTS.register("ki_slow", () ->
+			new DMZEffect(false).addAttributeModifier(Attributes.MOVEMENT_SPEED, "E21BB9D6-BF78-4D05-83DE-497DA4664A43",
+					-0.9D, AttributeModifier.Operation.MULTIPLY_TOTAL));
 
 	// Placeholders, info for the player | Neutral
 	public static final RegistryObject<MobEffect> DASH_CD = EFFECTS.register("dash_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> DOUBLEDASH_CD = EFFECTS.register("doubledash_cd", DMZEffect::new);
+	public static final RegistryObject<MobEffect> TELEPORT_CD = EFFECTS.register("teleport_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> FUSED = EFFECTS.register("fused", DMZEffect::new);
+	public static final RegistryObject<MobEffect> FUSION_CD = EFFECTS.register("fusion_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> SAIYAN_PASSIVE = EFFECTS.register("saiyan_passive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> BIOANDROID_PASSIVE = EFFECTS.register("bioandroid_passive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> MAJIN_REVIVE = EFFECTS.register("majin_revive", DMZEffect::new);

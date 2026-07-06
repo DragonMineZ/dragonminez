@@ -1,9 +1,9 @@
 package com.dragonminez.common.init.entities;
 
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.damagesource.DamageSource;
@@ -54,6 +54,11 @@ public class PunchMachineEntity extends Mob implements GeoEntity {
 				}
 				return false;
 			}
+		}
+
+		if (MainDamageTypes.isStrikeAttackDamage(source) || MainDamageTypes.isKiblastDamage(source)) {
+			if (source.getEntity() instanceof Player player) processHit(amount, player);
+			return false;
 		}
 
 		return super.hurt(source, amount);

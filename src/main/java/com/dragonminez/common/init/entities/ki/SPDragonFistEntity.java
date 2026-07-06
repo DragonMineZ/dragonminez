@@ -71,6 +71,7 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
 
         this.setYRot(yaw);
         this.setXRot(pitch);
+        this.setKiDamage(damage);
 
         // Spawn the entity at the owner's position so it is tracked/synced correctly from tick 0.
         // Without this it is added at (0,0,0), outside client tracking range, and never reaches the client.
@@ -135,7 +136,9 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
 
         for (Entity target : targets) {
             if (this.tickCount % 5 == 0) {
-                if (this.applyDamageOrHeal(target, this.getKiDamage())) {
+                boolean hit = target.hurt(MainDamageTypes.strikeAttack(this.level(), owner, "dragon_fist"), this.getKiDamage());
+
+                if (hit) {
                     this.onSuccessfulHit(target);
                     this.applyStrikeStun(target);
                 }

@@ -10,6 +10,7 @@ import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.common.network.C2S.DamageCurioC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
+import com.dragonminez.common.util.CuriosUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -49,10 +50,7 @@ public class ScouterHUD {
 	private static final int BP_LIMIT = 150000000;
 
 	private static ItemStack getScouterStack(Player player) {
-		return CuriosApi.getCuriosInventory(player)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.orElse(ItemStack.EMPTY);
+		return CuriosUtil.getFirstStack(player, "head_tech");
 	}
 
 	@SubscribeEvent
@@ -110,11 +108,7 @@ public class ScouterHUD {
 
 	/** Bulma's Anti-Ki Cloak: a worn cloak hides the wearer's BP from scouters. */
 	private static boolean isCloaked(Player target) {
-		return CuriosApi.getCuriosInventory(target)
-				.map(inv -> inv.getCurios().get("head_tech"))
-				.map(handler -> handler.getStacks().getStackInSlot(0))
-				.map(stack -> stack.getItem() == MainItems.ANTI_KI_CLOAK.get())
-				.orElse(false);
+		return CuriosUtil.getFirstStack(target, "head_tech").getItem() == MainItems.ANTI_KI_CLOAK.get();
 	}
 
 	private static double getEntityBP(LivingEntity entity) {

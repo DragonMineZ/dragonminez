@@ -104,7 +104,7 @@ public class CombatAttackRequestC2S {
 			}
 
 			if (player.level() instanceof ServerLevel serverLevel) {
-				SoundHelper.playSound(serverLevel, player, hand.attack().swingSound());
+				SoundHelper.playSound(serverLevel, player, player, hand.attack().swingSound());
 			}
 
 			float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
@@ -113,7 +113,7 @@ public class CombatAttackRequestC2S {
 			String animName = hand.attack() != null ? hand.attack().animation() : "";
 			boolean isOffhand = hand.isOffHand();
 			var animPacket = new MeleeAnimationS2C(player.getId(), animName, isOffhand, animSpeedMultiplier);
-			NetworkHandler.sendToTrackingEntityAndSelf(animPacket, player);
+			NetworkHandler.sendToTrackingEntity(animPacket, player);
 
 			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, true);
 
@@ -147,7 +147,7 @@ public class CombatAttackRequestC2S {
 
 			boolean firstHit = true;
 			for (int id : entityIds) {
-				Entity entity = player.level().getEntity(id);
+				Entity entity = TargetHelper.getEntityOrPart(player.level(), id);
 				if (entity == null) continue;
 
 				if (!TargetHelper.isAttackableMount(entity) && player.getVehicle() == entity) continue;

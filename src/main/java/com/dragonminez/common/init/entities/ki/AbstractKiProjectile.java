@@ -6,6 +6,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainGameRules;
+import com.dragonminez.common.init.block.custom.DragonBallBlock;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.passives.ClassPassives;
@@ -32,6 +33,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -69,6 +71,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final double HOMING_TURN_RATE = 0.2;
     private transient int homingTargetId = -1;
     private transient int firingStartTick = -1;
+
+    private static final float KI_INDESTRUCTIBLE_RESISTANCE = 1000.0F;
+
+    private UUID cachedOwnerUUID;
 
     public void setHomingTarget(int targetId) {
         this.homingTargetId = targetId;
@@ -214,11 +220,13 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     public boolean shouldDamage(Entity target) {
+        target = TargetHelper.resolveHittable(target);
         if (target == this) return false;
-        if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == this.getOwner()) return false;
-        if (target == this.getOwner() || target.is(this.getOwner())) return this.isHeal();
+        Entity owner = this.getOwner();
+        if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == owner) return false;
+        if (this.isOwner(target)) return this.isHeal();
 
-        if (this.getOwner() instanceof Player playerOwner) {
+        if (owner instanceof Player playerOwner) {
             TargetHelper.Relation relation = TargetHelper.getRelation(playerOwner, target);
 
             if (this.isHeal()) return relation == TargetHelper.Relation.FRIENDLY;
@@ -243,11 +251,42 @@ public abstract class AbstractKiProjectile extends Projectile {
         return !this.isHeal();
     }
 
+    @Override
+    public void setOwner(Entity owner) {
+        super.setOwner(owner);
+        if (owner != null) this.cachedOwnerUUID = owner.getUUID();
+    }
+
+    /** Owner UUID, falling back to the cached value if the live owner reference can't be resolved. */
+    public UUID getOwnerUUID() {
+        Entity owner = this.getOwner();
+        return owner != null ? owner.getUUID() : this.cachedOwnerUUID;
+    }
+
+    /** True if the entity is this projectile's caster (by reference or UUID). */
+    public boolean isOwner(Entity target) {
+        if (target == null) return false;
+        Entity owner = this.getOwner();
+        if (owner != null && (target == owner || target.is(owner))) return true;
+        UUID ownerUUID = this.cachedOwnerUUID;
+        return ownerUUID != null && target.getUUID().equals(ownerUUID);
+    }
+
+    @Override
+    protected boolean canHitEntity(Entity target) {
+        if (!super.canHitEntity(target)) return false;
+        // The caster's own attacks should never collide with them (no self-detonation/self-hit),
+        // except for healing attacks which are meant to be able to target the caster.
+        if (!this.isHeal() && this.isOwner(target)) return false;
+        return true;
+    }
+
     public void playInitialSound(SoundEvent sound) {
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 0.1F, 0.8F + (this.random.nextFloat() * 0.2F));
     }
 
     public boolean applyDamageOrHeal(Entity target, float amount) {
+        target = TargetHelper.resolveHittable(target);
         if (target instanceof LivingEntity livingTarget) {
             if (this.isHeal()) {
                 if ((livingTarget.getHealth() < livingTarget.getMaxHealth() && this.getOwner() instanceof Player playerOwner
@@ -282,6 +321,9 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     protected boolean canKiDestroyBlock(BlockPos pos) {
+        BlockState state = this.level().getBlockState(pos);
+        if (state.getBlock() instanceof DragonBallBlock) return false;
+        if (state.getExplosionResistance(this.level(), pos, null) >= KI_INDESTRUCTIBLE_RESISTANCE) return false;
         return MainGameRules.canKiGrief(this.level(), pos, this.getKiGriefingSource());
     }
 
@@ -365,7 +407,9 @@ public abstract class AbstractKiProjectile extends Projectile {
 
         var targetStatsOpt = StatsProvider.get(StatsCapability.INSTANCE, living).resolve();
         if (targetStatsOpt.isPresent()) {
-            targetStatsOpt.get().getSecondaryStatEffects().apply(affected.name(), factor, durationTicks);
+            var effects = targetStatsOpt.get().getSecondaryStatEffects();
+            if (isBuff && effects.hasOtherActiveBuff(affected.name())) return;
+            effects.apply(affected.name(), factor, durationTicks);
         } else if (!isBuff && EntityStatDebuffs.isSupported(affected.name())) {
             EntityStatDebuffs.applyDebuff(living, affected.name(), factor, durationTicks);
         }
@@ -406,6 +450,14 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     @Override
     public void tick() {
+        if (!this.level().isClientSide) {
+            Entity owner = this.getOwner();
+            if (owner != null && owner.level() != this.level()) {
+                this.discard();
+                return;
+            }
+        }
+
         super.tick();
         this.applyHomingSteering();
         Vec3 movement = this.getDeltaMovement();

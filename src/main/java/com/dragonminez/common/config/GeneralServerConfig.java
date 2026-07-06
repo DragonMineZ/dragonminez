@@ -16,18 +16,18 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class GeneralServerConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
+	private String configVersion;
 
 	private WorldGenConfig worldGen = new WorldGenConfig();
 	private GameplayConfig gameplay = new GameplayConfig();
 	private RacialSkillsConfig racialSkills = new RacialSkillsConfig();
 	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
-	private StorageConfig storage = new StorageConfig();
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
+	private StorageConfig storage = new StorageConfig();
 
 	@Getter
 	@NoArgsConstructor
@@ -40,6 +40,9 @@ public class GeneralServerConfig {
 		private Integer structureMinDistanceFromSpawn = 0;
 		private Integer structureMaxDistanceFromSpawn = 4000;
 		private Integer structureMinDistanceBetween = 250;
+
+		private Integer structureSpacing = 6000;
+		private Integer structureSeparation = 2000;
 
 		public Integer getDBSpawnRange() {
 			return Math.max(100, Math.min(dbSpawnRange, 6000));
@@ -63,6 +66,16 @@ public class GeneralServerConfig {
 			int value = structureMinDistanceBetween != null ? structureMinDistanceBetween : 250;
 			return Math.max(0, value);
 		}
+
+		public Integer getStructureSpacingBlocks() {
+			int value = structureSpacing != null ? structureSpacing : 6000;
+			return Math.max(256, value);
+		}
+
+		public Integer getStructureSeparationBlocks() {
+			int value = structureSeparation != null ? structureSeparation : 2000;
+			return Math.max(0, Math.min(value, getStructureSpacingBlocks() - 16));
+		}
 	}
 
 	@Getter
@@ -72,6 +85,7 @@ public class GeneralServerConfig {
 		private Boolean commandOutputOnConsole = true;
 		private Integer reviveCooldownSeconds = 300;
 		private Double tpGainMultiplier = 1.0;
+		private Double increaseTPGainRelativeToTPCost = 0.5;
 		private Double globalTPCostMultiplier = 1.0;
 		private Integer minTPCost = 16;
 		private Integer maxTPDiscount = 140;
@@ -82,7 +96,7 @@ public class GeneralServerConfig {
 		private Integer tpPerBlockMined = 1;
 		private Integer tpPerItemCrafted = 1;
 		private Boolean gravityBonusEnabled = true;
-		private Double HTCTpMultiplier = 2.5;
+		private Double HTCTpMultiplier = 1.75;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
 		private CapsulesConfig capsules = new CapsulesConfig();
@@ -106,6 +120,8 @@ public class GeneralServerConfig {
 		private Integer partyMaxMembers = -1;
 		private Integer partyMaxLevelGap = 500;
 		private Double partyTpShareRatio = 0.5;
+		private Double enemyHealthPerPartyPlayer = 1.25;
+		private Double enemyDamagePerPartyPlayer = 1.1;
 		private Integer instantTransmissionPlayerRangePerLevel = 200;
 
 		private Double easyModeHPMultiplier = 0.75;
@@ -122,6 +138,27 @@ public class GeneralServerConfig {
 				"dragonminez:invencible_blue_armor_helmet"
 		));
 
+		private Map<TpSource, List<TpBoost>> tpGainBoosts = defaultTpGainBoosts();
+
+		private static Map<TpSource, List<TpBoost>> defaultTpGainBoosts() {
+			Map<TpSource, List<TpBoost>> map = new LinkedHashMap<>();
+			for (TpSource source : TpSource.values()) {
+				List<TpBoost> boosts = new ArrayList<>(Arrays.asList(
+						TpBoost.CLASS, TpBoost.RACIALSKILL, TpBoost.HTC, TpBoost.GRAVITY,
+						TpBoost.WEIGHTS, TpBoost.GLOBAL, TpBoost.POTION, TpBoost.MUTANT
+				));
+				if (source == TpSource.STORY) boosts.add(TpBoost.DIFFICULTY);
+				map.put(source, boosts);
+			}
+			return map;
+		}
+
+		public List<TpBoost> getTpGainBoosts(TpSource source) {
+			if (tpGainBoosts == null) return Arrays.asList(TpBoost.values());
+			List<TpBoost> boosts = tpGainBoosts.get(source);
+			return boosts != null ? boosts : List.of();
+		}
+
 		public Integer getReviveCooldownSeconds() {
 			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
 		}
@@ -132,6 +169,10 @@ public class GeneralServerConfig {
 
 		public Double getTpsGainMultiplier() {
 			return Math.max(0, Math.min(tpGainMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getIncreaseTPGainRelativeToTPCost() {
+			return Math.max(0.0, increaseTPGainRelativeToTPCost != null ? increaseTPGainRelativeToTPCost : 0.5);
 		}
 
 		public Double getGlobalTpCostMultiplier() {
@@ -219,6 +260,14 @@ public class GeneralServerConfig {
 		public Double getPartyTpShareRatio() {
 			if (partyTpShareRatio == null) return 0.0;
 			return Math.max(0.0, Math.min(partyTpShareRatio, 10.0));
+		}
+
+		public Double getEnemyHealthPerPartyPlayer() {
+			return Math.max(1.0, enemyHealthPerPartyPlayer != null ? enemyHealthPerPartyPlayer : 1.25);
+		}
+
+		public Double getEnemyDamagePerPartyPlayer() {
+			return Math.max(1.0, enemyDamagePerPartyPlayer != null ? enemyDamagePerPartyPlayer : 1.1);
 		}
 
 		public Integer getInstantTransmissionPlayerRangePerLevel() {
@@ -347,7 +396,7 @@ public class GeneralServerConfig {
 		private Boolean majinReviveSkill = true;
 		private Integer majinAbsorptionAmount = 3;
 		private Double majinAbsorptionHealthRegen = 0.30;
-		private Double majinAbsorptionStatsCopy = 0.10;
+		private Double majinAbsorptionStatsCopy = 0.04;
 		private String[] majinAbsorptionBoosts = {"STR", "SKP", "PWR"};
 		private Boolean majinAbsorptionOnMobs = true;
 		private Integer majinReviveCooldownSeconds = 3600;
@@ -428,10 +477,10 @@ public class GeneralServerConfig {
 
 		private Double strPracticeMultiplier = 1.0;
 		private Double skpPracticeMultiplier = 1.0;
-		private Double resPracticeMultiplier = 1.0;
-		private Double vitPracticeMultiplier = 1.0;
+		private Double resPracticeMultiplier = 1.5;
+		private Double vitPracticeMultiplier = 0.5;
 		private Double pwrPracticeMultiplier = 1.0;
-		private Double enePracticeMultiplier = 1.0;
+		private Double enePracticeMultiplier = 1.5;
 
 		private Double staminaSpentXpRatio = 0.1;
 		private Double energySpentXpRatio = 0.1;
@@ -468,10 +517,10 @@ public class GeneralServerConfig {
 			return switch (statName.toUpperCase()) {
 				case "STR" -> clampNonNeg(strPracticeMultiplier, 1.0);
 				case "SKP" -> clampNonNeg(skpPracticeMultiplier, 1.0);
-				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.0);
-				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 1.0);
+				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.5);
+				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 0.5);
 				case "PWR" -> clampNonNeg(pwrPracticeMultiplier, 1.0);
-				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.0);
+				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.5);
 				default -> 1.0;
 			};
 		}
@@ -609,6 +658,22 @@ public class GeneralServerConfig {
 		private Double tpGravityBonusPerGravity = 0.025;
 		private Double masteryBonusPerGravity = 0.0025;
 
+		private Double tpIdealBaseDivisor = 2.0;
+		private Double gravitySensitivity = 1.0;
+		private Double tpComfortRatioLow = 0.5;
+		private Double tpIdealRatioLow = 0.75;
+		private Double tpIdealRatioHigh = 1.25;
+		private Double tpOverloadRatio = 2.0;
+		private Double tpOverloadHardRatio = 2.5;
+		private Double tpComfortMultiplier = 1.5;
+		private Double tpHeavyMultiplier = 2.5;
+		private Double maxWeightPenalty = 0.6;
+
+		private Double loadDrainComfort = 1.15;
+		private Double loadDrainIdeal = 1.3;
+		private Double loadDrainHeavy = 1.5;
+		private Double loadDrainOverload = 2.0;
+
 		private Double consumptionPerGravity = 0.04;
 
 		private Integer deviceMinRoomSize = 5;
@@ -739,6 +804,69 @@ public class GeneralServerConfig {
 			return Math.max(0.0001, tpCurveWidth != null ? tpCurveWidth : 7.0);
 		}
 
+		public Double getTpIdealBaseDivisor() {
+			return Math.max(0.0001, tpIdealBaseDivisor != null ? tpIdealBaseDivisor : 2.0);
+		}
+
+		public Double getGravitySensitivity() {
+			Double value = gravitySensitivity != null ? gravitySensitivity : 1.0;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getTpComfortRatioLow() {
+			Double value = tpComfortRatioLow != null ? tpComfortRatioLow : 0.5;
+			return Math.max(0.0, value);
+		}
+
+		public Double getTpIdealRatioLow() {
+			Double value = tpIdealRatioLow != null ? tpIdealRatioLow : 0.75;
+			return Math.max(getTpComfortRatioLow(), value);
+		}
+
+		public Double getTpIdealRatioHigh() {
+			Double value = tpIdealRatioHigh != null ? tpIdealRatioHigh : 1.25;
+			return Math.max(getTpIdealRatioLow(), value);
+		}
+
+		public Double getTpOverloadRatio() {
+			Double value = tpOverloadRatio != null ? tpOverloadRatio : 2.0;
+			return Math.max(getTpIdealRatioHigh(), value);
+		}
+
+		public Double getTpOverloadHardRatio() {
+			Double value = tpOverloadHardRatio != null ? tpOverloadHardRatio : 2.5;
+			return Math.max(getTpOverloadRatio() + 0.0001, value);
+		}
+
+		public Double getTpComfortMultiplier() {
+			return Math.max(1.0, tpComfortMultiplier != null ? tpComfortMultiplier : 1.5);
+		}
+
+		public Double getTpHeavyMultiplier() {
+			return Math.max(getTpPeakMultiplier(), tpHeavyMultiplier != null ? tpHeavyMultiplier : 2.5);
+		}
+
+		public Double getMaxWeightPenalty() {
+			Double value = maxWeightPenalty != null ? maxWeightPenalty : 0.6;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getLoadDrainComfort() {
+			return Math.max(0.0, loadDrainComfort != null ? loadDrainComfort : 1.15);
+		}
+
+		public Double getLoadDrainIdeal() {
+			return Math.max(0.0, loadDrainIdeal != null ? loadDrainIdeal : 1.3);
+		}
+
+		public Double getLoadDrainHeavy() {
+			return Math.max(0.0, loadDrainHeavy != null ? loadDrainHeavy : 1.5);
+		}
+
+		public Double getLoadDrainOverload() {
+			return Math.max(0.0, loadDrainOverload != null ? loadDrainOverload : 2.0);
+		}
+
 		public Double getTpGravityBonusPerGravity() {
 			return clampNonNeg(tpGravityBonusPerGravity, 0.05);
 		}
@@ -796,6 +924,7 @@ public class GeneralServerConfig {
 		private Double masteryGainMultiplier = 1.50;
 		private Double powerBonusReductionNoSkill = 0.67;
 		private Double powerBonusBoostWithSkill = 0.33;
+		private Boolean keepMutantOnDeath = false;
 
 		public Boolean getEnabled() {
 			return enabled == null || enabled;
@@ -837,6 +966,10 @@ public class GeneralServerConfig {
 
 		public Double getPowerBonusBoostWithSkill() {
 			return Math.max(0.0, powerBonusBoostWithSkill != null ? powerBonusBoostWithSkill : 0.33);
+		}
+
+		public Boolean getKeepMutantOnDeath() {
+			return keepMutantOnDeath != null && keepMutantOnDeath;
 		}
 	}
 }

@@ -58,6 +58,8 @@ public class UpdateSkillC2S {
 						case UPGRADE:
 							if (skill == null) break;
 							if (skill.getLevel() <= 0 && !raceAllowed) break;
+							boolean isStackSkill = ConfigManager.getSkillsConfig().getStackSkills().contains(skillName.toLowerCase());
+							if (isStackSkill && skill.getLevel() <= 0) break;
 							refreshRuntimeMaxLevel(data, skillName, skill);
 							if (!skill.isMaxLevel() && data.getResources().getTrainingPoints() >= cost && cost != -1 && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
 								data.getResources().removeTrainingPoints(cost);
@@ -70,7 +72,12 @@ public class UpdateSkillC2S {
 
 						case PURCHASE:
 							if (!raceAllowed) break;
-							if (!data.getSkills().hasSkill(skillName) && data.getResources().getTrainingPoints() >= cost && cost != -1) {
+							boolean isStackSkillPurchase = ConfigManager.getSkillsConfig().getStackSkills().contains(skillName.toLowerCase());
+							if (isStackSkillPurchase) break;
+							boolean isFormSkillPurchase = ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase());
+							boolean notOwned = !data.getSkills().hasSkill(skillName)
+									|| (isFormSkillPurchase && data.getSkills().getSkillLevel(skillName) == 0);
+							if (notOwned && data.getResources().getTrainingPoints() >= cost && cost != -1) {
 								data.getResources().removeTrainingPoints(cost);
 								data.getSkills().setSkillLevel(skillName, 1);
 								unlockTechniqueIfPresent(data, skillName);

@@ -45,6 +45,7 @@ public final class DynamicGrowthService {
 		if (!data.getStatus().isHasCreatedCharacter()) return;
 
 		DynamicGrowthData growth = data.getDynamicGrowth();
+		if (!growth.isGrowthEnabled(stat)) return;
 		long nowMs = System.currentTimeMillis();
 		double xp = baseXp;
 
@@ -63,7 +64,7 @@ public final class DynamicGrowthService {
 
 		xp *= cfg.getPracticeXpMultiplier();
 		xp *= cfg.getStatPracticeMultiplier(stat.key());
-		if (xp <= 0.0) return;
+		if (!Double.isFinite(xp) || xp <= 0.0) return;
 
 		growth.addPracticeXp(stat, xp);
 		processLevelUps(player, data, stat);
@@ -121,20 +122,26 @@ public final class DynamicGrowthService {
 
 	private static void processLevelUps(ServerPlayer player, StatsData data, DynamicGrowthStat stat) {
 		DynamicGrowthData growth = data.getDynamicGrowth();
-		boolean leveled = false;
 
-		while (data.getMaxAllowedIncreaseForStat(stat.key(), 1) > 0) {
-			int currentStat = data.getCurrentStatValue(stat.key());
-			int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
-			if (growth.getPracticeXp(stat) < requiredXp) break;
+		int currentStat = data.getCurrentStatValue(stat.key());
+		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
+		double availableXp = growth.getPracticeXp(stat);
+		boolean canIncrease = data.getMaxAllowedIncreaseForStat(stat.key(), 1) > 0;
 
-			growth.consumePracticeXp(stat, requiredXp);
-			grantStatPoint(player, data, stat);
-			leveled = true;
-			notifyStatGain(player, stat, data.getCurrentStatValue(stat.key()));
+		if (!Double.isFinite(availableXp) || availableXp < 0.0
+				|| (!canIncrease && requiredXp > 0 && availableXp > requiredXp)) {
+			growth.resetPracticeXp(stat);
+			return;
 		}
 
-		if (leveled) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		if (!canIncrease) return;
+		if (requiredXp <= 0 || availableXp < requiredXp) return;
+
+		growth.consumePracticeXp(stat, requiredXp);
+		grantStatPoint(player, data, stat);
+		notifyStatGain(player, stat, data.getCurrentStatValue(stat.key()));
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 	}
 
 	private static void grantStatPoint(ServerPlayer player, StatsData data, DynamicGrowthStat stat) {

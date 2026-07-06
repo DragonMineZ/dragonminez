@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.combat.util.MultipartTargeting;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.particles.KiTrailParticle;
@@ -262,7 +264,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
     private void pulseAreaDamage() {
         AABB area = this.getBoundingBox().inflate(0.5D, 0.2D, 0.5D);
-        List<LivingEntity> nearby = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> nearby = MultipartTargeting.collectTargets(this.level(), area);
 
         for (LivingEntity target : nearby) {
             if (this.shouldDamage(target)) {

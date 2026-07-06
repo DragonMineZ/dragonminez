@@ -18,9 +18,6 @@
 		},
 		{
 			"name": "GlowSampler"
-		},
-		{
-			"name": "EdgeSampler"
 		}
 	],
 	"uniforms": [

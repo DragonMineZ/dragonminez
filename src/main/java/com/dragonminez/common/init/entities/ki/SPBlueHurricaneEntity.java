@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.combat.util.MultipartTargeting;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
@@ -180,7 +182,7 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
     private void pulseDamage() {
         AABB area = this.getBoundingBox().inflate(4.5D, 9.0D, 4.5D); // Aumenté el radio a 4.5 para que jale desde más lejos
 
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), area);
 
         for (LivingEntity target : targets) {
             if (shouldDamage(target) && !target.is(this.getOwner())) {

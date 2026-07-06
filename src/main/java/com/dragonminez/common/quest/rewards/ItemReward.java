@@ -6,6 +6,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -24,7 +25,13 @@ public class ItemReward extends QuestReward {
 	@Override
 	public void giveReward(ServerPlayer player) {
 		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
-		player.addItem(new ItemStack(item, count));
+		if (item == null) return;
+		ItemStack stack = new ItemStack(item, count);
+		player.getInventory().add(stack);
+		if (!stack.isEmpty()) {
+			ItemEntity drop = player.drop(stack, false);
+			if (drop != null) drop.setNoPickUpDelay();
+		}
 	}
 
 	@Override

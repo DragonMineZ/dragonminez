@@ -53,12 +53,13 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_DEEPSLATE_GOLD.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_REDSTONE.get())
 				.add(MainBlocks.NAMEK_DEEPSLATE_EMERALD.get())
-				.add(MainBlocks.GRAVITY_DEVICE.get());
+				.add(MainBlocks.FUEL_GENERATOR.get());
 
 		this.tag(BlockTags.NEEDS_DIAMOND_TOOL)
 				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
 				.add(MainBlocks.KIKONO_BLOCK.get())
-				.add(MainBlocks.KIKONO_STATION.get());
+				.add(MainBlocks.KIKONO_STATION.get())
+				.add(MainBlocks.GRAVITY_DEVICE.get());
 
 		this.tag(Tags.Blocks.NEEDS_NETHERITE_TOOL)
 				.add(MainBlocks.GETE_ORE.get())
@@ -136,6 +137,8 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.GETE_BLOCK.get())
 				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
 				.add(MainBlocks.KIKONO_BLOCK.get())
+				.add(MainBlocks.KIKONO_STATION.get())
+				.add(MainBlocks.FUEL_GENERATOR.get())
 				.add(MainBlocks.GRAVITY_DEVICE.get());
 
 

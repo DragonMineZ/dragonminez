@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -166,7 +167,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed){
-        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0xA927F5);
+        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0x8B17CF);
     }
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
@@ -182,6 +183,25 @@ public class KiLaserEntity extends AbstractKiProjectile{
         updatePositionRelativeToOwner(owner);
         
     }
+
+    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
+        this.setKiRenderType(2);
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(20);
+        this.setCastOffsets(-0.2F, 0.7F, 0.5F);
+        updatePositionRelativeToOwner(owner);
+
+    }
+
+    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
+        this.setupKiBeamPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF);
+    }
+
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed) {
         this.setupKiDodonpaPlayer(owner, damage, speed, 0xFFFFFF);
@@ -337,14 +357,38 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
         Vec3 up = right.cross(look).normalize();
 
-        Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
-                .add(up.scale(this.entityData.get(OFFSET_Y)))
-                .add(look.scale(this.entityData.get(OFFSET_Z)));
-
         double centerX = owner.getX();
         double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
         double centerZ = owner.getZ();
         Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
+
+        Vec3 offset;
+
+        if (!this.isFiring()) {
+            offset = right.scale(this.entityData.get(OFFSET_X))
+                    .add(up.scale(this.entityData.get(OFFSET_Y)))
+                    .add(look.scale(this.entityData.get(OFFSET_Z)));
+        } else {
+            double forwardDistance = (owner.getBbWidth() / 2.0D) + 0.3D;
+
+            float fireOffsetX = 0.0F;
+            float fireOffsetY = 0.0F;
+            float fireOffsetZ = 0.0F;
+
+            int renderType = this.getKiRenderType();
+            if (renderType == 1 || renderType == 2) {
+                fireOffsetX = 0.1F;
+                fireOffsetY = 0.5F;
+                fireOffsetZ = 0.6F;
+            } else {
+                fireOffsetX = 0.0F;
+                fireOffsetY = 0.1F;
+            }
+
+            offset = right.scale(fireOffsetX)
+                    .add(up.scale(fireOffsetY))
+                    .add(look.scale(fireOffsetZ));
+        }
 
         Vec3 newPos = hitboxCenter.add(offset);
         this.setPos(newPos.x, newPos.y, newPos.z);
@@ -476,7 +520,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 end = start.add(dir.scale(length));
         double searchRadius = this.getSize() * 0.5;
         AABB searchBox = new AABB(start, end).inflate(searchRadius);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), searchBox);
 
         int hitInterval = 10;
 
@@ -486,10 +530,16 @@ public class KiLaserEntity extends AbstractKiProjectile{
             if (target.invulnerableTime > 0) continue;
 
             float hitPrecision = this.getSize() / 3.0F;
-            AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
-            var hit = targetBox.clip(start, end);
+            boolean beamHit = false;
+            for (AABB hb : MultipartTargeting.hitBoxes(target)) {
+                AABB targetBox = hb.inflate(hitPrecision);
+                if (targetBox.clip(start, end).isPresent() || targetBox.contains(start)) {
+                    beamHit = true;
+                    break;
+                }
+            }
 
-            if (hit.isPresent() || targetBox.contains(start)) {
+            if (beamHit) {
                 boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
 
                 if (wasHit) {
@@ -513,12 +563,11 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private void explodeAndDie(Vec3 pos) {
         float radius = this.getSize();
         AABB area = new AABB(pos, pos).inflate(radius);
-        List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> entities = MultipartTargeting.collectTargets(this.level(), area);
 
         for (LivingEntity target : entities) {
             if (this.shouldDamage(target)) {
-                double dist = target.distanceToSqr(pos);
-                if (dist <= radius * radius) {
+                if (MultipartTargeting.withinRadius(target, pos, radius)) {
                     boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
                     if (wasHit) this.onSuccessfulHit(target);
                 }

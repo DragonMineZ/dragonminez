@@ -1,25 +1,47 @@
 package com.dragonminez.common.stats.extras;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class DynamicGrowthData {
 	private static final int MAX_TRACKED_TARGETS = 128;
 
 	private final Map<String, Double> practiceXp = new HashMap<>();
 	private final Map<String, TargetHistory> targetHistory = new HashMap<>();
+	private final Set<String> disabledStats = new HashSet<>();
 	private long lastCombatMs;
 
+	public boolean isGrowthEnabled(DynamicGrowthStat stat) {
+		return !disabledStats.contains(stat.key());
+	}
+
+	public void setGrowthEnabled(DynamicGrowthStat stat, boolean enabled) {
+		if (enabled) disabledStats.remove(stat.key());
+		else disabledStats.add(stat.key());
+	}
+
 	public double getPracticeXp(DynamicGrowthStat stat) {
-		return practiceXp.getOrDefault(stat.key(), 0.0);
+		double value = practiceXp.getOrDefault(stat.key(), 0.0);
+		return Double.isFinite(value) && value > 0.0 ? value : 0.0;
+	}
+
+	public void resetPracticeXp(DynamicGrowthStat stat) {
+		practiceXp.put(stat.key(), 0.0);
 	}
 
 	public void addPracticeXp(DynamicGrowthStat stat, double amount) {
-		practiceXp.put(stat.key(), Math.max(0.0, getPracticeXp(stat) + amount));
+		if (!Double.isFinite(amount) || amount <= 0.0) return;
+		double updated = getPracticeXp(stat) + amount;
+		practiceXp.put(stat.key(), Double.isFinite(updated) ? Math.max(0.0, updated) : 0.0);
 	}
 
 	public void consumePracticeXp(DynamicGrowthStat stat, double amount) {
@@ -96,6 +118,11 @@ public class DynamicGrowthData {
 			xpTag.putDouble(entry.getKey(), entry.getValue());
 		}
 		tag.put("PracticeXp", xpTag);
+		if (!disabledStats.isEmpty()) {
+			ListTag disabledTag = new ListTag();
+			for (String key : disabledStats) disabledTag.add(StringTag.valueOf(key));
+			tag.put("DisabledStats", disabledTag);
+		}
 		return tag;
 	}
 
@@ -103,8 +130,12 @@ public class DynamicGrowthData {
 		practiceXp.clear();
 		CompoundTag xpTag = tag.getCompound("PracticeXp");
 		for (String key : xpTag.getAllKeys()) {
-			practiceXp.put(key, xpTag.getDouble(key));
+			double value = xpTag.getDouble(key);
+			practiceXp.put(key, Double.isFinite(value) && value > 0.0 ? value : 0.0);
 		}
+		disabledStats.clear();
+		ListTag disabledTag = tag.getList("DisabledStats", Tag.TAG_STRING);
+		for (int i = 0; i < disabledTag.size(); i++) disabledStats.add(disabledTag.getString(i));
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
@@ -113,6 +144,8 @@ public class DynamicGrowthData {
 			buf.writeUtf(entry.getKey());
 			buf.writeDouble(entry.getValue());
 		}
+		buf.writeInt(disabledStats.size());
+		for (String key : disabledStats) buf.writeUtf(key);
 	}
 
 	public void fromBytes(FriendlyByteBuf buf) {
@@ -121,14 +154,19 @@ public class DynamicGrowthData {
 		for (int i = 0; i < size; i++) {
 			String key = buf.readUtf();
 			double value = buf.readDouble();
-			practiceXp.put(key, value);
+			practiceXp.put(key, Double.isFinite(value) && value > 0.0 ? value : 0.0);
 		}
+		disabledStats.clear();
+		int disabledSize = buf.readInt();
+		for (int i = 0; i < disabledSize; i++) disabledStats.add(buf.readUtf());
 	}
 
 	public void copyFrom(DynamicGrowthData other) {
 		if (other == this) return;
 		this.practiceXp.clear();
 		this.practiceXp.putAll(other.practiceXp);
+		this.disabledStats.clear();
+		this.disabledStats.addAll(other.disabledStats);
 		this.targetHistory.clear();
 		for (Map.Entry<String, TargetHistory> entry : other.targetHistory.entrySet()) {
 			this.targetHistory.put(entry.getKey(), entry.getValue().copy());

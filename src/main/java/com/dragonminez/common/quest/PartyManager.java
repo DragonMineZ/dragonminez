@@ -117,7 +117,8 @@ public final class PartyManager {
             PartySavedData.PartyInstance party = data.getPartyOf(serverPlayer.getUUID());
             return party != null && party.isPvpEnabled();
         }
-        return false;
+        StatsData data = getStatsData(player);
+        return data != null && data.getPlayerQuestData().isPartyPvpEnabled();
     }
 
     public static void togglePartyPvp(ServerPlayer leader) {
@@ -128,6 +129,8 @@ public final class PartyManager {
             data.setDirty();
 
             updateTeamFriendlyFire(leader.getServer(), party.getPartyId(), party.isPvpEnabled());
+            syncPartyToOnlineMembers(leader.getServer(), party);
+
             String state = party.isPvpEnabled() ? "✓" : "✕";
             ChatFormatting color = party.isPvpEnabled() ? ChatFormatting.RED : ChatFormatting.GREEN;
 
@@ -175,6 +178,7 @@ public final class PartyManager {
     }
 
     public static InviteRequestResult requestInvite(ServerPlayer inviter, ServerPlayer invitee) {
+        if (inviter.getUUID().equals(invitee.getUUID())) return InviteRequestResult.CANNOT_INVITE_SELF;
         if (isInParty(invitee)) return InviteRequestResult.ALREADY_IN_PARTY;
 
         ServerPlayer resolvedLeader = isInParty(inviter) ? getPartyLeader(inviter) : inviter;
@@ -209,51 +213,67 @@ public final class PartyManager {
 
     public static void sendInvite(ServerPlayer inviter, ServerPlayer invitee) {
         UUID partyId = getOrCreateParty(inviter);
+        ServerPlayer leader = getPartyLeader(inviter);
+        if (leader == null) leader = inviter;
         PlayerQuestData inviteeQuestData = getQuestData(invitee);
         long expiresAt = System.currentTimeMillis() + INVITE_DURATION_MS;
         inviteeQuestData.setPendingPartyInvite(new PlayerQuestData.PartyInviteData(
                 inviter.getUUID(),
                 partyId,
-                inviter.getUUID(),
+                leader.getUUID(),
                 inviter.getGameProfile().getName(),
-                expiresAt
+                expiresAt,
+                getQuestData(leader).getDifficulty()
         ));
         syncSelf(invitee);
         NetworkHandler.sendToPlayer(new PartyInviteToastS2C(inviter.getGameProfile().getName()), invitee);
     }
 
     public static InviteAcceptResult acceptInvite(ServerPlayer inviter) {
-        PlayerQuestData inviteeQuestData = getQuestData(inviter);
+        return acceptInvite(inviter, false);
+    }
+
+    public static InviteAcceptResult acceptInvite(ServerPlayer invitee, boolean confirmedDifficultyChange) {
+        PlayerQuestData inviteeQuestData = getQuestData(invitee);
         PlayerQuestData.PartyInviteData invite = inviteeQuestData.getPendingPartyInviteData();
 
         if (invite == null) return InviteAcceptResult.INVALID;
 
-        ServerPlayer resolvedLeader = isInParty(inviter) ? getPartyLeader(inviter) : inviter;
-        if (resolvedLeader != null && !validateLevelGap(resolvedLeader, inviter)) return InviteAcceptResult.LEVEL_GAP;
+        ServerPlayer resolvedLeader = isInParty(invitee) ? getPartyLeader(invitee) : invitee;
+        if (resolvedLeader != null && !validateLevelGap(resolvedLeader, invitee)) return InviteAcceptResult.LEVEL_GAP;
 
         if (invite.isExpired()) {
             inviteeQuestData.clearPendingPartyInvite();
-            syncSelf(inviter);
+            syncSelf(invitee);
             return InviteAcceptResult.EXPIRED;
         }
 
-        ServerPlayer leader = inviter.getServer().getPlayerList().getPlayer(invite.getPartyLeaderId());
+        ServerPlayer leader = invitee.getServer().getPlayerList().getPlayer(invite.getPartyLeaderId());
         if (leader == null || !isPartyLeader(leader) || !Objects.equals(getPartyId(leader), invite.getPartyId())) {
             inviteeQuestData.clearPendingPartyInvite();
-            syncSelf(inviter);
+            syncSelf(invitee);
             return InviteAcceptResult.INVALID;
         }
 
         int maxMembers = ConfigManager.getServerConfig().getGameplay().getPartyMaxMembers();
         if (maxMembers != -1 && getAllPartyMembers(leader).size() >= maxMembers) {
             inviteeQuestData.clearPendingPartyInvite();
-            syncSelf(inviter);
+            syncSelf(invitee);
             return InviteAcceptResult.PARTY_FULL;
         }
 
+        Difficulty partyDifficulty = getQuestData(leader).getDifficulty();
+        Difficulty ownDifficulty = inviteeQuestData.getDifficulty();
+        if (partyDifficulty.ordinal() < ownDifficulty.ordinal()) {
+            return InviteAcceptResult.DIFFICULTY_TOO_LOW;
+        }
+        if (partyDifficulty.ordinal() > ownDifficulty.ordinal() && !confirmedDifficultyChange) {
+            return InviteAcceptResult.DIFFICULTY_CONFIRM_REQUIRED;
+        }
+
         inviteeQuestData.clearPendingPartyInvite();
-        leaveParty(inviter);
-        joinLeaderParty(leader, inviter);
+        leaveParty(invitee);
+        joinLeaderParty(leader, invitee);
         return InviteAcceptResult.SUCCESS;
     }
 
@@ -272,7 +292,8 @@ public final class PartyManager {
                 invite.getPartyId() == null ? "" : invite.getPartyId().toString(),
                 invite.getPartyLeaderId(),
                 invite.getInviterName(),
-                invite.getExpiresAtMs()
+                invite.getExpiresAtMs(),
+                invite.getPartyDifficulty()
         );
     }
 
@@ -284,10 +305,7 @@ public final class PartyManager {
         boolean isLeader = party.getLeaderId().equals(player.getUUID());
         UUID partyId = party.getPartyId();
 
-        PlayerQuestData questData = getQuestData(player);
-        questData.restorePartyQuestBackup();
-        questData.clearPartyQuestBackup();
-        questData.clearPartyState();
+        getQuestData(player).clearPartyState();
         syncSelf(player);
 
         removeFromMinecraftTeam(player.getServer(), partyId, player);
@@ -295,6 +313,18 @@ public final class PartyManager {
 
         if (isLeader && !party.getMembers().isEmpty()) transferLeadership(player, party);
         else syncPartyToOnlineMembers(player.getServer(), party);
+    }
+
+    public static void disbandParty(ServerPlayer leader) {
+        if (!isInParty(leader)) return;
+
+        List<ServerPlayer> members = getAllPartyMembers(leader);
+        syncPartyQuestState(leader);
+
+        for (ServerPlayer member : members) {
+            if (!member.equals(leader)) leaveParty(member);
+        }
+        leaveParty(leader);
     }
 
     public static void syncPartyQuestState(ServerPlayer sourcePlayer) {
@@ -339,13 +369,12 @@ public final class PartyManager {
         UUID prevPartyId = status.getFusionPrevPartyId();
         boolean prevLeader = status.isFusionPrevPartyLeader();
 
-        // Clear markers up front so a re-entrant end call cannot double-process.
         status.setFusionPartyManaged(false);
         status.setFusionPrevPartyId(null);
         status.setFusionPrevPartyLeader(false);
 
         UUID currentPartyId = getPartyId(player);
-        if (Objects.equals(currentPartyId, prevPartyId)) return; // host kept their party; nothing moved
+        if (Objects.equals(currentPartyId, prevPartyId)) return;
 
         if (prevPartyId == null) {
             leaveParty(player);
@@ -373,9 +402,8 @@ public final class PartyManager {
         MinecraftServer server = mover.getServer();
         PartySavedData data = PartySavedData.get(server);
         PartySavedData.PartyInstance party = data.getParty(targetPartyId);
-        if (party == null) return; // original party dissolved while fused; mover stays solo
+        if (party == null) return;
 
-        getQuestData(mover).savePartyQuestBackup();
         data.addPlayerToParty(targetPartyId, mover.getUUID());
         addToMinecraftTeam(server, targetPartyId, mover);
         updateTeamFriendlyFire(server, targetPartyId, party.isPvpEnabled());
@@ -412,8 +440,11 @@ public final class PartyManager {
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-        PlayerQuestData questData = getQuestData(player);
-        if (questData.hasPendingPartyInvite()) questData.clearPendingPartyInvite();
+        StatsData statsData = getStatsData(player);
+        if (statsData != null) {
+            PlayerQuestData questData = statsData.getPlayerQuestData();
+            if (questData.hasPendingPartyInvite()) questData.clearPendingPartyInvite();
+        }
 
         PartySavedData data = PartySavedData.get(player.getServer());
         PartySavedData.PartyInstance party = data.getPartyOf(player.getUUID());
@@ -455,8 +486,8 @@ public final class PartyManager {
         PartySavedData data = PartySavedData.get(leader.getServer());
         PartySavedData.PartyInstance party = data.getPartyOf(leader.getUUID());
 
-        getQuestData(member).savePartyQuestBackup();
-
+        PlayerQuestData memberData = getQuestData(member);
+        memberData.setDifficultyChosen(true);
         syncQuestProgress(leader, member);
         data.addPlayerToParty(partyId, member.getUUID());
 
@@ -472,7 +503,7 @@ public final class PartyManager {
         for (UUID id : memberIds) {
             ServerPlayer member = server.getPlayerList().getPlayer(id);
             if (member != null) {
-                getQuestData(member).setPartyState(party.getPartyId(), party.getLeaderId(), memberIds);
+                getQuestData(member).setPartyState(party.getPartyId(), party.getLeaderId(), memberIds, party.isPvpEnabled());
                 syncSelf(member);
             }
         }
@@ -483,7 +514,7 @@ public final class PartyManager {
         StatsData toData = getStatsData(toPlayer);
         if (fromData == null || toData == null) return;
 
-        toData.getPlayerQuestData().copyQuestStateFrom(fromData.getPlayerQuestData());
+        toData.getPlayerQuestData().mergeQuestStateFrom(fromData.getPlayerQuestData());
     }
 
     private static void syncSelf(ServerPlayer player) {
@@ -506,13 +537,15 @@ public final class PartyManager {
         @Getter private final UUID partyLeaderId;
         @Getter private final String inviterName;
         private final long expiresAtMs;
+        @Getter private final Difficulty partyDifficulty;
 
-        public PendingInvite(UUID inviterUUID, String teamName, UUID partyLeaderId, String inviterName, long expiresAtMs) {
+        public PendingInvite(UUID inviterUUID, String teamName, UUID partyLeaderId, String inviterName, long expiresAtMs, Difficulty partyDifficulty) {
             this.inviterUUID = inviterUUID;
             this.teamName = teamName;
             this.partyLeaderId = partyLeaderId;
             this.inviterName = inviterName == null ? "" : inviterName;
             this.expiresAtMs = expiresAtMs;
+            this.partyDifficulty = partyDifficulty == null ? Difficulty.NORMAL : partyDifficulty;
         }
 
         public boolean isExpired() {
@@ -529,10 +562,10 @@ public final class PartyManager {
     }
 
     public enum InviteRequestResult {
-        INVITED, SUGGESTED, PARTY_FULL, ALREADY_IN_PARTY, NO_PERMISSION, LEVEL_GAP
+        INVITED, SUGGESTED, PARTY_FULL, ALREADY_IN_PARTY, NO_PERMISSION, LEVEL_GAP, CANNOT_INVITE_SELF
     }
 
     public enum InviteAcceptResult {
-        SUCCESS, EXPIRED, PARTY_FULL, INVALID, LEVEL_GAP
+        SUCCESS, EXPIRED, PARTY_FULL, INVALID, LEVEL_GAP, DIFFICULTY_TOO_LOW, DIFFICULTY_CONFIRM_REQUIRED
     }
 }
