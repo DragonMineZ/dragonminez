@@ -194,6 +194,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			if (fc == null) fc = ConfigManager.getStackFormGroup(groupName);
 			if (fc != null && fc.getFormType() != null) type = fc.getFormType();
 
+			if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(type, race)) continue;
+
 			for (FormConfig.FormData form : group.getValue()) {
 				formNodes.add(new FormNode(groupName, type, form, formX, groupY));
 				formX += 80;
@@ -298,6 +300,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		Skills skills = statsData.getSkills();
 		List<String> skillNames = new ArrayList<>();
 		var skillsConfig = ConfigManager.getSkillsConfig();
+		String race = statsData.getCharacter().getRaceName();
 
 		switch (currentCategory) {
 			case SKILLS:
@@ -305,7 +308,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					if (!skillsConfig.getKiSkills().contains(name)
 							&& !skillsConfig.getStrikeSkills().contains(name)
 							&& !skillsConfig.getStackSkills().contains(name)
-							&& !skillsConfig.getFormSkills().contains(name)) {
+							&& !skillsConfig.getFormSkills().contains(name)
+							&& skillsConfig.isSkillAllowedForRace(name, race)) {
 						skillNames.add(name);
 					}
 				});
@@ -313,19 +317,20 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case KI:
 				skillNames.add(NEW_SKILL_ENTRY);
 				statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
-					if (technique instanceof KiAttackData) skillNames.add(id);
+					if (technique instanceof KiAttackData && skillsConfig.isSkillAllowedForRace(id, race)) skillNames.add(id);
 				});
 				break;
 			case FORMS:
 				skills.getAllSkills().forEach((name, skill) -> {
-					if (skillsConfig.getFormSkills().contains(name) || skillsConfig.getStackSkills().contains(name)) {
+					if ((skillsConfig.getFormSkills().contains(name) || skillsConfig.getStackSkills().contains(name))
+							&& skillsConfig.isSkillAllowedForRace(name, race)) {
 						skillNames.add(name);
 					}
 				});
 				break;
 			case STRIKE:
 				statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
-					if (technique instanceof StrikeAttackData) skillNames.add(id);
+					if (technique instanceof StrikeAttackData && skillsConfig.isSkillAllowedForRace(id, race)) skillNames.add(id);
 				});
 				break;
 		}
@@ -334,9 +339,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (skillNames.remove(NEW_SKILL_ENTRY)) skillNames.add(0, NEW_SKILL_ENTRY);
 		if (currentCategory == SkillCategory.SKILLS) {
 			int classPassiveIndex = 0;
-			String race = statsData.getCharacter().getRaceName().toLowerCase();
-			if (!race.isEmpty() && !ConfigManager.getRaceCharacter(race).getRacialSkill().isEmpty()) {
-				skillNames.add(0, "racial_" + ConfigManager.getRaceCharacter(race).getRacialSkill());
+			String raceLower = race.toLowerCase();
+			if (!raceLower.isEmpty() && !ConfigManager.getRaceCharacter(raceLower).getRacialSkill().isEmpty()) {
+				skillNames.add(0, "racial_" + ConfigManager.getRaceCharacter(raceLower).getRacialSkill());
 				classPassiveIndex = 1;
 			}
 			skillNames.add(classPassiveIndex, CLASS_PASSIVE_ENTRY);

@@ -74,7 +74,10 @@ public class UpdateSkillC2S {
 							if (!raceAllowed) break;
 							boolean isStackSkillPurchase = ConfigManager.getSkillsConfig().getStackSkills().contains(skillName.toLowerCase());
 							if (isStackSkillPurchase) break;
-							if (!data.getSkills().hasSkill(skillName) && data.getResources().getTrainingPoints() >= cost && cost != -1) {
+							boolean isFormSkillPurchase = ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase());
+							boolean notOwned = !data.getSkills().hasSkill(skillName)
+									|| (isFormSkillPurchase && data.getSkills().getSkillLevel(skillName) == 0);
+							if (notOwned && data.getResources().getTrainingPoints() >= cost && cost != -1) {
 								data.getResources().removeTrainingPoints(cost);
 								data.getSkills().setSkillLevel(skillName, 1);
 								unlockTechniqueIfPresent(data, skillName);

@@ -33,7 +33,11 @@ public final class RadialForms {
 		List<RadialNode> heads = new ArrayList<>();
 		Map<String, FormConfig> groups = ConfigManager.getAllStackForms();
 		if (groups != null) {
-			for (String group : groups.keySet()) {
+			for (Map.Entry<String, FormConfig> entry : groups.entrySet()) {
+				String group = entry.getKey();
+				FormConfig config = entry.getValue();
+				String type = config != null && config.getFormType() != null ? config.getFormType().toLowerCase(Locale.ROOT) : group.toLowerCase(Locale.ROOT);
+				if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(type, race)) continue;
 				List<String> formNames = TransformationsHelper.getSelectableStackFormNames(stats, group);
 				RadialNode head = buildGroupHead(stats, race, group, formNames, "stackforms", true);
 				if (head != null) heads.add(head);
@@ -52,6 +56,7 @@ public final class RadialForms {
 				if (config == null) continue;
 				String type = config.getFormType() != null ? config.getFormType().toLowerCase(Locale.ROOT) : "";
 				if (!typeFilter.test(type)) continue;
+				if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(type, race)) continue;
 				List<String> formNames = TransformationsHelper.getSelectableFormNames(stats, race, group);
 				RadialNode head = buildGroupHead(stats, race, group, formNames, categoryKey, false);
 				if (head != null) heads.add(head);
