@@ -1,5 +1,42 @@
 [[Home]]
 
+### DMZ Systems (Reference)
+1. Progression & Character
+   * [[Stats & Attributes|Stats-and-Attributes]]
+   * [[Player Classes|Player-Classes]]
+   * [[Races|Races]]
+   * [[Skills & Abilities|Abilities]]
+   * [[Techniques|Techniques]]
+     * [[Ki Attacks|Techniques#ki-attacks]]
+     * [[Strike Attacks|Techniques#strike-attacks]]
+     * [[Special Attacks|Techniques#special-attacks]]
+   * [[Transformations & Mastery|Transformations-and-Mastery]]
+   * [[Training Points & Mastery|Training-Points-and-Mastery]]
+   * [[Weights|Weights]]
+2. World
+   * [[Dimensions|Dimensions]]
+     * [[Planet Namek|Dimension-Namek]]
+     * [[Sacred Planet|Dimension-Sacred-Planet]]
+     * [[Hyperbolic Time Chamber|Dimension-Hyperbolic-Time-Chamber]]
+     * [[Otherworld|Dimension-Otherworld]]
+   * [[Structures & Masters|Structures]]
+   * [[Bestiary|Bestiary]]
+     * [[Wildlife|Bestiary-Wildlife]]
+     * [[Hostiles|Bestiary-Hostiles]]
+     * [[NPCs|Bestiary-NPCs]]
+   * [[Sagas|Sagas]]
+   * [[Raids (W.I.P)|Raids]]
+   * [[Dragons & Wishes|Dragons-and-Wishes]]
+3. Reference
+   * [[Menu|Menu]]
+   * [[Controls|Controls]]
+   * [[Items|Items]]
+   * [[Armors|Armors]]
+   * [[Special Weapons|Special-Weapons]]
+   * [[Enchantments|Enchantments]]
+   * [[Effects|Effects]]
+   * [[Commands|Commands]]
+
 ### Tweaking DMZ
 1. JSON Configurations
    * [[Entities|Entities]]
@@ -9,8 +46,9 @@
    * [[Combat|Combat]]
    * [[Gravity System|Gravity-System]]
    * [[Dynamic Growth|Dynamic-Growth]]
-2. [[Notice to Server Owners/Developers|Notice-to-server-owners-developers]]
-3. [[Permissions|Permissions]]
+2. [[Gamerules|Gamerules]]
+3. [[Notice to Server Owners/Developers|Notice-to-server-owners-developers]]
+4. [[Permissions|Permissions]]
 
 ### Creating your own in DMZ
 1. Start here
@@ -40,4 +78,3 @@
    * [[Getting Started|Getting-Started]]
    * [[Implementation & Events|Implementation-&-Events]]
    * [[Creating a DMZ Addon|Creating-a-DMZ-Addon]]
-
