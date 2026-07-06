@@ -264,7 +264,7 @@ public class EntitiesEvents {
 
 				if (!alreadyKnown) {
 					player.displayClientMessage(
-							Component.translatable("message.dragonminez.instant_transmission.ki_learned", master.getName()), true);
+							Component.translatable("message.dragonminez.instant_transmission.ki_learned", master.getName()), false);
 				}
 			});
 		}
