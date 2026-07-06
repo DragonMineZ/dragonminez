@@ -238,6 +238,15 @@ public class QuestParser {
 			type = type.substring(7);
 		}
 
+		String explicitDifficulty = firstString(json, "difficulty", "difficultyType", "minDifficulty");
+		if (explicitDifficulty != null) {
+			difficultyType = switch (explicitDifficulty.trim().toUpperCase()) {
+				case "HARD" -> QuestReward.DifficultyType.HARD;
+				case "NORMAL" -> QuestReward.DifficultyType.NORMAL;
+				default -> QuestReward.DifficultyType.ALL;
+			};
+		}
+
 		QuestReward reward = switch (type.toUpperCase()) {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();

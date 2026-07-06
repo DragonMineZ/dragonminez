@@ -259,7 +259,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private record DetailPanelLayout(int titleH, int rewardsH, int descH, int objectivesH) {
 	}
 
-	private record RewardBlock(QuestReward reward, List<String> lines, int height) {
+	private record RewardBlock(QuestReward reward, List<String> lines, int height, Component header, boolean locked, int headerColor) {
+		boolean isHeader() {
+			return header != null;
+		}
 	}
 
 	private record NodeRender(Quest quest, int pixelX, int pixelY, boolean blurred, boolean sidequest,
@@ -882,6 +885,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (isCompleted) {
 			boolean hasUnclaimedRewards = false;
 			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
+				if (!selectedQuest.getRewards().get(i).isUnlockedFor(questData.getDifficulty())) {
+					continue;
+				}
 				if (!isRewardClaimed(questData, currentSaga, selectedQuest, i)) {
 					hasUnclaimedRewards = true;
 					break;
@@ -1008,6 +1014,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			Quest quest = QuestRegistry.getClientQuest(questKey);
 			if (quest == null || quest.getClaimMode() == Quest.ClaimMode.NPC_ONLY) continue;
 			for (int i = 0; i < quest.getRewards().size(); i++) {
+				if (!quest.getRewards().get(i).isUnlockedFor(questData.getDifficulty())) {
+					continue;
+				}
 				if (!questData.isRewardClaimed(questKey, i)) {
 					return true;
 				}
@@ -1843,18 +1852,27 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int blockTop = originY;
 		int consumedChars = 0;
 		for (RewardBlock block : blocks) {
+			boolean blockVisible = (blockTop + block.height()) >= originY + currentRewardsScroll
+					&& blockTop <= originY + viewHeight + currentRewardsScroll;
+
+			if (block.isHeader()) {
+				if (blockVisible) {
+					TextUtil.drawStringWithBorder(graphics, this.font, block.header(), x + 8, blockTop + 2, block.headerColor());
+				}
+				blockTop += block.height();
+				continue;
+			}
+
 			QuestReward reward = block.reward();
 			String desc = reward.getDescription().getString();
 			int rowVisible = Math.max(0, revealedChars - consumedChars);
 			consumedChars += desc.length() + 1;
 
-			boolean blockVisible = (blockTop + block.height()) >= originY + currentRewardsScroll
-					&& blockTop <= originY + viewHeight + currentRewardsScroll;
-
 			if (blockVisible) {
 				int iconX = x + 8;
 				ItemStack iconStack = rewardIconStack(reward);
 				ItemStack tooltipStack = reward.getType() == QuestReward.RewardType.ITEM ? iconStack : null;
+				int textColor = block.locked() ? 0xFF777777 : 0xFFCCCCCC;
 
 				if (iconStack != null) {
 					graphics.renderItem(iconStack, iconX, blockTop);
@@ -1876,7 +1894,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						shownLine = fullLine.substring(0, Math.max(0, charsLeft));
 						charsLeft = 0;
 					}
-					TextUtil.drawStringWithBorder(graphics, this.font, txt(shownLine), x + 28, textY, 0xFFCCCCCC);
+					TextUtil.drawStringWithBorder(graphics, this.font, txt(shownLine), x + 28, textY, textColor);
 					textY += lineHeight;
 				}
 			}
@@ -1902,22 +1920,70 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int textWidth = Math.max(20, width - 40);
 		int iconSize = 16;
 		int lineHeight = getDetailLineHeight();
-		for (QuestReward reward : getDisplayRewards(selectedQuest)) {
-			List<String> lines = wrapText(reward.getDescription().getString(), textWidth);
-			if (lines.isEmpty()) lines = List.of("");
-			int textBlockH = lines.size() * lineHeight;
-			int blockH = Math.max(iconSize + 2, textBlockH) + 4;
-			blocks.add(new RewardBlock(reward, lines, blockH));
+		List<QuestReward> displayRewards = getDisplayRewards(selectedQuest);
+		Difficulty difficulty = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
+
+		boolean tiered = displayRewards.stream()
+				.anyMatch(r -> r.getDifficultyType() != QuestReward.DifficultyType.ALL);
+
+		for (QuestReward.DifficultyType tier : QuestReward.DifficultyType.values()) {
+			List<QuestReward> tierRewards = new ArrayList<>();
+			for (QuestReward reward : displayRewards) {
+				if (reward.getDifficultyType() == tier) tierRewards.add(reward);
+			}
+			if (tierRewards.isEmpty()) continue;
+
+			if (tiered) {
+				boolean tierLocked = !isTierUnlocked(tier, difficulty);
+				int headerColor = tierLocked ? 0xFF666666 : rewardTierColor(tier);
+				blocks.add(new RewardBlock(null, List.of(rewardTierHeader(tier).getString()),
+						lineHeight + 4, rewardTierHeader(tier), tierLocked, headerColor));
+			}
+
+			for (QuestReward reward : tierRewards) {
+				List<String> lines = wrapText(reward.getDescription().getString(), textWidth);
+				if (lines.isEmpty()) lines = List.of("");
+				int textBlockH = lines.size() * lineHeight;
+				int blockH = Math.max(iconSize + 2, textBlockH) + 4;
+				blocks.add(new RewardBlock(reward, lines, blockH, null, !reward.isUnlockedFor(difficulty), 0));
+			}
 		}
 		return blocks;
+	}
+
+	private boolean isTierUnlocked(QuestReward.DifficultyType tier, Difficulty difficulty) {
+		Difficulty min = switch (tier) {
+			case ALL -> Difficulty.EASY;
+			case NORMAL -> Difficulty.NORMAL;
+			case HARD -> Difficulty.HARD;
+		};
+		return (difficulty != null ? difficulty : Difficulty.NORMAL).ordinal() >= min.ordinal();
+	}
+
+	private Component rewardTierHeader(QuestReward.DifficultyType tier) {
+		return switch (tier) {
+			case ALL -> tr("gui.dragonminez.quests.rewards.tier.all");
+			case NORMAL -> tr("gui.dragonminez.quests.rewards.tier.normal");
+			case HARD -> tr("gui.dragonminez.quests.rewards.tier.hard");
+		};
+	}
+
+	private int rewardTierColor(QuestReward.DifficultyType tier) {
+		return switch (tier) {
+			case ALL -> 0xFFAAAAAA;
+			case NORMAL -> 0xFFFFD700;
+			case HARD -> 0xFFFF5555;
+		};
 	}
 
 	private List<QuestReward> getDisplayRewards(Quest quest) {
 		List<QuestReward> shown = new ArrayList<>();
 		if (quest == null) return shown;
-		for (QuestReward reward : quest.getRewards()) {
-			if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
-			shown.add(reward);
+		for (QuestReward.DifficultyType tier : QuestReward.DifficultyType.values()) {
+			for (QuestReward reward : quest.getRewards()) {
+				if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
+				if (reward.getDifficultyType() == tier) shown.add(reward);
+			}
 		}
 		return shown;
 	}
@@ -3286,6 +3352,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean isCompleted = isQuestCompleted(pqd, saga, quest);
 		if (isCompleted) {
 			for (int i = 0; i < quest.getRewards().size(); i++) {
+				if (!quest.getRewards().get(i).isUnlockedFor(pqd.getDifficulty())) {
+					continue;
+				}
 				if (!isRewardClaimed(pqd, saga, quest, i)) {
 					return QuestNodeStatus.CLAIMABLE;
 				}

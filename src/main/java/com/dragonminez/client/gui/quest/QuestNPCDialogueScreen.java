@@ -12,11 +12,14 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.NPCActionC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.QuestTextFormatter;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -422,13 +425,54 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 		int rewY = rewTitleY + 11;
 		List<FormattedCharSequence> rewLines = new ArrayList<>();
-		for (QuestReward reward : selected.quest.getRewards()) {
-			Component rewText = txt("  ").append(reward.getDescription()).withStyle(ChatFormatting.GREEN);
-			rewLines.addAll(this.font.split(rewText, detailW - 8));
+		Difficulty difficulty = StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
+				.map(d -> d.getPlayerQuestData().getDifficulty()).orElse(Difficulty.NORMAL);
+		boolean tiered = selected.quest.getRewards().stream()
+				.anyMatch(r -> r.getDifficultyType() != QuestReward.DifficultyType.ALL);
+		for (QuestReward.DifficultyType tier : QuestReward.DifficultyType.values()) {
+			List<QuestReward> tierRewards = selected.quest.getRewards().stream()
+					.filter(r -> r.getDifficultyType() == tier).toList();
+			if (tierRewards.isEmpty()) continue;
+			boolean tierLocked = !isTierUnlocked(tier, difficulty);
+			if (tiered) {
+				Component header = rewardTierHeader(tier).copy()
+						.withStyle(tierLocked ? ChatFormatting.DARK_GRAY : rewardTierStyle(tier));
+				rewLines.addAll(this.font.split(header, detailW - 8));
+			}
+			for (QuestReward reward : tierRewards) {
+				Component rewText = txt("  ").append(reward.getDescription())
+						.withStyle(tierLocked ? ChatFormatting.DARK_GRAY : ChatFormatting.GREEN);
+				rewLines.addAll(this.font.split(rewText, detailW - 8));
+			}
 		}
 		rewardMaxScroll = Math.max(0, rewLines.size() * (this.font.lineHeight + 2) - 33);
 		rewardTargetScroll = Mth.clamp(rewardTargetScroll, 0, rewardMaxScroll);
 		renderScrollableFormatted(guiGraphics, rewLines, detailX, rewY, detailW, 33, rewardScroll, rewardMaxScroll);
+	}
+
+	private boolean isTierUnlocked(QuestReward.DifficultyType tier, Difficulty difficulty) {
+		Difficulty min = switch (tier) {
+			case ALL -> Difficulty.EASY;
+			case NORMAL -> Difficulty.NORMAL;
+			case HARD -> Difficulty.HARD;
+		};
+		return (difficulty != null ? difficulty : Difficulty.NORMAL).ordinal() >= min.ordinal();
+	}
+
+	private Component rewardTierHeader(QuestReward.DifficultyType tier) {
+		return switch (tier) {
+			case ALL -> tr("gui.dragonminez.quests.rewards.tier.all");
+			case NORMAL -> tr("gui.dragonminez.quests.rewards.tier.normal");
+			case HARD -> tr("gui.dragonminez.quests.rewards.tier.hard");
+		};
+	}
+
+	private ChatFormatting rewardTierStyle(QuestReward.DifficultyType tier) {
+		return switch (tier) {
+			case ALL -> ChatFormatting.GRAY;
+			case NORMAL -> ChatFormatting.YELLOW;
+			case HARD -> ChatFormatting.RED;
+		};
 	}
 
 	private void renderScrollableFormatted(GuiGraphics guiGraphics, List<FormattedCharSequence> lines, int x, int y, int width, int height, float currentScroll, float maxScroll) {

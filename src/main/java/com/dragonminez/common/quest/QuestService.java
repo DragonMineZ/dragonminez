@@ -507,7 +507,11 @@ public final class QuestService {
 	}
 
 	private static boolean hasUnclaimedRewards(PlayerQuestData pqd, String questKey, Quest quest) {
-		for (int i = 0; i < quest.getRewards().size(); i++) {
+		List<QuestReward> rewards = quest.getRewards();
+		for (int i = 0; i < rewards.size(); i++) {
+			if (!rewards.get(i).isUnlockedFor(pqd.getDifficulty())) {
+				continue;
+			}
 			if (!pqd.isRewardClaimed(questKey, i)) {
 				return true;
 			}
@@ -540,6 +544,9 @@ public final class QuestService {
 		double rewardMultiplier = pqd.getDifficulty().questRewardMultiplier();
 		for (int i = 0; i < rewards.size(); i++) {
 			if (pqd.isRewardClaimed(questKey, i)) {
+				continue;
+			}
+			if (!rewards.get(i).isUnlockedFor(pqd.getDifficulty())) {
 				continue;
 			}
 			DMZEvent.QuestRewardClaimEvent rewardEvent = new DMZEvent.QuestRewardClaimEvent(
