@@ -37,8 +37,8 @@ public class CombatConfig {
 	private Double enchantmentDamageReductionCap = 0.85;
 	private Double defenseDecayOnGuardBreak = 0.66;
 	private Double flatMitigationFactor = 0.10;
-	private Double flatMitigationMaxAbsorbFraction = 0.5;
-	private Double defenseReductionScale = 0.25;
+	private Double flatMitigationMaxAbsorbFraction = 0.65;
+	private Double defenseReductionScale = 0.15;
 
 	private Boolean enableBlocking = true;
 	private Boolean enableParrying = true;
@@ -128,11 +128,11 @@ public class CombatConfig {
 	}
 
 	public double getFlatMitigationMaxAbsorbFraction() {
-		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.5;
+		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.65;
 	}
 
 	public double getDefenseReductionScale() {
-		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.25;
+		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.15;
 	}
 
 	public KiWeaponConfig getKiWeaponConfig(String type) {

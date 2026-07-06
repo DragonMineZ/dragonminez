@@ -1,5 +1,7 @@
 package com.dragonminez.server.events.players.combat;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
@@ -681,6 +683,23 @@ public class CombatEvent {
 								SummonPlayerShadowDummyC2S.dismissByDummy((ShadowDummyEntity) damageSource);
 							}
 						}
+					}
+
+					Entity dmzDebugAttacker = event.getSource().getEntity();
+					if (dmzDebugAttacker instanceof LivingEntity && !(dmzDebugAttacker instanceof Player)) {
+						double dmzDebugDefense = stats.getDefense();
+						double dmzDebugMitigatedPct = rawDamage > 0.0 ? (1.0 - (finalDamage / rawDamage)) * 100.0 : 0.0;
+						LogUtil.info(Env.SERVER,
+								"[DEF-DEBUG] victim={} attacker={} type={} raw={} defense={} guardBroken={} defPen={} final={} mitigated={}%",
+								victim.getName().getString(),
+								dmzDebugAttacker.getName().getString(),
+								event.getSource().getMsgId(),
+								String.format("%.1f", rawDamage),
+								String.format("%.1f", dmzDebugDefense),
+								isGuardBroken,
+								String.format("%.2f", defensePenetration),
+								String.format("%.1f", (double) finalDamage),
+								String.format("%.1f", dmzDebugMitigatedPct));
 					}
 
 					event.setAmount(finalDamage);
