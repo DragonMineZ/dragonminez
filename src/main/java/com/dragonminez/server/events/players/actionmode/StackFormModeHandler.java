@@ -37,7 +37,7 @@ public class StackFormModeHandler implements IActionModeHandler {
 		String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
 		int mastery = (int) data.getCharacter().getStackFormMasteries().getMastery(group, nextForm.getName());
-		return 5 + Math.min(20, (int)(mastery * 0.2));
+		return 10 + Math.min(15, (int)(mastery * 0.2));
 	}
 
 	@Override

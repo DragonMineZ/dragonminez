@@ -168,20 +168,26 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		formNodes.clear();
 		if (statsData == null) return;
 		String race = statsData.getCharacter().getRaceName().toLowerCase(Locale.ROOT);
+		var skillsConfig = ConfigManager.getSkillsConfig();
 		List<TransformationsHelper.OrderedFormEntry> orderedForms = TransformationsHelper.getOrderedFormsForRace(race, PREVIEW_FORM_TYPE_ORDER);
 		Map<String, List<FormConfig.FormData>> groupedForms = new LinkedHashMap<>();
+		Map<String, String> groupTypes = new LinkedHashMap<>();
 
 		for (TransformationsHelper.OrderedFormEntry entry : orderedForms) {
 			if (entry.getFormData() == null) continue;
+			if (!skillsConfig.isSkillAllowedForRace(TransformationsHelper.getSkillNameForType(entry.getFormType()), race)) continue;
 			groupedForms.computeIfAbsent(entry.getGroupName(), k -> new ArrayList<>()).add(entry.getFormData());
+			groupTypes.putIfAbsent(entry.getGroupName(), entry.getFormType());
 		}
 
-		for (String stackSkill : ConfigManager.getSkillsConfig().getStackSkills()) {
+		for (String stackSkill : skillsConfig.getStackSkills()) {
+			if (!skillsConfig.isSkillAllowedForRace(stackSkill, race)) continue;
 			FormConfig stackGroup = ConfigManager.getStackFormGroup(stackSkill);
 			if (stackGroup == null) continue;
 			List<FormConfig.FormData> stackForms = new ArrayList<>(stackGroup.getForms().values());
 			if (stackForms.isEmpty()) continue;
 			groupedForms.computeIfAbsent(stackGroup.getGroupName(), k -> new ArrayList<>()).addAll(stackForms);
+			groupTypes.putIfAbsent(stackGroup.getGroupName(), stackGroup.getFormType());
 		}
 
 		int groupY = -(groupedForms.size() * 80) / 2;
@@ -189,12 +195,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		for (Map.Entry<String, List<FormConfig.FormData>> group : groupedForms.entrySet()) {
 			int formX = -(group.getValue().size() * 80) / 2;
 			String groupName = group.getKey();
-			String type = "superforms";
-			FormConfig fc = ConfigManager.getFormGroup(race, groupName);
-			if (fc == null) fc = ConfigManager.getStackFormGroup(groupName);
-			if (fc != null && fc.getFormType() != null) type = fc.getFormType();
-
-			if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(type, race)) continue;
+			String type = groupTypes.getOrDefault(groupName, "superforms");
 
 			for (FormConfig.FormData form : group.getValue()) {
 				formNodes.add(new FormNode(groupName, type, form, formX, groupY));
