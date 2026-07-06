@@ -45,11 +45,9 @@ public class NamekBiomes {
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 
 		addWaterMobs(spawnBuilder);
-        // Higher charge = larger minimum spacing between soldiers, so they don't fill the
-        // monster cap and swarm an AFK player. They still spawn, just far more sparsely.
-        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER.get(), 2.0, 0.1D);
-        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), 2.0, 0.1D);
-        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), 2.0, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER.get(), 0.9, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), 0.9, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), 0.9, 0.1D);
 
         biomeBuilder.addFeature(GenerationStep.Decoration.LAKES, NamekPlacedFeatures.NAMEK_LAKE_LAVA_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.FLUID_SPRINGS, NamekPlacedFeatures.NAMEK_SPRING_LAVA_PLACED);
@@ -81,11 +79,9 @@ public class NamekBiomes {
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 
 		addWaterMobs(spawnBuilder);
-        // Higher charge = larger minimum spacing between soldiers, so they don't fill the
-        // monster cap and swarm an AFK player. They still spawn, just far more sparsely.
-        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER.get(), 2.0, 0.1D);
-        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), 2.0, 0.1D);
-        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), 2.0, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER.get(), 0.9, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), 0.9, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), 0.9, 0.1D);
 
 		biomeBuilder.addFeature(GenerationStep.Decoration.LAKES, NamekPlacedFeatures.NAMEK_LAKE_LAVA_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.FLUID_SPRINGS, NamekPlacedFeatures.NAMEK_SPRING_LAVA_PLACED);
