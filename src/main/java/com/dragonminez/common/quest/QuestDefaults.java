@@ -704,7 +704,7 @@ final class QuestDefaults {
 				step("buu", 4, "04_enter_the_world_tournament.json",
 						earthReq(1540, condBiome("minecraft:plains")),
 						new JsonObject[]{
-								objTalkTo("shin")
+								objTalkTo("piccolo")
 						},
 						rewTPS(43200)),
 				step("buu", 5, "05_tournament_goten.json",

@@ -1,0 +1,164 @@
+{
+  "configVersion": 21.0,
+  "staminaConsumptionRatio": 0.083,
+  "blockStaminaCost": 0.25,
+  "knockdownDurationSeconds": 30,
+  "baselineFormDrain": 100,
+  "killPlayersOnCombatLogout": true,
+  "kiProtectionMitigationPerLevel": 0.01,
+  "kiProtectionCostRatio": 0.5,
+  "kiInfusionDamagePerLevel": 0.025,
+  "kiInfusionBaseCostPct": 2.5,
+  "kiInfusionMaxCostPct": 7.5,
+  "baseDamageReductionCap": 0.75,
+  "enchantmentDamageReductionCap": 0.85,
+  "defenseDecayOnGuardBreak": 0.66,
+  "enableBlocking": true,
+  "enableParrying": true,
+  "parryWindowMs": 150,
+  "parryStaminaCostPenalty": 2.0,
+  "blockBreakStunDurationTicks": 60,
+  "poiseDamageMultiplier": 0.25,
+  "blockDamageReductionCap": 0.65,
+  "blockDamageReductionMin": 0.05,
+  "poiseRegenCooldown": 100,
+  "enablePerfectEvasion": true,
+  "perfectEvasionWindowMs": 200,
+  "dashCooldownSeconds": 4,
+  "doubleDashCooldownSeconds": 12,
+  "combatFlyAutoSwitchOnDamage": true,
+  "combatFlyLockSeconds": 8,
+  "combatFlyBaseSpeed": 0.3,
+  "combatFlySprintSpeed": 0.5,
+  "combatFlyHoldSpeedMultiplier": 1.6,
+  "combatFlyDrainMultiplier": 0.5,
+  "combatFlyImpulseKiCostPct": 0.05,
+  "combatFlyImpulseCooldownTicks": 25,
+  "kiWeaponsConfig": {
+    "scythe": {
+      "baseDamage": 0.0,
+      "kiScalingDamage": 0.45,
+      "baseKiCost": 0.0,
+      "kiScalingCost": 0.105,
+      "attackSpeed": -2.8,
+      "forcedColor": "#FFFFFF",
+      "weaponCombo": "dragonminez:scythe"
+    },
+    "clawlance": {
+      "baseDamage": 0.0,
+      "kiScalingDamage": 0.65,
+      "baseKiCost": 0.0,
+      "kiScalingCost": 0.175,
+      "attackSpeed": -2.6,
+      "forcedColor": "#FFFFFF",
+      "weaponCombo": "dragonminez:trident"
+    },
+    "blade": {
+      "baseDamage": 0.0,
+      "kiScalingDamage": 0.25,
+      "baseKiCost": 0.0,
+      "kiScalingCost": 0.075,
+      "attackSpeed": -2.4,
+      "forcedColor": "#FFFFFF",
+      "weaponCombo": "dragonminez:sword"
+    }
+  },
+  "upswingMultiplier": 0.5,
+  "allowAttackingMount": false,
+  "attackIntervalCap": 2,
+  "weaponRegistryLogging": false,
+  "weaponRegistryCompression": true,
+  "playerRelations": {
+    "minecraft:villager": "NEUTRAL",
+    "guardvillagers:guard": "NEUTRAL",
+    "minecraft:player": "HOSTILE",
+    "minecraft:iron_golem": "NEUTRAL"
+  },
+  "playerRelationToPassives": "HOSTILE",
+  "playerRelationToHostiles": "HOSTILE",
+  "playerRelationToOther": "HOSTILE",
+  "fallbackCompatibilityEnabled": true,
+  "blacklistItemIdRegex": "pickaxe",
+  "fallbackCompatibility": [
+    {
+      "item_id_regex": "claymore|great_sword|greatsword",
+      "weapon_attributes": "dragonminez:claymore"
+    },
+    {
+      "item_id_regex": "great_hammer|greathammer|war_hammer|warhammer|maul",
+      "weapon_attributes": "dragonminez:hammer"
+    },
+    {
+      "item_id_regex": "double_axe|doubleaxe|war_axe|waraxe|great_axe|greataxe",
+      "weapon_attributes": "dragonminez:double_axe"
+    },
+    {
+      "item_id_regex": "scythe",
+      "weapon_attributes": "dragonminez:scythe"
+    },
+    {
+      "item_id_regex": "halberd|glaive|pike|lance|naginata",
+      "weapon_attributes": "dragonminez:halberd"
+    },
+    {
+      "item_id_regex": "spear|trident|pitchfork|javelin",
+      "weapon_attributes": "dragonminez:spear"
+    },
+    {
+      "item_id_regex": "battlestaff|staff|quarterstaff|pole",
+      "weapon_attributes": "dragonminez:battlestaff"
+    },
+    {
+      "item_id_regex": "katana|uchigatana|nodachi|tachi",
+      "weapon_attributes": "dragonminez:katana"
+    },
+    {
+      "item_id_regex": "rapier|foil",
+      "weapon_attributes": "dragonminez:rapier"
+    },
+    {
+      "item_id_regex": "dagger|knife|shiv|dirk|kunai|karambit|wakizashi|tanto",
+      "weapon_attributes": "dragonminez:dagger"
+    },
+    {
+      "item_id_regex": "sickle|kama",
+      "weapon_attributes": "dragonminez:sickle"
+    },
+    {
+      "item_id_regex": "soul_knife",
+      "weapon_attributes": "dragonminez:soul_knife"
+    },
+    {
+      "item_id_regex": "claw|katar",
+      "weapon_attributes": "dragonminez:claw"
+    },
+    {
+      "item_id_regex": "wand",
+      "weapon_attributes": "dragonminez:wand"
+    },
+    {
+      "item_id_regex": "mace|hammer|flail",
+      "weapon_attributes": "dragonminez:mace"
+    },
+    {
+      "item_id_regex": "axe",
+      "weapon_attributes": "dragonminez:axe"
+    },
+    {
+      "item_id_regex": "coral_blade",
+      "weapon_attributes": "dragonminez:coral_blade"
+    },
+    {
+      "item_id_regex": "twin_blade|twinblade",
+      "weapon_attributes": "dragonminez:twin_blade"
+    },
+    {
+      "item_id_regex": "cutlass|scimitar|machete",
+      "weapon_attributes": "dragonminez:cutlass"
+    },
+    {
+      "item_id_regex": "sword|blade",
+      "weapon_attributes": "dragonminez:sword"
+    }
+  ]
+}

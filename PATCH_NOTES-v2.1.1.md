@@ -9,6 +9,7 @@
 - **Capsule Corp Villager Structure:** A Capsule Corp-themed structure now spawns inside vanilla Minecraft villages, blending the Dragon Ball world into regular Minecraft exploration.
 - **Gamerule — `allowKiGriefingMasterStructures`:** Added a new gamerule that controls whether ki attacks can destroy or damage master training structures. Servers can now protect these key structures from ki attack collateral damage.
 - **Structure Spacing Server Config:** Two new server config fields let operators tune how far apart repeating structure copies spawn: `structureSpacing` (default 6000 blocks; region size — lower means you encounter structures sooner while exploring) and `structureSeparation` (default 2000 blocks; minimum buffer between placements). Both are configurable at runtime without a datapack override.
+- **Namek Caves — GETE Ore Debris:** Gete ore now spawns as scattered debris clusters deep in Namek caves (Y −64 to −32). Two cluster sizes — large (up to 3 blocks) and small (up to 2 blocks) — generate per chunk using scattered placement (100% air-exposed), adding a new source of the material and a reason to mine the Namek underground.
 
 *(by @yuseix300, @Shokkoh)*
 
@@ -48,6 +49,7 @@
 ### New Dragon Wishes
 - **Change Difficulty** — use the Dragon Balls to permanently change your story difficulty.
 - **Reset Story** — use the Dragon Balls to reset your story progress and start the saga from the beginning.
+- **Reallocate Stats** wish has been removed.
 
 *(by @Shokkoh)*
 
@@ -80,6 +82,11 @@
 - Fixed the "Saiyan Biology Sample" Bulma sidequest where the Raditz kill objective used the wrong tracking method. Kills now register correctly.
 
 *(by @Bruneitor123)*
+
+### Buu Saga — Quest NPC Correction
+- The Buu Saga step 4 quest ("Enter the World Tournament") now correctly directs players to speak with **Piccolo** instead of Shin. The quest description has been updated to match.
+
+*(by @Shokkoh)*
 
 ---
 
@@ -130,6 +137,12 @@
 
 ### Progression TP Gain Multiplier
 - A new **Progression TP gain multiplier** scales TP rewards based on how far along your stat progression you are. As your stat cost grows relative to the configured maximum, you receive a bonus on all TP earned — up to a configurable cap (default: +50% at max stat cost). This is visible in the TP multiplier tooltip as a new "Progression" entry. Configurable via `increaseTPGainRelativeToTPCost` in the server config (default `0.5`).
+
+*(by @Shokkoh)*
+
+### TP Multiplier — Calculation Fix
+- Fixed the TP multiplier formula. All bonuses (class, racial skill, HTC, gravity, weight bells, global, potions, mutant, difficulty, progression) are now combined **additively**: `total = 1 + Σ(bonus − 1)`. Previously, several sources (weight bells, global, potions, mutant, difficulty) were applied multiplicatively on top of the additive group, causing compounding overstatements of TP gains — especially in scenarios where multiple bonuses were active at once.
+- As part of this rebalance, the **Hyperbolic Time Chamber** default TP multiplier has been reduced from **2.5× to 1.75×**.
 
 *(by @Shokkoh)*
 
@@ -222,6 +235,11 @@
 
 *(by @Shokkoh)*
 
+### Fly Burst — Removed
+- The double-tap fly key "burst launch" has been removed. Double-tapping the fly key while on the ground no longer fires the player forward at high speed — the key now initiates standard flight take-off in all cases. The burst deceleration immunity phase and its associated `isBurst` network packet field have also been removed.
+
+*(by @Shokkoh)*
+
 ---
 
 ## Skills & Techniques
@@ -229,6 +247,11 @@
 ### Instant Transmission
 - Reworked Ki cost handling for Instant Transmission to be accurate and consistent.
 - Added a fallback feedback message displayed to the player when no valid teleport destination can be found.
+
+*(by @Shokkoh)*
+
+### Instant Transform — Stack Form Support
+- Fixed Instant Transform not routing correctly when the player's selected action mode is **Stack**. The action now properly applies the next available stack form with all compatibility, mastery, and ki-cost checks — rather than always targeting the base form group. If switching the base form to one that is incompatible with the currently active stack form, the stack form is automatically cleared and the player is notified.
 
 *(by @Shokkoh)*
 
@@ -252,8 +275,35 @@
 
 *(by @Shokkoh)*
 
+### X Menu — Forms Grouped by Type
+- Transformation forms in the radial X menu are now **grouped by form group**: the first form in each group is the head node, and additional forms within the group are accessible by expanding it. This reduces clutter for races with large transformation pools and makes navigating to a specific form more intuitive.
+
+*(by @Shokkoh)*
+
+### Over Shoulder Camera
+- A fully configurable **over-shoulder camera** is now available. Open it from the Config screen → "Over Shoulder Camera" → **Open »**.
+- **Three modes:** Disabled, Lock-On Only (activates only while locked onto a target), or Always.
+- **Adjustable settings:** shoulder side (Left / Right), back distance (1–6), height (−1 to 2), side offset (0–3), and smoothing speed (0.05–0.6).
+- The camera clips intelligently against walls using 8 corner rays to prevent geometry phasing.
+- Default: Always mode, right shoulder, distance 3.
+
+*(by @Shokkoh)*
+
+### HUD Bars — Damage & Heal Chip Animations
+- Both HUD styles (Xenoverse and Alternative) now display **animated damage and heal chips** on the HP bar:
+  - Taking damage leaves a brief **red ghost bar** that lingers for ~1.5 seconds before catching up to the current HP value.
+  - Large burst heals show a brief **green chip** that fills ahead of the bar before snapping into place.
+- All three bars (HP, Ki, Stamina) now use a time-based eased animator for smoother, frame-rate-independent transitions.
+
+*(by @Shokkoh)*
+
 ### `/dmzmastery all` Command
 - The `/dmzmastery` admin command now accepts `all` as a target, instantly mastering every technique at once instead of requiring individual entries.
+
+*(by @Shokkoh)*
+
+### `/dmzrestoreupdate` Command
+- Added the `/dmzrestoreupdate` admin command. Running it displays a **clickable confirmation prompt** in chat (expires after 15 seconds). On confirmation, it deletes all world-save files inside the `wishes/`, `sagas/`, and `quests/` directories and immediately triggers a full `/dmzreload all` — useful for resetting server-customized quest and wish data back to the mod's current defaults after an update.
 
 *(by @Shokkoh)*
 
@@ -441,6 +491,32 @@
 
 ### Arclight — LivingEntity Crash
 - Fixed a server crash on **Arclight** software caused by incompatible `LivingEntity` handling in combat event processing.
+
+*(by @Shokkoh)*
+
+### X Menu — Radial Scaling
+- Fixed the radial X menu rendering too large on high-resolution or high-GUI-scale displays. The menu now applies a 2/3 scale factor relative to the available UI scale, matching the intended on-screen proportions.
+
+*(by @Shokkoh)*
+
+### Dende NPC — Reset Stats Confirmation
+- Clicking "Reset Stats" when speaking with Dende now shows a **warning message** and requires clicking "Reset everything" to confirm before the full character reset is performed. Selecting "Cancel" returns to the normal dialogue without any action. Previously the reset would execute immediately with no warning or confirmation step.
+
+*(by @Shokkoh)*
+
+### Instant Transform — Non-Stackable Forms
+- Fixed non-stackable stack-type forms incorrectly appearing as purchasable in the transformation skill tree. The buy button is now hidden for these forms' base slot, and the server rejects any attempt to purchase or upgrade a stack skill from level 0 via the normal TP path (they must be granted through quest rewards or other means).
+- When using Instant Transform to switch to a new base form, any currently active stack form that is incompatible with the new base form (due to stackability, mastery, or compatibility flags) is now automatically cleared and the player is notified.
+
+*(by @Shokkoh)*
+
+### Quest Conditions — Race & Class Sync
+- Fixed RACE and CLASS prerequisite conditions in quest definitions not being serialized into the quest registry sync packet sent to clients. On multiplayer servers, quests gated by a player's race or class will now correctly transmit those requirements, preventing them from being evaluated as always-met on the client side.
+
+*(by @Bruneitor123)*
+
+### Form Free-Transform Config — API Change *(Addon/Developer API)*
+- The `canAlwaysTransform` and `directTransformationIfUsed` / `directTransformIfUsedOnMastery` form JSON config fields have been **removed** and replaced by the single `allowFreeTransformOnMastery` field. Set to `0.0` (or omit) for forms that are always freely accessible from the radial menu; set to a mastery percentage value for forms that require reaching that threshold first. Addons using the old fields must migrate to `allowFreeTransformOnMastery` — the old fields are no longer read.
 
 *(by @Shokkoh)*
 
