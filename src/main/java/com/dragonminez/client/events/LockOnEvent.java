@@ -2,13 +2,16 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
+import com.dragonminez.client.systems.taiyoken.TaiyokenBlindState;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -34,6 +37,7 @@ import java.util.Optional;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class LockOnEvent {
 	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
+	@Getter
 	private static LivingEntity lockedTarget = null;
 	private static int scanTickCounter = 0;
 
@@ -42,7 +46,7 @@ public class LockOnEvent {
 		Player player = mc.player;
 		if (player == null) return;
 
-		if (com.dragonminez.client.systems.taiyoken.TaiyokenBlindState.isActive()) {
+		if (TaiyokenBlindState.isActive()) {
 			unlock();
 			return;
 		}
@@ -59,7 +63,7 @@ public class LockOnEvent {
 			if (level <= 0) return;
 
 			double range = 15.0 + 5.0 * level;
-			if (data.getStatus().isAndroidUpgraded()) range += 10.0;
+			if (data.getStatus().isAndroidUpgraded()) range += 25.0;
 
 			findTargetInFront(player, range, data).ifPresent(target -> {
 				lockedTarget = target;
@@ -102,7 +106,7 @@ public class LockOnEvent {
 				}
 
 				double maxRange = 15.0 + 5.0 * level;
-				if (data.getStatus().isAndroidUpgraded()) maxRange += 10.0;
+				if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
 
 				if (player.distanceTo(lockedTarget) > maxRange) {
 					unlock();
@@ -231,7 +235,7 @@ public class LockOnEvent {
 		AABB searchBox = player.getBoundingBox().expandTowards(viewVec.scale(range)).inflate(1.0D);
 
 		List<LivingEntity> list = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
-				e -> e != player && e.isAlive() && e.isPickable() && KiSenseScan.canTarget(e, data));
+				e -> e != player && e.isAlive() && e.isPickable() && canTarget(e, data));
 
 		LivingEntity closest = null;
 		double closestDist = range * range;
@@ -264,7 +268,11 @@ public class LockOnEvent {
 		return start + amount * f;
 	}
 
-	public static LivingEntity getLockedTarget() {
-		return lockedTarget;
+	public static boolean canTarget(LivingEntity target, StatsData myData) {
+		if (!(target instanceof Player targetPlayer)) return true;
+		StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).orElse(null);
+		if (targetData == null) return true;
+		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
+		return true;
 	}
 }
