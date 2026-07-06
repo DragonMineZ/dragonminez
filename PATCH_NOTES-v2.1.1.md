@@ -37,6 +37,13 @@
 
 *(by @yuseix300)*
 
+### Weapons
+
+- **Dimensional Sword:** A new katana-class weapon is now craftable. The Dimensional Sword features a fully custom GeckoLib 3D model and 2D inventory icon, 75 base damage, and inherits katana weapon attributes with a 25% crit chance and +10% crit damage bonus. Tooltip: *"A wicked blade capable of slicing through the very fabric of space."*
+- **Weapon Texture Updates:** Refreshed inventory textures for the **Brave Sword**, **Yajirobe Katana**, and **Z-Sword** items.
+
+*(by @yuseix300)*
+
 ---
 
 ## Story & Quests
@@ -87,6 +94,27 @@
 - The Buu Saga step 4 quest ("Enter the World Tournament") now correctly directs players to speak with **Piccolo** instead of Shin. The quest description has been updated to match.
 
 *(by @Shokkoh)*
+
+### Future Gohan — Super Saiyan NPC Model
+- Future Gohan now has a dedicated custom 3D model when appearing in his Super Saiyan form during story sequences, replacing the previous shared model.
+
+*(by @yuseix300)*
+
+### Quest-Tunable Transformation Stats *(Addon/Developer API)*
+- Kill objectives in quest JSON now support seven new optional fields for fine-tuning how a saga enemy's stats change when it transforms mid-fight:
+  - **Absolute overrides** (party-scaled at spawn, difficulty-scaled at transform time): `TransformHealth`, `TransformMeleeDamage`, `TransformKiDamage`
+  - **Multiplier overrides** (relative to the pre-transform form's values): `TransformHealthMultiplier`, `TransformMeleeMultiplier`, `TransformKiMultiplier`
+  - **Trigger threshold:** `TransformTriggerPercent` — fraction (0.0–1.0) of max HP at which the enemy triggers its transformation (default: 0.5)
+- Absolute values take precedence over multipliers when both are set. All overrides carry forward across multi-stage transformations.
+- A new `transformDefaults` block in `entities.json` sets global defaults for all transforming saga enemies; per-quest overrides always win over these global values.
+
+*(by @Bruneitor123)*
+
+### Quest Rewards Per Difficulty *(Addon/Developer API)*
+- Quest rewards in JSON now support a `difficulty` field (also accepted as `difficultyType` or `minDifficulty`) with values `ALL`, `NORMAL`, or `HARD`. Rewards gated behind a difficulty threshold are shown but grayed out in both the Quest Tree and NPC dialogue screens when the player's difficulty is below the requirement.
+- Not applied to any default quests until v2.2 — this is a developer/operator framework feature available to use manually today.
+
+*(by @Bruneitor123)*
 
 ---
 
@@ -153,6 +181,17 @@
 
 ### Defense Formula Update
 - Adjusted the defense formula to perform more consistently across damage types — particularly against **strike attacks**, in **PvP**, and against **story bosses**. The previous formula undervalued defense against these scenarios.
+
+*(by @Shokkoh)*
+
+### Defense Reduction — Further Tuning
+- Refined two key defense parameters for a more accurate combat feel: `flatMitigationMaxAbsorbFraction` raised from **0.5 → 0.65** (high-defense characters absorb a larger fraction of incoming damage) and `defenseReductionScale` lowered from **0.25 → 0.15** (defense penetration is slightly less punishing). Both values remain configurable in the combat config.
+
+*(by @Shokkoh)*
+
+### Android — Lock-On Range Improved
+- The lock-on range bonus for Android Upgraded players has been increased from **+10 → +25** blocks over the base lock-on range.
+- Players in an active god form can no longer be targeted by lock-on from players who do not have the godforms skill.
 
 *(by @Shokkoh)*
 
@@ -247,8 +286,9 @@
 ### Instant Transmission
 - Reworked Ki cost handling for Instant Transmission to be accurate and consistent.
 - Added a fallback feedback message displayed to the player when no valid teleport destination can be found.
+- When interacting with a Master NPC for the first time, players with the Instant Transmission skill now receive a chat message confirming the Ki signature has been memorized: *"You now know the Ki of [Master Name]."* Players without the skill no longer register masters' signatures on interaction.
 
-*(by @Shokkoh)*
+*(by @Shokkoh, @yuseix300)*
 
 ### Instant Transform — Stack Form Support
 - Fixed Instant Transform not routing correctly when the player's selected action mode is **Stack**. The action now properly applies the next available stack form with all compatibility, mastery, and ki-cost checks — rather than always targeting the base form group. If switching the base form to one that is incompatible with the currently active stack form, the stack form is automatically cleared and the player is notified.
@@ -280,6 +320,22 @@
 
 *(by @Shokkoh)*
 
+### X Menu — Fusion Action Node
+- A dedicated **Fusion** action button has been added to the radial X menu. It toggles the Fusion action mode directly from the wheel and is only visible when the player has the fusion skill unlocked.
+
+*(by @Shokkoh)*
+
+### Skills Menu — Per-Race Filtering
+- Skills, form skills, stack forms, and ki/strike techniques that are not allowed for the player's race are now correctly hidden across all tabs of the Skills Menu (SKILLS, FORMS, KI, STRIKE). The radial X menu also respects race filtering for both standard and stack forms, preventing forms from other races from cluttering the wheel.
+- Server-side validation for form skill purchases was also improved: the buy button is correctly gated by race permission checks, and the `level 0 → 1` transition for form skills is handled properly.
+
+*(by @Shokkoh)*
+
+### Quest Tree — Enemy Preview Accurate Stats
+- The enemy preview card in the Quest Tree screen now displays the enemy's **actual spawn stats**: base objective values scaled by the player's current difficulty multiplier and party size. Previously the card always showed raw base values regardless of these modifiers.
+
+*(by @Shokkoh)*
+
 ### Over Shoulder Camera
 - A fully configurable **over-shoulder camera** is now available. Open it from the Config screen → "Over Shoulder Camera" → **Open »**.
 - **Three modes:** Disabled, Lock-On Only (activates only while locked onto a target), or Always.
@@ -294,6 +350,7 @@
   - Taking damage leaves a brief **red ghost bar** that lingers for ~1.5 seconds before catching up to the current HP value.
   - Large burst heals show a brief **green chip** that fills ahead of the bar before snapping into place.
 - All three bars (HP, Ki, Stamina) now use a time-based eased animator for smoother, frame-rate-independent transitions.
+- The damage ghost system has been further refined: the animator now tracks **multiple simultaneous damage segments** in a segment list rather than a single shared ghost bar. Rapid consecutive hits each create their own ghost segment that fades independently, giving a more accurate visual readout of multi-hit burst damage.
 
 *(by @Shokkoh)*
 
@@ -387,6 +444,17 @@
 
 *(by @yuseix300, @Shokkoh, @Bruneitor123)*
 
+### Hyperbolic Time Chamber — Exit Portal Fix
+- Fixed players being teleported to world spawn when exiting the Hyperbolic Time Chamber if the exit portal could not be located. Exit now correctly resolves the Kami's Lookout structure position and teleports the player there, only falling back to world spawn if the structure genuinely cannot be found.
+- Fixed a structural issue where the portal block search failed due to Y-axis bounding box mismatch in the structure start lookup. Added a chunk-level fallback and force-loads all chunks within the structure's bounds so the portal block is placed before the scan runs.
+
+*(by @yuseix300)*
+
+### Oozaru — Idle Animation Stall Fix
+- Fixed the Oozaru idle animation getting stuck or not updating correctly after entering or leaving a stack form. The Oozaru model cache is now refreshed whenever a stack form is set, cleared, or copied (e.g. on respawn or dimension change).
+
+*(by @yuseix300)*
+
 ### Ki Laser — Position & Rendering
 - Fixed the position of ki laser beams while firing: the beam origin now correctly projects from in front of the caster (using a per-render-type forward offset) rather than defaulting to the entity's center.
 - Fixed render type routing: Makkankosanpo (type 1) and the new generic beam style (type 2) now map to the same renderer correctly after a routing mistake caused type 2 to fall through to the default laser.
@@ -479,8 +547,8 @@
 
 *(by @Shokkoh)*
 
-### Config Updating
-- Reworked the config version migration logic. Outdated configs are now upgraded more reliably without risking data loss or silent failures.
+### Smart Config Regeneration
+- The mod now ships baseline config snapshots (in `previousConfigs/`) inside the jar for all major config types: combat, entities, general-server, general-user, and all race configs (character, forms, stats). When a user's config is found to be outdated, migration now diffs against these bundled snapshots to apply only what changed — preserving server/user customizations while cleanly introducing new fields and corrections. Previously, migration could discard non-default customizations in edge cases.
 
 *(by @Shokkoh)*
 
@@ -527,7 +595,7 @@
 | Contributor | Area |
 |---|---|
 | **@Shokkoh** | Combat, balance, boss AI, physics, story systems, UI, networking, bug fixes |
-| **@yuseix300** (Yuse) | Art, models, armor, race customization, world generation |
+| **@yuseix300** (Yuse) | Art, models, armor, race customization, world generation, story NPCs |
 | **@Bruneitor123** (Bruno V.) | Quest systems, developer API, structures, client bug fixes |
 
 ---
