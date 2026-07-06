@@ -1,0 +1,47 @@
+{
+  "configVersion": 21.0,
+  "raceName": "frostdemon",
+  "hasGender": false,
+  "useVanillaSkin": false,
+  "customModel": "",
+  "isLayered": true,
+  "headBones": [
+    "horns1"
+  ],
+  "racialSkill": "frostdemon",
+  "hasSaiyanTail": false,
+  "auraType": "kakarot",
+  "defaultModelScaling": [
+    0.7375,
+    0.7375,
+    0.7375
+  ],
+  "defaultBodyType": 0,
+  "defaultHairType": 0,
+  "defaultEyesType": 0,
+  "defaultNoseType": 0,
+  "defaultMouthType": 0,
+  "defaultTattooType": 0,
+  "defaultBodyColor": "#FFFFFF",
+  "defaultBodyColor2": "#E8A2FF",
+  "defaultBodyColor3": "#FF39A9",
+  "defaultHairColor": "#8B1BCC",
+  "defaultEye1Color": "#FF001D",
+  "defaultEye2Color": "#FF001D",
+  "defaultAuraColor": "#5F00FF",
+  "formSkillsCosts": {
+    "legendaryforms": [
+      -1,
+      -1,
+      -1
+    ],
+    "godforms": [],
+    "superforms": [
+      7000,
+      12000,
+      20000,
+      32000,
+      45000
+    ]
+  }
+}

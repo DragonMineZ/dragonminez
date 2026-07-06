@@ -15,19 +15,24 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final double CONFIG_VERSION = 21.10;
+	public static final String CONFIG_VERSION = "2.1.1";
 	public static final String CLIENT_ONLY_CONFIG = "general-user";
+
+	private static final String PREVIOUS_CONFIGS_ROOT = "/data/dragonminez/previousConfigs/";
+	private static final String OLD_BACKUP_DIR = "oldBackup";
 
 	private static final double DEFENSE_SCALING_FOLD = 0.12;
 	private static final double DEFENSE_SCALING_FOLD_VERSION = 21.2;
@@ -109,36 +114,95 @@ public class ConfigManager {
 		}
 	}
 
-	private static double peekConfigVersion(Path path) {
-		if (!Files.exists(path)) return -1.0;
+	private static String peekConfigVersion(Path path) {
+		if (!Files.exists(path)) return null;
 		try {
 			JsonElement parsed = JsonParser.parseString(Files.readString(path));
-			if (parsed == null || !parsed.isJsonObject()) return -2.0;
+			if (parsed == null || !parsed.isJsonObject()) return "";
 			JsonObject obj = parsed.getAsJsonObject();
 			if (obj.has("configVersion") && obj.get("configVersion").isJsonPrimitive()) {
-				return obj.get("configVersion").getAsDouble();
+				return obj.get("configVersion").getAsString();
 			}
-			return 0.0;
+			return "";
 		} catch (Exception e) {
-			return -2.0;
+			return "";
 		}
+	}
+
+	private static Integer[] parseSemver(String version) {
+		if (version == null || version.isBlank()) return null;
+		String[] parts = version.trim().split("\\.");
+		if (parts.length != 3) return null;
+		Integer[] comps = new Integer[3];
+		for (int i = 0; i < 3; i++) {
+			try { comps[i] = Integer.parseInt(parts[i].trim()); }
+			catch (NumberFormatException e) { return null; }
+		}
+		return comps;
+	}
+
+	private static int compareSemver(Integer[] a, Integer[] b) {
+		for (int i = 0; i < 3; i++) {
+			int cmp = Integer.compare(a[i], b[i]);
+			if (cmp != 0) return cmp;
+		}
+		return 0;
+	}
+
+	private static boolean isOutdated(String storedVersion) {
+		Integer[] stored = parseSemver(storedVersion);
+		if (stored == null) return true;
+		Integer[] current = parseSemver(CONFIG_VERSION);
+		return compareSemver(stored, current) < 0;
+	}
+
+	private static boolean isLegacyPreFoldVersion(String storedVersion) {
+		if (storedVersion == null || storedVersion.isBlank()) return false;
+		if (parseSemver(storedVersion) != null) return false;
+		try {
+			double legacy = Double.parseDouble(storedVersion.trim());
+			return legacy >= 0.0 && legacy < DEFENSE_SCALING_FOLD_VERSION;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
+	private static Double defaultDefenseScaling(RaceStatsConfig config, String className) {
+		RaceStatsConfig.ClassStats classStats = config.getClasses().get(className);
+		if (classStats == null) return null;
+		RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
+		return scaling != null ? scaling.getDefenseScaling() : null;
 	}
 
 	private static void backupOldConfig(Path configPath) {
 		if (Files.exists(configPath)) {
 			try {
-				String fileName = configPath.getFileName().toString();
-				if (fileName.startsWith("old_")) return;
-				Path backupPath = configPath.getParent().resolve("old_" + fileName);
+				Path relative = CONFIG_DIR.relativize(configPath);
+				Path backupPath = CONFIG_DIR.resolve(OLD_BACKUP_DIR).resolve(relative);
+				Files.createDirectories(backupPath.getParent());
 				Files.move(configPath, backupPath, StandardCopyOption.REPLACE_EXISTING);
-				LogUtil.info(Env.COMMON, "Obsolete config backed up: {}", backupPath.getFileName());
-			} catch (IOException e) {
+				LogUtil.info(Env.COMMON, "Obsolete config backed up: {}", CONFIG_DIR.relativize(backupPath));
+			} catch (Exception e) {
 				LogUtil.error(Env.COMMON, "Failed to backup old config '{}': {}", configPath.getFileName(), e);
 			}
 		}
 	}
 
-	private static <T> T loadAndValidate(Path path, Class<T> clazz, Supplier<T> defaultProvider, ToDoubleFunction<T> versionGetter, BiConsumer<T, Double> versionSetter, double currentVersion, String templateName) {
+	private static JsonObject loadBaselineObject(Path configPath) {
+		Path relative;
+		try { relative = CONFIG_DIR.relativize(configPath); }
+		catch (Exception e) { return null; }
+		String resource = PREVIOUS_CONFIGS_ROOT + relative.toString().replace('\\', '/');
+		try (InputStream in = ConfigManager.class.getResourceAsStream(resource)) {
+			if (in == null) return null;
+			JsonElement parsed = JsonParser.parseString(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+			return parsed != null && parsed.isJsonObject() ? parsed.getAsJsonObject() : null;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private static <T> T loadAndValidate(Path path, Class<T> clazz, Supplier<T> defaultProvider, Function<T, String> versionGetter, BiConsumer<T, String> versionSetter, String currentVersion, String templateName) {
 		boolean overwrite = false;
 		String reason = "";
 		T config = null;
@@ -146,9 +210,9 @@ public class ConfigManager {
 		if (Files.exists(path)) {
 			try {
 				config = LOADER.loadConfig(path, clazz);
-				double version = versionGetter.applyAsDouble(config);
-				if (version < currentVersion) {
-					reason = version == 0.0 ? "Missing config version" : "Outdated version (" + version + " < " + currentVersion + ")";
+				String version = versionGetter.apply(config);
+				if (isOutdated(version)) {
+					reason = (version == null || version.isBlank()) ? "Missing config version" : "Outdated version (" + version + " < " + currentVersion + ")";
 					overwrite = true;
 				}
 			} catch (Exception e) {
@@ -162,7 +226,7 @@ public class ConfigManager {
 				try {
 					LOADER.saveDefaultFromTemplate(path, templateName);
 					config = LOADER.loadConfig(path, clazz);
-					if (versionGetter.applyAsDouble(config) < currentVersion) overwrite = true;
+					if (isOutdated(versionGetter.apply(config))) overwrite = true;
 				} catch (Exception e) {
 					reason = "Template loading failed: " + e.getMessage();
 				}
@@ -172,6 +236,7 @@ public class ConfigManager {
 		if (overwrite) {
 			boolean parsingError = reason.startsWith("Parsing error");
 			String oldRawJson = null;
+			JsonObject baseline = loadBaselineObject(path);
 			if (Files.exists(path)) {
 				if (!parsingError) {
 					try { oldRawJson = Files.readString(path); }
@@ -183,7 +248,7 @@ public class ConfigManager {
 
 			try {
 				versionSetter.accept(config, currentVersion);
-				if (oldRawJson != null) config = mergePreservedValues(oldRawJson, config, clazz, currentVersion, versionSetter);
+				if (oldRawJson != null) config = mergePreservedValues(oldRawJson, config, clazz, currentVersion, versionSetter, baseline);
 				LogUtil.warn(Env.COMMON, String.format("Regenerating %s. Reason: %s", path.getFileName(), reason));
 				LOADER.saveConfig(path, config);
 			} catch (Exception e) {
@@ -193,7 +258,7 @@ public class ConfigManager {
 		return config != null ? config : defaultProvider.get();
 	}
 
-	private static <T> T mergePreservedValues(String oldRawJson, T defaultConfig, Class<T> clazz, double currentVersion, BiConsumer<T, Double> versionSetter) {
+	private static <T> T mergePreservedValues(String oldRawJson, T defaultConfig, Class<T> clazz, String currentVersion, BiConsumer<T, String> versionSetter, JsonObject baseline) {
 		try {
 			JsonElement oldParsed = JsonParser.parseString(oldRawJson);
 			if (oldParsed == null || !oldParsed.isJsonObject()) return defaultConfig;
@@ -202,7 +267,7 @@ public class ConfigManager {
 
 			JsonObject oldObj = oldParsed.getAsJsonObject();
 			JsonObject newObj = newTree.getAsJsonObject();
-			int preserved = mergeMatchingValues(oldObj, newObj, clazz);
+			int preserved = mergeMatchingValues(oldObj, newObj, baseline, clazz);
 
 			T merged = GSON.fromJson(newObj, clazz);
 			if (merged == null) return defaultConfig;
@@ -215,24 +280,36 @@ public class ConfigManager {
 		}
 	}
 
-	private static int mergeMatchingValues(JsonObject oldObj, JsonObject newObj, Class<?> type) {
+	private static JsonElement baselineChild(JsonObject baseline, String key) {
+		return (baseline != null && baseline.has(key) && !baseline.get(key).isJsonNull()) ? baseline.get(key) : null;
+	}
+
+	private static boolean shouldPreserve(JsonElement oldVal, JsonElement newVal, JsonElement baseVal) {
+		if (baseVal != null) return !valuesEqual(oldVal, baseVal);
+		return !valuesEqual(oldVal, newVal);
+	}
+
+	private static int mergeMatchingValues(JsonObject oldObj, JsonObject newObj, JsonObject baseline, Class<?> type) {
 		int count = 0;
 		for (String key : new ArrayList<>(newObj.keySet())) {
 			if (key.equals("configVersion") || !oldObj.has(key)) continue;
 			JsonElement oldVal = oldObj.get(key);
 			JsonElement newVal = newObj.get(key);
 			if (oldVal.isJsonNull()) continue;
+			JsonElement baseVal = baselineChild(baseline, key);
 
 			Field field = findField(type, key);
 			Class<?> fieldType = field != null ? field.getType() : null;
 
 			if (fieldType != null && isMapType(fieldType) && oldVal.isJsonObject() && newVal.isJsonObject()) {
-				count += mergeMapValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), mapValueClass(field));
+				JsonObject baseMap = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
+				count += mergeMapValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), baseMap, mapValueClass(field));
 			} else if (fieldType != null && isCollectionOrArray(fieldType)) {
-				if (oldVal.isJsonArray() && !valuesEqual(oldVal, newVal)) { newObj.add(key, oldVal); count++; }
+				if (oldVal.isJsonArray() && shouldPreserve(oldVal, newVal, baseVal)) { newObj.add(key, oldVal); count++; }
 			} else if (oldVal.isJsonObject() && newVal.isJsonObject()) {
-				count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), fieldType);
-			} else if (isValueCompatible(oldVal, newVal, fieldType) && !valuesEqual(oldVal, newVal)) {
+				JsonObject baseObj = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
+				count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), baseObj, fieldType);
+			} else if (isValueCompatible(oldVal, newVal, fieldType) && shouldPreserve(oldVal, newVal, baseVal)) {
 				newObj.add(key, oldVal);
 				count++;
 			}
@@ -240,24 +317,26 @@ public class ConfigManager {
 		return count;
 	}
 
-	private static int mergeMapValues(JsonObject oldMap, JsonObject newMap, Class<?> valueType) {
+	private static int mergeMapValues(JsonObject oldMap, JsonObject newMap, JsonObject baseMap, Class<?> valueType) {
 		int count = 0;
 		for (String key : new ArrayList<>(newMap.keySet())) {
 			if (!oldMap.has(key)) continue;
 			JsonElement oldVal = oldMap.get(key);
 			JsonElement newVal = newMap.get(key);
 			if (oldVal.isJsonNull()) continue;
+			JsonElement baseVal = baselineChild(baseMap, key);
 
 			if (oldVal.isJsonObject() && newVal.isJsonObject()) {
 				if (valueType != null && !isMapType(valueType) && !isCollectionOrArray(valueType)) {
-					count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), valueType);
-				} else {
+					JsonObject baseObj = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
+					count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), baseObj, valueType);
+				} else if (shouldPreserve(oldVal, newVal, baseVal)) {
 					newMap.add(key, oldVal);
 					count++;
 				}
 			} else if (oldVal.isJsonArray()) {
-				if (!valuesEqual(oldVal, newVal)) { newMap.add(key, oldVal); count++; }
-			} else if (isValueCompatible(oldVal, newVal, valueType) && !valuesEqual(oldVal, newVal)) {
+				if (shouldPreserve(oldVal, newVal, baseVal)) { newMap.add(key, oldVal); count++; }
+			} else if (isValueCompatible(oldVal, newVal, valueType) && shouldPreserve(oldVal, newVal, baseVal)) {
 				newMap.add(key, oldVal);
 				count++;
 			}
@@ -358,10 +437,11 @@ public class ConfigManager {
 			try { oldRaw = Files.readString(formFilePath); }
 			catch (IOException e) { LogUtil.error(Env.COMMON, "Could not read old form '{}' for value preservation: {}", formFilePath.getFileName(), e.getMessage()); }
 		}
+		JsonObject baseline = loadBaselineObject(formFilePath);
 		backupOldConfig(formFilePath);
 		defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
 		FormConfig result = oldRaw != null
-				? mergePreservedValues(oldRaw, defaultFormConfig, FormConfig.class, FormConfig.CURRENT_VERSION, FormConfig::setConfigVersion)
+				? mergePreservedValues(oldRaw, defaultFormConfig, FormConfig.class, FormConfig.CURRENT_VERSION, FormConfig::setConfigVersion, baseline)
 				: defaultFormConfig;
 		try { LOADER.saveConfig(formFilePath, result); } catch (Exception e) {
 			LogUtil.error(Env.COMMON, "Failed to save regenerated form '{}': {}", formFilePath.getFileName(), e.getMessage());
@@ -380,7 +460,7 @@ public class ConfigManager {
 						try {
 							FormConfig existing = LOADER.loadConfig(p, FormConfig.class);
 							if (existing == null || defaults.contains(existing.getGroupName().toLowerCase())) return;
-							if (existing.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+							if (isOutdated(existing.getConfigVersion())) {
 								LogUtil.warn(Env.COMMON, "Regenerating user form '{}'. Reason: Outdated version", p.getFileName());
 								backupOldConfig(p);
 								existing.setConfigVersion(FormConfig.CURRENT_VERSION);
@@ -420,19 +500,25 @@ public class ConfigManager {
 			}
 		}
 		Path statsPath = racePath.resolve("stats.json");
-		double previousStatsVersion = peekConfigVersion(statsPath);
+		String previousStatsVersion = peekConfigVersion(statsPath);
 		RaceStatsConfig statsConfig = loadAndValidate(statsPath, RaceStatsConfig.class, ConfigManager::createDefaultStatsConfig, RaceStatsConfig::getConfigVersion, RaceStatsConfig::setConfigVersion, RaceStatsConfig.CURRENT_VERSION, null);
-		if (previousStatsVersion >= 0.0 && previousStatsVersion < DEFENSE_SCALING_FOLD_VERSION) {
-			for (RaceStatsConfig.ClassStats classStats : statsConfig.getClasses().values()) {
-				RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
-				if (scaling != null && scaling.getDefenseScaling() != null) {
-					scaling.setDefenseScaling(scaling.getDefenseScaling() * DEFENSE_SCALING_FOLD);
+		if (isLegacyPreFoldVersion(previousStatsVersion)) {
+			RaceStatsConfig newDefaults = createDefaultStatsConfig();
+			boolean folded = false;
+			for (Map.Entry<String, RaceStatsConfig.ClassStats> entry : statsConfig.getClasses().entrySet()) {
+				RaceStatsConfig.StatScaling scaling = entry.getValue().getStatScaling();
+				if (scaling == null || scaling.getDefenseScaling() == null) continue;
+				Double newDefault = defaultDefenseScaling(newDefaults, entry.getKey());
+				if (newDefault != null && newDefault.equals(scaling.getDefenseScaling())) continue;
+				scaling.setDefenseScaling(scaling.getDefenseScaling() * DEFENSE_SCALING_FOLD);
+				folded = true;
+			}
+			if (folded) {
+				try { LOADER.saveConfig(statsPath, statsConfig); } catch (Exception e) {
+					LogUtil.error(Env.COMMON, "Failed to save migrated stats.json for race '{}': {}", raceName, e.getMessage());
 				}
+				LogUtil.warn(Env.COMMON, "Migrated user-modified DEF_scaling to flat-defense units for race '{}'", raceName);
 			}
-			try { LOADER.saveConfig(statsPath, statsConfig); } catch (Exception e) {
-				LogUtil.error(Env.COMMON, "Failed to save migrated stats.json for race '{}': {}", raceName, e.getMessage());
-			}
-			LogUtil.warn(Env.COMMON, "Migrated DEF_scaling to flat-defense units for race '{}'", raceName);
 		}
 
 		Map<String, FormConfig> raceForms = new HashMap<>();
@@ -450,7 +536,7 @@ public class ConfigManager {
 
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
-					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+					if (isOutdated(userConfig.getConfigVersion())) {
 						FormConfig regenerated = regenerateOutdatedForm(formFilePath, defaultFormConfig, defaultEntry.getKey() + "' for race '" + raceName);
 						raceForms.put(groupKey, regenerated);
 					} else {
@@ -485,7 +571,7 @@ public class ConfigManager {
 
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
-					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+					if (isOutdated(userConfig.getConfigVersion())) {
 						FormConfig regenerated = regenerateOutdatedForm(formFilePath, defaultFormConfig, defaultEntry.getKey());
 						finalStackForms.put(groupKey, regenerated);
 					} else {
@@ -975,6 +1061,7 @@ public class ConfigManager {
 			stream.filter(Files::isRegularFile)
 					.filter(p -> p.toString().endsWith(".json"))
 					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.filter(p -> !CONFIG_DIR.relativize(p).toString().replace("\\", "/").startsWith(OLD_BACKUP_DIR + "/"))
 					.forEach(p -> {
 						String relativePath = CONFIG_DIR.relativize(p).toString().replace("\\", "/");
 						CACHED_CONFIG_FILES.add(relativePath.substring(0, relativePath.length() - 5));

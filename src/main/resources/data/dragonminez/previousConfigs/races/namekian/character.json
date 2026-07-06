@@ -1,0 +1,48 @@
+{
+  "configVersion": 21.0,
+  "raceName": "namekian",
+  "hasGender": false,
+  "useVanillaSkin": false,
+  "customModel": "",
+  "isLayered": true,
+  "headBones": [
+    "ears1",
+    "ears2",
+    "ears3"
+  ],
+  "racialSkill": "namekian",
+  "hasSaiyanTail": false,
+  "auraType": "kakarot",
+  "defaultModelScaling": [
+    0.9375,
+    0.9375,
+    0.9375
+  ],
+  "defaultBodyType": 0,
+  "defaultHairType": 0,
+  "defaultEyesType": 0,
+  "defaultNoseType": 0,
+  "defaultMouthType": 0,
+  "defaultTattooType": 0,
+  "defaultBodyColor": "#1FAA24",
+  "defaultBodyColor2": "#BB2024",
+  "defaultBodyColor3": "#FF86A6",
+  "defaultHairColor": "#1FAA24",
+  "defaultEye1Color": "#222629",
+  "defaultEye2Color": "#222629",
+  "defaultAuraColor": "#7FFF00",
+  "formSkillsCosts": {
+    "legendaryforms": [
+      -1,
+      -1,
+      -1
+    ],
+    "godforms": [],
+    "superforms": [
+      9000,
+      18000,
+      30000,
+      45000
+    ]
+  }
+}
