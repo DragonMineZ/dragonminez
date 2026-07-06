@@ -154,7 +154,16 @@ public class QuestParser {
 						: -1;
 				boolean canTransform = !json.has("CanTransform") || json.get("CanTransform").isJsonNull()
 						|| json.get("CanTransform").getAsBoolean();
-				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier, canTransform);
+				Double transformHealth = getNullableDouble(json, "TransformHealth");
+				Double transformMeleeDamage = getNullableDouble(json, "TransformMeleeDamage");
+				Double transformKiDamage = getNullableDouble(json, "TransformKiDamage");
+				Double transformHealthMultiplier = getNullableDouble(json, "TransformHealthMultiplier");
+				Double transformMeleeMultiplier = getNullableDouble(json, "TransformMeleeMultiplier");
+				Double transformKiMultiplier = getNullableDouble(json, "TransformKiMultiplier");
+				Double transformTriggerPercent = getNullableDouble(json, "TransformTriggerPercent");
+				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode,
+						textureVariant, aiTier, canTransform, transformHealth, transformMeleeDamage, transformKiDamage,
+						transformHealthMultiplier, transformMeleeMultiplier, transformKiMultiplier, transformTriggerPercent);
 			}
 			case "BIOME" -> new BiomeObjective(json.get("biome").getAsString());
 			case "DIMENSION" -> new DimensionObjective(json.get("dimension").getAsString());
@@ -229,6 +238,15 @@ public class QuestParser {
 			type = type.substring(7);
 		}
 
+		String explicitDifficulty = firstString(json, "difficulty", "difficultyType", "minDifficulty");
+		if (explicitDifficulty != null) {
+			difficultyType = switch (explicitDifficulty.trim().toUpperCase()) {
+				case "HARD" -> QuestReward.DifficultyType.HARD;
+				case "NORMAL" -> QuestReward.DifficultyType.NORMAL;
+				default -> QuestReward.DifficultyType.ALL;
+			};
+		}
+
 		QuestReward reward = switch (type.toUpperCase()) {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();
@@ -277,6 +295,17 @@ public class QuestParser {
 
 	public static Quest.ClaimMode parseClaimMode(String rawMode) {
 		return parseEnum(rawMode, Quest.ClaimMode.class, Quest.ClaimMode.TREE_OR_NPC);
+	}
+
+	private static Double getNullableDouble(JsonObject json, String key) {
+		if (!json.has(key) || json.get(key).isJsonNull()) {
+			return null;
+		}
+		try {
+			return json.get(key).getAsDouble();
+		} catch (Exception ignored) {
+			return null;
+		}
 	}
 
 	private static <T extends Enum<T>> T parseEnum(String rawMode, Class<T> enumClass, T fallback) {

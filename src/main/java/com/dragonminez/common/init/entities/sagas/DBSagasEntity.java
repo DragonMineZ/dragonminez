@@ -2,6 +2,8 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.clash.BeamClashManager;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
@@ -1359,7 +1361,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 return false;
             }
 
-            if (!this.isTransforming() && this.getHealth() <= (this.getMaxHealth() / 2.0F)) {
+            if (!this.isTransforming() && this.getHealth() <= (this.getMaxHealth() * this.resolveTransformTriggerFraction())) {
                 if (this.canTransform()) this.startTransformation();
             }
 
@@ -1382,6 +1384,23 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     protected boolean canTransform() {
         return this.hasTransformation() && !this.transformationDisabled;
+    }
+
+    private static final String[] TRANSFORM_OVERRIDE_TAGS = {
+            "dmz_quest_tf_hp_abs", "dmz_quest_tf_melee_abs", "dmz_quest_tf_ki_abs",
+            "dmz_quest_tf_hp_mult", "dmz_quest_tf_melee_mult", "dmz_quest_tf_ki_mult",
+            "dmz_quest_tf_trigger"
+    };
+
+    /**
+     * Fraction of max health (0..1) at which this enemy triggers its transformation.
+     * Resolves a per-quest override first, then the global config default, then 0.5.
+     */
+    private double resolveTransformTriggerFraction() {
+        if (this.getPersistentData().contains("dmz_quest_tf_trigger")) {
+            return Mth.clamp(this.getPersistentData().getDouble("dmz_quest_tf_trigger"), 0.0D, 1.0D);
+        }
+        return ConfigManager.getEntityTransformDefaults().triggerHealthFractionOr(0.5D);
     }
 
     @Override
@@ -1533,14 +1552,50 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                         this.getPersistentData().getInt("dmz_quest_texture_variant"));
             }
 
-            double scaledMaxHealth = this.getMaxHealth() * 1.5D;
+            EntitiesConfig.TransformSettings transformCfg = ConfigManager.getEntityTransformDefaults();
+            CompoundTag pd = this.getPersistentData();
+            com.dragonminez.common.quest.Difficulty difficulty =
+                    com.dragonminez.common.quest.Difficulty.fromName(pd.getString("dmz_difficulty"));
+
+            // Health: an absolute quest override (party-scaled at spawn, difficulty-scaled here) wins;
+            // otherwise scale the previous form's max health by the quest/config multiplier
+            // (difficulty is already baked into that value from the initial spawn).
+            double scaledMaxHealth;
+            if (pd.contains("dmz_quest_tf_hp_abs")) {
+                scaledMaxHealth = pd.getDouble("dmz_quest_tf_hp_abs") * difficulty.hpMultiplier();
+            } else {
+                double hpMult = pd.contains("dmz_quest_tf_hp_mult")
+                        ? pd.getDouble("dmz_quest_tf_hp_mult")
+                        : transformCfg.healthMultiplierOr(1.5D);
+                scaledMaxHealth = this.getMaxHealth() * hpMult;
+            }
+            scaledMaxHealth = Math.max(1.0D, scaledMaxHealth);
             if (newEntity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
                 newEntity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(scaledMaxHealth);
             }
 
-            newEntity.setKiBlastDamage(this.getKiBlastDamage() * 1.5F);
+            double scaledKiDamage;
+            if (pd.contains("dmz_quest_tf_ki_abs")) {
+                scaledKiDamage = pd.getDouble("dmz_quest_tf_ki_abs") * difficulty.damageMultiplier();
+            } else {
+                double kiMult = pd.contains("dmz_quest_tf_ki_mult")
+                        ? pd.getDouble("dmz_quest_tf_ki_mult")
+                        : transformCfg.kiMultiplierOr(1.5D);
+                scaledKiDamage = this.getKiBlastDamage() * kiMult;
+            }
+            newEntity.setKiBlastDamage((float) scaledKiDamage);
+
             if (newEntity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
-                newEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5D);
+                double scaledMelee;
+                if (pd.contains("dmz_quest_tf_melee_abs")) {
+                    scaledMelee = pd.getDouble("dmz_quest_tf_melee_abs") * difficulty.damageMultiplier();
+                } else {
+                    double meleeMult = pd.contains("dmz_quest_tf_melee_mult")
+                            ? pd.getDouble("dmz_quest_tf_melee_mult")
+                            : transformCfg.meleeMultiplierOr(1.5D);
+                    scaledMelee = this.getAttributeValue(Attributes.ATTACK_DAMAGE) * meleeMult;
+                }
+                newEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(scaledMelee);
             }
 
             if (fullHealth) {
@@ -1570,6 +1625,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 			}
 			if (this.getPersistentData().contains(QuestService.QUEST_OBJECTIVE_INDEX_TAG)) {
 				newEntity.getPersistentData().putInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG, this.getPersistentData().getInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG));
+			}
+
+			// Carry the quest transform overrides forward so multi-stage transforms keep tuning.
+			for (String tag : TRANSFORM_OVERRIDE_TAGS) {
+				if (pd.contains(tag)) {
+					newEntity.getPersistentData().putDouble(tag, pd.getDouble(tag));
+				}
 			}
 
 			level.addFreshEntity(newEntity);

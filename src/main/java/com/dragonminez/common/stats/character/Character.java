@@ -612,12 +612,14 @@ public class Character {
 		this.activeStackFormGroup = groupName != null ? groupName : "";
 		this.activeStackForm = formName != null ? formName : "";
 		this.activeStackFormItemDurationTicks = 0;
+		updateOozaruCache();
 	}
 
 	public void clearActiveStackForm() {
 		this.activeStackFormGroup = "";
 		this.activeStackForm = "";
 		this.activeStackFormItemDurationTicks = 0;
+		updateOozaruCache();
 	}
 
 	public void clearActiveStackForm(LivingEntity entity) {
@@ -723,5 +725,6 @@ public class Character {
 		this.interactedMasters.putAll(other.interactedMasters);
 		this.knownMinigames.clear();
 		this.knownMinigames.addAll(other.knownMinigames);
+		updateOozaruCache();
 	}
 }

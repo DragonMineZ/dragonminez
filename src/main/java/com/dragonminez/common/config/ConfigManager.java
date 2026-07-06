@@ -606,6 +606,12 @@ public class ConfigManager {
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.MINI_BUU, 60.0, 8.0, 6.0);
 
+		EntitiesConfig.TransformSettings transform = config.getTransformDefaults();
+		transform.setHealthMultiplier(1.5D);
+		transform.setMeleeMultiplier(1.5D);
+		transform.setKiMultiplier(1.5D);
+		transform.setTriggerHealthPercent(0.5D);
+
 		return config;
 	}
 
@@ -1303,5 +1309,16 @@ public class ConfigManager {
 	public static EntitiesConfig.EntityStats getEntityStats(String registryName) {
 		EntitiesConfig config = getEntitiesConfig();
 		return config != null && config.getDefaultEntityStats() != null ? config.getDefaultEntityStats().get(registryName) : null;
+	}
+
+	/**
+	 * Global transform tuning (server-synced). Never returns null; a fresh
+	 * {@link EntitiesConfig.TransformSettings} is returned when unconfigured so
+	 * callers can rely on the {@code ...Or(fallback)} helpers.
+	 */
+	public static EntitiesConfig.TransformSettings getEntityTransformDefaults() {
+		EntitiesConfig config = getEntitiesConfig();
+		EntitiesConfig.TransformSettings transform = config != null ? config.getTransformDefaults() : null;
+		return transform != null ? transform : new EntitiesConfig.TransformSettings();
 	}
 }

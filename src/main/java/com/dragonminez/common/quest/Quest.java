@@ -151,6 +151,24 @@ public class Quest {
 				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
 	}
 
+	public Double getScaledTransformHealth(KillObjective objective, int partySize) {
+		Double base = objective.getTransformHealth();
+		return base == null ? null : base * enemyPartyMultiplier(partySize,
+				ConfigManager.getServerConfig().getGameplay().getEnemyHealthPerPartyPlayer());
+	}
+
+	public Double getScaledTransformMeleeDamage(KillObjective objective, int partySize) {
+		Double base = objective.getTransformMeleeDamage();
+		return base == null ? null : base * enemyPartyMultiplier(partySize,
+				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
+	}
+
+	public Double getScaledTransformKiDamage(KillObjective objective, int partySize) {
+		Double base = objective.getTransformKiDamage();
+		return base == null ? null : base * enemyPartyMultiplier(partySize,
+				ConfigManager.getServerConfig().getGameplay().getEnemyDamagePerPartyPlayer());
+	}
+
 	private int getScaledObjectiveRequired(QuestObjective objective, int partySize) {
 		int baseRequired = objective.getRequired();
 		if (!partyScaling || partySize <= 1 || baseRequired <= 0) {

@@ -34,8 +34,22 @@ public class KillObjective extends QuestObjective {
 	private final int aiTier;
 	private final boolean canTransform;
 
+	// --- Transform overrides (all nullable; null = fall back to the global EntitiesConfig defaults). ---
+	// Absolute stats for the transformed form take precedence over the multipliers when both are set.
+	private final Double transformHealth;
+	private final Double transformMeleeDamage;
+	private final Double transformKiDamage;
+	private final Double transformHealthMultiplier;
+	private final Double transformMeleeMultiplier;
+	private final Double transformKiMultiplier;
+	/** Fraction of max health (0..1) at which this enemy triggers its transformation. */
+	private final Double transformTriggerPercent;
+
 	public KillObjective(String entityId, int count, double health, double meleeDamage, double kiDamage,
-						 SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier, boolean canTransform) {
+						 SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier, boolean canTransform,
+						 Double transformHealth, Double transformMeleeDamage, Double transformKiDamage,
+						 Double transformHealthMultiplier, Double transformMeleeMultiplier, Double transformKiMultiplier,
+						 Double transformTriggerPercent) {
 		super(ObjectiveType.KILL, count);
 		this.entityId = entityId;
 		this.count = count;
@@ -47,6 +61,13 @@ public class KillObjective extends QuestObjective {
 		this.textureVariant = textureVariant;
 		this.aiTier = aiTier;
 		this.canTransform = canTransform;
+		this.transformHealth = transformHealth;
+		this.transformMeleeDamage = transformMeleeDamage;
+		this.transformKiDamage = transformKiDamage;
+		this.transformHealthMultiplier = transformHealthMultiplier;
+		this.transformMeleeMultiplier = transformMeleeMultiplier;
+		this.transformKiMultiplier = transformKiMultiplier;
+		this.transformTriggerPercent = transformTriggerPercent;
 	}
 
 	@Override
