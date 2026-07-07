@@ -116,7 +116,7 @@ public class NamekConfiguredFeatures {
 				OreConfiguration.target(deepslateReplaceables, MainBlocks.GETE_ORE.get().defaultBlockState())
 		);
 		register(context, NAMEK_GETE_DEBRIS_LARGE, Feature.SCATTERED_ORE, new OreConfiguration(geteDebrisTargets, 3, 1.0f));
-		register(context, NAMEK_GETE_DEBRIS_SMALL, Feature.SCATTERED_ORE, new OreConfiguration(geteDebrisTargets, 2, 1.0f));
+		register(context, NAMEK_GETE_DEBRIS_SMALL, Feature.ORE, new OreConfiguration(geteDebrisTargets, 2, 1.0f));
 
 		register(context, AJISSA_TREE, Feature.TREE, new TreeConfiguration.TreeConfigurationBuilder(
 				BlockStateProvider.simple(MainBlocks.NAMEK_AJISSA_LOG.get()),

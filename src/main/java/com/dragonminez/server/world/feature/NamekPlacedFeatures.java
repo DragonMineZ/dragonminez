@@ -74,10 +74,10 @@ public class NamekPlacedFeatures {
 				commonOrePlacement(6, HeightRangePlacement.uniform(VerticalAnchor.bottom(), VerticalAnchor.absolute(32))));
 
 		register(context, NAMEK_GETE_DEBRIS_LARGE_PLACED, configured.getOrThrow(NamekConfiguredFeatures.NAMEK_GETE_DEBRIS_LARGE),
-				commonOrePlacement(1, HeightRangePlacement.triangle(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-32))));
+				commonOrePlacement(1, HeightRangePlacement.triangle(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-16))));
 
 		register(context, NAMEK_GETE_DEBRIS_SMALL_PLACED, configured.getOrThrow(NamekConfiguredFeatures.NAMEK_GETE_DEBRIS_SMALL),
-				commonOrePlacement(1, HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-32))));
+				commonOrePlacement(1, HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-16))));
 
 		register(context, AJISSA_TREE_PLACED, configured.getOrThrow(NamekConfiguredFeatures.AJISSA_TREE),
 				VegetationPlacements.treePlacement(PlacementUtils.countExtra(1, 0.1f, 1), MainBlocks.NAMEK_AJISSA_SAPLING.get()));
