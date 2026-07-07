@@ -331,12 +331,25 @@ public class HairEditorScreen extends ScaledScreen {
 				.textureSize(20, 20)
 				.message(Component.empty())
 				.onPress(btn -> {
-					String code = individualCodeBox.getValue();
-					CustomHair imported = HairManager.fromCode(code);
+					String code = individualCodeBox.getValue().trim();
+					CustomHair imported;
+					if (HairManager.isFullSetCode(code)) {
+						CustomHair[] set = HairManager.fromFullSetCode(code);
+						imported = (set != null && selectedStyle < set.length) ? set[selectedStyle] : null;
+					} else {
+						imported = HairManager.fromCode(code);
+					}
 					if (imported != null) {
 						workingHairs[selectedStyle] = imported;
 						syncHairToServer();
+						actionStatusText = tr("gui.dragonminez.hair_editor.status.imported");
+						actionStatusTimer = 60;
+						actionStatusColor = 0x55FF55;
 						rebuildWidgets();
+					} else {
+						actionStatusText = tr("gui.dragonminez.hair_editor.status.invalid");
+						actionStatusTimer = 60;
+						actionStatusColor = 0xFF5555;
 					}
 				})
 				.build());
@@ -840,6 +853,8 @@ public class HairEditorScreen extends ScaledScreen {
 		renderStrandsGrid(graphics, leftPanelX, panelY, mouseX, mouseY);
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.stylecode"), leftPanelX + 15, panelY + 162, 0xFFFFFF);
+
+		if (actionStatusTimer > 0) TextUtil.drawCenteredStringWithBorder(graphics, this.font, actionStatusText, leftPanelX + 70, panelY + 205, actionStatusColor);
 	}
 
 	private void renderStrandContent(GuiGraphics graphics) {

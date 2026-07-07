@@ -10,9 +10,9 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 public class RaceCharacterConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
-	private double configVersion;
+	private String configVersion;
 
 	private String raceName;
 	private Boolean hasGender = true;
@@ -60,16 +60,24 @@ public class RaceCharacterConfig {
 
 		Map<String, List<Integer>> normalized = new LinkedHashMap<>();
 		boolean changed = false;
+
 		for (Map.Entry<String, List<Integer>> entry : formSkillsCosts.entrySet()) {
 			String key = entry.getKey();
-			String target = key;
-			if (key != null) {
-				String lower = key.toLowerCase();
-				if (!canonical.contains(lower) && canonical.contains(lower + "s")) {
-					target = lower + "s";
-					changed = true;
-				}
+			if (key == null) continue;
+			String lower = key.toLowerCase();
+			if (canonical.contains(lower)) {
+				if (!normalized.containsKey(lower)) normalized.put(lower, entry.getValue());
+				if (!key.equals(lower)) changed = true;
 			}
+		}
+
+		for (Map.Entry<String, List<Integer>> entry : formSkillsCosts.entrySet()) {
+			String key = entry.getKey();
+			if (key == null) continue;
+			String lower = key.toLowerCase();
+			if (canonical.contains(lower)) continue;
+			String target = canonical.contains(lower + "s") ? lower + "s" : lower;
+			if (!target.equals(key)) changed = true;
 			List<Integer> existing = normalized.get(target);
 			if (existing == null || existing.isEmpty()) normalized.put(target, entry.getValue());
 		}

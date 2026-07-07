@@ -51,7 +51,7 @@ public class MemoryGameScreen extends BaseMinigameScreen {
 	}
 
 	private int sequenceLength() {
-		return cfg.getBaseSequenceLength() + (levelsCleared * cfg.getSequenceLengthPerLevel());
+		return cfg.getBaseSequenceLength() + ((levelsCleared / 2) * cfg.getSequenceLengthPerLevel());
 	}
 
 	private int showTicks() {
@@ -116,21 +116,31 @@ public class MemoryGameScreen extends BaseMinigameScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, prompt, cx, cy - 36, 0xFFFFFFFF);
 
 		int spacing = 26;
-		int startX = cx - ((sequence.size() - 1) * spacing) / 2;
+		int rowSpacing = 28;
+		int maxRowWidth = (int) (this.width * 0.75f);
+		int perRow = Math.max(1, maxRowWidth / spacing);
+		int rowCount = (int) Math.ceil((double) sequence.size() / perRow);
+		int gridTop = cy - ((rowCount - 1) * rowSpacing) / 2;
 
 		for (int i = 0; i < sequence.size(); i++) {
-			int x = startX + i * spacing;
+			int row = i / perRow;
+			int col = i % perRow;
+			int notesInRow = Math.min(perRow, sequence.size() - row * perRow);
+			int startX = cx - ((notesInRow - 1) * spacing) / 2;
+			int x = startX + col * spacing;
+			int y = gridTop + row * rowSpacing;
 			Direction dir = sequence.get(i);
 			if (phase == Phase.SHOWING) {
-				drawArrow(graphics, x, cy, dir.symbol, dir.color);
+				drawArrow(graphics, x, y, dir.symbol, dir.color);
 			} else {
-				if (i < inputIndex) drawArrow(graphics, x, cy, dir.symbol, 0xFF55FF55);
-				else drawArrow(graphics, x, cy, "?", 0xFF777777);
+				if (i < inputIndex) drawArrow(graphics, x, y, dir.symbol, 0xFF55FF55);
+				else drawArrow(graphics, x, y, "?", 0xFF777777);
 			}
 		}
 
 		if (phase == Phase.SHOWING) {
-			int pbLeft = cx - 60, pbRight = cx + 60, pbY = cy + 30;
+			int pbY = gridTop + (rowCount - 1) * rowSpacing + 30;
+			int pbLeft = cx - 60, pbRight = cx + 60;
 			graphics.fill(pbLeft, pbY, pbRight, pbY + 4, 0xFF333333);
 			float pct = Math.min(1.0f, (float) showTimer / showTicks());
 			graphics.fill(pbLeft, pbY, pbLeft + (int) ((pbRight - pbLeft) * pct), pbY + 4, 0xFFFFD700);

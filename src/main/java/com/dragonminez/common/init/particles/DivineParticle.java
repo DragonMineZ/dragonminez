@@ -66,7 +66,11 @@ public class DivineParticle extends TextureSheetParticle {
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
             DivineParticle particle = new DivineParticle(level, x, y, z, r, g, b);
-            particle.pickSprite(this.spriteSet);
+            try {
+                particle.pickSprite(this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
             return particle;
         }
     }

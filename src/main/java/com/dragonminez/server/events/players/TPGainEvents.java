@@ -12,13 +12,13 @@ import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import com.dragonminez.server.world.dimension.HTCDimension;
-import com.dragonminez.server.util.GravityLogic;
-import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.config.TpSource;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -65,11 +65,9 @@ public class TPGainEvents {
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return;
 		
-		int modifiedBaseTp = applyWeights(player, data, baseTP);
-		double difficultyMult = data.getPlayerQuestData().getDifficulty().tpMultiplier();
-		int finalTP = (int) Math.max(0, Math.round(data.calculateTPGain(modifiedBaseTp) * difficultyMult));
+		int finalTP = data.calculateTPGain(baseTP, TpSource.STORY);
 
-		if (!event.getShareWithParty()) {
+		if (event.getShareWithParty()) {
 			IS_SHARING_TP.set(true);
 			try {
 				if (data.getStatus().isFused() && data.getStatus().isFusionLeader()) shareWithFusionPartner(player, data, finalTP);
@@ -90,7 +88,8 @@ public class TPGainEvents {
 
 				int passiveTp = ConfigManager.getServerConfig().getGameplay().getPassiveTpGain();
 				if (passiveTp > 0 && player.tickCount % 100 == 0) {
-					data.getResources().addTrainingPoints(applyGravityRoom(player, passiveTp));
+					int boosted = data.applyTpBoosts(TpSource.PASSIVE, passiveTp);
+					data.getResources().addTrainingPoints(applyGravityRoom(player, boosted));
 				}
 
 				int tpTravel = ConfigManager.getServerConfig().getGameplay().getTpPer20BlocksTraveled();
@@ -104,7 +103,7 @@ public class TPGainEvents {
 						double accum = accumulatedDistance.getOrDefault(uuid, 0.0) + dist;
 						if (accum >= 20.0) {
 							int times = (int) (accum / 20.0);
-							data.getResources().addTrainingPoints(tpTravel * times);
+							data.getResources().addTrainingPoints(data.applyTpBoosts(TpSource.TRAVEL, tpTravel * times));
 							accum %= 20.0;
 						}
 						accumulatedDistance.put(uuid, accum);
@@ -130,7 +129,7 @@ public class TPGainEvents {
 					if (baseTp > 0) {
 						int xp = event.getExpToDrop();
 						int bonus = (int) Math.round(baseTp * 0.25 * xp);
-						data.getResources().addTrainingPoints(baseTp + bonus);
+						data.getResources().addTrainingPoints(data.applyTpBoosts(TpSource.MINED, baseTp + bonus));
 					}
 				}
 			});
@@ -154,7 +153,7 @@ public class TPGainEvents {
 						else if (stack.getItem() instanceof ArmorItem armor) tierMult = Math.max(1, armor.getDefense() / 4);
 
 						int finalMult = Math.max(rarityMult, tierMult);
-						data.getResources().addTrainingPoints(baseTp * amount * finalMult);
+						data.getResources().addTrainingPoints(data.applyTpBoosts(TpSource.CRAFTED, baseTp * amount * finalMult));
 					}
 				}
 			});
@@ -172,44 +171,15 @@ public class TPGainEvents {
 		return tp;
 	}
 
-	private static int applyWeights(Player player, StatsData data, int tp) {
-		if (tp <= 0) return tp;
-
-		GeneralServerConfig.GravityConfig gravityConfig = ConfigManager.getServerConfig().getGravity();
-		if (!gravityConfig.getTpEnabled()) return tp;
-
-		int totalWeight = GravityLogic.getTotalWeight(player);
-		if (totalWeight <= 0) return tp;
-
-		double gravityMultiplier = GravityLogic.getGravityMultiplier(player);
-		int effectiveWeight = (int) (totalWeight * gravityMultiplier);
-
-		int currentBaseLevel = data.getLevel();
-		int totalBaseStats = data.getStats().getTotalStats();
-		int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
-
-		double boostedTotal = 0;
-		boostedTotal += data.getStats().getStrength() * data.getTotalMultiplier("STR");
-		boostedTotal += data.getStats().getStrikePower() * data.getTotalMultiplier("SKP");
-		boostedTotal += data.getStats().getResistance() * data.getTotalMultiplier("RES");
-		boostedTotal += data.getStats().getVitality() * data.getTotalMultiplier("VIT");
-		boostedTotal += data.getStats().getKiPower() * data.getTotalMultiplier("PWR");
-		boostedTotal += data.getStats().getEnergy() * data.getTotalMultiplier("ENE");
-
-		double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
-
-		double peak = gravityConfig.getTpPeakMultiplier();
-		double width = gravityConfig.getTpCurveWidth();
-		double exponent = -Math.pow((relativeLevel - 2 * effectiveWeight), 2) / (2 * Math.pow(width, 2));
-		double multiplier = peak * Math.exp(exponent) + 1;
-
-		int newTp = (int) (tp * multiplier);
-		return newTp == 0 && multiplier > 0 ? 1 : newTp;
-	}
-
 	private static boolean isPlayerOwnedShadow(Entity entity) {
 		return entity instanceof ShadowDummyEntity
 				&& entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW);
+	}
+
+	private static int applyPlayerShadowTpBonus(Entity entity, int tp) {
+		if (tp <= 0 || !isPlayerOwnedShadow(entity)) return tp;
+		int pct = Mth.clamp(entity.getPersistentData().getInt("dmz_shadow_percent"), 25, 75);
+		return Math.max(1, (int) Math.round(tp * (1.0 + pct / 100.0)));
 	}
 
 	private static boolean dropTps(Entity entity) {
@@ -227,17 +197,15 @@ public class TPGainEvents {
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
-		if (isPlayerOwnedShadow(event.getEntity())) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
 			if (dropTps(event.getEntity())) {
-				int tpsHealth;
-				if (event.getEntity() instanceof ShadowDummyEntity)
-					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
-				else
-					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
+				double ratio = ConfigManager.getServerConfig().getGameplay().getTpHealthRatio();
+				double healthMult = (event.getEntity() instanceof ShadowDummyEntity && !isPlayerOwnedShadow(event.getEntity())) ? 0.5 : 1.0;
+				int tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ratio * healthMult);
 				int killTp = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth);
-				int finalTp = applyGravityRoom(attacker, killTp);
+				int boostedTp = data.applyTpBoosts(TpSource.KILL, killTp);
+				int finalTp = applyPlayerShadowTpBonus(event.getEntity(), applyGravityRoom(attacker, boostedTp));
 				data.getResources().addTrainingPoints(finalTp);
 			}
 		});
@@ -246,14 +214,14 @@ public class TPGainEvents {
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public static void onEntityHit(LivingHurtEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (isPlayerOwnedShadow(event.getEntity())) return;
 
 		if (event.getSource().getEntity() instanceof Player attacker) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
 						int baseTps = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
-						int finalTps = applyGravityRoom(attacker, baseTps);
+						int boostedTps = attackerData.applyTpBoosts(TpSource.HIT, baseTps);
+						int finalTps = applyPlayerShadowTpBonus(event.getEntity(), applyGravityRoom(attacker, boostedTps));
 						attackerData.getResources().addTrainingPoints(finalTps);
 					}
 				}

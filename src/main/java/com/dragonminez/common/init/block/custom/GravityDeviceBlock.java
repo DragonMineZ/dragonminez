@@ -83,6 +83,7 @@ public class GravityDeviceBlock extends BaseEntityBlock {
 		if (!pLevel.isClientSide()) {
 			BlockEntity entity = pLevel.getBlockEntity(pPos);
 			if (entity instanceof GravityDeviceBlockEntity device) {
+				device.refreshRoom();
 				NetworkHooks.openScreen((ServerPlayer) pPlayer, device, pPos);
 			}
 		}

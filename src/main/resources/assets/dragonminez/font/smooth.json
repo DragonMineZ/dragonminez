@@ -1038,6 +1038,10 @@
         "\ufee0\ufee1\ufee2\ufee3\ufee4\ufee5\ufee6\ufee7\ufee8\ufee9\ufeea\ufeeb\ufeec\ufeed\ufeee\ufeef",
         "\ufef0\ufef1\ufef2\ufef3\ufef4\ufef5\ufef6\ufef7\ufef8\ufef9\ufefa\ufefb\ufefc\u0000\u0000\u0000"
       ]
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:default"
     }
   ]
 }

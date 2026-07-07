@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.effects;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -45,6 +46,8 @@ public class AuraRenderer {
 	private static final float HALF_SQRT_3 = (float) (Math.sqrt(3.0D) / 2.0D);
 	private static final float FADE_SPEED = 0.005f;
 	private static final float PULSE_SPEED = 0.01f;
+	private static final float SHOULDER_LEAN_DEG_PER_BLOCK = 6.0f;
+	private static final float SHOULDER_LEAN_MAX_DEG = 12.0f;
 
 	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
@@ -101,11 +104,17 @@ public class AuraRenderer {
 		public String type;
 		public int layerId;
 		public float[] color;
+		public float alpha;
 
 		public AuraLayer(String type, int layerId, float[] color) {
+			this(type, layerId, color, 1.0f);
+		}
+
+		public AuraLayer(String type, int layerId, float[] color, float alpha) {
 			this.type = type;
 			this.layerId = layerId;
 			this.color = color;
+			this.alpha = alpha;
 		}
 	}
 
@@ -160,7 +169,7 @@ public class AuraRenderer {
 			shader.safeGetUniform("color2").set(layer.color[0] * 1.3f, layer.color[1] * 1.3f, layer.color[2] * 1.3f, 1.0f);
 			shader.safeGetUniform("color3").set(layer.color[0] * 1.0f, layer.color[1] * 1.0f, layer.color[2] * 1.0f, 0.85f);
 			shader.safeGetUniform("color4").set(layer.color[0] * 0.75f, layer.color[1] * 0.75f, layer.color[2] * 0.75f, 0.65f);
-			shader.safeGetUniform("alp1").set(1.0f);
+			shader.safeGetUniform("alp1").set(layer.alpha);
 			shader.apply();
 
 			mesh.bind();
@@ -280,9 +289,8 @@ public class AuraRenderer {
 			CachedAuraData data = entry.getValue();
 
 			if (!currentFramePlayers.contains(playerId)) {
-				Player player = (Player) mc.level.getEntity(playerId);
-
-				if (player == null || !player.isAlive()) {
+				// entity ids get reused, so a cached player id can now point at any entity (e.g. a Bat) -> guard the cast
+				if (!(mc.level.getEntity(playerId) instanceof Player player) || !player.isAlive()) {
 					it.remove();
 					continue;
 				}
@@ -384,10 +392,6 @@ public class AuraRenderer {
 
 		float chargeProgress = 0.0f;
 		if (chargingNormal || chargingStack) {
-			// Don't read actionCharge directly — it only syncs in coarse 20-tick steps so the colour used
-			// to snap to the final hue only on completion. Instead mirror the server charge rate locally:
-			// it adds (5 + max(20, mastery)) once every 20 ticks toward 100, i.e. increment/2000 of the
-			// full ramp per tick. Same formula the hair morph uses, so aura and hair stay in sync.
 			int mastery;
 			if (chargingStack) {
 				String mGroup = character.hasActiveStackForm() ? character.getActiveStackFormGroup() : character.getSelectedStackFormGroup();
@@ -396,7 +400,7 @@ public class AuraRenderer {
 				String mGroup = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
 				mastery = (int) character.getFormMasteries().getMastery(mGroup, nextForm.getName());
 			}
-			float ratePerTick = (5 + Math.max(20, mastery)) / 2000.0f;
+			float ratePerTick = (5 + Math.min(20, (int)(mastery * 0.2))) / 2000.0f;
 
 			float lastProgress = COLOR_PROGRESS_MAP.getOrDefault(entityId, 0.0f);
 			long lastTick = COLOR_TICK_MAP.getOrDefault(entityId, 0L);
@@ -430,13 +434,25 @@ public class AuraRenderer {
 			normalLayerId = fd.getAuraLayer() != null ? fd.getAuraLayer() : 0;
 		}
 
+		AuraLayer chargeLayer = null;
 		if (chargingNormal && nextForm != null) {
 			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : normalHex;
-			normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
+			int targetLayer = nextForm.getAuraLayer() != null ? nextForm.getAuraLayer() : normalLayerId;
+			if (targetLayer == normalLayerId) {
+				normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
+			} else {
+				String targetType = nextForm.getAuraType() != null && !nextForm.getAuraType().isEmpty() ? nextForm.getAuraType() : normalType;
+				chargeLayer = new AuraLayer(targetType, targetLayer, ColorUtils.hexToRgb(targetHex), chargeProgress);
+			}
 		}
 
-		normalLayerId = Mth.clamp(normalLayerId, 0, 6);
-		layerMap.put(normalLayerId, new AuraLayer(normalType, normalLayerId, normalColor));
+		putLayer(layerMap, normalLayerId, new AuraLayer(normalType, normalLayerId, normalColor));
+		if (chargeLayer != null) putLayer(layerMap, chargeLayer.layerId, chargeLayer);
+
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasExtraAura()) {
+			var fd = character.getActiveFormData();
+			putShifting(layerMap, fd.getExtraAuraLayer(), new AuraLayer(fd.getExtraAuraType(), fd.getExtraAuraLayer(), fd.getRgbExtraAuraColor()));
+		}
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
 			var fd = character.getActiveStackFormData();
@@ -450,22 +466,43 @@ public class AuraRenderer {
 				stackColor = interpolateColor(stackHex, targetHex, chargeProgress);
 			}
 
-			stackLayerId = Mth.clamp(stackLayerId, 0, 6);
-			layerMap.put(stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
+			putLayer(layerMap, stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
+
+			if (fd.hasExtraAura()) {
+				putShifting(layerMap, fd.getExtraAuraLayer(), new AuraLayer(fd.getExtraAuraType(), fd.getExtraAuraLayer(), fd.getRgbExtraAuraColor()));
+			}
 
 		} else if (chargingStack && nextForm != null) {
 			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : "#FFFFFF";
 			String stackType = nextForm.getAuraType() != null && !nextForm.getAuraType().isEmpty() ? nextForm.getAuraType() : "kakarot";
 			int stackLayerId = nextForm.getAuraLayer() != null ? nextForm.getAuraLayer() : 1;
 
-			float[] stackColor = interpolateColor(normalHex, targetHex, chargeProgress);
-			stackLayerId = Mth.clamp(stackLayerId, 0, 6);
-			layerMap.put(stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
+			if (stackLayerId == normalLayerId) {
+				AuraLayer base = layerMap.get(normalLayerId);
+				if (base != null) base.color = interpolateColor(normalHex, targetHex, chargeProgress);
+			} else {
+				putLayer(layerMap, stackLayerId, new AuraLayer(stackType, stackLayerId, ColorUtils.hexToRgb(targetHex), chargeProgress));
+			}
 		}
 
 		List<AuraLayer> activeLayers = new ArrayList<>(layerMap.values());
 		activeLayers.sort(Comparator.comparingInt(l -> l.layerId));
 		return activeLayers;
+	}
+
+	private static void putLayer(Map<Integer, AuraLayer> layerMap, int layerId, AuraLayer layer) {
+		if (layerId < 0) return;
+		layerId = Mth.clamp(layerId, 0, 6);
+		layer.layerId = layerId;
+		layerMap.put(layerId, layer);
+	}
+
+	private static void putShifting(Map<Integer, AuraLayer> layerMap, int layerId, AuraLayer layer) {
+		if (layerId < 0) return;
+		layerId = Mth.clamp(layerId, 0, 6);
+		while (layerMap.containsKey(layerId) && layerId < 6) layerId++;
+		layer.layerId = layerId;
+		layerMap.put(layerId, layer);
 	}
 
 	private static float[] interpolateColor(String hexFrom, String hexTo, float factor) {
@@ -645,7 +682,7 @@ public class AuraRenderer {
 
 		boolean isLocalPlayer = player == mc.player;
 		float maxAlpha = (isLocalPlayer && isFirstPerson) ? 0.5f : 1.0f;
-		float finalAlpha = maxAlpha * alphaMultiplier;
+		float finalAlpha = maxAlpha * alphaMultiplier * layer.alpha;
 
 		String typeStr = layer.type != null && !layer.type.isEmpty() ? layer.type.toLowerCase() : "kakarot";
 		ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
@@ -715,6 +752,10 @@ public class AuraRenderer {
 			poseStack.translate(0.0, 0.05, 0.0);
 			poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
 			poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+			if (OverShoulderCamera.isRunning()) {
+				float shoulderLean = (float) Mth.clamp(-OverShoulderCamera.getCurrentSide() * SHOULDER_LEAN_DEG_PER_BLOCK, -SHOULDER_LEAN_MAX_DEG, SHOULDER_LEAN_MAX_DEG);
+				poseStack.mulPose(Axis.ZP.rotationDegrees(shoulderLean));
+			}
 			poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
 
 			poseStack.translate(0.0, 0.7, 0.0);
@@ -825,7 +866,7 @@ public class AuraRenderer {
 		shader.safeGetUniform("color3").set(topLayer.color[0] * 1.0f, topLayer.color[1] * 1.0f, topLayer.color[2] * 1.0f, 0.85f);
 		shader.safeGetUniform("color4").set(topLayer.color[0] * 0.75f, topLayer.color[1] * 0.75f, topLayer.color[2] * 0.75f, 0.65f);
 
-		shader.safeGetUniform("alp1").set(alphaCurve * 0.6f * alphaMultiplier);
+		shader.safeGetUniform("alp1").set(alphaCurve * 0.6f * alphaMultiplier * topLayer.alpha);
 
 		RenderType pulseRender = auraType(crossTex);
 		customSetup(pulseRender, crossTex, shader);

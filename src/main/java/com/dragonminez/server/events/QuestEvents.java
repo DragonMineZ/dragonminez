@@ -77,7 +77,10 @@ public class QuestEvents {
 			return;
 		}
 
-		LivingEntity killedEntity = event.getEntity();
+		creditQuestKill(killer, event.getEntity());
+	}
+
+	public static void creditQuestKill(ServerPlayer killer, LivingEntity killedEntity) {
 		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(killer);
 		for (ServerPlayer member : partyMembers) {
 			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data ->
@@ -413,9 +416,7 @@ public class QuestEvents {
 	private static boolean matchesKillObjective(LivingEntity killedEntity, String questKey, int objectiveIndex,
 												KillObjective killObjective, List<ServerPlayer> partyMembers) {
 		try {
-			ResourceLocation targetId = ResourceLocation.parse(killObjective.getEntityId());
-			EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(targetId);
-			boolean typeMatches = requiredType != null && killedEntity.getType().equals(requiredType);
+			boolean typeMatches = killObjective.matches(killedEntity.getType());
 			boolean hasQuestTags = hasQuestSpawnTags(killedEntity);
 			boolean questTagsMatch = hasQuestTags && matchesQuestSpawnTags(killedEntity, questKey, objectiveIndex, partyMembers);
 			return acceptsKillMatch(typeMatches, questTagsMatch, killObjective.getCountMode(), hasQuestTags);

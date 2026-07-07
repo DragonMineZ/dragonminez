@@ -35,7 +35,8 @@ public class LeavePartyC2S {
 
             boolean leaderLeaving = PartyManager.isPartyLeader(player);
             List<ServerPlayer> members = PartyManager.getAllPartyMembers(player);
-            PartyManager.leaveParty(player);
+            if (leaderLeaving) PartyManager.disbandParty(player);
+            else PartyManager.leaveParty(player);
 
             if (leaderLeaving) {
                 player.sendSystemMessage(Component.translatable("quest.dmz.party.disbanded.self")

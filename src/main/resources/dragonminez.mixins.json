@@ -13,6 +13,7 @@
     "common.PlayerListMixin",
     "common.PlayerMixin",
     "common.RangedAttributeMixin",
+    "common.StructureTemplatePoolAccessor",
     "common.SweepingEdgeEnchantmentMixin"
   ],
   "client": [

@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.entities.IBattlePower;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -51,5 +52,25 @@ public class SagaOzaruEntity extends DBSagasEntity{
     @Override
     public String getGeckolibModelName() {
         return "saga_ozaru";
+    }
+
+    @Override
+    public boolean hasHitboxParts() {
+        return true;
+    }
+
+    @Override
+    protected EntityDimensions getCoreDimensions() {
+        return EntityDimensions.scalable(3.0F, 4.5F);
+    }
+
+    @Override
+    protected DBSagasPart[] createHitboxParts() {
+        // Bulky great ape (registered 6.5x10). Tune offsets/sizes in-game.
+        return new DBSagasPart[] {
+                new DBSagasPart(this, "legs", 5.0F, 4.0F, 0.0F, 0.0F, 2.0F),
+                new DBSagasPart(this, "torso", 6.0F, 4.0F, 0.0F, 0.0F, 6.0F),
+                new DBSagasPart(this, "head", 4.5F, 3.5F, 0.5F, 0.0F, 9.0F)
+        };
     }
 }

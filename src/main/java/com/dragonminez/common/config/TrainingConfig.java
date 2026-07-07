@@ -7,10 +7,10 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 public class TrainingConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
+	private String configVersion;
 
 	private double rewardBaseCoefficient = 3.4;
 	private double rewardCostExponent = 0.6;
@@ -92,10 +92,10 @@ public class TrainingConfig {
 		private int zoneWidthDecreasePerLevel = 6;
 		private int minZoneWidth = 24;
 		private double baseZoneSpeed = 1.2;
-		private double zoneSpeedPerLevel = 0.3;
+		private double zoneSpeedPerLevel = 0.15;
 		private double markerSpeed = 2.75;
 		private double baseProgressLossPerTick = 0.12;
-		private double progressLossPerLevel = 0.25;
+		private double progressLossPerLevel = 0.12;
 	}
 
 	@Getter
@@ -105,7 +105,7 @@ public class TrainingConfig {
 
 		private int baseSequenceLength = 3;
 		private int sequenceLengthPerLevel = 1;
-		private int baseShowTicks = 50;
+		private int baseShowTicks = 42;
 		private int showTicksDecreasePerLevel = 4;
 		private int minShowTicks = 16;
 	}
@@ -144,7 +144,7 @@ public class TrainingConfig {
 		private int barHeight = 180;
 		private double controlLineFraction = 0.45;
 		private double baseGravity = 1.1;
-		private double gravityPerLevel = 0.25;
+		private double gravityPerLevel = 0.13;
 		private double risePerTap = 9.0;
 		private double progressLossPerTick = 2.5;
 		private double wrongPressDescentMultiplier = 3.0;

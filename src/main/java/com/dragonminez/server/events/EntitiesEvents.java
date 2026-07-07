@@ -4,6 +4,8 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
@@ -16,14 +18,18 @@ import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.world.dimension.SacredKaiDimension;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -41,6 +47,7 @@ import java.util.UUID;
 public class EntitiesEvents {
 
 	private static final double QUEST_TETHER_RANGE_SQR = 31250.0;
+	private static final double SHADOW_DUMMY_TETHER_SQR = 100.0 * 100.0;
 
 	@SubscribeEvent
 	public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
@@ -66,6 +73,10 @@ public class EntitiesEvents {
 
 			if (entity.getPersistentData().contains("dmz_quest_ai_tier") && entity instanceof DBSagasEntity sagasEntity) {
 				sagasEntity.setAiTierById(entity.getPersistentData().getInt("dmz_quest_ai_tier"));
+			}
+
+			if (entity.getPersistentData().getBoolean("dmz_quest_no_transform") && entity instanceof DBSagasEntity sagasEntity) {
+				sagasEntity.setTransformationDisabled(true);
 			}
 		} else {
 			String registryName = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString();
@@ -93,6 +104,24 @@ public class EntitiesEvents {
 		if (cow.getRandom().nextBoolean()) {
 			cow.setVariant(MushroomCow.MushroomType.BROWN);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onStunnedEntityAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide()) return;
+		if (event.getSource().getDirectEntity() instanceof LivingEntity attacker
+				&& attacker.hasEffect(MainEffects.STUN.get())) {
+			event.setCanceled(true);
+		}
+	}
+
+	private static final int KI_SLOW_DURATION_TICKS = 30;
+
+	@SubscribeEvent
+	public static void onKiHitSlow(LivingHurtEvent event) {
+		if (event.getEntity().level().isClientSide()) return;
+		if (!MainDamageTypes.isKiblastDamage(event.getSource())) return;
+		event.getEntity().addEffect(new MobEffectInstance(MainEffects.KI_SLOW.get(), KI_SLOW_DURATION_TICKS, 0, false, false, true));
 	}
 
 	private static void applyStatsToEntity(LivingEntity entity, double health, double melee, double ki) {
@@ -150,6 +179,14 @@ public class EntitiesEvents {
 			}
 
 			ServerPlayer player = server.getPlayerList().getPlayer(ownerUUID);
+
+			if (entity instanceof ShadowDummyEntity shadow && entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+				if (player == null || player.level() != entity.level() || entity.distanceToSqr(player) > SHADOW_DUMMY_TETHER_SQR) {
+					SummonPlayerShadowDummyC2S.dismissByDummy(shadow);
+				}
+				return;
+			}
+
 			if (player == null || player.level() != entity.level() || entity.distanceToSqr(player) > QUEST_TETHER_RANGE_SQR) {
 				entity.discard();
 			}
@@ -169,19 +206,8 @@ public class EntitiesEvents {
 			String ownerUUID = entity.getPersistentData().getString("dmz_quest_owner");
 			if (!ownerUUID.equals(uuidStr)) continue;
 
-			if (entity instanceof ShadowDummyEntity && entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
-				ServerPlayer owner = server.getPlayerList().getPlayer(playerUUID);
-				if (owner != null) {
-					StatsProvider.get(StatsCapability.INSTANCE, owner).ifPresent(data -> {
-						if (data.getStatus().hasActiveShadowDummy() && data.getStatus().getActiveShadowDummyUUID().equals(entity.getUUID())) {
-							SummonPlayerShadowDummyC2S.removePenalties(owner, data);
-							data.getStatus().setActiveShadowDummyUUID(null);
-							data.getStatus().setShadowDummyPercent(0);
-							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(owner), owner);
-						}
-					});
-				}
-				entity.discard();
+			if (entity instanceof ShadowDummyEntity shadow && shadow.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW)) {
+				SummonPlayerShadowDummyC2S.dismissByDummy(shadow);
 				continue;
 			}
 
@@ -226,9 +252,20 @@ public class EntitiesEvents {
 		if (!event.getLevel().isClientSide && event.getTarget() instanceof MastersEntity master) {
 			ServerPlayer player = (ServerPlayer) event.getEntity();
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				// Only players who know Instant Transmission can memorize a master's Ki signature.
+				if (data.getSkills().getSkillLevel("instant_transmission") < 1) return;
+
+				String masterId = master.getStringUUID();
+				boolean alreadyKnown = data.getCharacter().getInteractedMasters().containsKey(masterId);
+
 				String dimId = player.level().dimension().location().toString();
-				data.getCharacter().addInteractedMaster(master.getStringUUID(), master.getName().getString(), dimId, master.blockPosition());
+				data.getCharacter().addInteractedMaster(masterId, master.getName().getString(), dimId, master.blockPosition());
 				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
+
+				if (!alreadyKnown) {
+					player.displayClientMessage(
+							Component.translatable("message.dragonminez.instant_transmission.ki_learned", master.getName()), false);
+				}
 			});
 		}
 	}

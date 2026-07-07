@@ -58,7 +58,7 @@ public class ShadowDummyEntity extends DBSagasEntity {
 			double hp = player.getAttributeValue(Attributes.MAX_HEALTH) * scale;
 			if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
 				this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(hp);
-				this.setHealth((float) (hp + data.getDefense() * scale));
+				this.setHealth((float) (hp + data.getDefenseLegacyUnits() * scale));
 			}
 			if (this instanceof IBattlePower bp) bp.setBattlePower((int) (data.getBattlePower() * scale));
 			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE))
@@ -75,7 +75,7 @@ public class ShadowDummyEntity extends DBSagasEntity {
 			double playerMaxHP = player.getAttributeValue(Attributes.MAX_HEALTH);
 			if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
 				this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(playerMaxHP);
-				this.setHealth((float) ((float) playerMaxHP + data.getDefense() * 0.25f));
+				this.setHealth((float) ((float) playerMaxHP + data.getDefenseLegacyUnits() * 0.25f));
 			}
 			if (this instanceof IBattlePower bpEntity) bpEntity.setBattlePower((int) (data.getBattlePower() * 0.25f));
 			double playerDmg = data.getMeleeDamage() * 0.25;

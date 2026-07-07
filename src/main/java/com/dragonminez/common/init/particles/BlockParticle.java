@@ -56,7 +56,11 @@ public class BlockParticle extends TextureSheetParticle {
         public Provider(SpriteSet spriteSet) { this.spriteSet = spriteSet; }
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
-            return new BlockParticle(level, x, y, z, r, g, b, this.spriteSet);
+            try {
+                return new BlockParticle(level, x, y, z, r, g, b, this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

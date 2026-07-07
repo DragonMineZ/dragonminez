@@ -5,6 +5,8 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallPackManager;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import lombok.Getter;
@@ -50,11 +52,11 @@ public class DragonWishRegistry extends SimpleJsonResourceReloadListener {
 	@SubscribeEvent
 	public static void onDatapackSync(OnDatapackSyncEvent event) {
 		if (event.getPlayer() != null) {
-			com.dragonminez.common.network.NetworkHandler.sendToPlayer(new com.dragonminez.common.network.S2C.SyncWishesS2C(getServerWishes()), event.getPlayer());
+			NetworkHandler.sendToPlayer(new SyncWishesS2C(getServerWishes()), event.getPlayer());
 			return;
 		}
 		for (ServerPlayer player : event.getPlayerList().getPlayers()) {
-			com.dragonminez.common.network.NetworkHandler.sendToPlayer(new com.dragonminez.common.network.S2C.SyncWishesS2C(getServerWishes()), player);
+			NetworkHandler.sendToPlayer(new SyncWishesS2C(getServerWishes()), player);
 		}
 	}
 }

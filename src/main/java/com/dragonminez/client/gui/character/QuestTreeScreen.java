@@ -47,6 +47,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
@@ -78,6 +79,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private static final ResourceLocation REWARD_GENERIC_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/quest/reward_generic.png");
 
+	private static final Style DMZ_STYLE = Style.EMPTY.withFont(DMZ_FONT);
+
 	private static final int NODE_SIZE = 18;
 
 	private StatsData statsData;
@@ -85,11 +88,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private int pendingRefreshTicks = 0;
 	private long lastRenderTime = 0;
 
-	private static final long HARD_MODE_TOGGLE_COOLDOWN_MS = 500L;
 	private int hardModeHitX, hardModeHitY, hardModeHitW, hardModeHitH;
 	private boolean hardModeToggleable = false;
 	private boolean hardModeIndicatorShown = false;
-	private long lastHardModeToggle = 0;
 
 	private TexturedTextButton actionButton;
 	private TexturedTextButton claimAllButton;
@@ -140,6 +141,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private float targetRewardsScroll = 0;
 	private float currentRewardsScroll = 0;
 	private float rewardsMaxScroll = 0;
+
+	private float diffIntroScroll = 0;
+	private float diffIntroMaxScroll = 0;
+	private final float[] diffOptScroll = new float[3];
+	private final float[] diffOptMaxScroll = new float[3];
 
 	private List<String> frameObjLinesCache = null;
 	private Quest frameObjLinesQuest = null;
@@ -209,6 +215,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private enum PartyConfirmAction {
 		NONE,
 		ACCEPT_INVITE,
+		ACCEPT_INVITE_DIFFICULTY,
 		LEAVE_PARTY
 	}
 
@@ -252,7 +259,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private record DetailPanelLayout(int titleH, int rewardsH, int descH, int objectivesH) {
 	}
 
-	private record RewardBlock(QuestReward reward, List<String> lines, int height) {
+	private record RewardBlock(QuestReward reward, List<String> lines, int height, Component header, boolean locked, int headerColor) {
+		boolean isHeader() {
+			return header != null;
+		}
 	}
 
 	private record NodeRender(Quest quest, int pixelX, int pixelY, boolean blurred, boolean sidequest,
@@ -589,7 +599,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			String hiddenLabel = "???";
 			bottomLabel = txt(hiddenLabel);
 			bottomLabelColor = 0x55888888;
-			bottomLabelOffsetX = (NODE_SIZE - this.font.width(hiddenLabel)) / 2;
+			bottomLabelOffsetX = (NODE_SIZE - TextUtil.width(this.font, hiddenLabel, DMZ_STYLE)) / 2;
 		} else if (node.isSidequest()) {
 			bottomLabel = null;
 			bottomLabelColor = 0;
@@ -598,7 +608,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			String questNum = String.valueOf(node.getQuest().getId());
 			bottomLabel = txt(questNum);
 			bottomLabelColor = 0xFFCCCCCC;
-			bottomLabelOffsetX = (NODE_SIZE - this.font.width(questNum)) / 2;
+			bottomLabelOffsetX = (NODE_SIZE - TextUtil.width(this.font, questNum, DMZ_STYLE)) / 2;
 		}
 
 		return new NodeRender(node.getQuest(), node.getPixelX(), node.getPixelY(), blurred, node.isSidequest(),
@@ -875,6 +885,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (isCompleted) {
 			boolean hasUnclaimedRewards = false;
 			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
+				if (!selectedQuest.getRewards().get(i).isUnlockedFor(questData.getDifficulty())) {
+					continue;
+				}
 				if (!isRewardClaimed(questData, currentSaga, selectedQuest, i)) {
 					hasUnclaimedRewards = true;
 					break;
@@ -910,11 +923,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return;
 		}
 
-		if (isClaimAction && buttonActive && isInSharedPartyAsMember()) {
-			buttonText = tr("gui.dragonminez.party.leader_only");
-			buttonActive = false;
-			tooltipLines = List.of(tr("gui.dragonminez.party.leader_only"));
-		} else if (isStartAction && !canStart) {
+		if (isStartAction && !canStart) {
 			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
 		} else if (!buttonActive && tooltipLines.isEmpty()) {
 			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
@@ -971,7 +980,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private void initClaimAllButton() {
 		if (statsData == null || availableSagas.isEmpty()) return;
-		if (isInSharedPartyAsMember()) return;
 		if (!hasAnyClaimableRewards()) return;
 
 		PanelRect tree = getTreePanelRect();
@@ -1006,6 +1014,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			Quest quest = QuestRegistry.getClientQuest(questKey);
 			if (quest == null || quest.getClaimMode() == Quest.ClaimMode.NPC_ONLY) continue;
 			for (int i = 0; i < quest.getRewards().size(); i++) {
+				if (!quest.getRewards().get(i).isUnlockedFor(questData.getDifficulty())) {
+					continue;
+				}
 				if (!questData.isRewardClaimed(questKey, i)) {
 					return true;
 				}
@@ -1044,7 +1055,20 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					footer.x + (footer.width - 74) / 2,
 					footer.bottom() - 46,
 					btn -> {
-						if (questData.isInParty()) {
+						Difficulty partyDifficulty = invite.getPartyDifficulty();
+						Difficulty ownDifficulty = questData.getDifficulty();
+						if (partyDifficulty.ordinal() < ownDifficulty.ordinal()) {
+							if (Minecraft.getInstance().player != null) {
+								Minecraft.getInstance().player.displayClientMessage(
+										tr("quest.dmz.party.invite.difficulty_too_low").withStyle(ChatFormatting.RED), false);
+							}
+						} else if (partyDifficulty.ordinal() > ownDifficulty.ordinal()) {
+							requestConfirm(
+									PartyConfirmAction.ACCEPT_INVITE_DIFFICULTY,
+									tr("gui.dragonminez.party.confirm.difficulty.title"),
+									tr("gui.dragonminez.party.confirm.difficulty.body", difficultyLabel(partyDifficulty))
+							);
+						} else if (questData.isInParty()) {
 							requestConfirm(
 									PartyConfirmAction.ACCEPT_INVITE,
 									tr("gui.dragonminez.party.confirm.title"),
@@ -1274,7 +1298,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (confirmOverlayOpen) {
 			renderConfirmOverlay(graphics, uiMouseX, uiMouseY);
 		}
-		if (!invitePopupOpen && !confirmOverlayOpen) {
+		boolean difficultySelectOpen = shouldShowDifficultySelect();
+		if (difficultySelectOpen) {
+			renderDifficultySelectOverlay(graphics, uiMouseX, uiMouseY);
+		}
+		if (!invitePopupOpen && !confirmOverlayOpen && !difficultySelectOpen) {
 			if (!renderHardModeTooltip(graphics, uiMouseX, uiMouseY)
 					&& !renderActionButtonTooltip(graphics, uiMouseX, uiMouseY)) {
 				renderRewardTooltips(graphics, uiMouseX, uiMouseY);
@@ -1316,6 +1344,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		renderConnections(graphics, panOffX, panOffY, viewRight, viewBottom);
 
+		boolean overOverlay = getLeftPanelRect().contains(mouseX, mouseY)
+				|| getRightPanelRect().contains(mouseX, mouseY)
+				|| this.getChildAt(mouseX, mouseY).isPresent();
+
 		Quest hoveredQuest = null;
 		for (NodeRender node : nodeRenders) {
 			int x = node.pixelX() + panOffX;
@@ -1324,7 +1356,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					|| y + NODE_SIZE + 20 < 0 || y - 18 > viewBottom) {
 				continue;
 			}
-			boolean isHovered = zoomedMouseX >= x && zoomedMouseX <= x + NODE_SIZE
+			boolean isHovered = !overOverlay && zoomedMouseX >= x && zoomedMouseX <= x + NODE_SIZE
 					&& zoomedMouseY >= y && zoomedMouseY <= y + NODE_SIZE;
 			if (isHovered) hoveredQuest = node.quest();
 			renderNode(graphics, node, x, y, isHovered);
@@ -1346,7 +1378,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private void renderHardModeIndicator(GuiGraphics graphics, PanelRect tree, int mouseX, int mouseY) {
 		Difficulty difficulty = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
-		hardModeToggleable = canToggleHardMode();
+		hardModeToggleable = false;
 		hardModeIndicatorShown = true;
 
 		Component label = tr("gui.dragonminez.quest_tree.difficulty.label");
@@ -1392,15 +1424,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.current",
 				difficultyLabel(difficulty)).withStyle(ChatFormatting.GRAY));
 		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.desc").withStyle(ChatFormatting.GRAY));
-		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.scope").withStyle(ChatFormatting.GRAY));
-		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.independent").withStyle(ChatFormatting.GRAY));
 		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.stats", hpMult, damageMult).withStyle(ChatFormatting.AQUA));
 		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.rewards", tpMult, rewardMult).withStyle(ChatFormatting.AQUA));
-		if (hardModeToggleable) {
-			desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.cycle").withStyle(ChatFormatting.DARK_GRAY));
-		} else if (statsData.getPlayerQuestData().isInParty()) {
-			desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.leader_only").withStyle(ChatFormatting.DARK_GRAY));
-		}
+		desc.add(tr("gui.dragonminez.quest_tree.difficulty.tooltip.locked").withStyle(ChatFormatting.DARK_GRAY));
 
 		TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, null, 0xFFFFFF);
 		return true;
@@ -1429,35 +1455,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return Double.toString(value);
 	}
 
-	private boolean canToggleHardMode() {
-		if (statsData == null) return false;
-		return !statsData.getPlayerQuestData().isInParty() || isLocalPartyLeader();
-	}
-
-	private boolean handleHardModeToggleClick(double uiMouseX, double uiMouseY) {
-		if (!hardModeToggleable) return false;
-		if (uiMouseX < hardModeHitX || uiMouseX > hardModeHitX + hardModeHitW
-				|| uiMouseY < hardModeHitY || uiMouseY > hardModeHitY + hardModeHitH) {
-			return false;
-		}
-
-		long now = System.currentTimeMillis();
-		if (now - lastHardModeToggle < HARD_MODE_TOGGLE_COOLDOWN_MS) {
-			return true;
-		}
-		lastHardModeToggle = now;
-
-		Difficulty current = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
-		Difficulty next = switch (current) {
-			case EASY -> Difficulty.NORMAL;
-			case NORMAL -> Difficulty.HARD;
-			case HARD -> Difficulty.EASY;
-		};
-		NetworkHandler.sendToServer(new SetStoryDifficultyC2S(next));
-		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
-		return true;
-	}
-
 	private void renderBackgroundGrid(GuiGraphics graphics, PanelRect tree) {
 		int spacing = 20;
 		int offsetX = ((int) panX) % spacing;
@@ -1472,7 +1469,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderEnemyPreview(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
-		enemyPreview.setQuest(selectedQuest);
+		Difficulty previewDifficulty = Difficulty.NORMAL;
+		int previewPartySize = 1;
+		if (statsData != null) {
+			PlayerQuestData questData = statsData.getPlayerQuestData();
+			previewDifficulty = questData.getDifficulty();
+			previewPartySize = Math.max(1, questData.getPartyMemberIds().size());
+		}
+		enemyPreview.setQuest(selectedQuest, previewDifficulty, previewPartySize);
 		if (!enemyPreview.isActive()) return;
 
 		PanelRect base = getBaseLeftPanelRect();
@@ -1765,8 +1769,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return new DetailPanelLayout(titleH, rewardsH, descH, objectivesH);
 	}
 
-	// Title/rewards text is wrapped both to size the section and to draw it (twice per
-	// frame). These memos resolve it once per frame, reused by estimate + render.
 	private List<String> titleLines(int width) {
 		if (frameTitleLines != null && frameTitleQuest == selectedQuest && frameTitleWidth == width) {
 			return frameTitleLines;
@@ -1857,18 +1859,27 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int blockTop = originY;
 		int consumedChars = 0;
 		for (RewardBlock block : blocks) {
+			boolean blockVisible = (blockTop + block.height()) >= originY + currentRewardsScroll
+					&& blockTop <= originY + viewHeight + currentRewardsScroll;
+
+			if (block.isHeader()) {
+				if (blockVisible) {
+					TextUtil.drawStringWithBorder(graphics, this.font, block.header(), x + 8, blockTop + 2, block.headerColor());
+				}
+				blockTop += block.height();
+				continue;
+			}
+
 			QuestReward reward = block.reward();
 			String desc = reward.getDescription().getString();
 			int rowVisible = Math.max(0, revealedChars - consumedChars);
 			consumedChars += desc.length() + 1;
 
-			boolean blockVisible = (blockTop + block.height()) >= originY + currentRewardsScroll
-					&& blockTop <= originY + viewHeight + currentRewardsScroll;
-
 			if (blockVisible) {
 				int iconX = x + 8;
 				ItemStack iconStack = rewardIconStack(reward);
 				ItemStack tooltipStack = reward.getType() == QuestReward.RewardType.ITEM ? iconStack : null;
+				int textColor = block.locked() ? 0xFF777777 : 0xFFCCCCCC;
 
 				if (iconStack != null) {
 					graphics.renderItem(iconStack, iconX, blockTop);
@@ -1890,7 +1901,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						shownLine = fullLine.substring(0, Math.max(0, charsLeft));
 						charsLeft = 0;
 					}
-					TextUtil.drawStringWithBorder(graphics, this.font, txt(shownLine), x + 28, textY, 0xFFCCCCCC);
+					TextUtil.drawStringWithBorder(graphics, this.font, txt(shownLine), x + 28, textY, textColor);
 					textY += lineHeight;
 				}
 			}
@@ -1916,22 +1927,70 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int textWidth = Math.max(20, width - 40);
 		int iconSize = 16;
 		int lineHeight = getDetailLineHeight();
-		for (QuestReward reward : getDisplayRewards(selectedQuest)) {
-			List<String> lines = wrapText(reward.getDescription().getString(), textWidth);
-			if (lines.isEmpty()) lines = List.of("");
-			int textBlockH = lines.size() * lineHeight;
-			int blockH = Math.max(iconSize + 2, textBlockH) + 4;
-			blocks.add(new RewardBlock(reward, lines, blockH));
+		List<QuestReward> displayRewards = getDisplayRewards(selectedQuest);
+		Difficulty difficulty = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
+
+		boolean tiered = displayRewards.stream()
+				.anyMatch(r -> r.getDifficultyType() != QuestReward.DifficultyType.ALL);
+
+		for (QuestReward.DifficultyType tier : QuestReward.DifficultyType.values()) {
+			List<QuestReward> tierRewards = new ArrayList<>();
+			for (QuestReward reward : displayRewards) {
+				if (reward.getDifficultyType() == tier) tierRewards.add(reward);
+			}
+			if (tierRewards.isEmpty()) continue;
+
+			if (tiered) {
+				boolean tierLocked = !isTierUnlocked(tier, difficulty);
+				int headerColor = tierLocked ? 0xFF666666 : rewardTierColor(tier);
+				blocks.add(new RewardBlock(null, List.of(rewardTierHeader(tier).getString()),
+						lineHeight + 4, rewardTierHeader(tier), tierLocked, headerColor));
+			}
+
+			for (QuestReward reward : tierRewards) {
+				List<String> lines = wrapText(reward.getDescription().getString(), textWidth);
+				if (lines.isEmpty()) lines = List.of("");
+				int textBlockH = lines.size() * lineHeight;
+				int blockH = Math.max(iconSize + 2, textBlockH) + 4;
+				blocks.add(new RewardBlock(reward, lines, blockH, null, !reward.isUnlockedFor(difficulty), 0));
+			}
 		}
 		return blocks;
+	}
+
+	private boolean isTierUnlocked(QuestReward.DifficultyType tier, Difficulty difficulty) {
+		Difficulty min = switch (tier) {
+			case ALL -> Difficulty.EASY;
+			case NORMAL -> Difficulty.NORMAL;
+			case HARD -> Difficulty.HARD;
+		};
+		return (difficulty != null ? difficulty : Difficulty.NORMAL).ordinal() >= min.ordinal();
+	}
+
+	private Component rewardTierHeader(QuestReward.DifficultyType tier) {
+		return switch (tier) {
+			case ALL -> tr("gui.dragonminez.quests.rewards.tier.all");
+			case NORMAL -> tr("gui.dragonminez.quests.rewards.tier.normal");
+			case HARD -> tr("gui.dragonminez.quests.rewards.tier.hard");
+		};
+	}
+
+	private int rewardTierColor(QuestReward.DifficultyType tier) {
+		return switch (tier) {
+			case ALL -> 0xFFAAAAAA;
+			case NORMAL -> 0xFFFFD700;
+			case HARD -> 0xFFFF5555;
+		};
 	}
 
 	private List<QuestReward> getDisplayRewards(Quest quest) {
 		List<QuestReward> shown = new ArrayList<>();
 		if (quest == null) return shown;
-		for (QuestReward reward : quest.getRewards()) {
-			if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
-			shown.add(reward);
+		for (QuestReward.DifficultyType tier : QuestReward.DifficultyType.values()) {
+			for (QuestReward reward : quest.getRewards()) {
+				if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
+				if (reward.getDifficultyType() == tier) shown.add(reward);
+			}
 		}
 		return shown;
 	}
@@ -2092,7 +2151,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			String marker = completed ? "✓ " : "✕ ";
 			String baseText = getObjectiveText(pqd, questKey, objective, i, progress);
 			marker = completed ? "+ " : "x ";
-			List<String> wrapped = wrapText(baseText, Math.max(12, textWidth - this.font.width(marker)));
+			List<String> wrapped = wrapText(baseText, Math.max(12, textWidth - TextUtil.width(this.font, marker, DMZ_STYLE)));
 			if (wrapped.isEmpty()) {
 				lines.add(marker);
 				continue;
@@ -2162,7 +2221,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void addWrappedRequirementLine(List<String> lines, String prefix, String text, int textWidth) {
-		int wrapWidth = Math.max(12, textWidth - this.font.width(prefix));
+		int wrapWidth = Math.max(12, textWidth - TextUtil.width(this.font, prefix, DMZ_STYLE));
 		List<String> wrapped = wrapText(text, wrapWidth);
 		if (wrapped.isEmpty()) {
 			lines.add(prefix.trim());
@@ -2332,7 +2391,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderConnections(GuiGraphics graphics, int panOffX, int panOffY, float viewRight, float viewBottom) {
-		// Axis-aligned connections (the saga backbone) are cheap filled rects.
 		for (ConnRender conn : connRenders) {
 			int x1 = conn.baseX1() + panOffX;
 			int y1 = conn.baseY1() + panOffY;
@@ -2350,8 +2408,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 		}
 
-		// Diagonal branches were drawn pixel-by-pixel (one graphics.fill per pixel ≈ 71%
-		// of the whole menu render). Draw them all as single rotated quads in one batch.
 		BufferBuilder buf = Tesselator.getInstance().getBuilder();
 		Matrix4f mat = graphics.pose().last().pose();
 		boolean began = false;
@@ -2366,8 +2422,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				continue;
 			}
 			if (!began) {
-				// Flush the pending GuiGraphics batch (grid, title, backbone fills) so the
-				// raw quad draw below layers on top of them instead of under.
 				graphics.flush();
 				RenderSystem.enableBlend();
 				RenderSystem.defaultBlendFunc();
@@ -2500,12 +2554,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return statsData.getPlayerQuestData().isPartyLeader(Minecraft.getInstance().player.getUUID());
 	}
 
-	private boolean isInSharedPartyAsMember() {
-		if (statsData == null) return false;
-		PlayerQuestData questData = statsData.getPlayerQuestData();
-		return questData.isInParty() && !isLocalPartyLeader();
-	}
-
 	private PlayerQuestData.PartyInviteData getVisiblePartyInvite() {
 		if (statsData == null) return null;
 		PlayerQuestData.PartyInviteData invite = statsData.getPlayerQuestData().getPendingPartyInviteData();
@@ -2615,6 +2663,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void executeConfirmAction() {
 		switch (confirmAction) {
 			case ACCEPT_INVITE -> NetworkHandler.sendToServer(new AcceptPartyInviteC2S());
+			case ACCEPT_INVITE_DIFFICULTY -> NetworkHandler.sendToServer(new AcceptPartyInviteC2S(true));
 			case LEAVE_PARTY -> NetworkHandler.sendToServer(new LeavePartyC2S());
 			case NONE -> {
 				closeTransientOverlay();
@@ -2713,6 +2762,101 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, label, rect.x + rect.width / 2, rect.y + 6, 0xFFFFFFFF);
 	}
 
+	private static final Difficulty[] DIFFICULTY_OPTIONS = { Difficulty.EASY, Difficulty.NORMAL, Difficulty.HARD };
+
+	private boolean shouldShowDifficultySelect() {
+		if (statsData == null) return false;
+		PlayerQuestData pqd = statsData.getPlayerQuestData();
+		if (pqd.isDifficultyChosen()) return false;
+		return !pqd.isInParty() || isLocalPartyLeader();
+	}
+
+	private PanelRect getDifficultySelectRect() {
+		int w = 220;
+		int h = 196;
+		return new PanelRect((getUiWidth() - w) / 2, (getUiHeight() - h) / 2, w, h);
+	}
+
+	private PanelRect getDifficultyIntroRect() {
+		PanelRect popup = getDifficultySelectRect();
+		return new PanelRect(popup.x + 10, popup.y + 16, popup.width - 20, 24);
+	}
+
+	private PanelRect getDifficultyOptionRect(int index) {
+		PanelRect popup = getDifficultySelectRect();
+		int optH = 42;
+		int x = popup.x + 12;
+		int y = popup.y + 46 + index * (optH + 5);
+		return new PanelRect(x, y, popup.width - 24, optH);
+	}
+
+	private List<String> difficultyDescriptionLines(Difficulty d, int textWidth) {
+		List<String> lines = new ArrayList<>();
+		lines.addAll(wrapText(tr("gui.dragonminez.quest_tree.difficulty.tooltip.stats",
+				formatMultiplier(d.hpMultiplier()), formatMultiplier(d.damageMultiplier())).getString(), textWidth));
+		lines.addAll(wrapText(tr("gui.dragonminez.quest_tree.difficulty.tooltip.rewards",
+				formatMultiplier(d.tpMultiplier()), formatMultiplier(d.questRewardMultiplier())).getString(), textWidth));
+		return lines;
+	}
+
+	private void renderDifficultySelectOverlay(GuiGraphics graphics, int mouseX, int mouseY) {
+		graphics.fill(0, 0, getUiWidth(), getUiHeight(), 0xAA000000);
+		PanelRect popup = getDifficultySelectRect();
+		renderSidePanelBackground(graphics, popup, false, false, true);
+
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+				tr("gui.dragonminez.quest_tree.difficulty.select.title").withStyle(ChatFormatting.BOLD),
+				popup.x + popup.width / 2, popup.y + 4, 0xFFFFD700);
+
+		PanelRect intro = getDifficultyIntroRect();
+		List<String> introLines = wrapText(tr("gui.dragonminez.quest_tree.difficulty.select.intro").getString(), intro.width - 6);
+		diffIntroMaxScroll = scrollMax(introLines, intro.height);
+		diffIntroScroll = Mth.clamp(diffIntroScroll, 0, diffIntroMaxScroll);
+		graphics.enableScissor(toScreenCoord(intro.x), toScreenCoord(intro.y), toScreenCoord(intro.right()), toScreenCoord(intro.bottom()));
+		TextUtil.renderScrollableText(graphics, this.font, introLines, intro.x, intro.y, intro.width, intro.height, diffIntroScroll, diffIntroMaxScroll, 0xFFAAAAAA, Style.EMPTY.withFont(DMZ_FONT));
+		graphics.disableScissor();
+
+		for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
+			Difficulty d = DIFFICULTY_OPTIONS[i];
+			PanelRect rect = getDifficultyOptionRect(i);
+			boolean hovered = rect.contains(mouseX, mouseY);
+			graphics.fill(rect.x, rect.y, rect.right(), rect.bottom(), hovered ? 0x66FFFFFF : 0x33000000);
+			graphics.renderOutline(rect.x, rect.y, rect.width, rect.height, hovered ? 0xFFCCDDFF : 0x55444466);
+
+			TextUtil.drawStringWithBorder(graphics, this.font,
+					difficultyLabel(d).copy().withStyle(ChatFormatting.BOLD), rect.x + 6, rect.y + 4, difficultyColor(d, hovered));
+
+			int textX = rect.x + 6;
+			int textY = rect.y + 15;
+			int textW = rect.width - 12;
+			int textH = rect.bottom() - textY - 2;
+			List<String> lines = difficultyDescriptionLines(d, textW - 6);
+			diffOptMaxScroll[i] = scrollMax(lines, textH);
+			diffOptScroll[i] = Mth.clamp(diffOptScroll[i], 0, diffOptMaxScroll[i]);
+			graphics.enableScissor(toScreenCoord(textX), toScreenCoord(textY), toScreenCoord(textX + textW), toScreenCoord(textY + textH));
+			TextUtil.renderScrollableText(graphics, this.font, lines, textX, textY, textW, textH, diffOptScroll[i], diffOptMaxScroll[i], 0xFFDCE6FF, Style.EMPTY.withFont(DMZ_FONT));
+			graphics.disableScissor();
+		}
+	}
+
+	private float scrollMax(List<String> lines, int viewHeight) {
+		return Math.max(0, lines.size() * (this.font.lineHeight + 2) - viewHeight);
+	}
+
+	private boolean handleDifficultySelectClick(double uiMouseX, double uiMouseY, int button) {
+		if (!shouldShowDifficultySelect()) return false;
+		if (button != 0) return true;
+		for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
+			if (getDifficultyOptionRect(i).contains(uiMouseX, uiMouseY)) {
+				NetworkHandler.sendToServer(new SetStoryDifficultyC2S(DIFFICULTY_OPTIONS[i]));
+				Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
+				pendingRefreshTicks = 5;
+				return true;
+			}
+		}
+		return true;
+	}
+
 	private PanelRect getConfirmYesRect() {
 		PanelRect popup = getConfirmRect();
 		return new PanelRect(popup.x + 18, popup.bottom() - 30, 66, 20);
@@ -2791,6 +2935,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
+		if (handleDifficultySelectClick(uiMouseX, uiMouseY, button)) {
+			return true;
+		}
 		if (handleConfirmOverlayClick(uiMouseX, uiMouseY, button)) {
 			return true;
 		}
@@ -2803,10 +2950,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		if (button != 0) return false;
-
-		if (handleHardModeToggleClick(uiMouseX, uiMouseY)) {
-			return true;
-		}
 
 		if (handleNavigatorClick(uiMouseX, uiMouseY)) {
 			return true;
@@ -2960,6 +3103,23 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (shouldShowDifficultySelect()) {
+			double dsX = toUiX(mouseX);
+			double dsY = toUiY(mouseY);
+			float step = (this.font.lineHeight + 2) * 2;
+			int dir = (int) Math.signum(delta);
+			if (getDifficultyIntroRect().contains(dsX, dsY)) {
+				diffIntroScroll = Mth.clamp(diffIntroScroll - dir * step, 0, diffIntroMaxScroll);
+				return true;
+			}
+			for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
+				if (getDifficultyOptionRect(i).contains(dsX, dsY)) {
+					diffOptScroll[i] = Mth.clamp(diffOptScroll[i] - dir * step, 0, diffOptMaxScroll[i]);
+					return true;
+				}
+			}
+			return true;
+		}
 		if (confirmOverlayOpen) {
 			return true;
 		}
@@ -3199,6 +3359,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean isCompleted = isQuestCompleted(pqd, saga, quest);
 		if (isCompleted) {
 			for (int i = 0; i < quest.getRewards().size(); i++) {
+				if (!quest.getRewards().get(i).isUnlockedFor(pqd.getDifficulty())) {
+					continue;
+				}
 				if (!isRewardClaimed(pqd, saga, quest, i)) {
 					return QuestNodeStatus.CLAIMABLE;
 				}
@@ -3294,79 +3457,21 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private List<String> wrapText(String text, int maxWidth) {
-		List<String> lines = new ArrayList<>();
-		if (text == null || text.isEmpty()) {
-			lines.add("");
-			return lines;
-		}
-
-		String[] paragraphs = text.split("\\n", -1);
-		for (String paragraph : paragraphs) {
-			if (paragraph.isEmpty()) {
-				lines.add("");
-				continue;
-			}
-
-			String[] words = paragraph.split(" ");
-			StringBuilder currentLine = new StringBuilder();
-			for (String word : words) {
-				if (word.isEmpty()) continue;
-
-				if (this.font.width(word) > maxWidth) {
-					if (!currentLine.isEmpty()) {
-						lines.add(currentLine.toString());
-						currentLine = new StringBuilder();
-					}
-					for (String split : splitWordToWidth(word, maxWidth)) {
-						lines.add(split);
-					}
-					continue;
-				}
-
-				String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
-				if (this.font.width(testLine) <= maxWidth) {
-					if (!currentLine.isEmpty()) currentLine.append(" ");
-					currentLine.append(word);
-				} else {
-					lines.add(currentLine.toString());
-					currentLine = new StringBuilder(word);
-				}
-			}
-			if (!currentLine.isEmpty()) lines.add(currentLine.toString());
-		}
-
-		return lines;
-	}
-
-	private List<String> splitWordToWidth(String word, int maxWidth) {
-		List<String> parts = new ArrayList<>();
-		StringBuilder current = new StringBuilder();
-		for (int i = 0; i < word.length(); i++) {
-			char c = word.charAt(i);
-			String test = current.toString() + c;
-			if (this.font.width(test) > maxWidth && !current.isEmpty()) {
-				parts.add(current.toString());
-				current = new StringBuilder().append(c);
-			} else {
-				current.append(c);
-			}
-		}
-		if (!current.isEmpty()) parts.add(current.toString());
-		return parts;
+		return TextUtil.wrap(this.font, text, maxWidth, DMZ_STYLE);
 	}
 
 	private String fitSingleLineEllipsis(String text, int maxWidth) {
 		if (text == null) return "";
-		if (this.font.width(text) <= maxWidth) return text;
+		if (TextUtil.width(this.font, text, DMZ_STYLE) <= maxWidth) return text;
 		String ellipsis = "...";
-		int ellipsisWidth = this.font.width(ellipsis);
+		int ellipsisWidth = TextUtil.width(this.font, ellipsis, DMZ_STYLE);
 		if (ellipsisWidth >= maxWidth) return ellipsis;
 
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
 			String candidate = builder.toString() + c;
-			if (this.font.width(candidate) + ellipsisWidth > maxWidth) break;
+			if (TextUtil.width(this.font, candidate, DMZ_STYLE) + ellipsisWidth > maxWidth) break;
 			builder.append(c);
 		}
 		return builder + ellipsis;
@@ -3413,9 +3518,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		int wordsWidth = 0;
-		for (String word : words) wordsWidth += this.font.width(word);
+		for (String word : words) wordsWidth += TextUtil.width(this.font, word, DMZ_STYLE);
 		int spaces = words.length - 1;
-		int baseSpace = this.font.width(" ");
+		int baseSpace = TextUtil.width(this.font, " ", DMZ_STYLE);
 		int totalBase = wordsWidth + (spaces * baseSpace);
 		if (totalBase >= width || totalBase < (int) (width * 0.75f)) {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt(trimmed), x, y, color);
@@ -3429,7 +3534,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int cursorX = x;
 		for (int i = 0; i < words.length; i++) {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt(words[i]), cursorX, y, color);
-			cursorX += this.font.width(words[i]);
+			cursorX += TextUtil.width(this.font, words[i], DMZ_STYLE);
 			if (i < spaces) {
 				cursorX += baseSpace + extraPerSpace + (i < remainder ? 1 : 0);
 			}
@@ -3576,7 +3681,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			TextUtil.drawStringWithBorder(graphics, this.font, txt(prefix), x, y, 0xFFCCCCCC);
 		}
 
-		int markerX = x + this.font.width(prefix);
+		int markerX = x + TextUtil.width(this.font, prefix, DMZ_STYLE);
 		drawPlainBoldStringWithBorder(graphics, marker, markerX, y, symbolColor);
 
 		if (!rest.isEmpty()) {

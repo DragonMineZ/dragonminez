@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -155,6 +156,7 @@ public class CreateCharacterC2S {
 					data.getCharacter().setSelectedStackFormGroup(TransformationsHelper.getGroupWithFirstAvailableStackForm(data));
 					data.getCharacter().setSelectedStackForm(TransformationsHelper.getFirstAvailableStackForm(data));
 					player.refreshDimensions();
+					player.setHealth(player.getMaxHealth());
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					MutantManager.runLottery(player.getServer());
 				}

@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.combat.util.MultipartTargeting;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
@@ -198,7 +200,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
                 this.getX() + damageRadius, this.getY() + damageRadius, this.getZ() + damageRadius
         );
 
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), area);
 
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {

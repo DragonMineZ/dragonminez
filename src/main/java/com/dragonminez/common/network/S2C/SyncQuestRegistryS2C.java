@@ -357,6 +357,8 @@ public class SyncQuestRegistryS2C {
 				obj.addProperty("skill", condition.getSkill());
 				obj.addProperty("minLevel", condition.getSkillLevel());
 			}
+			case RACE -> obj.addProperty("race", condition.getRace());
+			case CLASS -> obj.addProperty("class", condition.getCharacterClass());
 		}
 
 		return obj;

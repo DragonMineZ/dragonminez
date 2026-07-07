@@ -87,7 +87,9 @@ public class BoneVisibilityHandler {
 
 			boolean configHasSaiyanTail = ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
 
-			if (isSaiyan || configHasSaiyanTail) {
+			if (currentForm.contains("supersaiyan4") || logicKey.contains("ssj4")) {
+				showNormalTail = true;
+			} else if (isSaiyan || configHasSaiyanTail) {
 				showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
 			} else if (isTaillessRace || isTaillessModel) {
 				showNormalTail = false;

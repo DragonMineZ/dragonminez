@@ -372,23 +372,29 @@ public class QuestTreeLayoutHelper {
 	 * or if it chains off another sidequest that belongs to that saga.
 	 */
 	public static boolean belongsToSaga(Quest sidequest, String sagaId) {
-		if (sidequest.getPrerequisites() == null) return false;
+		Set<String> visited = new HashSet<>();
+		Deque<Quest> queue = new ArrayDeque<>();
+		queue.add(sidequest);
 
-		var conditions = sidequest.getPrerequisites().conditions();
-		if (conditions == null) return false;
+		while (!queue.isEmpty()) {
+			Quest current = queue.poll();
+			if (current.getPrerequisites() == null) continue;
 
-		for (var cond : conditions) {
-			if (cond.getType() == QuestPrerequisites.ConditionType.SAGA_QUEST
-					&& sagaId.equals(cond.getSagaId())) {
-				return true;
-			}
-			// If it references another sidequest, check if that sidequest belongs to this saga
-			if (cond.getType() == QuestPrerequisites.ConditionType.QUEST) {
-				String refId = cond.getRequiredQuestId();
-				if (refId != null) {
-					Quest parent = QuestRegistry.getClientQuest(refId);
-					if (parent != null && parent.isSideQuest() && belongsToSaga(parent, sagaId)) {
-						return true;
+			var conditions = current.getPrerequisites().conditions();
+			if (conditions == null) continue;
+
+			for (var cond : conditions) {
+				if (cond.getType() == QuestPrerequisites.ConditionType.SAGA_QUEST
+						&& sagaId.equals(cond.getSagaId())) {
+					return true;
+				}
+				if (cond.getType() == QuestPrerequisites.ConditionType.QUEST) {
+					String refId = cond.getRequiredQuestId();
+					if (refId != null && visited.add(refId)) {
+						Quest parent = QuestRegistry.getClientQuest(refId);
+						if (parent != null && parent.isSideQuest()) {
+							queue.add(parent);
+						}
 					}
 				}
 			}

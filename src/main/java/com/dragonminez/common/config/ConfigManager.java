@@ -9,23 +9,33 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import lombok.Getter;
+import com.google.gson.JsonPrimitive;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final double CONFIG_VERSION = 21.0;
+	public static final String CONFIG_VERSION = "2.1.1b";
+	public static final String CLIENT_ONLY_CONFIG = "general-user";
+
+	private static final String PREVIOUS_CONFIGS_ROOT = "/data/dragonminez/previousConfigs/";
+	private static final String OLD_BACKUP_DIR = "oldBackup";
+
+	private static final double DEFENSE_SCALING_FOLD = 0.12;
+	private static final double DEFENSE_SCALING_FOLD_VERSION = 21.2;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
@@ -54,6 +64,8 @@ public class ConfigManager {
 	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
 	private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
 	private static Map<String, FormConfig> SERVER_SYNCED_STACK_FORMS;
+	private static EntitiesConfig SERVER_SYNCED_ENTITIES;
+	private static boolean serverSyncActive = false;
 
 	private static GeneralUserConfig userConfig;
 	private static GeneralServerConfig serverConfig;
@@ -61,7 +73,6 @@ public class ConfigManager {
 	private static TrainingConfig trainingConfig;
 	private static SkillsConfig skillsConfig;
 	private static TechniqueConfig techniqueConfig;
-	@Getter
 	private static EntitiesConfig entitiesConfig;
 
 	public static void initialize() {
@@ -103,21 +114,105 @@ public class ConfigManager {
 		}
 	}
 
+	private static String peekConfigVersion(Path path) {
+		if (!Files.exists(path)) return null;
+		try {
+			JsonElement parsed = JsonParser.parseString(Files.readString(path));
+			if (parsed == null || !parsed.isJsonObject()) return "";
+			JsonObject obj = parsed.getAsJsonObject();
+			if (obj.has("configVersion") && obj.get("configVersion").isJsonPrimitive()) {
+				return obj.get("configVersion").getAsString();
+			}
+			return "";
+		} catch (Exception e) {
+			return "";
+		}
+	}
+
+	private static Integer[] parseSemver(String version) {
+		if (version == null || version.isBlank()) return null;
+		String v = version.trim();
+		int suffixRank = 0;
+		int end = v.length();
+		while (end > 0 && Character.isLetter(v.charAt(end - 1))) end--;
+		if (end < v.length()) {
+			suffixRank = Character.toLowerCase(v.charAt(end)) - 'a' + 1;
+			v = v.substring(0, end);
+		}
+		String[] parts = v.split("\\.");
+		if (parts.length != 3) return null;
+		Integer[] comps = new Integer[4];
+		for (int i = 0; i < 3; i++) {
+			try { comps[i] = Integer.parseInt(parts[i].trim()); }
+			catch (NumberFormatException e) { return null; }
+		}
+		comps[3] = suffixRank;
+		return comps;
+	}
+
+	private static int compareSemver(Integer[] a, Integer[] b) {
+		int n = Math.min(a.length, b.length);
+		for (int i = 0; i < n; i++) {
+			int cmp = Integer.compare(a[i], b[i]);
+			if (cmp != 0) return cmp;
+		}
+		return 0;
+	}
+
+	private static boolean isOutdated(String storedVersion) {
+		Integer[] stored = parseSemver(storedVersion);
+		if (stored == null) return true;
+		Integer[] current = parseSemver(CONFIG_VERSION);
+		return compareSemver(stored, current) < 0;
+	}
+
+	private static boolean isLegacyPreFoldVersion(String storedVersion) {
+		if (storedVersion == null || storedVersion.isBlank()) return false;
+		if (parseSemver(storedVersion) != null) return false;
+		try {
+			double legacy = Double.parseDouble(storedVersion.trim());
+			return legacy >= 0.0 && legacy < DEFENSE_SCALING_FOLD_VERSION;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
+	private static Double defaultDefenseScaling(RaceStatsConfig config, String className) {
+		RaceStatsConfig.ClassStats classStats = config.getClasses().get(className);
+		if (classStats == null) return null;
+		RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
+		return scaling != null ? scaling.getDefenseScaling() : null;
+	}
+
 	private static void backupOldConfig(Path configPath) {
 		if (Files.exists(configPath)) {
 			try {
-				String fileName = configPath.getFileName().toString();
-				if (fileName.startsWith("old_")) return;
-				Path backupPath = configPath.getParent().resolve("old_" + fileName);
+				Path relative = CONFIG_DIR.relativize(configPath);
+				Path backupPath = CONFIG_DIR.resolve(OLD_BACKUP_DIR).resolve(relative);
+				Files.createDirectories(backupPath.getParent());
 				Files.move(configPath, backupPath, StandardCopyOption.REPLACE_EXISTING);
-				LogUtil.info(Env.COMMON, "Obsolete config backed up: {}", backupPath.getFileName());
-			} catch (IOException e) {
+				LogUtil.info(Env.COMMON, "Obsolete config backed up: {}", CONFIG_DIR.relativize(backupPath));
+			} catch (Exception e) {
 				LogUtil.error(Env.COMMON, "Failed to backup old config '{}': {}", configPath.getFileName(), e);
 			}
 		}
 	}
 
-	private static <T> T loadAndValidate(Path path, Class<T> clazz, Supplier<T> defaultProvider, ToDoubleFunction<T> versionGetter, BiConsumer<T, Double> versionSetter, double currentVersion, String templateName) {
+	private static JsonObject loadBaselineObject(Path configPath) {
+		Path relative;
+		try { relative = CONFIG_DIR.relativize(configPath); }
+		catch (Exception e) { return null; }
+		String resource = PREVIOUS_CONFIGS_ROOT + relative.toString().replace('\\', '/');
+		try (InputStream in = ConfigManager.class.getResourceAsStream(resource)) {
+			if (in == null) return null;
+			JsonElement parsed = JsonParser.parseString(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+			return parsed != null && parsed.isJsonObject() ? parsed.getAsJsonObject() : null;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private static <T> T loadAndValidate(Path path, Class<T> clazz, Supplier<T> defaultProvider, Function<T, String> versionGetter, BiConsumer<T, String> versionSetter, String currentVersion, String templateName) {
 		boolean overwrite = false;
 		String reason = "";
 		T config = null;
@@ -125,9 +220,9 @@ public class ConfigManager {
 		if (Files.exists(path)) {
 			try {
 				config = LOADER.loadConfig(path, clazz);
-				double version = versionGetter.applyAsDouble(config);
-				if (version < currentVersion) {
-					reason = version == 0.0 ? "Missing config version" : "Outdated version (" + version + " < " + currentVersion + ")";
+				String version = versionGetter.apply(config);
+				if (isOutdated(version)) {
+					reason = (version == null || version.isBlank()) ? "Missing config version" : "Outdated version (" + version + " < " + currentVersion + ")";
 					overwrite = true;
 				}
 			} catch (Exception e) {
@@ -141,7 +236,7 @@ public class ConfigManager {
 				try {
 					LOADER.saveDefaultFromTemplate(path, templateName);
 					config = LOADER.loadConfig(path, clazz);
-					if (versionGetter.applyAsDouble(config) < currentVersion) overwrite = true;
+					if (isOutdated(versionGetter.apply(config))) overwrite = true;
 				} catch (Exception e) {
 					reason = "Template loading failed: " + e.getMessage();
 				}
@@ -149,10 +244,21 @@ public class ConfigManager {
 		}
 
 		if (overwrite) {
-			if (Files.exists(path)) backupOldConfig(path);
-			if (config == null || (templateName != null && reason.contains("failed"))) config = defaultProvider.get();
+			boolean parsingError = reason.startsWith("Parsing error");
+			String oldRawJson = null;
+			JsonObject baseline = loadBaselineObject(path);
+			if (Files.exists(path)) {
+				if (!parsingError) {
+					try { oldRawJson = Files.readString(path); }
+					catch (IOException e) { LogUtil.error(Env.COMMON, "Could not read old config '{}' for value preservation: {}", path.getFileName(), e.getMessage()); }
+				}
+				backupOldConfig(path);
+			}
+			if (!parsingError || config == null) config = defaultProvider.get();
+
 			try {
 				versionSetter.accept(config, currentVersion);
+				if (oldRawJson != null) config = mergePreservedValues(oldRawJson, config, clazz, currentVersion, versionSetter, baseline);
 				LogUtil.warn(Env.COMMON, String.format("Regenerating %s. Reason: %s", path.getFileName(), reason));
 				LOADER.saveConfig(path, config);
 			} catch (Exception e) {
@@ -160,6 +266,225 @@ public class ConfigManager {
 			}
 		}
 		return config != null ? config : defaultProvider.get();
+	}
+
+	private static <T> T mergePreservedValues(String oldRawJson, T defaultConfig, Class<T> clazz, String currentVersion, BiConsumer<T, String> versionSetter, JsonObject baseline) {
+		try {
+			JsonElement oldParsed = JsonParser.parseString(oldRawJson);
+			if (oldParsed == null || !oldParsed.isJsonObject()) return defaultConfig;
+			JsonElement newTree = GSON.toJsonTree(defaultConfig);
+			if (newTree == null || !newTree.isJsonObject()) return defaultConfig;
+
+			JsonObject oldObj = oldParsed.getAsJsonObject();
+			JsonObject newObj = newTree.getAsJsonObject();
+			int preserved = mergeMatchingValues(oldObj, newObj, baseline, clazz);
+
+			T merged = GSON.fromJson(newObj, clazz);
+			if (merged == null) return defaultConfig;
+			versionSetter.accept(merged, currentVersion);
+			if (preserved > 0) LogUtil.info(Env.COMMON, "Preserved {} user-modified value(s) from the old config", preserved);
+			return merged;
+		} catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Could not preserve old config values, falling back to defaults: {}", e.getMessage());
+			return defaultConfig;
+		}
+	}
+
+	private static JsonElement baselineChild(JsonObject baseline, String key) {
+		return (baseline != null && baseline.has(key) && !baseline.get(key).isJsonNull()) ? baseline.get(key) : null;
+	}
+
+	private static boolean shouldPreserve(JsonElement oldVal, JsonElement newVal, JsonElement baseVal) {
+		if (baseVal != null) return !valuesEqual(oldVal, baseVal);
+		return !valuesEqual(oldVal, newVal);
+	}
+
+	private static int mergeMatchingValues(JsonObject oldObj, JsonObject newObj, JsonObject baseline, Class<?> type) {
+		int count = 0;
+		for (String key : new ArrayList<>(newObj.keySet())) {
+			if (key.equals("configVersion") || !oldObj.has(key)) continue;
+			JsonElement oldVal = oldObj.get(key);
+			JsonElement newVal = newObj.get(key);
+			if (oldVal.isJsonNull()) continue;
+			JsonElement baseVal = baselineChild(baseline, key);
+
+			Field field = findField(type, key);
+			Class<?> fieldType = field != null ? field.getType() : null;
+
+			if (field != null && field.isAnnotationPresent(ConfigNonPreservable.class)) continue;
+
+			if (fieldType != null && isMapType(fieldType) && oldVal.isJsonObject() && newVal.isJsonObject()) {
+				JsonObject baseMap = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
+				count += mergeMapValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), baseMap, mapValueClass(field));
+			} else if (fieldType != null && isCollectionOrArray(fieldType)) {
+				if (oldVal.isJsonArray() && shouldPreserve(oldVal, newVal, baseVal)) { newObj.add(key, oldVal); count++; }
+			} else if (oldVal.isJsonObject() && newVal.isJsonObject()) {
+				JsonObject baseObj = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
+				count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), baseObj, fieldType);
+			} else if (isValueCompatible(oldVal, newVal, fieldType) && shouldPreserve(oldVal, newVal, baseVal)) {
+				newObj.add(key, oldVal);
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private static int mergeMapValues(JsonObject oldMap, JsonObject newMap, JsonObject baseMap, Class<?> valueType) {
+		int count = 0;
+		for (String key : new ArrayList<>(newMap.keySet())) {
+			if (!oldMap.has(key)) continue;
+			JsonElement oldVal = oldMap.get(key);
+			JsonElement newVal = newMap.get(key);
+			if (oldVal.isJsonNull()) continue;
+			JsonElement baseVal = baselineChild(baseMap, key);
+
+			if (oldVal.isJsonObject() && newVal.isJsonObject()) {
+				if (valueType != null && !isMapType(valueType) && !isCollectionOrArray(valueType)) {
+					JsonObject baseObj = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
+					count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), baseObj, valueType);
+				} else if (shouldPreserve(oldVal, newVal, baseVal)) {
+					newMap.add(key, oldVal);
+					count++;
+				}
+			} else if (oldVal.isJsonArray()) {
+				if (shouldPreserve(oldVal, newVal, baseVal)) { newMap.add(key, oldVal); count++; }
+			} else if (isValueCompatible(oldVal, newVal, valueType) && shouldPreserve(oldVal, newVal, baseVal)) {
+				newMap.add(key, oldVal);
+				count++;
+			}
+		}
+		for (String key : oldMap.keySet()) {
+			if (!newMap.has(key)) {
+				newMap.add(key, oldMap.get(key));
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private static boolean isValueCompatible(JsonElement oldVal, JsonElement newVal, Class<?> type) {
+		if (!oldVal.isJsonPrimitive()) return false;
+		JsonPrimitive oldPrim = oldVal.getAsJsonPrimitive();
+
+		if (type == null) {
+			if (newVal == null || !newVal.isJsonPrimitive()) return false;
+			JsonPrimitive newPrim = newVal.getAsJsonPrimitive();
+			if (oldPrim.isBoolean() || newPrim.isBoolean()) return oldPrim.isBoolean() && newPrim.isBoolean();
+			if (oldPrim.isString() || newPrim.isString()) return oldPrim.isString() && newPrim.isString();
+			if (oldPrim.isNumber() && newPrim.isNumber()) return isIntegralLiteral(oldPrim) == isIntegralLiteral(newPrim);
+			return false;
+		}
+
+		if (type == boolean.class || type == Boolean.class) return oldPrim.isBoolean();
+		if (type == String.class || type == char.class || type == Character.class || type.isEnum()) return oldPrim.isString();
+		if (isIntegralType(type)) return oldPrim.isNumber() && isIntegralLiteral(oldPrim);
+		if (isDecimalType(type)) return oldPrim.isNumber();
+		return false;
+	}
+
+	private static boolean valuesEqual(JsonElement oldVal, JsonElement newVal) {
+		if (newVal == null) return false;
+		if (oldVal.isJsonPrimitive() && newVal.isJsonPrimitive()) {
+			JsonPrimitive op = oldVal.getAsJsonPrimitive();
+			JsonPrimitive np = newVal.getAsJsonPrimitive();
+			if (op.isNumber() && np.isNumber()) {
+				try { return op.getAsBigDecimal().compareTo(np.getAsBigDecimal()) == 0; }
+				catch (NumberFormatException e) { return op.getAsString().equals(np.getAsString()); }
+			}
+		}
+		return oldVal.equals(newVal);
+	}
+
+	private static boolean isIntegralLiteral(JsonPrimitive prim) {
+		if (!prim.isNumber()) return false;
+		String s = prim.getAsString();
+		return s.indexOf('.') < 0 && s.indexOf('e') < 0 && s.indexOf('E') < 0;
+	}
+
+	private static boolean isIntegralType(Class<?> type) {
+		return type == int.class || type == Integer.class || type == long.class || type == Long.class
+				|| type == short.class || type == Short.class || type == byte.class || type == Byte.class
+				|| java.math.BigInteger.class.isAssignableFrom(type);
+	}
+
+	private static boolean isDecimalType(Class<?> type) {
+		return type == double.class || type == Double.class || type == float.class || type == Float.class
+				|| java.math.BigDecimal.class.isAssignableFrom(type);
+	}
+
+	private static boolean isMapType(Class<?> type) {
+		return Map.class.isAssignableFrom(type);
+	}
+
+	private static boolean isCollectionOrArray(Class<?> type) {
+		return type.isArray() || Collection.class.isAssignableFrom(type);
+	}
+
+	private static Field findField(Class<?> type, String name) {
+		if (type == null) return null;
+		for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
+			for (Field f : c.getDeclaredFields()) {
+				if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) || f.isSynthetic()) continue;
+				if (f.getName().equals(name)) return f;
+			}
+		}
+		return null;
+	}
+
+	private static Class<?> mapValueClass(Field field) {
+		try {
+			java.lang.reflect.Type generic = field.getGenericType();
+			if (generic instanceof java.lang.reflect.ParameterizedType pt) {
+				java.lang.reflect.Type[] args = pt.getActualTypeArguments();
+				if (args.length == 2 && args[1] instanceof Class<?> c) return c;
+			}
+		} catch (Exception ignored) {}
+		return null;
+	}
+
+	private static FormConfig regenerateOutdatedForm(Path formFilePath, FormConfig defaultFormConfig, String label) {
+		LogUtil.warn(Env.COMMON, "Regenerating form '{}'. Reason: Outdated version", label);
+		String oldRaw = null;
+		if (Files.exists(formFilePath)) {
+			try { oldRaw = Files.readString(formFilePath); }
+			catch (IOException e) { LogUtil.error(Env.COMMON, "Could not read old form '{}' for value preservation: {}", formFilePath.getFileName(), e.getMessage()); }
+		}
+		JsonObject baseline = loadBaselineObject(formFilePath);
+		backupOldConfig(formFilePath);
+		defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+		FormConfig result = oldRaw != null
+				? mergePreservedValues(oldRaw, defaultFormConfig, FormConfig.class, FormConfig.CURRENT_VERSION, FormConfig::setConfigVersion, baseline)
+				: defaultFormConfig;
+		try { LOADER.saveConfig(formFilePath, result); } catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Failed to save regenerated form '{}': {}", formFilePath.getFileName(), e.getMessage());
+		}
+		return result;
+	}
+
+	private static void upgradeUserFormFiles(Path formsDir, Map<String, FormConfig> defaultForms) {
+		if (!Files.exists(formsDir)) return;
+		Set<String> defaults = new HashSet<>();
+		for (FormConfig form : defaultForms.values()) if (form != null) defaults.add(form.getGroupName().toLowerCase());
+		try (Stream<Path> stream = Files.list(formsDir)) {
+			stream.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.forEach(p -> {
+						try {
+							FormConfig existing = LOADER.loadConfig(p, FormConfig.class);
+							if (existing == null || defaults.contains(existing.getGroupName().toLowerCase())) return;
+							if (isOutdated(existing.getConfigVersion())) {
+								LogUtil.warn(Env.COMMON, "Regenerating user form '{}'. Reason: Outdated version", p.getFileName());
+								backupOldConfig(p);
+								existing.setConfigVersion(FormConfig.CURRENT_VERSION);
+								LOADER.saveConfig(p, existing);
+							}
+						} catch (Exception e) {
+							LogUtil.error(Env.COMMON, "Failed to upgrade user form '{}': {}", p.getFileName(), e.getMessage());
+						}
+					});
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Failed to scan user forms in '{}': {}", formsDir, e.getMessage());
+		}
 	}
 
 	private static void loadGeneralConfigs() {
@@ -186,10 +511,31 @@ public class ConfigManager {
 				LogUtil.error(Env.COMMON, "Failed to save normalized character.json for race '{}': {}", raceName, e.getMessage());
 			}
 		}
-		RaceStatsConfig statsConfig = loadAndValidate(racePath.resolve("stats.json"), RaceStatsConfig.class, ConfigManager::createDefaultStatsConfig, RaceStatsConfig::getConfigVersion, RaceStatsConfig::setConfigVersion, RaceStatsConfig.CURRENT_VERSION, null);
+		Path statsPath = racePath.resolve("stats.json");
+		String previousStatsVersion = peekConfigVersion(statsPath);
+		RaceStatsConfig statsConfig = loadAndValidate(statsPath, RaceStatsConfig.class, ConfigManager::createDefaultStatsConfig, RaceStatsConfig::getConfigVersion, RaceStatsConfig::setConfigVersion, RaceStatsConfig.CURRENT_VERSION, null);
+		if (isLegacyPreFoldVersion(previousStatsVersion)) {
+			RaceStatsConfig newDefaults = createDefaultStatsConfig();
+			boolean folded = false;
+			for (Map.Entry<String, RaceStatsConfig.ClassStats> entry : statsConfig.getClasses().entrySet()) {
+				RaceStatsConfig.StatScaling scaling = entry.getValue().getStatScaling();
+				if (scaling == null || scaling.getDefenseScaling() == null) continue;
+				Double newDefault = defaultDefenseScaling(newDefaults, entry.getKey());
+				if (newDefault != null && newDefault.equals(scaling.getDefenseScaling())) continue;
+				scaling.setDefenseScaling(scaling.getDefenseScaling() * DEFENSE_SCALING_FOLD);
+				folded = true;
+			}
+			if (folded) {
+				try { LOADER.saveConfig(statsPath, statsConfig); } catch (Exception e) {
+					LogUtil.error(Env.COMMON, "Failed to save migrated stats.json for race '{}': {}", raceName, e.getMessage());
+				}
+				LogUtil.warn(Env.COMMON, "Migrated user-modified DEF_scaling to flat-defense units for race '{}'", raceName);
+			}
+		}
 
 		Map<String, FormConfig> raceForms = new HashMap<>();
 		if (isDefault) FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
+		upgradeUserFormFiles(formsPath, raceForms);
 		Map<String, FormConfig> userDiskForms = LOADER.loadRaceForms(raceName, formsPath);
 
 		if (!isDefault) {
@@ -202,12 +548,9 @@ public class ConfigManager {
 
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
-					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
-						LogUtil.warn(Env.COMMON, "Regenerating form '{}' for race '{}'. Reason: Outdated version", defaultEntry.getKey(), raceName);
-						backupOldConfig(formFilePath);
-						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-						try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
-						raceForms.put(groupKey, defaultFormConfig);
+					if (isOutdated(userConfig.getConfigVersion())) {
+						FormConfig regenerated = regenerateOutdatedForm(formFilePath, defaultFormConfig, defaultEntry.getKey() + "' for race '" + raceName);
+						raceForms.put(groupKey, regenerated);
 					} else {
 						raceForms.put(groupKey, userConfig);
 					}
@@ -229,6 +572,7 @@ public class ConfigManager {
 		Files.createDirectories(STACK_FORMS_DIR);
 		Map<String, FormConfig> finalStackForms = new HashMap<>();
 		if (isDefault) FORMS_FACTORY.createDefaultStackForms(STACK_FORMS_DIR, finalStackForms);
+		upgradeUserFormFiles(STACK_FORMS_DIR, finalStackForms);
 		Map<String, FormConfig> userDiskForms = LOADER.loadStackForms(STACK_FORMS_DIR);
 
 		if (isDefault) {
@@ -239,11 +583,9 @@ public class ConfigManager {
 
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
-					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
-						LogUtil.warn(Env.COMMON, "Regenerating stack form '{}'. Reason: Outdated version", defaultEntry.getKey());
-						backupOldConfig(formFilePath);
-						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-						try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
+					if (isOutdated(userConfig.getConfigVersion())) {
+						FormConfig regenerated = regenerateOutdatedForm(formFilePath, defaultFormConfig, defaultEntry.getKey());
+						finalStackForms.put(groupKey, regenerated);
 					} else {
 						finalStackForms.put(groupKey, userConfig);
 					}
@@ -275,6 +617,12 @@ public class ConfigManager {
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT2, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.MINI_BUU, 60.0, 8.0, 6.0);
+
+		EntitiesConfig.TransformSettings transform = config.getTransformDefaults();
+		transform.setHealthMultiplier(1.5D);
+		transform.setMeleeMultiplier(1.5D);
+		transform.setKiMultiplier(1.5D);
+		transform.setTriggerHealthPercent(0.5D);
 
 		return config;
 	}
@@ -363,10 +711,10 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#222629");
 		config.setDefaultEye2Color("#222629");
 		config.setDefaultAuraColor("#7FFFFF");
-		config.setFormSkillTpCosts("superforms", new Integer[]{8000, 16000, 25000, 40000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{21000, 42000, 65000, 104000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
-		config.setFormSkillTpCosts("androidforms", new Integer[]{16000, 40000});
+		config.setFormSkillTpCosts("androidforms", new Integer[]{42000, 104000});
 	}
 
 	private static void setupSaiyanCharacter(RaceCharacterConfig config) {
@@ -389,7 +737,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#222629");
 		config.setDefaultEye2Color("#222629");
 		config.setDefaultAuraColor("#7FFFFF");
-		config.setFormSkillTpCosts("superforms", new Integer[]{5000, 8000, 12000, 16000, 20000, 25000, 30000, 40000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{13000, 21000, 31000, 42000, 52000, 65000, 78000, 104000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -408,11 +756,11 @@ public class ConfigManager {
 		config.setDefaultBodyColor("#1FAA24");
 		config.setDefaultBodyColor2("#BB2024");
 		config.setDefaultBodyColor3("#FF86A6");
-		config.setDefaultHairColor("#1FAA24");
+		config.setDefaultHairColor("#80FF69");
 		config.setDefaultEye1Color("#222629");
 		config.setDefaultEye2Color("#222629");
 		config.setDefaultAuraColor("#7FFF00");
-		config.setFormSkillTpCosts("superforms", new Integer[]{9000, 18000, 30000, 45000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{23000, 47000, 78000, 117000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -420,7 +768,7 @@ public class ConfigManager {
 	private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("frostdemon");
 		config.setIsLayered(true);
-		config.setHeadBones(new String[]{"horns1"});
+		config.setHeadBones(new String[]{"horns1", "horns2", "horns3", "horns4", "horns5"});
 		config.setDefaultModelScaling(new Float[]{0.7375f, 0.7375f, 0.7375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
@@ -435,7 +783,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#FF001D");
 		config.setDefaultEye2Color("#FF001D");
 		config.setDefaultAuraColor("#5F00FF");
-		config.setFormSkillTpCosts("superforms", new Integer[]{7000, 12000, 20000, 32000, 45000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{18000, 31000, 52000, 83000, 117000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -457,7 +805,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#2E2424");
 		config.setDefaultEye2Color("#F06F6E");
 		config.setDefaultAuraColor("#1AA700");
-		config.setFormSkillTpCosts("superforms", new Integer[]{10000, 22000, 34000, 48000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{26000, 57000, 88000, 125000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -465,7 +813,7 @@ public class ConfigManager {
 	private static void setupMajinCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("majin");
 		config.setIsLayered(true);
-		config.setHeadBones(new String[]{"majin1"});
+		config.setHeadBones(new String[]{"majin1", "majin2", "majin3"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
@@ -480,7 +828,7 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#B40000");
 		config.setDefaultEye2Color("#B40000");
 		config.setDefaultAuraColor("#FF6DFF");
-		config.setFormSkillTpCosts("superforms", new Integer[]{9000, 18000, 30000, 44000});
+		config.setFormSkillTpCosts("superforms", new Integer[]{23000, 47000, 78000, 114000});
 		config.setFormSkillTpCosts("godforms", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{-1, -1, -1});
 	}
@@ -511,27 +859,27 @@ public class ConfigManager {
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
 
-		setupInitialStats(config.getClassStats("warrior"), 10, 0, 5, 5, 0, 0, 7.0, 0.08, 4.0, 0.04, 12.0, 0.12);
-		setupScalingStats(config.getClassStats("warrior"), 1.6, 1.0, 2.0, 1.6, 1.8, 0.5, 1.5);
+		setupInitialStats(config.getClassStats("warrior"), 10, 0, 5, 5, 0, 0, 1.75, 0.06, 4.0, 0.08, 12.0, 0.12);
+		setupScalingStats(config.getClassStats("warrior"), 1.4, 1.0, 0.24, 1.6, 1.8, 0.5, 1.5);
 
-		setupInitialStats(config.getClassStats("spiritualist"), 0, 0, 0, 0, 10, 10, 2.0, 0.02, 8.0, 0.10, 5.0, 0.05);
-		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 1.3, 0.7, 1.4, 1.9, 3.7);
+		setupInitialStats(config.getClassStats("spiritualist"), 0, 0, 0, 0, 10, 10, 0.5, 0.015, 8.0, 0.20, 5.0, 0.05);
+		setupScalingStats(config.getClassStats("spiritualist"), 0.3, 0.5, 0.156, 0.7, 1.4, 1.9, 3.7);
 
-		setupInitialStats(config.getClassStats("martialartist"), 0, 10, 0, 10, 0, 0, 6.0, 0.07, 4.0, 0.04, 9.0, 0.09);
-		setupScalingStats(config.getClassStats("martialartist"), 1.0, 1.8, 1.5, 1.3, 2.2, 0.6, 1.6);
+		setupInitialStats(config.getClassStats("martialartist"), 0, 10, 0, 10, 0, 0, 1.5, 0.0525, 4.0, 0.08, 9.0, 0.09);
+		setupScalingStats(config.getClassStats("martialartist"), 0.8, 1.8, 0.18, 1.3, 2.2, 0.6, 1.6);
 
-		setupInitialStats(config.getClassStats("berserker"), 10, 0, 0, 10, 0, 0, 4.0, 0.05, 2.0, 0.02, 14.0, 0.13);
-		setupScalingStats(config.getClassStats("berserker"), 1.9, 0.8, 1.5, 1.1, 3.0, 0.4, 1.3);
+		setupInitialStats(config.getClassStats("berserker"), 10, 0, 0, 10, 0, 0, 1.0, 0.0375, 2.0, 0.04, 14.0, 0.13);
+		setupScalingStats(config.getClassStats("berserker"), 1.7, 0.8, 0.18, 1.1, 3.0, 0.4, 1.3);
 
-		setupInitialStats(config.getClassStats("paladin"), 0, 5, 10, 5, 0, 0, 8.0, 0.09, 4.0, 0.04, 8.0, 0.08);
-		setupScalingStats(config.getClassStats("paladin"), 1.0, 1.2, 2.8, 1.2, 2.0, 0.6, 1.2);
+		setupInitialStats(config.getClassStats("paladin"), 0, 5, 10, 5, 0, 0, 2.0, 0.0675, 4.0, 0.08, 8.0, 0.08);
+		setupScalingStats(config.getClassStats("paladin"), 0.8, 1.2, 0.336, 1.2, 2.0, 0.6, 1.2);
 
-		setupInitialStats(config.getClassStats("tank"), 0, 0, 10, 10, 0, 0, 9.0, 0.10, 5.0, 0.05, 9.0, 0.09);
-		setupScalingStats(config.getClassStats("tank"), 0.8, 0.7, 3.2, 1.5, 2.5, 0.5, 0.8);
+		setupInitialStats(config.getClassStats("tank"), 0, 0, 10, 10, 0, 0, 2.25, 0.075, 5.0, 0.10, 9.0, 0.09);
+		setupScalingStats(config.getClassStats("tank"), 0.6, 0.7, 0.384, 1.5, 2.5, 0.5, 0.8);
 		config.getClassStats("tank").setTpGainMultiplier(1.25);
 
-		setupInitialStats(config.getClassStats("cleric"), 0, 0, 5, 0, 0, 15, 2.0, 0.02, 12.0, 0.12, 16.0, 0.12);
-		setupScalingStats(config.getClassStats("cleric"), 0.5, 0.5, 1.4, 2.6, 1.2, 0.8, 3.0);
+		setupInitialStats(config.getClassStats("cleric"), 0, 0, 5, 0, 0, 15, 0.5, 0.015, 12.0, 0.24, 16.0, 0.12);
+		setupScalingStats(config.getClassStats("cleric"), 0.5, 0.5, 0.168, 2.6, 1.2, 0.8, 3.0);
 		config.getClassStats("cleric").setTpGainMultiplier(1.25);
 		config.getClassStats("cleric").setTpCostMultiplier(0.9);
 		setupDefaultPassives(config);
@@ -623,21 +971,29 @@ public class ConfigManager {
 
 	public static RaceStatsConfig getRaceStats(String raceName) {
 		String key = raceName != null ? raceName.toLowerCase() : "human";
-		if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(key)) return SERVER_SYNCED_STATS.get(key);
+		if (serverSyncActive) {
+			Map<String, RaceStatsConfig> synced = SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : Collections.emptyMap();
+			RaceStatsConfig config = synced.getOrDefault(key, synced.get("human"));
+			return config != null ? config : createDefaultStatsConfig();
+		}
 		RaceStatsConfig config = RACE_STATS.getOrDefault(key, RACE_STATS.get("human"));
 		return config != null ? config : createDefaultStatsConfig();
 	}
 
 	public static RaceCharacterConfig getRaceCharacter(String raceName) {
 		String key = raceName != null ? raceName.toLowerCase() : "human";
-		if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(key)) return SERVER_SYNCED_CHARACTER.get(key);
+		if (serverSyncActive) {
+			Map<String, RaceCharacterConfig> synced = SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : Collections.emptyMap();
+			RaceCharacterConfig config = synced.getOrDefault(key, synced.get("human"));
+			return config != null ? config : createDefaultCharacterConfig(key, false);
+		}
 		RaceCharacterConfig config = RACE_CHARACTER.getOrDefault(key, RACE_CHARACTER.get("human"));
 		return config != null ? config : createDefaultCharacterConfig(key, false);
 	}
 
 	public static List<String> getLoadedRaces() {
 		List<String> races;
-		if (SERVER_SYNCED_CHARACTER != null) races = new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet());
+		if (serverSyncActive) races = SERVER_SYNCED_CHARACTER != null ? new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet()) : new ArrayList<>();
 		else races = new ArrayList<>(LOADED_RACES);
 
 		races.sort((r1, r2) -> {
@@ -658,20 +1014,21 @@ public class ConfigManager {
 
 	public static List<String> getDefaultRaces() { return Arrays.asList(DEFAULT_RACES); }
 	public static boolean isRaceLoaded(String raceName) {
-		if (SERVER_SYNCED_CHARACTER != null) return SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
+		if (raceName == null) return false;
+		if (serverSyncActive) return SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
 		return LOADED_RACES.stream().anyMatch(r -> r.equalsIgnoreCase(raceName));
 	}
 	public static GeneralUserConfig getUserConfig() { return userConfig != null ? userConfig : new GeneralUserConfig(); }
 	public static GeneralServerConfig getServerConfig() {
-		if (SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
+		if (serverSyncActive && SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
 		return serverConfig != null ? serverConfig : new GeneralServerConfig();
 	}
 	public static CombatConfig getCombatConfig() {
-		if (SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
+		if (serverSyncActive && SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
 		return combatConfig != null ? combatConfig : new CombatConfig();
 	}
 	public static TrainingConfig getTrainingConfig() {
-		if (SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
+		if (serverSyncActive && SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
 		return trainingConfig != null ? trainingConfig : new TrainingConfig();
 	}
 	public static void saveGeneralUserConfig() {
@@ -722,6 +1079,7 @@ public class ConfigManager {
 			stream.filter(Files::isRegularFile)
 					.filter(p -> p.toString().endsWith(".json"))
 					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.filter(p -> !CONFIG_DIR.relativize(p).toString().replace("\\", "/").startsWith(OLD_BACKUP_DIR + "/"))
 					.forEach(p -> {
 						String relativePath = CONFIG_DIR.relativize(p).toString().replace("\\", "/");
 						CACHED_CONFIG_FILES.add(relativePath.substring(0, relativePath.length() - 5));
@@ -853,19 +1211,21 @@ public class ConfigManager {
 
 	public static void applySpecificSyncedConfig(String configFilePath, String json) {
 		try {
+			serverSyncActive = true;
 			if (configFilePath.equals("general-server")) SERVER_SYNCED_GENERAL_SERVER = GSON.fromJson(json, GeneralServerConfig.class);
 			else if (configFilePath.equals("combat")) SERVER_SYNCED_COMBAT = GSON.fromJson(json, CombatConfig.class);
 			else if (configFilePath.equals("training")) SERVER_SYNCED_TRAINING = GSON.fromJson(json, TrainingConfig.class);
 			else if (configFilePath.equals("skills")) SERVER_SYNCED_SKILLS = GSON.fromJson(json, SkillsConfig.class);
 			else if (configFilePath.equals("techniques")) SERVER_SYNCED_TECHNIQUES = GSON.fromJson(json, TechniqueConfig.class);
+			else if (configFilePath.equals("entities")) SERVER_SYNCED_ENTITIES = GSON.fromJson(json, EntitiesConfig.class);
 			else if (configFilePath.startsWith("races/")) {
 				String[] parts = configFilePath.split("/");
 				String raceName = parts[1];
 				if (parts[2].equals("stats")) {
-					if (SERVER_SYNCED_STATS == null) SERVER_SYNCED_STATS = new HashMap<>(RACE_STATS);
+					if (SERVER_SYNCED_STATS == null) SERVER_SYNCED_STATS = new HashMap<>();
 					SERVER_SYNCED_STATS.put(raceName.toLowerCase(), GSON.fromJson(json, RaceStatsConfig.class));
 				} else if (parts[2].equals("character")) {
-					if (SERVER_SYNCED_CHARACTER == null) SERVER_SYNCED_CHARACTER = new HashMap<>(RACE_CHARACTER);
+					if (SERVER_SYNCED_CHARACTER == null) SERVER_SYNCED_CHARACTER = new HashMap<>();
 					SERVER_SYNCED_CHARACTER.put(raceName.toLowerCase(), GSON.fromJson(json, RaceCharacterConfig.class));
 				} else if (parts[2].equals("forms")) {
 					if (SERVER_SYNCED_FORMS == null) SERVER_SYNCED_FORMS = new HashMap<>();
@@ -873,7 +1233,7 @@ public class ConfigManager {
 							.put(parts[3].toLowerCase(), GSON.fromJson(json, FormConfig.class));
 				}
 			} else if (configFilePath.startsWith("forms/")) {
-				if (SERVER_SYNCED_STACK_FORMS == null) SERVER_SYNCED_STACK_FORMS = new HashMap<>(STACK_FORMS);
+				if (SERVER_SYNCED_STACK_FORMS == null) SERVER_SYNCED_STACK_FORMS = new HashMap<>();
 				SERVER_SYNCED_STACK_FORMS.put(configFilePath.split("/")[1].toLowerCase(), GSON.fromJson(json, FormConfig.class));
 			}
 		} catch (Exception e) { LogUtil.error(Env.CLIENT, "Error applying synced config: " + e.getMessage()); }
@@ -887,23 +1247,44 @@ public class ConfigManager {
 		SERVER_SYNCED_STATS = syncedStats;
 		SERVER_SYNCED_CHARACTER = syncedCharacters;
 		SERVER_SYNCED_STACK_FORMS = syncedStackForms;
+		serverSyncActive = true;
 	}
 
-	public static void clearServerSync() {
+	private static void clearSyncedMaps() {
 		SERVER_SYNCED_GENERAL_SERVER = null;
 		SERVER_SYNCED_COMBAT = null;
 		SERVER_SYNCED_TRAINING = null;
 		SERVER_SYNCED_SKILLS = null;
 		SERVER_SYNCED_TECHNIQUES = null;
+		SERVER_SYNCED_ENTITIES = null;
 		SERVER_SYNCED_FORMS = null;
 		SERVER_SYNCED_STATS = null;
 		SERVER_SYNCED_CHARACTER = null;
 		SERVER_SYNCED_STACK_FORMS = null;
 	}
 
-	public static Map<String, RaceStatsConfig> getAllRaceStats() { return SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : new HashMap<>(RACE_STATS); }
-	public static Map<String, RaceCharacterConfig> getAllRaceCharacters() { return SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : new HashMap<>(RACE_CHARACTER); }
-	public static Map<String, Map<String, FormConfig>> getAllForms() { return SERVER_SYNCED_FORMS != null ? SERVER_SYNCED_FORMS : RACE_FORMS; }
+	public static void beginServerSyncBatch() {
+		clearSyncedMaps();
+		serverSyncActive = true;
+	}
+
+	public static void clearServerSync() {
+		clearSyncedMaps();
+		serverSyncActive = false;
+	}
+
+	public static Map<String, RaceStatsConfig> getAllRaceStats() {
+		if (serverSyncActive) return SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : new HashMap<>();
+		return new HashMap<>(RACE_STATS);
+	}
+	public static Map<String, RaceCharacterConfig> getAllRaceCharacters() {
+		if (serverSyncActive) return SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : new HashMap<>();
+		return new HashMap<>(RACE_CHARACTER);
+	}
+	public static Map<String, Map<String, FormConfig>> getAllForms() {
+		if (serverSyncActive) return SERVER_SYNCED_FORMS != null ? SERVER_SYNCED_FORMS : new HashMap<>();
+		return RACE_FORMS;
+	}
 	public static Map<String, FormConfig> getAllFormsForRace(String raceName) { return getAllForms().getOrDefault(raceName.toLowerCase(), new HashMap<>()); }
 	public static FormConfig getFormGroup(String raceName, String groupName) {
 		Map<String, FormConfig> raceForms = getAllFormsForRace(raceName);
@@ -913,7 +1294,10 @@ public class ConfigManager {
 		FormConfig group = getFormGroup(raceName, groupName);
 		return group != null ? group.getForm(formName) : null;
 	}
-	public static Map<String, FormConfig> getAllStackForms() { return SERVER_SYNCED_STACK_FORMS != null ? SERVER_SYNCED_STACK_FORMS : STACK_FORMS; }
+	public static Map<String, FormConfig> getAllStackForms() {
+		if (serverSyncActive) return SERVER_SYNCED_STACK_FORMS != null ? SERVER_SYNCED_STACK_FORMS : new HashMap<>();
+		return STACK_FORMS;
+	}
 	public static FormConfig getStackFormGroup(String groupName) {
 		Map<String, FormConfig> stackForms = getAllStackForms();
 		return stackForms != null ? stackForms.get(groupName.toLowerCase()) : null;
@@ -922,7 +1306,31 @@ public class ConfigManager {
 		FormConfig group = getStackFormGroup(groupName);
 		return group != null ? group.getForm(formName) : null;
 	}
-	public static SkillsConfig getSkillsConfig() { return SERVER_SYNCED_SKILLS != null ? SERVER_SYNCED_SKILLS : (skillsConfig != null ? skillsConfig : new SkillsConfig()); }
-	public static TechniqueConfig getTechniqueConfig() { return SERVER_SYNCED_TECHNIQUES != null ? SERVER_SYNCED_TECHNIQUES : (techniqueConfig != null ? techniqueConfig : new TechniqueConfig()); }
-	public static EntitiesConfig.EntityStats getEntityStats(String registryName) { return entitiesConfig != null && entitiesConfig.getDefaultEntityStats() != null ? entitiesConfig.getDefaultEntityStats().get(registryName) : null; }
+	public static SkillsConfig getSkillsConfig() {
+		if (serverSyncActive && SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;
+		return skillsConfig != null ? skillsConfig : new SkillsConfig();
+	}
+	public static TechniqueConfig getTechniqueConfig() {
+		if (serverSyncActive && SERVER_SYNCED_TECHNIQUES != null) return SERVER_SYNCED_TECHNIQUES;
+		return techniqueConfig != null ? techniqueConfig : new TechniqueConfig();
+	}
+	public static EntitiesConfig getEntitiesConfig() {
+		if (serverSyncActive) return SERVER_SYNCED_ENTITIES;
+		return entitiesConfig;
+	}
+	public static EntitiesConfig.EntityStats getEntityStats(String registryName) {
+		EntitiesConfig config = getEntitiesConfig();
+		return config != null && config.getDefaultEntityStats() != null ? config.getDefaultEntityStats().get(registryName) : null;
+	}
+
+	/**
+	 * Global transform tuning (server-synced). Never returns null; a fresh
+	 * {@link EntitiesConfig.TransformSettings} is returned when unconfigured so
+	 * callers can rely on the {@code ...Or(fallback)} helpers.
+	 */
+	public static EntitiesConfig.TransformSettings getEntityTransformDefaults() {
+		EntitiesConfig config = getEntitiesConfig();
+		EntitiesConfig.TransformSettings transform = config != null ? config.getTransformDefaults() : null;
+		return transform != null ? transform : new EntitiesConfig.TransformSettings();
+	}
 }

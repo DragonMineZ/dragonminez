@@ -15,15 +15,15 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class CombatConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
+	private String configVersion;
 
 	private Double staminaConsumptionRatio = 0.083;
 	private Double blockStaminaCost = 0.25;
 	private Integer knockdownDurationSeconds = 30;
-	private Integer baselineFormDrain = 100;
+	private Integer baselineFormDrain = 80;
 	private Boolean killPlayersOnCombatLogout = true;
 
 	private Double kiProtectionMitigationPerLevel = 0.01;
@@ -36,6 +36,9 @@ public class CombatConfig {
 	private Double baseDamageReductionCap = 0.75;
 	private Double enchantmentDamageReductionCap = 0.85;
 	private Double defenseDecayOnGuardBreak = 0.66;
+	private Double flatMitigationFactor = 0.10;
+	private Double flatMitigationMaxAbsorbFraction = 0.65;
+	private Double defenseReductionScale = 0.15;
 
 	private Boolean enableBlocking = true;
 	private Boolean enableParrying = true;
@@ -51,6 +54,7 @@ public class CombatConfig {
 	private Integer perfectEvasionWindowMs = 200;
 	private Integer dashCooldownSeconds = 4;
 	private Integer doubleDashCooldownSeconds = 12;
+	private Integer teleportCooldownSeconds = 30;
 
 	private Boolean combatFlyAutoSwitchOnDamage = true;
 	private Integer combatFlyLockSeconds = 8;
@@ -79,6 +83,11 @@ public class CombatConfig {
 		put("minecraft:iron_golem", TargetHelper.Relation.NEUTRAL);
 		put("guardvillagers:guard", TargetHelper.Relation.NEUTRAL);
 	}};
+
+	private List<String> masteryBlacklistEntities = new ArrayList<>(Arrays.asList(
+			"minecraft:silverfish",
+			"dummmmmmy:target_dummy"
+	));
 
 	private TargetHelper.Relation playerRelationToPassives = TargetHelper.Relation.HOSTILE;
 	private TargetHelper.Relation playerRelationToHostiles = TargetHelper.Relation.HOSTILE;
@@ -112,6 +121,18 @@ public class CombatConfig {
 
 	public float getUpswingMultiplier() {
 		return Math.max(0.2F, Math.min(1.0F, upswingMultiplier));
+	}
+
+	public double getFlatMitigationFactor() {
+		return flatMitigationFactor != null ? Math.max(0.0, flatMitigationFactor) : 0.10;
+	}
+
+	public double getFlatMitigationMaxAbsorbFraction() {
+		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.65;
+	}
+
+	public double getDefenseReductionScale() {
+		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.15;
 	}
 
 	public KiWeaponConfig getKiWeaponConfig(String type) {

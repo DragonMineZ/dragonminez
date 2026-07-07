@@ -217,7 +217,7 @@ public class SagaGohanEntity {
 
         @Override
         public String getGeckolibModelName() {
-            return "saga_future_gohan";
+            return "saga_future_gohanssj";
         }
 
     }

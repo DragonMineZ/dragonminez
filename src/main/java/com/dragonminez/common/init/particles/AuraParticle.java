@@ -69,7 +69,11 @@ public class AuraParticle extends TextureSheetParticle {
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
             // Pasamos r, g, b al constructor
             AuraParticle particle = new AuraParticle(level, x, y, z, r, g, b);
-            particle.pickSprite(this.spriteSet);
+            try {
+                particle.pickSprite(this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
             return particle;
         }
     }

@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * Generates the default side-quest JSON files in the unified schema.
  * <p>
- * Side-quests use the same schema as saga quests â€” only the {@code "type"} field
+ * Side-quests use the same schema as saga quests & only the {@code "type"} field
  * is set to {@code "SIDEQUEST"} and there is no {@code "chain"} block.
  * <p>
  * Default generation also supports optional start-only {@code "requirements"} blocks
@@ -92,9 +92,10 @@ final class SideQuestDefaults {
 		if (turnIn != null) q.addProperty("turn_in", turnIn);
 		else q.add("turn_in", JsonNull.INSTANCE);
 
-		JsonObject effectiveStartRequirements = requiresGoodPath(questGiver, turnIn)
-				? withAlignmentRequirement(startRequirements)
-				: startRequirements;
+		JsonObject effectiveStartRequirements = startRequirements;
+//		JsonObject effectiveStartRequirements = requiresGoodPath(questGiver, turnIn)
+//				? withAlignmentRequirement(startRequirements)
+//				: startRequirements;
 
 		if (prerequisites != null) q.add("prerequisites", prerequisites);
 		if (effectiveStartRequirements != null) q.add("requirements", effectiveStartRequirements);
@@ -274,7 +275,6 @@ final class SideQuestDefaults {
 				"roshi_basic_training", "dmz.sidequest.roshi_basic.name", "dmz.sidequest.roshi_basic.desc",
 				"training", false, "roshi", "roshi", null,
 				new JsonObject[]{
-						objStructure("dragonminez:roshi_house"),
 						objKill("minecraft:zombie", 10),
 						objTalkTo("roshi")
 				},
@@ -570,7 +570,7 @@ final class SideQuestDefaults {
 				"combat", false, "guru", "guru",
 				prereqs("AND", condSaga("frieza_saga", 2)),
 				new JsonObject[]{
-						objKill("dragonminez:saga_friezasoldier01", 10),
+						objKill("#dragonminez:frieza_soldiers", 10),
 						objTalkTo("guru")
 				},
 				new JsonObject[]{ rewTPS(9000) }));
@@ -581,8 +581,7 @@ final class SideQuestDefaults {
 				prereqs("AND", condSaga("frieza_saga", 6)),
 				requirements("AND", condBiome("dragonminez:ajissa_plains")),
 				new JsonObject[]{
-						objKill("dragonminez:saga_friezasoldier01", 8),
-						objKill("dragonminez:saga_friezasoldier02", 8)
+						objKill("#dragonminez:frieza_soldiers", 16)
 				},
 				new JsonObject[]{ rewTPS(21000) }));
 
@@ -747,7 +746,7 @@ final class SideQuestDefaults {
 
 		writeQuestFile(dir, "merchant_alien_artifacts.json", sidequest(
 				"merchant_alien_artifacts", "dmz.sidequest.merchant_artifacts.name", "dmz.sidequest.merchant_artifacts.desc",
-				"collection", false, "merchant_01", "merchant_01",
+				"collection", false, "bulma", "bulma",
 				prereqs("AND", condSaga("frieza_saga", 4)),
 				new JsonObject[]{
 						objItem("dragonminez:kikono_shard", 16),
@@ -1074,7 +1073,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "bulma_saiyan_biology_sample.json", sidequest(
 				"bulma_saiyan_biology_sample", "dmz.sidequest.bulma_saiyan_biology_sample.name", "dmz.sidequest.bulma_saiyan_biology_sample.desc",
 				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 6)),
-				new JsonObject[]{ objKill("dragonminez:saga_raditz", 1), objItem("minecraft:diamond", 3), objTalkTo("bulma") },
+				new JsonObject[]{ objQuestKill("dragonminez:saga_raditz", 1), objItem("minecraft:diamond", 3), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(7500) }));
 
 		writeQuestFile(dir, "bulma_energy_storage_battery.json", sidequest(

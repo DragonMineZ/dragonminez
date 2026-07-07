@@ -99,7 +99,7 @@ public class AttributeTooltipHandler {
 					extraMods.add(new AttributeModifier(UUID.randomUUID(), "Enchantment Crit Damage", critDamageBonus, AttributeModifier.Operation.ADDITION));
 				}
 
-				double playerBase = player != null ? player.getAttributeBaseValue(attr) : 0.0;
+				double playerBase = player != null && player.getAttributes().hasAttribute(attr) ? player.getAttributeBaseValue(attr) : 0.0;
 				if (attr.equals(Attributes.ATTACK_DAMAGE)) playerBase = 1.0;
 				if (attr.equals(Attributes.ATTACK_SPEED)) playerBase = 4.0;
 				if (attr.equals(MainAttributes.CRIT_CHANCE.get())) playerBase = 0.05;

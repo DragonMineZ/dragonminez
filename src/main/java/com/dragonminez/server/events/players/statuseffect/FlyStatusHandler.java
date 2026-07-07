@@ -28,6 +28,8 @@ public class FlyStatusHandler implements IStatusEffectHandler {
     @Override
     public void onPlayerTick(ServerPlayer serverPlayer, StatsData data) {
         if (data.getSkills().isSkillActive("fly") && !serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
+            serverPlayer.resetFallDistance();
+
             if (serverPlayer.horizontalCollision) {
                 double dx = serverPlayer.getX() - serverPlayer.xOld;
                 double dz = serverPlayer.getZ() - serverPlayer.zOld;

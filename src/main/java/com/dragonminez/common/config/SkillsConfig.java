@@ -12,18 +12,18 @@ import java.util.Map;
 
 @Getter
 public class SkillsConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
+	private String configVersion;
 
-	private final List<String> kiSkills = new ArrayList<>();
-	private final List<String> formSkills = new ArrayList<>();
-	private final List<String> stackSkills = new ArrayList<>();
-	private final List<String> androidBlacklistedForms = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> kiSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> formSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> stackSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> androidBlacklistedForms = new ArrayList<>();
 	private final Map<String, SkillCosts> skills = new HashMap<>();
 	private final Map<String, List<String>> skillOfferings = new HashMap<>();
-	private final List<String> strikeSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> strikeSkills = new ArrayList<>();
 
 	public SkillsConfig() {
 		createDefaults();

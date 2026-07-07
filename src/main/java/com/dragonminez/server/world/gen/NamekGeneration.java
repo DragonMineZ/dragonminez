@@ -157,7 +157,7 @@ public class NamekGeneration {
 				List.of(),
 				64,
 				false,
-				true,
+				false,
 				false,
 				false
 		));

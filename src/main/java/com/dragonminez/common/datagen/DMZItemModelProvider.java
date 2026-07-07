@@ -189,6 +189,17 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.XENO_GOKU_ARMOR);
 		generateArmorSetModels(MainItems.YARDRAT_ARMOR);
 		generateArmorSetModels(MainItems.ZAMASU_ARMOR);
+        generateArmorSetModels(MainItems.THRAGG_ARMOR);
+        generateArmorSetModels(MainItems.GILGAMESH_ARMOR);
+        generateArmorSetModels(MainItems.SUBARU_NATSUKI_ARMOR);
+        generateArmorSetModels(MainItems.SUBARU_NATSUKI_ARC6_ARMOR);
+        generateArmorSetModels(MainItems.RADITZ_ARMOR);
+        generateArmorSetModels(MainItems.GERO_ARMOR);
+        generateArmorSetModels(MainItems.COOLER_SOLDIER_ARMOR);
+        generateArmorSetModels(MainItems.CAPSULE_CORP_ARMOR);
+        generateArmorSetModels(MainItems.XENO_GOKU_PATREON_ARMOR);
+        generateArmorSetModels(MainItems.VERGIL_ARMOR);
+        generateArmorSetModels(MainItems.GREAT_SAIYAMAN_2_ARMOR);
 
         //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);

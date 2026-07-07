@@ -183,13 +183,21 @@ public class TechniqueDispatcher {
                 break;
             case BEAM:
                 KiLaserEntity beam = new KiLaserEntity(level, owner);
-                beam.setupKiMakkankosanpoPlayer(owner, realDamage, data.getSpeed());
-                beam.setKiType(kiTypeOrdinal);
-                beam.setTechniqueId(data.getId());
-                beam.setArmorPenetration(data.getArmorPenetration());
-                beam.setHeal(isHeal);
+                if ("makkanko".equals(data.getId())) {
+                    beam.setupKiMakkankosanpoPlayer(owner, realDamage, data.getSpeed());
+                    beam.setKiType(kiTypeOrdinal);
+                    beam.setTechniqueId(data.getId());
+                    beam.setArmorPenetration(data.getArmorPenetration());
+                    beam.setHeal(isHeal);
+                } else {
+                    beam.setupKiBeamPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
+                    beam.setKiType(kiTypeOrdinal);
+                    beam.setTechniqueId(data.getId());
+                    beam.setArmorPenetration(data.getArmorPenetration());
+                    beam.setHeal(isHeal);
+                }
 
-                if (!level.isClientSide) level.addFreshEntity(beam);
+                    if (!level.isClientSide) level.addFreshEntity(beam);
                 break;
             case DISK:
                 if ("kienzan_doble".equals(data.getId())) {
@@ -218,6 +226,17 @@ public class TechniqueDispatcher {
                         level.addFreshEntity(diskRight);
                         level.addFreshEntity(diskLeft);
                     }
+                } else if ("kienzan".equals(data.getId())) {
+                    KiDiskEntity disk = new KiDiskEntity(level, owner);
+                    disk.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize());
+                    disk.setColors(0xfffb7d, data.getColorExterior(), 0xFFFFFF);
+                    disk.setKiType(kiTypeOrdinal);
+                    disk.setTechniqueId(data.getId());
+                    disk.setArmorPenetration(data.getArmorPenetration());
+                    disk.setHeal(isHeal);
+                    disk.setHomingTarget(homingTargetId);
+
+                    if (!level.isClientSide) level.addFreshEntity(disk);
                 } else {
                     KiDiskEntity disk = new KiDiskEntity(level, owner);
                     disk.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize());

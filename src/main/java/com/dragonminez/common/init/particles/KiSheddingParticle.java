@@ -73,7 +73,11 @@ public class KiSheddingParticle extends TextureSheetParticle {
         public Provider(SpriteSet spriteSet) { this.spriteSet = spriteSet; }
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double vx, double vy, double vz) {
-            return new KiSheddingParticle(level, x, y, z, vx, vy, vz, this.spriteSet);
+            try {
+                return new KiSheddingParticle(level, x, y, z, vx, vy, vz, this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

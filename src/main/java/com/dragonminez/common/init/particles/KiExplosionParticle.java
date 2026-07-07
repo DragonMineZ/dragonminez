@@ -103,7 +103,11 @@ public class KiExplosionParticle extends TextureSheetParticle {
             // Si por error llega 0, le damos un tamaño por defecto
             if (size <= 0) size = 1.0F;
 
-            return new KiExplosionParticle(level, x, y, z, r, g, b, this.spriteSet, size);
+            try {
+                return new KiExplosionParticle(level, x, y, z, r, g, b, this.spriteSet, size);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

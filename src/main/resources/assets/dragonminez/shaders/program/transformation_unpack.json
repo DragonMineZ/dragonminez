@@ -12,9 +12,6 @@
 	"samplers": [
 		{
 			"name": "DiffuseSampler"
-		},
-		{
-			"name": "ParamsSampler"
 		}
 	],
 	"uniforms": [

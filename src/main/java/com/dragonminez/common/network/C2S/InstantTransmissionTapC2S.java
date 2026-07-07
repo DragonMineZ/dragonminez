@@ -1,18 +1,24 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.util.ITTeleportHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.combat.CombatEvent;
 import com.dragonminez.server.events.players.combat.DashHandler;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -48,6 +54,12 @@ public class InstantTransmissionTapC2S {
 				int skillLevel = data.getSkills().getSkillLevel("instant_transmission");
 				if (skillLevel <= 0) return;
 
+				boolean bypassCosts = player.isCreative() || player.isSpectator();
+				if (!bypassCosts && data.getCooldowns().hasCooldown(Cooldowns.DASH_CD)) {
+					fail(player, "dash_cooldown");
+					return;
+				}
+
 				ServerLevel level = player.serverLevel();
 				LivingEntity finalTarget = null;
 
@@ -72,29 +84,46 @@ public class InstantTransmissionTapC2S {
 					}
 				}
 
-				if (finalTarget != null) {
-					int kiCost = DashHandler.getFlyDashKiCost();
-					if (!player.isCreative() && !player.isSpectator()) {
-						if (data.getResources().getCurrentEnergy() < kiCost) return;
-						data.getResources().removeEnergy(kiCost);
-						NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
+				if (finalTarget == null) {
+					fail(player, "no_target");
+					return;
+				}
+
+				double distance = player.position().distanceTo(finalTarget.position());
+				int kiCost = DashHandler.getFlyDashKiCost() + ITTeleportHelper.extraKiCostForDistance(distance);
+				if (!bypassCosts) {
+					if (data.getResources().getCurrentEnergy() < kiCost) {
+						fail(player, "no_ki");
+						return;
 					}
+					data.getResources().removeEnergy(kiCost);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
+				}
 
-					float targetYaw = finalTarget.getYRot();
-					double rad = Math.toRadians(targetYaw);
-					double xOffset = -Math.sin(rad) * -1.5;
-					double zOffset = Math.cos(rad) * -1.5;
+				float targetYaw = finalTarget.getYRot();
+				double rad = Math.toRadians(targetYaw);
+				double xOffset = -Math.sin(rad) * -1.5;
+				double zOffset = Math.cos(rad) * -1.5;
 
-					double newX = finalTarget.getX() + xOffset;
-					double newY = finalTarget.getY();
-					double newZ = finalTarget.getZ() + zOffset;
+				double newX = finalTarget.getX() + xOffset;
+				double newY = finalTarget.getY();
+				double newZ = finalTarget.getZ() + zOffset;
 
-					player.teleportTo(level, newX, newY, newZ, finalTarget.getYRot(), player.getXRot());
-					player.playNotifySound(MainSounds.TP_SHORT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+				player.teleportTo(level, newX, newY, newZ, finalTarget.getYRot(), player.getXRot());
+				player.playNotifySound(MainSounds.TP_SHORT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+
+				if (!bypassCosts) {
+					int dashCdTicks = ConfigManager.getCombatConfig().getDashCooldownSeconds() * 20;
+					data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
+					player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
 				}
 			});
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static void fail(ServerPlayer player, String reason) {
+		player.displayClientMessage(Component.translatable("gui.dragonminez.transmission.fail." + reason), true);
 	}
 
 	private static final double CROSSHAIR_COS_THRESHOLD = 0.93;

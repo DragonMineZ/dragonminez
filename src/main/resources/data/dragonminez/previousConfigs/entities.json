@@ -1,0 +1,60 @@
+{
+  "configVersion": 21.0,
+  "defaultEntityStats": {
+    "dragonminez:dino1": {
+      "health": 100.0,
+      "meleeDamage": 8.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:sabertooth": {
+      "health": 30.0,
+      "meleeDamage": 5.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:dino3": {
+      "health": 75.0,
+      "meleeDamage": 10.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:mini_buu": {
+      "health": 60.0,
+      "meleeDamage": 8.0,
+      "kiDamage": 6.0
+    },
+    "dragonminez:dino2": {
+      "health": 150.0,
+      "meleeDamage": 12.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:bandit": {
+      "health": 75.0,
+      "meleeDamage": 10.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:red_ribbon_soldier": {
+      "health": 40.0,
+      "meleeDamage": 5.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:dinokid": {
+      "health": 30.0,
+      "meleeDamage": 4.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:robot1": {
+      "health": 120.0,
+      "meleeDamage": 15.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:robot2": {
+      "health": 120.0,
+      "meleeDamage": 15.0,
+      "kiDamage": 0.0
+    },
+    "dragonminez:robot3": {
+      "health": 120.0,
+      "meleeDamage": 15.0,
+      "kiDamage": 0.0
+    }
+  }
+}
