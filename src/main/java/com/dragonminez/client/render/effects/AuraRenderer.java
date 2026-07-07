@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.effects;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -45,6 +46,8 @@ public class AuraRenderer {
 	private static final float HALF_SQRT_3 = (float) (Math.sqrt(3.0D) / 2.0D);
 	private static final float FADE_SPEED = 0.005f;
 	private static final float PULSE_SPEED = 0.01f;
+	private static final float SHOULDER_LEAN_DEG_PER_BLOCK = 6.0f;
+	private static final float SHOULDER_LEAN_MAX_DEG = 12.0f;
 
 	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
@@ -749,6 +752,10 @@ public class AuraRenderer {
 			poseStack.translate(0.0, 0.05, 0.0);
 			poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
 			poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+			if (OverShoulderCamera.isRunning()) {
+				float shoulderLean = (float) Mth.clamp(-OverShoulderCamera.getCurrentSide() * SHOULDER_LEAN_DEG_PER_BLOCK, -SHOULDER_LEAN_MAX_DEG, SHOULDER_LEAN_MAX_DEG);
+				poseStack.mulPose(Axis.ZP.rotationDegrees(shoulderLean));
+			}
 			poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
 
 			poseStack.translate(0.0, 0.7, 0.0);

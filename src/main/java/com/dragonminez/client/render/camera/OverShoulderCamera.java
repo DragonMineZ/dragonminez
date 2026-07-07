@@ -32,6 +32,14 @@ public final class OverShoulderCamera {
 
 	private OverShoulderCamera() {}
 
+	public static boolean isRunning() {
+		return active;
+	}
+
+	public static double getCurrentSide() {
+		return curRight;
+	}
+
 	public static boolean isActive(Entity entity, boolean thirdPersonReverse) {
 		if (thirdPersonReverse || !(entity instanceof Player)) return false;
 		if (entity instanceof LivingEntity living && living.isSleeping()) return false;
