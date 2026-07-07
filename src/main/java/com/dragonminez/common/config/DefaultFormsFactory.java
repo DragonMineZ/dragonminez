@@ -516,6 +516,7 @@ public class DefaultFormsFactory {
 		androidBase.setHairType("base");
 		setDefaultMasteryValues(androidBase);
 		androidBase.setStackDrainMultiplier(2.0);
+		androidBase.setAllowFreeTransformOnMastery(0.0);
 
 		FormConfig.FormData superAndroid = new FormConfig.FormData();
 		superAndroid.setName(HumanForms.SUPER_ANDROID);

@@ -208,11 +208,7 @@ public class SkinGathererProvider {
         }
 
 		if (renderSaiyanTail) {
-			float[] tailColor;
-			if (hasStackForm && character.getActiveStackFormData().getRgbBodyColor2() != null) tailColor = character.getActiveStackFormData().getRgbBodyColor2();
-			else if (hasForm && character.getActiveFormData().getRgbBodyColor2() != null) tailColor = character.getActiveFormData().getRgbBodyColor2();
-			else if (character.getRgbBodyColor2() != null) tailColor = character.getRgbBodyColor2();
-			else tailColor = DEFAULT_TAIL_COLOR;
+			float[] tailColor = b2 != null ? b2 : DEFAULT_TAIL_COLOR;
 			consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/tail1.png")), tailColor);
 		}
     }
