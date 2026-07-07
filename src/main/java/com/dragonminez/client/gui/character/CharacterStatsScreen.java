@@ -1402,7 +1402,62 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int centerY = getUiHeight() / 2;
 		int labelX = getUiWidth() - 137;
 		int y = centerY + 78;
-		double totalMultiplier = statsData.getTpTotalMultiplier();
+
+		double eps = 0.005;
+		double totalDelta = 0.0;
+		List<Component> extras = new ArrayList<>();
+
+		double general = statsData.getTpGlobalMultiplier();
+		extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.general", formatUpToTwoDecimals(general)).withStyle(ChatFormatting.GRAY));
+		totalDelta += general - 1.0;
+
+		double clazz = statsData.getTpClassMultiplier();
+		extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.class", formatUpToTwoDecimals(clazz)).withStyle(ChatFormatting.AQUA));
+		totalDelta += clazz - 1.0;
+
+		if (statsData.isFrostDemonTpPassiveActive()) {
+			double frost = statsData.getTpFrostDemonMultiplier();
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.frost_demon", formatUpToTwoDecimals(frost)).withStyle(ChatFormatting.LIGHT_PURPLE));
+			totalDelta += frost - 1.0;
+		}
+
+		double htc = statsData.getTpHTCMultiplier();
+		if (Math.abs(htc - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.htc", formatUpToTwoDecimals(htc)).withStyle(ChatFormatting.GOLD));
+			totalDelta += htc - 1.0;
+		}
+
+		double gravity = ClientGravityState.getTpGravityMult();
+		if (Math.abs(gravity - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", formatUpToTwoDecimals(gravity)).withStyle(ChatFormatting.GREEN));
+			totalDelta += gravity - 1.0;
+		}
+
+		double weightBell = ClientGravityState.getWeightTpMult();
+		if (Math.abs(weightBell - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.weight", formatUpToTwoDecimals(weightBell)).withStyle(ChatFormatting.YELLOW));
+			totalDelta += weightBell - 1.0;
+		}
+
+		double potionEffect = statsData.getTpPotionEffectMultiplier();
+		if (Math.abs(potionEffect - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", formatUpToTwoDecimals(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE));
+			totalDelta += potionEffect - 1.0;
+		}
+
+		double mutantTp = statsData.getMutantTpMultiplier();
+		if (Math.abs(mutantTp - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant", formatUpToTwoDecimals(mutantTp)).withStyle(ChatFormatting.DARK_PURPLE));
+			totalDelta += mutantTp - 1.0;
+		}
+
+		double progressionTp = statsData.getProgressionTpGainMultiplier();
+		if (Math.abs(progressionTp - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.progression", formatUpToTwoDecimals(progressionTp)).withStyle(ChatFormatting.GOLD));
+			totalDelta += progressionTp - 1.0;
+		}
+
+		double totalMultiplier = Math.max(0.0, 1.0 + totalDelta);
 		String totalMult = formatUpToTwoDecimals(totalMultiplier);
 
 		Component label = tr("gui.dragonminez.character_stats.tp_multiplier");
@@ -1423,43 +1478,6 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			List<Component> desc = new ArrayList<>();
 			desc.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.total", totalMult).withStyle(ChatFormatting.YELLOW));
 
-			List<Component> extras = new ArrayList<>();
-			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.general", formatUpToTwoDecimals(statsData.getTpGlobalMultiplier())).withStyle(ChatFormatting.GRAY));
-			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.class", formatUpToTwoDecimals(statsData.getTpClassMultiplier())).withStyle(ChatFormatting.AQUA));
-
-			if (statsData.isFrostDemonTpPassiveActive()) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.frost_demon", formatUpToTwoDecimals(statsData.getTpFrostDemonMultiplier())).withStyle(ChatFormatting.LIGHT_PURPLE));
-			}
-
-			double htc = statsData.getTpHTCMultiplier();
-			if (htc > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.htc", formatUpToTwoDecimals(htc)).withStyle(ChatFormatting.GOLD));
-			}
-
-			double gravity = ClientGravityState.getTpGravityMult();
-			if (gravity > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", formatUpToTwoDecimals(gravity)).withStyle(ChatFormatting.GREEN));
-			}
-
-			double weightBell = ClientGravityState.getWeightTpMult();
-			if (weightBell > 1.01) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.weight", formatUpToTwoDecimals(weightBell)).withStyle(ChatFormatting.YELLOW));
-			}
-
-			double potionEffect = statsData.getTpPotionEffectMultiplier();
-			if (potionEffect > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", formatUpToTwoDecimals(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE));
-			}
-
-			double mutantTp = statsData.getMutantTpMultiplier();
-			if (mutantTp > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant", formatUpToTwoDecimals(mutantTp)).withStyle(ChatFormatting.DARK_PURPLE));
-			}
-
-			double progressionTp = statsData.getProgressionTpGainMultiplier();
-			if (progressionTp > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.progression", formatUpToTwoDecimals(progressionTp)).withStyle(ChatFormatting.GOLD));
-			}
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0x7CFDD6);
 		}
 	}
