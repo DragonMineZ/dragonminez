@@ -89,6 +89,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.BOOLEAN, userConfig.getTaiyokenInvertPalette() ? 1 : 0, 0, 1,
 				v -> userConfig.setTaiyokenInvertPalette(v > 0)));
 
+		configOptions.add(new ConfigOption("config.transformationOutlines",
+				ConfigType.BOOLEAN, userConfig.getTransformationOutlines() ? 1 : 0, 0, 1,
+				v -> userConfig.setTransformationOutlines(v > 0)));
+
 		configOptions.add(new ConfigOption("config.showAccumulativeDamage",
 				ConfigType.BOOLEAN, userConfig.getShowAccumulativeDamage() ? 1 : 0, 0, 1,
 				v -> userConfig.setShowAccumulativeDamage(v > 0)));

@@ -475,6 +475,7 @@
   "gui.dragonminez.config.firstPersonAnimated": "Use Animated First Person Model",
   "gui.dragonminez.config.impactFramesEnabled": "Enable Impact Frames",
   "gui.dragonminez.config.taiyokenInvertPalette": "Solar Flare - Invert Palette",
+  "gui.dragonminez.config.transformationOutlines": "Transformation Outlines",
   "gui.dragonminez.config.showAccumulativeDamage": "Ki Sense - Accumulative Damage",
   "gui.dragonminez.config.techniqueHotbarRightSide": "Technique Hotbar (Right Side)",
   "gui.dragonminez.config.alwaysVisibleHudValues": "Always Visible HUD Values",

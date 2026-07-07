@@ -36,6 +36,7 @@ public class GeneralUserConfig {
 	private Boolean liveCrowdinTranslations = true;
 	private Boolean showAccumulativeDamage = true;
 	private Boolean taiyokenInvertPalette = false;
+	private Boolean transformationOutlines = true;
 
 	private Integer overShoulderMode = 2;
 	private Boolean overShoulderLeft = false;
@@ -77,6 +78,11 @@ public class GeneralUserConfig {
 	public Boolean getTaiyokenInvertPalette() {
 		if (taiyokenInvertPalette == null) taiyokenInvertPalette = false;
 		return taiyokenInvertPalette;
+	}
+
+	public Boolean getTransformationOutlines() {
+		if (transformationOutlines == null) transformationOutlines = true;
+		return transformationOutlines;
 	}
 
 	public Boolean getShowAccumulativeDamage() {
