@@ -77,7 +77,10 @@ public class QuestEvents {
 			return;
 		}
 
-		LivingEntity killedEntity = event.getEntity();
+		creditQuestKill(killer, event.getEntity());
+	}
+
+	public static void creditQuestKill(ServerPlayer killer, LivingEntity killedEntity) {
 		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(killer);
 		for (ServerPlayer member : partyMembers) {
 			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data ->

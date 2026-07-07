@@ -15,6 +15,7 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.QuestEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -219,6 +220,7 @@ public class RacialSkillLogic {
 			float heal = (float) (user.getMaxHealth() * healRatio);
 			user.heal(heal);
 		}
+		QuestEvents.creditQuestKill(user, target);
 		target.kill();
 	}
 
