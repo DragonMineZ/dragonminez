@@ -99,6 +99,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private List<Component> actionButtonTooltip = List.of();
 	private long lastClickTime = 0;
 
+	// After pressing "start" on a quest that summons an enemy, close the menu once the server confirms the
+	// quest is actually accepted (status flips to ACCEPTED). Cleared on a timeout if no confirmation arrives.
+	private String pendingStartCloseKey = null;
+	private int pendingStartCloseTicks = 0;
+
 	private int currentSagaIndex = 0;
 	private final List<Saga> availableSagas = new ArrayList<>();
 
@@ -969,6 +974,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						startResummonCooldown(selectedKey);
 						btn.visible = false;
 						pendingRefreshTicks = 5;
+						if (questSpawnsQuestEnemy(selectedQuest)) {
+							pendingStartCloseKey = selectedKey;
+							pendingStartCloseTicks = 60;
+						}
 					}
 				})
 				.build();
@@ -1177,6 +1186,33 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return false;
 	}
 
+	private boolean questSpawnsQuestEnemy(Quest quest) {
+		if (quest == null) return false;
+		for (QuestObjective objective : quest.getObjectives()) {
+			if (objective instanceof KillObjective killObjective
+					&& killObjective.getSpawnMode() == KillObjective.SpawnMode.QUEST) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void tickPendingStartClose() {
+		if (pendingStartCloseKey == null) return;
+		if (statsData != null) {
+			PlayerQuestData questData = statsData.getPlayerQuestData();
+			if (questData.getQuestStatus(pendingStartCloseKey) == PlayerQuestData.QuestStatus.ACCEPTED) {
+				pendingStartCloseKey = null;
+				pendingStartCloseTicks = 0;
+				onClose();
+				return;
+			}
+		}
+		if (--pendingStartCloseTicks <= 0) {
+			pendingStartCloseKey = null;
+		}
+	}
+
 	private boolean canStartQuest(Quest quest) {
 		if (statsData == null || availableSagas.isEmpty() || quest == null) return false;
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
@@ -1199,6 +1235,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		super.tick();
 		tickCount++;
 		enemyPreview.clientTick();
+		tickPendingStartClose();
 
 		if (tickCount >= 10) {
 			tickCount = 0;

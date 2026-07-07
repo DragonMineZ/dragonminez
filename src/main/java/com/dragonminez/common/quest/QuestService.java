@@ -12,12 +12,17 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
@@ -625,16 +630,13 @@ public final class QuestService {
 				continue;
 			}
 
-			double spawnRadius = quest.isSagaQuest() ? 8.0 : 2.0;
 			for (int j = 0; j < remaining; j++) {
 				Entity entity = entityType.create(requester.level());
 				if (entity == null) {
 					continue;
 				}
 
-				double offsetX = (Math.random() - 0.5) * spawnRadius;
-				double offsetZ = (Math.random() - 0.5) * spawnRadius;
-				entity.setPos(requester.getX() + offsetX, requester.getY(), requester.getZ() + offsetZ);
+				positionQuestEntity(requester, entity);
 
 				if (difficulty != null && difficulty != Difficulty.NORMAL) {
 					entity.getPersistentData().putString("dmz_difficulty", difficulty.name());
@@ -696,6 +698,55 @@ public final class QuestService {
 				requester.serverLevel().addFreshEntity(entity);
 			}
 		}
+	}
+
+	// Quest-spawned enemies used to appear on top of the player. Instead, drop them ~10 blocks away in a
+	// random direction, on a spot where the entity's bounding box actually fits (so it doesn't suffocate
+	// inside walls) and has ground beneath it. Falls back to the player's position if no safe spot is found.
+	private static final double QUEST_SPAWN_DISTANCE = 10.0;
+	private static final int QUEST_SPAWN_ANGLE_ATTEMPTS = 16;
+
+	private static void positionQuestEntity(ServerPlayer requester, Entity entity) {
+		ServerLevel level = requester.serverLevel();
+		RandomSource random = requester.getRandom();
+
+		for (int attempt = 0; attempt < QUEST_SPAWN_ANGLE_ATTEMPTS; attempt++) {
+			double angle = random.nextDouble() * Math.PI * 2.0;
+			double dist = QUEST_SPAWN_DISTANCE + (random.nextDouble() - 0.5) * 2.0;
+			double targetX = requester.getX() + Math.cos(angle) * dist;
+			double targetZ = requester.getZ() + Math.sin(angle) * dist;
+
+			Double safeY = findSafeSpawnY(level, entity, targetX, targetZ, requester.getY());
+			if (safeY != null) {
+				entity.setPos(targetX, safeY, targetZ);
+				return;
+			}
+		}
+
+		// No safe spot ~10 blocks away: keep the entity spawnable by placing it on the player.
+		entity.setPos(requester.getX(), requester.getY(), requester.getZ());
+	}
+
+	@Nullable
+	private static Double findSafeSpawnY(ServerLevel level, Entity entity, double x, double z, double baseY) {
+		int startY = Mth.floor(baseY) + 4;
+		int minY = Mth.floor(baseY) - 8;
+
+		for (int y = startY; y >= minY; y--) {
+			entity.setPos(x, y, z);
+			// The entity's full bounding box must be clear of blocks, otherwise it would suffocate in a wall.
+			if (!level.noCollision(entity, entity.getBoundingBox())) {
+				continue;
+			}
+			// Require solid ground directly below so it doesn't spawn floating in mid-air or a cave ceiling.
+			BlockPos ground = BlockPos.containing(x, y, z).below();
+			BlockState groundState = level.getBlockState(ground);
+			if (groundState.getCollisionShape(level, ground).isEmpty()) {
+				continue;
+			}
+			return (double) y;
+		}
+		return null;
 	}
 
 	@Nullable
