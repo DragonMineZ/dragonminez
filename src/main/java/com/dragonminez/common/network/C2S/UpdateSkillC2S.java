@@ -72,8 +72,6 @@ public class UpdateSkillC2S {
 
 						case PURCHASE:
 							if (!raceAllowed) break;
-							boolean isStackSkillPurchase = ConfigManager.getSkillsConfig().getStackSkills().contains(skillName.toLowerCase());
-							if (isStackSkillPurchase) break;
 							boolean isFormSkillPurchase = ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase());
 							boolean notOwned = !data.getSkills().hasSkill(skillName)
 									|| (isFormSkillPurchase && data.getSkills().getSkillLevel(skillName) == 0);
