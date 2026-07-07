@@ -10,6 +10,7 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -62,6 +63,7 @@ public class CombatEvent {
 
 	private static final double HEALING_REDUCTION_CAP = 0.40;
 	private static final int HEALING_REDUCTION_DURATION_TICKS = 120;
+	private static final int PARRY_COMBO_STUN_TICKS = 30;
 
 	private static void maybeForceCombatFly(Player player) {
 		if (!ConfigManager.getCombatConfig().getCombatFlyAutoSwitchOnDamage()) return;
@@ -407,6 +409,11 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
 											attackerLiving.getPersistentData().putLong("dmz_parry_penalty", System.currentTimeMillis() + 4000);
+
+											if (attackerLiving instanceof DBSagasEntity saga && saga.isComboing()) {
+												saga.interruptCombo();
+												saga.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_COMBO_STUN_TICKS, 0, false, false, true));
+											}
 										}
 										if (MainDamageTypes.isKiblastDamage(source)) {
 											divertKiProjectile(source, victim);

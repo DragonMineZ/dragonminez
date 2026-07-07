@@ -183,10 +183,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private static final int SKILL_GRACE_TICKS = 80;
 
-    public static final float SKILL_COOLDOWN_MULTIPLIER = 1.5F;
-    private static final int POST_CAST_LOCKOUT = 80;
+    public static final float SKILL_COOLDOWN_MULTIPLIER = 2.0F;
+    private static final int POST_CAST_LOCKOUT = 100;
+    private static final int GLOBAL_ACTION_LOCKOUT = 60;
     private static final float CAST_COMMIT_CHANCE = 0.5F;
     private int postCastCooldown = 0;
+    private int globalActionCooldown = 0;
 
     protected int castTimer = 0;
     protected int transformTick = 0;
@@ -563,7 +565,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public boolean isComboReady() {
-        return this.comboEnabled && this.currentComboCooldown <= 0;
+        return this.comboEnabled && this.currentComboCooldown <= 0 && this.globalActionCooldown <= 0;
     }
 
     public boolean isDashReady() {
@@ -767,6 +769,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.canUseZanzoken && this.currentZanzokenCooldown > 0) this.currentZanzokenCooldown--;
                     if (this.currentDashCooldown > 0) this.currentDashCooldown--;
                     if (this.postCastCooldown > 0) this.postCastCooldown--;
+                    if (this.globalActionCooldown > 0) this.globalActionCooldown--;
 
                     for (KiSkill skill : this.skillPool) {
                         if (skill.currentCooldown > 0) {
@@ -883,7 +886,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.isComboing()) {
                         this.comboTimer++;
                         handleComboLogic();
-                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null && !clashing && !this.isStunned()) {
+                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && this.globalActionCooldown <= 0 && !this.isCasting() && this.getTarget() != null && !clashing && !this.isStunned()) {
                         if (this.distanceTo(this.getTarget()) < 6.0D) {
                             this.startComboAuto();
                         }
@@ -1013,7 +1016,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             return false;
         }
 
-        if (this.postCastCooldown > 0) {
+        if (this.postCastCooldown > 0 || this.globalActionCooldown > 0) {
             return false;
         }
 
@@ -1211,15 +1214,22 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.set(CURRENT_COMBO_ID, -1);
         this.comboTimer = 0;
         this.comboTarget = null;
+        this.globalActionCooldown = GLOBAL_ACTION_LOCKOUT;
 
         if (this.isCharge()) {
             this.setKiCharge(false);
         }
     }
 
+    public void interruptCombo() {
+        if (this.isComboing()) this.stopCombo();
+        this.currentComboCooldown = this.comboCooldownMax;
+    }
+
     public void startCombo(int comboId) {
         if (this.isInSkillGracePeriod()) return;
         if (this.isStunned()) return;
+        if (this.globalActionCooldown > 0) return;
         if (this.getTarget() == null) return;
 
         int resolved = comboId;
@@ -1601,6 +1611,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public void startCasting(int type) {
         if (this.isInSkillGracePeriod()) return;
         if (this.isStunned()) return;
+        if (this.globalActionCooldown > 0) return;
         if (BeamClashManager.isClashing(this.getUUID())) return;
         this.setCasting(true);
         this.setSkillType(type);
@@ -1616,12 +1627,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.castTimer = 0;
         this.setSkillType(0);
         this.postCastCooldown = POST_CAST_LOCKOUT;
+        this.globalActionCooldown = GLOBAL_ACTION_LOCKOUT;
 
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
     }
 
     public boolean isSkillCastReady() {
-        return this.postCastCooldown <= 0;
+        return this.postCastCooldown <= 0 && this.globalActionCooldown <= 0;
     }
 
     protected boolean handleTransformationLogic(int transformTick, int duration) {

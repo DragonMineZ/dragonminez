@@ -8,6 +8,7 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
@@ -25,11 +26,15 @@ import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.MobEffectEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -112,6 +117,36 @@ public class EntitiesEvents {
 		if (event.getSource().getDirectEntity() instanceof LivingEntity attacker
 				&& attacker.hasEffect(MainEffects.STUN.get())) {
 			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onStunApplied(MobEffectEvent.Added event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide() || entity instanceof Player) return;
+		if (event.getEffectInstance().getEffect() != MainEffects.STUN.get()) return;
+
+		if (entity instanceof DBSagasEntity saga && saga.isCasting()) {
+			saga.stopCasting();
+		}
+
+		List<AbstractKiProjectile> owned = entity.level().getEntitiesOfClass(AbstractKiProjectile.class,
+				entity.getBoundingBox().inflate(64.0),
+				p -> p.getOwner() != null && p.getOwner().getUUID().equals(entity.getUUID()));
+		for (AbstractKiProjectile projectile : owned) projectile.discard();
+	}
+
+	@SubscribeEvent
+	public static void onStunnedEntityTick(LivingEvent.LivingTickEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide() || entity instanceof Player) return;
+		if (!entity.hasEffect(MainEffects.STUN.get())) return;
+
+		Vec3 movement = entity.getDeltaMovement();
+		entity.setDeltaMovement(0.0D, Math.min(movement.y, 0.0D), 0.0D);
+		if (entity instanceof Mob mob) {
+			mob.getNavigation().stop();
+			mob.setJumping(false);
 		}
 	}
 

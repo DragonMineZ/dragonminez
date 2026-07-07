@@ -13,9 +13,20 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 public class ComboManager {
+
+    private static boolean isComboBlocked(DBSagasEntity user, LivingEntity target) {
+        if (!(target instanceof Player player)) return false;
+        var data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
+        if (data == null) return false;
+        if (!data.getStatus().isBlocking() || data.getStatus().isStunEffect()) return false;
+
+        Vec3 directionToUser = user.position().subtract(player.position()).normalize();
+        return player.getLookAngle().dot(directionToUser) > 0.0;
+    }
 
     public static void handleCombo(DBSagasEntity user, LivingEntity target, int comboId, int timer) {
         if (target == null || !target.isAlive() || !user.isAlive() || user.isTransforming()) {
@@ -79,7 +90,9 @@ public class ComboManager {
             target.hasImpulse = true;
         }
         if (timer == 25) {
-            target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
+            if (!isComboBlocked(user, target)) {
+                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
+            }
             user.stopCombo();
         }
     }
@@ -121,7 +134,9 @@ public class ComboManager {
         }
         if (timer == 35) {
             meleeHit(user, target, 0.0, 0.0);
-            target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, false, true));
+            if (!isComboBlocked(user, target)) {
+                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, false, true));
+            }
         }
         if (timer == 45) {
             user.teleportTo(target.getX(), target.getY() + 4.0D, target.getZ());
@@ -223,7 +238,9 @@ public class ComboManager {
         }
 
         if (timer == 13) {
-            target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, true, true));
+            if (!isComboBlocked(user, target)) {
+                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, true, true));
+            }
         }
 
         if (timer >= 20) {

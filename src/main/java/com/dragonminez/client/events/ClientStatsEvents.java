@@ -61,6 +61,7 @@ public class ClientStatsEvents {
 	private static long lastKiChargeTapTime = 0;
 	private static int kiBlastTimer = 0;
 	private static int blockLockTicks = 0;
+	private static final int BLOCK_REACTIVATION_LOCK_TICKS = 5;
 	private static boolean wasTransformKeyDown = false;
 	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
@@ -146,6 +147,7 @@ public class ClientStatsEvents {
 			StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 				if (data.getStatus().isBlocking()) {
 					data.getStatus().setBlocking(false);
+					blockLockTicks = Math.max(blockLockTicks, BLOCK_REACTIVATION_LOCK_TICKS);
 					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
 				}
 			});
@@ -199,6 +201,7 @@ public class ClientStatsEvents {
 			boolean handsEmpty = localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty();
 			if ((kiWeaponActive || isChargingTechnique) && data.getStatus().isBlocking() || Minecraft.getInstance().screen != null || (data.getStatus().isBlocking() && !handsEmpty)) {
 				data.getStatus().setBlocking(false);
+				blockLockTicks = Math.max(blockLockTicks, BLOCK_REACTIVATION_LOCK_TICKS);
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
 			} else if (isBlockKeyDown != data.getStatus().isBlocking() && !PlayerAttackHelper.isKiWeaponActive(localPlayer)) {
 				if (isBlockKeyDown && !kiWeaponActive && localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty()) {
@@ -206,6 +209,7 @@ public class ClientStatsEvents {
 					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
 				} else if (!isBlockKeyDown) {
 					data.getStatus().setBlocking(isBlockKeyDown);
+					blockLockTicks = Math.max(blockLockTicks, BLOCK_REACTIVATION_LOCK_TICKS);
 					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
 				}
 			}
