@@ -3,8 +3,10 @@ package com.dragonminez.server.events.players.statuseffect;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import com.dragonminez.server.util.FusionLogic;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.Collections;
 import java.util.UUID;
 
 public class FusionStatusHandler implements IStatusEffectHandler {
@@ -37,7 +39,13 @@ public class FusionStatusHandler implements IStatusEffectHandler {
                     FusionLogic.endFusion(serverPlayer, data, true);
                 } else if (partner.isDeadOrDying()) {
                     FusionLogic.endFusion(serverPlayer, data, true);
+                } else if (partner.level() != serverPlayer.level()) {
+                    partner.stopRiding();
+                    partner.teleportTo((ServerLevel) serverPlayer.level(), serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
+                            Collections.emptySet(), serverPlayer.getYRot(), serverPlayer.getXRot());
+                    partner.startRiding(serverPlayer, true);
                 } else if (partner.distanceTo(serverPlayer) > 5.0) {
+                    if (!partner.isPassenger()) partner.startRiding(serverPlayer, true);
                     partner.teleportTo(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ());
                 }
             } else {
