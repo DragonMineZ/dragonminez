@@ -25,6 +25,7 @@ public class GeneralUserConfig {
 	private Boolean alternativeHud = false;
 	private Boolean hexagonStatsDisplay = false;
 	private Float menuScaleMultiplier = 1.0f;
+	private Float utilityMenuScaleMultiplier = 1.0f;
 	private Integer healthBarPosX = 10;
 	private Integer healthBarPosY = 20;
 	private Integer energyBarPosX = 10;
@@ -86,6 +87,19 @@ public class GeneralUserConfig {
 	public Float getMenuScaleMultiplier() {
 		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
 		return menuScaleMultiplier;
+	}
+
+	public Float getUtilityMenuScaleMultiplier() {
+		if (utilityMenuScaleMultiplier == null || !Float.isFinite(utilityMenuScaleMultiplier) || utilityMenuScaleMultiplier <= 0.0f) utilityMenuScaleMultiplier = 1.0f;
+		return utilityMenuScaleMultiplier;
+	}
+
+	public void setUtilityMenuScaleMultiplier(Float utilityMenuScaleMultiplier) {
+		if (utilityMenuScaleMultiplier == null || !Float.isFinite(utilityMenuScaleMultiplier) || utilityMenuScaleMultiplier <= 0.0f) {
+			this.utilityMenuScaleMultiplier = 1.0f;
+			return;
+		}
+		this.utilityMenuScaleMultiplier = utilityMenuScaleMultiplier;
 	}
 
 	public Float getXenoverseHudScale() {

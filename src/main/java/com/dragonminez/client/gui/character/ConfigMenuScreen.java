@@ -137,6 +137,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.FLOAT, userConfig.getMenuScaleMultiplier(), 0.75f, 2.5f,
 				v -> userConfig.setMenuScaleMultiplier(v)));
 
+		configOptions.add(new ConfigOption("config.utilityMenuScaleMultiplier",
+				ConfigType.FLOAT, userConfig.getUtilityMenuScaleMultiplier(), 0.5f, 2.5f,
+				v -> userConfig.setUtilityMenuScaleMultiplier(v)));
+
 		configOptions.add(new ConfigOption("config.healthBarPosX",
 				ConfigType.INT, userConfig.getHealthBarPosX(), -1000, 2000,
 				v -> userConfig.setHealthBarPosX(v.intValue())));
@@ -466,7 +470,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
 		} else if (option.type == ConfigType.FLOAT) {
 			float step;
-			if ("config.menuScaleMultiplier".equals(option.key) || "config.xenoverseHudScale".equals(option.key)) {
+			if ("config.menuScaleMultiplier".equals(option.key) || "config.xenoverseHudScale".equals(option.key)
+					|| "config.utilityMenuScaleMultiplier".equals(option.key)) {
 				step = isShiftDown ? 0.25f : 0.05f;
 			} else {
 				step = isShiftDown ? 1.0f : 0.1f;

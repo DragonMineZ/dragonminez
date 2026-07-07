@@ -13,6 +13,7 @@ import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.render.shader.UtilityMenuBlur;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -140,7 +141,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 
 	@Override
 	protected float computeDynamicScale(float availableScale) {
-		return availableScale * (2f / 3f);
+		return availableScale * (2f / 3f) * ConfigManager.getUserConfig().getUtilityMenuScaleMultiplier();
 	}
 
 	@Override
