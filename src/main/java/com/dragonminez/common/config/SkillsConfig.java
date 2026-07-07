@@ -17,13 +17,13 @@ public class SkillsConfig {
 	@Setter
 	private String configVersion;
 
-	private final List<String> kiSkills = new ArrayList<>();
-	private final List<String> formSkills = new ArrayList<>();
-	private final List<String> stackSkills = new ArrayList<>();
-	private final List<String> androidBlacklistedForms = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> kiSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> formSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> stackSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> androidBlacklistedForms = new ArrayList<>();
 	private final Map<String, SkillCosts> skills = new HashMap<>();
 	private final Map<String, List<String>> skillOfferings = new HashMap<>();
-	private final List<String> strikeSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> strikeSkills = new ArrayList<>();
 
 	public SkillsConfig() {
 		createDefaults();

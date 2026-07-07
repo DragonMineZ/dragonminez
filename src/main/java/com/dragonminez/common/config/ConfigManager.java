@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final String CONFIG_VERSION = "2.1.1";
+	public static final String CONFIG_VERSION = "2.1.1b";
 	public static final String CLIENT_ONLY_CONFIG = "general-user";
 
 	private static final String PREVIOUS_CONFIGS_ROOT = "/data/dragonminez/previousConfigs/";
@@ -131,18 +131,28 @@ public class ConfigManager {
 
 	private static Integer[] parseSemver(String version) {
 		if (version == null || version.isBlank()) return null;
-		String[] parts = version.trim().split("\\.");
+		String v = version.trim();
+		int suffixRank = 0;
+		int end = v.length();
+		while (end > 0 && Character.isLetter(v.charAt(end - 1))) end--;
+		if (end < v.length()) {
+			suffixRank = Character.toLowerCase(v.charAt(end)) - 'a' + 1;
+			v = v.substring(0, end);
+		}
+		String[] parts = v.split("\\.");
 		if (parts.length != 3) return null;
-		Integer[] comps = new Integer[3];
+		Integer[] comps = new Integer[4];
 		for (int i = 0; i < 3; i++) {
 			try { comps[i] = Integer.parseInt(parts[i].trim()); }
 			catch (NumberFormatException e) { return null; }
 		}
+		comps[3] = suffixRank;
 		return comps;
 	}
 
 	private static int compareSemver(Integer[] a, Integer[] b) {
-		for (int i = 0; i < 3; i++) {
+		int n = Math.min(a.length, b.length);
+		for (int i = 0; i < n; i++) {
 			int cmp = Integer.compare(a[i], b[i]);
 			if (cmp != 0) return cmp;
 		}
@@ -300,6 +310,8 @@ public class ConfigManager {
 
 			Field field = findField(type, key);
 			Class<?> fieldType = field != null ? field.getType() : null;
+
+			if (field != null && field.isAnnotationPresent(ConfigNonPreservable.class)) continue;
 
 			if (fieldType != null && isMapType(fieldType) && oldVal.isJsonObject() && newVal.isJsonObject()) {
 				JsonObject baseMap = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
