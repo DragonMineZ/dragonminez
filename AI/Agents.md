@@ -54,6 +54,7 @@ DragonMineZ is a Forge mod for Minecraft `1.20.1`.
 - Server init: `DMZServer.init()`
 - Registrations are mostly centralized in `DMZCommon` and `common/init/Main*` classes.
 - Runtime data-heavy systems load from world/config folders, not only assets.
+- Mandatory dependencies: GeckoLib, TerraBlender, Curios. Hard-incompatible (startup crash): Legendary Tooltips, Epic Fight, Better Combat.
 
 ## Build And Run Commands
 
@@ -105,6 +106,7 @@ git add <changed-files>
 
 - Register all gameplay packets in `NetworkHandler.register()`.
 - Use explicit direction and stable encode/decode/handle triplets.
+- Packet ids come from a sequential counter: APPEND new registrations at the end; never reorder or insert mid-list.
 - Validate server-side packet handling. Never trust client input for stats, unlocks, permissions, quests, wishes, or progression.
 
 ### Player State
@@ -126,9 +128,9 @@ Many JSON files are not internal-only. Players and addon authors create and edit
 
 Important systems:
 
-- Quests and sagas load/generate under world folders such as `dragonminez/{sagas,quests,sidequests}`.
-- Wishes load/generate under `dragonminez/wishes/{shenron,porunga}.json`.
-- Config files live under `config/dragonminez` and use versioned regeneration/backup behavior.
+- Quests and sagas load/generate under world-save folders `<world>/dragonminez/{sagas,quests,sidequests}`; existing files are never overwritten by defaults.
+- Wishes load/generate under `<world>/dragonminez/wishes/*.json` (world save, NOT `config/`); plain JSON arrays, dragon id = filename stem.
+- Config files live under `config/dragonminez`, use semver `configVersion` regeneration, and back up outdated files into `config/dragonminez/oldBackup/`.
 
 ### Configs
 
@@ -140,7 +142,7 @@ Important systems:
 
 - Storage supports `NBT`, `JSON`, and `DATABASE`.
 - Inspect `StorageManager` before changing persistence behavior.
-- `DatabaseManager` uses MariaDB and HikariCP and can fall back when misconfigured.
+- `DatabaseManager` uses MariaDB and HikariCP. On DB failure there is NO active fallback switch — the broken backend silently no-ops and durability comes from the always-on vanilla capability `.dat` persistence.
 - Do not log credentials or connection secrets.
 - Treat storage changes as high-risk because they can affect existing worlds.
 

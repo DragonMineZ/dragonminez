@@ -1,12 +1,14 @@
 # DragonMineZ AI Context
 
-This file captures project context that future AI agents should read after `AI/Agents.md` and `AI/Memory.md`. Keep it factual and update it when the architecture, workflows, or important repo conventions change.
+This file captures project context that AI agents should read after `AI/Agents.md` and `AI/Memory.md`. Keep it factual and update it when the architecture, workflows, or important repo conventions change. Last full audit against the code: 2026-07-07 (v2.1.1).
 
 ## Project Snapshot
 
 DragonMineZ is a Minecraft Forge mod for Minecraft `1.20.1`, Java 17, mod id `dragonminez`. The root project name is `DragonMineZ`; archives are named from `mod_id`.
 
-This repo is data-heavy and player-customizable. Many systems load JSON from runtime folders in `config/dragonminez`, world save folders, datapacks, and external addon folders. Do not assume JSON is internal-only or safe to rewrite destructively.
+This repo is data-heavy and player-customizable. Many systems load JSON from runtime folders in `config/dragonminez`, world save folders (`<world>/dragonminez/...`), datapacks, and external addon folders. Do not assume JSON is internal-only or safe to rewrite destructively.
+
+Dependencies declared in `META-INF/mods.toml`: Forge, Minecraft, GeckoLib, TerraBlender, and **Curios** are all `mandatory=true`. Legendary Tooltips, Epic Fight, and Better Combat are declared `type="incompatible"`, and the `com.dragonminez.DragonMineZ` entry class additionally throws `IllegalStateException` at construction if any of them is loaded.
 
 ## Build And Run
 
@@ -22,274 +24,247 @@ Use the Gradle wrapper from repo root, usually PowerShell on Windows:
 Important details:
 
 - Java toolchain and compiler release are Java 17.
-- `runClient` and `runServer` use `run/` as working directory.
-- `runData` uses `run-data/` and writes to `src/generated/resources/`.
-- `src/generated/resources/` is included as a main resource source set.
-- `build` depends on reobfuscation tasks.
-- There is no committed `src/test` suite currently. Validate gameplay changes with `build`, `runClient`, `runServer`, or targeted in-game scenarios.
+- `runClient` and `runServer` use `run/` as working directory; `runData` uses `run-data/` and writes to `src/generated/resources/`.
+- `src/generated/resources/` is included as a main resource source set. `build` depends on reobfuscation tasks and re-runs `runData`.
+- Gradle runs **offline** (`org.gradle.offline=true` in `gradle.properties`).
+- The distributable jar is the no-classifier `jarJar` artifact (bundles `mariadb-java-client` and `HikariCP`); the plain `jar` task produces `-slim`. Never ship the slim jar.
+- Client-only dev mods (JEI runtime, Oculus, Xenon, Free Cam, Huge Structure Blocks) are on the classpath only for `runClient` (`includeClientOnlyDevMods` in `build.gradle.kts`) because some mixin into vanilla codecs and would poison `runData` output.
+- PackSquash optimizes bundled PNG/OGG/JSON before jar packaging; automatic on CI, off locally, forced with `-PoptimizeResources=true|false`. Options in `packsquash.toml`.
+- There is no committed `src/test` suite. Validate with `build`, `runClient`, `runServer`, or targeted in-game scenarios.
 - `scripts/check_lang.sh` validates language JSON with `jq`.
 
 ## Lifecycle
 
 Primary boot path:
 
-- `DragonMineZ` is the `@Mod` entry point.
-- Constructor logs startup, calls `DMZCommon.init()`, then side-specific init through `DistExecutor`.
-- Client side calls `DMZClient.init()`.
-- Dedicated server side calls `DMZServer.init()`.
+- `com.dragonminez.DragonMineZ` is the `@Mod` entry point. Its constructor first enforces the incompatibility list (legendarytooltips, epicfight, bettercombat), then calls `DMZCommon.init()`, then side-specific init through `DistExecutor` (`DMZClient.init()` on client, `DMZServer.init()` on dedicated server — the latter is log-only; commands register via event).
+- Root-package helpers: `Reference` (MOD_ID), `Env`/`LogUtil` (logging).
 
-`DMZCommon.init()` is the central registration and setup point:
+`DMZCommon.init()` is the central registration and setup point, in order: `ConfigManager.initialize()`, `QuestRegistry.init()`, `WishManager.init()`, `NetworkHandler.register()`, `GeckoLib.initialize()`, then deferred registers on the mod bus — `MainAttributes`, `EntityAttributes`, `MainBlocks`, `MainBlockEntities`, `MainItems`, `MainFluids`, `MainSounds`, `MainTabs`, `MainEntities`, `MainVillagers`, `MainParticles`, `MainRecipes`, `MainMenus`, `MainEffects`, `MainEnchants`, `MainLootModifiers`, `MainStructurePlacements`, `MainStructureProcessors`, `MainStructureTypes`, `OverworldFeatures`, `SacredKaiFeatures` — plus `ModCommonEvents::commonSetup`, `MainGameRules.register()`, `MainDamageTypes.register()`. Note the structure/feature classes live under `server/world/...` but register from common init.
 
-- Initializes `ConfigManager`.
-- Initializes quest and wish systems.
-- Registers network packets through `NetworkHandler.register()`.
-- Initializes GeckoLib.
-- Registers most deferred registries: attributes, blocks, block entities, items, fluids, sounds, creative tabs, entities, particles, recipes, menus, effects, enchantments, structure placement types, and overworld features.
-- Adds `ModCommonEvents.commonSetup`.
-- Registers game rules and damage types.
+`ModCommonEvents` (mod bus) also registers entity attributes, adds player attributes (`STRENGTH`, etc.), registers `DragonBallSavedData` capability, adds a pack finder, and in `commonSetup` registers the TerraBlender `OverworldRegion` (weight 40, adds the rocky biome without replacing vanilla biomes) and `OverworldSurfaceRules`.
 
-Server event flow:
+Server event flow (`common/events/ForgeCommonEvents`, forge bus):
 
-- `ForgeCommonEvents.onServerStarting` initializes storage, beta whitelist, wishes, permissions, quests, NPC alignment, NPC placement, WorldGuard compatibility, and first Dragon Ball spawning.
-- `ForgeCommonEvents.onServerStarted` loads Otherworld regions and spawns configured NPC placements.
-- `ForgeCommonEvents.onServerAboutToStart` preloads Otherworld regions when enabled.
-- `ForgeCommonEvents.onAddReloadListeners` registers datapack/resource reload listeners for space pod destinations, dragonball definitions, dragon wishes, and weapon attributes.
-- `ForgeCommonEvents.onRegisterCommands` delegates to `DMZServer.registerCommands`.
+- `onServerAboutToStart`: pre-loads Otherworld regions when `worldGen.otherworldActive`, and runs `VillagePoolInjector.injectAll`.
+- `onServerStarting`: `StorageManager.init()`, `BetaWhitelist.reload()` (async), `WishManager.loadWishes(server)`, `DMZPermissions.init()`, `QuestRegistry.loadAll(server)`, `NpcAlignmentRules.load`, `NPCPlacementManager.load`, `WorldGuardCompat.init()`, then first dragonball scatter per ball set if `worldGen.generateDragonBalls`.
+- `onServerStarted`: `StructureSpawnPlanner.precomputeAndWait`, Otherworld region load (double-check), `NPCPlacementManager.spawnForLoadedLevels`.
+- `onLevelLoad`: `StructureSpawnPlanner.onLevelLoad`; re-runs Otherworld region loading when the Otherworld level loads.
+- `onServerStopping`: `StorageManager.shutdown()`, `StructureSpawnPlanner.reset()`.
+- `onAddReloadListeners`: `SpacePodDestinationRegistry`, `DragonDefinitionReloadListener`, `DragonWishRegistry`, and an inline listener calling `WeaponRegistry.loadAttributes`.
+- `onRegisterCommands` → `DMZServer.registerCommands`.
+- `ForgeCommonEvents` also hosts gameplay handlers: login/logout/death/respawn/dimension-change, melee/ranged crits, `LivingAttack`/`LivingDamage` mitigation hooks, equipment change, mob spawn finalize, villager trades.
 
 ## Source Layout
 
-Main packages:
+Main packages (`com.dragonminez`):
 
-- `com.dragonminez.client`: rendering, GUI, model, animation, flight, collision, Crowdin/resource-pack support, client events.
-- `com.dragonminez.common`: shared config, registries, stats, networking, quests, wishes, dragonballs, combat, datapack/data generation, compatibility.
-- `com.dragonminez.server`: commands, recipes, storage, worldgen, dimensions, server events, utilities.
-- `com.dragonminez.mixin`: common and client mixins declared in `src/main/resources/dragonminez.mixins.json`.
+- `client`: `animation`, `beta` (beta-access verification screen), `clash` (beam/combat clash UI), `collision`, `crowdin`, `dragonball` (radar rendering), `events`, `flight`, `gui`, `init`, `model`, `render`, `systems` (`impactframes`, `kisense`, `taiyoken`), `title`, `util`.
+- `common`: `alignment` (NPC alignment rules/disposition), `combat` (`clash`, `logic`, `player`, `util`, `weapon`), `compat` (JEI plugin, `WorldGuardCompat` — reflective, no hard dep), `config`, `datagen`, `dragonball`, `events`, `hair` (custom hair strands), `init` (all `Main*` registries), `loot`, `network` (`C2S`, `S2C`, `NetworkHandler`), `passives` (class passives + handlers), `quest`, `spacepod`, `stats` (capability + `character`, `extras`, `skills`, `techniques`), `util`, `wish`.
+- `server`: `commands`, `dynamicgrowth` (`DynamicGrowthService`), `energy` (`StarEnergyStorage`), `events` (incl. `players/TickHandler`, `players/StatsEvents`, `DataSyncHandler`, `QuestEvents`, `DragonBallsHandler`), `recipes`, `storage`, `util`, `world` (`biome`, `data`, `dimension`, `feature`, `gen`, `npc`, `raid`, `region`, `structure`, `tree`).
+- `mixin`: `common` + `client` mixins declared in `src/main/resources/dragonminez.mixins.json` (with `dragonminez.refmap.json`); the `server` mixin list is empty.
 
 Registration pattern:
 
-- New content usually belongs in a `common/init/Main*` class and must be registered from `DMZCommon.init()`.
-- New packets must be registered explicitly in `NetworkHandler.register()` with a stable encode/decode/handle triplet and correct direction.
+- New content belongs in a `common/init/Main*` class registered from `DMZCommon.init()`.
+- New packets must be registered in `NetworkHandler.register()`; see Networking below for ordering rules.
 - New mixins require both a Java class and an entry in `dragonminez.mixins.json`.
 
 ## Player State
 
 Player state is capability-based:
 
-- Core classes: `StatsCapability`, `StatsProvider`, `StatsData`.
-- Capability attaches to players in `AttachCapabilitiesEvent<Entity>`.
-- Clone logic copies old data on death/dimension clone and has client cache handling for character creation state.
-- Server player ticks call `StatsData.tick()`.
-- Login sync sends server config, quests, and stats.
-- Dimension changes mark visited dimensions and resync stats.
-- Respawn restores health, energy, stamina, and sends resource sync.
+- Core classes: `common/stats/StatsCapability`, `StatsProvider`, `StatsData` (~1570 lines; state + most stat/form/combat math).
+- `StatsCapability` registers the capability and attaches a `StatsProvider` to every `Player` in `AttachCapabilitiesEvent<Entity>`. `StatsProvider` implements `INBTSerializable` (`serializeNBT()→data.save()`, `deserializeNBT()→data.load()`), so vanilla `.dat` persistence is always active regardless of storage backend.
+- `StatsData` owns exactly 12 sub-objects (ctor-constructed): `Stats`, `Status`, `Cooldowns`, `Character`, `Resources`, `Skills`, `Effects`, `SecondaryStatEffects`, `PlayerQuestData`, `BonusStats`, `Techniques`, `DynamicGrowthData`. (There is no `Training` object; training config lives in `config/dragonminez/training.json`.) Sub-objects live in `common/stats/character/`, `common/stats/skills/`, `common/stats/techniques/`, `common/stats/extras/` (DynamicGrowthData), and `common/quest/` (PlayerQuestData).
+- NBT keys written by `save()`: `Stats`, `Status`, `Cooldowns`, `Character`, `Resources`, `Skills`, `Effects`, `SecondaryStatEffects`, `PlayerQuestData`, `BonusStats`, `Techniques`, `DynamicGrowth`, `HasInitializedHealth`. These are the save-format contract for all three storage backends — renaming any silently orphans existing NBT/JSON/DB data.
+- `load()` is a per-key partial loader EXCEPT it hard-throws (`ClassNotFoundException`, wrapped in RuntimeException) when the `PlayerQuestData` key is absent. Treat `load()` as a full-document loader, not a safe partial merge.
+- Clone (death/dimension): `onPlayerClone` revives caps, `newData.copyFrom(oldData)` (deep copies; PlayerQuestData round-trips through NBT), invalidates old caps. A client-side `static StatsData CLIENT_CACHE` preserves character-creation state across clone only.
+- Login sync (`onPlayerLogin`): sends every config file except `general-user` via `SyncServerConfigS2C` (first packet `reset=true`), `SyncQuestRegistryS2C`, then per-player fixes (visited dimension, unlock `saiyan_saga`, form-selection defaults, clear stun/knockdown/strike-lock, skill-name repair, deactivate kisense) and a full `StatsSyncS2C`.
+- Adding a state group requires updating ctor + `save()` + `load()` + `copyFrom()` together, and deciding which sync packet carries it.
 
-`StatsData` owns these major state groups:
+Sync packets (all decode into the same client-side `data.load(nbt)`):
 
-- `Stats`
-- `Status`
-- `Cooldowns`
-- `Character`
-- `Resources`
-- `Skills`
-- `Effects`
-- `PlayerQuestData`
-- `BonusStats`
-- `Training`
-- `Techniques`
+- `StatsSyncS2C` = full `data.save()` (login, dimension change).
+- `ProgressionSyncS2C` = `Stats` + `BonusStats` + `Skills` + `Techniques` + `PlayerQuestData` (after progression changes, `/dmzreload`).
+- `ResourceSyncS2C` = `Resources` + `Status` only (respawn, resource changes). Because `load()` throws without `PlayerQuestData`, this packet relies on the client already having full data — be careful changing `load()` or packet contents.
 
-Race, class, form, stack form, effect, mastery, TP, and stat calculations depend heavily on `ConfigManager`.
+Ticking is split across THREE PlayerTick handlers:
+
+- `StatsCapability.onPlayerTick` (server, END phase) → `StatsData.tick()` which only ticks `Cooldowns`.
+- `server/events/players/TickHandler` — the real gameplay loop: regen (every 20 ticks), sync (every 10), effects/secondary-stat-effects/techniques ticking, aura light, stun handling.
+- `server/events/players/StatsEvents` — weights, food-regen queue, health. Also applies the max-health `AttributeModifier` (`DMZ_HEALTH_MODIFIER_UUID`); energy/stamina/poise are custom attributes from `MainAttributes` (`MAX_ENERGY`, `MAX_STAMINA`, `MAX_POISE`). `hasInitializedHealth` (persisted) gates the one-time full heal.
+
+Race, class, form, stack-form, effect, mastery, TP, and stat calculations read `ConfigManager` live on every call — there is no memoization, so `/dmzreload` changes results immediately.
 
 ## Networking
 
-`NetworkHandler` creates a Forge `SimpleChannel` named `dragonminez:network`.
+`NetworkHandler` creates a Forge `SimpleChannel` named `dragonminez:network` (protocol "1.0", all versions accepted). ~54 C2S and ~25 S2C packet classes live in `common/network/C2S` and `common/network/S2C`.
 
-Major packet categories:
-
-- C2S: character creation/update, stat changes, skill changes, quests, wishes, space pod travel, actions, flight/dash/ki blasts, party, techniques, combat.
-- S2C: stat/resource/progression/appearance sync, server config sync, quest/wish sync, radar sync, animations, UI open messages, party toasts, weapon registry sync, space pod destination sync.
-
-Use helper send methods:
-
-- `sendToServer`
-- `sendToPlayer`
-- `sendToAllPlayers`
-- `sendToTrackingEntityAndSelf`
+- Packet ids come from a sequential `id()` counter, so **registration order defines the wire ids**. Append new packets; never reorder or insert mid-list, or client/server builds desync.
+- Each registration is a `messageBuilder(...).decoder(...).encoder(...).consumerMainThread(handle).add()` triplet with explicit `NetworkDirection`.
+- Helper send methods: `sendToServer`, `sendToPlayer`, `sendToAllPlayers`, `sendToTrackingEntityAndSelf`, `sendToTrackingEntity`.
+- C2S categories: character creation/update, stat/skill changes, quests (accept/claim/unlock), wishes (`GrantWishC2S`), space pod travel, actions/forms/release limit, flight/dash/ki blasts, party, techniques, combat. S2C: stat/resource/progression sync, config sync, quest/wish registry sync, radar sync, animations, UI opens, party toasts, weapon registry sync, space pod destinations.
+- Validate all C2S input server-side. Never trust the client for stats, unlocks, permissions, quests, wishes, or progression.
 
 ## Config System
 
-Runtime config root: `config/dragonminez`.
+Runtime config root: `config/dragonminez`. Managed by `common/config/ConfigManager` (static; initialized from `DMZCommon.init()`).
 
-`ConfigManager` loads and generates:
+Files loaded/generated:
 
-- `general-user.json`
-- `general-server.json`
-- `combat.json`
-- `skills.json`
-- `entities.json`
-- race folders under `config/dragonminez/races/<race>/`
-- race `character.json`
-- race `stats.json`
-- race form groups under `races/<race>/forms/*.json`
-- stack forms under `config/dragonminez/forms/*.json`
+- `general-user.json` (client-only prefs — never synced), `general-server.json`, `combat.json`, `training.json`, `skills.json`, `techniques.json`, `entities.json`.
+- Per race (`DEFAULT_RACES` = human, saiyan, namekian, frostdemon, bioandroid, majin; custom race folders auto-detected): `races/<race>/character.json`, `races/<race>/stats.json`, `races/<race>/forms/*.json`.
+- Stack forms: `forms/*.json`.
+- (`<world>/dragonminez/wishes/*.json` is wish data owned by `WishManager`, not ConfigManager — see Wishes.)
 
 Versioning rules:
 
-- Config version is a **semver String** `"X.Y.Z"` (`ConfigManager.CONFIG_VERSION`, mirrored by each class's `CURRENT_VERSION`/`configVersion`). Comparison is component-wise; any stored value that is not exactly 3 numeric components (all legacy `double`/`int` versions such as `21.0`, `21.3`, `12`) is treated as outdated and forces an upgrade. Do NOT go back to numeric versions — `21.10` as a `double` equals `21.1`.
-- Outdated, missing-version, corrupt, or unparsable default config files are moved to `oldBackup/<same relative path>/<filename>` (mirrors the normal layout) and regenerated. `oldBackup/` is excluded from config scans.
-- On regeneration, values are merged **three-way** against the previous release's defaults bundled at `resources/data/dragonminez/previousConfigs/<same relative path>` (`ConfigManager.loadBaselineObject`): if the user's value equals the old default it is upgraded to the new default (propagates balance changes); if it differs it is kept (respects user edits). New default keys are added; user-added map keys are kept. When no baseline file exists (custom races/forms, or first ever semver release) it falls back to "preserve any value differing from the new default".
-- **Per-release workflow:** before shipping, drop the previous release's generated `config/dragonminez` tree into `resources/data/dragonminez/previousConfigs/` (excluding `old_*`/`oldBackup`) so it becomes the baseline for the next upgrade, then bump `CONFIG_VERSION`.
-- The pre-`21.2` `DEFENSE_SCALING_FOLD` migration now only folds user-modified `defenseScaling` values (those that differ from the new default after merge), avoiding double-application on untouched values already reset to folded defaults.
-- Default race/form files are regenerated only when missing or invalid/outdated.
-- Unknown custom race/form files are loaded and preserved.
-- Do not remove user-defined form groups or races while regenerating defaults.
+- Config version is a **semver String** `"X.Y.Z"` (`ConfigManager.CONFIG_VERSION`, mirrored by each config class's `CURRENT_VERSION`/`configVersion`). `parseSemver` requires exactly 3 numeric components; anything else (all legacy `double`/`int` versions like `21.0`, `21.10`, `12`) is treated as outdated and forces an upgrade. Do NOT go back to numeric versions — `21.10` as a `double` equals `21.1`.
+- Outdated, missing-version, corrupt, or unparsable default config files are MOVED to `config/dragonminez/oldBackup/<same relative path>` (`backupOldConfig`) and regenerated. `oldBackup/` is excluded from config scans. The `old_` filename prefix is only a skip-filter for user-authored form files — it is NOT the backup mechanism.
+- Regeneration merges **three-way** against the previous release's defaults bundled at `resources/data/dragonminez/previousConfigs/<same relative path>` (`loadBaselineObject`): if the user's value equals the old default it upgrades to the new default (propagates balance changes); if it differs it is kept (respects user edits). New default keys are added; user-added map keys are kept. With no baseline file (custom races/forms, or newly added defaults) it falls back to "preserve any value differing from the new default".
+- **Per-release workflow:** before shipping, copy the previous release's generated `config/dragonminez` tree into `resources/data/dragonminez/previousConfigs/` (excluding `oldBackup`/`old_*`), then bump `CONFIG_VERSION`. Skipping this silently weakens the merge for everything without a baseline.
+- The pre-`21.2` `DEFENSE_SCALING_FOLD` migration (×0.12) applies only to legacy numeric-version stats files and only folds user-modified `defenseScaling` values, avoiding double application.
+- Default race/form files are regenerated only when missing or invalid/outdated. Unknown custom races and user-defined form groups are loaded and preserved (`putIfAbsent` over defaults); custom races skip default form generation entirely.
+
+Known dead code / traps inside ConfigManager:
+
+- The `config_defaults` template mechanism (`saveDefaultFromTemplate` reading `/assets/dragonminez/config_defaults/<name>`) points at a resource directory that does not exist; first-run generation silently falls back to no-arg constructor defaults. Do not assume templates seed files.
+- The 7-arg `applySyncedServerConfig(...)` batch method is unused dead code; real sync is the per-file `applySpecificSyncedConfig` path.
 
 Client/server config sync:
 
-- Server sends general server config, combat config, skills config, race stats, race character config, forms, and stack forms to clients.
-- `ConfigManager` has server-synced override fields used client-side after sync.
-- `/dmzreload` clears server sync, reloads config, reloads storage, quests, NPC data, wishes, and resyncs online players.
+- On login (and `/dmzreload`), the server sends EVERY config file except `general-user` (`CLIENT_ONLY_CONFIG`), one gzip-compressed `SyncServerConfigS2C` per file; the first packet carries `reset=true` which begins a fresh sync batch. Payloads route by path into `SERVER_SYNCED_*` fields, and all `get*Config` getters return synced values while `serverSyncActive`. The client clears sync on disconnect (`ConfigManager.clearServerSync()` in `ForgeClientEvents`).
+- `/dmzconfig` (ConfigCommand) live-edits single keys via `updateConfigValue` → `reloadSpecificConfig`, which **bypasses** version checks, oldBackup, and the three-way merge (straight deserialize + single-file sync). The in-game editor `DMZConfigEditScreen` persists via `saveRawConfig`. Only full `reload()`/`initialize()` run the validation+merge pipeline.
 
 ## Quest System
 
-Quest data is world-save JSON, not normal assets only.
-
-Runtime world structure:
+Quest data is world-save JSON, loaded by `common/quest/QuestRegistry.loadAll(MinecraftServer)` from `ForgeCommonEvents.onServerStarting` and `/dmzreload`. Runtime world structure:
 
 ```text
 <world>/dragonminez/
-  sagas/
-  quests/
-  sidequests/
+  sagas/        # saga manifest JSON (recursive scan)
+  quests/<questFolder>/   # quest files, loaded alphabetically (01_...json ordering)
+  sidequests/   # side-quest JSON (recursive scan)
 ```
 
-`QuestRegistry.loadAll(server)`:
+Key behaviors:
 
-- Resolves the overworld save root.
-- Generates default quest files via `QuestDefaults` if story mode and default saga creation are enabled.
-- Loads saga manifests from `dragonminez/sagas`.
-- Saga manifests reference `questFolder`, then quest files load alphabetically from `dragonminez/quests/<questFolder>`.
-- Loads sidequest JSON files when side quests are enabled.
-- Builds indexes by objective type, quest giver, and turn-in.
-- Syncs loaded sagas and quests to clients through `SyncQuestRegistryS2C`.
+- Default generation: sagas require BOTH `storyModeEnabled` AND `createDefaultSagas`; side quests require only `createDefaultSideQuests` (independent of story mode). Runtime load gates are separate: sagas load only when `storyModeEnabled`, side quests only when `sideQuestsEnabled`.
+- Default files are **never overwritten** (`if (Files.exists(file)) return;` in `QuestDefaults`/`SagaDefaults`). Changing default quest content in code has no effect on existing worlds unless files are deleted.
+- Six default sagas: saiyan → frieza → android, then future and buu both branch from android, movies requires buu.
+- Saga quest key is `sagaId:numericId` (the JSON `id` int, not the filename — duplicate ids in one folder silently collide). Side-quest key is the JSON string id.
+- Objective types: ITEM, KILL, INTERACT, STRUCTURE, BIOME, DIMENSION, COORDS, TALK_TO, DRAGON_SUMMON, SKILL. Reward types: TPS, ITEM, ALIGNMENT, COMMAND, SKILL, TRANSFORMATION, KI_TECHNIQUE; reward type strings may be prefixed `hard:`/`normal:` for difficulty filtering.
+- `loadAll` builds indexes (objective type, quest giver, turn-in) used by `QuestService`. `loadAll` does NOT sync to clients — `SyncQuestRegistryS2C` is sent from `StatsCapability.syncToClient()` on login and from `ReloadCommand`; reloading quests outside those paths leaves clients stale until relog.
+- `SyncQuestRegistryS2C` carries two JSON strings capped at 1 MiB each; the standalone-quests blob excludes SAGA-type quests (sagas travel in the sagas blob).
+- Kill objectives: contiguous KillObjectives in a sequential quest unlock and count as one block (`QuestEvents.isKillObjectiveUnlocked` walks back to the block start). Default `CountMode.QUEST_SPAWNED_ONLY` requires the killed entity to carry `dmz_quest_key` + `dmz_quest_objective_index` + `dmz_quest_owner` tags (written by `QuestService.spawnKillObjectives`, which also writes stat/AI-tier/transformation-override tags).
+- Quest failure: party wipe fails only quests that have at least one KillObjective; `failQuest()` increments failureCount and resets progress.
+- `PlayerQuestData` NBT: `difficulty`, `questState`, `difficultyChosen`, `partyState`, with legacy migration from `difficultyStates`/`hardModeEnabled`. Party join adopts the leader's difficulty wholesale.
+- Server code uses `getQuest()/getSaga()`; client GUI uses `getClientQuest()/getClientSaga()` — cross-side calls silently return empty.
 
-Quest update rules:
-
-- Preserve filename ordering conventions for saga quests, such as `01_...json`.
-- Preserve translation-key titles/descriptions when used.
-- Existing world quest files are not overwritten by default.
-- If changing parser schema, keep user-authored addon quests in mind.
+Quest update rules: preserve filename ordering conventions, translation-key titles, and user-authored addon quests when changing the parser schema.
 
 ## Wish And Dragonball Systems
 
-Wishes are loaded from multiple places and merged.
+Two interleaved pipelines — definitions (ball sets, radars, dragons) and wishes — with three sources: hardcoded bootstrap, external addon packs, and per-world overrides. There is **no in-jar datapack wish/definition JSON**: `DragonDefinitionReloadListener` and `DragonWishRegistry` are `SimpleJsonResourceReloadListener`s rooted at `dragonminez/dragonballs` but both IGNORE the scanned datapack JSON and call `DragonBallPackManager.loadAll()` instead. Adding standard datapack JSON under that path does nothing.
 
-`DragonWishRegistry`:
-
-- Resource reload listener rooted at `dragonminez/dragonballs`.
-- Loads external dragonball packs through `DragonBallPackManager`.
-- Ensures every loaded dragon has a wish list.
-- Syncs wishes on datapack sync.
-
-`WishManager`:
-
-- Merges datapack/dragonball-system wishes with config overrides from `config/dragonminez/wishes/*.json`.
-- Config wish files override by dragon id when they contain `dragon` and `wishes`.
-- Supported wish types include `item`, `command`, `tps`, `multi_wish`, `skill`, `passivereset`, and `recustomize`.
-
-`DragonBallPackManager`:
-
-- External addon root is `dragonballs` under game dir and candidate nearby roots.
-- Supports folder packs and `.zip` packs.
-- External definitions merge over bootstrap definitions in `DragonDefinitionReloadListener`.
+- `DragonBallDefinitions` holds bootstrap maps (hardcoded earth/namek sets, shenron/porunga, radars, recipes) plus runtime maps set on reload. `syncRegisteredBlocks()` copies Forge `RegistryObject<Block>` refs from bootstrap into same-id runtime definitions after every reload — addon packs cannot introduce new blocks at runtime; new blocks need a `Main*` deferred register.
+- `DragonBallPackManager.loadAll()` scans folder and `.zip` packs under the game-dir `dragonballs` root (plus sibling candidates), routing files by suffix (`definitions/{ballset,radar,dragon,wishes}.json`, `assets/...`). It runs three times per boot/reload (bootstrap static init, definition listener, wish listener).
+- `WishManager.loadWishes(server)` runs at `onServerStarting` (not on datapack reload): starts from addon-pack wishes, then merges `<world>/dragonminez/wishes/*.json` (auto-creating default `shenron.json`/`porunga.json`). World-save wish files are **plain JSON arrays**; the dragon id is the filename stem, and a file fully replaces that dragon's wish list. The `{"dragon": ..., "wishes": [...]}` object wrapper is the addon-pack format only. Note: a vanilla `/reload` re-runs the listeners but NOT `WishManager.loadWishes` — world-save overrides need `/dmzreload` or restart.
+- Wish types (registered in `common/util/WishTypeAdapter`, 10 total): `item`, `command`, `tps`, `multi_wish`, `skill`, `passivereset`, `recustomize`, `relocatestats`, `changedifficulty`, `resetstory`.
+- Grant flow: owner right-clicks `DragonWishEntity` → wish screen (shenron 1 wish, porunga 3) → `GrantWishC2S` with indices → server validates against `WishManager.getAllWishes()` and grants → entity despawns after 100 ticks, resets weather/time, and rescatters balls via `DragonBallsHandler.scatterDragonBalls`.
+- Scattering (`server/events/DragonBallsHandler`): first spawn scatters full sets, later scatters cap to `maxSets`; positions are XZ-random around world spawn, tracked as "pending" in `DragonBallSavedData` (per-level SavedData, key `dragon_balls_data`, with legacy Earth/Namek key migration) until the chunk loads or a player comes within 128 blocks, then placed on the heightmap. Radar sync (`RadarSyncS2C`) includes pending balls and fires on scatter, place/break, login, dimension change, and a 100-tick timer.
+- `DragonBallDataPackResources` is a synthetic PackResources that only injects crafting recipes for addon radar items.
 
 ## Datapack Resource Systems
 
 Space pod destinations:
 
-- `SpacePodDestinationRegistry` is a JSON reload listener.
-- JSON root has `destinations`.
-- Supports `replace` to clear previous destination list.
-- Destination fields include id/name/translation, dimension, icon, optional coordinates, visibility, and unlock rules.
+- `common/spacepod/SpacePodDestinationRegistry` is a JSON reload listener; root key `destinations`, supports `replace`. Fields: id/name/translation, dimension, icon, optional coordinates, visibility, unlock rules (`SpacePodUnlockExpression`).
 
 Weapon attributes:
 
-- `WeaponRegistry.loadAttributes(resourceManager)` loads all `weapon_attributes/*.json` resources from all namespaces.
-- It rewrites `bettercombat:` animation namespace strings to `dragonminez:`.
-- It builds an animation-name cache from `animations/*.json` and fuzzy-matches missing animation names.
-- It resolves parent/override containers and syncs the encoded registry to clients.
+- `WeaponRegistry.loadAttributes(resourceManager)` (wired as an inline reload listener) loads all `weapon_attributes/*.json` from all namespaces, rewrites `bettercombat:` animation namespaces to `dragonminez:`, fuzzy-matches missing animation names against an `animations/*.json` cache, resolves parent/override containers, and syncs the encoded registry to clients.
 
 ## Storage
 
-`StorageManager` chooses player storage from server config:
+`StorageManager` (`server/storage`) selects the player-data backend from `general-server.json` (`StorageConfig`, default `NBT`):
 
-- `NBT`: vanilla capability storage.
-- `JSON`: world folder `dragonminez/playerdata_json/<uuid>.json`.
-- `DATABASE`: MariaDB/MySQL through HikariCP.
+- `NBT`: `activeStorage == null`; the whole custom layer (StorageManager/DataSyncHandler/JsonStorage/DatabaseManager) is inert and persistence is purely the vanilla capability path (`StatsProvider` INBTSerializable → player `.dat`).
+- `JSON`: `<world>/dragonminez/playerdata_json/<uuid>.json` (pretty-printed via NbtOps/JsonOps).
+- `DATABASE`: MariaDB via HikariCP (`jdbc:mariadb` only); gzip NBT in a `MEDIUMBLOB` keyed by uuid. Hikari `poolSize` and async `threadPoolSize` are separate config keys.
 
-Storage behavior:
+Behavior and caveats:
 
-- `DataSyncHandler` loads custom storage on server player login and saves on logout.
-- Custom storage uses async executor threads from config.
-- Auto-save runs periodically for JSON/DATABASE modes.
-- Save/load posts player data events.
-- Database mode can fall back when credentials are missing or connection fails.
-
-Be careful when changing storage:
-
-- Do not block the server thread with database or filesystem work.
-- Preserve NBT key names unless performing an intentional migration.
-- Avoid saving blank data before character creation unless the existing guard is intentionally changed.
+- Vanilla `.dat` capability persistence is ALWAYS on. JSON/DATABASE modes double-persist: the custom store async-loads on login (`DataSyncHandler` on `PlayerLoggedInEvent`) and its data overwrites vanilla-loaded values on the server thread, then a full `StatsSyncS2C` is pushed. Logout saves via `DataSyncHandler`.
+- The DB "fallback" is a log message, not a code path: on connection failure `DatabaseManager` stays the active storage and silently no-ops; durability comes only from the vanilla `.dat` path. Nothing switches to JsonStorage/NBT.
+- `savePlayer` serializes NBT on the server thread and submits only the IO to the executor; it skips saving when `!isDataLoaded && !hasCreatedCharacter` (blank pre-character guard).
+- Auto-save is a hardcoded 5-minute `scheduleAtFixedRate` (not config-driven), JSON/DATABASE only.
+- `DMZEvent.PlayerDataLoadEvent` fires before apply (tag mutable), `PlayerDataSaveEvent` after serialize / before write.
+- Login load is async and racy: briefly after login the player has vanilla-loaded values until the custom apply runs; a disconnect during load skips apply.
+- `/dmzreload` reload saves online players, then `shutdown()`+`init()`; note the async executor is recreated without shutting the old one down (leak on repeated reloads).
+- Never block the server thread with DB/filesystem work; never log credentials; preserve `StatsData` NBT key names (cross-backend contract).
 
 ## Worldgen And Dimensions
 
-Worldgen is split between Java registration, datagen output, and static resources.
+Split between Java registration, datagen output, and static resources:
 
-Important pieces:
-
-- `ModCommonEvents.commonSetup` registers TerraBlender region/surface rules.
-- `server/world` contains biome, dimension, feature, gen, NPC, region, structure, placement, and tree logic.
-- Generated resources include dimensions, dimension types, biomes, configured/placed features, structures, structure sets, template pools, tags, recipes, loot tables, and advancements.
-- Static resources include structures, regions, biome modifiers, worldgen JSON, and weapon attributes.
-
-Dimensions include Namek, HTC, and Otherworld. Otherworld has pre-generated region loading during server startup/level load paths when enabled.
+- Custom dimensions (`server/world/dimension`): Namek, HTC (Hyperbolic Time Chamber), Otherworld, and Sacred Kai (`SacredKaiDimension`, with `SacredKaiFeatures`). `OtherworldRegionLoader` loads pre-generated `.mca` regions at server-about-to-start / server-started / Otherworld level load, gated by `worldGen.otherworldActive`.
+- TerraBlender: `ModCommonEvents.commonSetup` registers `OverworldRegion` (weight 40; adds the rocky biome additively) and overworld surface rules.
+- `server/world` also contains `biome`, `data` (SavedData like `DragonBallSavedData`, `RaidSavedData`), `feature`, `gen`, `npc` (alignment-driven placement/spawning), `raid` (Raid/RaidManager/RaidTypes/waves/rewards), `structure` (incl. `StructureSpawnPlanner` precompute, `VillagePoolInjector`, placement types, processors), `tree`.
+- Generated resources (`src/generated/resources/`): dimensions, dimension types, biomes, configured/placed features, structures, structure sets, template pools, tags, recipes, loot tables, advancements, space pod destinations, dragon definitions/wishes.
+- Static resources (`src/main/resources/`): structure `.nbt`, Otherworld regions, biome modifiers, worldgen JSON, weapon attributes.
 
 ## Commands And Permissions
 
-`DMZServer.registerCommands()` registers server commands from `server/commands`, including stats, racial skills, bonuses, effects, skills, techniques, forms, points, debug, mastery, locate, party, story, revive, and reload.
+`DMZServer.registerCommands()` registers 22 commands from `server/commands`: Stats, RacialSkill, Bonus, Effects, Skills, Tech, Forms, Points, Debug, Mastery, Locate, Party, Story, Revive, Reload, Config, Weight, Raid, Alignment, Tail, Halo, Restore.
 
-`/dmzreload` is important for development and server operators:
-
-- Requires reload permission.
-- Reloads config, storage subsystem, quest registry, NPC alignment/placement, and wishes.
-- Resyncs config, progression, quest registry, and wishes to online players.
+- Permissions: Forge PermissionAPI `PermissionNode<Boolean>`s in `DMZPermissions` (~70 nodes, self/others split), default fallback permission level 2. `hasPermission()` contains a hard-coded name-based admin bypass for `ezShokkoh`, `ImYuseix`, `MrBrunoh` — do not replicate this pattern; flag it if touching permissions. `RaidCommand` checks `hasPermission(2)` directly instead of DMZPermissions.
+- `/dmzreload [all|config|story|wishes]` (default all): config scope does `ConfigManager.clearServerSync()` + `reload()`, `StorageManager.reload()`, NPC alignment + placement reload/respawn; story scope reloads `QuestRegistry`; wishes scope reloads `WishManager`; then resyncs configs (per-file `SyncServerConfigS2C`), `ProgressionSyncS2C`, `SyncQuestRegistryS2C`, `SyncWishesS2C` to online players. Requires `DMZPermissions.RELOAD`.
 
 ## Integrations
 
-- Forge and Minecraft are required.
-- GeckoLib is required.
-- TerraBlender is used for regions/surface rules.
-- JEI APIs are compile-only; runtime JEI is a client-only dev mod unless excluded for server/data tasks.
-- WorldGuard compatibility is reflective and defensive. Do not introduce a hard dependency unless explicitly requested.
-- Mixins are enabled by `dragonminez.mixins.json`.
-- Crowdin config uses `assets/dragonminez/lang/en_us.json` as source.
+- Forge, Minecraft, GeckoLib, TerraBlender, and Curios are mandatory (`mods.toml`).
+- Legendary Tooltips, Epic Fight, and Better Combat are hard-incompatible (mods.toml + startup crash in the entry class).
+- JEI APIs are compile-only (`JEIDragonMineZPlugin` in `common/compat`); runtime JEI is a client-only dev mod.
+- WorldGuard compatibility (`WorldGuardCompat`) is reflective and defensive — no hard dependency.
+- Lombok is used at compile time (`compileOnly` + annotationProcessor).
+- Crowdin uses `assets/dragonminez/lang/en_us.json` as the source locale (`crowdin.yml` maps locale filenames).
 
 ## Localization
 
-Primary language file:
-
-- `src/main/resources/assets/dragonminez/lang/en_us.json`
-
-Crowdin config:
-
-- `crowdin.yml` maps Crowdin locales to Minecraft locale filenames.
-- Keep new translation keys in `en_us.json`.
-- Validate language JSON with `scripts/check_lang.sh` when editing lang files.
+- Source of truth: `src/main/resources/assets/dragonminez/lang/en_us.json`. Keep keys stable unless intentionally renaming; add entries for any user-visible text.
+- Validate with `scripts/check_lang.sh` (jq). CI runs it in `.github/workflows/languages.yml`, which also uploads the source file to Crowdin on lang changes, on a 2-day schedule, and manually.
 
 ## Datagen
 
-`DatagenManager` registers providers for recipes, loot tables, block states, item models, block/item tags, worldgen, biome tags, advancements, space pod destinations, dragon definitions, and dragon wishes.
+`common/datagen/DatagenManager` (mod-bus `GatherDataEvent`) registers providers: recipes (`DMZRecipeProvider`, plus `DMZKikonoRecipeProvider` used by it), loot tables, block states, item models, block/item/entity-type tags, worldgen (`DMZWorldGenProvider`) + biome tags, advancements, space pod destinations, dragon definitions, and dragon wishes.
 
-Run `.\gradlew.bat runData` after changing providers and review `src/generated/resources/`.
+Run `.\gradlew.bat runData` after changing providers and review the `src/generated/resources/` diff (`.cache/` is excluded from packaging).
+
+## Beta Access Verification
+
+Beta/alpha builds (version contains `-beta`/`-alpha`) reject non-whitelisted players in `ForgeCommonEvents.onPlayerLogin`. `BetaWhitelist` loads asynchronously from `https://raw.githubusercontent.com/DragonMineZ/.github/refs/heads/main/allowed_betatesters.txt` at server start with a small hardcoded fallback list. The disconnect is detected client-side by `DisconnectedScreenMixin`, which adds a `Verify here` button opening `BetaAccessVerificationScreen` → browser to `https://downloads.dragonminez.com/beta-access/start?username=<minecraft_username>` (override with JVM property `dragonminez.betaAccessUrl`).
+
+The matching `dragonminez-ai` bot flow is intentionally narrow: Discord OAuth → guild member → Patreon beta roles → existing Patreon link + whitelist PR auto-approval. Keep it a small verification bridge, not a general public API.
+
+## CI And Release Automation
+
+Workflows in `.github/workflows/`:
+
+- `gradle.yml` — Java CI: builds on PRs and pushes to `main` touching Java/build files; submits the Gradle dependency graph.
+- `languages.yml` — Crowdin check & upload (see Localization).
+- `codeql.yml` — CodeQL analysis. PMD rulesets live in `.github/workflows/pmd/`.
+- `dev-jar-upload.yml` — dev distribution: runs on pushes to **`main`** (paths-filtered to Java/resources/Gradle/workflow inputs) and manual dispatch. Builds and uploads ONLY the no-classifier jar `build/libs/dragonminez-<mod_version>.jar` (never `-slim`) via SSH/SCP to the VPS with pinned host keys (vars `DMZ_VPS_HOST`/`DMZ_VPS_PORT`; secrets `DMZ_VPS_USER`/`DMZ_VPS_SSH_KEY`/`DMZ_VPS_KNOWN_HOSTS`/`DMZ_VPS_UPLOAD_DIR`). Upload is atomic (temp name → move), chmod `0644`, SHA-256 verified, then prunes old artifacts keeping the two newest `dragonminez-*__*__*.jar`. After upload it notifies the Discord bot locally on the VPS at `http://127.0.0.1:8088/dmz-dev-jar` (bypassing Cloudflare) using `DMZ_RELEASE_BOT_WEBHOOK_SECRET`.
+- `release-prepare.yml` — validates stable release candidates on `main`, builds the jar, writes manifest artifacts (via `scripts/release/prepare_release.py`), and posts the candidate payload to the Discord bot at `https://release-bot.dragonminez.com/dmz-release` (secret `DMZ_RELEASE_BOT_WEBHOOK_SECRET`).
+- `release-publish.yml` — triggered by Discord-bot approval through `repository_dispatch` (`dragonminez_release_approved`) or manual dispatch with the same payload fields. Verifies the approved commit is still `origin/main` HEAD, rebuilds, compares the jar SHA-256 against the approved manifest (**mismatch is a warning, not a failure** — resource optimization is not byte-reproducible), publishes to Modrinth and CurseForge, updates `update.json` (via `scripts/release/update_forge_update_json.py`), and commits it back to `main`.
+
+Rules:
+
+- Do not publish GitHub Release jar assets from these workflows.
+- Stable `main` releases only: versions containing `alpha`/`beta` are skipped or rejected.
+- The Discord bot must not hold Modrinth/CurseForge tokens; those stay in GitHub Actions secrets.
+- Python release helpers live in `scripts/release/` (`prepare_release.py`, `release_common.py`, `update_forge_update_json.py`, `release_tools_test.py`).
 
 ## Update Checklist For Future Agents
 
@@ -297,45 +272,12 @@ Before changing behavior:
 
 - Identify whether data is code-owned, datapack-owned, config-owned, world-save-owned, or addon-owned.
 - Prefer editing canonical loaders/default factories over hand-editing generated/runtime files.
-- If a JSON schema changes, update parser, defaults, config version, sync packets, and docs together.
+- If a JSON schema changes, update parser, defaults, config version, sync packets, and docs together. For configs, also refresh the `previousConfigs` baseline at release time.
 - If adding content, register it through the appropriate `Main*` class and ensure datagen/assets/lang are complete.
-- If adding packets, add both packet class and `NetworkHandler.register()` entry.
-- If adding reloadable data, wire a reload listener and sync path if clients need it.
-- If changing server config used by clients, update config sync and apply logic.
-- If changing player state, update save/load/copy/sync/storage expectations.
+- If adding packets, add the packet class and APPEND its `NetworkHandler.register()` entry (never reorder).
+- If adding reloadable data, wire a reload listener and a sync path if clients need it.
+- If changing server config used by clients, remember sync is generic per-file, but nested layouts need routing in `applySpecificSyncedConfig`.
+- If changing player state, update ctor/save/load/copyFrom/sync/storage expectations together.
 - If changing worldgen/datagen, run `runData` and inspect generated resource diffs.
 - If editing language files, run `scripts/check_lang.sh` or equivalent JSON validation.
 - If editing code, run at least `.\gradlew.bat build` unless blocked, and state any blockers.
-
-## Release Automation
-
-Release automation is split between dev distribution and stable release publishing.
-
-## Beta Access Verification
-
-Beta/alpha builds reject non-whitelisted players during `ForgeCommonEvents.onPlayerLogin`. The disconnect reason is detected client-side by `DisconnectedScreenMixin`, which adds a `Verify here` button for DragonMineZ beta-access disconnects only.
-
-The button opens `BetaAccessVerificationScreen`, which launches the browser to `https://downloads.dragonminez.com/beta-access/start?username=<minecraft_username>` by default. The URL can be overridden for local/dev testing with the JVM system property `dragonminez.betaAccessUrl`.
-
-The matching `dragonminez-ai` bot flow is intentionally narrow: a GET start route redirects through Discord OAuth, resolves the Discord guild member, checks the configured Patreon beta access roles, and then reuses the existing Patreon OAuth/link plus whitelist PR auto-approval logic. This should stay a small verification bridge, not a general public API.
-
-Development jar uploads:
-
-- `.github/workflows/dev-jar-upload.yml` runs on pushes to non-`main` branches when Java, resource, Gradle, or workflow inputs change.
-- It runs `./gradlew build` and uploads only the no-classifier jar, `build/libs/dragonminez-<mod_version>.jar`; it must not upload the `-slim.jar`.
-- Upload uses SSH/SCP to the VPS with pinned host key checking. Required GitHub repository variables are `DMZ_VPS_HOST` and `DMZ_VPS_PORT`; required GitHub secrets are `DMZ_VPS_USER`, `DMZ_VPS_SSH_KEY`, `DMZ_VPS_KNOWN_HOSTS`, and `DMZ_VPS_UPLOAD_DIR`.
-- The jar is uploaded to a temporary remote filename, moved into place atomically, chmodded `0644`, and verified by SHA-256 after upload.
-- After a verified upload, the workflow prunes old dev artifacts in `DMZ_VPS_UPLOAD_DIR`, keeping only the two newest files matching `dragonminez-*__*__*.jar`.
-- The Discord bot owns download authorization, key rotation, and any future public domain routing around the uploaded jar.
-
-Stable release automation is split into two GitHub Actions workflows:
-
-- `.github/workflows/release-prepare.yml` validates stable release candidates on `main`, builds the jar, writes release manifest artifacts, and posts a release candidate payload to the Discord bot at the constant URL `https://release-bot.dragonminez.com/dmz-release`.
-- `.github/workflows/release-publish.yml` is triggered by Discord bot approval through `repository_dispatch` event `dragonminez_release_approved`; it rebuilds the approved `main` commit, verifies the jar checksum, publishes to Modrinth and CurseForge, updates `update.json`, and commits that file back to `main`.
-
-Important release workflow rules:
-
-- Do not publish GitHub Release jar assets from these workflows.
-- Stable `main` releases only: versions containing `alpha` or `beta` are skipped or rejected.
-- The Discord bot must not hold Modrinth or CurseForge tokens; those stay in GitHub Actions secrets.
-- Release candidate webhooks use the Discord bot tunnel host `release-bot.dragonminez.com` and GitHub secret `DMZ_RELEASE_BOT_WEBHOOK_SECRET`. Dev jar upload notifications intentionally bypass Cloudflare: after the jar upload, `.github/workflows/dev-jar-upload.yml` SSHes to the VPS and posts to the bot locally at `http://127.0.0.1:8088/dmz-dev-jar` using the same `DMZ_RELEASE_BOT_WEBHOOK_SECRET`.
