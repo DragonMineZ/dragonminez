@@ -585,8 +585,43 @@ public class StatsData {
 	}
 
 	private double getReducedOffense() {
-		double totalOffense = getMeleeDamage() + getStrikeDamage() + getKiDamage();
+		double totalOffense = getMeleeDamageNoBonus() + getStrikeDamageNoBonus() + getKiDamageNoBonus();
 		return totalOffense * getFormOffenseCostFactor();
+	}
+
+	// Offense used exclusively by the health/energy/stamina drain formulas.
+	// It mirrors the damage formulas but intentionally excludes bonus stats
+	// (equipment/effect StatBonus): only the normal stat values plus their
+	// transformation multipliers and power release are considered.
+	private double getMeleeDamageNoBonus() {
+		double strength = stats.getStrength();
+		double strScaling = getStatScaling("STR");
+		double strMult = getTotalMultiplier("STR");
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		return secondaryMeleeDamage + (strength * strScaling * strMult) * releaseMultiplier;
+	}
+
+	private double getStrikeDamageNoBonus() {
+		double strikePower = stats.getStrikePower();
+		double strength = stats.getStrength();
+		double skpScaling = getStatScaling("SKP");
+		double strScaling = getStatScaling("STR");
+		double skpMult = getTotalMultiplier("SKP");
+		double strMult = getTotalMultiplier("STR");
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
+		double baseDamage = (strikePower * skpScaling * skpMult) + (strength * strScaling * strMult) * 0.25;
+		return secondaryStrikeDamage + baseDamage * releaseMultiplier;
+	}
+
+	private double getKiDamageNoBonus() {
+		double kiPower = stats.getKiPower();
+		double pwrScaling = getStatScaling("PWR");
+		double pwrMult = getTotalMultiplier("PWR");
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
+		return secondaryKiDamage + (kiPower * pwrScaling * pwrMult) * releaseMultiplier;
 	}
 
 	public double getEffectiveEnergyDrain() {
