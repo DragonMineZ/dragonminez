@@ -46,8 +46,8 @@ public class AuraRenderer {
 	private static final float HALF_SQRT_3 = (float) (Math.sqrt(3.0D) / 2.0D);
 	private static final float FADE_SPEED = 0.005f;
 	private static final float PULSE_SPEED = 0.01f;
-	private static final float SHOULDER_LEAN_DEG_PER_BLOCK = 6.0f;
-	private static final float SHOULDER_LEAN_MAX_DEG = 12.0f;
+	private static final float SHOULDER_LEAN_DEG_PER_BLOCK = 3.0f;
+	private static final float SHOULDER_LEAN_MAX_DEG = 6.0f;
 
 	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
