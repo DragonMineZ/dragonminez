@@ -30,10 +30,21 @@ public class StructurePlanSavedData extends SavedData {
 		return Collections.unmodifiableMap(positions);
 	}
 
-	public void setResolved(Map<Integer, ChunkPos> resolvedPositions) {
+	/**
+	 * Stores the planned positions. {@code complete} marks the plan as fully
+	 * resolved; when false, missing structures are searched again on next load.
+	 */
+	public void setPositions(Map<Integer, ChunkPos> newPositions, boolean complete) {
 		this.positions.clear();
-		if (resolvedPositions != null) this.positions.putAll(resolvedPositions);
-		this.resolved = true;
+		if (newPositions != null) this.positions.putAll(newPositions);
+		this.resolved = complete;
+		setDirty();
+	}
+
+	/** Drops one structure's planned position so it can be relocated. */
+	public void removePosition(int salt) {
+		this.positions.remove(salt);
+		this.resolved = false;
 		setDirty();
 	}
 
