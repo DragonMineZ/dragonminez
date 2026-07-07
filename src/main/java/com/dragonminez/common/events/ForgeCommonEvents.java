@@ -86,6 +86,7 @@ import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.CriticalHitEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
@@ -134,6 +135,22 @@ public class ForgeCommonEvents {
 				new ItemStack(MainItems.RED_SCOUTER.get(), 1)));
 		trades.get(5).add(mapTrade(DMZStructures.BABIDI, "dragonminez.babidi",
 				new ItemStack(Items.ENDER_PEARL, 4)));
+	}
+
+	/**
+	 * Las ofertas de los comerciantes se persisten con el mapa ya generado; si la
+	 * estructura se resolvió o reubicó después, el mapa vendido quedaría obsoleto
+	 * (sin X o apuntando al sitio viejo). Antes de abrir el menú se regeneran las
+	 * ofertas de mapas cuyo objetivo ya no coincide con el plan actual.
+	 */
+	@SubscribeEvent
+	public static void onMerchantInteract(PlayerInteractEvent.EntityInteract event) {
+		if (event.getLevel().isClientSide()) return;
+		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+		if (!(event.getTarget() instanceof net.minecraft.world.entity.npc.AbstractVillager merchant)) return;
+		try {
+			CapsuleCorpMapTrade.refreshStaleMapOffers(serverLevel, merchant);
+		} catch (Exception ignored) {}
 	}
 
 	private static final int MAP_XP = 40;
@@ -491,6 +508,16 @@ public class ForgeCommonEvents {
 	}
 
 	@SubscribeEvent
+	public static void onLevelTick(TickEvent.LevelTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) return;
+		if (!(event.level instanceof ServerLevel serverLevel)) return;
+		try {
+			com.dragonminez.server.world.structure.placement.StructureRepairManager.tick(serverLevel);
+		} catch (Throwable ignored) {
+		}
+	}
+
+	@SubscribeEvent
 	public static void onLevelLoad(LevelEvent.Load event) {
 		if (event.getLevel() instanceof ServerLevel serverLevel) {
 			try {
@@ -509,6 +536,7 @@ public class ForgeCommonEvents {
 	public void onServerStopping(ServerStoppingEvent event) {
 		StorageManager.shutdown();
 		com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.reset();
+		com.dragonminez.server.world.structure.placement.StructureRepairManager.reset();
 	}
 
 	@SubscribeEvent

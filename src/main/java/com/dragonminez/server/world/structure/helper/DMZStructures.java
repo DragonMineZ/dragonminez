@@ -82,7 +82,10 @@ public class DMZStructures {
 
 		context.register(ELDER_GURU, new JigsawStructure(
 				new Structure.StructureSettings(
-						biomes.getOrThrow(MainTags.Biomes.IS_SACREDLAND),
+						// Broad on purpose: vanilla's final biome check samples the chunk
+						// middle and rejects the start if it lands outside a narrow set.
+						// The thematic biome lives in the placement's valid_biomes.
+						biomes.getOrThrow(MainTags.Biomes.IS_NAMEK),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
@@ -124,7 +127,9 @@ public class DMZStructures {
 
 		context.register(BABIDI, new TallJigsawStructure(
 				new Structure.StructureSettings(
-						biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE),
+						// Broad on purpose (see ELDER_GURU); placement valid_biomes keeps
+						// the ship in mountain-like biomes.
+						biomes.getOrThrow(MainTags.Biomes.IS_LAND),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
