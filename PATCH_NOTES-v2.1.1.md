@@ -22,6 +22,7 @@
 - **BioAndroid — New Body Types:** Added 2 base body types, 2 Semi-Perfect body types, and 2 Perfect body types for the BioAndroid race, each with 5 layered textures, expanding character creation options for BioAndroid players.
 - **Broly — Texture Variants:** Broly NPC now has multiple texture variants for both his Super Saiyan and Legendary Super Saiyan forms.
 - **Form Skin Tint — `formTint` Config Field** *(Addon/Developer API)*: Forms can now specify a `tintColor` (hex) and `tintIntensity` (0.0–1.0) in their form JSON config to tint the player's skin, hair, and race parts while in that form. Replaces the old hardcoded Kaioken-only red tint. Kaioken (x2–x100), Shiyoken, Shin Shiyoken, and Chou Shiyoken all use this new system. User-defined form files are automatically version-migrated on load.
+- **Tail Color Transition:** The Saiyan tail now displays a smooth color gradient transition, adding visual polish to tail rendering during form changes and race part previews.
 
 *(by @yuseix300, @Shokkoh)*
 
@@ -114,6 +115,11 @@
 - Not applied to any default quests until v2.2 — this is a developer/operator framework feature available to use manually today.
 
 *(by @Bruneitor123)*
+
+### Absorption Counts Toward Kill Objectives
+- Absorbing an enemy (e.g., as Cell or Buu) now correctly registers as a kill for quest kill-tracking objectives.
+
+*(by @Shokkoh)*
 
 ---
 
@@ -242,6 +248,11 @@
 
 ### HTC Double TP Bonus
 - Fixed the Hyperbolic Time Chamber granting Training Points from two independent sources simultaneously, which resulted in doubled TP gain per session.
+
+*(by @Shokkoh)*
+
+### Drain Scaling — Bonus Stats Excluded
+- Ki and energy drain scaling now correctly ignores bonus stat values when calculating drain rates. Previously, bonus stats (from gear, effects, or passive abilities) were factored into drain, causing inflated consumption.
 
 *(by @Shokkoh)*
 
@@ -383,6 +394,21 @@
 
 *(by @Bruneitor123)*
 
+### Quest Reward Display — Commands, Transformations & Ki Techniques
+- Rewards granted via commands (e.g., `/dmzstory`), transformation unlocks, and ki technique grants now display a visual reward notification, making it immediately clear what the player received.
+
+*(by @Shokkoh)*
+
+### Client Config — Hide Outlines
+- A new client-side configuration option allows players to hide entity and player outlines globally, for those who prefer a cleaner visual presentation.
+
+*(by @Shokkoh)*
+
+### Utility Menu — Manual Scaling
+- The X radial utility menu now supports a manual scale override in the client config, letting players set a custom size multiplier independent of the current GUI scale setting.
+
+*(by @Shokkoh)*
+
 ---
 
 ## Bug Fixes
@@ -395,6 +421,16 @@
 ### Aura Layer Renderer
 - Reworked the aura layer rendering system to support per-layer alpha. Each `AuraLayer` now carries an `alpha` value, enabling smooth fade-in transitions when charging toward a form whose aura uses a different layer slot than the current one. Previously, cross-layer aura transitions could cause an abrupt swap; the incoming layer now fades in proportionally to charge progress while the current layer remains visible.
 - Fixed the charge-state logic for stack forms: when the target form's stack layer matches the base layer, color is interpolated in-place; when it differs, the new layer blends in by alpha. Both the GUI aura and the in-world aura pulse draws now respect per-layer alpha.
+
+*(by @Shokkoh)*
+
+### Aura Rotation — Reduced
+- Reduced excessive aura rotation speed for a cleaner, less distracting visual.
+
+*(by @Shokkoh)*
+
+### Aura on Over-Shoulder Camera
+- Fixed the player aura rendering incorrectly or clipping when the over-shoulder camera mode is active.
 
 *(by @Shokkoh)*
 
@@ -415,10 +451,20 @@
 
 *(by @Shokkoh)*
 
+### Entity Stun
+- Fixed a general issue where entities were not correctly applying or respecting the Stun status effect under certain combat scenarios outside of story boss fights.
+
+*(by @Shokkoh)*
+
 ### Quest Reward — Transformation Unlock
 - Fixed `TransformationReward` quest rewards not granting the required skill level for the rewarded form. Completing a quest that awards a transformation now also ensures the player's relevant transformation skill (e.g. `superforms`, `legendaryforms`) is set to at least the level required to access that form — preventing forms from being awarded but remaining locked.
 
 *(by @Bruneitor123)*
+
+### Quest Entity Spawning
+- Fixed quest-related entities (NPCs and enemies tied to story objectives) failing to spawn correctly under certain conditions.
+
+*(by @Shokkoh)*
 
 ### Kikono Station & Fuel Generator — Drops & Required Tool
 - Fixed the Kikono Station and Fuel Generator not dropping correctly and requiring the wrong mining tool. Kikono Station now correctly requires a diamond tool. Fuel Generator is now tagged as mineable with a pickaxe. Gravity Device was moved from `needs_iron_tool` to `needs_diamond_tool`.
@@ -440,8 +486,19 @@
 - Pending Dragon Balls now generate as soon as a player is within 128 blocks and the target chunk is loaded, preventing balls from being invisible until a relog.
 - Refactored `DMZStructureSets` registration to a shared `unique()` helper, reducing boilerplate and making it easier to add new structures.
 - Fixed the foundation placement on newly added structures.
+- Further structure generation and placement corrections (v3 iteration), addressing additional edge cases in structure spawning logic.
 
 *(by @yuseix300, @Shokkoh, @Bruneitor123)*
+
+### Duplicated Dragon Ball Generation
+- Fixed an issue where Dragon Balls were generating multiple times in the same session, resulting in duplicate balls appearing in the world.
+
+*(by @Shokkoh)*
+
+### GETE Ore Debris Generation
+- Fixed GETE ore debris not generating correctly in Namek cave chunks after the feature was introduced.
+
+*(by @Shokkoh)*
 
 ### Hyperbolic Time Chamber — Exit Portal Fix
 - Fixed players being teleported to world spawn when exiting the Hyperbolic Time Chamber if the exit portal could not be located. Exit now correctly resolves the Kami's Lookout structure position and teleports the player there, only falling back to world spawn if the structure genuinely cannot be found.
@@ -463,6 +520,11 @@
 
 ### Ki Wave — Hitbox
 - Enlarged the Ki Wave beam's collision cylinder radius from 1× to 1.5× the wave's size, and recalibrated the per-target hit precision to match. Ki waves now connect more reliably against targets within the visible beam area.
+
+*(by @yuseix300)*
+
+### Ki Weapon & Movement
+- Fixed multiple issues related to Ki weapon behavior and player movement interactions, improving reliability and feel.
 
 *(by @yuseix300)*
 
@@ -501,8 +563,18 @@
 
 *(by @Shokkoh)*
 
+### Config Restoring
+- Fixed an issue with config file restoration behavior under certain load and backup conditions.
+
+*(by @Shokkoh)*
+
 ### Missing Network Packets
 - Fixed missing network packets that caused certain client-server actions to silently fail.
+
+*(by @Shokkoh)*
+
+### Custom Skills Reset on `/dmzreload`
+- Fixed custom-defined skills (from config or addons) being reset back to defaults when `/dmzreload` was executed on a running server.
 
 *(by @Shokkoh)*
 
@@ -533,6 +605,11 @@
 
 ### Tail Slot on Other Races
 - Fixed the tail display slot incorrectly appearing or interfering with non-Saiyan races that do not have a tail.
+
+*(by @Shokkoh)*
+
+### Black Tail
+- Fixed a visual bug where the Saiyan tail was rendering solid black instead of the correct skin texture.
 
 *(by @Shokkoh)*
 
@@ -574,6 +651,41 @@
 ### Instant Transform — Non-Stackable Forms
 - Fixed non-stackable stack-type forms incorrectly appearing as purchasable in the transformation skill tree. The buy button is now hidden for these forms' base slot, and the server rejects any attempt to purchase or upgrade a stack skill from level 0 via the normal TP path (they must be granted through quest rewards or other means).
 - When using Instant Transform to switch to a new base form, any currently active stack form that is incompatible with the new base form (due to stackability, mastery, or compatibility flags) is now automatically cleared and the player is notified.
+
+*(by @Shokkoh)*
+
+### Stack Forms Buyable Again
+- Fixed a regression that prevented stack transformation forms from being purchased in the skill tree.
+
+*(by @Shokkoh)*
+
+### Fusion — Teleport Issues
+- Fixed multiple issues with player teleportation occurring incorrectly during or after the fusion sequence.
+
+*(by @Shokkoh)*
+
+### Flying Animations on Multiplayer
+- Fixed flying animations not playing or syncing correctly for other players in multiplayer sessions.
+
+*(by @Shokkoh)*
+
+### Camera Roll During Search Fly — Reduced
+- Slightly reduced the camera banking/roll effect during "search fly" mode for a more comfortable flying camera feel.
+
+*(by @Shokkoh)*
+
+### Forms Order on X Menu
+- Fixed the ordering of transformation forms in the radial X utility menu, ensuring forms appear in the correct intended order.
+
+*(by @Shokkoh)*
+
+### Hair Physics
+- Fixed hair physics simulation not behaving correctly in certain cases.
+
+*(by @Shokkoh)*
+
+### TP Multiplier Tooltip
+- Fixed the TP multiplier tooltip displaying incorrect or malformed values.
 
 *(by @Shokkoh)*
 
