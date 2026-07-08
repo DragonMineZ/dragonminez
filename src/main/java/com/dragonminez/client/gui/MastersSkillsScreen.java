@@ -188,11 +188,16 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		String playerRace = getPlayerRaceName();
 
 		for (String skillId : masterOfferings) {
-			if (!skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
-
 			boolean isKi = skillsConfig.getKiSkills().contains(skillId);
-			boolean isForm = skillsConfig.getFormSkills().contains(skillId) || skillsConfig.getStackSkills().contains(skillId);
+			boolean isFormSkill = skillsConfig.getFormSkills().contains(skillId);
+			boolean isStackSkill = skillsConfig.getStackSkills().contains(skillId);
 			boolean isStrike = skillsConfig.getStrikeSkills().contains(skillId);
+			boolean isForm = isFormSkill || isStackSkill;
+
+			if (isFormSkill) {
+				var raceConfig = ConfigManager.getRaceCharacter(playerRace);
+				if (raceConfig == null || !raceConfig.hasFormSkill(skillId)) continue;
+			} else if (!skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
 
 			switch (category) {
 				case SKILLS -> { if (!isKi && !isForm && !isStrike) visibleSkills.add(skillId); }
@@ -256,8 +261,19 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	private int getUpgradeCost(String skillName, int currentLevel) {
 		var skillConfig = ConfigManager.getSkillsConfig();
-		var skillData = skillConfig.getSkills().get(skillName);
 
+		if (skillConfig.getFormSkills().contains(skillName.toLowerCase())) {
+			var raceConfig = ConfigManager.getRaceCharacter(getPlayerRaceName());
+			if (raceConfig != null) {
+				Integer[] costs = raceConfig.getFormSkillTpCosts(skillName);
+				if (costs != null && currentLevel >= 0 && currentLevel < costs.length) {
+					return costs[currentLevel] != null ? costs[currentLevel] : Integer.MAX_VALUE;
+				}
+			}
+			return Integer.MAX_VALUE;
+		}
+
+		var skillData = skillConfig.getSkills().get(skillName);
 		if (skillData != null && skillData.getCosts() != null) {
 			var costs = skillData.getCosts();
 			if (currentLevel < costs.size()) {

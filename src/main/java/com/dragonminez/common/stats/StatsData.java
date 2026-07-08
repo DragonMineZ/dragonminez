@@ -518,9 +518,6 @@ public class StatsData {
 
 		double rawFlatMitigation = baseDefense * Math.max(1.0, defMult);
 
-		// Cancelación por mitigación excesiva (revamp): la mitigación plana NO cancela el daño (topa en
-		// flatMitigationMaxAbsorbFraction), salvo que sea >= N veces el daño entrante (por defecto el triple).
-		// En ese caso el golpe se anula por completo; el feedback lo dispara CombatEvent al ver daño final <= 0.
 		if (ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()
 				&& incomingDamage > 0.0
 				&& rawFlatMitigation >= incomingDamage * ConfigManager.getCombatConfig().getCancelDamageMitigationThreshold()) {
@@ -569,9 +566,6 @@ public class StatsData {
 
 		double afterEnchant = remainingDamage * (1.0 - enchReduction);
 
-		// Mitigación adaptativa (revamp): ÚLTIMA reducción, en función del ratio daño/defensa efectiva.
-		// Fuerte cuando el daño ronda tu defensa, decae a 0 cuando la supera ampliamente. Topada por su cap.
-		// Deja el daño muy bajo pero difícilmente en cero (la anulación sólo ocurre en el caso del triple).
 		if (ConfigManager.getCombatConfig().getEnableAdaptativeDefenseMitigation()
 				&& rawFlatMitigation > 0.0 && incomingDamage > 0.0) {
 			double ratio = incomingDamage / rawFlatMitigation;
@@ -581,11 +575,6 @@ public class StatsData {
 		return afterEnchant;
 	}
 
-	/**
-	 * Curva de mitigación adaptativa (revamp). {@code ratio} es daño entrante / defensa efectiva (absorción plana).
-	 * Recta anclada: en {@code parityRatio} mitiga {@code parityValue}, decae a 0 en {@code zeroRatio},
-	 * topada por {@code cap}. Todo configurable en CombatConfig.
-	 */
 	private double computeAdaptativeDefenseMitigation(double ratio) {
 		if (!Double.isFinite(ratio) || ratio <= 0.0) return 0.0;
 		CombatConfig cfg = ConfigManager.getCombatConfig();
@@ -1164,6 +1153,10 @@ public class StatsData {
 				if (!status.isAndroidUpgraded() && "androidforms".equalsIgnoreCase(skillName)) continue;
 				Integer[] tpCosts = charConfig.getFormSkillTpCosts(skillName);
 				int maxLevel = tpCosts != null ? tpCosts.length : 0;
+				if (charConfig.isFormSkillBuyFromMaster(skillName)) {
+					if (skills.hasSkill(skillName)) skills.registerDefaultSkill(skillName, maxLevel);
+					continue;
+				}
 				skills.registerDefaultSkill(skillName, maxLevel);
 			}
 		}

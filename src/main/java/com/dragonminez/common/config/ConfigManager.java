@@ -37,7 +37,9 @@ public class ConfigManager {
 	private static final double DEFENSE_SCALING_FOLD = 0.12;
 	private static final double DEFENSE_SCALING_FOLD_VERSION = 21.2;
 
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
+	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient()
+			.registerTypeAdapter(RaceCharacterConfig.FormSkillCost.class, new RaceCharacterConfig.FormSkillCost.Adapter())
+			.create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
 	private static final DefaultFormsFactory FORMS_FACTORY = new DefaultFormsFactory();
 
