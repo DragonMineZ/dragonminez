@@ -176,6 +176,10 @@ public class DragonBallsHandler {
 	}
 
 	private static void generateBallSafely(ServerLevel level, DragonBallSetDefinition definition, int star, BlockPos targetXZ) {
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		List<BlockPos> pendingForStar = data.getPendingBalls(definition.getId()).get(star);
+		if (pendingForStar == null || !pendingForStar.contains(targetXZ)) return;
+
 		int x = targetXZ.getX();
 		int z = targetXZ.getZ();
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
@@ -205,7 +209,6 @@ public class DragonBallsHandler {
 
 		if (!success || level.getBlockState(realPos).getBlock() != block) return;
 
-		DragonBallSavedData data = DragonBallSavedData.get(level);
 		data.getPendingBalls(definition.getId()).get(star).remove(targetXZ);
 
 		if (!data.getActiveBalls(definition.getId()).get(star).contains(realPos)) data.getActiveBalls(definition.getId()).get(star).add(realPos);
