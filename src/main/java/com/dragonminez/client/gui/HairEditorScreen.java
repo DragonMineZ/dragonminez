@@ -381,6 +381,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(0, maxCubes + 1)
 				.value(curLenMap)
+				.step(0.5f)
 				.axis(AxisSlider.Axis.Y)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -399,6 +400,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(0.5f, maxWidth)
 				.value(strand != null ? strand.getScaleX() : 1.0f)
+				.step(0.1f)
 				.axis(AxisSlider.Axis.Y)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -415,6 +417,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(-180f, 180f)
 				.value(strand != null ? strand.getRotationX() : 0)
+				.step(1.0f)
 				.axis(AxisSlider.Axis.X)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -431,6 +434,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(-180f, 180f)
 				.value(strand != null ? strand.getRotationZ() : 0)
+				.step(1.0f)
 				.axis(AxisSlider.Axis.Z)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -447,6 +451,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(-180f, 180f)
 				.value(strand != null ? strand.getCurveX() : 0)
+				.step(1.0f)
 				.axis(AxisSlider.Axis.X)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -463,6 +468,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(-180f, 180f)
 				.value(strand != null ? strand.getCurveZ() : 0)
+				.step(1.0f)
 				.axis(AxisSlider.Axis.Z)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -514,28 +520,32 @@ public class HairEditorScreen extends ScaledScreen {
 		initColorPicker();
 	}
 
+	private HairStrand getMirrorTarget() {
+		int col = selectedStrandIndex % currentFace.cols;
+		int row = selectedStrandIndex / currentFace.cols;
+		int mirrorCol = (currentFace.cols - 1) - col;
+
+		HairFace mirrorFace;
+		if (currentFace == HairFace.LEFT) {
+			mirrorFace = HairFace.RIGHT;
+		} else if (currentFace == HairFace.RIGHT) {
+			mirrorFace = HairFace.LEFT;
+		} else {
+			if (mirrorCol == col) return null;
+			mirrorFace = currentFace;
+		}
+
+		int mirrorIndex = row * currentFace.cols + mirrorCol;
+		return workingHairs[selectedStyle].getStrand(mirrorFace, mirrorIndex);
+	}
+
 	private void applyMirror() {
 		if (!mirrorEnabled) return;
 		HairStrand source = getSelectedStrand();
 		if (source == null) return;
 
-		HairFace mirrorFace = currentFace;
-		int mirrorIndex = selectedStrandIndex;
-
-		if (currentFace == HairFace.FRONT || currentFace == HairFace.BACK || currentFace == HairFace.TOP) {
-			int col = selectedStrandIndex % currentFace.cols;
-			int row = selectedStrandIndex / currentFace.cols;
-			int mirrorCol = (currentFace.cols - 1) - col;
-			if (mirrorCol == col) return;
-			mirrorIndex = row * currentFace.cols + mirrorCol;
-		} else if (currentFace == HairFace.LEFT) {
-			mirrorFace = HairFace.RIGHT;
-		} else if (currentFace == HairFace.RIGHT) {
-			mirrorFace = HairFace.LEFT;
-		}
-
-		HairStrand target = workingHairs[selectedStyle].getStrand(mirrorFace, mirrorIndex);
-		if (target != null) {
+		HairStrand target = getMirrorTarget();
+		if (target != null && target != source) {
 			target.setLength(source.getLength());
 			target.setLengthScale(source.getLengthScale());
 			target.setScale(source.getScaleX(), source.getScaleY(), source.getScaleZ());
@@ -547,23 +557,8 @@ public class HairEditorScreen extends ScaledScreen {
 
 	private void applyMirrorColor(String color) {
 		if (!mirrorEnabled) return;
-		HairFace mirrorFace = currentFace;
-		int mirrorIndex = selectedStrandIndex;
-
-		if (currentFace == HairFace.FRONT || currentFace == HairFace.BACK || currentFace == HairFace.TOP) {
-			int col = selectedStrandIndex % currentFace.cols;
-			int row = selectedStrandIndex / currentFace.cols;
-			int mirrorCol = (currentFace.cols - 1) - col;
-			if (mirrorCol == col) return;
-			mirrorIndex = row * currentFace.cols + mirrorCol;
-		} else if (currentFace == HairFace.LEFT) {
-			mirrorFace = HairFace.RIGHT;
-		} else if (currentFace == HairFace.RIGHT) {
-			mirrorFace = HairFace.LEFT;
-		}
-
-		HairStrand target = workingHairs[selectedStyle].getStrand(mirrorFace, mirrorIndex);
-		if (target != null) {
+		HairStrand target = getMirrorTarget();
+		if (target != null && target != getSelectedStrand()) {
 			target.setColor(color);
 		}
 	}
