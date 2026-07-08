@@ -283,6 +283,11 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 
 			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
+				// The enrolled tail is a single solid box that overlaps the waist (and the vanilla-skin
+				// jacket "body_layer"). It must be rendered with back-face culling: a NO_CULL translucent
+				// render type draws its far faces and z-fights the body, which paints the tail black from
+				// most camera angles (only recovering the real color at a few random angles).
+				RenderType tailRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
 				partsModel.getBone("tailenrolled").ifPresent(targetBone -> {
 					syncTargetBoneAndParents(targetBone, playerModel);
 					float[] tailColor = ColorUtils.hexToRgb("#572117");
@@ -314,7 +319,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					}
 
 					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
-					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, tailRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				});
 			}
 		}
