@@ -11,6 +11,7 @@ import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TrainingConfig;
@@ -49,6 +50,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 	private float targetDescScrollY = 0;
 	private int descContentHeight = 0;
 	private int descViewportHeight = 0;
+	private final ScrollbarState descBar = new ScrollbarState();
 	private int shadowDummyPercent = 50;
 
 	private TexturedTextButton playButton;
@@ -349,6 +351,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 		graphics.disableScissor();
 
 		int maxScroll = Math.max(0, descContentHeight - descViewportHeight);
+		descBar.update(panelX + 130, 3, top, descViewportHeight, maxScroll);
 		if (maxScroll > 0) {
 			int barX = panelX + 130;
 			graphics.fill(barX, top, barX + 3, top + descViewportHeight, 0xFF333333);
@@ -364,6 +367,11 @@ public class MinigamesScreen extends BaseMenuScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
+		if (descBar.tryStartDrag(uiMouseX, uiMouseY)) {
+			targetDescScrollY = descBar.scrollFor(uiMouseY);
+			return true;
+		}
+
 		for (int i = 0; i < MINIGAMES.length; i++) {
 			if (isOverListItem(uiMouseX, uiMouseY, i)) {
 				if (selectedIndex != i) {
@@ -376,6 +384,24 @@ public class MinigamesScreen extends BaseMenuScreen {
 			}
 		}
 		return super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (descBar.isDragging()) {
+			targetDescScrollY = descBar.scrollFor(toUiY(mouseY));
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (descBar.isDragging()) {
+			descBar.stopDrag();
+			return true;
+		}
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override

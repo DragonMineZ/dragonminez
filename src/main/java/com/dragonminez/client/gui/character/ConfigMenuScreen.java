@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.gui.config.OverShoulderCameraScreen;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
@@ -45,7 +46,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private int tickCount = 0;
 	private int scrollOffset = 0;
 	private int maxScroll = 0;
-	private boolean isDraggingScroll = false;
+	private final ScrollbarState scrollBar = new ScrollbarState();
 	private int holdTicks = 0;
 	private int heldConfigIndex = -1;
 	private int heldDelta = 0;
@@ -404,6 +405,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.pose().popPose();
 		graphics.disableScissor();
 
+		scrollBar.update(panelX + 128, 3, startY, MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT, maxScroll);
 		if (maxScroll > 0) {
 			int scrollBarX = panelX + 128;
 			int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
@@ -527,18 +529,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int leftPanelX = getLeftPanelX();
-		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
 
-		int startY = leftPanelY + 35;
-		int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
-		int scrollBarX = leftPanelX + 140;
-
-		if (maxScroll > 0 && uiMouseX >= scrollBarX - 5 && uiMouseX <= scrollBarX + 10 &&
-				uiMouseY >= startY && uiMouseY <= startY + scrollBarHeight) {
-			isDraggingScroll = true;
-			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+		if (scrollBar.tryStartDrag(uiMouseX, uiMouseY)) {
+			scrollOffset = Math.round(scrollBar.scrollFor(uiMouseY));
 			initConfigButtons();
 			return true;
 		}
@@ -547,13 +540,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (isDraggingScroll && maxScroll > 0) {
-			double uiMouseY = toUiY(mouseY);
-			int centerY = getUiHeight() / 2;
-			int startY = (centerY - 105) + 35;
-			int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
-
-			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+		if (scrollBar.isDragging()) {
+			scrollOffset = Math.round(scrollBar.scrollFor(toUiY(mouseY)));
 			initConfigButtons();
 			return true;
 		}
@@ -564,8 +552,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		heldConfigIndex = -1;
 
-		if (isDraggingScroll) {
-			isDraggingScroll = false;
+		if (scrollBar.isDragging()) {
+			scrollBar.stopDrag();
 			return true;
 		}
 		return super.mouseReleased(mouseX, mouseY, button);
