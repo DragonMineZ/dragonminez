@@ -348,6 +348,7 @@
   "gui.dragonminez.quests.rewards.tps": "%s TPs.",
   "gui.dragonminez.quests.rewards.skill": "%s Lvl: %s.",
   "gui.dragonminez.quests.rewards.alignment": "%s Alignment.",
+  "gui.dragonminez.quests.rewards.ki_technique": "Tech: %s",
   "gui.dragonminez.quests.rewards.tier.all": "All Rewards",
   "gui.dragonminez.quests.rewards.tier.normal": "Only Normal And up",
   "gui.dragonminez.quests.rewards.tier.hard": "Only Hard And up",

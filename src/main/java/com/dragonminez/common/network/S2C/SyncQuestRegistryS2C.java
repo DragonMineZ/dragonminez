@@ -21,8 +21,10 @@ import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.AlignmentReward;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
+import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
+import com.dragonminez.common.quest.rewards.TransformationReward;
 import com.dragonminez.server.world.structure.helper.QuestStructureHints;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -273,11 +275,21 @@ public class SyncQuestRegistryS2C {
 			obj.addProperty("count", item.getCount());
 		} else if (reward instanceof CommandReward command) {
 			obj.addProperty("command", command.getCommand());
+			if (command.getTranslationKey() != null && !command.getTranslationKey().isEmpty()) {
+				obj.addProperty("translationKey", command.getTranslationKey());
+			}
 		} else if (reward instanceof SkillReward skill) {
 			obj.addProperty("skill", skill.getSkill());
 			obj.addProperty("level", skill.getLevel());
 		} else if (reward instanceof AlignmentReward alignment) {
 			obj.addProperty("amount", alignment.getAmount());
+		} else if (reward instanceof TransformationReward transformation) {
+			obj.addProperty("formGroup", transformation.getFormGroup());
+			obj.addProperty("formName", transformation.getFormName());
+			obj.addProperty("mastery", transformation.getMastery());
+			obj.addProperty("stack", transformation.isStack());
+		} else if (reward instanceof KiTechniqueReward kiTechnique) {
+			obj.addProperty("code", kiTechnique.getTemplate().generateExportCode());
 		}
 
 		return obj;

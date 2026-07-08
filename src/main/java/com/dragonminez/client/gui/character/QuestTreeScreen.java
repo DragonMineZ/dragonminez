@@ -7,6 +7,9 @@ import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.config.SkillsConfig;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
@@ -29,6 +32,7 @@ import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.QuestPrerequisites;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.rewards.ItemReward;
+import com.dragonminez.common.quest.rewards.TransformationReward;
 import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.dragonminez.common.quest.QuestTextFormatter;
 import com.dragonminez.common.stats.StatsCapability;
@@ -52,6 +56,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
@@ -1908,7 +1913,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 
 			QuestReward reward = block.reward();
-			String desc = reward.getDescription().getString();
+			String desc = rewardDescription(reward).getString();
 			int rowVisible = Math.max(0, revealedChars - consumedChars);
 			consumedChars += desc.length() + 1;
 
@@ -1925,7 +1930,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				}
 
 				rewardHitboxes.add(new RewardHitbox(iconX, (int) (blockTop - currentRewardsScroll), iconSize,
-						tooltipStack, reward.getDescription()));
+						tooltipStack, rewardDescription(reward)));
 
 				int charsLeft = rowVisible;
 				int textY = blockTop;
@@ -1985,7 +1990,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 
 			for (QuestReward reward : tierRewards) {
-				List<String> lines = wrapText(reward.getDescription().getString(), textWidth);
+				List<String> lines = wrapText(rewardDescription(reward).getString(), textWidth);
 				if (lines.isEmpty()) lines = List.of("");
 				int textBlockH = lines.size() * lineHeight;
 				int blockH = Math.max(iconSize + 2, textBlockH) + 4;
@@ -2025,11 +2030,44 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (quest == null) return shown;
 		for (QuestReward.DifficultyType tier : QuestReward.DifficultyType.values()) {
 			for (QuestReward reward : quest.getRewards()) {
-				if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
 				if (reward.getDifficultyType() == tier) shown.add(reward);
 			}
 		}
 		return shown;
+	}
+
+	/**
+	 * Resolves the display text for a reward. Most rewards are self-describing via
+	 * {@link QuestReward#getDescription()}, but transformations need the player's race to build the
+	 * per-race form lang key (e.g. {@code race.dragonminez.<race>.form.<group>.<name>}), which the
+	 * reward alone does not know.
+	 */
+	private Component rewardDescription(QuestReward reward) {
+		if (reward instanceof TransformationReward transformation) {
+			String group = transformation.getFormGroup();
+			String form = transformation.getFormName();
+			if (isStackFormGroup(group)) {
+				return Component.translatable("race.dragonminez.stack.group." + group)
+						.append(": ")
+						.append(Component.translatable("race.dragonminez.stack.form." + group + "." + form));
+			}
+			String race = statsData != null ? statsData.getCharacter().getRaceName() : "";
+			return Component.translatable("race.dragonminez." + race + ".form." + group + "." + form);
+		}
+		return reward.getDescription();
+	}
+
+	/**
+	 * A transformation belongs to a stack (global) form group when its form type is registered as a
+	 * stack skill in {@link SkillsConfig}. Stack forms use the race-agnostic
+	 * {@code race.dragonminez.stack.form.*} lang keys; everything else is a per-race form. The
+	 * reward's own {@code stack} flag is not authoritative here — the form type is.
+	 */
+	private boolean isStackFormGroup(String formGroup) {
+		if (formGroup == null || formGroup.isEmpty()) return false;
+		FormConfig stackGroup = ConfigManager.getStackFormGroup(formGroup);
+		if (stackGroup == null || stackGroup.getFormType() == null) return false;
+		return ConfigManager.getSkillsConfig().getStackSkills().contains(stackGroup.getFormType().toLowerCase());
 	}
 
 	private ItemStack rewardIconStack(QuestReward reward) {
@@ -2046,6 +2084,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 			case SKILL -> {
 				return new ItemStack(MainItems.GETE_BLUE_CAPSULE.get());
+			}
+			case COMMAND -> {
+				return new ItemStack(Items.COMMAND_BLOCK);
+			}
+			case KI_TECHNIQUE -> {
+				return new ItemStack(MainItems.MERUS_LASER.get());
+			}
+			case TRANSFORMATION -> {
+				return new ItemStack(MainItems.MIGHT_TREE_FRUIT.get());
 			}
 			default -> {
 				return null;
@@ -2422,7 +2469,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < rewards.size(); i++) {
 			if (i > 0) builder.append('\n');
-			builder.append(rewards.get(i).getDescription().getString());
+			builder.append(rewardDescription(rewards.get(i)).getString());
 		}
 		return builder.toString();
 	}
