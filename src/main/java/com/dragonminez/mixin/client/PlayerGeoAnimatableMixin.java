@@ -180,15 +180,16 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return FLY_IDLE;
 		}
 
-		Vec3 motion = player.getDeltaMovement();
-		double horizontal = motion.horizontalDistance();
-		if (horizontal < 0.04) return FLY_IDLE;
+		double moveX = player.getX() - player.xOld;
+		double moveZ = player.getZ() - player.zOld;
+		double horizontal = Math.sqrt(moveX * moveX + moveZ * moveZ);
+		if (horizontal < 0.01) return FLY_IDLE;
 
 		float yawRad = player.yBodyRot * Mth.DEG_TO_RAD;
 		double sin = Mth.sin(yawRad);
 		double cos = Mth.cos(yawRad);
-		double forwardComp = -motion.x * sin + motion.z * cos;
-		double rightComp = -motion.x * cos - motion.z * sin;
+		double forwardComp = -moveX * sin + moveZ * cos;
+		double rightComp = -moveX * cos - moveZ * sin;
 
 		if (Math.abs(forwardComp) >= Math.abs(rightComp)) {
 			return forwardComp >= 0 ? FLY_FRONT : FLY_BACK;
