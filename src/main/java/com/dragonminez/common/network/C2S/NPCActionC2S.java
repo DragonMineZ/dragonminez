@@ -197,8 +197,6 @@ public class NPCActionC2S {
 		}
 	}
 
-	private static final int MAX_WEIGHT_REQUEST = 100000;
-
 	private static void handlePiccolo(ServerPlayer player, StatsData data, int action, int value) {
 		if (action == 1) {
 			player.setHealth(player.getMaxHealth());
@@ -211,7 +209,8 @@ public class NPCActionC2S {
 	}
 
 	private static void giveWeight(ServerPlayer player, int value, String messageKey, Item itemStack) {
-		int weight = Math.max(1, Math.min(MAX_WEIGHT_REQUEST, value));
+		Double maxWeight = ConfigManager.getServerConfig().getGravity().getMaxWeightRequestable();
+		int weight = Math.max(1, Math.min(maxWeight.intValue(), value));
 		ItemStack weightStack = new ItemStack(itemStack);
 		WeightItem.setWeight(weightStack, weight);
 		player.addItem(weightStack);
