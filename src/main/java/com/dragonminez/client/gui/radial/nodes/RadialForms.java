@@ -66,12 +66,18 @@ public final class RadialForms {
 		if (formNames == null || formNames.isEmpty()) return null;
 		List<RadialNode> rest = new ArrayList<>();
 		for (int i = 1; i < formNames.size(); i++) rest.add(new FormSelectNode(race, group, formNames.get(i), stack));
-		rest = finish(stats, parentCategoryKey + ":" + group, rest);
+		// Forms keep their JSON (config) ordering by default; only user MORE reordering overrides it.
+		rest = orderAndCap(parentCategoryKey + ":" + group, rest);
 		return new FormGroupHeadNode(race, group, formNames.get(0), stack, rest);
 	}
 
 	private static List<RadialNode> finish(StatsData stats, String categoryKey, List<RadialNode> out) {
+		// Groups are shown alphabetically by default; user MORE reordering overrides it.
 		out.sort(Comparator.comparing(node -> node.label(stats).getString(), String.CASE_INSENSITIVE_ORDER));
+		return orderAndCap(categoryKey, out);
+	}
+
+	private static List<RadialNode> orderAndCap(String categoryKey, List<RadialNode> out) {
 		out = new ArrayList<>(RadialLayoutStore.applyOrder(categoryKey, out));
 		return capWithMore(categoryKey, out);
 	}
