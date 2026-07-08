@@ -206,6 +206,15 @@ public abstract class AbstractKiProjectile extends Projectile {
         return this.getKiDamage() / Math.max(1.0F, (float)this.getMaxHits());
     }
 
+    public static final int CONTINUOUS_HIT_INTERVAL = 20;
+
+    protected boolean applyContinuousDamage(Entity target) {
+        if (target.invulnerableTime > 0) return false;
+        boolean hit = this.applyDamageOrHeal(target, this.getDamagePerHit());
+        if (hit) target.invulnerableTime = CONTINUOUS_HIT_INTERVAL;
+        return hit;
+    }
+
     public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder, int colorOutline) {
         this.setOwner(owner);
         this.setKiDamage(damage);

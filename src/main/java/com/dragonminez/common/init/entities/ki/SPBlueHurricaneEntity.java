@@ -3,7 +3,6 @@ package com.dragonminez.common.init.entities.ki;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -52,9 +51,11 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
         this.setNoGravity(true);
     }
 
+    private static final int FIRING_WINDOW = 140;
+
     @Override
     public int getMaxHits() {
-        return this.getMaxLife() / 20;
+        return Math.max(1, FIRING_WINDOW / CONTINUOUS_HIT_INTERVAL);
     }
 
     public void setupHurricane(LivingEntity owner, float damage, float speed, int castTime) {
@@ -187,7 +188,8 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
         for (LivingEntity target : targets) {
             if (shouldDamage(target) && !target.is(this.getOwner())) {
 
-                target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                // Damage is gated to ~1s pulses; the vortex pull still applies every call.
+                this.applyContinuousDamage(target);
 
                 double dx = this.getX() - target.getX();
                 double dz = this.getZ() - target.getZ();

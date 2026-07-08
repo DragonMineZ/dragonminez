@@ -170,20 +170,31 @@ public class SkillManager {
         }
     }
 
+    /**
+     * A volley (ki id 10 / 20) sprays many mini-blasts in random directions over its cast, so its
+     * total damage can't be bounded deterministically. We treat the per-bullet value as a fraction
+     * of a Weak-tier hit so a handful of connecting bullets lands around one tier's worth of damage.
+     */
+    private static final float VOLLEY_HIT_DIVISOR = 8.0F;
+
+    /**
+     * Total damage a ki skill deals, expressed as {@code stat * tier.multiplier}. Multi-instance
+     * skills divide that total across their hits (see {@link #executeSkillEffect} callers), so the
+     * value returned here is the per-hit amount.
+     */
     public static float getCalculatedDamage(int id, DBSagasEntity user) {
         float kiDmg = user.getKiBlastDamage();
         float meleeDmg = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE);
+
+        DBSagasEntity.KiSkillType type = DBSagasEntity.KiSkillType.fromId(id);
+        float mult = type != null ? type.getTier().getDamageMultiplier() : DBSagasEntity.Tier.MEDIUM.getDamageMultiplier();
+
         return switch (id) {
-            case 6 -> 0.0F;
-            case 7 -> meleeDmg;
-            case 10, 11, 20 -> kiDmg / 4.0F;
-            case 12 -> meleeDmg * 3.0F;
-            case 13 -> kiDmg / 2.0F;
-            case 14 -> kiDmg * 1.5F;
-            case 15, 18 -> kiDmg * 2.0F;
-            case 17 -> kiDmg * 1.8F;
-            case 19 -> meleeDmg * 2.0F;
-            default -> kiDmg;
+            case 6 -> 0.0F;                             // Ki Barrier: defensive, no damage
+            case 7, 12, 19 -> meleeDmg * mult;          // Oozaru Roar / Blue Hurricane / Majin Candy: melee-scaled
+            case 13 -> kiDmg * mult / 3.0F;             // Triple Laser: 3 instances (ticks 10/20/30)
+            case 10, 20 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley: random spray, per-bullet
+            default -> kiDmg * mult;                    // every other ki skill: single ki-scaled hit
         };
     }
 

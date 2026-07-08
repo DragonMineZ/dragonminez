@@ -42,7 +42,7 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
 
     @Override
     public int getMaxHits() {
-        return this.getMaxLife() / 5;
+        return Math.max(1, (this.getMaxLife() + CONTINUOUS_HIT_INTERVAL - 1) / CONTINUOUS_HIT_INTERVAL);
     }
 
     public void setupOzaruFist(LivingEntity owner, float damage, float speed) {
@@ -104,11 +104,9 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
         List<Entity> targets = this.level().getEntities(this, hitbox, this::shouldDamage);
 
         for (Entity target : targets) {
-            if (this.tickCount % 5 == 0) {
-                if (this.applyDamageOrHeal(target, this.getKiDamage())) {
-                    this.onSuccessfulHit(target);
-                    this.applyStrikeStun(target);
-                }
+            if (this.applyContinuousDamage(target)) {
+                this.onSuccessfulHit(target);
+                this.applyStrikeStun(target);
             }
 
             double pullX = (owner.getX() - target.getX()) * 0.3D;
