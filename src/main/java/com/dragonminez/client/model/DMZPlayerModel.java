@@ -141,6 +141,18 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
                 if (!modelKey.isEmpty()) {
                     String customRaceGender = (raceConfig != null && raceConfig.getHasGender()) ? gender : "";
+                    if (modelKey.equals("finalbase")) {
+                        switch (race) {
+                            case "human", "saiyan":
+                                if (!isMale) return MAJIN_SLIM;
+                                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
+                                return BASE_DEFAULT;
+                            case "majin": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                            case "namekian": return BASE_DEFAULT;
+                            case "frostdemon": return FROST_DEMON;
+                            case "bioandroid": return BIO_ANDROID_PERFECT;
+                        }
+                    }
                     return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType, customRaceGender);
                 }
 
@@ -210,7 +222,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "janemba_super": return JANEMBA_SUPER;
 
             // FROSTDEMON
-            case "frostdemon": case "frostdemon_final": case "frostdemon_mecha":return FROST_DEMON;
+            case "frostdemon": case "frostdemon_final": case "frostdemon_mecha": return FROST_DEMON;
             case "frostdemon_second": return FROST_DEMON_SECOND;
             case "frostdemon_fifth": return FROST_DEMON_FIFTH;
             case "frostdemon_fp": return FROSTDEMON_BUFFED;

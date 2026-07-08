@@ -37,8 +37,19 @@ public class CombatConfig {
 	private Double enchantmentDamageReductionCap = 0.85;
 	private Double defenseDecayOnGuardBreak = 0.66;
 	private Double flatMitigationFactor = 0.10;
-	private Double flatMitigationMaxAbsorbFraction = 0.65;
+	private Double flatMitigationMaxAbsorbFraction = 0.70;
 	private Double defenseReductionScale = 0.15;
+
+	private Boolean enableAdaptativeDefenseMitigation = true;
+	private Double adaptativeMitigationParityRatio = 1.0;
+	private Double adaptativeMitigationParityValue = 0.20;
+	private Double adaptativeMitigationZeroRatio = 5.0;
+	private Double adaptativeDefenseMitigationCap = 0.70;
+
+	private Boolean cancelDamageEventIfMitigationTooHigh = true;
+	private Double cancelDamageMitigationThreshold = 3.0;
+
+	private Boolean accurateMobBattlePower = true;
 
 	private Boolean enableBlocking = true;
 	private Boolean enableParrying = true;
@@ -128,11 +139,43 @@ public class CombatConfig {
 	}
 
 	public double getFlatMitigationMaxAbsorbFraction() {
-		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.65;
+		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.70;
 	}
 
 	public double getDefenseReductionScale() {
 		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.15;
+	}
+
+	public boolean getEnableAdaptativeDefenseMitigation() {
+		return enableAdaptativeDefenseMitigation == null || enableAdaptativeDefenseMitigation;
+	}
+
+	public double getAdaptativeMitigationParityRatio() {
+		return adaptativeMitigationParityRatio != null ? Math.max(1.0E-4, adaptativeMitigationParityRatio) : 1.0;
+	}
+
+	public double getAdaptativeMitigationParityValue() {
+		return adaptativeMitigationParityValue != null ? Math.max(0.0, Math.min(1.0, adaptativeMitigationParityValue)) : 0.20;
+	}
+
+	public double getAdaptativeMitigationZeroRatio() {
+		return adaptativeMitigationZeroRatio != null ? Math.max(getAdaptativeMitigationParityRatio() + 1.0E-4, adaptativeMitigationZeroRatio) : 5.0;
+	}
+
+	public double getAdaptativeDefenseMitigationCap() {
+		return adaptativeDefenseMitigationCap != null ? Math.max(0.0, Math.min(1.0, adaptativeDefenseMitigationCap)) : 0.70;
+	}
+
+	public boolean getCancelDamageEventIfMitigationTooHigh() {
+		return cancelDamageEventIfMitigationTooHigh == null || cancelDamageEventIfMitigationTooHigh;
+	}
+
+	public double getCancelDamageMitigationThreshold() {
+		return cancelDamageMitigationThreshold != null ? Math.max(1.0, cancelDamageMitigationThreshold) : 3.0;
+	}
+
+	public boolean getAccurateMobBattlePower() {
+		return accurateMobBattlePower == null || accurateMobBattlePower;
 	}
 
 	public KiWeaponConfig getKiWeaponConfig(String type) {

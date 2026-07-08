@@ -61,6 +61,7 @@ public class CombatEvent {
 	public static final String DMZ_LAST_HIT_TARGET_ID_TAG = "dmz_last_hit_target_id";
 	public static final String DMZ_LAST_HIT_TARGET_TIME_TAG = "dmz_last_hit_target_time";
 
+	private static final double VANILLA_UNARMED_ATTACK_DAMAGE = 1.0;
 	private static final double HEALING_REDUCTION_CAP = 0.40;
 	private static final int HEALING_REDUCTION_DURATION_TICKS = 120;
 	private static final int PARRY_COMBO_STUN_TICKS = 30;
@@ -224,8 +225,10 @@ public class CombatEvent {
 
 				finalDmzDamage = dmzDamage * staminaRatio;
 
-				if (isEmptyHandOrNoDamageItem(attacker)) currentDamage[0] = finalDmzDamage;
-				else currentDamage[0] = baseDamage + finalDmzDamage;
+				if (isEmptyHandOrNoDamageItem(attacker)) {
+					double externalAttackBonus = Math.max(0.0, baseDamage - VANILLA_UNARMED_ATTACK_DAMAGE);
+					currentDamage[0] = finalDmzDamage + externalAttackBonus;
+				} else currentDamage[0] = baseDamage + finalDmzDamage;
 
 				double normalMeleeDamage = currentDamage[0];
 				double kiWeaponBonus = 0.0;
@@ -632,6 +635,8 @@ public class CombatEvent {
 				StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(stats -> {
 					boolean isGuardBroken = stats.getStatus().isStunEffect() && stats.getResources().getCurrentPoise() <= 0;
 					double postMitigation = stats.calculatePostMitigationDamage(rawDamage, isGuardBroken, defensePenetration);
+						// La defensa por sí sola absorbió el golpe entero (antes de bloqueo/parry/ki-protección).
+						boolean defenseFullyNegated = postMitigation <= 0.0;
 
 					if (victim.getPersistentData().contains("dmz_block_multiplier")) {
 						postMitigation *= victim.getPersistentData().getDouble("dmz_block_multiplier");
@@ -709,12 +714,39 @@ public class CombatEvent {
 								String.format("%.1f", dmzDebugMitigatedPct));
 					}
 
+					if (defenseFullyNegated && rawDamage > 0.0
+							&& ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()) {
+						applyFullNegation(victim);
+						event.setAmount(0.0f);
+						event.setCanceled(true);
+						return;
+					}
+
 					event.setAmount(finalDamage);
 				});
 
 				victim.getPersistentData().remove("dmz_raw_damage");
 				victim.getPersistentData().remove("dmz_defense_pen");
 			}
+		}
+	}
+
+	private static final Map<java.util.UUID, Long> LAST_NEGATION_SOUND_TICK = new HashMap<>();
+
+	private static void applyFullNegation(LivingEntity target) {
+		target.setDeltaMovement(Vec3.ZERO);
+		target.hasImpulse = true;
+		target.hurtMarked = true;
+		target.invulnerableTime = Math.max(target.invulnerableTime, 10);
+		target.hurtTime = 0;
+		target.hurtDuration = 0;
+
+		long gameTime = target.level().getGameTime();
+		Long last = LAST_NEGATION_SOUND_TICK.get(target.getUUID());
+		if (last == null || gameTime - last >= 20L) {
+			LAST_NEGATION_SOUND_TICK.put(target.getUUID(), gameTime);
+			target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+					MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		}
 	}
 
