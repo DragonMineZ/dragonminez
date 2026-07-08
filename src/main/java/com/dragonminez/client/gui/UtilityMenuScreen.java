@@ -94,6 +94,10 @@ public class UtilityMenuScreen extends ScaledScreen {
 	private double dragStartY = 0;
 	private double dragCurrentY = 0;
 
+	private static final long DOUBLE_CLICK_MS = 300L;
+	private RadialNode lastClickNode = null;
+	private long lastClickMs = 0L;
+
 	public UtilityMenuScreen() {
 		super(Component.literal("Menu").withStyle(Style.EMPTY.withFont(DMZ_FONT)));
 		this.openTime = System.currentTimeMillis();
@@ -725,8 +729,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 				int rel = rowIndexAt(rowsTop, uy);
 				int i = panelScroll + rel;
 				if (rel >= 0 && rel < visiblePanelRows() && i < panelOptions.size()) {
-					RadialNode row = panelOptions.get(i);
-					if (row.interactive(statsData)) row.onSelect(statsData);
+					selectNode(panelOptions.get(i));
 				}
 				return true;
 			}
@@ -756,7 +759,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 			return true;
 		}
 		if (node instanceof FormSelectNode form && form.interactive(statsData)) {
-			form.onSelect(statsData);
+			selectNode(form);
 			return true;
 		}
 		if (node != null && node.interactive(statsData) && !node.expandable(statsData)) {
@@ -774,6 +777,16 @@ public class UtilityMenuScreen extends ScaledScreen {
 		panelAngleDeg = hover.deepestAngleDeg;
 		panelLevel = hover.deepestLevel;
 		frozenHover = hover;
+	}
+
+	private void selectNode(RadialNode node) {
+		if (node == null || !node.interactive(statsData)) return;
+		long now = System.currentTimeMillis();
+		boolean doubleClick = node == lastClickNode && (now - lastClickMs) <= DOUBLE_CLICK_MS;
+		lastClickNode = node;
+		lastClickMs = doubleClick ? 0L : now;
+		if (doubleClick) node.onDoubleSelect(statsData);
+		else node.onSelect(statsData);
 	}
 
 	private void closePanel() {
@@ -802,8 +815,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 		if (panelOptions != null && !panelScrollable && dragIndex >= 0) {
 			double uy = toUiY(mouseY);
 			if (!dragging) {
-				RadialNode row = panelOptions.get(dragIndex);
-				if (row.interactive(statsData)) row.onSelect(statsData);
+				selectNode(panelOptions.get(dragIndex));
 			} else {
 				int[] b = panelBounds(getUiWidth() / 2f, getUiHeight() / 2f);
 				int rowsTop = b[1] + PANEL_TITLE_H;

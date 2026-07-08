@@ -46,6 +46,10 @@ public interface RadialNode {
 	default void onSelect(StatsData stats) {
 	}
 
+	default void onDoubleSelect(StatsData stats) {
+		onSelect(stats);
+	}
+
 	default String orderKey() {
 		return "";
 	}
