@@ -1996,6 +1996,8 @@
   "command.dragonminez.halo.on.multiple": "§e[DMZ-Halo]§r Halo enabled for %d players.",
   "command.dragonminez.halo.off.success": "§e[DMZ-Halo]§r Halo disabled for %s",
   "command.dragonminez.halo.off.multiple": "§e[DMZ-Halo]§r Halo disabled for %d players.",
+  "command.dragonminez.hair.resync": "§e[DMZ-Hair]§r Re-synced hair for %d player(s).",
+  "command.dragonminez.hair.reset": "§e[DMZ-Hair]§r Reset hair to race default for %d player(s).",
   "command.dragonminez.bonus.add.success": "§e[DMZ-Bonus]§r Added bonus '%s' to %s for %s",
   "command.dragonminez.bonus.add.multiple": "§e[DMZ-Bonus]§r Added bonus '%s' to %d players for %s",
   "raid.dragonminez.saiyan_assault": "Saiyan Assault",

@@ -151,6 +151,10 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> HALO_SELF = register("dmzhalo.self", "Allows toggling your own halo.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> HALO_OTHERS = register("dmzhalo.others", "Allows toggling other players' halos.", (player, uuid, context) -> false);
 
+	// Hair
+	public static final PermissionNode<Boolean> HAIR_SELF = register("dmzhair.self", "Allows resyncing/resetting your own hair.", (player, uuid, context) -> true);
+	public static final PermissionNode<Boolean> HAIR_OTHERS = register("dmzhair.others", "Allows resyncing/resetting other players' hair.", (player, uuid, context) -> false);
+
 	public static void init() {}
 
 	private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {

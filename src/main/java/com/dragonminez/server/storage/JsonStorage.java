@@ -5,9 +5,12 @@ import com.dragonminez.LogUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.server.ServerLifecycleHooks;
@@ -48,6 +51,15 @@ public class JsonStorage implements IDataStorage {
 
 		try (Reader reader = Files.newBufferedReader(file)) {
 			JsonElement json = GSON.fromJson(reader, JsonElement.class);
+			if (json == null) return null;
+
+			if (json.isJsonObject()) {
+				JsonObject obj = json.getAsJsonObject();
+				if (obj.has("data") && obj.has("format") && "snbt".equals(obj.get("format").getAsString())) {
+					return TagParser.parseTag(obj.get("data").getAsString());
+				}
+			}
+
 			return (CompoundTag) JsonOps.INSTANCE.convertTo(NbtOps.INSTANCE, json);
 		} catch (Exception e) {
 			LogUtil.error(Env.SERVER, "Failed to load JSON data for " + playerUUID, e);
@@ -61,8 +73,12 @@ public class JsonStorage implements IDataStorage {
 
 		Path file = storageDir.resolve(playerUUID.toString() + ".json");
 		try (Writer writer = Files.newBufferedWriter(file)) {
-			JsonElement json = NbtOps.INSTANCE.convertTo(JsonOps.INSTANCE, data);
-			GSON.toJson(json, writer);
+			// Store the raw NBT as SNBT to preserve exact tag types (numbers, lists, nested compounds
+			// like the hair strands). The lossy NbtOps<->JsonOps round-trip could silently mangle them.
+			JsonObject wrapper = new JsonObject();
+			wrapper.addProperty("format", "snbt");
+			wrapper.addProperty("data", NbtUtils.structureToSnbt(data));
+			GSON.toJson(wrapper, writer);
 			return true;
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Failed to save JSON data for " + playerName, e);
