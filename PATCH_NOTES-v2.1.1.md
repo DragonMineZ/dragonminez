@@ -45,6 +45,12 @@
 
 *(by @yuseix300)*
 
+### Masters
+
+- **Form Skills for Masters:** Master NPCs can now teach skills linked to specific transformation forms. Their skill list in both the Master Skills screen and the character Skills Menu now includes form-specific skill entries, letting players unlock and train form abilities directly through a master's teaching interface. Race character configs now support a dedicated form-skill section, and the server correctly handles the level 0→1 unlock transition for these form-linked skills.
+
+*(by @Shokkoh)*
+
 ---
 
 ## Story & Quests
@@ -225,8 +231,10 @@
 
 *(by @Shokkoh)*
 
-### Ozaru Fist & Dragon Fist Damage
-- Corrected the damage values for Ozaru Fist and Dragon Fist attacks.
+### Ozaru Fist & Dragon Fist — Rework & Fixes
+- Corrected initial damage values for Ozaru Fist and Dragon Fist attacks.
+- **OozaruFist** received a complete rework — the `StrikeAttackHandler` logic for the attack was rebuilt from scratch with substantially revised timing, hitbox handling, and attack application flow.
+- **DragonFist** received additional fixes to its entity behavior (`SPDragonFistEntity`) and the strike execution pipeline, improving consistency and damage application.
 
 *(by @yuseix300)*
 
@@ -253,6 +261,44 @@
 
 ### Drain Scaling — Bonus Stats Excluded
 - Ki and energy drain scaling now correctly ignores bonus stat values when calculating drain rates. Previously, bonus stats (from gear, effects, or passive abilities) were factored into drain, causing inflated consumption.
+
+*(by @Shokkoh)*
+
+### Battle Power Formula — VIT & ENE Now Included
+
+- VIT (Vitality) and ENE (Energy) stats now contribute to Battle Power at **50% weight** alongside the existing STR, SKP, DEF, and PWR contributions. Support stats factor in proportionally without overshadowing offensive contributors, making high-VIT and high-ENE builds reflect more accurately in BP display and combat scaling.
+
+*(by @Shokkoh)*
+
+### Battle Power — Accurate Mob Formula
+
+- Non-DMZ mobs (vanilla Minecraft entities, animals, and mobs from other mods) now have their Battle Power calculated using an accurate formula based on their actual entity attributes: **max health, attack damage, armor, armor toughness, ki/ranged damage, and movement speed**. Previously all non-player entities used the naive `health + attack × 5` estimate, which grossly underestimated many modded or high-stat enemies.
+- The new `MobBattlePowerHelper` class handles this calculation and is automatically skipped for DMZ-managed entities, which continue to use the native DMZ BP system.
+- The `accurateMobBattlePower` combat config option (default `true`) can disable the accurate formula if needed.
+- Config version updated to **2.1.2** to reflect these and the defense system additions.
+
+*(by @Shokkoh)*
+
+### Adaptive Defense Mitigation
+
+- A new final reduction layer — **Adaptive Defense Mitigation** — is applied after all flat, power-divider, and enchantment reductions. When incoming damage is at or below your effective defense level, an additional proportional reduction is applied. The closer the damage-to-defense ratio is to 1:1 (parity), the stronger this layer; it decays to zero as incoming damage significantly exceeds defense. Default cap: **70%**.
+- When raw flat mitigation equals or exceeds **3× the incoming damage** (configurable via `cancelDamageMitigationThreshold`, default 3.0), the hit is **fully negated** — the damage event is cancelled and a brief block-impact sound plays.
+- `flatMitigationMaxAbsorbFraction` further raised from **0.65 → 0.70**.
+- New combat config fields: `enableAdaptativeDefenseMitigation`, `adaptativeMitigationParityRatio`, `adaptativeMitigationParityValue`, `adaptativeMitigationZeroRatio`, `adaptativeDefenseMitigationCap`, `cancelDamageEventIfMitigationTooHigh`, `cancelDamageMitigationThreshold`.
+
+*(by @Shokkoh)*
+
+### Zenkai & Assimilation Boosts Nerfed
+
+- The default bonus multipliers for **Saiyan Zenkai** (the HP-scaling power boost earned after recovering from near-death) and **BioAndroid Assimilation** (the damage boost from absorbing enemies) have been reduced in the server config defaults. Existing configs that have already been generated will retain the old values until manually updated or reset via `/dmzrestoreupdate`.
+
+*(by @Shokkoh)*
+
+### Story Boss & Enemy AI — Skills Rebalanced
+
+- Saga enemy AI for skill usage and combo execution has been substantially overhauled. `ComboManager` and `SkillManager` now apply improved timing windows and selection criteria, preventing bosses from spamming certain abilities while ignoring others.
+- Special ki attack entities used by story bosses have been tuned: **Blue Hurricane, Dragon Fist, OozaruFist, and Majin Candy** projectile and strike behaviors adjusted for fairer, more consistent encounters.
+- `DBSagasEntity` skill dispatch logic received a major overhaul — AI decisions are now better gated by cooldowns and health thresholds.
 
 *(by @Shokkoh)*
 
@@ -696,6 +742,63 @@
 
 ### Form Free-Transform Config — API Change *(Addon/Developer API)*
 - The `canAlwaysTransform` and `directTransformationIfUsed` / `directTransformIfUsedOnMastery` form JSON config fields have been **removed** and replaced by the single `allowFreeTransformOnMastery` field. Set to `0.0` (or omit) for forms that are always freely accessible from the radial menu; set to a mastery percentage value for forms that require reaching that threshold first. Addons using the old fields must migrate to `allowFreeTransformOnMastery` — the old fields are no longer read.
+
+*(by @Shokkoh)*
+
+### Hair Editor — Mirror & Sliders
+- Fixed the mirror functionality and axis sliders in the Hair Editor screen not working correctly. Slider interactions are now properly registered and mirror mode correctly propagates symmetrical changes to the opposite side.
+
+*(by @Shokkoh)*
+
+### Ki Attack Position — Additional Fixes
+- Fixed the origin position of ki attacks during certain gameplay states. `TechniqueDispatcher` now correctly resolves attack origins when firing or dispatching techniques from flight or transitional movement states. Ki Laser entity behavior was also corrected to track caster movement more accurately.
+
+*(by @yuseix300)*
+
+### Sparks Sound Effects
+- Fixed clash spark sound effects not playing correctly under certain combat conditions.
+
+*(by @yuseix300)*
+
+### Explosion Density
+- Fixed particle density on Ki Blast and Ki Wave explosions appearing too sparse or too dense under certain conditions.
+
+*(by @yuseix300)*
+
+### Capsule Corp Villager — Zombie Texture
+- Added the missing zombie villager texture for the Capsule Corp Assistant profession. CC Villagers that are turned into zombies now display the correct zombified texture.
+
+*(by @yuseix300)*
+
+### Entity Spawning & Namek Warrior Crash
+- Fixed biome modifier data for several entity groups — dinosaurs, robots, sabertooth tigers, and saibamans — that were not spawning in their intended biomes due to incorrect modifier configuration.
+- Fixed a server crash triggered by the Namek Warrior entity under certain initialization conditions.
+- Sacred Kai dimension monster data was also updated.
+
+*(by @Shokkoh)*
+
+### Keybind Handling — Additional Fixes
+- Fixed several keybind detection and handling issues in `ClientStatsEvents` and `KeyBinds`. Technique hotbar keybind registration was corrected to properly detect and respond to configured key combinations.
+
+*(by @Shokkoh)*
+
+### Flight + Attack Movement Lock
+- Fixed players being able to freely move while charging or firing ki attacks during flight. Player movement is now correctly locked when using attacks mid-fly, preventing unintended repositioning during attack animations and charge phases.
+
+*(by @Shokkoh)*
+
+### Dragon Ball Radar — Sync Fixes
+- Fixed the Dragon Ball radar failing to update reliably after dimension changes or certain server-side events. Added a delayed sync mechanism and additional sync triggers in the server-side `DragonBallsHandler` so the radar display stays accurate when ball positions change.
+
+*(by @Shokkoh)*
+
+### Racial Skill Display on X Menu
+- Fixed racial skill action nodes not displaying correctly in the radial X utility menu.
+
+*(by @Shokkoh)*
+
+### Saga Enemy Party Scaling
+- Fixed party player count scaling not correctly applying to saga boss encounter stats under certain conditions.
 
 *(by @Shokkoh)*
 
