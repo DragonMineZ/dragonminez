@@ -140,6 +140,14 @@ public class TickHandler {
 				}
 			}
 
+            boolean flyingSkillActive = data.getSkills().isSkillActive("fly");
+            if (flyingSkillActive && serverPlayer.getDeltaMovement().y < 0.0D
+                    && !TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data)) {
+                serverPlayer.setDeltaMovement(serverPlayer.getDeltaMovement().x, 0.0D, serverPlayer.getDeltaMovement().z);
+                serverPlayer.resetFallDistance();
+                serverPlayer.hasImpulse = true;
+            }
+
 			if (!isStunned) handleTechniqueCharge(serverPlayer, data);
 
 			boolean shouldRegen = tickCounter >= REGEN_INTERVAL && !serverPlayer.isDeadOrDying();
@@ -217,8 +225,10 @@ public class TickHandler {
 				}
 
 				serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", true);
-			} else if (wasExecuting) {
-				serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+			} else {
+
+
+				if (wasExecuting) serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
 			}
 
 			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();

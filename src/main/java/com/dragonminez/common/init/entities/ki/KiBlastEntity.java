@@ -1120,7 +1120,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         if ((type == 5 || type == 6) && !this.level().isClientSide) {
             this.isDetonating = true;
-            this.maxDetonationRadius = (this.getSize() / 2.0F) * 4.5F;
+            this.maxDetonationRadius = (this.getSize() / 2.0F) * 5.0F;
             this.currentDetonationRadius = 0.0F;
             this.setDeltaMovement(0, 0, 0);
 
@@ -1150,7 +1150,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             return;
         }
 
-        float explosionRadius = (this.getSize() / 2.0F) * 2.2F;
+        float explosionRadius = (this.getSize() / 2.0F) * 3.0F;
         float visualParticleSize = explosionRadius * 1.8F;
 
         AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(explosionRadius);
@@ -1235,7 +1235,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private boolean destroyBlocksInPath() {
         boolean hitSomething = false;
-        float eatRadius = this.scaledDestructionRadius(this.getSize() * 1.4f);
+        float eatRadius = this.scaledDestructionRadius(this.getSize() * 2.0f);
         int bRad = Math.round(eatRadius);
         BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
         Level level = this.level();

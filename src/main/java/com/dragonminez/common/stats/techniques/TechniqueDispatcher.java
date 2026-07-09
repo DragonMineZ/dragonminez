@@ -173,12 +173,18 @@ public class TechniqueDispatcher {
                 break;
             case LASER:
                 KiLaserEntity laser = new KiLaserEntity(level, owner);
-                laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior());
-                laser.setColorOutline(data.getColorOutline());
+                if ("death_beam".equals(data.getId())) {
+                    laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), 0xFF59FF, 0xD859FF);
+                    laser.setColorOutline(0x9238F2);
+                } else {
+                    laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior());
+                    laser.setColorOutline(data.getColorOutline());
+                }
                 laser.setKiType(kiTypeOrdinal);
                 laser.setTechniqueId(data.getId());
                 laser.setArmorPenetration(data.getArmorPenetration());
                 laser.setHeal(isHeal);
+
                 if (!level.isClientSide) level.addFreshEntity(laser);
                 break;
             case BEAM:
@@ -265,8 +271,16 @@ public class TechniqueDispatcher {
                 break;
             case EXPLOSION:
                 KiExplosionEntity explosion = new KiExplosionEntity(level, owner);
-                explosion.setupExplosionPlayer(owner, realDamage, data.getSize(), data.getColorInterior(), data.getColorExterior());
-                explosion.setColorOutline(data.getColorOutline());
+
+                if ("final_explosion".equals(data.getId())) {
+                    explosion.setupExplosionPlayer(owner, realDamage, data.getSize(), 0xFFFA99, 0xFCF56A);
+                    explosion.setColorOutline(0xFFFFFC);
+                } else {
+                    explosion.setupExplosionPlayer(owner, realDamage, data.getSize(), data.getColorInterior(), data.getColorExterior());
+                    explosion.setColorOutline(data.getColorOutline());
+                }
+
+
                 explosion.setKiType(kiTypeOrdinal);
                 explosion.setTechniqueId(data.getId());
                 explosion.setArmorPenetration(data.getArmorPenetration());
@@ -390,21 +404,32 @@ public class TechniqueDispatcher {
 		return null;
 	}
 
-	private static boolean hasOwnedProjectileWithRestriction(Player player, boolean movementRestriction) {
-		List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
-		for (AbstractKiProjectile ki : projectiles) {
-			if (ki.getOwner() == null || !ki.getOwner().getUUID().equals(player.getUUID())) continue;
-			if (isProjectileRestrictedType(ki.getKiType(), movementRestriction)) return true;
-		}
-		return false;
-	}
+    private static boolean hasOwnedProjectileWithRestriction(Player player, boolean movementRestriction) {
+        List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
+        for (AbstractKiProjectile ki : projectiles) {
+            if (ki.getOwner() == null || !ki.getOwner().getUUID().equals(player.getUUID())) continue;
+            if (isProjectileRestrictedType(ki.getKiType(), movementRestriction)) return true;
+            // Lock the caster's position while actively firing a *technique* attack that is still anchored
+            // to them (continuous beams, on-body area/barrier, and the launch instant of thrown attacks).
+            // Scoped to movement only, and released as soon as the shot flies off (distance grows) — so it
+            // is "only while firing". Excludes the basic ki blast, which carries no technique id.
+            // Excludes LASER: it's an instant, stationary beam meant to be fired freely without pinning the caster.
+            if (movementRestriction && ki.isFiring()
+                    && ki.getKiType() != AbstractKiProjectile.KiType.LASER
+                    && ki.getTechniqueId() != null && !ki.getTechniqueId().isEmpty()
+                    && ki.distanceToSqr(player) <= 9.0D) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 	private static boolean isChargingRestrictedTechniqueType(KiAttackData.KiType kiType, boolean movementRestriction) {
 		if (kiType == null) return false;
 		return switch (kiType) {
 			case GIANT_BALL, WAVE, BEAM, EXPLOSION, BARRAGE -> true;
 			case SHIELD, AREA -> !movementRestriction;
-			case SMALL_BALL, MEDIUM_BALL, DISK, LASER -> false;
+			case SMALL_BALL, MEDIUM_BALL, LASER, DISK -> false;
 		};
 	}
 

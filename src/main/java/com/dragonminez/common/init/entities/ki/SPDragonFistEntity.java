@@ -115,9 +115,13 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
         this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
 
         if (currentTick < this.getMaxLife()) {
-            owner.setDeltaMovement(this.fixedDirection.scale(3.0D).add(0, 0.1D, 0));
+            owner.setDeltaMovement(this.fixedDirection.scale(2.5D).add(0, 0.1D, 0));
             owner.hasImpulse = true;
             owner.fallDistance = 0;
+
+            if (currentTick % 10 == 0) {
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+            }
 
             if (!this.level().isClientSide) {
                 devastateEnemies(owner, this.fixedDirection);
@@ -145,8 +149,9 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
                 }
             }
 
-            Vec3 pushVel = fixedDirection.scale(3.2D).add(0, 0.2D, 0);
-            target.setDeltaMovement(pushVel);
+            Vec3 holdPos = owner.position().add(fixedDirection.scale(2.5D));
+            target.setPos(holdPos.x, owner.getY(), holdPos.z);
+            target.setDeltaMovement(0, 0, 0);
             target.hasImpulse = true;
             target.fallDistance = 0;
         }

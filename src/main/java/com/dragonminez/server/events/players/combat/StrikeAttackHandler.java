@@ -1,10 +1,14 @@
 package com.dragonminez.server.events.players.combat;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
@@ -193,7 +197,20 @@ public class StrikeAttackHandler {
 		PENDING.put(player.getUUID(), pending.withTicksRemaining(pending.ticksRemaining() - 1));
 	}
 
-	private static void processActive(ServerPlayer player) {
+    private static void processActive(ServerPlayer player) {
+        try {
+            processActiveInternal(player);
+        } catch (Exception e) {
+            LogUtil.error(Env.SERVER, "Error procesando ActiveStrike de " + player.getName().getString() + ", forzando cierre", e);
+            ActiveStrike active = ACTIVE.get(player.getUUID());
+            if (active != null) {
+                LivingEntity target = resolveLiving(player, active.targetId());
+                endStrike(player, target, active);
+            }
+        }
+    }
+
+	private static void processActiveInternal(ServerPlayer player) {
 		ActiveStrike active = ACTIVE.get(player.getUUID());
 		if (active == null) return;
 
@@ -204,43 +221,110 @@ public class StrikeAttackHandler {
 			return;
 		}
 
-		if ("dragon_fist".equals(active.techniqueId())) {
-			if (active.ticksElapsed() == 0) {
-				faceStrikeTarget(player, target);
-			}
+        if ("dragon_fist".equals(active.techniqueId())) {
+            if (active.ticksElapsed() == 0) {
+                faceStrikeTarget(player, target);
+            }
 
-			if (active.ticksElapsed() == 5) {
-				SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
-				dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
-				dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
-			}
+            Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
+            double distance = 2.5;
+            target.setPos(player.getX() + lookVec.x * distance, player.getY(), player.getZ() + lookVec.z * distance);
+            target.setDeltaMovement(0, 0, 0);
+            target.hurtMarked = true;
 
-			if (active.ticksElapsed() >= active.durationTicks()) {
-				endStrike(player, target, active);
-			} else {
-				ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
-			}
-			return;
-		}
+            if (active.ticksElapsed() == 5) {
+                SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
+                dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
 
-		if ("oozaru_fist".equals(active.techniqueId())) {
-			if (active.ticksElapsed() == 0) {
-				faceStrikeTarget(player, target);
-			}
+                try {
+                    dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
+                } catch (Exception e) {
+                }
+            }
 
-			if (active.ticksElapsed() == 5) {
-				OzaruFistEntity ozaruFist = new OzaruFistEntity(player.level(), player);
-				ozaruFist.setupOzaruFist(player, (float) active.totalDamage(), 1.0f);
-				ozaruFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
-			}
+            if (active.ticksElapsed() >= active.durationTicks()) {
 
-			if (active.ticksElapsed() >= active.durationTicks()) {
-				endStrike(player, target, active);
-			} else {
-				ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
-			}
-			return;
-		}
+                if (!player.level().isClientSide) {
+                    try {
+                        KiExplosionVisualEntity explosion = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
+                        explosion.setPos(target.getX(), target.getY() + 1.0, target.getZ());
+                        explosion.setupExplosion(0xFFD700, 0xFF8C00, 5.0F);
+                        player.level().addFreshEntity(explosion);
+                    } catch (Exception e) {
+                    }
+                }
+
+                endStrike(player, target, active);
+            } else {
+                ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
+            }
+            return;
+        }
+
+        if ("oozaru_fist".equals(active.techniqueId())) {
+            int currentTick = active.ticksElapsed();
+
+            if (currentTick < 10) {
+                Vec3 lookDownPos = player.getEyePosition().add(0, -10.0, 0);
+                player.lookAt(EntityAnchorArgument.Anchor.EYES, lookDownPos);
+                player.setXRot(90.0F);
+
+                freezeEntity(player);
+                freezeEntity(target);
+            }
+
+            else if (currentTick == 10) {
+                Vec3 lookDownPos = player.getEyePosition().add(0, -10.0, 0);
+                player.lookAt(EntityAnchorArgument.Anchor.EYES, lookDownPos);
+                player.setXRot(90.0F);
+
+                KiWaveEntity kamehameha = new KiWaveEntity(player.level(), player);
+                kamehameha.setupKiHame(player, (float) active.totalDamage() * 0.2F, 2.0F, 0.5F, 5);
+                kamehameha.setFiring(true);
+                kamehameha.setMaxLife(15);
+
+                player.level().addFreshEntity(kamehameha);
+                player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_KAME_FIRE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
+            }
+
+            else if (currentTick > 10 && currentTick < 20) {
+                faceStrikeTarget(player, target);
+                freezeEntity(target);
+            }
+
+            else if (currentTick == 20) {
+                faceStrikeTarget(player, target);
+
+                player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.OOZARU_GROWL_PLAYER.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
+
+                OzaruFistEntity ozaruFist = new OzaruFistEntity(player.level(), player);
+                ozaruFist.setupOzaruFist(player, (float) active.totalDamage(), 1.0f);
+
+                try {
+                    ozaruFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
+                } catch (Exception e) {
+                }
+            }
+
+            if (currentTick >= active.durationTicks()) {
+
+                if (!player.level().isClientSide) {
+                    try {
+                        KiExplosionVisualEntity explosion = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
+                        explosion.setPos(target.getX(), target.getY() + 1.0, target.getZ());
+                        explosion.setupExplosion(0xFFFFFF, 0x73FFEE, 3.0F);
+                        player.level().addFreshEntity(explosion);
+                    } catch (Exception e) {
+                    }
+                }
+
+                endStrike(player, target, active);
+            } else {
+                ACTIVE.put(player.getUUID(), active.withTicksElapsed(currentTick + 1));
+            }
+            return;
+        }
+
 
 		if ("meteor".equals(active.techniqueId())) {
 			if (target instanceof ServerPlayer targetPlayer) {

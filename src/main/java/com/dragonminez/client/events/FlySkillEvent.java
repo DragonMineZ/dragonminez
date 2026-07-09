@@ -16,6 +16,7 @@ import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
@@ -241,7 +242,11 @@ public class FlySkillEvent {
 			boolean movementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStunned() || data.getStatus().isActionCharging();
 
 			if (isFlying) {
-				if (isCombatFly) {
+				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data)) {
+					flightVector = Vec3.ZERO;
+					player.setDeltaMovement(0.0D, 0.0D, 0.0D);
+					player.fallDistance = 0F;
+				} else if (isCombatFly) {
 					if (pendingFlightDisable) {
 						pendingFlightDisable = false;
 						NetworkHandler.sendToServer(new FlyToggleC2S(false));
