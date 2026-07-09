@@ -226,6 +226,12 @@ public class StrikeAttackHandler {
                 faceStrikeTarget(player, target);
             }
 
+            Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
+            double distance = 2.5;
+            target.setPos(player.getX() + lookVec.x * distance, player.getY(), player.getZ() + lookVec.z * distance);
+            target.setDeltaMovement(0, 0, 0);
+            target.hurtMarked = true;
+
             if (active.ticksElapsed() == 5) {
                 SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
                 dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
@@ -233,12 +239,21 @@ public class StrikeAttackHandler {
                 try {
                     dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
                 } catch (Exception e) {
-                    LogUtil.error(Env.SERVER, "Fallo al aplicar stun en SPDragonFistEntity (target="
-                            + active.targetId() + ", técnica=" + active.techniqueId() + ")", e);
                 }
             }
 
             if (active.ticksElapsed() >= active.durationTicks()) {
+
+                if (!player.level().isClientSide) {
+                    try {
+                        KiExplosionVisualEntity explosion = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
+                        explosion.setPos(target.getX(), target.getY() + 1.0, target.getZ());
+                        explosion.setupExplosion(0xFFD700, 0xFF8C00, 5.0F);
+                        player.level().addFreshEntity(explosion);
+                    } catch (Exception e) {
+                    }
+                }
+
                 endStrike(player, target, active);
             } else {
                 ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
