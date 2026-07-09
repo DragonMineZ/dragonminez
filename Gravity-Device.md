@@ -31,6 +31,7 @@ The device checks the room by **flood-filling outward** from itself in every dir
 
 ### Example:
 
+<img width="1148" height="646" alt="Captura de pantalla 2026-07-09 150534" src="https://github.com/user-attachments/assets/3595b1a2-b8a2-438c-be62-f8341db2601a" />
 
 ## Using it with Weights
 
