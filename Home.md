@@ -4,6 +4,8 @@ Welcome to the DragonMineZ wiki — the reference for **how the mod works**, **h
 
 Use the sidebar to browse everything, or jump into a section below.
 
+<img width="1002" height="294" alt="endofz" src="https://github.com/user-attachments/assets/ab73d73d-1e2e-4185-881c-66c1175bcd06" />
+
 ---
 
 ## 🐉 DMZ Systems — how the mod works
