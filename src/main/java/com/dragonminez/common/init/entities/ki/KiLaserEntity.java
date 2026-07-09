@@ -214,6 +214,18 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setFireTick(this.tickCount);
         if (this.getOwner() instanceof LivingEntity livingOwner) {
             updatePositionRelativeToOwner(livingOwner);
+            // TEMP DEBUG: diagnose laser spawn height during custom flight. Remove after fixing.
+            if (!this.level().isClientSide) {
+                System.out.println("[DMZ-LASER] side=" + (this.level().isClientSide ? "CLIENT" : "SERVER")
+                        + " renderType=" + this.getKiRenderType()
+                        + " ownerY=" + String.format("%.3f", livingOwner.getY())
+                        + " eyeY=" + String.format("%.3f", livingOwner.getEyeY())
+                        + " bbH=" + String.format("%.3f", livingOwner.getBbHeight())
+                        + " laserY=" + String.format("%.3f", this.getY())
+                        + " laserPos=(" + String.format("%.2f", this.getX()) + "," + String.format("%.2f", this.getY()) + "," + String.format("%.2f", this.getZ()) + ")"
+                        + " xRot=" + String.format("%.1f", livingOwner.getXRot())
+                        + " fixedPitch=" + String.format("%.1f", this.getFixedPitch()));
+            }
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 0.4F, 1.0F + (this.random.nextFloat() * 0.2F));
         }
 
@@ -381,8 +393,9 @@ public class KiLaserEntity extends AbstractKiProjectile{
                 fireOffsetY = 0.5F;
                 fireOffsetZ = 0.6F;
             } else {
-                fireOffsetX = 0.0F;
-                fireOffsetY = 0.1F;
+                fireOffsetX = 0.1F;
+                fireOffsetY = 0.5F;
+                fireOffsetZ = 0.6F;
             }
 
             offset = right.scale(fireOffsetX)
