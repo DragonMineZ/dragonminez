@@ -30,8 +30,8 @@ These are the "abilities" that quietly modify your combat (bought and leveled li
 | :-- | :-- |
 | **Ki Boost** | **+25% ki regen per level** while actively charging ki (4 levels). |
 | **Ki Manipulation** | Increases ki-blast damage (**+5% per level**); at level 5+ enables ki weapons and shadow-dummy sparring. |
-| **Ki Infusion** | Infuses your melee strikes with extra ki damage. |
-| **Ki Protection** | Reduces the ki damage you take. |
+| **Ki Infusion** | Adds bonus melee damage equal to **+2.5% of your max Ki per level** (10 levels, up to +25%), spending **2.5%–7.5% of max Ki per hit** (scales with level) — only triggers if you have enough Ki. |
+| **Ki Protection** | Reduces incoming damage by **1% per level** (10 levels, up to 10%), at a Ki cost of **50% of the (pre-reduction) damage blocked** — only triggers if you have enough Ki. |
 | **Defense Penetration** | Ignores **2.5% of enemy defense per level**. |
 | **Healing Reduction** | Your hits reduce the target's healing by **2% per level**. |
 
@@ -53,7 +53,7 @@ Every race has a **racial skill** — its signature ability. Some are **always-o
 
 | Race | Racial ability | How to use | Limit |
 | :-- | :-- | :-- | :-- |
-| **Human** | **Ki Regen Boost** (×1.40 ki regen) | Always-on passive. | — |
+| **Human** | **Blood-Fueled Ki** — ki attacks cost **25% less Ki**, drawing the difference from your **HP** (12.5% of the original cost) and adding that drained HP as **bonus flat damage** on the attack's first hit. As an **Android**, the discount rises to 50% and ki regen doubles, but ki attacks deal 15% less damage (and the HP-drain/bonus-damage part no longer applies) | Always-on passive; triggers on ki attack charge/fire. | — |
 | **Frost Demon** | **Training Boost** (×1.25 TP gain) | Always-on passive. | — |
 | **Saiyan** | **Zenkai** — permanent **+10% STR/SKP/PWR** and 20% heal | Triggers automatically when you **recover from near death**. 900s cooldown between gains. | **3 times** |
 | **Namekian** | **Assimilation** — permanent **+15% STR/SKP/PWR** and 35% heal | Activate the racial skill, then **absorb another Namekian** (player or, optionally, Namek NPC). Namekians also regenerate. | **4 times** |

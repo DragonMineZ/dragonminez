@@ -21,7 +21,7 @@ Players themselves pick from the appearance options above in the character-creat
 
 ## Human
 
-- **Racial skill — Ki Regeneration Boost:** passive **×1.40 ki regen**.
+- **Racial skill — Blood-Fueled Ki:** always-on passive. Ki attacks cost **25% less Ki**, but the ki you save is drawn from your **health** instead (**12.5%** of the original ki cost, as flat HP loss); that drained HP is then added back as **bonus flat damage** on the attack's first hit. No cooldown — it applies continuously whenever you charge/fire a ki attack.
 - **Hair:** yes (selectable hairstyles).
 - **Gender:** yes.
 - **Default body type:** 0 (uses the player's Minecraft skin + extra body types, per gender).
@@ -33,7 +33,7 @@ Humans (and **only** humans) can convert into **Androids** — a **sub-race** of
 
 - **It is permanent.** Once you become an Android you **cannot revert** to a normal human.
 - **Different transformations.** As an Android you lose access to the human **Super forms** and **Legendary forms**, and instead gain the **Android forms** line (Android Base → Super Android → Fused Android). A normal human has the opposite: Super/Legendary forms but no Android forms.
-- Being an Android also changes how your ki works (e.g. boosted energy regen and reduced ki costs). See [[Transformations & Mastery|Transformations-and-Mastery]].
+- **Blood-Fueled Ki upgrades:** the Ki discount rises to **50%**, all **Ki regeneration is doubled**, but ki attacks deal **15% less damage** — and the HP-drain/bonus-damage part of the passive no longer applies. See [[Transformations & Mastery|Transformations-and-Mastery]].
 
 ## Saiyan
 
