@@ -45,8 +45,8 @@ public class TechniqueHotbarHUD {
 
 		KeyModifier bar1Mod = KeyBinds.TECHNIQUE_SLOTS[0].getKeyModifier();
 		KeyModifier bar2Mod = KeyBinds.TECHNIQUE_SLOTS[BAR_SLOTS].getKeyModifier();
-		boolean bar1Held = KeyBinds.isModifierActive(bar1Mod);
-		boolean bar2Held = KeyBinds.isModifierActive(bar2Mod);
+		boolean bar1Held = KeyBinds.isBarModifierActive(bar1Mod);
+		boolean bar2Held = KeyBinds.isBarModifierActive(bar2Mod);
 
 		int baseSlot;
 		if (bar2Held && bar2Mod != bar1Mod) baseSlot = BAR_SLOTS;
