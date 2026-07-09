@@ -3,13 +3,13 @@
   "biomes": "#dragonminez:has_sabertooth",
   "spawners": [{
     "type": "dragonminez:sabertooth",
-    "weight": 10,
+    "weight": 8,
     "minCount": 1,
-    "maxCount": 4
+    "maxCount": 2
   },{
     "type": "dragonminez:bandit",
-    "weight": 5,
+    "weight": 4,
     "minCount": 1,
-    "maxCount": 3
+    "maxCount": 2
   }]
 }

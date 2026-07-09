@@ -47,7 +47,7 @@ public class CombatConfig {
 	private Double adaptativeDefenseMitigationCap = 0.70;
 
 	private Boolean cancelDamageEventIfMitigationTooHigh = true;
-	private Double cancelDamageMitigationThreshold = 3.0;
+	private Double cancelDamageMitigationThreshold = 2.5;
 
 	private Boolean accurateMobBattlePower = true;
 
