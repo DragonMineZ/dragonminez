@@ -52,8 +52,8 @@ Training under gravity stacks with weights:
 - Gravity also grants a **flat TP bonus** (+2.5% per gravity by default) and a small **mastery bonus** (+0.25% per gravity).
 - Heavier load also increases your **stamina/energy drain** while worn.
 
-So the strongest training setup is **weights + a Gravity Device / the Hyperbolic Time Chamber**, kept in (or just into) the ideal zone.
+So the strongest training setup is **weights + a Gravity Device / the Hyperbolic Time Chamber**, kept in (or just into) the ideal zone. For how to build and use the machine itself, see [[Gravity Device|Gravity-Device]].
 
 ---
 
-Related: [[Training Points & Mastery|Training-Points-and-Mastery]] · [[Gravity System|Gravity-System]] · [[Hyperbolic Time Chamber|Dimension-Hyperbolic-Time-Chamber]] · [[Stats & Attributes|Stats-and-Attributes]] · [[Masters|Structures]] · [[Commands|Commands]]
+Related: [[Gravity Device|Gravity-Device]] · [[Training Points & Mastery|Training-Points-and-Mastery]] · [[Gravity System|Gravity-System]] · [[Hyperbolic Time Chamber|Dimension-Hyperbolic-Time-Chamber]] · [[Stats & Attributes|Stats-and-Attributes]] · [[Masters|Structures]] · [[Commands|Commands]]

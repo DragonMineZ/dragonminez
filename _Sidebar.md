@@ -13,6 +13,7 @@
    * [[Transformations & Mastery|Transformations-and-Mastery]]
    * [[Training Points & Mastery|Training-Points-and-Mastery]]
    * [[Weights|Weights]]
+     * [[Gravity Device|Gravity-Device]]
 2. World
    * [[Dimensions|Dimensions]]
      * [[Planet Namek|Dimension-Namek]]
