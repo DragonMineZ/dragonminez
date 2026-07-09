@@ -4,6 +4,8 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -52,8 +54,6 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
         this.setMaxLife(30);
         this.setKiDamage(damage);
 
-        // Spawn the entity at the owner's position so it is tracked/synced correctly from tick 0.
-        // Without this it is added at (0,0,0), outside client tracking range, and never reaches the client.
         this.setPos(owner.getX(), owner.getY(), owner.getZ());
         this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
 
@@ -103,6 +103,8 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
         AABB hitbox = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
         List<Entity> targets = this.level().getEntities(this, hitbox, this::shouldDamage);
 
+        double holdHeight = 2.0D;
+
         for (Entity target : targets) {
             if (this.tickCount % 5 == 0) {
                 if (this.applyDamageOrHeal(target, this.getKiDamage())) {
@@ -111,12 +113,8 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
                 }
             }
 
-            double pullX = (owner.getX() - target.getX()) * 0.3D;
-            double pullZ = (owner.getZ() - target.getZ()) * 0.3D;
-
-            double pushY = upwardForce * 1.1D;
-
-            target.setDeltaMovement(pullX, pushY, pullZ);
+            target.setPos(owner.getX(), owner.getY() + holdHeight, owner.getZ());
+            target.setDeltaMovement(0, upwardForce, 0);
             target.hasImpulse = true;
             target.fallDistance = 0;
         }
@@ -136,7 +134,7 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
 
             float scale = 3.0f + this.random.nextFloat() * 2.0f;
 
-            net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+            Particle p = Minecraft.getInstance().particleEngine.createParticle(
                     MainParticles.KI_TRAIL.get(),
                     this.getX() + dx, this.getY() + dy, this.getZ() + dz,
                     vx, vy, vz
