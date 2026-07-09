@@ -87,14 +87,21 @@ public class SoundClientHandler {
             long nextPlayTime = LIGHTNING_TIMERS.getOrDefault(playerId, 0L);
 
             if (currentTime >= nextPlayTime) {
-                float volume = 0.2F;
+                float volume = 0.3F;
                 float pitch = 0.9F + player.getRandom().nextFloat() * 0.2F;
 
-                mc.level.playSound(null, player.getX(), player.getY(), player.getZ(),
+//                mc.level.playSound(null, player.getX(), player.getY(), player.getZ(),
+//                        MainSounds.KI_SPARKS.get(),
+//                        SoundSource.PLAYERS,
+//                        volume,
+//                        pitch);
+
+                mc.level.playLocalSound(player.getX(), player.getY(), player.getZ(),
                         MainSounds.KI_SPARKS.get(),
                         SoundSource.PLAYERS,
                         volume,
-                        pitch);
+                        pitch,
+                        false);
 
                 LIGHTNING_TIMERS.put(playerId, currentTime + 60L);
             }
