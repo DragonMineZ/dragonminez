@@ -13,6 +13,7 @@ import com.dragonminez.common.network.C2S.FlyToggleC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.skills.Skill;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -237,6 +238,8 @@ public class FlySkillEvent {
 				lastFlightMode = flightMode;
 			}
 
+			boolean movementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStunned() || data.getStatus().isActionCharging();
+
 			if (isFlying) {
 				if (isCombatFly) {
 					if (pendingFlightDisable) {
@@ -246,8 +249,8 @@ public class FlySkillEvent {
 						resetFlightState();
 						return;
 					}
-					CombatFlightHandler.handle(player, data);
-				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"));
+					CombatFlightHandler.handle(player, data, movementRestricted);
+				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"), movementRestricted);
 				handleKiConsumption(player, data, flySkill);
 			} else if (!pendingFlightDisable) {
 				resetFlightState();
@@ -259,20 +262,20 @@ public class FlySkillEvent {
 		});
 	}
 
-	private static void handleFlightMovement(LocalPlayer player, int flyLevel) {
+	private static void handleFlightMovement(LocalPlayer player, int flyLevel, boolean movementRestricted) {
 		float flySpeedScale = getFlySpeedScale(player);
 		float levelMultiplier = 1.0F + (0.20F * flyLevel);
 		float maxNormalSpeed = NORMAL_MAX_SPEED * levelMultiplier * flySpeedScale;
 		float maxSprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale;
 
 		Minecraft mc = Minecraft.getInstance();
-		boolean isForward = mc.options.keyUp.isDown();
-		boolean isBack = mc.options.keyDown.isDown();
-		boolean isLeft = mc.options.keyLeft.isDown();
-		boolean isRight = mc.options.keyRight.isDown();
-		boolean isJump = mc.options.keyJump.isDown();
-		boolean isCrouch = mc.options.keyShift.isDown();
-		boolean isSprintingInput = player.isSprinting();
+		boolean isForward = !movementRestricted && mc.options.keyUp.isDown();
+		boolean isBack = !movementRestricted && mc.options.keyDown.isDown();
+		boolean isLeft = !movementRestricted && mc.options.keyLeft.isDown();
+		boolean isRight = !movementRestricted && mc.options.keyRight.isDown();
+		boolean isJump = !movementRestricted && mc.options.keyJump.isDown();
+		boolean isCrouch = !movementRestricted && mc.options.keyShift.isDown();
+		boolean isSprintingInput = !movementRestricted && player.isSprinting();
 
 		boolean hasInput = isForward || isBack || isLeft || isRight;
 
