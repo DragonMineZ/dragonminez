@@ -58,7 +58,9 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
         this.setPos(owner.getX(), owner.getY(), owner.getZ());
         this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
 
-        this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), MainSounds.OOZARU_FIST.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        // Bind the sound to the caster so it follows them instead of staying fixed at the launch
+        // position and fading as the player moves away.
+        this.level().playSound(null, owner, MainSounds.OOZARU_FIST.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
