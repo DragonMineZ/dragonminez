@@ -229,6 +229,28 @@ public class ModRenderTypes extends RenderType {
                     .setOverlayState(OVERLAY)
                     .createCompositeState(false)));
 
+    private static final Function<ResourceLocation, RenderType> SKIN_OVERLAY_CUTOUT = Util.memoize((pLocation) ->
+            create("dmz_skin_overlay_cutout", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, false, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_CUTOUT_NO_CULL_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, false, false))
+                    .setTransparencyState(NO_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .setLayeringState(POLYGON_OFFSET_LAYERING)
+                    .createCompositeState(true)));
+
+    private static final Function<ResourceLocation, RenderType> SKIN_OVERLAY_TRANSLUCENT = Util.memoize((pLocation) ->
+            create("dmz_skin_overlay_translucent", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, false, false))
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .setLayeringState(POLYGON_OFFSET_LAYERING)
+                    .createCompositeState(true)));
+
     private static final Function<ResourceLocation, RenderType> AURA_BILLBOARD = Util.memoize((pLocation) ->
             create("aura_billboard", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
                     .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
@@ -279,6 +301,8 @@ public class ModRenderTypes extends RenderType {
     public static RenderType energy(ResourceLocation pLocation) { return ENERGY.apply(pLocation); }
     public static RenderType energy2(ResourceLocation pLocation) { return ENERGY2.apply(pLocation); }
     public static RenderType auraBillboard(ResourceLocation pLocation) { return AURA_BILLBOARD.apply(pLocation); }
+    public static RenderType skinOverlayCutout(ResourceLocation pLocation) { return SKIN_OVERLAY_CUTOUT.apply(pLocation); }
+    public static RenderType skinOverlayTranslucent(ResourceLocation pLocation) { return SKIN_OVERLAY_TRANSLUCENT.apply(pLocation); }
     public static RenderType lightning(ResourceLocation pLocation) { return LIGHTNING.apply(pLocation); }
     public static RenderType kiblast(ResourceLocation pLocation) { return KI_BLAST.apply(pLocation); }
     public static RenderType ki_rendertype(ResourceLocation pLocation) { return KI_RENDERTYPE.apply(pLocation); }
