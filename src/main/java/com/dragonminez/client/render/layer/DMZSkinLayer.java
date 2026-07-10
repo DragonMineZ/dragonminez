@@ -128,16 +128,20 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(SSJ4_FUR_LAYER, furTex, ssj4.color(), ssj4.target()));
 		}
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(player, stats, partialTick, geoConsumer);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(true);
 		renderFadingBodyLayers(model, poseStack, animatable, bufferSource, playerId, gameTime, fadingLayers, partialTick, packedLight, packedOverlay, alpha);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(false);
 
 		this.currentSsj4Alpha = PREVIEW_MODE ? ssj4Target : BodyLayerFadeTracker.getProgress(playerId, SSJ4_FUR_LAYER);
 		this.currentSsj4Color = ssj4Color != null ? ssj4Color : BodyLayerFadeTracker.getColor(playerId, SSJ4_FUR_LAYER);
 
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(false);
 		renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(true);
 		SkinGathererProvider.INSTANCE.gatherTattooLayers(player, stats, partialTick, overlayConsumer);
 		SkinGathererProvider.INSTANCE.gatherEffectLayers(player, stats, partialTick, overlayConsumer);
 		renderWounds(model, poseStack, animatable, bufferSource, player, partialTick, packedLight, packedOverlay, alpha);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(false);
 		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(true);
 

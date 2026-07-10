@@ -132,6 +132,7 @@ public class ModRenderTypes extends RenderType {
                     .setDepthTestState(LEQUAL_DEPTH_TEST)
                     .setLightmapState(NO_LIGHTMAP)
                     .setOverlayState(NO_OVERLAY)
+                    .setLayeringState(POLYGON_OFFSET_LAYERING)
                     .setWriteMaskState(COLOR_WRITE)
                     .setOutputState(TRANSFORMATION_MASK_TARGET)
                     .createCompositeState(false)
@@ -347,6 +348,10 @@ public class ModRenderTypes extends RenderType {
                 .setOutputState(TRANSFORMATION_MASK_TARGET);
         if (viewOffset) {
             builder.setLayeringState(VIEW_OFFSET_Z_LAYERING);
+        } else {
+            // Match the polygon offset used by the skin overlay decals in the main pass; see
+            // TRANSFORMATION_MASK for the full rationale (prevents interior outline rings).
+            builder.setLayeringState(POLYGON_OFFSET_LAYERING);
         }
         return create(
                 "transformation_mask_tex",
