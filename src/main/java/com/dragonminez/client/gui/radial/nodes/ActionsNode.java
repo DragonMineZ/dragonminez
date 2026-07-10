@@ -20,6 +20,7 @@ public class ActionsNode extends CategoryNode {
 		out.add(new KiWeaponsNode());
 		out.add(new KiActionsNode());
 		out.add(new ReleaseNode());
+		out.add(new FlightSpeedNode());
 		return out;
 	}
 }

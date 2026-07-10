@@ -741,6 +741,14 @@ public class UtilityMenuScreen extends ScaledScreen {
 			openPanel(release.buildOptions(statsData), release.label(statsData), hover, true);
 			return true;
 		}
+		if (node instanceof FlightSpeedNode flightSpeed) {
+			if (flightSpeed.active(statsData)) {
+				flightSpeed.onSelect(statsData);
+				return true;
+			}
+			openPanel(flightSpeed.buildOptions(), flightSpeed.label(statsData), hover, true);
+			return true;
+		}
 		if (node != null && node.interactive(statsData) && !node.expandable(statsData)) {
 			node.onSelect(statsData);
 			return true;

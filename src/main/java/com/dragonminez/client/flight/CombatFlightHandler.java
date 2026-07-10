@@ -57,8 +57,8 @@ public class CombatFlightHandler {
 		float speedScale = getFlySpeedScale(player);
 		float levelMultiplier = 1.0F + (0.20F * flyLevel);
 
-		double baseSpeed = config.getCombatFlyBaseSpeed() * levelMultiplier * speedScale;
-		double sprintSpeed = config.getCombatFlySprintSpeed() * levelMultiplier * speedScale;
+		double baseSpeed = config.getCombatFlyBaseSpeed() * levelMultiplier * speedScale * data.getResources().getFlightSpeedLimit() / 100;
+		double sprintSpeed = config.getCombatFlySprintSpeed() * levelMultiplier * speedScale * data.getResources().getFlightSpeedLimit() / 100;
 
 		Minecraft mc = Minecraft.getInstance();
 		boolean forward = mc.options.keyUp.isDown();

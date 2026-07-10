@@ -111,6 +111,12 @@ public class NetworkHandler {
 				.consumerMainThread(SetReleaseLimitC2S::handle)
 				.add();
 
+		net.messageBuilder(SetFlightSpeedLimitC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SetFlightSpeedLimitC2S::new)
+				.encoder(SetFlightSpeedLimitC2S::encode)
+				.consumerMainThread(SetFlightSpeedLimitC2S::handle)
+				.add();
+
 		net.messageBuilder(SelectFormC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(SelectFormC2S::new)
 				.encoder(SelectFormC2S::encode)
