@@ -260,7 +260,12 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 			return new Saga(id, name, quests, requirements);
 		}
 
-		Path questFolder = worldFolder.resolve(QUESTS_FOLDER).resolve(folderName);
+		Path questsBase = worldFolder.resolve(QUESTS_FOLDER).normalize();
+		Path questFolder = questsBase.resolve(folderName).normalize();
+		if (!questFolder.startsWith(questsBase)) {
+			LogUtil.warn(Env.COMMON, "Saga '{}' has a questFolder '{}' that escapes the quests directory; skipping", id, folderName);
+			return new Saga(id, name, quests, requirements);
+		}
 		if (Files.exists(questFolder)) {
 			quests = loadQuestsFromFolder(questFolder);
 		} else {
