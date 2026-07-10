@@ -1,21 +1,28 @@
 package com.dragonminez.common.quest;
 
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+
+import java.util.EnumSet;
+import java.util.Set;
 
 @Getter
 public abstract class QuestReward {
 	private final RewardType type;
-	@Setter
-	private DifficultyType difficultyType = DifficultyType.ALL;
+	private Set<Difficulty> difficulties = EnumSet.allOf(Difficulty.class);
 
 	public QuestReward(RewardType type) {
 		this.type = type;
 	}
 
-	public abstract void giveReward(net.minecraft.server.level.ServerPlayer player);
+	public void setDifficulties(Set<Difficulty> difficulties) {
+		this.difficulties = (difficulties == null || difficulties.isEmpty())
+				? EnumSet.allOf(Difficulty.class)
+				: EnumSet.copyOf(difficulties);
+	}
+
+	public abstract void giveReward(ServerPlayer player);
 
 	public void giveReward(ServerPlayer player, double rewardMultiplier) {
 		giveReward(player);
@@ -23,17 +30,12 @@ public abstract class QuestReward {
 
 	public abstract Component getDescription();
 
-	public Difficulty getMinimumDifficulty() {
-		return switch (difficultyType) {
-			case ALL -> Difficulty.EASY;
-			case NORMAL -> Difficulty.NORMAL;
-			case HARD -> Difficulty.HARD;
-		};
+	public Component getDescription(double rewardMultiplier) {
+		return getDescription();
 	}
 
 	public boolean isUnlockedFor(Difficulty difficulty) {
-		Difficulty effective = difficulty != null ? difficulty : Difficulty.NORMAL;
-		return effective.ordinal() >= getMinimumDifficulty().ordinal();
+		return difficulties.contains(difficulty != null ? difficulty : Difficulty.NORMAL);
 	}
 
 	public enum RewardType {
@@ -44,11 +46,5 @@ public abstract class QuestReward {
 		ALIGNMENT,
 		TRANSFORMATION,
 		KI_TECHNIQUE
-	}
-
-	public enum DifficultyType {
-		ALL,
-		NORMAL,
-		HARD
 	}
 }

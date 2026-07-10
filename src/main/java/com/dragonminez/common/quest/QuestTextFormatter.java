@@ -11,6 +11,7 @@ import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsData;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -22,7 +23,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -474,5 +480,71 @@ public final class QuestTextFormatter {
 		public long realTimeMs() {
 			return System.currentTimeMillis();
 		}
+	}
+
+	public record RewardGroup(Set<Difficulty> difficulties, List<QuestReward> rewards) {
+	}
+
+	public static List<RewardGroup> groupRewardsByDifficulty(List<QuestReward> rewards, boolean excludeCommands) {
+		LinkedHashMap<Set<Difficulty>, List<QuestReward>> grouped = new LinkedHashMap<>();
+		if (rewards != null) {
+			for (QuestReward reward : rewards) {
+				if (excludeCommands && reward.getType() == QuestReward.RewardType.COMMAND) continue;
+				grouped.computeIfAbsent(reward.getDifficulties(), key -> new ArrayList<>()).add(reward);
+			}
+		}
+
+		List<RewardGroup> result = new ArrayList<>();
+		for (Map.Entry<Set<Difficulty>, List<QuestReward>> entry : grouped.entrySet()) {
+			result.add(new RewardGroup(entry.getKey(), entry.getValue()));
+		}
+		result.sort(Comparator.comparingInt(group -> groupRank(group.difficulties())));
+		return result;
+	}
+
+	private static int groupRank(Set<Difficulty> difficulties) {
+		if (isUniversalDifficulty(difficulties)) return -1;
+		int min = Integer.MAX_VALUE;
+		for (Difficulty difficulty : difficulties) min = Math.min(min, difficulty.ordinal());
+		return min;
+	}
+
+	public static boolean isUniversalDifficulty(Set<Difficulty> difficulties) {
+		return difficulties == null || difficulties.size() >= Difficulty.values().length;
+	}
+
+	public static boolean hasRewardTiers(List<QuestReward> rewards) {
+		if (rewards == null) return false;
+		for (QuestReward reward : rewards) {
+			if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
+			if (!isUniversalDifficulty(reward.getDifficulties())) return true;
+		}
+		return false;
+	}
+
+	public static Component describeRewardDifficulties(Set<Difficulty> difficulties) {
+		if (isUniversalDifficulty(difficulties)) {
+			return Component.translatable("gui.dragonminez.quests.rewards.tier.all");
+		}
+		MutableComponent joined = Component.empty();
+		boolean first = true;
+		for (Difficulty difficulty : Difficulty.values()) {
+			if (!difficulties.contains(difficulty)) continue;
+			if (!first) joined.append(", ");
+			joined.append(Component.translatable("gui.dragonminez.quest_tree.difficulty." + difficulty.name().toLowerCase()));
+			first = false;
+		}
+		return Component.translatable("gui.dragonminez.quests.rewards.tier.only", joined);
+	}
+
+	public static int rewardDifficultyColor(Set<Difficulty> difficulties, boolean locked) {
+		if (locked) return 0xFF666666;
+		if (isUniversalDifficulty(difficulties)) return 0xFFAAAAAA;
+		return difficulties.contains(Difficulty.HARD) ? 0xFFFF5555 : 0xFFFFD700;
+	}
+
+	public static ChatFormatting rewardDifficultyStyle(Set<Difficulty> difficulties) {
+		if (isUniversalDifficulty(difficulties)) return ChatFormatting.GRAY;
+		return difficulties.contains(Difficulty.HARD) ? ChatFormatting.RED : ChatFormatting.YELLOW;
 	}
 }

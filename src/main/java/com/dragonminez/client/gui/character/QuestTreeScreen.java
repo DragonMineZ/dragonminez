@@ -1986,79 +1986,44 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int textWidth = Math.max(20, width - 40);
 		int iconSize = 16;
 		int lineHeight = getDetailLineHeight();
-		List<QuestReward> displayRewards = getDisplayRewards(selectedQuest);
 		Difficulty difficulty = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
+		Difficulty effective = difficulty != null ? difficulty : Difficulty.NORMAL;
 
-		boolean tiered = displayRewards.stream()
-				.anyMatch(r -> r.getDifficultyType() != QuestReward.DifficultyType.ALL);
+		List<QuestTextFormatter.RewardGroup> groups =
+				QuestTextFormatter.groupRewardsByDifficulty(selectedQuest.getRewards(), true);
+		boolean tiered = QuestTextFormatter.hasRewardTiers(selectedQuest.getRewards());
 
-		for (QuestReward.DifficultyType tier : QuestReward.DifficultyType.values()) {
-			List<QuestReward> tierRewards = new ArrayList<>();
-			for (QuestReward reward : displayRewards) {
-				if (reward.getDifficultyType() == tier) tierRewards.add(reward);
-			}
-			if (tierRewards.isEmpty()) continue;
+		for (QuestTextFormatter.RewardGroup group : groups) {
+			if (group.rewards().isEmpty()) continue;
 
 			if (tiered) {
-				boolean tierLocked = !isTierUnlocked(tier, difficulty);
-				int headerColor = tierLocked ? 0xFF666666 : rewardTierColor(tier);
-				blocks.add(new RewardBlock(null, List.of(rewardTierHeader(tier).getString()),
-						lineHeight + 4, rewardTierHeader(tier), tierLocked, headerColor));
+				boolean groupLocked = !group.difficulties().contains(effective);
+				Component header = QuestTextFormatter.describeRewardDifficulties(group.difficulties());
+				int headerColor = QuestTextFormatter.rewardDifficultyColor(group.difficulties(), groupLocked);
+				blocks.add(new RewardBlock(null, List.of(header.getString()),
+						lineHeight + 4, header, groupLocked, headerColor));
 			}
 
-			for (QuestReward reward : tierRewards) {
+			for (QuestReward reward : group.rewards()) {
 				List<String> lines = wrapText(rewardDescription(reward).getString(), textWidth);
 				if (lines.isEmpty()) lines = List.of("");
 				int textBlockH = lines.size() * lineHeight;
 				int blockH = Math.max(iconSize + 2, textBlockH) + 4;
-				blocks.add(new RewardBlock(reward, lines, blockH, null, !reward.isUnlockedFor(difficulty), 0));
+				blocks.add(new RewardBlock(reward, lines, blockH, null, !reward.isUnlockedFor(effective), 0));
 			}
 		}
 		return blocks;
 	}
 
-	private boolean isTierUnlocked(QuestReward.DifficultyType tier, Difficulty difficulty) {
-		Difficulty min = switch (tier) {
-			case ALL -> Difficulty.EASY;
-			case NORMAL -> Difficulty.NORMAL;
-			case HARD -> Difficulty.HARD;
-		};
-		return (difficulty != null ? difficulty : Difficulty.NORMAL).ordinal() >= min.ordinal();
-	}
-
-	private Component rewardTierHeader(QuestReward.DifficultyType tier) {
-		return switch (tier) {
-			case ALL -> tr("gui.dragonminez.quests.rewards.tier.all");
-			case NORMAL -> tr("gui.dragonminez.quests.rewards.tier.normal");
-			case HARD -> tr("gui.dragonminez.quests.rewards.tier.hard");
-		};
-	}
-
-	private int rewardTierColor(QuestReward.DifficultyType tier) {
-		return switch (tier) {
-			case ALL -> 0xFFAAAAAA;
-			case NORMAL -> 0xFFFFD700;
-			case HARD -> 0xFFFF5555;
-		};
-	}
-
 	private List<QuestReward> getDisplayRewards(Quest quest) {
 		List<QuestReward> shown = new ArrayList<>();
 		if (quest == null) return shown;
-		for (QuestReward.DifficultyType tier : QuestReward.DifficultyType.values()) {
-			for (QuestReward reward : quest.getRewards()) {
-				if (reward.getDifficultyType() == tier) shown.add(reward);
-			}
+		for (QuestTextFormatter.RewardGroup group : QuestTextFormatter.groupRewardsByDifficulty(quest.getRewards(), true)) {
+			shown.addAll(group.rewards());
 		}
 		return shown;
 	}
 
-	/**
-	 * Resolves the display text for a reward. Most rewards are self-describing via
-	 * {@link QuestReward#getDescription()}, but transformations need the player's race to build the
-	 * per-race form lang key (e.g. {@code race.dragonminez.<race>.form.<group>.<name>}), which the
-	 * reward alone does not know.
-	 */
 	private Component rewardDescription(QuestReward reward) {
 		if (reward instanceof TransformationReward transformation) {
 			String group = transformation.getFormGroup();
@@ -2071,15 +2036,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			String race = statsData != null ? statsData.getCharacter().getRaceName() : "";
 			return Component.translatable("race.dragonminez." + race + ".form." + group + "." + form);
 		}
-		return reward.getDescription();
+		double rewardMultiplier = statsData != null
+				? statsData.getPlayerQuestData().getDifficulty().questRewardMultiplier()
+				: 1.0;
+		return reward.getDescription(rewardMultiplier);
 	}
 
-	/**
-	 * A transformation belongs to a stack (global) form group when its form type is registered as a
-	 * stack skill in {@link SkillsConfig}. Stack forms use the race-agnostic
-	 * {@code race.dragonminez.stack.form.*} lang keys; everything else is a per-race form. The
-	 * reward's own {@code stack} flag is not authoritative here — the form type is.
-	 */
 	private boolean isStackFormGroup(String formGroup) {
 		if (formGroup == null || formGroup.isEmpty()) return false;
 		FormConfig stackGroup = ConfigManager.getStackFormGroup(formGroup);
