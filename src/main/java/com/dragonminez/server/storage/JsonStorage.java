@@ -16,8 +16,10 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.io.*;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 public class JsonStorage implements IDataStorage {
@@ -72,13 +74,19 @@ public class JsonStorage implements IDataStorage {
 		if (storageDir == null) return false;
 
 		Path file = storageDir.resolve(playerUUID.toString() + ".json");
-		try (Writer writer = Files.newBufferedWriter(file)) {
-			// Store the raw NBT as SNBT to preserve exact tag types (numbers, lists, nested compounds
-			// like the hair strands). The lossy NbtOps<->JsonOps round-trip could silently mangle them.
-			JsonObject wrapper = new JsonObject();
-			wrapper.addProperty("format", "snbt");
-			wrapper.addProperty("data", NbtUtils.structureToSnbt(data));
-			GSON.toJson(wrapper, writer);
+		Path tempFile = storageDir.resolve(playerUUID.toString() + ".json.tmp");
+		try {
+			try (Writer writer = Files.newBufferedWriter(tempFile)) {
+				JsonObject wrapper = new JsonObject();
+				wrapper.addProperty("format", "snbt");
+				wrapper.addProperty("data", NbtUtils.structureToSnbt(data));
+				GSON.toJson(wrapper, writer);
+			}
+			try {
+				Files.move(tempFile, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+			} catch (AtomicMoveNotSupportedException e) {
+				Files.move(tempFile, file, StandardCopyOption.REPLACE_EXISTING);
+			}
 			return true;
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Failed to save JSON data for " + playerName, e);
