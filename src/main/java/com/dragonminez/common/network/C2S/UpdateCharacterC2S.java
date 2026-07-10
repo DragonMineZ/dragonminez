@@ -1,5 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
@@ -73,8 +75,12 @@ public class UpdateCharacterC2S {
 		this.auraColor = auraColor;
 	}
 
+	private static final int CLASS_NAME_CAP = 32;
+	private static final int BONE_NAME_CAP = 64;
+	private static final int COLOR_CAP = 8;
+
 	public static void encode(UpdateCharacterC2S msg, FriendlyByteBuf buf) {
-		buf.writeUtf(msg.className);
+		buf.writeUtf(msg.className, CLASS_NAME_CAP);
 		buf.writeInt(msg.hairId);
 		boolean hasCustomHair = msg.customHair != null;
 		buf.writeBoolean(hasCustomHair);
@@ -85,18 +91,18 @@ public class UpdateCharacterC2S {
 		buf.writeInt(msg.mouthType);
 		buf.writeInt(msg.tattooType);
 		buf.writeFloat(msg.boobScale);
-		buf.writeUtf(msg.activeHeadBone);
-		buf.writeUtf(msg.hairColor);
-		buf.writeUtf(msg.bodyColor);
-		buf.writeUtf(msg.bodyColor2);
-		buf.writeUtf(msg.bodyColor3);
-		buf.writeUtf(msg.eye1Color);
-		buf.writeUtf(msg.eye2Color);
-		buf.writeUtf(msg.auraColor);
+		buf.writeUtf(msg.activeHeadBone, BONE_NAME_CAP);
+		buf.writeUtf(msg.hairColor, COLOR_CAP);
+		buf.writeUtf(msg.bodyColor, COLOR_CAP);
+		buf.writeUtf(msg.bodyColor2, COLOR_CAP);
+		buf.writeUtf(msg.bodyColor3, COLOR_CAP);
+		buf.writeUtf(msg.eye1Color, COLOR_CAP);
+		buf.writeUtf(msg.eye2Color, COLOR_CAP);
+		buf.writeUtf(msg.auraColor, COLOR_CAP);
 	}
 
 	public static UpdateCharacterC2S decode(FriendlyByteBuf buf) {
-		String className = buf.readUtf();
+		String className = buf.readUtf(CLASS_NAME_CAP);
 		int hairId = buf.readInt();
 		CustomHair customHair = null;
 		if (buf.readBoolean()) {
@@ -113,14 +119,14 @@ public class UpdateCharacterC2S {
 				buf.readInt(),
 				buf.readInt(),
 				buf.readFloat(),
-				buf.readUtf(),
-				buf.readUtf(),
-				buf.readUtf(),
-				buf.readUtf(),
-				buf.readUtf(),
-				buf.readUtf(),
-				buf.readUtf(),
-				buf.readUtf()
+				buf.readUtf(BONE_NAME_CAP),
+				buf.readUtf(COLOR_CAP),
+				buf.readUtf(COLOR_CAP),
+				buf.readUtf(COLOR_CAP),
+				buf.readUtf(COLOR_CAP),
+				buf.readUtf(COLOR_CAP),
+				buf.readUtf(COLOR_CAP),
+				buf.readUtf(COLOR_CAP)
 		);
 	}
 
@@ -131,7 +137,10 @@ public class UpdateCharacterC2S {
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				Character c = data.getCharacter();
-				c.setCharacterClass(msg.className);
+				RaceStatsConfig raceConfig = ConfigManager.getRaceStats(c.getRaceName());
+				if (raceConfig.getAllClasses().contains(msg.className)) {
+					c.setCharacterClass(msg.className);
+				}
 				c.setHairId(msg.hairId);
 				if (msg.customHair != null) c.setHairBase(msg.customHair);
 				c.setBodyType(msg.bodyType);
