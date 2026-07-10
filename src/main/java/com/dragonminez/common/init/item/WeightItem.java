@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.item;
 
+import com.dragonminez.client.util.NumberFormattingUtil;
 import lombok.Getter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -15,9 +16,15 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class WeightItem extends DMZCuriosItem implements GeoItem {
+	private final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.US);
+	private final DecimalFormat compactBpFormatter = new DecimalFormat("0.##", DecimalFormatSymbols.getInstance(Locale.US));
 
 	public enum WeightType {
 		TURTLE_SHELL,
@@ -50,7 +57,7 @@ public class WeightItem extends DMZCuriosItem implements GeoItem {
 		super.appendHoverText(stack, level, tooltip, flag);
 		int weight = getWeight(stack);
 		if (weight > 0) {
-			tooltip.add(Component.translatable("item.dragonminez.weight.tooltip", weight).withStyle(ChatFormatting.GOLD));
+			tooltip.add(Component.translatable("item.dragonminez.weight.tooltip", NumberFormattingUtil.formatLargeNumber(weight)).withStyle(ChatFormatting.GOLD));
 		}
 	}
 
