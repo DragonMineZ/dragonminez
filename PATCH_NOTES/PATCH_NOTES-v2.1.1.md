@@ -118,7 +118,7 @@
 
 ### Quest Rewards Per Difficulty *(Addon/Developer API)*
 - Quest rewards in JSON now support a `difficulty` field (also accepted as `difficultyType` or `minDifficulty`) with values `ALL`, `NORMAL`, or `HARD`. Rewards gated behind a difficulty threshold are shown but grayed out in both the Quest Tree and NPC dialogue screens when the player's difficulty is below the requirement.
-- Not applied to any default quests until v2.2 — this is a developer/operator framework feature available to use manually today.
+- **Now fully implemented across all reward types** (`ItemReward`, `TPSReward`, `AlignmentReward`): difficulty gating is consistently applied and synced to clients via the quest registry packet. Quest reward text rendering has been unified into a new `QuestTextFormatter` class, ensuring consistent formatting across the Quest Tree and NPC Dialogue screens.
 
 *(by @Bruneitor123)*
 

@@ -30,7 +30,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Central parser for the unified quest JSON format.
@@ -229,23 +231,7 @@ public class QuestParser {
 		}
 
 		String type = json.get("type").getAsString();
-		QuestReward.DifficultyType difficultyType = QuestReward.DifficultyType.ALL;
-		if (type.toLowerCase().startsWith("hard:")) {
-			difficultyType = QuestReward.DifficultyType.HARD;
-			type = type.substring(5);
-		} else if (type.toLowerCase().startsWith("normal:")) {
-			difficultyType = QuestReward.DifficultyType.NORMAL;
-			type = type.substring(7);
-		}
-
-		String explicitDifficulty = firstString(json, "difficulty", "difficultyType", "minDifficulty");
-		if (explicitDifficulty != null) {
-			difficultyType = switch (explicitDifficulty.trim().toUpperCase()) {
-				case "HARD" -> QuestReward.DifficultyType.HARD;
-				case "NORMAL" -> QuestReward.DifficultyType.NORMAL;
-				default -> QuestReward.DifficultyType.ALL;
-			};
-		}
+		Set<Difficulty> difficulties = parseRewardDifficulties(json);
 
 		QuestReward reward = switch (type.toUpperCase()) {
 			case "ITEM" -> {
@@ -280,9 +266,48 @@ public class QuestParser {
 		};
 
 		if (reward != null) {
-			reward.setDifficultyType(difficultyType);
+			reward.setDifficulties(difficulties);
 		}
 		return reward;
+	}
+
+	private static Set<Difficulty> parseRewardDifficulties(JsonObject json) {
+		JsonElement element = firstElement(json, "difficulty", "difficulties", "difficultyType", "minDifficulty");
+		if (element == null || element.isJsonNull()) {
+			return EnumSet.allOf(Difficulty.class);
+		}
+
+		Set<Difficulty> result = EnumSet.noneOf(Difficulty.class);
+		if (element.isJsonArray()) {
+			for (JsonElement token : element.getAsJsonArray()) {
+				if (token != null && !token.isJsonNull()) addDifficultyTokens(result, token.getAsString());
+			}
+		} else if (element.isJsonPrimitive()) {
+			addDifficultyTokens(result, element.getAsString());
+		}
+
+		return result.isEmpty() ? EnumSet.allOf(Difficulty.class) : result;
+	}
+
+	private static void addDifficultyTokens(Set<Difficulty> out, String raw) {
+		if (raw == null || raw.isBlank()) return;
+		for (String token : raw.split("[,\\s]+")) {
+			if (token.isBlank()) continue;
+			try {
+				out.add(Difficulty.valueOf(token.trim().toUpperCase()));
+			} catch (IllegalArgumentException ignored) {
+				// Unknown difficulty name — skip it.
+			}
+		}
+	}
+
+	private static JsonElement firstElement(JsonObject json, String... keys) {
+		for (String key : keys) {
+			if (json.has(key) && !json.get(key).isJsonNull()) {
+				return json.get(key);
+			}
+		}
+		return null;
 	}
 
 	public static KillObjective.SpawnMode parseKillSpawnMode(String rawMode) {

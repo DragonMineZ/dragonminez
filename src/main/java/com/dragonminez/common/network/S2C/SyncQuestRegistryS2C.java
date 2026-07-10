@@ -2,6 +2,7 @@ package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestParser;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -260,13 +262,16 @@ public class SyncQuestRegistryS2C {
 	private static JsonObject serializeReward(QuestReward reward) {
 		JsonObject obj = new JsonObject();
 
-		String typeStr = reward.getType().name();
-		if (reward.getDifficultyType() == QuestReward.DifficultyType.HARD) {
-			typeStr = "hard:" + typeStr;
-		} else if (reward.getDifficultyType() == QuestReward.DifficultyType.NORMAL) {
-			typeStr = "normal:" + typeStr;
+		obj.addProperty("type", reward.getType().name());
+
+		Set<Difficulty> difficulties = reward.getDifficulties();
+		if (difficulties != null && difficulties.size() < Difficulty.values().length) {
+			JsonArray difficultyArr = new JsonArray();
+			for (Difficulty difficulty : Difficulty.values()) {
+				if (difficulties.contains(difficulty)) difficultyArr.add(difficulty.name());
+			}
+			obj.add("difficulty", difficultyArr);
 		}
-		obj.addProperty("type", typeStr);
 
 		if (reward instanceof TPSReward tps) {
 			obj.addProperty("amount", tps.getAmount());

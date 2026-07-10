@@ -23,9 +23,13 @@ public class TPSReward extends QuestReward {
 
 	@Override
 	public void giveReward(ServerPlayer player, double rewardMultiplier) {
-		int scaled = (int) Math.max(0, Math.round(amount * rewardMultiplier));
+		int scaled = scaledAmount(rewardMultiplier);
 		if (scaled <= 0) return;
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getResources().addTrainingPoints(scaled, false));
+	}
+
+	public int scaledAmount(double rewardMultiplier) {
+		return (int) Math.max(0, Math.round(amount * rewardMultiplier));
 	}
 
 	@Override
@@ -33,6 +37,14 @@ public class TPSReward extends QuestReward {
 		return Component.translatable(
 				"gui.dragonminez.quests.rewards.tps",
 				amount
+		);
+	}
+
+	@Override
+	public Component getDescription(double rewardMultiplier) {
+		return Component.translatable(
+				"gui.dragonminez.quests.rewards.tps",
+				scaledAmount(rewardMultiplier)
 		);
 	}
 }
