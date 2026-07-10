@@ -106,11 +106,13 @@ public class StrikeAttackHandler {
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
 			if (immediateTarget != null) {
+				// dragon_fist must not rotate the player's view toward the enemy.
+				boolean faceTarget = !"dragon_fist".equals(strike.getId());
 				PartEntity<?> hitPart = nearestPartInSight(player, coneRange);
 					if (hitPart != null && hitPart.getParent() == immediateTarget) {
-						teleportToPartFront(player, hitPart, immediateTarget);
+						teleportToPartFront(player, hitPart, immediateTarget, faceTarget);
 					} else {
-						teleportToTargetFront(player, immediateTarget);
+						teleportToTargetFront(player, immediateTarget, faceTarget);
 					}
 				player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
 						MainSounds.TP_SHORT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -222,15 +224,9 @@ public class StrikeAttackHandler {
 		}
 
         if ("dragon_fist".equals(active.techniqueId())) {
-            if (active.ticksElapsed() == 0) {
-                faceStrikeTarget(player, target);
-            }
-
-            Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
-            double distance = 2.5;
-            target.setPos(player.getX() + lookVec.x * distance, player.getY(), player.getZ() + lookVec.z * distance);
-            target.setDeltaMovement(0, 0, 0);
-            target.hurtMarked = true;
+            // Do NOT reposition the target in front of the player here. SPDragonFistEntity already
+            // holds the enemy onto the caster (holdTargetAtCaster); pinning it 2.5 blocks ahead of
+            // the player's facing every tick glued it into the camera view, which is unwanted.
 
             if (active.ticksElapsed() == 5) {
                 SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
@@ -282,6 +278,7 @@ public class StrikeAttackHandler {
                 kamehameha.setupKiHame(player, (float) active.totalDamage() * 0.2F, 2.0F, 0.5F, 5);
                 kamehameha.setFiring(true);
                 kamehameha.setMaxLife(15);
+                kamehameha.setBlockDestructionEnabled(false); // cosmetic blast — must not grief terrain
 
                 player.level().addFreshEntity(kamehameha);
                 player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_KAME_FIRE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
@@ -721,7 +718,10 @@ public class StrikeAttackHandler {
 				STRIKE_ANCHOR_PART.remove(player.getUUID());
 			}
 
-			faceStrikeTarget(player, target);
+			// dragon_fist must not rotate the attacker's view toward the enemy.
+			if (!"dragon_fist".equals(pending.techniqueId())) {
+				faceStrikeTarget(player, target);
+			}
 			if (target instanceof ServerPlayer targetPlayer) {
 				faceEntity(targetPlayer, player);
 			}
@@ -849,7 +849,7 @@ public class StrikeAttackHandler {
 		return best;
 	}
 
-	private static void teleportToPartFront(ServerPlayer player, PartEntity<?> part, LivingEntity parent) {
+	private static void teleportToPartFront(ServerPlayer player, PartEntity<?> part, LivingEntity parent, boolean faceTarget) {
 		Vec3 center = part.getBoundingBox().getCenter();
 		Vec3 look = parent.getLookAngle();
 		if (look.horizontalDistanceSqr() < 1.0E-6) look = player.getLookAngle();
@@ -857,7 +857,7 @@ public class StrikeAttackHandler {
 		double distance = 1.3 + part.getBbWidth() * 0.5;
 		Vec3 teleportPos = center.subtract(look.scale(distance));
 		player.teleportTo(teleportPos.x, center.y - player.getEyeHeight(), teleportPos.z);
-		player.lookAt(EntityAnchorArgument.Anchor.EYES, center);
+		if (faceTarget) player.lookAt(EntityAnchorArgument.Anchor.EYES, center);
 	}
 
 	private static void dashForward(ServerPlayer player, boolean isFlying) {
@@ -930,14 +930,14 @@ public class StrikeAttackHandler {
 		return look.dot(toTarget) >= CONE_HALF_ANGLE_COS;
 	}
 
-	private static void teleportToTargetFront(ServerPlayer player, LivingEntity target) {
+	private static void teleportToTargetFront(ServerPlayer player, LivingEntity target, boolean faceTarget) {
 		Vec3 targetPos = target.position();
 		Vec3 targetLook = target.getLookAngle();
 		Vec3 teleportPos = targetPos.subtract(targetLook.scale(1.3));
 
 		player.teleportTo(teleportPos.x, targetPos.y, teleportPos.z);
 
-		player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+		if (faceTarget) player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
 
 	}
 

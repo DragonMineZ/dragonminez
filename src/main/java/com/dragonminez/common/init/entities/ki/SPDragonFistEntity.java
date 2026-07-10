@@ -110,7 +110,10 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
 
         int currentTick = this.tickCount;
 
-        Vec3 dragonPos = owner.position().add(this.fixedDirection.scale(1.5D));
+        // Offset the fist ahead of the caster, but clip that offset against blocks so it doesn't
+        // poke through a wall the caster is pressed against.
+        Vec3 dragonBase = owner.position().add(0, owner.getBbHeight() * 0.5D, 0);
+        Vec3 dragonPos = this.clipAgainstBlocks(dragonBase, dragonBase.add(this.fixedDirection.scale(1.5D)));
         this.setPos(dragonPos.x, owner.getY(), dragonPos.z);
         this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
 
@@ -149,8 +152,10 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
                 }
             }
 
-            Vec3 holdPos = owner.position().add(fixedDirection.scale(2.5D));
-            target.setPos(holdPos.x, owner.getY(), holdPos.z);
+            // Lock the target onto the caster's position each tick, but never teleport it through a
+            // wall to get there: if a block sits between them (e.g. the caster grabbed it from the
+            // far side of an obsidian wall) it is held on its own side instead of passing through.
+            this.holdTargetAtCaster(target, owner.position());
             target.setDeltaMovement(0, 0, 0);
             target.hasImpulse = true;
             target.fallDistance = 0;

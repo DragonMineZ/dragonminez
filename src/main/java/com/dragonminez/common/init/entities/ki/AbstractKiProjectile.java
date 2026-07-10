@@ -31,9 +31,11 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -215,6 +217,44 @@ public abstract class AbstractKiProjectile extends Projectile {
         return hit;
     }
 
+    /**
+     * Drags an entity toward {@code desired} while respecting block collision, so grab-and-carry
+     * moves can't pull a target through a wall the caster themselves would be stopped by. Uses
+     * {@link Entity#move} (the same collision-clipped movement mobs use) instead of a hard
+     * {@code setPos} teleport.
+     */
+    protected void moveEntityTowards(Entity target, Vec3 desired) {
+        target.move(MoverType.SELF, desired.subtract(target.position()));
+    }
+
+    /**
+     * Clips a straight path from {@code from} to {@code to} against block collision and returns the
+     * furthest point that stays on the near side of any solid block. Keeps visual projectiles that
+     * are offset ahead of the caster from poking through a wall the caster is pressed against.
+     */
+    protected Vec3 clipAgainstBlocks(Vec3 from, Vec3 to) {
+        BlockHitResult hit = this.level().clip(new ClipContext(
+                from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        return hit.getType() == HitResult.Type.MISS ? to : hit.getLocation();
+    }
+
+    /**
+     * Hard-locks a grabbed target onto {@code desiredFeet} (the caster's own feet position) each
+     * tick, but never lets it cross a solid block to get there. The target's full bounding box is
+     * swept toward the destination with {@link Entity#collideBoundingBox} — the exact same block
+     * collision the player itself uses — so if a wall sits between them the target stops at it
+     * instead of teleporting through. Positioning is authoritative ({@code setPos}) so the target
+     * does not drift ahead from entity push/physics while it is held.
+     */
+    protected void holdTargetAtCaster(Entity target, Vec3 desiredFeet) {
+        Vec3 delta = new Vec3(
+                desiredFeet.x - target.getX(),
+                desiredFeet.y - target.getY(),
+                desiredFeet.z - target.getZ());
+        Vec3 collided = Entity.collideBoundingBox(target, delta, target.getBoundingBox(), this.level(), List.of());
+        target.setPos(target.getX() + collided.x, target.getY() + collided.y, target.getZ() + collided.z);
+    }
+
     public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder, int colorOutline) {
         this.setOwner(owner);
         this.setKiDamage(damage);
@@ -329,7 +369,15 @@ public abstract class AbstractKiProjectile extends Projectile {
         return owner != null ? owner : this;
     }
 
+    // Per-instance override to fully suppress block destruction for a specific projectile,
+    // regardless of griefing gamerules (e.g. the cosmetic kamehameha fired during oozaru_fist).
+    private transient boolean blockDestructionEnabled = true;
+
+    public void setBlockDestructionEnabled(boolean enabled) { this.blockDestructionEnabled = enabled; }
+    public boolean isBlockDestructionEnabled() { return this.blockDestructionEnabled; }
+
     protected boolean canKiDestroyBlock(BlockPos pos) {
+        if (!this.blockDestructionEnabled) return false;
         BlockState state = this.level().getBlockState(pos);
         if (state.getBlock() instanceof DragonBallBlock) return false;
         if (state.getExplosionResistance(this.level(), pos, null) >= KI_INDESTRUCTIBLE_RESISTANCE) return false;
