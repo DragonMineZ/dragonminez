@@ -11,6 +11,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.MeleeAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,11 +25,15 @@ import net.minecraftforge.network.NetworkEvent;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import io.netty.handler.codec.DecoderException;
 
 import java.util.UUID;
 import java.util.function.Supplier;
 
+@Getter
 public class CombatAttackRequestC2S {
+
+	private static final int MAX_ENTITY_IDS = 64;
 
 	private final int comboCount;
 	private final boolean isSneaking;
@@ -47,6 +52,9 @@ public class CombatAttackRequestC2S {
 		this.isSneaking = buffer.readBoolean();
 		this.selectedSlot = buffer.readInt();
 		int length = buffer.readInt();
+		if (length < 0 || length > MAX_ENTITY_IDS) {
+			throw new DecoderException("CombatAttackRequestC2S: invalid entity id count " + length);
+		}
 		this.entityIds = new int[length];
 		for (int i = 0; i < length; i++) {
 			this.entityIds[i] = buffer.readInt();
@@ -77,12 +85,7 @@ public class CombatAttackRequestC2S {
 		ctx.get().setPacketHandled(true);
 	}
 
-	public int getComboCount() { return comboCount; }
-	public boolean isSneaking() { return isSneaking; }
-	public int getSelectedSlot() { return selectedSlot; }
-	public int[] getEntityIds() { return entityIds; }
-
-	private static final UUID SWEEPING_MODIFIER_UUID = UUID.fromString("99435a26-9fa8-48b4-a8eb-8438bf228eb3");
+    private static final UUID SWEEPING_MODIFIER_UUID = UUID.fromString("99435a26-9fa8-48b4-a8eb-8438bf228eb3");
 
 	private static final String LAST_MELEE_ATTACK_TIME_TAG = "dmz_last_melee_attack_time";
 	private static final int ATTACK_RATE_TOLERANCE_TICKS = 2;
