@@ -158,7 +158,7 @@ public class CreateCharacterC2S {
 					player.refreshDimensions();
 					player.setHealth(player.getMaxHealth());
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-					MutantManager.runLottery(player.getServer());
+					MutantManager.rollForPlayer(player, data);
 				}
 			});
 		});
