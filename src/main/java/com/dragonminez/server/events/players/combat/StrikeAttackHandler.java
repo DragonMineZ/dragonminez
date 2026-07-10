@@ -224,9 +224,6 @@ public class StrikeAttackHandler {
 		}
 
         if ("dragon_fist".equals(active.techniqueId())) {
-            // Do NOT reposition the target in front of the player here. SPDragonFistEntity already
-            // holds the enemy onto the caster (holdTargetAtCaster); pinning it 2.5 blocks ahead of
-            // the player's facing every tick glued it into the camera view, which is unwanted.
 
             if (active.ticksElapsed() == 5) {
                 SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
