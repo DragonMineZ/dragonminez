@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "worldGen": {
     "generateCustomStructures": true,
     "generateDragonBalls": true,
@@ -8,13 +8,16 @@
     "dragonBallSets": 1,
     "structureMinDistanceFromSpawn": 0,
     "structureMaxDistanceFromSpawn": 4000,
-    "structureMinDistanceBetween": 250
+    "structureMinDistanceBetween": 250,
+    "structureSpacing": 6000,
+    "structureSeparation": 2000
   },
   "gameplay": {
     "forceCharacterCreation": true,
     "commandOutputOnConsole": true,
     "reviveCooldownSeconds": 300,
     "tpGainMultiplier": 1.0,
+    "increaseTPGainRelativeToTPCost": 0.5,
     "globalTPCostMultiplier": 1.0,
     "minTPCost": 16,
     "maxTPDiscount": 140,
@@ -25,12 +28,16 @@
     "tpPerBlockMined": 1,
     "tpPerItemCrafted": 1,
     "gravityBonusEnabled": true,
-    "HTCTpMultiplier": 2.5,
+    "HTCTpMultiplier": 1.75,
     "maxLevelValueInsteadOfStats": true,
     "maxValue": 10000,
     "capsules": {
       "statSeparator": ", ",
       "values": {
+        "PWR": {
+          "stats": "PWR",
+          "points": 5
+        },
         "STR": {
           "stats": "STR",
           "points": 5
@@ -39,20 +46,16 @@
           "stats": "SKP",
           "points": 5
         },
-        "PWR": {
-          "stats": "PWR",
-          "points": 5
-        },
-        "ENE": {
-          "stats": "ENE",
-          "points": 5
-        },
         "RES": {
           "stats": "RES",
           "points": 5
         },
         "VIT": {
           "stats": "VIT",
+          "points": 5
+        },
+        "ENE": {
+          "stats": "ENE",
           "points": 5
         }
       }
@@ -94,6 +97,8 @@
     "partyMaxMembers": -1,
     "partyMaxLevelGap": 500,
     "partyTpShareRatio": 0.5,
+    "enemyHealthPerPartyPlayer": 1.25,
+    "enemyDamagePerPartyPlayer": 1.1,
     "instantTransmissionPlayerRangePerLevel": 200,
     "easyModeHPMultiplier": 0.75,
     "easyModeDamageMultiplier": 0.5,
@@ -106,7 +111,80 @@
     "helmetsThatKeepHair": [
       "dragonminez:invencible_armor_helmet",
       "dragonminez:invencible_blue_armor_helmet"
-    ]
+    ],
+    "tpGainBoosts": {
+      "STORY": [
+        "class",
+        "racialskill",
+        "htc",
+        "gravity",
+        "weights",
+        "global",
+        "potion",
+        "mutant",
+        "difficulty"
+      ],
+      "PASSIVE": [
+        "class",
+        "racialskill",
+        "htc",
+        "gravity",
+        "weights",
+        "global",
+        "potion",
+        "mutant"
+      ],
+      "TRAVEL": [
+        "class",
+        "racialskill",
+        "htc",
+        "gravity",
+        "weights",
+        "global",
+        "potion",
+        "mutant"
+      ],
+      "MINED": [
+        "class",
+        "racialskill",
+        "htc",
+        "gravity",
+        "weights",
+        "global",
+        "potion",
+        "mutant"
+      ],
+      "CRAFTED": [
+        "class",
+        "racialskill",
+        "htc",
+        "gravity",
+        "weights",
+        "global",
+        "potion",
+        "mutant"
+      ],
+      "KILL": [
+        "class",
+        "racialskill",
+        "htc",
+        "gravity",
+        "weights",
+        "global",
+        "potion",
+        "mutant"
+      ],
+      "HIT": [
+        "class",
+        "racialskill",
+        "htc",
+        "gravity",
+        "weights",
+        "global",
+        "potion",
+        "mutant"
+      ]
+    }
   },
   "racialSkills": {
     "enableRacialSkills": true,
@@ -141,7 +219,7 @@
     "majinReviveSkill": true,
     "majinAbsorptionAmount": 3,
     "majinAbsorptionHealthRegen": 0.3,
-    "majinAbsorptionStatsCopy": 0.1,
+    "majinAbsorptionStatsCopy": 0.04,
     "majinAbsorptionBoosts": [
       "STR",
       "SKP",
@@ -158,10 +236,10 @@
     "practiceXpMultiplier": 2.0,
     "strPracticeMultiplier": 1.0,
     "skpPracticeMultiplier": 1.0,
-    "resPracticeMultiplier": 1.0,
-    "vitPracticeMultiplier": 1.0,
+    "resPracticeMultiplier": 1.5,
+    "vitPracticeMultiplier": 0.5,
     "pwrPracticeMultiplier": 1.0,
-    "enePracticeMultiplier": 1.0,
+    "enePracticeMultiplier": 1.5,
     "staminaSpentXpRatio": 0.1,
     "energySpentXpRatio": 0.1,
     "kiWeaponMeleePwrShare": 0.25,
@@ -178,17 +256,6 @@
     "repeatTargetHardCap": 24,
     "repeatTargetSoftMultiplier": 0.5,
     "repeatTargetHardMultiplier": 0.15
-  },
-  "storage": {
-    "storageType": "NBT",
-    "host": "localhost",
-    "port": 3306,
-    "database": "dragonminez",
-    "table": "player_data",
-    "username": "root",
-    "password": "password",
-    "poolSize": 10,
-    "threadPoolSize": 4
   },
   "gravity": {
     "enabled": true,
@@ -231,6 +298,20 @@
     "tpCurveWidth": 7.0,
     "tpGravityBonusPerGravity": 0.025,
     "masteryBonusPerGravity": 0.0025,
+    "tpIdealBaseDivisor": 2.0,
+    "gravitySensitivity": 1.0,
+    "tpComfortRatioLow": 0.5,
+    "tpIdealRatioLow": 0.75,
+    "tpIdealRatioHigh": 1.25,
+    "tpOverloadRatio": 2.0,
+    "tpOverloadHardRatio": 2.5,
+    "tpComfortMultiplier": 1.5,
+    "tpHeavyMultiplier": 2.5,
+    "maxWeightPenalty": 0.6,
+    "loadDrainComfort": 1.15,
+    "loadDrainIdeal": 1.3,
+    "loadDrainHeavy": 1.5,
+    "loadDrainOverload": 2.0,
     "consumptionPerGravity": 0.04,
     "deviceMinRoomSize": 5,
     "deviceMaxRoomSize": 25,
@@ -249,6 +330,18 @@
     "tpGainMultiplier": 1.25,
     "masteryGainMultiplier": 1.5,
     "powerBonusReductionNoSkill": 0.67,
-    "powerBonusBoostWithSkill": 0.33
+    "powerBonusBoostWithSkill": 0.33,
+    "keepMutantOnDeath": false
+  },
+  "storage": {
+    "storageType": "NBT",
+    "host": "localhost",
+    "port": 3306,
+    "database": "dragonminez",
+    "table": "player_data",
+    "username": "root",
+    "password": "password",
+    "poolSize": 10,
+    "threadPoolSize": 4
   }
 }

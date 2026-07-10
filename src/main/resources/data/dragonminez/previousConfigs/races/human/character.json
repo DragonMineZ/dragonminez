@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "raceName": "human",
   "hasGender": true,
   "useVanillaSkin": true,
@@ -37,14 +37,14 @@
     ],
     "godforms": [],
     "superforms": [
-      8000,
-      16000,
-      25000,
-      40000
+      21000,
+      42000,
+      65000,
+      104000
     ],
     "androidforms": [
-      16000,
-      40000
+      42000,
+      104000
     ]
   }
 }

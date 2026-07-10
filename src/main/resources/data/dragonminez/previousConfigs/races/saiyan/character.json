@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "raceName": "saiyan",
   "hasGender": true,
   "useVanillaSkin": true,
@@ -37,14 +37,14 @@
     ],
     "godforms": [],
     "superforms": [
-      5000,
-      8000,
-      12000,
-      16000,
-      20000,
-      25000,
-      30000,
-      40000
+      13000,
+      21000,
+      31000,
+      42000,
+      52000,
+      65000,
+      78000,
+      104000
     ]
   }
 }

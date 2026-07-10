@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "firstPersonAnimated": true,
   "impactFramesEnabled": false,
   "techniqueHotbarRightSide": false,
@@ -13,6 +13,7 @@
   "alternativeHud": false,
   "hexagonStatsDisplay": false,
   "menuScaleMultiplier": 1.0,
+  "utilityMenuScaleMultiplier": 1.0,
   "healthBarPosX": 10,
   "healthBarPosY": 20,
   "energyBarPosX": 10,
@@ -22,5 +23,12 @@
   "cameraMovementDuringFlight": true,
   "liveCrowdinTranslations": true,
   "showAccumulativeDamage": true,
-  "taiyokenInvertPalette": false
+  "taiyokenInvertPalette": false,
+  "transformationOutlines": true,
+  "overShoulderMode": 2,
+  "overShoulderLeft": false,
+  "overShoulderBack": 3.0,
+  "overShoulderUp": 0.35,
+  "overShoulderSide": 1.45,
+  "overShoulderSmoothing": 0.4
 }

@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "groupName": "ultimate",
   "formType": "ultimate",
   "forms": {
@@ -23,8 +23,13 @@
       "auraType": "kakarot",
       "auraLayer": 0,
       "auraColor": "#FFFFFF",
+      "extraAuraLayer": -1,
+      "extraAuraColor": "#FFFFFF",
+      "extraAuraType": "kakarot",
       "hasLightnings": false,
       "lightningColor": "",
+      "tintColor": "#FF0000",
+      "tintIntensity": 0.0,
       "modelScaling": [
         0.9375,
         0.9375,
@@ -33,7 +38,7 @@
       "strMultiplier": 2.0,
       "skpMultiplier": 2.0,
       "stmMultiplier": 1.0,
-      "defMultiplier": 1.15,
+      "defMultiplier": 1.1875,
       "vitMultiplier": 1.0,
       "pwrMultiplier": 2.0,
       "eneMultiplier": 1.0,
@@ -50,15 +55,13 @@
       "maxCostMultiplier": 0.5,
       "maxStatsMultiplier": 1.0,
       "formRequisite": "",
+      "formRequisiteType": "all",
       "unlockOnMastery": 0.0,
       "stackOnMastery": 0.0,
       "instantTransformOnMastery": 40.0,
-      "allowAlwaysTransformOnMastery": 0.0,
-      "directTransformIfUsedOnMastery": 0.0,
+      "allowFreeTransformOnMastery": 0.0,
       "formStackable": false,
       "stackDrainMultiplier": 1.0,
-      "canAlwaysTransform": true,
-      "directTransformationIfUsed": false,
       "incompatibleWith": [
         "ultimate.ultimate"
       ],
@@ -68,8 +71,6 @@
         "enabled": false,
         "primaryColor": "#7FFFFF",
         "secondaryColor": "#7FFFFF",
-        "noiseScale": 4.0,
-        "colorMixSpeed": 0.7,
         "outlineThickness": 1.5
       },
       "triggerItemCosts": [],
