@@ -758,7 +758,7 @@ final class SideQuestDefaults {
 				new JsonObject[]{
 						objItem("dragonminez:kikono_shard", 16),
 						objItem("minecraft:diamond", 8),
-						objTalkTo("merchant_01")
+						objTalkTo("bulma")
 				},
 				new JsonObject[]{ rewTPS(13500), rewItem("minecraft:diamond_sword", 1) }));
 
