@@ -6,6 +6,8 @@ import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.particles.KiLightningParticle;
 import com.dragonminez.common.init.particles.KiSheddingParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -501,6 +503,10 @@ public class KiWaveEntity extends AbstractKiProjectile {
                         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
                     }
                 }
+
+                if (this.getKiRenderType() == 1 && this.tickCount == 1) {
+                    this.playSound(MainSounds.KI_KAME_CHARGE.get(), 0.8F, 1.0F);
+                }
             } else {
                 if (this.isClashLocked()) {
                     this.setBeamLength(this.getClashLockedLength());
@@ -609,7 +615,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         double vy = offsetY * 0.1D;
         double vz = offsetZ * 0.1D;
 
-        net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+        Particle p = Minecraft.getInstance().particleEngine.createParticle(
                 MainParticles.KI_LIGHTNING.get(),
                 pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ,
                 vx, vy, vz
