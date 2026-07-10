@@ -1,6 +1,7 @@
 package com.dragonminez.server.world.biome;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.server.world.feature.SacredKaiPlacedFeatures;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
@@ -33,6 +34,7 @@ public class SacredKaiBiomes {
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
+		addMonsterCharges(spawnBuilder);
 
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 		addNormalCaves(biomeBuilder, context);
@@ -52,6 +54,7 @@ public class SacredKaiBiomes {
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
+		addMonsterCharges(spawnBuilder);
 
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 		addNormalCaves(biomeBuilder, context);
@@ -76,6 +79,7 @@ public class SacredKaiBiomes {
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
+		addMonsterCharges(spawnBuilder);
 
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 		addNormalCaves(biomeBuilder, context);
@@ -85,6 +89,10 @@ public class SacredKaiBiomes {
 		biomeBuilder.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, SacredKaiPlacedFeatures.FLOWERS_PLACED);
 
 		return biome(spawnBuilder, biomeBuilder);
+	}
+
+	private static void addMonsterCharges(MobSpawnSettings.Builder builder) {
+		builder.addMobCharge(MainEntities.MINI_BUU.get(), 1.0D, 0.12D);
 	}
 
 	private static Biome biome(MobSpawnSettings.Builder spawnBuilder, BiomeGenerationSettings.Builder biomeBuilder) {

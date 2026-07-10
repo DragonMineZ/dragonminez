@@ -139,10 +139,11 @@ public class SPDragonFistEntity extends AbstractKiProjectile implements GeoEntit
         List<Entity> targets = this.level().getEntities(this, hitbox, this::shouldDamage);
 
         for (Entity target : targets) {
-            if (this.tickCount % 5 == 0) {
-                boolean hit = target.hurt(MainDamageTypes.strikeAttack(this.level(), owner, "dragon_fist"), this.getKiDamage());
+            if (target.invulnerableTime <= 0) {
+                boolean hit = target.hurt(MainDamageTypes.strikeAttack(this.level(), owner, "dragon_fist"), this.getDamagePerHit());
 
                 if (hit) {
+                    target.invulnerableTime = CONTINUOUS_HIT_INTERVAL;
                     this.onSuccessfulHit(target);
                     this.applyStrikeStun(target);
                 }

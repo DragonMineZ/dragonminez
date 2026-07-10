@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.config.CombatConfig;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.init.MainAttributes;
@@ -150,6 +151,8 @@ public class StatsData {
 	private static final double K = 100.0;
 	private static final double BP_REF_VALUE = 1_200.0;
 	private static final double BP_CURVE_EXPONENT = 1.2;
+	// Peso de las stats de soporte (VIT/ENE) en el BP del jugador (revamp): aportan sin dominar a la ofensiva.
+	private static final double SUPPORT_STAT_BP_WEIGHT = 0.5;
 
 	public float getBattlePower() {
 		double exact = getBattlePowerExact();
@@ -162,7 +165,9 @@ public class StatsData {
 		double str = stats.getStrength();
 		double skp = stats.getStrikePower();
 		double res = stats.getResistance();
+		double vit = stats.getVitality();
 		double pwr = stats.getKiPower();
+		double ene = stats.getEnergy();
 
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(str), true);
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(str), false);
@@ -170,14 +175,22 @@ public class StatsData {
 		double flatBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(skp), false);
 		double multBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(res), true);
 		double flatBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(res), false);
+		double multBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vit), true);
+		double flatBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vit), false);
 		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(pwr), true);
 		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(pwr), false);
+		double multBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(ene), true);
+		double flatBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(ene), false);
 
 		double rawPower =
 				((str + multBonusStr) * getStatScaling("STR") * getTotalMultiplier("STR")) + (flatBonusStr * getStatScaling("STR"))
 				+ ((skp + multBonusSkp) * getStatScaling("SKP") * getTotalMultiplier("SKP")) + (flatBonusSkp * getStatScaling("SKP"))
 				+ ((res + multBonusDef) * getStatScaling("DEF") * getTotalMultiplier("RES")) + (flatBonusDef * getStatScaling("DEF"))
 				+ ((pwr + multBonusPwr) * getStatScaling("PWR") * getTotalMultiplier("PWR")) + (flatBonusPwr * getStatScaling("PWR"));
+
+		rawPower += SUPPORT_STAT_BP_WEIGHT * (
+				((vit + multBonusVit) * getStatScaling("VIT") * getTotalMultiplier("VIT")) + (flatBonusVit * getStatScaling("VIT"))
+				+ ((ene + multBonusEne) * getStatScaling("ENE") * getTotalMultiplier("ENE")) + (flatBonusEne * getStatScaling("ENE")));
 
 		if (Double.isNaN(rawPower) || rawPower <= 0) return 0.0;
 
@@ -504,6 +517,13 @@ public class StatsData {
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
 
 		double rawFlatMitigation = baseDefense * Math.max(1.0, defMult);
+
+		if (ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()
+				&& incomingDamage > 0.0
+				&& rawFlatMitigation >= incomingDamage * ConfigManager.getCombatConfig().getCancelDamageMitigationThreshold()) {
+			return 0.0;
+		}
+
 		double flatAbsorbCap = incomingDamage * ConfigManager.getCombatConfig().getFlatMitigationMaxAbsorbFraction();
 		double flatMitigation = Math.min(rawFlatMitigation, flatAbsorbCap);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
@@ -544,7 +564,28 @@ public class StatsData {
 			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
 		}
 
-		return remainingDamage * (1.0 - enchReduction);
+		double afterEnchant = remainingDamage * (1.0 - enchReduction);
+
+		if (ConfigManager.getCombatConfig().getEnableAdaptativeDefenseMitigation()
+				&& rawFlatMitigation > 0.0 && incomingDamage > 0.0) {
+			double ratio = incomingDamage / rawFlatMitigation;
+			afterEnchant *= (1.0 - computeAdaptativeDefenseMitigation(ratio));
+		}
+
+		return afterEnchant;
+	}
+
+	private double computeAdaptativeDefenseMitigation(double ratio) {
+		if (!Double.isFinite(ratio) || ratio <= 0.0) return 0.0;
+		CombatConfig cfg = ConfigManager.getCombatConfig();
+		double parityRatio = cfg.getAdaptativeMitigationParityRatio();
+		double parityValue = cfg.getAdaptativeMitigationParityValue();
+		double zeroRatio = cfg.getAdaptativeMitigationZeroRatio();
+		double cap = cfg.getAdaptativeDefenseMitigationCap();
+		double slope = parityValue / (zeroRatio - parityRatio);
+		double mitigation = parityValue + slope * (parityRatio - ratio);
+		if (!Double.isFinite(mitigation) || mitigation <= 0.0) return 0.0;
+		return Math.min(mitigation, cap);
 	}
 
 	public double getFlatMitigation() {
@@ -1112,6 +1153,10 @@ public class StatsData {
 				if (!status.isAndroidUpgraded() && "androidforms".equalsIgnoreCase(skillName)) continue;
 				Integer[] tpCosts = charConfig.getFormSkillTpCosts(skillName);
 				int maxLevel = tpCosts != null ? tpCosts.length : 0;
+				if (charConfig.isFormSkillBuyFromMaster(skillName)) {
+					if (skills.hasSkill(skillName)) skills.registerDefaultSkill(skillName, maxLevel);
+					continue;
+				}
 				skills.registerDefaultSkill(skillName, maxLevel);
 			}
 		}

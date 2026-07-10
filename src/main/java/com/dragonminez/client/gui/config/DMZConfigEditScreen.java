@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.config;
 
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.common.config.ConfigManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -35,6 +36,7 @@ public class DMZConfigEditScreen extends Screen {
 
 	private JsonObject root;
 	private int scrollOffset = 0;
+	private final ScrollbarState scrollBar = new ScrollbarState();
 	private Component feedback;
 	private int feedbackColor;
 	private long feedbackUntil;
@@ -184,6 +186,7 @@ public class DMZConfigEditScreen extends Screen {
 					this.width / 2, top + 10, 0xFF888888);
 		}
 
+		scrollBar.update(this.width - 8, 3, top, bottom - top, maxScroll());
 		if (maxScroll() > 0) {
 			int barX = this.width - 8;
 			int trackH = bottom - top;
@@ -217,6 +220,34 @@ public class DMZConfigEditScreen extends Screen {
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
+	}
+
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (super.mouseClicked(mouseX, mouseY, button)) return true;
+		if (scrollBar.tryStartDrag(mouseX, mouseY)) {
+			scrollOffset = Math.round(scrollBar.scrollFor(mouseY));
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (scrollBar.isDragging()) {
+			scrollOffset = Math.round(scrollBar.scrollFor(mouseY));
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (scrollBar.isDragging()) {
+			scrollBar.stopDrag();
+			return true;
+		}
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override

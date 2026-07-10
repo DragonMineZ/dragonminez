@@ -4,6 +4,7 @@ import com.dragonminez.common.combat.logic.knockback.ConfigurableKnockback;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.init.entities.MobBattlePowerHelper;
 import com.dragonminez.common.util.IHealthFixable;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
@@ -65,9 +66,17 @@ public abstract class LivingEntityMixin implements IBattlePower, IHealthFixable,
 	@Override
 	public int getBattlePower() {
 		if (this.battlePower == 0) {
-			double attackDamage = 0;
-			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) attackDamage = this.getAttributes().getValue(Attributes.ATTACK_DAMAGE);
-			this.battlePower = (int) (this.getMaxHealth() + attackDamage * 5);
+			LivingEntity self = (LivingEntity) (Object) this;
+			boolean accurate = com.dragonminez.common.config.ConfigManager.getCombatConfig().getAccurateMobBattlePower()
+					&& self instanceof net.minecraft.world.entity.Mob
+					&& !MobBattlePowerHelper.isDmzManaged(self);
+			if (accurate) {
+				this.battlePower = MobBattlePowerHelper.calculate(self);
+			} else {
+				double attackDamage = 0;
+				if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) attackDamage = this.getAttributes().getValue(Attributes.ATTACK_DAMAGE);
+				this.battlePower = (int) (this.getMaxHealth() + attackDamage * 5);
+			}
 		}
 		return Math.max(5, this.battlePower);
 	}

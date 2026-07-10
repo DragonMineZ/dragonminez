@@ -46,6 +46,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	private float targetScroll = 0;
 	private float currentScroll = 0;
 	private float maxScroll = 0;
+	private boolean isDraggingScroll = false;
 
 	private TexturedTextButton actionBtn;
 	private CustomTextureButton prevBtn, nextBtn;
@@ -466,7 +467,15 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		}
 
 		int startY = panelY + 35;
-		if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 120 && uiMouseY >= startY && uiMouseY <= startY + (MAX_VISIBLE_ITEMS * ITEM_HEIGHT)) {
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+
+		if (maxScroll > 0 && TextUtil.overScrollBar(uiMouseX, uiMouseY, leftPanelX + 130, 2, startY, viewHeight)) {
+			isDraggingScroll = true;
+			targetScroll = TextUtil.scrollFromBar(uiMouseY, startY, viewHeight, maxScroll);
+			return true;
+		}
+
+		if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 120 && uiMouseY >= startY && uiMouseY <= startY + viewHeight) {
 			int index = (int) ((uiMouseY - startY + currentScroll) / ITEM_HEIGHT);
 			if (index >= 0 && index < displayList.size()) {
 				selectedIndex = index;
@@ -475,5 +484,25 @@ public class PartyMenuScreen extends BaseMenuScreen {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (isDraggingScroll && maxScroll > 0) {
+			int panelY = (getUiHeight() / 2) - 105;
+			int startY = panelY + 35;
+			targetScroll = TextUtil.scrollFromBar(toUiY(mouseY), startY, MAX_VISIBLE_ITEMS * ITEM_HEIGHT, maxScroll);
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (isDraggingScroll) {
+			isDraggingScroll = false;
+			return true;
+		}
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 }

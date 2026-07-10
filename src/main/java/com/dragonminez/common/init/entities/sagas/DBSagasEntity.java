@@ -96,32 +96,55 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         AOE_BURST
     }
 
+    /**
+     * Balance tier shared by ki skills and melee combos.
+     * <p>{@code damageMultiplier} is the TOTAL damage an attack deals expressed as a factor of the
+     * relevant stat (ki blast damage or attack damage). Multi-hit attacks split this total across
+     * their hits. {@code cooldownFactor} scales the per-entity cooldown so stronger attacks fire
+     * less often.
+     */
+    @Getter
+    public enum Tier {
+        WEAK(1.25F, 1.0F),
+        MEDIUM(1.5F, 1.5F),
+        STRONG(1.75F, 2.0F);
+
+        private final float damageMultiplier;
+        private final float cooldownFactor;
+
+        Tier(float damageMultiplier, float cooldownFactor) {
+            this.damageMultiplier = damageMultiplier;
+            this.cooldownFactor = cooldownFactor;
+        }
+    }
+
     @Getter
     public enum KiSkillType {
-        KAMEHAMEHA(1, SkillRole.RANGED_TRAVEL),
-        GALICK_GUN(2, SkillRole.RANGED_TRAVEL),
-        MAKANKOSAPPO(3, SkillRole.HITSCAN),
-        KI_LASER(4, SkillRole.HITSCAN),
-        KI_EXPLOSION(5, SkillRole.AOE_BURST),
-        KI_BARRIER(6, SkillRole.DEFENSIVE),
-        OOZARU_ROAR(7, SkillRole.AOE_BURST),
-        GENERIC_KI_WAVE(8, SkillRole.RANGED_TRAVEL),
-        OOZARU_BEAM(9, SkillRole.RANGED_TRAVEL),
-        KI_VOLLEY(10, SkillRole.PROJECTILE_FAST),
-        KI_SMALL(11, SkillRole.PROJECTILE_FAST),
-        BLUE_HURRICANE(12, SkillRole.AOE_BURST),
-        TRIPLE_LASER(13, SkillRole.HITSCAN),
-        KIENZAN(14, SkillRole.HITSCAN),
-        DEATH_BALL(15, SkillRole.GUARD_BREAK),
-        MASENKO(16, SkillRole.RANGED_TRAVEL),
-        BIG_BANG(17, SkillRole.GUARD_BREAK),
-        FINAL_FLASH(18, SkillRole.RANGED_TRAVEL),
-        MAJIN_CANDY(19, SkillRole.ZONING),
-        KI_AIR_VOLLEY(20, SkillRole.ZONING);
+        KAMEHAMEHA(1, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        GALICK_GUN(2, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        MAKANKOSAPPO(3, SkillRole.HITSCAN, Tier.MEDIUM),
+        KI_LASER(4, SkillRole.HITSCAN, Tier.WEAK),
+        KI_EXPLOSION(5, SkillRole.AOE_BURST, Tier.MEDIUM),
+        KI_BARRIER(6, SkillRole.DEFENSIVE, Tier.WEAK),
+        OOZARU_ROAR(7, SkillRole.AOE_BURST, Tier.STRONG),
+        GENERIC_KI_WAVE(8, SkillRole.RANGED_TRAVEL, Tier.WEAK),
+        OOZARU_BEAM(9, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        KI_VOLLEY(10, SkillRole.PROJECTILE_FAST, Tier.WEAK),
+        KI_SMALL(11, SkillRole.PROJECTILE_FAST, Tier.WEAK),
+        BLUE_HURRICANE(12, SkillRole.AOE_BURST, Tier.STRONG),
+        TRIPLE_LASER(13, SkillRole.HITSCAN, Tier.MEDIUM),
+        KIENZAN(14, SkillRole.HITSCAN, Tier.MEDIUM),
+        DEATH_BALL(15, SkillRole.GUARD_BREAK, Tier.STRONG),
+        MASENKO(16, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        BIG_BANG(17, SkillRole.GUARD_BREAK, Tier.STRONG),
+        FINAL_FLASH(18, SkillRole.RANGED_TRAVEL, Tier.STRONG),
+        MAJIN_CANDY(19, SkillRole.ZONING, Tier.STRONG),
+        KI_AIR_VOLLEY(20, SkillRole.ZONING, Tier.WEAK);
 
         private final int id;
         private final SkillRole role;
-        KiSkillType(int id, SkillRole role) { this.id = id; this.role = role; }
+        private final Tier tier;
+        KiSkillType(int id, SkillRole role, Tier tier) { this.id = id; this.role = role; this.tier = tier; }
 
         public static KiSkillType fromId(int id) {
             for (KiSkillType type : values()) {
@@ -138,17 +161,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     @Getter
     public enum ComboType {
-        BASIC(0), AIR(1), KI_CHARGE_ATTACK(2), METEOR_COMBINATION(3), ANDROID_ABSORPTION(4),
-        GUM_PUNCH(5), GUM_EXPAND(6), SLEEP_RECOVERY(7), RAPID_KICKS(8);
+        BASIC(0, Tier.MEDIUM), AIR(1, Tier.MEDIUM), KI_CHARGE_ATTACK(2, Tier.STRONG),
+        METEOR_COMBINATION(3, Tier.STRONG), ANDROID_ABSORPTION(4, Tier.STRONG),
+        GUM_PUNCH(5, Tier.MEDIUM), GUM_EXPAND(6, Tier.WEAK), SLEEP_RECOVERY(7, Tier.WEAK),
+        RAPID_KICKS(8, Tier.WEAK);
 
         private final int id;
-        ComboType(int id) { this.id = id; }
+        private final Tier tier;
+        ComboType(int id, Tier tier) { this.id = id; this.tier = tier; }
 
         public static ComboType fromId(int id) {
             for (ComboType type : values()) {
                 if (type.id == id) return type;
             }
             return null;
+        }
+
+        public static Tier tierOf(int id) {
+            ComboType type = fromId(id);
+            return type != null ? type.tier : Tier.MEDIUM;
         }
 	}
 
@@ -278,7 +309,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         public KiSkill(int id, int cooldown, float size, int colorMain, int colorBorder, int colorOutline) {
             this.id = id;
-            this.cooldownMax = Math.max(1, Math.round(cooldown * SKILL_COOLDOWN_MULTIPLIER));
+            KiSkillType type = KiSkillType.fromId(id);
+            float tierFactor = type != null ? type.getTier().getCooldownFactor() : 1.0F;
+            this.cooldownMax = Math.max(1, Math.round(cooldown * SKILL_COOLDOWN_MULTIPLIER * tierFactor));
             this.currentCooldown = 0;
             this.size = size;
             this.colorMain = colorMain;
@@ -1247,7 +1280,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.setComboing(true);
         this.entityData.set(CURRENT_COMBO_ID, resolved);
         this.comboTimer = 0;
-        this.currentComboCooldown = this.comboCooldownMax;
+        this.currentComboCooldown = Math.round(this.comboCooldownMax * ComboType.tierOf(resolved).getCooldownFactor());
     }
 
     public void startComboAuto() {

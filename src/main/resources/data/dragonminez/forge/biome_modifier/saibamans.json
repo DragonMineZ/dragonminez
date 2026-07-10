@@ -3,33 +3,33 @@
   "biomes": "dragonminez:rocky",
   "spawners": [{
     "type": "dragonminez:saga_saibaman1",
-    "weight": 60,
-    "minCount": 2,
-    "maxCount": 4
+    "weight": 15,
+    "minCount": 1,
+    "maxCount": 2
   },{
     "type": "dragonminez:saga_saibaman2",
-    "weight": 55,
-    "minCount": 2,
-    "maxCount": 4
+    "weight": 14,
+    "minCount": 1,
+    "maxCount": 2
   },{
     "type": "dragonminez:saga_saibaman3",
-    "weight": 50,
-    "minCount": 2,
-    "maxCount": 4
+    "weight": 12,
+    "minCount": 1,
+    "maxCount": 2
   },{
     "type": "dragonminez:saga_saibaman4",
-    "weight": 45,
-    "minCount": 2,
-    "maxCount": 4
+    "weight": 10,
+    "minCount": 1,
+    "maxCount": 2
   },{
     "type": "dragonminez:saga_saibaman5",
-    "weight": 40,
-    "minCount": 2,
-    "maxCount": 4
+    "weight": 8,
+    "minCount": 1,
+    "maxCount": 2
   }, {
     "type": "dragonminez:saga_saibaman6",
-    "weight": 35,
-    "minCount": 2,
-    "maxCount": 4
+    "weight": 6,
+    "minCount": 1,
+    "maxCount": 2
   }]
 }

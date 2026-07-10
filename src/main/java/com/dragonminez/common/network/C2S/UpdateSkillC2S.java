@@ -60,6 +60,7 @@ public class UpdateSkillC2S {
 							if (skill.getLevel() <= 0 && !raceAllowed) break;
 							boolean isStackSkill = ConfigManager.getSkillsConfig().getStackSkills().contains(skillName.toLowerCase());
 							if (isStackSkill && skill.getLevel() <= 0) break;
+							if (skill.getLevel() <= 0 && isMasterOnlyFormSkill(data, skillName)) break;
 							refreshRuntimeMaxLevel(data, skillName, skill);
 							if (!skill.isMaxLevel() && data.getResources().getTrainingPoints() >= cost && cost != -1 && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
 								data.getResources().removeTrainingPoints(cost);
@@ -73,11 +74,20 @@ public class UpdateSkillC2S {
 						case PURCHASE:
 							if (!raceAllowed) break;
 							boolean isFormSkillPurchase = ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase());
+							int effectiveCost = cost;
+							if (isFormSkillPurchase) {
+								var charConfig = ConfigManager.getRaceCharacter(data.getCharacter().getRaceName());
+								if (charConfig == null || !charConfig.hasFormSkill(skillName)) break;
+								Integer[] prices = charConfig.getFormSkillTpCosts(skillName);
+								effectiveCost = (prices.length > 0 && prices[0] != null) ? prices[0] : -1;
+							}
 							boolean notOwned = !data.getSkills().hasSkill(skillName)
 									|| (isFormSkillPurchase && data.getSkills().getSkillLevel(skillName) == 0);
-							if (notOwned && data.getResources().getTrainingPoints() >= cost && cost != -1) {
-								data.getResources().removeTrainingPoints(cost);
+							if (notOwned && effectiveCost != -1 && data.getResources().getTrainingPoints() >= effectiveCost) {
+								data.getResources().removeTrainingPoints(effectiveCost);
 								data.getSkills().setSkillLevel(skillName, 1);
+								Skill purchased = data.getSkills().getSkill(skillName);
+								if (purchased != null) refreshRuntimeMaxLevel(data, skillName, purchased);
 								unlockTechniqueIfPresent(data, skillName);
 							}
 							break;
@@ -87,6 +97,14 @@ public class UpdateSkillC2S {
 			}
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static boolean isMasterOnlyFormSkill(StatsData data, String skillName) {
+		if (data == null || skillName == null) return false;
+		if (!ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase())) return false;
+		String raceName = data.getCharacter() != null ? data.getCharacter().getRaceName() : "";
+		var charConfig = ConfigManager.getRaceCharacter(raceName);
+		return charConfig != null && charConfig.isFormSkillBuyFromMaster(skillName);
 	}
 
 	private static boolean isSkillAllowedForPlayerRace(StatsData data, String skillName) {

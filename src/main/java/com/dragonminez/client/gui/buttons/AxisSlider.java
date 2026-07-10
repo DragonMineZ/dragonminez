@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.buttons;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -22,13 +23,20 @@ public class AxisSlider extends AbstractSliderButton {
 
     private final float minValue;
     private final float maxValue;
+    private final float step;
     private final Consumer<Float> onValueChange;
     private final Axis axis;
+    private float lastAppliedValue = Float.NaN;
 
     public AxisSlider(int x, int y, int width, int height, float minValue, float maxValue, float currentValue, Axis axis, Consumer<Float> onValueChange) {
+        this(x, y, width, height, minValue, maxValue, currentValue, 0f, axis, onValueChange);
+    }
+
+    public AxisSlider(int x, int y, int width, int height, float minValue, float maxValue, float currentValue, float step, Axis axis, Consumer<Float> onValueChange) {
         super(x, y, width, height, Component.empty(), (double)(currentValue - minValue) / (maxValue - minValue));
         this.minValue = minValue;
         this.maxValue = maxValue;
+        this.step = step;
         this.onValueChange = onValueChange;
         this.axis = axis;
     }
@@ -38,8 +46,15 @@ public class AxisSlider extends AbstractSliderButton {
 
     @Override
     protected void applyValue() {
+        if (step > 0) {
+            float snapped = Mth.clamp(Math.round(getValue() / step) * step, minValue, maxValue);
+            this.value = (double)(snapped - minValue) / (maxValue - minValue);
+        }
+        float current = getValue();
+        if (current == lastAppliedValue) return;
+        lastAppliedValue = current;
         if (onValueChange != null) {
-            onValueChange.accept(getValue());
+            onValueChange.accept(current);
         }
     }
 
@@ -66,6 +81,7 @@ public class AxisSlider extends AbstractSliderButton {
         private float minValue = -180f;
         private float maxValue = 180f;
         private float currentValue = 0f;
+        private float step = 0f;
         private Axis axis = Axis.X;
         private Consumer<Float> onValueChange;
 
@@ -92,6 +108,11 @@ public class AxisSlider extends AbstractSliderButton {
             return this;
         }
 
+        public Builder step(float step) {
+            this.step = step;
+            return this;
+        }
+
         public Builder axis(Axis axis) {
             this.axis = axis;
             return this;
@@ -103,7 +124,7 @@ public class AxisSlider extends AbstractSliderButton {
         }
 
         public AxisSlider build() {
-            return new AxisSlider(x, y, width, height, minValue, maxValue, currentValue, axis, onValueChange);
+            return new AxisSlider(x, y, width, height, minValue, maxValue, currentValue, step, axis, onValueChange);
         }
     }
 }

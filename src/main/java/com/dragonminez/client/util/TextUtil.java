@@ -191,8 +191,23 @@ public class TextUtil {
         }
     }
 
+    public static boolean overScrollBar(double mouseX, double mouseY, int barX, int barWidth, int trackY, int trackHeight) {
+        return mouseX >= barX - 4 && mouseX <= barX + barWidth + 4 && mouseY >= trackY && mouseY <= trackY + trackHeight;
+    }
+
+    public static float scrollFromBar(double mouseY, int trackY, int trackHeight, float maxScroll) {
+        if (trackHeight <= 0 || maxScroll <= 0) return 0f;
+        float percent = Mth.clamp((float) (mouseY - trackY) / trackHeight, 0f, 1f);
+        return percent * maxScroll;
+    }
+
     public static void renderScrollableText(GuiGraphics graphics, Font font, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color) {
         renderScrollableText(graphics, font, lines, x, y, width, height, currentScroll, maxScroll, color, net.minecraft.network.chat.Style.EMPTY);
+    }
+
+    public static void renderScrollableText(GuiGraphics graphics, Font font, ScrollbarState bar, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color, net.minecraft.network.chat.Style style) {
+        bar.update(x + width - 4, 3, y, height, maxScroll);
+        renderScrollableText(graphics, font, lines, x, y, width, height, currentScroll, maxScroll, color, style);
     }
 
     public static void renderScrollableText(GuiGraphics graphics, Font font, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color, net.minecraft.network.chat.Style style) {

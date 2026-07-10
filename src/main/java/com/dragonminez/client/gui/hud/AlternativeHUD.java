@@ -166,7 +166,7 @@ public class AlternativeHUD {
 	private static void drawBarValues(GuiGraphics guiGraphics, HudStatNumberAnimator animator, float current, float max, int x, int y, float tickTime) {
 		if (ConfigManager.getUserConfig().getAdvancedDescription()) {
 			boolean pct = ConfigManager.getUserConfig().getAdvancedDescriptionPercentage();
-			String text = pct ? String.format("%.0f%%", (current / max) * 100) : numberFormat.format((int) current) + " / " + numberFormat.format((int) max);
+			String text = pct ? String.format("%.0f%%", (current / max) * 100) : numberFormat.format(Math.round((double) current)) + " / " + numberFormat.format(Math.round((double) max));
 			drawAnimatedTinyText(guiGraphics, animator, text, displayValue(current, max, pct), tickTime, x, y);
 		}
 	}

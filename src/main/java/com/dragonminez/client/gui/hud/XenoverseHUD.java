@@ -143,13 +143,13 @@ public class XenoverseHUD {
 					boolean showPercent = ConfigManager.getUserConfig().getAdvancedDescriptionPercentage();
 					float tickTime = mc.player.tickCount + partialTicks;
 
-					String hpText = showPercent ? String.format("%.0f%%", (currentHP / maxHP) * 100) : numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
+					String hpText = showPercent ? String.format("%.0f%%", (currentHP / maxHP) * 100) : numberFormat.format(Math.round((double) currentHP)) + " / " + numberFormat.format(Math.round((double) maxHP));
 					drawAnimatedScaledText(guiGraphics, HP_NUMBER, hpText, displayValue(currentHP, maxHP, showPercent), tickTime, 100, 15, 0.5f);
 
-					String kiText = showPercent ? String.format("%.0f%%", (currentKi / (float) maxKi) * 100) : numberFormat.format(currentKi) + " / " + numberFormat.format(maxKi);
+					String kiText = showPercent ? String.format("%.0f%%", (currentKi / (float) maxKi) * 100) : numberFormat.format(Math.round((double) currentKi)) + " / " + numberFormat.format(Math.round((double) maxKi));
 					drawAnimatedScaledText(guiGraphics, KI_NUMBER, kiText, displayValue(currentKi, maxKi, showPercent), tickTime, 90, 23, 0.5f);
 
-					String stmText = showPercent ? String.format("%.0f%%", (currentStm / (float) maxStm) * 100) : numberFormat.format(currentStm) + " / " + numberFormat.format(maxStm);
+					String stmText = showPercent ? String.format("%.0f%%", (currentStm / (float) maxStm) * 100) : numberFormat.format(Math.round((double) currentStm)) + " / " + numberFormat.format(Math.round((double) maxStm));
 					drawAnimatedScaledText(guiGraphics, STM_NUMBER, stmText, displayValue(currentStm, maxStm, showPercent), tickTime, 80, 30, 0.5f);
 				}
 

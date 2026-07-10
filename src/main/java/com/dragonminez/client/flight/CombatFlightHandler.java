@@ -42,7 +42,7 @@ public class CombatFlightHandler {
 	private static int sustainedDir = -1;
 	private static long lastImpulseTime = 0;
 
-	public static void handle(LocalPlayer player, StatsData data) {
+	public static void handle(LocalPlayer player, StatsData data, boolean movementRestricted) {
 		if (data.getStatus().isStunned()) {
 			velocity = Vec3.ZERO;
 			burstVelocity = Vec3.ZERO;
@@ -61,13 +61,13 @@ public class CombatFlightHandler {
 		double sprintSpeed = config.getCombatFlySprintSpeed() * levelMultiplier * speedScale;
 
 		Minecraft mc = Minecraft.getInstance();
-		boolean forward = mc.options.keyUp.isDown();
-		boolean back = mc.options.keyDown.isDown();
-		boolean left = mc.options.keyLeft.isDown();
-		boolean right = mc.options.keyRight.isDown();
-		boolean jump = mc.options.keyJump.isDown();
-		boolean descend = mc.options.keyShift.isDown();
-		boolean sprint = mc.options.keySprint.isDown();
+		boolean forward = !movementRestricted && mc.options.keyUp.isDown();
+		boolean back = !movementRestricted && mc.options.keyDown.isDown();
+		boolean left = !movementRestricted && mc.options.keyLeft.isDown();
+		boolean right = !movementRestricted && mc.options.keyRight.isDown();
+		boolean jump = !movementRestricted && mc.options.keyJump.isDown();
+		boolean descend = !movementRestricted && mc.options.keyShift.isDown();
+		boolean sprint = !movementRestricted && mc.options.keySprint.isDown();
 
 		float yaw = player.getYRot();
 		Vec3 fwdDir = Vec3.directionFromRotation(0, yaw).normalize();

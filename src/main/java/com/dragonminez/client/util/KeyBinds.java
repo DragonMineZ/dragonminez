@@ -26,6 +26,9 @@ public class KeyBinds {
 	public static final KeyMapping KI_CHARGE = registerKey("ki_charge", GLFW.GLFW_KEY_C);
 	public static final KeyMapping SECOND_FUNCTION_KEY = registerKey("second_function_key", GLFW.GLFW_KEY_LEFT_ALT);
 	public static final KeyMapping ACTION_KEY = registerKey("action_key", GLFW.GLFW_KEY_G);
+	public static final KeyMapping DESCEND = registerKeyAlt("descend", GLFW.GLFW_KEY_G);
+	public static final KeyMapping INSTANT_TRANSFORM = registerKeyUnbound("instant_transform");
+	public static final KeyMapping LOWER_RELEASE = registerKeyAlt("lower_release", GLFW.GLFW_KEY_C);
 	public static final KeyMapping INSTANT_TRANSMISSION = registerKey("instant_transmission", GLFW.GLFW_KEY_H);
 	public static final KeyMapping SPACEPOD_MENU = registerKey("spacepod_menu", GLFW.GLFW_KEY_H);
 	public static final KeyMapping UTILITY_MENU = registerKey("utility_menu", GLFW.GLFW_KEY_X);
@@ -120,30 +123,35 @@ public class KeyBinds {
 		return isPhysicallyDown(SECOND_FUNCTION_KEY);
 	}
 
-	public static boolean isModifierActive(KeyModifier modifier) {
-		return modifier != KeyModifier.NONE && modifier.isActive(KeyConflictContext.IN_GAME);
+	public static boolean isBarModifierActive(KeyModifier modifier) {
+		if (modifier == KeyModifier.NONE) return false;
+		if (modifier == KeyModifier.CONTROL && isAltGrDown()) return false;
+		return modifier.isActive(KeyConflictContext.IN_GAME);
+	}
+
+	private static boolean isAltGrDown() {
+		if (Minecraft.ON_OSX) return false;
+		long window = Minecraft.getInstance().getWindow().getWindow();
+		return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_ALT);
 	}
 
 	public static boolean isChordDown(KeyMapping mapping) {
 		KeyModifier modifier = mapping.getKeyModifier();
-		if (modifier != KeyModifier.NONE && !modifier.isActive(mapping.getKeyConflictContext())) return false;
+		if (modifier != KeyModifier.NONE && !isBarModifierActive(modifier)) return false;
 		return isPhysicallyDown(mapping);
-	}
-
-	public static boolean isAnyTechniqueModifierDown() {
-		for (KeyMapping slot : TECHNIQUE_SLOTS) {
-			if (isModifierActive(slot.getKeyModifier())) return true;
-		}
-		return false;
 	}
 
 	public static boolean isPhysicallyDown(KeyMapping mapping) {
 		InputConstants.Key key = mapping.getKey();
-		if (key.getType() != InputConstants.Type.KEYSYM || key.getValue() == InputConstants.UNKNOWN.getValue()) {
-			return mapping.isDown();
-		}
+		if (key.getValue() == InputConstants.UNKNOWN.getValue()) return mapping.isDown();
 		long window = Minecraft.getInstance().getWindow().getWindow();
-		return InputConstants.isKeyDown(window, key.getValue());
+		if (key.getType() == InputConstants.Type.KEYSYM) {
+			return InputConstants.isKeyDown(window, key.getValue());
+		}
+		if (key.getType() == InputConstants.Type.MOUSE) {
+			return GLFW.glfwGetMouseButton(window, key.getValue()) == GLFW.GLFW_PRESS;
+		}
+		return mapping.isDown();
 	}
 
     public static void registerAll(RegisterKeyMappingsEvent event) {

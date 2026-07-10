@@ -378,13 +378,13 @@ public class GeneralServerConfig {
 		private Boolean saiyanRacialSkill = true;
 		private Integer saiyanZenkaiAmount = 3;
 		private Double saiyanZenkaiHealthRegen = 0.20;
-		private Double saiyanZenkaiStatBoost = 0.10;
+		private Double saiyanZenkaiStatBoost = 0.075;
 		private String[] saiyanZenkaiBoosts = {"STR", "SKP", "PWR"};
 		private Integer saiyanZenkaiCooldownSeconds = 900;
 		private Boolean namekianRacialSkill = true;
 		private Integer namekianAssimilationAmount = 4;
 		private Double namekianAssimilationHealthRegen = 0.35;
-		private Double namekianAssimilationStatBoost = 0.15;
+		private Double namekianAssimilationStatBoost = 0.075;
 		private String[] namekianAssimilationBoosts = {"STR", "SKP", "PWR"};
 		private Boolean namekianAssimilationOnNamekNpcs = true;
 		private Boolean frostDemonRacialSkill = true;

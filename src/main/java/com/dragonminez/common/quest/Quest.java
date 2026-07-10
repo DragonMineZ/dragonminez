@@ -198,8 +198,8 @@ public class Quest {
 		if (!partyScaling) {
 			return 1.0;
 		}
-		int safePartySize = Math.max(1, partySize);
-		return 1.0 + safePartySize * (perPlayerMultiplier - 1.0);
+		int extraMembers = Math.max(1, partySize) - 1;
+		return 1.0 + extraMembers * (perPlayerMultiplier - 1.0);
 	}
 
 	private static int resolveItemCountStep(int baseRequired) {

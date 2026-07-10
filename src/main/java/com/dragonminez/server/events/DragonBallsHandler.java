@@ -167,12 +167,27 @@ public class DragonBallsHandler {
 
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			syncRadarForPlayer(player);
+			scheduleDelayedSync(player, 40);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
 	}
 
 	@SubscribeEvent
 	public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
+	}
+
+	private static void scheduleDelayedSync(ServerPlayer player, int delayTicks) {
+		player.server.tell(new net.minecraft.server.TickTask(player.server.getTickCount() + delayTicks, () -> {
+			if (player.hasDisconnected()) return;
+			syncRadarForPlayer(player);
+		}));
 	}
 
 	private static void generateBallSafely(ServerLevel level, DragonBallSetDefinition definition, int star, BlockPos targetXZ) {
@@ -246,31 +261,34 @@ public class DragonBallsHandler {
 
 	public static void syncRadar(ServerLevel level) {
 		if (level == null) return;
-		Map<String, List<BlockPos>> positionsBySet = new HashMap<>();
-		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) {
-			ServerLevel setLevel = level.getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));
-			if (setLevel != null) {
-				DragonBallSavedData data = DragonBallSavedData.get(setLevel);
-				positionsBySet.put(definition.getId(), new ArrayList<>(data.getAllKnownPositionsForRadar(definition.getId())));
-			}
-		}
-		List<BlockPos> earthPositions = new ArrayList<>(positionsBySet.getOrDefault("earth", List.of()));
-		List<BlockPos> namekPositions = new ArrayList<>(positionsBySet.getOrDefault("namek", List.of()));
-		NetworkHandler.sendToAllPlayers(new RadarSyncS2C(earthPositions, namekPositions, positionsBySet));
+		RadarSyncS2C packet = buildRadarPacket(level.getServer());
+		if (packet != null) NetworkHandler.sendToAllPlayers(packet);
 	}
 
 	public static void syncRadarForPlayer(ServerPlayer player) {
 		if (player == null) return;
+		RadarSyncS2C packet = buildRadarPacket(player.serverLevel().getServer());
+		if (packet != null) NetworkHandler.sendToPlayer(packet, player);
+	}
+
+	/**
+	 * Collects radar positions for every ball set across ALL of its valid dimensions. A set is only
+	 * skipped for a dimension that isn't currently loaded (null level); other dimensions of the same
+	 * set still contribute, so a partially-loaded multi-dimension set never wipes the client radar.
+	 */
+	private static RadarSyncS2C buildRadarPacket(net.minecraft.server.MinecraftServer server) {
+		if (server == null) return null;
 		Map<String, List<BlockPos>> positionsBySet = new HashMap<>();
 		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) {
-			ServerLevel setLevel = player.serverLevel().getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));
-			if (setLevel != null) {
-				DragonBallSavedData data = DragonBallSavedData.get(setLevel);
-				positionsBySet.put(definition.getId(), new ArrayList<>(data.getAllKnownPositionsForRadar(definition.getId())));
+			List<BlockPos> positions = positionsBySet.computeIfAbsent(definition.getId(), ignored -> new ArrayList<>());
+			for (net.minecraft.resources.ResourceLocation dimension : definition.getValidDimensions()) {
+				ServerLevel setLevel = server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, dimension));
+				if (setLevel == null) continue;
+				positions.addAll(DragonBallSavedData.get(setLevel).getAllKnownPositionsForRadar(definition.getId()));
 			}
 		}
 		List<BlockPos> earthPositions = new ArrayList<>(positionsBySet.getOrDefault("earth", List.of()));
 		List<BlockPos> namekPositions = new ArrayList<>(positionsBySet.getOrDefault("namek", List.of()));
-		NetworkHandler.sendToPlayer(new RadarSyncS2C(earthPositions, namekPositions, positionsBySet), player);
+		return new RadarSyncS2C(earthPositions, namekPositions, positionsBySet);
 	}
 }

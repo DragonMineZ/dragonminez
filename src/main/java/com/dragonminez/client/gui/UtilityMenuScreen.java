@@ -12,6 +12,7 @@ import com.dragonminez.client.gui.utilitymenu.IUtilityMenuSlot;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.render.shader.UtilityMenuBlur;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
@@ -85,6 +86,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 	private Component panelTitle = null;
 	private boolean panelScrollable = false;
 	private int panelScroll = 0;
+	private final ScrollbarState panelBar = new ScrollbarState();
 	private MoreNode openMore = null;
 	private float panelAngleDeg = 0f;
 	private int panelLevel = 0;
@@ -93,6 +95,10 @@ public class UtilityMenuScreen extends ScaledScreen {
 	private boolean dragging = false;
 	private double dragStartY = 0;
 	private double dragCurrentY = 0;
+
+	private static final long DOUBLE_CLICK_MS = 300L;
+	private RadialNode lastClickNode = null;
+	private long lastClickMs = 0L;
 
 	public UtilityMenuScreen() {
 		super(Component.literal("Menu").withStyle(Style.EMPTY.withFont(DMZ_FONT)));
@@ -270,14 +276,19 @@ public class UtilityMenuScreen extends ScaledScreen {
 			TextUtil.drawStringWithBorder(graphics, this.font, Component.literal(text).withStyle(style), px + 6, drawY + 3, color, 0x000000);
 		}
 
-		if (panelScrollable && maxScroll > 0) {
+		if (panelScrollable) {
 			int trackX = px + pw - 3;
 			int trackTop = rowsTop;
 			int trackH = visibleRows * PANEL_ROW_H;
-			graphics.fill(trackX, trackTop, trackX + 2, trackTop + trackH, 0x40FFFFFF);
-			int thumbH = Math.max(6, trackH * visibleRows / opts.size());
-			int thumbY = trackTop + (trackH - thumbH) * panelScroll / maxScroll;
-			graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbH, 0xC0FFFFFF);
+			panelBar.update(trackX, 2, trackTop, trackH, maxScroll);
+			if (maxScroll > 0) {
+				graphics.fill(trackX, trackTop, trackX + 2, trackTop + trackH, 0x40FFFFFF);
+				int thumbH = Math.max(6, trackH * visibleRows / opts.size());
+				int thumbY = trackTop + (trackH - thumbH) * panelScroll / maxScroll;
+				graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbH, 0xC0FFFFFF);
+			}
+		} else {
+			panelBar.clear();
 		}
 
 		if (!panelScrollable && dragging && dragIndex >= 0) {
@@ -722,11 +733,14 @@ public class UtilityMenuScreen extends ScaledScreen {
 			}
 			int rowsTop = b[1] + PANEL_TITLE_H;
 			if (panelScrollable) {
+				if (panelBar.tryStartDrag(ux, uy)) {
+					panelScroll = Math.round(panelBar.scrollFor(uy));
+					return true;
+				}
 				int rel = rowIndexAt(rowsTop, uy);
 				int i = panelScroll + rel;
 				if (rel >= 0 && rel < visiblePanelRows() && i < panelOptions.size()) {
-					RadialNode row = panelOptions.get(i);
-					if (row.interactive(statsData)) row.onSelect(statsData);
+					selectNode(panelOptions.get(i));
 				}
 				return true;
 			}
@@ -756,7 +770,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 			return true;
 		}
 		if (node instanceof FormSelectNode form && form.interactive(statsData)) {
-			form.onSelect(statsData);
+			selectNode(form);
 			return true;
 		}
 		if (node != null && node.interactive(statsData) && !node.expandable(statsData)) {
@@ -776,6 +790,16 @@ public class UtilityMenuScreen extends ScaledScreen {
 		frozenHover = hover;
 	}
 
+	private void selectNode(RadialNode node) {
+		if (node == null || !node.interactive(statsData)) return;
+		long now = System.currentTimeMillis();
+		boolean doubleClick = node == lastClickNode && (now - lastClickMs) <= DOUBLE_CLICK_MS;
+		lastClickNode = node;
+		lastClickMs = doubleClick ? 0L : now;
+		if (doubleClick) node.onDoubleSelect(statsData);
+		else node.onSelect(statsData);
+	}
+
 	private void closePanel() {
 		panelOptions = null;
 		panelTitle = null;
@@ -784,10 +808,15 @@ public class UtilityMenuScreen extends ScaledScreen {
 		openMore = null;
 		dragIndex = -1;
 		dragging = false;
+		panelBar.stopDrag();
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (panelBar.isDragging()) {
+			panelScroll = Math.round(panelBar.scrollFor(toUiY(mouseY)));
+			return true;
+		}
 		if (panelOptions != null && !panelScrollable && dragIndex >= 0) {
 			double uy = toUiY(mouseY);
 			if (Math.abs(uy - dragStartY) > 3) dragging = true;
@@ -799,11 +828,14 @@ public class UtilityMenuScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (panelBar.isDragging()) {
+			panelBar.stopDrag();
+			return true;
+		}
 		if (panelOptions != null && !panelScrollable && dragIndex >= 0) {
 			double uy = toUiY(mouseY);
 			if (!dragging) {
-				RadialNode row = panelOptions.get(dragIndex);
-				if (row.interactive(statsData)) row.onSelect(statsData);
+				selectNode(panelOptions.get(dragIndex));
 			} else {
 				int[] b = panelBounds(getUiWidth() / 2f, getUiHeight() / 2f);
 				int rowsTop = b[1] + PANEL_TITLE_H;

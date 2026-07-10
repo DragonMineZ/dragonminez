@@ -51,12 +51,23 @@ public class ComboManager {
         }
     }
 
+    /**
+     * Per-hit melee damage so that a combo's hits sum to {@code attackDamage * tier.multiplier}.
+     * Hybrid combos (Meteor) call this only for their melee portion; the ki portion is computed
+     * separately against ki blast damage.
+     */
+    private static float comboHitDamage(DBSagasEntity user, DBSagasEntity.ComboType combo, int totalHits) {
+        float melee = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        return melee * combo.getTier().getDamageMultiplier() / totalHits;
+    }
+
     private static void handleBasicCombo(DBSagasEntity user, LivingEntity target, int timer) {
+        float perHit = comboHitDamage(user, DBSagasEntity.ComboType.BASIC, 3);
         if (timer == 1) {
-            teleportAndHit(user, target, target.getLookAngle().normalize(), 1.5, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.4F, MainSounds.CRITICO1.get(), 1.4F);
+            teleportAndHit(user, target, target.getLookAngle().normalize(), 1.5, perHit, MainSounds.CRITICO1.get(), 1.4F);
         }
         if (timer == 12) {
-            teleportAndHit(user, target, target.getLookAngle().normalize().scale(-1), 1.5, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.4F, MainSounds.CRITICO1.get(), 1.5F);
+            teleportAndHit(user, target, target.getLookAngle().normalize().scale(-1), 1.5, perHit, MainSounds.CRITICO1.get(), 1.5F);
         }
         if (timer == 22) {
             Vec3 targetLook = target.getLookAngle().normalize();
@@ -65,13 +76,14 @@ public class ComboManager {
             user.setDeltaMovement(0, 0, 0);
         }
         if (timer == 31) {
-            finalBlow(user, target, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.4F, 2.5);
+            finalBlow(user, target, perHit, 2.5);
         }
     }
 
     private static void handleAirCombo(DBSagasEntity user, LivingEntity target, int timer) {
+        float perHit = comboHitDamage(user, DBSagasEntity.ComboType.AIR, 2);
         if (timer == 1) {
-            teleportAndHit(user, target, target.getLookAngle().normalize(), 1.5, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.6F, MainSounds.CRITICO1.get(), 1.2F);
+            teleportAndHit(user, target, target.getLookAngle().normalize(), 1.5, perHit, MainSounds.CRITICO1.get(), 1.2F);
             target.setDeltaMovement(0, 1.2D, 0);
             target.hasImpulse = true;
         }
@@ -83,7 +95,7 @@ public class ComboManager {
         }
         if (timer == 20) {
             target.invulnerableTime = 0;
-            target.hurt(user.damageSources().mobAttack(user), (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.6F);
+            target.hurt(user.damageSources().mobAttack(user), perHit);
             user.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
             user.spawnPunchParticles(target);
             target.setDeltaMovement(0, -2.5D, 0);
@@ -98,6 +110,7 @@ public class ComboManager {
     }
 
     private static void handleChargeAttack(DBSagasEntity user, LivingEntity target, int timer) {
+        float perHit = comboHitDamage(user, DBSagasEntity.ComboType.KI_CHARGE_ATTACK, 2);
         if (timer == 1) {
             user.setKiCharge(true);
             user.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.5F);
@@ -105,7 +118,7 @@ public class ComboManager {
         }
         if (timer == 6) {
             user.spawnPunchParticles(target);
-            target.hurt(user.damageSources().mobAttack(user), (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.1F);
+            target.hurt(user.damageSources().mobAttack(user), perHit);
             user.setDeltaMovement(0, 0, 0);
             target.setDeltaMovement(0, 0, 0);
         }
@@ -115,14 +128,16 @@ public class ComboManager {
             user.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
         }
         if (timer == 17) {
-            finalBlow(user, target, (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.1F, 3.0);
+            finalBlow(user, target, perHit, 3.0);
             user.setKiCharge(false);
         }
     }
 
     private static void handleMeteorCombination(DBSagasEntity user, LivingEntity target, int timer) {
+        // Hybrid: 6 melee hits sum to melee * tier, then a final Kamehameha for ki * tier (double instance).
+        float perHit = comboHitDamage(user, DBSagasEntity.ComboType.METEOR_COMBINATION, 6);
         if (timer == 1) {
-            meleeHit(user, target, 0.3, 2.0);
+            meleeHit(user, target, perHit, 0.3, 2.0);
         }
         if (timer == 10) {
             Vec3 look = target.getLookAngle().normalize();
@@ -130,10 +145,10 @@ public class ComboManager {
             user.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
         }
         if (timer == 15 || timer == 20 || timer == 25 || timer == 30) {
-            meleeHit(user, target, 0.0, 0.0);
+            meleeHit(user, target, perHit, 0.0, 0.0);
         }
         if (timer == 35) {
-            meleeHit(user, target, 0.0, 0.0);
+            meleeHit(user, target, perHit, 0.0, 0.0);
             if (!isComboBlocked(user, target)) {
                 target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, false, true));
             }
@@ -143,7 +158,7 @@ public class ComboManager {
             user.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
             user.setDeltaMovement(0, 0, 0);
 
-            float damage = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.0F;
+            float damage = user.getKiBlastDamage() * DBSagasEntity.ComboType.METEOR_COMBINATION.getTier().getDamageMultiplier();
             KiWaveEntity kame = new KiWaveEntity(user.level(), user);
             kame.setupKiHame(user, damage, user.getKiBlastSpeed(), 1.5F, 30);
         }
@@ -192,9 +207,10 @@ public class ComboManager {
         user.spawnPunchParticles(target);
     }
 
-    private static void meleeHit(DBSagasEntity user, LivingEntity target, double pushY, double pushStrength) {
+    private static void meleeHit(DBSagasEntity user, LivingEntity target, float damage, double pushY, double pushStrength) {
         user.lookAt(target, 360, 360);
-        user.doHurtTarget(target);
+        target.invulnerableTime = 0;
+        target.hurt(user.damageSources().mobAttack(user), damage);
         user.swing(InteractionHand.MAIN_HAND);
         user.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
         if (pushStrength > 0) {
@@ -224,7 +240,7 @@ public class ComboManager {
         }
 
         if (timer == 7) {
-            float damage = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 3.0F;
+            float damage = comboHitDamage(user, DBSagasEntity.ComboType.GUM_PUNCH, 1);
 
             target.invulnerableTime = 0;
             target.hurt(user.damageSources().mobAttack(user), damage);
@@ -257,7 +273,7 @@ public class ComboManager {
         }
 
         if (timer == 5) {
-            float damage = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.2F;
+            float damage = comboHitDamage(user, DBSagasEntity.ComboType.GUM_EXPAND, 1);
 
             target.invulnerableTime = 0;
             target.hurt(user.damageSources().mobAttack(user), damage);
@@ -310,7 +326,8 @@ public class ComboManager {
 
             if (user.distanceTo(target) <= 3.0D) {
                 if (timer % 2 == 0) {
-                    float damage = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.4F;
+                    // 9 potential hits across ticks 2..18 sum to melee * tier.
+                    float damage = comboHitDamage(user, DBSagasEntity.ComboType.RAPID_KICKS, 9);
 
                     target.invulnerableTime = 0;
                     target.hurt(user.damageSources().mobAttack(user), damage);

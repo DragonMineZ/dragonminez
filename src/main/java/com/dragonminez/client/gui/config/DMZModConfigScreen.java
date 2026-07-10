@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.config;
 
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -27,6 +28,7 @@ public class DMZModConfigScreen extends Screen {
 	private final List<String> files = new ArrayList<>();
 	private EditBox searchBox;
 	private int scrollOffset = 0;
+	private final ScrollbarState scrollBar = new ScrollbarState();
 
 	public DMZModConfigScreen(Screen parent) {
 		super(Component.translatable("gui.dragonminez.modconfig.title"));
@@ -118,6 +120,7 @@ public class DMZModConfigScreen extends Screen {
 					this.width / 2, top + 10, 0xFF888888);
 		}
 
+		scrollBar.update(this.width / 2 + 156, 3, top, bottom - top, maxScroll());
 		if (maxScroll() > 0) {
 			int barX = this.width / 2 + 156;
 			int trackH = bottom - top;
@@ -133,6 +136,10 @@ public class DMZModConfigScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (button == 0 && scrollBar.tryStartDrag(mouseX, mouseY)) {
+			scrollOffset = Math.round(scrollBar.scrollFor(mouseY));
+			return true;
+		}
 		if (button == 0) {
 			int top = LIST_TOP;
 			int bottom = listBottom();
@@ -146,6 +153,24 @@ public class DMZModConfigScreen extends Screen {
 			}
 		}
 		return super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (scrollBar.isDragging()) {
+			scrollOffset = Math.round(scrollBar.scrollFor(mouseY));
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (scrollBar.isDragging()) {
+			scrollBar.stopDrag();
+			return true;
+		}
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override

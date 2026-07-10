@@ -11,6 +11,7 @@ import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
@@ -93,6 +94,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private int nosePreviewScrollRows = 0;
 	private int mouthPreviewScrollRows = 0;
 	private int tattooPreviewScrollRows = 0;
+	private final ScrollbarState bodyTypeBar = new ScrollbarState();
+	private final ScrollbarState hairBar = new ScrollbarState();
+	private final ScrollbarState eyesBar = new ScrollbarState();
+	private final ScrollbarState noseBar = new ScrollbarState();
+	private final ScrollbarState mouthBar = new ScrollbarState();
+	private final ScrollbarState tattooBar = new ScrollbarState();
 	private float playerRotation = 180.0f;
 	private float playerPitch = 12.0f;
 	private boolean isDraggingModel = false;
@@ -487,6 +494,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int top = panelY + LEFT_PANEL_PADDING;
 		TabId tab = activeTabs.get(currentTabIndex);
 
+		bodyTypeBar.clear();
+		hairBar.clear();
+		eyesBar.clear();
+		noseBar.clear();
+		mouthBar.clear();
+		tattooBar.clear();
+
 		switch (tab) {
 			case PRESET -> renderPresetText(graphics, centerX, top);
 			case HAIR -> renderHairText(graphics, centerX, top);
@@ -499,7 +513,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.body_type"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
+		renderPreviewGrid(graphics, bodyTypeBar, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
 		if (Character.GENDER_FEMALE.equalsIgnoreCase(character.getGender())) {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(tr("gui.dragonminez.customization.chest_size").getString() + " x" + String.format("%.2f", character.getBoobScale())), centerX, top + 150, 0xFF9B9B);
 		}
@@ -512,26 +526,26 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.hair"), centerX, top + 2, 0xFF9B9B);
 		int maxHairIndex = Math.max(0, getMaxHairForCurrentState() - 1);
 		Set<Integer> selected = getSelectedHeadBoneValues();
-		renderPreviewGrid(graphics, top + 30, 0, maxHairIndex, selected::contains, PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
+		renderPreviewGrid(graphics, hairBar, top + 30, 0, maxHairIndex, selected::contains, PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(getCurrentPreviewTransformationName()), centerX, top + 178, 0xFFFFFF);
 	}
 
 	private void renderEyesText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.eyes"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), character.getEyesType(), PreviewRenderMode.EYES_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows);
+		renderPreviewGrid(graphics, eyesBar, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), character.getEyesType(), PreviewRenderMode.EYES_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows);
 	}
 
 	private void renderFaceText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.nose"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), character.getNoseType(), PreviewRenderMode.NOSE_ONLY, true, 1, nosePreviewScrollRows);
+		renderPreviewGrid(graphics, noseBar, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), character.getNoseType(), PreviewRenderMode.NOSE_ONLY, true, 1, nosePreviewScrollRows);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.mouth"), centerX, top + 74, 0xFF9B9B);
-		renderPreviewGrid(graphics, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), character.getMouthType(), PreviewRenderMode.MOUTH_ONLY, true, 2, mouthPreviewScrollRows);
+		renderPreviewGrid(graphics, mouthBar, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), character.getMouthType(), PreviewRenderMode.MOUTH_ONLY, true, 2, mouthPreviewScrollRows);
 	}
 
 	private void renderBodyText(GuiGraphics graphics, int centerX, int top) {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.tattoo"), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, top + 30, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), character.getTattooType(), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
+		renderPreviewGrid(graphics, tattooBar, top + 30, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), character.getTattooType(), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
 	}
 
 	private void renderAuraClassText(GuiGraphics graphics, int centerX, int top, int mouseX, int mouseY) {
@@ -793,6 +807,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			return false;
 		}
 
+		if (button == 0 && tryStartGridScrollDrag(uiMouseX, uiMouseY)) {
+			return true;
+		}
+
 		if (button == 0 && handlePreviewGridClick(uiMouseX, uiMouseY)) {
 			return true;
 		}
@@ -817,11 +835,44 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		isDraggingModel = false;
+		stopGridScrollDrag();
 		return super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	private boolean tryStartGridScrollDrag(double mx, double my) {
+		if (bodyTypeBar.tryStartDrag(mx, my)) { bodyTypePreviewScrollRows = Math.round(bodyTypeBar.scrollFor(my)); return true; }
+		if (hairBar.tryStartDrag(mx, my)) { hairPreviewScrollRows = Math.round(hairBar.scrollFor(my)); return true; }
+		if (eyesBar.tryStartDrag(mx, my)) { eyesPreviewScrollRows = Math.round(eyesBar.scrollFor(my)); return true; }
+		if (noseBar.tryStartDrag(mx, my)) { nosePreviewScrollRows = Math.round(noseBar.scrollFor(my)); return true; }
+		if (mouthBar.tryStartDrag(mx, my)) { mouthPreviewScrollRows = Math.round(mouthBar.scrollFor(my)); return true; }
+		if (tattooBar.tryStartDrag(mx, my)) { tattooPreviewScrollRows = Math.round(tattooBar.scrollFor(my)); return true; }
+		return false;
+	}
+
+	private boolean updateGridScrollDrag(double my) {
+		if (bodyTypeBar.isDragging()) { bodyTypePreviewScrollRows = Math.round(bodyTypeBar.scrollFor(my)); return true; }
+		if (hairBar.isDragging()) { hairPreviewScrollRows = Math.round(hairBar.scrollFor(my)); return true; }
+		if (eyesBar.isDragging()) { eyesPreviewScrollRows = Math.round(eyesBar.scrollFor(my)); return true; }
+		if (noseBar.isDragging()) { nosePreviewScrollRows = Math.round(noseBar.scrollFor(my)); return true; }
+		if (mouthBar.isDragging()) { mouthPreviewScrollRows = Math.round(mouthBar.scrollFor(my)); return true; }
+		if (tattooBar.isDragging()) { tattooPreviewScrollRows = Math.round(tattooBar.scrollFor(my)); return true; }
+		return false;
+	}
+
+	private void stopGridScrollDrag() {
+		bodyTypeBar.stopDrag();
+		hairBar.stopDrag();
+		eyesBar.stopDrag();
+		noseBar.stopDrag();
+		mouthBar.stopDrag();
+		tattooBar.stopDrag();
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (updateGridScrollDrag(toUiY(mouseY))) {
+			return true;
+		}
 		if (isDraggingModel && !colorPickerVisible) {
 			double uiMouseX = toUiX(mouseX);
 			double uiMouseY = toUiY(mouseY);
@@ -1606,11 +1657,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		return false;
 	}
 
-	private void renderPreviewGrid(GuiGraphics graphics, int startY, int minValue, int maxValue, int selectedValue, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
-		renderPreviewGrid(graphics, startY, minValue, maxValue, (IntPredicate) (v -> v == selectedValue), mode, headZoom, visibleRows, scrollRows);
+	private void renderPreviewGrid(GuiGraphics graphics, ScrollbarState bar, int startY, int minValue, int maxValue, int selectedValue, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
+		renderPreviewGrid(graphics, bar, startY, minValue, maxValue, (IntPredicate) (v -> v == selectedValue), mode, headZoom, visibleRows, scrollRows);
 	}
 
-	private void renderPreviewGrid(GuiGraphics graphics, int startY, int minValue, int maxValue, IntPredicate selectedPredicate, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
+	private void renderPreviewGrid(GuiGraphics graphics, ScrollbarState bar, int startY, int minValue, int maxValue, IntPredicate selectedPredicate, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
 		if (maxValue < minValue) return;
 		int total = maxValue - minValue + 1;
 		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
@@ -1635,11 +1686,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		}
 
 		int maxScrollRows = getMaxScrollRows(minValue, maxValue, visibleRows);
+		int gridHeight = visibleRows * PREVIEW_CARD_HEIGHT + (visibleRows - 1) * PREVIEW_CARD_GAP;
+		int scrollbarX = startX + PREVIEW_GRID_COLUMNS * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP) - 4;
+		int scrollbarW = 3;
+		bar.update(scrollbarX, scrollbarW, startY, gridHeight, maxScrollRows);
 		if (maxScrollRows > 0) {
-			int gridHeight = visibleRows * PREVIEW_CARD_HEIGHT + (visibleRows - 1) * PREVIEW_CARD_GAP;
-			int scrollbarX = startX + PREVIEW_GRID_COLUMNS * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP) - 4;
-			int scrollbarW = 3;
-
 			graphics.fill(scrollbarX, startY, scrollbarX + scrollbarW, startY + gridHeight, 0x88000000);
 
 			int thumbHeight = Math.max(8, gridHeight / (maxScrollRows + 1));
