@@ -187,10 +187,10 @@ public final class KiSenseScan {
 	}
 
 	private static boolean isCloaked(Player target) {
-		return CuriosUtil.getFirstStack(target, "head_tech").getItem() == MainItems.ANTI_KI_CLOAK.get();
+		return CuriosUtil.getFirstStackForItem(target, "head_tech", "anti_ki_cloak").getItem() == MainItems.ANTI_KI_CLOAK.get();
 	}
 
 	public static ItemStack scouterStack(Player player) {
-		return CuriosUtil.getFirstStack(player, "head_tech");
+		return CuriosUtil.getFirstStackForItem(player, "head_tech", "scouter");
 	}
 }

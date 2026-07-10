@@ -21,7 +21,6 @@ import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.passives.PassiveEventHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -894,7 +893,7 @@ public class StatsEvents {
 	}
 
 	private static ItemStack getHeadTechStack(ServerPlayer player) {
-		return CuriosUtil.getFirstStack(player, "head_tech");
+		return CuriosUtil.getFirstStackForItem(player, "head_tech", "pothala");
 	}
 
 	private static boolean hasPothala(ServerPlayer player, String side) {

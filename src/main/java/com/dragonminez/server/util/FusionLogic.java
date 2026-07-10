@@ -13,10 +13,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
@@ -97,7 +94,7 @@ public class FusionLogic {
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.POTHALA);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
-		ItemStack leaderHeadTech = CuriosUtil.getFirstStack(leader, "head_tech");
+		ItemStack leaderHeadTech = CuriosUtil.getFirstStackForItem(leader, "head_tech", "pothala");
 		boolean isGreenPothala = !leaderHeadTech.isEmpty() && leaderHeadTech.getItem().getDescriptionId().contains("green");
 
 		lData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
@@ -299,8 +296,8 @@ public class FusionLogic {
 	}
 
 	private static void damageEarring(ServerPlayer player) {
-		ItemStack stack = CuriosUtil.getFirstStack(player, "head_tech");
-		if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {
+		ItemStack stack = CuriosUtil.getFirstStackForItem(player, "head_tech", "pothala");
+		if (!stack.isEmpty()) {
 			stack.hurtAndBreak(1, player, (entity) -> {});
 		}
 	}
