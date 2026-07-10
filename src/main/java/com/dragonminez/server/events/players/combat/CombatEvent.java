@@ -3,6 +3,7 @@ package com.dragonminez.server.events.players.combat;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.config.ConfigManager;
@@ -143,6 +144,17 @@ public class CombatEvent {
 				if (attackerData.getStatus().isBlocking()) {
 					event.setCanceled(true);
 					canceledByBlocking[0] = true;
+					return;
+				}
+
+				var attackerMainHand = attacker.getMainHandItem();
+				if (!attackerMainHand.isEmpty() && WeaponRegistry.getAttributes(attackerMainHand) == null) {
+					if (isPunchMachine) {
+						((PunchMachineEntity) event.getEntity()).processHit((float) currentDamage[0], attacker);
+						attackerData.getResources().addTrainingPoints(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
+						event.setCanceled(true);
+						event.setAmount(0);
+					}
 					return;
 				}
 

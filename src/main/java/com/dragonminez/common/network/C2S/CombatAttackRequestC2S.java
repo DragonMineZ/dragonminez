@@ -84,6 +84,9 @@ public class CombatAttackRequestC2S {
 
 	private static final UUID SWEEPING_MODIFIER_UUID = UUID.fromString("99435a26-9fa8-48b4-a8eb-8438bf228eb3");
 
+	private static final String LAST_MELEE_ATTACK_TIME_TAG = "dmz_last_melee_attack_time";
+	private static final int ATTACK_RATE_TOLERANCE_TICKS = 2;
+
 	public static void processAttackRequest(ServerPlayer player, CombatAttackRequestC2S request) {
 		player.server.execute(() -> {
 			int comboCount = request.getComboCount();
@@ -94,6 +97,12 @@ public class CombatAttackRequestC2S {
 				LogUtil.warn(Env.SERVER, "Player {} tried to attack with mismatched selected slot", player.getName().getString());
 				return;
 			}
+
+			long gameTime = player.level().getGameTime();
+			long lastAttackTime = player.getPersistentData().getLong(LAST_MELEE_ATTACK_TIME_TAG);
+			int minInterval = Math.max(0, (int) Math.floor(player.getCurrentItemAttackStrengthDelay()) - ATTACK_RATE_TOLERANCE_TICKS);
+			if (lastAttackTime > 0 && gameTime - lastAttackTime < minInterval) return;
+			player.getPersistentData().putLong(LAST_MELEE_ATTACK_TIME_TAG, gameTime);
 
 			((PlayerAttackProperties) player).setComboCount(comboCount);
 

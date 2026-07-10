@@ -783,7 +783,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 this.getNavigation().stop();
             }
 
-            this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming());
+            this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming() || this.isStunned());
 
             if (this.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight();
 
@@ -1177,7 +1177,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     @Override
     public void travel(Vec3 pTravelVector) {
-        if (this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken()) {
+        if (this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken() || this.isStunned()) {
             this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
             super.travel(Vec3.ZERO);
             return;
@@ -1612,7 +1612,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void moveTowardsTargetInAir(LivingEntity target) {
-        if (this.isCasting() || this.isComboing() || this.isEvading() || this.isZanzoken()) return;
+        if (this.isCasting() || this.isComboing() || this.isEvading() || this.isZanzoken() || this.isStunned()) return;
         double flyspeed = this.getFlySpeed();
 
         double distance = this.distanceTo(target);
