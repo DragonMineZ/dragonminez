@@ -188,6 +188,13 @@ final class SideQuestDefaults {
 		return r;
 	}
 
+	private static JsonObject onlyOn(JsonObject reward, String... difficulties) {
+		JsonArray arr = new JsonArray();
+		for (String difficulty : difficulties) arr.add(difficulty);
+		reward.add("difficulty", arr);
+		return reward;
+	}
+
 	// ---- Prerequisite helpers ----
 
 	private static JsonObject prereqs(String op, JsonObject... conditions) {

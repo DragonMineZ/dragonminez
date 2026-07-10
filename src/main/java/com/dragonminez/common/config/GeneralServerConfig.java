@@ -6,12 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 @NoArgsConstructor
@@ -156,7 +151,8 @@ public class GeneralServerConfig {
 		public List<TpBoost> getTpGainBoosts(TpSource source) {
 			if (tpGainBoosts == null) return Arrays.asList(TpBoost.values());
 			List<TpBoost> boosts = tpGainBoosts.get(source);
-			return boosts != null ? boosts : List.of();
+			if (boosts == null) return List.of();
+			return boosts.stream().filter(Objects::nonNull).toList();
 		}
 
 		public Integer getReviveCooldownSeconds() {

@@ -24,9 +24,16 @@ public class ItemReward extends QuestReward {
 
 	@Override
 	public void giveReward(ServerPlayer player) {
+		giveReward(player, 1.0);
+	}
+
+	@Override
+	public void giveReward(ServerPlayer player, double rewardMultiplier) {
 		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
 		if (item == null) return;
-		ItemStack stack = new ItemStack(item, count);
+		int scaledCount = scaledCount(rewardMultiplier);
+		if (scaledCount <= 0) return;
+		ItemStack stack = new ItemStack(item, scaledCount);
 		player.getInventory().add(stack);
 		if (!stack.isEmpty()) {
 			ItemEntity drop = player.drop(stack, false);
@@ -34,11 +41,25 @@ public class ItemReward extends QuestReward {
 		}
 	}
 
+	public int scaledCount(double rewardMultiplier) {
+		if (count <= 0) return 0;
+		return Math.max(1, (int) Math.round(count * rewardMultiplier));
+	}
+
 	@Override
 	public Component getDescription() {
+		return describe(count);
+	}
+
+	@Override
+	public Component getDescription(double rewardMultiplier) {
+		return describe(scaledCount(rewardMultiplier));
+	}
+
+	private Component describe(int shownCount) {
 		return Component.translatable(
 				"gui.dragonminez.quests.rewards.item",
-				count,
+				shownCount,
 				Component.translatable(
 						"item." + ResourceLocation.parse(itemId).toLanguageKey()
 				)
