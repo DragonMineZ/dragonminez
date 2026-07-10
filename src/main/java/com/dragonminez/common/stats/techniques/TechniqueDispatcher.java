@@ -1,9 +1,11 @@
 package com.dragonminez.common.stats.techniques;
 
 import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -113,9 +115,12 @@ public class TechniqueDispatcher {
                 } else if ("sokidan".equals(data.getId())) {
                     medBall.setupSokidanPlayer(owner, realDamage, data.getSpeed(), 0xF7F723, 0xF7B736, data.getSize());
                     medBall.setColors(0xFCFC5D, 0xF7F723, 0xF7B736);
-                } else {
+                } else if("burning_attack".equals(data.getId())){
                     medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
-                }
+                    if (!level.isClientSide) level.playSound(null, medBall.getX(), medBall.getY(), medBall.getZ(), MainSounds.KI_BURNING_CHARGE.get(), SoundSource.PLAYERS, 4.0F, 1.0F);
+                } else {
+                medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+            }
                 medBall.setColorOutline("sokidan".equals(data.getId()) ? 0xF7B736 : data.getColorOutline());
                 medBall.setKiType(kiTypeOrdinal);
                 medBall.setTechniqueId(data.getId());

@@ -331,7 +331,7 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     public void playInitialSound(SoundEvent sound) {
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 0.1F, 0.8F + (this.random.nextFloat() * 0.2F));
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 0.7F, 0.8F + (this.random.nextFloat() * 0.2F));
     }
 
     public boolean applyDamageOrHeal(Entity target, float amount) {

@@ -20,6 +20,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
@@ -663,7 +664,17 @@ public class KiBlastEntity extends AbstractKiProjectile {
             this.shoot(newTrajectory.x, newTrajectory.y, newTrajectory.z, this.getKiSpeed(), 0.0F);
             this.hasImpulse = true;
 
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (this.random.nextFloat() * 0.2F));
+            SoundEvent fireSound;
+            if ("burning_attack".equals(this.getTechniqueId())) {
+                fireSound = MainSounds.KI_BURNING_FIRE.get();
+            } else if (this.getKiRenderType() == 5) {
+                fireSound = MainSounds.KI_SPIRITBOMB_FIRE.get();
+            } else if (this.getKiRenderType() == 6) {
+                fireSound = MainSounds.KI_SUPERNOVA_FIRE.get();
+            } else {
+                fireSound = MainSounds.KIBLAST_ATTACK.get();
+            }
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 1.0F, 1.0F);
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
@@ -836,7 +847,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         if (!this.level().isClientSide) {
-            if (!isCasting) {
+            if(isCasting){
+                if (type == 5 && this.tickCount == 1) {
+                    this.playSound(MainSounds.KI_SPIRITBOMB_CHARGE.get(), 0.8F, 1.0F);
+                }  else if (type == 6 && this.tickCount == 1) {
+                    this.playSound(MainSounds.KI_SUPERNOVA_CHARGE.get(), 0.8F, 1.0F);
+                }
+            } else {
                 if (this.isDetonating) {
                     this.processDetonation();
                     return;
