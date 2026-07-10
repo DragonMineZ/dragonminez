@@ -156,8 +156,21 @@ public final class MainSounds {
     public static final RegistryObject<SoundEvent> KI_KAME_CHARGE = registerSoundEvent("ki_kame_charge");
     public static final RegistryObject<SoundEvent> KI_KAME_FIRE = registerSoundEvent("ki_kame_fire");
     public static final RegistryObject<SoundEvent> KI_DISK_CHARGE = registerSoundEvent("ki_disk_charge");
+    public static final RegistryObject<SoundEvent> KI_DISK_FIRE = registerSoundEvent("ki_disk_fire");
+    public static final RegistryObject<SoundEvent> KI_BURNING_CHARGE = registerSoundEvent("ki_burning_charge");
+    public static final RegistryObject<SoundEvent> KI_BURNING_FIRE = registerSoundEvent("ki_burning_fire");
+    public static final RegistryObject<SoundEvent> KI_FINALFLASH_CHARGE = registerSoundEvent("ki_finalflash_charge");
+    public static final RegistryObject<SoundEvent> KI_FINALFLASH_FIRE = registerSoundEvent("ki_finalflash_fire");
+    public static final RegistryObject<SoundEvent> KI_SPIRITBOMB_CHARGE = registerSoundEvent("ki_spiritbomb_charge");
+    public static final RegistryObject<SoundEvent> KI_SPIRITBOMB_FIRE = registerSoundEvent("ki_spiritbomb_fire");
+    public static final RegistryObject<SoundEvent> KI_SUPERNOVA_CHARGE = registerSoundEvent("ki_supernova_charge");
+    public static final RegistryObject<SoundEvent> KI_SUPERNOVA_FIRE = registerSoundEvent("ki_supernova_fire");
+    public static final RegistryObject<SoundEvent> KI_BEAM_CHARGE = registerSoundEvent("ki_beam_charge");
+    public static final RegistryObject<SoundEvent> KI_BEAM_FIRE = registerSoundEvent("ki_beam_fire");
 
-	public static final RegistryObject<SoundEvent> OOZARU_HEARTBEAT = registerSoundEvent("oozaru_heartbeat");
+
+
+    public static final RegistryObject<SoundEvent> OOZARU_HEARTBEAT = registerSoundEvent("oozaru_heartbeat");
 	public static final RegistryObject<SoundEvent> OOZARU_GROWL_PLAYER = registerSoundEvent("oozaru_growl_player");
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_GROWL = registerSoundEvent("vegeta_oozaru_growl");
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_DEATH = registerSoundEvent("vegeta_oozaru_death");
