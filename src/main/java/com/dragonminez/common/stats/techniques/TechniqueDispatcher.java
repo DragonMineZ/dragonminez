@@ -45,8 +45,11 @@ public class TechniqueDispatcher {
                     } else if (activeKi instanceof KiBlastEntity blast) {
                         blast.setKiDamage(realDamage);
                         blast.fireHability(maxLife);
-                        Vec3 lookBlast = owner.getLookAngle();
-                        blast.setDeltaMovement(lookBlast.scale(data.getSpeed()));
+                        int renderType = blast.getKiRenderType();
+                        if (renderType != 2 && renderType != 5 && renderType != 6 && renderType != 7) {
+                            Vec3 lookBlast = owner.getLookAngle();
+                            blast.setDeltaMovement(lookBlast.scale(data.getSpeed()));
+                        }
                     } else if (activeKi instanceof KiLaserEntity laser) {
                         laser.setKiDamage(realDamage);
                         laser.fireHability(maxLife);
