@@ -221,7 +221,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
                     ? MainSounds.KI_BEAM_FIRE.get()
                     : MainSounds.KI_LASER.get();
 
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 0.8F, 1.0F + (this.random.nextFloat() * 0.2F));
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 0.7F, 1.0F + (this.random.nextFloat() * 0.2F));
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
@@ -302,7 +302,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
                 if (!this.level().isClientSide) {
                     int renderType = this.getKiRenderType();
                     if ((renderType == 1 || renderType == 2) && this.tickCount == 1) {
-                        this.playSound(MainSounds.KI_BEAM_CHARGE.get(), 0.8F, 1.0F);
+                        this.playSound(MainSounds.KI_BEAM_CHARGE.get(), 0.7F, 1.0F);
                     }
                 }
 

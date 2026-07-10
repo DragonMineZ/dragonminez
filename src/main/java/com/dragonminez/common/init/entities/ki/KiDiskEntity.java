@@ -182,7 +182,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             if (!isFiring) {
                 if (this.tickCount == 1) {
-                    this.playSound(MainSounds.KI_DISK_CHARGE.get(), 0.5F, 1.2F);
+                    this.playSound(MainSounds.KI_DISK_CHARGE.get(), 0.7F, 1.2F);
                 }
                 if (this.tickCount % 10 == 0) {
                     pulseAreaDamage();

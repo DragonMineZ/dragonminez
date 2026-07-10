@@ -674,7 +674,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             } else {
                 fireSound = MainSounds.KIBLAST_ATTACK.get();
             }
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 1.0F, 1.0F);
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 0.7F, 1.0F);
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
@@ -849,9 +849,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             if(isCasting){
                 if (type == 5 && this.tickCount == 1) {
-                    this.playSound(MainSounds.KI_SPIRITBOMB_CHARGE.get(), 0.8F, 1.0F);
+                    this.playSound(MainSounds.KI_SPIRITBOMB_CHARGE.get(), 0.7F, 1.0F);
                 }  else if (type == 6 && this.tickCount == 1) {
-                    this.playSound(MainSounds.KI_SUPERNOVA_CHARGE.get(), 0.8F, 1.0F);
+                    this.playSound(MainSounds.KI_SUPERNOVA_CHARGE.get(), 0.7F, 1.0F);
                 }
             } else {
                 if (this.isDetonating) {
