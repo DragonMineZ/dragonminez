@@ -1,0 +1,8 @@
+{
+  "id": "saiyan_saga",
+  "name": "dmz.saga.saiyan_saga",
+  "requirements": {
+    "previousSaga": ""
+  },
+  "questFolder": "saga_saiyan"
+}

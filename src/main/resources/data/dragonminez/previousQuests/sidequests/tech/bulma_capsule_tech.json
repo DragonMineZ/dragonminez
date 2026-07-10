@@ -1,0 +1,54 @@
+{
+  "id": "bulma_capsule_tech",
+  "title": "dmz.sidequest.bulma_capsule_tech.name",
+  "description": "dmz.sidequest.bulma_capsule_tech.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_gete_discovery"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_ingot",
+      "count": 4
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 4
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 40000
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_red_capsule",
+      "count": 1
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_orange_capsule",
+      "count": 1
+    }
+  ]
+}

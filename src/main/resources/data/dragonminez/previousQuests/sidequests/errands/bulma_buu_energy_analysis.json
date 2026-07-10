@@ -1,0 +1,47 @@
+{
+  "id": "bulma_buu_energy_analysis",
+  "title": "dmz.sidequest.bulma_buu_energy_analysis.name",
+  "description": "dmz.sidequest.bulma_buu_energy_analysis.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 5
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_buufat",
+      "count": 5,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:lapis_block",
+      "count": 3
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 160000
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": 19,
+  "title": "dmz.quest.buu19.name",
+  "description": "dmz.quest.buu19.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 18
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1940
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "#minecraft:is_beach"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_gotenks",
+      "count": 1,
+      "health": 315000.0,
+      "meleeDamage": 13200.0,
+      "kiDamage": 11900.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 151200
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": 8,
+  "title": "dmz.quest.buu8.name",
+  "description": "dmz.quest.buu8.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 7
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1620
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_shin",
+      "count": 1,
+      "health": 231000.0,
+      "meleeDamage": 9600.0,
+      "kiDamage": 8670.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 100800
+    }
+  ]
+}

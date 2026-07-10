@@ -1,0 +1,56 @@
+{
+  "id": "gohan_time_chamber_training",
+  "title": "dmz.sidequest.gohan_timechamber.name",
+  "description": "dmz.sidequest.gohan_timechamber.desc",
+  "type": "SIDEQUEST",
+  "category": "training",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "gohan",
+  "turn_in": "gohan",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 11
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "STRUCTURE",
+        "structure": "dragonminez:timechamber"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "minecraft:phantom",
+      "count": 20,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:golden_apple",
+      "count": 8
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "gohan"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 72000
+    }
+  ]
+}

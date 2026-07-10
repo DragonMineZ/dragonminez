@@ -1,0 +1,57 @@
+{
+  "id": 2,
+  "title": "dmz.quest.frieza2.name",
+  "description": "dmz.quest.frieza2.desc",
+  "type": "SAGA",
+  "category": "saga_frieza",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 1
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 112
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:namek"
+      },
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:ajissa_plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_cui",
+      "count": 1,
+      "health": 2652.0,
+      "meleeDamage": 155.0,
+      "kiDamage": 179.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 16320
+    }
+  ]
+}

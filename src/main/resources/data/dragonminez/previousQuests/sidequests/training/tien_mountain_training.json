@@ -1,0 +1,51 @@
+{
+  "id": "tien_mountain_training",
+  "title": "dmz.sidequest.tien_mountain.name",
+  "description": "dmz.sidequest.tien_mountain.desc",
+  "type": "SIDEQUEST",
+  "category": "training",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "krillin",
+  "turn_in": "krillin",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 4
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "BIOME",
+        "biome": "#minecraft:is_mountain"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "minecraft:iron_golem",
+      "count": 5,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "krillin"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1400
+    }
+  ]
+}

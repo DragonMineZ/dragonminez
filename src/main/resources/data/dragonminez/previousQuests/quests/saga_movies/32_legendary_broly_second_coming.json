@@ -1,0 +1,62 @@
+{
+  "id": 32,
+  "title": "dmz.quest.movies32.name",
+  "description": "dmz.quest.movies32.desc",
+  "type": "SAGA",
+  "category": "saga_movies",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 31
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 2240
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:snowy_plains"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 30
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_broly_lssj",
+      "count": 1,
+      "health": 1295000.0,
+      "meleeDamage": 54600.0,
+      "kiDamage": 49300.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 375000
+    }
+  ]
+}

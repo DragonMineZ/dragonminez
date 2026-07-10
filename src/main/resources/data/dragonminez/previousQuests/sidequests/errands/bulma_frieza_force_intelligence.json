@@ -1,0 +1,47 @@
+{
+  "id": "bulma_frieza_force_intelligence",
+  "title": "dmz.sidequest.bulma_frieza_force_intelligence.name",
+  "description": "dmz.sidequest.bulma_frieza_force_intelligence.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 4
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_friezasoldier02",
+      "count": 10,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 6
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 15000
+    }
+  ]
+}

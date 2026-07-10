@@ -1,0 +1,8 @@
+{
+  "id": "future_saga",
+  "name": "dmz.saga.future_saga",
+  "requirements": {
+    "previousSaga": "android_saga"
+  },
+  "questFolder": "saga_future"
+}

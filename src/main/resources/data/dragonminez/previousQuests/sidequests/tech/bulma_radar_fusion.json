@@ -1,0 +1,63 @@
+{
+  "id": "bulma_radar_fusion",
+  "title": "dmz.sidequest.bulma_radar_fusion.name",
+  "description": "dmz.sidequest.bulma_radar_fusion.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_radar_amplifier"
+      },
+      {
+        "type": "QUEST",
+        "questId": "bulma_namek_research"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:dball_radar",
+      "count": 1
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:namekdball_radar",
+      "count": 1
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 8
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone_block",
+      "count": 3
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 18000
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:fused_dball_radar",
+      "count": 1
+    }
+  ]
+}

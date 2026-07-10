@@ -1,0 +1,47 @@
+{
+  "id": "ginyu_force_warm_up",
+  "title": "dmz.sidequest.ginyu_warmup.name",
+  "description": "dmz.sidequest.ginyu_warmup.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "goku",
+  "turn_in": "goku",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 6
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:ajissa_plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "#dragonminez:frieza_soldiers",
+      "count": 16,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 21000
+    }
+  ]
+}

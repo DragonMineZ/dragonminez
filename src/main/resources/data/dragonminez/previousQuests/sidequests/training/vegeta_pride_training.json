@@ -1,0 +1,58 @@
+{
+  "id": "vegeta_pride_training",
+  "title": "dmz.sidequest.vegeta_pride.name",
+  "description": "dmz.sidequest.vegeta_pride.desc",
+  "type": "SIDEQUEST",
+  "category": "training",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "vegeta",
+  "turn_in": "vegeta",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 12
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "STRUCTURE",
+        "structure": "dragonminez:timechamber"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "minecraft:wither_skeleton",
+      "count": 10,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "KILL",
+      "entity": "minecraft:blaze",
+      "count": 5,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "vegeta"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 60000
+    }
+  ]
+}

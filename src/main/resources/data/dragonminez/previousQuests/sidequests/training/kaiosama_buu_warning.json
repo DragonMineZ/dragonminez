@@ -1,0 +1,35 @@
+{
+  "id": "kaiosama_buu_warning",
+  "title": "dmz.sidequest.kaiosama_buu.name",
+  "description": "dmz.sidequest.kaiosama_buu.desc",
+  "type": "SIDEQUEST",
+  "category": "training",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "kingkai",
+  "turn_in": "kingkai",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 1
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "TALK_TO",
+      "npcId": "kingkai"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 72000
+    }
+  ]
+}

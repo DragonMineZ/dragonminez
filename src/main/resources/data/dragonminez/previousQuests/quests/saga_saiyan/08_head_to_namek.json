@@ -1,0 +1,46 @@
+{
+  "id": 8,
+  "title": "dmz.quest.saiyan8.name",
+  "description": "dmz.quest.saiyan8.desc",
+  "type": "SAGA",
+  "category": "saga_saiyan",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 7
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 100
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "DIMENSION",
+      "dimension": "dragonminez:namek"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 2000
+    }
+  ]
+}

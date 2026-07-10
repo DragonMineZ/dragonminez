@@ -1,0 +1,56 @@
+{
+  "id": "otherworld_pikkon_rematch",
+  "title": "dmz.sidequest.otherworld_pikkon_rematch.name",
+  "description": "dmz.sidequest.otherworld_pikkon_rematch.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "kingkai",
+  "turn_in": "kingkai",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 37
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:otherworld"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_paikuhan",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "kingkai"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 360000
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:senzu_bean",
+      "count": 3
+    }
+  ]
+}

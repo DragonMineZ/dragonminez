@@ -1,0 +1,55 @@
+{
+  "id": "bulma_radar_parts",
+  "title": "dmz.sidequest.bulma_radar.name",
+  "description": "dmz.sidequest.bulma_radar.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 3
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone",
+      "count": 16
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:copper_ingot",
+      "count": 16
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:gold_ingot",
+      "count": 8
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1600
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:dball_radar",
+      "count": 1
+    }
+  ]
+}

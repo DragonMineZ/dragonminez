@@ -1,0 +1,63 @@
+{
+  "id": "bojack_tournament_cleanup",
+  "title": "dmz.sidequest.bojack_tournament_cleanup.name",
+  "description": "dmz.sidequest.bojack_tournament_cleanup.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "gohan",
+  "turn_in": "gohan",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 29
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_zangya",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_bido",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_bujin",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_gokua",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "gohan"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 260000
+    }
+  ]
+}

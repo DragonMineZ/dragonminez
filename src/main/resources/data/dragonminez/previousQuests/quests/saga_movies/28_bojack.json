@@ -1,0 +1,62 @@
+{
+  "id": 28,
+  "title": "dmz.quest.movies28.name",
+  "description": "dmz.quest.movies28.desc",
+  "type": "SAGA",
+  "category": "saga_movies",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 27
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1600
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:plains"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 15
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_bojack",
+      "count": 1,
+      "health": 434000.0,
+      "meleeDamage": 17400.0,
+      "kiDamage": 15980.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 151200
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "id": 29,
+  "title": "dmz.quest.buu29.name",
+  "description": "dmz.quest.buu29.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 28
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 2200
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:sacredkaiplanet"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "DIMENSION",
+      "dimension": "dragonminez:sacredkaiplanet"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 79200
+    }
+  ]
+}

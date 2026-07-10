@@ -1,0 +1,62 @@
+{
+  "id": 15,
+  "title": "dmz.quest.movies15.name",
+  "description": "dmz.quest.movies15.desc",
+  "type": "SAGA",
+  "category": "saga_movies",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 14
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 320
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:rocky"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 14
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_cooler",
+      "count": 1,
+      "health": 61880.0,
+      "meleeDamage": 2873.0,
+      "kiDamage": 2499.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 58800
+    }
+  ]
+}

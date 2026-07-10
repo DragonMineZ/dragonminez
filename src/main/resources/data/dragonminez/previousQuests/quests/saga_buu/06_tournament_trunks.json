@@ -1,0 +1,57 @@
+{
+  "id": 6,
+  "title": "dmz.quest.buu6.name",
+  "description": "dmz.quest.buu6.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 5
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1580
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_kid_trunks",
+      "count": 1,
+      "health": 210000.0,
+      "meleeDamage": 8700.0,
+      "kiDamage": 7820.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 93600
+    }
+  ]
+}

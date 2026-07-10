@@ -1,0 +1,48 @@
+{
+  "id": "dende_lookout_vigil",
+  "title": "dmz.sidequest.dende_lookout_vigil.name",
+  "description": "dmz.sidequest.dende_lookout_vigil.desc",
+  "type": "SIDEQUEST",
+  "category": "story",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "dende",
+  "turn_in": "dende",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 1
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "STRUCTURE",
+        "structure": "dragonminez:kamilookout"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:kamilookout"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "dende"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 60000
+    }
+  ]
+}
