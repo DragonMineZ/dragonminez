@@ -5,6 +5,9 @@ import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Character;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -18,6 +21,12 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 
 public class KiWeaponRenderer {
+	private static final float OOZARU_WEAPON_SCALE = 3.8f;
+	private static final float[] HUMAN_ARM_RIGHT = {-5f, 22f, 0f};
+	private static final float[] HUMAN_ARM_LEFT = {5f, 22f, 0f};
+	private static final float[] OOZARU_ARM_RIGHT = {-12f, 74f, 0f};
+	private static final float[] OOZARU_ARM_LEFT = {21f, 74f, 0f};
+
 	private static ResourceLocation weaponModel(String type) {
 		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/kiweapon_" + type.toLowerCase() + ".geo.json");
 		if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) return loc;
@@ -46,6 +55,12 @@ public class KiWeaponRenderer {
 			if (type == null || type.isEmpty()) continue;
 
 			Player player = entry.player();
+
+			Character character = StatsProvider.get(StatsCapability.INSTANCE, player)
+					.map(s -> s.getCharacter()).orElse(null);
+			boolean isOozaru = character != null && character.isOozaruCached();
+			boolean mainRight = player.getMainArm() == HumanoidArm.RIGHT;
+
 			DMZPlayerRenderer<?> renderer = DMZRendererCache.getTPRenderer(player);
 
 			if (renderer != null) {
@@ -63,6 +78,16 @@ public class KiWeaponRenderer {
 
 					poseStack.pushPose();
 					poseStack.last().pose().set(entry.poseMatrix());
+
+					if (isOozaru) {
+
+						float[] humanPivot = mainRight ? HUMAN_ARM_RIGHT : HUMAN_ARM_LEFT;
+						float[] oozaruPivot = mainRight ? OOZARU_ARM_RIGHT : OOZARU_ARM_LEFT;
+						float k = OOZARU_WEAPON_SCALE;
+						poseStack.translate(oozaruPivot[0] / 16f, oozaruPivot[1] / 16f, oozaruPivot[2] / 16f);
+						poseStack.scale(k, k, k);
+						poseStack.translate(-humanPivot[0] / 16f, -humanPivot[1] / 16f, -humanPivot[2] / 16f);
+					}
 
 					RenderType renderType = ModRenderTypes.energy2(texture);
 					VertexConsumer vertexConsumer = buffers.getBuffer(renderType);
