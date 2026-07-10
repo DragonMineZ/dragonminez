@@ -225,7 +225,7 @@ public class StatsData {
 		double vitMult = getFormMultiplier("VIT");
 		double flatBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), true);
-		return (float) (((vitality + multBonusVit) * vitScaling * vitMult) + (flatBonusVit * vitScaling));
+		return (float) Math.min(((vitality + multBonusVit) * vitScaling * vitMult) + (flatBonusVit * vitScaling), Float.MAX_VALUE - 1);
 	}
 
 	public float getMaxHealth() {
@@ -1440,16 +1440,6 @@ public class StatsData {
 		return (int) Math.max(0.0, total);
 	}
 
-	private double statCostVariableComponent(int simulatedTotalStats) {
-		double totalStats = Math.max(0.0, simulatedTotalStats);
-		double knee = getConfiguredMaxTotalStats() * STAT_COST_LATE_KNEE_FRACTION;
-		if (knee <= 0.0 || totalStats <= knee) return totalStats * STAT_COST_PER_POINT;
-
-		double kneeCost = knee * STAT_COST_PER_POINT;
-		double ratio = totalStats / knee;
-		return kneeCost + (kneeCost / STAT_COST_LATE_EXPONENT) * (Math.pow(ratio, STAT_COST_LATE_EXPONENT) - 1.0);
-	}
-
 	public double getProgressionTpGainMultiplier() {
 		double strength = ConfigManager.getServerConfig().getGameplay().getIncreaseTPGainRelativeToTPCost();
 		if (strength <= 0.0) return 1.0;
@@ -1461,6 +1451,16 @@ public class StatsData {
 
 		double factor = Math.max(0.0, Math.min(1.0, (double) currentCost / maxCost));
 		return 1.0 + strength * factor;
+	}
+
+	private double statCostVariableComponent(int simulatedTotalStats) {
+		double totalStats = Math.max(0.0, simulatedTotalStats);
+		double knee = getConfiguredMaxTotalStats() * STAT_COST_LATE_KNEE_FRACTION;
+		if (knee <= 0.0 || totalStats <= knee) return totalStats * STAT_COST_PER_POINT;
+
+		double kneeCost = knee * STAT_COST_PER_POINT;
+		double ratio = totalStats / knee;
+		return kneeCost + (kneeCost / STAT_COST_LATE_EXPONENT) * (Math.pow(ratio, STAT_COST_LATE_EXPONENT) - 1.0);
 	}
 
 	public int getSingleStatCost(int simulatedTotalStats) {

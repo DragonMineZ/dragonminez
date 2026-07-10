@@ -62,10 +62,11 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
 
             double boostMult = config.getSaiyanZenkaiStatBoost();
             String[] statsToBoost = config.getSaiyanZenkaiBoosts();
+            int maxBonus = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 
             for (String statKey : statsToBoost) {
                 int currentStat = getStatValue(data, statKey);
-                int bonus = (int) Math.max(1, currentStat * boostMult);
+                int bonus = (int) Math.max(1, Math.min(maxBonus, currentStat * boostMult));
                 data.getBonusStats().addBonusSplit(statKey, "Zenkai_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
             }
 

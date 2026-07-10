@@ -84,10 +84,11 @@ public class RacialSkillLogic {
 
 		double boostMult = config.getNamekianAssimilationStatBoost();
 		String[] statsToBoost = config.getNamekianAssimilationBoosts();
+		int maxBonus = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 
 		for (String statKey : statsToBoost) {
 			int currentStat = getStatValue(data, statKey);
-			int bonus = (int) Math.max(1, currentStat * boostMult);
+			int bonus = (int) Math.max(1, Math.min(maxBonus, currentStat * boostMult));
 			data.getBonusStats().addBonusSplit(statKey, "Assimilation_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 		}
 
@@ -107,6 +108,7 @@ public class RacialSkillLogic {
 		}
 
 		double ratio = config.getMajinAbsorptionStatCopy();
+		int maxBonus = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		boolean success = false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
@@ -114,14 +116,14 @@ public class RacialSkillLogic {
 				String[] stats = config.getMajinAbsorptionBoosts();
 				for (String stat : stats) {
 					int targetStatVal = getStatValue(targetData, stat);
-					int bonus = (int) Math.max(1, targetStatVal * ratio);
+					int bonus = (int) Math.max(1, Math.min(maxBonus, targetStatVal * ratio));
 					data.getBonusStats().addBonusSplit(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 				}
 			});
 			success = true;
 		} else if (target instanceof Mob && config.getMajinAbsorptionOnMobs()) {
 			float maxHp = target.getMaxHealth();
-			int bonus = (int) Math.max(1, maxHp * ratio);
+			int bonus = (int) Math.max(1, Math.min(maxBonus, maxHp * ratio));
 			String[] mobBonuses = config.getMajinAbsorptionBoosts();
 
 			for (String stat : mobBonuses) {
