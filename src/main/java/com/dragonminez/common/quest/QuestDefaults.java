@@ -745,9 +745,9 @@ final class QuestDefaults {
 						},
 						rewTPS(108000)),
 				step("buu", 10, "10_find_babidi_ship.json",
-						earthReq(1660, condStructure("dragonminez:babidi")),
+						earthReq(1660),
 						new JsonObject[]{
-								objTalkTo("shin")
+								objStructure("dragonminez:babidi")
 						},
 						rewTPS(50400)),
 				step("buu", 11, "11_babidi_level_pui_pui.json",

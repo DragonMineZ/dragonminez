@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "raceName": "bioandroid",
   "hasGender": false,
   "useVanillaSkin": false,
@@ -35,10 +35,10 @@
     ],
     "godforms": [],
     "superforms": [
-      10000,
-      22000,
-      34000,
-      48000
+      26000,
+      57000,
+      88000,
+      125000
     ]
   }
 }

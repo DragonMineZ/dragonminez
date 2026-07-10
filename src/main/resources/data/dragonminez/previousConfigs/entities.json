@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "defaultEntityStats": {
     "dragonminez:dino1": {
       "health": 100.0,
@@ -56,5 +56,11 @@
       "meleeDamage": 15.0,
       "kiDamage": 0.0
     }
+  },
+  "transformDefaults": {
+    "healthMultiplier": 1.5,
+    "meleeMultiplier": 1.5,
+    "kiMultiplier": 1.5,
+    "triggerHealthPercent": 0.5
   }
 }

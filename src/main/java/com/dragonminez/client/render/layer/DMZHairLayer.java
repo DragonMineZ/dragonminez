@@ -98,9 +98,6 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (!HairManager.canUseHair(character)) return;
 
-		CustomHair effectiveHair = HairManager.getEffectiveHair(character);
-		if (effectiveHair == null || effectiveHair.isEmpty()) return;
-
 		CustomHair hairFrom = character.getHairBase();
 		float[] rgbFrom = character.getRgbHairColor();
 
@@ -237,6 +234,8 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		else kiChargeProgressMap.remove(entityId);
 
 		publishHairBaseColor(entityId, gameTime, rgbFrom, rgbTo, factor);
+
+		if ((hairFrom == null || hairFrom.isEmpty()) && (hairTo == null || hairTo.isEmpty())) return;
 
 		poseStack.pushPose();
 		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, overrideFrom, forceTo, partialTick, packedLight, packedOverlay, alpha, physicsLodMultiplier, kiChargeProgress);

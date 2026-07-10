@@ -1,12 +1,14 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "raceName": "majin",
   "hasGender": true,
   "useVanillaSkin": false,
   "customModel": "",
   "isLayered": true,
   "headBones": [
-    "majin1"
+    "majin1",
+    "majin2",
+    "majin3"
   ],
   "racialSkill": "majin",
   "hasSaiyanTail": false,
@@ -37,10 +39,10 @@
     ],
     "godforms": [],
     "superforms": [
-      9000,
-      18000,
-      30000,
-      44000
+      23000,
+      47000,
+      78000,
+      114000
     ]
   }
 }

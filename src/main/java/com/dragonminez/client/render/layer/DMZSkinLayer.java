@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -109,22 +110,38 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 		};
 
+		SkinGathererProvider.BodyLayerSink overlayConsumer = new SkinGathererProvider.BodyLayerSink() {
+			@Override
+			public void base(ResourceLocation texture, float[] color) {
+				renderLayerWholeModel(model, poseStack, bufferSource, animatable, ModRenderTypes.skinOverlayCutout(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
+			}
+
+			@Override
+			public void fading(String layerId, ResourceLocation texture, float[] color) {
+				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color));
+			}
+		};
+
 		SkinGathererProvider.INSTANCE.gatherBodyLayers(player, stats, partialTick, geoConsumer);
 		if (ssj4 != null) {
 			ResourceLocation furTex = getSafeTexture(SkinGathererProvider.getCachedTexture("textures/entity/races/humansaiyan/" + ssj4.key() + "_layer1.png"));
 			fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(SSJ4_FUR_LAYER, furTex, ssj4.color(), ssj4.target()));
 		}
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(player, stats, partialTick, geoConsumer);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(true);
 		renderFadingBodyLayers(model, poseStack, animatable, bufferSource, playerId, gameTime, fadingLayers, partialTick, packedLight, packedOverlay, alpha);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(false);
 
 		this.currentSsj4Alpha = PREVIEW_MODE ? ssj4Target : BodyLayerFadeTracker.getProgress(playerId, SSJ4_FUR_LAYER);
 		this.currentSsj4Color = ssj4Color != null ? ssj4Color : BodyLayerFadeTracker.getColor(playerId, SSJ4_FUR_LAYER);
 
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(false);
 		renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
-		SkinGathererProvider.INSTANCE.gatherTattooLayers(player, stats, partialTick, geoConsumer);
-		SkinGathererProvider.INSTANCE.gatherEffectLayers(player, stats, partialTick, geoConsumer);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(true);
+		SkinGathererProvider.INSTANCE.gatherTattooLayers(player, stats, partialTick, overlayConsumer);
+		SkinGathererProvider.INSTANCE.gatherEffectLayers(player, stats, partialTick, overlayConsumer);
 		renderWounds(model, poseStack, animatable, bufferSource, player, partialTick, packedLight, packedOverlay, alpha);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(false);
 		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(true);
 
@@ -543,7 +560,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha, boolean applyTransformationTint) {
 		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
-		renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(getSafeTexture(loc)), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, applyTransformationTint);
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, ModRenderTypes.skinOverlayCutout(getSafeTexture(loc)), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, applyTransformationTint);
 	}
 
 	public record Ssj4Overlay(String key, float[] color, float target) {}
@@ -613,7 +630,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			float a = baseAlpha * entry.alpha();
 			if (a <= 0.001f) continue;
 			float[] color = entry.color();
-			RenderType renderType = a < 1.0f ? RenderType.entityTranslucent(entry.texture()) : RenderType.entityCutoutNoCull(entry.texture());
+			RenderType renderType = a < 1.0f ? ModRenderTypes.skinOverlayTranslucent(entry.texture()) : ModRenderTypes.skinOverlayCutout(entry.texture());
 			renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, a, true);
 		}
 	}
@@ -636,7 +653,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderWoundLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float partialTick, int packedLight, int packedOverlay, float alpha) {
 		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
-		RenderType renderType = RenderType.entityTranslucent(loc);
+		RenderType renderType = ModRenderTypes.skinOverlayTranslucent(loc);
 		for (int pass = 0; pass < WOUND_OPACITY_PASSES; pass++) {
 			renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
 		}
@@ -644,7 +661,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderFadingColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha) {
 		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
-		RenderType renderType = alpha < 1.0f ? RenderType.entityTranslucent(loc) : RenderType.entityCutoutNoCull(loc);
+		RenderType renderType = alpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(loc) : ModRenderTypes.skinOverlayCutout(loc);
 		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
 	}
 

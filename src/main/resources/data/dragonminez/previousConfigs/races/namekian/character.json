@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "raceName": "namekian",
   "hasGender": false,
   "useVanillaSkin": false,
@@ -27,7 +27,7 @@
   "defaultBodyColor": "#1FAA24",
   "defaultBodyColor2": "#BB2024",
   "defaultBodyColor3": "#FF86A6",
-  "defaultHairColor": "#1FAA24",
+  "defaultHairColor": "#80FF69",
   "defaultEye1Color": "#222629",
   "defaultEye2Color": "#222629",
   "defaultAuraColor": "#7FFF00",
@@ -39,10 +39,10 @@
     ],
     "godforms": [],
     "superforms": [
-      9000,
-      18000,
-      30000,
-      45000
+      23000,
+      47000,
+      78000,
+      117000
     ]
   }
 }

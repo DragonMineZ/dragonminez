@@ -1,12 +1,16 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "raceName": "frostdemon",
   "hasGender": false,
   "useVanillaSkin": false,
   "customModel": "",
   "isLayered": true,
   "headBones": [
-    "horns1"
+    "horns1",
+    "horns2",
+    "horns3",
+    "horns4",
+    "horns5"
   ],
   "racialSkill": "frostdemon",
   "hasSaiyanTail": false,
@@ -37,11 +41,11 @@
     ],
     "godforms": [],
     "superforms": [
-      7000,
-      12000,
-      20000,
-      32000,
-      45000
+      18000,
+      31000,
+      52000,
+      83000,
+      117000
     ]
   }
 }

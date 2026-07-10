@@ -978,22 +978,21 @@ public class TickHandler {
 
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
 
-			double finalEnergyDrain = Math.max(0.0, data.getEffectiveEnergyDrain());
-			double finalStaminaDrain = Math.max(0.0, data.getEffectiveStaminaDrain());
-			double finalHealthDrain = Math.max(0.0, data.getEffectiveHealthDrain());
+			int energyDrain = (int) Math.round(data.getEffectiveEnergyDrain());
+			int staminaDrain = (int) Math.round(data.getEffectiveStaminaDrain());
+			double healthDrain = Math.round(data.getEffectiveHealthDrain());
 
-			int energyDrain = (int) Math.round(finalEnergyDrain);
-			int staminaDrain = (int) Math.round(finalStaminaDrain);
-			double healthDrain = Math.round(finalHealthDrain);
-
-			boolean hasEnoughEnergy = data.getResources().getCurrentEnergy() >= energyDrain;
-			boolean hasEnoughStamina = data.getResources().getCurrentStamina() >= staminaDrain;
-			boolean hasEnoughHealth = player.getHealth() > healthDrain;
+			boolean hasEnoughEnergy = energyDrain <= 0 || data.getResources().getCurrentEnergy() >= energyDrain;
+			boolean hasEnoughStamina = staminaDrain <= 0 || data.getResources().getCurrentStamina() >= staminaDrain;
+			boolean hasEnoughHealth = healthDrain <= 0 || player.getHealth() > healthDrain;
 
 			if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
 				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain);
+				else if (energyDrain < 0) data.getResources().addEnergy(-energyDrain);
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
+				else if (staminaDrain < 0) data.getResources().addStamina(-staminaDrain);
 				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
+				else if (healthDrain < 0) player.setHealth((float) Math.min(player.getMaxHealth(), player.getHealth() - healthDrain));
 			} else {
 				data.getCharacter().clearActiveStackForm(player);
 				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);

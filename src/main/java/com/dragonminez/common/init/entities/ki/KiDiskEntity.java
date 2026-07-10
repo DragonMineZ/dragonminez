@@ -105,7 +105,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
             this.setDeltaMovement(lookDir.scale(this.getKiSpeed()));
 
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_DISK_CHARGE.get(), SoundSource.PLAYERS, 0.7F, 1.5F);
+            this.playSound(MainSounds.KI_DISK_FIRE.get(), 0.7F, 1.5F);
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
@@ -180,9 +180,9 @@ public class KiDiskEntity extends AbstractKiProjectile {
         boolean isFiring = this.isFiring();
 
         if (!this.level().isClientSide) {
-            if (isFiring) {
-                if (this.tickCount % 12 == 0) {
-                    this.playSound(MainSounds.KI_DISK_CHARGE.get(), 0.3F, 1.2F);
+            if (!isFiring) {
+                if (this.tickCount == 1) {
+                    this.playSound(MainSounds.KI_DISK_CHARGE.get(), 0.5F, 1.2F);
                 }
                 if (this.tickCount % 10 == 0) {
                     pulseAreaDamage();

@@ -14,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
@@ -57,7 +58,9 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
         this.setPos(owner.getX(), owner.getY(), owner.getZ());
         this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
 
-        this.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), MainSounds.OOZARU_FIST.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        // Bind the sound to the caster so it follows them instead of staying fixed at the launch
+        // position and fading as the player moves away.
+        this.level().playSound(null, owner, MainSounds.OOZARU_FIST.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
@@ -111,7 +114,11 @@ public class OzaruFistEntity extends AbstractKiProjectile implements GeoEntity {
                 this.applyStrikeStun(target);
             }
 
-            target.setPos(owner.getX(), owner.getY() + holdHeight, owner.getZ());
+            // Clip the upward hold point against blocks so the target isn't lifted through a ceiling
+            // the caster themselves can't pass — it stays on the caster's side.
+            Vec3 ownerCenter = new Vec3(owner.getX(), owner.getY() + owner.getBbHeight() * 0.5D, owner.getZ());
+            Vec3 holdPos = this.clipAgainstBlocks(ownerCenter, new Vec3(owner.getX(), owner.getY() + holdHeight, owner.getZ()));
+            this.moveEntityTowards(target, holdPos);
             target.setDeltaMovement(0, upwardForce, 0);
             target.hasImpulse = true;
             target.fallDistance = 0;

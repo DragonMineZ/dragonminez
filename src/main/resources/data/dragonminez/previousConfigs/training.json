@@ -1,5 +1,5 @@
 {
-  "configVersion": 21.0,
+  "configVersion": "2.1.2",
   "rewardBaseCoefficient": 3.4,
   "rewardCostExponent": 0.6,
   "rhythm": {
@@ -38,10 +38,10 @@
     "zoneWidthDecreasePerLevel": 6,
     "minZoneWidth": 24,
     "baseZoneSpeed": 1.2,
-    "zoneSpeedPerLevel": 0.3,
+    "zoneSpeedPerLevel": 0.15,
     "markerSpeed": 2.75,
     "baseProgressLossPerTick": 0.12,
-    "progressLossPerLevel": 0.25,
+    "progressLossPerLevel": 0.12,
     "rewardMultiplier": 1.0,
     "tpsLimitPerGame": 50000.0,
     "unlockedByDefault": false,
@@ -50,7 +50,7 @@
   "memory": {
     "baseSequenceLength": 3,
     "sequenceLengthPerLevel": 1,
-    "baseShowTicks": 50,
+    "baseShowTicks": 42,
     "showTicksDecreasePerLevel": 4,
     "minShowTicks": 16,
     "rewardMultiplier": 1.0,
@@ -87,7 +87,7 @@
     "barHeight": 180,
     "controlLineFraction": 0.45,
     "baseGravity": 1.1,
-    "gravityPerLevel": 0.25,
+    "gravityPerLevel": 0.13,
     "risePerTap": 9.0,
     "progressLossPerTick": 2.5,
     "wrongPressDescentMultiplier": 3.0,

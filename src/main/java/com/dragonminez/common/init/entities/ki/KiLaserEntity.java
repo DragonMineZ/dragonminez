@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -214,19 +215,13 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setFireTick(this.tickCount);
         if (this.getOwner() instanceof LivingEntity livingOwner) {
             updatePositionRelativeToOwner(livingOwner);
-            // TEMP DEBUG: diagnose laser spawn height during custom flight. Remove after fixing.
-            if (!this.level().isClientSide) {
-                System.out.println("[DMZ-LASER] side=" + (this.level().isClientSide ? "CLIENT" : "SERVER")
-                        + " renderType=" + this.getKiRenderType()
-                        + " ownerY=" + String.format("%.3f", livingOwner.getY())
-                        + " eyeY=" + String.format("%.3f", livingOwner.getEyeY())
-                        + " bbH=" + String.format("%.3f", livingOwner.getBbHeight())
-                        + " laserY=" + String.format("%.3f", this.getY())
-                        + " laserPos=(" + String.format("%.2f", this.getX()) + "," + String.format("%.2f", this.getY()) + "," + String.format("%.2f", this.getZ()) + ")"
-                        + " xRot=" + String.format("%.1f", livingOwner.getXRot())
-                        + " fixedPitch=" + String.format("%.1f", this.getFixedPitch()));
-            }
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 0.4F, 1.0F + (this.random.nextFloat() * 0.2F));
+
+            int renderType = this.getKiRenderType();
+            SoundEvent fireSound = (renderType == 1 || renderType == 2)
+                    ? MainSounds.KI_BEAM_FIRE.get()
+                    : MainSounds.KI_LASER.get();
+
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 0.8F, 1.0F + (this.random.nextFloat() * 0.2F));
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
@@ -303,6 +298,14 @@ public class KiLaserEntity extends AbstractKiProjectile{
                 this.entityData.set(FIXED_PITCH, livingOwner.getXRot());
                 this.setYRot(livingOwner.getYRot());
                 this.setXRot(livingOwner.getXRot());
+
+                if (!this.level().isClientSide) {
+                    int renderType = this.getKiRenderType();
+                    if ((renderType == 1 || renderType == 2) && this.tickCount == 1) {
+                        this.playSound(MainSounds.KI_BEAM_CHARGE.get(), 0.8F, 1.0F);
+                    }
+                }
+
             } else if (!this.level().isClientSide) {
                 this.discard();
                 return;
