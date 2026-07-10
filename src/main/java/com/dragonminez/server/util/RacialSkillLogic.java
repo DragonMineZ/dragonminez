@@ -107,21 +107,20 @@ public class RacialSkillLogic {
 		}
 
 		double ratio = config.getMajinAbsorptionStatCopy();
+		int absorptionCap = data.getConfiguredMaxTotalStats();
 		boolean success = false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
 			StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
 				String[] stats = config.getMajinAbsorptionBoosts();
 				for (String stat : stats) {
-					int targetStatVal = getStatValue(targetData, stat);
-					int bonus = (int) Math.max(1, targetStatVal * ratio);
+					int bonus = cappedAbsorptionBonus(getStatValue(targetData, stat), ratio, absorptionCap);
 					data.getBonusStats().addBonusSplit(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 				}
 			});
 			success = true;
 		} else if (target instanceof Mob && config.getMajinAbsorptionOnMobs()) {
-			float maxHp = target.getMaxHealth();
-			int bonus = (int) Math.max(1, maxHp * ratio);
+			int bonus = cappedAbsorptionBonus(target.getMaxHealth(), ratio, absorptionCap);
 			String[] mobBonuses = config.getMajinAbsorptionBoosts();
 
 			for (String stat : mobBonuses) {
@@ -240,6 +239,13 @@ public class RacialSkillLogic {
 			}
 		}
 		return null;
+	}
+
+	private static int cappedAbsorptionBonus(double sourceValue, double ratio, int cap) {
+		if (!Double.isFinite(sourceValue) || sourceValue <= 0) return 1;
+		double bonus = Math.min(sourceValue, cap) * ratio;
+		if (!Double.isFinite(bonus) || bonus < 1) return 1;
+		return (int) Math.min(bonus, cap);
 	}
 
 	private static int getStatValue(StatsData data, String statName) {
