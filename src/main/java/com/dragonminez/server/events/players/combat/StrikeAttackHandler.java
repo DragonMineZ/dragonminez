@@ -7,6 +7,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
@@ -436,6 +437,17 @@ public class StrikeAttackHandler {
 						2.5F,
 						0.7F
 				);
+
+				if (!player.level().isClientSide) {
+					try {
+						KiExplosionVisualEntity impact = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
+						impact.setPos(target.getX(), target.getY() + (target.getBbHeight() * 0.5), target.getZ());
+						impact.setupExplosion(0xFFFFFF, 0xF5C527, 0.5F);
+						player.level().addFreshEntity(impact);
+					} catch (Exception e) {
+					}
+					spawnSuperGodFistImpactParticles(player.serverLevel(), target);
+				}
 
 				Vec3 pushDir = player.getLookAngle().normalize();
 				double knockbackPower = 4.0;
@@ -980,6 +992,32 @@ public class StrikeAttackHandler {
 				? MomentumImpactHandler.CollisionImpactType.GROUND
 				: MomentumImpactHandler.CollisionImpactType.WALL;
 		MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (totalDamage * IMPACT_DAMAGE_RATIO), dir);
+	}
+
+	/**
+	 * Xenoverse-style impact burst for super_god_fist's connecting blow. All cosmetic, server-driven so every
+	 * nearby client sees it. Mixes the mod's themed punch/spark particles (colour is packed into the delta args,
+	 * count 0 = one particle per call) with a vanilla crit + explosion burst so the hit reads at any distance.
+	 */
+	private static void spawnSuperGodFistImpactParticles(ServerLevel level, LivingEntity target) {
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.5;
+		double z = target.getZ();
+
+		// Themed punch flash (white) — the same particle NPCs throw on a landed hit.
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 1.0, 1.0, 1.0, 1.0);
+
+		// Golden sparks scattering off the impact point, matching the flash's border colour (0xF5C527).
+		for (int i = 0; i < 8; i++) {
+			double ox = (level.random.nextDouble() - 0.5) * 0.8;
+			double oy = (level.random.nextDouble() - 0.5) * 0.8;
+			double oz = (level.random.nextDouble() - 0.5) * 0.8;
+			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, 0.96, 0.77, 0.15, 1.0);
+		}
+
+		// Vanilla crit spread + a small explosion puff for a punchy, instantly-readable impact.
+		level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, 18, 0.4, 0.4, 0.4, 0.6);
+		level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
 	}
 
 	private static void playStrikeAnimation(ServerPlayer player, String animationId) {
