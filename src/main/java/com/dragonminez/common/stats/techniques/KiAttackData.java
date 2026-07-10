@@ -9,12 +9,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.util.Mth;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -34,6 +36,9 @@ public class KiAttackData extends TechniqueData {
 
 	public enum SecondaryEffectType { NONE, BUFF, DEBUFF }
 	public enum AffectedStat { STR, SKP, DEF, STM_REGEN, HP_REGEN, ENE_REGEN, PWR }
+
+	private static final int MAX_IMPORT_NBT_BYTES = 64 * 1024;
+	private static final int MAX_IMPORT_CODE_LENGTH = 16 * 1024;
 
 	public static final int MIN_SECONDARY_INTENSITY = 5;
 	public static final int MAX_SECONDARY_INTENSITY = 50;
@@ -342,7 +347,10 @@ public class KiAttackData extends TechniqueData {
 		try (InflaterInputStream infIn = new InflaterInputStream(byteIn, inflater)) {
 			byte[] buffer = new byte[1024];
 			int len;
+			int total = 0;
 			while ((len = infIn.read(buffer)) != -1) {
+				total += len;
+				if (total > MAX_IMPORT_NBT_BYTES) throw new IOException("Decompressed technique data exceeds limit");
 				byteOut.write(buffer, 0, len);
 			}
 		}
@@ -406,19 +414,22 @@ public class KiAttackData extends TechniqueData {
 
 	public static KiAttackData importFromCode(String code) {
 		if (code == null || code.isEmpty()) return null;
+		if (code.length() > MAX_IMPORT_CODE_LENGTH) return null;
 
 		if (!code.startsWith(CODE_PREFIX)) {
 			try {
 				byte[] data = Base64.getUrlDecoder().decode(code);
+				if (data.length > MAX_IMPORT_NBT_BYTES) return null;
 				ByteArrayInputStream bais = new ByteArrayInputStream(data);
 				GZIPInputStream gzip = new GZIPInputStream(bais);
-				CompoundTag tag = NbtIo.read(new DataInputStream(gzip));
+				CompoundTag tag = NbtIo.read(new DataInputStream(gzip), new NbtAccounter(MAX_IMPORT_NBT_BYTES));
 				gzip.close();
 
 				KiAttackData attack = new KiAttackData();
 				attack.load(tag);
 				attack.setId(UUID.randomUUID().toString());
 				attack.setExperience(0);
+				attack.sanitizeImportedStats();
 				return attack;
 			} catch (Exception e) {
 				return null;
@@ -431,17 +442,34 @@ public class KiAttackData extends TechniqueData {
 
 			ByteArrayInputStream byteIn = new ByteArrayInputStream(decompressed);
 			DataInputStream dataIn = new DataInputStream(byteIn);
-			CompoundTag tag = NbtIo.read(dataIn);
+			CompoundTag tag = NbtIo.read(dataIn, new NbtAccounter(MAX_IMPORT_NBT_BYTES));
 
 			KiAttackData attack = new KiAttackData();
 			attack.load(tag);
 			attack.setId(UUID.randomUUID().toString());
 			attack.setExperience(0);
+			attack.sanitizeImportedStats();
 			return attack;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	public void sanitizeImportedStats() {
+		this.damageLevel = 0;
+		this.sizeLevel = 0;
+		this.speedLevel = 0;
+		this.armorPenLevel = 0;
+		this.castTimeLevel = 0;
+		this.cooldownLevel = 0;
+
+		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
+		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);
+		this.damageMultiplier = normalized[0];
+		this.size = normalized[1];
+		this.speed = normalized[2];
+		this.armorPenetration = Math.round(normalized[3]);
 	}
 
 	@Override
