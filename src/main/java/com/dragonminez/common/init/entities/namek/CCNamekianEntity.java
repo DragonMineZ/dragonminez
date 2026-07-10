@@ -5,6 +5,7 @@ import com.dragonminez.common.init.CapsuleCorpMapTrade;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
@@ -14,6 +15,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 
 public class CCNamekianEntity extends NamekTraderEntity {
@@ -39,12 +41,6 @@ public class CCNamekianEntity extends NamekTraderEntity {
 	}
 
 	@Override
-	public void readAdditionalSaveData(net.minecraft.nbt.CompoundTag pCompound) {
-		super.readAdditionalSaveData(pCompound);
-		this.offers = null;
-	}
-
-	@Override
 	protected void updateTrades() {
 		if (this.offers == null) {
 			this.offers = new MerchantOffers();
@@ -63,9 +59,7 @@ public class CCNamekianEntity extends NamekTraderEntity {
 				DMZStructures.ELDER_GURU, "dragonminez.elder_guru");
 	}
 
-	private void addMapOffer(ItemStack cost,
-			net.minecraft.resources.ResourceKey<net.minecraft.world.level.levelgen.structure.Structure> destination,
-			String displayName) {
+	private void addMapOffer(ItemStack cost, ResourceKey<Structure> destination, String displayName) {
 		CapsuleCorpMapTrade trade = new CapsuleCorpMapTrade(new ItemStack(Items.MAP, 1), cost, destination,
 				displayName, MapDecoration.Type.RED_X, MAP_MAX_USES, MAP_XP);
 		MerchantOffer offer = trade.getOffer(this, this.getRandom());
