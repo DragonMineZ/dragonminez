@@ -5,6 +5,7 @@ import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.item.WeightItem;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -65,6 +66,9 @@ public class NPCActionC2S {
 					player.displayClientMessage(blocker, true);
 					return;
 				}
+				if (!isNpcInRange(player, packet.npcName)) {
+					return;
+				}
 				switch (packet.npcName) {
 					case "karin" -> handleKarin(player, data, packet.actionId);
 					case "guru" -> handleGuru(player, data, packet.actionId);
@@ -83,6 +87,15 @@ public class NPCActionC2S {
 			});
 		});
 		context.setPacketHandled(true);
+	}
+
+	private static final double NPC_INTERACTION_RANGE = 8.0;
+
+	private static boolean isNpcInRange(ServerPlayer player, String npcName) {
+		return player.serverLevel().getEntitiesOfClass(MastersEntity.class,
+						player.getBoundingBox().inflate(NPC_INTERACTION_RANGE),
+						npc -> npcName.equals(npc.getMasterName()))
+				.stream().findFirst().isPresent();
 	}
 
 	private static void handleKarin(ServerPlayer player, StatsData data, int action) {
@@ -218,11 +231,17 @@ public class NPCActionC2S {
 		player.sendSystemMessage(Component.translatable(messageKey, weight));
 	}
 
+	private static final String OLDKAI_ZSWORD_COOLDOWN = "OldKaiZSword";
+
 	private static void handleOldKai(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
 			if (data.getResources().getAlignment() > 61 && data.getSkills().getSkillLevel("potentialunlock") >= 10) {
 				data.getSkills().setSkillLevel("ultimate", 1);
 				player.sendSystemMessage(Component.translatable("message.dragonminez.oldkai.ultimate"));
+			}
+
+			if (data.getCooldowns().hasCooldown(OLDKAI_ZSWORD_COOLDOWN)) {
+				return;
 			}
 
 			ItemStack stack = new ItemStack(MainItems.Z_SWORD.get(), 1);
@@ -231,6 +250,7 @@ public class NPCActionC2S {
 				ItemEntity drop = player.drop(stack, false);
 				if (drop != null) drop.setNoPickUpDelay();
 			}
+			data.getCooldowns().addCooldown(OLDKAI_ZSWORD_COOLDOWN, Integer.MAX_VALUE);
 		}
 	}
 
