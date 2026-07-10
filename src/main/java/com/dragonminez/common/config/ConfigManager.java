@@ -6,6 +6,7 @@ import com.dragonminez.client.animation.AnimationCache;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -319,7 +320,7 @@ public class ConfigManager {
 				JsonObject baseMap = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
 				count += mergeMapValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), baseMap, mapValueClass(field));
 			} else if (fieldType != null && isCollectionOrArray(fieldType)) {
-				if (oldVal.isJsonArray() && shouldPreserve(oldVal, newVal, baseVal)) { newObj.add(key, oldVal); count++; }
+				if (oldVal.isJsonArray() && shouldPreserve(oldVal, newVal, baseVal)) { newObj.add(key, stripNullElements(oldVal.getAsJsonArray())); count++; }
 			} else if (oldVal.isJsonObject() && newVal.isJsonObject()) {
 				JsonObject baseObj = (baseVal != null && baseVal.isJsonObject()) ? baseVal.getAsJsonObject() : null;
 				count += mergeMatchingValues(oldVal.getAsJsonObject(), newVal.getAsJsonObject(), baseObj, fieldType);
@@ -349,7 +350,7 @@ public class ConfigManager {
 					count++;
 				}
 			} else if (oldVal.isJsonArray()) {
-				if (shouldPreserve(oldVal, newVal, baseVal)) { newMap.add(key, oldVal); count++; }
+				if (shouldPreserve(oldVal, newVal, baseVal)) { newMap.add(key, stripNullElements(oldVal.getAsJsonArray())); count++; }
 			} else if (isValueCompatible(oldVal, newVal, valueType) && shouldPreserve(oldVal, newVal, baseVal)) {
 				newMap.add(key, oldVal);
 				count++;
@@ -420,6 +421,14 @@ public class ConfigManager {
 
 	private static boolean isCollectionOrArray(Class<?> type) {
 		return type.isArray() || Collection.class.isAssignableFrom(type);
+	}
+
+	private static JsonArray stripNullElements(JsonArray array) {
+		JsonArray cleaned = new JsonArray();
+		for (JsonElement element : array) {
+			if (!element.isJsonNull()) cleaned.add(element);
+		}
+		return cleaned;
 	}
 
 	private static Field findField(Class<?> type, String name) {
