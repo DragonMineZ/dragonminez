@@ -1,8 +1,0 @@
-{
-  "parent": "dragonminez:katana",
-  "attributes": {
-    "crit_chance": 0.25,
-    "crit_damage": 0.10
-  }
-}
-
