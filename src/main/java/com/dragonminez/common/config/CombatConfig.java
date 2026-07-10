@@ -42,9 +42,9 @@ public class CombatConfig {
 
 	private Boolean enableAdaptativeDefenseMitigation = true;
 	private Double adaptativeMitigationParityRatio = 1.0;
-	private Double adaptativeMitigationParityValue = 0.20;
+	private Double adaptativeMitigationParityValue = 0.15;
 	private Double adaptativeMitigationZeroRatio = 5.0;
-	private Double adaptativeDefenseMitigationCap = 0.70;
+	private Double adaptativeDefenseMitigationCap = 0.65;
 
 	private Boolean cancelDamageEventIfMitigationTooHigh = true;
 	private Double cancelDamageMitigationThreshold = 2.5;
