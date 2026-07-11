@@ -669,7 +669,11 @@ public class StatsData {
 		double base = getAdjustedEnergyDrain();
 		if (base <= 0.0) return base;
 		double maxEnergy = getMaxEnergy();
-		double energyRatio = Math.max(1.0, getReducedOffense() / Math.max(1.0, maxEnergy * 1.5));
+		// Soften the offense/energy penalty with a square root so high Strength no
+		// longer scales the drain linearly and unbounded. Offense that vastly
+		// exceeds the ki pool still costs more, but far more gently.
+		double rawEnergyRatio = getReducedOffense() / Math.max(1.0, maxEnergy * 1.5);
+		double energyRatio = Math.max(1.0, Math.sqrt(rawEnergyRatio));
 		double formRawEneDrain = 0.0;
 		if (character.hasActiveForm() && character.getActiveFormData() != null)
 			formRawEneDrain += Math.max(0.0, character.getActiveFormData().getEnergyDrain());
