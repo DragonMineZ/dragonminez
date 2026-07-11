@@ -10,7 +10,7 @@ Use the sidebar to browse everything, or jump into a section below.
 
 ## 🐉 DMZ Systems — how the mod works
 
-Reference for the gameplay itself. Good starting points:
+Reference for the game-play itself. Good starting points:
 
 - [[Stats & Attributes|Stats-and-Attributes]] — the six stats, resources, Battle Power & alignment
 - [[Player Classes|Player-Classes]] · [[Races|Races]] — your character
