@@ -222,7 +222,7 @@ public class StatsData {
 	public float getHealthBonus() {
 		double vitality = stats.getVitality();
 		double vitScaling = getStatScaling("VIT");
-		double vitMult = getFormMultiplier("VIT");
+		double vitMult = getTotalMultiplier("VIT");
 		double flatBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), true);
 		return (float) Math.min(((vitality + multBonusVit) * vitScaling * vitMult) + (flatBonusVit * vitScaling), Float.MAX_VALUE - 1);
@@ -235,7 +235,7 @@ public class StatsData {
 	public float getMaxEnergy() {
 		double energy = stats.getEnergy();
 		double eneScaling = getStatScaling("ENE");
-		double eneMult = getFormMultiplier("ENE");
+		double eneMult = getTotalMultiplier("ENE");
 		double flatBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), true);
 		double secondaryMaxEnergy = getSecondaryAttributeValue(MainAttributes.MAX_ENERGY.get(), 20.0);
@@ -260,7 +260,7 @@ public class StatsData {
 		int baseVit = stats.getVitality();
 		double flatBonusVit = bonusStats.calculateBonus("VIT", baseVit, false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
-		double vitMult = getFormMultiplier("VIT");
+		double vitMult = getTotalMultiplier("VIT");
 		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
 		double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5StmScaling());
 
@@ -289,7 +289,7 @@ public class StatsData {
 		int baseVit = stats.getVitality();
 		double flatBonusVit = bonusStats.calculateBonus("VIT", baseVit, false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
-		double vitMult = getFormMultiplier("VIT");
+		double vitMult = getTotalMultiplier("VIT");
 		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
 		double hp5 = classStats.getBaseHp5() + (effectiveVit * classStats.getHp5VitScaling());
 
@@ -319,7 +319,7 @@ public class StatsData {
 		int baseEne = stats.getEnergy();
 		double flatBonusEne = bonusStats.calculateBonus("ENE", baseEne, false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", baseEne, true);
-		double eneMult = getFormMultiplier("ENE");
+		double eneMult = getTotalMultiplier("ENE");
 		double effectiveEne = ((baseEne + multBonusEne) * eneMult) + flatBonusEne;
 		double ep5 = classStats.getBaseEp5() + (effectiveEne * classStats.getEp5EneScaling());
 
