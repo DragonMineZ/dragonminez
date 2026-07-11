@@ -32,8 +32,10 @@ public class RacialSkillLogic {
 	public static void attemptRacialAction(ServerPlayer player) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			String race = data.getCharacter().getRaceName();
-			LivingEntity target = getTargetEntity(player, 3.0);
 			RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
+
+			double range = (config != null && "majin".equals(config.getRacialSkill())) ? 8.0 : 3.0;
+			LivingEntity target = getTargetEntity(player, range);
 
 			if (target == null) return;
 			if (target instanceof MastersEntity || target instanceof PunchMachineEntity) return;
