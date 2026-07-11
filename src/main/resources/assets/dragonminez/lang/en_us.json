@@ -1006,6 +1006,7 @@
   "message.dragonminez.racial.majin.success": "§dAbsorption complete!",
   "message.dragonminez.racial.bio.success": "§2Vital energy drained successfully!",
   "message.dragonminez.racial.zenkai.used": "§aZenkai Boost used! You feel stronger!",
+  "message.dragonminez.racial.zenkai.approaching": "§eA Zenkai approaches within you... §c%s §eseconds remaining!",
   "message.dragonminez.fusion.different_race": "§cYou can only fuse (Metamoru) with players of the same race.",
   "message.dragonminez.fusion.level_gap": "§cYou can only fuse (Metamoru) with a player similar in level to you.",
   "message.dragonminez.fusion.android_cannot_fuse": "§cAndroids cannot perform fusion.",
