@@ -3,6 +3,7 @@ package com.dragonminez.server.events.players.statuseffect;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -10,6 +11,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 
 import java.util.HashMap;
@@ -52,6 +54,12 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
         if (player.getHealth() <= maxHealth * 0.15) {
             int seconds = SAIYAN_ZENKAI_SECONDS.getOrDefault(player.getUUID(), 0) + 1;
             SAIYAN_ZENKAI_SECONDS.put(player.getUUID(), seconds);
+
+            int remaining = 8 - seconds;
+            if (remaining > 0) {
+                player.displayClientMessage(
+                        Component.translatable("message.dragonminez.racial.zenkai.approaching", remaining), true);
+            }
         } else {
             resetSaiyanZenkaiTimer(player);
             return;
@@ -70,6 +78,7 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
             }
 
             player.displayClientMessage(Component.translatable("message.dragonminez.racial.zenkai.used"), true);
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
             data.getResources().addRacialSkillCount(1);
             data.getCooldowns().setCooldown(Cooldowns.ZENKAI, config.getSaiyanZenkaiCooldownSeconds() * 20);
