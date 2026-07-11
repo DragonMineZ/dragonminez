@@ -2,6 +2,7 @@ package com.dragonminez.common.wish;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.util.WishTypeAdapter;
 import com.dragonminez.common.wish.wishes.*;
 import com.google.common.reflect.TypeToken;
@@ -39,6 +40,7 @@ public class WishManager {
 			return;
 		}
 
+		JsonLoadReport.clear("wishes");
 		Path worldFolder = overworld.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
 		Path dragonminezFolder = worldFolder.resolve("dragonminez");
 		Path wishDir = dragonminezFolder.resolve("wishes");
@@ -84,6 +86,7 @@ public class WishManager {
 			LogUtil.info(Env.COMMON, "Loaded dragon wishes from config file {}", path.getFileName());
 		} catch (Exception e) {
 			LogUtil.error(Env.COMMON, "Failed to load dragon wish config '{}': {}", path.getFileName(), e.toString());
+			JsonLoadReport.error("wishes", "wishes/" + path.getFileName(), "Malformed wish JSON, file skipped: " + JsonLoadReport.rootCause(e));
 		}
 	}
 
