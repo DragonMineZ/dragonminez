@@ -5,6 +5,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.entities.AllMastersEntity;
 import com.dragonminez.common.init.item.WeightItem;
+import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -62,22 +63,50 @@ public class GravityLogic {
 		return Math.max(0.0, ambient + machineExtra);
 	}
 
+	private static double avgEffectiveStats(StatsData data) {
+		return (
+				data.getStats().getStrength() * data.getTotalMultiplier("STR") +
+				data.getStats().getStrikePower() * data.getTotalMultiplier("SKP") +
+				data.getStats().getResistance() * data.getTotalMultiplier("RES") +
+				data.getStats().getVitality() * data.getTotalMultiplier("VIT") +
+				data.getStats().getKiPower() * data.getTotalMultiplier("PWR") +
+				data.getStats().getEnergy() * data.getTotalMultiplier("ENE")
+		) / 6.0;
+	}
+
 	private static double getResistance(Player player) {
 		GeneralServerConfig.GravityConfig config = cfg();
 		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-			double avgEffectiveStats = (
-					data.getStats().getStrength() * data.getTotalMultiplier("STR") +
-					data.getStats().getStrikePower() * data.getTotalMultiplier("SKP") +
-					data.getStats().getResistance() * data.getTotalMultiplier("RES") +
-					data.getStats().getVitality() * data.getTotalMultiplier("VIT") +
-					data.getStats().getKiPower() * data.getTotalMultiplier("PWR") +
-					data.getStats().getEnergy() * data.getTotalMultiplier("ENE")
-			) / 6.0;
-
 			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 			double div = Math.max(1.0, maxStats * config.getResistanceStatDivisorRatio());
-			return (avgEffectiveStats / div) * config.getResistanceScale();
+			return (avgEffectiveStats(data) / div) * config.getResistanceScale();
 		}).orElse(0.0);
+	}
+
+	public static double getGravityRoomReliefFraction(Player player) {
+		if (getMachineGravity(player) <= 1.0) return 0.0;
+
+		GeneralServerConfig.GravityConfig config = cfg();
+		double base;
+		double falloff;
+		if (QuestUnlocks.isCompleted(player, QuestUnlocks.GRAVITY_MK3)) {
+			base = config.getGravityRoomMk3Relief();
+			falloff = config.getGravityRoomMk3Falloff();
+		} else if (QuestUnlocks.isCompleted(player, QuestUnlocks.GRAVITY_MK2)) {
+			base = config.getGravityRoomMk2Relief();
+			falloff = config.getGravityRoomMk2Falloff();
+		} else {
+			return 0.0;
+		}
+		if (base <= 0.0) return 0.0;
+
+		double powerNorm = StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			double div = Math.max(1.0, ConfigManager.getServerConfig().getGameplay().getMaxValue());
+			return Math.max(0.0, avgEffectiveStats(data) / div);
+		}).orElse(0.0);
+
+		double relief = base * Math.exp(-falloff * powerNorm);
+		return Math.max(0.0, Math.min(base, relief));
 	}
 
 	public static double getNetGravity(Player player) {
@@ -246,8 +275,11 @@ public class GravityLogic {
 		double overloadHard = config.getTpOverloadHardRatio();
 		if (r <= idealHigh) return 0.0;
 		double max = config.getMaxWeightPenalty();
-		if (r >= overloadHard) return max;
-		return max * (r - idealHigh) / (overloadHard - idealHigh);
+		double penalty = (r >= overloadHard) ? max : max * (r - idealHigh) / (overloadHard - idealHigh);
+
+		double relief = getGravityRoomReliefFraction(player);
+		if (relief > 0.0) penalty *= (1.0 - relief);
+		return penalty;
 	}
 
 	public static double getStatReduction(Player player) {

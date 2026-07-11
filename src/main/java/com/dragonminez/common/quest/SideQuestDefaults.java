@@ -975,7 +975,6 @@ final class SideQuestDefaults {
 				},
 				new JsonObject[]{ rewTPS(52000), rewItem("dragonminez:gete_smithing_template", 1) }));
 
-		// Gravity Room Mk.II/Mk.III: training inside the Time Chamber earns 1.5x / 2x TP (gate in TPGainEvents).
 		writeQuestFile(dir, "bulma_gravity_mk2.json", sidequest(
 				"bulma_gravity_mk2", "dmz.sidequest.bulma_gravity_mk2.name", "dmz.sidequest.bulma_gravity_mk2.desc",
 				"tech", false, "bulma", "bulma",
@@ -987,7 +986,7 @@ final class SideQuestDefaults {
 						objItem("minecraft:heavy_weighted_pressure_plate", 4),
 						objTalkTo("bulma")
 				},
-				new JsonObject[]{ rewTPS(40000) }));
+				new JsonObject[]{ rewTPS(25000) }));
 
 		writeQuestFile(dir, "bulma_gravity_mk3.json", sidequest(
 				"bulma_gravity_mk3", "dmz.sidequest.bulma_gravity_mk3.name", "dmz.sidequest.bulma_gravity_mk3.desc",
@@ -998,7 +997,7 @@ final class SideQuestDefaults {
 						objItem("minecraft:netherite_ingot", 2),
 						objTalkTo("bulma")
 				},
-				new JsonObject[]{ rewTPS(72000) }));
+				new JsonObject[]{ rewTPS(45000) }));
 
 		// Ki Accumulator: hand over the parts and Bulma builds energy batteries (consumable ki restore).
 		writeQuestFile(dir, "bulma_ki_battery.json", sidequest(
