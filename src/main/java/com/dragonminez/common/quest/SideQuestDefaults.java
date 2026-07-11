@@ -6,8 +6,6 @@ import com.dragonminez.common.config.ConfigManager;
 import com.google.gson.*;
 
 import java.io.IOException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
@@ -27,17 +25,19 @@ import java.util.Set;
  */
 final class SideQuestDefaults {
 
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Set<String> GOOD_PATH_NPCS = Set.of(
 			"goku", "roshi", "karin", "guru", "dende", "popo", "kingkai",
 			"bulma", "krillin", "yamcha", "tien", "chiaotzu", "gohan", "trunks",
 			"chi_chi", "videl", "namek_elder"
 	);
 
+	private static Path dmzBase;
+
 	private SideQuestDefaults() {} // utility class
 
 	static void createDefaultSideQuestFiles(Path sideQuestDir) {
 		if (!ConfigManager.getServerConfig().getGameplay().getCreateDefaultSideQuests()) return;
+		dmzBase = sideQuestDir.getParent(); // <world>/dragonminez
 		createTrainingCategory(sideQuestDir);
 		createExplorationCategory(sideQuestDir);
 		createCombatCategory(sideQuestDir);
@@ -51,13 +51,9 @@ final class SideQuestDefaults {
 	// ---- Helpers ----
 
 	private static void writeQuestFile(Path dir, String filename, JsonObject quest) {
-		Path file = dir.resolve(filename);
 		try {
 			Files.createDirectories(dir);
-			if (Files.exists(file)) {
-				return;
-			}
-			try (Writer w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) { GSON.toJson(quest, w); }
+			QuestUpgrader.upgradeOrWrite(dmzBase, dir.resolve(filename), quest);
 		} catch (IOException e) { LogUtil.error(Env.COMMON, "Failed to create default side-quest file: {}", filename, e); }
 	}
 
@@ -758,7 +754,7 @@ final class SideQuestDefaults {
 				new JsonObject[]{
 						objItem("dragonminez:kikono_shard", 16),
 						objItem("minecraft:diamond", 8),
-						objTalkTo("merchant_01")
+						objTalkTo("bulma")
 				},
 				new JsonObject[]{ rewTPS(13500), rewItem("minecraft:diamond_sword", 1) }));
 

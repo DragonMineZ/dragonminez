@@ -1,0 +1,8 @@
+{
+  "id": "frieza_saga",
+  "name": "dmz.saga.frieza_saga",
+  "requirements": {
+    "previousSaga": "saiyan_saga"
+  },
+  "questFolder": "saga_frieza"
+}

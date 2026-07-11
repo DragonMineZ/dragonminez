@@ -1,0 +1,68 @@
+{
+  "id": 15,
+  "title": "dmz.quest.buu15.name",
+  "description": "dmz.quest.buu15.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 14
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1820
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:rocky"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_goku_end_ssj2",
+      "count": 1,
+      "health": 322000.0,
+      "meleeDamage": 13500.0,
+      "kiDamage": 12240.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 3
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_vegeta_majin",
+      "count": 1,
+      "health": 336000.0,
+      "meleeDamage": 14100.0,
+      "kiDamage": 12750.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 158400
+    }
+  ]
+}

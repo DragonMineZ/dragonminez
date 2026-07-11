@@ -1,0 +1,8 @@
+{
+  "id": "buu_saga",
+  "name": "dmz.saga.buu_saga",
+  "requirements": {
+    "previousSaga": "android_saga"
+  },
+  "questFolder": "saga_buu"
+}

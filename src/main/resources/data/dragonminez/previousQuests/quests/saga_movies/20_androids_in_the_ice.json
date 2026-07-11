@@ -1,0 +1,73 @@
+{
+  "id": 20,
+  "title": "dmz.quest.movies20.name",
+  "description": "dmz.quest.movies20.desc",
+  "type": "SAGA",
+  "category": "saga_movies",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 19
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 700
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:snowy_plains"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 6
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_a14",
+      "count": 1,
+      "health": 154000.0,
+      "meleeDamage": 6000.0,
+      "kiDamage": 5440.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_a15",
+      "count": 1,
+      "health": 129500.0,
+      "meleeDamage": 5280.0,
+      "kiDamage": 4760.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 81200
+    }
+  ]
+}

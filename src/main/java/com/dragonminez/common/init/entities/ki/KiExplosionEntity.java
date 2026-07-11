@@ -32,6 +32,13 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Integer> CAST_EXPLOSION = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.INT);
 
+    // Final Explosion "life sacrifice": on firing, the caster is drained down to FINAL_EXPLOSION_HP_FLOOR of
+    // their max HP, and the blast's damage and radius scale up by how much life was actually spent. A near-dead
+    // cast barely amplifies it; a full-HP cast is devastating to both the caster and everything nearby.
+    private static final float FINAL_EXPLOSION_HP_FLOOR = 0.05F;   // caster is left at 5% HP
+    private static final float FINAL_EXPLOSION_DAMAGE_GAIN = 1.8F; // up to ~2.7x damage at full HP
+    private static final float FINAL_EXPLOSION_SIZE_GAIN = 0.8F;   // up to ~1.76x radius at full HP
+
     public KiExplosionEntity(EntityType<? extends KiExplosionEntity> type, Level level) {
         super(type, level);
         this.setNoGravity(true);
@@ -95,12 +102,37 @@ public class KiExplosionEntity extends AbstractKiProjectile {
         this.setMaxLife(this.tickCount + finalMaxLife);
 
         if (!this.level().isClientSide) {
+            applyFinalExplosionSacrifice();
             createCrater(this.getMaxRadius()*1.2f);
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 0.5F, 1.2F);
+                    MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 0.7F, 1.2F);
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
+    }
+
+    /**
+     * Final Explosion only: the caster burns their own life force to empower the blast. Drains the owner down to
+     * {@link #FINAL_EXPLOSION_HP_FLOOR} of their max HP and scales both damage and radius by the fraction of max
+     * HP that was actually consumed. Called once, server-side, at the moment the explosion fires. A caster already
+     * at/below the floor sacrifices nothing and gets no bonus.
+     */
+    private void applyFinalExplosionSacrifice() {
+        if (!"final_explosion".equals(this.getTechniqueId())) return;
+        if (!(this.getOwner() instanceof LivingEntity ownerLiving) || !ownerLiving.isAlive()) return;
+
+        float maxHp = ownerLiving.getMaxHealth();
+        if (maxHp <= 0.0F) return;
+
+        float floorHp = maxHp * FINAL_EXPLOSION_HP_FLOOR;
+        float consumed = ownerLiving.getHealth() - floorHp;
+        if (consumed <= 0.0F) return; // already at/below the floor: nothing to sacrifice, no bonus
+
+        ownerLiving.setHealth(floorHp);
+
+        float consumedFraction = consumed / maxHp; // 0 .. (1 - FINAL_EXPLOSION_HP_FLOOR)
+        this.setKiDamage(this.getKiDamage() * (1.0F + consumedFraction * FINAL_EXPLOSION_DAMAGE_GAIN));
+        this.setMaxRadius(this.getMaxRadius() * (1.0F + consumedFraction * FINAL_EXPLOSION_SIZE_GAIN));
     }
 
     @Override
@@ -174,7 +206,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
             if (!isFiring) {
                 if (this.tickCount == 1) {
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                            MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 0.2F, 1.0F);
+                            MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 0.7F, 1.0F);
                 }
             } else {
                 int activeTicks = this.tickCount - this.getFireTick();

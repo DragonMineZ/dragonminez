@@ -624,6 +624,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (this.getOwner() instanceof LivingEntity livingOwner) {
 
             if (this.getKiRenderType() == 9) {
+                // The barrage emitter stays anchored to the caster (it doesn't fly), so we skip the trajectory
+                // logic below — but still fire the "_fire" animation (ki.barrage_fire) the same as every other ki.
+                if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
                 return;
             }
 
@@ -674,7 +677,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             } else {
                 fireSound = MainSounds.KIBLAST_ATTACK.get();
             }
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 1.0F, 1.0F);
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 0.7F, 1.0F);
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
@@ -755,17 +758,20 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 if (!this.level().isClientSide) {
                     if (!isCasting) {
                         if (type == 9) {
-                            if (this.tickCount % 4 == 0) {
+                            // Xenoverse-style max Volley: a dense, rapid stream of blasts converging toward where the
+                            // caster aims. Fast cadence (every 2 ticks) + tight spread (focused, not a scattered
+                            // shotgun) + full flight speed sell the "super rush" look.
+                            if (this.tickCount % 2 == 0) {
                                 for (int i = 0; i < 5; i++) {
                                     KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
                                     bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
 
-                                    bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed() / 2, 15.0F);
+                                    bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 6.0F);
                                     this.level().addFreshEntity(bullet);
                                 }
 
                                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                                        MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.5F + (this.random.nextFloat() * 0.5F));
+                                        MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.6F + (this.random.nextFloat() * 0.5F));
                             }
                         } else if (type == 10) {
                             if (this.tickCount % 2 == 0) {
@@ -849,9 +855,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             if(isCasting){
                 if (type == 5 && this.tickCount == 1) {
-                    this.playSound(MainSounds.KI_SPIRITBOMB_CHARGE.get(), 0.8F, 1.0F);
+                    this.playSound(MainSounds.KI_SPIRITBOMB_CHARGE.get(), 0.7F, 1.0F);
                 }  else if (type == 6 && this.tickCount == 1) {
-                    this.playSound(MainSounds.KI_SUPERNOVA_CHARGE.get(), 0.8F, 1.0F);
+                    this.playSound(MainSounds.KI_SUPERNOVA_CHARGE.get(), 0.7F, 1.0F);
                 }
             } else {
                 if (this.isDetonating) {

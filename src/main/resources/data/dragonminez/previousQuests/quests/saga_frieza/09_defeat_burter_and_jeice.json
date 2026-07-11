@@ -1,0 +1,68 @@
+{
+  "id": 9,
+  "title": "dmz.quest.frieza9.name",
+  "description": "dmz.quest.frieza9.desc",
+  "type": "SAGA",
+  "category": "saga_frieza",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 8
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 196
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:namek"
+      },
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:ajissa_plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_burter",
+      "count": 1,
+      "health": 4862.0,
+      "meleeDamage": 265.0,
+      "kiDamage": 238.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_jeice",
+      "count": 1,
+      "health": 4862.0,
+      "meleeDamage": 265.0,
+      "kiDamage": 238.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 30240
+    }
+  ]
+}

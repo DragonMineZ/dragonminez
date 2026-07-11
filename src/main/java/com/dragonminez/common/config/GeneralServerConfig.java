@@ -99,6 +99,7 @@ public class GeneralServerConfig {
 		private Boolean createDefaultSagas = true;
 		private Boolean sideQuestsEnabled = true;
 		private Boolean createDefaultSideQuests = true;
+		private Boolean autoUpdateQuests = true;
 		private Double defaultQuestPartyMultiplier = 1.45;
 		private Integer senzuCooldownTicks = 240;
 		private Integer senzuGiftCooldownTicks = 18000;

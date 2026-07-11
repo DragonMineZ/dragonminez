@@ -1,8 +1,6 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
-import com.dragonminez.client.init.entities.model.ki.KiBlockModel;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.ModRenderTypes;
@@ -28,18 +26,13 @@ import org.joml.Matrix4f;
 
 public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
-    private static final ResourceLocation TEXTURE_KI_BLOCK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_block1.png");
-    private static final ResourceLocation TEXTURE_KI_BLOCK2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_block2.png");
     private static final ResourceLocation TEXTURE_KI_SPARKS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle1.png");
     private static final ResourceLocation TEXTURE_KI_SPARKS2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle2.png");
     private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
     private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
 
-    private final KiBlockModel model2;
-
     public KiProjectileRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
-        this.model2 = new KiBlockModel(pContext.bakeLayer(KiBlockModel.LAYER_LOCATION));
     }
 
     @Override
@@ -190,32 +183,6 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         shader.safeGetUniform("alphaMult").set(alpha);
         shader.apply();
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
-        poseStack.popPose();
-    }
-
-    private void renderLegacyBlockModel(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float ageInTicks, float[] coreColor, float[] borderColor, int packedLight) {
-        float[] brightAuraColor = ColorUtils.lightenColor(coreColor, 0.5f);
-        this.model2.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
-
-        poseStack.pushPose();
-        poseStack.translate(0, -0.25, 0.0f);
-        poseStack.scale(0.6f,0.6f ,0.6f );
-        VertexConsumer solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI_BLOCK));
-        this.model2.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F);
-        poseStack.popPose();
-
-        poseStack.pushPose();
-        poseStack.translate(0, -0.25, 0.0f);
-        poseStack.scale(0.6f,0.6f ,0.6f );
-        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI_BLOCK2));
-        this.model2.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F);
-        poseStack.popPose();
-
-        poseStack.pushPose();
-        poseStack.translate(0, -0.4, 0.0f);
-        poseStack.scale(0.7f, 0.7f, 0.7f);
-        VertexConsumer borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
-        this.model2.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.35F);
         poseStack.popPose();
     }
 

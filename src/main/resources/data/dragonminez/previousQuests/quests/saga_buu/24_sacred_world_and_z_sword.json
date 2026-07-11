@@ -1,0 +1,57 @@
+{
+  "id": 24,
+  "title": "dmz.quest.buu24.name",
+  "description": "dmz.quest.buu24.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 23
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 2060
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:sacredkaiplanet"
+      },
+      {
+        "type": "SKILL",
+        "skill": "potentialunlock",
+        "minLevel": 10
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:z_sword",
+      "count": 1
+    },
+    {
+      "type": "SKILL",
+      "skill": "ultimate",
+      "level": 1
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 187200
+    }
+  ]
+}

@@ -37,9 +37,12 @@ public class DamageCurioC2S {
 			ServerPlayer player = context.getSender();
 			if (player == null || slotId.isEmpty()) return;
 
+			if (damageAmount <= 0) return;
+
 			CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
 				var handler = inv.getCurios().get(slotId);
 				if (handler != null) {
+					if (slotIndex < 0 || slotIndex >= handler.getStacks().getSlots()) return;
 					ItemStack stack = handler.getStacks().getStackInSlot(slotIndex);
 
 					if (!stack.isEmpty() && stack.isDamageableItem()) {

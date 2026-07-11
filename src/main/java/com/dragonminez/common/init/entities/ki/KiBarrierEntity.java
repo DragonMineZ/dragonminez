@@ -102,7 +102,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
         if (!this.level().isClientSide) {
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.2F);
+                    MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.7F, 1.2F);
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");

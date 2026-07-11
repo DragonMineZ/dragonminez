@@ -55,9 +55,7 @@ public class SetStoryDifficultyC2S {
 
 			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
 				PlayerQuestData pqd = data.getPlayerQuestData();
-				boolean alreadyChosen = pqd.isDifficultyChosen();
-				boolean sameDifficulty = pqd.getDifficulty() == difficulty;
-				if (alreadyChosen && sameDifficulty) {
+				if (pqd.isDifficultyChosen()) {
 					return;
 				}
 				pqd.setDifficulty(difficulty);

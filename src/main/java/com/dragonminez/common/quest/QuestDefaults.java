@@ -6,8 +6,6 @@ import com.dragonminez.common.config.ConfigManager;
 import com.google.gson.*;
 
 import java.io.IOException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -39,8 +37,9 @@ import java.nio.file.Path;
  */
 final class QuestDefaults {
 
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String PARTY_SCALING_KEY = "party_scaling";
+
+	private static Path dmzBase;
 
 	private QuestDefaults() {
 	} // utility class
@@ -48,6 +47,8 @@ final class QuestDefaults {
 	static void createDefaultQuestFiles(Path questsDir) {
 		if (!ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled()) return;
 		if (!ConfigManager.getServerConfig().getGameplay().getCreateDefaultSagas()) return;
+
+		dmzBase = questsDir.getParent();
 
 		createSaiyanSagaQuests(questsDir);
 		createFriezaSagaQuests(questsDir);
@@ -60,15 +61,9 @@ final class QuestDefaults {
 	// ---- Helpers ----
 
 	private static void writeQuest(Path dir, String filename, JsonObject quest) {
-		Path file = dir.resolve(filename);
 		try {
 			Files.createDirectories(dir);
-			if (Files.exists(file)) {
-				return;
-			}
-			try (Writer w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-				GSON.toJson(quest, w);
-			}
+			QuestUpgrader.upgradeOrWrite(dmzBase, dir.resolve(filename), quest);
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Failed to create default quest file: {}", filename, e);
 		}

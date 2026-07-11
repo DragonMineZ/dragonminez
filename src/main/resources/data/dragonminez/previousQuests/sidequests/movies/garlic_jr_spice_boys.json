@@ -1,0 +1,51 @@
+{
+  "id": "garlic_jr_spice_boys",
+  "title": "dmz.sidequest.garlic_jr_spice_boys.name",
+  "description": "dmz.sidequest.garlic_jr_spice_boys.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "popo",
+  "turn_in": "popo",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 3
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:rocky"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_garlick_jr",
+      "count": 3,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "popo"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 72000
+    }
+  ]
+}

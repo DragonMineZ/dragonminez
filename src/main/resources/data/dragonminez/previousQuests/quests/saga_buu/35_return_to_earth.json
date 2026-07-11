@@ -1,0 +1,46 @@
+{
+  "id": 35,
+  "title": "dmz.quest.buu35.name",
+  "description": "dmz.quest.buu35.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 34
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 2320
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "DIMENSION",
+      "dimension": "minecraft:overworld"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 108000
+    }
+  ]
+}

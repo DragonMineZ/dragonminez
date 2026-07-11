@@ -63,12 +63,17 @@ public class InstantTransmissionTapC2S {
 				ServerLevel level = player.serverLevel();
 				LivingEntity finalTarget = null;
 
+				double range = 25.0 + (skillLevel * 10.0);
+				Vec3 eyePos = player.getEyePosition();
+				Vec3 viewVec = player.getViewVector(1.0F).normalize();
+
 				if (targetId != null) {
-					if (level.getEntity(targetId) instanceof LivingEntity le && !isBlockedPlayer(data, le)) finalTarget = le;
+					if (level.getEntity(targetId) instanceof LivingEntity le && le != player && le.isAlive()
+							&& !isBlockedPlayer(data, le) && player.hasLineOfSight(le)
+							&& isNearCrosshair(eyePos, viewVec, le, range)) {
+						finalTarget = le;
+					}
 				} else {
-					double range = 25.0 + (skillLevel * 10.0);
-					Vec3 eyePos = player.getEyePosition();
-					Vec3 viewVec = player.getViewVector(1.0F).normalize();
 					AABB searchBox = player.getBoundingBox().inflate(range);
 
 					List<LivingEntity> candidates = level.getEntitiesOfClass(LivingEntity.class, searchBox,

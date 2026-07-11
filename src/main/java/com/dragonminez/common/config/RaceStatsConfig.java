@@ -16,14 +16,18 @@ public class RaceStatsConfig {
 
 	@Setter
 	private String configVersion;
-
 	private final Map<String, ClassStats> classes = new HashMap<>();
+	private static final int MAX_TRACKED_CLASSES = 64;
 
 	public ClassStats getClassStats(String characterClass) {
-		if (!this.classes.containsKey(characterClass)) {
-			this.classes.put(characterClass, new ClassStats());
+		ClassStats existing = this.classes.get(characterClass);
+		if (existing != null) return existing;
+		if (characterClass != null && this.classes.size() < MAX_TRACKED_CLASSES) {
+			ClassStats created = new ClassStats();
+			this.classes.put(characterClass, created);
+			return created;
 		}
-		return this.classes.get(characterClass);
+		return new ClassStats();
 	}
 
 	public Collection<String> getAllClasses() {

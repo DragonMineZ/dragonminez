@@ -62,8 +62,9 @@ public class UpdateSkillC2S {
 							if (isStackSkill && skill.getLevel() <= 0) break;
 							if (skill.getLevel() <= 0 && isMasterOnlyFormSkill(data, skillName)) break;
 							refreshRuntimeMaxLevel(data, skillName, skill);
-							if (!skill.isMaxLevel() && data.getResources().getTrainingPoints() >= cost && cost != -1 && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
-								data.getResources().removeTrainingPoints(cost);
+							int upgradeCost = computeTpCost(data, skillName, skill.getLevel());
+							if (!skill.isMaxLevel() && upgradeCost >= 0 && data.getResources().getTrainingPoints() >= upgradeCost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
+								data.getResources().removeTrainingPoints(upgradeCost);
 								boolean wasLevelZero = skill.getLevel() == 0;
 								skill.addLevel(1);
 
@@ -74,16 +75,18 @@ public class UpdateSkillC2S {
 						case PURCHASE:
 							if (!raceAllowed) break;
 							boolean isFormSkillPurchase = ConfigManager.getSkillsConfig().getFormSkills().contains(skillName.toLowerCase());
-							int effectiveCost = cost;
+							int effectiveCost;
 							if (isFormSkillPurchase) {
 								var charConfig = ConfigManager.getRaceCharacter(data.getCharacter().getRaceName());
 								if (charConfig == null || !charConfig.hasFormSkill(skillName)) break;
 								Integer[] prices = charConfig.getFormSkillTpCosts(skillName);
 								effectiveCost = (prices.length > 0 && prices[0] != null) ? prices[0] : -1;
+							} else {
+								effectiveCost = computeTpCost(data, skillName, 0);
 							}
 							boolean notOwned = !data.getSkills().hasSkill(skillName)
 									|| (isFormSkillPurchase && data.getSkills().getSkillLevel(skillName) == 0);
-							if (notOwned && effectiveCost != -1 && data.getResources().getTrainingPoints() >= effectiveCost) {
+							if (notOwned && effectiveCost >= 0 && data.getResources().getTrainingPoints() >= effectiveCost) {
 								data.getResources().removeTrainingPoints(effectiveCost);
 								data.getSkills().setSkillLevel(skillName, 1);
 								Skill purchased = data.getSkills().getSkill(skillName);
@@ -97,6 +100,24 @@ public class UpdateSkillC2S {
 			}
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static int computeTpCost(StatsData data, String skillName, int currentLevel) {
+		if (skillName == null || currentLevel < 0) return -1;
+		var skillsConfig = ConfigManager.getSkillsConfig();
+		if (skillsConfig.getFormSkills().contains(skillName.toLowerCase())) {
+			String raceName = data.getCharacter() != null ? data.getCharacter().getRaceName() : "";
+			var charConfig = ConfigManager.getRaceCharacter(raceName);
+			if (charConfig == null) return -1;
+			Integer[] prices = charConfig.getFormSkillTpCosts(skillName);
+			if (prices == null || currentLevel >= prices.length || prices[currentLevel] == null) return -1;
+			return Math.max(0, prices[currentLevel]);
+		}
+		var skillCosts = skillsConfig.getSkillCosts(skillName);
+		if (skillCosts == null || skillCosts.getCosts() == null) return -1;
+		java.util.List<Integer> costs = skillCosts.getCosts();
+		if (currentLevel >= costs.size() || costs.get(currentLevel) == null) return -1;
+		return Math.max(0, costs.get(currentLevel));
 	}
 
 	private static boolean isMasterOnlyFormSkill(StatsData data, String skillName) {

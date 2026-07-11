@@ -1,0 +1,57 @@
+{
+  "id": "gravity_chamber",
+  "title": "dmz.sidequest.gravity.name",
+  "description": "dmz.sidequest.gravity.desc",
+  "type": "SIDEQUEST",
+  "category": "training",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "goku",
+  "turn_in": "goku",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "weighted_training"
+      },
+      {
+        "type": "LEVEL",
+        "minLevel": 10
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "minecraft:wither_skeleton",
+      "count": 5,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "KILL",
+      "entity": "minecraft:blaze",
+      "count": 10,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:blaze_rod",
+      "count": 10
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "goku"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 6000
+    }
+  ]
+}

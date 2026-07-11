@@ -1,0 +1,50 @@
+{
+  "id": "bulma_namek_research",
+  "title": "dmz.sidequest.bulma_namek.name",
+  "description": "dmz.sidequest.bulma_namek.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 2
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:kikono_shard",
+      "count": 16
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:kikono_cloth",
+      "count": 8
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 10500
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:namekdball_radar",
+      "count": 1
+    }
+  ]
+}

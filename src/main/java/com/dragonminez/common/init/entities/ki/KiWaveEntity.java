@@ -498,14 +498,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (!isFiring) {
                 if (this.tickCount == 1) {
                     if (this.getKiRenderType() == 3) {
-                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_FINALFLASH_CHARGE.get(), SoundSource.HOSTILE, 4.0F, 1.0F);
+                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_FINALFLASH_CHARGE.get(), SoundSource.HOSTILE, 0.7F, 1.0F);
                     } else {
-                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
+                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.7F, 1.0F);
                     }
                 }
 
                 if (this.getKiRenderType() == 1 && this.tickCount == 1) {
-                    this.playSound(MainSounds.KI_KAME_CHARGE.get(), 0.8F, 1.0F);
+                    this.playSound(MainSounds.KI_KAME_CHARGE.get(), 0.7F, 1.0F);
                 }
             } else {
                 if (this.isClashLocked()) {
@@ -522,7 +522,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 if (this.tickCount % 5 == 0) {
                     Vec3 tipPosForSound = startPos.add(dir.scale(currentLen));
                     net.minecraft.sounds.SoundEvent fireSound = this.getKiRenderType() == 3 ? MainSounds.KI_FINALFLASH_FIRE.get() : MainSounds.KI_KAME_FIRE.get();
-                    this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, fireSound, SoundSource.HOSTILE, 4.0F, 1.0F);
+                    this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, fireSound, SoundSource.HOSTILE, 0.7F, 1.0F);
                 }
 
                 float targetLen = currentLen + currentSpeed;

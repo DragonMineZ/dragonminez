@@ -1,0 +1,50 @@
+{
+  "id": "merchant_alien_artifacts",
+  "title": "dmz.sidequest.merchant_artifacts.name",
+  "description": "dmz.sidequest.merchant_artifacts.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 4
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:kikono_shard",
+      "count": 16
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 8
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 13500
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond_sword",
+      "count": 1
+    }
+  ]
+}

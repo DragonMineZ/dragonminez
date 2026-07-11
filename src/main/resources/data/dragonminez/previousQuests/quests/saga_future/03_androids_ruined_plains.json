@@ -1,0 +1,68 @@
+{
+  "id": 3,
+  "title": "dmz.quest.future3.name",
+  "description": "dmz.quest.future3.desc",
+  "type": "SAGA",
+  "category": "saga_future",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "future_saga",
+        "questId": 2
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1440
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_a17",
+      "count": 1,
+      "health": 217000.0,
+      "meleeDamage": 9000.0,
+      "kiDamage": 8160.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_a18",
+      "count": 1,
+      "health": 210000.0,
+      "meleeDamage": 8700.0,
+      "kiDamage": 7820.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 83200
+    }
+  ]
+}

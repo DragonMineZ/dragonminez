@@ -11,9 +11,16 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class TrainingRewardC2S {
+	private static final Map<UUID, Long> LAST_CLAIM = new ConcurrentHashMap<>();
+	private static final long MIN_CLAIM_INTERVAL_TICKS = 100L;
+	private static final int MAX_LEVELS_CLEARED = 100;
+
 	private final String minigameId;
 	private final int levelsCleared;
 
@@ -37,6 +44,13 @@ public class TrainingRewardC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null || levelsCleared <= 0) return;
 
+			int clampedLevelsCleared = Math.min(levelsCleared, MAX_LEVELS_CLEARED);
+
+			long now = player.level().getGameTime();
+			Long lastClaim = LAST_CLAIM.get(player.getUUID());
+			if (lastClaim != null && now - lastClaim < MIN_CLAIM_INTERVAL_TICKS) return;
+			LAST_CLAIM.put(player.getUUID(), now);
+
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(statsData -> {
 				TrainingConfig config = ConfigManager.getTrainingConfig();
 				TrainingConfig.MinigameSettings settings = config.getSettings(minigameId);
@@ -44,7 +58,7 @@ public class TrainingRewardC2S {
 				int currentTpc = statsData.getSingleStatCost(statsData.getStats().getTotalStats());
 				float tpsPerLevel = config.computeTpsPerLevel(currentTpc, settings);
 
-				float totalReward = tpsPerLevel * levelsCleared;
+				float totalReward = tpsPerLevel * clampedLevelsCleared;
 				float limit = settings.getTpsLimitPerGame();
 				if (limit > 0 && totalReward > limit) totalReward = limit;
 				if (totalReward <= 0) return;

@@ -1,0 +1,50 @@
+{
+  "id": "bulma_gravity_chamber_parts",
+  "title": "dmz.sidequest.bulma_gravity_chamber_parts.name",
+  "description": "dmz.sidequest.bulma_gravity_chamber_parts.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 6
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:obsidian",
+      "count": 20
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone_block",
+      "count": 4
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 6
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 48000
+    }
+  ]
+}

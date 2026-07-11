@@ -33,8 +33,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -65,6 +68,19 @@ public class QuestEvents {
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			}
 		});
+	}
+
+	/**
+	 * When quest defaults were upgraded in place on server load, quietly notify operators on login
+	 * so they know balance fixes were applied and can review conflicts in the report file. Never
+	 * shown to non-ops; the console log and report file remain the authoritative record.
+	 */
+	@SubscribeEvent
+	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		if (!player.hasPermissions(2) || !QuestRegistry.hasPendingUpdateReport()) return;
+		player.sendSystemMessage(Component.literal(QuestRegistry.updateReportSummary())
+				.withStyle(ChatFormatting.GOLD));
 	}
 
 	@SubscribeEvent

@@ -9,6 +9,7 @@ import java.util.Map;
 
 public class Techniques {
 	public static final int SLOT_COUNT = 8;
+	public static final int MAX_UNLOCKED_TECHNIQUES = 256;
 
 	@Getter
 	private final Map<String, TechniqueData> unlockedTechniques = new HashMap<>();
@@ -30,6 +31,7 @@ public class Techniques {
 	}
 
 	public void unlockTechnique(TechniqueData data) {
+		if (!unlockedTechniques.containsKey(data.getId()) && unlockedTechniques.size() >= MAX_UNLOCKED_TECHNIQUES) return;
 		unlockedTechniques.put(data.getId(), data);
 	}
 
@@ -122,6 +124,9 @@ public class Techniques {
 
 	public void equipOrSwapTechnique(int slotIndex, String techniqueId) {
 		if (slotIndex < 0 || slotIndex >= SLOT_COUNT) return;
+
+		boolean isEmpty = techniqueId == null || techniqueId.isEmpty();
+		if (!isEmpty && !unlockedTechniques.containsKey(techniqueId)) return;
 
 		int existingSlot = -1;
 		for (int i = 0; i < SLOT_COUNT; i++) {

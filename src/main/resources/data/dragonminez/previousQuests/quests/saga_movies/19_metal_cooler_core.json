@@ -1,0 +1,62 @@
+{
+  "id": 19,
+  "title": "dmz.quest.movies19.name",
+  "description": "dmz.quest.movies19.desc",
+  "type": "SAGA",
+  "category": "saga_movies",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 18
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 400
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:namek"
+      },
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:ajissa_plains"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 16
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_metal_cooler_core",
+      "count": 1,
+      "health": 75140.0,
+      "meleeDamage": 3536.0,
+      "kiDamage": 2999.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 72500
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "id": "bulma_senzu_bean_substitute",
+  "title": "dmz.sidequest.bulma_senzu_bean_substitute.name",
+  "description": "dmz.sidequest.bulma_senzu_bean_substitute.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 8
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:golden_carrot",
+      "count": 12
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:glow_berries",
+      "count": 8
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:kikono_cloth",
+      "count": 2
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 9000
+    }
+  ]
+}

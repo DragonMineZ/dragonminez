@@ -1,0 +1,49 @@
+{
+  "id": "bulma_radar_amplifier",
+  "title": "dmz.sidequest.bulma_radar_amplifier.name",
+  "description": "dmz.sidequest.bulma_radar_amplifier.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_radar_parts"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:amethyst_shard",
+      "count": 16
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone",
+      "count": 24
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:gold_ingot",
+      "count": 8
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 4500
+    }
+  ]
+}

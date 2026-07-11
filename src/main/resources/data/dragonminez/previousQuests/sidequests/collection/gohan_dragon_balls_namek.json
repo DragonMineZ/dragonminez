@@ -1,0 +1,44 @@
+{
+  "id": "gohan_dragon_balls_namek",
+  "title": "dmz.sidequest.gohan_namek_db.name",
+  "description": "dmz.sidequest.gohan_namek_db.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "guru",
+  "turn_in": "guru",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 3
+      },
+      {
+        "type": "QUEST",
+        "questId": "bulma_namek_research"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "DRAGON_SUMMON",
+      "dragon": "porunga",
+      "ball_set": "namek"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "guru"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 36000
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "id": "bulma_power_suppression_unit",
+  "title": "dmz.sidequest.bulma_power_suppression_unit.name",
+  "description": "dmz.sidequest.bulma_power_suppression_unit.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 4
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone",
+      "count": 24
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:glass",
+      "count": 12
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 4
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 24000
+    }
+  ]
+}
