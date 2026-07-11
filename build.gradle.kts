@@ -173,7 +173,7 @@ dependencies {
     implementation("org.apache.commons:commons-compress:1.27.1") { because("Security/compat override requested.") }
 
     // GeckoLib, Terrablender & Curios
-    implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.3"))
+    implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.4"))
     implementation("com.eliotlash.mclib:mclib:20")
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
     compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api"))
