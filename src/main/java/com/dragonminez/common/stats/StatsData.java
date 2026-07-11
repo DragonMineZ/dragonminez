@@ -974,9 +974,10 @@ public class StatsData {
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
+		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (drainAmount < 0) return Math.min(-1, scaledDrain);
+		return Math.max(1, scaledDrain);
 	}
 
 	public double getAdjustedStaminaDrain() {
@@ -1016,9 +1017,10 @@ public class StatsData {
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
+		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (drainAmount < 0) return Math.min(-1, scaledDrain);
+		return Math.max(1, scaledDrain);
 	}
 
 	public double getAdjustedHealthDrain() {
@@ -1058,9 +1060,10 @@ public class StatsData {
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
+		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (drainAmount < 0) return Math.min(-1, scaledDrain);
+		return Math.max(1, scaledDrain);
 	}
 
 	public float[] snapshotMultiplierResources() {
