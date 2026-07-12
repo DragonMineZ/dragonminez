@@ -182,4 +182,13 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
 		return super.getRenderType(animatable, texture, bufferSource, partialTick);
 	}
+
+	@Override
+	public boolean shouldShowName(T animatable) {
+		// GeckoLib's shouldShowName only excludes the camera entity in its team-less branch. Fused players
+		// (and party members) are put on a scoreboard team, so that branch is skipped and the local player
+		// would see their own nametag. Always hide the name of the entity the camera is attached to.
+		if (animatable == Minecraft.getInstance().getCameraEntity()) return false;
+		return super.shouldShowName(animatable);
+	}
 }
