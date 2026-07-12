@@ -37,7 +37,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
@@ -46,7 +45,6 @@ import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.dragonminez.common.util.CuriosUtil;
 
 import java.util.Locale;
 
@@ -351,7 +349,7 @@ public class ClientStatsEvents {
 				}
 			} else flightSound = null;
 
-			boolean hasScouter = !getScouterStack(localPlayer).isEmpty();
+			boolean hasScouter = KiSenseScan.hasScouter(localPlayer);
 			if (KeyBinds.KI_SENSE.consumeClick()) {
 				if (!hasScouter) {
 					Skill kiSense = data.getSkills().getSkill("kisense");
@@ -476,10 +474,6 @@ public class ClientStatsEvents {
 	private static void resetChargeTracking() {
 		resetChargeSession();
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) wasSlotKeyDown[i] = false;
-	}
-
-	private static ItemStack getScouterStack(Player player) {
-		return CuriosUtil.getFirstStack(player, "head_tech");
 	}
 
 	@SubscribeEvent

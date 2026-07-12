@@ -70,6 +70,10 @@ public class KiSenseEvent {
 			if (KiSenseState.isActive() && (!data.getSkills().isSkillActive("kisense") || data.getSkills().getSkillLevel("kisense") <= 0)) {
 				KiSenseState.reset();
 			}
+			if (KiSenseState.isActive() && KiSenseScan.hasScouter(player)) {
+				KiSenseState.set(KiSenseState.Mode.NONE);
+				return;
+			}
 			KiSenseScan.tick(player, data, KiSenseState.getMode());
 			if (KiSenseState.isCombat()) CombatIndicators.tick();
 			else CombatIndicators.clear();
