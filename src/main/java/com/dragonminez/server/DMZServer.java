@@ -19,6 +19,7 @@ public class DMZServer {
 		EffectsCommand.register(dispatcher);
 		SkillsCommand.register(dispatcher);
 		TechCommand.register(dispatcher);
+		CooldownsCommand.register(dispatcher);
 		FormsCommand.register(dispatcher);
 		PointsCommand.register(dispatcher);
 		DebugCommand.register(dispatcher);
