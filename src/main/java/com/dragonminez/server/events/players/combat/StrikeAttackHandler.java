@@ -23,8 +23,10 @@ import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.entity.PartEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -1076,11 +1078,11 @@ public class StrikeAttackHandler {
 		double y = target.getY() + target.getBbHeight() * 0.6;
 		double z = target.getZ();
 
-		net.minecraft.sounds.SoundEvent[] punches = {
+		SoundEvent[] punches = {
 				MainSounds.GOLPE1.get(), MainSounds.GOLPE2.get(), MainSounds.GOLPE3.get(),
 				MainSounds.GOLPE4.get(), MainSounds.GOLPE5.get(), MainSounds.GOLPE6.get()
 		};
-		net.minecraft.sounds.SoundEvent punch = punches[Math.floorMod(beat / 4, punches.length)];
+        SoundEvent punch = punches[Math.floorMod(beat / 4, punches.length)];
 		level.playSound(null, x, y, z, punch, net.minecraft.sounds.SoundSource.PLAYERS,
 				1.0F, 1.1F + (level.random.nextFloat() * 0.3F));
 
@@ -1093,7 +1095,7 @@ public class StrikeAttackHandler {
 			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, 0.25, 0.55, 1.0, 1.0);
 		}
 
-		level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, 6, 0.3, 0.3, 0.3, 0.5);
+		level.sendParticles(ParticleTypes.CRIT, x, y, z, 6, 0.3, 0.3, 0.3, 0.5);
 	}
 
 	private static void spawnWolfFangFinalParticles(ServerLevel level, LivingEntity target) {
