@@ -69,7 +69,7 @@ Humans (and **only** humans) can convert into **Androids** — a **sub-race** of
 
 ## Majin
 
-- **Racial skill — Absorption + Revive:** absorb targets to copy **4%** of their stats (up to **3 times**, heal **30%**, also works on mobs); and a separate **Revive** skill to come back from a blob (3600s cooldown, restores 25% HP per blob).
+- **Racial skill — Absorption:** absorb targets to copy **4%** of their stats (up to **3 times**, heal **30%**, also works on mobs).
 - **Hair:** no — uses the **head tentacle** (`majin1–3`).
 - **Gender:** yes.
 - **Default body type:** 0 (3 body types per gender).
