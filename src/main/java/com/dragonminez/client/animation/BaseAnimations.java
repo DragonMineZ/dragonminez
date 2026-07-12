@@ -36,6 +36,8 @@ public class BaseAnimations {
 	public static final RawAnimation TRANSFORMATION = RawAnimation.begin().thenLoop("transf.generic");
 	public static final RawAnimation OOZARU_TRANSFORMATION = RawAnimation.begin().thenLoop("transf.ozaru");
 	public static final RawAnimation ABSORB = RawAnimation.begin().thenLoop("transf.absorb");
+	public static final RawAnimation FUSION_DANCE_RIGHT = RawAnimation.begin().thenLoop("base.fusion_dance_right");
+	public static final RawAnimation FUSION_DANCE_LEFT = RawAnimation.begin().thenLoop("base.fusion_dance_left");
 	public static final RawAnimation DASH_FORWARD = RawAnimation.begin().thenPlay("base.dash_front");
 	public static final RawAnimation DASH_BACKWARD = RawAnimation.begin().thenPlay("base.evasion_back");
 	public static final RawAnimation DOUBLEDASH_BACKWARD = RawAnimation.begin().thenPlay("base.dash_back");

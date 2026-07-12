@@ -231,6 +231,20 @@ public class TickHandler {
 				if (wasExecuting) serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
 			}
 
+			// Fusion charging pins the player in place while the dance plays. Facing is held at whatever
+			// it already was (locked to the previous tick, like a ki attack) — no snapping, no forced
+			// direction — so however the two lined themselves up is kept. Movement is frozen too.
+			if (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
+				serverPlayer.setDeltaMovement(0, Math.min(serverPlayer.getDeltaMovement().y, 0.0D), 0);
+				serverPlayer.hasImpulse = true;
+				serverPlayer.setJumping(false);
+				serverPlayer.setSprinting(false);
+				serverPlayer.setYRot(serverPlayer.yRotO);
+				serverPlayer.setXRot(serverPlayer.xRotO);
+				serverPlayer.yHeadRot = serverPlayer.yHeadRotO;
+				serverPlayer.yBodyRot = serverPlayer.yBodyRotO;
+			}
+
 			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 			boolean kiAnimWasActive = serverPlayer.getPersistentData().getBoolean("dmz_ki_anim_active");
 			if (kiAnimShouldBeActive) serverPlayer.getPersistentData().putBoolean("dmz_ki_anim_active", true);

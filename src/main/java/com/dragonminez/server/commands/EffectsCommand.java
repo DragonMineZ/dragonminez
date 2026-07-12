@@ -1,10 +1,14 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.MutantManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -19,6 +23,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 public class EffectsCommand {
 	private static final SuggestionProvider<CommandSourceStack> EFFECT_SUGGESTIONS = (ctx, builder) ->
@@ -114,6 +119,24 @@ public class EffectsCommand {
 					MutantManager.revoke(player, data);
 				}
 				data.getEffects().clear();
+
+				// Undo an active fusion (splits both members) and lift the fusion cooldown for both,
+				// so a cleared player — and their partner — can fuse again immediately.
+				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
+				if (data.getStatus().isFused() || partnerUUID != null) {
+					FusionLogic.endFusion(player, data, false);
+				}
+				clearFusionCooldown(player, data);
+				if (partnerUUID != null) {
+					ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
+					if (partner != null) {
+						StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(partnerData -> {
+							clearFusionCooldown(partner, partnerData);
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
+						});
+					}
+				}
+
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		}
@@ -123,6 +146,11 @@ public class EffectsCommand {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.clear_multiple", targets.size()), log);
 		}
 		return targets.size();
+	}
+
+	private static void clearFusionCooldown(ServerPlayer player, StatsData data) {
+		data.getCooldowns().removeCooldown(Cooldowns.FUSION_CD);
+		if (player.hasEffect(MainEffects.FUSION_CD.get())) player.removeEffect(MainEffects.FUSION_CD.get());
 	}
 
 	private static double getEffectPower(String effectName) {

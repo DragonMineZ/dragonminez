@@ -163,6 +163,31 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		return (float) Mth.clamp(dragonminez$horizSpeed / baseline, 0.6, 1.8);
 	}
 
+	@Unique private static final double FUSION_PAIR_RANGE_SQ = 64.0;
+
+	// Returns the nearest other player also charging a fusion, or null if none is in range.
+	// The dance only plays when a partner exists, so both dancers appear at once; the role
+	// (left/right) is then a deterministic UUID tiebreak that every client resolves identically,
+	// so the two dancers and any observer always agree without extra networking.
+	@Unique
+	private AbstractClientPlayer dragonminez$findFusionPartner(AbstractClientPlayer player) {
+		AbstractClientPlayer partner = null;
+		double bestSq = Double.MAX_VALUE;
+		for (var other : player.level().players()) {
+			if (other == player || !(other instanceof AbstractClientPlayer candidate)) continue;
+			boolean otherFusing = StatsProvider.get(StatsCapability.INSTANCE, other)
+					.map(d -> d.getStatus().isActionCharging() && d.getStatus().getSelectedAction() == ActionMode.FUSION)
+					.orElse(false);
+			if (!otherFusing) continue;
+			double dSq = player.distanceToSqr(other);
+			if (dSq <= FUSION_PAIR_RANGE_SQ && dSq < bestSq) {
+				bestSq = dSq;
+				partner = candidate;
+			}
+		}
+		return partner;
+	}
+
 	@Unique
 	private RawAnimation dragonminez$resolveFlyAnimation(AbstractClientPlayer player) {
 		Minecraft mc = Minecraft.getInstance();
@@ -294,6 +319,23 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return state.setAndContinue(TRANSFORMATION);
 		} else if (isTransforming && actionMode.equals(ActionMode.RACIAL)) {
 			return state.setAndContinue(ABSORB);
+		} else if (isTransforming && actionMode.equals(ActionMode.FUSION)) {
+			AbstractClientPlayer fusionPartner = dragonminez$findFusionPartner(player);
+			if (fusionPartner != null) {
+				// Pick the dance by physical side, not identity: whoever actually stands to the right
+				// (relative to the pair leader's facing) plays the right dance, the other the left. The
+				// leader (lower UUID) provides the shared reference direction, and the two players sit on
+				// opposite sides of it, so every client resolves the same, position-correct pairing.
+				AbstractClientPlayer leader = player.getUUID().compareTo(fusionPartner.getUUID()) < 0 ? player : fusionPartner;
+				double refRad = Math.toRadians(leader.getYRot());
+				double rightX = -Math.cos(refRad);
+				double rightZ = -Math.sin(refRad);
+				double side = (player.getX() - fusionPartner.getX()) * rightX + (player.getZ() - fusionPartner.getZ()) * rightZ;
+				return state.setAndContinue(side > 0 ? FUSION_DANCE_LEFT : FUSION_DANCE_RIGHT);
+			}
+			// Charging fusion alone: hold a neutral charge pose until a partner also starts,
+			// so the dance only appears once both dancers are present (and then on both at once).
+			return state.setAndContinue(TRANSFORMATION);
 		} else if (isTransforming) {
 			return state.setAndContinue(TRANSFORMATION);
 		}
