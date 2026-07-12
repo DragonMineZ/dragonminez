@@ -2,11 +2,15 @@ package com.dragonminez.common.dragonball;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.diagnostics.JsonKeys;
+import com.dragonminez.common.diagnostics.JsonLoadReport;
+import com.dragonminez.common.diagnostics.JsonSchema;
 import com.dragonminez.common.util.WishTypeAdapter;
 import com.dragonminez.common.wish.Wish;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraftforge.fml.loading.FMLPaths;
 
@@ -62,6 +66,7 @@ public final class DragonBallPackManager {
 	public static LoadedDefinitions getCurrent() { return current; }
 
 	public static LoadedDefinitions loadAll() {
+		JsonLoadReport.clear("dragonballs");
 		LoadedDefinitions loaded = new LoadedDefinitions();
 		List<Path> candidateRoots = getCandidateRootDirectories();
 		for (Path root : candidateRoots) {
@@ -123,13 +128,54 @@ public final class DragonBallPackManager {
 		}
 	}
 
+	private static final Set<String> BALLSET_KEYS = Set.of("id", "dimensions", "copies", "spawn_range",
+			"summon_radius", "blocks", "asset_definition", "display_name");
+	private static final Set<String> RADAR_KEYS = Set.of("id", "item_registry_name", "dimensions", "ball_set",
+			"tooltip_key", "ranges", "recipe_definition", "asset_definition", "chip_item", "cpu_item",
+			"chip_model_item", "cpu_model_item", "display_name");
+	private static final Set<String> DRAGON_KEYS = Set.of("id", "entity_registry_name", "entity_width",
+			"entity_height", "dimensions", "ball_set", "wish_screen_id", "wish_count", "asset_definition");
+	private static final Set<String> WISHES_FILE_KEYS = Set.of("dragon", "wishes");
+	private static final Set<String> BALLSET_ASSET_KEYS = Set.of("id", "flat_texture_prefix",
+			"inventory_texture_format", "geo_model", "animation", "geo_texture_prefix",
+			"block_model_template", "item_model_template");
+	private static final Set<String> RADAR_ASSET_KEYS = Set.of("id", "item_model", "item_texture",
+			"radar_background_texture", "radar_dot_texture", "radar_overlay_texture");
+	private static final Set<String> DRAGON_ASSET_KEYS = Set.of("id", "renderer_type", "model", "texture", "animation");
+
+	private static String label(String normalizedPath) {
+		int index = normalizedPath.indexOf(ROOT_FOLDER_NAME + "/");
+		return index >= 0 ? normalizedPath.substring(index) : normalizedPath;
+	}
+
+	private static void validateWishArray(String file, JsonObject root) {
+		if (!root.has("wishes") || !root.get("wishes").isJsonArray()) return;
+		int i = 0;
+		for (JsonElement element : root.getAsJsonArray("wishes")) {
+			if (element.isJsonObject()) {
+				JsonObject wish = element.getAsJsonObject();
+				String type = wish.has("type") && !wish.get("type").isJsonNull() ? wish.get("type").getAsString() : null;
+				Class<? extends Wish> target = WishTypeAdapter.classForType(type);
+				if (target == null) {
+					JsonKeys.reportBadType("dragonballs", file, "wishes[" + i + "]", type);
+				} else {
+					JsonSchema.check("dragonballs", file, "wishes[" + i + "]", wish, target);
+				}
+			}
+			i++;
+		}
+	}
+
 	private static void readDefinition(String normalizedPath, JsonObject root, LoadedDefinitions loaded) {
+		String file = label(normalizedPath);
 		if (normalizedPath.endsWith("/definitions/ballset.json")) {
+			JsonKeys.checkObject("dragonballs", file, "ballset", root, BALLSET_KEYS);
 			DragonBallSetDefinition definition = DragonBallSetDefinition.fromJson(root);
 			loaded.ballSets.put(definition.getId(), definition);
 			return;
 		}
 		if (normalizedPath.endsWith("/definitions/radar.json")) {
+			JsonKeys.checkObject("dragonballs", file, "radar", root, RADAR_KEYS);
 			DragonRadarDefinition definition = DragonRadarDefinition.fromJson(root);
 			loaded.radars.put(definition.getId(), definition);
 			if (definition.getRecipeDefinitionId().isPresent()) {
@@ -146,11 +192,14 @@ public final class DragonBallPackManager {
 			return;
 		}
 		if (normalizedPath.endsWith("/definitions/dragon.json")) {
+			JsonKeys.checkObject("dragonballs", file, "dragon", root, DRAGON_KEYS);
 			DragonDefinition definition = DragonDefinition.fromJson(root);
 			loaded.dragons.put(definition.getId(), definition);
 			return;
 		}
 		if (normalizedPath.endsWith("/definitions/wishes.json")) {
+			JsonKeys.checkObject("dragonballs", file, "wishes", root, WISHES_FILE_KEYS);
+			validateWishArray(file, root);
 			if (root.has("dragon") && root.has("wishes")) {
 				String dragonId = root.get("dragon").getAsString();
 				List<Wish> wishes = GSON.fromJson(root.getAsJsonArray("wishes"), WISH_LIST_TYPE);
@@ -159,16 +208,19 @@ public final class DragonBallPackManager {
 			return;
 		}
 		if (normalizedPath.endsWith("/assets/ballset.json")) {
+			JsonKeys.checkObject("dragonballs", file, "ballset asset", root, BALLSET_ASSET_KEYS);
 			DragonBallSetAssetDefinition definition = DragonBallSetAssetDefinition.fromJson(root);
 			loaded.ballSetAssets.put(definition.getId(), definition);
 			return;
 		}
 		if (normalizedPath.endsWith("/assets/radar.json")) {
+			JsonKeys.checkObject("dragonballs", file, "radar asset", root, RADAR_ASSET_KEYS);
 			DragonRadarAssetDefinition definition = DragonRadarAssetDefinition.fromJson(root);
 			loaded.radarAssets.put(definition.getId(), definition);
 			return;
 		}
 		if (normalizedPath.endsWith("/assets/dragon.json")) {
+			JsonKeys.checkObject("dragonballs", file, "dragon asset", root, DRAGON_ASSET_KEYS);
 			DragonAssetDefinition definition = DragonAssetDefinition.fromJson(root);
 			loaded.dragonAssets.put(definition.getId(), definition);
 		}

@@ -2,7 +2,9 @@ package com.dragonminez.common.wish;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.diagnostics.JsonKeys;
 import com.dragonminez.common.diagnostics.JsonLoadReport;
+import com.dragonminez.common.diagnostics.JsonSchema;
 import com.dragonminez.common.util.WishTypeAdapter;
 import com.dragonminez.common.wish.wishes.*;
 import com.google.common.reflect.TypeToken;
@@ -79,6 +81,7 @@ public class WishManager {
 			JsonArray rootArray = GSON.fromJson(Files.readString(path), JsonArray.class);
 			List<Wish> wishes = new ArrayList<>();
 			for (JsonElement element : rootArray) {
+				validateWish("wishes/" + path.getFileName(), element);
 				wishes.add(GSON.fromJson(element, Wish.class));
 			}
 			String dragonId = path.getFileName().toString().replace(".json", "");
@@ -87,6 +90,18 @@ public class WishManager {
 		} catch (Exception e) {
 			LogUtil.error(Env.COMMON, "Failed to load dragon wish config '{}': {}", path.getFileName(), e.toString());
 			JsonLoadReport.error("wishes", "wishes/" + path.getFileName(), "Malformed wish JSON, file skipped: " + JsonLoadReport.rootCause(e));
+		}
+	}
+
+	private static void validateWish(String file, JsonElement element) {
+		if (element == null || !element.isJsonObject()) return;
+		JsonObject obj = element.getAsJsonObject();
+		String type = obj.has("type") && !obj.get("type").isJsonNull() ? obj.get("type").getAsString() : null;
+		Class<? extends Wish> target = WishTypeAdapter.classForType(type);
+		if (target == null) {
+			JsonKeys.reportBadType("wishes", file, "wish", type);
+		} else {
+			JsonSchema.check("wishes", file, "wish", obj, target);
 		}
 	}
 

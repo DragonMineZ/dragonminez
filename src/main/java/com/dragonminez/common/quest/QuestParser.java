@@ -17,6 +17,7 @@ import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import com.dragonminez.common.quest.rewards.TransformationReward;
+import com.dragonminez.common.diagnostics.JsonKeys;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -480,5 +481,138 @@ public class QuestParser {
 			case GAME_TIME -> json.has("ticks") ? Math.max(0L, json.get("ticks").getAsLong()) : 0L;
 			case REAL_TIME -> json.has("milliseconds") ? Math.max(0L, json.get("milliseconds").getAsLong()) : 0L;
 		};
+	}
+
+	private static final Set<String> QUEST_KEYS = Set.of(
+			"id", "title", "type", "description", "category", "parallel_objectives", "party_scaling",
+			"quest_giver", "turn_in", "secret", "claim_mode", "prerequisites", "requirements",
+			"objectives", "rewards", "defaultsVersion");
+
+	private static final Set<String> CONDITION_BLOCK_KEYS = Set.of("operator", "conditions");
+	private static final Set<String> STRUCTURE_HINT_KEYS = Set.of("dimension", "x", "y", "z");
+	private static final Set<String> SAGA_KEYS = Set.of("id", "name", "requirements", "questFolder", "defaultsVersion");
+	private static final Set<String> SAGA_REQUIREMENT_KEYS = Set.of("previousSaga");
+
+	public static void validate(String source, String file, JsonObject json) {
+		if (json == null) return;
+		JsonKeys.checkObject(source, file, "quest", json, QUEST_KEYS);
+
+		if (json.has("objectives") && json.get("objectives").isJsonArray()) {
+			int i = 0;
+			for (JsonElement element : json.getAsJsonArray("objectives")) {
+				if (element.isJsonObject()) validateObjective(source, file, "objectives[" + i + "]", element.getAsJsonObject());
+				i++;
+			}
+		}
+
+		if (json.has("rewards") && json.get("rewards").isJsonArray()) {
+			int i = 0;
+			for (JsonElement element : json.getAsJsonArray("rewards")) {
+				if (element.isJsonObject()) validateReward(source, file, "rewards[" + i + "]", element.getAsJsonObject());
+				i++;
+			}
+		}
+
+		validateConditionsBlock(source, file, json, "prerequisites");
+		validateConditionsBlock(source, file, json, "requirements");
+	}
+
+	public static void validateSaga(String source, String file, JsonObject json) {
+		if (json == null) return;
+		JsonKeys.checkObject(source, file, "saga", json, SAGA_KEYS);
+		if (json.has("requirements") && json.get("requirements").isJsonObject()) {
+			JsonKeys.checkObject(source, file, "requirements", json.getAsJsonObject("requirements"), SAGA_REQUIREMENT_KEYS);
+		}
+	}
+
+	private static void validateObjective(String source, String file, String path, JsonObject json) {
+		String type = json.has("type") && !json.get("type").isJsonNull() ? json.get("type").getAsString().toUpperCase() : null;
+		Set<String> allowed;
+		switch (type == null ? "" : type) {
+			case "ITEM" -> allowed = JsonKeys.of("type", "item", "count");
+			case "KILL" -> allowed = JsonKeys.of("type", "entity", "count", "health", "meleeDamage", "kiDamage",
+					"spawn", "count_mode", "TextureVariant", "AITier", "canTransform", "TransformHealth",
+					"TransformMeleeDamage", "TransformKiDamage", "TransformHealthMultiplier",
+					"TransformMeleeDamageMultiplier", "TransformKiMultiplier", "TransformTriggerPercent");
+			case "BIOME" -> allowed = JsonKeys.of("type", "biome");
+			case "DIMENSION" -> allowed = JsonKeys.of("type", "dimension");
+			case "COORDS" -> allowed = JsonKeys.of("type", "x", "y", "z", "radius");
+			case "INTERACT" -> allowed = JsonKeys.of("type", "entity", "entityName");
+			case "STRUCTURE" -> allowed = JsonKeys.of("type", "structure");
+			case "DRAGON_SUMMON" -> allowed = JsonKeys.of("type", "dragon", "dragon_id", "dragonId",
+					"ball_set", "ballSet", "ball_set_id", "ballSetId", "set");
+			case "TALK_TO" -> allowed = JsonKeys.of("type", "npcId");
+			case "SKILL" -> allowed = JsonKeys.of("type", "skill", "skillId", "id", "level", "minLevel", "required");
+			default -> { JsonKeys.reportBadType(source, file, path, type); return; }
+		}
+		JsonKeys.checkObject(source, file, path, json, allowed);
+	}
+
+	private static void validateReward(String source, String file, String path, JsonObject json) {
+		String type = json.has("type") && !json.get("type").isJsonNull() ? json.get("type").getAsString().toUpperCase() : null;
+		Set<String> common = JsonKeys.of("type", "difficulty", "difficulties", "difficultyType", "minDifficulty");
+		Set<String> allowed;
+		switch (type == null ? "" : type) {
+			case "ITEM" -> allowed = JsonKeys.union(common, "item", "count");
+			case "TPS" -> allowed = JsonKeys.union(common, "amount");
+			case "ALIGNMENT" -> allowed = JsonKeys.union(common, "amount");
+			case "COMMAND" -> allowed = JsonKeys.union(common, "command", "translationKey");
+			case "SKILL" -> allowed = JsonKeys.union(common, "skill", "level");
+			case "TRANSFORMATION" -> allowed = JsonKeys.union(common, "formGroup", "form_group", "group",
+					"formName", "form_name", "form", "mastery", "stack");
+			case "KI_TECHNIQUE" -> allowed = JsonKeys.union(common, "code", "techniqueCode", "technique_code");
+			default -> { JsonKeys.reportBadType(source, file, path, type); return; }
+		}
+		JsonKeys.checkObject(source, file, path, json, allowed);
+	}
+
+	private static void validateConditionsBlock(String source, String file, JsonObject parent, String key) {
+		if (!parent.has(key) || !parent.get(key).isJsonObject()) return;
+		JsonObject block = parent.getAsJsonObject(key);
+		JsonKeys.checkObject(source, file, key, block, CONDITION_BLOCK_KEYS);
+		validateConditionArray(source, file, key, block);
+	}
+
+	private static void validateConditionArray(String source, String file, String path, JsonObject block) {
+		if (!block.has("conditions") || !block.get("conditions").isJsonArray()) return;
+		int i = 0;
+		for (JsonElement element : block.getAsJsonArray("conditions")) {
+			if (element.isJsonObject()) validateCondition(source, file, path + ".conditions[" + i + "]", element.getAsJsonObject());
+			i++;
+		}
+	}
+
+	private static void validateCondition(String source, String file, String path, JsonObject json) {
+		if (json.has("operator")) {
+			JsonKeys.checkObject(source, file, path, json, CONDITION_BLOCK_KEYS);
+			validateConditionArray(source, file, path, json);
+			return;
+		}
+
+		String type = json.has("type") && !json.get("type").isJsonNull() ? json.get("type").getAsString().toUpperCase() : null;
+		Set<String> allowed;
+		switch (type == null ? "" : type) {
+			case "SAGA_QUEST" -> allowed = JsonKeys.of("type", "sagaId", "questId");
+			case "QUEST" -> allowed = JsonKeys.of("type", "questId");
+			case "STAT" -> allowed = JsonKeys.of("type", "stat", "minValue");
+			case "LEVEL" -> allowed = JsonKeys.of("type", "minLevel");
+			case "BIOME" -> allowed = JsonKeys.of("type", "biome");
+			case "STRUCTURE" -> { validateStructureCondition(source, file, path, json); return; }
+			case "DIMENSION" -> allowed = JsonKeys.of("type", "dimension");
+			case "TIME" -> allowed = JsonKeys.of("type", "mode", "ticks", "milliseconds");
+			case "ALIGNMENT" -> allowed = JsonKeys.of("type", "min", "max");
+			case "SKILL" -> allowed = JsonKeys.of("type", "skill", "skillId", "id", "minLevel", "level", "required");
+			case "RACE" -> allowed = JsonKeys.of("type", "race", "raceName", "race_name");
+			case "CLASS" -> allowed = JsonKeys.of("type", "class", "className", "class_name", "characterClass");
+			default -> { JsonKeys.reportBadType(source, file, path, type); return; }
+		}
+		JsonKeys.checkObject(source, file, path, json, allowed);
+	}
+
+	private static void validateStructureCondition(String source, String file, String path, JsonObject json) {
+		JsonKeys.checkObject(source, file, path, json, JsonKeys.of("type", "structure", "hint"));
+		if (json.has("hint") && json.get("hint").isJsonObject()) {
+			JsonKeys.checkObject(source, file, path + ".hint", json.getAsJsonObject("hint"), STRUCTURE_HINT_KEYS);
+		}
 	}
 }
