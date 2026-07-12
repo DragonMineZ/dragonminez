@@ -188,6 +188,13 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		return partner;
 	}
 
+	// The potara partner is known explicitly (stored UUID), so just resolve it to a client player.
+	@Unique
+	private AbstractClientPlayer dragonminez$findPotaraPartner(AbstractClientPlayer player, java.util.UUID partnerUUID) {
+		if (partnerUUID == null) return null;
+		return player.level().getPlayerByUUID(partnerUUID) instanceof AbstractClientPlayer candidate ? candidate : null;
+	}
+
 	@Unique
 	private RawAnimation dragonminez$resolveFlyAnimation(AbstractClientPlayer player) {
 		Minecraft mc = Minecraft.getInstance();
@@ -285,6 +292,21 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return state.setAndContinue(IDLE);
+
+		// Potara pose: a short pre-fusion window (earrings) where both players play the mirrored
+		// pothala animation before merging. Role is by physical side, like the metamoru dance.
+		if (data.getStatus().getPotaraPoseTimer() > 0) {
+			AbstractClientPlayer potaraPartner = dragonminez$findPotaraPartner(player, data.getStatus().getPotaraPartnerUUID());
+			if (potaraPartner != null) {
+				AbstractClientPlayer leader = player.getUUID().compareTo(potaraPartner.getUUID()) < 0 ? player : potaraPartner;
+				double refRad = Math.toRadians(leader.getYRot());
+				double rightX = -Math.cos(refRad);
+				double rightZ = -Math.sin(refRad);
+				double side = (player.getX() - potaraPartner.getX()) * rightX + (player.getZ() - potaraPartner.getZ()) * rightZ;
+				return state.setAndContinue(side > 0 ? FUSION_POTHALA_LEFT : FUSION_POTHALA_RIGHT);
+			}
+			return state.setAndContinue(FUSION_POTHALA_RIGHT);
+		}
 
 		boolean isDraining = data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE);
 		boolean flySkillActive = data.getSkills().isSkillActive("fly");

@@ -120,17 +120,24 @@ public class EffectsCommand {
 				}
 				data.getEffects().clear();
 
-				// Undo an active fusion (splits both members) and lift the fusion cooldown for both,
-				// so a cleared player — and their partner — can fuse again immediately.
-				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
-				if (data.getStatus().isFused() || partnerUUID != null) {
+				// Fully reset any fusion state: split an active fusion, cancel an in-progress potara
+				// pose, break the worn pothala earrings, and lift the fusion cooldown — for both members —
+				// so nothing (including the proximity pairing) immediately re-fuses them.
+				UUID partnerUUID = data.getStatus().getFusionPartnerUUID() != null
+						? data.getStatus().getFusionPartnerUUID()
+						: data.getStatus().getPotaraPartnerUUID();
+				if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
 					FusionLogic.endFusion(player, data, false);
 				}
+				clearPotaraPose(data);
+				FusionLogic.breakPothala(player);
 				clearFusionCooldown(player, data);
 				if (partnerUUID != null) {
 					ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
 					if (partner != null) {
 						StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(partnerData -> {
+							clearPotaraPose(partnerData);
+							FusionLogic.breakPothala(partner);
 							clearFusionCooldown(partner, partnerData);
 							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 						});
@@ -151,6 +158,12 @@ public class EffectsCommand {
 	private static void clearFusionCooldown(ServerPlayer player, StatsData data) {
 		data.getCooldowns().removeCooldown(Cooldowns.FUSION_CD);
 		if (player.hasEffect(MainEffects.FUSION_CD.get())) player.removeEffect(MainEffects.FUSION_CD.get());
+	}
+
+	private static void clearPotaraPose(StatsData data) {
+		data.getStatus().setPotaraPoseTimer(0);
+		data.getStatus().setPotaraPartnerUUID(null);
+		data.getStatus().setPotaraLeader(false);
 	}
 
 	private static double getEffectPower(String effectName) {

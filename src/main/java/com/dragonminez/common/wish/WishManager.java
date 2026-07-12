@@ -156,13 +156,11 @@ public class WishManager {
 		defaultWishes.add(new MultiItemWish("wish.porunga.invincible_blue.name", "wish.porunga.invincible_blue.desc", invincibleBlue));
 
 		List<Tuple<String, Integer>> potaraYellow = new ArrayList<>();
-		potaraYellow.add(new Tuple<>("dragonminez:pothala_left", 1));
-		potaraYellow.add(new Tuple<>("dragonminez:pothala_right", 1));
+		potaraYellow.add(new Tuple<>("dragonminez:pothala_pair", 1));
 		defaultWishes.add(new MultiItemWish("wish.porunga.pothala_yellow.name", "wish.porunga.pothala_yellow.desc", potaraYellow));
 
 		List<Tuple<String, Integer>> potaraGreen = new ArrayList<>();
-		potaraGreen.add(new Tuple<>("dragonminez:green_pothala_left", 1));
-		potaraGreen.add(new Tuple<>("dragonminez:green_pothala_right", 1));
+		potaraGreen.add(new Tuple<>("dragonminez:green_pothala_pair", 1));
 		defaultWishes.add(new MultiItemWish("wish.porunga.pothala_green.name", "wish.porunga.pothala_green.desc", potaraGreen));
 
 		try (FileWriter writer = new FileWriter(wishFile)) {

@@ -567,7 +567,7 @@ public class ClientStatsEvents {
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
-					|| data.getStatus().isActionCharging()) {
+					|| data.getStatus().isActionCharging() || data.getStatus().getPotaraPoseTimer() > 0) {
 				event.getInput().forwardImpulse = 0;
 				event.getInput().leftImpulse = 0;
 				event.getInput().jumping = false;

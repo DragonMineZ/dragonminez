@@ -899,57 +899,6 @@ public class StatsEvents {
 		});
 	}
 
-	@SubscribeEvent
-	public static void onPlayerInteractEntity(PlayerInteractEvent.EntityInteract event) {
-		if (event.getLevel().isClientSide) return;
-		if (!(event.getTarget() instanceof ServerPlayer target)) return;
-		ServerPlayer source = (ServerPlayer) event.getEntity();
-		if (!source.getMainHandItem().isEmpty()) return;
-
-		StatsProvider.get(StatsCapability.INSTANCE, source).ifPresent(sData -> {
-			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(tData -> {
-
-				if (!tData.getStatus().isBlocking()) return;
-
-				boolean sHasRight = hasPothala(source, "right");
-				boolean tHasLeft = hasPothala(target, "left");
-
-				boolean sameColor = checkPothalaColorMatch(source, target);
-
-				if (sHasRight && tHasLeft && sameColor) {
-					FusionLogic.executePothala(source, target, sData, tData);
-					event.setCanceled(true);
-				}
-			});
-		});
-	}
-
-	private static ItemStack getHeadTechStack(ServerPlayer player) {
-		return CuriosUtil.getFirstStack(player, "head_tech");
-	}
-
-	private static boolean hasPothala(ServerPlayer player, String side) {
-		ItemStack headTech = getHeadTechStack(player);
-		if (headTech.isEmpty()) return false;
-
-		if (side.equals("left") && (headTech.getItem() == MainItems.POTHALA_LEFT.get() || headTech.getItem() == MainItems.GREEN_POTHALA_LEFT.get())) {
-			return true;
-		}
-		return side.equals("right") && (headTech.getItem() == MainItems.POTHALA_RIGHT.get() || headTech.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
-	}
-
-	private static boolean checkPothalaColorMatch(ServerPlayer p1, ServerPlayer p2) {
-		ItemStack p1Tech = getHeadTechStack(p1);
-		ItemStack p2Tech = getHeadTechStack(p2);
-
-		if (p1Tech.isEmpty() || p2Tech.isEmpty()) return false;
-
-		boolean p1IsGreen = p1Tech.getItem().getDescriptionId().contains("green");
-		boolean p2IsGreen = p2Tech.getItem().getDescriptionId().contains("green");
-
-		return p1IsGreen == p2IsGreen;
-	}
-
     @SubscribeEvent
     public static void onEntitySize(EntityEvent.Size event) {
         Entity entity = event.getEntity();

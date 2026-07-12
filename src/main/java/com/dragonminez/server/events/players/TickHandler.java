@@ -11,6 +11,7 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.item.PothalaPairItem;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
@@ -26,6 +27,7 @@ import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
+import com.dragonminez.common.util.CuriosUtil;
 import com.dragonminez.common.util.TransformationItemCostHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.SaiyanForms;
@@ -34,6 +36,7 @@ import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
+import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.GravityStateSync;
 import com.dragonminez.server.util.PotionEffectHelper;
@@ -243,6 +246,76 @@ public class TickHandler {
 				serverPlayer.setXRot(serverPlayer.xRotO);
 				serverPlayer.yHeadRot = serverPlayer.yHeadRotO;
 				serverPlayer.yBodyRot = serverPlayer.yBodyRotO;
+			}
+
+			// Potara proximity pairing: a player wearing a RIGHT pothala looks for a nearby player wearing
+			// the matching LEFT half (same pair id) within 20 blocks and starts the fusion pose. Only the
+			// right-wearer initiates, so it happens once and that player becomes the fusion leader.
+			if (serverPlayer.tickCount % 10 == 0
+					&& data.getStatus().getPotaraPoseTimer() == 0
+					&& !data.getStatus().isFused()
+					&& data.getStatus().getFusionPartnerUUID() == null) {
+				ItemStack head = CuriosUtil.getFirstStack(serverPlayer, "head_tech");
+				Item counterpart = pothalaLeftCounterpart(head.getItem());
+				int pairId = counterpart != null ? PothalaPairItem.getPairId(head) : 0;
+				if (pairId != 0) {
+					for (ServerPlayer other : serverPlayer.level().getEntitiesOfClass(ServerPlayer.class,
+							serverPlayer.getBoundingBox().inflate(20.0D), p -> p != serverPlayer)) {
+						StatsData otherData = StatsProvider.get(StatsCapability.INSTANCE, other).orElse(null);
+						if (otherData == null || otherData.getStatus().getPotaraPoseTimer() > 0
+								|| otherData.getStatus().isFused() || otherData.getStatus().getFusionPartnerUUID() != null) continue;
+						if (serverPlayer.distanceTo(other) > 20.0f) continue;
+						ItemStack otherHead = CuriosUtil.getFirstStack(other, "head_tech");
+						if (otherHead.getItem() == counterpart && PothalaPairItem.getPairId(otherHead) == pairId) {
+							startPotaraPose(serverPlayer, data, other, otherData);
+							break;
+						}
+					}
+				}
+			}
+
+			// Potara pose: while the pothala animation plays, both players are pulled toward each other
+			// with a force that starts gentle and ramps up hard until they meet; the leader then runs the
+			// actual fusion the moment they touch. If the partner is gone or too far, the pose cancels.
+			if (data.getStatus().getPotaraPoseTimer() > 0) {
+				UUID potaraPartnerUUID = data.getStatus().getPotaraPartnerUUID();
+				ServerPlayer potaraPartner = potaraPartnerUUID != null ? serverPlayer.getServer().getPlayerList().getPlayer(potaraPartnerUUID) : null;
+				if (potaraPartner == null || !potaraPartner.isAlive() || serverPlayer.distanceTo(potaraPartner) > 24.0f) {
+					clearPotaraPose(data);
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				} else {
+					int elapsed = data.getStatus().getPotaraPoseTimer();
+					double dx = potaraPartner.getX() - serverPlayer.getX();
+					double dy = potaraPartner.getY() - serverPlayer.getY();
+					double dz = potaraPartner.getZ() - serverPlayer.getZ();
+					double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+					// Ramp: gentle at first, then very strong (grows with elapsed^2), capped so it snaps together.
+					double speed = Math.min(2.5, 0.02 + elapsed * elapsed * 0.0015);
+					if (dist > 0.05) {
+						double step = Math.min(speed, dist) / dist;
+						serverPlayer.setDeltaMovement(dx * step, dy * step, dz * step);
+						serverPlayer.hurtMarked = true;
+					} else {
+						serverPlayer.setDeltaMovement(0, 0, 0);
+					}
+					serverPlayer.setJumping(false);
+					serverPlayer.setSprinting(false);
+					serverPlayer.fallDistance = 0;
+					data.getStatus().setPotaraPoseTimer(elapsed + 1);
+
+					// Only the leader fires the fusion (once), the moment they touch — with a safety cap
+					// so a blocked pull never hangs the pose forever.
+					if (data.getStatus().isPotaraLeader() && (dist < 1.4 || elapsed > 200)) {
+						clearPotaraPose(data);
+						StatsData partnerData = StatsProvider.get(StatsCapability.INSTANCE, potaraPartner).orElse(null);
+						if (partnerData != null) {
+							clearPotaraPose(partnerData);
+							FusionLogic.executePothala(serverPlayer, potaraPartner, data, partnerData);
+						} else {
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+						}
+					}
+				}
 			}
 
 			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
@@ -929,6 +1002,31 @@ public class TickHandler {
 		}
 
 		CHARGING_CACHE.remove(playerId);
+		return null;
+	}
+
+	private static void clearPotaraPose(StatsData data) {
+		data.getStatus().setPotaraPoseTimer(0);
+		data.getStatus().setPotaraPartnerUUID(null);
+		data.getStatus().setPotaraLeader(false);
+	}
+
+	private static void startPotaraPose(ServerPlayer leader, StatsData leaderData, ServerPlayer partner, StatsData partnerData) {
+		leaderData.getStatus().setPotaraPoseTimer(1);
+		leaderData.getStatus().setPotaraPartnerUUID(partner.getUUID());
+		leaderData.getStatus().setPotaraLeader(true);
+		partnerData.getStatus().setPotaraPoseTimer(1);
+		partnerData.getStatus().setPotaraPartnerUUID(leader.getUUID());
+		partnerData.getStatus().setPotaraLeader(false);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
+	}
+
+	// Returns the LEFT pothala earring that matches a given RIGHT earring, or null if the item is not
+	// a right pothala. Used to pair the two halves (right-wearer initiates the fusion).
+	private static Item pothalaLeftCounterpart(Item rightItem) {
+		if (rightItem == MainItems.POTHALA_RIGHT.get()) return MainItems.POTHALA_LEFT.get();
+		if (rightItem == MainItems.GREEN_POTHALA_RIGHT.get()) return MainItems.GREEN_POTHALA_LEFT.get();
 		return null;
 	}
 

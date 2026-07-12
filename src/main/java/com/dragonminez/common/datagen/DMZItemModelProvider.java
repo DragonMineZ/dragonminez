@@ -52,6 +52,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.POTHALA_RIGHT);
 		simpleItem(MainItems.GREEN_POTHALA_LEFT);
 		simpleItem(MainItems.GREEN_POTHALA_RIGHT);
+		// Placeholder textures for the pair items (reuse the earring art until dedicated art exists).
+		withExistingParent(MainItems.POTHALA_PAIR.getId().getPath(), mcLoc("item/generated")).texture("layer0", modLoc("item/pothala_right"));
+		withExistingParent(MainItems.GREEN_POTHALA_PAIR.getId().getPath(), mcLoc("item/generated")).texture("layer0", modLoc("item/green_pothala_right"));
 		simpleItem(MainItems.HEART_MEDICINE);
 		simpleItem(MainItems.NAMEK_WATER_BUCKET);
 		simpleItem(MainItems.HEALING_BUCKET);
