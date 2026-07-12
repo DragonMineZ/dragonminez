@@ -146,8 +146,8 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 			}
 
 			@Override
-			public void fading(String layerId, ResourceLocation texture, float[] color) {
-				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color));
+			public void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha) {
+				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color, targetAlpha));
 			}
 		};
 
