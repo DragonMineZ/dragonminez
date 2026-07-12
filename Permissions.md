@@ -81,6 +81,13 @@ Nodes default to `false` (OP/admin-only) unless marked **default: true** below.
 | `dragonminez:dmztech.list.others` | List another player's techniques. |
 | `dragonminez:dmztech.experience.self` / `.others` | Change technique experience. |
 
+### Technique cooldowns (`CooldownsCommand`)
+
+| Node | Grants |
+| :-- | :-- |
+| `dragonminez:dmzcooldowns.self` | Change your own ki/strike technique cooldowns. |
+| `dragonminez:dmzcooldowns.others` | Change another player's ki/strike technique cooldowns. |
+
 ### Bonus stats (`BonusCommand`)
 
 | Node | Grants |
@@ -149,6 +156,8 @@ Nodes default to `false` (OP/admin-only) unless marked **default: true** below.
 | `dragonminez:dmztail.self` | **default: true** — grow/cut your own tail. | `TailCommand` |
 | `dragonminez:dmztail.others` | Grow/cut another player's tail. | `TailCommand` |
 | `dragonminez:dmzhalo.self` / `.others` | Toggle a halo. | `HaloCommand` |
+| `dragonminez:dmzhair.self` | **default: true** — resync/reset your own hair. | `HairCommand` |
+| `dragonminez:dmzhair.others` | Resync/reset another player's hair. | `HairCommand` |
 
 ## Reload
 

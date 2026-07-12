@@ -15,9 +15,11 @@ DMZ's in-game commands. Most require operator/permission level — see [[Permiss
 | **`/dmzmastery`** | `set\|add <targetPlayer> <group> <form> <value>` — **target is required** (no self-default) and comes **before** the group/form, unlike other commands. `<group>` is either a race/stack name, or the literal `current`/`ALL`; when using `current`/`ALL` the next argument is the literal `form` or `stack` (or `all` after `ALL`) | `/dmzmastery Steve current form 100` |
 | **`/dmzskill`** | `set <skill> <level> [targets]` · `add <skill> [targets]` (level 1) · `remove <skill> [targets]` — only "plain" skills (not ki/stack/form/strike techniques) | `/dmzskill add ki_control @s` |
 | **`/dmztech`** | `add\|remove <technique> [targets]` · `experience add\|set\|remove <technique> <amount> [targets]` | `/dmztech add kamehameha @s` |
+| **`/dmzcooldowns`** | `<slot 1-8> <cooldown> [targets]` — sets the remaining cooldown of the ki/strike technique equipped in that hotbar slot. Value is in **ticks** (20 ticks = 1 second); `0` clears it so the technique can fire immediately. Fails if the slot is empty. | `/dmzcooldowns 1 0 @s` |
 | **`/dmzracial`** | `reset [targets]` — clears a player's racial-skill stack counter | `/dmzracial reset @s` |
 | **`/dmzalignment`** | `set <0-100> [targets]` · `add <amount> [targets]` · `remove <amount> [targets]` | `/dmzalignment set 100 @s` |
 | **`/dmztail`** | `grow [targets]` · `cut [targets]` | `/dmztail grow @s` |
+| **`/dmzhair`** | `resync [targets]` (re-sends appearance to nearby clients — fixes desynced/invisible hair) · `reset [targets]` (restores the race's default hair type/color and clears all custom base/SSJ/SSJ2/SSJ3 hair) | `/dmzhair reset @s` |
 | **`/dmzweight`** | `<turtle_shell\|workout_weights\|piccolo_cape> <weight>` (self only, no `[targets]`) · bare `<weight>` defaults to `workout_weights` | `/dmzweight turtle_shell 500` |
 
 ### Resetting a character without losing stats
