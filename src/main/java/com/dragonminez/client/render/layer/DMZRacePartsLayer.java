@@ -477,7 +477,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
 		if (accModel == null) return;
 
-		RenderType accRenderType = RenderType.entityTranslucentCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
+		// Custom translucent type that does NOT write depth, so the semi-transparent lens can never
+		// occlude the player's face on machines where its translucent buffer flushes first. See
+		// ModRenderTypes.SCOUTER_LENS.
+		RenderType accRenderType = ModRenderTypes.scouterLens(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
 
 		accModel.getBone("radar").ifPresent(bone -> {
 			syncTargetBoneAndParents(bone, playerModel);

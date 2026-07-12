@@ -252,6 +252,23 @@ public class ModRenderTypes extends RenderType {
                     .setLayeringState(POLYGON_OFFSET_LAYERING)
                     .createCompositeState(true)));
 
+    // Same as vanilla entityTranslucentCull, but COLOR_WRITE instead of COLOR_DEPTH_WRITE: the worn
+    // scouter lens is a semi-transparent overlay right in front of the face. Writing depth lets it
+    // occlude the player's face when its translucent buffer happens to flush before the base model's
+    // (flush order between different-texture translucent buffers is hardware/driver/mod dependent),
+    // which is why the character was invisible behind the scouter on some machines. Not writing depth
+    // means the lens can never cull what's behind it, so the face always shows through everywhere.
+    private static final Function<ResourceLocation, RenderType> SCOUTER_LENS = Util.memoize((pLocation) ->
+            create("dmz_scouter_lens", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_CULL_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, false, false))
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(true)));
+
     private static final Function<ResourceLocation, RenderType> AURA_BILLBOARD = Util.memoize((pLocation) ->
             create("aura_billboard", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
                     .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
@@ -302,6 +319,7 @@ public class ModRenderTypes extends RenderType {
     public static RenderType energy(ResourceLocation pLocation) { return ENERGY.apply(pLocation); }
     public static RenderType energy2(ResourceLocation pLocation) { return ENERGY2.apply(pLocation); }
     public static RenderType auraBillboard(ResourceLocation pLocation) { return AURA_BILLBOARD.apply(pLocation); }
+    public static RenderType scouterLens(ResourceLocation pLocation) { return SCOUTER_LENS.apply(pLocation); }
     public static RenderType skinOverlayCutout(ResourceLocation pLocation) { return SKIN_OVERLAY_CUTOUT.apply(pLocation); }
     public static RenderType skinOverlayTranslucent(ResourceLocation pLocation) { return SKIN_OVERLAY_TRANSLUCENT.apply(pLocation); }
     public static RenderType lightning(ResourceLocation pLocation) { return LIGHTNING.apply(pLocation); }
