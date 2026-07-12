@@ -654,6 +654,55 @@ public class StrikeAttackHandler {
 			return;
 		}
 
+		if ("wolf_fang".equals(active.techniqueId())) {
+			freezeEntity(player);
+			freezeEntity(target);
+			faceStrikeTarget(player, target);
+			if (target instanceof ServerPlayer targetPlayer) {
+				faceEntity(targetPlayer, player);
+			}
+			player.invulnerableTime = 20;
+
+			int wolfTick = active.ticksElapsed() + 1;
+			int wolfDuration = active.durationTicks();
+
+			if (wolfTick % active.hitIntervalTicks() == 0 && wolfTick < wolfDuration) {
+				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+			}
+
+			if (wolfTick < wolfDuration - 3 && wolfTick % 4 == 0) {
+				spawnWolfFangJab(player, target, wolfTick);
+			}
+
+			if (wolfTick >= wolfDuration) {
+				applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
+				grantKillXpIfNeeded(player, target, active.techniqueId());
+
+				double sx = target.getX();
+				double sy = target.getY() + target.getBbHeight() * 0.5;
+				double sz = target.getZ();
+
+				// Finishing blow: heavy punch impact + explosion boom + a full-throated roar.
+				player.level().playSound(null, sx, sy, sz,
+						MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 0.7F);
+				player.level().playSound(null, sx, sy, sz,
+						MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.5F, 1.0F);
+				player.level().playSound(null, sx, sy, sz,
+						MainSounds.OOZARU_GROWL_PLAYER.get(), net.minecraft.sounds.SoundSource.PLAYERS, 3.0F, 1.15F);
+
+				if (!player.level().isClientSide) {
+					spawnWolfFangFinalParticles(player.serverLevel(), target);
+				}
+
+				applyKnockback(player, target, active.totalDamage());
+				endStrike(player, target, active);
+				return;
+			}
+
+			ACTIVE.put(player.getUUID(), active.withTicksElapsed(wolfTick));
+			return;
+		}
+
 		freezeEntity(player);
 		freezeEntity(target);
 		faceStrikeTarget(player, target);
@@ -1018,6 +1067,55 @@ public class StrikeAttackHandler {
 		// Vanilla crit spread + a small explosion puff for a punchy, instantly-readable impact.
 		level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, 18, 0.4, 0.4, 0.4, 0.6);
 		level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
+	}
+
+	private static void spawnWolfFangJab(ServerPlayer player, LivingEntity target, int beat) {
+		if (!(player.level() instanceof ServerLevel level)) return;
+
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.6;
+		double z = target.getZ();
+
+		net.minecraft.sounds.SoundEvent[] punches = {
+				MainSounds.GOLPE1.get(), MainSounds.GOLPE2.get(), MainSounds.GOLPE3.get(),
+				MainSounds.GOLPE4.get(), MainSounds.GOLPE5.get(), MainSounds.GOLPE6.get()
+		};
+		net.minecraft.sounds.SoundEvent punch = punches[Math.floorMod(beat / 4, punches.length)];
+		level.playSound(null, x, y, z, punch, net.minecraft.sounds.SoundSource.PLAYERS,
+				1.0F, 1.1F + (level.random.nextFloat() * 0.3F));
+
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 0.30, 0.62, 1.0, 1.0);
+
+		for (int i = 0; i < 4; i++) {
+			double ox = (level.random.nextDouble() - 0.5) * 0.7;
+			double oy = (level.random.nextDouble() - 0.5) * 0.7;
+			double oz = (level.random.nextDouble() - 0.5) * 0.7;
+			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, 0.25, 0.55, 1.0, 1.0);
+		}
+
+		level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, 6, 0.3, 0.3, 0.3, 0.5);
+	}
+
+	private static void spawnWolfFangFinalParticles(ServerLevel level, LivingEntity target) {
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.5;
+		double z = target.getZ();
+
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 0.30, 0.62, 1.0, 1.0);
+
+		for (int i = 0; i < 90; i++) {
+			double dirX = level.random.nextDouble() - 0.5;
+			double dirY = level.random.nextDouble() - 0.5;
+			double dirZ = level.random.nextDouble() - 0.5;
+			double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+			if (len < 1.0E-4) continue;
+			double radius = 0.5 + level.random.nextDouble() * 2.5;
+			double px = x + (dirX / len) * radius;
+			double py = y + (dirY / len) * radius;
+			double pz = z + (dirZ / len) * radius;
+			level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, 0.25, 0.55, 1.0, 1.0);
+		}
+
 	}
 
 	private static void playStrikeAnimation(ServerPlayer player, String animationId) {
