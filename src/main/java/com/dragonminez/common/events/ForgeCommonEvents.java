@@ -100,6 +100,8 @@ import net.minecraftforge.registries.RegistryObject;
 
 import java.util.*;
 
+import static com.dragonminez.common.diagnostics.JsonLoadReport.logConsoleReport;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeCommonEvents {
 
@@ -492,6 +494,7 @@ public class ForgeCommonEvents {
 		} else {
 			LogUtil.info(Env.COMMON, "DragonBalls generation is disabled in the config.");
 		}
+		logConsoleReport();
 	}
 
 	@SubscribeEvent

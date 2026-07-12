@@ -23,6 +23,8 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.List;
 import java.util.Locale;
 
+import static com.dragonminez.common.diagnostics.JsonLoadReport.logConsoleReport;
+
 public class ReloadCommand {
 	private static final SuggestionProvider<CommandSourceStack> RELOAD_VALUE_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(List.of("all", "config", "story", "wishes"), builder);
@@ -102,6 +104,7 @@ public class ReloadCommand {
 				syncedPlayers++;
 			}
 
+			logConsoleReport();
 			int finalSyncedPlayers = syncedPlayers;
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.reload.success"), true);
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.reload.sync", finalSyncedPlayers), true);
