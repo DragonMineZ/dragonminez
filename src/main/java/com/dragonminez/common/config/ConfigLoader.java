@@ -2,6 +2,7 @@ package com.dragonminez.common.config;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import lombok.AllArgsConstructor;
@@ -58,6 +59,8 @@ public class ConfigLoader {
 							}
 						} catch (IOException e) {
 							LogUtil.error(Env.COMMON, "Error loading form file '{}' for race '{}': {}", formFile.getFileName(), raceName, e.getMessage());
+							JsonLoadReport.error("config", "races/" + raceName + "/forms/" + formFile.getFileName(),
+									"Malformed form JSON, file skipped: " + JsonLoadReport.rootCause(e));
 						}
 					});
 		}
@@ -87,6 +90,8 @@ public class ConfigLoader {
 							}
 						} catch (IOException e) {
 							LogUtil.error(Env.COMMON, "Error loading stack form file '{}': {}", formFile.getFileName(), e.getMessage());
+							JsonLoadReport.error("config", "forms/" + formFile.getFileName(),
+									"Malformed stack-form JSON, file skipped: " + JsonLoadReport.rootCause(e));
 						}
 					});
 		}

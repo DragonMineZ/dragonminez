@@ -44,14 +44,6 @@ public class StructureLocator {
 		BlockPos best = null;
 		double bestDist = Double.MAX_VALUE;
 
-		HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
-		Pair<BlockPos, Holder<Structure>> searchResult = level.getChunkSource().getGenerator()
-				.findNearestMapStructure(level, holderSet, searchFrom, 100, false);
-		if (searchResult != null) {
-			best = searchResult.getFirst();
-			bestDist = searchFrom.distSqr(best);
-		}
-
 		for (StructurePlacement placement : placements) {
 			BlockPos pos = getPositionFromPlacement(level, structureKey, structureRegistry, placement);
 			if (pos == null) continue;
@@ -60,6 +52,17 @@ public class StructureLocator {
 				best = pos;
 				bestDist = dist;
 			}
+		}
+
+		if (best != null) {
+			return best;
+		}
+
+		HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
+		Pair<BlockPos, Holder<Structure>> searchResult = level.getChunkSource().getGenerator()
+				.findNearestMapStructure(level, holderSet, searchFrom, 100, false);
+		if (searchResult != null) {
+			best = searchResult.getFirst();
 		}
 
 		return best;

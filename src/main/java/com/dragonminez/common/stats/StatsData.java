@@ -222,10 +222,10 @@ public class StatsData {
 	public float getHealthBonus() {
 		double vitality = stats.getVitality();
 		double vitScaling = getStatScaling("VIT");
-		double vitMult = getFormMultiplier("VIT");
+		double vitMult = getTotalMultiplier("VIT");
 		double flatBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), true);
-		return (float) (((vitality + multBonusVit) * vitScaling * vitMult) + (flatBonusVit * vitScaling));
+		return (float) Math.min(((vitality + multBonusVit) * vitScaling * vitMult) + (flatBonusVit * vitScaling), Float.MAX_VALUE - 1);
 	}
 
 	public float getMaxHealth() {
@@ -235,7 +235,7 @@ public class StatsData {
 	public float getMaxEnergy() {
 		double energy = stats.getEnergy();
 		double eneScaling = getStatScaling("ENE");
-		double eneMult = getFormMultiplier("ENE");
+		double eneMult = getTotalMultiplier("ENE");
 		double flatBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), true);
 		double secondaryMaxEnergy = getSecondaryAttributeValue(MainAttributes.MAX_ENERGY.get(), 20.0);
@@ -260,7 +260,7 @@ public class StatsData {
 		int baseVit = stats.getVitality();
 		double flatBonusVit = bonusStats.calculateBonus("VIT", baseVit, false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
-		double vitMult = getFormMultiplier("VIT");
+		double vitMult = getTotalMultiplier("VIT");
 		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
 		double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5StmScaling());
 
@@ -289,7 +289,7 @@ public class StatsData {
 		int baseVit = stats.getVitality();
 		double flatBonusVit = bonusStats.calculateBonus("VIT", baseVit, false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
-		double vitMult = getFormMultiplier("VIT");
+		double vitMult = getTotalMultiplier("VIT");
 		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
 		double hp5 = classStats.getBaseHp5() + (effectiveVit * classStats.getHp5VitScaling());
 
@@ -319,7 +319,7 @@ public class StatsData {
 		int baseEne = stats.getEnergy();
 		double flatBonusEne = bonusStats.calculateBonus("ENE", baseEne, false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", baseEne, true);
-		double eneMult = getFormMultiplier("ENE");
+		double eneMult = getTotalMultiplier("ENE");
 		double effectiveEne = ((baseEne + multBonusEne) * eneMult) + flatBonusEne;
 		double ep5 = classStats.getBaseEp5() + (effectiveEne * classStats.getEp5EneScaling());
 
@@ -978,9 +978,10 @@ public class StatsData {
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
+		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (drainAmount < 0) return Math.min(-1, scaledDrain);
+		return Math.max(1, scaledDrain);
 	}
 
 	public double getAdjustedStaminaDrain() {
@@ -1020,9 +1021,10 @@ public class StatsData {
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
+		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (drainAmount < 0) return Math.min(-1, scaledDrain);
+		return Math.max(1, scaledDrain);
 	}
 
 	public double getAdjustedHealthDrain() {
@@ -1062,9 +1064,10 @@ public class StatsData {
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-		if (drainAmount < 0) return drainAmount;
 
-		return Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier());
+		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (drainAmount < 0) return Math.min(-1, scaledDrain);
+		return Math.max(1, scaledDrain);
 	}
 
 	public float[] snapshotMultiplierResources() {
@@ -1444,16 +1447,6 @@ public class StatsData {
 		return (int) Math.max(0.0, total);
 	}
 
-	private double statCostVariableComponent(int simulatedTotalStats) {
-		double totalStats = Math.max(0.0, simulatedTotalStats);
-		double knee = getConfiguredMaxTotalStats() * STAT_COST_LATE_KNEE_FRACTION;
-		if (knee <= 0.0 || totalStats <= knee) return totalStats * STAT_COST_PER_POINT;
-
-		double kneeCost = knee * STAT_COST_PER_POINT;
-		double ratio = totalStats / knee;
-		return kneeCost + (kneeCost / STAT_COST_LATE_EXPONENT) * (Math.pow(ratio, STAT_COST_LATE_EXPONENT) - 1.0);
-	}
-
 	public double getProgressionTpGainMultiplier() {
 		double strength = ConfigManager.getServerConfig().getGameplay().getIncreaseTPGainRelativeToTPCost();
 		if (strength <= 0.0) return 1.0;
@@ -1465,6 +1458,16 @@ public class StatsData {
 
 		double factor = Math.max(0.0, Math.min(1.0, (double) currentCost / maxCost));
 		return 1.0 + strength * factor;
+	}
+
+	private double statCostVariableComponent(int simulatedTotalStats) {
+		double totalStats = Math.max(0.0, simulatedTotalStats);
+		double knee = getConfiguredMaxTotalStats() * STAT_COST_LATE_KNEE_FRACTION;
+		if (knee <= 0.0 || totalStats <= knee) return totalStats * STAT_COST_PER_POINT;
+
+		double kneeCost = knee * STAT_COST_PER_POINT;
+		double ratio = totalStats / knee;
+		return kneeCost + (kneeCost / STAT_COST_LATE_EXPONENT) * (Math.pow(ratio, STAT_COST_LATE_EXPONENT) - 1.0);
 	}
 
 	public int getSingleStatCost(int simulatedTotalStats) {

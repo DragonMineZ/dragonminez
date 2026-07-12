@@ -3,6 +3,7 @@ package com.dragonminez.common.quest;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -149,6 +150,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		cachedWorldFolder = worldFolder;
 
 		QuestUpdateReport.clear();
+		JsonLoadReport.clear("quests");
 		QuestUpgrader.setAutoUpdateEnabled(
 				ConfigManager.getServerConfig().getGameplay().getAutoUpdateQuests());
 
@@ -193,6 +195,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		int conflicts = QuestUpdateReport.totalConflicts();
 		LogUtil.info(Env.COMMON, "QuestRegistry: quest defaults upgraded — {} value(s) auto-updated, {} conflict(s) kept as your edits across {} file(s)",
 				applied, conflicts, QuestUpdateReport.changedFiles().size());
+		JsonLoadReport.update("quests", "quest defaults", updateReportSummary());
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("DragonMineZ quest update report\n");
@@ -271,6 +274,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 			LogUtil.info(Env.COMMON, "Loaded saga: {} ({} quests)", saga.getName(), saga.getQuests().size());
 		} catch (Exception e) {
 			LogUtil.error(Env.COMMON, "Failed to load saga file: {}", file.getFileName(), e);
+			JsonLoadReport.error("quests", "sagas/" + file.getFileName(), "Malformed saga JSON, file skipped: " + JsonLoadReport.rootCause(e));
 		}
 	}
 
@@ -345,6 +349,8 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 					if (quest != null) quests.add(quest);
 				} catch (Exception e) {
 					LogUtil.error(Env.COMMON, "Failed to load quest file: {}", file.getFileName(), e);
+					JsonLoadReport.error("quests", "quests/" + folder.getFileName() + "/" + file.getFileName(),
+							"Malformed quest JSON, file skipped: " + JsonLoadReport.rootCause(e));
 				}
 			}
 		} catch (IOException e) {
@@ -387,6 +393,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 			}
 		} catch (Exception e) {
 			LogUtil.error(Env.COMMON, "Failed to load side-quest file: {}", file.getFileName(), e);
+			JsonLoadReport.error("quests", "sidequests/" + file.getFileName(), "Malformed side-quest JSON, file skipped: " + JsonLoadReport.rootCause(e));
 		}
 	}
 

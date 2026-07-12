@@ -23,6 +23,17 @@ public class GeneralServerConfig {
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
 	private StorageConfig storage = new StorageConfig();
+	private DeveloperConfig developer = new DeveloperConfig();
+
+	@Getter
+	@NoArgsConstructor
+	public static class DeveloperConfig {
+		private Boolean reportJsonProblemsInChat = true;
+
+		public Boolean isReportJsonProblemsInChat() {
+			return reportJsonProblemsInChat == null || reportJsonProblemsInChat;
+		}
+	}
 
 	@Getter
 	@NoArgsConstructor
@@ -666,6 +677,11 @@ public class GeneralServerConfig {
 		private Double tpHeavyMultiplier = 2.5;
 		private Double maxWeightPenalty = 0.6;
 
+		private Double gravityRoomMk2Relief = 0.5;
+		private Double gravityRoomMk2Falloff = 3.0;
+		private Double gravityRoomMk3Relief = 0.8;
+		private Double gravityRoomMk3Falloff = 1.5;
+
 		private Double loadDrainComfort = 1.15;
 		private Double loadDrainIdeal = 1.3;
 		private Double loadDrainHeavy = 1.5;
@@ -846,6 +862,24 @@ public class GeneralServerConfig {
 		public Double getMaxWeightPenalty() {
 			Double value = maxWeightPenalty != null ? maxWeightPenalty : 0.6;
 			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getGravityRoomMk2Relief() {
+			Double value = gravityRoomMk2Relief != null ? gravityRoomMk2Relief : 0.5;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getGravityRoomMk2Falloff() {
+			return clampNonNeg(gravityRoomMk2Falloff, 3.0);
+		}
+
+		public Double getGravityRoomMk3Relief() {
+			Double value = gravityRoomMk3Relief != null ? gravityRoomMk3Relief : 0.8;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getGravityRoomMk3Falloff() {
+			return clampNonNeg(gravityRoomMk3Falloff, 1.5);
 		}
 
 		public Double getLoadDrainComfort() {

@@ -11,6 +11,7 @@ public class MutantStatusHandler implements IStatusEffectHandler {
 	@Override
 	public void handleStatusEffects(ServerPlayer player, StatsData data) {
 		if (data.getEffects().hasEffect(MutantManager.EFFECT_NAME)) {
+			MutantManager.reconcileHolder(player, data);
 			if (!player.hasEffect(MainEffects.MUTANT.get())) {
 				player.addEffect(new MobEffectInstance(MainEffects.MUTANT.get(), data.getEffects().getEffectDuration(MutantManager.EFFECT_NAME), 0, false, false, true));
 			}

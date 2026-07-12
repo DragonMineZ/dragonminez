@@ -72,6 +72,28 @@ public final class MutantManager {
 		MutantSavedData.get(server).removeHolder(playerId);
 	}
 
+	public static void reconcileHolder(ServerPlayer player, StatsData data) {
+		if (player == null || data == null || player.getServer() == null) return;
+		if (!isMutant(data)) return;
+		MutantSavedData saved = MutantSavedData.get(player.getServer());
+		if (!saved.isHolder(player.getUUID())) saved.addHolder(player.getUUID());
+	}
+
+	public static void rollForPlayer(ServerPlayer player, StatsData data) {
+		if (player == null || data == null || player.getServer() == null) return;
+		GeneralServerConfig.MutantConfig cfg = config();
+		if (cfg == null || !cfg.getEnabled()) return;
+		if (!data.getStatus().isHasCreatedCharacter() || !data.getStatus().isAlive()) return;
+
+		MutantSavedData saved = MutantSavedData.get(player.getServer());
+		if (saved.isHolder(player.getUUID()) || isMutant(data)) return;
+		if (saved.count() >= cfg.getMaxHolders()) return;
+
+		if (player.getServer().overworld().getRandom().nextDouble() < cfg.getChance()) {
+			grant(player, data);
+		}
+	}
+
 	public static void runLottery(MinecraftServer server) {
 		if (server == null) return;
 		GeneralServerConfig.MutantConfig cfg = config();

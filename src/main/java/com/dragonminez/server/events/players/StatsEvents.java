@@ -334,8 +334,6 @@ public class StatsEvents {
 	@SubscribeEvent
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		Player attacker = resolveAttackerPlayer(event.getSource().getEntity(), event.getSource().getDirectEntity());
-		if (attacker == null) return;
 		boolean[] addAlignment = new boolean[]{false};
 		boolean[] removeAlignment = new boolean[]{false};
 
@@ -345,8 +343,14 @@ public class StatsEvents {
 					addAlignment[0] = true;
 				else removeAlignment[0] = true;
 				if (victimData.getStatus().isHasCreatedCharacter()) {
-					if (!ConfigManager.getServerConfig().getMutant().getKeepMutantOnDeath() && victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME) && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
+					boolean wasMutant = victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME);
+					boolean keepMutant = ConfigManager.getServerConfig().getMutant().getKeepMutantOnDeath();
+					if (wasMutant && !keepMutant && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
 					victimData.getEffects().removeAllEffects();
+					if (wasMutant && keepMutant) {
+						victimData.getEffects().addEffect(MutantManager.EFFECT_NAME, 1.0, -1);
+						if (victim instanceof ServerPlayer mutantVictim) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(mutantVictim), mutantVictim);
+					}
 					victimData.getSecondaryStatEffects().clear();
 					victimData.getStatus().setChargingKi(false);
 					victimData.getStatus().setActionCharging(false);
@@ -357,6 +361,9 @@ public class StatsEvents {
 				}
 			});
 		}
+
+		Player attacker = resolveAttackerPlayer(event.getSource().getEntity(), event.getSource().getDirectEntity());
+		if (attacker == null) return;
 
 		if (removesAlignment(event.getEntity())) removeAlignment[0] = true;
 		if (addsAlignment(event.getEntity())) addAlignment[0] = true;

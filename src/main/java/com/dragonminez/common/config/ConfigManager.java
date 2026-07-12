@@ -3,6 +3,7 @@ package com.dragonminez.common.config;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.animation.AnimationCache;
+import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -80,6 +81,7 @@ public class ConfigManager {
 
 	public static void initialize() {
 		LogUtil.info(Env.COMMON, "Initializing DragonMineZ configuration system...");
+		JsonLoadReport.clear("config");
 
 		try {
 			Files.createDirectories(CONFIG_DIR);
@@ -98,6 +100,7 @@ public class ConfigManager {
 
 	public static void reload() {
 		LogUtil.info(Env.COMMON, "Reloading DragonMineZ configuration system...");
+		JsonLoadReport.clear("config");
 
 		try {
 			RACE_STATS.clear();
@@ -187,6 +190,11 @@ public class ConfigManager {
 		return scaling != null ? scaling.getDefenseScaling() : null;
 	}
 
+	private static String relativeName(Path path) {
+		try { return CONFIG_DIR.relativize(path).toString().replace('\\', '/'); }
+		catch (Exception e) { return path.getFileName().toString(); }
+	}
+
 	private static void backupOldConfig(Path configPath) {
 		if (Files.exists(configPath)) {
 			try {
@@ -231,6 +239,8 @@ public class ConfigManager {
 			} catch (Exception e) {
 				reason = "Parsing error: " + e.getMessage();
 				overwrite = true;
+				JsonLoadReport.error("config", relativeName(path),
+						"Malformed JSON: " + JsonLoadReport.rootCause(e) + " — running on defaults for now; your file was left untouched, fix the syntax and /dmzreload to apply your edits");
 			}
 		} else {
 			reason = "File not found";
@@ -248,16 +258,19 @@ public class ConfigManager {
 
 		if (overwrite) {
 			boolean parsingError = reason.startsWith("Parsing error");
+			if (parsingError) {
+				LogUtil.warn(Env.COMMON, String.format("%s has malformed JSON; using defaults this session and leaving your file untouched. Reason: %s", path.getFileName(), reason));
+				return defaultProvider.get();
+			}
+
 			String oldRawJson = null;
 			JsonObject baseline = loadBaselineObject(path);
 			if (Files.exists(path)) {
-				if (!parsingError) {
-					try { oldRawJson = Files.readString(path); }
-					catch (IOException e) { LogUtil.error(Env.COMMON, "Could not read old config '{}' for value preservation: {}", path.getFileName(), e.getMessage()); }
-				}
+				try { oldRawJson = Files.readString(path); }
+				catch (IOException e) { LogUtil.error(Env.COMMON, "Could not read old config '{}' for value preservation: {}", path.getFileName(), e.getMessage()); }
 				backupOldConfig(path);
 			}
-			if (!parsingError || config == null) config = defaultProvider.get();
+			config = defaultProvider.get();
 
 			try {
 				versionSetter.accept(config, currentVersion);
@@ -491,6 +504,7 @@ public class ConfigManager {
 							}
 						} catch (Exception e) {
 							LogUtil.error(Env.COMMON, "Failed to upgrade user form '{}': {}", p.getFileName(), e.getMessage());
+							JsonLoadReport.error("config", relativeName(p), "Form file failed to upgrade: " + JsonLoadReport.rootCause(e));
 						}
 					});
 		} catch (IOException e) {
@@ -567,7 +581,9 @@ public class ConfigManager {
 					}
 				} else {
 					defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-					try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
+					if (!Files.exists(formFilePath)) {
+						try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
+					}
 				}
 			}
 			userDiskForms.forEach(raceForms::putIfAbsent);
@@ -602,7 +618,9 @@ public class ConfigManager {
 					}
 				} else {
 					defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-					try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
+					if (!Files.exists(formFilePath)) {
+						try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
+					}
 				}
 			}
 			userDiskForms.forEach(finalStackForms::putIfAbsent);
@@ -664,6 +682,7 @@ public class ConfigManager {
 							LogUtil.info(Env.COMMON, "Custom race detected: {}", raceName);
 						} catch (IOException e) {
 							LogUtil.error(Env.COMMON, "Error loading custom race '{}': {}", raceName, e.getMessage());
+							JsonLoadReport.error("config", "races/" + raceName, "Custom race failed to load: " + JsonLoadReport.rootCause(e));
 						}
 					}
 				}
