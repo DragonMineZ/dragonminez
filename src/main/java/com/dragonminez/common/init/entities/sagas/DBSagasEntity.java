@@ -255,8 +255,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Getter @Setter protected double defaultMovementSpeed = 0.25D;
     @Getter @Setter protected double defaultAttackSpeed = 4.0D;
 
+    @Setter
     @Getter private AiTier aiTier = AiTier.SIMPLE;
-    public void setAiTier(AiTier tier) { this.aiTier = tier; }
 
     public void setAiTierById(int id) {
         AiTier[] values = AiTier.values();

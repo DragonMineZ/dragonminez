@@ -625,12 +625,12 @@ public final class QuestService {
 				continue;
 			}
 
-			EntityType<?> entityType = killObjective.resolveEntityType();
-			if (entityType == null) {
-				continue;
-			}
-
 			for (int j = 0; j < remaining; j++) {
+				EntityType<?> entityType = killObjective.resolveEntityType();
+				if (entityType == null) {
+					continue;
+				}
+
 				Entity entity = entityType.create(requester.level());
 				if (entity == null) {
 					continue;
@@ -657,9 +657,10 @@ public final class QuestService {
 				if (killObjective.getTextureVariant() >= 0) {
 					entity.getPersistentData().putInt("dmz_quest_texture_variant", killObjective.getTextureVariant());
 				}
-				if (killObjective.getAiTier() > 0) {
-					entity.getPersistentData().putInt("dmz_quest_ai_tier", killObjective.getAiTier());
-				}
+				int aiTier = killObjective.getAiTier() > 0
+						? killObjective.getAiTier()
+						: (difficulty != null ? difficulty.aiTierId() : Difficulty.NORMAL.aiTierId());
+				entity.getPersistentData().putInt("dmz_quest_ai_tier", aiTier);
 				if (!killObjective.isCanTransform()) {
 					entity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
 				}

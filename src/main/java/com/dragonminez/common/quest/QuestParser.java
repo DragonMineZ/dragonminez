@@ -160,7 +160,7 @@ public class QuestParser {
 				Double transformMeleeDamage = getNullableDouble(json, "TransformMeleeDamage");
 				Double transformKiDamage = getNullableDouble(json, "TransformKiDamage");
 				Double transformHealthMultiplier = getNullableDouble(json, "TransformHealthMultiplier");
-				Double transformMeleeMultiplier = getNullableDouble(json, "TransformMeleeMultiplier");
+				Double transformMeleeMultiplier = getNullableDouble(json, "TransformMeleeDamageMultiplier");
 				Double transformKiMultiplier = getNullableDouble(json, "TransformKiMultiplier");
 				Double transformTriggerPercent = getNullableDouble(json, "TransformTriggerPercent");
 				yield new KillObjective(entityId, killCount, health, meleeDamage, kiDamage, spawnMode, countMode,

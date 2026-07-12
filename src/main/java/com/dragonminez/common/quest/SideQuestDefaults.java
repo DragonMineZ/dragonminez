@@ -113,6 +113,14 @@ final class SideQuestDefaults {
 		return objKill(entity, count, "QUEST", "QUEST_SPAWNED_ONLY");
 	}
 
+	private static JsonObject objQuestKill(String entity, int count, double hp, double melee, double ki) {
+		JsonObject o = objKill(entity, count, "QUEST", "QUEST_SPAWNED_ONLY");
+		o.addProperty("health", hp);
+		o.addProperty("meleeDamage", melee);
+		o.addProperty("kiDamage", ki);
+		return o;
+	}
+
 	private static JsonObject objKill(String entity, int count, String spawnMode, String countMode) {
 		JsonObject o = new JsonObject();
 		o.addProperty("type", "KILL");
@@ -322,7 +330,8 @@ final class SideQuestDefaults {
 				prereqs("AND", condQuest("gravity_chamber"), condLevel(15)),
 				new JsonObject[]{
 						objItem("minecraft:diamond", 20),
-						objItem("minecraft:obsidian", 20)
+						objItem("minecraft:obsidian", 20),
+						objTalkTo("bulma")
 				},
 				new JsonObject[]{ rewTPS(9000), rewItem("minecraft:enderpearl", 16)}
 		));
@@ -359,7 +368,8 @@ final class SideQuestDefaults {
 				new JsonObject[]{
 						objKill("minecraft:zombie", 20),
 						objKill("minecraft:skeleton", 10),
-						objKill("minecraft:creeper", 5)
+						objKill("minecraft:creeper", 5),
+						objTalkTo("piccolo")
 				},
 				new JsonObject[]{ rewTPS(3300) }));
 
@@ -543,8 +553,8 @@ final class SideQuestDefaults {
 				},
 				new JsonObject[]{ rewTPS(4500), rewItem("minecraft:diamond", 3) }));
 
-		writeQuestFile(dir, "dragon_ball_hunter.json", sidequest(
-				"dragon_ball_hunter", "dmz.sidequest.dball_hunter.name", "dmz.sidequest.dball_hunter.desc",
+		writeQuestFile(dir, "red_ribbon_outpost.json", sidequest(
+				"red_ribbon_outpost", "dmz.sidequest.red_ribbon_outpost.name", "dmz.sidequest.red_ribbon_outpost.desc",
 				"combat", false, null, null,
 				prereqs("AND", condSaga("saiyan_saga", 4)),
 				new JsonObject[]{
@@ -584,7 +594,8 @@ final class SideQuestDefaults {
 				prereqs("AND", condSaga("frieza_saga", 6)),
 				requirements("AND", condBiome("dragonminez:ajissa_plains")),
 				new JsonObject[]{
-						objKill("#dragonminez:frieza_soldiers", 16)
+						objKill("#dragonminez:frieza_soldiers", 16),
+						objTalkTo("goku")
 				},
 				new JsonObject[]{ rewTPS(21000) }));
 
@@ -597,7 +608,7 @@ final class SideQuestDefaults {
 				requirements("AND", condBiome("dragonminez:rocky")),
 				new JsonObject[]{
 						objKill("dragonminez:red_ribbon_soldier", 15),
-						objKill("dragonminez:robot1", 3),
+						objKill("#dragonminez:red_ribbon_robots", 3),
 						objTalkTo("krillin")
 				},
 				new JsonObject[]{ rewTPS(48000) }));
@@ -609,7 +620,8 @@ final class SideQuestDefaults {
 				requirements("AND", condBiome("minecraft:plains")),
 				new JsonObject[]{
 						objKill("minecraft:zombie", 30),
-						objKill("minecraft:spider", 15)
+						objKill("minecraft:spider", 15),
+						objTalkTo("krillin")
 				},
 				new JsonObject[]{ rewTPS(64000) }));
 
@@ -638,8 +650,7 @@ final class SideQuestDefaults {
 				"story", false, "piccolo", "piccolo",
 				prereqs("AND", condSaga("frieza_saga", 8)),
 				new JsonObject[]{
-						objKill("dragonminez:saga_friezasoldier01", 5),
-						objKill("dragonminez:saga_friezasoldier02", 5),
+						objKill("#dragonminez:frieza_soldiers", 10),
 						objTalkTo("piccolo")
 				},
 				new JsonObject[]{ rewTPS(15000) }));
@@ -650,7 +661,7 @@ final class SideQuestDefaults {
 				prereqs("AND", condSaga("frieza_saga", 11)),
 				requirements("AND", condStructure("dragonminez:elder_guru")),
 				new JsonObject[]{
-						objKill("dragonminez:saga_friezasoldier01", 20),
+						objKill("#dragonminez:frieza_soldiers", 20),
 						objTalkTo("goku")
 				},
 				new JsonObject[]{ rewTPS(24000) }));
@@ -730,7 +741,8 @@ final class SideQuestDefaults {
 				new JsonObject[]{
 						objItem("minecraft:cooked_beef", 32),
 						objItem("minecraft:bread", 32),
-						objItem("minecraft:golden_carrot", 8)
+						objItem("minecraft:golden_carrot", 8),
+						objTalkTo("goku")
 				},
 				new JsonObject[]{ rewTPS(800), rewItem("minecraft:golden_apple", 5) }));
 
@@ -875,7 +887,7 @@ final class SideQuestDefaults {
 				"tech", false, "bulma", "bulma",
 				prereqs("AND", condQuest("bulma_scouter_calibration")),
 				new JsonObject[]{
-						objKill("dragonminez:saga_friezasoldier01", 12),
+						objKill("#dragonminez:frieza_soldiers", 12),
 						objItem("minecraft:amethyst_shard", 8),
 						objTalkTo("bulma")
 				},
@@ -887,7 +899,7 @@ final class SideQuestDefaults {
 				"tech", false, "bulma", "bulma",
 				prereqs("AND", condQuest("bulma_scouter_bioscan")),
 				new JsonObject[]{
-						objKill("dragonminez:saga_friezasoldier02", 15),
+						objKill("#dragonminez:frieza_soldiers", 15),
 						objItem("minecraft:diamond", 4),
 						objTalkTo("bulma")
 				},
@@ -1075,7 +1087,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "bulma_saiyan_biology_sample.json", sidequest(
 				"bulma_saiyan_biology_sample", "dmz.sidequest.bulma_saiyan_biology_sample.name", "dmz.sidequest.bulma_saiyan_biology_sample.desc",
 				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 6)),
-				new JsonObject[]{ objQuestKill("dragonminez:saga_raditz", 1), objItem("minecraft:diamond", 3), objTalkTo("bulma") },
+				new JsonObject[]{ objQuestKill("dragonminez:saga_raditz", 1, 3450, 220, 139), objItem("minecraft:diamond", 3), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(7500) }));
 
 		writeQuestFile(dir, "bulma_energy_storage_battery.json", sidequest(
@@ -1094,13 +1106,13 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "bulma_frieza_armor_study.json", sidequest(
 				"bulma_frieza_armor_study", "dmz.sidequest.bulma_frieza_armor_study.name", "dmz.sidequest.bulma_frieza_armor_study.desc",
 				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("frieza_saga", 3)),
-				new JsonObject[]{ objKill("dragonminez:saga_friezasoldier01", 8), objItem("minecraft:iron_ingot", 16), objTalkTo("bulma") },
+				new JsonObject[]{ objKill("#dragonminez:frieza_soldiers", 8), objItem("minecraft:iron_ingot", 16), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(12000) }));
 
 		writeQuestFile(dir, "bulma_frieza_force_intelligence.json", sidequest(
 				"bulma_frieza_force_intelligence", "dmz.sidequest.bulma_frieza_force_intelligence.name", "dmz.sidequest.bulma_frieza_force_intelligence.desc",
 				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("frieza_saga", 4)),
-				new JsonObject[]{ objKill("dragonminez:saga_friezasoldier02", 10), objItem("minecraft:diamond", 6), objTalkTo("bulma") },
+				new JsonObject[]{ objKill("#dragonminez:frieza_soldiers", 10), objItem("minecraft:diamond", 6), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(15000) }));
 
 		writeQuestFile(dir, "bulma_namekian_tech_integration.json", sidequest(
@@ -1229,7 +1241,7 @@ final class SideQuestDefaults {
 				"collection", true, "piccolo", "piccolo",
 				prereqs("AND", condSaga("movies_saga", 10)),
 				new JsonObject[]{
-						objQuestKill("dragonminez:saga_turles", 1),
+						objQuestKill("dragonminez:saga_turles", 1, 6500, 364, 364),
 						objItem("minecraft:oak_sapling", 12),
 						objItem("minecraft:apple", 16),
 						objTalkTo("piccolo")
@@ -1244,7 +1256,7 @@ final class SideQuestDefaults {
 				prereqs("AND", condSaga("movies_saga", 13)),
 				requirements("AND", condBiome("minecraft:plains")),
 				new JsonObject[]{
-						objKill("dragonminez:saga_slug_soldier", 20),
+						objQuestKill("dragonminez:saga_slug_soldier", 20, 1040, 66, 91),
 						objTalkTo("guru")
 				},
 				new JsonObject[]{ rewTPS(128000) }));
@@ -1256,9 +1268,10 @@ final class SideQuestDefaults {
 				"combat", true, "krillin", "krillin",
 				prereqs("AND", condSaga("movies_saga", 16)),
 				new JsonObject[]{
-						objKill("dragonminez:saga_salza", 4),
-						objKill("dragonminez:saga_dore", 4),
-						objKill("dragonminez:saga_neiz", 4)
+						objQuestKill("dragonminez:saga_salza", 4, 6409, 377, 441),
+						objQuestKill("dragonminez:saga_dore", 4, 7514, 421, 524),
+						objQuestKill("dragonminez:saga_neiz", 4, 5304, 309, 357),
+						objTalkTo("krillin")
 				},
 				new JsonObject[]{ rewTPS(152000) }));
 
