@@ -353,6 +353,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 				double rightX = -Math.cos(refRad);
 				double rightZ = -Math.sin(refRad);
 				double side = (player.getX() - fusionPartner.getX()) * rightX + (player.getZ() - fusionPartner.getZ()) * rightZ;
+				// Slow the dance so its single play spans ~9s of the ~10s fusion charge (5.25s / 9s),
+				// reaching its final frame ~1s before fusing and holding there (thenPlayAndHold) — so the
+				// partner doesn't vanish mid-dance: they settle on the final pose, hold ~1s, then merge.
+				state.getController().setAnimationSpeed(0.583D);
 				return state.setAndContinue(side > 0 ? FUSION_DANCE_LEFT : FUSION_DANCE_RIGHT);
 			}
 			// Charging fusion alone: hold a neutral charge pose until a partner also starts,

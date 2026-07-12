@@ -206,6 +206,10 @@ public class ScouterHUD {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		gui.blit(texture, 0, -20, 0, 15, 7, 41, 128, 128);
 		RenderSystem.enableBlend();
+		// Pin the blend function explicitly. enableBlend() alone inherits whatever blend func
+		// was last left in the GL state, which on some GPUs/driver + mod combos ignores the
+		// 0.65 alpha and renders the lens fully opaque (character behind not visible).
+		RenderSystem.defaultBlendFunc();
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.65F);
 		gui.blit(texture, 7, -20, 7, 15, 63, 41, 128, 128);
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);

@@ -64,6 +64,10 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> TECH_EXP_SELF = register("dmztech.experience.self", "Allows changing the experience of your own ki techniques.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> TECH_EXP_OTHERS = register("dmztech.experience.others", "Allows changing the experience of other players' ki techniques.", (player, uuid, context) -> false);
 
+	// Technique cooldowns
+	public static final PermissionNode<Boolean> COOLDOWNS_SELF = register("dmzcooldowns.self", "Allows changing your own ki/strike technique cooldowns.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> COOLDOWNS_OTHERS = register("dmzcooldowns.others", "Allows changing other players' ki/strike technique cooldowns.", (player, uuid, context) -> false);
+
 	// Bonus
 	public static final PermissionNode<Boolean> BONUS_ADD_SELF = register("dmzbonus.add.self", "Allows adding bonus stats to yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> BONUS_ADD_OTHERS = register("dmzbonus.add.others", "Allows adding bonus stats to other players.", (player, uuid, context) -> false);
