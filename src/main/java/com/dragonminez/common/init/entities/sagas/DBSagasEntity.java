@@ -946,10 +946,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 this.transformTick++;
                 if (this.handleTransformationLogic(this.transformTick, 80)) {
                     if (!this.level().isClientSide) {
-                        EntityType<? extends DBSagasEntity> nextFormType = this.getNextTransform();
-                        if (nextFormType != null) {
-                            DBSagasEntity nextForm = nextFormType.create(this.level());
-                            this.finishTransformationSpawn(nextForm, this.spawnsNewFormFullHealth());
+                        if (!this.canTransform()) {
+                            this.setTransforming(false);
+                            this.transformTick = 0;
+                        } else {
+                            EntityType<? extends DBSagasEntity> nextFormType = this.getNextTransform();
+                            if (nextFormType != null) {
+                                DBSagasEntity nextForm = nextFormType.create(this.level());
+                                this.finishTransformationSpawn(nextForm, this.spawnsNewFormFullHealth());
+                            }
                         }
                     }
                 }
@@ -1523,7 +1528,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     protected boolean canTransform() {
-        return this.hasTransformation() && !this.transformationDisabled;
+        if (!this.hasTransformation() || this.transformationDisabled) return false;
+        return !this.getPersistentData().getBoolean("dmz_quest_no_transform");
     }
 
     private static final String[] TRANSFORM_OVERRIDE_TAGS = {
@@ -1774,6 +1780,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 				if (pd.contains(tag)) {
 					newEntity.getPersistentData().putDouble(tag, pd.getDouble(tag));
 				}
+			}
+
+			if (this.transformationDisabled || pd.getBoolean("dmz_quest_no_transform")) {
+				newEntity.setTransformationDisabled(true);
+				newEntity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
 			}
 
 			level.addFreshEntity(newEntity);

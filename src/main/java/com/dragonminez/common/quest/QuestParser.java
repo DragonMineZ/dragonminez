@@ -154,8 +154,8 @@ public class QuestParser {
 				int aiTier = json.has("AITier") && !json.get("AITier").isJsonNull()
 						? json.get("AITier").getAsInt()
 						: -1;
-				boolean canTransform = !json.has("CanTransform") || json.get("CanTransform").isJsonNull()
-						|| json.get("CanTransform").getAsBoolean();
+				boolean canTransform = !json.has("canTransform") || json.get("canTransform").isJsonNull()
+						|| json.get("canTransform").getAsBoolean();
 				Double transformHealth = getNullableDouble(json, "TransformHealth");
 				Double transformMeleeDamage = getNullableDouble(json, "TransformMeleeDamage");
 				Double transformKiDamage = getNullableDouble(json, "TransformKiDamage");
