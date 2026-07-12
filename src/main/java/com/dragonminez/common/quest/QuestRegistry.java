@@ -262,6 +262,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 	private static void loadSingleSagaFile(Path file) {
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			JsonObject root = GSON.fromJson(reader, JsonObject.class);
+			QuestParser.validateSaga("quests", "sagas/" + file.getFileName(), root);
 			Saga saga = parseSagaFromJson(root, cachedWorldFolder);
 			LOADED_SAGAS.put(saga.getId(), saga);
 
@@ -345,6 +346,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 			for (Path file : files) {
 				try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 					JsonObject root = GSON.fromJson(reader, JsonObject.class);
+					QuestParser.validate("quests", "quests/" + folder.getFileName() + "/" + file.getFileName(), root);
 					Quest quest = QuestParser.parseQuest(root);
 					if (quest != null) quests.add(quest);
 				} catch (Exception e) {
@@ -385,6 +387,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 	private static void loadSingleSideQuestFile(Path file) {
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			JsonObject root = GSON.fromJson(reader, JsonObject.class);
+			QuestParser.validate("quests", "sidequests/" + file.getFileName(), root);
 			Quest quest = QuestParser.parseQuest(root);
 
 			if (quest != null) {

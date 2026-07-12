@@ -4,6 +4,8 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.diagnostics.JsonKeys;
+import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -69,16 +71,31 @@ public final class NpcAlignmentRules {
 		return Map.copyOf(rules);
 	}
 
+	private static final String RULES_LABEL = "npcs/" + RULES_FILE;
+	private static final java.util.Set<String> ROOT_KEYS = java.util.Set.of("npcs");
+	private static final java.util.Set<String> RULE_KEYS = java.util.Set.of("default_relation", "interaction",
+			"hostile_below", "hostile_above", "min_alignment", "max_alignment");
+	private static final java.util.Set<String> INTERACTION_KEYS = java.util.Set.of("min_alignment", "max_alignment");
+
 	private static Map<String, NpcAlignmentRule> parseRules(@Nullable JsonObject root) {
 		Map<String, NpcAlignmentRule> parsed = defaultRules();
 		if (root == null || !root.has("npcs") || !root.get("npcs").isJsonObject()) {
 			return parsed;
 		}
 
+		JsonLoadReport.clear("npc-alignment");
+		JsonKeys.checkObject("npc-alignment", RULES_LABEL, "", root, ROOT_KEYS);
+
 		JsonObject npcs = root.getAsJsonObject("npcs");
 		for (Map.Entry<String, com.google.gson.JsonElement> entry : npcs.entrySet()) {
 			if (!entry.getValue().isJsonObject()) {
 				continue;
+			}
+			JsonObject ruleJson = entry.getValue().getAsJsonObject();
+			JsonKeys.checkObject("npc-alignment", RULES_LABEL, "npcs." + entry.getKey(), ruleJson, RULE_KEYS);
+			if (ruleJson.has("interaction") && ruleJson.get("interaction").isJsonObject()) {
+				JsonKeys.checkObject("npc-alignment", RULES_LABEL, "npcs." + entry.getKey() + ".interaction",
+						ruleJson.getAsJsonObject("interaction"), INTERACTION_KEYS);
 			}
 			NpcAlignmentRule rule = parseRule(entry.getValue().getAsJsonObject());
 			if (rule != null) {
