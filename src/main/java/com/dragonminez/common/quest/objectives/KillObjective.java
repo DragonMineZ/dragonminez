@@ -11,6 +11,10 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
 @Getter
 public class KillObjective extends QuestObjective {
 	public enum SpawnMode {
@@ -104,12 +108,17 @@ public class KillObjective extends QuestObjective {
 			if (isTag()) {
 				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(entityId.substring(1)));
 				var tags = ForgeRegistries.ENTITY_TYPES.tags();
-				if (tags != null) {
-					for (EntityType<?> type : tags.getTag(tag)) {
-						return type;
-					}
+				if (tags == null) {
+					return null;
 				}
-				return null;
+				List<EntityType<?>> members = new ArrayList<>();
+				for (EntityType<?> type : tags.getTag(tag)) {
+					members.add(type);
+				}
+				if (members.isEmpty()) {
+					return null;
+				}
+				return members.get(ThreadLocalRandom.current().nextInt(members.size()));
 			}
 			return ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId));
 		} catch (Exception e) {

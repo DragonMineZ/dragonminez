@@ -24,6 +24,8 @@ public class MainTags {
 
 	public static class EntityTypes {
 		public static final TagKey<EntityType<?>> FRIEZA_SOLDIERS = create("frieza_soldiers");
+		public static final TagKey<EntityType<?>> SAIBAMEN = create("saibamen");
+		public static final TagKey<EntityType<?>> RED_RIBBON_ROBOTS = create("red_ribbon_robots");
 
 		private static TagKey<EntityType<?>> create(String name) {
 			return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
