@@ -752,9 +752,6 @@ public class StatsEvents {
 				}
 
 				if (attackSpeedAttr != null) {
-					// Ki weapons act as fake weapons: apply their configured attack speed as a flat
-					// modifier (e.g. -2.4 -> base 4.0 becomes 1.6, like a real sword). Applied before
-					// the form multiplier below so forms scale the adjusted Ki weapon speed.
 					double expectedKi = 0.0;
 					if (PlayerAttackHelper.isKiWeaponActive(serverPlayer)) {
 						var kiCfg = ConfigManager.getCombatConfig().getKiWeaponConfig(data.getStatus().getKiWeaponType());

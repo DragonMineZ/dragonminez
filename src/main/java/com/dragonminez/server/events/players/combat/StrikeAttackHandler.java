@@ -65,8 +65,6 @@ public class StrikeAttackHandler {
 	private static final Map<UUID, PendingStrike> PENDING = new HashMap<>();
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
 	private static final Map<UUID, RecentHit> RECENTLY_DAMAGED = new HashMap<>();
-	// When a strike locks onto a multipart giant, this remembers which hitbox part the player is
-	// fighting so the whole strike faces/aims at that part instead of the giant's feet.
 	private static final Map<UUID, Integer> STRIKE_ANCHOR_PART = new HashMap<>();
 
 	public static void requestStrike(ServerPlayer player, int preferredTargetId) {
@@ -109,7 +107,6 @@ public class StrikeAttackHandler {
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
 			if (immediateTarget != null) {
-				// dragon_fist must not rotate the player's view toward the enemy.
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
 				PartEntity<?> hitPart = nearestPartInSight(player, coneRange);
 					if (hitPart != null && hitPart.getParent() == immediateTarget) {
@@ -278,7 +275,7 @@ public class StrikeAttackHandler {
                 kamehameha.setupKiHame(player, (float) active.totalDamage() * 0.2F, 2.0F, 0.5F, 5);
                 kamehameha.setFiring(true);
                 kamehameha.setMaxLife(15);
-                kamehameha.setBlockDestructionEnabled(false); // cosmetic blast — must not grief terrain
+                kamehameha.setBlockDestructionEnabled(false);
 
                 player.level().addFreshEntity(kamehameha);
                 player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_KAME_FIRE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
@@ -684,7 +681,6 @@ public class StrikeAttackHandler {
 				double sy = target.getY() + target.getBbHeight() * 0.5;
 				double sz = target.getZ();
 
-				// Finishing blow: heavy punch impact + explosion boom + a full-throated roar.
 				player.level().playSound(null, sx, sy, sz,
 						MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 0.7F);
 				player.level().playSound(null, sx, sy, sz,
@@ -778,7 +774,6 @@ public class StrikeAttackHandler {
 				STRIKE_ANCHOR_PART.remove(player.getUUID());
 			}
 
-			// dragon_fist must not rotate the attacker's view toward the enemy.
 			if (!"dragon_fist".equals(pending.techniqueId())) {
 				faceStrikeTarget(player, target);
 			}
@@ -1045,20 +1040,13 @@ public class StrikeAttackHandler {
 		MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (totalDamage * IMPACT_DAMAGE_RATIO), dir);
 	}
 
-	/**
-	 * Xenoverse-style impact burst for super_god_fist's connecting blow. All cosmetic, server-driven so every
-	 * nearby client sees it. Mixes the mod's themed punch/spark particles (colour is packed into the delta args,
-	 * count 0 = one particle per call) with a vanilla crit + explosion burst so the hit reads at any distance.
-	 */
 	private static void spawnSuperGodFistImpactParticles(ServerLevel level, LivingEntity target) {
 		double x = target.getX();
 		double y = target.getY() + target.getBbHeight() * 0.5;
 		double z = target.getZ();
 
-		// Themed punch flash (white) — the same particle NPCs throw on a landed hit.
 		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 1.0, 1.0, 1.0, 1.0);
 
-		// Golden sparks scattering off the impact point, matching the flash's border colour (0xF5C527).
 		for (int i = 0; i < 8; i++) {
 			double ox = (level.random.nextDouble() - 0.5) * 0.8;
 			double oy = (level.random.nextDouble() - 0.5) * 0.8;
@@ -1066,7 +1054,6 @@ public class StrikeAttackHandler {
 			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, 0.96, 0.77, 0.15, 1.0);
 		}
 
-		// Vanilla crit spread + a small explosion puff for a punchy, instantly-readable impact.
 		level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, 18, 0.4, 0.4, 0.4, 0.6);
 		level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
 	}

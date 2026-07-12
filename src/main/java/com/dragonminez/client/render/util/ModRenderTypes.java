@@ -252,12 +252,6 @@ public class ModRenderTypes extends RenderType {
                     .setLayeringState(POLYGON_OFFSET_LAYERING)
                     .createCompositeState(true)));
 
-    // Same as vanilla entityTranslucentCull, but COLOR_WRITE instead of COLOR_DEPTH_WRITE: the worn
-    // scouter lens is a semi-transparent overlay right in front of the face. Writing depth lets it
-    // occlude the player's face when its translucent buffer happens to flush before the base model's
-    // (flush order between different-texture translucent buffers is hardware/driver/mod dependent),
-    // which is why the character was invisible behind the scouter on some machines. Not writing depth
-    // means the lens can never cull what's behind it, so the face always shows through everywhere.
     private static final Function<ResourceLocation, RenderType> SCOUTER_LENS = Util.memoize((pLocation) ->
             create("dmz_scouter_lens", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true, CompositeState.builder()
                     .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_CULL_SHADER)
@@ -364,13 +358,9 @@ public class ModRenderTypes extends RenderType {
                 .setOverlayState(NO_OVERLAY)
                 .setWriteMaskState(COLOR_WRITE)
                 .setOutputState(TRANSFORMATION_MASK_TARGET);
-        if (viewOffset) {
-            builder.setLayeringState(VIEW_OFFSET_Z_LAYERING);
-        } else {
-            // Match the polygon offset used by the skin overlay decals in the main pass; see
-            // TRANSFORMATION_MASK for the full rationale (prevents interior outline rings).
-            builder.setLayeringState(POLYGON_OFFSET_LAYERING);
-        }
+        if (viewOffset) builder.setLayeringState(VIEW_OFFSET_Z_LAYERING);
+        else builder.setLayeringState(POLYGON_OFFSET_LAYERING);
+
         return create(
                 "transformation_mask_tex",
                 DefaultVertexFormat.NEW_ENTITY,

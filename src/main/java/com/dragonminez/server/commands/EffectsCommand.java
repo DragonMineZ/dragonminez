@@ -120,9 +120,6 @@ public class EffectsCommand {
 				}
 				data.getEffects().clear();
 
-				// Fully reset any fusion state: split an active fusion, cancel an in-progress potara
-				// pose, break the worn pothala earrings, and lift the fusion cooldown — for both members —
-				// so nothing (including the proximity pairing) immediately re-fuses them.
 				UUID partnerUUID = data.getStatus().getFusionPartnerUUID() != null
 						? data.getStatus().getFusionPartnerUUID()
 						: data.getStatus().getPotaraPartnerUUID();

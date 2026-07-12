@@ -151,7 +151,6 @@ public class StatsData {
 	private static final double K = 100.0;
 	private static final double BP_REF_VALUE = 1_200.0;
 	private static final double BP_CURVE_EXPONENT = 1.2;
-	// Peso de las stats de soporte (VIT/ENE) en el BP del jugador (revamp): aportan sin dominar a la ofensiva.
 	private static final double SUPPORT_STAT_BP_WEIGHT = 0.5;
 
 	public float getBattlePower() {
@@ -630,10 +629,6 @@ public class StatsData {
 		return totalOffense * getFormOffenseCostFactor();
 	}
 
-	// Offense used exclusively by the health/energy/stamina drain formulas.
-	// It mirrors the damage formulas but intentionally excludes bonus stats
-	// (equipment/effect StatBonus): only the normal stat values plus their
-	// transformation multipliers and power release are considered.
 	private double getMeleeDamageNoBonus() {
 		double strength = stats.getStrength();
 		double strScaling = getStatScaling("STR");
@@ -669,9 +664,6 @@ public class StatsData {
 		double base = getAdjustedEnergyDrain();
 		if (base <= 0.0) return base;
 		double maxEnergy = getMaxEnergy();
-		// Soften the offense/energy penalty with a square root so high Strength no
-		// longer scales the drain linearly and unbounded. Offense that vastly
-		// exceeds the ki pool still costs more, but far more gently.
 		double rawEnergyRatio = getReducedOffense() / Math.max(1.0, maxEnergy * 1.5);
 		double energyRatio = Math.max(1.0, Math.sqrt(rawEnergyRatio));
 		double formRawEneDrain = 0.0;

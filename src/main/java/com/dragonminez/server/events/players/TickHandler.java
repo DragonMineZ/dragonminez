@@ -204,12 +204,6 @@ public class TickHandler {
 			boolean wasExecuting = serverPlayer.getPersistentData().getBoolean("dmz_was_executing_ki");
 
 			if (isMovementRestricted) {
-				// While a ki attack pins the player in place, only clamp the downward velocity for
-				// grounded/falling players. A player using the custom fly skill (abilities.flying is
-				// kept false, so vanilla gravity still applies) would otherwise keep sinking on the
-				// server while the client holds them hovering — dropping the attack's spawn origin
-				// down around their feet. Creative flight never sinks because it has no gravity, so
-				// mirror that here by hovering flying players in place.
 				boolean flying = data.getSkills().isSkillActive("fly");
 				double restrictedY = flying ? 0.0D : Math.min(serverPlayer.getDeltaMovement().y, 0.0D);
 				serverPlayer.setDeltaMovement(0, restrictedY, 0);
@@ -234,9 +228,6 @@ public class TickHandler {
 				if (wasExecuting) serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
 			}
 
-			// Fusion charging pins the player in place while the dance plays. Facing is held at whatever
-			// it already was (locked to the previous tick, like a ki attack) — no snapping, no forced
-			// direction — so however the two lined themselves up is kept. Movement is frozen too.
 			if (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
 				serverPlayer.setDeltaMovement(0, Math.min(serverPlayer.getDeltaMovement().y, 0.0D), 0);
 				serverPlayer.hasImpulse = true;
@@ -248,9 +239,6 @@ public class TickHandler {
 				serverPlayer.yBodyRot = serverPlayer.yBodyRotO;
 			}
 
-			// Potara proximity pairing: a player wearing a RIGHT pothala looks for a nearby player wearing
-			// the matching LEFT half (same pair id) within 20 blocks and starts the fusion pose. Only the
-			// right-wearer initiates, so it happens once and that player becomes the fusion leader.
 			if (serverPlayer.tickCount % 10 == 0
 					&& data.getStatus().getPotaraPoseTimer() == 0
 					&& !data.getStatus().isFused()
@@ -274,9 +262,6 @@ public class TickHandler {
 				}
 			}
 
-			// Potara pose: while the pothala animation plays, both players are pulled toward each other
-			// with a force that starts gentle and ramps up hard until they meet; the leader then runs the
-			// actual fusion the moment they touch. If the partner is gone or too far, the pose cancels.
 			if (data.getStatus().getPotaraPoseTimer() > 0) {
 				UUID potaraPartnerUUID = data.getStatus().getPotaraPartnerUUID();
 				ServerPlayer potaraPartner = potaraPartnerUUID != null ? serverPlayer.getServer().getPlayerList().getPlayer(potaraPartnerUUID) : null;
@@ -289,7 +274,6 @@ public class TickHandler {
 					double dy = potaraPartner.getY() - serverPlayer.getY();
 					double dz = potaraPartner.getZ() - serverPlayer.getZ();
 					double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-					// Ramp: gentle at first, then very strong (grows with elapsed^2), capped so it snaps together.
 					double speed = Math.min(2.5, 0.02 + elapsed * elapsed * 0.0015);
 					if (dist > 0.05) {
 						double step = Math.min(speed, dist) / dist;
@@ -303,8 +287,6 @@ public class TickHandler {
 					serverPlayer.fallDistance = 0;
 					data.getStatus().setPotaraPoseTimer(elapsed + 1);
 
-					// Only the leader fires the fusion (once), the moment they touch — with a safety cap
-					// so a blocked pull never hangs the pose forever.
 					if (data.getStatus().isPotaraLeader() && (dist < 1.4 || elapsed > 200)) {
 						clearPotaraPose(data);
 						StatsData partnerData = StatsProvider.get(StatsCapability.INSTANCE, potaraPartner).orElse(null);
@@ -1022,8 +1004,6 @@ public class TickHandler {
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 	}
 
-	// Returns the LEFT pothala earring that matches a given RIGHT earring, or null if the item is not
-	// a right pothala. Used to pair the two halves (right-wearer initiates the fusion).
 	private static Item pothalaLeftCounterpart(Item rightItem) {
 		if (rightItem == MainItems.POTHALA_RIGHT.get()) return MainItems.POTHALA_LEFT.get();
 		if (rightItem == MainItems.GREEN_POTHALA_RIGHT.get()) return MainItems.GREEN_POTHALA_LEFT.get();

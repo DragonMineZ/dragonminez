@@ -26,10 +26,8 @@ public class XenoverseHUD {
 	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
 	private static final HudBarAnimator HP_BAR = new HudBarAnimator();
-	private static float displayKiFraction = -1.0f;
-	private static float displayStmFraction = -1.0f;
-	private static long lastBarSmoothNanos = 0L;
-	private static final float BAR_SMOOTH_TAU = 0.30f;
+	private static final HudBarAnimator KI_BAR = new HudBarAnimator();
+	private static final HudBarAnimator STM_BAR = new HudBarAnimator();
 	private static volatile float displayPowerRelease = 0;
 	private static volatile float lastSeenMaxHP = -1.0f;
 	private static volatile float lastSeenMaxKi = -1;
@@ -78,21 +76,18 @@ public class XenoverseHUD {
 				float stmFraction = Mth.clamp(currentStm / (float) maxStm, 0.0f, 1.0f);
 
 				if (lastSeenMaxHP != maxHP) { HP_BAR.reset(hpFraction); lastSeenMaxHP = maxHP; }
-				if (lastSeenMaxKi != maxKi) { displayKiFraction = kiFraction; lastSeenMaxKi = maxKi; }
-				if (lastSeenMaxStm != maxStm) { displayStmFraction = stmFraction; lastSeenMaxStm = maxStm; }
+				if (lastSeenMaxKi != maxKi) { KI_BAR.reset(kiFraction); lastSeenMaxKi = maxKi; }
+				if (lastSeenMaxStm != maxStm) { STM_BAR.reset(stmFraction); lastSeenMaxStm = maxStm; }
 
 				HP_BAR.update(hpFraction);
-				long nowNanos = System.nanoTime();
-				float barDt = lastBarSmoothNanos == 0L ? 0.0f : (nowNanos - lastBarSmoothNanos) / 1_000_000_000.0f;
-				lastBarSmoothNanos = nowNanos;
-				displayKiFraction = smoothBarFraction(displayKiFraction, kiFraction, barDt);
-				displayStmFraction = smoothBarFraction(displayStmFraction, stmFraction, barDt);
+				KI_BAR.update(kiFraction);
+				STM_BAR.update(stmFraction);
 				displayPowerRelease += (powerRelease - displayPowerRelease) * LERP_SPEED * partialTicks;
 				if (Math.abs(displayPowerRelease - powerRelease) <= 1) displayPowerRelease = powerRelease;
 
 				float currentHPBarWidth = HP_BAR.frontFraction() * HP_BAR_MAX_WIDTH;
-				float currentKiBarWidth = displayKiFraction * KI_BAR_MAX_WIDTH;
-				float currentStmBarWidth = displayStmFraction * STM_BAR_MAX_WIDTH;
+				float currentKiBarWidth = KI_BAR.frontFraction() * KI_BAR_MAX_WIDTH;
+				float currentStmBarWidth = STM_BAR.frontFraction() * STM_BAR_MAX_WIDTH;
 
 				RenderSystem.enableBlend();
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -162,15 +157,6 @@ public class XenoverseHUD {
 			}
 		});
 	};
-
-	private static float smoothBarFraction(float current, float target, float dt) {
-		if (current < 0.0f || dt <= 0.0f) return target;
-		if (dt > 0.25f) dt = 0.25f;
-		float blend = 1.0f - (float) Math.exp(-dt / BAR_SMOOTH_TAU);
-		float next = current + (target - current) * blend;
-		if (Math.abs(target - next) <= 0.001f) return target;
-		return next;
-	}
 
 	private static void drawHpChip(GuiGraphics guiGraphics, int x, int y, int u, int v, float front, float ghost, HudBarAnimator.GapType gap, int height) {
 		if (gap == HudBarAnimator.GapType.NONE) return;

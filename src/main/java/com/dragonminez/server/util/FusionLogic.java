@@ -307,7 +307,6 @@ public class FusionLogic {
 		}
 	}
 
-	// Fully breaks the worn pothala earring (if any), so the two can't immediately re-fuse by proximity.
 	public static void breakPothala(ServerPlayer player) {
 		ItemStack stack = CuriosUtil.getFirstStack(player, "head_tech");
 		if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {

@@ -107,8 +107,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		SkinGathererProvider.BodyLayerSink geoConsumer = new SkinGathererProvider.BodyLayerSink() {
 			@Override
 			public void base(ResourceLocation texture, float[] color) {
-				// alpha < 1 (spectator) needs a blending render type; cutout ignores alpha and stays
-				// opaque. Mirrors HairRenderer's opaque/translucent pairing so the whole skin fades.
 				RenderType baseType = alpha < 1.0f ? RenderType.entityTranslucent(texture) : RenderType.entityCutoutNoCull(texture);
 				renderLayerWholeModel(model, poseStack, bufferSource, animatable, baseType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
 			}
@@ -570,8 +568,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha, boolean applyTransformationTint) {
 		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
-		// Match renderFadingColoredLayer: fade the face layers in spectator (alpha < 1) instead of
-		// leaving them opaque on a cutout render type.
 		RenderType renderType = alpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(loc) : ModRenderTypes.skinOverlayCutout(loc);
 		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, applyTransformationTint);
 	}

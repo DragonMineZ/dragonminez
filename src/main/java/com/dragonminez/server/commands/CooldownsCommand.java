@@ -19,16 +19,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * /dmzcooldowns <slot 1-8> <cooldown> [targets]
- *
- * Sets the active (remaining) cooldown of the ki/strike technique equipped in the given hotbar slot.
- * A value of 0 removes the cooldown entirely, letting the technique be used immediately.
- * The value is expressed in ticks (20 ticks = 1 second); this is the same unit techniques apply on fire.
- *
- * Both ki attacks and strike attacks store their active cooldown under the same
- * "TechniqueCooldown_&lt;id&gt;" key, so this works uniformly for either type.
- */
 public class CooldownsCommand {
 
 	private static final String TECHNIQUE_COOLDOWN_PREFIX = "TechniqueCooldown_";
@@ -64,7 +54,6 @@ public class CooldownsCommand {
 				TechniqueData tech = techniques.getUnlockedTechniques().get(techId);
 				if (tech == null) return;
 
-				// setCooldown removes the entry when value <= 0, so a cooldown of 0 clears it.
 				data.getCooldowns().setCooldown(TECHNIQUE_COOLDOWN_PREFIX + techId, cooldownTicks);
 				applied.incrementAndGet();
 				lastPlayer[0] = player.getName().getString();

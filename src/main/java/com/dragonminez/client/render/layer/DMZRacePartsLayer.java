@@ -283,10 +283,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 
 			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
-				// The enrolled tail is a single solid box that overlaps the waist (and the vanilla-skin
-				// jacket "body_layer"). It must be rendered with back-face culling: a NO_CULL translucent
-				// render type draws its far faces and z-fights the body, which paints the tail black from
-				// most camera angles (only recovering the real color at a few random angles).
 				RenderType tailRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
 				partsModel.getBone("tailenrolled").ifPresent(targetBone -> {
 					syncTargetBoneAndParents(targetBone, playerModel);
@@ -477,9 +473,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
 		if (accModel == null) return;
 
-		// Custom translucent type that does NOT write depth, so the semi-transparent lens can never
-		// occlude the player's face on machines where its translucent buffer flushes first. See
-		// ModRenderTypes.SCOUTER_LENS.
 		RenderType accRenderType = ModRenderTypes.scouterLens(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
 
 		accModel.getBone("radar").ifPresent(bone -> {

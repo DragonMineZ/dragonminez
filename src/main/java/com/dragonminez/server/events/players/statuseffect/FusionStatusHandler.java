@@ -32,8 +32,6 @@ public class FusionStatusHandler implements IStatusEffectHandler {
                 if (timer > 0) {
                     data.getStatus().setFusionTimer(timer - 1);
                     if (timer - 1 <= 0) {
-                        // Break the pothala earrings when a potara fusion ends by time, so the two don't
-                        // instantly re-fuse by proximity. Capture the partner before the state is cleared.
                         boolean isPothala = "POTHALA".equals(data.getStatus().getFusionType());
                         UUID timedPartnerUUID = data.getStatus().getFusionPartnerUUID();
                         ServerPlayer timedPartner = timedPartnerUUID != null ? serverPlayer.getServer().getPlayerList().getPlayer(timedPartnerUUID) : null;

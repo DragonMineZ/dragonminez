@@ -189,10 +189,6 @@ public class ClientStatsEvents {
 				}
 			}
 
-			// While charging a fusion, hold whatever facing the player already had (like a ki attack):
-			// reset to the previous tick so the mouse can't turn them. No snapping and no forced
-			// direction — however they were looking when the cast began is kept while the dance plays.
-			// (WASD/jump are already suppressed for any action charge in onMovementInput.)
 			if (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
 				localPlayer.setYRot(localPlayer.yRotO);
 				localPlayer.setXRot(localPlayer.xRotO);

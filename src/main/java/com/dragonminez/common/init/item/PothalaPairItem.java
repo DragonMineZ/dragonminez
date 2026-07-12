@@ -10,11 +10,6 @@ import net.minecraft.world.level.Level;
 
 import java.util.function.Supplier;
 
-/**
- * A "pair of Pothalas" held item. Right-clicking splits it into a matched left and right earring,
- * both stamped with the same random pair id (stored in NBT). Two players wearing the two halves of
- * the same pair (opposite sides, same id) are the ones the proximity fusion pairs together.
- */
 public class PothalaPairItem extends Item {
 
 	public static final String PAIR_ID_KEY = "PothalaPairId";
@@ -33,7 +28,7 @@ public class PothalaPairItem extends Item {
 		ItemStack pair = player.getItemInHand(hand);
 		if (!level.isClientSide) {
 			int pairId = level.random.nextInt();
-			if (pairId == 0) pairId = 1; // 0 means "unpaired", so never hand it out
+			if (pairId == 0) pairId = 1;
 
 			ItemStack left = new ItemStack(leftEarring.get());
 			ItemStack right = new ItemStack(rightEarring.get());

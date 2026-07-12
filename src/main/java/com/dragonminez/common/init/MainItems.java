@@ -85,9 +85,9 @@ public final class MainItems {
 	public static final RegistryObject<Item> GREEN_POTHALA_RIGHT =
 			ITEM_REGISTER.register("green_pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> POTHALA_PAIR =
-			ITEM_REGISTER.register("pothala_pair", () -> new PothalaPairItem(new Item.Properties().fireResistant().stacksTo(16), () -> POTHALA_LEFT.get(), () -> POTHALA_RIGHT.get()));
+			ITEM_REGISTER.register("pothala_pair", () -> new PothalaPairItem(new Item.Properties().fireResistant().stacksTo(1), () -> POTHALA_LEFT.get(), () -> POTHALA_RIGHT.get()));
 	public static final RegistryObject<Item> GREEN_POTHALA_PAIR =
-			ITEM_REGISTER.register("green_pothala_pair", () -> new PothalaPairItem(new Item.Properties().fireResistant().stacksTo(16), () -> GREEN_POTHALA_LEFT.get(), () -> GREEN_POTHALA_RIGHT.get()));
+			ITEM_REGISTER.register("green_pothala_pair", () -> new PothalaPairItem(new Item.Properties().fireResistant().stacksTo(1), () -> GREEN_POTHALA_LEFT.get(), () -> GREEN_POTHALA_RIGHT.get()));
 
 	public static final RegistryObject<Item> RED_SCOUTER =
 			ITEM_REGISTER.register("red_scouter", () -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().defaultDurability(15), DMZCuriosItem.CurioType.HEAD_TECH));
