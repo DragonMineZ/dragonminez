@@ -358,9 +358,11 @@ public class QuestEnemyPreview {
 				return null;
 			}
 		}
-		if (entity instanceof ITextureVariant variantEntity && target.textureVariant >= 0
-				&& variantEntity.getTextureVariant() != target.textureVariant) {
-			variantEntity.setTextureVariant(target.textureVariant);
+		if (entity instanceof ITextureVariant variantEntity) {
+			int desiredVariant = target.textureVariant >= 0 ? target.textureVariant : 0;
+			if (variantEntity.getTextureVariant() != desiredVariant) {
+				variantEntity.setTextureVariant(desiredVariant);
+			}
 		}
 		return entity;
 	}
