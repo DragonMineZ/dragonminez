@@ -56,7 +56,11 @@ public class SkinGathererProvider {
 
 		void base(ResourceLocation texture, float[] color);
 
-		void fading(String layerId, ResourceLocation texture, float[] color);
+		void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha);
+
+		default void fading(String layerId, ResourceLocation texture, float[] color) {
+			fading(layerId, texture, color, 1.0f);
+		}
 	}
 
 	private static final Map<String, ResourceLocation> TEXTURE_CACHE = new ConcurrentHashMap<>();

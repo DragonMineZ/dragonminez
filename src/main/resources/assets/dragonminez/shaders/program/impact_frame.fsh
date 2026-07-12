@@ -46,5 +46,5 @@ void main() {
         gray = 1.0 - gray;
     }
 
-    fragColor = vec4(gray, gray, gray, color.a);
+    fragColor = vec4(gray, gray, gray, 1.0);
 }

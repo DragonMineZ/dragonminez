@@ -63,6 +63,7 @@ public final class KiSenseScan {
 		if (!(target instanceof Player targetPlayer)) return true;
 		StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).orElse(null);
 		if (targetData == null) return true;
+		if (isCloaked(targetPlayer)) return false;
 		if (targetData.getStatus().isAndroidUpgraded()) return false;
 		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
 		return true;
@@ -186,8 +187,13 @@ public final class KiSenseScan {
 		return 0f;
 	}
 
-	private static boolean isCloaked(Player target) {
+	public static boolean isCloaked(Player target) {
 		return CuriosUtil.getFirstStack(target, "head_tech").getItem() == MainItems.ANTI_KI_CLOAK.get();
+	}
+
+	public static boolean hasScouter(Player player) {
+		ItemStack stack = CuriosUtil.getFirstStack(player, "head_tech");
+		return !stack.isEmpty() && stack.getItem().getDescriptionId().contains("scouter");
 	}
 
 	public static ItemStack scouterStack(Player player) {
