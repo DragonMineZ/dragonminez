@@ -578,16 +578,6 @@ final class SideQuestDefaults {
 
 		// --- Frieza Saga: Combat ---
 
-		writeQuestFile(dir, "namek_elder_blessing.json", sidequest(
-				"namek_elder_blessing", "dmz.sidequest.elder_blessing.name", "dmz.sidequest.elder_blessing.desc",
-				"combat", false, "guru", "guru",
-				prereqs("AND", condSaga("frieza_saga", 2)),
-				new JsonObject[]{
-						objKill("#dragonminez:frieza_soldiers", 10),
-						objTalkTo("guru")
-				},
-				new JsonObject[]{ rewTPS(9000) }));
-
 		writeQuestFile(dir, "ginyu_force_warm_up.json", sidequest(
 				"ginyu_force_warm_up", "dmz.sidequest.ginyu_warmup.name", "dmz.sidequest.ginyu_warmup.desc",
 				"combat", true, "goku", "goku",
@@ -667,17 +657,6 @@ final class SideQuestDefaults {
 				new JsonObject[]{ rewTPS(24000) }));
 
 		// --- Android Saga: Story ---
-
-		writeQuestFile(dir, "chi_chi_gohan_worry.json", sidequest(
-				"chi_chi_gohan_worry", "dmz.sidequest.chichi_worry.name", "dmz.sidequest.chichi_worry.desc",
-				"story", false, "goku", "goku",
-				prereqs("AND", condSaga("android_saga", 14)),
-				new JsonObject[]{
-						objItem("minecraft:iron_sword", 1),
-						objItem("minecraft:cooked_beef", 16),
-						objTalkTo("goku")
-				},
-				new JsonObject[]{ rewTPS(15000), rewItem("minecraft:golden_apple", 5) }));
 
 		writeQuestFile(dir, "goku_final_farewell.json", sidequest(
 				"goku_final_farewell", "dmz.sidequest.goku_farewell.name", "dmz.sidequest.goku_farewell.desc",
