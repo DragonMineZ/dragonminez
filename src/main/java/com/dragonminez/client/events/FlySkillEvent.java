@@ -18,7 +18,6 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -140,7 +139,7 @@ public class FlySkillEvent {
 
 								float flySpeedScale = getFlySpeedScale(player);
 								float levelMultiplier = 1.0F + (0.20F * flyLevel);
-								float maxSprint = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale;
+								float maxSprint = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale * data.getResources().getFlightSpeedLimit() / 100;
 
 								player.jumpFromGround();
 								Vec3 look = player.getLookAngle();
@@ -259,7 +258,7 @@ public class FlySkillEvent {
 
 			if (isFlying && !wasFlyingSkillActive) {
 				if (isCombatFly) CombatFlightHandler.initFromMotion(player);
-				else if (!burstDecelActive) initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"));
+				else if (!burstDecelActive) initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit());
 				lastFlightMode = flightMode;
 			}
 
@@ -269,7 +268,7 @@ public class FlySkillEvent {
 					CombatFlightHandler.initFromMotion(player);
 				} else {
 					CombatFlightHandler.reset();
-					initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"));
+					initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit());
 				}
 				player.displayClientMessage(Component.translatable(
 						isCombatFly ? "dragonminez.flight.mode.switched.combat" : "dragonminez.flight.mode.switched.search"), true);
@@ -286,7 +285,7 @@ public class FlySkillEvent {
 						return;
 					}
 					CombatFlightHandler.handle(player, data);
-				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"));
+				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit());
 				handleKiConsumption(player, data, flySkill);
 			} else if (!pendingFlightDisable) {
 				resetFlightState();
@@ -298,11 +297,11 @@ public class FlySkillEvent {
 		});
 	}
 
-	private static void handleFlightMovement(LocalPlayer player, int flyLevel) {
+	private static void handleFlightMovement(LocalPlayer player, int flyLevel, int flightSpeedLimit) {
 		float flySpeedScale = getFlySpeedScale(player);
 		float levelMultiplier = 1.0F + (0.20F * flyLevel);
-		float maxNormalSpeed = NORMAL_MAX_SPEED * levelMultiplier * flySpeedScale;
-		float maxSprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale;
+		float maxNormalSpeed = NORMAL_MAX_SPEED * levelMultiplier * flySpeedScale * flightSpeedLimit / 100;
+		float maxSprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale * flightSpeedLimit / 100;
 
 		Minecraft mc = Minecraft.getInstance();
 		boolean isForward = mc.options.keyUp.isDown();
@@ -425,11 +424,11 @@ public class FlySkillEvent {
 		return (float) Mth.clamp(scale, 0.25, 4.0);
 	}
 
-	private static void initializeFlightVectorFromCurrentMotion(LocalPlayer player, int flyLevel) {
+	private static void initializeFlightVectorFromCurrentMotion(LocalPlayer player, int flyLevel, int flightSpeedLimit) {
 		float speedScale = getFlySpeedScale(player);
 		float levelMultiplier = 1.0F + (0.20F * flyLevel);
-		float maxNormalSpeed = NORMAL_MAX_SPEED * levelMultiplier * speedScale;
-		float maxSprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * speedScale;
+		float maxNormalSpeed = NORMAL_MAX_SPEED * levelMultiplier * speedScale * flightSpeedLimit / 100;
+		float maxSprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * speedScale * flightSpeedLimit / 100;
 		float capSpeed = Math.max(maxNormalSpeed, maxSprintSpeed);
 
 		Vec3 currentMotion = player.getDeltaMovement();

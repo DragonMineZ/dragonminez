@@ -18,6 +18,7 @@ public class Resources {
     private float currentPoise;
     private int release;
     private int releaseLimit;
+    private int flightSpeedLimit;
     private int actionCharge;
     private int alignment;
     private float trainingPoints;
@@ -32,6 +33,7 @@ public class Resources {
         this.currentPoise = 0;
         this.release = 5;
         this.releaseLimit = 0;
+        this.flightSpeedLimit = 100;
         this.actionCharge = 0;
         this.alignment = 100;
         this.trainingPoints = 0;
@@ -45,6 +47,7 @@ public class Resources {
         this.currentPoise = 0;
         this.release = 5;
         this.releaseLimit = 0;
+        this.flightSpeedLimit = 100;
         this.actionCharge = 0;
         this.alignment = 100;
         this.racialSkillCount = 0;
@@ -168,6 +171,7 @@ public class Resources {
         tag.putFloat("CurrentPoise", currentPoise);
         tag.putInt("Release", release);
         tag.putInt("ReleaseLimit", releaseLimit);
+        tag.putInt("FlightSpeed", flightSpeedLimit);
         tag.putInt("FormRelease", actionCharge);
         tag.putInt("Alignment", alignment);
         tag.putFloat("TrainingPointsF", trainingPoints);
@@ -188,6 +192,7 @@ public class Resources {
 
         this.release = tag.getInt("Release");
         this.releaseLimit = tag.getInt("ReleaseLimit");
+        this.flightSpeedLimit = tag.getInt("FlightSpeed");
         this.actionCharge = tag.getInt("FormRelease");
         this.alignment = tag.getInt("Alignment");
 
@@ -205,6 +210,7 @@ public class Resources {
         this.currentPoise = other.currentPoise;
         this.release = other.release;
         this.releaseLimit = other.releaseLimit;
+        this.flightSpeedLimit = other.flightSpeedLimit;
         this.actionCharge = other.actionCharge;
         this.alignment = other.alignment;
         this.trainingPoints = other.trainingPoints;
