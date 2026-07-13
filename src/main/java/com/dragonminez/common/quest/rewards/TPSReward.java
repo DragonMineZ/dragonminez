@@ -1,5 +1,6 @@
 package com.dragonminez.common.quest.rewards;
 
+import com.dragonminez.client.util.NumberFormattingUtil;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -32,7 +33,7 @@ public class TPSReward extends QuestReward {
 	public Component getDescription() {
 		return Component.translatable(
 				"gui.dragonminez.quests.rewards.tps",
-				amount
+				NumberFormattingUtil.formatFullTps(amount)
 		);
 	}
 }
