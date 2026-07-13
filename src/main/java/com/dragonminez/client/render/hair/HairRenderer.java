@@ -72,7 +72,7 @@ public class HairRenderer {
 			inertiaForward = Mth.clamp(fwd * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaSide = Mth.clamp(-side * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaLift = Mth.clamp(vert * gain, -INERTIA_MAX, INERTIA_MAX);
-			if (chargeProgress > 0.0f) inertiaLift += KI_CHARGE_LIFT * physicsLodMultiplier * chargeProgress;
+			if (chargeProgress > 0.0f) inertiaLift -= KI_CHARGE_LIFT * physicsLodMultiplier * chargeProgress;
 		}
 
 		if (!useFromOnly && !useToOnly) {
