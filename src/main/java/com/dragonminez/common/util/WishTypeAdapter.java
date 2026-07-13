@@ -20,18 +20,27 @@ public class WishTypeAdapter implements JsonSerializer<Wish>, JsonDeserializer<W
 		JsonObject jsonObject = json.getAsJsonObject();
 		String type = jsonObject.get(TYPE).getAsString();
 
+		Class<? extends Wish> target = classForType(type);
+		if (target == null) {
+			throw new JsonParseException("Unknown wish type: " + type);
+		}
+		return new GsonBuilder().create().fromJson(json, target);
+	}
+
+	public static Class<? extends Wish> classForType(String type) {
+		if (type == null) return null;
 		return switch (type) {
-			case "item" -> new GsonBuilder().create().fromJson(json, ItemWish.class);
-			case "command" -> new GsonBuilder().create().fromJson(json, CommandWish.class);
-			case "tps" -> new GsonBuilder().create().fromJson(json, TPSWish.class);
-			case "multi_wish" -> new GsonBuilder().create().fromJson(json, MultiItemWish.class);
-			case "skill" -> new GsonBuilder().create().fromJson(json, SkillWish.class);
-			case "passivereset" -> new GsonBuilder().create().fromJson(json, PassiveResetWish.class);
-			case "recustomize" -> new GsonBuilder().create().fromJson(json, ReCustomizeWish.class);
-			case "relocatestats" -> new GsonBuilder().create().fromJson(json, RelocateStatsWish.class);
-			case "changedifficulty" -> new GsonBuilder().create().fromJson(json, ChangeDifficultyWish.class);
-			case "resetstory" -> new GsonBuilder().create().fromJson(json, ResetStoryWish.class);
-			default -> throw new JsonParseException("Unknown wish type: " + type);
+			case "item" -> ItemWish.class;
+			case "command" -> CommandWish.class;
+			case "tps" -> TPSWish.class;
+			case "multi_wish" -> MultiItemWish.class;
+			case "skill" -> SkillWish.class;
+			case "passivereset" -> PassiveResetWish.class;
+			case "recustomize" -> ReCustomizeWish.class;
+			case "relocatestats" -> RelocateStatsWish.class;
+			case "changedifficulty" -> ChangeDifficultyWish.class;
+			case "resetstory" -> ResetStoryWish.class;
+			default -> null;
 		};
 	}
 }

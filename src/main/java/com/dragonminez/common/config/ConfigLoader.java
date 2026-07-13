@@ -3,7 +3,9 @@ package com.dragonminez.common.config;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.diagnostics.JsonLoadReport;
+import com.dragonminez.common.diagnostics.JsonSchema;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 import lombok.AllArgsConstructor;
 
@@ -21,7 +23,11 @@ public class ConfigLoader {
 	public <T> T loadConfig(Path path, Class<T> clazz) throws IOException {
 		try {
 			String content = Files.readString(path, StandardCharsets.UTF_8);
-			return gson.fromJson(content, clazz);
+			JsonElement tree = gson.fromJson(content, JsonElement.class);
+			if (tree != null && tree.isJsonObject()) {
+				JsonSchema.check("config", path.getFileName().toString(), "", tree.getAsJsonObject(), clazz);
+			}
+			return gson.fromJson(tree, clazz);
 		} catch (JsonSyntaxException e) {
 			throw new IOException("Invalid JSON syntax in file: " + path.getFileName(), e);
 		} catch (Exception e) {

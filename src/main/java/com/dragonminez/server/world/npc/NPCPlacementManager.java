@@ -4,6 +4,8 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.alignment.NpcDispositionService;
+import com.dragonminez.common.diagnostics.JsonKeys;
+import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import com.dragonminez.server.world.structure.helper.StructureLocator;
@@ -125,17 +127,28 @@ public final class NPCPlacementManager {
 		}
 	}
 
+	private static final String PLACEMENTS_LABEL = "npcs/" + PLACEMENTS_FILE;
+	private static final java.util.Set<String> ROOT_KEYS = java.util.Set.of("placements", "schema");
+	private static final java.util.Set<String> PLACEMENT_KEYS = java.util.Set.of("id", "entity", "dimension",
+			"npc_id", "model", "texture", "structure", "x", "y", "z", "yaw", "pitch", "surface",
+			"relative_to_spawn", "enabled", "override", "alignment", "relation");
+
 	private static List<NPCPlacement> parsePlacements(@Nullable JsonObject root) {
 		if (root == null || !root.has("placements") || !root.get("placements").isJsonArray()) {
 			return List.of();
 		}
 
+		JsonLoadReport.clear("npcs");
+		JsonKeys.checkObject("npcs", PLACEMENTS_LABEL, "", root, ROOT_KEYS);
+
 		List<NPCPlacement> parsed = new ArrayList<>();
+		int index = 0;
 		for (JsonElement element : root.getAsJsonArray("placements")) {
 			if (!element.isJsonObject()) {
 				continue;
 			}
 
+			JsonKeys.checkObject("npcs", PLACEMENTS_LABEL, "placements[" + index++ + "]", element.getAsJsonObject(), PLACEMENT_KEYS);
 			NPCPlacement placement = parsePlacement(element.getAsJsonObject());
 			if (placement != null) {
 				parsed.add(placement);
