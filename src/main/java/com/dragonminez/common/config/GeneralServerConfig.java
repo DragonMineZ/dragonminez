@@ -670,6 +670,7 @@ public class GeneralServerConfig {
 		private Double tpComfortMultiplier = 1.5;
 		private Double tpHeavyMultiplier = 2.5;
 		private Double maxWeightPenalty = 0.6;
+		private Double maxWeightRequested = 100000d;
 
 		private Double loadDrainComfort = 1.15;
 		private Double loadDrainIdeal = 1.3;
@@ -851,6 +852,11 @@ public class GeneralServerConfig {
 		public Double getMaxWeightPenalty() {
 			Double value = maxWeightPenalty != null ? maxWeightPenalty : 0.6;
 			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getMaxWeightRequestable() {
+			Double value = maxWeightRequested != null ? maxWeightRequested : 100000d;
+			return Math.max(0.0, Math.min(value, Double.MAX_VALUE));
 		}
 
 		public Double getLoadDrainComfort() {

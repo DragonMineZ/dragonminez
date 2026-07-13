@@ -390,7 +390,7 @@ public class MasterTextScreen extends Screen {
 	private void initPiccolo(int x, int y, StatsData stats) {
 		if (secondFunc) {
 			weightBox = new EditBox(this.font, this.width / 2 - 60, y - 28, 120, 16, Component.empty());
-			weightBox.setMaxLength(6);
+			weightBox.setMaxLength(getMaxWeightBoxLength());
 			weightBox.setFilter(s -> s.matches("\\d*"));
 			this.addRenderableWidget(weightBox);
 			this.setInitialFocus(weightBox);
@@ -443,7 +443,7 @@ public class MasterTextScreen extends Screen {
 	private void initWeightService(int x, int y, String name) {
 		if (secondFunc) {
 			weightBox = new EditBox(this.font, this.width / 2 - 60, y - 28, 120, 16, Component.empty());
-			weightBox.setMaxLength(6);
+			weightBox.setMaxLength(getMaxWeightBoxLength());
 			weightBox.setFilter(s -> s.matches("\\d*"));
 			this.addRenderableWidget(weightBox);
 			this.setInitialFocus(weightBox);
@@ -580,5 +580,11 @@ public class MasterTextScreen extends Screen {
 
 	public MutableComponent txt(String text) {
 		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	private int getMaxWeightBoxLength() {
+		var maxWeight = ConfigManager.getServerConfig().getGravity().getMaxWeightRequestable();
+		var wholeValue = String.valueOf(Math.abs(maxWeight.intValue()));
+		return wholeValue.length();
 	}
 }
