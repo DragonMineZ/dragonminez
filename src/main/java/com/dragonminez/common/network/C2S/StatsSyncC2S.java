@@ -164,6 +164,9 @@ public class StatsSyncC2S {
 					character.setGender(msg.gender);
 					character.setCharacterClass(msg.characterClass);
 					if (ConfigManager.getRaceCharacter(msg.raceName) != null) character.setHasSaiyanTail(ConfigManager.getRaceCharacter(msg.raceName).getHasSaiyanTail());
+				} else if (ConfigManager.getRaceStats(character.getRaceName()).getAllClasses().contains(msg.characterClass)) {
+					// Race/gender stay locked after creation, but the recustomization wish may switch class
+					character.setCharacterClass(msg.characterClass);
 				}
 				character.setHairId(msg.hairId);
 				character.setHairBase(msg.customHair);
