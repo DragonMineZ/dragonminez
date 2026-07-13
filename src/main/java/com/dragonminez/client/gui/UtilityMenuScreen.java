@@ -151,6 +151,11 @@ public class UtilityMenuScreen extends ScaledScreen {
 	}
 
 	@Override
+	protected float getMinUiScale() {
+		return 0.25f;
+	}
+
+	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (statsData == null) return;
 

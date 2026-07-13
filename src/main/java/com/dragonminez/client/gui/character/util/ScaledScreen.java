@@ -63,11 +63,16 @@ public abstract class ScaledScreen extends Screen {
 		float availableScale = getAvailableScale(window);
 		float dynamicScale = computeDynamicScale(availableScale);
 		float desiredScale = dynamicScale * multiplier;
-		return clamp(desiredScale, 1.0f, availableScale);
+		float minScale = getMinUiScale();
+		return clamp(desiredScale, minScale, Math.max(minScale, availableScale));
 	}
 
 	protected float computeDynamicScale(float availableScale) {
 		return (float) Math.sqrt(availableScale);
+	}
+
+	protected float getMinUiScale() {
+		return 1.0f;
 	}
 
 	private float getAvailableScale(Window window) {

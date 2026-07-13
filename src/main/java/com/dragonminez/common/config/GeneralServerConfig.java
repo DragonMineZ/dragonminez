@@ -89,7 +89,7 @@ public class GeneralServerConfig {
 	public static class GameplayConfig {
 		private Boolean forceCharacterCreation = true;
 		private Boolean commandOutputOnConsole = true;
-		private Integer reviveCooldownSeconds = 300;
+		private Integer reviveCooldownSeconds = 180;
 		private Double tpGainMultiplier = 1.0;
 		private Double increaseTPGainRelativeToTPCost = 0.5;
 		private Double globalTPCostMultiplier = 1.0;
