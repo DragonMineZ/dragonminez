@@ -2,7 +2,7 @@
 
 The Saga system recreates the Dragon Ball story as a chain of quest battles. Their enemies are special combat NPCs whose behavior is driven by an **AI tier** — how smart and dangerous they are in a fight.
 
-> AI tier is set **per encounter** (in the saga/quest data), so the *same* character can appear at different tiers in different fights. The default is Tier 1. See [[Custom Quests, Sagas & Sidequests|Custom-Quests-Sagas-and-Sidequests]] to edit encounters, and [[Raids (W.I.P)|Raids]] for the raid feature.
+> AI tier is set **per encounter** (in the saga/quest data), so the *same* character can appear at different tiers in different fights. If a fight's `AITier` isn't set explicitly, it now defaults to the player's chosen difficulty (Easy → 1, Normal → 2, Hard → 3) instead of a flat Tier 1. See [[Custom Quests, Sagas & Sidequests|Custom-Quests-Sagas-and-Sidequests]] to edit encounters, and [[Raids (W.I.P)|Raids]] for the raid feature.
 
 ## AI tiers
 

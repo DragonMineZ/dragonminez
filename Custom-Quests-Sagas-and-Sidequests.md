@@ -108,7 +108,7 @@ Each entry in `objectives` needs a `type` plus that type's fields:
 | `type` | Fields | Notes |
 | :-- | :-- | :-- |
 | `ITEM` | `item`, `count` | Turn in/collect an item. |
-| `KILL` | `entity`, `count`, `health`*, `meleeDamage`*, `kiDamage`*, `spawn`*, `count_mode`*, `AITier`*, `TextureVariant`*, `CanTransform`* | `entity` can be a registry id or an entity tag (`#minecraft:zombies`). `spawn`: `QUEST` (spawned for the quest) or `NATURAL`. `count_mode`: `QUEST_SPAWNED_ONLY` or `ANY_MATCHING`. |
+| `KILL` | `entity`, `count`, `health`*, `meleeDamage`*, `kiDamage`*, `spawn`*, `count_mode`*, `AITier`*, `TextureVariant`*, `canTransform`*, `TransformHealth`*, `TransformMeleeDamage`*, `TransformKiDamage`*, `TransformHealthMultiplier`*, `TransformMeleeDamageMultiplier`*, `TransformKiMultiplier`*, `TransformTriggerPercent`* | `entity` can be a registry id or an entity tag (`#minecraft:zombies`). `spawn`: `QUEST` (spawned for the quest) or `NATURAL`. `count_mode`: `QUEST_SPAWNED_ONLY` or `ANY_MATCHING`. See [Kill objective: AI tier and transformations](#kill-objective-ai-tier-and-transformations) below. |
 | `INTERACT` | `entity`*, `entityName`* | Right-click interact with a matching entity. |
 | `STRUCTURE` | `structure` | Player must enter a generated structure. |
 | `BIOME` | `biome` | Player must be standing in this biome (or biome tag). |
@@ -120,9 +120,26 @@ Each entry in `objectives` needs a `type` plus that type's fields:
 
 `*` optional, sensible defaults apply. Source: `QuestParser.parseObjective`, classes under `common/quest/objectives/`.
 
+### Kill objective: AI tier and transformations
+
+- `AITier` is optional. If omitted (or negative), the spawned enemy's AI tier is derived from the **player's chosen difficulty** at spawn time: `EASY` → tier 1, `NORMAL` → tier 2, `HARD` → tier 3. Set `AITier` explicitly to force a specific tier regardless of difficulty.
+- `canTransform` (boolean, default `true`) controls whether the enemy is allowed to transform mid-fight at all. Set it to `false` to lock the enemy out of transforming entirely — this is enforced server-side, not just cosmetic.
+- When `canTransform` is `true`, the seven `Transform*` fields let you tune the enemy's **transformed** stats without touching global config defaults. All are optional (`null` = fall back to the global `entities.json` transformation defaults):
+  - `TransformHealth`, `TransformMeleeDamage`, `TransformKiDamage` — absolute stat values for the transformed form.
+  - `TransformHealthMultiplier`, `TransformMeleeDamageMultiplier`, `TransformKiMultiplier` — multipliers applied to the base (pre-transform) stats instead of absolute values.
+  - Absolute values take precedence over multipliers when both are set for the same stat.
+  - `TransformTriggerPercent` — fraction of max health (`0.0`–`1.0`) at which the enemy triggers its transformation.
+
+```json
+{ "type": "KILL", "entity": "dragonminez:saga_vegeta", "count": 1, "health": 900.0, "meleeDamage": 40.0, "kiDamage": 60.0,
+  "canTransform": true, "TransformTriggerPercent": 0.5, "TransformHealthMultiplier": 1.8, "TransformMeleeDamageMultiplier": 1.6 }
+```
+
 ## Reward types
 
-Each entry in `rewards` needs a `type` plus its fields. Prefix the type with `hard:` or `normal:` (e.g. `"hard:ITEM"`) to only grant it on a specific difficulty — no prefix grants it on all difficulties.
+Each entry in `rewards` needs a `type` plus its fields. Every reward type also accepts an optional `difficulty` field to restrict which player difficulty it's granted on.
+
+> **Changed:** the old `hard:`/`normal:` type-string prefix (e.g. `"hard:ITEM"`) has been **removed** — a leftover prefixed type now fails to match any known reward type, so the reward is dropped and reported as an unknown type in the JSON load report (see below). Use the `difficulty` field described below instead.
 
 | `type` | Fields | Notes |
 | :-- | :-- | :-- |
@@ -134,7 +151,15 @@ Each entry in `rewards` needs a `type` plus its fields. Prefix the type with `ha
 | `KI_TECHNIQUE` | `code` | Grants a ki technique from an exported technique code (aliases: `techniqueCode`/`technique_code`). |
 | `COMMAND` | `command`, `translationKey`* | Runs a command server-side with `%player%` replaced by the player's name. |
 
-Source: `QuestParser.parseReward`, classes under `common/quest/rewards/`.
+Every reward: `difficulty`* — an **allow-set** of difficulties this reward is granted on (aliases: `difficulties`/`difficultyType`/`minDifficulty`). Accepts a JSON array (`["NORMAL","HARD"]`), a comma/space-separated string (`"NORMAL, HARD"`), or a single value (`"HARD"`). Valid values: `EASY`, `NORMAL`, `HARD`. Omitted/empty = granted on all difficulties. This is a set membership check, **not** a minimum threshold — `"EASY"` alone means Easy-only, and `["EASY","HARD"]` (skipping Normal) is valid. Unknown tokens are dropped.
+
+```json
+{ "type": "ITEM", "item": "dragonminez:senzu_bean", "count": 1, "difficulty": ["NORMAL", "HARD"] }
+```
+
+`ITEM`/`TPS`/`ALIGNMENT` reward amounts are scaled by the difficulty's `questRewardMultiplier` (from `general-server.json`'s easy/hard mode settings) when claimed. `SKILL`/`TRANSFORMATION`/`KI_TECHNIQUE`/`COMMAND` are unlock-type rewards and are never scaled.
+
+Source: `QuestParser.parseReward`, classes under `common/quest/rewards/`, `Difficulty.java`.
 
 ## Prerequisites & requirements
 
@@ -213,6 +238,16 @@ Example (`dragonminez/sidequests/collection/bulma_gero_blueprints.json`):
 ## Quest giver / turn-in NPCs
 
 `quest_giver` and `turn_in` reference an NPC by id — the same id used by quest NPC entities and master/trainer NPCs. DMZ indexes quests by both fields so an NPC can show "available quest" markers and accept turn-ins without extra wiring on your end. Both fields are optional; omit or set `null` if the quest isn't tied to an NPC (e.g. a purely exploration/kill-based saga quest).
+
+## Unknown/misspelled keys are reported, not silently ignored
+
+Every quest, saga, objective, reward, prerequisite/requirement condition, and structure hint is checked against an explicit allow-list of fields (`QuestParser.validate`/`validateSaga`). Any key that isn't recognized (typo, wrong casing, leftover field from an old schema) is **not** silently dropped — it's logged and surfaced to players via the in-game JSON load report on login (gated by `developer.reportJsonProblemsInChat`, default on), plus the server console. The entry still loads with the rest of its valid fields; only the unrecognized key is flagged. Use this to catch typos (e.g. `CanTransform` instead of `canTransform`) instead of silently having the field do nothing.
+
+Keys starting with `_`, `$`, or `//` are treated as comments and never flagged, so you can leave notes for yourself directly in the JSON.
+
+## `defaultsVersion`
+
+Every generated quest, saga, and sidequest file is stamped with a `defaultsVersion` field (a semver string). This is managed automatically by `QuestUpgrader` to three-way-merge your edits against DMZ's shipped defaults whenever the built-in content changes — you don't need to set it by hand on your own custom content, and DMZ won't touch a file that doesn't carry a version it recognizes as one of its own defaults. See [[Reloading and updating changes|Reloading-and-updating-changes]] for how upgrades are reported.
 
 ## Translation keys
 
