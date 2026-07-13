@@ -200,8 +200,9 @@ public class ClientStatsEvents {
 			if (blockLockTicks > 0) blockLockTicks--;
 			if (isChargingTechnique || isDescendKeyPressed || blockLockTicks > 0) isBlockKeyDown = false;
 
+			boolean isStackMode = data.getStatus().getSelectedAction() == ActionMode.STACK;
 			var nextForm = TransformationsHelper.getNextAvailableForm(data);
-			boolean isOozaruNextForm = TransformationsHelper.isOozaruForm(nextForm);
+			boolean isOozaruNextForm = !isStackMode && TransformationsHelper.isOozaruForm(nextForm);
 			boolean canAutoChargeOozaru = !isActionRestricted && TransformationsHelper.shouldAutoChargeOozaru(localPlayer, data);
 			boolean shouldChargeAction = isActionKeyPressed || canAutoChargeOozaru;
 
