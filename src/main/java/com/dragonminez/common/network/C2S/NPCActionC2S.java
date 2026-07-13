@@ -66,7 +66,10 @@ public class NPCActionC2S {
 					player.displayClientMessage(blocker, true);
 					return;
 				}
-				if (!isNpcInRange(player, packet.npcName)) {
+				// The shadow-dummy spar is sent as ("popo", 1) from every skill master's
+				// training menu, not just Popo's dialogue — any master in range validates it.
+				boolean shadowDummySpar = "popo".equals(packet.npcName) && packet.actionId == 1;
+				if (shadowDummySpar ? !isAnyMasterInRange(player) : !isNpcInRange(player, packet.npcName)) {
 					return;
 				}
 				switch (packet.npcName) {
@@ -96,6 +99,13 @@ public class NPCActionC2S {
 						player.getBoundingBox().inflate(NPC_INTERACTION_RANGE),
 						npc -> npcName.equals(npc.getMasterName()))
 				.stream().findFirst().isPresent();
+	}
+
+	private static boolean isAnyMasterInRange(ServerPlayer player) {
+		return !player.serverLevel().getEntitiesOfClass(MastersEntity.class,
+						player.getBoundingBox().inflate(NPC_INTERACTION_RANGE),
+						npc -> npc.getMasterName() != null && !npc.getMasterName().isBlank())
+				.isEmpty();
 	}
 
 	private static void handleKarin(ServerPlayer player, StatsData data, int action) {
