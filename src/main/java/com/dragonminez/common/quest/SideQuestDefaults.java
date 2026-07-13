@@ -1207,7 +1207,7 @@ final class SideQuestDefaults {
 						objStructure("dragonminez:kamilookout"),
 						objTalkTo("dende")
 				},
-				new JsonObject[]{ rewTPS(60000) }));
+				new JsonObject[]{ rewTPS(750) }));
 
 		writeQuestFile(dir, "garlic_jr_spice_boys.json", sidequest(
 				"garlic_jr_spice_boys", "dmz.sidequest.garlic_jr_spice_boys.name", "dmz.sidequest.garlic_jr_spice_boys.desc",
@@ -1218,7 +1218,7 @@ final class SideQuestDefaults {
 						objQuestKill("dragonminez:saga_garlick_jr", 3),
 						objTalkTo("popo")
 				},
-				new JsonObject[]{ rewTPS(72000) }));
+				new JsonObject[]{ rewTPS(10000) }));
 
 		// --- Dr. Wheelo arc ---
 
@@ -1232,7 +1232,7 @@ final class SideQuestDefaults {
 						objItem("minecraft:redstone", 24),
 						objTalkTo("bulma")
 				},
-				new JsonObject[]{ rewTPS(88000) }));
+				new JsonObject[]{ rewTPS(15000) }));
 
 		// --- Turles arc ---
 
@@ -1246,7 +1246,7 @@ final class SideQuestDefaults {
 						objItem("minecraft:apple", 16),
 						objTalkTo("piccolo")
 				},
-				new JsonObject[]{ rewTPS(112000) }));
+				new JsonObject[]{ rewTPS(22000) }));
 
 		// --- Lord Slug arc ---
 
@@ -1259,7 +1259,7 @@ final class SideQuestDefaults {
 						objQuestKill("dragonminez:saga_slug_soldier", 20, 1040, 66, 91),
 						objTalkTo("guru")
 				},
-				new JsonObject[]{ rewTPS(128000) }));
+				new JsonObject[]{ rewTPS(28000) }));
 
 		// --- Cooler arc ---
 
@@ -1273,7 +1273,7 @@ final class SideQuestDefaults {
 						objQuestKill("dragonminez:saga_neiz", 4, 5304, 309, 357),
 						objTalkTo("krillin")
 				},
-				new JsonObject[]{ rewTPS(152000) }));
+				new JsonObject[]{ rewTPS(60000) }));
 
 		// --- Big Gete Star arc ---
 
@@ -1286,7 +1286,7 @@ final class SideQuestDefaults {
 						objItem("dragonminez:gete_scrap", 8),
 						objTalkTo("bulma")
 				},
-				new JsonObject[]{ rewTPS(180000), rewItem("dragonminez:gete_ingot", 4) }));
+				new JsonObject[]{ rewTPS(78000), rewItem("dragonminez:gete_ingot", 4) }));
 
 		// --- Cold androids arc (Androids 13/14/15) ---
 
@@ -1301,7 +1301,7 @@ final class SideQuestDefaults {
 						objItem("dragonminez:gete_scrap", 6),
 						objTalkTo("bulma")
 				},
-				new JsonObject[]{ rewTPS(208000), rewItem("dragonminez:gete_ingot", 3) }));
+				new JsonObject[]{ rewTPS(105000), rewItem("dragonminez:gete_ingot", 3) }));
 
 		// --- Bojack arc ---
 
@@ -1316,7 +1316,7 @@ final class SideQuestDefaults {
 						objQuestKill("dragonminez:saga_gokua", 1),
 						objTalkTo("gohan")
 				},
-				new JsonObject[]{ rewTPS(260000) }));
+				new JsonObject[]{ rewTPS(175000) }));
 
 		// --- Otherworld arc (Pikkon / Janemba) ---
 
