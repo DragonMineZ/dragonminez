@@ -425,8 +425,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
 		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
 
-		boolean hasPothalaRight = headTechStack.getItem().getDescriptionId().contains("pothala_right");
-		boolean hasPothalaLeft = headTechStack.getItem().getDescriptionId().contains("pothala_left");
+		String headTechId = headTechStack.getItem().getDescriptionId();
+		boolean hasPothalaPair = headTechId.contains("pothala_pair");
+		boolean hasPothalaRight = hasPothalaPair || headTechId.contains("pothala_right");
+		boolean hasPothalaLeft = hasPothalaPair || headTechId.contains("pothala_left");
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));

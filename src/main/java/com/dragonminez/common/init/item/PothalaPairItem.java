@@ -46,9 +46,6 @@ public class PothalaPairItem extends Item {
 			setPairId(left, pairId);
 			setPairId(right, pairId);
 
-			// Give the earrings while the pair item still occupies the hand slot; shrinking
-			// first frees that slot, addItem places the left earring there, and vanilla's
-			// useItem then wipes the hand slot because the returned stack is empty.
 			giveOrDrop(player, left);
 			giveOrDrop(player, right);
 			if (!player.getAbilities().instabuild) pair.shrink(1);
@@ -58,6 +55,8 @@ public class PothalaPairItem extends Item {
 
 	@Override
 	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+		tooltip.add(Component.translatable("item.dragonminez.pothala.pair.tooltip.split").withStyle(ChatFormatting.GRAY));
+		tooltip.add(Component.translatable("item.dragonminez.pothala.pair.tooltip.aura").withStyle(ChatFormatting.GRAY));
 		appendPairIdTooltip(stack, tooltip);
 		super.appendHoverText(stack, level, tooltip, flag);
 	}

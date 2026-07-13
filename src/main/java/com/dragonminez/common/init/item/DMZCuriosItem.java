@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.item;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -30,6 +31,12 @@ public class DMZCuriosItem extends Item implements ICurioItem {
 
 	@Override
 	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+		String id = stack.getItem().getDescriptionId();
+		if (id.contains("pothala_right")) {
+			tooltip.add(Component.translatable("item.dragonminez.pothala.right.tooltip").withStyle(ChatFormatting.GRAY));
+		} else if (id.contains("pothala_left")) {
+			tooltip.add(Component.translatable("item.dragonminez.pothala.left.tooltip").withStyle(ChatFormatting.GRAY));
+		}
 		PothalaPairItem.appendPairIdTooltip(stack, tooltip);
 		super.appendHoverText(stack, level, tooltip, flag);
 	}
