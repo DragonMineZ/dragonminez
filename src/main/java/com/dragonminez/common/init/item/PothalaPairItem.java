@@ -46,9 +46,12 @@ public class PothalaPairItem extends Item {
 			setPairId(left, pairId);
 			setPairId(right, pairId);
 
-			pair.shrink(1);
+			// Give the earrings while the pair item still occupies the hand slot; shrinking
+			// first frees that slot, addItem places the left earring there, and vanilla's
+			// useItem then wipes the hand slot because the returned stack is empty.
 			giveOrDrop(player, left);
 			giveOrDrop(player, right);
+			if (!player.getAbilities().instabuild) pair.shrink(1);
 		}
 		return InteractionResultHolder.sidedSuccess(pair, level.isClientSide());
 	}
