@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "dragonminez:namek_frog",
+      "required": false
+    },
+    {
+      "id": "dragonminez:namek_frog_ginyu",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "dragonminez:master_karin",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_goku",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_kaiosama",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_roshi",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_uranai",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_enma",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_dende",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_gero",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_popo",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_guru",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_toribot",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_piccolo",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_gohan",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_babidi",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_oldkai",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_cell",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_vegeta",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_frieza",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_trunks",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_yamcha",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_krillin",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_beerus",
+      "required": false
+    },
+    {
+      "id": "dragonminez:master_whis",
+      "required": false
+    },
+    {
+      "id": "dragonminez:spacepod",
+      "required": false
+    },
+    {
+      "id": "dragonminez:flying_nimbus",
+      "required": false
+    },
+    {
+      "id": "dragonminez:black_nimbus",
+      "required": false
+    },
+    {
+      "id": "dragonminez:robotxv",
+      "required": false
+    },
+    {
+      "id": "dragonminez:punch_machine",
+      "required": false
+    },
+    {
+      "id": "dragonminez:majin_skill",
+      "required": false
+    },
+    {
+      "id": "dragonminez:shenron",
+      "required": false
+    },
+    {
+      "id": "dragonminez:porunga",
+      "required": false
+    }
+  ]
+}
