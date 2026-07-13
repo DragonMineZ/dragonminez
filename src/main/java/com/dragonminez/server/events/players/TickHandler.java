@@ -1,11 +1,9 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Env;
-import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
-import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
@@ -42,7 +40,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -52,7 +49,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
@@ -282,19 +278,24 @@ public class TickHandler {
 					data.getStatus().setBackWeapon(newBackWeapon);
 				}
 
-				ItemStack headTechStack = CuriosUtil.getFirstStack(serverPlayer, "head_tech");
-				String itemId = headTechStack.getDescriptionId();
+				ItemStack scouterStack = CuriosUtil.getFirstStackForItem(serverPlayer, "head_tech", "scouter");
+				if (!scouterStack.isEmpty()) {
+					String scouterItemId = scouterStack.getDescriptionId();
+					if (!data.getStatus().getScouterItem().equals(scouterItemId)) {
+						data.getStatus().setScouterItem(scouterItemId);
+					}
+				} else if (!data.getStatus().getScouterItem().isEmpty()) {
+					data.getStatus().setScouterItem("");
+				}
 
-				boolean hasScouter = itemId.contains("scouter");
-				if (hasScouter) {
-					if (!data.getStatus().getScouterItem().equals(itemId)) data.getStatus().setScouterItem(itemId);
-				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
-
-				boolean hasPothala = itemId.contains("pothala");
-				if (hasPothala) {
-					boolean isGreenPothala = itemId.contains("green");
+				ItemStack pothalaStack = CuriosUtil.getFirstStackForItem(serverPlayer, "head_tech", "pothala");
+				if (!pothalaStack.isEmpty()) {
+					String pothalaItemId = pothalaStack.getDescriptionId();
+					boolean isGreenPothala = pothalaItemId.contains("green");
 					data.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
-				} else if (!data.getStatus().getPothalaColor().isEmpty()) data.getStatus().setPothalaColor("");
+				} else if (!data.getStatus().getPothalaColor().isEmpty()) {
+					data.getStatus().setPothalaColor("");
+				}
 			}
 
 			if (tickCounter % 20 == 0) {

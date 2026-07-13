@@ -22,7 +22,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -97,7 +96,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		if (isLimb) {
 			if (!animatable.isSpectator() && !stats.getCharacter().isOozaruCached()) {
-				renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+				renderWeights(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
 			}
 			bufferSource.getBuffer(renderType);
 			return;
@@ -112,11 +111,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (!animatable.isSpectator()) {
 			if ("head".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
 				renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-				renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
 			} else {
 				renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
 				if ("body".equals(anchor) && !stats.getCharacter().isOozaruCached()) {
-					renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
+					renderWeights(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
 				}
 			}
 		}
@@ -417,10 +415,20 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
+		for (int i = 0; i < getCuriosSlotSize(animatable, "head_tech"); i++) {
+			ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", i);
+			renderPothala(poseStack, animatable,  playerModel, bufferSource, partialTick, packedLight, headTechStack);
+			renderScouter(poseStack, animatable,  playerModel, bufferSource, partialTick, packedLight, headTechStack);
 
-		boolean hasPothalaRight = headTechStack.getItem().getDescriptionId().contains("pothala_right");
-		boolean hasPothalaLeft = headTechStack.getItem().getDescriptionId().contains("pothala_left");
+			ItemStack cosmeticHeadTechStack = getRenderableCosmetic(animatable, "head_tech", i);
+			renderPothala(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight, cosmeticHeadTechStack);
+			renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight, cosmeticHeadTechStack);
+		}
+	}
+
+	private void renderPothala(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight, ItemStack stack) {
+		boolean hasPothalaRight = stack.getItem().getDescriptionId().contains("pothala_right");
+		boolean hasPothalaLeft = stack.getItem().getDescriptionId().contains("pothala_left");
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
@@ -432,7 +440,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel accModel = getGeoModel().getBakedModel(ACCESORIES_MODEL);
 		if (accModel == null) return;
 
-		String pothalaColor = stats.getStatus().getPothalaColor().contains("green") ? "green" : "yellow";
+		String pothalaColor = stack.getDescriptionId().contains("green") ? "green" : "yellow";
 		RenderType accRenderType = RenderType.entityCutoutNoCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + pothalaColor + "pothala.png"));
 
 		if (hasPothalaRight || isFused) {
@@ -450,11 +458,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 	}
 
-	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		ItemStack headTechStack = getRenderableCurio(animatable, "head_tech", 0);
-		if (headTechStack.isEmpty()) return;
+	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight, ItemStack stack) {
+		if (stack.isEmpty()) return;
 
-		Item item = headTechStack.getItem();
+		Item item = stack.getItem();
 		String color = null;
 
 		if (item == MainItems.GREEN_SCOUTER.get()) color = "green";
@@ -475,9 +482,18 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		});
 	}
 
-	private void renderWeightedItems(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String anchor, float partialTick, int packedLight, float alpha) {
-		ItemStack weightStack = getRenderableCurio(animatable, "weights", 0);
-		if (weightStack.isEmpty() || !(weightStack.getItem() instanceof WeightItem weightItem)) return;
+	private void renderWeights(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String anchor, float partialTick, int packedLight, float alpha) {
+		for (int i = 0; i < getCuriosSlotSize(animatable, "weights"); i++) {
+			ItemStack weightStack = getRenderableCurio(animatable, "weights", i);
+			renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha, weightStack);
+
+			ItemStack cosmeticWeightStack = getRenderableCosmetic(animatable, "weights", i);
+			renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha, cosmeticWeightStack);
+		}
+	}
+
+	private void renderWeightedItems(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String anchor, float partialTick, int packedLight, float alpha, ItemStack stack) {
+		if (stack.isEmpty() || !(stack.getItem() instanceof WeightItem weightItem)) return;
 
 		BakedGeoModel weightModel = getGeoModel().getBakedModel(WEIGHTED_ITEMS_MODEL);
 		if (weightModel == null) return;
@@ -607,5 +623,27 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (!stacksHandler.getRenders().get(index)) return ItemStack.EMPTY;
 
 		return stacksHandler.getStacks().getStackInSlot(index);
+	}
+
+	private ItemStack getRenderableCosmetic(T animatable, String slotId, int index) {
+		var inventory = CuriosApi.getCuriosInventory(animatable).orElse(null);
+		if (inventory == null) return ItemStack.EMPTY;
+
+		var stacksHandler = inventory.getCurios().get(slotId);
+		if (stacksHandler == null) return ItemStack.EMPTY;
+
+		if (!stacksHandler.getRenders().get(index)) return ItemStack.EMPTY;
+
+		return stacksHandler.getCosmeticStacks().getStackInSlot(index);
+	}
+
+	private int getCuriosSlotSize(T animatable, String slotId) {
+		var inventory = CuriosApi.getCuriosInventory(animatable).orElse(null);
+		if (inventory == null) return 0;
+
+		var stacksHandler = inventory.getCurios().get(slotId);
+		if (stacksHandler == null) return 0;
+
+		return stacksHandler.getSlots();
 	}
 }

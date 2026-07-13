@@ -438,7 +438,7 @@ public class ClientStatsEvents {
 	}
 
 	private static ItemStack getScouterStack(Player player) {
-		return CuriosUtil.getFirstStack(player, "head_tech");
+		return CuriosUtil.getFirstStackForItem(player, "head_tech", "scouter");
 	}
 
 	@SubscribeEvent

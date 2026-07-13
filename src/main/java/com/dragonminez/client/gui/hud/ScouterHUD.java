@@ -50,7 +50,7 @@ public class ScouterHUD {
 	private static final int BP_LIMIT = 150000000;
 
 	private static ItemStack getScouterStack(Player player) {
-		return CuriosUtil.getFirstStack(player, "head_tech");
+		return CuriosUtil.getFirstStackForItem(player, "head_tech", "scouter");
 	}
 
 	@SubscribeEvent
@@ -60,7 +60,7 @@ public class ScouterHUD {
 		if (mc.player == null || mc.level == null) return;
 
 		ItemStack scouterStack = getScouterStack(mc.player);
-		if (scouterStack.isEmpty() || !scouterStack.getDescriptionId().contains("scouter")) {
+		if (scouterStack.isEmpty()) {
 			isRenderingInfo = false;
 			return;
 		}
@@ -108,7 +108,7 @@ public class ScouterHUD {
 
 	/** Bulma's Anti-Ki Cloak: a worn cloak hides the wearer's BP from scouters. */
 	private static boolean isCloaked(Player target) {
-		return CuriosUtil.getFirstStack(target, "head_tech").getItem() == MainItems.ANTI_KI_CLOAK.get();
+		return CuriosUtil.getFirstStackForItem(target, "head_tech", "anti_ki_cloak").getItem() == MainItems.ANTI_KI_CLOAK.get();
 	}
 
 	private static double getEntityBP(LivingEntity entity) {
@@ -131,7 +131,7 @@ public class ScouterHUD {
 		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
 
 		ItemStack scouterStack = getScouterStack(mc.player);
-		if (scouterStack.isEmpty() || !scouterStack.getItem().getDescriptionId().contains("scouter")) return;
+		if (scouterStack.isEmpty()) return;
 
 		Item currentItem = scouterStack.getItem();
 		ResourceLocation currentTexture = currentItem == MainItems.BLUE_SCOUTER.get() ? SCOUTER_BLUE :
