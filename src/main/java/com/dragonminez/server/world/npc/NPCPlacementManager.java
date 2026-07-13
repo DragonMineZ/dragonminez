@@ -277,16 +277,19 @@ public final class NPCPlacementManager {
 
 	@Nullable
 	private static Entity findPlacedEntity(ServerLevel level, String placementId) {
-		Entity first = null;
+		List<Entity> matches = new ArrayList<>();
 		for (Entity entity : level.getAllEntities()) {
-			if (placementId.equals(entity.getPersistentData().getString(PLACEMENT_TAG))) {
-				if (first == null) {
-					first = entity;
-				} else {
-					entity.discard();
-					LogUtil.warn(Env.SERVER, "NPCPlacementManager: removed duplicate entity for placement '{}'", placementId);
-				}
+			if (entity != null && placementId.equals(entity.getPersistentData().getString(PLACEMENT_TAG))) {
+				matches.add(entity);
 			}
+		}
+		if (matches.isEmpty()) {
+			return null;
+		}
+		Entity first = matches.get(0);
+		for (int i = 1; i < matches.size(); i++) {
+			matches.get(i).discard();
+			LogUtil.warn(Env.SERVER, "NPCPlacementManager: removed duplicate entity for placement '{}'", placementId);
 		}
 		return first;
 	}
