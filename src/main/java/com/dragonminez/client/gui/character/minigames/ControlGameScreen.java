@@ -19,8 +19,8 @@ public class ControlGameScreen extends BaseMinigameScreen {
 	private TrainingConfig.ControlConfig cfg;
 
 	private int barLeft, barRight, barY;
-	private float markerX;
-	private float zoneCenter;
+	private float cursorX;
+	private float zoneMid;
 	private int zoneDir = 1;
 	private int dirChangeTimer = DIR_CHANGE_INTERVAL_TICKS;
 	private int zoneWidth;
@@ -39,8 +39,8 @@ public class ControlGameScreen extends BaseMinigameScreen {
 		this.barLeft = cx - cfg.getBarWidth() / 2;
 		this.barRight = cx + cfg.getBarWidth() / 2;
 		this.barY = this.height / 2;
-		this.markerX = cx;
-		this.zoneCenter = cx;
+		this.cursorX = cx;
+		this.zoneMid = cx;
 		this.zoneWidth = cfg.getBaseZoneWidth();
 		this.holdProgress = 0;
 		this.levelTicksLeft = cfg.getLevelTimeLimitTicks();
@@ -64,23 +64,23 @@ public class ControlGameScreen extends BaseMinigameScreen {
 		}
 
 		float half = zoneWidth / 2.0f;
-		zoneCenter += (float) (zoneDir * zoneSpeed());
-		if (zoneCenter - half <= barLeft) {
-			zoneCenter = barLeft + half;
+		zoneMid += (float) (zoneDir * zoneSpeed());
+		if (zoneMid - half <= barLeft) {
+			zoneMid = barLeft + half;
 			zoneDir = 1;
-		} else if (zoneCenter + half >= barRight) {
-			zoneCenter = barRight - half;
+		} else if (zoneMid + half >= barRight) {
+			zoneMid = barRight - half;
 			zoneDir = -1;
 		}
 
 		long window = Minecraft.getInstance().getWindow().getWindow();
 		boolean left = isHeld(window, GLFW.GLFW_KEY_LEFT) || isHeld(window, GLFW.GLFW_KEY_A) || isHeld(window, KeyBinds.RHYTHM_LEFT.getKey().getValue());
 		boolean right = isHeld(window, GLFW.GLFW_KEY_RIGHT) || isHeld(window, GLFW.GLFW_KEY_D) || isHeld(window, KeyBinds.RHYTHM_RIGHT.getKey().getValue());
-		if (left) markerX -= (float) cfg.getMarkerSpeed();
-		if (right) markerX += (float) cfg.getMarkerSpeed();
-		markerX = Math.max(barLeft, Math.min(barRight, markerX));
+		if (left) cursorX -= (float) cfg.getMarkerSpeed();
+		if (right) cursorX += (float) cfg.getMarkerSpeed();
+		cursorX = Math.max(barLeft, Math.min(barRight, cursorX));
 
-		boolean inside = Math.abs(markerX - zoneCenter) <= half;
+		boolean inside = Math.abs(cursorX - zoneMid) <= half;
 		if (inside) {
 			holdProgress++;
 			if (holdProgress >= cfg.getHoldDurationTicks()) levelCleared();
@@ -99,7 +99,7 @@ public class ControlGameScreen extends BaseMinigameScreen {
 		zoneWidth = Math.max(cfg.getMinZoneWidth(), cfg.getBaseZoneWidth() - levelsCleared * cfg.getZoneWidthDecreasePerLevel());
 		holdProgress = 0;
 		levelTicksLeft = cfg.getLevelTimeLimitTicks();
-		zoneCenter = this.width / 2.0f;
+		zoneMid = this.width / 2.0f;
 		dirChangeTimer = DIR_CHANGE_INTERVAL_TICKS;
 	}
 
@@ -113,11 +113,11 @@ public class ControlGameScreen extends BaseMinigameScreen {
 		graphics.renderOutline(barLeft - 1, barY - 9, (barRight - barLeft) + 2, 18, 0xFFFFFFFF);
 
 		float half = zoneWidth / 2.0f;
-		graphics.fill((int) (zoneCenter - half), barY - 8, (int) (zoneCenter + half), barY + 8, 0x9033FF55);
+		graphics.fill((int) (zoneMid - half), barY - 8, (int) (zoneMid + half), barY + 8, 0x9033FF55);
 
-		boolean inside = Math.abs(markerX - zoneCenter) <= half;
+		boolean inside = Math.abs(cursorX - zoneMid) <= half;
 		int markerColor = inside ? 0xFFFFFFFF : 0xFFFF5555;
-		graphics.fill((int) markerX - 2, barY - 14, (int) markerX + 2, barY + 14, markerColor);
+		graphics.fill((int) cursorX - 2, barY - 14, (int) cursorX + 2, barY + 14, markerColor);
 
 		int pbLeft = cx - 60, pbRight = cx + 60, pbY = barY + 30;
 		graphics.fill(pbLeft, pbY, pbRight, pbY + 6, 0xFF333333);
