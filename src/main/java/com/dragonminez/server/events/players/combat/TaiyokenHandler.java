@@ -38,7 +38,7 @@ public class TaiyokenHandler {
 	private static final int COOLDOWN_TICKS = 45 * 20;
 	private static final double FULL_LOOK_DOT = 0.93;
 	private static final double PARTIAL_LOOK_DOT = 0.5;
-	private static final String CAST_ANIMATION = "ki.bigbang";
+	private static final String CAST_ANIMATION = "ki.solarflare_fire";
 
 	private static final Set<LivingEntity> BLINDED_MOBS = new HashSet<>();
 
