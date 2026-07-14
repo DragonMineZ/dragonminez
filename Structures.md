@@ -2,6 +2,8 @@
 
 DMZ generates landmark structures across its worlds. Most of them are the **homes of masters** — the trainer NPCs who teach you [[Skills & Abilities|Abilities]] and [[Techniques|Techniques]]. This page lists each structure, the world it spawns in, the master inside, and the **alignment** you need to talk to them.
 
+> Looking for **who teaches what** (each master's skills, ki/strike techniques and training minigame)? That's on the **[[Masters|Masters]]** page. Not every master lives in a landmark building — **Gohan** and **Krillin** are story NPCs you meet through their [[sagas|Sagas]], and **King Kai, Grand Kai, Enma and Baba** live in the [[Otherworld|Dimension-Otherworld]] — none of them appear in the structure table below.
+
 ## Alignment to talk to a master
 
 Some masters only deal with you if your [[Stats & Attributes|alignment]] fits their morality (bands: Good 61–100, Neutral 41–60, Evil 0–40):
@@ -33,6 +35,19 @@ Some masters only deal with you if your [[Stats & Attributes|alignment]] fits th
 
 Each structure is placed **uniquely** per world (one instance, biome-gated), so they don't spawn on top of each other. The `generateCustomStructures` toggle enables/disables them (see [[General Server|general-server]]).
 
+### Masters not tied to a structure
+
+A few masters aren't found by locating a building:
+
+| Master | Where | Alignment to talk |
+| :-- | :-- | :-- |
+| **King Kai** | [[Otherworld\|Dimension-Otherworld]] — on King Kai's Planet | **Good (≥ 61)** |
+| **Grand Kai / Enma / Baba** | [[Otherworld\|Dimension-Otherworld]] (story & services) | None |
+| **Gohan** | Story NPC, met through the Gohan [[saga\|Sagas]] on Earth | **Good (≥ 61)** |
+| **Krillin** | Story NPC, met through the Saiyan/Vegeta [[saga\|Sagas]] on Earth | **Good (≥ 61)** |
+
+See **[[Masters|Masters]]** for what each of them teaches.
+
 ## Finding structures — locator NPCs
 
 Two NPCs sell **treasure maps** (red X marker) that point straight to these structures:
@@ -44,4 +59,4 @@ See [[Bestiary-NPCs|Bestiary-NPCs]] for their trade costs.
 
 ---
 
-Related: [[Dimensions|Dimensions]] · [[Bestiary-NPCs|Bestiary-NPCs]] · [[Skills & Abilities|Abilities]] · [[Stats & Attributes|Stats-and-Attributes]]
+Related: [[Masters|Masters]] · [[Dimensions|Dimensions]] · [[Bestiary-NPCs|Bestiary-NPCs]] · [[Skills & Abilities|Abilities]] · [[Stats & Attributes|Stats-and-Attributes]]

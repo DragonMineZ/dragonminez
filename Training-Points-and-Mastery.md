@@ -41,6 +41,21 @@ The amount from every source is scaled by your active boosts (they stack):
 
 TP gain rates and per-hit/kill values are all tunable in [[General Server|general-server]] (`gameplay`).
 
+### Best way to train (fastest TP)
+
+No single source is "the" answer — the fastest grind **stacks** a high-yield activity with every multiplier at once. In rough order of value:
+
+1. **Training minigames.** The biggest deliberate TP source. Five [[Masters|Masters]] teach one each — **Rhythm** (Mr. Popo), **Control** (Krillin), **Shadow Boxing** (Gohan), **Precision** (Trunks) and **Gravity** (Vegeta). Their reward **scales with your current power**, so they stay worthwhile as you grow (up to a per-game cap). Learn them all and rotate through them.
+2. **Fight things stronger than you.** Kill TP scales with the target's **Battle Power**, and you also gain TP **per hit**, so a long fight with a tough enemy (or a **Shadow Dummy**) beats farming weak mobs. This trains TP *and* [mastery](#mastery) at the same time — see [Best way to farm mastery](#best-way-to-farm-mastery).
+3. **Passive/travel training — but multiplied.** The trickle you get for playing, moving and mining is small at base, so only lean on it **inside a multiplier**:
+   - **[[Gravity Device|Gravity-Device]] / [[Gravity System|Gravity-System]]** — higher gravity = more passive TP.
+   - **[[Hyperbolic Time Chamber|Dimension-Hyperbolic-Time-Chamber]]** — Bulma's gravity upgrades boost training, and time runs long inside.
+   - **[[Weights|Weights]]** — training while wearing weights improves gains.
+4. **Keep your boosts running the whole time.** Everything above is multiplied by your **class**, your **racial skill** (Frost Demon ×1.25), and a **`tp_gain`** effect/consumable — so pop a `tp_gain` buff before a minigame or a gravity session, not after.
+5. **Quests and wishes for lump sums.** Story/side [[quests|Custom-Quests-Sagas-and-Sidequests]] and a **Dragon wish** hand out big one-off TP — cheap progress that doesn't depend on the grind.
+
+> Fastest realistic loop: wear **weights**, train inside the **Gravity Device** or **Time Chamber** with a **`tp_gain`** buff active, and break it up by running the **master minigames** and sparring a **Shadow Dummy** — which banks mastery alongside the TP.
+
 ---
 
 ## Mastery

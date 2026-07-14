@@ -81,6 +81,23 @@ Bio-Evolution TP ladder: **26,000 · 57,000 · 88,000 · 125,000**
 
 ---
 
+## Energy consumption while transformed
+
+The "Ki drain" numbers in the tables above are **base** values. What you actually pay each tick is scaled by several things, so the real cost is usually **higher** than the table figure — and it grows with your own power:
+
+- **Which resource** — most forms drain **Ki (energy)**; a few drain **stamina** or **health** instead (e.g. Kaioken drains health). A **negative** value *restores* the resource (Metal Frost-Demon forms).
+- **Power Release** — the drain scales directly with your current **power release** (the % you charge with **C**). Fighting at 100% release costs the most; powering down lowers upkeep.
+- **Your offensive power** — the stronger your STR/SKP/PWR relative to your max Ki, the more the form costs to hold (a square-root scaling). A percentage of your **max Ki** is also added on top, so bigger pools pay bigger upkeep.
+- **Mastery** — this is the discount. As a form's mastery climbs, its cost multiplier drops toward **×0.75** at 100% mastery (see [Mastery](#mastery)). A well-mastered form is much cheaper to sustain.
+- **Stacking** — layering a stack form (Kaioken, etc.) multiplies the drain of **both** the base form and the stack (each form's `stackDrainMultiplier`, ×2.0 by default), which is why stacked transformations burn resources fast.
+- **Server baseline** — a global `baselineFormDrain` (combat config) and equipped-[[Weights|Weights]] load further scale everything.
+
+**Running out drops you back to base.** Each tick the game checks you can afford the drain; if you can't pay the Ki (or stamina/health), the form — and any stack form — is **forcibly deactivated** and you revert to base with a *"drained"* message. So a form you can't sustain will keep collapsing until you either raise its mastery, power down, or grow your Ki pool.
+
+> Practical takeaway: **mastery + a large Ki pool (ENE) are what let you stay transformed.** Grinding a form's mastery both raises its stat bonus *and* cuts its upkeep, and investing in Energy raises the pool the drain is measured against.
+
+---
+
 ## Stackable forms
 
 Stack forms layer **on top of** your normal transformation for an extra multiplier at a heavier upkeep. They're skills learned from a master, not race forms:
