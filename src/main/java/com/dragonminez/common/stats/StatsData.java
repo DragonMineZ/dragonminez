@@ -1558,8 +1558,6 @@ public class StatsData {
 		if (getStatus().isFused()) FusionLogic.endFusion(player, this, false);
 		getCharacter().clearActiveForm(player);
 		getCharacter().clearActiveStackForm(player);
-		// Persistent (infinite-duration) form MobEffects are normally cleared by TransformStatusHandler#onPlayerTick,
-		// but that path stops once hasCreatedCharacter becomes false below, so strip them here explicitly.
 		TransformStatusHandler.clearAllPersistentFormEffects(player);
 
 		getStatus().reset();

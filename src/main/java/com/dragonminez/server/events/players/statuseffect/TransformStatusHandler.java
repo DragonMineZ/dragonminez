@@ -285,12 +285,6 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         return persistentData.getCompound(TAG_ROOT);
     }
 
-    /**
-     * Removes every persistent (infinite-duration) MobEffect that active transformations applied and were tracked on
-     * the player, then wipes the tracking tag. Needed on full character resets: the normal cleanup path
-     * ({@link #onPlayerTick}) stops running once {@code hasCreatedCharacter} becomes false, so the -1 duration effects
-     * would otherwise linger forever onto the next character.
-     */
     public static void clearAllPersistentFormEffects(ServerPlayer player) {
         CompoundTag persistentData = player.getPersistentData();
         if (!persistentData.contains(TAG_ROOT)) {

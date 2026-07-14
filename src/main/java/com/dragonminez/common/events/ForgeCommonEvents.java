@@ -25,6 +25,8 @@ import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.TrainingSessionTracker;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWeaponRegistryS2C;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
@@ -215,6 +217,8 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
+			TrainingSessionTracker.end(player.getUUID());
+			PacketRateLimiter.clear(player.getUUID());
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout()) {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
@@ -253,10 +257,6 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
-			// Dead players (spirits) are moved to the Otherworld by TickHandler after a short grace
-			// period rather than immediately here. That grace lets the client register the overworld
-			// death location (minimap death waypoints, the vanilla recovery compass) before the
-			// dimension change relocates the player to the Otherworld.
 			player.refreshDimensions();
 		}
 	}
