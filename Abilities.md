@@ -20,7 +20,7 @@ This page lists the **skills** you can learn in DMZ and what they do, plus the *
 | **Ki Control** | The foundation for channeling ki — required to charge and use techniques. |
 | **Potential Unlock** | Unlocks your hidden potential for a permanent power boost; maxing it (with a master, requires good alignment) gates further advanced unlocks. |
 | **Instant Transmission** | Teleport. Opens a menu to warp to **any master you've already met** and to **players**; player range scales **+200 blocks per level**. (Default key: **H**.) |
-| **Fusion** | Fuse with another player into a single stronger character. |
+| **Fusion** | Learn the **Fusion Dance (Metamoru)** — merge with a same-race player into a single stronger character; its level sets how long the fusion lasts. See [[Fusions|Fusions]]. |
 
 ## Passive combat abilities
 

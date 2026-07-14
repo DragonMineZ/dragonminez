@@ -59,8 +59,8 @@ DMZ has **two wish-granting dragons**. You summon one by gathering that world's 
 - **Materials pack** (Kikono Shards and more)
 - The **Invincible Armor** set (helmet, chestplate, leggings, boots)
 - The **Invincible Blue Armor** set
-- **Potara earrings** (yellow — left & right)
-- **Potara earrings** (green — left & right)
+- **Potara earrings — yellow pair** (both the left **and** right earring, so two players can perform a Potara Fusion — see [[Fusions|Fusions]])
+- **Potara earrings — green pair** (both the left **and** right earring)
 
 Because Porunga grants **three wishes** at once and its balls are on Namek, it's the bigger prize — but you'll need Namek-tier radars and a trip off-world.
 
@@ -76,4 +76,4 @@ See [[Items|Items]] for the radars and [[Dimension-Namek|Planet Namek]] for the 
 
 ---
 
-Related: [[Custom Wishes|Custom-Wishes]] · [[Items|Items]] · [[Dimension-Namek|Dimension-Namek]] · [[Skills & Abilities|Abilities]] · [[General Server|general-server]]
+Related: [[Custom Wishes|Custom-Wishes]] · [[Fusions|Fusions]] · [[Items|Items]] · [[Dimension-Namek|Dimension-Namek]] · [[Skills & Abilities|Abilities]] · [[General Server|general-server]]

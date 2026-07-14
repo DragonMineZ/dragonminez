@@ -12,6 +12,7 @@
      * [[Special Attacks|Techniques#special-attacks]]
    * [[Transformations & Mastery|Transformations-and-Mastery]]
    * [[Training Points & Mastery|Training-Points-and-Mastery]]
+   * [[Fusions|Fusions]]
    * [[Weights|Weights]]
      * [[Gravity Device|Gravity-Device]]
 2. World

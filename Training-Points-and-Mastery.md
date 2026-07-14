@@ -56,6 +56,19 @@ TP gain rates and per-hit/kill values are all tunable in [[General Server|genera
 
 So the fastest way to master a form is to **fight in it** — trade blows while transformed rather than sitting idle.
 
+### Best way to farm mastery
+
+Passive gain (+0.006% every 5s) is tiny — you'd wait hours just standing around. Combat is **~7× per hit** and both *dealing* and *taking* hits count, so the goal is to be in a transformation and exchanging as many hits as possible:
+
+1. **Transform first, then fight.** Mastery only ticks up while that specific form is active, so enter the form *before* the fight, not after.
+2. **Pick a punching bag that hits back.** Because taking hits also grants mastery, the ideal target is something that survives a while and keeps swinging at you — a tanky mob you don't one-shot, or a sparring partner. Trading blows fills the bar from both directions at once.
+3. **Don't out-level your target.** If you delete enemies in one hit you get one hit's worth of mastery and then have to find another. A fight that lasts many exchanges is far better than many one-shots.
+4. **Stack the multipliers below** — a `mastery_gain` effect on top of the ×1.50 global multiplier roughly doubles everything above.
+5. **Exploit shared mastery.** If a form is configured to share mastery with related forms, grinding the one you *can* keep active also raises the others for free.
+6. **Top it up with quests.** A few quests grant transformation mastery directly (see the table above) — cheap chunks that don't require a fight.
+
+> In short: put on the form, find something that trades hits with you for a long time, keep a `mastery_gain` buff running, and avoid one-shotting.
+
 ### Mastery multipliers
 
 - **Global mastery multiplier** — ×1.50 by default (server-tunable in [[General Server|general-server]]).
