@@ -27,9 +27,9 @@ public class PassiveResetWish extends Wish {
 
 			for (String stat : statBoosts) {
 				for (int i = data.getResources().getRacialSkillCount(); i >= 0; i--) {
-					data.getBonusStats().clearBonus(stat, "Absorption_");
-					data.getBonusStats().clearBonus(stat, "Assimilation_");
-					data.getBonusStats().clearBonus(stat, "Zenkai_");
+					data.getBonusStats().clearBonusSplit(stat, "Absorption_");
+					data.getBonusStats().clearBonusSplit(stat, "Assimilation_");
+					data.getBonusStats().clearBonusSplit(stat, "Zenkai_");
 				}
 			}
 

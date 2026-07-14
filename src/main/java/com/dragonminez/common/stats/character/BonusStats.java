@@ -40,6 +40,13 @@ public class BonusStats {
         } else removeBonus(stat, bonusName);
     }
 
+    public void clearBonusSplit(String stat, String bonusName) {
+        if (stat.equalsIgnoreCase("RES")) {
+            clearBonus("DEF", bonusName);
+            clearBonus("STM", bonusName);
+        } else clearBonus(stat, bonusName);
+    }
+
     public void clearAllSplit(String stat) {
         if (stat.equalsIgnoreCase("RES")) {
             clearAll("DEF");
