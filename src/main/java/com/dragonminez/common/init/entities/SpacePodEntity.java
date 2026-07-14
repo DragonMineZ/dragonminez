@@ -40,6 +40,12 @@ public class SpacePodEntity extends Mob implements GeoEntity {
         super(pEntityType, pLevel);
 
         this.setNoGravity(true);
+        this.setPersistenceRequired();
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double pDistanceToClosestPlayer) {
+        return false;
     }
 
     public static AttributeSupplier createAttributes() {

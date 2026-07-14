@@ -4,6 +4,8 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.spacepod.SpacePodDestinationDefinition;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -35,6 +37,14 @@ public class TravelToPlanetC2S {
 		context.get().enqueueWork(() -> {
 			ServerPlayer player = context.get().getSender();
 			if (player == null) return;
+
+			// Dead spirits are forced back to the Otherworld each tick by TickHandler's
+			// handleOtherworldTransfer. Allowing travel would spawn the pod at the destination
+			// while the spirit gets yanked back, leaving the player pod-less in the Otherworld.
+			boolean dead = StatsProvider.get(StatsCapability.INSTANCE, player)
+					.map(data -> !data.getStatus().isAlive())
+					.orElse(false);
+			if (dead) return;
 
 			ServerLevel currentLevel = player.serverLevel();
 			SpacePodDestinationDefinition destination = SpacePodDestinationRegistry.getServerDestination(destinationId);
