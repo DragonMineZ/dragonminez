@@ -7,6 +7,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
+import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -22,6 +23,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -102,9 +104,16 @@ public class NPCActionC2S {
 	}
 
 	private static boolean isAnyMasterInRange(ServerPlayer player) {
-		return !player.serverLevel().getEntitiesOfClass(MastersEntity.class,
-						player.getBoundingBox().inflate(NPC_INTERACTION_RANGE),
+		AABB range = player.getBoundingBox().inflate(NPC_INTERACTION_RANGE);
+		boolean hasMaster = !player.serverLevel().getEntitiesOfClass(MastersEntity.class, range,
 						npc -> npc.getMasterName() != null && !npc.getMasterName().isBlank())
+				.isEmpty();
+		if (hasMaster) return true;
+		// Several training/minigame masters (krillin, gohan, trunks, vegeta, ...) are placed as
+		// QuestNPCEntity rather than MastersEntity, so accept those in range too — otherwise the
+		// shadow-dummy spar they offer is silently rejected and the dummy never spawns.
+		return !player.serverLevel().getEntitiesOfClass(QuestNPCEntity.class, range,
+						npc -> npc.getNpcId() != null && !npc.getNpcId().isBlank())
 				.isEmpty();
 	}
 
