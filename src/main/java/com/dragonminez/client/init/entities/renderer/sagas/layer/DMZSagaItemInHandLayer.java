@@ -14,16 +14,15 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-public class ItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> {
+public class DMZSagaItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> {
 
-    public ItemInHandLayer(GeoEntityRenderer<T> entityRendererIn) {
+    public DMZSagaItemInHandLayer(GeoEntityRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
 
     @Override
     public void renderForBone(PoseStack poseStack, DBSagasEntity animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-
-        if (bone.getName().equals("right_item_hand")) {
+        if (bone.getName().equals("right_hand_item")) {
             ItemStack mainHandItem = animatable.getItemBySlot(EquipmentSlot.MAINHAND);
 
             if (!mainHandItem.isEmpty()) {
