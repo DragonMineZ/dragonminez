@@ -171,6 +171,10 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> HAIR_SELF = register("dmzhair.self", "Allows resyncing/resetting your own hair.", (player, uuid, context) -> true);
 	public static final PermissionNode<Boolean> HAIR_OTHERS = register("dmzhair.others", "Allows resyncing/resetting other players' hair.", (player, uuid, context) -> false);
 
+	// Class
+	public static final PermissionNode<Boolean> CLASS_SET_SELF = register("dmzclass.set.self", "Allows changing your own class.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> CLASS_SET_OTHERS = register("dmzclass.set.others", "Allows changing other players' class.", (player, uuid, context) -> false);
+
 	public static void init() {}
 
 	private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {
