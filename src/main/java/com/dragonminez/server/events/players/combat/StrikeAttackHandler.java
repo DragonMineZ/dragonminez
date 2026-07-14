@@ -477,6 +477,8 @@ public class StrikeAttackHandler {
 
 		if ("deadly_dance".equals(active.techniqueId()) || "deadly_dance_vegetto".equals(active.techniqueId())) {
 
+			boolean vegetto = "deadly_dance_vegetto".equals(active.techniqueId());
+
 			if (target instanceof ServerPlayer targetPlayer) {
 				faceEntity(targetPlayer, player);
 			} else {
@@ -487,23 +489,39 @@ public class StrikeAttackHandler {
 
 			Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
 
-			double advanceSpeed = 0.25;
-			player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
-			player.hurtMarked = true;
-
 			double distance = 1.5;
 			double targetX = player.getX() + lookVec.x * distance;
 			double targetY = player.getY();
 			double targetZ = player.getZ() + lookVec.z * distance;
 
-			target.setPos(targetX, targetY, targetZ);
-			target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
-			target.hurtMarked = true;
+			// Only keep dragging both entities forward while nothing solid is in the way.
+			// If the attacker hits a wall, or the spot the victim would occupy is blocked,
+			// freeze the pair in place instead of clipping them through the block.
+			boolean blocked = player.horizontalCollision || !canOccupy(target, targetX, targetY, targetZ);
+
+			if (!blocked) {
+				double advanceSpeed = 0.25;
+				player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
+				player.hurtMarked = true;
+
+				target.setPos(targetX, targetY, targetZ);
+				target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
+				target.hurtMarked = true;
+			} else {
+				player.setDeltaMovement(0, player.getDeltaMovement().y, 0);
+				player.hurtMarked = true;
+				target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
+				target.hurtMarked = true;
+			}
 
 			int nextTick = active.ticksElapsed() + 1;
 
 			if (nextTick % active.hitIntervalTicks() == 0 && nextTick < 30) {
 				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+
+				if (!player.level().isClientSide) {
+					spawnDeadlyDanceHitParticles(player.serverLevel(), target, vegetto);
+				}
 
 				player.level().playSound(
 						null, target.getX(), target.getY(), target.getZ(),
@@ -517,6 +535,10 @@ public class StrikeAttackHandler {
 			if (nextTick >= 30) {
 				applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
 				grantKillXpIfNeeded(player, target, active.techniqueId());
+
+				if (!player.level().isClientSide) {
+					spawnDeadlyDanceFinalParticles(player.serverLevel(), target, vegetto);
+				}
 
 				player.level().playSound(
 						null, target.getX(), target.getY(), target.getZ(),
@@ -1056,6 +1078,105 @@ public class StrikeAttackHandler {
 
 		level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, 18, 0.4, 0.4, 0.4, 0.6);
 		level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
+	}
+
+	/** True if {@code entity} could stand at (x,y,z) without its hitbox overlapping solid blocks. */
+	private static boolean canOccupy(LivingEntity entity, double x, double y, double z) {
+		AABB moved = entity.getBoundingBox().move(x - entity.getX(), y - entity.getY(), z - entity.getZ());
+		return entity.level().noCollision(entity, moved);
+	}
+
+	private static final float[] DD_GOLD = {1.0F, 0.84F, 0.0F};
+	private static final float[] DD_CELESTE = {0.30F, 0.80F, 1.0F};
+	private static final float[] DD_YELLOW = {1.0F, 0.95F, 0.15F};
+	private static final float[] DD_YELLOW_DEEP = {1.0F, 0.78F, 0.05F};
+
+	private static float[] deadlyDanceColor(boolean vegetto, int i) {
+		if (vegetto) return (i % 2 == 0) ? DD_GOLD : DD_CELESTE;
+		return (i % 2 == 0) ? DD_YELLOW : DD_YELLOW_DEEP;
+	}
+
+	private static void spawnDeadlyDanceHitParticles(ServerLevel level, LivingEntity target, boolean vegetto) {
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.6;
+		double z = target.getZ();
+
+		float[] main = deadlyDanceColor(vegetto, 0);
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
+
+		int sparkCount = vegetto ? 2 : 1;
+		for (int i = 0; i < sparkCount; i++) {
+			float[] c = deadlyDanceColor(vegetto, i);
+			double ox = (level.random.nextDouble() - 0.5) * 0.9;
+			double oy = (level.random.nextDouble() - 0.5) * 0.9;
+			double oz = (level.random.nextDouble() - 0.5) * 0.9;
+			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, c[0], c[1], c[2], 1.0);
+		}
+
+		if (vegetto) {
+			level.sendParticles(ParticleTypes.CRIT, x, y, z, 2, 0.3, 0.3, 0.3, 0.6);
+			level.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 4, 0.3, 0.3, 0.3, 0.4);
+		}
+	}
+
+	private static void spawnDeadlyDanceFinalParticles(ServerLevel level, LivingEntity target, boolean vegetto) {
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.5;
+		double z = target.getZ();
+
+		float[] main = deadlyDanceColor(vegetto, 0);
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
+
+		if (!vegetto) {
+			// Base version: keep it subtle — a small colored burst and nothing else.
+			for (int i = 0; i < 3; i++) {
+				double dirX = level.random.nextDouble() - 0.5;
+				double dirY = level.random.nextDouble() - 0.5;
+				double dirZ = level.random.nextDouble() - 0.5;
+				double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+				if (len < 1.0E-4) continue;
+				float[] c = deadlyDanceColor(false, i);
+				double radius = 0.5 + level.random.nextDouble() * 1.2;
+				double px = x + (dirX / len) * radius;
+				double py = y + (dirY / len) * radius;
+				double pz = z + (dirZ / len) * radius;
+				level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, c[0], c[1], c[2], 1.0);
+			}
+			level.sendParticles(ParticleTypes.CRIT, x, y, z, 4, 0.4, 0.4, 0.4, 0.5);
+			return;
+		}
+
+		// Bright omnidirectional burst.
+		for (int i = 0; i < 5; i++) {
+			double dirX = level.random.nextDouble() - 0.5;
+			double dirY = level.random.nextDouble() - 0.5;
+			double dirZ = level.random.nextDouble() - 0.5;
+			double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+			if (len < 1.0E-4) continue;
+			float[] c = deadlyDanceColor(true, i);
+			double radius = 0.5 + level.random.nextDouble() * 2.5;
+			double px = x + (dirX / len) * radius;
+			double py = y + (dirY / len) * radius;
+			double pz = z + (dirZ / len) * radius;
+			level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, c[0], c[1], c[2], 1.0);
+		}
+
+		// Two spiral rings for extra flair.
+		int ringPoints = 5;
+		for (int i = 0; i < ringPoints; i++) {
+			double angle = (Math.PI * 2 * i) / ringPoints;
+			float[] c = deadlyDanceColor(true, i);
+			for (double ry : new double[]{-0.4, 0.4}) {
+				double px = x + Math.cos(angle) * 1.3;
+				double pz = z + Math.sin(angle) * 1.3;
+				level.sendParticles(MainParticles.SPARKS.get(), px, y + ry, pz, 0, c[0], c[1], c[2], 1.0);
+			}
+		}
+
+		level.sendParticles(ParticleTypes.CRIT, x, y, z, 30, 0.6, 0.6, 0.6, 0.8);
+		level.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 20, 0.5, 0.5, 0.5, 0.6);
+		level.sendParticles(ParticleTypes.FIREWORK, x, y, z, 40, 0.3, 0.3, 0.3, 0.35);
+		level.sendParticles(ParticleTypes.FLASH, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
 	}
 
 	private static void spawnWolfFangJab(ServerPlayer player, LivingEntity target, int beat) {
