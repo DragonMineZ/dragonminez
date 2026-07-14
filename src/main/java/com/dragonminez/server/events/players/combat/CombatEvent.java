@@ -66,6 +66,7 @@ public class CombatEvent {
 	private static final double HEALING_REDUCTION_CAP = 0.40;
 	private static final int HEALING_REDUCTION_DURATION_TICKS = 120;
 	private static final int PARRY_COMBO_STUN_TICKS = 30;
+	private static final int PARRY_STUN_TICKS = 20;
 
 	private static void maybeForceCombatFly(Player player) {
 		if (!ConfigManager.getCombatConfig().getCombatFlyAutoSwitchOnDamage()) return;
@@ -428,6 +429,12 @@ public class CombatEvent {
 											if (attackerLiving instanceof DBSagasEntity saga && saga.isComboing()) {
 												saga.interruptCombo();
 												saga.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_COMBO_STUN_TICKS, 0, false, false, true));
+											} else if (!(attackerLiving instanceof Player)) {
+												// STAGGER alone has no meaningful effect on mob AI (vanilla ATTACK_SPEED doesn't govern
+												// mob attack cadence), so the enemy would keep acting despite the parry. Apply a brief
+												// STUN to actually interrupt the attack and open a vulnerability window; the existing STUN
+												// handlers cancel attacks/casts and freeze navigation for every mob type.
+												attackerLiving.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_STUN_TICKS, 0, false, false, true));
 											}
 										}
 										if (MainDamageTypes.isKiblastDamage(source)) {
@@ -647,7 +654,7 @@ public class CombatEvent {
 				StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(stats -> {
 					boolean isGuardBroken = stats.getStatus().isStunEffect() && stats.getResources().getCurrentPoise() <= 0;
 					double postMitigation = stats.calculatePostMitigationDamage(rawDamage, isGuardBroken, defensePenetration);
-						// La defensa por sí sola absorbió el golpe entero (antes de bloqueo/parry/ki-protección).
+						// La defensa por sÃ­ sola absorbiÃ³ el golpe entero (antes de bloqueo/parry/ki-protecciÃ³n).
 						boolean defenseFullyNegated = postMitigation <= 0.0;
 
 					if (victim.getPersistentData().contains("dmz_block_multiplier")) {
