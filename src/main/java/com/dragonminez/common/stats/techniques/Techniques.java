@@ -26,6 +26,10 @@ public class Techniques {
 	@Setter
 	private transient int homingTargetId = -1;
 
+	// Rolls sub-1 XP gains (e.g. rapid-fire barrage bullets) into whole experience points.
+	// Transient: losing a fractional remainder on logout is negligible.
+	private final transient Map<String, Float> fractionalXpRemainder = new HashMap<>();
+
 	public Techniques() {
 		for (int i = 0; i < SLOT_COUNT; i++) equippedSlots[i] = "";
 	}
@@ -151,6 +155,18 @@ public class Techniques {
 	public void addExperienceToTechnique(String id, int amount) {
 		if (unlockedTechniques.containsKey(id)) {
 			unlockedTechniques.get(id).addExperience(amount);
+		}
+	}
+
+	// Accumulates fractional XP so high-cadence multi-hit attacks (barrage) can grant less than
+	// one point per hit, only crediting whole points once enough fractions have piled up.
+	public void addFractionalExperienceToTechnique(String id, float amount) {
+		if (amount <= 0.0f || !unlockedTechniques.containsKey(id)) return;
+		float total = fractionalXpRemainder.merge(id, amount, Float::sum);
+		int whole = (int) total;
+		if (whole > 0) {
+			unlockedTechniques.get(id).addExperience(whole);
+			fractionalXpRemainder.put(id, total - whole);
 		}
 	}
 
