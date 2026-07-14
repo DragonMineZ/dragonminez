@@ -24,6 +24,7 @@ import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.events.players.TickHandler;
+import com.dragonminez.server.events.players.statuseffect.TransformStatusHandler;
 import com.dragonminez.server.util.FusionLogic;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -1557,6 +1558,9 @@ public class StatsData {
 		if (getStatus().isFused()) FusionLogic.endFusion(player, this, false);
 		getCharacter().clearActiveForm(player);
 		getCharacter().clearActiveStackForm(player);
+		// Persistent (infinite-duration) form MobEffects are normally cleared by TransformStatusHandler#onPlayerTick,
+		// but that path stops once hasCreatedCharacter becomes false below, so strip them here explicitly.
+		TransformStatusHandler.clearAllPersistentFormEffects(player);
 
 		getStatus().reset();
 		getResources().reset();

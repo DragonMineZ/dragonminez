@@ -285,7 +285,28 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         return persistentData.getCompound(TAG_ROOT);
     }
 
-    private Set<MobEffect> readTrackedPersistentEffects(CompoundTag effectTag) {
+    /**
+     * Removes every persistent (infinite-duration) MobEffect that active transformations applied and were tracked on
+     * the player, then wipes the tracking tag. Needed on full character resets: the normal cleanup path
+     * ({@link #onPlayerTick}) stops running once {@code hasCreatedCharacter} becomes false, so the -1 duration effects
+     * would otherwise linger forever onto the next character.
+     */
+    public static void clearAllPersistentFormEffects(ServerPlayer player) {
+        CompoundTag persistentData = player.getPersistentData();
+        if (!persistentData.contains(TAG_ROOT)) {
+            return;
+        }
+        CompoundTag effectTag = persistentData.getCompound(TAG_ROOT);
+        for (MobEffect effect : readTrackedPersistentEffects(effectTag)) {
+            if (player.hasEffect(effect)) {
+                player.removeEffect(effect);
+                LogUtil.info(Env.SERVER, LOG_PREFIX + "Removing persistent effect '{}' from {} due to character reset.", getEffectId(effect), player.getScoreboardName());
+            }
+        }
+        persistentData.remove(TAG_ROOT);
+    }
+
+    private static Set<MobEffect> readTrackedPersistentEffects(CompoundTag effectTag) {
         Set<MobEffect> tracked = new HashSet<>();
         if (!effectTag.contains("trackedPersistentEffects")) {
             return tracked;
@@ -319,7 +340,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         effectTag.putString("trackedPersistentEffects", builder.toString());
     }
 
-    private MobEffect resolveMobEffect(String rawEffectId) {
+    private static MobEffect resolveMobEffect(String rawEffectId) {
         if (rawEffectId == null || rawEffectId.isBlank()) {
             return null;
         }
@@ -332,7 +353,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         return ForgeRegistries.MOB_EFFECTS.getValue(location);
     }
 
-    private String normalizeEffectId(String effectId) {
+    private static String normalizeEffectId(String effectId) {
         return switch (effectId) {
             case "minecraft:movement_speed" -> "minecraft:speed";
             case "minecraft:damage_boost" -> "minecraft:strength";
@@ -345,7 +366,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         };
     }
 
-    private String getEffectId(MobEffect effect) {
+    private static String getEffectId(MobEffect effect) {
         ResourceLocation key = ForgeRegistries.MOB_EFFECTS.getKey(effect);
         return key != null ? key.toString() : "unknown";
     }
