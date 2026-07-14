@@ -31,7 +31,7 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	}
 
 	private final Random random = new Random();
-	private final List<Note> notes = new ArrayList<>();
+	private final List<Note> arrows = new ArrayList<>();
 	private final Deque<Boolean> outcomes = new ArrayDeque<>();
 	private final Set<Direction> holdLockedDirections = new HashSet<>();
 	private final Set<Integer> downKeys = new HashSet<>();
@@ -43,8 +43,8 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	private boolean spawnLeftLane = true;
 
 	private int lineY;
-	private int leftTargetX;
-	private int rightTargetX;
+	private int laneLeftX;
+	private int laneRightX;
 
 	public RythmGameScreen() {
 		super("rhythm", "gui.dragonminez.minigame.rhythm");
@@ -55,11 +55,11 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		super.init();
 		this.cfg = ConfigManager.getTrainingConfig().getRhythm();
 		this.lineY = this.height / 2;
-		this.leftTargetX = this.width / 2 - 40;
-		this.rightTargetX = this.width / 2 + 40;
+		this.laneLeftX = this.width / 2 - 40;
+		this.laneRightX = this.width / 2 + 40;
 		this.progress = 0;
 		this.spawnTimer = 0;
-		this.notes.clear();
+		this.arrows.clear();
 		this.outcomes.clear();
 		this.holdLockedDirections.clear();
 		this.downKeys.clear();
@@ -87,10 +87,10 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		int goodWindow = cfg.getGoodWindow();
 		long window = Minecraft.getInstance().getWindow().getWindow();
 
-		Iterator<Note> it = notes.iterator();
+		Iterator<Note> it = arrows.iterator();
 		while (it.hasNext()) {
 			Note note = it.next();
-			int targetX = note.leftLane ? leftTargetX : rightTargetX;
+			int targetX = note.leftLane ? laneLeftX : laneRightX;
 
 			if (note.activated) {
 				if (isHeld(window, note.direction)) {
@@ -144,7 +144,7 @@ public class RythmGameScreen extends BaseMinigameScreen {
 	}
 
 	private boolean laneHasHold(boolean leftLane) {
-		for (Note n : notes) if (n.isHold && n.leftLane == leftLane) return true;
+		for (Note n : arrows) if (n.isHold && n.leftLane == leftLane) return true;
 		return false;
 	}
 
@@ -161,9 +161,9 @@ public class RythmGameScreen extends BaseMinigameScreen {
 
 	private void addNote(boolean leftLane, Direction dir, int behindOffset, boolean isHold) {
 		int travel = cfg.getNoteTravelDistance();
-		float baseX = leftLane ? leftTargetX - travel : rightTargetX + travel;
+		float baseX = leftLane ? laneLeftX - travel : laneRightX + travel;
 		float startX = leftLane ? baseX - behindOffset : baseX + behindOffset;
-		notes.add(new Note(startX, leftLane, dir, isHold, cfg.getHoldDurationTicks()));
+		arrows.add(new Note(startX, leftLane, dir, isHold, cfg.getHoldDurationTicks()));
 		if (isHold) holdLockedDirections.add(dir);
 	}
 
@@ -219,9 +219,9 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		Note best = null;
 		double minDist = Double.MAX_VALUE;
 
-		for (Note note : notes) {
+		for (Note note : arrows) {
 			if (note.activated || note.direction != dir) continue;
-			int targetX = note.leftLane ? leftTargetX : rightTargetX;
+			int targetX = note.leftLane ? laneLeftX : laneRightX;
 			double dist = Math.abs(note.x - targetX);
 			if (dist < cfg.getGoodWindow() && dist < minDist) {
 				minDist = dist;
@@ -241,12 +241,12 @@ public class RythmGameScreen extends BaseMinigameScreen {
 
 		if (best.isHold) {
 			best.activated = true;
-			best.x = best.leftLane ? leftTargetX : rightTargetX;
+			best.x = best.leftLane ? laneLeftX : laneRightX;
 			best.holdRemaining = best.holdTicksTotal;
 			recordOutcome(true);
 		} else {
 			holdLockedDirections.remove(best.direction);
-			notes.remove(best);
+			arrows.remove(best);
 			recordOutcome(true);
 		}
 		clampProgress();
@@ -278,17 +278,17 @@ public class RythmGameScreen extends BaseMinigameScreen {
 		graphics.renderOutline(pbLeft - 1, pbY - 1, (pbRight - pbLeft) + 2, 10, 0xFFFFFFFF);
 
 		int travel = cfg.getNoteTravelDistance();
-		int leftEnd = leftTargetX - travel - 10;
-		int rightEnd = rightTargetX + travel + 10;
+		int leftEnd = laneLeftX - travel - 10;
+		int rightEnd = laneRightX + travel + 10;
 
-		graphics.fill(leftEnd, lineY - 1, leftTargetX - 14, lineY + 1, 0x40FFFFFF);
-		graphics.fill(rightTargetX + 14, lineY - 1, rightEnd, lineY + 1, 0x40FFFFFF);
+		graphics.fill(leftEnd, lineY - 1, laneLeftX - 14, lineY + 1, 0x40FFFFFF);
+		graphics.fill(laneRightX + 14, lineY - 1, rightEnd, lineY + 1, 0x40FFFFFF);
 
-		drawTarget(graphics, leftTargetX);
-		drawTarget(graphics, rightTargetX);
+		drawTarget(graphics, laneLeftX);
+		drawTarget(graphics, laneRightX);
 
 		float speed = noteSpeed();
-		for (Note note : notes) {
+		for (Note note : arrows) {
 			if (note.isHold) drawHoldTail(graphics, note, speed);
 			drawArrow(graphics, (int) note.x, lineY, note.direction.symbol, note.direction.color);
 		}

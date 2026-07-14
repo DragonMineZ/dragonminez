@@ -33,11 +33,11 @@ public class MemoryGameScreen extends BaseMinigameScreen {
 
 	private TrainingConfig.MemoryConfig cfg;
 	private final Random random = new Random();
-	private final List<Direction> sequence = new ArrayList<>();
+	private final List<Direction> pattern = new ArrayList<>();
 
-	private Phase phase = Phase.SHOWING;
+	private Phase memPhase = Phase.SHOWING;
 	private int showTimer;
-	private int inputIndex;
+	private int patternIndex;
 
 	public MemoryGameScreen() {
 		super("memory", "gui.dragonminez.minigame.memory");
@@ -59,33 +59,33 @@ public class MemoryGameScreen extends BaseMinigameScreen {
 	}
 
 	private void buildSequence() {
-		sequence.clear();
+		pattern.clear();
 		int len = sequenceLength();
 		Direction[] all = Direction.values();
-		for (int i = 0; i < len; i++) sequence.add(all[random.nextInt(all.length)]);
-		phase = Phase.SHOWING;
+		for (int i = 0; i < len; i++) pattern.add(all[random.nextInt(all.length)]);
+		memPhase = Phase.SHOWING;
 		showTimer = showTicks();
-		inputIndex = 0;
+		patternIndex = 0;
 	}
 
 	@Override
 	protected void tickGame() {
-		if (phase == Phase.SHOWING) {
+		if (memPhase == Phase.SHOWING) {
 			showTimer--;
-			if (showTimer <= 0) phase = Phase.INPUT;
+			if (showTimer <= 0) memPhase = Phase.INPUT;
 		}
 	}
 
 	@Override
 	protected boolean onKey(int keyCode) {
-		if (phase != Phase.INPUT) return false;
+		if (memPhase != Phase.INPUT) return false;
 		Direction dir = directionForKey(keyCode);
 		if (dir == null) return false;
 
-		if (dir == sequence.get(inputIndex)) {
-			inputIndex++;
+		if (dir == pattern.get(patternIndex)) {
+			patternIndex++;
 			playHit(false);
-			if (inputIndex >= sequence.size()) levelCleared();
+			if (patternIndex >= pattern.size()) levelCleared();
 		} else {
 			playMiss();
 			endGame();
@@ -112,33 +112,33 @@ public class MemoryGameScreen extends BaseMinigameScreen {
 		int cy = this.height / 2;
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.level", level()), cx, cy - 50, 0xFFFFD700);
-		Component prompt = phase == Phase.SHOWING ? tr("gui.dragonminez.minigame.memory.memorize") : tr("gui.dragonminez.minigame.memory.repeat");
+		Component prompt = memPhase == Phase.SHOWING ? tr("gui.dragonminez.minigame.memory.memorize") : tr("gui.dragonminez.minigame.memory.repeat");
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, prompt, cx, cy - 36, 0xFFFFFFFF);
 
 		int spacing = 26;
 		int rowSpacing = 28;
 		int maxRowWidth = (int) (this.width * 0.75f);
 		int perRow = Math.max(1, maxRowWidth / spacing);
-		int rowCount = (int) Math.ceil((double) sequence.size() / perRow);
+		int rowCount = (int) Math.ceil((double) pattern.size() / perRow);
 		int gridTop = cy - ((rowCount - 1) * rowSpacing) / 2;
 
-		for (int i = 0; i < sequence.size(); i++) {
+		for (int i = 0; i < pattern.size(); i++) {
 			int row = i / perRow;
 			int col = i % perRow;
-			int notesInRow = Math.min(perRow, sequence.size() - row * perRow);
+			int notesInRow = Math.min(perRow, pattern.size() - row * perRow);
 			int startX = cx - ((notesInRow - 1) * spacing) / 2;
 			int x = startX + col * spacing;
 			int y = gridTop + row * rowSpacing;
-			Direction dir = sequence.get(i);
-			if (phase == Phase.SHOWING) {
+			Direction dir = pattern.get(i);
+			if (memPhase == Phase.SHOWING) {
 				drawArrow(graphics, x, y, dir.symbol, dir.color);
 			} else {
-				if (i < inputIndex) drawArrow(graphics, x, y, dir.symbol, 0xFF55FF55);
+				if (i < patternIndex) drawArrow(graphics, x, y, dir.symbol, 0xFF55FF55);
 				else drawArrow(graphics, x, y, "?", 0xFF777777);
 			}
 		}
 
-		if (phase == Phase.SHOWING) {
+		if (memPhase == Phase.SHOWING) {
 			int pbY = gridTop + (rowCount - 1) * rowSpacing + 30;
 			int pbLeft = cx - 60, pbRight = cx + 60;
 			graphics.fill(pbLeft, pbY, pbRight, pbY + 4, 0xFF333333);
