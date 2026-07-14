@@ -66,7 +66,14 @@ public class SummonPlayerShadowDummyC2S {
 				dummy.getPersistentData().putString("dmz_quest_owner", player.getStringUUID());
 				dummy.getPersistentData().putBoolean(TAG_PLAYER_SHADOW, true);
 				dummy.getPersistentData().putInt("dmz_shadow_percent", pct);
-				level.addFreshEntity(dummy);
+				// Only commit the tracking state + stat penalties if the dummy actually entered the
+				// world. If addFreshEntity fails/cancels (e.g. the spawn is rejected), applying the
+				// penalties here would leave them permanently stuck — nothing would ever dismiss a
+				// dummy that never existed, so the player's stamina/stats never recover.
+				if (!level.addFreshEntity(dummy)) {
+					dummy.discard();
+					return;
+				}
 
 				data.getStatus().setActiveShadowDummyUUID(dummy.getUUID());
 				data.getStatus().setShadowDummyPercent(pct);
