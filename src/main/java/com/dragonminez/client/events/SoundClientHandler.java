@@ -41,7 +41,8 @@ public class SoundClientHandler {
             updatePlayerAuraSound(player, mc);
         }
 
-        ACTIVE_AURA_SOUNDS.entrySet().removeIf(entry -> entry.getValue().isStopped());
+        ACTIVE_AURA_SOUNDS.entrySet().removeIf(entry ->
+                entry.getValue().isStopped() || !mc.getSoundManager().isActive(entry.getValue()));
 
         if (mc.level.getGameTime() % 200 == 0) { // Cada 10 segundos
             LIGHTNING_TIMERS.keySet().removeIf(uuid -> mc.level.getPlayerByUUID(uuid) == null);
@@ -59,7 +60,13 @@ public class SoundClientHandler {
         var character = stats.getCharacter();
 
         boolean hasAura = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
-        boolean isPlaying = ACTIVE_AURA_SOUNDS.containsKey(playerId) && !ACTIVE_AURA_SOUNDS.get(playerId).isStopped();
+
+        AuraLoopSound existing = ACTIVE_AURA_SOUNDS.get(playerId);
+        // isStopped() solo cubre las paradas que hacemos nosotros; isActive() detecta
+        // ademas cuando el motor de sonido descarta el loop por su cuenta (falta de
+        // canales, buffer underrun, limite de sonidos) para poder recrearlo.
+        boolean isPlaying = existing != null && !existing.isStopped()
+                && mc.getSoundManager().isActive(existing);
 
         if (hasAura) {
             if (!isPlaying) {

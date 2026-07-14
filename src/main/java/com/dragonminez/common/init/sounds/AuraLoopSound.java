@@ -26,6 +26,14 @@ public class AuraLoopSound extends AbstractTickableSoundInstance {
     }
 
     @Override
+    public boolean canStartSilent() {
+        // Permite que el loop se registre aunque el volumen sea 0 en ese instante
+        // (categoria muteada, atenuacion momentanea). Asi el motor no lo descarta y
+        // vuelve a oirse solo cuando el volumen regresa, sin recrearlo cada tick.
+        return true;
+    }
+
+    @Override
     public void tick() {
         if (this.player.isRemoved()) {
             this.stop();
