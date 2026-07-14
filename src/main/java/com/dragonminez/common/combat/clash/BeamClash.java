@@ -12,12 +12,12 @@ public class BeamClash {
     public static final float SWEET_LOW = 0.78f;
     public static final float SWEET_HIGH = 0.96f;
     public static final float OFF_SPOT_EFFICIENCY = 0.18f;
-    public static final float BURST_PER_PERFECT_PRESS = 0.7f;
+    public static final float BURST_PER_PERFECT_PRESS = 0.6f;
     public static final float MOMENTUM_DECAY = 0.96f;
 
     private static final float DRIFT_PER_TICK = 0.005f;
     private static final float STR_FLOOR = 0.6f;
-    private static final float STR_SPAN = 0.8f;
+    private static final float STR_SPAN = 0.95f;
     private static final float MIN_TRACTION = 0.35f;
     private static final float WIN_THRESHOLD = 0.8f;
     private static final int IDLE_DISSOLVE_TICKS = 100;
