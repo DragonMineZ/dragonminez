@@ -78,6 +78,10 @@ public class TickHandler {
 	private static final int REGEN_INTERVAL = 20;
 	private static final int SYNC_INTERVAL = 10;
 	private static final int FORCED_KILL_GRACE_TICKS = 40;
+	// Ticks a dead player lingers in their current dimension before being sent to the Otherworld.
+	// The delay lets the client register the overworld death location (minimap death waypoints,
+	// recovery compass) before the dimension change moves the player.
+	private static final int OTHERWORLD_TP_GRACE_TICKS = 10;
 	private static final int AURA_LIGHT_INTERVAL = 2;
 	private static final int AURA_LIGHT_LEVEL = 12;
 	private static final int AURA_LIGHT_STEP = 1;
@@ -88,6 +92,7 @@ public class TickHandler {
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
 	private static final Map<UUID, Integer> auraLightLevels = new HashMap<>();
 	private static final Map<UUID, Integer> forceKillGraceByPlayer = new HashMap<>();
+	private static final Map<UUID, Integer> otherworldTpGraceByPlayer = new HashMap<>();
 
 	static {
 		registerActionModeHandlers();
@@ -385,20 +390,14 @@ public class TickHandler {
 				} else if (!data.getStatus().getPothalaColor().isEmpty()) data.getStatus().setPothalaColor("");
 			}
 
+			handleOtherworldTransfer(serverPlayer, data, playerId);
+
 			if (tickCounter % 20 == 0) {
 				handleActionCharge(serverPlayer, data);
 				handleActiveFormDrains(serverPlayer, data);
 				enforceShadowDummyTether(serverPlayer, data);
 				GravityLogic.tick(serverPlayer);
 				GravityStateSync.sync(serverPlayer);
-				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
-					if (!data.getStatus().isAlive() && !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
-						if (!serverPlayer.isSpectator() && !serverPlayer.isCreative()) {
-							ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
-							serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);
-						}
-					}
-				}
 
 				if (data.getStatus().isAndroidUpgraded() && (data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm() == null)) {
 					data.getCharacter().setActiveForm("androidforms", "androidbase");
@@ -410,12 +409,38 @@ public class TickHandler {
 		});
 	}
 
+	// Sends dead players (spirits) to the Otherworld, but only after OTHERWORLD_TP_GRACE_TICKS ticks
+	// in their current dimension. The grace period lets the client register the overworld death
+	// location (minimap death waypoints, recovery compass) before the dimension change moves them.
+	private static void handleOtherworldTransfer(ServerPlayer serverPlayer, StatsData data, UUID playerId) {
+		boolean shouldTransfer = ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()
+				&& !data.getStatus().isAlive()
+				&& !serverPlayer.isSpectator() && !serverPlayer.isCreative()
+				&& !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY);
+
+		if (!shouldTransfer) {
+			otherworldTpGraceByPlayer.remove(playerId);
+			return;
+		}
+
+		int grace = otherworldTpGraceByPlayer.getOrDefault(playerId, 0) + 1;
+		if (grace < OTHERWORLD_TP_GRACE_TICKS) {
+			otherworldTpGraceByPlayer.put(playerId, grace);
+			return;
+		}
+
+		otherworldTpGraceByPlayer.remove(playerId);
+		ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
+		if (otherworld != null) serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);
+	}
+
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) return;
 
         serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
         CHARGING_CACHE.remove(serverPlayer.getUUID());
+        otherworldTpGraceByPlayer.remove(serverPlayer.getUUID());
 
         StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
             data.getStatus().setChargingKi(false);
