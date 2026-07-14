@@ -109,9 +109,6 @@ public class NPCActionC2S {
 						npc -> npc.getMasterName() != null && !npc.getMasterName().isBlank())
 				.isEmpty();
 		if (hasMaster) return true;
-		// Several training/minigame masters (krillin, gohan, trunks, vegeta, ...) are placed as
-		// QuestNPCEntity rather than MastersEntity, so accept those in range too — otherwise the
-		// shadow-dummy spar they offer is silently rejected and the dummy never spawns.
 		return !player.serverLevel().getEntitiesOfClass(QuestNPCEntity.class, range,
 						npc -> npc.getNpcId() != null && !npc.getNpcId().isBlank())
 				.isEmpty();

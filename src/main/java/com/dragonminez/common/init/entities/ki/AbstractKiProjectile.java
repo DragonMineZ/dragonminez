@@ -210,8 +210,6 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     public static final int CONTINUOUS_HIT_INTERVAL = 20;
 
-    // Fraction of a technique's per-hit XP granted by each individual barrage bullet, so the many
-    // rapid hits of one cast add up to roughly a single-hit technique's worth (~3 solid hits = 1 XP).
     private static final float BARRAGE_XP_HIT_WEIGHT = 0.34f;
 
     protected boolean applyContinuousDamage(Entity target) {
@@ -429,8 +427,6 @@ public abstract class AbstractKiProjectile extends Projectile {
                 StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
                     TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
                     if (tech instanceof KiAttackData kiAttackData) {
-                        // Barrage lands many rapid bullets per cast; credit a fraction of a point per hit so the
-                        // per-cast total stays comparable to a single-hit technique instead of ballooning.
                         if (kiAttackData.getKiType() == KiAttackData.KiType.BARRAGE) {
                             stats.getTechniques().addFractionalExperienceToTechnique(techId, kiAttackData.getXpGainPerHit() * BARRAGE_XP_HIT_WEIGHT);
                         } else {

@@ -38,9 +38,6 @@ public class TravelToPlanetC2S {
 			ServerPlayer player = context.get().getSender();
 			if (player == null) return;
 
-			// Dead spirits are forced back to the Otherworld each tick by TickHandler's
-			// handleOtherworldTransfer. Allowing travel would spawn the pod at the destination
-			// while the spirit gets yanked back, leaving the player pod-less in the Otherworld.
 			boolean dead = StatsProvider.get(StatsCapability.INSTANCE, player)
 					.map(data -> !data.getStatus().isAlive())
 					.orElse(false);

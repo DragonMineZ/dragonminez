@@ -494,9 +494,6 @@ public class StrikeAttackHandler {
 			double targetY = player.getY();
 			double targetZ = player.getZ() + lookVec.z * distance;
 
-			// Only keep dragging both entities forward while nothing solid is in the way.
-			// If the attacker hits a wall, or the spot the victim would occupy is blocked,
-			// freeze the pair in place instead of clipping them through the block.
 			boolean blocked = player.horizontalCollision || !canOccupy(target, targetX, targetY, targetZ);
 
 			if (!blocked) {
@@ -1080,7 +1077,6 @@ public class StrikeAttackHandler {
 		level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
 	}
 
-	/** True if {@code entity} could stand at (x,y,z) without its hitbox overlapping solid blocks. */
 	private static boolean canOccupy(LivingEntity entity, double x, double y, double z) {
 		AABB moved = entity.getBoundingBox().move(x - entity.getX(), y - entity.getY(), z - entity.getZ());
 		return entity.level().noCollision(entity, moved);
@@ -1128,7 +1124,6 @@ public class StrikeAttackHandler {
 		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
 
 		if (!vegetto) {
-			// Base version: keep it subtle — a small colored burst and nothing else.
 			for (int i = 0; i < 3; i++) {
 				double dirX = level.random.nextDouble() - 0.5;
 				double dirY = level.random.nextDouble() - 0.5;
@@ -1146,7 +1141,6 @@ public class StrikeAttackHandler {
 			return;
 		}
 
-		// Bright omnidirectional burst.
 		for (int i = 0; i < 5; i++) {
 			double dirX = level.random.nextDouble() - 0.5;
 			double dirY = level.random.nextDouble() - 0.5;
@@ -1161,7 +1155,6 @@ public class StrikeAttackHandler {
 			level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, c[0], c[1], c[2], 1.0);
 		}
 
-		// Two spiral rings for extra flair.
 		int ringPoints = 5;
 		for (int i = 0; i < ringPoints; i++) {
 			double angle = (Math.PI * 2 * i) / ringPoints;

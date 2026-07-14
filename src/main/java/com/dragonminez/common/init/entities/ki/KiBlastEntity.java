@@ -765,9 +765,6 @@ public class KiBlastEntity extends AbstractKiProjectile {
                                 for (int i = 0; i < 5; i++) {
                                     KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
                                     bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
-                                    // Carry the parent volley's technique id so each bullet credits XP / secondary
-                                    // effects on hit. Left as the default SMALL_BALL ki type on purpose, so these
-                                    // free-flying bullets don't pin the caster via the barrage movement restriction.
                                     bullet.setTechniqueId(this.getTechniqueId());
 
                                     bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 6.0F);

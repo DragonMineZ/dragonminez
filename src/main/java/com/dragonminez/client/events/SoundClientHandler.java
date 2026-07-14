@@ -62,9 +62,6 @@ public class SoundClientHandler {
         boolean hasAura = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
 
         AuraLoopSound existing = ACTIVE_AURA_SOUNDS.get(playerId);
-        // isStopped() solo cubre las paradas que hacemos nosotros; isActive() detecta
-        // ademas cuando el motor de sonido descarta el loop por su cuenta (falta de
-        // canales, buffer underrun, limite de sonidos) para poder recrearlo.
         boolean isPlaying = existing != null && !existing.isStopped()
                 && mc.getSoundManager().isActive(existing);
 

@@ -78,9 +78,6 @@ public class TickHandler {
 	private static final int REGEN_INTERVAL = 20;
 	private static final int SYNC_INTERVAL = 10;
 	private static final int FORCED_KILL_GRACE_TICKS = 40;
-	// Ticks a dead player lingers in their current dimension before being sent to the Otherworld.
-	// The delay lets the client register the overworld death location (minimap death waypoints,
-	// recovery compass) before the dimension change moves the player.
 	private static final int OTHERWORLD_TP_GRACE_TICKS = 10;
 	private static final int AURA_LIGHT_INTERVAL = 2;
 	private static final int AURA_LIGHT_LEVEL = 12;
@@ -409,9 +406,6 @@ public class TickHandler {
 		});
 	}
 
-	// Sends dead players (spirits) to the Otherworld, but only after OTHERWORLD_TP_GRACE_TICKS ticks
-	// in their current dimension. The grace period lets the client register the overworld death
-	// location (minimap death waypoints, recovery compass) before the dimension change moves them.
 	private static void handleOtherworldTransfer(ServerPlayer serverPlayer, StatsData data, UUID playerId) {
 		boolean shouldTransfer = ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()
 				&& !data.getStatus().isAlive()

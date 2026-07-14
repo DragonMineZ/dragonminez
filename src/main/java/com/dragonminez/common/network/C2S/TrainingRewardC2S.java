@@ -3,6 +3,8 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TrainingConfig;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.TrainingSessionTracker;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -11,13 +13,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class TrainingRewardC2S {
-	private static final Map<UUID, Long> LAST_CLAIM = new ConcurrentHashMap<>();
 	private static final long MIN_CLAIM_INTERVAL_TICKS = 100L;
 	private static final int MAX_LEVELS_CLEARED = 100;
 
@@ -44,12 +42,12 @@ public class TrainingRewardC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null || levelsCleared <= 0) return;
 
-			int clampedLevelsCleared = Math.min(levelsCleared, MAX_LEVELS_CLEARED);
-
 			long now = player.level().getGameTime();
-			Long lastClaim = LAST_CLAIM.get(player.getUUID());
-			if (lastClaim != null && now - lastClaim < MIN_CLAIM_INTERVAL_TICKS) return;
-			LAST_CLAIM.put(player.getUUID(), now);
+			if (!PacketRateLimiter.allow(player.getUUID(), "training_reward", now, MIN_CLAIM_INTERVAL_TICKS)) return;
+
+			int plausibleLevels = TrainingSessionTracker.plausibleLevels(player.getUUID(), now);
+			if (plausibleLevels <= 0) return;
+			int clampedLevelsCleared = Math.min(Math.min(levelsCleared, MAX_LEVELS_CLEARED), plausibleLevels);
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(statsData -> {
 				TrainingConfig config = ConfigManager.getTrainingConfig();

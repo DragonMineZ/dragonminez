@@ -7,31 +7,28 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * One side of a beam clash: a firing beam, its owner, and that owner's live
- * struggle state (auto-filling QTE meter + accumulated momentum). Players drive
- * the meter with real key presses; NPCs drive it with a virtual presser.
- *
- * <p>Clash power is the firing attack's own damage ({@link AbstractKiProjectile#getKiDamage()}),
- * i.e. the technique's strength — not the owner's raw stats — so the stronger technique wins.
- */
 public class ClashParticipant {
 
     private final AbstractKiProjectile beam;
     private final LivingEntity owner;
     @Getter
     private final boolean npc;
-    private final boolean wasNoAi; // NPC AI state before the clash, restored on release
+    private final boolean wasNoAi;
     private final double statPower;
 
-    /** NPC timing accuracy in [0,1], derived from battle power. Unused for players. */
     private final float npcAccuracy;
 
-    // --- live QTE state ---
-    private float meterPhase;     // sweeps 0 -> 1 repeatedly
+    private static final int TIMING_SAMPLE_COUNT = 6;
+    private static final float BOT_SPREAD_THRESHOLD = 0.02f;
+    private static final float BOT_DAMPEN = 0.4f;
+    private final float[] recentPressPhases = new float[TIMING_SAMPLE_COUNT];
+    private int pressSampleCount;
+    private int pressWriteIndex;
+
+    private float meterPhase;
     private float prevMeterPhase;
-    private float momentum;       // recent struggle intensity, decays each tick
-    private int idleTicks;        // ticks since this side last pressed
+    private float momentum;
+    private int idleTicks;
 
     public ClashParticipant(AbstractKiProjectile beam, LivingEntity owner) {
         this.beam = beam;
@@ -40,15 +37,13 @@ public class ClashParticipant {
         this.wasNoAi = owner instanceof Mob mob && mob.isNoAi();
         this.statPower = Math.max(1.0, beam.getKiDamage());
         this.npcAccuracy = resolveNpcAccuracy(this.statPower, this.npc);
-        // Stagger the two meters so both players don't pulse in perfect lockstep.
         this.meterPhase = owner.getRandom().nextFloat();
         this.prevMeterPhase = this.meterPhase;
     }
 
     private static float resolveNpcAccuracy(double attackPower, boolean npc) {
         if (!npc) return 0.0f;
-        // Stronger attacks come from stronger fighters, who time their struggle better.
-        double t = Math.log10(attackPower + 1.0) / 3.0; // ~0..1 across damage 1..1000
+        double t = Math.log10(attackPower + 1.0) / 3.0;
         return (float) Math.min(0.92, 0.45 + t * 0.45);
     }
 
@@ -76,12 +71,10 @@ public class ClashParticipant {
         return idleTicks;
     }
 
-    /** Origin of the beam (fixed while firing, since the owner is movement-locked). */
     public Vec3 origin() {
         return beam.position();
     }
 
-    /** Normalized firing direction of the beam. */
     public Vec3 direction() {
         return Vec3.directionFromRotation(beam.getClashPitch(), beam.getClashYaw());
     }
@@ -90,11 +83,6 @@ public class ClashParticipant {
         return owner.isAlive() && !beam.isRemoved() && beam.isClashableBeam();
     }
 
-    /**
-     * Freezes an NPC owner in place for the cinematic clash: disables its AI (so it can't
-     * path/charge/teleport toward the opponent) and zeroes any residual motion. Players are
-     * already movement-locked client-side, so this is a no-op for them.
-     */
     public void freezeOwner() {
         if (owner instanceof Mob mob) {
             if (!mob.isNoAi()) mob.setNoAi(true);
@@ -104,17 +92,12 @@ public class ClashParticipant {
         }
     }
 
-    /** Restores the NPC owner's AI to its pre-clash state. */
     public void unfreezeOwner() {
         if (owner instanceof Mob mob) {
             mob.setNoAi(wasNoAi);
         }
     }
 
-    /**
-     * Advances the auto-filling meter one tick and decays momentum. For NPCs, also
-     * runs the virtual presser. Returns true when the meter wrapped this tick.
-     */
     public boolean tickMeter() {
         this.prevMeterPhase = this.meterPhase;
         this.meterPhase += BeamClash.SWEEP_RATE;
@@ -133,7 +116,6 @@ public class ClashParticipant {
         return wrapped;
     }
 
-    /** NPC presses once per sweep, right as the marker crosses the sweet-spot center. */
     private void tickNpcPress() {
         float center = (BeamClash.SWEET_LOW + BeamClash.SWEET_HIGH) * 0.5f;
         boolean crossedCenter = prevMeterPhase < center && meterPhase >= center && meterPhase >= prevMeterPhase;
@@ -144,21 +126,32 @@ public class ClashParticipant {
         }
     }
 
-    /**
-     * Scores a player's key press against the current meter position and feeds the
-     * result into momentum. One scoring opportunity per sweep: any press consumes the
-     * sweep by resetting the meter, so mistimed spam is self-punishing.
-     */
     public void registerPlayerPress() {
-        float efficiency = scoreEfficiency(this.meterPhase);
+        float phaseAtPress = this.meterPhase;
+        float efficiency = scoreEfficiency(phaseAtPress) * botConsistencyPenalty(phaseAtPress);
         addBurst(efficiency);
         this.idleTicks = 0;
-        // Consume the sweep regardless of accuracy.
         this.meterPhase = 0.0f;
         this.prevMeterPhase = 0.0f;
     }
 
-    /** 1.0 at the center of the sweet-spot, tapering to 0 at its edges, 0 outside. */
+    private float botConsistencyPenalty(float phaseAtPress) {
+        recentPressPhases[pressWriteIndex] = phaseAtPress;
+        pressWriteIndex = (pressWriteIndex + 1) % TIMING_SAMPLE_COUNT;
+        if (pressSampleCount < TIMING_SAMPLE_COUNT) {
+            pressSampleCount++;
+            return 1.0f;
+        }
+        float min = Float.MAX_VALUE;
+        float max = -Float.MAX_VALUE;
+        for (float p : recentPressPhases) {
+            if (p < BeamClash.SWEET_LOW || p > BeamClash.SWEET_HIGH) return 1.0f;
+            min = Math.min(min, p);
+            max = Math.max(max, p);
+        }
+        return (max - min) < BOT_SPREAD_THRESHOLD ? BOT_DAMPEN : 1.0f;
+    }
+
     public static float scoreEfficiency(float phase) {
         if (phase < BeamClash.SWEET_LOW || phase > BeamClash.SWEET_HIGH) return BeamClash.OFF_SPOT_EFFICIENCY;
         float center = (BeamClash.SWEET_LOW + BeamClash.SWEET_HIGH) * 0.5f;
