@@ -45,6 +45,9 @@ public class GeneralUserConfig {
 	private Float overShoulderSide = 1.45f;
 	private Float overShoulderSmoothing = 0.4f;
 
+	private TitleScreenConfig titleScreenConfig = new TitleScreenConfig();
+	private PauseScreenConfig pauseScreenConfig = new PauseScreenConfig();
+
 	public Integer getOverShoulderMode() {
 		if (overShoulderMode == null || overShoulderMode < 0 || overShoulderMode > 2) overShoulderMode = 2;
 		return overShoulderMode;
@@ -137,6 +140,23 @@ public class GeneralUserConfig {
 			return;
 		}
 		this.menuScaleMultiplier = menuScaleMultiplier;
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class TitleScreenConfig {
+		private Boolean removeRealmsButton = true;
+		private Boolean displayDiscordButton = true;
+		private Boolean displayPatreonButton = true;
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class PauseScreenConfig {
+		private Boolean removeFeedbackButton = true;
+		private Boolean removeReportButton = true;
+		private Boolean displayDiscordButton = true;
+		private Boolean displayPatreonButton = true;
 	}
 }
 
