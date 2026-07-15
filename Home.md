@@ -44,6 +44,11 @@ For developers writing Java against DMZ:
 
 - [[Getting Started|Getting-Started]] · [[Implementation & Events|Implementation-&-Events]] · [[Creating a DMZ Addon|Creating-a-DMZ-Addon]]
 
+## 🤝 Project
+
+- [[Contributing|Contributing]] — how to report bugs, test releases, and submit PRs
+- [[Security Policy|Security]] — how to responsibly disclose vulnerabilities
+
 ---
 
 > Looking for the old player guides? The [Trello](https://trello.com/b/xewaqYee/dragonmine-z-trello) is **outdated** and shouldn't be used for v2.0+ — this wiki replaces it.
