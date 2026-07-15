@@ -83,3 +83,7 @@
    * [[Getting Started|Getting-Started]]
    * [[Implementation & Events|Implementation-&-Events]]
    * [[Creating a DMZ Addon|Creating-a-DMZ-Addon]]
+
+### Project
+* [[Contributing|Contributing]]
+* [[Security Policy|Security]]
