@@ -208,10 +208,19 @@ public class TransformationsHelper {
 	private static boolean meetsFreeTransformMasteryFor(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
 		if (formData == null) return false;
 		if (statsData.getPlayer() != null && statsData.getPlayer().isCreative()) return true;
+		if (isFirstUnlockedForm(statsData, groupName, formData, stack)) return true;
 		double have = stack
 				? statsData.getCharacter().getStackFormMasteries().getMastery(groupName, formData.getName())
 				: statsData.getCharacter().getFormMasteries().getMastery(groupName, formData.getName());
 		return have >= formData.getAllowFreeTransformOnMastery();
+	}
+
+	private static boolean isFirstUnlockedForm(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
+		if (formData == null) return false;
+		List<FormConfig.FormData> unlocked = stack
+				? getUnlockedStackForms(statsData, groupName)
+				: getUnlockedForms(statsData, statsData.getCharacter().getRaceName(), groupName);
+		return !unlocked.isEmpty() && unlocked.get(0).getName().equalsIgnoreCase(formData.getName());
 	}
 
 	public static List<String> getSelectableStackFormNames(StatsData statsData, String groupName) {
