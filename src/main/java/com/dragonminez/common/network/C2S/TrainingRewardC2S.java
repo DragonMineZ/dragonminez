@@ -17,7 +17,6 @@ import java.util.function.Supplier;
 
 public class TrainingRewardC2S {
 	private static final long MIN_CLAIM_INTERVAL_TICKS = 100L;
-	private static final int MAX_LEVELS_CLEARED = 100;
 
 	private final String minigameId;
 	private final int levelsCleared;
@@ -47,7 +46,7 @@ public class TrainingRewardC2S {
 
 			int plausibleLevels = TrainingSessionTracker.plausibleLevels(player.getUUID(), now);
 			if (plausibleLevels <= 0) return;
-			int clampedLevelsCleared = Math.min(Math.min(levelsCleared, MAX_LEVELS_CLEARED), plausibleLevels);
+			int clampedLevelsCleared = Math.min(levelsCleared, plausibleLevels);
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(statsData -> {
 				TrainingConfig config = ConfigManager.getTrainingConfig();
