@@ -1,4 +1,4 @@
-package com.dragonminez.common.util;
+package com.dragonminez.common.util.adapters;
 
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.wishes.*;
@@ -7,7 +7,6 @@ import com.google.gson.*;
 import java.lang.reflect.Type;
 
 public class WishTypeAdapter implements JsonSerializer<Wish>, JsonDeserializer<Wish> {
-
 	private static final String TYPE = "type";
 
 	@Override
@@ -40,6 +39,7 @@ public class WishTypeAdapter implements JsonSerializer<Wish>, JsonDeserializer<W
 			case "relocatestats" -> RelocateStatsWish.class;
 			case "changedifficulty" -> ChangeDifficultyWish.class;
 			case "resetstory" -> ResetStoryWish.class;
+			case "item_list_wish"  -> ItemListWish.class;
 			default -> null;
 		};
 	}

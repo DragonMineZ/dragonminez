@@ -1,7 +1,9 @@
 package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.common.network.CompressionUtil;
-import com.dragonminez.common.util.WishTypeAdapter;
+import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
+import com.dragonminez.common.util.adapters.WishTypeAdapter;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.WishManager;
 import com.google.gson.Gson;
@@ -18,11 +20,11 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class SyncWishesS2C {
-
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Wish.class, new WishTypeAdapter())
+            .registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
+            .setPrettyPrinting()
             .create();
-
     private final byte[] compressedWishes;
 
     public SyncWishesS2C(Map<String, List<Wish>> wishes) {

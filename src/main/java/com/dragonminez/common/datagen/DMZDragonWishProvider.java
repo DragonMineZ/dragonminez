@@ -3,7 +3,9 @@ package com.dragonminez.common.datagen;
 import com.dragonminez.Reference;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonDefinition;
-import com.dragonminez.common.util.WishTypeAdapter;
+import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
+import com.dragonminez.common.util.adapters.WishTypeAdapter;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.wishes.*;
 import com.google.gson.Gson;
@@ -12,7 +14,6 @@ import com.google.gson.JsonObject;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
-import net.minecraft.util.Tuple;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,7 +21,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class DMZDragonWishProvider implements DataProvider {
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().registerTypeAdapter(Wish.class, new WishTypeAdapter()).create();
+	private static final Gson GSON = new GsonBuilder()
+			.registerTypeAdapter(Wish.class, new WishTypeAdapter())
+			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
+			.setPrettyPrinting()
+			.create();
 	private final PackOutput output;
 	public DMZDragonWishProvider(PackOutput output) { this.output = output; }
 
@@ -58,8 +63,8 @@ public class DMZDragonWishProvider implements DataProvider {
 		defaultWishes.add(new ItemWish("wish.shenron.saiyanship.name", "wish.shenron.saiyanship.desc", "dragonminez:saiyan_ship", 1));
 		defaultWishes.add(new PassiveResetWish("wish.shenron.racialskillreset.name", "wish.shenron.racialskillreset.desc"));
 		defaultWishes.add(new ReCustomizeWish("wish.shenron.customization.name", "wish.shenron.customization.desc"));
-		List<Tuple<String, Integer>> materials = new ArrayList<>(); materials.add(new Tuple<>("dragonminez:kikono_shard", 32)); materials.add(new Tuple<>("minecraft:iron_ingot", 64)); defaultWishes.add(new MultiItemWish("wish.shenron.materials.name", "wish.shenron.materials.desc", materials));
-		List<Tuple<String, Integer>> strongest = new ArrayList<>(); strongest.add(new Tuple<>("dragonminez:strongest_armor_chestplate", 1)); strongest.add(new Tuple<>("dragonminez:strongest_armor_leggings", 1)); strongest.add(new Tuple<>("dragonminez:strongest_armor_boots", 1)); defaultWishes.add(new MultiItemWish("wish.shenron.strongest.name", "wish.shenron.strongest.desc", strongest));
+		List<GenericItemDTO> materials = new ArrayList<>(); materials.add(new GenericItemDTO("dragonminez:kikono_shard", 32)); materials.add(new GenericItemDTO("minecraft:iron_ingot", 64)); defaultWishes.add(new ItemListWish("wish.shenron.materials.name", "wish.shenron.materials.desc", materials));
+		List<GenericItemDTO> strongest = new ArrayList<>(); strongest.add(new GenericItemDTO("dragonminez:strongest_armor_chestplate", 1)); strongest.add(new GenericItemDTO("dragonminez:strongest_armor_leggings", 1)); strongest.add(new GenericItemDTO("dragonminez:strongest_armor_boots", 1)); defaultWishes.add(new ItemListWish("wish.shenron.strongest.name", "wish.shenron.strongest.desc", strongest));
 		return defaultWishes;
 	}
 
@@ -71,11 +76,11 @@ public class DMZDragonWishProvider implements DataProvider {
 		defaultWishes.add(new PassiveResetWish("wish.porunga.racialskillreset.name", "wish.porunga.racialskillreset.desc"));
 		defaultWishes.add(new ReCustomizeWish("wish.porunga.customization.name", "wish.porunga.customization.desc"));
 		defaultWishes.add(new RelocateStatsWish("wish.porunga.relocatestats.name", "wish.porunga.relocatestats.desc"));
-		List<Tuple<String, Integer>> materials = new ArrayList<>(); materials.add(new Tuple<>("dragonminez:kikono_shard", 64)); materials.add(new Tuple<>("minecraft:iron_ingot", 128)); defaultWishes.add(new MultiItemWish("wish.porunga.materials.name", "wish.porunga.materials.desc", materials));
-		List<Tuple<String, Integer>> invincible = new ArrayList<>(); invincible.add(new Tuple<>("dragonminez:invencible_armor_helmet", 1)); invincible.add(new Tuple<>("dragonminez:invencible_armor_chestplate", 1)); invincible.add(new Tuple<>("dragonminez:invencible_armor_leggings", 1)); invincible.add(new Tuple<>("dragonminez:invencible_armor_boots", 1)); defaultWishes.add(new MultiItemWish("wish.porunga.invincible.name", "wish.porunga.invincible.desc", invincible));
-		List<Tuple<String, Integer>> invincibleBlue = new ArrayList<>(); invincibleBlue.add(new Tuple<>("dragonminez:invencible_blue_armor_helmet", 1)); invincibleBlue.add(new Tuple<>("dragonminez:invencible_blue_armor_chestplate", 1)); invincibleBlue.add(new Tuple<>("dragonminez:invencible_blue_armor_leggings", 1)); invincibleBlue.add(new Tuple<>("dragonminez:invencible_blue_armor_boots", 1)); defaultWishes.add(new MultiItemWish("wish.porunga.invincible_blue.name", "wish.porunga.invincible_blue.desc", invincibleBlue));
-		List<Tuple<String, Integer>> potaraYellow = new ArrayList<>(); potaraYellow.add(new Tuple<>("dragonminez:pothala_left", 1)); potaraYellow.add(new Tuple<>("dragonminez:pothala_right", 1)); defaultWishes.add(new MultiItemWish("wish.porunga.pothala_yellow.name", "wish.porunga.pothala_yellow.desc", potaraYellow));
-		List<Tuple<String, Integer>> potaraGreen = new ArrayList<>(); potaraGreen.add(new Tuple<>("dragonminez:green_pothala_left", 1)); potaraGreen.add(new Tuple<>("dragonminez:green_pothala_right", 1)); defaultWishes.add(new MultiItemWish("wish.porunga.pothala_green.name", "wish.porunga.pothala_green.desc", potaraGreen));
+		List<GenericItemDTO> materials = new ArrayList<>(); materials.add(new GenericItemDTO("dragonminez:kikono_shard", 64)); materials.add(new GenericItemDTO("minecraft:iron_ingot", 128)); defaultWishes.add(new ItemListWish("wish.porunga.materials.name", "wish.porunga.materials.desc", materials));
+		List<GenericItemDTO> invincible = new ArrayList<>(); invincible.add(new GenericItemDTO("dragonminez:invencible_armor_helmet", 1)); invincible.add(new GenericItemDTO("dragonminez:invencible_armor_chestplate", 1)); invincible.add(new GenericItemDTO("dragonminez:invencible_armor_leggings", 1)); invincible.add(new GenericItemDTO("dragonminez:invencible_armor_boots", 1)); defaultWishes.add(new ItemListWish("wish.porunga.invincible.name", "wish.porunga.invincible.desc", invincible));
+		List<GenericItemDTO> invincibleBlue = new ArrayList<>(); invincibleBlue.add(new GenericItemDTO("dragonminez:invencible_blue_armor_helmet", 1)); invincibleBlue.add(new GenericItemDTO("dragonminez:invencible_blue_armor_chestplate", 1)); invincibleBlue.add(new GenericItemDTO("dragonminez:invencible_blue_armor_leggings", 1)); invincibleBlue.add(new GenericItemDTO("dragonminez:invencible_blue_armor_boots", 1)); defaultWishes.add(new ItemListWish("wish.porunga.invincible_blue.name", "wish.porunga.invincible_blue.desc", invincibleBlue));
+		List<GenericItemDTO> potaraYellow = new ArrayList<>(); potaraYellow.add(new GenericItemDTO("dragonminez:pothala_left", 1)); potaraYellow.add(new GenericItemDTO("dragonminez:pothala_right", 1)); defaultWishes.add(new ItemListWish("wish.porunga.pothala_yellow.name", "wish.porunga.pothala_yellow.desc", potaraYellow));
+		List<GenericItemDTO> potaraGreen = new ArrayList<>(); potaraGreen.add(new GenericItemDTO("dragonminez:green_pothala_left", 1)); potaraGreen.add(new GenericItemDTO("dragonminez:green_pothala_right", 1)); defaultWishes.add(new ItemListWish("wish.porunga.pothala_green.name", "wish.porunga.pothala_green.desc", potaraGreen));
 		return defaultWishes;
 	}
 
