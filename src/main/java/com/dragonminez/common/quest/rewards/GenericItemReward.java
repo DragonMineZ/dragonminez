@@ -1,7 +1,9 @@
 package com.dragonminez.common.quest.rewards;
 
 import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -11,14 +13,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 @Getter
-public class ItemReward extends QuestReward {
-	private final String itemId;
-	private final int count;
+@Setter
+public class GenericItemReward extends QuestReward {
+	protected GenericItemDTO itemReward;
 
-	public ItemReward(ItemStack itemStack) {
-		super(RewardType.ITEM);
-		this.itemId = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
-		this.count = itemStack.getCount();
+	public GenericItemReward(GenericItemDTO itemReward) {
+		super(RewardType.GENERIC_ITEM);
+		this.itemReward = itemReward;
 	}
 
 	@Override
@@ -28,7 +29,7 @@ public class ItemReward extends QuestReward {
 
 	@Override
 	public void giveReward(ServerPlayer player, double rewardMultiplier) {
-		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
+		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemReward.getItemId()));
 		if (item == null) return;
 		int scaledCount = scaledCount(rewardMultiplier);
 		if (scaledCount <= 0) return;
@@ -41,13 +42,13 @@ public class ItemReward extends QuestReward {
 	}
 
 	public int scaledCount(double rewardMultiplier) {
-		if (count <= 0) return 0;
-		return Math.max(1, (int) Math.round(count * rewardMultiplier));
+		if (itemReward.getCount() <= 0) return 0;
+		return Math.max(1, (int) Math.round(itemReward.getCount() * rewardMultiplier));
 	}
 
 	@Override
 	public Component getDescription() {
-		return describe(count);
+		return describe(itemReward.getCount());
 	}
 
 	@Override
@@ -60,7 +61,7 @@ public class ItemReward extends QuestReward {
 				"gui.dragonminez.quests.rewards.item",
 				shownCount,
 				Component.translatable(
-						"item." + ResourceLocation.parse(itemId).toLanguageKey()
+						"item." + ResourceLocation.parse(itemReward.getItemId()).toLanguageKey()
 				)
 		);
 	}

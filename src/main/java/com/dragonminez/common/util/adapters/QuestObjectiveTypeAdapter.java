@@ -1,4 +1,4 @@
-package com.dragonminez.common.util;
+package com.dragonminez.common.util.adapters;
 
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.objectives.*;
