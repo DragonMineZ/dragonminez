@@ -1,5 +1,7 @@
 [[Home]]
 
+[[FAQ|FAQ]]
+
 ### DMZ Systems (Reference)
 1. Progression & Character
    * [[Stats & Attributes|Stats-and-Attributes]]

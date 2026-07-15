@@ -2,7 +2,7 @@
 
 Welcome to the DragonMineZ wiki — the reference for **how the mod works**, **how to configure it**, and **how to create your own content and add-ons**.
 
-Use the sidebar to browse everything, or jump into a section below.
+Use the sidebar to browse everything, or jump into a section below. Hitting a common issue? Check the [[FAQ|FAQ]].
 
 <img width="1002" height="294" alt="endofz" src="https://github.com/user-attachments/assets/ab73d73d-1e2e-4185-881c-66c1175bcd06" />
 
