@@ -348,7 +348,13 @@ public class ConfigManager {
 	private static int mergeMapValues(JsonObject oldMap, JsonObject newMap, JsonObject baseMap, Class<?> valueType) {
 		int count = 0;
 		for (String key : new ArrayList<>(newMap.keySet())) {
-			if (!oldMap.has(key)) continue;
+			if (!oldMap.has(key)) {
+				if (baseMap != null && baseMap.has(key)) {
+					newMap.remove(key);
+					count++;
+				}
+				continue;
+			}
 			JsonElement oldVal = oldMap.get(key);
 			JsonElement newVal = newMap.get(key);
 			if (oldVal.isJsonNull()) continue;
