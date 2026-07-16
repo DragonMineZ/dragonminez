@@ -176,8 +176,8 @@ dependencies {
     implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.3"))
     implementation("com.eliotlash.mclib:mclib:20")
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
-    compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api"))
-    runtimeOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1"))
+    compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:8.1.0+:api"))
+    runtimeOnly(fg.deobf("top.theillusivec4.curios:curios-forge:8.1.0+"))
 
     // Lukas' Weapon Levelling
     compileOnly(fg.deobf("curse.maven:weapon-leveling-644704:8400008"))
