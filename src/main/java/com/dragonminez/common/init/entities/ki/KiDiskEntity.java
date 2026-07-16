@@ -3,14 +3,23 @@ package com.dragonminez.common.init.entities.ki;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Character;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
@@ -314,11 +323,11 @@ public class KiDiskEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             Entity targetEntity = pResult.getEntity();
             if (this.shouldDamage(targetEntity)) {
-                // A piercing disk delivers its FULL damage on contact (i-frames keep it to one full hit per pass).
                 boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getKiDamage());
 
                 if (wasHit) {
                     this.onSuccessfulHit(targetEntity);
+                    this.tryCutSaiyanTail(targetEntity);
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                         double colorData = (double) this.getColor();
                         double sizeData = (double) this.getBbWidth();
@@ -331,5 +340,31 @@ public class KiDiskEntity extends AbstractKiProjectile {
                 }
             }
         }
+    }
+
+    private void tryCutSaiyanTail(Entity targetEntity) {
+        if (this.level().isClientSide) return;
+        if (!(targetEntity instanceof ServerPlayer targetPlayer)) return;
+
+        StatsData data = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).orElse(null);
+        if (data == null) return;
+
+        Character character = data.getCharacter();
+        if (!character.isHasSaiyanTail() || !canHaveTail(data)) return;
+
+        float diskPower = this.getKiDamage();
+        if (diskPower <= data.getDefense() || diskPower <= targetPlayer.getHealth()) return;
+
+        character.setHasSaiyanTail(false);
+        NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(targetPlayer), targetPlayer);
+        targetPlayer.level().playSound(null, targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(),
+                MainSounds.KATANA_SLASH.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+    }
+
+    private static boolean canHaveTail(StatsData data) {
+        String race = data.getCharacter().getRaceName();
+        if ("saiyan".equalsIgnoreCase(race)) return true;
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
+        return config != null && Boolean.TRUE.equals(config.getHasSaiyanTail());
     }
 }
