@@ -1,34 +1,34 @@
 {
   "type": "forge:add_spawns",
-  "biomes": "dragonminez:rocky",
+  "biomes": "#dragonminez:has_saibamans",
   "spawners": [{
     "type": "dragonminez:saga_saibaman1",
-    "weight": 15,
-    "minCount": 1,
-    "maxCount": 2
+    "weight": 80,
+    "minCount": 2,
+    "maxCount": 4
   },{
     "type": "dragonminez:saga_saibaman2",
-    "weight": 14,
-    "minCount": 1,
-    "maxCount": 2
+    "weight": 70,
+    "minCount": 2,
+    "maxCount": 4
   },{
     "type": "dragonminez:saga_saibaman3",
-    "weight": 12,
+    "weight": 60,
     "minCount": 1,
-    "maxCount": 2
+    "maxCount": 3
   },{
     "type": "dragonminez:saga_saibaman4",
-    "weight": 10,
+    "weight": 45,
     "minCount": 1,
-    "maxCount": 2
+    "maxCount": 3
   },{
     "type": "dragonminez:saga_saibaman5",
-    "weight": 8,
+    "weight": 35,
     "minCount": 1,
     "maxCount": 2
   }, {
     "type": "dragonminez:saga_saibaman6",
-    "weight": 6,
+    "weight": 25,
     "minCount": 1,
     "maxCount": 2
   }]
