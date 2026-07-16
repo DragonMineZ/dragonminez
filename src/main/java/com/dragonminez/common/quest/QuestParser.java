@@ -13,10 +13,8 @@ import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.*;
 import com.dragonminez.common.diagnostics.JsonKeys;
 import com.dragonminez.common.stats.techniques.KiAttackData;
-import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
-import com.dragonminez.common.util.adapters.WishTypeAdapter;
+import com.dragonminez.common.util.gson.GsonUtils;
 import com.dragonminez.common.util.types.items.GenericItemDTO;
-import com.dragonminez.common.wish.Wish;
 import com.google.gson.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -25,6 +23,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -35,11 +34,6 @@ import java.util.Set;
  * Central parser for the unified quest JSON format.
  */
 public class QuestParser {
-	private static final Gson GSON = new GsonBuilder()
-			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
-			.setPrettyPrinting()
-			.create();
-
 	/**
 	 * Parses a quest from the unified quest JSON format.
 	 */
@@ -134,7 +128,7 @@ public class QuestParser {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();
 				int count = json.get("count").getAsInt();
-				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+				Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
 				yield (item != Items.AIR) ? new ItemObjective(item, count) : null;
 			}
 			case "KILL" -> {
@@ -181,7 +175,7 @@ public class QuestParser {
 				String interactEntity = json.has("entity") ? json.get("entity").getAsString() : null;
 				String entityName = json.has("entityName") ? json.get("entityName").getAsString() : null;
 				EntityType<?> interactType = interactEntity != null
-						? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(interactEntity))
+						? ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(interactEntity))
 						: null;
 				yield new InteractObjective(interactType, entityName);
 			}
@@ -238,11 +232,11 @@ public class QuestParser {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();
 				int count = json.has("count") ? json.get("count").getAsInt() : 1;
-				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+				Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
 				yield (item != Items.AIR) ? new ItemReward(new ItemStack(item, count)) : null;
 			}
 			case "GENERIC_ITEM" -> {
-				var genericItem = GSON.fromJson(
+				var genericItem = GsonUtils.GSON.fromJson(
 						json.getAsJsonObject("itemReward"),
 						GenericItemDTO.class
 				);

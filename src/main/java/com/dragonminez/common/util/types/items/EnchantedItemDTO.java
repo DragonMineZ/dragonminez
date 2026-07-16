@@ -1,6 +1,6 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,52 +17,68 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 public class EnchantedItemDTO extends GenericItemDTO {
-    protected Map<String, Integer> enchantments = new HashMap<>();
+    private static final String ITEM_TYPE = "enchanted_item";
 
-    public EnchantedItemDTO(String itemId, int count) {
-        super("enchanted_item", itemId, count);
+    protected Map<ResourceLocation, Integer> enchantments = new HashMap<>();
+
+    public EnchantedItemDTO(ResourceLocation itemId, int count) {
+        super(ITEM_TYPE, itemId, count);
     }
 
-    public EnchantedItemDTO(String itemId, int count, Map<String, Integer> enchantments) {
-        super("enchanted_item", itemId, count);
+    public EnchantedItemDTO(ResourceLocation itemId, int count, Map<ResourceLocation, Integer> enchantments) {
+        super(ITEM_TYPE, itemId, count);
         this.enchantments = enchantments;
     }
 
-    public EnchantedItemDTO(String itemType, String itemId, int count) {
-        this.itemType = itemType;
-        this.itemId = itemId;
-        this.count = count;
+    public EnchantedItemDTO(String itemType, ResourceLocation itemId, int count) {
+        super(itemType, itemId, count);
     }
 
-    public EnchantedItemDTO(String itemType, String itemId, int count, Map<String, Integer> enchantments) {
+    public EnchantedItemDTO(String itemType, ResourceLocation itemId, int count, Map<ResourceLocation, Integer> enchantments) {
         super(itemType, itemId, count);
         this.enchantments = enchantments;
     }
 
     @Override
     public ItemStack getItemStack() {
-        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(this.getItemId()));
-        if (item != null) {
-            var itemStack = new ItemStack(item, this.count);
-            if (this.enchantments != null && !this.enchantments.isEmpty()) {
-                EnchantmentHelper.setEnchantments(this.getEnchantmentMap(), itemStack);
-            }
-            return itemStack;
-        }
-        return ItemStack.EMPTY;
+        ItemStack itemStack = super.getItemStack();
+        this.applyEnchantments(itemStack);
+        return itemStack;
     }
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, EnchantedItemDTO.class);
+    protected void applyEnchantments(ItemStack itemStack) {
+        if (this.enchantments == null || this.enchantments.isEmpty()) {
+            return;
+        }
+
+        EnchantmentHelper.setEnchantments(this.getEnchantmentMap(), itemStack);
     }
 
     protected Map<Enchantment, Integer> getEnchantmentMap() {
-        Map<Enchantment, Integer> enchantments = new HashMap<>();
-        this.enchantments.keySet().forEach(key -> {
-            Enchantment value = ForgeRegistries.ENCHANTMENTS.getValue(ResourceLocation.tryParse(key));
-            enchantments.put(value, this.enchantments.get(key));
-        });
-        return enchantments;
+        Map<Enchantment, Integer> enchantmentMap = new HashMap<>(this.enchantments.size());
+        this.enchantments.forEach((id, level) ->
+                enchantmentMap.put(
+                        this.getEnchantment(id, level),
+                        level
+                )
+        );
+        return enchantmentMap;
+    }
+
+    protected Enchantment getEnchantment(ResourceLocation id, Integer level) {
+        if (id == null) {
+            throw new JsonSyntaxException(getErrorPrefix() + " enchantment id must not be null.");
+        }
+
+        Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(id);
+        if (enchantment == null) {
+            throw new JsonSyntaxException(getErrorPrefix() + " unknown enchantment '" + id + "'.");
+        }
+
+        if (level == null || level < 1) {
+            throw new JsonSyntaxException(getErrorPrefix() + " enchantment '" + id + "' has invalid level " + level + ".");
+        }
+
+        return enchantment;
     }
 }

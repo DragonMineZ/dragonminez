@@ -1,22 +1,22 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Items;
+import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.Map;
+import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
-public class TippedArrowDTO extends PotionDTO {
-    public TippedArrowDTO(String potion, Integer count, Map<String, Integer> mobEffects) {
-        super("tipped_arrow", "minecraft:tipped_arrow", count, potion, mobEffects);
-    }
+public final class TippedArrowDTO extends PotionDTO {
+    private static final String ITEM_TYPE = "tipped_arrow";
+    private static final ResourceLocation TIPPED_ARROW_ID = ForgeRegistries.ITEMS.getKey(Items.TIPPED_ARROW);
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, TippedArrowDTO.class);
+    public TippedArrowDTO(ResourceLocation potion, Integer count, List<PotionEffectDTO> mobEffects) {
+        super(ITEM_TYPE, TIPPED_ARROW_ID, count, potion, mobEffects);
     }
 }

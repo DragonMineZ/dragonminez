@@ -1,4 +1,4 @@
-package com.dragonminez.common.util.adapters;
+package com.dragonminez.common.util.gson;
 
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.wishes.*;

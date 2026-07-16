@@ -1,4 +1,4 @@
-package com.dragonminez.common.util.adapters;
+package com.dragonminez.common.util.gson;
 
 import com.dragonminez.common.util.types.items.*;
 import com.google.gson.*;
