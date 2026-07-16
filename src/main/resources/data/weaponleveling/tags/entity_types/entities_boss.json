@@ -1,0 +1,173 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "dragonminez:saga_ozaruvegeta",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_ozaru",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_ginyu",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_ginyu_goku",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_frieza_first",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_frieza_second",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_frieza_third",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_frieza_base",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_frieza_fp",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_mecha_frieza",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_king_cold",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_cell_imperfect",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_cell_semiperfect",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_cell_perfect",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_cell_superperfect",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_buufat",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_evilbuu",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_superbuu",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_superbuu_piccolo",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_superbuu_gotenks",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_superbuu_gohan",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_kidbuu",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_garlick_jr_transformed",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_turles",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_slug_giant",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_cooler",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_cooler_5ta",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_metal_cooler",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_metal_cooler_core",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_super_a13",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_broly_base",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_broly_ssj_restricted",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_broly_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_broly_lssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_bojack",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_bojack_fp",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_bio_broly",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_bio_broly_giant",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_janemba_fat",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_super_janemba",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_hirudegarn",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_super_hirudegarn",
+      "required": false
+    }
+  ]
+}

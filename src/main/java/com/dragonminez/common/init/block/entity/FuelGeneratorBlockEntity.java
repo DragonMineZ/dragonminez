@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -121,13 +122,19 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 
 		if (burnTime <= 0 && energyStorage.getEnergyStored() < energyStorage.getMaxEnergyStored()) {
 			ItemStack fuel = itemHandler.getStackInSlot(0);
+			Item fuelItem = fuel.getItem();
 			if (!fuel.isEmpty()) {
 				int fuelTime = ForgeHooks.getBurnTime(fuel, RecipeType.SMELTING);
 				if (fuelTime > 0) {
 					this.burnTime = fuelTime;
 					this.maxBurnTime = fuelTime;
 					fuel.shrink(1);
-					itemHandler.setStackInSlot(0, fuel);
+					if (fuel.isEmpty()) {
+						var remainder = fuelItem.getCraftingRemainingItem(fuel);
+						itemHandler.setStackInSlot(0, remainder);
+					} else {
+						itemHandler.setStackInSlot(0, fuel);
+					}
 					changed = true;
 					if (!isBurning) pLevel.setBlock(pPos, pState.setValue(FuelGeneratorBlock.LIT, true), 3);
 				}

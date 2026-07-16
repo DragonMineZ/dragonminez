@@ -22,6 +22,7 @@ public class GeneralServerConfig {
 	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
+	private CraftingConfig crafting = new CraftingConfig();
 	private StorageConfig storage = new StorageConfig();
 	private DeveloperConfig developer = new DeveloperConfig();
 
@@ -1002,5 +1003,17 @@ public class GeneralServerConfig {
 		public Boolean getKeepMutantOnDeath() {
 			return keepMutantOnDeath != null && keepMutantOnDeath;
 		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class CraftingConfig {
+		private Boolean copyEnchantmentsFromTemplate = false;
+		private Boolean copyWeaponLevelFromTemplate = false;
+		private Boolean copyWeaponLevelProgressFromTemplate = false;
+		private Boolean copyApotheosisRarityFromTemplate = false;
+		private Boolean copyApotheosisAffixesFromTemplate = false;
+		private Boolean copyApotheosisSocketsFromTemplate = false;
+		private Boolean copyApotheosisGemsFromTemplate = false;
 	}
 }

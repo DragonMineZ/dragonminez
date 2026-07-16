@@ -1,0 +1,365 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "dragonminez:a13_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a14_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a16_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a17_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a17_super_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a18_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a18_cell_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a18_kame_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a18_tournament_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:a20_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:age1000_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:bardock_dbz_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:bardock_super_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:beerus_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:blackgoku_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:broly_super_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:broly_z_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:capsule_corp_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:caulifla_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:chaoz_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:cooler_soldier_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:demon_gi_blue_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:dragon_clan_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:evil_buu_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:fighter_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:fusion_zamasu_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:future_gohan_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:gamma1_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:gamma2_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:gas_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:gero_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:gine_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:gogeta_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:gohan_super_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:goku_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:goku_gt_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:goku_kid_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:goku_super_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:goku_whis_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:goten_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:goten_super_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:granola_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:great_saiyaman_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:great_saiyaman_armor_2_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:hit_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:invencible_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:invencible_blue_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:kale_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:kefla_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:kibito_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:king_vegeta_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:majin21_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:majin_buu_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:mighty_majin_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:mystic_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:naruke_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:orange_high_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:piccolo_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:pride_troops_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:raditz_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:shin_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:slug_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:strongest_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:subaru_natsuki_arc6_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:subaru_natsuki_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:super_buu_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:thragg_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:gilgamesh_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:tien_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:trunks_kid_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:trunks_super_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:trunks_z_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:turles_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vegeta_buu_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vegeta_gt_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vegeta_namek_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vegeta_saiyan_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vegeta_super_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vegeta_whis_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vegeta_z_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vegetto_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:vergil_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:videl_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:warrior_clan_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:whis_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:wonder_majin_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:xeno_goku_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:xeno_goku_patreon_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:yardrat_armor_chestplate",
+      "required": false
+    },
+    {
+      "id": "dragonminez:zamasu_armor_chestplate",
+      "required": false
+    }
+  ]
+}
