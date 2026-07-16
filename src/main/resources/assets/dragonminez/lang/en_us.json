@@ -2753,7 +2753,7 @@
   "skill.dragonminez.racial_human": "Blood-Fueled Ki",
   "skill.dragonminez.racial_human.desc": "Ki attacks cost 25% less Ki — the saved amount is drawn from your health instead (12.5% of the original cost as HP). That HP drain is then added as flat bonus damage on the attack's first hit. §6Android §6Upgraded§r: The discount rises to 50%, all Ki regen is doubled, but Ki attacks deal 15% less damage.",
   "skill.dragonminez.racial_saiyan": "Zenkai",
-  "skill.dragonminez.racial_saiyan.desc": "Upon staying 8 seconds below 15%% health, Saiyans will receive a Zenkai boost, which heals them by %d%% of their max health and increases their stats by a %d%%. This has a %d seconds cooldown. A Saiyan can receive a maximum of %d Zenkai boosts.",
+  "skill.dragonminez.racial_saiyan.desc": "Upon staying 8 seconds below 15%% health, Saiyans will receive a Zenkai boost, which heals them by %d%% of their max health and increases their stats by a %d%%. This has a %d seconds cooldown. A Saiyan can receive a maximum of %d Zenkai boosts. Only works from level %d onwards.",
   "skill.dragonminez.racial_namekian": "Assimilation",
   "skill.dragonminez.racial_namekian.desc": "Namekians can assimilate with other Namekians by selecting the Skill on the X menu, then holding G next to a Namekian. When assimilating, you will regen %d%% of your max health, and will also gain a permanent %d%% (of your stats) boost to your stats. You can assimilate a maximum of %d times.",
   "skill.dragonminez.racial_frostdemon": "Prodigious Strength",

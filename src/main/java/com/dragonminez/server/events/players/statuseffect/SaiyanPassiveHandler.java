@@ -41,6 +41,10 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
     private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {
         GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 
+        if (data.getLevel() < config.getSaiyanZenkaiMinLevel()) {
+            resetSaiyanZenkaiTimer(player);
+            return;
+        }
         if (data.getResources().getRacialSkillCount() >= config.getSaiyanZenkaiAmount()) {
             resetSaiyanZenkaiTimer(player);
             return;

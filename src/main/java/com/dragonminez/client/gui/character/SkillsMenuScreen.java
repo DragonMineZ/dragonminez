@@ -1247,7 +1247,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					int zenkaiStat = (int) Math.round((config.getSaiyanZenkaiStatBoost() * 100));
 					int cooldown = config.getSaiyanZenkaiCooldownSeconds();
 					int maxUses = config.getSaiyanZenkaiAmount();
-					description = tr("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown, maxUses).getString();
+					int minLevel = config.getSaiyanZenkaiMinLevel();
+					description = tr("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown, maxUses, minLevel).getString();
 				}
 				case "racial_namekian" -> {
 					int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
