@@ -1,6 +1,6 @@
-package com.dragonminez.client.init.entities.renderer.sagas.layer;
+package com.dragonminez.client.init.entities.renderer.rr.layer;
 
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -14,16 +14,15 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-public class ItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> {
+public class DMZRedRibbonItemInHandLayer<T extends RedRibbonEntity> extends GeoRenderLayer<T> {
 
-    public ItemInHandLayer(GeoEntityRenderer<T> entityRendererIn) {
+    public DMZRedRibbonItemInHandLayer(GeoEntityRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
 
     @Override
-    public void renderForBone(PoseStack poseStack, DBSagasEntity animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-
-        if (bone.getName().equals("right_item_hand")) {
+    public void renderForBone(PoseStack poseStack, RedRibbonEntity animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+        if (bone.getName().equals("right_hand_item")) {
             ItemStack mainHandItem = animatable.getItemBySlot(EquipmentSlot.MAINHAND);
 
             if (!mainHandItem.isEmpty()) {
