@@ -518,6 +518,33 @@ public class ConfigManager {
 		}
 	}
 
+	private static void backupRenamedDefaultForms(Path formsDir, Map<String, FormConfig> defaultForms) {
+		if (!Files.exists(formsDir) || defaultForms.isEmpty()) return;
+		Set<String> defaults = new HashSet<>();
+		for (FormConfig form : defaultForms.values()) {
+			if (form != null && form.getGroupName() != null) defaults.add(form.getGroupName().toLowerCase());
+		}
+		try (Stream<Path> stream = Files.list(formsDir)) {
+			stream.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.forEach(p -> {
+						try {
+							FormConfig existing = LOADER.loadConfig(p, FormConfig.class);
+							if (existing == null || existing.getGroupName() == null) return;
+							String group = existing.getGroupName().toLowerCase();
+							if (defaults.contains(group) || !defaults.contains(group + "s")) return;
+							if (!isOutdated(existing.getConfigVersion())) return;
+							LogUtil.warn(Env.COMMON, "Backing up obsolete renamed form file '{}' (group '{}' renamed to '{}s')", p.getFileName(), group, group);
+							backupOldConfig(p);
+						} catch (Exception e) {
+							LogUtil.error(Env.COMMON, "Failed to inspect form file '{}' for legacy rename: {}", p.getFileName(), e.getMessage());
+						}
+					});
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Failed to scan forms for legacy renames in '{}': {}", formsDir, e.getMessage());
+		}
+	}
+
 	private static void loadGeneralConfigs() {
 		userConfig = loadAndValidate(CONFIG_DIR.resolve("general-user.json"), GeneralUserConfig.class, GeneralUserConfig::new, GeneralUserConfig::getConfigVersion, GeneralUserConfig::setConfigVersion, GeneralUserConfig.CURRENT_VERSION, null);
 		serverConfig = loadAndValidate(CONFIG_DIR.resolve("general-server.json"), GeneralServerConfig.class, GeneralServerConfig::new, GeneralServerConfig::getConfigVersion, GeneralServerConfig::setConfigVersion, GeneralServerConfig.CURRENT_VERSION, "general-server.json");
@@ -566,6 +593,7 @@ public class ConfigManager {
 
 		Map<String, FormConfig> raceForms = new HashMap<>();
 		if (isDefault) FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
+		if (isDefault) backupRenamedDefaultForms(formsPath, raceForms);
 		upgradeUserFormFiles(formsPath, raceForms);
 		Map<String, FormConfig> userDiskForms = LOADER.loadRaceForms(raceName, formsPath);
 
@@ -605,6 +633,7 @@ public class ConfigManager {
 		Files.createDirectories(STACK_FORMS_DIR);
 		Map<String, FormConfig> finalStackForms = new HashMap<>();
 		if (isDefault) FORMS_FACTORY.createDefaultStackForms(STACK_FORMS_DIR, finalStackForms);
+		if (isDefault) backupRenamedDefaultForms(STACK_FORMS_DIR, finalStackForms);
 		upgradeUserFormFiles(STACK_FORMS_DIR, finalStackForms);
 		Map<String, FormConfig> userDiskForms = LOADER.loadStackForms(STACK_FORMS_DIR);
 
