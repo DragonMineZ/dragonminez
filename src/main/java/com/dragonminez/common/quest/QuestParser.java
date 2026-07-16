@@ -10,18 +10,14 @@ import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
-import com.dragonminez.common.quest.rewards.CommandReward;
-import com.dragonminez.common.quest.rewards.AlignmentReward;
-import com.dragonminez.common.quest.rewards.ItemReward;
-import com.dragonminez.common.quest.rewards.KiTechniqueReward;
-import com.dragonminez.common.quest.rewards.SkillReward;
-import com.dragonminez.common.quest.rewards.TPSReward;
-import com.dragonminez.common.quest.rewards.TransformationReward;
+import com.dragonminez.common.quest.rewards.*;
 import com.dragonminez.common.diagnostics.JsonKeys;
 import com.dragonminez.common.stats.techniques.KiAttackData;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
+import com.dragonminez.common.util.adapters.WishTypeAdapter;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
+import com.dragonminez.common.wish.Wish;
+import com.google.gson.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -39,6 +35,10 @@ import java.util.Set;
  * Central parser for the unified quest JSON format.
  */
 public class QuestParser {
+	private static final Gson GSON = new GsonBuilder()
+			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
+			.setPrettyPrinting()
+			.create();
 
 	/**
 	 * Parses a quest from the unified quest JSON format.
@@ -240,6 +240,13 @@ public class QuestParser {
 				int count = json.has("count") ? json.get("count").getAsInt() : 1;
 				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
 				yield (item != Items.AIR) ? new ItemReward(new ItemStack(item, count)) : null;
+			}
+			case "GENERIC_ITEM" -> {
+				var genericItem = GSON.fromJson(
+						json.getAsJsonObject("itemReward"),
+						GenericItemDTO.class
+				);
+				yield new GenericItemReward(genericItem);
 			}
 			case "TPS" -> new TPSReward(json.get("amount").getAsInt());
 			case "ALIGNMENT" -> new AlignmentReward(json.get("amount").getAsInt());
@@ -554,6 +561,7 @@ public class QuestParser {
 		Set<String> allowed;
 		switch (type == null ? "" : type) {
 			case "ITEM" -> allowed = JsonKeys.union(common, "item", "count");
+			case "GENERIC_ITEM"  -> allowed = JsonKeys.union(common, "itemReward", "itemType", "itemId", "count", "enchantments", "potion", "mobEffects", "material", "pattern");
 			case "TPS" -> allowed = JsonKeys.union(common, "amount");
 			case "ALIGNMENT" -> allowed = JsonKeys.union(common, "amount");
 			case "COMMAND" -> allowed = JsonKeys.union(common, "command", "translationKey");

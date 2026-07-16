@@ -40,6 +40,7 @@ public abstract class QuestReward {
 
 	public enum RewardType {
 		ITEM,
+		GENERIC_ITEM,
 		COMMAND,
 		TPS,
 		SKILL,
