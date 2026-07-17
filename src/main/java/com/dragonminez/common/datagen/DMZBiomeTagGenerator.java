@@ -71,6 +71,10 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.replace(false)
 				.add(OverworldBiomes.ROCKY);
 
+		this.tag(MainTags.Biomes.HAS_SAIBAMANS)
+				.replace(false)
+				.add(OverworldBiomes.ROCKY);
+
 		this.tag(MainTags.Biomes.IS_SACREDKAI)
 				.replace(false)
 				.add(SacredKaiBiomes.SACREDKAI_PLAINS)

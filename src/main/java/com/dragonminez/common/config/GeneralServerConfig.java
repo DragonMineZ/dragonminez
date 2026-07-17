@@ -385,6 +385,7 @@ public class GeneralServerConfig {
 		private Boolean humanRacialSkill = true;
 		private Double humanKiRegenBoost = 1.40;
 		private Boolean saiyanRacialSkill = true;
+		private Integer saiyanZenkaiMinLevel = 100;
 		private Integer saiyanZenkaiAmount = 3;
 		private Double saiyanZenkaiHealthRegen = 0.20;
 		private Double saiyanZenkaiStatBoost = 0.075;
@@ -413,6 +414,10 @@ public class GeneralServerConfig {
 
 		public Double getHumanKiRegenBoost() {
 			return Math.max(0, Math.min(humanKiRegenBoost, Double.MAX_VALUE));
+		}
+
+		public Integer getSaiyanZenkaiMinLevel() {
+			return Math.max(0, Math.min(saiyanZenkaiMinLevel != null ? saiyanZenkaiMinLevel : 100, Integer.MAX_VALUE));
 		}
 
 		public Integer getSaiyanZenkaiAmount() {

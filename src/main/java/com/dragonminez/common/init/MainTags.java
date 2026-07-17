@@ -35,6 +35,7 @@ public class MainTags {
 	public static class Biomes {
 		public static final TagKey<Biome> IS_NAMEK = create("is_namekworld"), IS_SACREDLAND = create("is_sacredland"), IS_HTC = create("is_htc"),
 		IS_OTHERWORLD = create("is_otherworld"), HAS_DINOSAURS = create("has_dinosaurs"), HAS_SABERTOOTH = create("has_sabertooth"), HAS_ROBOTS = create("has_robots"),
+		HAS_SAIBAMANS = create("has_saibamans"),
 		IS_ROCKYBIOME = create("is_rockybiome"), IS_SACREDKAI = create("is_sacredkai"), IS_LAND = create("is_land"),
 		IS_MOUNTAINLIKE = create("is_mountainlike"), IS_PLAINSLIKE = create("is_plainslike"), IS_DESERTLIKE = create("is_desertlike");
 
