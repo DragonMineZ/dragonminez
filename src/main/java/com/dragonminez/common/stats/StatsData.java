@@ -511,12 +511,12 @@ public class StatsData {
 
 	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken, double armorPenetration) {
 		double defMult = getTotalMultiplier("DEF");
-		double baseDefense = getDefense();
+		double baseDefense = getDefense() * Math.max(1.0, defMult);
 
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
 
-		double rawFlatMitigation = baseDefense * Math.max(1.0, defMult);
+		double rawFlatMitigation = baseDefense;
 
 		if (ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()
 				&& incomingDamage > 0.0
