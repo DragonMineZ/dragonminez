@@ -26,8 +26,8 @@ public class CombatConfig {
 	private Integer baselineFormDrain = 80;
 	private Boolean killPlayersOnCombatLogout = true;
 
-	private Double kiProtectionMitigationPerLevel = 0.01;
-	private Double kiProtectionCostRatio = 0.5;
+	private Double kiProtectionMitigationPerLevel = 0.025;
+	private Double kiProtectionCostRatio = 0.15;
 
 	private Double kiInfusionDamagePerLevel = 0.025;
 	private Double kiInfusionBaseCostPct = 2.5;
@@ -37,12 +37,12 @@ public class CombatConfig {
 	private Double enchantmentDamageReductionCap = 0.85;
 	private Double defenseDecayOnGuardBreak = 0.66;
 	private Double flatMitigationFactor = 0.10;
-	private Double flatMitigationMaxAbsorbFraction = 0.70;
-	private Double defenseReductionScale = 0.15;
+	private Double flatMitigationMaxAbsorbFraction = 0.82;
+	private Double defenseReductionScale = 0.11;
 
 	private Boolean enableAdaptativeDefenseMitigation = true;
 	private Double adaptativeMitigationParityRatio = 1.0;
-	private Double adaptativeMitigationParityValue = 0.15;
+	private Double adaptativeMitigationParityValue = 0.25;
 	private Double adaptativeMitigationZeroRatio = 5.0;
 	private Double adaptativeDefenseMitigationCap = 0.65;
 
@@ -139,11 +139,11 @@ public class CombatConfig {
 	}
 
 	public double getFlatMitigationMaxAbsorbFraction() {
-		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.70;
+		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.82;
 	}
 
 	public double getDefenseReductionScale() {
-		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.15;
+		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.11;
 	}
 
 	public boolean getEnableAdaptativeDefenseMitigation() {
@@ -155,7 +155,7 @@ public class CombatConfig {
 	}
 
 	public double getAdaptativeMitigationParityValue() {
-		return adaptativeMitigationParityValue != null ? Math.max(0.0, Math.min(1.0, adaptativeMitigationParityValue)) : 0.20;
+		return adaptativeMitigationParityValue != null ? Math.max(0.0, Math.min(1.0, adaptativeMitigationParityValue)) : 0.25;
 	}
 
 	public double getAdaptativeMitigationZeroRatio() {

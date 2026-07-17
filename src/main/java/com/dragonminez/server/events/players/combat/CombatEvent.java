@@ -350,6 +350,9 @@ public class CombatEvent {
 
 					double blockMultiplier = 1.0;
 
+					boolean estGuardBroken = victimData.getStatus().isStunEffect() && victimData.getResources().getCurrentPoise() <= 0;
+					double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], estGuardBroken, finalDefensePenetration);
+
 					boolean techCharging = victimData.getTechniques().isTechniqueCharging();
 					boolean techFiring = !techCharging && TechniqueDispatcher.isFiringKiAttack(victim);
 					boolean techActive = techCharging || techFiring;
@@ -361,7 +364,7 @@ public class CombatEvent {
 
 						double poiseDamageMultiplier = ConfigManager.getCombatConfig().getPoiseDamageMultiplier();
 						if (!(sourceEntity instanceof Player)) poiseDamageMultiplier *= 1.5;
-						float poiseDamage = (float) (currentDamage[0] * poiseDamageMultiplier * poiseMult);
+						float poiseDamage = (float) (estimatedPostMitigation * poiseDamageMultiplier * poiseMult);
 						float currentPoise = victimData.getResources().getCurrentPoise();
 
 						if (currentPoise - poiseDamage <= 0) {
@@ -392,13 +395,13 @@ public class CombatEvent {
 
 								double poiseMultiplier = ConfigManager.getCombatConfig().getPoiseDamageMultiplier();
 								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 1.5;
-								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
+								float poiseDamage = (float) (estimatedPostMitigation * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.66f;
 
 								float currentPoise = victimData.getResources().getCurrentPoise();
 								float currentStamina = victimData.getResources().getCurrentStamina();
-								int blockStaminaCost = (int) (event.getAmount() * ConfigManager.getCombatConfig().getBlockStaminaCost());
+								int blockStaminaCost = (int) (estimatedPostMitigation * ConfigManager.getCombatConfig().getBlockStaminaCost());
 
 								if (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0) {
 									doGuardBreak(victim, victimData);
@@ -438,8 +441,6 @@ public class CombatEvent {
 										}
 										if (MainDamageTypes.isStrikeAttackDamage(source)) {
 											applyStrikeCounterGuardBreak(sourceEntity);
-											boolean isGuardBrokenTmp = victimData.getStatus().isStunEffect() && victimData.getResources().getCurrentPoise() <= 0;
-											double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp, finalDefensePenetration);
 											if (!(estimatedPostMitigation <= 0.0)) victimData.getResources().removeStamina((float) (estimatedPostMitigation * 0.5));
 										}
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
@@ -485,8 +486,6 @@ public class CombatEvent {
 									}
 
 									if (victim instanceof ServerPlayer sPlayer) {
-										boolean isGuardBrokenTmp = victimData.getStatus().isStunEffect() && victimData.getResources().getCurrentPoise() <= 0;
-										double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp, finalDefensePenetration);
 										float finalDmg = (float) (estimatedPostMitigation * blockMultiplier);
 
 										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(sPlayer, source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null, (float)currentDamage[0], finalDmg, isParry, poiseDamage);
@@ -709,23 +708,6 @@ public class CombatEvent {
 								SummonPlayerShadowDummyC2S.dismissByDummy((ShadowDummyEntity) damageSource);
 							}
 						}
-					}
-
-					Entity dmzDebugAttacker = event.getSource().getEntity();
-					if (dmzDebugAttacker instanceof LivingEntity && !(dmzDebugAttacker instanceof Player)) {
-						double dmzDebugDefense = stats.getDefense();
-						double dmzDebugMitigatedPct = rawDamage > 0.0 ? (1.0 - (finalDamage / rawDamage)) * 100.0 : 0.0;
-						LogUtil.info(Env.SERVER,
-								"[DEF-DEBUG] victim={} attacker={} type={} raw={} defense={} guardBroken={} defPen={} final={} mitigated={}%",
-								victim.getName().getString(),
-								dmzDebugAttacker.getName().getString(),
-								event.getSource().getMsgId(),
-								String.format("%.1f", rawDamage),
-								String.format("%.1f", dmzDebugDefense),
-								isGuardBroken,
-								String.format("%.2f", defensePenetration),
-								String.format("%.1f", (double) finalDamage),
-								String.format("%.1f", dmzDebugMitigatedPct));
 					}
 
 					if (defenseFullyNegated && rawDamage > 0.0
