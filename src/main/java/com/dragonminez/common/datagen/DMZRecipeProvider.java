@@ -85,6 +85,17 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 		geteCapsule(pWriter, MainItems.ORANGE_CAPSULE.get(), MainItems.GETE_ORANGE_CAPSULE.get(), "gete_orange_capsule");
 		geteCapsule(pWriter, MainItems.BLUE_CAPSULE.get(), MainItems.GETE_BLUE_CAPSULE.get(), "gete_blue_capsule");
 
+		// Gete Pattern (smithing template): netherite-upgrade base reforged with Gete scraps and iron.
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.GETE_SMITHING_TEMPLATE.get(), 1)
+				.pattern("IGI")
+				.pattern("GTG")
+				.pattern("IGI")
+				.define('T', Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE)
+				.define('G', MainItems.GETE_SCRAP.get())
+				.define('I', Items.IRON_INGOT)
+				.unlockedBy(getHasName(MainItems.GETE_SCRAP.get()), has(MainItems.GETE_SCRAP.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
 		// Ki Accumulator (battery) — Gete-cored energy cell.
 		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.KI_BATTERY.get())
 				.pattern("RLR").pattern("LGL").pattern("RLR")
@@ -573,7 +584,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 		ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, MainItems.PATTERN_VEGETA_Z.get(), 1)
 				.pattern("Y#Y")
 				.pattern("BWB")
-				.pattern("BYB")
+				.pattern("YBY")
 				.define('B', Items.BLUE_DYE)
 				.define('W', Items.WHITE_DYE)
 				.define('Y', Items.YELLOW_DYE)
