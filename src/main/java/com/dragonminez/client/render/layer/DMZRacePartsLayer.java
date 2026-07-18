@@ -17,6 +17,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -47,6 +48,14 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation BRAVE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
 	private static final ResourceLocation BRAVE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/brave_sword.png");
 	private static final ResourceLocation POWER_POLE_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
+
+	private static  float BRAVE_BACK_X = 0.7F;
+	private static  float BRAVE_BACK_Y = 2.0F;
+	private static  float BRAVE_BACK_Z = 0.15F;
+	private static  float BRAVE_BACK_ROT_X = 0.0F;
+	private static  float BRAVE_BACK_ROT_Y = 0.0F;
+	private static  float BRAVE_BACK_ROT_Z = 135.0f;
+	private static  float BRAVE_BACK_SCALE = 0.9F;
 	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/power_pole.png");
 
 	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
@@ -561,7 +570,13 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
 			if (braveModel != null) {
 				RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
-				renderWeaponFromBodyAnchor(braveModel, "espadatrunks", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 0.9f);
+				poseStack.pushPose();
+				poseStack.translate(BRAVE_BACK_X, BRAVE_BACK_Y, BRAVE_BACK_Z);
+				if (BRAVE_BACK_ROT_X != 0.0F) poseStack.mulPose(Axis.XP.rotationDegrees(BRAVE_BACK_ROT_X));
+				if (BRAVE_BACK_ROT_Y != 0.0F) poseStack.mulPose(Axis.YP.rotationDegrees(BRAVE_BACK_ROT_Y));
+                if (BRAVE_BACK_ROT_Z != 0.0F) poseStack.mulPose(Axis.ZP.rotationDegrees(BRAVE_BACK_ROT_Z));
+				renderWeaponFromBodyAnchor(braveModel, "espadatrunks", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, BRAVE_BACK_SCALE);
+				poseStack.popPose();
 			}
 		}
 	}
