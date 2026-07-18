@@ -77,7 +77,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private boolean dragonminez$isShootingKi = false;
 	@Unique private String dragonminez$currentMeleeAnim = null;
 	@Unique private String dragonminez$currentPoseAnim = null;
+	@Unique private boolean dragonminez$poseInstantResume = false;
 	@Unique private float dragonminez$currentMeleeSpeed = 1.0F;
+
+	@Unique private static final int POSE_TRANSITION_TICKS = 4;
 
 	@Unique private String dragonminez$currentKiAnim = null;
 	@Unique private String dragonminez$lastKiAnim = null;
@@ -240,7 +243,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
 		registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
 		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
-		registrar.add(new AnimationController<>(this, "pose_controller", 4, this::posePredicate));
+		registrar.add(new AnimationController<>(this, "pose_controller", POSE_TRANSITION_TICKS, this::posePredicate));
 		registrar.add(new AnimationController<>(this, "ki_controller", 4, this::kiPredicate));
 		registrar.add(new AnimationController<>(this, "eat_controller", 3, this::eatPredicate));
 	}
@@ -431,7 +434,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	private <T extends GeoAnimatable> PlayState posePredicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 
-		if (dragonminez$attackAnimTicks > 0) return PlayState.STOP;
+		if (dragonminez$attackAnimTicks > 0) {
+			dragonminez$poseInstantResume = true;
+			return PlayState.STOP;
+		}
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
 		if (dragonminez$isShootingKi) return PlayState.STOP;
 		if (dragonminez$currentKiAnim != null) return PlayState.STOP;
@@ -442,6 +448,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi())) return PlayState.STOP;
 
 		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
+
+		state.getController().transitionLength(dragonminez$poseInstantResume ? 0 : POSE_TRANSITION_TICKS);
+		dragonminez$poseInstantResume = false;
 
 		return state.setAndContinue(AnimationCache.getLoop(dragonminez$currentPoseAnim));
 	}
@@ -712,6 +721,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Override
+	public double getBoneResetTime() {
+		return (dragonminez$attackAnimTicks > 0 || dragonminez$combatGraceFrames > 0) ? 0.0D : 5.0D;
+	}
+
+	@Override
 	public void dragonminez$setFlying(boolean flying) {
 		this.dragonminez$isFlying = flying;
 	}
@@ -753,7 +767,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return;
 		}
 
-		String resolved = CombatAnimationResolver.resolveAttack(animationName, isOffhand);
+		ItemStack attackingStack = isOffhand ? self.getOffhandItem() : self.getMainHandItem();
+		boolean armSpecific = !attackingStack.isEmpty() && !PlayerAttackHelper.isTwoHandedWielding(self);
+		boolean useLeftArm = armSpecific && (isOffhand != (self.getMainArm() == HumanoidArm.LEFT));
+		String resolved = CombatAnimationResolver.resolveAttack(animationName, useLeftArm);
 		this.dragonminez$currentMeleeAnim = resolved.isEmpty() ? "fallback" : resolved;
 		this.dragonminez$currentMeleeSpeed = Math.max(0.15F, speedMultiplier);
 		this.dragonminez$isOffhandAttack = isOffhand;
@@ -779,9 +796,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Override
 	public float dragonminez$getCombatPlacementWeight() {
-		if (dragonminez$attackAnimTicks > 0) return 1.0F;
-		if (dragonminez$combatGraceFrames > 0) return Math.min(1.0F, dragonminez$combatGraceFrames / 8.0F);
-		return 0.0F;
+		// Snap the held item between combat placement and its rest grip: full weight while the
+		// attack animation plays, none the moment it ends (no eased "swing back" of the item).
+		return dragonminez$attackAnimTicks > 0 ? 1.0F : 0.0F;
 	}
 
 	@Override
