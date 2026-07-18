@@ -89,6 +89,15 @@ public class ShadowDummyEntity extends DBSagasEntity {
 
 
 	@Override
+	public boolean isPersistenceRequired() {
+		return true;
+	}
+
+	@Override
+	public void checkDespawn() {
+	}
+
+	@Override
 	public void stopCasting() {
 		if (getSkillType() == Bolita) {
 			this.kiBlastCooldown = 10 * 20;

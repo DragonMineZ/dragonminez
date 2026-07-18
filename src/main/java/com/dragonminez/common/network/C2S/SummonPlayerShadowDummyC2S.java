@@ -1,5 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
@@ -45,10 +47,14 @@ public class SummonPlayerShadowDummyC2S {
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				String playerName = player.getGameProfile().getName();
+
 				boolean hasKill = data.getStatus().getShadowDummyKillCount() > 0;
 				boolean hasKiControl = data.getSkills().hasSkill("kicontrol");
 				boolean hasKiManip = data.getSkills().getSkillLevel("kimanipulation") >= 5;
 				if (!hasKill || !hasKiControl || !hasKiManip) {
+					LogUtil.warn(Env.SERVER, "Shadow clone (minigame) FAILED to spawn (requirements not met: kill={}, kicontrol={}, kimanip>=5={}) for player {}",
+							hasKill, hasKiControl, hasKiManip, playerName);
 					player.sendSystemMessage(Component.translatable("gui.dragonminez.shadow_dummy.requirements_not_met"));
 					return;
 				}
@@ -59,7 +65,10 @@ public class SummonPlayerShadowDummyC2S {
 
 				ServerLevel level = player.serverLevel();
 				EntityType<?> entityType = MainEntities.SHADOW_DUMMY.get();
-				if (!(entityType.create(level) instanceof ShadowDummyEntity dummy)) return;
+				if (!(entityType.create(level) instanceof ShadowDummyEntity dummy)) {
+					LogUtil.warn(Env.SERVER, "Shadow clone (minigame) FAILED to spawn (entity creation returned null) for player {}", playerName);
+					return;
+				}
 
 				dummy.setPos(player.getX(), player.getY(), player.getZ());
 				dummy.copyStatsFromPlayerWithPercent(player, pct);
@@ -68,8 +77,11 @@ public class SummonPlayerShadowDummyC2S {
 				dummy.getPersistentData().putInt("dmz_shadow_percent", pct);
 				if (!level.addFreshEntity(dummy)) {
 					dummy.discard();
+					LogUtil.warn(Env.SERVER, "Shadow clone (minigame) FAILED to spawn (addFreshEntity rejected, e.g. protected/spawn-blocked area) for player {}", playerName);
 					return;
 				}
+				LogUtil.info(Env.SERVER, "Shadow clone (minigame) spawned for player {} at {}% ({}, {}, {})",
+						playerName, pct, (int) player.getX(), (int) player.getY(), (int) player.getZ());
 
 				data.getStatus().setActiveShadowDummyUUID(dummy.getUUID());
 				data.getStatus().setShadowDummyPercent(pct);
