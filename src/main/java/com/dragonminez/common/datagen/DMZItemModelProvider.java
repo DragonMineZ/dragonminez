@@ -292,6 +292,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
         patternItem(MainItems.PATTERN_KING_VEGETA);
         patternItem(MainItems.PATTERN_GREAT_SAIYAMAN_2);
         patternItem(MainItems.PATTERN_RADITZ);
+        patternItem(MainItems.PATTERN_A14);
 
         //Minerales
 		simpleItem(MainItems.GETE_SCRAP);
