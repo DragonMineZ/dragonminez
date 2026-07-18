@@ -199,8 +199,7 @@ public class CombatEvent {
 					Vec3 knockbackDir = new Vec3(mx, my, mz).normalize();
 					if (knockbackDir.lengthSqr() < 1.0E-6) knockbackDir = attacker.getLookAngle();
 
-					livingTarget.setDeltaMovement(knockbackDir.scale(1.8));
-					livingTarget.hurtMarked = true;
+					KnockbackHelper.apply(livingTarget, knockbackDir.scale(1.8));
 
 					MomentumImpactHandler.CollisionImpactType impactType = livingTarget.onGround() || knockbackDir.y < -0.5 ? MomentumImpactHandler.CollisionImpactType.GROUND : MomentumImpactHandler.CollisionImpactType.WALL;
 					MomentumImpactHandler.registerCollisionImpact(livingTarget, impactType, (float)(dmzDamage * 0.3), knockbackDir);

@@ -443,6 +443,10 @@ public class FlySkillEvent {
 		}
 	}
 
+	public static void injectKnockback(Vec3 knockback) {
+		flightVector = flightVector.add(knockback);
+	}
+
 	private static void resetFlightState() {
 		flightVector = Vec3.ZERO;
 		verticalHover = 0;

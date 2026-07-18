@@ -220,6 +220,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final float CAST_COMMIT_CHANCE = 0.5F;
     private int postCastCooldown = 0;
     private int globalActionCooldown = 0;
+    private int knockbackLockTicks = 0;
 
     protected int castTimer = 0;
     protected int transformTick = 0;
@@ -1573,6 +1574,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     protected void handleCommonCombatMovement(LivingEntity target, boolean isActionActive) {
         if (this.level().isClientSide) return;
 
+        if (this.knockbackLockTicks > 0) {
+            this.knockbackLockTicks--;
+            this.getNavigation().stop();
+            if (target != null) rotateBodyToTarget(target);
+            return;
+        }
+
         if (isActionActive) {
             this.getNavigation().stop();
             this.setDeltaMovement(0, 0, 0);
@@ -1606,6 +1614,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 rotateBodyToTarget(target);
             } else this.setDeltaMovement(this.getDeltaMovement().add(0, -0.01D, 0));
         } else this.setNoGravity(false);
+    }
+
+    public void lockKnockback(int ticks) {
+        this.knockbackLockTicks = Math.max(this.knockbackLockTicks, ticks);
     }
 
     public void rotateBodyToTarget(LivingEntity target) {

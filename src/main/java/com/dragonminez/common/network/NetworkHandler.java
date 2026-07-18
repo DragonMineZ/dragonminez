@@ -509,6 +509,12 @@ public class NetworkHandler {
 				.encoder(GravityZoneSyncS2C::encode)
 				.consumerMainThread(GravityZoneSyncS2C::handle)
 				.add();
+
+		net.messageBuilder(KnockbackFlightS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KnockbackFlightS2C::new)
+				.encoder(KnockbackFlightS2C::encode)
+				.consumerMainThread(KnockbackFlightS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

@@ -371,8 +371,7 @@ public class StrikeAttackHandler {
 				);
 
 				Vec3 pushDir = player.getLookAngle().normalize();
-				target.setDeltaMovement(pushDir.x * 2.5, 0.4, pushDir.z * 2.5);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * 2.5, 0.4, pushDir.z * 2.5));
 
 				playStrikeKnockbackAnimation(target);
 
@@ -450,8 +449,7 @@ public class StrikeAttackHandler {
 
 				Vec3 pushDir = player.getLookAngle().normalize();
 				double knockbackPower = 4.0;
-				target.setDeltaMovement(pushDir.x * knockbackPower, 0.6, pushDir.z * knockbackPower);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * knockbackPower, 0.6, pushDir.z * knockbackPower));
 
 				playStrikeKnockbackAnimation(target);
 
@@ -549,8 +547,7 @@ public class StrikeAttackHandler {
 				double upwardForce = 1.5;
 				double forwardForce = 0.5;
 
-				target.setDeltaMovement(pushDir.x * forwardForce, upwardForce, pushDir.z * forwardForce);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * forwardForce, upwardForce, pushDir.z * forwardForce));
 
 				playStrikeKnockbackAnimation(target);
 
@@ -603,8 +600,7 @@ public class StrikeAttackHandler {
 				player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.GOLPE1.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.0F);
 
 				Vec3 pushDir = player.getLookAngle().normalize();
-				target.setDeltaMovement(pushDir.x * 1.5, 0.4, pushDir.z * 1.5);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * 1.5, 0.4, pushDir.z * 1.5));
 				freezeEntity(player);
 			}
 			else if (nextTick < 15) {
@@ -628,8 +624,7 @@ public class StrikeAttackHandler {
 				player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 0.8F);
 
 				Vec3 pushDir = player.getLookAngle().normalize();
-				target.setDeltaMovement(pushDir.x * 3.5, 0.2, pushDir.z * 3.5);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * 3.5, 0.2, pushDir.z * 3.5));
 				playStrikeKnockbackAnimation(target);
 
 				freezeEntity(player);
@@ -778,6 +773,9 @@ public class StrikeAttackHandler {
 					0
 			);
 			ACTIVE.put(player.getUUID(), active);
+			// Grant invulnerability the instant the strike locks on, before the next tick's
+			// processActive runs, so the target can't land a free hit during the engage window.
+			player.invulnerableTime = 20;
 			MinecraftForge.EVENT_BUS.post(
 					new DMZEvent.StrikeAttackFireEvent(player, stats, strike, target));
 
@@ -1049,8 +1047,7 @@ public class StrikeAttackHandler {
 	private static void applyKnockback(ServerPlayer player, LivingEntity target, double totalDamage) {
 		Vec3 dir = target.position().subtract(player.position()).normalize();
 		if (dir.lengthSqr() < 1.0E-6) dir = player.getLookAngle();
-		target.setDeltaMovement(dir.scale(KNOCKBACK_FORCE));
-		target.hurtMarked = true;
+		KnockbackHelper.apply(target, dir.scale(KNOCKBACK_FORCE));
 		playStrikeKnockbackAnimation(target);
 
 		MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || dir.y < -0.5

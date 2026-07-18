@@ -198,6 +198,10 @@ public class CombatFlightHandler {
 		burstVelocity = Vec3.ZERO;
 	}
 
+	public static void injectKnockback(Vec3 knockback) {
+		burstVelocity = burstVelocity.add(knockback);
+	}
+
 	public static void reset() {
 		velocity = Vec3.ZERO;
 		burstVelocity = Vec3.ZERO;
