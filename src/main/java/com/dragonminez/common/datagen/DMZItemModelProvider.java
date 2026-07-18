@@ -283,8 +283,17 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		patternItem(MainItems.PATTERN_XENO_GOKU);
 		patternItem(MainItems.PATTERN_YARDRAT);
 		patternItem(MainItems.PATTERN_ZAMASU);
+        patternItem(MainItems.PATTERN_VERGIL);
+        patternItem(MainItems.PATTERN_XENO_GOKU_PATREON);
+        patternItem(MainItems.PATTERN_COOLER_SOLDIER);
+        patternItem(MainItems.PATTERN_CAPSULE_CORP);
+        patternItem(MainItems.PATTERN_A20);
+        patternItem(MainItems.PATTERN_GERO);
+        patternItem(MainItems.PATTERN_KING_VEGETA);
+        patternItem(MainItems.PATTERN_GREAT_SAIYAMAN_2);
+        patternItem(MainItems.PATTERN_RADITZ);
 
-		//Minerales
+        //Minerales
 		simpleItem(MainItems.GETE_SCRAP);
 		simpleItem(MainItems.GETE_INGOT);
 		simpleItem(MainItems.KIKONO_SHARD);
