@@ -21,6 +21,7 @@ public class GenericAttributes {
         Attribute armorAttribute = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.armor"));
         Attribute armorToughnessAttribute = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.armor_toughness"));
         Attribute maxHealth = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.max_health"));
+        Attribute attackDamage = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.attack_damage"));
 
         if (armorAttribute instanceof RangedAttribute rangedAttribute) {
             ((RangedAttributeMixin) rangedAttribute).setMaxValue(Float.MAX_VALUE);
@@ -31,6 +32,10 @@ public class GenericAttributes {
         }
 
         if (maxHealth instanceof RangedAttribute rangedAttribute) {
+            ((RangedAttributeMixin) rangedAttribute).setMaxValue(Float.MAX_VALUE);
+        }
+
+        if (attackDamage instanceof RangedAttribute rangedAttribute) {
             ((RangedAttributeMixin) rangedAttribute).setMaxValue(Float.MAX_VALUE);
         }
 
