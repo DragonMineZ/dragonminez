@@ -23,7 +23,7 @@ public class SagaRaditzEntity extends DBSagasEntity {
         this.setDBZStyle(0);
         this.setCanFly(true);
 
-        this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 200, 1.0F, 0xD22FF5, 0x8D0FA8);
+        this.addKiSkill(KiSkillType.DOUBLE_SUNDAY, 200, 1.0F, 0xD22FF5, 0x8D0FA8);
 
     }
 }

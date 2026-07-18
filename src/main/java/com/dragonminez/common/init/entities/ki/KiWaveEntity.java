@@ -285,6 +285,28 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setupFinalFlashPlayer(owner, damage, speed, size, 0xFFFFFF);
     }
 
+    public void setupDoubleSunday(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime) {
+        this.setKiRenderType(5);
+        this.setSize(size);
+        this.setCastSize(size / 2.0F);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setCastWave(castTime);
+        this.setMaxLife(castTime * 2);
+        this.playInitialSound(MainSounds.KI_FINALFLASH_CHARGE.get());
+        this.setCastOffsets(0.0F, 0.4F, 0.5F);
+        updatePositionRelativeToOwner(owner, true);
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    public void setupDoubleSunday(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
+        this.setupDoubleSunday(owner, damage, speed, color, colorBorder, 0xFFFFFF, size, castTime);
+    }
+
     public void setupKiOozaru(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime) {
         this.setKiRenderType(0);
         this.setSize(size);
@@ -497,7 +519,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             if (!isFiring) {
                 if (this.tickCount == 1) {
-                    if (this.getKiRenderType() == 3) {
+                    if (this.getKiRenderType() == 3 || this.getKiRenderType() == 5) {
                         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_FINALFLASH_CHARGE.get(), SoundSource.HOSTILE, 0.7F, 1.0F);
                     } else {
                         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.7F, 1.0F);
@@ -521,7 +543,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
                 if (this.tickCount % 5 == 0) {
                     Vec3 tipPosForSound = startPos.add(dir.scale(currentLen));
-                    net.minecraft.sounds.SoundEvent fireSound = this.getKiRenderType() == 3 ? MainSounds.KI_FINALFLASH_FIRE.get() : MainSounds.KI_KAME_FIRE.get();
+                    net.minecraft.sounds.SoundEvent fireSound = (this.getKiRenderType() == 3 || this.getKiRenderType() == 5) ? MainSounds.KI_FINALFLASH_FIRE.get() : MainSounds.KI_KAME_FIRE.get();
                     this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, fireSound, SoundSource.HOSTILE, 0.7F, 1.0F);
                 }
 

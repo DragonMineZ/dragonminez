@@ -160,6 +160,12 @@ public class SkillManager {
             KiBlastEntity airVolley = new KiBlastEntity(user.level(), user);
             airVolley.setupKiAirVolley(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorOutline(), 30);
         });
+
+        // 21. DOUBLE SUNDAY (Raditz)
+        REGISTRY.put(21, (user, target, dmg) -> {
+            KiWaveEntity doubleSunday = new KiWaveEntity(user.level(), user);
+            doubleSunday.setupDoubleSunday(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 40);
+        });
     }
 
     public static void execute(int id, DBSagasEntity user, LivingEntity target) {
@@ -196,7 +202,7 @@ public class SkillManager {
             case 4 -> 10;
             case 11 -> 12;
             case 12, 14, 17 -> 30;
-            case 13, 16, 18 -> 40;
+            case 13, 16, 18, 21 -> 40;
             case 19 -> 35;
             case 15 -> 60;
             default -> 60;
