@@ -85,6 +85,7 @@ public class MainEntities {
                 SAGA_SHIN, SAGA_VIDEL, SAGA_BULMA, SAGA_KIBITO,
                 SAGA_SPOPOVITCH, SAGA_PUIPUI, SAGA_YAKON, SAGA_DABURA, SAGA_BABIDI,
                 SAGA_BUU_FAT, SAGA_EVILBUU, SAGA_SUPERBUU, SAGA_SUPERBUU_PICCOLO, SAGA_SUPERBUU_GOTENKS, SAGA_SUPERBUU_GOHAN, SAGA_KIDBUU,
+                SAGA_VEGETTO_BASE, SAGA_VEGETTO_SSJ,
 
                 // PELÍCULAS
                 SAGA_GARLICK_JR, SAGA_GARLICK_JR_TRANSFORMED, SAGA_DR_WHEELO, SAGA_TURLES,
@@ -885,6 +886,16 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaBuuEntity.KidBuuEntity::new, MobCategory.MONSTER)
                             .sized(0.4f, 1.4f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kidbuu").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaEntity.SagaVegettoBaseEntity>> SAGA_VEGETTO_BASE =
+            ENTITY_TYPES.register("saga_vegetto_base",
+                    () -> EntityType.Builder.of(SagaVegetaEntity.SagaVegettoBaseEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_vegetto_base").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaEntity.SagaVegettoSSJEntity>> SAGA_VEGETTO_SSJ =
+            ENTITY_TYPES.register("saga_vegetto_ssj",
+                    () -> EntityType.Builder.of(SagaVegetaEntity.SagaVegettoSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_vegetto_ssj").toString()));
 
     // Garlick Jr.
     public static final RegistryObject<EntityType<SagaMoviesEntity.GarlickJrEntity>> SAGA_GARLICK_JR =
