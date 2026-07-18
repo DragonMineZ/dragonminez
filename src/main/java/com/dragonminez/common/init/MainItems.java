@@ -288,6 +288,7 @@ public final class MainItems {
 	//MINERALES
 	public static final RegistryObject<Item> GETE_SCRAP = regItem("gete_scrap");
 	public static final RegistryObject<Item> GETE_INGOT = regItem("gete_ingot");
+	public static final RegistryObject<Item> GETE_SMITHING_TEMPLATE = regItem("gete_smithing_template");
 	// Novel wave: Ki Accumulator consumable (restores ki/energy) + Anti-Ki Cloak curios (hides BP from scouters).
 	public static final RegistryObject<Item> KI_BATTERY = ITEM_REGISTER.register("ki_battery",
 			() -> new KiBatteryItem());
