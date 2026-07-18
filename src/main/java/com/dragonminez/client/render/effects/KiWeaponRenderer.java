@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -78,6 +79,12 @@ public class KiWeaponRenderer {
 
 					poseStack.pushPose();
 					poseStack.last().pose().set(entry.poseMatrix());
+
+					if (type.equalsIgnoreCase("clawlance")) {
+						poseStack.mulPose(Axis.YP.rotationDegrees(35.0F));
+                        poseStack.mulPose(Axis.XP.rotationDegrees(35.f));
+                        poseStack.translate(0.0F / 16f, -0.1F, -1.0F);
+                    }
 
 					if (isOozaru) {
 
