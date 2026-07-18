@@ -66,6 +66,13 @@ public final class DynamicGrowthService {
 		xp *= cfg.getStatPracticeMultiplier(stat.key());
 		if (!Double.isFinite(xp) || xp <= 0.0) return;
 
+		int currentStat = data.getCurrentStatValue(stat.key());
+		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
+		if (requiredXp > 0) {
+			double perInstanceCap = requiredXp * 0.10;
+			if (xp > perInstanceCap) xp = perInstanceCap;
+		}
+
 		growth.addPracticeXp(stat, xp);
 		processLevelUps(player, data, stat);
 	}
@@ -137,7 +144,7 @@ public final class DynamicGrowthService {
 		if (!canIncrease) return;
 		if (requiredXp <= 0 || availableXp < requiredXp) return;
 
-		growth.consumePracticeXp(stat, requiredXp);
+		growth.resetPracticeXp(stat);
 		grantStatPoint(player, data, stat);
 		notifyStatGain(player, stat, data.getCurrentStatValue(stat.key()));
 
