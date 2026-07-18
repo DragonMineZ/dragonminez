@@ -1,14 +1,9 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.flight.CombatFlightHandler;
-import com.dragonminez.client.events.FlySkillEvent;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.stats.character.Status;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
+import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -43,20 +38,8 @@ public class KnockbackFlightS2C {
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			LocalPlayer player = Minecraft.getInstance().player;
-			if (player == null) return;
-
-			Vec3 knockback = new Vec3(x, y, z);
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (!data.getSkills().isSkillActive("fly")) return;
-				if (data.getStatus().getFlightMode() == Status.FLIGHT_COMBAT) {
-					CombatFlightHandler.injectKnockback(knockback);
-				} else {
-					FlySkillEvent.injectKnockback(knockback);
-				}
-			});
-		});
+		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+				() -> () -> ClientPacketHandler.handleKnockbackFlightPacket(x, y, z)));
 		ctx.get().setPacketHandled(true);
 	}
 }

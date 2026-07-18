@@ -38,11 +38,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
@@ -237,10 +234,9 @@ public class CombatEvent {
 
 				finalDmzDamage = dmzDamage * staminaRatio;
 
-				if (isEmptyHandOrNoDamageItem(attacker)) {
-					double externalAttackBonus = Math.max(0.0, baseDamage - VANILLA_UNARMED_ATTACK_DAMAGE);
-					currentDamage[0] = finalDmzDamage + externalAttackBonus;
-				} else currentDamage[0] = baseDamage + finalDmzDamage;
+				// baseDamage is the player's full ATTACK_DAMAGE attribute total (weapon + armor + curios + potions),
+				// independent of what's held; only vanilla's unarmed baseline is netted out since DMZ's own melee stat replaces it.
+				currentDamage[0] = finalDmzDamage + Math.max(0.0, baseDamage - VANILLA_UNARMED_ATTACK_DAMAGE);
 
 				double normalMeleeDamage = currentDamage[0];
 				double kiWeaponBonus = 0.0;
@@ -628,13 +624,6 @@ public class CombatEvent {
 		if (stats == null) return 0.0;
 		TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techId);
 		return tech instanceof KiAttackData kiData ? kiData.getActualArmorPenetration() / 100.0 : 0.0;
-	}
-
-	private static boolean isEmptyHandOrNoDamageItem(Player player) {
-		ItemStack mainHand = player.getMainHandItem();
-		if (mainHand.isEmpty()) return true;
-		var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE);
-		return attackDamageModifier.isEmpty();
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)

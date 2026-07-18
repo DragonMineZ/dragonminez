@@ -234,8 +234,13 @@ public class FlySkillEvent {
 					CombatFlightHandler.reset();
 					initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"));
 				}
+				Component switchHint = Component.empty()
+						.append(KeyBinds.SECOND_FUNCTION_KEY.getTranslatedKeyMessage())
+						.append(" + ")
+						.append(KeyBinds.FLY_KEY.getTranslatedKeyMessage());
 				player.displayClientMessage(Component.translatable(
-						isCombatFly ? "dragonminez.flight.mode.switched.combat" : "dragonminez.flight.mode.switched.search"), true);
+						isCombatFly ? "dragonminez.flight.mode.switched.combat" : "dragonminez.flight.mode.switched.search",
+						switchHint), true);
 				lastFlightMode = flightMode;
 			}
 

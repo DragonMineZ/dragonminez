@@ -43,6 +43,18 @@ If you’ve encountered a bug, please:
   - Expected vs. actual results
   - Screenshots, logs, or crash reports (if applicable)
 
+### 🎮 Game Testing
+
+Anyone is free to test our public releases and share what they find with us — bugs, exploits, balance issues,
+crashes, or anything else that seems off. You don't need to be a developer or open a PR to help this way.
+
+- Test against **public releases only**. Do not test against unreleased or internal builds unless you've been given
+  explicit access.
+- Share your findings with us via a [Bug Report](https://github.com/DragonMineZ/DragonMineZ/issues/new?template=bug_report.yml)
+  or on Discord.
+- If what you find is a **security vulnerability** (e.g. something that could be exploited to harm other players or
+  servers), follow our [Security Policy](/.github/SECURITY.md) instead of opening a public issue.
+
 ### ⭐ Suggesting Features
 
 Have a great idea? Open
