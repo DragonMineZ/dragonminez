@@ -259,7 +259,10 @@ public class KiBarrierEntity extends AbstractKiProjectile {
                 if (this.isHeal()) {
                     if (this.tickCount % HEAL_BUFF_INTERVAL == 0) {
                         LivingEntity target = getAnchor();
-                        if (target != null) this.applyTechniqueSecondaryEffect(target);
+                        if (target != null) {
+                            this.applyTechniqueSecondaryEffect(target);
+                            this.onSuccessfulHit(target);
+                        }
                     }
                 } else {
                     pushEntitiesAway();

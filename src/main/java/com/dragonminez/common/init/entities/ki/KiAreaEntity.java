@@ -132,6 +132,7 @@ public class KiAreaEntity extends AbstractKiProjectile {
             if (this.isHeal()) {
                 if (target == this.getOwner() || !this.shouldDamage(target)) {
                     this.applyDamageOrHeal(target, this.getDamagePerHit());
+                    this.onSuccessfulHit(target);
                 }
             } else {
                 if (target != this.getOwner() && this.shouldDamage(target)) {
