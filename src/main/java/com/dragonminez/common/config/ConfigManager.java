@@ -1241,11 +1241,13 @@ public class ConfigManager {
 			} else if (parts[2].equals("character")) {
 				RACE_CHARACTER.put(raceName.toLowerCase(), LOADER.loadConfig(path, RaceCharacterConfig.class));
 			} else if (parts[2].equals("forms")) {
+				FormConfig formConfig = LOADER.loadConfig(path, FormConfig.class);
 				RACE_FORMS.computeIfAbsent(raceName.toLowerCase(), k -> new HashMap<>())
-						.put(parts[3].toLowerCase(), LOADER.loadConfig(path, FormConfig.class));
+						.put(formGroupKey(formConfig, parts[3]), formConfig);
 			}
 		} else if (configFilePath.startsWith("forms/")) {
-			STACK_FORMS.put(configFilePath.split("/")[1].toLowerCase(), LOADER.loadConfig(path, FormConfig.class));
+			FormConfig formConfig = LOADER.loadConfig(path, FormConfig.class);
+			STACK_FORMS.put(formGroupKey(formConfig, configFilePath.split("/")[1]), formConfig);
 		}
 	}
 
@@ -1274,6 +1276,13 @@ public class ConfigManager {
 		}
 	}
 
+	private static String formGroupKey(FormConfig config, String fileNameFallback) {
+		if (config != null && config.getGroupName() != null && !config.getGroupName().isEmpty()) {
+			return config.getGroupName().toLowerCase();
+		}
+		return fileNameFallback.toLowerCase();
+	}
+
 	public static void applySpecificSyncedConfig(String configFilePath, String json) {
 		try {
 			serverSyncActive = true;
@@ -1294,12 +1303,14 @@ public class ConfigManager {
 					SERVER_SYNCED_CHARACTER.put(raceName.toLowerCase(), GSON.fromJson(json, RaceCharacterConfig.class));
 				} else if (parts[2].equals("forms")) {
 					if (SERVER_SYNCED_FORMS == null) SERVER_SYNCED_FORMS = new HashMap<>();
+					FormConfig formConfig = GSON.fromJson(json, FormConfig.class);
 					SERVER_SYNCED_FORMS.computeIfAbsent(raceName.toLowerCase(), k -> new HashMap<>())
-							.put(parts[3].toLowerCase(), GSON.fromJson(json, FormConfig.class));
+							.put(formGroupKey(formConfig, parts[3]), formConfig);
 				}
 			} else if (configFilePath.startsWith("forms/")) {
 				if (SERVER_SYNCED_STACK_FORMS == null) SERVER_SYNCED_STACK_FORMS = new HashMap<>();
-				SERVER_SYNCED_STACK_FORMS.put(configFilePath.split("/")[1].toLowerCase(), GSON.fromJson(json, FormConfig.class));
+				FormConfig formConfig = GSON.fromJson(json, FormConfig.class);
+				SERVER_SYNCED_STACK_FORMS.put(formGroupKey(formConfig, configFilePath.split("/")[1]), formConfig);
 			}
 		} catch (Exception e) { LogUtil.error(Env.CLIENT, "Error applying synced config: " + e.getMessage()); }
 	}

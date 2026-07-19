@@ -2,6 +2,7 @@ package com.dragonminez.common.util;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
@@ -125,10 +126,10 @@ public class TransformationsHelper {
 
 	public static String getSkillNameForType(String formType) {
 		String lower = formType.toLowerCase();
-		if (lower.contains("super")) return "superforms";
-		else if (lower.contains("legendary")) return "legendaryforms";
-		else if (lower.contains("god")) return "godforms";
-		else if (lower.contains("android")) return "androidforms";
+		if (lower.contains("superform")) return "superforms";
+		else if (lower.contains("legendaryform")) return "legendaryforms";
+		else if (lower.contains("godform")) return "godforms";
+		else if (lower.contains("androidform")) return "androidforms";
 		else return formType;
 	}
 
@@ -730,5 +731,9 @@ public class TransformationsHelper {
 	public static boolean isInstantTransmissionBlocked(StatsData requester, StatsData target) {
 		if (target.getStatus().isAndroidUpgraded()) return true;
 		return hasGodFormActive(target) && requester.getSkills().getSkillLevel("godforms") < 1;
+	}
+
+	public static boolean hasAntiKiCloak(Player target) {
+		return CuriosUtil.getFirstStack(target, "head_tech").getItem() == MainItems.ANTI_KI_CLOAK.get();
 	}
 }
