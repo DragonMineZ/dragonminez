@@ -62,7 +62,7 @@ public class InstantTransmissionTravelToPlayerC2S {
 					fail(player, "not_found");
 					return;
 				}
-				if (TransformationsHelper.isInstantTransmissionBlocked(data, targetData)) {
+				if (TransformationsHelper.hasAntiKiCloak(target) || TransformationsHelper.isInstantTransmissionBlocked(data, targetData)) {
 					fail(player, "blocked");
 					return;
 				}

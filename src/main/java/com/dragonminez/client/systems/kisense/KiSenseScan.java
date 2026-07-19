@@ -1,6 +1,5 @@
 package com.dragonminez.client.systems.kisense;
 
-import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.stats.StatsCapability;
@@ -188,7 +187,7 @@ public final class KiSenseScan {
 	}
 
 	public static boolean isCloaked(Player target) {
-		return CuriosUtil.getFirstStack(target, "head_tech").getItem() == MainItems.ANTI_KI_CLOAK.get();
+		return TransformationsHelper.hasAntiKiCloak(target);
 	}
 
 	public static boolean hasScouter(Player player) {
