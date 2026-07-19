@@ -72,6 +72,8 @@ public class StatsEvents {
 
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
 	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
+	public static final UUID TURBO_SPEED_UUID = UUID.fromString("b3f4a1d2-6c8e-4b0a-9f21-7d5e3c9a1b64");
+	private static final double TURBO_SPEED_BONUS = 0.30;
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
 	public static final UUID KI_WEAPON_ATTACK_SPEED_UUID = UUID.fromString("a3b1c5d7-9e2f-4a6b-8c1d-5f7e9a0b2c4d");
@@ -747,6 +749,18 @@ public class StatsEvents {
 						speedAttr.removeModifier(FORM_SPEED_UUID);
 						if (expectedBonus > 0) {
 							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+						}
+					}
+
+					boolean turboActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura();
+					double expectedTurboBonus = turboActive ? TURBO_SPEED_BONUS : 0.0;
+					AttributeModifier existingTurbo = speedAttr.getModifier(TURBO_SPEED_UUID);
+					double currentTurboBonus = existingTurbo != null ? existingTurbo.getAmount() : 0.0;
+
+					if (expectedTurboBonus != currentTurboBonus) {
+						speedAttr.removeModifier(TURBO_SPEED_UUID);
+						if (expectedTurboBonus > 0) {
+							speedAttr.addTransientModifier(new AttributeModifier(TURBO_SPEED_UUID, "Turbo Speed Bonus", expectedTurboBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
 						}
 					}
 				}
