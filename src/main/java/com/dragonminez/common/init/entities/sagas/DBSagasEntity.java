@@ -5,6 +5,7 @@ import com.dragonminez.common.combat.clash.BeamClashManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.MainParticles;
@@ -222,6 +223,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private int postCastCooldown = 0;
     private int globalActionCooldown = 0;
     private int knockbackLockTicks = 0;
+    private int kiHitSlowTicks = 0;
+    // Ki beams (e.g. kamehameha) re-hit roughly every 20 ticks; keep the slow active
+    // slightly longer so the enemy stays visibly pushed back for the whole beam.
+    private static final int KI_HIT_SLOW_TICKS = 22;
+    private static final double KI_HIT_FLY_SLOW_FACTOR = 0.2D;
 
     protected int castTimer = 0;
     protected int transformTick = 0;
@@ -784,6 +790,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 if (this.isComboing()) this.stopCombo();
                 this.getNavigation().stop();
             }
+
+            if (this.kiHitSlowTicks > 0) this.kiHitSlowTicks--;
 
             this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming() || this.isStunned());
 
@@ -1501,6 +1509,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (actuallyHurt && !this.level().isClientSide) {
 
+            if (pSource.is(MainDamageTypes.KIBLAST)) {
+                // While being struck by a ki technique (e.g. a kamehameha beam) the enemy
+                // should be pushed/slowed instead of continuing to cruise at full flight speed.
+                this.kiHitSlowTicks = KI_HIT_SLOW_TICKS;
+            }
+
             if (this.getHealth() <= 0.0F && this.canTransform() && !isAbsoluteDeath) {
                 this.setHealth(1.0F);
                 this.deathTime = 0;
@@ -1643,6 +1657,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (this.isFlyingFast()) {
             flyspeed *= 2.0D;
+        }
+
+        // Being struck by a ki technique should bleed off flight speed so the enemy
+        // crawls forward (or is pushed back) instead of cruising through the beam.
+        if (this.kiHitSlowTicks > 0) {
+            this.setFlyingFast(false);
+            flyspeed *= KI_HIT_FLY_SLOW_FACTOR;
         }
 
         double dx = target.getX() - this.getX();
