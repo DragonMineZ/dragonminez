@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationItemCostHelper;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.common.util.lists.StackForms;
 import com.dragonminez.server.events.players.IActionModeHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -114,6 +115,10 @@ public class StackFormModeHandler implements IActionModeHandler {
 			player.refreshDimensions();
 
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+
+			if (StackForms.GROUP_KAIOKEN.equalsIgnoreCase(group)) {
+				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.STACK_FORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+			}
 
 			Component translatedStackFormGroup = Component.translatable("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
 			Component translatedStackFormName = Component.translatable("race.dragonminez.stack.form." + data.getCharacter().getSelectedStackFormGroup() + "." + nextForm.getName());

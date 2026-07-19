@@ -2,6 +2,7 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -9,9 +10,11 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.common.util.lists.StackForms;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -182,6 +185,7 @@ public class ExecuteActionC2S {
 			data.getCharacter().getFormsUsedBefore().putForm(group, nextForm.getName());
 		}
 		data.restoreMultiplierGains(player, resourceSnapshot);
+		playFormSound(player, MainSounds.INSTA_FORM_ON.get());
 		return true;
 	}
 
@@ -235,6 +239,10 @@ public class ExecuteActionC2S {
 			data.getCharacter().getStackFormsUsedBefore().putForm(group, nextForm.getName());
 		}
 		data.restoreMultiplierGains(player, resourceSnapshot);
+		playFormSound(player, MainSounds.INSTA_FORM_ON.get());
+		if (StackForms.GROUP_KAIOKEN.equalsIgnoreCase(group)) {
+			playFormSound(player, MainSounds.STACK_FORM.get());
+		}
 		return true;
 	}
 
@@ -245,6 +253,7 @@ public class ExecuteActionC2S {
 			data.getCharacter().clearPreviousFormRecord();
 			if (previousForm != null && !previousForm.isEmpty()) {
 				data.getCharacter().setActiveForm(previousGroup, previousForm);
+				playFormSound(player, MainSounds.INSTA_FORM_OFF.get());
 				return;
 			}
 			TransformationsHelper.revertToBaseForm(player, data);
@@ -255,6 +264,7 @@ public class ExecuteActionC2S {
 		FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
 		if (previousForm != null) {
 			data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+			playFormSound(player, MainSounds.INSTA_FORM_OFF.get());
 		} else {
 			TransformationsHelper.revertToBaseForm(player, data);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
@@ -268,6 +278,7 @@ public class ExecuteActionC2S {
 			data.getCharacter().clearPreviousStackFormRecord();
 			if (previousForm != null && !previousForm.isEmpty()) {
 				data.getCharacter().setActiveStackForm(previousGroup, previousForm);
+				playFormSound(player, MainSounds.INSTA_FORM_OFF.get());
 				return;
 			}
 			data.getCharacter().clearActiveStackForm(player);
@@ -276,10 +287,17 @@ public class ExecuteActionC2S {
 		}
 
 		FormConfig.FormData previousForm = TransformationsHelper.getPreviousStackForm(data);
-		if (previousForm != null) data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
-		else {
+		if (previousForm != null) {
+			data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
+			playFormSound(player, MainSounds.INSTA_FORM_OFF.get());
+		} else {
 			data.getCharacter().clearActiveStackForm(player);
 			player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 		}
+	}
+
+	private static void playFormSound(ServerPlayer player, net.minecraft.sounds.SoundEvent sound) {
+		player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+				sound, SoundSource.PLAYERS, 1.0F, 1.0F);
 	}
 }

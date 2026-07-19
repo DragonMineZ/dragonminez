@@ -683,11 +683,12 @@ public class TickHandler {
 			data.getResources().setCurrentEnergy(newEnergy);
 
 			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
-				data.getCharacter().clearActiveForm(player);
-				data.getCharacter().clearActiveStackForm(player);
+				data.getCharacter().clearActiveForm(player, false);
+				data.getCharacter().clearActiveStackForm(player, false);
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
 				player.refreshDimensions();
+				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.NO_KI_FORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 				player.sendSystemMessage(Component.translatable("message.dragonminez.form.drained_ki"), true);
 			}
 		}

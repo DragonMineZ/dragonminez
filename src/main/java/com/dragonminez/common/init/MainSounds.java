@@ -124,6 +124,11 @@ public final class MainSounds {
     public static final RegistryObject<SoundEvent> MAJIN_ABSORB = registerSoundEvent("majin_absorb");
     public static final RegistryObject<SoundEvent> TRANSFORM_ON = registerSoundEvent("transform_on");
 	public static final RegistryObject<SoundEvent> TRANSFORM_OFF = registerSoundEvent("transform_off");
+    public static final RegistryObject<SoundEvent> INSTA_FORM_ON = registerSoundEvent("insta_form_on");
+    public static final RegistryObject<SoundEvent> INSTA_FORM_OFF = registerSoundEvent("insta_form_off");
+    public static final RegistryObject<SoundEvent> NO_KI_FORM = registerSoundEvent("no_ki_form");
+    public static final RegistryObject<SoundEvent> STACK_FORM = registerSoundEvent("stack_form");
+
     public static final RegistryObject<SoundEvent> FUSION = registerSoundEvent("fusion");
     public static final RegistryObject<SoundEvent> OOZARU_FIST = registerSoundEvent("oozaru_fist");
     public static final RegistryObject<SoundEvent> DRAGON_FIST = registerSoundEvent("dragon_fist");

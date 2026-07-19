@@ -1152,5 +1152,29 @@
     "sounds": [
       "dragonminez:majin_absorb"
     ]
+  },
+  "insta_form_on": {
+    "subtitle": "sounds.dragonminez.insta_form_on",
+    "sounds": [
+      "dragonminez:insta_form_on"
+    ]
+  },
+  "insta_form_off": {
+    "subtitle": "sounds.dragonminez.insta_form_off",
+    "sounds": [
+      "dragonminez:insta_form_off"
+    ]
+  },
+  "no_ki_form": {
+    "subtitle": "sounds.dragonminez.no_ki_form",
+    "sounds": [
+      "dragonminez:no_ki_form"
+    ]
+  },
+  "stack_form": {
+    "subtitle": "sounds.dragonminez.stack_form",
+    "sounds": [
+      "dragonminez:stack_form"
+    ]
   }
 }
