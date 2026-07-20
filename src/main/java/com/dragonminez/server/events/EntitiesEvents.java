@@ -54,6 +54,9 @@ public class EntitiesEvents {
 	private static final double QUEST_TETHER_RANGE_SQR = 31250.0;
 	private static final double SHADOW_DUMMY_TETHER_SQR = 100.0 * 100.0;
 
+	private static final int QUEST_COMBAT_TICK_INTERVAL = 20;
+	private static final int QUEST_COMBAT_GRACE_TICKS = 100;
+
 	@SubscribeEvent
 	public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
 		if (event.getLevel().isClientSide() || !(event.getEntity() instanceof LivingEntity entity)) return;
@@ -227,6 +230,49 @@ public class EntitiesEvents {
 			}
 		} catch (Exception e) {
 			entity.discard();
+		}
+	}
+
+	@SubscribeEvent
+	public static void onQuestCombatTick(LivingEvent.LivingTickEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide() || entity.tickCount % QUEST_COMBAT_TICK_INTERVAL != 0) return;
+		if (!(entity instanceof Mob mob)) return;
+		if (!mob.getPersistentData().contains(QuestService.QUEST_KEY_TAG)
+				|| !mob.getPersistentData().contains(QuestService.QUEST_OWNER_TAG)) return;
+
+		MinecraftServer server = mob.getServer();
+		if (server == null) return;
+
+		UUID ownerUUID;
+		try {
+			ownerUUID = UUID.fromString(mob.getPersistentData().getString(QuestService.QUEST_OWNER_TAG));
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+
+		boolean anyLivingGuardian = false;
+		ServerPlayer nearestLivingInRange = null;
+		double nearestSqr = Double.MAX_VALUE;
+		for (ServerPlayer guardian : questGuardians(server, ownerUUID)) {
+			if (guardian.isDeadOrDying() || guardian.isSpectator()) continue;
+			anyLivingGuardian = true;
+			if (guardian.level() != mob.level()) continue;
+			double distSqr = mob.distanceToSqr(guardian);
+			if (distSqr <= QUEST_TETHER_RANGE_SQR && distSqr < nearestSqr) {
+				nearestSqr = distSqr;
+				nearestLivingInRange = guardian;
+			}
+		}
+
+		if (!anyLivingGuardian) {
+			if (mob.tickCount >= QUEST_COMBAT_GRACE_TICKS) mob.discard();
+			return;
+		}
+
+		LivingEntity current = mob.getTarget();
+		if ((current == null || !current.isAlive()) && nearestLivingInRange != null) {
+			mob.setTarget(nearestLivingInRange);
 		}
 	}
 
