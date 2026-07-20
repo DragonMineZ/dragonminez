@@ -17,6 +17,8 @@ Each race has a `config/dragonminez/races/<race>/` folder. In `character.json` y
 
 Players themselves pick from the appearance options above in the character-creation screen; the number of body types, eyes, etc. is driven by how many textures exist for that race. Stat scalings live separately in `stats.json` (see [[Player Classes|Player-Classes]] and [[Custom Races|Custom-Races]]).
 
+> **Tuning the racial skills.** Every racial passive/active below can be toggled and re-balanced (percentages, cooldowns, stack counts, level gates) under the `racialSkills` block of `general-server.json` — including a master `enableRacialSkills` switch. See [[General Server|general-server]]. The exact percentages shown here are the **defaults**; the in-game **X (skills) menu** always displays your server's live values.
+
 ---
 
 ## Human
@@ -37,7 +39,7 @@ Humans (and **only** humans) can convert into **Androids** — a **sub-race** of
 
 ## Saiyan
 
-- **Racial skill — Zenkai:** on recovering from near-death, gain a permanent **+10%** to **STR/SKP/PWR**, heal **20%** HP; stacks up to **3 times**, 900s cooldown. Saiyans also have a **tail** (Oozaru).
+- **Racial skill — Zenkai:** after staying **8 seconds below 15% HP**, a Zenkai triggers — it heals **20%** of your max HP and grants a **permanent +7.5%** to **STR/SKP/PWR**. Stacks up to **3 times**, **900s** cooldown, and only works from **level 100** onward. Saiyans also have a **tail** (Oozaru).
 - **Hair:** yes (selectable hairstyles).
 - **Gender:** yes.
 - **Default body type:** 0 (vanilla skin + extra body types, per gender).
@@ -45,7 +47,7 @@ Humans (and **only** humans) can convert into **Androids** — a **sub-race** of
 
 ## Namekian
 
-- **Racial skill — Assimilation:** absorb other Namekians (players and, optionally, Namek NPCs) to gain a permanent **+15%** to **STR/SKP/PWR** and heal **35%** HP; up to **4 times**. Namekians also **regenerate**.
+- **Racial skill — Assimilation:** select the skill in the **X (skills) menu**, then hold **G** next to another Namekian — players, and by default Namek NPCs too — to assimilate them: heal **35%** of your max HP and gain a **permanent +7.5%** to **STR/SKP/PWR**. Up to **4 times**. Namekians also **regenerate**.
 - **Hair:** no — uses **antennae/ears** (`ears1–3`).
 - **Gender:** no.
 - **Default body type:** 0 (3 body types available).
@@ -53,7 +55,7 @@ Humans (and **only** humans) can convert into **Androids** — a **sub-race** of
 
 ## Frost Demon
 
-- **Racial skill — Training Boost:** passive **×1.25 TP gain** (trains faster).
+- **Racial skill — Prodigious Strength:** always-on passive that raises your **TP (training-point) gain by +25%** (×1.25) — Frost Demons simply train faster. This **stacks** with other TP boosts (e.g. the Hyperbolic Time Chamber).
 - **Hair:** no — uses **horns** (`horns1–5`).
 - **Gender:** no.
 - **Default body type:** 0 (3 base body types; note it also has dedicated third/final/fifth-form bodies). Smaller default model scale (0.7375).
@@ -61,7 +63,7 @@ Humans (and **only** humans) can convert into **Androids** — a **sub-race** of
 
 ## Bio-Android
 
-- **Racial skill — Drain:** actively drain living targets (default **25%** ratio) to empower yourself; 180s cooldown, applies a passive effect. (The classic Cell-style absorption.)
+- **Racial skill — Life Drain:** select the skill in the **X menu** and press **G** to drain a target — it deals **25% of the target's max health** as damage and **heals you for the same amount**. **180s** cooldown. (The classic Cell-style absorption.)
 - **Hair:** no (no head appendage bones).
 - **Gender:** no.
 - **Default body type:** 0 (3 body types, `base_0–2`).
@@ -69,7 +71,7 @@ Humans (and **only** humans) can convert into **Androids** — a **sub-race** of
 
 ## Majin
 
-- **Racial skill — Absorption:** absorb targets to copy **4%** of their stats (up to **3 times**, heal **30%**, also works on mobs).
+- **Racial skill — Absorption:** select the skill in the **X menu** and press **G** to absorb a target: heal **30%** of your max HP and gain a **permanent +4% of the target's stats** added to your **STR/SKP/PWR**. Up to **3 times**; works on mobs too by default.
 - **Hair:** no — uses the **head tentacle** (`majin1–3`).
 - **Gender:** yes.
 - **Default body type:** 0 (3 body types per gender).

@@ -34,6 +34,28 @@ Each stat is raised with **training points / attribute points** (see [[Weights|W
 
 Regen is further modified by armor recovery enchantments, the **Meditation** skill, potion effects, and active transformation drain.
 
+## How Defense works
+
+**Defense** is your damage-mitigation value — DMZ replaces vanilla armor math with its own server-side calculation. Your defense total is built from:
+
+- your **Resistance (RES)** × your class **DEF scaling** (plus any flat/percent DEF bonuses from forms, effects, etc.);
+- your worn **armor**, weighted as `armor × 0.5 + toughness × 0.7`;
+- any secondary DEF attributes/effects.
+
+That total is then **multiplied by your current Power Release %** — so a character who isn't charged up defends far more weakly than one at full release. Keeping your ki charged is part of tanking.
+
+When you take a hit, that defense is applied in stages:
+
+1. **Penetration & guard state.** The attacker's **defense penetration** (from skills, enchantments, or a ki technique's armor-pen — capped at **50%**) is subtracted from your defense first. If your **guard was broken**, your defense for that hit is slashed further.
+2. **Flat mitigation.** A flat chunk of the hit is absorbed outright — up to `flatMitigationMaxAbsorbFraction` (default **50%** of the incoming damage).
+3. **Percent reduction (diminishing returns).** The remainder is reduced by the curve `defense / (k + defense)`: more defense always helps, but with diminishing returns, hard-capped at `baseDamageReductionCap` (default **75%**). `k` scales off the expected max defense via `defenseReductionScale`.
+4. **Enchantment protection.** Protection enchantments add their own reduction on top, with the combined total capped at `enchantmentDamageReductionCap` (default **85%**).
+5. **Blocking & Ki Protection.** While actively **blocking**, an extra block multiplier applies (between `blockDamageReductionMin` and `blockDamageReductionCap`, scaled by your defense). The **Ki Protection** skill can additionally spend energy to shave off more of the hit.
+
+If your total mitigation is high enough relative to the incoming hit, the damage is **negated entirely (0)**. All of these values are configurable in `combat.json` — see [[Combat|Combat]].
+
+> **Takeaways:** raise **RES** (and wear armor) to tank harder; keep your **Power Release** high in a fight since defense scales with it; and note the caps — stacking reduction past **75%** base / **85%** with enchantments does nothing.
+
 ## Battle Power
 
 **Battle Power (BP)** is your overall "power level". It's computed from your four combat stats (**STR + SKP + RES + PWR**, with their scalings and bonuses) run through a scaling curve, then multiplied by your current **Power Release**. VIT and ENE don't directly raise BP — they build your pools instead.
