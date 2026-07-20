@@ -2,6 +2,7 @@ package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.gui.buttons.DiscordTitleButton;
 import com.dragonminez.client.gui.buttons.IconButton;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -151,32 +152,40 @@ public abstract class TitleScreenMixin extends Screen {
 		Button realmsButton = this.dragonminez$findButton("menu.online");
 		if (realmsButton == null) return;
 
-		this.removeWidget(realmsButton);
-		int discordWidth = realmsButton.getWidth() - (20 + 4);
-		Button dragonminez$discordButton = this.addRenderableWidget(new DiscordTitleButton(
-				realmsButton.getX(),
-				realmsButton.getY(),
-				discordWidth,
-				realmsButton.getHeight(),
-				Component.translatable("gui.dragonminez.title.discord"),
-				button -> this.dragonminez$openDiscordPrompt()
-		));
-		dragonminez$discordButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.discord.prompt")));
-		dragonminez$discordButton.setTooltipDelay(120);
+		if (ConfigManager.getUserConfig().getTitleScreenConfig().getRemoveRealmsButton()
+				|| ConfigManager.getUserConfig().getTitleScreenConfig().getDisplayDiscordButton()) {
+			this.removeWidget(realmsButton);
+		}
 
-		Button dragonminez$patreonButton = this.addRenderableWidget(new IconButton(
-				realmsButton.getX() + discordWidth + 4,
-				realmsButton.getY() + (realmsButton.getHeight() - 20) / 2,
-				20,
-				20,
-				dragonminez$PATREON_LOGO,
-				12,
-				32,
-				Component.translatable("gui.dragonminez.title.patreon"),
-				button -> this.dragonminez$openPatreonPrompt()
-		));
-		dragonminez$patreonButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.patreon.prompt")));
-		dragonminez$patreonButton.setTooltipDelay(120);
+		int discordWidth = realmsButton.getWidth() - (20 + 4);
+		if (ConfigManager.getUserConfig().getTitleScreenConfig().getDisplayDiscordButton()) {
+			Button dragonminez$discordButton = this.addRenderableWidget(new DiscordTitleButton(
+					realmsButton.getX(),
+					realmsButton.getY(),
+					discordWidth,
+					realmsButton.getHeight(),
+					Component.translatable("gui.dragonminez.title.discord"),
+					button -> this.dragonminez$openDiscordPrompt()
+			));
+			dragonminez$discordButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.discord.prompt")));
+			dragonminez$discordButton.setTooltipDelay(120);
+		}
+
+		if (ConfigManager.getUserConfig().getTitleScreenConfig().getDisplayPatreonButton()) {
+			Button dragonminez$patreonButton = this.addRenderableWidget(new IconButton(
+					realmsButton.getX() + discordWidth + 4,
+					realmsButton.getY() + (realmsButton.getHeight() - 20) / 2,
+					20,
+					20,
+					dragonminez$PATREON_LOGO,
+					12,
+					32,
+					Component.translatable("gui.dragonminez.title.patreon"),
+					button -> this.dragonminez$openPatreonPrompt()
+			));
+			dragonminez$patreonButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.patreon.prompt")));
+			dragonminez$patreonButton.setTooltipDelay(120);
+		}
 	}
 
 	@Inject(method = "render", at = @At("TAIL"))

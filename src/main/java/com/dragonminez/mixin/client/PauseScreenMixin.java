@@ -2,6 +2,7 @@ package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.gui.buttons.DiscordTitleButton;
 import com.dragonminez.client.gui.buttons.PatreonTitleButton;
+import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.Util;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -42,30 +43,41 @@ public abstract class PauseScreenMixin extends Screen {
 		int rowWidth = reportButton.getX() + reportButton.getWidth() - feedbackButton.getX();
 		int halfWidth = (rowWidth - 4) / 2;
 
-		this.removeWidget(feedbackButton);
-		this.removeWidget(reportButton);
+		if (ConfigManager.getUserConfig().getPauseScreenConfig().getRemoveFeedbackButton()
+				|| ConfigManager.getUserConfig().getPauseScreenConfig().getDisplayDiscordButton()) {
+			this.removeWidget(feedbackButton);
+		}
 
-		Button dragonminez$discordButton = this.addRenderableWidget(new DiscordTitleButton(
-				rowX,
-				rowY,
-				halfWidth,
-				rowHeight,
-				Component.translatable("gui.dragonminez.title.discord"),
-				button -> this.dragonminez$openDiscordPrompt()
-		));
-		dragonminez$discordButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.discord.prompt")));
-		dragonminez$discordButton.setTooltipDelay(120);
+		if (ConfigManager.getUserConfig().getPauseScreenConfig().getRemoveReportButton()
+				|| ConfigManager.getUserConfig().getPauseScreenConfig().getDisplayPatreonButton()) {
+			this.removeWidget(reportButton);
+		}
 
-		Button dragonminez$patreonButton = this.addRenderableWidget(new PatreonTitleButton(
-				rowX + halfWidth + 4,
-				rowY,
-				halfWidth,
-				rowHeight,
-				Component.translatable("gui.dragonminez.title.patreon"),
-				button -> this.dragonminez$openPatreonPrompt()
-		));
-		dragonminez$patreonButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.patreon.prompt")));
-		dragonminez$patreonButton.setTooltipDelay(120);
+		if (ConfigManager.getUserConfig().getPauseScreenConfig().getDisplayDiscordButton()) {
+			Button dragonminez$discordButton = this.addRenderableWidget(new DiscordTitleButton(
+					rowX,
+					rowY,
+					halfWidth,
+					rowHeight,
+					Component.translatable("gui.dragonminez.title.discord"),
+					button -> this.dragonminez$openDiscordPrompt()
+			));
+			dragonminez$discordButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.discord.prompt")));
+			dragonminez$discordButton.setTooltipDelay(120);
+		}
+
+		if (ConfigManager.getUserConfig().getPauseScreenConfig().getDisplayPatreonButton()) {
+			Button dragonminez$patreonButton = this.addRenderableWidget(new PatreonTitleButton(
+					rowX + halfWidth + 4,
+					rowY,
+					halfWidth,
+					rowHeight,
+					Component.translatable("gui.dragonminez.title.patreon"),
+					button -> this.dragonminez$openPatreonPrompt()
+			));
+			dragonminez$patreonButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.patreon.prompt")));
+			dragonminez$patreonButton.setTooltipDelay(120);
+		}
 	}
 
 	@Unique
