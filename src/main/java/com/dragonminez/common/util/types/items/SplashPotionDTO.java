@@ -1,22 +1,22 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Items;
+import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.Map;
+import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
-public class SplashPotionDTO extends PotionDTO {
-    public SplashPotionDTO(String potion, Map<String, Integer> mobEffects) {
-        super("splash_potion", "minecraft:splash_potion", 1, potion, mobEffects);
-    }
+public final class SplashPotionDTO extends PotionDTO {
+    private static final String ITEM_TYPE = "splash_potion";
+    private static final ResourceLocation SPLASH_POTION_ID = ForgeRegistries.ITEMS.getKey(Items.SPLASH_POTION);
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, SplashPotionDTO.class);
+    public SplashPotionDTO(ResourceLocation potion, Integer count, List<PotionEffectDTO> mobEffects) {
+        super(ITEM_TYPE, SPLASH_POTION_ID, count, potion, mobEffects);
     }
 }

@@ -1,10 +1,12 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Map;
@@ -13,34 +15,48 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 public class TrimmedArmorDTO extends EnchantedItemDTO {
-    private String material;
-    private String pattern;
+    private static final String ITEM_TYPE = "trimmed_armor";
 
-    public TrimmedArmorDTO(String itemId, String material, String pattern) {
-        super("trimmed_armor", itemId, 1);
+    protected ResourceLocation material;
+    protected ResourceLocation pattern;
+
+    public TrimmedArmorDTO(ResourceLocation itemId, ResourceLocation material, ResourceLocation pattern) {
+        super(ITEM_TYPE, itemId, 1);
         this.material = material;
         this.pattern = pattern;
     }
 
-    public TrimmedArmorDTO(String itemId, Map<String, Integer> enchantments, String material, String pattern) {
-        super("trimmed_armor", itemId, 1, enchantments);
+    public TrimmedArmorDTO(ResourceLocation itemId, Map<ResourceLocation, Integer> enchantments, ResourceLocation material, ResourceLocation pattern) {
+        super(ITEM_TYPE, itemId, 1, enchantments);
         this.material = material;
         this.pattern = pattern;
     }
 
     @Override
     public ItemStack getItemStack() {
-        var itemStack = super.getItemStack();
-        CompoundTag trimTag = new CompoundTag();
-        trimTag.putString("material", material);
-        trimTag.putString("pattern", pattern);
-
-        itemStack.getOrCreateTag().put("Trim", trimTag);
+        ItemStack itemStack = super.getItemStack();
+        if (itemStack.isEmpty()) {
+            return itemStack;
+        }
+        this.applyTrim(itemStack);
         return itemStack;
     }
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, TrimmedArmorDTO.class);
+    protected void applyTrim(ItemStack itemStack) {
+        if (!(itemStack.getItem() instanceof ArmorItem)) {
+            throw new JsonSyntaxException(this.getErrorPrefix() + "' item does not extend ArmorItem.");
+        }
+
+        if (material == null) {
+            throw new JsonSyntaxException(this.getErrorPrefix() + "' material must not be null.");
+        }
+
+        if (pattern == null) {
+            throw new JsonSyntaxException(this.getErrorPrefix() + "' pattern must not be null.");
+        }
+
+        CompoundTag trimTag = itemStack.getOrCreateTagElement("Trim");
+        trimTag.putString("material", material.toString());
+        trimTag.putString("pattern", pattern.toString());
     }
 }

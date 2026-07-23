@@ -20,11 +20,8 @@ import com.dragonminez.common.quest.objectives.SkillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.*;
-import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
-import com.dragonminez.common.util.types.items.GenericItemDTO;
+import com.dragonminez.common.util.gson.GsonUtils;
 import com.dragonminez.server.world.structure.helper.QuestStructureHints;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -46,11 +43,6 @@ import java.util.function.Supplier;
  * Sync packet that sends the entire QuestRegistry state (sagas + quests) to the client.
  */
 public class SyncQuestRegistryS2C {
-	private static final Gson GSON = new GsonBuilder()
-			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
-			.setPrettyPrinting()
-			.create();
-
 	private final String sagasJson;
 	private final String questsJson;
 
@@ -136,7 +128,7 @@ public class SyncQuestRegistryS2C {
 		for (Map.Entry<String, Saga> entry : sagas.entrySet()) {
 			root.add(entry.getKey(), serializeSaga(entry.getValue()));
 		}
-		return GSON.toJson(root);
+		return GsonUtils.GSON.toJson(root);
 	}
 
 	private static JsonObject serializeSaga(Saga saga) {
@@ -165,7 +157,7 @@ public class SyncQuestRegistryS2C {
 			if (quest.getType() == Quest.QuestType.SAGA) continue;
 			root.add(entry.getKey(), serializeQuest(quest));
 		}
-		return GSON.toJson(root);
+		return GsonUtils.GSON.toJson(root);
 	}
 
 	private static JsonObject serializeQuest(Quest quest) {
@@ -277,7 +269,7 @@ public class SyncQuestRegistryS2C {
 			obj.addProperty("item", item.getItemId());
 			obj.addProperty("count", item.getCount());
 		} else if (reward instanceof GenericItemReward genericItemReward) {
-			obj.add("itemReward", GSON.toJsonTree(genericItemReward.getItemReward()));
+			obj.add("itemReward", GsonUtils.GSON.toJsonTree(genericItemReward.getItemReward()));
 		} else if (reward instanceof CommandReward command) {
 			obj.addProperty("command", command.getCommand());
 			if (command.getTranslationKey() != null && !command.getTranslationKey().isEmpty()) {
