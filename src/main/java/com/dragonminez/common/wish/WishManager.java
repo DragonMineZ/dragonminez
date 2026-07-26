@@ -164,7 +164,7 @@ public class WishManager {
 		List<Wish> defaultWishes = new ArrayList<>();
 
 		List<GenericItemDTO> senzu = new ArrayList<>();
-		senzu.add(new GenericItemDTO("dragonminez:senzu", 32));
+		senzu.add(new GenericItemDTO("dragonminez:senzu_bean", 32));
 		defaultWishes.add(new ItemListWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", senzu));
 
 		defaultWishes.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 15000));
