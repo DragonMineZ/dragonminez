@@ -39,7 +39,37 @@ public class TransformationReward extends QuestReward {
 			if (mastery > current) {
 				masteries.setMastery(formGroup, formName, mastery, Double.MAX_VALUE);
 			}
+
+			grantRequisiteChain(character, character.getRaceName(), formGroup, formName);
 		});
+	}
+
+	private void grantRequisiteChain(Character character, String raceName, String group, String form) {
+		FormConfig config = ConfigManager.getFormGroup(raceName, group);
+		if (config == null) config = ConfigManager.getStackFormGroup(group);
+		if (config == null) return;
+
+		FormConfig.FormData formData = config.getForm(form);
+		if (formData == null) return;
+
+		String req = formData.getFormRequisite();
+		double need = formData.getUnlockOnMastery();
+		if (req.isEmpty() || need <= 0.0) return;
+
+		for (String token : req.split(",")) {
+			String entry = token.trim();
+			int dot = entry.indexOf('.');
+			if (dot <= 0 || dot >= entry.length() - 1) continue;
+			String reqGroup = entry.substring(0, dot);
+			String reqForm = entry.substring(dot + 1);
+
+			FormMasteries reqMasteries = character.getFormMasteries();
+			if (reqMasteries.getMastery(reqGroup, reqForm) < need) {
+				reqMasteries.setMastery(reqGroup, reqForm, need, Double.MAX_VALUE);
+			}
+
+			grantRequisiteChain(character, raceName, reqGroup, reqForm);
+		}
 	}
 
 	private void grantFormSkill(com.dragonminez.common.stats.StatsData data, String raceName) {
