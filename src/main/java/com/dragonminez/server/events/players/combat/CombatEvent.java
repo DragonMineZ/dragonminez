@@ -150,9 +150,9 @@ public class CombatEvent {
 					if (isPunchMachine) {
 						((PunchMachineEntity) event.getEntity()).processHit((float) currentDamage[0], attacker);
 						attackerData.getResources().addTrainingPoints(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
-						event.setCanceled(true);
-						event.setAmount(0);
 					}
+					event.setCanceled(true);
+					event.setAmount(0);
 					return;
 				}
 
