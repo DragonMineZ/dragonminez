@@ -268,7 +268,7 @@ public class StatsData {
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
 
 		int meditationLevel = skills.getSkillLevel("meditation");
-		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.075) : 1.0;
+		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * TickHandler.MEDITATION_BONUS_PER_LEVEL) : 1.0;
 
 		double adjustedStaminaDrain = getAdjustedStaminaDrain();
 		double regenMultiplier = 1.0;
@@ -311,11 +311,6 @@ public class StatsData {
 		float currentEnergy = resources.getCurrentEnergy();
 		float maxEnergy = getMaxEnergy();
 
-		boolean hasActiveForm = character.hasActiveForm();
-		FormConfig.FormData activeForm = hasActiveForm ? character.getActiveFormData() : null;
-		boolean hasActiveStackForm = character.hasActiveStackForm();
-		FormConfig.FormData activeStackForm = hasActiveStackForm ? character.getActiveStackFormData() : null;
-
 		int baseEne = stats.getEnergy();
 		double flatBonusEne = bonusStats.calculateBonus("ENE", baseEne, false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", baseEne, true);
@@ -327,7 +322,7 @@ public class StatsData {
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
 
 		int meditationLevel = skills.getSkillLevel("meditation");
-		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * 0.075) : 1.0;
+		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * TickHandler.MEDITATION_BONUS_PER_LEVEL) : 1.0;
 
 		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
 		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult * kiConductivityMult;
@@ -342,17 +337,7 @@ public class StatsData {
 			if (regenAmount < 1.0) regenAmount = 1.0;
 			energyChange += regenAmount;
 		} else if (currentEnergy < maxEnergy) {
-			double regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * androidRegenMult;
-
-			double formRawDrain = 0.0;
-			if (hasActiveForm && activeForm != null) formRawDrain = activeForm.getEnergyDrain();
-			else if (hasActiveStackForm && activeStackForm != null) formRawDrain = activeStackForm.getEnergyDrain();
-
-			double regenMultiplier = 1.0;
-			if (formRawDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (formRawDrain * 2.5));
-			else if (formRawDrain < 0.0) regenMultiplier = 1.0 + Math.abs(formRawDrain);
-
-			energyChange += regenAmount * regenMultiplier;
+			energyChange += PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * androidRegenMult;
 		}
 
 		return energyChange * secondaryStatEffects.getMultiplier(SecondaryStatEffects.ENE_REGEN);

@@ -19,6 +19,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.extras.DynamicGrowthMath;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
+import com.dragonminez.server.events.players.TickHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -1558,9 +1559,10 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int level = statsData.getSkills().getSkillLevel("meditation");
 		if (level <= 0) return;
 		double base = energy ? baseEnergyRegenPerSec() : baseStaminaRegenPerSec();
-		double bonus = base * (level * 0.05);
+		double bonusPct = level * TickHandler.MEDITATION_BONUS_PER_LEVEL;
+		double bonus = base * bonusPct;
 		extras.add(tr("gui.dragonminez.character_stats.meditation_bonus",
-				formatUpToOneDecimal(bonus), formatUpToOneDecimal(level * 5.0)).withStyle(ChatFormatting.GREEN));
+				formatUpToOneDecimal(bonus), formatUpToOneDecimal(bonusPct * 100.0)).withStyle(ChatFormatting.GREEN));
 	}
 
 	private RaceStatsConfig.ClassStats currentClassStats() {

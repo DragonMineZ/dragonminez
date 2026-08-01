@@ -82,7 +82,7 @@ public class TickHandler {
 	private static final int AURA_LIGHT_INTERVAL = 2;
 	private static final int AURA_LIGHT_LEVEL = 12;
 	private static final int AURA_LIGHT_STEP = 1;
-	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
+	public static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
 	private static final Map<UUID, Integer> masterySecondsByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> chargeTicksByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
