@@ -546,7 +546,6 @@ public final class QuestService {
 		ResolvedQuest resolved = resolveQuest(questKey);
 		Saga saga = resolved != null ? resolved.saga() : null;
 		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(rewardTarget);
-		double rewardMultiplier = pqd.getDifficulty().questRewardMultiplier();
 		for (int i = 0; i < rewards.size(); i++) {
 			if (pqd.isRewardClaimed(questKey, i)) {
 				continue;
@@ -565,7 +564,7 @@ public final class QuestService {
 			if (MinecraftForge.EVENT_BUS.post(rewardEvent)) {
 				continue;
 			}
-			rewards.get(i).giveReward(rewardTarget, rewardMultiplier);
+			rewards.get(i).giveReward(rewardTarget, pqd.rewardMultiplierFor(rewards.get(i)));
 			pqd.claimReward(questKey, i);
 			anyClaimed = true;
 		}

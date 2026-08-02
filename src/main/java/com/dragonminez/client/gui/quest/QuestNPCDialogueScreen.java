@@ -14,12 +14,14 @@ import com.dragonminez.common.network.C2S.NPCActionC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.Difficulty;
+import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.QuestTextFormatter;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
@@ -434,8 +436,9 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 		int rewY = rewTitleY + 11;
 		List<FormattedCharSequence> rewLines = new ArrayList<>();
-		Difficulty difficulty = StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
-				.map(d -> d.getPlayerQuestData().getDifficulty()).orElse(Difficulty.NORMAL);
+		PlayerQuestData questData = StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
+				.map(StatsData::getPlayerQuestData).orElse(null);
+		Difficulty difficulty = questData != null ? questData.getDifficulty() : Difficulty.NORMAL;
 		boolean tiered = QuestTextFormatter.hasRewardTiers(selected.quest.getRewards());
 		for (QuestTextFormatter.RewardGroup group : QuestTextFormatter.groupRewardsByDifficulty(selected.quest.getRewards(), false)) {
 			List<QuestReward> tierRewards = group.rewards();
@@ -446,7 +449,10 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 				rewLines.addAll(this.font.split(header, detailW - 8));
 			}
 			for (QuestReward reward : tierRewards) {
-				Component rewText = txt("  ").append(reward.getDescription(difficulty.questRewardMultiplier()))
+				double rewardMultiplier = questData != null
+						? questData.rewardMultiplierFor(reward)
+						: difficulty.questRewardMultiplier();
+				Component rewText = txt("  ").append(reward.getDescription(rewardMultiplier))
 						.withStyle(tierLocked ? ChatFormatting.DARK_GRAY : ChatFormatting.GREEN);
 				rewLines.addAll(this.font.split(rewText, detailW - 8));
 			}

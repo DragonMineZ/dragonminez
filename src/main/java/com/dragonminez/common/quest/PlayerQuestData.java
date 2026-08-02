@@ -1,5 +1,7 @@
 package com.dragonminez.common.quest;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.quest.rewards.TPSReward;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -85,6 +87,13 @@ public class PlayerQuestData {
     @Getter
     @Setter
     private boolean difficultyChosen = false;
+
+    /**
+     * How many times this player has wiped their story with the reset-story wish. Each reset decays
+     * the TP paid out by quest rewards ({@link #tpRewardMultiplier()}); item/skill rewards are untouched.
+     */
+    @Getter
+    private int storyResetCount = 0;
 
     /** Active party identifier for synchronized story progress. */
     @Getter
@@ -214,6 +223,39 @@ public class PlayerQuestData {
      */
     public void resetAll() {
         clearActiveQuestState();
+    }
+
+    /**
+     * Records a story wipe done through the reset-story wish, decaying future quest TP payouts.
+     * Admin resets ({@code /dmzstory reset}) deliberately do not count.
+     */
+    public void markStoryReset() {
+        storyResetCount++;
+    }
+
+    /** Clears the reset-story decay (full character wipes start from a clean slate). */
+    public void clearStoryResets() {
+        storyResetCount = 0;
+    }
+
+    /**
+     * TP payout factor for quest rewards: {@code storyResetTPMultiplier ^ storyResetCount}
+     * (100% / 50% / 25% ... with the default config value).
+     */
+    public double tpRewardMultiplier() {
+        if (storyResetCount <= 0) return 1.0;
+        double perReset = ConfigManager.getServerConfig().getGameplay().getStoryResetTPMultiplier();
+        return Math.pow(perReset, storyResetCount);
+    }
+
+    /**
+     * Reward multiplier to hand to {@link QuestReward#giveReward(net.minecraft.server.level.ServerPlayer, double)}
+     * and its description counterpart. Only TP rewards decay on story resets — items, skills and
+     * transformations stay at full value so replaying the story still works as intended.
+     */
+    public double rewardMultiplierFor(QuestReward reward) {
+        double multiplier = difficulty.questRewardMultiplier();
+        return reward instanceof TPSReward ? multiplier * tpRewardMultiplier() : multiplier;
     }
 
     private void clearActiveQuestState() {
@@ -615,6 +657,7 @@ public class PlayerQuestData {
     public CompoundTag serializeNBT() {
         CompoundTag tag = serializeFullQuestState();
         tag.putBoolean("difficultyChosen", difficultyChosen);
+        tag.putInt("storyResetCount", storyResetCount);
 
         CompoundTag partyTag = new CompoundTag();
         if (activePartyId != null) {
@@ -649,6 +692,7 @@ public class PlayerQuestData {
     public void deserializeNBT(CompoundTag tag) {
         deserializeFullQuestState(tag);
         difficultyChosen = tag.getBoolean("difficultyChosen");
+        storyResetCount = Math.max(0, tag.getInt("storyResetCount"));
 
         activePartyId = null;
         partyLeaderId = null;

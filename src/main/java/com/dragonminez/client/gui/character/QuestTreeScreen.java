@@ -2039,7 +2039,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return Component.translatable("race.dragonminez." + race + ".form." + group + "." + form);
 		}
 		double rewardMultiplier = statsData != null
-				? statsData.getPlayerQuestData().getDifficulty().questRewardMultiplier()
+				? statsData.getPlayerQuestData().rewardMultiplierFor(reward)
 				: 1.0;
 		return reward.getDescription(rewardMultiplier);
 	}

@@ -18,6 +18,7 @@ public class ResetStoryWish extends Wish {
 	public void grant(ServerPlayer player) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			data.getPlayerQuestData().resetAll();
+			data.getPlayerQuestData().markStoryReset();
 			NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 		});
 	}

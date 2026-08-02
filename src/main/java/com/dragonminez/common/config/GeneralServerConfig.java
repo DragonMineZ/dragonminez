@@ -141,6 +141,9 @@ public class GeneralServerConfig {
 		private Double hardModeTPMultiplier = 1.25;
 		private Double hardModeQuestRewardMultiplier = 1.25;
 
+		/** TP reward decay applied per story reset (wish): run 1 = 100%, run 2 = 50%, run 3 = 25%, ... Set to 1.0 to disable. */
+		private Double storyResetTPMultiplier = 0.5;
+
 		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
 				"dragonminez:invencible_armor_helmet",
 				"dragonminez:invencible_blue_armor_helmet"
@@ -318,6 +321,10 @@ public class GeneralServerConfig {
 
 		public Double getHardModeQuestRewardMultiplier() {
 			return Math.max(0.0, hardModeQuestRewardMultiplier != null ? hardModeQuestRewardMultiplier : 1.25);
+		}
+
+		public Double getStoryResetTPMultiplier() {
+			return Math.min(1.0, Math.max(0.0, storyResetTPMultiplier != null ? storyResetTPMultiplier : 0.5));
 		}
 	}
 
