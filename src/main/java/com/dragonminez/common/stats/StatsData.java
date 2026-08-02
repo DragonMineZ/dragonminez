@@ -958,6 +958,7 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 
 		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (scaledDrain == 0) return 0.0;
 		if (drainAmount < 0) return Math.min(-1, scaledDrain);
 		return Math.max(1, scaledDrain);
 	}
@@ -1001,6 +1002,7 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 
 		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (scaledDrain == 0) return 0.0;
 		if (drainAmount < 0) return Math.min(-1, scaledDrain);
 		return Math.max(1, scaledDrain);
 	}
@@ -1044,6 +1046,7 @@ public class StatsData {
 		if (drainAmount == 0) return 0.0;
 
 		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
+		if (scaledDrain == 0) return 0.0;
 		if (drainAmount < 0) return Math.min(-1, scaledDrain);
 		return Math.max(1, scaledDrain);
 	}
@@ -1551,6 +1554,7 @@ public class StatsData {
 		getResources().setPowerRelease(0);
 		getSkills().setSkillActive("kisense", false);
 		getPlayerQuestData().resetAll();
+		getPlayerQuestData().clearStoryResets();
 		getCharacter().clearInteractedMasters();
 		getDynamicGrowth().clear();
 
