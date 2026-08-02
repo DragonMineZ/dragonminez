@@ -64,3 +64,4 @@ When changing any JSON schema, update the parser, defaults, config version, and 
 
 - Make the smallest coherent change that solves the request. Backward compatibility is **not** assumed unless the change affects save data, player-editable JSON, configs, or addons — when in doubt for those, ask.
 - Avoid destructive git operations (`reset --hard`, forced checkout, recursive deletion). Don't edit `build/`, `run/`, or `run-data/` unless the task targets them. Don't commit unless asked.
+- **Older-version compatibility:** before making a change that could break compatibility with older versions — renaming/removing a config key, changing a JSON schema field, changing NBT save keys, reordering/removing a network packet registration, changing a registry name, or anything else that existing worlds/saves/configs/addons (created under older versions) would fail to load or migrate from — flag the risk to the user explicitly and wait for confirmation before proceeding.
