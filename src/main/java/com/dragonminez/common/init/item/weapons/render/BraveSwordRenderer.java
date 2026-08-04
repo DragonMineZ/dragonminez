@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
 public class BraveSwordRenderer extends GeoItemRenderer<BraveSwordItem> {
@@ -20,11 +21,17 @@ public class BraveSwordRenderer extends GeoItemRenderer<BraveSwordItem> {
 	@Override
 	public void actuallyRender(PoseStack poseStack, BraveSwordItem animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
 
-		model.getBone("cubretodo").ifPresent(bone -> {
-			bone.setHidden(true);
-		});
+		// Hide the scabbard while the sword is held, then put it back. BakedGeoModel
+		// instances are cached per model file in GeckoLibCache and shared by every
+		// renderer that uses them, so leaving the bone hidden here also hides it in
+		// DMZRacePartsLayer, which draws the sheathed sword on the player's back.
+		GeoBone sheath = model.getBone("cubretodo").orElse(null);
+		boolean wasHidden = sheath != null && sheath.isHidden();
+		if (sheath != null) sheath.setHidden(true);
 
 		super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+
+		if (sheath != null) sheath.setHidden(wasHidden);
 
 	}
 
