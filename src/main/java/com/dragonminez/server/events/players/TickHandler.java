@@ -344,8 +344,14 @@ public class TickHandler {
 					data.getStatus().setRenderKatana(renderKatanaTarget);
 				}
 
-				ItemStack backItem = ItemStack.EMPTY;
-				boolean holdingOtherWeapon = false;
+				// backWeapon names the weapon the player OWNS, whether it is in hand or not, so
+				// it does not change when the weapon is merely drawn or stowed. That matters:
+				// this block runs only every 5 ticks and then still has to reach the client, so
+				// a field that flipped on every draw would leave the client disagreeing for up
+				// to 500ms with the hand it can already see, and the sheath would blink out.
+				// The client derives drawn state from the held item instead, which is instant.
+				ItemStack heldWeapon = ItemStack.EMPTY;
+				ItemStack stowedWeapon = ItemStack.EMPTY;
 				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
 					ItemStack stack = serverPlayer.getInventory().getItem(i);
 					if (stack.isEmpty()) continue;
@@ -353,24 +359,47 @@ public class TickHandler {
 
 					if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get() || item == MainItems.POWER_POLE.get()) {
 						boolean isHeld = serverPlayer.getMainHandItem().getItem() == item || serverPlayer.getOffhandItem().getItem() == item;
-						if (isHeld) holdingOtherWeapon = true;
-						else if (backItem == ItemStack.EMPTY) backItem = item.getDefaultInstance();
+						if (isHeld) {
+							if (heldWeapon == ItemStack.EMPTY) heldWeapon = item.getDefaultInstance();
+						} else if (stowedWeapon == ItemStack.EMPTY) {
+							stowedWeapon = item.getDefaultInstance();
+						}
 					}
 				}
+
+				// A held weapon takes the slot, because its sheath is the one that should stay
+				// on the back. The Z Sword is the exception: it has no sheath bone and renders
+				// nothing while held, so letting it claim the slot would blank the back and
+				// hide a weapon that is genuinely stowed there.
+				boolean heldHasSheath = heldWeapon != ItemStack.EMPTY && heldWeapon.getItem() != MainItems.Z_SWORD.get();
+				ItemStack backItem;
+				if (heldHasSheath) backItem = heldWeapon;
+				else if (stowedWeapon != ItemStack.EMPTY) backItem = stowedWeapon;
+				else backItem = heldWeapon;
+
+				boolean weaponDrawn = heldWeapon != ItemStack.EMPTY;
 
 				String newBackWeapon = backItem != ItemStack.EMPTY ? backItem.getDescriptionId() : "";
 				String currentBackWeapon = data.getStatus().getBackWeapon();
+				// Edge detection only, never read by the client, so it stays out of StatsData and
+				// its save contract. Same idiom as dmz_ki_anim_active further up this method.
+				boolean wasDrawn = serverPlayer.getPersistentData().getBoolean("dmz_weapon_drawn");
 
-				if (!currentBackWeapon.equals(newBackWeapon)) {
-					if (!playedSound) {
-						if (!newBackWeapon.isEmpty()) {
-							serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-						} else if (holdingOtherWeapon) {
-							serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_OUT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-						}
+				if (!playedSound) {
+					if (weaponDrawn && !wasDrawn) {
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_OUT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+					} else if (!weaponDrawn && wasDrawn && !newBackWeapon.isEmpty()) {
+						// Only when it is still owned. Dying with a drawn weapon, dropping it or
+						// clearing it is not sheathing it, and must not play the sheathing sound.
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+					} else if (currentBackWeapon.isEmpty() && !newBackWeapon.isEmpty() && !weaponDrawn) {
+						// Newly acquired and it went straight onto the back.
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 					}
-					data.getStatus().setBackWeapon(newBackWeapon);
 				}
+
+				if (weaponDrawn != wasDrawn) serverPlayer.getPersistentData().putBoolean("dmz_weapon_drawn", weaponDrawn);
+				if (!currentBackWeapon.equals(newBackWeapon)) data.getStatus().setBackWeapon(newBackWeapon);
 
 				ItemStack headTechStack = CuriosUtil.getFirstStack(serverPlayer, "head_tech");
 				String itemId = headTechStack.getDescriptionId();

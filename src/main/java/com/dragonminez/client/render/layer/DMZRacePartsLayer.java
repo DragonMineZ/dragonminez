@@ -552,33 +552,75 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			}
 		}
 
-		if (stats.getStatus().getBackWeapon() == null || stats.getStatus().getBackWeapon().isEmpty()) return;
+		String backWeapon = stats.getStatus().getBackWeapon();
 
-		if (stats.getStatus().getBackWeapon().equals(MainItems.POWER_POLE.get().getDescriptionId())) {
-			BakedGeoModel powerpole = getGeoModel().getBakedModel(POWER_POLE_MODEL);
-			if (powerpole != null) {
-				RenderType type = RenderType.entityCutoutNoCull(POWER_POLE_TEXTURE);
-				renderWeaponFromBodyAnchor(powerpole, "baculo", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+		if (backWeapon == null || backWeapon.isEmpty()) return;
+
+		// backWeapon only names the weapon the player owns. Whether it is in hand right now
+		// is read straight off the entity, which costs no server round trip, so the sheath
+		// never blinks out while a stale value catches up. Held items are synced for every
+		// player, so this is correct for other players too.
+		if (backWeapon.equals(MainItems.POWER_POLE.get().getDescriptionId())) {
+			renderPowerPoleOnBack(poseStack, animatable, playerBodyBone, bufferSource, partialTick, packedLight, isHolding(animatable, MainItems.POWER_POLE.get()));
+		} else if (backWeapon.equals(MainItems.Z_SWORD.get().getDescriptionId())) {
+			// The Z Sword model carries no sheath bone, so it just leaves the back when drawn.
+			if (!isHolding(animatable, MainItems.Z_SWORD.get())) {
+				BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
+				if (zModel != null) {
+					RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
+					renderWeaponFromBodyAnchor(zModel, "espada", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+				}
 			}
-		} else if (stats.getStatus().getBackWeapon().equals(MainItems.Z_SWORD.get().getDescriptionId())) {
-			BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
-			if (zModel != null) {
-				RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
-				renderWeaponFromBodyAnchor(zModel, "espada", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
-			}
-		} else if (stats.getStatus().getBackWeapon().equals(MainItems.BRAVE_SWORD.get().getDescriptionId())) {
-			BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
-			if (braveModel != null) {
-				RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
-				poseStack.pushPose();
-				poseStack.translate(BRAVE_BACK_X, BRAVE_BACK_Y, BRAVE_BACK_Z);
-				if (BRAVE_BACK_ROT_X != 0.0F) poseStack.mulPose(Axis.XP.rotationDegrees(BRAVE_BACK_ROT_X));
-				if (BRAVE_BACK_ROT_Y != 0.0F) poseStack.mulPose(Axis.YP.rotationDegrees(BRAVE_BACK_ROT_Y));
-                if (BRAVE_BACK_ROT_Z != 0.0F) poseStack.mulPose(Axis.ZP.rotationDegrees(BRAVE_BACK_ROT_Z));
-				renderWeaponFromBodyAnchor(braveModel, "espadatrunks", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, BRAVE_BACK_SCALE);
-				poseStack.popPose();
-			}
+		} else if (backWeapon.equals(MainItems.BRAVE_SWORD.get().getDescriptionId())) {
+			renderBraveSwordOnBack(poseStack, animatable, playerBodyBone, bufferSource, partialTick, packedLight, isHolding(animatable, MainItems.BRAVE_SWORD.get()));
 		}
+	}
+
+	private static boolean isHolding(AbstractClientPlayer player, Item item) {
+		return player.getMainHandItem().is(item) || player.getOffhandItem().is(item);
+	}
+
+	/**
+	 * Renders the Brave Sword on the player's back. With {@code scabbardOnly} the sword
+	 * bone is hidden so only the scabbard draws, which is what stays behind while the
+	 * sword itself is in hand.
+	 */
+	private void renderBraveSwordOnBack(PoseStack poseStack, T animatable, GeoBone playerBodyBone, MultiBufferSource bufferSource, float partialTick, int packedLight, boolean scabbardOnly) {
+		BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
+		if (braveModel == null) return;
+
+		GeoBone blade = scabbardOnly ? braveModel.getBone("espada").orElse(null) : null;
+		boolean bladeWasHidden = blade != null && blade.isHidden();
+		if (blade != null) blade.setHidden(true);
+
+		RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
+		poseStack.pushPose();
+		poseStack.translate(BRAVE_BACK_X, BRAVE_BACK_Y, BRAVE_BACK_Z);
+		if (BRAVE_BACK_ROT_X != 0.0F) poseStack.mulPose(Axis.XP.rotationDegrees(BRAVE_BACK_ROT_X));
+		if (BRAVE_BACK_ROT_Y != 0.0F) poseStack.mulPose(Axis.YP.rotationDegrees(BRAVE_BACK_ROT_Y));
+		if (BRAVE_BACK_ROT_Z != 0.0F) poseStack.mulPose(Axis.ZP.rotationDegrees(BRAVE_BACK_ROT_Z));
+		renderWeaponFromBodyAnchor(braveModel, "espadatrunks", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, BRAVE_BACK_SCALE);
+		poseStack.popPose();
+
+		if (blade != null) blade.setHidden(bladeWasHidden);
+	}
+
+	/**
+	 * Renders the Power Pole on the player's back. With {@code holsterOnly} the pole bone
+	 * is hidden so only the holster draws.
+	 */
+	private void renderPowerPoleOnBack(PoseStack poseStack, T animatable, GeoBone playerBodyBone, MultiBufferSource bufferSource, float partialTick, int packedLight, boolean holsterOnly) {
+		BakedGeoModel powerpole = getGeoModel().getBakedModel(POWER_POLE_MODEL);
+		if (powerpole == null) return;
+
+		GeoBone pole = holsterOnly ? powerpole.getBone("palo").orElse(null) : null;
+		boolean poleWasHidden = pole != null && pole.isHidden();
+		if (pole != null) pole.setHidden(true);
+
+		RenderType type = RenderType.entityCutoutNoCull(POWER_POLE_TEXTURE);
+		renderWeaponFromBodyAnchor(powerpole, "baculo", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+
+		if (pole != null) pole.setHidden(poleWasHidden);
 	}
 
 	private void renderWeaponFromBodyAnchor(BakedGeoModel weaponModel, String anchorBoneName, GeoBone playerBodyBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType type, float partialTick, int packedLight, float scale) {
