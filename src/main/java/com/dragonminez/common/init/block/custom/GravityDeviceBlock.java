@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.block.custom;
 
+import com.mojang.serialization.MapCodec;
+
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.block.entity.GravityDeviceBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -23,10 +25,17 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 import org.jetbrains.annotations.Nullable;
 
 public class GravityDeviceBlock extends BaseEntityBlock {
+	public static final MapCodec<GravityDeviceBlock> CODEC = simpleCodec(GravityDeviceBlock::new);
+
+	@Override
+	protected MapCodec<? extends BaseEntityBlock> codec() {
+		return CODEC;
+	}
+
 	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 	public static final BooleanProperty ACTIVE = BlockStateProperties.POWERED;
 
@@ -71,10 +80,10 @@ public class GravityDeviceBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+	public InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
 		if (pPlayer.isSecondaryUseActive()) {
 			if (pLevel.isClientSide()) {
-				net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
+				com.dragonminez.compat.DistExecutor.unsafeRunWhenOn(net.neoforged.api.distmarker.Dist.CLIENT,
 						() -> () -> com.dragonminez.client.render.shader.GravityRangeRenderer.toggle(pPos));
 			}
 			return InteractionResult.sidedSuccess(pLevel.isClientSide());
@@ -84,7 +93,7 @@ public class GravityDeviceBlock extends BaseEntityBlock {
 			BlockEntity entity = pLevel.getBlockEntity(pPos);
 			if (entity instanceof GravityDeviceBlockEntity device) {
 				device.refreshRoom();
-				NetworkHooks.openScreen((ServerPlayer) pPlayer, device, pPos);
+				if (pPlayer instanceof ServerPlayer sp) sp.openMenu(device, buf -> buf.writeBlockPos(pPos));
 			}
 		}
 		return InteractionResult.sidedSuccess(pLevel.isClientSide());

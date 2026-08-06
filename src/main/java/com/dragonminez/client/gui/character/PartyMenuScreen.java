@@ -20,8 +20,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
@@ -105,8 +105,8 @@ public class PartyMenuScreen extends BaseMenuScreen {
 				}
 
 				displayList.sort((e1, e2) -> {
-					if (e1.id().equals(localId)) return -1;
-					if (e2.id().equals(localId)) return 1;
+					if (e1.equals(localId)) return -1;
+					if (e2.equals(localId)) return 1;
 					return e1.name().compareToIgnoreCase(e2.name());
 				});
 			});
@@ -116,7 +116,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		if (selectedId != null) {
 			for (int i = 0; i < displayList.size(); i++) {
 				PartyEntry entry = displayList.get(i);
-				if (entry.id().equals(selectedId)) {
+				if (entry.equals(selectedId)) {
 					if (entry.isOnline()) selectedIndex = i;
 					break;
 				}
@@ -189,7 +189,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		if (validSelection && Minecraft.getInstance().player != null) {
 			PartyEntry targetEntry = displayList.get(selectedIndex);
-			boolean isSelf = targetEntry.id().equals(Minecraft.getInstance().player.getUUID());
+			boolean isSelf = targetEntry.equals(Minecraft.getInstance().player.getUUID());
 
 			if (currentTab == Tab.SERVER) {
 				actionBtn.visible = !isSelf;
@@ -211,7 +211,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		if (selectedIndex < 0 || selectedIndex >= displayList.size() || Minecraft.getInstance().player == null) return;
 
 		PartyEntry target = displayList.get(selectedIndex);
-		boolean isSelf = target.id().equals(Minecraft.getInstance().player.getUUID());
+		boolean isSelf = target.equals(Minecraft.getInstance().player.getUUID());
 		String name = target.name();
 
 		if (currentTab == Tab.SERVER) {
@@ -224,7 +224,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -279,7 +279,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		maxScroll = Math.max(0, totalHeight - viewHeight);
 		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		currentScroll = Mth.lerp(Minecraft.getInstance().getDeltaFrameTime() * 0.4f, currentScroll, targetScroll);
+		currentScroll = Mth.lerp(Minecraft.getInstance().getTimer().getRealtimeDeltaTicks() * 0.4f, currentScroll, targetScroll);
 
 		graphics.enableScissor(toScreenCoord(panelX + 5), toScreenCoord(startY), toScreenCoord(panelX + 135), toScreenCoord(startY + viewHeight));
 		graphics.pose().pushPose();
@@ -425,7 +425,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, renderEntity);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, renderEntity);
 		graphics.pose().popPose();
 
 		renderEntity.yBodyRot = yBodyRotO;
@@ -436,12 +436,12 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		if (maxScroll > 0) {
-			targetScroll = Mth.clamp(targetScroll - ((float) Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
+			targetScroll = Mth.clamp(targetScroll - ((float) Math.signum(scrollY) * ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override

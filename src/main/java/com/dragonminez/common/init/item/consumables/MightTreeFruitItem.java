@@ -14,7 +14,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -27,8 +27,8 @@ public class MightTreeFruitItem extends Item {
         super(new Properties().stacksTo(6).food(
                 new FoodProperties.Builder()
                         .nutrition(HUNGER)
-                        .saturationMod(SATURATION)
-                        .alwaysEat()
+                        .saturationModifier(SATURATION)
+                        .alwaysEdible()
                         .build()
         ));
     }
@@ -39,12 +39,12 @@ public class MightTreeFruitItem extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
+    public void appendHoverText(@NotNull ItemStack pStack, @NotNull Item.TooltipContext context, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
         pTooltipComponents.add(Component.translatable("item.dragonminez.might_tree_fruit.tooltip").withStyle(ChatFormatting.GRAY));
     }
 
     @Override
-    public @NonNull ItemStack finishUsingItem(@NonNull ItemStack pStack, Level pLevel, @NonNull LivingEntity pLivingEntity) {
+    public ItemStack finishUsingItem(ItemStack pStack, Level pLevel, LivingEntity pLivingEntity) {
         if (!pLevel.isClientSide && pLivingEntity instanceof ServerPlayer player) {
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 double effectPower = ConfigManager.getServerConfig().getGameplay().getMightFruitPower();

@@ -103,7 +103,7 @@ public class KiWeaponRenderer {
 
 					rawRenderer.renderRecursively(poseStack, player, targetBone, renderType, buffers, vertexConsumer, true,
 							entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
-							entry.color()[0], entry.color()[1], entry.color()[2], 0.65f);
+							net.minecraft.util.FastColor.ARGB32.colorFromFloat(0.65f, entry.color()[0], entry.color()[1], entry.color()[2]));
 
 					poseStack.popPose();
 				});

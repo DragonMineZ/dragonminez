@@ -14,11 +14,11 @@ import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.PathComputationType;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidType;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -35,9 +35,9 @@ public class SimpleFluid extends FluidType {
 
     public SimpleFluid(int color, FluidType.Properties properties) {
         super(properties);
-        this.stillTexture = new ResourceLocation("block/water_still");
-        this.flowTexture = new ResourceLocation("block/water_flow");
-        this.overlayTexture = new ResourceLocation("block/water_overlay");
+        this.stillTexture = ResourceLocation.withDefaultNamespace("block/water_still");
+        this.flowTexture = ResourceLocation.withDefaultNamespace("block/water_flow");
+        this.overlayTexture = ResourceLocation.withDefaultNamespace("block/water_overlay");
 
         this.tintColor = toAlpha(color);
         this.fogColor = new Vector3f((color >> 16 & 0xFF) / 255F, (color >> 8 & 0xFF) / 255F, (color & 0xFF) / 255F);
@@ -90,12 +90,12 @@ public class SimpleFluid extends FluidType {
     }
 
     @Override
-    public @Nullable BlockPathTypes getBlockPathType(FluidState state, BlockGetter level, BlockPos pos, @Nullable Mob mob, boolean canFluidLog) {
-        return BlockPathTypes.WATER;
+    public @Nullable PathType getBlockPathType(FluidState state, BlockGetter level, BlockPos pos, @Nullable Mob mob, boolean canFluidLog) {
+        return PathType.WATER;
     }
 
     @Override
-    public @org.jetbrains.annotations.Nullable BlockPathTypes getAdjacentBlockPathType(FluidState state, BlockGetter level, BlockPos pos, @org.jetbrains.annotations.Nullable Mob mob, BlockPathTypes originalType) {
+    public @org.jetbrains.annotations.Nullable PathType getAdjacentBlockPathType(FluidState state, BlockGetter level, BlockPos pos, @org.jetbrains.annotations.Nullable Mob mob, PathType originalType) {
         return null;
     }
 

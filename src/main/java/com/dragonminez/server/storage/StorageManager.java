@@ -12,8 +12,8 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -108,7 +108,7 @@ public class StorageManager {
 	}
 
 	private static void applyLoadedData(ServerPlayer player, CompoundTag loadedData) {
-		MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
+		NeoForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			try {
@@ -136,7 +136,7 @@ public class StorageManager {
 			if (!stats.isDataLoaded() && !stats.getStatus().isHasCreatedCharacter()) return;
 			CompoundTag dataToSave = stats.save();
 
-			MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataSaveEvent(player, dataToSave));
+			NeoForge.EVENT_BUS.post(new DMZEvent.PlayerDataSaveEvent(player, dataToSave));
 
 			String name = player.getScoreboardName();
 			UUID uuid = player.getUUID();

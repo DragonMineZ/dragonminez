@@ -572,14 +572,13 @@ public class MasterTextScreen extends Screen {
 		RenderSystem.setShader(GameRenderer::getPositionTexShader);
 		RenderSystem.setShaderTexture(0, MENU_TEXT);
 
-		BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-		buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+		BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
-		buffer.vertex(centerX - 140, centerY + 250, 0.0D).uv(0.0F, 1.0F).endVertex();
-		buffer.vertex(centerX + 140, centerY + 250, 0.0D).uv(1.0F, 1.0F).endVertex();
-		buffer.vertex(centerX + 140, centerY - 90, 0.0D).uv(1.0F, 0.0F).endVertex();
-		buffer.vertex(centerX - 140, centerY - 90, 0.0D).uv(0.0F, 0.0F).endVertex();
-		Tesselator.getInstance().end();
+		buffer.addVertex(centerX - 140, centerY + 250, 0.0F).setUv(0.0F, 1.0F);
+		buffer.addVertex(centerX + 140, centerY + 250, 0.0F).setUv(1.0F, 1.0F);
+		buffer.addVertex(centerX + 140, centerY - 90, 0.0F).setUv(1.0F, 0.0F);
+		buffer.addVertex(centerX - 140, centerY - 90, 0.0F).setUv(0.0F, 0.0F);
+		/* end handled by BufferUploader */
 
 		RenderSystem.disableBlend();
 

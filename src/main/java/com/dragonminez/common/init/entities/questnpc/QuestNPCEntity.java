@@ -22,7 +22,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A single, generic, data-driven quest NPC entity.
@@ -101,11 +101,11 @@ public class QuestNPCEntity extends MastersEntity {
 	}
 
 	@Override
-	protected void defineSynchedData() {
-		super.defineSynchedData();
-		this.entityData.define(NPC_ID, "generic_npc");
-		this.entityData.define(NPC_MODEL, "");
-		this.entityData.define(NPC_TEXTURE, "");
+	protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+		super.defineSynchedData(builder);
+		builder.define(NPC_ID, "generic_npc");
+		builder.define(NPC_MODEL, "");
+		builder.define(NPC_TEXTURE, "");
 	}
 
 	// ---- NPC identity ----
@@ -156,19 +156,19 @@ public class QuestNPCEntity extends MastersEntity {
 	// ---- Display name ----
 
 	@Override
-	public @NonNull Component getName() {
+	public Component getName() {
 		return Component.translatable("entity.dragonminez.questnpc." + getNpcId());
 	}
 
 	@Override
-	public @NonNull Component getDisplayName() {
+	public Component getDisplayName() {
 		return getName();
 	}
 
 	// ---- NBT persistence ----
 
 	@Override
-	public void addAdditionalSaveData(@NonNull CompoundTag tag) {
+	public void addAdditionalSaveData(CompoundTag tag) {
 		super.addAdditionalSaveData(tag);
 		tag.putString("QuestNpcId", getNpcId());
 		String model = getNpcModel();
@@ -187,7 +187,7 @@ public class QuestNPCEntity extends MastersEntity {
 	}
 
 	@Override
-	public void readAdditionalSaveData(@NonNull CompoundTag tag) {
+	public void readAdditionalSaveData(CompoundTag tag) {
 		super.readAdditionalSaveData(tag);
 		if (tag.contains("QuestNpcId")) {
 			setNpcId(tag.getString("QuestNpcId"));
@@ -206,7 +206,7 @@ public class QuestNPCEntity extends MastersEntity {
 	// ---- Interaction: open quest dialogue ----
 
 	@Override
-	protected @NonNull InteractionResult mobInteract(@NonNull Player pPlayer, @NonNull InteractionHand pHand) {
+	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
 		if (!this.level().isClientSide && pPlayer instanceof ServerPlayer serverPlayer) {
 			String npcId = getNpcId();
 

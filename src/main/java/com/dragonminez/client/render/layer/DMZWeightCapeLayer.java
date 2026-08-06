@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.ItemArmorGeoLayer;
 import top.theillusivec4.curios.api.CuriosApi;

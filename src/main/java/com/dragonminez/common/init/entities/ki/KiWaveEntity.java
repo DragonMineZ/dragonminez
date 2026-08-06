@@ -437,19 +437,19 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEAM_LENGTH, 0.0F);
-        this.entityData.define(FIXED_YAW, 0.0F);
-        this.entityData.define(FIXED_PITCH, 0.0F);
-        this.entityData.define(CAST_WAVE, 100);
-        this.entityData.define(CAST_SIZE, 1.0F);
-        this.entityData.define(OFFSET_X, 0.0F);
-        this.entityData.define(OFFSET_Y, 0.0F);
-        this.entityData.define(OFFSET_Z, 0.0F);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEAM_LENGTH, 0.0F);
+        builder.define(FIXED_YAW, 0.0F);
+        builder.define(FIXED_PITCH, 0.0F);
+        builder.define(CAST_WAVE, 100);
+        builder.define(CAST_SIZE, 1.0F);
+        builder.define(OFFSET_X, 0.0F);
+        builder.define(OFFSET_Y, 0.0F);
+        builder.define(OFFSET_Z, 0.0F);
 
-        this.entityData.define(CONTINUOUS_FOLLOW, false);
-        this.entityData.define(IS_FIRING, false);
+        builder.define(CONTINUOUS_FOLLOW, false);
+        builder.define(IS_FIRING, false);
     }
 
     public float getBeamLength() { return this.entityData.get(BEAM_LENGTH); }

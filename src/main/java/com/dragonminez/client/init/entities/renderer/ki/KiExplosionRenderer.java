@@ -28,7 +28,7 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
 
         PlayerEffectQueue.addKiAttack((stack, proj) -> {
             stack.pushPose();
-            stack.last().pose().set(basePose);
+            stack.last().pose().mul(basePose);
 
             float ageInTicks = entity.tickCount + partialTick;
             boolean isFiring = entity.isFiring();

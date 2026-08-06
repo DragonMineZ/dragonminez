@@ -3,22 +3,20 @@ package com.dragonminez.mixin.common;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(Entity.class)
+@Mixin(LivingEntity.class)
 public abstract class EntityMixin {
-	@Shadow public abstract AABB getBoundingBox();
-
-	@Inject(method = "canEnterPose", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "wouldNotSuffocateAtTargetPose", at = @At("HEAD"), cancellable = true)
 	private void onCanEnterPose(Pose pose, CallbackInfoReturnable<Boolean> cir) {
-		Entity self = (Entity) (Object) this;
+		LivingEntity self = (LivingEntity) (Object) this;
 		if (!(self instanceof Player player)) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -40,7 +38,7 @@ public abstract class EntityMixin {
 
 				float actualHeight = baseHeight * ratioY * poseMultiplier;
 
-				AABB currentBox = this.getBoundingBox();
+				AABB currentBox = self.getBoundingBox();
 				AABB testBox = new AABB(
 					currentBox.minX,
 					currentBox.minY,

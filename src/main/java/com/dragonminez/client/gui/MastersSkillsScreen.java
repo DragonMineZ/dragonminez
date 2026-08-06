@@ -27,8 +27,8 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
@@ -285,7 +285,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -372,7 +372,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		maxScroll = Math.max(0, totalHeight - viewHeight);
 		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		float tickDelta = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
 
 		graphics.enableScissor(
@@ -559,7 +559,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		maxDescScroll = Math.max(0, totalContentHeight - viewHeight);
 		targetDescScroll = Mth.clamp(targetDescScroll, 0, maxDescScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		float tickDelta = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 		currentDescScroll = Mth.lerp(tickDelta * 0.4f, currentDescScroll, targetDescScroll);
 
 		TextUtil.renderScrollableText(graphics, this.font, wrappedDesc, boxX, descY, boxW, viewHeight, currentDescScroll, maxDescScroll, 0xFFCCCCCC);
@@ -570,14 +570,14 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int leftPanelX = 12;
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
-		int scrollAmount = (int) Math.signum(delta);
+		int scrollAmount = (int) Math.signum(scrollY);
 
 		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 && uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
 			targetScroll = Mth.clamp(targetScroll - (scrollAmount * SKILL_ITEM_HEIGHT * 2), 0, maxScroll);
@@ -594,7 +594,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			return true;
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	private float calculateScrollPercent(double uiMouseY, int startY, int scrollBarHeight) {
@@ -704,7 +704,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, 100, pose, cameraOrientation, masterEntity);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, 100, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, masterEntity);
 		graphics.pose().popPose();
 
 		masterEntity.yBodyRot = yBodyRotO;

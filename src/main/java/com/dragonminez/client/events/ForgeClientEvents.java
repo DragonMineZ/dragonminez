@@ -10,6 +10,7 @@ import com.dragonminez.client.gui.character.QuestTreeScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
+import com.dragonminez.client.render.shader.UtilityMenuBlur;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
@@ -30,18 +31,22 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class ForgeClientEvents {
 	public static boolean isHasCreatedCharacterCache = false;
 	private static String lastLang = "";
@@ -50,10 +55,10 @@ public class ForgeClientEvents {
 	private static final int CHARACTER_CREATION_OPEN_COOLDOWN = 8;
 
 	@SubscribeEvent
-	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
+	public static void RenderHealthBar(RenderGuiLayerEvent.Pre event) {
 		if (Minecraft.getInstance().player != null) {
 			if (isHasCreatedCharacterCache) {
-				if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
+				if (VanillaGuiLayers.PLAYER_HEALTH.equals(event.getName())) {
 					event.setCanceled(true);
 				}
 			}
@@ -157,6 +162,7 @@ public class ForgeClientEvents {
 			if (data.getStatus().isHasCreatedCharacter()) return;
 			if (isCharacterCreationScreen(mc.screen)) return;
 			if (mc.screen instanceof PauseScreen) return;
+			UtilityMenuBlur.stop();
 			mc.setScreen(new RaceSelectionScreen(data.getCharacter()));
 			characterCreationOpenCooldownTicks = CHARACTER_CREATION_OPEN_COOLDOWN;
 			opened[0] = true;
@@ -165,8 +171,7 @@ public class ForgeClientEvents {
 	}
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.END) return;
+	public static void onClientTick(ClientTickEvent.Post event) {
 
 		Minecraft mc = Minecraft.getInstance();
 		TransformationPostShaderManager.tick();
@@ -256,7 +261,7 @@ public class ForgeClientEvents {
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
 		if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-			TransformationPostShaderManager.flushMaskAndApplyUniforms(event.getPartialTick(), event.getPoseStack(), event.getCamera(), event.getFrustum());
+			TransformationPostShaderManager.flushMaskAndApplyUniforms(event.getPartialTick().getGameTimeDeltaPartialTick(false), event.getPoseStack(), event.getCamera(), event.getFrustum());
 		}
 	}
 
@@ -270,15 +275,15 @@ public class ForgeClientEvents {
 	}
 
 	@SubscribeEvent
-	public static void onPreRenderCrosshair(RenderGuiOverlayEvent.Pre event) {
-		if (event.getOverlay() == VanillaGuiOverlay.CROSSHAIR.type()) {
+	public static void onPreRenderCrosshair(RenderGuiLayerEvent.Pre event) {
+		if (VanillaGuiLayers.CROSSHAIR.equals(event.getName())) {
 			Minecraft client = Minecraft.getInstance();
 			if (client != null && ((Minecraft_DMZ) client).hasTargetsInReach()) RenderSystem.setShaderColor(1.0F, 0.0F, 0.0F, 1.0F);
 		}
 	}
 
 	@SubscribeEvent
-	public static void onPostRenderCrosshair(RenderGuiOverlayEvent.Post event) {
-		if (event.getOverlay() == VanillaGuiOverlay.CROSSHAIR.type()) RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+	public static void onPostRenderCrosshair(RenderGuiLayerEvent.Post event) {
+		if (VanillaGuiLayers.CROSSHAIR.equals(event.getName())) RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 }

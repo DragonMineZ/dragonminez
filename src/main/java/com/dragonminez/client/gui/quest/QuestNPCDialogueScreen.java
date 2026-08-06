@@ -36,9 +36,9 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jspecify.annotations.NonNull;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -301,13 +301,13 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	}
 
 	@Override
-	public void render(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(guiGraphics);
+	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+		this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		float tickDelta = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 		dialogueScroll = Mth.lerp(tickDelta * 0.4f, dialogueScroll, dialogueTargetScroll);
 		listScroll = Mth.lerp(tickDelta * 0.4f, listScroll, listTargetScroll);
 		descScroll = Mth.lerp(tickDelta * 0.4f, descScroll, descTargetScroll);
@@ -556,10 +556,10 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int scrollAmount = (int) Math.signum(delta);
+		int scrollAmount = (int) Math.signum(scrollY);
 
 		if (uiMouseX >= panelX + 14 && uiMouseX <= panelX + panelW - 6 && uiMouseY >= panelY + 28 && uiMouseY <= panelY + 83) {
 			dialogueTargetScroll = Mth.clamp(dialogueTargetScroll - (scrollAmount * 13), 0, dialogueMaxScroll);
@@ -596,7 +596,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			}
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override

@@ -8,8 +8,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.ModList;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public final class MobBattlePowerHelper {
 
@@ -19,14 +19,14 @@ public final class MobBattlePowerHelper {
 	private static final double RANGED_WEIGHT = 5.0;
 	private static final double MOVEMENT_WEIGHT = 15.0;
 
-	private static final ResourceLocation AUTOLEVELING_PROJECTILE_DAMAGE = new ResourceLocation("autoleveling", "monster.projectile_damage_bonus");
-	private static final ResourceLocation AUTOLEVELING_EXPLOSION_DAMAGE = new ResourceLocation("autoleveling", "monster.explosion_damage_bonus");
+	private static final ResourceLocation AUTOLEVELING_PROJECTILE_DAMAGE = ResourceLocation.fromNamespaceAndPath("autoleveling", "monster.projectile_damage_bonus");
+	private static final ResourceLocation AUTOLEVELING_EXPLOSION_DAMAGE = ResourceLocation.fromNamespaceAndPath("autoleveling", "monster.explosion_damage_bonus");
 
 	private MobBattlePowerHelper() {}
 
 	public static boolean isDmzManaged(LivingEntity entity) {
 		if (entity instanceof Player) return true;
-		ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+		ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
 		return key != null && "dragonminez".equals(key.getNamespace());
 	}
 
@@ -37,8 +37,8 @@ public final class MobBattlePowerHelper {
 		double armorToughness = attributeValue(entity, Attributes.ARMOR_TOUGHNESS);
 		double movementSpeed = movementOrFlyingSpeed(entity);
 
-		double kiPower = positivePower(entity, MainAttributes.KI_DAMAGE.get());
-		if (kiPower <= 0.0) kiPower = positivePower(entity, EntityAttributes.KI_BLAST_DAMAGE.get());
+		double kiPower = positivePower(entity, MainAttributes.KI_DAMAGE);
+		if (kiPower <= 0.0) kiPower = positivePower(entity, EntityAttributes.KI_BLAST_DAMAGE);
 		double projectileDamage = autoLevelingBonus(entity, AUTOLEVELING_PROJECTILE_DAMAGE);
 		double explosionDamage = autoLevelingBonus(entity, AUTOLEVELING_EXPLOSION_DAMAGE);
 		double rangedPower = kiPower + projectileDamage + explosionDamage;
@@ -59,24 +59,24 @@ public final class MobBattlePowerHelper {
 	private static double movementOrFlyingSpeed(LivingEntity entity) {
 		AttributeInstance movement = entity.getAttribute(Attributes.MOVEMENT_SPEED);
 		if (movement != null) return sanitize(movement.getValue());
-		return attributeValue(entity, EntityAttributes.FLY_SPEED.get());
+		return attributeValue(entity, EntityAttributes.FLY_SPEED);
 	}
 
 	private static double autoLevelingBonus(LivingEntity entity, ResourceLocation id) {
 		if (!ModList.get().isLoaded("autoleveling")) return 0.0;
-		Attribute attribute = ForgeRegistries.ATTRIBUTES.getValue(id);
-		if (attribute == null) return 0.0;
-		AttributeInstance instance = entity.getAttribute(attribute);
+		var holder = BuiltInRegistries.ATTRIBUTE.getHolder(id);
+		if (holder.isEmpty()) return 0.0;
+		AttributeInstance instance = entity.getAttribute(holder.get());
 		return instance == null ? 0.0 : Math.max(0.0, sanitize(instance.getValue()) - 1.0);
 	}
 
-	private static double positivePower(LivingEntity entity, Attribute attribute) {
+	private static double positivePower(LivingEntity entity, net.minecraft.core.Holder<Attribute> attribute) {
 		AttributeInstance instance = entity.getAttribute(attribute);
 		if (instance == null) return 0.0;
 		return Math.max(0.0, sanitize(instance.getValue()));
 	}
 
-	private static double attributeValue(LivingEntity entity, Attribute attribute) {
+	private static double attributeValue(LivingEntity entity, net.minecraft.core.Holder<Attribute> attribute) {
 		AttributeInstance instance = entity.getAttribute(attribute);
 		return instance == null ? 0.0 : sanitize(instance.getValue());
 	}

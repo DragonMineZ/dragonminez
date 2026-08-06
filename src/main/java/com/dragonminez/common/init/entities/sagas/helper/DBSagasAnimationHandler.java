@@ -4,10 +4,10 @@ import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.AiTier;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.LocomotionMode;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
 
 public class DBSagasAnimationHandler {
 

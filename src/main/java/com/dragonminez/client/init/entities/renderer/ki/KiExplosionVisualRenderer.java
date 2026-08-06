@@ -28,7 +28,7 @@ public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualE
 
         PlayerEffectQueue.addKiAttack((stack, proj) -> {
             stack.pushPose();
-            stack.last().pose().set(basePose);
+            stack.last().pose().mul(basePose);
 
             float ageInTicks = entity.tickCount + partialTick;
             float lifeTime = 25.0F;

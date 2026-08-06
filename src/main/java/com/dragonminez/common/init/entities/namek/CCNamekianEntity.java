@@ -16,7 +16,7 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.Structure;
-import net.minecraft.world.level.saveddata.maps.MapDecoration;
+import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
 
 public class CCNamekianEntity extends NamekTraderEntity {
 
@@ -61,7 +61,7 @@ public class CCNamekianEntity extends NamekTraderEntity {
 
 	private void addMapOffer(ItemStack cost, ResourceKey<Structure> destination, String displayName) {
 		CapsuleCorpMapTrade trade = new CapsuleCorpMapTrade(new ItemStack(Items.MAP, 1), cost, destination,
-				displayName, MapDecoration.Type.RED_X, MAP_MAX_USES, MAP_XP);
+				displayName, MapDecorationTypes.RED_X, MAP_MAX_USES, MAP_XP);
 		MerchantOffer offer = trade.getOffer(this, this.getRandom());
 		if (offer != null) {
 			this.offers.add(offer);

@@ -9,10 +9,10 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.data.BlockTagsProvider;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.data.BlockTagsProvider;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -143,7 +143,7 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 
 
 		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
-			for (RegistryObject<Block> block : MainBlocks.getDragonBallBlocks(setDefinition.getId()).values()) {
+			for (DeferredHolder<Block, ? extends Block> block : MainBlocks.getDragonBallBlocks(setDefinition.getId()).values()) {
 				this.tag(BlockTags.MINEABLE_WITH_PICKAXE).add(block.get());
 			}
 		}

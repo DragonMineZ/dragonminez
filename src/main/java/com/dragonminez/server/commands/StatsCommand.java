@@ -126,8 +126,8 @@ public class StatsCommand {
 				if (healthDiff > 0) {
 					var attribute = player.getAttribute(Attributes.MAX_HEALTH);
 					if (attribute != null) {
-						attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
-						attribute.addPermanentModifier(new AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADDITION));
+						attribute.removeModifier(com.dragonminez.common.util.AttributeMods.id(StatsEvents.DMZ_HEALTH_MODIFIER_UUID));
+						attribute.addPermanentModifier(com.dragonminez.common.util.AttributeMods.of(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADD_VALUE));
 					}
 					player.heal(healthDiff);
 				}

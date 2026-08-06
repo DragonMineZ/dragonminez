@@ -8,8 +8,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,7 +97,7 @@ public class DMZModConfigScreen extends Screen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		this.renderBackground(graphics, mouseX, mouseY, partialTick);
 		graphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 0xFFFFFF);
 		searchBox.render(graphics, mouseX, mouseY, partialTick);
 
@@ -174,13 +174,13 @@ public class DMZModConfigScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		int max = maxScroll();
 		if (max > 0) {
-			scrollOffset = Math.max(0, Math.min(max, scrollOffset - (int) Math.signum(delta)));
+			scrollOffset = Math.max(0, Math.min(max, scrollOffset - (int) Math.signum(scrollY)));
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override

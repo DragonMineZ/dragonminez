@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.core.object.Color;
+import software.bernie.geckolib.util.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class MajinSkillRenderer<T extends MajinSkillEntity> extends GeoEntityRenderer<T> {

@@ -2,7 +2,7 @@ package com.dragonminez.server.world.biome;
 
 import com.dragonminez.Reference;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.*;
@@ -10,11 +10,11 @@ import net.minecraft.world.level.biome.*;
 public class HTCBiomes {
 	public static final ResourceKey<Biome> TIME_CHAMBER = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "hyperbolic_time_chamber"));
 
-	public static void bootstrap(BootstapContext<Biome> context) {
+	public static void bootstrap(BootstrapContext<Biome> context) {
 		context.register(TIME_CHAMBER, timeChamber(context));
 	}
 
-	private static Biome timeChamber(BootstapContext<Biome> context) {
+	private static Biome timeChamber(BootstrapContext<Biome> context) {
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CONFIGURED_CARVER));
 

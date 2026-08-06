@@ -24,8 +24,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.List;
 import java.util.Map;
@@ -55,6 +55,45 @@ public class ClientPacketHandler {
 					data.load(nbt);
 				} catch (ClassNotFoundException e) {
 					throw new RuntimeException(e);
+				}
+				player.refreshDimensions();
+				player.refreshDisplayName();
+			});
+		}
+	}
+
+	public static void handleAppearanceSyncPacket(int playerId, CompoundTag nbt) {
+		var clientLevel = Minecraft.getInstance().level;
+		if (clientLevel == null || !nbt.contains("Character")) return;
+
+		if (clientLevel.getEntity(playerId) instanceof Player player) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				data.getCharacter().load(nbt.getCompound("Character"));
+				player.refreshDimensions();
+				player.refreshDisplayName();
+			});
+		}
+	}
+
+	/**
+	 * Applies the deliberately partial payload sent after progression changes.
+	 * Feeding this tag through {@link com.dragonminez.common.stats.StatsData#load}
+	 * also resets sections which are absent from the packet, and can make a
+	 * newly-created technique appear to have been lost on the client.
+	 */
+	public static void handleProgressionSyncPacket(int playerId, CompoundTag nbt) {
+		var clientLevel = Minecraft.getInstance().level;
+		if (clientLevel == null) return;
+
+		if (clientLevel.getEntity(playerId) instanceof Player player) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (nbt.contains("Stats")) data.getStats().load(nbt.getCompound("Stats"));
+				if (nbt.contains("BonusStats")) data.getBonusStats().load(nbt.getCompound("BonusStats"));
+				if (nbt.contains("Resources")) data.getResources().load(nbt.getCompound("Resources"));
+				if (nbt.contains("Skills")) data.getSkills().load(nbt.getCompound("Skills"));
+				if (nbt.contains("Techniques")) data.getTechniques().load(nbt.getCompound("Techniques"));
+				if (nbt.contains("PlayerQuestData")) {
+					data.getPlayerQuestData().deserializeNBT(nbt.getCompound("PlayerQuestData"));
 				}
 				player.refreshDimensions();
 				player.refreshDisplayName();

@@ -6,10 +6,9 @@ import com.dragonminez.common.network.S2C.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import com.dragonminez.compat.network.NetworkDirection;
+import com.dragonminez.compat.network.NetworkRegistry;
+import com.dragonminez.compat.network.simple.SimpleChannel;
 
 public class NetworkHandler {
 
@@ -522,18 +521,18 @@ public class NetworkHandler {
 	}
 
 	public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
-		INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), message);
+		INSTANCE.sendToPlayer(message, player);
 	}
 
 	public static <MSG> void sendToAllPlayers(MSG message) {
-		INSTANCE.send(PacketDistributor.ALL.noArg(), message);
+		INSTANCE.sendToAllPlayers(message);
 	}
 
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
-		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
+		INSTANCE.sendToTrackingEntityAndSelf(message, entity);
 	}
 
 	public static <MSG> void sendToTrackingEntity(MSG message, Entity entity) {
-		INSTANCE.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), message);
+		INSTANCE.sendToTrackingEntity(message, entity);
 	}
 }

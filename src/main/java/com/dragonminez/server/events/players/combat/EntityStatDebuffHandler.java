@@ -8,20 +8,21 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.entity.living.LivingHealEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class EntityStatDebuffHandler {
 
 	@SubscribeEvent(priority = EventPriority.NORMAL)
-	public static void onLivingHurt(LivingHurtEvent event) {
+	public static void onLivingHurt(LivingDamageEvent.Pre event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		float amount = event.getAmount();
+		float amount = event.getNewDamage();
 		DamageSource source = event.getSource();
 		boolean isKi = MainDamageTypes.isKiblastDamage(source);
 
@@ -38,7 +39,7 @@ public class EntityStatDebuffHandler {
 			if (defMult < 1.0) amount *= (float) (2.0 - defMult);
 		}
 
-		if (amount != event.getAmount()) event.setAmount(Math.max(0.0f, amount));
+		if (amount != event.getNewDamage()) event.setNewDamage(Math.max(0.0f, amount));
 	}
 
 	@SubscribeEvent(priority = EventPriority.NORMAL)

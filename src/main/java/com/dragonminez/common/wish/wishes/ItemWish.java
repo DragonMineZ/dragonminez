@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class ItemWish extends Wish {
 	private final String itemId;
@@ -23,7 +23,7 @@ public class ItemWish extends Wish {
 
 	@Override
 	public void grant(ServerPlayer player) {
-		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
+		Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
 		if (item != null) {
 			giveOrDrop(player, new ItemStack(item, count));
 		} else {

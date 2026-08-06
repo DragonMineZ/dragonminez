@@ -26,7 +26,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
@@ -75,7 +75,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var player = (AbstractClientPlayer) animatable;
 		if (player == null) return;
 
-		if (player.hasEffect(MainEffects.CANDY.get())) return;
+		if (player.hasEffect(MainEffects.CANDY)) return;
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
 		var stats = statsCap.orElse(new StatsData(player));
@@ -410,7 +410,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         var legendaryGroup = character.getActiveFormGroup().equals("legendaryforms");
 		float[] white = {1.0f, 1.0f, 1.0f};
 
-		boolean isMajin = animatable.hasEffect(MainEffects.MAJIN.get());
+		boolean isMajin = animatable.hasEffect(MainEffects.MAJIN);
 
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_0.png")).getPath(), white, pt, pl, po, alpha);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + eyeBase + "_1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "humansaiyan_eye_0_1.png")).getPath(), eye1, pt, pl, po, alpha);
@@ -553,7 +553,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			});
 		}
 
-		getRenderer().reRender(model, poseStack, bufferSource, animatable, renderType, bufferSource.getBuffer(renderType), partialTick, packedLight, packedOverlay, r, g, b, alpha);
+		getRenderer().reRender(model, poseStack, bufferSource, animatable, renderType, bufferSource.getBuffer(renderType), partialTick, packedLight, packedOverlay, com.dragonminez.client.render.util.RenderBufferUtil.packColor(r, g, b, alpha));
 
 		for (GeoBone bone : hiddenArmors) bone.setHidden(false);
 

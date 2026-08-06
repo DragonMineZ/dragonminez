@@ -12,7 +12,7 @@ import com.dragonminez.common.stats.character.MasterLocation;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.ArrayList;
 import java.util.HashSet;

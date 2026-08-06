@@ -73,7 +73,7 @@ public class SkillManager {
                     if (entity != user && entity.isAlive()) {
                         entity.invulnerableTime = 0;
                         entity.hurt(user.damageSources().mobAttack(user), dmg);
-                        entity.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
+                        entity.addEffect(new MobEffectInstance(MainEffects.STUN, 40, 0, false, false, true));
                         Vec3 push = new Vec3(entity.getX() - user.getX(), 0.5D, entity.getZ() - user.getZ()).normalize().scale(3.5D);
                         entity.setDeltaMovement(push);
                         entity.hasImpulse = true;

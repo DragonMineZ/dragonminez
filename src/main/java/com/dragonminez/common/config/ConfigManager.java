@@ -13,8 +13,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import net.minecraft.world.entity.EntityType;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -691,7 +691,7 @@ public class ConfigManager {
 		return config;
 	}
 
-	private static void addDefaultEntityStats(Map<String, EntitiesConfig.EntityStats> map, RegistryObject<? extends EntityType<?>> entityType, double health, double meleeDamage, double kiDamage) {
+	private static void addDefaultEntityStats(Map<String, EntitiesConfig.EntityStats> map, DeferredHolder<EntityType<?>, ? extends EntityType<?>> entityType, double health, double meleeDamage, double kiDamage) {
 		EntitiesConfig.EntityStats stats = new EntitiesConfig.EntityStats();
 		stats.setHealth(health);
 		stats.setMeleeDamage(meleeDamage);

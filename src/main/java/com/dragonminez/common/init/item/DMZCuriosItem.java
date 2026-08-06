@@ -30,7 +30,7 @@ public class DMZCuriosItem extends Item implements ICurioItem {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
 		String id = stack.getItem().getDescriptionId();
 		if (id.contains("pothala_right")) {
 			tooltip.add(Component.translatable("item.dragonminez.pothala.right.tooltip").withStyle(ChatFormatting.GRAY));
@@ -38,6 +38,6 @@ public class DMZCuriosItem extends Item implements ICurioItem {
 			tooltip.add(Component.translatable("item.dragonminez.pothala.left.tooltip").withStyle(ChatFormatting.GRAY));
 		}
 		PothalaPairItem.appendPairIdTooltip(stack, tooltip);
-		super.appendHoverText(stack, level, tooltip, flag);
+		super.appendHoverText(stack, context, tooltip, flag);
 	}
 }

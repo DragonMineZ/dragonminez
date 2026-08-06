@@ -4,14 +4,15 @@ import com.dragonminez.Reference;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.data.event.GatherDataEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.concurrent.CompletableFuture;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class DatagenManager {
 
 	@SubscribeEvent
@@ -21,8 +22,8 @@ public class DatagenManager {
 		CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
 		ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
 
-		generator.addProvider(event.includeServer(), new DMZRecipeProvider(packOutput));
-		generator.addProvider(event.includeServer(), DMZLootTableProvider.create(packOutput));
+		generator.addProvider(event.includeServer(), new DMZRecipeProvider(packOutput, lookupProvider));
+		generator.addProvider(event.includeServer(), DMZLootTableProvider.create(packOutput, lookupProvider));
 		generator.addProvider(event.includeServer(), new DMZBlockStateProvider(packOutput, existingFileHelper));
 		generator.addProvider(event.includeServer(), new DMZItemModelProvider(packOutput, existingFileHelper));
 

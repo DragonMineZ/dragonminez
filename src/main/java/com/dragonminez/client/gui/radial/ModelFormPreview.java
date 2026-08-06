@@ -45,7 +45,7 @@ public final class ModelFormPreview {
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
 		DMZSkinLayer.PREVIEW_MODE = swap.applied();
 		try {
-			InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+			InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
 			graphics.pose().popPose();

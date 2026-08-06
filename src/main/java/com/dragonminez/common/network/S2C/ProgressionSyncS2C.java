@@ -6,9 +6,9 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import com.dragonminez.compat.DistExecutor;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -22,6 +22,7 @@ public class ProgressionSyncS2C {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			this.nbt.put("Stats", data.getStats().save());
 			this.nbt.put("BonusStats", data.getBonusStats().save());
+			this.nbt.put("Resources", data.getResources().save());
 			this.nbt.put("Skills", data.getSkills().save());
 			this.nbt.put("Techniques", data.getTechniques().save());
 			this.nbt.put("PlayerQuestData", data.getPlayerQuestData().serializeNBT());
@@ -43,7 +44,7 @@ public class ProgressionSyncS2C {
 	}
 
 	public static void handle(ProgressionSyncS2C msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handleStatsSyncPacket(msg.playerId, msg.nbt)));
+		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandler.handleProgressionSyncPacket(msg.playerId, msg.nbt)));
 		ctx.get().setPacketHandled(true);
 	}
 }

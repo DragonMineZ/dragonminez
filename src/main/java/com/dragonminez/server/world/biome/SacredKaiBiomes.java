@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.server.world.feature.SacredKaiPlacedFeatures;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.Carvers;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -16,20 +16,20 @@ public class SacredKaiBiomes {
 	public static final ResourceKey<Biome> SACREDKAI_HILLS = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkai_hills"));
 	public static final ResourceKey<Biome> SACREDKAI_RIVERS = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkai_rivers"));
 
-	public static void bootstrap(BootstapContext<Biome> context) {
+	public static void bootstrap(BootstrapContext<Biome> context) {
 		context.register(SACREDKAI_PLAINS, plains(context));
 		context.register(SACREDKAI_HILLS, hills(context));
 		context.register(SACREDKAI_RIVERS, rivers(context));
 	}
 
-	private static void addNormalCaves(BiomeGenerationSettings.Builder builder, BootstapContext<Biome> context) {
+	private static void addNormalCaves(BiomeGenerationSettings.Builder builder, BootstrapContext<Biome> context) {
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 		builder.addCarver(GenerationStep.Carving.AIR, carvers.getOrThrow(Carvers.CAVE));
 		builder.addCarver(GenerationStep.Carving.AIR, carvers.getOrThrow(Carvers.CAVE_EXTRA_UNDERGROUND));
 		builder.addCarver(GenerationStep.Carving.AIR, carvers.getOrThrow(Carvers.CANYON));
 	}
 
-	private static Biome plains(BootstapContext<Biome> context) {
+	private static Biome plains(BootstrapContext<Biome> context) {
 		var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 
@@ -49,7 +49,7 @@ public class SacredKaiBiomes {
 		return biome(spawnBuilder, biomeBuilder);
 	}
 
-	private static Biome hills(BootstapContext<Biome> context) {
+	private static Biome hills(BootstrapContext<Biome> context) {
 		var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 
@@ -74,7 +74,7 @@ public class SacredKaiBiomes {
 		return biome(spawnBuilder, biomeBuilder);
 	}
 
-	private static Biome rivers(BootstapContext<Biome> context) {
+	private static Biome rivers(BootstrapContext<Biome> context) {
 		var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 

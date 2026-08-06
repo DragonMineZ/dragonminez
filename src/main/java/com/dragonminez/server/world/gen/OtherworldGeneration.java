@@ -6,7 +6,7 @@ import com.dragonminez.server.world.biome.OtherworldBiomes;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
@@ -24,7 +24,7 @@ public class OtherworldGeneration {
 	public static final ResourceKey<LevelStem> OTHERWORLD_STEM = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "otherworld"));
 	public static final ResourceKey<NoiseGeneratorSettings> OTHERWORLD_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "otherworld"));
 
-	public static void bootstrap(BootstapContext<LevelStem> context) {
+	public static void bootstrap(BootstrapContext<LevelStem> context) {
 		HolderGetter<Biome> biomeRegistry = context.lookup(Registries.BIOME);
 		HolderGetter<DimensionType> dimTypes = context.lookup(Registries.DIMENSION_TYPE);
 		HolderGetter<NoiseGeneratorSettings> noiseSettings = context.lookup(Registries.NOISE_SETTINGS);
@@ -39,7 +39,7 @@ public class OtherworldGeneration {
 		context.register(OTHERWORLD_STEM, new LevelStem(dimTypes.getOrThrow(OtherworldDimension.OTHERWORLD_TYPE), chunkGenerator));
 	}
 
-	public static void bootstrapNoise(BootstapContext<NoiseGeneratorSettings> context) {
+	public static void bootstrapNoise(BootstrapContext<NoiseGeneratorSettings> context) {
 		SurfaceRules.RuleSource otherWorldRules = SurfaceRules.sequence(
 				SurfaceRules.ifTrue(
 						SurfaceRules.verticalGradient("bedrock_floor", VerticalAnchor.aboveBottom(0), VerticalAnchor.aboveBottom(2)),

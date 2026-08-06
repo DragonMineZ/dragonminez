@@ -5,7 +5,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.Pose;
-import net.minecraftforge.entity.PartEntity;
+import net.neoforged.neoforge.entity.PartEntity;
 
 public class DBSagasPart extends PartEntity<DBSagasEntity> {
 
@@ -30,7 +30,7 @@ public class DBSagasPart extends PartEntity<DBSagasEntity> {
     }
 
     @Override
-    protected void defineSynchedData() {
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
     }
 
     @Override

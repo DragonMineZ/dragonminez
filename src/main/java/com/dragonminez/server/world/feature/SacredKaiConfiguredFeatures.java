@@ -3,7 +3,7 @@ package com.dragonminez.server.world.feature;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.placement.PlacementUtils;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -28,7 +28,7 @@ public class SacredKaiConfiguredFeatures {
 	public static final ResourceKey<ConfiguredFeature<?, ?>> GRASS_PATCH = key("sacredkai_grass_patch");
 	public static final ResourceKey<ConfiguredFeature<?, ?>> FLOWERS = key("sacredkai_flowers");
 
-	public static void bootstrap(BootstapContext<ConfiguredFeature<?, ?>> context) {
+	public static void bootstrap(BootstrapContext<ConfiguredFeature<?, ?>> context) {
 		register(context, ROCK_CLUSTER, SacredKaiFeatures.ROCK_CLUSTER.get(), NoneFeatureConfiguration.INSTANCE);
 		register(context, GRASSY_PEAK, SacredKaiFeatures.GRASSY_PEAK.get(), NoneFeatureConfiguration.INSTANCE);
 		register(context, GRASSY_CLIFF, SacredKaiFeatures.GRASSY_CLIFF.get(), NoneFeatureConfiguration.INSTANCE);
@@ -41,7 +41,7 @@ public class SacredKaiConfiguredFeatures {
 
 		register(context, GRASS_PATCH, Feature.RANDOM_PATCH, new RandomPatchConfiguration(32, 7, 3,
 				PlacementUtils.onlyWhenEmpty(Feature.SIMPLE_BLOCK, new SimpleBlockConfiguration(
-						BlockStateProvider.simple(Blocks.GRASS)))));
+						BlockStateProvider.simple(Blocks.SHORT_GRASS)))));
 
 		register(context, FLOWERS, Feature.FLOWER, new RandomPatchConfiguration(64, 6, 2,
 				PlacementUtils.onlyWhenEmpty(Feature.SIMPLE_BLOCK, new SimpleBlockConfiguration(
@@ -58,7 +58,7 @@ public class SacredKaiConfiguredFeatures {
 		return ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 	}
 
-	private static <FC extends FeatureConfiguration, F extends Feature<FC>> void register(BootstapContext<ConfiguredFeature<?, ?>> context, ResourceKey<ConfiguredFeature<?, ?>> key, F feature, FC configuration) {
+	private static <FC extends FeatureConfiguration, F extends Feature<FC>> void register(BootstrapContext<ConfiguredFeature<?, ?>> context, ResourceKey<ConfiguredFeature<?, ?>> key, F feature, FC configuration) {
 		context.register(key, new ConfiguredFeature<>(feature, configuration));
 	}
 }

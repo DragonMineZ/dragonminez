@@ -19,16 +19,20 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class TaiyokenHandler {
 
 	public static final String TECHNIQUE_ID = "taiyoken";
@@ -126,8 +130,8 @@ public class TaiyokenHandler {
 	}
 
 	@SubscribeEvent
-	public static void onLevelTick(TickEvent.LevelTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.level.isClientSide) return;
+	public static void onLevelTick(LevelTickEvent.Post event) {
+		if (event.getLevel().isClientSide) return;
 		if (BLINDED_MOBS.isEmpty()) return;
 
 		Iterator<LivingEntity> it = BLINDED_MOBS.iterator();

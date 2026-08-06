@@ -43,10 +43,10 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import org.jspecify.annotations.NonNull;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -151,7 +151,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 			}
 		};
 
-		float pt = Minecraft.getInstance().getFrameTime();
+		float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
 		SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
 		addSsj4HandFur(stats, fadingLayers);
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
@@ -244,7 +244,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 	private void renderPart(PoseStack stack, MultiBufferSource buffer, int light, ModelPart part, ResourceLocation texture, float[] rgb, float alpha) {
 		VertexConsumer vc = buffer.getBuffer(RenderType.entityTranslucent(texture));
-		part.render(stack, vc, light, OverlayTexture.NO_OVERLAY, rgb[0], rgb[1], rgb[2], alpha);
+		part.render(stack, vc, light, OverlayTexture.NO_OVERLAY, net.minecraft.util.FastColor.ARGB32.color((int)((alpha) * 255.0F), (int)((rgb[0]) * 255.0F), (int)((rgb[1]) * 255.0F), (int)((rgb[2]) * 255.0F)));
 	}
 
 	private ResourceLocation loc(String path) {
@@ -273,10 +273,10 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		}
 	}
 
-	protected void setupRotations(AbstractClientPlayer pEntityLiving, @NonNull PoseStack pPoseStack, float pAgeInTicks, float pRotationYaw, float pPartialTicks) {
+	protected void setupRotations(AbstractClientPlayer pEntityLiving, PoseStack pPoseStack, float pAgeInTicks, float pRotationYaw, float pPartialTicks, float scale) {
 		float f = pEntityLiving.getSwimAmount(pPartialTicks);
 		if (pEntityLiving.isFallFlying()) {
-			super.setupRotations(pEntityLiving, pPoseStack, pAgeInTicks, pRotationYaw, pPartialTicks);
+			super.setupRotations(pEntityLiving, pPoseStack, pAgeInTicks, pRotationYaw, pPartialTicks, scale);
 			float f1 = (float) pEntityLiving.getFallFlyingTicks() + pPartialTicks;
 			float f2 = Mth.clamp(f1 * f1 / 100.0F, 0.0F, 1.0F);
 			if (!pEntityLiving.isAutoSpinAttack())
@@ -291,22 +291,22 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 				pPoseStack.mulPose(Axis.YP.rotation((float) (Math.signum(d3) * Math.acos(d2))));
 			}
 		} else if (f > 0.0F) {
-			super.setupRotations(pEntityLiving, pPoseStack, pAgeInTicks, pRotationYaw, pPartialTicks);
+			super.setupRotations(pEntityLiving, pPoseStack, pAgeInTicks, pRotationYaw, pPartialTicks, scale);
 			float f3 = pEntityLiving.isInWater() || pEntityLiving.isInFluidType((fluidType, height) -> pEntityLiving.canSwimInFluidType(fluidType)) ? -90.0F - pEntityLiving.getXRot() : -90.0F;
 			float f4 = Mth.lerp(f, 0.0F, f3);
 			pPoseStack.mulPose(Axis.XP.rotationDegrees(f4));
 			if (pEntityLiving.isVisuallySwimming()) pPoseStack.translate(0.0F, -1.0F, 0.3F);
-		} else super.setupRotations(pEntityLiving, pPoseStack, pAgeInTicks, pRotationYaw, pPartialTicks);
+		} else super.setupRotations(pEntityLiving, pPoseStack, pAgeInTicks, pRotationYaw, pPartialTicks, scale);
 	}
 
 	@Override
-	public @NonNull ResourceLocation getTextureLocation(AbstractClientPlayer pEntity) {
-		return pEntity.getSkinTextureLocation();
+	public ResourceLocation getTextureLocation(AbstractClientPlayer pEntity) {
+		return pEntity.getSkin().texture();
 	}
 
 	private void renderKiPartTex(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color, ResourceLocation texture) {
 		VertexConsumer vc = buffer.getBuffer(ModRenderTypes.kiblast(texture));
-		part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
+		part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, net.minecraft.util.FastColor.ARGB32.color((int)((0.85F) * 255.0F), (int)((color[0]) * 255.0F), (int)((color[1]) * 255.0F), (int)((color[2]) * 255.0F)));
 	}
 
 	private float[] getKiColor(StatsData stats) {
@@ -334,7 +334,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 	}
 
 	private void queueFirstPersonAura(AbstractClientPlayer player, PoseStack poseStack, int packedLight) {
-		float partialTick = Minecraft.getInstance().getFrameTime();
+		float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
 		PlayerEffectQueue.addFirstPersonAura(player, poseStack, partialTick, packedLight);
 	}
 }

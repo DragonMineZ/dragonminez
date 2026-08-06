@@ -32,30 +32,34 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID)
+@EventBusSubscriber(modid = Reference.MOD_ID)
 public class QuestEvents {
 	@SubscribeEvent
-	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) {
+	public static void onPlayerTick(PlayerTickEvent.Post event) {
+		if (event.getEntity().level().isClientSide) {
 			return;
 		}
-		if (event.player.tickCount % 20 != 0) {
+		if (event.getEntity().tickCount % 20 != 0) {
 			return;
 		}
-		if (!(event.player instanceof ServerPlayer player)) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) {
 			return;
 		}
 
@@ -124,7 +128,7 @@ public class QuestEvents {
 						partyMembers,
 						DMZEvent.QuestFailEvent.FailureReason.PLAYER_DEATH
 				);
-				if (MinecraftForge.EVENT_BUS.post(failEvent)) {
+				if (NeoForge.EVENT_BUS.post(failEvent).isCanceled()) {
 					continue;
 				}
 
@@ -529,7 +533,7 @@ public class QuestEvents {
 				newProgress,
 				required
 		);
-		if (MinecraftForge.EVENT_BUS.post(progressEvent)) {
+		if (NeoForge.EVENT_BUS.post(progressEvent).isCanceled()) {
 			return;
 		}
 		newProgress = progressEvent.getNewProgress();
@@ -572,7 +576,7 @@ public class QuestEvents {
 				quest,
 				PartyManager.getAllPartyMembers(player)
 		);
-		if (MinecraftForge.EVENT_BUS.post(completeEvent)) {
+		if (NeoForge.EVENT_BUS.post(completeEvent).isCanceled()) {
 			return;
 		}
 

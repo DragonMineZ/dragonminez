@@ -5,9 +5,7 @@ import java.time.format.DateTimeFormatter
 plugins {
     java
     idea
-    id("net.minecraftforge.gradle") version "6.0.30"
-    id("org.parchmentmc.librarian.forgegradle") version "1.+"
-    id("org.spongepowered.mixin") version "0.7.38"
+    id("net.neoforged.moddev") version "2.0.143"
 }
 
 /** Fail-fast property access (keeps the build deterministic and debuggable). */
@@ -26,8 +24,9 @@ base {
     archivesName.set(modId)
 }
 
+// Mojang ships Java 21 from 1.20.5+; NeoForge 1.21.1 requires it.
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
     withSourcesJar()
 }
 
@@ -37,9 +36,9 @@ tasks.withType<AbstractArchiveTask>().configureEach {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal"))
+    options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal", "-Xmaxerrs", "10000", "-Xmaxwarns", "10000"))
     options.encoding = "UTF-8"
-    options.release.set(17)
+    options.release.set(21)
 }
 
 /**
@@ -62,18 +61,70 @@ tasks.register("printBuildInfo") {
 }
 tasks.named("build").configure { dependsOn("printBuildInfo") }
 
-extensions.configure<org.spongepowered.asm.gradle.plugins.MixinExtension>("mixin") {
-    add(sourceSets.main.get(), "dragonminez.refmap.json")
-    config("dragonminez.mixins.json")
-}
+val minecraftVersion = requiredProp("minecraft_version")
+val neoVersion = requiredProp("neo_version")
+val parchmentMinecraftVersion = requiredProp("parchment_minecraft_version")
+val parchmentMappingsVersion = requiredProp("parchment_mappings_version")
+val jeiVersion = requiredProp("jei_version")
+val geckolibVersion = requiredProp("geckolib_version")
+val terrablenderVersion = requiredProp("terrablender_version")
+val curiosVersion = requiredProp("curios_version")
 
-tasks.named<Jar>("jarJar").configure {
-    archiveClassifier.set("")
-    finalizedBy("reobfJarJar")
-}
+val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
+// Client/dev-only optional mods only when launching the client.
+val clientRunRequested = requestedTasks.any { it.contains("runclient") }
+val includeClientOnlyDevMods = providers.gradleProperty("includeClientOnlyDevMods")
+    .map { it.toBoolean() }
+    .orElse(clientRunRequested)
 
-tasks.named<Jar>("jar").configure {
-    archiveClassifier.set("slim")
+neoForge {
+    version = neoVersion
+
+    parchment {
+        minecraftVersion = parchmentMinecraftVersion
+        mappingsVersion = parchmentMappingsVersion
+    }
+
+    runs {
+        register("client") {
+            client()
+            gameDirectory = file("run")
+            systemProperty("neoforge.enabledGameTestNamespaces", modId)
+            systemProperty("geckolib.disable_examples", "true")
+        }
+        register("server") {
+            server()
+            gameDirectory = file("run")
+            programArgument("--nogui")
+            systemProperty("neoforge.enabledGameTestNamespaces", modId)
+            systemProperty("geckolib.disable_examples", "true")
+        }
+        register("gameTestServer") {
+            type = "gameTestServer"
+            gameDirectory = file("run")
+            systemProperty("neoforge.enabledGameTestNamespaces", modId)
+        }
+        register("data") {
+            data()
+            gameDirectory = file("run-data")
+            programArguments.addAll(
+                "--mod", modId,
+                "--all",
+                "--output", file("src/generated/resources/").absolutePath,
+                "--existing", file("src/main/resources/").absolutePath
+            )
+        }
+        configureEach {
+            systemProperty("forge.logging.markers", "REGISTRIES")
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        register(modId) {
+            sourceSet(sourceSets.main.get())
+        }
+    }
 }
 
 repositories {
@@ -90,13 +141,11 @@ repositories {
         url = uri("https://maven.blamejared.com/")
     }
     maven {
-        name = "CurseMaven"
-        url = uri("https://cursemaven.com")
-        content { includeGroup("curse.maven") }
-    }
-    maven {
-        name = "ModMaven"
-        url = uri("https://modmaven.dev")
+        name = "TerraBlender / Forge"
+        url = uri("https://maven.minecraftforge.net/")
+        content {
+            includeGroup("com.github.glitchfiend")
+        }
     }
     maven {
         name = "Illusive Soulworks maven"
@@ -105,142 +154,41 @@ repositories {
     mavenCentral()
 }
 
-val minecraftVersion = requiredProp("minecraft_version")
-val forgeVersion = requiredProp("forge_version")
-val mappingChannelProp = requiredProp("mapping_channel")
-val mappingVersionProp = requiredProp("mapping_version")
-val jeiVersion = requiredProp("jei_version")
-val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
-// Client/dev-only mods belong on the classpath only when a client is actually launched.
-// Keeping them out of every other task graph is critical for data generation: `build`
-// re-runs runData, and codec-altering dev mods (e.g. Huge Structure Blocks' jigsaw
-// limit patch) would otherwise bake values into the generated JSON that vanilla
-// codecs reject at load time in production.
-val clientRunRequested = requestedTasks.any { it.contains("runclient") }
-val includeClientOnlyDevMods = providers.gradleProperty("includeClientOnlyDevMods")
-    .map { it.toBoolean() }
-    .orElse(clientRunRequested)
-
-minecraft {
-    mappings(mappingChannelProp, mappingVersionProp)
-    copyIdeResources.set(true)
-
-    jarJar { enable() }
-
-    accessTransformer(file("src/main/resources/META-INF/accesstransformer.cfg"))
-
-    runs {
-        configureEach {
-            workingDirectory(project.file("run"))
-            property("forge.logging.markers", "REGISTRIES")
-            property("forge.logging.console.level", "debug")
-            property("fml.earlyprogresswindow", "false")
-            property("geckolib.disable_examples", "true")
-            mods {
-                create(modId) {
-                    source(sourceSets.main.get())
-                }
-            }
-        }
-
-        create("client") { /* inherits defaults */ }
-        create("server") { /* inherits defaults */ }
-
-        create("gameTestServer") {  
-            property("forge.enabledGameTestNamespaces", modId)
-        }
-
-        create("data") {
-            workingDirectory(project.file("run-data"))
-            args(
-                "--mod", modId,
-                "--all",
-                "--output", file("src/generated/resources/"),
-                "--existing", file("src/main/resources/")
-            )
-        }
-    }
-}
+// Optional runtime-only configuration (not published as a hard dependency).
+val localRuntime by configurations.creating
+configurations.named("runtimeClasspath") { extendsFrom(localRuntime) }
 
 dependencies {
-    minecraft("net.minecraftforge:forge:$minecraftVersion-$forgeVersion")
-    annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
+    // Mandatory libraries — coordinates verified on official Maven metadata (HTTP 200).
+    implementation("software.bernie.geckolib:geckolib-neoforge-1.21.1:$geckolibVersion")
+    implementation("com.github.glitchfiend:TerraBlender-neoforge:$terrablenderVersion")
+    compileOnly("top.theillusivec4.curios:curios-neoforge:$curiosVersion:api")
+    runtimeOnly("top.theillusivec4.curios:curios-neoforge:$curiosVersion")
 
-    // Vulnerability corrections
-    implementation("com.google.guava:guava:33.6.0-jre") { because("Security/compat override requested.") }
-    implementation("io.netty:netty-codec:4.2.7.Final") { because("Security/compat override requested.") }
-    implementation("io.netty:netty-handler:4.2.7.Final") { because("Security/compat override requested.") }
-    implementation("org.apache.commons:commons-compress:1.27.1") { because("Security/compat override requested.") }
+    // Lombok removed: sources were delomboked for NeoForge/ModDevGradle reliability.
 
-    // GeckoLib, Terrablender & Curios
-    implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.3"))
-    implementation("com.eliotlash.mclib:mclib:20")
-    implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
-    compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api"))
-    runtimeOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1"))
-
-    // Lukas' Weapon Levelling
-    compileOnly(fg.deobf("curse.maven:weapon-leveling-644704:8400008"))
-
-    // Apotheosis
-    compileOnly(fg.deobf("curse.maven:placebo-283644:6274231"))
-    compileOnly(fg.deobf("curse.maven:apothic-attributes-898963:5634071"))
-    compileOnly(fg.deobf("curse.maven:apotheosis-313970:6461960"))
-
-    // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
-    compileOnly("org.projectlombok:lombok:1.18.46")
-    annotationProcessor("org.projectlombok:lombok:1.18.46")
-
-    // Database libraries
-
-    jarJar("org.mariadb.jdbc:mariadb-java-client:[3.5.9,)") {
-        jarJar.ranged(
-            this,
-            "[3.5.7,)"
-        )
-    }
-    jarJar("com.zaxxer:HikariCP:[7.1.0,)") { jarJar.ranged(this, "[7.1.0,)") }
+    // Database libraries (pure Java; jar-in-jar for distribution).
+    // Exclude HikariCP's slf4j pin so it does not fight Minecraft's strictly 2.0.9.
+    // Versions verified on Maven Central (same pins as pre-port project).
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.9")
-    compileOnly("com.zaxxer:HikariCP:7.1.0")
+    jarJar("org.mariadb.jdbc:mariadb-java-client:3.5.9")
+    compileOnly("com.zaxxer:HikariCP:7.1.0") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
+    jarJar("com.zaxxer:HikariCP:7.1.0") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    // Dev utility mods
-    compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-common-api:$jeiVersion"))
-    compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge-api:$jeiVersion"))
-    runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
-    runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
-    runtimeOnly(fg.deobf("curse.maven:spark-361579:4738952"))
+    // JEI API only (optional compile). Full JEI for client runs is optional localRuntime.
+    compileOnly("mezz.jei:jei-$minecraftVersion-common-api:$jeiVersion")
+    compileOnly("mezz.jei:jei-$minecraftVersion-neoforge-api:$jeiVersion")
 
-    // Client-only visual/testing mods must stay off dedicated server and data runs.
-    // Huge Structure Blocks in particular mixes into JigsawStructure's codec and
-    // would poison generated structure JSON with out-of-vanilla-range values.
     if (includeClientOnlyDevMods.get()) {
-        runtimeOnly(fg.deobf("curse.maven:huge-structure-blocks-474114:4803547"))
-        runtimeOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge:$jeiVersion"))
-        runtimeOnly(fg.deobf("curse.maven:xenon-564239:5752040"))
-        runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
-        runtimeOnly(fg.deobf("curse.maven:free-cam-557076:4643128"))
-        // Luka's Weapon Levelling for testing purposes only
-//        runtimeOnly(fg.deobf("curse.maven:architectury-api-419699:5137938"))
-//        runtimeOnly(fg.deobf("curse.maven:weapon-leveling-644704:8400008"))
-        // Apotheosis for testing purposes only
-//        runtimeOnly(fg.deobf("curse.maven:placebo-283644:6274231"))
-//        runtimeOnly(fg.deobf("curse.maven:apothic-attributes-898963:5634071"))
-//        runtimeOnly(fg.deobf("curse.maven:apotheosis-313970:6461960"))
+        add("localRuntime", "mezz.jei:jei-$minecraftVersion-neoforge:$jeiVersion")
     }
-
-    // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)
-    //runtimeOnly(fg.deobf("curse.maven:explorerscompass-491794:4712194"))
-    //runtimeOnly(fg.deobf("curse.maven:naturecompass-252848:4712189"))
-
-    // "Layers" mods for testing compatibility
-    //runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))
-    runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
-    //runtimeOnly(fg.deobf("curse.maven:artifacts-312353:6399828"))
-    //runtimeOnly(fg.deobf("curse.maven:cloth-config-api-348521:5729105"))
-    //runtimeOnly(fg.deobf("curse.maven:architectury-api-419699:5137938"))
-    //runtimeOnly(fg.deobf("curse.maven:expandability-465066:5301414"))
 }
 
 sourceSets.main {
@@ -249,19 +197,17 @@ sourceSets.main {
 
 val generatedResourcesDir = layout.projectDirectory.dir("src/generated/resources")
 val copyGeneratedResourcesToOutput by tasks.registering(Copy::class) {
-    dependsOn("runData")
+    // Do not force runData on every jar build during the port; include generated tree if present.
     from(generatedResourcesDir) {
         exclude(".cache/**")
     }
     into(layout.buildDirectory.dir("resources/main"))
+    onlyIf { generatedResourcesDir.asFile.exists() }
 }
 
 tasks.named<Jar>("jar").configure {
     dependsOn(copyGeneratedResourcesToOutput)
-}
-
-tasks.named<Jar>("jarJar").configure {
-    dependsOn(copyGeneratedResourcesToOutput)
+    archiveClassifier.set("")
 }
 
 //Helps with some AI Run Tests
@@ -270,7 +216,7 @@ tasks.named<JavaCompile>("compileTestJava").configure {
 }
 
 val minecraftVersionRange = requiredProp("minecraft_version_range")
-val forgeVersionRange = requiredProp("forge_version_range")
+val neoVersionRange = requiredProp("neo_version_range")
 val loaderVersionRange = requiredProp("loader_version_range")
 val modName = requiredProp("mod_name")
 val modLicense = requiredProp("mod_license")
@@ -288,8 +234,8 @@ tasks.named<ProcessResources>("processResources").configure {
     val replaceProperties = mapOf(
         "minecraft_version" to minecraftVersion,
         "minecraft_version_range" to minecraftVersionRange,
-        "forge_version" to forgeVersion,
-        "forge_version_range" to forgeVersionRange,
+        "neo_version" to neoVersion,
+        "neo_version_range" to neoVersionRange,
         "loader_version_range" to loaderVersionRange,
         "mod_id" to modId,
         "mod_name" to modName,
@@ -305,20 +251,14 @@ tasks.named<ProcessResources>("processResources").configure {
 
     inputs.properties(replaceProperties)
 
-    filesMatching(listOf("META-INF/mods.toml", "pack.mcmeta")) {
+    filesMatching(listOf("META-INF/neoforge.mods.toml", "pack.mcmeta")) {
         expand(replaceProperties + mapOf("project" to project))
     }
 }
 
 // ============================================================================
 // Resource optimization via PackSquash (https://github.com/ComunidadAylas/PackSquash)
-//
-// Optimizes bundled textures (.png), sounds (.ogg) and JSON in `build/resources/main`
-// before the jar is packed, so every produced jar (local, dev, release) is optimized
-// identically. Options live in `packsquash.toml`; this task injects the build paths.
-//
-// Opt-in: runs automatically on CI (env CI is set by GitHub Actions); locally it is
-// off by default to keep dev builds fast. Force on/off with -PoptimizeResources=true|false.
+// Opt-in: CI by default; locally off. Force with -PoptimizeResources=true|false.
 // ============================================================================
 val packSquashVersion = "v0.4.1"
 
@@ -326,7 +266,7 @@ val optimizeResourcesEnabled: Provider<Boolean> =
     providers.gradleProperty("optimizeResources")
         .map { it.toBoolean() }
         .orElse(providers.environmentVariable("CI").map { it.equals("true", ignoreCase = true) || it == "1" })
-        .orElse(true)
+        .orElse(false)
 
 /** Escapes a path into a TOML basic string. */
 fun tomlString(value: String): String =
@@ -338,7 +278,6 @@ val optimizeResources by tasks.registering {
     dependsOn("processResources")
     mustRunAfter(copyGeneratedResourcesToOutput)
     onlyIf { optimizeResourcesEnabled.get() }
-    // Mutates resources/main in place; never treat as up-to-date.
     outputs.upToDateWhen { false }
 
     val resourcesOutput = layout.buildDirectory.dir("resources/main")
@@ -360,17 +299,6 @@ val optimizeResources by tasks.registering {
         stagingDir.mkdirs()
         outputZip.delete()
 
-        // 1) Stage PackSquash-friendly files. Textures/sounds/icons come from the
-        //    PRISTINE source (assets are not template-expanded, so this is identical
-        //    to the build output but guarantees idempotent re-runs — important so
-        //    lossy OGG re-encoding never compounds across repeated local builds).
-        //    Excluded on purpose:
-        //      - shaders/: negligible savings; PackSquash's GLSL validator rejects
-        //        some non-standard cores.
-        //      - pack.mcmeta: the expanded copy contains literal control chars from
-        //        § / \n escapes (Minecraft-tolerated, but invalid strict JSON);
-        //        it has zero optimization value, so leave it untouched.
-        //      - data/: mostly binary (nbt/mca) with negligible gains; skipped for speed.
         project.copy {
             from(srcDir) {
                 include("assets/**")
@@ -381,7 +309,6 @@ val optimizeResources by tasks.registering {
             into(stagingDir)
         }
 
-        // 2) Resolve (download + cache) the PackSquash binary for this OS/arch.
         val osName = System.getProperty("os.name").lowercase()
         val osArch = System.getProperty("os.arch").lowercase()
         val (asset, binaryName) = when {
@@ -412,7 +339,6 @@ val optimizeResources by tasks.registering {
             if (!osName.contains("win")) binary.setExecutable(true)
         }
 
-        // 3) Compose the settings file: dynamic paths + committed options.
         val settings = File(work, "settings.toml")
         settings.writeText(
             buildString {
@@ -423,7 +349,6 @@ val optimizeResources by tasks.registering {
             }
         )
 
-        // 4) Run PackSquash.
         val result = project.exec {
             commandLine(binary.absolutePath, settings.absolutePath)
             isIgnoreExitValue = true
@@ -431,9 +356,6 @@ val optimizeResources by tasks.registering {
         if (result.exitValue != 0) error("PackSquash failed with exit code ${result.exitValue}")
         if (!outputZip.exists()) error("PackSquash did not produce output: $outputZip")
 
-        // 5) Overlay optimized files back over resources/main. PackSquash drops file
-        //    types it does not recognize (.mca, .icns, ...); an overlay copy (no delete)
-        //    keeps those originals while replacing png/ogg/json/mcmeta with smaller ones.
         fun dirSize(dir: File) = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
         val before = dirSize(resDir)
         project.copy {
@@ -446,7 +368,6 @@ val optimizeResources by tasks.registering {
 }
 
 tasks.named<Jar>("jar").configure { dependsOn(optimizeResources) }
-tasks.named<Jar>("jarJar").configure { dependsOn(optimizeResources) }
 
 /**
  * Optional manifest timestamp
@@ -456,10 +377,6 @@ val includeTimestamp: Provider<Boolean> =
     providers.gradleProperty("includeTimestamp")
         .map { it.toBoolean() }
         .orElse(false)
-
-tasks.named("build") {
-    dependsOn("reobfJar", "reobfJarJar")
-}
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
@@ -486,6 +403,9 @@ tasks.withType<Jar>().configureEach {
     }
 }
 
-tasks.named<Jar>("jar").configure {
-    finalizedBy("reobfJar")
+idea {
+    module {
+        isDownloadSources = true
+        isDownloadJavadoc = true
+    }
 }

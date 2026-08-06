@@ -1,27 +1,26 @@
 package com.dragonminez.common.loot;
 
 import com.dragonminez.common.init.MainItems;
-import com.google.common.base.Suppliers;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.RecordItem;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
-import net.minecraftforge.common.loot.IGlobalLootModifier;
-import net.minecraftforge.common.loot.LootModifier;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.loot.LootModifier;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
-import java.util.function.Supplier;
 
 public class AddMusicDiscModifier extends LootModifier {
-	public static final Supplier<Codec<AddMusicDiscModifier>> CODEC = Suppliers.memoize(() ->
-			RecordCodecBuilder.create(inst -> codecStart(inst).and(
+	public static final MapCodec<AddMusicDiscModifier> CODEC =
+			RecordCodecBuilder.mapCodec(inst -> codecStart(inst).and(
 					Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance)
-			).apply(inst, AddMusicDiscModifier::new)));
+			).apply(inst, AddMusicDiscModifier::new));
 
 	private final float chance;
 
@@ -38,7 +37,7 @@ public class AddMusicDiscModifier extends LootModifier {
 
 		boolean hasVanillaDisc = false;
 		for (ItemStack stack : loot) {
-			if (stack.getItem() instanceof RecordItem) {
+			if (stack.has(DataComponents.JUKEBOX_PLAYABLE)) {
 				hasVanillaDisc = true;
 				break;
 			}
@@ -46,13 +45,13 @@ public class AddMusicDiscModifier extends LootModifier {
 		if (!hasVanillaDisc) return loot;
 		if (context.getRandom().nextFloat() >= chance) return loot;
 
-		RegistryObject<Item> disc = MainItems.MUSIC_DISCS.get(context.getRandom().nextInt(MainItems.MUSIC_DISCS.size()));
+		DeferredHolder<Item, ? extends Item> disc = MainItems.MUSIC_DISCS.get(context.getRandom().nextInt(MainItems.MUSIC_DISCS.size()));
 		loot.add(new ItemStack(disc.get()));
 		return loot;
 	}
 
 	@Override
-	public Codec<? extends IGlobalLootModifier> codec() {
-		return CODEC.get();
+	public MapCodec<? extends IGlobalLootModifier> codec() {
+		return CODEC;
 	}
 }

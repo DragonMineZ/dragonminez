@@ -87,7 +87,7 @@ public class GravityDeviceScreen extends AbstractContainerScreen<GravityDeviceMe
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float delta) {
-		renderBackground(guiGraphics);
+		renderBackground(guiGraphics, pMouseX, pMouseY, delta);
 		if (toggleButton != null) toggleButton.setMessage(toggleLabel(menu.isActive()));
 		super.render(guiGraphics, pMouseX, pMouseY, delta);
 

@@ -10,7 +10,7 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -40,7 +40,7 @@ final class FeatureUtil {
         float t = random.nextFloat();
         BlockState plant;
         if (t < 0.6F) {
-            plant = Blocks.GRASS.defaultBlockState();
+            plant = Blocks.SHORT_GRASS.defaultBlockState();
         } else if (t < 0.8F) {
             plant = Blocks.FERN.defaultBlockState();
         } else {
@@ -66,7 +66,7 @@ final class FeatureUtil {
 
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                ChunkAccess chunk = level.getChunk(chunkX + dx, chunkZ + dz, ChunkStatus.STRUCTURE_STARTS, false);
+                ChunkAccess chunk = level.getChunk(chunkX + dx, chunkZ + dz, net.minecraft.world.level.chunk.status.ChunkStatus.STRUCTURE_STARTS, false);
                 if (chunk == null) continue;
 
                 for (Map.Entry<Structure, StructureStart> entry : chunk.getAllStarts().entrySet()) {

@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
+import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import org.joml.Matrix4f;
 
 public class CustomSpecialEffects extends DimensionSpecialEffects {
@@ -38,12 +38,12 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 	}
 
 	@Override
-	public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
+	public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
 		return false; // False = No se renderizan nubes | True = Se renderizan nubes
 	}
 
 	@Override
-	public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+	public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
 		return false; // True = No se renderiza el cielo | False = Se renderiza el cielo
 	}
 
@@ -74,7 +74,7 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		}
 
 		@Override
-		public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+		public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
 			if (!ClientStateHelper.isPorungaActive) {
 				return false;
 			}
@@ -86,7 +86,8 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
 			Tesselator tesselator = Tesselator.getInstance();
-			BufferBuilder bufferbuilder = tesselator.getBuilder();
+			PoseStack poseStack = new PoseStack();
+			poseStack.mulPose(modelViewMatrix);
 
 			float r = 0.05f;
 			float g = 0.05f;
@@ -103,12 +104,12 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 
 				Matrix4f matrix4f = poseStack.last().pose();
 
-				bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-				bufferbuilder.vertex(matrix4f, -100.0F, -100.0F, -100.0F).color(r, g, b, a).endVertex();
-				bufferbuilder.vertex(matrix4f, -100.0F, -100.0F, 100.0F).color(r, g, b, a).endVertex();
-				bufferbuilder.vertex(matrix4f, 100.0F, -100.0F, 100.0F).color(r, g, b, a).endVertex();
-				bufferbuilder.vertex(matrix4f, 100.0F, -100.0F, -100.0F).color(r, g, b, a).endVertex();
-				tesselator.end();
+				BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+				bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, -100.0F).setColor(r, g, b, a);
+				bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, 100.0F).setColor(r, g, b, a);
+				bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, 100.0F).setColor(r, g, b, a);
+				bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, -100.0F).setColor(r, g, b, a);
+				com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
 
 				poseStack.popPose();
 			}
@@ -120,7 +121,7 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		}
 
 		@Override
-		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
+		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
 			Vec3 namekGreen = new Vec3(0.659D, 0.922D, 0.443D);
 			this.cloudRenderer.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, namekGreen);
 			return true;
@@ -148,12 +149,12 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		}
 
 		@Override
-		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
+		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
 			return true;
 		}
 
 		@Override
-		public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+		public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
 			return true;
 		}
 
@@ -179,14 +180,14 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		}
 
 		@Override
-		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
+		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
 			Vec3 namekGreen = new Vec3(0.929D, 0.929D, 0.157D);
 			this.cloudRenderer.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, namekGreen);
 			return true;
 		}
 
 		@Override
-		public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+		public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
 			return true;
 		}
 

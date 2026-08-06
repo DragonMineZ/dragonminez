@@ -551,11 +551,15 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player != null) {
 			String generatedId = com.dragonminez.common.stats.techniques.TechniqueData.generateId(mc.player.getName().getString(), finalName);
-			boolean duplicate = StatsProvider.get(StatsCapability.INSTANCE, mc.player)
-					.map(data -> data.getTechniques().getUnlockedTechniques().containsKey(generatedId))
-					.orElse(false);
+			var stats = StatsProvider.get(StatsCapability.INSTANCE, mc.player).orElse(null);
+			boolean duplicate = stats != null && stats.getTechniques().getUnlockedTechniques().containsKey(generatedId);
 			if (duplicate) {
 				mc.player.displayClientMessage(tr("gui.dragonminez.skills.creator.duplicate", finalName), true);
+				return;
+			}
+			if (stats != null && stats.getResources().getTrainingPoints() < tpCost) {
+				mc.player.displayClientMessage(Component.literal("Not enough TP: this technique costs "
+						+ Math.round(tpCost) + " TP (you have " + Math.round(stats.getResources().getTrainingPoints()) + ")."), true);
 				return;
 			}
 		}
@@ -583,7 +587,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		renderBackground(graphics);
+		renderBackground(graphics, mouseX, mouseY, partialTick);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 		beginUiScale(graphics);

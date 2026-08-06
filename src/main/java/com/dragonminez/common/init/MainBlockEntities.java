@@ -7,19 +7,19 @@ import com.dragonminez.common.init.block.custom.DragonBallBlock;
 import com.dragonminez.common.init.block.entity.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public final class MainBlockEntities {
 	public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES_REGISTER =
-			DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, Reference.MOD_ID);
+			DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, Reference.MOD_ID);
 
-	public static final RegistryObject<BlockEntityType<DragonBallBlockEntity>> DRAGON_BALL_BLOCK_ENTITY =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DragonBallBlockEntity>> DRAGON_BALL_BLOCK_ENTITY =
 			BLOCK_ENTITY_TYPES_REGISTER.register("dragon_ball", () ->
 					BlockEntityType.Builder.of((pos, state) -> {
 						DragonBallBlock block = (DragonBallBlock) state.getBlock();
@@ -37,31 +37,31 @@ public final class MainBlockEntities {
 		return blocks.toArray(Block[]::new);
 	}
 
-	public static final RegistryObject<BlockEntityType<KikonoStationBlockEntity>> KIKONO_STATION_BE =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<KikonoStationBlockEntity>> KIKONO_STATION_BE =
 			BLOCK_ENTITY_TYPES_REGISTER.register("kikono_station", () ->
 					BlockEntityType.Builder.of(KikonoStationBlockEntity::new,
 							MainBlocks.KIKONO_STATION.get()
 					).build(null));
 
-	public static final RegistryObject<BlockEntityType<FuelGeneratorBlockEntity>> FUEL_GENERATOR_BE =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FuelGeneratorBlockEntity>> FUEL_GENERATOR_BE =
 			BLOCK_ENTITY_TYPES_REGISTER.register("fuel_generator", () ->
 					BlockEntityType.Builder.of(FuelGeneratorBlockEntity::new,
 							MainBlocks.FUEL_GENERATOR.get()
 					).build(null));
 
-	public static final RegistryObject<BlockEntityType<GravityDeviceBlockEntity>> GRAVITY_DEVICE_BE =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GravityDeviceBlockEntity>> GRAVITY_DEVICE_BE =
 			BLOCK_ENTITY_TYPES_REGISTER.register("gravity_device", () ->
 					BlockEntityType.Builder.of(GravityDeviceBlockEntity::new,
 							MainBlocks.GRAVITY_DEVICE.get()
 					).build(null));
 
-	public static final RegistryObject<BlockEntityType<EnergyCableBlockEntity>> ENERGY_CABLE_BE =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EnergyCableBlockEntity>> ENERGY_CABLE_BE =
 			BLOCK_ENTITY_TYPES_REGISTER.register("energy_cable", () ->
 					BlockEntityType.Builder.of(EnergyCableBlockEntity::new,
 							MainBlocks.ENERGY_CABLE.get()
 					).build(null));
 
-	public static final RegistryObject<BlockEntityType<TimeChamberPortalBlockEntity>> TIME_CHAMBER_PORTAL =
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TimeChamberPortalBlockEntity>> TIME_CHAMBER_PORTAL =
 			BLOCK_ENTITY_TYPES_REGISTER.register("time_chamber_portal", () ->
 					BlockEntityType.Builder.of(TimeChamberPortalBlockEntity::new,
 							MainBlocks.TIME_CHAMBER_PORTAL.get()

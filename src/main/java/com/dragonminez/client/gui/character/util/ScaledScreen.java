@@ -4,13 +4,14 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class ScaledScreen extends Screen {
@@ -29,6 +30,18 @@ public abstract class ScaledScreen extends Screen {
 
 	protected ScaledScreen(Component title) {
 		super(title);
+	}
+
+	/**
+	 * Preserve Screen.render's 1.20.1 behavior used by every DMZ menu. In 1.21
+	 * vanilla added renderBackground here, which blurs custom panoramas, models,
+	 * and panels that DMZ deliberately renders before calling super.render.
+	 */
+	@Override
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		for (Renderable renderable : this.renderables) {
+			renderable.render(graphics, mouseX, mouseY, partialTick);
+		}
 	}
 
 	protected void updateUiScale() {
@@ -168,8 +181,8 @@ public abstract class ScaledScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		return super.mouseScrolled(toUiX(mouseX), toUiY(mouseY), delta);
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		return super.mouseScrolled(toUiX(mouseX), toUiY(mouseY), scrollX, scrollY);
 	}
 
 	@Override

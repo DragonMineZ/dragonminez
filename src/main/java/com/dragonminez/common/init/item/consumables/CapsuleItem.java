@@ -54,7 +54,7 @@ public class CapsuleItem extends Item {
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
+	public void appendHoverText(@NotNull ItemStack pStack, @NotNull Item.TooltipContext context, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
 		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
 		pTooltipComponents.add(Component.translatable("item.dragonminez.capsule.tooltip", values.getPoints() * tierMultiplier, values.getStats()).withStyle(ChatFormatting.GREEN));
 		pTooltipComponents.add(Component.translatable("item.dragonminez.capsule.tooltip2", values.getStats()).withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));

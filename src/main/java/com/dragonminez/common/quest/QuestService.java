@@ -23,8 +23,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -341,7 +341,7 @@ public final class QuestService {
 				partyMembers,
 				difficulty
 		);
-		if (MinecraftForge.EVENT_BUS.post(startEvent)) {
+		if (NeoForge.EVENT_BUS.post(startEvent).isCanceled()) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 
@@ -405,7 +405,7 @@ public final class QuestService {
 				partyMembers,
 				npcId
 		);
-		if (MinecraftForge.EVENT_BUS.post(turnInEvent)) {
+		if (NeoForge.EVENT_BUS.post(turnInEvent).isCanceled()) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 
@@ -433,7 +433,7 @@ public final class QuestService {
 				quest,
 				partyMembers
 		);
-		if (MinecraftForge.EVENT_BUS.post(completeEvent)) {
+		if (NeoForge.EVENT_BUS.post(completeEvent).isCanceled()) {
 			if (objectiveProgressChanged) {
 				syncQuestState(controller);
 			}
@@ -484,7 +484,7 @@ public final class QuestService {
 				newProgress,
 				required
 		);
-		if (MinecraftForge.EVENT_BUS.post(progressEvent)) {
+		if (NeoForge.EVENT_BUS.post(progressEvent).isCanceled()) {
 			return false;
 		}
 
@@ -561,7 +561,7 @@ public final class QuestService {
 					partyMembers,
 					i
 			);
-			if (MinecraftForge.EVENT_BUS.post(rewardEvent)) {
+			if (NeoForge.EVENT_BUS.post(rewardEvent).isCanceled()) {
 				continue;
 			}
 			rewards.get(i).giveReward(rewardTarget, pqd.rewardMultiplierFor(rewards.get(i)));

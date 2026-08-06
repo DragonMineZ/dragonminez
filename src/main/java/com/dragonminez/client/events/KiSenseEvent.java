@@ -22,11 +22,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderNameTagEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderNameTagEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import org.joml.Matrix4f;
 
 import java.text.NumberFormat;
@@ -34,7 +38,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class KiSenseEvent {
 	private static final ResourceLocation HUD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
@@ -55,8 +59,7 @@ public class KiSenseEvent {
 	}
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.END) return;
+	public static void onClientTick(ClientTickEvent.Post event) {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null || mc.level == null) return;
@@ -357,23 +360,13 @@ public class KiSenseEvent {
 	}
 
 	private static void drawTexture(PoseStack poseStack, float x, float y, int width, int height, int u, int v) {
-		Matrix4f matrix = poseStack.last().pose();
-		Tesselator tesselator = Tesselator.getInstance();
-		BufferBuilder buffer = tesselator.getBuilder();
-
 		float textureSize = 128.0f;
-
 		float minU = (float) u / textureSize;
 		float maxU = (float) (u + width) / textureSize;
 		float minV = (float) v / textureSize;
 		float maxV = (float) (v + height) / textureSize;
-
-		buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-		buffer.vertex(matrix, x, y + height, 0).uv(minU, maxV).endVertex();
-		buffer.vertex(matrix, x + width, y + height, 0).uv(maxU, maxV).endVertex();
-		buffer.vertex(matrix, x + width, y, 0).uv(maxU, minV).endVertex();
-		buffer.vertex(matrix, x, y, 0).uv(minU, minV).endVertex();
-		tesselator.end();
+		com.dragonminez.client.render.util.RenderBufferUtil.drawTexturedQuad(
+				poseStack.last().pose(), x, y, x + width, y + height, 0, minU, minV, maxU, maxV);
 	}
 
 	private static MutableComponent txt(String text) {

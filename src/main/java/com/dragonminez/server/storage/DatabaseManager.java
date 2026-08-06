@@ -136,7 +136,7 @@ public class DatabaseManager implements IDataStorage {
 				if (rs.next()) {
 					try (InputStream is = rs.getBinaryStream("data")) {
 						if (is != null) {
-							return NbtIo.readCompressed(is);
+							return NbtIo.readCompressed(is, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
 						}
 					} catch (IOException e) {
 						LogUtil.error(Env.SERVER, "Error decompressing NBT for " + uuid + ": " + e.getMessage());

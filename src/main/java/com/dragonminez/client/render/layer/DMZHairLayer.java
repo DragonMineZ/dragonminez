@@ -23,12 +23,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.util.RenderUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +67,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		poseStack.pushPose();
-		RenderUtils.translateToPivotPoint(poseStack, bone);
+		RenderUtil.translateToPivotPoint(poseStack, bone);
 		renderHair(poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 		bufferSource.getBuffer(renderType);
 		poseStack.popPose();
@@ -83,7 +83,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		ItemStack headItem = resolveHeadArmorStack(animatable);
 		if (!headItem.isEmpty()) {
-			ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(headItem.getItem());
+			ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(headItem.getItem());
 			if (itemId != null) {
 				List<String> allowedHelmets = ConfigManager.getServerConfig().getGameplay().getHelmetsThatKeepHair();
 				if (!allowedHelmets.contains(itemId.toString())) return;
@@ -94,7 +94,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var stats = statsCap.orElse(new StatsData(animatable));
 		Character character = stats.getCharacter();
 
-		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+		if (animatable.hasEffect(MainEffects.CANDY)) return;
 
 		if (!HairManager.canUseHair(character)) return;
 
@@ -157,7 +157,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			if (nextForm != null && targetHair != null && targetRgb != null) {
 				int increment = 5 + Math.max(20, chargeMastery);
 				float ratePerTick = increment / 2000.0f;
-				float dt = Minecraft.getInstance().getDeltaFrameTime();
+				float dt = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 				curHairProgress = Math.min(1.0f, curHairProgress + ratePerTick * dt);
 				progressMap.put(entityId, curHairProgress);
 
@@ -170,7 +170,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				factor = curHairProgress;
 			}
 		} else if (curHairProgress > 0.0f) {
-				float dt = Minecraft.getInstance().getDeltaFrameTime();
+				float dt = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 				curHairProgress = Math.max(0.0f, curHairProgress - FADE_OUT_RATE * dt);
 				CustomHair fadeTarget = fadeTargetHairMap.get(entityId);
 
@@ -225,7 +225,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		boolean isCharging = stats.getStatus().isChargingKi() || stats.getStatus().isPermanentAura() || (stats.getStatus().isActionCharging() && (!stats.getStatus().getSelectedAction().equals(ActionMode.STACK) && !stats.getStatus().getSelectedAction().equals(ActionMode.FORM)));
 		float kiChargeProgress = kiChargeProgressMap.getOrDefault(entityId, 0.0f);
-		float dt = Minecraft.getInstance().getDeltaFrameTime();
+		float dt = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 
 		if (isCharging) kiChargeProgress = Math.min(1.0f, kiChargeProgress + dt * 0.25f);
 		else kiChargeProgress = Math.max(0.0f, kiChargeProgress - dt * 0.15f);

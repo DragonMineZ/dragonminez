@@ -5,20 +5,21 @@ import com.mojang.brigadier.ParseResults;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.CommandEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.permission.PermissionAPI;
-import net.minecraftforge.server.permission.events.PermissionGatherEvent;
-import net.minecraftforge.server.permission.nodes.PermissionNode;
-import net.minecraftforge.server.permission.nodes.PermissionTypes;
+import net.neoforged.neoforge.event.CommandEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.server.permission.PermissionAPI;
+import net.neoforged.neoforge.server.permission.events.PermissionGatherEvent;
+import net.neoforged.neoforge.server.permission.nodes.PermissionNode;
+import net.neoforged.neoforge.server.permission.nodes.PermissionTypes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class DMZPermissions {
 
 	private static final List<PermissionNode<Boolean>> NODES = new ArrayList<>();

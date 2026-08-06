@@ -1,6 +1,7 @@
 package com.dragonminez.server.world.structure.processor;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 public class FoundationProcessor extends StructureProcessor {
-	public static final Codec<FoundationProcessor> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+	public static final MapCodec<FoundationProcessor> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
 			Codec.intRange(1, 256).optionalFieldOf("max_depth", 32).forGetter(p -> p.maxDepth)
 	).apply(instance, FoundationProcessor::new));
 

@@ -96,7 +96,7 @@ public abstract class LivingEntityMixin implements IBattlePower, IHealthFixable,
 					&& PlayerAttackHelper.shouldAttackWithOffHand(player, comboCount)) {
 
 				PlayerAttackHelper.offhandAttributes(player, () -> {
-					var value = player.getAttributes().getValue(attribute.value());
+					var value = player.getAttributes().getValue(attribute);
 					cir.setReturnValue(value);
 				});
 				cir.cancel();

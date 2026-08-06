@@ -27,28 +27,37 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FlowerPotBlock;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.minecraftforge.event.AddPackFindersEvent;
-import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
-import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.registries.RegistryObject;
+import com.dragonminez.common.init.MainBlockEntities;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class ModCommonEvents {
 
 	@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {
 		if (event.getPackType() == PackType.SERVER_DATA) {
 			event.addRepositorySource((packConsumer) -> {
-				Pack dragonballPack = Pack.readMetaAndCreate("dmz_dragonballs_runtime_data", Component.literal("DMZ Dragonballs Runtime Data"), true,
-					DragonBallDataPackResources::new, PackType.SERVER_DATA, Pack.Position.TOP, PackSource.BUILT_IN);
+				Pack dragonballPack = Pack.readMetaAndCreate(
+					new net.minecraft.server.packs.PackLocationInfo("dmz_dragonballs_runtime_data", Component.literal("DMZ Dragonballs Runtime Data"), PackSource.BUILT_IN, java.util.Optional.empty()),
+					new Pack.ResourcesSupplier() {
+						@Override public net.minecraft.server.packs.PackResources openPrimary(net.minecraft.server.packs.PackLocationInfo location) { return new DragonBallDataPackResources(location); }
+						@Override public net.minecraft.server.packs.PackResources openFull(net.minecraft.server.packs.PackLocationInfo location, Pack.Metadata metadata) { return openPrimary(location); }
+					},
+					PackType.SERVER_DATA,
+					new net.minecraft.server.packs.PackSelectionConfig(true, Pack.Position.TOP, false));
 				if (dragonballPack != null) packConsumer.accept(dragonballPack);
 			});
 		}
@@ -148,31 +157,37 @@ public class ModCommonEvents {
 
     @SubscribeEvent
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
-        event.add(EntityType.PLAYER, MainAttributes.STRENGTH.get());
-        event.add(EntityType.PLAYER, MainAttributes.STRIKE_POWER.get());
-        event.add(EntityType.PLAYER, MainAttributes.RESISTANCE.get());
-        event.add(EntityType.PLAYER, MainAttributes.VITALITY.get());
-        event.add(EntityType.PLAYER, MainAttributes.KI_POWER.get());
-        event.add(EntityType.PLAYER, MainAttributes.ENERGY.get());
-        event.add(EntityType.PLAYER, MainAttributes.MAX_ENERGY.get());
-        event.add(EntityType.PLAYER, MainAttributes.MAX_STAMINA.get());
-        event.add(EntityType.PLAYER, MainAttributes.MAX_POISE.get());
-        event.add(EntityType.PLAYER, MainAttributes.MELEE_DAMAGE.get());
-        event.add(EntityType.PLAYER, MainAttributes.STRIKE_DAMAGE.get());
-        event.add(EntityType.PLAYER, MainAttributes.DEFENSE.get());
-		event.add(EntityType.PLAYER, MainAttributes.CRIT_CHANCE.get());
-		event.add(EntityType.PLAYER, MainAttributes.CRIT_DAMAGE.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRENGTH);
+        event.add(EntityType.PLAYER, MainAttributes.STRIKE_POWER);
+        event.add(EntityType.PLAYER, MainAttributes.RESISTANCE);
+        event.add(EntityType.PLAYER, MainAttributes.VITALITY);
+        event.add(EntityType.PLAYER, MainAttributes.KI_POWER);
+        event.add(EntityType.PLAYER, MainAttributes.ENERGY);
+        event.add(EntityType.PLAYER, MainAttributes.MAX_ENERGY);
+        event.add(EntityType.PLAYER, MainAttributes.MAX_STAMINA);
+        event.add(EntityType.PLAYER, MainAttributes.MAX_POISE);
+        event.add(EntityType.PLAYER, MainAttributes.MELEE_DAMAGE);
+        event.add(EntityType.PLAYER, MainAttributes.STRIKE_DAMAGE);
+        event.add(EntityType.PLAYER, MainAttributes.DEFENSE);
+		event.add(EntityType.PLAYER, MainAttributes.CRIT_CHANCE);
+		event.add(EntityType.PLAYER, MainAttributes.CRIT_DAMAGE);
     }
 
 	@SubscribeEvent
-	public void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
-		event.register(DragonBallSavedData.class);
+	public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, MainBlockEntities.KIKONO_STATION_BE.get(), (be, side) -> be.getItemHandler());
+		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MainBlockEntities.KIKONO_STATION_BE.get(), (be, side) -> be.getEnergyStorage());
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, MainBlockEntities.FUEL_GENERATOR_BE.get(), (be, side) -> be.getItemHandler());
+		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MainBlockEntities.FUEL_GENERATOR_BE.get(), (be, side) -> be.getEnergyStorage());
+		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MainBlockEntities.ENERGY_CABLE_BE.get(), (be, side) -> be.getEnergyStorage());
+		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MainBlockEntities.GRAVITY_DEVICE_BE.get(), (be, side) -> be.getEnergyStorage());
 	}
 
     @SafeVarargs
-    private static <T extends LivingEntity> void regAttr(EntityAttributeCreationEvent event, AttributeSupplier attributes, RegistryObject<? extends EntityType<? extends T>>... entities) {
-        for (RegistryObject<? extends EntityType<? extends T>> reg : entities) {
-            event.put(reg.get(), attributes);
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void regAttr(EntityAttributeCreationEvent event, AttributeSupplier attributes, DeferredHolder... entities) {
+        for (DeferredHolder reg : entities) {
+            event.put((EntityType) reg.get(), attributes);
         }
     }
 }

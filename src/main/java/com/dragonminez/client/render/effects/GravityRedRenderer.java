@@ -5,13 +5,14 @@ import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.client.render.shader.GravityRedManager;
 import com.dragonminez.client.render.util.IrisCompat;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class GravityRedRenderer {
 
 	private GravityRedRenderer() {}
@@ -33,9 +34,9 @@ public final class GravityRedRenderer {
 
 		if (iris) {
 			mc.getMainRenderTarget().bindWrite(false);
-			GravityRedManager.process(event.getPartialTick(), intensity, false);
+			GravityRedManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false), intensity, false);
 		} else {
-			GravityRedManager.process(event.getPartialTick(), intensity);
+			GravityRedManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false), intensity);
 		}
 	}
 }

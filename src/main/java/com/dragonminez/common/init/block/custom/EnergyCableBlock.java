@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.block.custom;
 
+import com.mojang.serialization.MapCodec;
+
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.block.entity.EnergyCableBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -20,14 +22,23 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.EnumMap;
 
 public class EnergyCableBlock extends BaseEntityBlock {
+	public static final MapCodec<EnergyCableBlock> CODEC = MapCodec.unit(() -> {
+		throw new UnsupportedOperationException("EnergyCableBlock codec not supported");
+	});
+
+	@Override
+	protected MapCodec<? extends BaseEntityBlock> codec() {
+		return CODEC;
+	}
+
 	public static final BooleanProperty NORTH = BooleanProperty.create("north");
 	public static final BooleanProperty EAST = BooleanProperty.create("east");
 	public static final BooleanProperty SOUTH = BooleanProperty.create("south");
@@ -112,9 +123,9 @@ public class EnergyCableBlock extends BaseEntityBlock {
 		}
 
 		if (be != null) {
-			var key = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+			var key = BuiltInRegistries.BLOCK.getKey(state.getBlock());
 			if (key != null && key.getNamespace().equals(com.dragonminez.Reference.MOD_ID)) {
-				return be.getCapability(ForgeCapabilities.ENERGY, side).isPresent();
+				return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, pos, side) != null;
 			}
 		}
 

@@ -284,13 +284,13 @@ public class KiDiskEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(CAST_TIME, 0);
-        this.entityData.define(OFFSET_X, 0.0F);
-        this.entityData.define(OFFSET_Y, 0.0F);
-        this.entityData.define(OFFSET_Z, 0.0F);
-        this.entityData.define(IS_FIRING, false);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CAST_TIME, 0);
+        builder.define(OFFSET_X, 0.0F);
+        builder.define(OFFSET_Y, 0.0F);
+        builder.define(OFFSET_Z, 0.0F);
+        builder.define(IS_FIRING, false);
     }
 
     public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }

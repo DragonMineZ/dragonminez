@@ -4,7 +4,7 @@ import com.dragonminez.server.events.players.combat.CombatEvent;
 import com.dragonminez.server.events.players.combat.DashHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

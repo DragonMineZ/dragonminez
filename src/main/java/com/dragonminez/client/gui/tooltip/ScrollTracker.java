@@ -9,7 +9,6 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientBundleTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
 
 import java.util.Iterator;
 import java.util.List;
@@ -47,7 +46,7 @@ public class ScrollTracker {
 		targetVerticalScroll = Mth.clamp(targetVerticalScroll, Math.min(screenHeight - (y + height) - 4, 0), Math.max(-y + 4, 0));
 		targetHorizontalScroll = Mth.clamp(targetHorizontalScroll, Math.min(screenWidth - (x + width) - 4, 0), Math.max(-x + 4, 0));
 
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		float tickDelta = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 		currentVerticalScroll = Mth.lerp(tickDelta * 0.5f, currentVerticalScroll, targetVerticalScroll);
 		currentHorizontalScroll = Mth.lerp(tickDelta * 0.5f, currentHorizontalScroll, targetHorizontalScroll);
 
@@ -72,12 +71,8 @@ public class ScrollTracker {
 			if (c1 instanceof ClientTextTooltip ot1 && c2 instanceof ClientTextTooltip ot2) {
 				if (!TooltipUtil.toText(((ClientTextTooltipAccessor) ot1).getText()).equals(TooltipUtil.toText(((ClientTextTooltipAccessor) ot2).getText()))) return false;
 			} else if (c1 instanceof ClientBundleTooltip bt1 && c2 instanceof ClientBundleTooltip bt2) {
-				Iterator<ItemStack> i1 = ((BundleTooltipComponentAccessor) bt1).getItems().iterator();
-				Iterator<ItemStack> i2 = ((BundleTooltipComponentAccessor) bt2).getItems().iterator();
-				while (i1.hasNext() && i2.hasNext()) {
-					if (!ItemStack.matches(i1.next(), i2.next())) return false;
-				}
-				if (i1.hasNext() || i2.hasNext()) return false;
+				if (!((BundleTooltipComponentAccessor) bt1).getContents()
+						.equals(((BundleTooltipComponentAccessor) bt2).getContents())) return false;
 			} else {
 				return false;
 			}

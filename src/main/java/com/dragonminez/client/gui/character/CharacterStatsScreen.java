@@ -22,6 +22,7 @@ import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.dragonminez.server.events.players.TickHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.ChatFormatting;
@@ -36,10 +37,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -120,8 +121,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -271,8 +272,10 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		int totalProtection = 0;
 		if (Minecraft.getInstance().player != null) {
-			for (var stack : Minecraft.getInstance().player.getArmorSlots())
-				totalProtection += EnchantmentHelper.getItemEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, stack);
+			var player = Minecraft.getInstance().player;
+			var protection = player.level().registryAccess().holderOrThrow(Enchantments.PROTECTION);
+			for (var stack : player.getArmorSlots())
+				totalProtection += EnchantmentHelper.getItemEnchantmentLevel(protection, stack);
 		}
 
 		double enchReduction = 0.0;
@@ -1269,7 +1272,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;
@@ -1604,7 +1607,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int skillLevel = statsData.getSkills().getSkillLevel("defense_penetration");
 		int enchLevel = 0;
 
-		if (Minecraft.getInstance().player != null) enchLevel = EnchantmentHelper.getEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), Minecraft.getInstance().player);
+		if (Minecraft.getInstance().player != null) enchLevel = MainEnchants.level(Minecraft.getInstance().player, MainEnchants.DEFENSE_PENETRATION);
 
 		return Math.min(0.50, (skillLevel * 0.025) + (enchLevel * 0.025)) * 100.0;
 	}
@@ -1618,9 +1621,6 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 		RenderSystem.disableCull();
 
-		var tesselator = Tesselator.getInstance();
-		var buffer = tesselator.getBuilder();
-
 		String auraColorHex = statsData.getCharacter().getAuraColor();
 		float[] auraRgb = ColorUtils.hexToRgb(auraColorHex);
 
@@ -1629,17 +1629,17 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		float fillB = auraRgb[2];
 		float fillAlpha = 0.3f;
 
-		buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+		var buffer = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
 		for (int i = 0; i < 6; i++) {
 			int next = (i + 1) % 6;
-			buffer.vertex(matrix, centerX, centerY, 0).color(fillR, fillG, fillB, fillAlpha).endVertex();
-			buffer.vertex(matrix, pointsX[i], pointsY[i], 0).color(fillR, fillG, fillB, fillAlpha).endVertex();
-			buffer.vertex(matrix, pointsX[next], pointsY[next], 0).color(fillR, fillG, fillB, fillAlpha).endVertex();
+			buffer.addVertex(matrix, centerX, centerY, 0).setColor(fillR, fillG, fillB, fillAlpha);
+			buffer.addVertex(matrix, pointsX[i], pointsY[i], 0).setColor(fillR, fillG, fillB, fillAlpha);
+			buffer.addVertex(matrix, pointsX[next], pointsY[next], 0).setColor(fillR, fillG, fillB, fillAlpha);
 		}
 
-		tesselator.end();
-		buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+		BufferUploader.drawWithShader(buffer.buildOrThrow());
+		buffer = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
 		float outlineR = 0.0f;
 		float outlineG = 0.0f;
@@ -1660,16 +1660,16 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			float perpX = -dy / length * borderWidth;
 			float perpY = dx / length * borderWidth;
 
-			buffer.vertex(matrix, x1 + perpX, y1 + perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
-			buffer.vertex(matrix, x1 - perpX, y1 - perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
-			buffer.vertex(matrix, x2 + perpX, y2 + perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
-			buffer.vertex(matrix, x2 + perpX, y2 + perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
-			buffer.vertex(matrix, x1 - perpX, y1 - perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
-			buffer.vertex(matrix, x2 - perpX, y2 - perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+			buffer.addVertex(matrix, x1 + perpX, y1 + perpY, 0).setColor(outlineR, outlineG, outlineB, outlineAlpha);
+			buffer.addVertex(matrix, x1 - perpX, y1 - perpY, 0).setColor(outlineR, outlineG, outlineB, outlineAlpha);
+			buffer.addVertex(matrix, x2 + perpX, y2 + perpY, 0).setColor(outlineR, outlineG, outlineB, outlineAlpha);
+			buffer.addVertex(matrix, x2 + perpX, y2 + perpY, 0).setColor(outlineR, outlineG, outlineB, outlineAlpha);
+			buffer.addVertex(matrix, x1 - perpX, y1 - perpY, 0).setColor(outlineR, outlineG, outlineB, outlineAlpha);
+			buffer.addVertex(matrix, x2 - perpX, y2 - perpY, 0).setColor(outlineR, outlineG, outlineB, outlineAlpha);
 		}
 
-		tesselator.end();
-		buffer.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+		BufferUploader.drawWithShader(buffer.buildOrThrow());
+		buffer = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
 		float lineR = auraRgb[0];
 		float lineG = auraRgb[1];
@@ -1678,11 +1678,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		for (int i = 0; i < 6; i++) {
 			int next = (i + 1) % 6;
-			buffer.vertex(matrix, pointsX[i], pointsY[i], 0).color(lineR, lineG, lineB, lineAlpha).endVertex();
-			buffer.vertex(matrix, pointsX[next], pointsY[next], 0).color(lineR, lineG, lineB, lineAlpha).endVertex();
+			buffer.addVertex(matrix, pointsX[i], pointsY[i], 0).setColor(lineR, lineG, lineB, lineAlpha);
+			buffer.addVertex(matrix, pointsX[next], pointsY[next], 0).setColor(lineR, lineG, lineB, lineAlpha);
 		}
 
-		tesselator.end();
+		BufferUploader.drawWithShader(buffer.buildOrThrow());
 		RenderSystem.enableCull();
 		RenderSystem.disableBlend();
 	}

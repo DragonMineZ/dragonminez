@@ -38,7 +38,9 @@ public final class UtilityMenuBlur {
 			return;
 		}
 		PostChain current = mc.gameRenderer.currentEffect();
-		if (loadedByUs && current != null && EFFECT.toString().equals(current.getName())) {
+		// Screen transitions can re-run init/removed in an order that loses loadedByUs.
+		// The effect name is the authoritative ownership check.
+		if (current != null && EFFECT.toString().equals(current.getName())) {
 			mc.gameRenderer.shutdownEffect();
 		}
 		loadedByUs = false;

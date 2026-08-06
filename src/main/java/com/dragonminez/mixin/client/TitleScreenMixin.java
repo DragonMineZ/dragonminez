@@ -1,5 +1,7 @@
 package com.dragonminez.mixin.client;
 
+import java.time.Duration;
+
 import com.dragonminez.client.gui.buttons.DiscordTitleButton;
 import com.dragonminez.client.gui.buttons.IconButton;
 import com.dragonminez.common.init.MainSounds;
@@ -22,8 +24,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraftforge.internal.BrandingControl;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.internal.BrandingControl;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -42,7 +44,7 @@ public abstract class TitleScreenMixin extends Screen {
 	@Unique
 	private static final ResourceLocation dragonminez$PATREON_LOGO = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/title/patreon_logo.png");
 	@Unique
-	private static final List<RegistryObject<SoundEvent>> dragonminez$MENU_PLAYLIST = List.of(
+	private static final List<DeferredHolder<SoundEvent, ? extends SoundEvent>> dragonminez$MENU_PLAYLIST = List.of(
 			MainSounds.MENU_MUSIC_1,
 			MainSounds.MENU_MUSIC_2,
 			MainSounds.MENU_MUSIC_3,
@@ -162,7 +164,7 @@ public abstract class TitleScreenMixin extends Screen {
 				button -> this.dragonminez$openDiscordPrompt()
 		));
 		dragonminez$discordButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.discord.prompt")));
-		dragonminez$discordButton.setTooltipDelay(120);
+		dragonminez$discordButton.setTooltipDelay(Duration.ofMillis(120));
 
 		Button dragonminez$patreonButton = this.addRenderableWidget(new IconButton(
 				realmsButton.getX() + discordWidth + 4,
@@ -176,7 +178,7 @@ public abstract class TitleScreenMixin extends Screen {
 				button -> this.dragonminez$openPatreonPrompt()
 		));
 		dragonminez$patreonButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.patreon.prompt")));
-		dragonminez$patreonButton.setTooltipDelay(120);
+		dragonminez$patreonButton.setTooltipDelay(Duration.ofMillis(120));
 	}
 
 	@Inject(method = "render", at = @At("TAIL"))

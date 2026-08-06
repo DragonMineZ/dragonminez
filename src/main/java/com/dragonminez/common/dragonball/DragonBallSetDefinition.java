@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -27,7 +27,7 @@ public class DragonBallSetDefinition {
 	private final Map<Integer, String> blockRegistryNamesByStar;
 	private final String assetDefinitionId;
 	private final String displayName;
-	private final Map<Integer, RegistryObject<Block>> registeredBlocksByStar = new LinkedHashMap<>();
+	private final Map<Integer, DeferredHolder<Block, ? extends Block>> registeredBlocksByStar = new LinkedHashMap<>();
 
 	public DragonBallSetDefinition(String id,
 			Set<ResourceLocation> validDimensions,
@@ -68,11 +68,11 @@ public class DragonBallSetDefinition {
 	public Optional<String> getAssetDefinitionId() { return Optional.ofNullable(assetDefinitionId); }
 	public Optional<String> getDisplayName() { return Optional.ofNullable(displayName); }
 	public DragonBallSetAssetDefinition resolveAssetDefinition() { return assetDefinitionId == null ? null : DragonBallDefinitions.getBallSetAsset(assetDefinitionId); }
-	public void setRegisteredBlock(int star, RegistryObject<Block> block) { registeredBlocksByStar.put(star, block); }
-	public RegistryObject<Block> getRegisteredBlockObjectForStar(int star) { return registeredBlocksByStar.get(star); }
-	public Block getBlockForStar(int star) { RegistryObject<Block> registryObject = registeredBlocksByStar.get(star); return registryObject == null ? null : registryObject.get(); }
+	public void setRegisteredBlock(int star, DeferredHolder<Block, ? extends Block> block) { registeredBlocksByStar.put(star, block); }
+	public DeferredHolder<Block, ? extends Block> getRegisteredBlockObjectForStar(int star) { return registeredBlocksByStar.get(star); }
+	public Block getBlockForStar(int star) { DeferredHolder<Block, ? extends Block> registryObject = registeredBlocksByStar.get(star); return registryObject == null ? null : registryObject.get(); }
 	public Integer getStarForBlock(Block block) {
-		for (Map.Entry<Integer, RegistryObject<Block>> entry : registeredBlocksByStar.entrySet()) {
+		for (Map.Entry<Integer, DeferredHolder<Block, ? extends Block>> entry : registeredBlocksByStar.entrySet()) {
 			if (entry.getValue().get() == block) return entry.getKey();
 		}
 		return null;

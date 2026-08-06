@@ -1,0 +1,75 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+issueTrackerURL="https://discord.dragonminez.com"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+logoFile="dmz_logo.png"
+credits="${mod_credits}"
+authors="${mod_authors}"
+description='''${mod_description}'''
+displayTest="MATCH_VERSION"
+displayURL="https://dragonminez.com/"
+updateJSONURL="https://raw.githubusercontent.com/DragonMineZ/dragonminez/main/update.json"
+
+[[mixins]]
+config="dragonminez.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="${neo_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="geckolib"
+    type="required"
+    versionRange="${geckolib_version_range}"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="terrablender"
+    type="required"
+    versionRange="${terrablender_version_range}"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="curios"
+    type="required"
+    versionRange="${curios_version_range}"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="legendarytooltips"
+    type="incompatible"
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="epicfight"
+    type="incompatible"
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="bettercombat"
+    type="incompatible"
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"

@@ -10,7 +10,7 @@ import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -89,7 +89,7 @@ public class TechniqueChargeC2S {
 							data.getTechniques().selectSlot(msg.slot);
 							data.getTechniques().startTechniqueCharge(kiAttack.getId());
 							data.getTechniques().setHomingTargetId(msg.targetId);
-							net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+							net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
 									new com.dragonminez.common.events.DMZEvent.KiAttackCastEvent(player, data, kiAttack));
 						} else {
 							data.getTechniques().clearTechniqueCharge();

@@ -20,9 +20,9 @@ public class DimensionalSwordRenderer extends GeoItemRenderer<DimensionalSwordIt
 	}
 
 	@Override
-	public void actuallyRender(PoseStack poseStack, DimensionalSwordItem animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+	public void actuallyRender(PoseStack poseStack, DimensionalSwordItem animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
 
-		super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+		super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, colour);
 
 	}
 

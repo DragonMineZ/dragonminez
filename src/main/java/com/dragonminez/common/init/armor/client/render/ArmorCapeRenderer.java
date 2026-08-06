@@ -20,10 +20,10 @@ public class ArmorCapeRenderer extends GeoArmorRenderer<DbzArmorCapeItem> {
 
     @Override
     public void renderCubesOfBone(PoseStack poseStack, GeoBone bone, VertexConsumer buffer, int packedLight,
-                                  int packedOverlay, float red, float green, float blue, float alpha) {
+                                  int packedOverlay, int colour) {
         String name = bone.getName();
         if (name == null || !name.startsWith("cape")) return;
-        super.renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+        super.renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, colour);
     }
 
     @Override

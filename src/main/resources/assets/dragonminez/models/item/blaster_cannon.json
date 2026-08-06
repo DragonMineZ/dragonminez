@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/handheld",
-  "loader": "forge:separate_transforms",
+  "loader": "neoforge:separate_transforms",
   "base": {
     "parent": "dragonminez:item/blaster_cannon_3d"
   },

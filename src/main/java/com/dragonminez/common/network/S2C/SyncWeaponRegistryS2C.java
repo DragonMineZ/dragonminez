@@ -3,7 +3,7 @@ package com.dragonminez.common.network.S2C;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.network.CompressionUtil;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

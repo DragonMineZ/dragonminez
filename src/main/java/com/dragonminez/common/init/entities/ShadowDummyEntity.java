@@ -13,11 +13,11 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
 
 import java.util.UUID;
 
@@ -42,9 +42,9 @@ public class ShadowDummyEntity extends DBSagasEntity {
 				.add(Attributes.FOLLOW_RANGE, 64.0D)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 0.6D)
 				.add(Attributes.ARMOR, 10.0D)
-				.add(EntityAttributes.KI_BLAST_DAMAGE.get(), 20.0D)
-				.add(EntityAttributes.FLY_SPEED.get(), 0.35D)
-				.add(EntityAttributes.KI_BLAST_SPEED.get(), 0.6D);
+				.add(EntityAttributes.KI_BLAST_DAMAGE, 20.0D)
+				.add(EntityAttributes.FLY_SPEED, 0.35D)
+				.add(EntityAttributes.KI_BLAST_SPEED, 0.6D);
 	}
 
 	public void setOwner(LivingEntity owner) {

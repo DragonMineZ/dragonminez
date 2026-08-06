@@ -5,71 +5,55 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.mixin.common.RangedAttributeMixin;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class GenericAttributes {
 
-    @SubscribeEvent
-    public static void onLoadComplete(FMLLoadCompleteEvent event) {
-        Attribute armorAttribute = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.armor"));
-        Attribute armorToughnessAttribute = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.armor_toughness"));
-        Attribute maxHealth = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.max_health"));
-        Attribute attackDamage = ForgeRegistries.ATTRIBUTES.getValue(ResourceLocation.parse("minecraft:generic.attack_damage"));
+	@SubscribeEvent
+	public static void onLoadComplete(FMLLoadCompleteEvent event) {
+		setMaxIfRanged(Attributes.ARMOR, Float.MAX_VALUE);
+		setMaxIfRanged(Attributes.ARMOR_TOUGHNESS, Float.MAX_VALUE);
+		setMaxIfRanged(Attributes.MAX_HEALTH, Float.MAX_VALUE);
+		setMaxIfRanged(Attributes.ATTACK_DAMAGE, Float.MAX_VALUE);
 
-        if (armorAttribute instanceof RangedAttribute rangedAttribute) {
-            ((RangedAttributeMixin) rangedAttribute).setMaxValue(Float.MAX_VALUE);
-        }
+		double mainStatMax = getConfiguredMainStatMax();
+		setMaxIfRanged(MainAttributes.STRENGTH, mainStatMax);
+		setMaxIfRanged(MainAttributes.STRIKE_POWER, mainStatMax);
+		setMaxIfRanged(MainAttributes.RESISTANCE, mainStatMax);
+		setMaxIfRanged(MainAttributes.VITALITY, mainStatMax);
+		setMaxIfRanged(MainAttributes.KI_POWER, mainStatMax);
+		setMaxIfRanged(MainAttributes.ENERGY, mainStatMax);
 
-        if (armorToughnessAttribute instanceof RangedAttribute rangedAttribute) {
-            ((RangedAttributeMixin) rangedAttribute).setMaxValue(Float.MAX_VALUE);
-        }
+		setMaxIfRanged(MainAttributes.MAX_ENERGY, Float.MAX_VALUE);
+		setMaxIfRanged(MainAttributes.MAX_STAMINA, Float.MAX_VALUE);
+		setMaxIfRanged(MainAttributes.MAX_POISE, Float.MAX_VALUE);
+		setMaxIfRanged(MainAttributes.MELEE_DAMAGE, Float.MAX_VALUE);
+		setMaxIfRanged(MainAttributes.STRIKE_DAMAGE, Float.MAX_VALUE);
+		setMaxIfRanged(MainAttributes.KI_DAMAGE, Float.MAX_VALUE);
+		setMaxIfRanged(MainAttributes.DEFENSE, Float.MAX_VALUE);
 
-        if (maxHealth instanceof RangedAttribute rangedAttribute) {
-            ((RangedAttributeMixin) rangedAttribute).setMaxValue(Float.MAX_VALUE);
-        }
+		setMaxIfRanged(EntityAttributes.KI_BLAST_DAMAGE, Float.MAX_VALUE);
+		setMaxIfRanged(EntityAttributes.FLY_SPEED, Float.MAX_VALUE);
+		setMaxIfRanged(EntityAttributes.KI_BLAST_SPEED, Float.MAX_VALUE);
+	}
 
-        if (attackDamage instanceof RangedAttribute rangedAttribute) {
-            ((RangedAttributeMixin) rangedAttribute).setMaxValue(Float.MAX_VALUE);
-        }
+	private static double getConfiguredMainStatMax() {
+		if (ConfigManager.getServerConfig() != null && ConfigManager.getServerConfig().getGameplay() != null) {
+			return ConfigManager.getServerConfig().getGameplay().getMaxValue();
+		}
+		return 10000.0;
+	}
 
-        double mainStatMax = getConfiguredMainStatMax();
-        setMaxIfRanged(MainAttributes.STRENGTH.get(), mainStatMax);
-        setMaxIfRanged(MainAttributes.STRIKE_POWER.get(), mainStatMax);
-        setMaxIfRanged(MainAttributes.RESISTANCE.get(), mainStatMax);
-        setMaxIfRanged(MainAttributes.VITALITY.get(), mainStatMax);
-        setMaxIfRanged(MainAttributes.KI_POWER.get(), mainStatMax);
-        setMaxIfRanged(MainAttributes.ENERGY.get(), mainStatMax);
-
-        setMaxIfRanged(MainAttributes.MAX_ENERGY.get(), Float.MAX_VALUE);
-        setMaxIfRanged(MainAttributes.MAX_STAMINA.get(), Float.MAX_VALUE);
-        setMaxIfRanged(MainAttributes.MAX_POISE.get(), Float.MAX_VALUE);
-        setMaxIfRanged(MainAttributes.MELEE_DAMAGE.get(), Float.MAX_VALUE);
-        setMaxIfRanged(MainAttributes.STRIKE_DAMAGE.get(), Float.MAX_VALUE);
-        setMaxIfRanged(MainAttributes.KI_DAMAGE.get(), Float.MAX_VALUE);
-        setMaxIfRanged(MainAttributes.DEFENSE.get(), Float.MAX_VALUE);
-
-        setMaxIfRanged(EntityAttributes.KI_BLAST_DAMAGE.get(), Float.MAX_VALUE);
-        setMaxIfRanged(EntityAttributes.FLY_SPEED.get(), Float.MAX_VALUE);
-        setMaxIfRanged(EntityAttributes.KI_BLAST_SPEED.get(), Float.MAX_VALUE);
-    }
-
-    private static double getConfiguredMainStatMax() {
-        if (ConfigManager.getServerConfig() != null && ConfigManager.getServerConfig().getGameplay() != null) {
-            return ConfigManager.getServerConfig().getGameplay().getMaxValue();
-        }
-        return 10000.0;
-    }
-
-    private static void setMaxIfRanged(Attribute attribute, double maxValue) {
-        if (attribute instanceof RangedAttribute rangedAttribute) {
-            ((RangedAttributeMixin) rangedAttribute).setMaxValue(maxValue);
-        }
-    }
+	private static void setMaxIfRanged(Holder<Attribute> attribute, double maxValue) {
+		if (attribute.value() instanceof RangedAttribute rangedAttribute) {
+			((RangedAttributeMixin) (Object) rangedAttribute).setMaxValue(maxValue);
+		}
+	}
 }

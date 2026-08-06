@@ -29,7 +29,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import top.theillusivec4.curios.api.CuriosApi;
@@ -84,7 +84,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				|| "right_leg".equals(anchor) || "left_leg".equals(anchor);
 		if (!"head".equals(anchor) && !"body".equals(anchor) && !isLimb) return;
 
-		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+		if (animatable.hasEffect(MainEffects.CANDY)) return;
 
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) {
 			var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
@@ -332,7 +332,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	private void renderTargetedBone(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float alpha, float partialTick, int packedLight) {
 		VertexConsumer buffer = bufferSource.getBuffer(renderType);
-		getRenderer().renderRecursively(poseStack, animatable, targetBone, renderType, bufferSource, buffer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
+		getRenderer().renderRecursively(poseStack, animatable, targetBone, renderType, bufferSource, buffer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, com.dragonminez.client.render.util.RenderBufferUtil.packColor(r, g, b, alpha));
 	}
 
 	private float[] resolveBodyColor1(StatsData stats) {
@@ -633,7 +633,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (scale != 1.0f) poseStack.scale(scale, scale, scale);
 
 		VertexConsumer vertexConsumer = bufferSource.getBuffer(type);
-		getRenderer().renderRecursively(poseStack, animatable, weaponAnchor, type, bufferSource, vertexConsumer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
+		getRenderer().renderRecursively(poseStack, animatable, weaponAnchor, type, bufferSource, vertexConsumer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, -1);
 
 		poseStack.popPose();
 	}
@@ -655,7 +655,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		VertexConsumer vertexConsumer = bufferSource.getBuffer(type);
 		for (GeoBone bone : model.topLevelBones()) {
 			if (!bone.isHidden()) {
-				getRenderer().renderRecursively(poseStack, animatable, bone, type, bufferSource, vertexConsumer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
+				getRenderer().renderRecursively(poseStack, animatable, bone, type, bufferSource, vertexConsumer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, -1);
 			}
 		}
 

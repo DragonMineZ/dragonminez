@@ -1,8 +1,6 @@
 package com.dragonminez.client.clash;
-
-import lombok.Getter;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 /**
  * Client-side mirror of the local player's beam-clash state, fed by {@code BeamClashStateS2C}
@@ -11,7 +9,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public final class ClientBeamClashState {
 
-	@Getter
 	private static volatile boolean active = false;
 	private static volatile float meterPhase = 0.0f;
 	private static volatile float sweetLow = 0.0f;
@@ -35,6 +32,10 @@ public final class ClientBeamClashState {
 
 	public static void clear() {
 		active = false;
+	}
+
+	public static boolean isActive() {
+		return active;
 	}
 
 	public static float meterPhase() {

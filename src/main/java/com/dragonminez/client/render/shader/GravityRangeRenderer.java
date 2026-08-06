@@ -12,10 +12,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,7 +26,7 @@ import java.util.Set;
  * Toggleable client-side visualization (shift + right-click on a Gravity Device) that draws the
  * bounds of the device's detected room. Green when the room is valid, red when it is not.
  */
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class GravityRangeRenderer {
 
 	private static final Set<BlockPos> SHOWN = new HashSet<>();

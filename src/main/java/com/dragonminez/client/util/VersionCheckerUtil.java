@@ -7,19 +7,20 @@ import com.dragonminez.client.gui.quest.StoryToast;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModContainer;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.VersionChecker;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.forgespi.language.IModInfo;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.VersionChecker;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforgespi.language.IModInfo;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.Locale;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class VersionCheckerUtil {
 
 	private static final int MAX_PENDING_POLLS = 40;

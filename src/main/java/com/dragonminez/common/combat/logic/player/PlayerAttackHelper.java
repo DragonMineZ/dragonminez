@@ -13,12 +13,17 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
-import net.minecraftforge.common.ForgeMod;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import java.util.Set;
+import net.minecraft.core.Holder;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 import static net.minecraft.world.entity.EquipmentSlot.MAINHAND;
 
@@ -245,9 +250,9 @@ public class PlayerAttackHelper {
     }
 
     public static double getEffectiveAttackRange(Player player, double weaponAttackRange) {
-        var entityReachAttr = player.getAttribute(ForgeMod.ENTITY_REACH.get());
+        var entityReachAttr = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE);
         if (entityReachAttr == null) return Math.max(0.0D, weaponAttackRange);
-        double defaultEntityReach = ForgeMod.ENTITY_REACH.get().getDefaultValue();
+        double defaultEntityReach = net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE.value().getDefaultValue();
         double currentEntityReach = entityReachAttr.getValue();
         double effectiveRange = weaponAttackRange + (currentEntityReach - defaultEntityReach);
         return Math.max(0.0D, effectiveRange);
@@ -367,7 +372,11 @@ public class PlayerAttackHelper {
             remove = offHandStack;
             add = mainHandStack;
         }
-        player.getAttributes().removeAttributeModifiers(remove.getAttributeModifiers(MAINHAND));
-        player.getAttributes().addTransientAttributeModifiers(add.getAttributeModifiers(MAINHAND));
+        Multimap<Holder<Attribute>, AttributeModifier> removeMods = HashMultimap.create();
+        Multimap<Holder<Attribute>, AttributeModifier> addMods = HashMultimap.create();
+        remove.forEachModifier(MAINHAND, removeMods::put);
+        add.forEachModifier(MAINHAND, addMods::put);
+        player.getAttributes().removeAttributeModifiers(removeMods);
+        player.getAttributes().addTransientAttributeModifiers(addMods);
     }
 }

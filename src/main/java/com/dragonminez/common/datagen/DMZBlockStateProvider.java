@@ -8,11 +8,11 @@ import com.dragonminez.common.init.MainBlocks;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.*;
-import net.minecraftforge.client.model.generators.BlockStateProvider;
-import net.minecraftforge.client.model.generators.ModelFile;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
+import net.neoforged.neoforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 public class DMZBlockStateProvider extends BlockStateProvider {
 	public DMZBlockStateProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
@@ -123,10 +123,10 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
 			for (var entry : MainBlocks.getDragonBallBlocks(setDefinition.getId()).entrySet()) {
 				int star = entry.getKey();
-				RegistryObject<Block> block = entry.getValue();
+				DeferredHolder<Block, ? extends Block> block = entry.getValue();
 				if (assets != null && assets.getFlatTexturePathForStar(star).isPresent()) {
 					ResourceLocation texture = ResourceLocation.parse(assets.getFlatTexturePathForStar(star).get());
-					simpleBlockWithItem(block.get(), models().cubeAll(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), texture));
+					simpleBlockWithItem(block.get(), models().cubeAll(BuiltInRegistries.BLOCK.getKey(block.get()).getPath(), texture));
 				} else {
 					blockWithItem(block);
 				}
@@ -134,30 +134,30 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		}
 	}
 
-	private void blockWithItem(RegistryObject<Block> blockRegistryObject) {
-		simpleBlockWithItem(blockRegistryObject.get(), cubeAll(blockRegistryObject.get()));
+	private void blockWithItem(DeferredHolder<Block, ? extends Block> blockDeferredHolder) {
+		simpleBlockWithItem(blockDeferredHolder.get(), cubeAll(blockDeferredHolder.get()));
 	}
 	
-	private void grassBlock(RegistryObject<Block> blockRegistryObject) {
-		String path = ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath();
+	private void grassBlock(DeferredHolder<Block, ? extends Block> blockDeferredHolder) {
+		String path = BuiltInRegistries.BLOCK.getKey(blockDeferredHolder.get()).getPath();
 		ResourceLocation bottom = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_down");
 		ResourceLocation top = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_top");
 		ResourceLocation side = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_side");
 		
-		simpleBlockWithItem(blockRegistryObject.get(), 
+		simpleBlockWithItem(blockDeferredHolder.get(),
 			models().cubeBottomTop(path, side, bottom, top));
 	}
 	
-	private void blockItem(RegistryObject<Block> blockRegistryObject) {
-		simpleBlockItem(blockRegistryObject.get(), new ModelFile.UncheckedModelFile(Reference.MOD_ID +
-				":block/" + ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath()));
+	private void blockItem(DeferredHolder<Block, ? extends Block> blockDeferredHolder) {
+		simpleBlockItem(blockDeferredHolder.get(), new ModelFile.UncheckedModelFile(Reference.MOD_ID +
+				":block/" + BuiltInRegistries.BLOCK.getKey(blockDeferredHolder.get()).getPath()));
 	}
-	private void leavesBlock(RegistryObject<Block> blockRegistryObject) {
-		simpleBlockWithItem(blockRegistryObject.get(), models().singleTexture(ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath(),
-				ResourceLocation.parse("minecraft:block/leaves"), "all", blockTexture(blockRegistryObject.get())).renderType("cutout"));
+	private void leavesBlock(DeferredHolder<Block, ? extends Block> blockDeferredHolder) {
+		simpleBlockWithItem(blockDeferredHolder.get(), models().singleTexture(BuiltInRegistries.BLOCK.getKey(blockDeferredHolder.get()).getPath(),
+				ResourceLocation.parse("minecraft:block/leaves"), "all", blockTexture(blockDeferredHolder.get())).renderType("cutout"));
 	}
-	private void saplingBlock(RegistryObject<Block> blockRegistryObject) {
-		simpleBlock(blockRegistryObject.get(),
-				models().cross(ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath(), blockTexture(blockRegistryObject.get())).renderType("cutout"));
+	private void saplingBlock(DeferredHolder<Block, ? extends Block> blockDeferredHolder) {
+		simpleBlock(blockDeferredHolder.get(),
+				models().cross(BuiltInRegistries.BLOCK.getKey(blockDeferredHolder.get()).getPath(), blockTexture(blockDeferredHolder.get())).renderType("cutout"));
 	}
 }

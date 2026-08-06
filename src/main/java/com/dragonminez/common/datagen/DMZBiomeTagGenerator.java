@@ -14,7 +14,7 @@ import net.minecraft.data.tags.BiomeTagsProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biomes;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;

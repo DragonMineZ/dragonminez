@@ -2,7 +2,7 @@
 package com.dragonminez.common.dragonball;
 
 import com.google.gson.JsonObject;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import java.util.function.Consumer;
 
 public abstract class DragonRadarRecipeDefinition {
@@ -13,7 +13,7 @@ public abstract class DragonRadarRecipeDefinition {
 	}
 
 	public String getId() { return id; }
-	public abstract void buildRecipes(Consumer<FinishedRecipe> output, DragonRadarDefinition radarDefinition);
+	public abstract void buildRecipes(RecipeOutput output, DragonRadarDefinition radarDefinition);
 	protected abstract void writeTypeSpecificJson(JsonObject root);
 
 	public final JsonObject toJson() {

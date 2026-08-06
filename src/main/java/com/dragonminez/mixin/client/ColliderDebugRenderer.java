@@ -113,7 +113,7 @@ public class ColliderDebugRenderer {
 		float len = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
 		nx /= len; ny /= len; nz /= len;
 
-		consumer.vertex(matrix, (float) (start.x - cX), (float) (start.y - cY), (float) (start.z - cZ)).color(r, g, b, a).normal(nx, ny, nz).endVertex();
-		consumer.vertex(matrix, (float) (end.x - cX), (float) (end.y - cY), (float) (end.z - cZ)).color(r, g, b, a).normal(nx, ny, nz).endVertex();
+		consumer.addVertex(matrix, (float) (start.x - cX), (float) (start.y - cY), (float) (start.z - cZ)).setColor(r, g, b, a).setNormal(nx, ny, nz);
+		consumer.addVertex(matrix, (float) (end.x - cX), (float) (end.y - cY), (float) (end.z - cZ)).setColor(r, g, b, a).setNormal(nx, ny, nz);
 	}
 }

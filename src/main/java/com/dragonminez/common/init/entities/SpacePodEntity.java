@@ -22,11 +22,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceCache;
+import software.bernie.geckolib.animation.*;
+import software.bernie.geckolib.animation.PlayState;
 
 public class SpacePodEntity extends Mob implements GeoEntity {
 
@@ -62,9 +62,9 @@ public class SpacePodEntity extends Mob implements GeoEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(IS_OPEN, false);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(IS_OPEN, false);
     }
 
     @Override
@@ -118,16 +118,15 @@ public class SpacePodEntity extends Mob implements GeoEntity {
     public LivingEntity getControllingPassenger() {
         return this.getFirstPassenger() instanceof LivingEntity entity ? entity : null;
     }
-
     @Override
-    public double getPassengersRidingOffset() {
-        return 0.4D;
+    protected net.minecraft.world.phys.Vec3 getPassengerAttachmentPoint(Entity entity, net.minecraft.world.entity.EntityDimensions dimensions, float partialTick) {
+        return new net.minecraft.world.phys.Vec3(0.0D, 0.4D, 0.0D);
     }
 
 	@Override
 	public void positionRider(Entity passenger, MoveFunction callback) {
 		if (this.hasPassenger(passenger)) {
-			double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
+			double yOffset = 0.4D;
 			Vec3 vec3 = (new Vec3(0.0D, 0.0D, 0.0D)).yRot(-this.getYRot() * ((float)Math.PI / 180F) - ((float)Math.PI / 2F));
 			callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
 			if (passenger instanceof LivingEntity livingPassenger) {

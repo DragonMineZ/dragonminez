@@ -4,7 +4,7 @@ import com.dragonminez.client.systems.impactframes.ImpactFrame;
 import com.dragonminez.client.systems.impactframes.ImpactFramesHandler;
 import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

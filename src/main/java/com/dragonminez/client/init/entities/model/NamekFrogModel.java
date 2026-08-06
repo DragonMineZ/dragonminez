@@ -5,10 +5,10 @@ import com.dragonminez.common.init.entities.animal.DinoGlobalEntity;
 import com.dragonminez.common.init.entities.animal.NamekFrogEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
-import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
@@ -31,7 +31,7 @@ public class NamekFrogModel<T extends NamekFrogEntity> extends GeoModel<T> {
 
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
-        CoreGeoBone head = getAnimationProcessor().getBone("head");
+        GeoBone head = getAnimationProcessor().getBone("head");
 
         if (head != null) {
             EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);

@@ -4,7 +4,7 @@ import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.List;
 import java.util.function.Supplier;

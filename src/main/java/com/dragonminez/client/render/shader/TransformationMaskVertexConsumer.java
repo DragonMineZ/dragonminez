@@ -1,20 +1,14 @@
 package com.dragonminez.client.render.shader;
 
-import com.mojang.blaze3d.vertex.DefaultedVertexConsumer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-public final class TransformationMaskVertexConsumer extends DefaultedVertexConsumer {
+/** Forwards geometry while forcing mask color (1.21 VertexConsumer API). */
+public final class TransformationMaskVertexConsumer implements VertexConsumer {
 	private final VertexConsumer delegate;
 	private final int packedR;
 	private final int packedG;
 	private final int packedB;
 	private final int packedA;
-
-	private double x;
-	private double y;
-	private double z;
-	private float u;
-	private float v;
 
 	public TransformationMaskVertexConsumer(VertexConsumer delegate, int packedR, int packedG, int packedB, int packedA) {
 		this.delegate = delegate;
@@ -25,67 +19,39 @@ public final class TransformationMaskVertexConsumer extends DefaultedVertexConsu
 	}
 
 	@Override
-	public void defaultColor(int defaultR, int defaultG, int defaultB, int defaultA) {
-	}
-
-	@Override
-	public void unsetDefaultColor() {
-	}
-
-	@Override
-	public VertexConsumer vertex(double x, double y, double z) {
-		this.x = x;
-		this.y = y;
-		this.z = z;
+	public VertexConsumer addVertex(float x, float y, float z) {
+		this.delegate.addVertex(x, y, z);
+		this.delegate.setColor(this.packedR, this.packedG, this.packedB, this.packedA);
 		return this;
 	}
 
 	@Override
-	public VertexConsumer color(int red, int green, int blue, int alpha) {
+	public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+		// Force mask color; ignore upstream tint.
 		return this;
 	}
 
 	@Override
-	public VertexConsumer uv(float u, float v) {
-		this.u = u;
-		this.v = v;
+	public VertexConsumer setUv(float u, float v) {
+		this.delegate.setUv(u, v);
 		return this;
 	}
 
 	@Override
-	public VertexConsumer overlayCoords(int u, int v) {
+	public VertexConsumer setUv1(int u, int v) {
+		this.delegate.setUv1(0, 0);
 		return this;
 	}
 
 	@Override
-	public VertexConsumer uv2(int u, int v) {
+	public VertexConsumer setUv2(int u, int v) {
+		this.delegate.setUv2(0, 0);
 		return this;
 	}
 
 	@Override
-	public VertexConsumer normal(float x, float y, float z) {
+	public VertexConsumer setNormal(float x, float y, float z) {
+		this.delegate.setNormal(0.0f, 1.0f, 0.0f);
 		return this;
-	}
-
-	@Override
-	public void vertex(float x, float y, float z, float red, float green, float blue, float alpha, float texU, float texV, int overlayUV, int lightmapUV, float normalX, float normalY, float normalZ) {
-		this.delegate.vertex(x, y, z)
-				.color(this.packedR, this.packedG, this.packedB, this.packedA)
-				.uv(texU, texV)
-				.overlayCoords(0)
-				.uv2(0)
-				.normal(0.0f, 1.0f, 0.0f)
-				.endVertex();
-	}
-
-	@Override
-	public void endVertex() {
-		this.delegate.vertex(this.x, this.y, this.z)
-				.color(this.packedR, this.packedG, this.packedB, this.packedA)
-				.uv(this.u, this.v)
-				.overlayCoords(0)
-				.uv2(0)
-				.normal(0.0f, 1.0f, 0.0f)
-				.endVertex();
 	}
 }

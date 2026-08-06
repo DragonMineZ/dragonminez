@@ -963,18 +963,18 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(CAST_TIME, 0);
-        this.entityData.define(OFFSET_X, 0.0F);
-        this.entityData.define(OFFSET_Y, 0.0F);
-        this.entityData.define(OFFSET_Z, 0.0F);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CAST_TIME, 0);
+        builder.define(OFFSET_X, 0.0F);
+        builder.define(OFFSET_Y, 0.0F);
+        builder.define(OFFSET_Z, 0.0F);
 
-        this.entityData.define(IS_CONTROLLABLE, false);
-        this.entityData.define(IS_PARKED, false);
-        this.entityData.define(PARKED_DISTANCE, 0.0F);
+        builder.define(IS_CONTROLLABLE, false);
+        builder.define(IS_PARKED, false);
+        builder.define(PARKED_DISTANCE, 0.0F);
 
-        this.entityData.define(IS_FIRING, false);
+        builder.define(IS_FIRING, false);
 
     }
 

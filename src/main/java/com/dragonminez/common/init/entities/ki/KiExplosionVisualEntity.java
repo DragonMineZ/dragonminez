@@ -39,11 +39,11 @@ public class KiExplosionVisualEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(COLOR_MAIN, 0xFFFFFF);
-        this.entityData.define(COLOR_BORDER, 0xFFFFFF);
-        this.entityData.define(COLOR_OUTLINE, 0xFFFFFF);
-        this.entityData.define(MAX_SIZE, 1.0F);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(COLOR_MAIN, 0xFFFFFF);
+        builder.define(COLOR_BORDER, 0xFFFFFF);
+        builder.define(COLOR_OUTLINE, 0xFFFFFF);
+        builder.define(MAX_SIZE, 1.0F);
     }
 
     public int getColorMain() { return this.entityData.get(COLOR_MAIN); }

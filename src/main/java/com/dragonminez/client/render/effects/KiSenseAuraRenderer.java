@@ -29,15 +29,16 @@ import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public final class KiSenseAuraRenderer {
 
 	private static final double LOD_DISTANCE = 24.0;
@@ -60,10 +61,10 @@ public final class KiSenseAuraRenderer {
 
 		if (iris) {
 			mc.getMainRenderTarget().bindWrite(false);
-			SearchGrayscaleManager.process(event.getPartialTick(), false);
+			SearchGrayscaleManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false), false);
 			renderAuras(mc, event, true);
 		} else {
-			SearchGrayscaleManager.process(event.getPartialTick());
+			SearchGrayscaleManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
 			renderAuras(mc, event, false);
 		}
 	}
@@ -83,7 +84,7 @@ public final class KiSenseAuraRenderer {
 		Camera camera = mc.gameRenderer.getMainCamera();
 		Vec3 camPos = camera.getPosition();
 		Matrix4f proj = event.getProjectionMatrix();
-		float partialTick = event.getPartialTick();
+		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		long gameTime = mc.level.getGameTime();
 
 		PoseStack poseStack = iris ? viewStack(mc) : event.getPoseStack();

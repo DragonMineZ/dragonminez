@@ -30,7 +30,7 @@ public class KiDiskRenderer extends EntityRenderer<KiDiskEntity> {
 
         PlayerEffectQueue.addKiAttack((stack, proj) -> {
             stack.pushPose();
-            stack.last().pose().set(basePose);
+            stack.last().pose().mul(basePose);
 
             float ageInTicks = entity.tickCount + partialTick;
             float scale = entity.getSize();

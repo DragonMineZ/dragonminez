@@ -2,6 +2,7 @@ package com.dragonminez.client.render.util;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -48,9 +49,7 @@ public class KiSpiralMesh {
 									  float tubeRadius2, float twistsPerBlock, boolean doubleHelix) {
 		VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
 		Tesselator tesselator = Tesselator.getInstance();
-		BufferBuilder builder = tesselator.getBuilder();
-
-		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
+		BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
 
 		int rings = Math.max(2, Math.min(MAX_RINGS, (int) (length * RING_DENSITY)));
 		float k = (float) (2.0 * Math.PI * twistsPerBlock);
@@ -60,7 +59,7 @@ public class KiSpiralMesh {
 			appendTube(builder, length, radius, tubeRadius2, k, rings, (float) Math.PI);
 		}
 
-		BufferBuilder.RenderedBuffer rendered = builder.end();
+		MeshData rendered = builder.buildOrThrow();
 		buffer.bind();
 		buffer.upload(rendered);
 		VertexBuffer.unbind();
@@ -156,13 +155,13 @@ public class KiSpiralMesh {
 
 	private static void vertex(BufferBuilder builder, Vector3f pos, Vector3f normal,
 							   float localX, float localY, float localZ, float u) {
-		builder.vertex(pos.x, pos.y, pos.z)
-				.color(encode(localX * 0.5F + 0.5F), encode(localY * 0.5F + 0.5F), encode(localZ), 255)
-				.uv(u, localZ)
-				.overlayCoords(OverlayTexture.NO_OVERLAY)
-				.uv2(15728880)
-				.normal(normal.x, normal.y, normal.z)
-				.endVertex();
+		builder.addVertex(pos.x, pos.y, pos.z)
+				.setColor(encode(localX * 0.5F + 0.5F), encode(localY * 0.5F + 0.5F), encode(localZ), 255)
+				.setUv(u, localZ)
+				.setOverlay(OverlayTexture.NO_OVERLAY)
+				.setLight(15728880)
+				.setNormal(normal.x, normal.y, normal.z)
+				;
 	}
 
 	private static int encode(float value) {

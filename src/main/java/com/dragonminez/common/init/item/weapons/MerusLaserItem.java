@@ -4,6 +4,7 @@ import com.dragonminez.common.init.entities.ki.*;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -12,7 +13,7 @@ import net.minecraft.world.level.Level;
 
 public class MerusLaserItem extends Item {
 	public MerusLaserItem( ) {
-        super(new Properties().stacksTo(1).defaultDurability(250));
+        super(new Properties().stacksTo(1).durability(250));
 	}
     @Override
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
@@ -25,7 +26,7 @@ public class MerusLaserItem extends Item {
             kiBlast.setupKiBlast(pPlayer, 10.0f,  2.5f, 0x00FFFF, 0x78FFFF, 1.0f, 5);
 
             //kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 1.5f, 0.5F);
-            itemstack.hurtAndBreak(1, pPlayer, (player) -> player.broadcastBreakEvent(pHand));
+            itemstack.hurtAndBreak(1, pPlayer, pHand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
         }
 
 

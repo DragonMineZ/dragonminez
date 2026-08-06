@@ -16,10 +16,10 @@ public class MajinStatusHandler implements IStatusEffectHandler {
                 data.getResources().setAlignment(0);
                 NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
             }
-            if (!player.hasEffect(MainEffects.MAJIN.get())) {
+            if (!player.hasEffect(MainEffects.MAJIN)) {
                 player.addEffect(
                         new MobEffectInstance(
-                                MainEffects.MAJIN.get(),
+                                MainEffects.MAJIN,
                                 data.getEffects().getEffectDuration("majin"),
                                 0,
                                 false,
@@ -29,7 +29,7 @@ public class MajinStatusHandler implements IStatusEffectHandler {
                 );
             }
         } else {
-            player.removeEffect(MainEffects.MAJIN.get());
+            player.removeEffect(MainEffects.MAJIN);
         }
     }
 

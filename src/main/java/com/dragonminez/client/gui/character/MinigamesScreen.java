@@ -28,8 +28,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 
 import java.util.List;
@@ -178,7 +178,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
@@ -405,7 +405,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int rightPanelX = getUiWidth() - 158;
@@ -414,10 +414,10 @@ public class MinigamesScreen extends BaseMenuScreen {
 
 		if (uiMouseX >= rightPanelX && uiMouseX <= rightPanelX + 141 && uiMouseY >= top && uiMouseY <= top + descViewportHeight) {
 			int maxScroll = Math.max(0, descContentHeight - descViewportHeight);
-			targetDescScrollY = Mth.clamp(targetDescScrollY - (float) (delta * 12.0), 0f, maxScroll);
+			targetDescScrollY = Mth.clamp(targetDescScrollY - (float) (scrollY * 12.0), 0f, maxScroll);
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
@@ -447,7 +447,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;

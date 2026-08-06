@@ -22,7 +22,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.Comparator;
 import java.util.List;
@@ -120,7 +120,7 @@ public class InstantTransmissionTapC2S {
 				if (!bypassCosts) {
 					int dashCdTicks = ConfigManager.getCombatConfig().getDashCooldownSeconds() * 20;
 					data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
-					player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
+					player.addEffect(new MobEffectInstance(MainEffects.DASH_CD, dashCdTicks, 0, false, false, true));
 				}
 			});
 		});

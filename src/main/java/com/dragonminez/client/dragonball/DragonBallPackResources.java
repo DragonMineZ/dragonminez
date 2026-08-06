@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.dragonball.*;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
@@ -18,14 +19,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class DragonBallPackResources implements PackResources {
-	private final String packId;
+	private final PackLocationInfo location;
 	private final byte[] packMcmetaBytes;
 
-	public DragonBallPackResources(String packId) {
-		this.packId = packId;
+	public DragonBallPackResources(PackLocationInfo location) {
+		this.location = location;
 		JsonObject packInfo = new JsonObject();
 		packInfo.addProperty("description", "DMZ Dragonballs Runtime Resources");
-		packInfo.addProperty("pack_format", 15);
+		packInfo.addProperty("pack_format", 34);
 
 		JsonObject root = new JsonObject();
 		root.add("pack", packInfo);
@@ -312,9 +313,9 @@ public class DragonBallPackResources implements PackResources {
 	}
 
 	@Override
-	public String packId() { return packId; }
+	public PackLocationInfo location() { return location; }
 	@Override
 	public void close() {}
 	@Override
-	public boolean isBuiltin() { return true; }
+	public boolean isHidden() { return false; }
 }

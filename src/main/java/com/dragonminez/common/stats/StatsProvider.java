@@ -2,17 +2,21 @@ package com.dragonminez.common.stats;
 
 import com.dragonminez.Reference;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.common.util.LazyOptional;
+import com.dragonminez.compat.capabilities.Capability;
+import com.dragonminez.compat.capabilities.ICapabilityProvider;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import com.dragonminez.compat.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Player stats provider backed by a serializable NeoForge data attachment.
+ */
 public class StatsProvider implements ICapabilityProvider, INBTSerializable<CompoundTag> {
     public static final ResourceLocation ID = ResourceLocation.parse(Reference.MOD_ID);
 
@@ -24,6 +28,14 @@ public class StatsProvider implements ICapabilityProvider, INBTSerializable<Comp
         this.optional = LazyOptional.of(() -> data);
     }
 
+	public static StatsProvider getOrCreate(Player player) {
+		return player.getData(StatsCapability.PLAYER_STATS.get());
+	}
+
+	public static void remove(Player player) {
+		// Attachments are owned by the entity and discarded with it.
+	}
+
     @NotNull
     @Override
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
@@ -34,7 +46,15 @@ public class StatsProvider implements ICapabilityProvider, INBTSerializable<Comp
     }
 
     public static @NotNull <T> LazyOptional<T> get(Capability<T> cap, Entity entity) {
-        return entity.getCapability(cap);
+		if (!(entity instanceof Player player)) {
+			return LazyOptional.empty();
+		}
+		if (cap != StatsCapability.INSTANCE) {
+			return LazyOptional.empty();
+		}
+		@SuppressWarnings("unchecked")
+		LazyOptional<T> result = (LazyOptional<T>) LazyOptional.of(() -> getOrCreate(player).data);
+		return result;
     }
 
     void invalidate() {
@@ -42,12 +62,12 @@ public class StatsProvider implements ICapabilityProvider, INBTSerializable<Comp
     }
 
     @Override
-    public CompoundTag serializeNBT() {
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
         return data.save();
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
 		try {
 			data.load(nbt);
 		} catch (ClassNotFoundException e) {
@@ -55,4 +75,3 @@ public class StatsProvider implements ICapabilityProvider, INBTSerializable<Comp
 		}
 	}
 }
-

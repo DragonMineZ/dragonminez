@@ -48,7 +48,7 @@ public class NamekSacredGrassBlock extends Block implements BonemealableBlock {
 	}
 
 	@Override
-	public boolean isValidBonemealTarget(LevelReader levelReader, BlockPos pos, BlockState state, boolean isClient) {
+	public boolean isValidBonemealTarget(LevelReader levelReader, BlockPos pos, BlockState state) {
 		return levelReader.getBlockState(pos.above()).isAir();
 	}
 

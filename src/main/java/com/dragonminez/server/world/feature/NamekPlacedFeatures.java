@@ -5,7 +5,7 @@ import com.dragonminez.common.init.MainBlocks;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.placement.PlacementUtils;
 import net.minecraft.data.worldgen.placement.VegetationPlacements;
 import net.minecraft.resources.ResourceKey;
@@ -43,7 +43,7 @@ public class NamekPlacedFeatures {
 	public static final ResourceKey<PlacedFeature> NAMEK_SPRING_LAVA_PLACED = registerKey("namek_spring_lava_placed");
 	public static final ResourceKey<PlacedFeature> NAMEK_SPRING_WATER_PLACED = registerKey("namek_spring_water_placed");
 
-	public static void bootstrap(BootstapContext<PlacedFeature> context) {
+	public static void bootstrap(BootstrapContext<PlacedFeature> context) {
 		var configured = context.lookup(Registries.CONFIGURED_FEATURE);
 
 		register(context, NAMEK_COAL_ORE_PLACED, configured.getOrThrow(NamekConfiguredFeatures.NAMEK_COAL_ORE),
@@ -141,7 +141,7 @@ public class NamekPlacedFeatures {
 		return ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 	}
 
-	private static void register(BootstapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key, Holder<ConfiguredFeature<?, ?>> configuration, List<PlacementModifier> modifiers) {
+	private static void register(BootstrapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key, Holder<ConfiguredFeature<?, ?>> configuration, List<PlacementModifier> modifiers) {
 		context.register(key, new PlacedFeature(configuration, List.copyOf(modifiers)));
 	}
 }

@@ -12,7 +12,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -59,7 +59,7 @@ public class KiBlastC2S {
 					data.getCooldowns().setCooldown(Cooldowns.KI_BLAST_CD, 32);
 					player.addEffect(
 							new MobEffectInstance(
-									MainEffects.KI_BLAST_CD.get(),
+									MainEffects.KI_BLAST_CD,
 									32,
 									0,
 									false,

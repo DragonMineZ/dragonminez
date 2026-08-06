@@ -3,9 +3,9 @@ package com.dragonminez.common.network.S2C;
 import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import com.dragonminez.compat.DistExecutor;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,22 +28,22 @@ public class RadarSyncS2C {
 	}
 
 	public static void encode(RadarSyncS2C msg, FriendlyByteBuf buf) {
-		buf.writeCollection(msg.earthPositions, FriendlyByteBuf::writeBlockPos);
-		buf.writeCollection(msg.namekPositions, FriendlyByteBuf::writeBlockPos);
+		buf.writeCollection(msg.earthPositions, (b, p) -> b.writeBlockPos(p));
+		buf.writeCollection(msg.namekPositions, (b, p) -> b.writeBlockPos(p));
 		buf.writeInt(msg.positionsBySet.size());
 		for (Map.Entry<String, List<BlockPos>> entry : msg.positionsBySet.entrySet()) {
 			buf.writeUtf(entry.getKey());
-			buf.writeCollection(entry.getValue(), FriendlyByteBuf::writeBlockPos);
+			buf.writeCollection(entry.getValue(), (b, p) -> b.writeBlockPos(p));
 		}
 	}
 
 	public static RadarSyncS2C decode(FriendlyByteBuf buf) {
-		List<BlockPos> earth = buf.readList(FriendlyByteBuf::readBlockPos);
-		List<BlockPos> namek = buf.readList(FriendlyByteBuf::readBlockPos);
+		List<BlockPos> earth = buf.readList(b -> b.readBlockPos());
+		List<BlockPos> namek = buf.readList(b -> b.readBlockPos());
 		int size = buf.readInt();
 		Map<String, List<BlockPos>> positionsBySet = new HashMap<>();
 		for (int i = 0; i < size; i++) {
-			positionsBySet.put(buf.readUtf(), buf.readList(FriendlyByteBuf::readBlockPos));
+			positionsBySet.put(buf.readUtf(), buf.readList(b -> b.readBlockPos()));
 		}
 		positionsBySet.put("earth", earth);
 		positionsBySet.put("namek", namek);

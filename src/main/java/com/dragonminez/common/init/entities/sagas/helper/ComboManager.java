@@ -103,7 +103,7 @@ public class ComboManager {
         }
         if (timer == 25) {
             if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
+                target.addEffect(new MobEffectInstance(MainEffects.STUN, 40, 0, false, false, true));
             }
             user.stopCombo();
         }
@@ -150,7 +150,7 @@ public class ComboManager {
         if (timer == 35) {
             meleeHit(user, target, perHit, 0.0, 0.0);
             if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, false, true));
+                target.addEffect(new MobEffectInstance(MainEffects.STUN, 60, 0, false, false, true));
             }
         }
         if (timer == 45) {
@@ -255,7 +255,7 @@ public class ComboManager {
 
         if (timer == 13) {
             if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, true, true));
+                target.addEffect(new MobEffectInstance(MainEffects.STUN, 60, 0, false, true, true));
             }
         }
 
