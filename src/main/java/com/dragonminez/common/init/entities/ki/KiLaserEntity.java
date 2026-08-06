@@ -1,7 +1,10 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.compat.CameraAimHelper;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.util.MultipartTargeting;
+import com.dragonminez.common.compat.SableCompat;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -214,7 +217,14 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setMaxLife(this.tickCount + finalMaxLife);
         this.setFireTick(this.tickCount);
         if (this.getOwner() instanceof LivingEntity livingOwner) {
-            updatePositionRelativeToOwner(livingOwner);
+            Vec3 aim = CameraAimHelper.resolve(livingOwner);
+            updatePositionRelativeToOwner(livingOwner, aim);
+            float yaw = CameraAimHelper.yaw(aim);
+            float pitch = CameraAimHelper.pitch(aim);
+            this.entityData.set(FIXED_YAW, yaw);
+            this.entityData.set(FIXED_PITCH, pitch);
+            this.setYRot(yaw);
+            this.setXRot(pitch);
 
             int renderType = this.getKiRenderType();
             SoundEvent fireSound = (renderType == 1 || renderType == 2)
@@ -335,10 +345,11 @@ public class KiLaserEntity extends AbstractKiProjectile{
                 double distToWall = MAX_RANGE;
 
                 if (hitResult.getType() != HitResult.Type.MISS) {
-                    distToWall = hitResult.getLocation().distanceTo(startPos);
+					Vec3 worldHit = SableCompat.projectToWorld(this.level(), hitResult.getLocation());
+					distToWall = worldHit.distanceTo(startPos);
 
                     if (hitResult.getType() == HitResult.Type.BLOCK && targetLen >= distToWall) {
-                        explodeAndDie(hitResult.getLocation());
+						explodeAndDie(worldHit);
                         return;
                     }
                     distToWall += 0.1D;
@@ -368,7 +379,10 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
 
     private void updatePositionRelativeToOwner(LivingEntity owner) {
-        Vec3 look = owner.getLookAngle();
+        updatePositionRelativeToOwner(owner, owner.getLookAngle());
+    }
+
+    private void updatePositionRelativeToOwner(LivingEntity owner, Vec3 look) {
         Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
         Vec3 up = right.cross(look).normalize();
 
@@ -409,8 +423,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 newPos = hitboxCenter.add(offset);
         this.setPos(newPos.x, newPos.y, newPos.z);
 
-        this.setYRot(owner.getYRot());
-        this.setXRot(owner.getXRot());
+        this.setYRot(CameraAimHelper.yaw(look));
+        this.setXRot(CameraAimHelper.pitch(look));
     }
 
 

@@ -1,5 +1,9 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.common.compat.SableCompat;
+import com.dragonminez.common.compat.CameraAimHelper;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 
 import com.dragonminez.client.util.ColorUtils;
@@ -35,6 +39,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 public class KiBlastEntity extends AbstractKiProjectile {
+	private transient BlockPos blockDestructionCenter;
 
     private boolean hasSpawnedSplash = false;
 
@@ -631,7 +636,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             }
 
             Vec3 eyePos = livingOwner.getEyePosition();
-            Vec3 lookDir = livingOwner.getLookAngle();
+			Vec3 lookDir = CameraAimHelper.resolve(livingOwner);
             double reach = 100.0D;
             Vec3 endPos = eyePos.add(lookDir.scale(reach));
 
@@ -642,10 +647,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
                     livingOwner
             ));
 
-            if (blockHit.getType() != BlockHitResult.Type.MISS) {
-                endPos = blockHit.getLocation();
-                reach = eyePos.distanceTo(endPos);
-            }
+			if (blockHit.getType() != BlockHitResult.Type.MISS) {
+				// Sable returns the impacted ship block in plot-local coordinates. The launch
+				// trajectory must target that block's projected world position, not the distant plot.
+				endPos = SableCompat.projectToWorld(this.level(), blockHit.getLocation());
+				reach = eyePos.distanceTo(endPos);
+			}
 
             AABB searchBox = livingOwner.getBoundingBox().expandTowards(lookDir.scale(reach)).inflate(1.0D);
             for (Entity entity : this.level().getEntities(livingOwner, searchBox, e -> !e.isSpectator() && e.isPickable())) {
@@ -663,6 +670,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
             Vec3 kiPos = new Vec3(this.getX(), this.getVisualCenterY(), this.getZ());
             Vec3 newTrajectory = endPos.subtract(kiPos).normalize();
+
+            if (!this.level().isClientSide) {
+                LogUtil.info(Env.SERVER,
+                        "Ki blast launch: technique={}, renderType={}, aim={}, hitType={}, rawHit={}, target={}, origin={}, trajectory={}",
+                        this.getTechniqueId(), this.getKiRenderType(), lookDir, blockHit.getType(),
+                        blockHit.getLocation(), endPos, kiPos, newTrajectory);
+            }
 
             this.shoot(newTrajectory.x, newTrajectory.y, newTrajectory.z, this.getKiSpeed(), 0.0F);
             this.hasImpulse = true;
@@ -1130,6 +1144,19 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         if (type == 5 || type == 6) {
         } else {
+			// Sable clip results use the ship's plot-local block coordinate. Keep that coordinate
+			// for block edits while retaining this entity's world coordinate for damage and visuals.
+			this.blockDestructionCenter = pResult.getBlockPos().immutable();
+			if (!this.level().isClientSide) {
+				var hitState = this.level().getBlockState(this.blockDestructionCenter);
+				LogUtil.info(Env.SERVER,
+						"Ki blast block hit: localPos={}, worldPos={}, block={}, resistance={}, canDestroy={}",
+						this.blockDestructionCenter,
+						SableCompat.projectToWorld(this.level(), pResult.getLocation()),
+						hitState.getBlock(),
+						hitState.getExplosionResistance(this.level(), this.blockDestructionCenter, null),
+						this.canKiDestroyBlock(this.blockDestructionCenter));
+			}
             super.onHitBlock(pResult);
             if (!this.level().isClientSide) {
                 explodeAndDie();
@@ -1188,22 +1215,27 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         if (!this.level().isClientSide) {
-            BlockPos center = BlockPos.containing(this.getX(), centerY, this.getZ());
+			BlockPos center = this.blockDestructionCenter != null
+					? this.blockDestructionCenter
+					: BlockPos.containing(this.getX(), centerY, this.getZ());
 
             float destructionRadius = this.scaledDestructionRadius(explosionRadius);
             int blockRadius = Math.round(destructionRadius);
+			int destroyedBlocks = 0;
             for (int x = -blockRadius; x <= blockRadius; x++) {
                 for (int y = -blockRadius; y <= blockRadius; y++) {
                     for (int z = -blockRadius; z <= blockRadius; z++) {
                         if (x * x + y * y + z * z <= destructionRadius * destructionRadius) {
                             BlockPos targetPos = center.offset(x, y, z);
                             if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
-                                this.setKiBlockToAir(targetPos, 2);
+								if (this.setKiBlockToAir(targetPos, 2)) destroyedBlocks++;
                             }
                         }
                     }
                 }
             }
+			LogUtil.info(Env.SERVER, "Ki blast destruction: center={}, radius={}, destroyedBlocks={}",
+					center, destructionRadius, destroyedBlocks);
 
             if (this.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(

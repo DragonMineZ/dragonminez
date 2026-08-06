@@ -32,7 +32,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class TimeChamberPortalBlock extends BaseEntityBlock {
-	public static final MapCodec<TimeChamberPortalBlock> CODEC = MapCodec.unit(() -> { throw new UnsupportedOperationException("TimeChamberPortalBlock codec"); });
+	public static final MapCodec<TimeChamberPortalBlock> CODEC = simpleCodec(TimeChamberPortalBlock::new);
 
 	@Override
 	protected MapCodec<? extends BaseEntityBlock> codec() {
@@ -41,7 +41,11 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
 
 
 	public TimeChamberPortalBlock() {
-		super(BlockBehaviour.Properties.ofFullCopy(Blocks.QUARTZ_BLOCK).noLootTable().strength(-1.0F, 3600000.0F));
+		this(BlockBehaviour.Properties.ofFullCopy(Blocks.QUARTZ_BLOCK).noLootTable().strength(-1.0F, 3600000.0F));
+	}
+
+	public TimeChamberPortalBlock(BlockBehaviour.Properties properties) {
+		super(properties);
 	}
 
     @Override

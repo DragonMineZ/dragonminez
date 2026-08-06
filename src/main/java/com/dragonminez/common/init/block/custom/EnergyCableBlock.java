@@ -30,9 +30,7 @@ import java.util.Map;
 import java.util.EnumMap;
 
 public class EnergyCableBlock extends BaseEntityBlock {
-	public static final MapCodec<EnergyCableBlock> CODEC = MapCodec.unit(() -> {
-		throw new UnsupportedOperationException("EnergyCableBlock codec not supported");
-	});
+	public static final MapCodec<EnergyCableBlock> CODEC = simpleCodec(EnergyCableBlock::new);
 
 	@Override
 	protected MapCodec<? extends BaseEntityBlock> codec() {

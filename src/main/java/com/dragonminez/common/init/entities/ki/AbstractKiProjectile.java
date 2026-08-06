@@ -511,17 +511,21 @@ public abstract class AbstractKiProjectile extends Projectile {
 		super.tick();
 		this.applyHomingSteering();
 		Vec3 movement = this.getDeltaMovement();
+		if (!this.level().isClientSide) {
+			// Match vanilla projectile ordering: clip the current-to-next movement segment before
+			// entering the destination block. Moving first let Sable classify the projectile as
+			// inside a ship sublevel, kick/re-add it, and rotate its velocity before DMZ saw the hit.
+			HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
+			if (hitResult.getType() != HitResult.Type.MISS) {
+				this.onHit(hitResult);
+				if (this.isRemoved()) return;
+			}
+		}
 		double nextX = this.getX() + movement.x;
 		double nextY = this.getY() + movement.y;
 		double nextZ = this.getZ() + movement.z;
 		this.setPos(nextX, nextY, nextZ);
 		ProjectileUtil.rotateTowardsMovement(this, 0.2F);
-		if (!this.level().isClientSide) {
-			HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
-			if (hitResult.getType() != HitResult.Type.MISS) {
-				this.onHit(hitResult);
-			}
-		}
 		if (!this.level().isClientSide && this.isFiring() && this.kiLifetimeDrainPerTick > 0.0F && this.getOwner() instanceof Player ownerPlayer) {
 			this.kiDrainAccumulator += this.kiLifetimeDrainPerTick;
 			int whole = (int) this.kiDrainAccumulator;

@@ -1,6 +1,8 @@
 package com.dragonminez.common.init.block.custom;
 
 import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
@@ -43,9 +45,13 @@ import java.util.List;
 import java.util.Set;
 
 public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
-	public static final MapCodec<DragonBallBlock> CODEC = MapCodec.unit(() -> {
-		throw new UnsupportedOperationException("DragonBallBlock codec not supported");
-	});
+	private static final Codec<DragonBallType> BALL_TYPE_CODEC = Codec.intRange(1, 7)
+			.xmap(stars -> DragonBallType.values()[stars - 1], DragonBallType::getStars);
+	public static final MapCodec<DragonBallBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+			propertiesCodec(),
+			BALL_TYPE_CODEC.fieldOf("ball_type").forGetter(DragonBallBlock::getBallType),
+			Codec.STRING.fieldOf("ball_set").forGetter(DragonBallBlock::getBallSetId)
+	).apply(instance, DragonBallBlock::new));
 
 	@Override
 	protected MapCodec<? extends BaseEntityBlock> codec() {

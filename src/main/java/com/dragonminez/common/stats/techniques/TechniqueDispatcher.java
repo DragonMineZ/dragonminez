@@ -1,6 +1,7 @@
 package com.dragonminez.common.stats.techniques;
 
 import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.compat.CameraAimHelper;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.stats.StatsData;
@@ -49,7 +50,7 @@ public class TechniqueDispatcher {
                         blast.fireHability(maxLife);
                         int renderType = blast.getKiRenderType();
                         if (renderType != 2 && renderType != 5 && renderType != 6 && renderType != 7) {
-                            Vec3 lookBlast = owner.getLookAngle();
+							Vec3 lookBlast = CameraAimHelper.resolve(owner);
                             blast.setDeltaMovement(lookBlast.scale(data.getSpeed()));
                         }
                     } else if (activeKi instanceof KiLaserEntity laser) {
@@ -94,7 +95,7 @@ public class TechniqueDispatcher {
                 smallBall.setHomingTarget(homingTargetId);
                 smallBall.setFiring(true);
 
-                Vec3 lookSmall = owner.getLookAngle();
+				Vec3 lookSmall = CameraAimHelper.resolve(owner);
                 Vec3 spawnPos = owner.getEyePosition().add(lookSmall.scale(0.5D));
                 smallBall.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
                 smallBall.setDeltaMovement(lookSmall.scale(data.getSpeed()));
@@ -128,8 +129,8 @@ public class TechniqueDispatcher {
                 medBall.setHeal(isHeal);
                 medBall.setHomingTarget(homingTargetId);
 
-                if (!level.isClientSide) level.addFreshEntity(medBall);
-                break;
+				// KiBlastEntity player setup methods already register the charging entity.
+				break;
             case GIANT_BALL:
                 KiBlastEntity giantBall = new KiBlastEntity(level, owner);
                 if ("spiritbomb".equals(data.getId())) {
@@ -150,8 +151,8 @@ public class TechniqueDispatcher {
                 giantBall.setArmorPenetration(data.getArmorPenetration());
                 giantBall.setHeal(isHeal);
 
-                if (!level.isClientSide) level.addFreshEntity(giantBall);
-                break;
+				// KiBlastEntity player setup methods already register the charging entity.
+				break;
             case WAVE:
                 KiWaveEntity wave = new KiWaveEntity(level, owner);
                 if ("kamehameha".equals(data.getId())) {
@@ -317,7 +318,7 @@ public class TechniqueDispatcher {
                     area.setFiring(false);
                     area.setMaxLife(99999);
 
-                    if (!level.isClientSide) level.addFreshEntity(area);
+					// setupAreaPlayer already registers the charging entity.
                 }
                 break;
             case BARRAGE:
@@ -335,7 +336,7 @@ public class TechniqueDispatcher {
                     volley.setFiring(false);
                     volley.setMaxLife(99999);
 
-                    if (!level.isClientSide) level.addFreshEntity(volley);
+					// setupKiVolleyPlayer already registers the charging entity.
                 }
                 break;
             default:

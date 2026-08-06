@@ -1,6 +1,6 @@
 {
     "ambientocclusion": false,
-	"parent": "dragonminez:block/lotus_flower1",
+	"parent": "dragonminez:block/lotus_flower",
 	"textures": {
 		"1": "dragonminez:block/lotus_flower4"
 	}
