@@ -4,7 +4,6 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.taiyoken.TaiyokenBlindState;
-import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -14,6 +13,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
@@ -34,6 +34,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import org.joml.Matrix4f;
+import org.joml.Matrix3f;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +45,40 @@ public class LockOnEvent {
 	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
 	private static LivingEntity lockedTarget = null;
 	private static int scanTickCounter = 0;
+	private static boolean markerVisible;
+	private static float markerX;
+	private static float markerY;
+	private static float markerHalfSize = 16.0F;
+
+	public static final LayeredDraw.Layer HUD_LOCK_ON = (gui, deltaTracker) -> {
+		if (!markerVisible || lockedTarget == null || !lockedTarget.isAlive()) return;
+
+		long time = System.currentTimeMillis();
+		boolean lod = Minecraft.getInstance().player != null && Minecraft.getInstance().player.distanceTo(lockedTarget) > 24.0;
+		float angle1 = lod ? 0.0F : (time % 3600L) / 10.0F;
+		float angle2 = lod ? 0.0F : -((time % 7200L) / 20.0F);
+
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		RenderSystem.setShaderColor(0.0F, 1.0F, 1.0F, 0.9F);
+		gui.pose().pushPose();
+		gui.pose().translate(markerX, markerY, 0.0F);
+		gui.pose().mulPose(Axis.ZP.rotationDegrees(angle1));
+		int size = Math.max(8, Math.round(markerHalfSize * 2.0F));
+		gui.blit(LOCK_ICON, -size / 2, -size / 2, 0, 0, size, size, 64, 64);
+		gui.pose().popPose();
+
+		RenderSystem.setShaderColor(0.0F, 1.0F, 1.0F, 0.5F);
+		gui.pose().pushPose();
+		gui.pose().translate(markerX, markerY, 0.0F);
+		gui.pose().mulPose(Axis.ZP.rotationDegrees(angle2));
+		int outerSize = Math.max(12, Math.round(size * 1.5F));
+		gui.blit(LOCK_ICON, -outerSize / 2, -outerSize / 2, 0, 0, outerSize, outerSize, 64, 64);
+		gui.pose().popPose();
+
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+		RenderSystem.disableBlend();
+	};
 
 	public static void toggleLock() {
 		Minecraft mc = Minecraft.getInstance();
@@ -71,6 +107,7 @@ public class LockOnEvent {
 
 	public static void unlock() {
 		lockedTarget = null;
+		markerVisible = false;
 	}
 
 	@SubscribeEvent
@@ -137,65 +174,47 @@ public class LockOnEvent {
 	@SubscribeEvent
 	public static void onRenderWorldLast(RenderLevelStageEvent event) {
 		Minecraft mc = Minecraft.getInstance();
-		boolean iris = mc.level != null && IrisCompat.isShaderPackInUse(mc.level.getGameTime());
-		RenderLevelStageEvent.Stage targetStage = iris
-				? RenderLevelStageEvent.Stage.AFTER_LEVEL
-				: RenderLevelStageEvent.Stage.AFTER_PARTICLES;
-		if (event.getStage() != targetStage) return;
-		if (lockedTarget == null || !lockedTarget.isAlive()) return;
-		if (iris) mc.getMainRenderTarget().bindWrite(false);
-		PoseStack poseStack = iris ? viewStack(mc) : event.getPoseStack();
+		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+		if (lockedTarget == null || !lockedTarget.isAlive()) {
+			markerVisible = false;
+			return;
+		}
+
+		// Project the target during the world pass, then render the original rotating
+		// icon as a real GUI layer. This keeps it above every 1.21 framebuffer composite
+		// (Fabulous, Iris, Aeronautics/Sable) instead of letting later passes erase it.
 		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		double lerpX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());
 		double lerpY = Mth.lerp(partialTick, lockedTarget.yo, lockedTarget.getY());
 		double lerpZ = Mth.lerp(partialTick, lockedTarget.zo, lockedTarget.getZ());
 		Vec3 cameraPos = event.getCamera().getPosition();
-		poseStack.pushPose();
-		poseStack.translate(lerpX - cameraPos.x, (lerpY - cameraPos.y) + lockedTarget.getBbHeight() * 0.5, lerpZ - cameraPos.z);
-		poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-		float scale = 0.04F;
-		poseStack.scale(-scale, -scale, scale);
-		RenderSystem.setShader(GameRenderer::getPositionTexShader);
-		RenderSystem.setShaderTexture(0, LOCK_ICON);
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-		RenderSystem.disableDepthTest();
-		RenderSystem.depthMask(false);
-		RenderSystem.depthFunc(GL11.GL_ALWAYS);
-		boolean lod = Minecraft.getInstance().player != null && Minecraft.getInstance().player.distanceTo(lockedTarget) > 24.0;
-		long time = lod ? 0L : System.currentTimeMillis();
-		float angle1 = (time % 3600L) / 10.0F;
-		float angle2 = -((time % 7200L) / 20.0F);
-		float size = 16.0F;
-		poseStack.pushPose();
-		poseStack.mulPose(Axis.ZP.rotationDegrees(angle1));
-		drawTextureQuad(poseStack, size, 0.0F, 1.0F, 1.0F, 0.9F);
-		poseStack.popPose();
-		poseStack.pushPose();
-		poseStack.mulPose(Axis.ZP.rotationDegrees(angle2));
-		poseStack.scale(1.5F, 1.5F, 1.5F);
-		poseStack.translate(0, 0, 0.05F);
-		drawTextureQuad(poseStack, size, 0.0F, 1.0F, 1.0F, 0.5F);
-		poseStack.popPose();
-		RenderSystem.depthFunc(GL11.GL_LEQUAL);
-		RenderSystem.depthMask(true);
-		RenderSystem.enableDepthTest();
-		RenderSystem.disableBlend();
-		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		poseStack.popPose();
-	}
+		Vector4f view = new Vector4f(
+				(float) (lerpX - cameraPos.x),
+				(float) ((lerpY - cameraPos.y) + lockedTarget.getBbHeight() * 0.5F),
+				(float) (lerpZ - cameraPos.z), 1.0F).mul(event.getModelViewMatrix());
+		Vector4f clip = new Vector4f(view).mul(event.getProjectionMatrix());
+		if (clip.w <= 0.001F) {
+			markerVisible = false;
+			return;
+		}
 
-	private static PoseStack viewStack(Minecraft mc) {
-		PoseStack stack = new PoseStack();
-		var camera = mc.gameRenderer.getMainCamera();
-		stack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
-		stack.mulPose(Axis.YP.rotationDegrees(camera.getYRot() + 180.0F));
-		return stack;
-	}
+		float ndcX = clip.x / clip.w;
+		float ndcY = clip.y / clip.w;
+		float ndcZ = clip.z / clip.w;
+		if (ndcZ < -1.0F || ndcZ > 1.0F || Math.abs(ndcX) > 1.15F || Math.abs(ndcY) > 1.15F) {
+			markerVisible = false;
+			return;
+		}
 
-	private static void drawTextureQuad(PoseStack poseStack, float size, float r, float g, float b, float a) {
-		RenderSystem.setShaderColor(r, g, b, a);
-		com.dragonminez.client.render.util.RenderBufferUtil.drawTexturedQuadCentered(poseStack.last().pose(), size, 0, 0, 1, 1);
+		int guiWidth = mc.getWindow().getGuiScaledWidth();
+		int guiHeight = mc.getWindow().getGuiScaledHeight();
+		markerX = (ndcX * 0.5F + 0.5F) * guiWidth;
+		markerY = (0.5F - ndcY * 0.5F) * guiHeight;
+
+		Vector4f edge = new Vector4f(view.x + 0.64F, view.y, view.z, 1.0F).mul(event.getProjectionMatrix());
+		float edgeNdcX = edge.w > 0.001F ? edge.x / edge.w : ndcX;
+		markerHalfSize = Mth.clamp(Math.abs(edgeNdcX - ndcX) * guiWidth * 0.5F, 8.0F, 64.0F);
+		markerVisible = true;
 	}
 
 	private static Optional<LivingEntity> findTargetInFront(Player player, double range, StatsData data) {

@@ -86,6 +86,7 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiLayers.PLAYER_HEALTH, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "tracked_quest_hud"), TrackedQuestHUD.HUD_TRACKED_QUEST);
 		e.registerAbove(VanillaGuiLayers.PLAYER_HEALTH, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "techniquehud"), TechniqueHotbarHUD.HUD_TECHNIQUES);
 		e.registerAbove(VanillaGuiLayers.PLAYER_HEALTH, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "beam_clash_hud"), BeamClashOverlay.HUD_BEAM_CLASH);
+		e.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lock_on_hud"), LockOnEvent.HUD_LOCK_ON);
 	}
 	@SubscribeEvent
 	public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {

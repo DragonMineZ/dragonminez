@@ -204,17 +204,28 @@ sourceSets.main {
 
 val generatedResourcesDir = layout.projectDirectory.dir("src/generated/resources")
 val copyGeneratedResourcesToOutput by tasks.registering(Copy::class) {
-    // Do not force runData on every jar build during the port; include generated tree if present.
+    // Datagen runs before release packaging so clean checkouts do not silently
+    // omit DMZ's dimensions, biomes, structures, recipes and registry tags.
     from(generatedResourcesDir) {
         exclude(".cache/**")
     }
     into(layout.buildDirectory.dir("resources/main"))
     onlyIf { generatedResourcesDir.asFile.exists() }
 }
+val generateReleaseData = tasks.named("runData")
+copyGeneratedResourcesToOutput.configure {
+    mustRunAfter(generateReleaseData)
+}
 
 tasks.named<Jar>("jar").configure {
-    dependsOn(copyGeneratedResourcesToOutput)
+    dependsOn(generateReleaseData, copyGeneratedResourcesToOutput)
     archiveClassifier.set("")
+}
+
+tasks.named<Jar>("sourcesJar").configure {
+    // Four critical spawn tags are also kept in src/main/resources so clean
+    // development runs work before datagen; avoid duplicating them in sources.
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 //Helps with some AI Run Tests
