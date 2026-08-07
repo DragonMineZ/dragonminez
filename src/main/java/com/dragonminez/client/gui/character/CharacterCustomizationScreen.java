@@ -35,7 +35,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import com.dragonminez.client.render.EntityPreviewRenderContext;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.client.resources.language.I18n;
@@ -763,7 +763,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
 		try {
-			InventoryScreen.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, player);
+			EntityPreviewRenderContext.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, player);
 
 			if (tab == TabId.AURA_CLASS) {
 				RenderSystem.enableBlend();
@@ -1878,7 +1878,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().translate(0.0D, 0.0D, 320.0D);
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
 		try {
-			InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, player);
+			EntityPreviewRenderContext.renderEntityInInventory(graphics, x, previewY, previewScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
 			graphics.pose().popPose();

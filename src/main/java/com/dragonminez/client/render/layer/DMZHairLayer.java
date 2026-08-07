@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.render.compat.AeroCamSyncCompat;
+import com.dragonminez.client.render.EntityPreviewRenderContext;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
@@ -81,7 +82,9 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	public void renderHair(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, float partialTick, int packedLight, int packedOverlay) {
 		if (animatable.isInvisible() && !animatable.isSpectator()) return;
 		Minecraft minecraft = Minecraft.getInstance();
-		if (animatable == minecraft.player && minecraft.options.getCameraType().isFirstPerson()) return;
+		if (animatable == minecraft.player
+				&& minecraft.options.getCameraType().isFirstPerson()
+				&& !EntityPreviewRenderContext.isRendering()) return;
 		// DMZ replaces PlayerRenderer at HEAD, so Aero Cam Sync's own callback is not guaranteed
 		// to be active by the time GeckoLib renders this layer. Its presence is the stable compat
 		// signal: keep the complete DMZ model and let Aero Cam Sync position the camera around it.

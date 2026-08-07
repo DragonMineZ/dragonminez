@@ -28,7 +28,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import com.dragonminez.client.render.EntityPreviewRenderContext;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.network.chat.Component;
@@ -974,7 +974,7 @@ public class HairEditorScreen extends ScaledScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, new Quaternionf().rotateX(0), player);
+		EntityPreviewRenderContext.renderEntityInInventory(graphics, x, y, scale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, new Quaternionf().rotateX(0), player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;

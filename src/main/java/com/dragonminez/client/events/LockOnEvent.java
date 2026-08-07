@@ -55,25 +55,16 @@ public class LockOnEvent {
 
 		long time = System.currentTimeMillis();
 		boolean lod = Minecraft.getInstance().player != null && Minecraft.getInstance().player.distanceTo(lockedTarget) > 24.0;
-		float angle1 = lod ? 0.0F : (time % 3600L) / 10.0F;
-		float angle2 = lod ? 0.0F : -((time % 7200L) / 20.0F);
+		float angle = lod ? 0.0F : (time % 3600L) / 10.0F;
 
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.setShaderColor(0.0F, 1.0F, 1.0F, 0.9F);
 		gui.pose().pushPose();
 		gui.pose().translate(markerX, markerY, 0.0F);
-		gui.pose().mulPose(Axis.ZP.rotationDegrees(angle1));
+		gui.pose().mulPose(Axis.ZP.rotationDegrees(angle));
 		int size = Math.max(8, Math.round(markerHalfSize * 2.0F));
-		gui.blit(LOCK_ICON, -size / 2, -size / 2, 0, 0, size, size, 64, 64);
-		gui.pose().popPose();
-
-		RenderSystem.setShaderColor(0.0F, 1.0F, 1.0F, 0.5F);
-		gui.pose().pushPose();
-		gui.pose().translate(markerX, markerY, 0.0F);
-		gui.pose().mulPose(Axis.ZP.rotationDegrees(angle2));
-		int outerSize = Math.max(12, Math.round(size * 1.5F));
-		gui.blit(LOCK_ICON, -outerSize / 2, -outerSize / 2, 0, 0, outerSize, outerSize, 64, 64);
+		gui.blit(LOCK_ICON, -size / 2, -size / 2, size, size, 0.0F, 0.0F, 64, 64, 64, 64);
 		gui.pose().popPose();
 
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
