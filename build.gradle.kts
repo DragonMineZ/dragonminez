@@ -369,6 +369,56 @@ val optimizeResources by tasks.registering {
 
 tasks.named<Jar>("jar").configure { dependsOn(optimizeResources) }
 
+// Youer ships MariaDB inside LibrariesVault. Keeping our nested Connector/J in that
+// environment gives JPMS two modules exporting org.mariadb.jdbc and aborts before
+// ModLauncher can initialize. Preserve the normal NeoForge jar, and provide a hybrid-
+// server variant whose JarJar metadata contains only HikariCP; Youer's copy supplies
+// Connector/J at runtime.
+val prepareYouerJarJarMetadata by tasks.registering {
+    val output = layout.buildDirectory.file("generated/youer-jarjar/metadata.json")
+    outputs.file(output)
+    doLast {
+        val file = output.get().asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """{
+  "jars": [
+    {
+      "identifier": {
+        "group": "com.zaxxer",
+        "artifact": "HikariCP"
+      },
+      "version": {
+        "range": "[7.1.0,)",
+        "artifactVersion": "7.1.0"
+      },
+      "path": "META-INF/jarjar/HikariCP-7.1.0.jar",
+      "isObfuscated": false
+    }
+  ]
+}
+"""
+        )
+    }
+}
+
+val standardJar = tasks.named<Jar>("jar")
+tasks.register<Jar>("youerJar") {
+    group = "build"
+    description = "Builds a Youer-compatible jar without the duplicate MariaDB Connector/J module."
+    dependsOn(standardJar, prepareYouerJarJarMetadata)
+    archiveClassifier.set("youer")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from({ zipTree(standardJar.get().archiveFile.get().asFile) }) {
+        exclude("META-INF/jarjar/mariadb-java-client-*.jar")
+        exclude("META-INF/jarjar/metadata.json")
+    }
+    from(layout.buildDirectory.file("generated/youer-jarjar/metadata.json")) {
+        into("META-INF/jarjar")
+    }
+}
+
 /**
  * Optional manifest timestamp
  * Enable with: -PincludeTimestamp=true
