@@ -1246,8 +1246,14 @@ public static Map<String, DeferredHolder<EntityType<?>, ? extends EntityType<Dra
             registerDinoSpawn(event, dE.get());
         }
 
+        // These ambient mobs intentionally had unrestricted placement in 1.20.1.
+        // NeoForge 1.21 requires every entity referenced by a biome spawn entry to
+        // register that choice explicitly.
+        registerUnrestrictedSpawn(event, NAMEK_FROG.get());
+        registerUnrestrictedSpawn(event, NAMEK_FROG_GINYU.get());
+
         List<DeferredHolder<EntityType<?>, ? extends EntityType<? extends Mob>>> redRibbonEntities = List.of(
-                BANDIT, RED_RIBBON_ROBOT1, RED_RIBBON_ROBOT2, RED_RIBBON_ROBOT3, RED_RIBBON_SOLDIER, MINI_BUU);
+                BANDIT, RED_RIBBON_ROBOT1, RED_RIBBON_ROBOT2, RED_RIBBON_ROBOT3, RED_RIBBON_SOLDIER);
 
         for (DeferredHolder<EntityType<?>, ? extends EntityType<? extends Mob>> rrE : redRibbonEntities) {
             registerRedRibbonSpawn(event, rrE.get());
@@ -1272,6 +1278,13 @@ public static Map<String, DeferredHolder<EntityType<?>, ? extends EntityType<Dra
         event.register(entityType, net.minecraft.world.entity.SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING,
                 (e, w, r, p, rand) -> RedRibbonEntity.canSpawnHere((EntityType<? extends RedRibbonEntity>) e, w, r, p, rand),
+                RegisterSpawnPlacementsEvent.Operation.REPLACE);
+    }
+
+    private static <T extends Mob> void registerUnrestrictedSpawn(RegisterSpawnPlacementsEvent event, EntityType<T> entityType) {
+        event.register(entityType, net.minecraft.world.entity.SpawnPlacementTypes.NO_RESTRICTIONS,
+                Heightmap.Types.MOTION_BLOCKING,
+                (e, w, r, p, rand) -> true,
                 RegisterSpawnPlacementsEvent.Operation.REPLACE);
     }
 }

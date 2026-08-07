@@ -2,6 +2,7 @@
 package com.dragonminez.client.gui.character.minigames;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.UnblurredScreen;
 import com.dragonminez.client.gui.character.MinigamesScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -14,7 +15,6 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -26,7 +26,7 @@ import net.minecraft.util.FormattedCharSequence;
 import org.lwjgl.glfw.GLFW;
 import java.util.List;
 
-public abstract class BaseMinigameScreen extends Screen {
+public abstract class BaseMinigameScreen extends UnblurredScreen {
 	protected static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 	private static final ResourceLocation MENU_NPC_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menunpc.png");
 	private static final int PANEL_TEX_W = 346;

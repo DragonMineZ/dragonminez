@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.config;
 
+import com.dragonminez.client.gui.UnblurredScreen;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.client.Minecraft;
@@ -17,7 +18,7 @@ import java.util.Locale;
 
 
 @OnlyIn(Dist.CLIENT)
-public class DMZModConfigScreen extends Screen {
+public class DMZModConfigScreen extends UnblurredScreen {
 
 	private static final int ROW_HEIGHT = 12;
 	private static final int LIST_TOP = 40;

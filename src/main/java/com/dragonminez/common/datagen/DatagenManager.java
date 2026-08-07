@@ -24,8 +24,8 @@ public class DatagenManager {
 
 		generator.addProvider(event.includeServer(), new DMZRecipeProvider(packOutput, lookupProvider));
 		generator.addProvider(event.includeServer(), DMZLootTableProvider.create(packOutput, lookupProvider));
-		generator.addProvider(event.includeServer(), new DMZBlockStateProvider(packOutput, existingFileHelper));
-		generator.addProvider(event.includeServer(), new DMZItemModelProvider(packOutput, existingFileHelper));
+		generator.addProvider(event.includeClient(), new DMZBlockStateProvider(packOutput, existingFileHelper));
+		generator.addProvider(event.includeClient(), new DMZItemModelProvider(packOutput, existingFileHelper));
 
 		DMZBlockTagGenerator blockTagGenerator = generator.addProvider(event.includeServer(),
 				new DMZBlockTagGenerator(packOutput, lookupProvider, existingFileHelper));

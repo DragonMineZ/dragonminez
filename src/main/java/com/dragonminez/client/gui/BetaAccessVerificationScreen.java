@@ -17,7 +17,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class BetaAccessVerificationScreen extends Screen {
+public class BetaAccessVerificationScreen extends UnblurredScreen {
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 	private static final int CONTENT_WIDTH = 320;
 

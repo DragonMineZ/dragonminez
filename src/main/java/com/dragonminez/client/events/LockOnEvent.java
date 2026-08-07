@@ -4,6 +4,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.taiyoken.TaiyokenBlindState;
+import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -135,9 +136,15 @@ public class LockOnEvent {
 
 	@SubscribeEvent
 	public static void onRenderWorldLast(RenderLevelStageEvent event) {
-		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+		Minecraft mc = Minecraft.getInstance();
+		boolean iris = mc.level != null && IrisCompat.isShaderPackInUse(mc.level.getGameTime());
+		RenderLevelStageEvent.Stage targetStage = iris
+				? RenderLevelStageEvent.Stage.AFTER_LEVEL
+				: RenderLevelStageEvent.Stage.AFTER_WEATHER;
+		if (event.getStage() != targetStage) return;
 		if (lockedTarget == null || !lockedTarget.isAlive()) return;
-		PoseStack poseStack = event.getPoseStack();
+		if (iris) mc.getMainRenderTarget().bindWrite(false);
+		PoseStack poseStack = iris ? viewStack(mc) : event.getPoseStack();
 		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		double lerpX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());
 		double lerpY = Mth.lerp(partialTick, lockedTarget.yo, lockedTarget.getY());
@@ -145,7 +152,7 @@ public class LockOnEvent {
 		Vec3 cameraPos = event.getCamera().getPosition();
 		poseStack.pushPose();
 		poseStack.translate(lerpX - cameraPos.x, (lerpY - cameraPos.y) + lockedTarget.getBbHeight() * 0.5, lerpZ - cameraPos.z);
-		poseStack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
+		poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
 		float scale = 0.04F;
 		poseStack.scale(-scale, -scale, scale);
 		RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -176,6 +183,14 @@ public class LockOnEvent {
 		RenderSystem.disableBlend();
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		poseStack.popPose();
+	}
+
+	private static PoseStack viewStack(Minecraft mc) {
+		PoseStack stack = new PoseStack();
+		var camera = mc.gameRenderer.getMainCamera();
+		stack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
+		stack.mulPose(Axis.YP.rotationDegrees(camera.getYRot() + 180.0F));
+		return stack;
 	}
 
 	private static void drawTextureQuad(PoseStack poseStack, float size, float r, float g, float b, float a) {

@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui.config;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.UnblurredScreen;
 import com.dragonminez.client.gui.buttons.AxisSlider;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.render.camera.OverShoulderCamera;
@@ -20,7 +21,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public class OverShoulderCameraScreen extends Screen {
+public class OverShoulderCameraScreen extends UnblurredScreen {
 
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");

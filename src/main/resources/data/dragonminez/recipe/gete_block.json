@@ -12,7 +12,7 @@
     "###"
   ],
   "result": {
-    "item": "dragonminez:gete_block"
+    "id": "dragonminez:gete_block"
   },
   "show_notification": true
 }

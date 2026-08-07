@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.config;
 
+import com.dragonminez.client.gui.UnblurredScreen;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.common.config.ConfigManager;
 import com.google.gson.JsonArray;
@@ -23,7 +24,7 @@ import java.util.function.Consumer;
 
 
 @OnlyIn(Dist.CLIENT)
-public class DMZConfigEditScreen extends Screen {
+public class DMZConfigEditScreen extends UnblurredScreen {
 
 	private static final int ROW_HEIGHT = 18;
 	private static final int LIST_TOP = 32;

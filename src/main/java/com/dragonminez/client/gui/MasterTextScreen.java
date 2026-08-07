@@ -25,6 +25,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -592,7 +593,12 @@ public class MasterTextScreen extends Screen {
 			TextUtil.drawStringWithBorder(graphics, this.font, line, centerX - 120, textY, 0xFFFFFF);
 			textY += this.font.lineHeight + 2;
 		}
-		super.render(graphics, mouseX, mouseY, partialTick);
+		// Screen.render() gained background/blur rendering in 1.21. Calling it after
+		// the original DMZ dialogue panel blurs both the world and the panel itself.
+		// Preserve the 1.20.1 behavior by rendering only this screen's widgets.
+		for (Renderable renderable : this.renderables) {
+			renderable.render(graphics, mouseX, mouseY, partialTick);
+		}
 	}
 
 	private void refreshButtons() {

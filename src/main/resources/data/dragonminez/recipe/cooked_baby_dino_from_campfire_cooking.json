@@ -6,5 +6,5 @@
   "ingredient": {
     "item": "dragonminez:raw_baby_dino_meat"
   },
-  "result": "dragonminez:cooked_baby_dino_meat"
+  "result": { "id": "dragonminez:cooked_baby_dino_meat" }
 }
