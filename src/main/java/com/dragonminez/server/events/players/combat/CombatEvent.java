@@ -541,6 +541,18 @@ public class CombatEvent {
 		}
 	}
 
+	/**
+	 * Punch machines are damage meters, not destructible mobs. Run after the combat
+	 * calculation so the displayed hit and training reward use the final DMZ damage,
+	 * then prevent that value from being applied to the machine's health.
+	 */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void protectPunchMachine(LivingDamageEvent.Pre event) {
+		if (event.getEntity() instanceof PunchMachineEntity) {
+			event.setNewDamage(0.0F);
+		}
+	}
+
 	private static void divertKiProjectile(DamageSource source, Player defender) {
 		Entity direct = source.getDirectEntity();
 		if (!(direct instanceof AbstractKiProjectile projectile)) return;

@@ -17,6 +17,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -578,7 +579,7 @@ public class MasterTextScreen extends Screen {
 		buffer.addVertex(centerX + 140, centerY + 250, 0.0F).setUv(1.0F, 1.0F);
 		buffer.addVertex(centerX + 140, centerY - 90, 0.0F).setUv(1.0F, 0.0F);
 		buffer.addVertex(centerX - 140, centerY - 90, 0.0F).setUv(0.0F, 0.0F);
-		/* end handled by BufferUploader */
+		BufferUploader.drawWithShader(buffer.buildOrThrow());
 
 		RenderSystem.disableBlend();
 
