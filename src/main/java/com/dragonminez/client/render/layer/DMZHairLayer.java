@@ -71,7 +71,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		poseStack.pushPose();
 		RenderUtil.translateToPivotPoint(poseStack, bone);
 		renderHair(poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
-		bufferSource.getBuffer(renderType);
+		if (renderType != null) bufferSource.getBuffer(renderType);
 		poseStack.popPose();
 
 		if (maskBuffer != null) {

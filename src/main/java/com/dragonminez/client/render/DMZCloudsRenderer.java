@@ -22,7 +22,12 @@ public class DMZCloudsRenderer {
 	private CloudStatus prevCloudsType;
 	private boolean generateClouds = true;
 
-	public void render(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor) {
+	/**
+	 * Renders colored clouds fixed at the dimension cloud height (not stuck to the camera).
+	 * Matches vanilla 1.21 LevelRenderer: apply {@code modelViewMatrix} (frustum/view) before
+	 * cloud scale/translate so Y is {@code cloudHeight - camY}.
+	 */
+	public void render(PoseStack poseStack, Matrix4f modelViewMatrix, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor) {
 		Minecraft mc = Minecraft.getInstance();
 		float cloudHeight = mc.level.effects().getCloudHeight();
 
@@ -41,6 +46,7 @@ public class DMZCloudsRenderer {
 		);
 		RenderSystem.depthMask(true);
 
+		// World-fixed cloud plane: relative Y so clouds sit at cloudHeight, not at player Y.
 		double time = (double) ((float) mc.level.getGameTime() + partialTick) * 0.03F;
 		double viewX = (camX + time) / 12.0D;
 		double viewY = (double) (cloudHeight - (float) camY + 0.33F);
@@ -82,10 +88,13 @@ public class DMZCloudsRenderer {
 			VertexBuffer.unbind();
 		}
 
-		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+		// Clouds format is POSITION_TEX_COLOR_NORMAL; use the dedicated clouds shader when available.
+		RenderSystem.setShader(GameRenderer::getRendertypeCloudsShader);
 		RenderSystem.setShaderTexture(0, CLOUDS_LOCATION);
 
 		poseStack.pushPose();
+		// Required in 1.21: without this, clouds are camera-locked instead of world-fixed at cloud Y.
+		poseStack.mulPose(modelViewMatrix);
 		poseStack.scale(12.0F, 1.0F, 12.0F);
 		poseStack.translate(-offsetX, offsetY, -offsetZ);
 
@@ -127,7 +136,7 @@ public class DMZCloudsRenderer {
 		float shadowG = g * 0.6F;
 		float shadowB = b * 0.6F;
 
-		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+		RenderSystem.setShader(GameRenderer::getRendertypeCloudsShader);
 		BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL);
 
 		float floorY = (float) Math.floor(y / 4.0D) * 4.0F;

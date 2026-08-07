@@ -106,7 +106,7 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 			poseStack.popPose();
 		}
 
-		bufferSource.getBuffer(renderType);
+		if (renderType != null) bufferSource.getBuffer(renderType);
 		poseStack.popPose();
 	}
 }

@@ -93,7 +93,9 @@ public final class SimpleChannel {
 
 	@SubscribeEvent
 	public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
-		PayloadRegistrar registrar = event.registrar("1");
+		// optional(): tolerate version skew / partial channel presence on servers without hard disconnects.
+		// Large config/quest S2C payloads are already compressed in packet classes.
+		PayloadRegistrar registrar = event.registrar("1").optional();
 		for (SimpleChannel channel : List.copyOf(CHANNELS)) {
 			channel.flush(registrar);
 		}

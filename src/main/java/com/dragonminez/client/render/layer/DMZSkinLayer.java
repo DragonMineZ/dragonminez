@@ -151,7 +151,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, headAlpha);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(true);
 
-		bufferSource.getBuffer(renderType);
+		// Restore the caller's active buffer after we switched RenderTypes mid-layer.
+		// GeckoLib can pass a null renderType; Iris' FullyBufferedMultiBufferSource NPEs on that.
+		if (renderType != null) {
+			bufferSource.getBuffer(renderType);
+		}
 	}
 
 	private float[] getTopAuraColor(StatsData stats) {

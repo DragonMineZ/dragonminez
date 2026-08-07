@@ -54,7 +54,7 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 
 		renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 
-		bufferSource.getBuffer(renderType);
+		if (renderType != null) bufferSource.getBuffer(renderType);
 		poseStack.popPose();
 	}
 

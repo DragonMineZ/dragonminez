@@ -50,6 +50,14 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 			}
 			return this.delegate.getBuffer(renderType);
 		}
+		// Name tags / GUI text must never be captured into the NEW_ENTITY mask buffer:
+		// font glyphs omit UV1/Normal and crash BufferBuilder under forceCaptureAll.
+		if (isNonGeometryRenderType(renderType)) {
+			if (this.delegate == null || !this.includeOriginal) {
+				return EmptyVertexConsumer.INSTANCE;
+			}
+			return this.delegate.getBuffer(renderType);
+		}
 		RenderType maskRenderType = ModRenderTypes.transformationMask(renderType);
 		if (this.delegate == null) {
 			VertexConsumer maskDelegate = this.getMaskBuffer(maskRenderType);
@@ -118,6 +126,25 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		int p = Math.max(0, Math.min(255, Math.round(primary * 255.0f)));
 		int s = Math.max(0, Math.min(255, Math.round(secondary * 255.0f)));
 		return (p & 0xF0) | ((s >> 4) & 0x0F);
+	}
+
+	/**
+	 * Render types used for fonts, lines, particles, etc. that are unsafe to remap
+	 * into the transformation mask NEW_ENTITY format.
+	 */
+	private static boolean isNonGeometryRenderType(RenderType renderType) {
+		if (renderType == null) return true;
+		String name = renderType.toString();
+		// RenderType.toString() typically includes the debug name (e.g. "text", "text_see_through").
+		return name.contains("text")
+				|| name.contains("Text")
+				|| name.contains("lines")
+				|| name.contains("line_strip")
+				|| name.contains("particle")
+				|| name.contains("lightning")
+				|| name.contains("leash")
+				|| name.contains("water_mask")
+				|| name.contains("gui");
 	}
 
 	private static final class MaskBuffer {

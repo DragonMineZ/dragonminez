@@ -104,7 +104,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             }
 
             poseStack.popPose();
-            bufferSource.getBuffer(renderType);
+            if (renderType != null) bufferSource.getBuffer(renderType);
             return;
         }
 
@@ -155,7 +155,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             armorBoobas.setScaleZ(savedBoobZ);
         }
 
-        bufferSource.getBuffer(renderType);
+        if (renderType != null) bufferSource.getBuffer(renderType);
     }
 
     private float resolveBoobScale(StatsData stats) {

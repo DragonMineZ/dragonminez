@@ -3,21 +3,21 @@ package com.dragonminez.common.init.armor;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ArmorTextureResolver;
-import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.core.Holder;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
-import org.jetbrains.annotations.NotNull;
-import javax.annotation.Nullable;
-import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 
+/**
+ * Custom DBZ armor piece. Texture paths are resolved per-item via
+ * {@link #getArmorTexture} so armor stands (Goku's house displays, etc.) and
+ * vanilla {@code HumanoidArmorLayer} pick up the correct layer PNGs.
+ * Client model registration is handled by {@code DMZClientItemExtensions}.
+ */
 public class DbzArmorItem extends ArmorItem implements DbzArmorTextured {
     private final String modId;
     private final String itemId;
@@ -32,21 +32,14 @@ public class DbzArmorItem extends ArmorItem implements DbzArmorTextured {
         this.itemId = itemId;
     }
 
+    /**
+     * NeoForge 1.21 armor texture hook used by ClientHooks / HumanoidArmorLayer
+     * (armor stands, non-player entities, item frames, etc.).
+     */
     @Nullable
-    public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-        return ArmorTextureResolver.resolve(modId, itemId, slot, stack).toString();
-    }
-
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            private ArmorBaseModel model;
-            @Override
-            @NotNull
-            public HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack, EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
-                if (model == null) model = new ArmorBaseModel(Minecraft.getInstance().getEntityModels().bakeLayer(ArmorBaseModel.LAYER_LOCATION));
-                return model;
-            }
-        });
+    @Override
+    public ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, ArmorMaterial.Layer layer, boolean innerModel) {
+        return ArmorTextureResolver.resolve(modId, itemId, slot, stack);
     }
 
     @java.lang.SuppressWarnings("all")

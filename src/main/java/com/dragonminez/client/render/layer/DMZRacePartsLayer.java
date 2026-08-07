@@ -98,7 +98,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					}
 				}
 			}
-			bufferSource.getBuffer(renderType);
+			if (renderType != null) bufferSource.getBuffer(renderType);
 			return;
 		}
 
@@ -109,7 +109,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			if (!animatable.isSpectator() && !stats.getCharacter().isOozaruCached()) {
 				renderWeightedItems(poseStack, animatable, bufferSource, anchor, partialTick, packedLight, alpha);
 			}
-			bufferSource.getBuffer(renderType);
+			if (renderType != null) bufferSource.getBuffer(renderType);
 			return;
 		}
 
@@ -131,7 +131,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			}
 		}
 
-		bufferSource.getBuffer(renderType);
+		if (renderType != null) bufferSource.getBuffer(renderType);
 	}
 
 	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
@@ -331,6 +331,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderTargetedBone(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float alpha, float partialTick, int packedLight) {
+		if (renderType == null) return;
 		VertexConsumer buffer = bufferSource.getBuffer(renderType);
 		getRenderer().renderRecursively(poseStack, animatable, targetBone, renderType, bufferSource, buffer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, com.dragonminez.client.render.util.RenderBufferUtil.packColor(r, g, b, alpha));
 	}

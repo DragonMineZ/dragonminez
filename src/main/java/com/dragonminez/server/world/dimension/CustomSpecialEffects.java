@@ -123,7 +123,8 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 		@Override
 		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
 			Vec3 namekGreen = new Vec3(0.659D, 0.922D, 0.443D);
-			this.cloudRenderer.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, namekGreen);
+			// Pass modelViewMatrix so clouds stay at dimension cloud height (192), not glued to camera.
+			this.cloudRenderer.render(poseStack, modelViewMatrix, projectionMatrix, partialTick, camX, camY, camZ, namekGreen);
 			return true;
 		}
 
@@ -181,8 +182,8 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 
 		@Override
 		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
-			Vec3 namekGreen = new Vec3(0.929D, 0.929D, 0.157D);
-			this.cloudRenderer.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, namekGreen);
+			Vec3 namekYellow = new Vec3(0.929D, 0.929D, 0.157D);
+			this.cloudRenderer.render(poseStack, modelViewMatrix, projectionMatrix, partialTick, camX, camY, camZ, namekYellow);
 			return true;
 		}
 
