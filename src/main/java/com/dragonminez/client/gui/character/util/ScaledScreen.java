@@ -61,6 +61,10 @@ public abstract class ScaledScreen extends Screen {
 
 		float newScale = calculateUiScale(window, multiplier);
 		if (newScale <= 0.0f || Float.isNaN(newScale) || Float.isInfinite(newScale)) newScale = 1.0f;
+		// GUI textures and the DMZ bitmap font are pixel art. Fractional pose scales
+		// make every texel span a non-integral number of screen pixels and blur the
+		// dialogue text, player preview, and panel borders.
+		newScale = Math.max(1.0f, (float) Math.floor(newScale));
 
 
 		uiScale = newScale;
