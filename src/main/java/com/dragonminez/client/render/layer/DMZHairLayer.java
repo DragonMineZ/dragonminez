@@ -83,7 +83,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (animatable.isInvisible() && !animatable.isSpectator()) return;
 		Minecraft minecraft = Minecraft.getInstance();
 		if (animatable == minecraft.player
-				&& minecraft.options.getCameraType().isFirstPerson()
+				&& FirstPersonManager.shouldRenderFirstPerson(animatable)
 				&& !EntityPreviewRenderContext.isRendering()) return;
 		// DMZ replaces PlayerRenderer at HEAD, so Aero Cam Sync's own callback is not guaranteed
 		// to be active by the time GeckoLib renders this layer. Its presence is the stable compat

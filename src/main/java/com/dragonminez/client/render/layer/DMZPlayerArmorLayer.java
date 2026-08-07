@@ -7,12 +7,14 @@ import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
+import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -33,6 +35,7 @@ import software.bernie.geckolib.renderer.layer.ItemArmorGeoLayer;
 import javax.annotation.Nullable;
 
 public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends ItemArmorGeoLayer<T> {
+	private ArmorBaseModel dmzArmorModel;
 
 	public DMZPlayerArmorLayer(GeoRenderer<T> geoRenderer) {
 		super(geoRenderer);
@@ -136,6 +139,18 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			case "armorLeftLeg", "armorLeftBoot" -> baseModel.leftLeg;
 			default -> super.getModelPartForBone(bone, slot, stack, animatable, baseModel);
 		};
+	}
+
+	@Override
+	protected HumanoidModel<?> getModelForItem(GeoBone bone, EquipmentSlot slot, ItemStack stack, T animatable) {
+		if (!(stack.getItem() instanceof DbzArmorTextured)) {
+			return super.getModelForItem(bone, slot, stack, animatable);
+		}
+
+		if (dmzArmorModel == null) {
+			dmzArmorModel = new ArmorBaseModel(Minecraft.getInstance().getEntityModels().bakeLayer(ArmorBaseModel.LAYER_LOCATION));
+		}
+		return dmzArmorModel;
 	}
 
 	@Override
