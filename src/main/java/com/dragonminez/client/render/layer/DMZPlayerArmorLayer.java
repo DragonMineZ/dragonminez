@@ -1,6 +1,8 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.Reference;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -16,8 +18,10 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -132,6 +136,23 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			case "armorLeftLeg", "armorLeftBoot" -> baseModel.leftLeg;
 			default -> super.getModelPartForBone(bone, slot, stack, animatable, baseModel);
 		};
+	}
+
+	@Override
+	protected VertexConsumer getVanillaArmorBuffer(MultiBufferSource bufferSource, T animatable, ItemStack stack,
+			EquipmentSlot slot, GeoBone bone, ArmorMaterial.Layer layer, int packedLight, int packedOverlay,
+			boolean glint) {
+		if (!(stack.getItem() instanceof DbzArmorTextured textured)) {
+			return super.getVanillaArmorBuffer(bufferSource, animatable, stack, slot, bone, layer,
+					packedLight, packedOverlay, glint);
+		}
+
+		if (glint) return bufferSource.getBuffer(RenderType.armorEntityGlint());
+
+		String namespace = Reference.MOD_ID;
+		if (stack.getItem() instanceof DbzArmorItem dbzArmor) namespace = dbzArmor.getModId();
+		ResourceLocation texture = ArmorTextureResolver.resolve(namespace, textured.getItemId(), slot, stack);
+		return bufferSource.getBuffer(RenderType.armorCutoutNoCull(texture));
 	}
 
 
