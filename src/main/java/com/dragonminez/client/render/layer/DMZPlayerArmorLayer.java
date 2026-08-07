@@ -47,6 +47,39 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		super.render(poseStack, animatable, bakedModel, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 	}
 
+	@Override
+	public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType,
+			MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight,
+			int packedOverlay) {
+		ItemStack stack = getArmorItemForBone(bone, animatable);
+		if (stack == null || !(stack.getItem() instanceof DbzArmorTextured)) {
+			super.renderForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick,
+					packedLight, packedOverlay);
+			return;
+		}
+
+		EquipmentSlot slot = getEquipmentSlotForBone(bone, stack, animatable);
+		HumanoidModel<?> armorModel = getModelForItem(bone, slot, stack, animatable);
+		ModelPart armorPart = getModelPartForBone(bone, slot, stack, animatable, armorModel);
+		if (armorPart.isEmpty() || bone.getCubes().isEmpty()) return;
+
+		poseStack.pushPose();
+		poseStack.scale(-1.0F, -1.0F, 1.0F);
+		prepModelPartForRender(poseStack, bone, armorPart);
+
+		VertexConsumer armorBuffer = getVanillaArmorBuffer(bufferSource, animatable, stack, slot, bone,
+				null, packedLight, packedOverlay, false);
+		armorPart.render(poseStack, armorBuffer, packedLight, packedOverlay, -1);
+
+		if (stack.hasFoil()) {
+			VertexConsumer glintBuffer = getVanillaArmorBuffer(bufferSource, animatable, stack, slot, bone,
+					null, packedLight, packedOverlay, true);
+			armorPart.render(poseStack, glintBuffer, packedLight, packedOverlay, -1);
+		}
+
+		poseStack.popPose();
+	}
+
     @Override
     protected @Nullable ItemStack getArmorItemForBone(GeoBone bone, T animatable) {
         final String boneName = bone.getName();
