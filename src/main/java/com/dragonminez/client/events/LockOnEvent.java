@@ -140,7 +140,7 @@ public class LockOnEvent {
 		boolean iris = mc.level != null && IrisCompat.isShaderPackInUse(mc.level.getGameTime());
 		RenderLevelStageEvent.Stage targetStage = iris
 				? RenderLevelStageEvent.Stage.AFTER_LEVEL
-				: RenderLevelStageEvent.Stage.AFTER_WEATHER;
+				: RenderLevelStageEvent.Stage.AFTER_PARTICLES;
 		if (event.getStage() != targetStage) return;
 		if (lockedTarget == null || !lockedTarget.isAlive()) return;
 		if (iris) mc.getMainRenderTarget().bindWrite(false);
