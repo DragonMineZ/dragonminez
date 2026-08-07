@@ -1,5 +1,5 @@
 {
-  "type": "forge:add_spawns",
+  "type": "neoforge:add_spawns",
   "biomes": "#dragonminez:has_saibamans",
   "spawners": [{
     "type": "dragonminez:saga_saibaman1",

@@ -1,5 +1,5 @@
 {
-  "type": "forge:add_spawns",
+  "type": "neoforge:add_spawns",
   "biomes": "#dragonminez:has_dinosaurs",
   "spawners": [{
     "type": "dragonminez:dino1",

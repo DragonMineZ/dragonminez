@@ -76,7 +76,7 @@ public class SpacePodDestinationRegistry extends SimpleJsonResourceReloadListene
 	@Nullable
 	public static SpacePodDestinationDefinition getServerDestination(String destinationId) {
 		for (SpacePodDestinationDefinition destination : serverDestinations) {
-			if (destination.equals(destinationId)) {
+			if (destination.id().equals(destinationId)) {
 				return destination;
 			}
 		}
