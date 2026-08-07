@@ -6,6 +6,7 @@ plugins {
     java
     idea
     id("net.neoforged.moddev") version "2.0.143"
+    id("io.github.goooler.shadow") version "8.1.8"
 }
 
 /** Fail-fast property access (keeps the build deterministic and debuggable). */
@@ -157,6 +158,11 @@ repositories {
 // Optional runtime-only configuration (not published as a hard dependency).
 val localRuntime by configurations.creating
 configurations.named("runtimeClasspath") { extendsFrom(localRuntime) }
+val mariaRelocation by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
 
 dependencies {
     // Mandatory libraries — coordinates verified on official Maven metadata (HTTP 200).
@@ -172,6 +178,7 @@ dependencies {
     // Versions verified on Maven Central (same pins as pre-port project).
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.9")
     jarJar("org.mariadb.jdbc:mariadb-java-client:3.5.9")
+    add(mariaRelocation.name, "org.mariadb.jdbc:mariadb-java-client:3.5.9")
     compileOnly("com.zaxxer:HikariCP:7.1.0") {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
@@ -369,55 +376,25 @@ val optimizeResources by tasks.registering {
 
 tasks.named<Jar>("jar").configure { dependsOn(optimizeResources) }
 
-// Youer ships MariaDB inside LibrariesVault. Keeping our nested Connector/J in that
-// environment gives JPMS two modules exporting org.mariadb.jdbc and aborts before
-// ModLauncher can initialize. Preserve the normal NeoForge jar, and provide a hybrid-
-// server variant whose JarJar metadata contains only HikariCP; Youer's copy supplies
-// Connector/J at runtime.
-val prepareYouerJarJarMetadata by tasks.registering {
-    val output = layout.buildDirectory.file("generated/youer-jarjar/metadata.json")
-    outputs.file(output)
-    doLast {
-        val file = output.get().asFile
-        file.parentFile.mkdirs()
-        file.writeText(
-            """{
-  "jars": [
-    {
-      "identifier": {
-        "group": "com.zaxxer",
-        "artifact": "HikariCP"
-      },
-      "version": {
-        "range": "[7.1.0,)",
-        "artifactVersion": "7.1.0"
-      },
-      "path": "META-INF/jarjar/HikariCP-7.1.0.jar",
-      "isObfuscated": false
-    }
-  ]
-}
-"""
-        )
-    }
-}
-
-val standardJar = tasks.named<Jar>("jar")
-tasks.register<Jar>("youerJar") {
+// Youer ships MariaDB packages inside LibrariesVault. Relocate our Connector/J
+// packages in-place before the normal jar is assembled so one artifact works on
+// both standard NeoForge and hybrid servers without a JPMS split-package failure.
+val relocateMariaDb by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
     group = "build"
-    description = "Builds a Youer-compatible jar without the duplicate MariaDB Connector/J module."
-    dependsOn(standardJar, prepareYouerJarJarMetadata)
-    archiveClassifier.set("youer")
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    from({ zipTree(standardJar.get().archiveFile.get().asFile) }) {
-        exclude("META-INF/jarjar/mariadb-java-client-*.jar")
-        exclude("META-INF/jarjar/metadata.json")
-    }
-    from(layout.buildDirectory.file("generated/youer-jarjar/metadata.json")) {
-        into("META-INF/jarjar")
+    description = "Relocates the bundled MariaDB driver to avoid hybrid-server module conflicts."
+    dependsOn("jarJar")
+    configurations = listOf(mariaRelocation)
+    archiveFileName.set("mariadb-java-client-3.5.9.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("generated/jarJar/META-INF/jarjar"))
+    relocate("org.mariadb.jdbc", "com.dragonminez.libs.mariadb.jdbc")
+    mergeServiceFiles()
+    exclude("module-info.class")
+    exclude("META-INF/versions/**/module-info.class")
+    manifest {
+        attributes["Automatic-Module-Name"] = "com.dragonminez.mariadb"
     }
 }
+tasks.named<Jar>("jar").configure { dependsOn(relocateMariaDb) }
 
 /**
  * Optional manifest timestamp
