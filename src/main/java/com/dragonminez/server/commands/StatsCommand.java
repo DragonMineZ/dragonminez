@@ -96,8 +96,10 @@ public class StatsCommand {
 			return 0;
 		}
 
+		// Raise RangedAttribute maxes to the configured maxValue before writing bases.
+		com.dragonminez.common.stats.GenericAttributes.ensureAttributeCeilings();
+
 		int value;
-		int maxValue = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		try {
 			if (amountStr.equalsIgnoreCase("min")) value = 0;
 			else value = Integer.parseInt(amountStr);
@@ -117,6 +119,8 @@ public class StatsCommand {
 					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) applyModification(data, s, value, mode);
 				} else applyModification(data, finalStat, value, mode);
 
+				// Keep attribute mirrors in sync after large absolute sets.
+				data.reapplyStatAttributes();
 
 				float newHealthBonus = data.getHealthBonus();
 				float healthDiff = newHealthBonus - oldHealthBonus;
@@ -151,13 +155,11 @@ public class StatsCommand {
 		int current = data.getCurrentStatValue(stat);
 		switch (mode) {
 			case "set" -> {
-				int target = Math.max(0, value);
-				if (target <= current) {
-					data.getStats().setStat(stat, target);
-				} else {
-					int increase = data.getMaxAllowedIncreaseForStat(stat, target - current);
-					data.getStats().setStat(stat, current + increase);
-				}
+				// Admin absolute set: each stat independently clamped to [0, maxValue].
+				// Do not use the shared total budget — that overflowed at Integer.MAX_VALUE
+				// when maxValue is 1e9 (STR+SKP ate the pool; RES got ~147M; VIT/PWR/ENE starved).
+				int target = data.clampStatToConfiguredMax(value);
+				data.getStats().setStat(stat, target);
 			}
 			case "add" -> {
 				int increase = data.getMaxAllowedIncreaseForStat(stat, value);

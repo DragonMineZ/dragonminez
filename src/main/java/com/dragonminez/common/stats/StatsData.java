@@ -105,14 +105,30 @@ public class StatsData {
 		return ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats();
 	}
 
+	/**
+	 * Total budget across all six main stats: {@code maxValue * 6}.
+	 * Must use long — with maxValue=1e9 the product is 6e9 and must not clamp to
+	 * {@link Integer#MAX_VALUE} (that left only ~147M for RES and 0 for VIT/PWR/ENE).
+	 */
+	public long getConfiguredMaxTotalStatsLong() {
+		long raw = getConfiguredMaxTotalStatsRaw();
+		return raw < 0L ? Long.MAX_VALUE / 8L : raw;
+	}
+
+	/** Int view for UI; saturates at Integer.MAX_VALUE when the long budget is larger. */
 	public int getConfiguredMaxTotalStats() {
-		long rawMax = getConfiguredMaxTotalStatsRaw();
+		long rawMax = getConfiguredMaxTotalStatsLong();
 		return rawMax > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rawMax;
 	}
 
+	public long getRemainingAssignableStatsLong() {
+		long remaining = getConfiguredMaxTotalStatsLong() - stats.getTotalStats();
+		return Math.max(0L, remaining);
+	}
+
 	public int getRemainingAssignableStats() {
-		long remaining = (long) getConfiguredMaxTotalStats() - stats.getTotalStats();
-		return remaining <= 0 ? 0 : (int) Math.min(Integer.MAX_VALUE, remaining);
+		long remaining = getRemainingAssignableStatsLong();
+		return remaining <= 0L ? 0 : (int) Math.min(Integer.MAX_VALUE, remaining);
 	}
 
 	public int getCurrentStatValue(String statName) {
@@ -127,15 +143,36 @@ public class StatsData {
 		};
 	}
 
+	/**
+	 * How many points may still be spent on this stat (gameplay add / UI).
+	 * Uses long total budget so high maxValue configs (e.g. 1_000_000_000) work.
+	 */
 	public int getMaxAllowedIncreaseForStat(String statName, int requestedAmount) {
 		int safeRequested = Math.max(0, requestedAmount);
 		if (safeRequested <= 0) return 0;
-		int remainingTotal = getRemainingAssignableStats();
-		if (remainingTotal <= 0) return 0;
-		int allowedByTotal = Math.min(safeRequested, remainingTotal);
-		if (isMaxLevelValueInsteadOfStats()) return allowedByTotal;
-		int remainingStat = Math.max(0, getConfiguredMaxValue() - getCurrentStatValue(statName));
-		return Math.min(allowedByTotal, remainingStat);
+		long remainingTotal = getRemainingAssignableStatsLong();
+		if (remainingTotal <= 0L) return 0;
+		long allowedByTotal = Math.min(safeRequested, remainingTotal);
+		if (!isMaxLevelValueInsteadOfStats()) {
+			long remainingStat = Math.max(0L, (long) getConfiguredMaxValue() - getCurrentStatValue(statName));
+			allowedByTotal = Math.min(allowedByTotal, remainingStat);
+		} else {
+			// Even in "max level instead of per-stat" mode, never exceed configured per-stat max
+			// when the operator/config has set an explicit maxValue.
+			long remainingStat = Math.max(0L, (long) getConfiguredMaxValue() - getCurrentStatValue(statName));
+			allowedByTotal = Math.min(allowedByTotal, remainingStat);
+		}
+		return (int) Math.min(Integer.MAX_VALUE, allowedByTotal);
+	}
+
+	/**
+	 * Absolute admin/set target for one stat: clamp to [0, maxValue] only
+	 * (does not consume shared total budget — operators expect set = set).
+	 */
+	public int clampStatToConfiguredMax(int value) {
+		int max = getConfiguredMaxValue();
+		if (value < 0) return 0;
+		return Math.min(value, max);
 	}
 
 	private static final double K = 100.0;

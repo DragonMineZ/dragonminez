@@ -60,7 +60,9 @@ public class GenericAttributes {
 		setMaxIfRanged(Attributes.MAX_HEALTH, COMBAT_ATTRIBUTE_MAX);
 		setMaxIfRanged(Attributes.ATTACK_DAMAGE, COMBAT_ATTRIBUTE_MAX);
 
-		double mainStatMax = getConfiguredMainStatMax();
+		// Main combat stats: registry-time max is often 10000 (config not loaded yet).
+		// Raise to configured maxValue (can be 1e9). Also beat AttributeFix-style 99999 caps.
+		double mainStatMax = Math.max(10_000.0, getConfiguredMainStatMax());
 		setMaxIfRanged(MainAttributes.STRENGTH, mainStatMax);
 		setMaxIfRanged(MainAttributes.STRIKE_POWER, mainStatMax);
 		setMaxIfRanged(MainAttributes.RESISTANCE, mainStatMax);
