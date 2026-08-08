@@ -8,8 +8,6 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -105,11 +103,9 @@ public class IncreaseStatC2S {
 				float healthDiff = newHealthBonus - oldHealthBonus;
 
 				if (healthDiff > 0) {
-					var attribute = player.getAttribute(Attributes.MAX_HEALTH);
-					if (attribute != null) {
-						attribute.removeModifier(com.dragonminez.common.util.AttributeMods.id(StatsEvents.DMZ_HEALTH_MODIFIER_UUID));
-						attribute.addPermanentModifier(com.dragonminez.common.util.AttributeMods.of(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADD_VALUE));
-					}
+					// Route through applyHealthBonus so MAX_HEALTH ceiling is raised first
+					// (vanilla 1024 / AttributeFix 2048 clamps would silently discard the gain).
+					com.dragonminez.server.events.players.StatsEvents.applyHealthBonus(player);
 					player.heal(healthDiff);
 				}
 			}

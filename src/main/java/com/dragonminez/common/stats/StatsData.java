@@ -1050,13 +1050,11 @@ public class StatsData {
 		stats.setKiPower(baseStats.getKiPower());
 		stats.setEnergy(baseStats.getEnergy());
 		float newHealthBonus = getHealthBonus();
-		if (newHealthBonus < oldHealthBonus) {
-			var attribute = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
-			if (attribute != null) {
-				attribute.removeModifier(com.dragonminez.common.util.AttributeMods.id(StatsEvents.DMZ_HEALTH_MODIFIER_UUID));
-				attribute.addPermanentModifier(com.dragonminez.common.util.AttributeMods.of(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+		if (newHealthBonus != oldHealthBonus) {
+			StatsEvents.applyHealthBonus(serverPlayer);
+			if (serverPlayer.getHealth() > serverPlayer.getMaxHealth()) {
+				serverPlayer.setHealth(serverPlayer.getMaxHealth());
 			}
-			if (serverPlayer.getHealth() > serverPlayer.getMaxHealth()) serverPlayer.setHealth(serverPlayer.getMaxHealth());
 		}
 		resources.setCurrentEnergy(Math.min(resources.getCurrentEnergy(), getMaxEnergy()));
 		resources.setCurrentStamina(Math.min(resources.getCurrentStamina(), getMaxStamina()));
@@ -1404,6 +1402,8 @@ public class StatsData {
 		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
+		// NeoForge attachment deserialize can run before AttributeInstances exist; re-push fields.
+		stats.applyToAttributes();
 		this.isDataLoaded = true;
 	}
 
@@ -1422,7 +1422,13 @@ public class StatsData {
 		this.dynamicGrowth.copyFrom(other.dynamicGrowth);
 		this.hasInitializedHealth = other.hasInitializedHealth;
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
+		stats.applyToAttributes();
 		this.isDataLoaded = true;
+	}
+
+	/** Re-bind live attribute mirrors after login/clone (NeoForge attach order). */
+	public void reapplyStatAttributes() {
+		stats.applyToAttributes();
 	}
 
 	@java.lang.SuppressWarnings("all")

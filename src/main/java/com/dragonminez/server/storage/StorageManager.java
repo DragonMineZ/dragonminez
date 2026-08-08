@@ -111,6 +111,14 @@ public class StorageManager {
 		NeoForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			// Never let an empty secondary store wipe a richer in-memory / attachment load.
+			if (isEmptyOrZeroStatsBlob(loadedData) && stats.getStats().getTotalStats() > 0) {
+				LogUtil.info(Env.SERVER,
+						"Skipping async overwrite for {}: secondary store has empty Stats while live totals are {}",
+						player.getName().getString(), stats.getStats().getTotalStats());
+				return;
+			}
+
 			try {
 				stats.load(loadedData);
 			} catch (ClassNotFoundException e) {
@@ -124,9 +132,22 @@ public class StorageManager {
 			TransformationsHelper.ensureSelectedFormDefault(stats);
 			TransformationsHelper.ensureSelectedStackFormDefault(stats);
 
+			stats.reapplyStatAttributes();
+			com.dragonminez.server.events.players.StatsEvents.applyHealthBonus(player);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString());
+			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString()
+					+ " VIT=" + stats.getStats().getVitality()
+					+ " PWR=" + stats.getStats().getKiPower()
+					+ " ENE=" + stats.getStats().getEnergy());
 		});
+	}
+
+	/** True when Stats compound is missing or all six main stats are zero. */
+	private static boolean isEmptyOrZeroStatsBlob(CompoundTag loadedData) {
+		if (loadedData == null || !loadedData.contains("Stats")) return true;
+		CompoundTag s = loadedData.getCompound("Stats");
+		return s.getInt("STR") == 0 && s.getInt("SKP") == 0 && s.getInt("RES") == 0
+				&& s.getInt("VIT") == 0 && s.getInt("PWR") == 0 && s.getInt("ENE") == 0;
 	}
 
 	public static void savePlayer(ServerPlayer player) {

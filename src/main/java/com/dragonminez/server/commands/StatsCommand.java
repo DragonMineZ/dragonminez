@@ -17,8 +17,6 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.Collection;
 import java.util.List;
@@ -123,13 +121,9 @@ public class StatsCommand {
 				float newHealthBonus = data.getHealthBonus();
 				float healthDiff = newHealthBonus - oldHealthBonus;
 
-				if (healthDiff > 0) {
-					var attribute = player.getAttribute(Attributes.MAX_HEALTH);
-					if (attribute != null) {
-						attribute.removeModifier(com.dragonminez.common.util.AttributeMods.id(StatsEvents.DMZ_HEALTH_MODIFIER_UUID));
-						attribute.addPermanentModifier(com.dragonminez.common.util.AttributeMods.of(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADD_VALUE));
-					}
-					player.heal(healthDiff);
+				if (healthDiff != 0) {
+					StatsEvents.applyHealthBonus(player);
+					if (healthDiff > 0) player.heal(healthDiff);
 				}
 
 				float newMaxEnergy = data.getMaxEnergy();

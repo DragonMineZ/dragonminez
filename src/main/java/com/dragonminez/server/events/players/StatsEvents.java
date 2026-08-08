@@ -269,11 +269,19 @@ public class StatsEvents {
 
 	public static void applyHealthBonus(ServerPlayer serverPlayer) {
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+			// AttributeFix / vanilla may re-clamp generic.max_health to 1024 or 2048 after our
+			// load-complete pass. Raise the hard ceiling before applying permanent HP mods so
+			// vitality past that point actually sticks and survives save/load.
+			com.dragonminez.common.stats.GenericAttributes.ensureAttributeCeilings();
+
 			AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
 			if (maxHealthAttr == null) return;
 
 			float dmzHealthBonus = data.getHealthBonus();
 			if (!Float.isFinite(dmzHealthBonus) || dmzHealthBonus < 0) dmzHealthBonus = 0f;
+
+			float healthBefore = serverPlayer.getHealth();
+			double maxBefore = maxHealthAttr.getValue();
 
 			AttributeModifier existingModifier = maxHealthAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(DMZ_HEALTH_MODIFIER_UUID));
 
@@ -284,10 +292,16 @@ public class StatsEvents {
 					AttributeModifier healthModifier = com.dragonminez.common.util.AttributeMods.of(DMZ_HEALTH_MODIFIER_UUID, "DMZ Health Bonus", dmzHealthBonus, AttributeModifier.Operation.ADD_VALUE);
 					maxHealthAttr.addPermanentModifier(healthModifier);
 				}
+			}
 
-				if (serverPlayer.getHealth() > maxHealthAttr.getValue()) {
-					serverPlayer.setHealth((float) maxHealthAttr.getValue());
-				}
+			double maxAfter = maxHealthAttr.getValue();
+			// If the ceiling was raised or vitality grew, keep the player topped up by the
+			// gained max (not left at a stale capped current HP after a previous 1024/2048 clamp).
+			if (maxAfter > maxBefore + 0.01D) {
+				float gain = (float) (maxAfter - maxBefore);
+				serverPlayer.setHealth(Math.min((float) maxAfter, healthBefore + gain));
+			} else if (serverPlayer.getHealth() > maxAfter) {
+				serverPlayer.setHealth((float) maxAfter);
 			}
 
 			if (!data.hasInitializedHealth()) {
@@ -947,7 +961,10 @@ public class StatsEvents {
     @SubscribeEvent
     public static void onEntitySize(EntityEvent.Size event) {
         Entity entity = event.getEntity();
-        if (!(entity instanceof Player)) return;
+        // During Player/ServerPlayer construction AttributeMap is still null. Touching
+        // attachments here materializes StatsProvider -> setPlayer -> getAttribute NPE.
+        if (!(entity instanceof Player player)) return;
+        if (player.getAttributes() == null) return;
 
         StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
             var character = data.getCharacter();
