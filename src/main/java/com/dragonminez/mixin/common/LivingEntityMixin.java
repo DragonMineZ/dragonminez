@@ -42,7 +42,7 @@ public abstract class LivingEntityMixin implements IBattlePower, IHealthFixable,
 	private void dragonminez$readAdditionalSaveData(CompoundTag tag, CallbackInfo callback) {
 		if (tag.contains("Health", Tag.TAG_ANY_NUMERIC)) {
 			float savedHealth = tag.getFloat("Health");
-			if (savedHealth > this.getMaxHealth() && savedHealth > 0.0F) {
+			if (savedHealth > this.getMaxHealth() && savedHealth > 0.0F && Float.isFinite(savedHealth)) {
 				this.dragonminez$actualHealth = savedHealth;
 			}
 		}
@@ -50,17 +50,29 @@ public abstract class LivingEntityMixin implements IBattlePower, IHealthFixable,
 
 	@Inject(method = "tick()V", at = @At("TAIL"))
 	private void dragonminez$restoreStoredHealth(CallbackInfo callback) {
-		if (this.dragonminez$actualHealth != null) {
-			if (this.dragonminez$actualHealth > 0.0F && this.dragonminez$actualHealth > this.getHealth()) {
-				this.setHealth(this.dragonminez$actualHealth);
-			}
-			this.dragonminez$actualHealth = null;
-		}
+		dragonminez$applyDeferredHealthRestore();
 	}
 
 	@Override
 	public void dragonminez$setHealthRestorePoint(float restorePoint) {
 		this.dragonminez$actualHealth = restorePoint;
+	}
+
+	@Override
+	public void dragonminez$applyDeferredHealthRestore() {
+		if (this.dragonminez$actualHealth == null) return;
+		float target = this.dragonminez$actualHealth;
+		this.dragonminez$actualHealth = null;
+		if (!(target > 0.0F) || !Float.isFinite(target)) return;
+		float max = this.getMaxHealth();
+		if (!(max > 0.0F) || !Float.isFinite(max)) {
+			this.dragonminez$actualHealth = target;
+			return;
+		}
+		float applied = Math.min(target, max);
+		if (applied > this.getHealth()) {
+			this.setHealth(applied);
+		}
 	}
 
 	@Override

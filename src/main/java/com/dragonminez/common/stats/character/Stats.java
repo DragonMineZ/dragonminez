@@ -64,9 +64,10 @@ public class Stats {
 	private void setAttributeBaseValue(Holder<Attribute> attribute, int value) {
 		if (!attributesReady()) return;
 		AttributeInstance instance = player.getAttribute(attribute);
-		if (instance != null) {
-			instance.setBaseValue(value);
-		}
+		if (instance == null) return;
+		// Full field value (up to maxValue). Skip no-op to avoid dirty attribute sync every tick.
+		if (Math.abs(instance.getBaseValue() - value) < 0.5D) return;
+		instance.setBaseValue(value);
 	}
 
 	/** Push field values onto player attributes when instances exist (safe to call often). */

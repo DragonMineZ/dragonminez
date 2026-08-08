@@ -93,8 +93,7 @@ public class IncreaseStatC2S {
 			case "RES" -> {
 				float oldMaxStamina = data.getMaxStamina();
 				data.getStats().addResistance(amount);
-				float newMaxStamina = data.getMaxStamina();
-				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+				data.getResources().grantMaxPoolIncrease(oldMaxStamina, data.getMaxStamina(), false);
 			}
 			case "VIT" -> {
 				float oldHealthBonus = data.getHealthBonus();
@@ -113,8 +112,7 @@ public class IncreaseStatC2S {
 			case "ENE" -> {
 				float oldMaxEnergy = data.getMaxEnergy();
 				data.getStats().addEnergy(amount);
-				float newMaxEnergy = data.getMaxEnergy();
-				if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
+				data.getResources().grantMaxPoolIncrease(oldMaxEnergy, data.getMaxEnergy(), true);
 			}
 		}
 	}

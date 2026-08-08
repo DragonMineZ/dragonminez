@@ -119,7 +119,7 @@ public class StatsCommand {
 					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) applyModification(data, s, value, mode);
 				} else applyModification(data, finalStat, value, mode);
 
-				// Keep attribute mirrors in sync after large absolute sets.
+				// Keep attribute mirrors in sync after large absolute sets (VIT/ENE fields → attributes).
 				data.reapplyStatAttributes();
 
 				float newHealthBonus = data.getHealthBonus();
@@ -130,10 +130,17 @@ public class StatsCommand {
 					if (healthDiff > 0) player.heal(healthDiff);
 				}
 
-				float newMaxEnergy = data.getMaxEnergy();
-				if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
-				float newMaxStamina = data.getMaxStamina();
-				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+				// Max ki/stamina like health: fill on absolute set of the driving stat; else grant delta.
+				if ("set".equals(mode) && (finalStat.equals("ALL") || finalStat.equals("ENE"))) {
+					data.getResources().setCurrentEnergy(data.getMaxEnergy());
+				} else {
+					data.getResources().grantMaxPoolIncrease(oldMaxEnergy, data.getMaxEnergy(), true);
+				}
+				if ("set".equals(mode) && (finalStat.equals("ALL") || finalStat.equals("RES"))) {
+					data.getResources().setCurrentStamina(data.getMaxStamina());
+				} else {
+					data.getResources().grantMaxPoolIncrease(oldMaxStamina, data.getMaxStamina(), false);
+				}
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

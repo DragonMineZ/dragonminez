@@ -132,8 +132,7 @@ public class StorageManager {
 			TransformationsHelper.ensureSelectedFormDefault(stats);
 			TransformationsHelper.ensureSelectedStackFormDefault(stats);
 
-			stats.reapplyStatAttributes();
-			com.dragonminez.server.events.players.StatsEvents.applyHealthBonus(player);
+			com.dragonminez.server.events.players.StatsEvents.restoreStatsPoolsOnJoin(player);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString()
 					+ " VIT=" + stats.getStats().getVitality()

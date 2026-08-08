@@ -28,10 +28,17 @@ import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 @EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class GenericAttributes {
 	/**
-	 * Finite ceiling high enough for endgame vitality without using {@link Float#MAX_VALUE}
-	 * (which can break float health sync / AttributeFix configs).
+	 * Ceiling for damage/armor/etc. Not used for living max_health (see below).
 	 */
 	public static final double COMBAT_ATTRIBUTE_MAX = 2_000_000_000.0D;
+
+	/**
+	 * Living max_health only. 1.20.1 (vanilla 1024 / AttributeFix ~2048) kept this low enough
+	 * that multiplayer join worked. Raising it to 2e9 with VIT=999999999 freezes rejoin after
+	 * terrain. 2^20 is well above AttributeFix defaults and safe for entity HP sync.
+	 * Main stats STR…ENE still use full config {@code maxValue} (can be 1e9).
+	 */
+	public static final double MAX_HEALTH_ENGINE_CEILING = 1_048_576.0D;
 
 	private static volatile boolean gameBusHooked;
 	private static volatile boolean loggedHealthCeiling;
@@ -57,11 +64,11 @@ public class GenericAttributes {
 	public static void ensureAttributeCeilings() {
 		setMaxIfRanged(Attributes.ARMOR, COMBAT_ATTRIBUTE_MAX);
 		setMaxIfRanged(Attributes.ARMOR_TOUGHNESS, COMBAT_ATTRIBUTE_MAX);
-		setMaxIfRanged(Attributes.MAX_HEALTH, COMBAT_ATTRIBUTE_MAX);
+		// Not COMBAT_ATTRIBUTE_MAX — rejoin-safe living HP ceiling (see MAX_HEALTH_ENGINE_CEILING).
+		setMaxIfRanged(Attributes.MAX_HEALTH, MAX_HEALTH_ENGINE_CEILING);
 		setMaxIfRanged(Attributes.ATTACK_DAMAGE, COMBAT_ATTRIBUTE_MAX);
 
-		// Main combat stats: registry-time max is often 10000 (config not loaded yet).
-		// Raise to configured maxValue (can be 1e9). Also beat AttributeFix-style 99999 caps.
+		// Main combat stats: full config maxValue so VIT/ENE bases stick after /dmzstats set 1e9.
 		double mainStatMax = Math.max(10_000.0, getConfiguredMainStatMax());
 		setMaxIfRanged(MainAttributes.STRENGTH, mainStatMax);
 		setMaxIfRanged(MainAttributes.STRIKE_POWER, mainStatMax);
@@ -84,7 +91,9 @@ public class GenericAttributes {
 
 		if (!loggedHealthCeiling && Attributes.MAX_HEALTH.value() instanceof RangedAttribute health) {
 			loggedHealthCeiling = true;
-			LogUtil.info(Env.COMMON, "MAX_HEALTH attribute ceiling is now {}", health.getMaxValue());
+			LogUtil.info(Env.COMMON,
+					"Attribute ceilings: maxHealth={} mainStatMax={}",
+					health.getMaxValue(), mainStatMax);
 		}
 	}
 

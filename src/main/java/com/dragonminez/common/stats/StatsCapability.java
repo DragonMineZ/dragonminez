@@ -92,8 +92,12 @@ public class StatsCapability {
 					else if (CLIENT_CACHE != null) newData.copyFrom(CLIENT_CACHE);
 				}
 			});
-			// Ensure attribute mirrors exist on the new player entity after clone.
-			newData.reapplyStatAttributes();
+			// Ensure attribute mirrors + pools on the new player entity after clone.
+			if (player instanceof ServerPlayer serverPlayer) {
+				com.dragonminez.server.events.players.StatsEvents.restoreStatsPoolsOnJoin(serverPlayer);
+			} else {
+				newData.reapplyStatAttributes();
+			}
 		});
 		// Drop original provider mapping after clone copy.
 		StatsProvider.remove(original);
@@ -139,10 +143,8 @@ public class StatsCapability {
 					repairedSkills.forEach((oldName, newName) -> LogUtil.info(Env.SERVER, "Repaired skill for {}: '{}' -> '{}'", serverPlayer.getGameProfile().getName(), oldName, newName));
 				}
 				data.getSkills().setSkillActive("kisense", false);
-				// Fields are authoritative; re-push STR…ENE onto attributes after login attach.
-				data.reapplyStatAttributes();
-				// Re-apply HP modifier after ceilings are ensured so save/load is not stuck at 1024/2048.
-				com.dragonminez.server.events.players.StatsEvents.applyHealthBonus(serverPlayer);
+				// VIT/ENE fields from NBT → attributes + HP mod + reclamp max ki/stamina (like health fix).
+				com.dragonminez.server.events.players.StatsEvents.restoreStatsPoolsOnJoin(serverPlayer);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}

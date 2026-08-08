@@ -711,8 +711,9 @@ public class TickHandler {
 				int pct = data.getStatus().getShadowDummyPercent();
 				effectiveMaxEnergy = maxEnergy * (1.0f - pct / 100.0f);
 			}
-			int newEnergy = (int) Math.max(0, Math.min(effectiveMaxEnergy, currentEnergy + Math.ceil(energyChange)));
-			data.getResources().setCurrentEnergy(newEnergy);
+			// Double math — int cast + float store stuck at huge pools (~ULP).
+			double newEnergy = Math.max(0.0, Math.min((double) effectiveMaxEnergy, (double) currentEnergy + Math.ceil(energyChange)));
+			data.getResources().setCurrentEnergy((float) newEnergy);
 
 			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
 				data.getCharacter().clearActiveForm(player, false);
@@ -747,8 +748,8 @@ public class TickHandler {
 			int pct = data.getStatus().getShadowDummyPercent();
 			effectiveMaxStamina = maxStamina * (1.0f - pct / 100.0f);
 		}
-		float newStamina = (float) Math.min(effectiveMaxStamina, currentStamina + Math.ceil(regenPerSecond));
-		data.getResources().setCurrentStamina(newStamina);
+		double newStamina = Math.min((double) effectiveMaxStamina, (double) currentStamina + Math.ceil(regenPerSecond));
+		data.getResources().setCurrentStamina((float) newStamina);
 	}
 
 	private static void regeneratePoise(StatsData data, double meditationBonus) {

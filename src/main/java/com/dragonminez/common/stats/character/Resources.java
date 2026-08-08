@@ -55,22 +55,44 @@ public class Resources {
         return (float) Math.floor(value);
     }
 
+    private static final float LARGE_POOL_THRESHOLD = 1_000_000.0F;
+
+    /**
+     * Clamp ki/stamina with double math so pools at high ENE/RES (1e8–1e9 max) can reach max.
+     * Quarter steps only below {@link #LARGE_POOL_THRESHOLD}.
+     */
+    private static float clampPool(double value, float max) {
+        if (!(max > 0.0F) || !Double.isFinite(value)) {
+            return 0.0F;
+        }
+        double v = Math.min(Math.max(0.0, value), (double) max);
+        if (v >= (double) max - Math.max(4.0 * Math.ulp(max), 1.0)) {
+            return max;
+        }
+        if (v < LARGE_POOL_THRESHOLD) {
+            return roundToQuarter((float) v);
+        }
+        return (float) v;
+    }
+
     public int getPowerRelease() {
         return release;
     }
 
     public void setCurrentEnergy(float energy) {
         if (energy <= 1) setPowerRelease(0);
-        this.currentEnergy = roundToQuarter(Math.min(Math.max(0, energy), statsData.getMaxEnergy()));
+        float max = statsData != null ? statsData.getMaxEnergy() : 0.0F;
+        this.currentEnergy = clampPool(energy, max);
     }
 
     public void setCurrentStamina(float stamina) {
-        float max = Math.max(0, statsData.getMaxStamina());
-        this.currentStamina = roundToQuarter(Math.min(Math.max(0, stamina), max));
+        float max = statsData != null ? Math.max(0.0F, statsData.getMaxStamina()) : 0.0F;
+        this.currentStamina = clampPool(stamina, max);
     }
 
     public void setCurrentPoise(float poise) {
-        this.currentPoise = roundToQuarter(Math.min(Math.max(0, poise), statsData.getMaxPoise()));
+        float max = statsData != null ? statsData.getMaxPoise() : 0.0F;
+        this.currentPoise = roundToQuarter((float) Math.min(Math.max(0.0, (double) poise), Math.max(0.0, (double) max)));
     }
 
     public void setPowerRelease(int release) {
@@ -115,15 +137,46 @@ public class Resources {
     }
 
     public void addEnergy(float amount) {
-        setCurrentEnergy(currentEnergy + amount);
+        setCurrentEnergy((float) ((double) currentEnergy + (double) amount));
     }
 
     public void addStamina(float amount) {
-        setCurrentStamina(currentStamina + amount);
+        setCurrentStamina((float) ((double) currentStamina + (double) amount));
     }
 
     public void addPoise(float amount) {
         setCurrentPoise(currentPoise + amount);
+    }
+
+    /**
+     * When max energy/stamina grows (VIT-style heal for pools): grant the delta with double math,
+     * or snap full if the bar was full before.
+     */
+    public void grantMaxPoolIncrease(float oldMax, float newMax, boolean energy) {
+        if (!(newMax > oldMax)) return;
+        double cur = energy ? currentEnergy : currentStamina;
+        boolean wasFull = oldMax <= 0.0F || cur >= (double) oldMax - Math.max(4.0 * Math.ulp(oldMax), 1.0);
+        if (wasFull) {
+            if (energy) setCurrentEnergy(newMax);
+            else setCurrentStamina(newMax);
+            return;
+        }
+        double next = cur + ((double) newMax - (double) oldMax);
+        if (energy) setCurrentEnergy((float) Math.min(newMax, next));
+        else setCurrentStamina((float) Math.min(newMax, next));
+    }
+
+    /** After login / max recompute: snap near-full float pools to exact max; never invent fill. */
+    public void reclampToCurrentMax() {
+        if (statsData == null) return;
+        float maxE = statsData.getMaxEnergy();
+        float maxS = statsData.getMaxStamina();
+        float maxP = statsData.getMaxPoise();
+        if (maxE > 0.0F) this.currentEnergy = clampPool(this.currentEnergy, maxE);
+        if (maxS > 0.0F) this.currentStamina = clampPool(this.currentStamina, maxS);
+        if (maxP > 0.0F) {
+            this.currentPoise = roundToQuarter((float) Math.min(Math.max(0.0, (double) this.currentPoise), (double) maxP));
+        }
     }
 
     public void addAlignment(int amount) {
