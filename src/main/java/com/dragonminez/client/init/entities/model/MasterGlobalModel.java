@@ -44,7 +44,7 @@ public class MasterGlobalModel<T extends MastersEntity> extends GeoModel<T> {
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/master/" + name + ".animation.json");
+        ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/master/masters.animation.json");
 
         boolean exists = ANIM_CACHE.computeIfAbsent(name, k -> resourceExists(original));
         return exists ? original : ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/master/master_goku.animation.json");

@@ -98,12 +98,32 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 		return false;
 	}
 
-	@Override
-	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		controllers.add(new AnimationController<>(this, "controller", 0, event -> {
-			return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
-		}));
-        if ("frieza".equals(this.masterName)) controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "controller", 0, event -> {
+            String idleAnim = "idle";
+
+            if (this.masterName != null) {
+                switch (this.masterName) {
+                    case "guru":
+                        idleAnim = "guru_idle";
+                        break;
+                    case "uranai":
+                        idleAnim = "uranai_idle";
+                        break;
+                    case "toribot":
+                        idleAnim = "tori_idle";
+                        break;
+                    case "roshi":
+                        idleAnim = "roshi_idle";
+                        break;
+                }
+            }
+
+            return event.setAndContinue(RawAnimation.begin().thenLoop(idleAnim));
+        }));
+
+        controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
     }
 
 	@Override
