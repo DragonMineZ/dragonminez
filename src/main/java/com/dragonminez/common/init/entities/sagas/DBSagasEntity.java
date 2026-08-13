@@ -272,14 +272,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 	private static final double DASH_SPEED_MULTIPLIER = 2.6;
 	private boolean wasTargetCasting = false;
 	private boolean isAttacking = false;
-	/**
-	 * Which fly loop the animation is currently on, so the choice can have hysteresis.
-	 *
-	 * <p>Presentation only, and only ever touched by the client's animation predicate, so it is
-	 * deliberately not synched and not saved — a wrong value costs at most one frame on the wrong
-	 * loop. See {@code DBSagasAnimationHandler.FLY_FAST_ENTER_SQR}.
-	 */
-	private boolean flyAnimFast = false;
 	private boolean transformationDisabled = false;
 	private final List<KiSkill> skillPool = new ArrayList<>();
 	private float currentPoolSkillSize = 1.0F;
@@ -1093,12 +1085,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 		controllers.add(new AnimationController<>(this, "base_controller", 5, DBSagasAnimationHandler::walkPredicate));
 		controllers.add(new AnimationController<>(this, "skill_controller", 5, DBSagasAnimationHandler::skillPredicate));
 		controllers.add(new AnimationController<>(this, "evasion_controller", 5, DBSagasAnimationHandler::evasionPredicate));
-		// Transition length 5, not 0. GeckoLib layers controllers in registration order, so the
-		// punch is meant to play over whatever the base controller is doing — arms swing while the
-		// legs keep walking. At 0 there is no blend at all, so the attack pose snaps on at the start
-		// of the swing and snaps off at the end, popping twice per punch. Against a mob that chains
-		// attacks that reads as the model flickering. Everything else here already blends over 5.
-		controllers.add(new AnimationController<>(this, "attack_controller", 5, DBSagasAnimationHandler::attackPredicate));
+		controllers.add(new AnimationController<>(this, "attack_controller", 0, DBSagasAnimationHandler::attackPredicate));
 		controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
 		controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
 	}
@@ -1835,15 +1822,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 	@java.lang.SuppressWarnings("all")
 	public AiTier getAiTier() {
 		return this.aiTier;
-	}
-
-	/** Which fly loop the animation settled on. See {@link #flyAnimFast}. */
-	public boolean isFlyAnimFast() {
-		return this.flyAnimFast;
-	}
-
-	public void setFlyAnimFast(final boolean flyAnimFast) {
-		this.flyAnimFast = flyAnimFast;
 	}
 
 	@java.lang.SuppressWarnings("all")

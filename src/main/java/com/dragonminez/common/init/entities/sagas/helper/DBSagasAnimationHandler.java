@@ -11,22 +11,6 @@ import software.bernie.geckolib.animation.PlayState;
 
 public class DBSagasAnimationHandler {
 
-    /**
-     * Hysteresis band for the fly animation, as squared horizontal speed.
-     *
-     * <p>This was a single {@code > 0.15} test, which is a hair-trigger: a flying mob circling a
-     * target sits right on that line and its horizontal speed wobbles tick to tick, so the
-     * controller swapped between the fast and slow fly loops constantly. Each swap restarts a
-     * 5-tick transition, so the model never settled — the flicker seen on every flying saga mob.
-     * Raditz is the clearest case, since {@code setFlySpeed(0.35)} lands just under the old
-     * threshold of {@code sqrt(0.15) ≈ 0.387}.
-     *
-     * <p>Separate enter and exit points mean it takes a real change in speed to switch, and noise
-     * around either edge cannot flip it back and forth.
-     */
-    private static final double FLY_FAST_ENTER_SQR = 0.18D;
-    private static final double FLY_FAST_EXIT_SQR = 0.12D;
-
     public static <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
@@ -59,12 +43,7 @@ public class DBSagasAnimationHandler {
         //FLY
         if (entity.isFlying()) {
             double currentSpeedSqr = entity.getDeltaMovement().x * entity.getDeltaMovement().x + entity.getDeltaMovement().z * entity.getDeltaMovement().z;
-            if (entity.isFlyAnimFast()) {
-                if (currentSpeedSqr < FLY_FAST_EXIT_SQR) entity.setFlyAnimFast(false);
-            } else if (currentSpeedSqr > FLY_FAST_ENTER_SQR) {
-                entity.setFlyAnimFast(true);
-            }
-            if (entity.isFlyAnimFast()) {
+            if (currentSpeedSqr > 0.15D) {
                 if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST4);
                 return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST);
             }
