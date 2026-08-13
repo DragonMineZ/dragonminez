@@ -51,7 +51,7 @@ public class DMZSagaItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLa
                 // buffer so GeckoLib's remaining bones keep writing into a valid, set-up buffer.
                 // Without this, strict GPU drivers (AMD/Intel) render the entity as garbage.
                 // This mirrors GeckoLib's own BlockAndItemGeoLayer / DMZPlayerItemInHandLayer.
-                bufferSource.getBuffer(renderType);
+                if (renderType != null) bufferSource.getBuffer(renderType);
 
                 poseStack.popPose();
             }

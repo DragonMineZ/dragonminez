@@ -70,7 +70,7 @@ public class FormModeHandler implements IActionModeHandler {
 
 				if (!isFormStackable || !isStackStackable || !meetsStackMastery || !compatible) {
 					data.getCharacter().clearActiveStackForm(player);
-					player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
+					player.removeEffect(MainEffects.STACK_TRANSFORMED);
 					player.sendSystemMessage(Component.translatable("message.dragonminez.form.stack_removed"));
 				}
 			}
@@ -129,8 +129,8 @@ public class FormModeHandler implements IActionModeHandler {
 						.append(translatedStackFormName);
 			}
 
-			if (!player.hasEffect(MainEffects.TRANSFORMED.get())) {
-				player.addEffect(new MobEffectInstance(MainEffects.TRANSFORMED.get(), -1, 0, false, false, true));
+			if (!player.hasEffect(MainEffects.TRANSFORMED)) {
+				player.addEffect(new MobEffectInstance(MainEffects.TRANSFORMED, -1, 0, false, false, true));
 			}
 			player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", translatedFormName), true);
 			player.refreshDimensions();

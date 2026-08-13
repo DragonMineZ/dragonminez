@@ -141,8 +141,8 @@ public class StackFormModeHandler implements IActionModeHandler {
 
 			player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", fullFormName), true);
 
-			if (!player.hasEffect(MainEffects.STACK_TRANSFORMED.get())) {
-				player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORMED.get(), -1, 0, false, false, true));
+			if (!player.hasEffect(MainEffects.STACK_TRANSFORMED)) {
+				player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORMED, -1, 0, false, false, true));
 			}
 			player.refreshDimensions();
 		}

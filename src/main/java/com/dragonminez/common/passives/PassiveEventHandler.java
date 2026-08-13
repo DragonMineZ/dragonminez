@@ -9,18 +9,22 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHealEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class PassiveEventHandler {
 
 	private static boolean redirecting = false;
@@ -28,9 +32,9 @@ public class PassiveEventHandler {
 	public static boolean suppressHealingBonus = false;
 
 	@SubscribeEvent
-	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
-		if (!(event.player instanceof ServerPlayer player)) return;
+	public static void onPlayerTick(PlayerTickEvent.Post event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null || !data.getStatus().isHasCreatedCharacter()) return;
@@ -92,11 +96,11 @@ public class PassiveEventHandler {
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public static void onLivingHurt(LivingHurtEvent event) {
+	public static void onLivingHurt(LivingDamageEvent.Pre event) {
 		if (event.getEntity().level().isClientSide) return;
 
 		if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
-			applyPaladinLifesteal(attacker, event.getEntity(), event.getAmount());
+			applyPaladinLifesteal(attacker, event.getEntity(), event.getNewDamage());
 		}
 
 		if (!redirecting && event.getEntity() instanceof ServerPlayer victim) {
@@ -116,9 +120,9 @@ public class PassiveEventHandler {
 		if (pct > 0.0) paladin.heal((float) (damageDealt * pct));
 	}
 
-	private static void applyPaladinRedirect(ServerPlayer victim, LivingHurtEvent event) {
+	private static void applyPaladinRedirect(ServerPlayer victim, LivingDamageEvent.Pre event) {
 		boolean hasRaw = victim.getPersistentData().contains("dmz_raw_damage");
-		double raw = hasRaw ? victim.getPersistentData().getDouble("dmz_raw_damage") : event.getAmount();
+		double raw = hasRaw ? victim.getPersistentData().getDouble("dmz_raw_damage") : event.getNewDamage();
 
 		if (raw < victim.getMaxHealth() * 0.01f) return;
 
@@ -133,7 +137,7 @@ public class PassiveEventHandler {
 		if (redirect <= 0.0) return;
 
 		if (hasRaw) victim.getPersistentData().putDouble("dmz_raw_damage", Math.max(0.0, raw - redirect));
-		else event.setAmount((float) Math.max(0.0, raw - redirect));
+		else event.setNewDamage((float) Math.max(0.0, raw - redirect));
 
 		redirecting = true;
 		try {

@@ -6,7 +6,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class SagaGokuEntity{
 
@@ -16,7 +16,7 @@ public class SagaGokuEntity{
         public SagaGokuEarlyEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
-            String entityName = ForgeRegistries.ENTITY_TYPES.getKey(pEntityType).getPath();
+            String entityName = BuiltInRegistries.ENTITY_TYPE.getKey(pEntityType).getPath();
 
             if (entityName != null && entityName.contains("noweights")) {
                 this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);

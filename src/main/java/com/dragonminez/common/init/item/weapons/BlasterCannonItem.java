@@ -4,6 +4,7 @@ import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -12,7 +13,7 @@ import net.minecraft.world.level.Level;
 
 public class BlasterCannonItem extends Item {
 	public BlasterCannonItem( ) {
-		super(new Properties().stacksTo(1).defaultDurability(200));
+		super(new Properties().stacksTo(1).durability(200));
 	}
 
     @Override
@@ -26,7 +27,7 @@ public class BlasterCannonItem extends Item {
 //            kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.5F);
 
             pLevel.addFreshEntity(kiBlast);
-            itemstack.hurtAndBreak(1, pPlayer, (player) -> player.broadcastBreakEvent(pHand));
+            itemstack.hurtAndBreak(1, pPlayer, pHand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
         }
 
 

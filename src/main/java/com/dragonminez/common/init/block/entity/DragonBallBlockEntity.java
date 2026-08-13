@@ -6,10 +6,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.util.RenderUtil;
 
 public class DragonBallBlockEntity extends BlockEntity implements GeoBlockEntity {
 	private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
@@ -45,6 +45,6 @@ public class DragonBallBlockEntity extends BlockEntity implements GeoBlockEntity
 
 	@Override
 	public double getTick(Object blockEntity) {
-		return RenderUtils.getCurrentTick();
+		return RenderUtil.getCurrentTick();
 	}
 }

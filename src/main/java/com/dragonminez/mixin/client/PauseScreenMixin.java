@@ -1,5 +1,7 @@
 package com.dragonminez.mixin.client;
 
+import java.time.Duration;
+
 import com.dragonminez.client.gui.buttons.DiscordTitleButton;
 import com.dragonminez.client.gui.buttons.PatreonTitleButton;
 import net.minecraft.Util;
@@ -54,7 +56,7 @@ public abstract class PauseScreenMixin extends Screen {
 				button -> this.dragonminez$openDiscordPrompt()
 		));
 		dragonminez$discordButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.discord.prompt")));
-		dragonminez$discordButton.setTooltipDelay(120);
+		dragonminez$discordButton.setTooltipDelay(Duration.ofMillis(120));
 
 		Button dragonminez$patreonButton = this.addRenderableWidget(new PatreonTitleButton(
 				rowX + halfWidth + 4,
@@ -65,7 +67,7 @@ public abstract class PauseScreenMixin extends Screen {
 				button -> this.dragonminez$openPatreonPrompt()
 		));
 		dragonminez$patreonButton.setTooltip(Tooltip.create(Component.translatable("gui.dragonminez.title.patreon.prompt")));
-		dragonminez$patreonButton.setTooltipDelay(120);
+		dragonminez$patreonButton.setTooltipDelay(Duration.ofMillis(120));
 	}
 
 	@Unique

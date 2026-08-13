@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.compat.CameraAimHelper;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -10,31 +11,43 @@ import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.world.phys.Vec3;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
 public class TechniqueChargeC2S {
-	public enum Action { START, SET_HOLDING }
+	public enum Action { START, SET_HOLDING, UPDATE_AIM }
 
 	private final Action action;
 	private final int slot;
 	private final boolean holding;
 	private final int targetId;
+	private final float aimX;
+	private final float aimY;
+	private final float aimZ;
 
-	private TechniqueChargeC2S(Action action, int slot, boolean holding, int targetId) {
+	private TechniqueChargeC2S(Action action, int slot, boolean holding, int targetId, Vec3 aim) {
 		this.action = action;
 		this.slot = slot;
 		this.holding = holding;
 		this.targetId = targetId;
+		this.aimX = (float) aim.x;
+		this.aimY = (float) aim.y;
+		this.aimZ = (float) aim.z;
 	}
 
-	public static TechniqueChargeC2S start(int slot, int targetId) {
-		return new TechniqueChargeC2S(Action.START, slot, false, targetId);
+	public static TechniqueChargeC2S start(int slot, int targetId, Vec3 aim) {
+		return new TechniqueChargeC2S(Action.START, slot, false, targetId, aim);
 	}
 
-	public static TechniqueChargeC2S setHolding(boolean holding) {
-		return new TechniqueChargeC2S(Action.SET_HOLDING, -1, holding, -1);
+	public static TechniqueChargeC2S setHolding(boolean holding, Vec3 aim) {
+		return new TechniqueChargeC2S(Action.SET_HOLDING, -1, holding, -1, aim);
+	}
+
+	/** Lightweight aim refresh while holding a charge (no progression resync). */
+	public static TechniqueChargeC2S updateAim(Vec3 aim) {
+		return new TechniqueChargeC2S(Action.UPDATE_AIM, -1, false, -1, aim);
 	}
 
 	public TechniqueChargeC2S(FriendlyByteBuf buf) {
@@ -42,6 +55,9 @@ public class TechniqueChargeC2S {
 		this.slot = buf.readVarInt();
 		this.holding = buf.readBoolean();
 		this.targetId = buf.readInt();
+		this.aimX = buf.readFloat();
+		this.aimY = buf.readFloat();
+		this.aimZ = buf.readFloat();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
@@ -49,12 +65,16 @@ public class TechniqueChargeC2S {
 		buf.writeVarInt(this.slot);
 		buf.writeBoolean(this.holding);
 		buf.writeInt(this.targetId);
+		buf.writeFloat(this.aimX);
+		buf.writeFloat(this.aimY);
+		buf.writeFloat(this.aimZ);
 	}
 
 	public static void handle(TechniqueChargeC2S msg, Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+			CameraAimHelper.store(player, new Vec3(msg.aimX, msg.aimY, msg.aimZ));
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) {
@@ -89,7 +109,7 @@ public class TechniqueChargeC2S {
 							data.getTechniques().selectSlot(msg.slot);
 							data.getTechniques().startTechniqueCharge(kiAttack.getId());
 							data.getTechniques().setHomingTargetId(msg.targetId);
-							net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+							net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
 									new com.dragonminez.common.events.DMZEvent.KiAttackCastEvent(player, data, kiAttack));
 						} else {
 							data.getTechniques().clearTechniqueCharge();
@@ -102,7 +122,9 @@ public class TechniqueChargeC2S {
 					}
 				}
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+				if (msg.action != Action.UPDATE_AIM) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+				}
 			});
 		});
 

@@ -26,7 +26,7 @@ import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import software.bernie.geckolib.core.object.Color;
+import software.bernie.geckolib.util.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 import java.util.Random;

@@ -136,11 +136,11 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(MAX_RADIUS, 15.0f);
-        this.entityData.define(OWNER_ID, -1);
-        this.entityData.define(CAST_EXPLOSION, 100);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(MAX_RADIUS, 15.0f);
+        builder.define(OWNER_ID, -1);
+        builder.define(CAST_EXPLOSION, 100);
     }
 
     @Override

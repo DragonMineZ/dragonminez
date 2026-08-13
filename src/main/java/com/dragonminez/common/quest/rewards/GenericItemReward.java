@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 @Getter
 @Setter
@@ -29,7 +29,7 @@ public class GenericItemReward extends QuestReward {
 
 	@Override
 	public void giveReward(ServerPlayer player, double rewardMultiplier) {
-		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemReward.getItemId()));
+		Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemReward.getItemId()));
 		if (item == null) return;
 		int scaledCount = scaledCount(rewardMultiplier);
 		if (scaledCount <= 0) return;

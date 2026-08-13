@@ -10,11 +10,11 @@ public class KiChargeStatusHandler implements IStatusEffectHandler {
     @Override
     public void handleStatusEffects(ServerPlayer player, StatsData data) {
         if (data.getStatus().isChargingKi()) {
-            if (!player.hasEffect(MainEffects.KICHARGE.get())) {
-                player.addEffect(new MobEffectInstance(MainEffects.KICHARGE.get(), -1, 0, false, false, true));
+            if (!player.hasEffect(MainEffects.KICHARGE)) {
+                player.addEffect(new MobEffectInstance(MainEffects.KICHARGE, -1, 0, false, false, true));
             }
         } else {
-            player.removeEffect(MainEffects.KICHARGE.get());
+            player.removeEffect(MainEffects.KICHARGE);
         }
     }
 

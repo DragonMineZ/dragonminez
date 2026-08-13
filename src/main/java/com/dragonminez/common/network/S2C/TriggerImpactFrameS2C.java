@@ -1,10 +1,10 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.systems.impactframes.ImpactFrame;
-import com.dragonminez.client.systems.impactframes.ImpactFramesHandler;
-import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.network.ClientPacketHandler;
+import com.dragonminez.compat.DistExecutor;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
 
 import java.util.function.Supplier;
 
@@ -37,11 +37,8 @@ public class TriggerImpactFrameS2C {
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			if (ConfigManager.getUserConfig().isImpactFramesEnabled()) {
-				ImpactFramesHandler.addImpactFrame(new ImpactFrame(threshold, lerp, duration, invert));
-			}
-		});
+		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+				() -> () -> ClientPacketHandler.handleImpactFrame(threshold, lerp, duration, invert)));
 		ctx.get().setPacketHandled(true);
 	}
 }

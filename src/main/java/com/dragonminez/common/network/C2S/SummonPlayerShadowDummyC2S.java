@@ -17,7 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -152,8 +152,8 @@ public class SummonPlayerShadowDummyC2S {
 
 		var maxHealthAttr = player.getAttribute(Attributes.MAX_HEALTH);
 		if (maxHealthAttr != null) {
-			maxHealthAttr.removeModifier(SHADOW_HP_MODIFIER_UUID);
-			maxHealthAttr.addPermanentModifier(new AttributeModifier(SHADOW_HP_MODIFIER_UUID, "Shadow Dummy HP Penalty", -(pct / 100.0), AttributeModifier.Operation.MULTIPLY_TOTAL));
+			maxHealthAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(SHADOW_HP_MODIFIER_UUID));
+			maxHealthAttr.addPermanentModifier(com.dragonminez.common.util.AttributeMods.of(SHADOW_HP_MODIFIER_UUID, "Shadow Dummy HP Penalty", -(pct / 100.0), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 			float newMax = (float) maxHealthAttr.getValue();
 			if (player.getHealth() > newMax) player.setHealth(newMax);
 		}
@@ -163,6 +163,6 @@ public class SummonPlayerShadowDummyC2S {
 		data.getBonusStats().removeAllBonuses(BONUS_KEY);
 
 		var maxHealthAttr = player.getAttribute(Attributes.MAX_HEALTH);
-		if (maxHealthAttr != null) maxHealthAttr.removeModifier(SHADOW_HP_MODIFIER_UUID);
+		if (maxHealthAttr != null) maxHealthAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(SHADOW_HP_MODIFIER_UUID));
 	}
 }

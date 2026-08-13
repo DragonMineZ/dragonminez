@@ -1,6 +1,6 @@
 package com.dragonminez.client.animation;
 
-import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.animation.RawAnimation;
 
 public class BaseAnimations {
 	public static final RawAnimation IDLE = RawAnimation.begin().thenLoop("base.idle");

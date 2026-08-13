@@ -10,14 +10,18 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class MovementSkillsHandler {
 	public static final UUID SPRINT_SPEED_UUID = UUID.fromString("c4c4e8b0-5f21-4f16-9a2d-123456789abc");
 	private static int airTicks = 0;
@@ -25,8 +29,7 @@ public class MovementSkillsHandler {
 	private static boolean hasAppliedBaseBoost = false;
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.END) return;
+	public static void onClientTick(ClientTickEvent.Post event) {
 
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer player = mc.player;
@@ -56,15 +59,15 @@ public class MovementSkillsHandler {
 
 		AttributeInstance speedAttr = player.getAttribute(Attributes.MOVEMENT_SPEED);
 		if (speedAttr != null) {
-			AttributeModifier existingSprint = speedAttr.getModifier(SPRINT_SPEED_UUID);
+			AttributeModifier existingSprint = speedAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(SPRINT_SPEED_UUID));
 			if (sprintLevel[0] > 0 && !isStunned[0]) {
 				double boost = sprintLevel[0] * 0.1;
-				if (existingSprint == null || existingSprint.getAmount() != boost) {
-					speedAttr.removeModifier(SPRINT_SPEED_UUID);
-					speedAttr.addTransientModifier(new AttributeModifier(SPRINT_SPEED_UUID, "Sprint Skill Boost", boost, AttributeModifier.Operation.MULTIPLY_TOTAL));
+				if (existingSprint == null || existingSprint.amount() != boost) {
+					speedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(SPRINT_SPEED_UUID));
+					speedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(SPRINT_SPEED_UUID, "Sprint Skill Boost", boost, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 				}
 			} else if (existingSprint != null) {
-				speedAttr.removeModifier(SPRINT_SPEED_UUID);
+				speedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(SPRINT_SPEED_UUID));
 			}
 		}
 

@@ -19,7 +19,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -63,7 +63,7 @@ public class WeaponRegistry {
             }
         }
 
-        var itemId = ForgeRegistries.ITEMS.getKey(itemStack.getItem());
+        var itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
         if (itemId != null) return getAttributes(itemId);
         return null;
     }

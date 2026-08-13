@@ -17,8 +17,6 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.Collection;
 import java.util.List;
@@ -98,8 +96,10 @@ public class StatsCommand {
 			return 0;
 		}
 
+		// Raise RangedAttribute maxes to the configured maxValue before writing bases.
+		com.dragonminez.common.stats.GenericAttributes.ensureAttributeCeilings();
+
 		int value;
-		int maxValue = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		try {
 			if (amountStr.equalsIgnoreCase("min")) value = 0;
 			else value = Integer.parseInt(amountStr);
@@ -119,23 +119,28 @@ public class StatsCommand {
 					for (String s : new String[]{"STR", "SKP", "RES", "VIT", "PWR", "ENE"}) applyModification(data, s, value, mode);
 				} else applyModification(data, finalStat, value, mode);
 
+				// Keep attribute mirrors in sync after large absolute sets (VIT/ENE fields → attributes).
+				data.reapplyStatAttributes();
 
 				float newHealthBonus = data.getHealthBonus();
 				float healthDiff = newHealthBonus - oldHealthBonus;
 
-				if (healthDiff > 0) {
-					var attribute = player.getAttribute(Attributes.MAX_HEALTH);
-					if (attribute != null) {
-						attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
-						attribute.addPermanentModifier(new AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADDITION));
-					}
-					player.heal(healthDiff);
+				if (healthDiff != 0) {
+					StatsEvents.applyHealthBonus(player);
+					if (healthDiff > 0) player.heal(healthDiff);
 				}
 
-				float newMaxEnergy = data.getMaxEnergy();
-				if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
-				float newMaxStamina = data.getMaxStamina();
-				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+				// Max ki/stamina like health: fill on absolute set of the driving stat; else grant delta.
+				if ("set".equals(mode) && (finalStat.equals("ALL") || finalStat.equals("ENE"))) {
+					data.getResources().setCurrentEnergy(data.getMaxEnergy());
+				} else {
+					data.getResources().grantMaxPoolIncrease(oldMaxEnergy, data.getMaxEnergy(), true);
+				}
+				if ("set".equals(mode) && (finalStat.equals("ALL") || finalStat.equals("RES"))) {
+					data.getResources().setCurrentStamina(data.getMaxStamina());
+				} else {
+					data.getResources().grantMaxPoolIncrease(oldMaxStamina, data.getMaxStamina(), false);
+				}
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
@@ -157,13 +162,11 @@ public class StatsCommand {
 		int current = data.getCurrentStatValue(stat);
 		switch (mode) {
 			case "set" -> {
-				int target = Math.max(0, value);
-				if (target <= current) {
-					data.getStats().setStat(stat, target);
-				} else {
-					int increase = data.getMaxAllowedIncreaseForStat(stat, target - current);
-					data.getStats().setStat(stat, current + increase);
-				}
+				// Admin absolute set: each stat independently clamped to [0, maxValue].
+				// Do not use the shared total budget — that overflowed at Integer.MAX_VALUE
+				// when maxValue is 1e9 (STR+SKP ate the pool; RES got ~147M; VIT/PWR/ENE starved).
+				int target = data.clampStatToConfiguredMax(value);
+				data.getStats().setStat(stat, target);
 			}
 			case "add" -> {
 				int increase = data.getMaxAllowedIncreaseForStat(stat, value);

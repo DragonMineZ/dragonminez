@@ -1,6 +1,6 @@
 package com.dragonminez.server.world.data;
 
-import lombok.Setter;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -8,7 +8,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +16,6 @@ import java.util.UUID;
 
 public class PartySavedData extends SavedData {
 	private static final String FILE_NAME = "dragonminez_parties";
-
 	private final Map<UUID, PartyInstance> parties = new HashMap<>();
 	private final Map<UUID, UUID> playerPartyMap = new HashMap<>();
 
@@ -26,10 +24,10 @@ public class PartySavedData extends SavedData {
 
 	public static PartySavedData get(MinecraftServer server) {
 		DimensionDataStorage storage = server.getLevel(Level.OVERWORLD).getDataStorage();
-		return storage.computeIfAbsent(PartySavedData::load, PartySavedData::new, FILE_NAME);
+		return storage.computeIfAbsent(new SavedData.Factory<>(PartySavedData::new, PartySavedData::load), FILE_NAME);
 	}
 
-	public static PartySavedData load(CompoundTag tag) {
+	public static PartySavedData load(CompoundTag tag, HolderLookup.Provider registries) {
 		PartySavedData data = new PartySavedData();
 		ListTag partiesList = tag.getList("Parties", Tag.TAG_COMPOUND);
 		for (int i = 0; i < partiesList.size(); i++) {
@@ -37,14 +35,12 @@ public class PartySavedData extends SavedData {
 			UUID partyId = partyTag.getUUID("PartyId");
 			UUID leaderId = partyTag.getUUID("LeaderId");
 			boolean pvpEnabled = partyTag.contains("PvpEnabled") && partyTag.getBoolean("PvpEnabled");
-
 			ListTag membersList = partyTag.getList("Members", Tag.TAG_COMPOUND);
 			List<UUID> members = new ArrayList<>();
 			for (int j = 0; j < membersList.size(); j++) {
 				CompoundTag mTag = membersList.getCompound(j);
 				members.add(mTag.getUUID("Id"));
 			}
-
 			PartyInstance instance = new PartyInstance(partyId, leaderId, members, pvpEnabled);
 			data.parties.put(partyId, instance);
 			for (UUID memberId : members) {
@@ -55,14 +51,13 @@ public class PartySavedData extends SavedData {
 	}
 
 	@Override
-	public CompoundTag save(CompoundTag tag) {
+	public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
 		ListTag partiesList = new ListTag();
 		for (PartyInstance instance : parties.values()) {
 			CompoundTag partyTag = new CompoundTag();
 			partyTag.putUUID("PartyId", instance.getPartyId());
 			partyTag.putUUID("LeaderId", instance.getLeaderId());
 			partyTag.putBoolean("PvpEnabled", instance.isPvpEnabled());
-
 			ListTag membersList = new ListTag();
 			for (UUID memberId : instance.getMembers()) {
 				CompoundTag mTag = new CompoundTag();
@@ -117,12 +112,11 @@ public class PartySavedData extends SavedData {
 		}
 	}
 
+
 	public static class PartyInstance {
 		private final UUID partyId;
-		@Setter
 		private UUID leaderId;
 		private final List<UUID> members;
-		@Setter
 		private boolean pvpEnabled;
 
 		public PartyInstance(UUID partyId, UUID leaderId, List<UUID> members, boolean pvpEnabled) {
@@ -132,9 +126,30 @@ public class PartySavedData extends SavedData {
 			this.pvpEnabled = pvpEnabled;
 		}
 
-		public UUID getPartyId() { return partyId; }
-		public UUID getLeaderId() { return leaderId; }
-		public List<UUID> getMembers() { return members; }
-		public boolean isPvpEnabled() { return pvpEnabled; }
+		public UUID getPartyId() {
+			return partyId;
+		}
+
+		public UUID getLeaderId() {
+			return leaderId;
+		}
+
+		public List<UUID> getMembers() {
+			return members;
+		}
+
+		public boolean isPvpEnabled() {
+			return pvpEnabled;
+		}
+
+		@java.lang.SuppressWarnings("all")
+		public void setLeaderId(final UUID leaderId) {
+			this.leaderId = leaderId;
+		}
+
+		@java.lang.SuppressWarnings("all")
+		public void setPvpEnabled(final boolean pvpEnabled) {
+			this.pvpEnabled = pvpEnabled;
+		}
 	}
 }

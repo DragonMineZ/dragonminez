@@ -3,7 +3,9 @@ package com.dragonminez.common.combat.weapon;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 
 import java.io.Reader;
 import java.lang.reflect.Type;
@@ -49,8 +51,10 @@ public class WeaponAttributesHelper {
     private static final String nbtTag = "dragonminez_weapon_attributes";
 
     public static AttributesContainer getContainerFromNBT(ItemStack itemStack) {
-        var tag = itemStack.getTag();
-        if (!itemStack.isEmpty() && tag != null && tag.contains(nbtTag)) {
+        if (itemStack.isEmpty()) return null;
+        CustomData data = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        var tag = data.copyTag();
+        if (tag.contains(nbtTag)) {
             var json = tag.getString(nbtTag);
             if (!json.isBlank()) {
                 var gson = new Gson();

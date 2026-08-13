@@ -12,12 +12,16 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.RegistryObject;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,7 +34,7 @@ import java.util.UUID;
  * head-on beam collisions, advances active clashes (tug-of-war + QTE meters), resolves
  * winners, and keeps both participants invulnerable for the duration.
  */
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class BeamClashManager {
 
     /** Beam directions must oppose at least this much (dot < value) to count as head-on. */
@@ -46,9 +50,8 @@ public class BeamClashManager {
     private static final Set<UUID> CLASHING_OWNERS = new HashSet<>();
 
     @SubscribeEvent
-    public static void onLevelTick(TickEvent.LevelTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
-        if (!(event.level instanceof ServerLevel level)) return;
+    public static void onLevelTick(LevelTickEvent.Post event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
 
         advanceActiveClashes();
 
@@ -261,7 +264,7 @@ public class BeamClashManager {
     }
 
     @SuppressWarnings("unchecked")
-    private static final RegistryObject<SoundEvent>[] PUNCH_SOUNDS = new RegistryObject[]{
+    private static final DeferredHolder<SoundEvent, ? extends SoundEvent>[] PUNCH_SOUNDS = new DeferredHolder[]{
             MainSounds.GOLPE1, MainSounds.GOLPE2, MainSounds.GOLPE3,
             MainSounds.GOLPE4, MainSounds.GOLPE5, MainSounds.GOLPE6
     };
@@ -287,7 +290,7 @@ public class BeamClashManager {
 
     /** Cinematic invulnerability: clashing fighters ignore all other incoming damage. */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onClashingHurt(LivingAttackEvent event) {
+    public static void onClashingHurt(LivingIncomingDamageEvent event) {
         LivingEntity victim = event.getEntity();
         if (victim.level().isClientSide) return;
         if (isClashing(victim.getUUID())) {

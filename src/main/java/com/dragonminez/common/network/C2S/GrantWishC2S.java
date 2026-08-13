@@ -7,7 +7,7 @@ import com.dragonminez.common.wish.WishManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

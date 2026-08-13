@@ -16,8 +16,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.eventbus.api.Cancelable;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.ICancellableEvent;
+import net.neoforged.bus.api.Event;
 
 import java.util.List;
 
@@ -39,8 +39,7 @@ public abstract class DMZEvent extends Event {
 	 * This event is cancelable; if canceled, the stat change will not occur.
 	 */
 	@Getter
-	@Cancelable
-	public static class StatChangeEvent extends Event {
+	public static class StatChangeEvent extends Event implements ICancellableEvent {
 
 		private final Player player;
 		private final StatType stat;
@@ -69,8 +68,7 @@ public abstract class DMZEvent extends Event {
 	 * This event is cancelable; if canceled, the ki charge will not occur.
 	 */
 	@Getter
-	@Cancelable
-	public static class KiChargeEvent extends Event {
+	public static class KiChargeEvent extends Event implements ICancellableEvent {
 
 		private final Player player;
 		private final float currentEnergy;
@@ -92,8 +90,7 @@ public abstract class DMZEvent extends Event {
 	 * This event is cancelable; if canceled, the TP gain will not occur.
 	 */
 	@Getter
-	@Cancelable
-	public static class TPGainEvent extends Event {
+	public static class TPGainEvent extends Event implements ICancellableEvent {
 
 		private final Player player;
 		private final int oldValue;
@@ -123,8 +120,7 @@ public abstract class DMZEvent extends Event {
 	 * This event is cancelable; if canceled, the block will not occur, so the player will take full damage.
 	 */
 	@Getter
-	@Cancelable
-	public static class PlayerBlockEvent extends Event {
+	public static class PlayerBlockEvent extends Event implements ICancellableEvent {
 		private final ServerPlayer victim;
 		private final LivingEntity attacker;
 		private final float originalDamage;
@@ -151,8 +147,7 @@ public abstract class DMZEvent extends Event {
 	 * This event is cancelable; if canceled, the dash will not occur.
 	 */
 	@Getter
-	@Cancelable
-	public static class PlayerDashEvent extends Event {
+	public static class PlayerDashEvent extends Event implements ICancellableEvent {
 		private final ServerPlayer player;
 		private final DashType dashType;
 		@Setter
@@ -178,8 +173,7 @@ public abstract class DMZEvent extends Event {
 	 * This event is cancelable; if canceled, the evasion will not occur.
 	 */
 	@Getter
-	@Cancelable
-	public static class PlayerEvasionEvent extends Event {
+	public static class PlayerEvasionEvent extends Event implements ICancellableEvent {
 		private final ServerPlayer player;
 		private final LivingEntity attacker;
 		private final float originalDamage;
@@ -200,8 +194,7 @@ public abstract class DMZEvent extends Event {
 	 * This event is cancelable; if canceled, the fusion will not occur.
 	 */
 	@Getter
-	@Cancelable
-	public static class FusionEvent extends Event {
+	public static class FusionEvent extends Event implements ICancellableEvent {
 		private final ServerPlayer initiator;
 		private final LivingEntity target;
 		private final FusionType type;
@@ -254,7 +247,7 @@ public abstract class DMZEvent extends Event {
 	 * Base event for quest lifecycle hooks (start/progress/fail/turn-in/reward/complete).
 	 */
 	@Getter
-	public abstract static class QuestLifecycleEvent extends Event {
+	public abstract static class QuestLifecycleEvent extends Event implements ICancellableEvent {
 		private final ServerPlayer player;
 		private final String questKey;
 		private final Saga saga;
@@ -276,8 +269,7 @@ public abstract class DMZEvent extends Event {
 	 */
 	@Setter
 	@Getter
-	@Cancelable
-	public static class QuestStartEvent extends QuestLifecycleEvent {
+	public static class QuestStartEvent extends QuestLifecycleEvent implements ICancellableEvent {
 		private Difficulty difficulty;
 
 		public QuestStartEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, Difficulty difficulty) {
@@ -291,8 +283,7 @@ public abstract class DMZEvent extends Event {
 	 * Event fired before objective progress is stored.
 	 */
 	@Getter
-	@Cancelable
-	public static class QuestObjectiveProgressEvent extends QuestLifecycleEvent {
+	public static class QuestObjectiveProgressEvent extends QuestLifecycleEvent implements ICancellableEvent {
 		private final int objectiveIndex;
 		private final int oldProgress;
 		@Setter
@@ -314,8 +305,7 @@ public abstract class DMZEvent extends Event {
 	 * Event fired before a quest is marked as failed.
 	 */
 	@Getter
-	@Cancelable
-	public static class QuestFailEvent extends QuestLifecycleEvent {
+	public static class QuestFailEvent extends QuestLifecycleEvent implements ICancellableEvent {
 		private final FailureReason reason;
 
 		public QuestFailEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, FailureReason reason) {
@@ -334,8 +324,7 @@ public abstract class DMZEvent extends Event {
 	 * Event fired before a quest turn-in action is applied.
 	 */
 	@Getter
-	@Cancelable
-	public static class QuestTurnInEvent extends QuestLifecycleEvent {
+	public static class QuestTurnInEvent extends QuestLifecycleEvent implements ICancellableEvent {
 		private final String npcId;
 
 		public QuestTurnInEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, String npcId) {
@@ -349,8 +338,7 @@ public abstract class DMZEvent extends Event {
 	 * Event fired before an individual reward is claimed.
 	 */
 	@Getter
-	@Cancelable
-	public static class QuestRewardClaimEvent extends QuestLifecycleEvent {
+	public static class QuestRewardClaimEvent extends QuestLifecycleEvent implements ICancellableEvent {
 		private final int rewardIndex;
 
 		public QuestRewardClaimEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, int rewardIndex) {
@@ -405,8 +393,7 @@ public abstract class DMZEvent extends Event {
 
 	/** Base for the per-second resource regeneration events. Modify {@link #amount} or cancel to suppress. */
 	@Getter
-	@Cancelable
-	public abstract static class ResourceRegenEvent extends Event {
+	public abstract static class ResourceRegenEvent extends Event implements ICancellableEvent {
 		private final Player player;
 		private final StatsData statsData;
 		@Setter
@@ -444,8 +431,7 @@ public abstract class DMZEvent extends Event {
 
 	/** Phase 1: fired pre-mitigation for an outgoing hit. Modify {@link #amount}/{@link #defensePenetration} or cancel. */
 	@Getter
-	@Cancelable
-	public static class DamageModifyEvent extends Event {
+	public static class DamageModifyEvent extends Event implements ICancellableEvent {
 		private final Player attacker;
 		private final LivingEntity victim;
 		@Setter

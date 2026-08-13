@@ -25,19 +25,16 @@ import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
-import org.jetbrains.annotations.NotNull;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceCache;
+import software.bernie.geckolib.animation.*;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.util.RenderUtil;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
@@ -48,7 +45,6 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 
 	private final StarEnergyStorage energyStorage;
 
-	private LazyOptional<IEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
 
 	protected final ContainerData data;
 
@@ -98,18 +94,6 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 
 	private static GeneralServerConfig.GravityConfig cfg() {
 		return ConfigManager.getServerConfig().getGravity();
-	}
-
-	@Override
-	public void onLoad() {
-		super.onLoad();
-		lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
-	}
-
-	@Override
-	public void invalidateCaps() {
-		super.invalidateCaps();
-		lazyEnergyHandler.invalidate();
 	}
 
 	@Override
@@ -271,6 +255,7 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 		return state.getCollisionShape(level, pos).isEmpty();
 	}
 
+	public IEnergyStorage getEnergyStorage() { return energyStorage; }
 	public boolean isRoomValid() { return roomValid; }
 	public boolean isActive() { return active; }
 	public int getTargetGravity() { return targetGravity; }
@@ -278,19 +263,19 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 	public BlockPos getRoomMax() { return roomMax; }
 
 	@Override
-	protected void saveAdditional(CompoundTag pTag) {
+	protected void saveAdditional(CompoundTag pTag, net.minecraft.core.HolderLookup.Provider registries) {
 		pTag.putBoolean("active", active);
 		pTag.putInt("targetGravity", targetGravity);
 		pTag.putBoolean("roomValid", roomValid);
 		pTag.putLong("roomMin", roomMin.asLong());
 		pTag.putLong("roomMax", roomMax.asLong());
 		energyStorage.saveNBT(pTag);
-		super.saveAdditional(pTag);
+		super.saveAdditional(pTag, registries);
 	}
 
 	@Override
-	public void load(CompoundTag pTag) {
-		super.load(pTag);
+	protected void loadAdditional(CompoundTag pTag, net.minecraft.core.HolderLookup.Provider registries) {
+		super.loadAdditional(pTag, registries);
 		active = pTag.getBoolean("active");
 		targetGravity = pTag.getInt("targetGravity");
 		roomValid = pTag.getBoolean("roomValid");
@@ -300,8 +285,8 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 	}
 
 	@Override
-	public CompoundTag getUpdateTag() {
-		CompoundTag tag = super.getUpdateTag();
+	public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+		CompoundTag tag = super.getUpdateTag(registries);
 		tag.putBoolean("active", active);
 		tag.putBoolean("roomValid", roomValid);
 		tag.putInt("targetGravity", targetGravity);
@@ -311,7 +296,7 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 	}
 
 	@Override
-	public void handleUpdateTag(CompoundTag tag) {
+	public void handleUpdateTag(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 		active = tag.getBoolean("active");
 		roomValid = tag.getBoolean("roomValid");
 		targetGravity = tag.getInt("targetGravity");
@@ -326,20 +311,16 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 	}
 
 	@Override
-	public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-		if (pkt.getTag() != null) handleUpdateTag(pkt.getTag());
+	public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt, net.minecraft.core.HolderLookup.Provider registries) {
+		if (pkt.getTag() != null) handleUpdateTag(pkt.getTag(), registries);
 	}
 
 	@Override
 	public Component getDisplayName() {
 		return Component.translatable("block.dragonminez.gravity_device");
 	}
+	// getCapability removed — register via RegisterCapabilitiesEvent
 
-	@Override
-	public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-		if (cap == ForgeCapabilities.ENERGY) return lazyEnergyHandler.cast();
-		return super.getCapability(cap, side);
-	}
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
@@ -362,7 +343,7 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 
 	@Override
 	public double getTick(Object blockEntity) {
-		return RenderUtils.getCurrentTick();
+		return RenderUtil.getCurrentTick();
 	}
 
 	@Nullable
@@ -370,4 +351,5 @@ public class GravityDeviceBlockEntity extends BlockEntity implements MenuProvide
 	public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
 		return new GravityDeviceMenu(pContainerId, pPlayerInventory, this, this.data);
 	}
+
 }

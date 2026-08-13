@@ -6,10 +6,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Set;
 
@@ -23,17 +23,17 @@ import java.util.Set;
 public final class MainVillagers {
 
 	public static final DeferredRegister<PoiType> POI_TYPES =
-			DeferredRegister.create(ForgeRegistries.POI_TYPES, Reference.MOD_ID);
+			DeferredRegister.create(BuiltInRegistries.POINT_OF_INTEREST_TYPE, Reference.MOD_ID);
 
 	public static final DeferredRegister<VillagerProfession> PROFESSIONS =
-			DeferredRegister.create(ForgeRegistries.VILLAGER_PROFESSIONS, Reference.MOD_ID);
+			DeferredRegister.create(BuiltInRegistries.VILLAGER_PROFESSION, Reference.MOD_ID);
 
 	/** POI asociado a todos los blockstates del fuel generator. */
-	public static final RegistryObject<PoiType> CAPSULE_CORP_POI = POI_TYPES.register("capsule_corp",
+	public static final DeferredHolder<PoiType, PoiType> CAPSULE_CORP_POI = POI_TYPES.register("capsule_corp",
 			() -> new PoiType(fuelGeneratorStates(), 1, 1));
 
 	/** El oficio en sí. Usa el POI de arriba como sitio de trabajo. */
-	public static final RegistryObject<VillagerProfession> CAPSULE_CORP_ASSISTANT =
+	public static final DeferredHolder<VillagerProfession, VillagerProfession> CAPSULE_CORP_ASSISTANT =
 			PROFESSIONS.register("capsule_corp_assistant",
 					() -> new VillagerProfession(
 							"capsule_corp_assistant",

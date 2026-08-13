@@ -41,7 +41,7 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
         PlayerEffectQueue.addKiAttack((stack, proj) -> {
             stack.pushPose();
-            stack.last().pose().set(basePose);
+            stack.last().pose().mul(basePose);
 
             float ageInTicks = entity.tickCount + partialTick;
             float scale = entity.getSize();
@@ -138,12 +138,12 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                     break;
             }
 
-            PoseStack modelViewStack = RenderSystem.getModelViewStack();
-            modelViewStack.pushPose();
-            modelViewStack.setIdentity();
+            org.joml.Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
+            modelViewStack.pushMatrix();
+            modelViewStack.identity();
             RenderSystem.applyModelViewMatrix();
             immediateBuffer.endBatch();
-            modelViewStack.popPose();
+            modelViewStack.popMatrix();
             RenderSystem.applyModelViewMatrix();
 
             ShaderInstance shader = DMZShaders.ki3dShader;
@@ -268,16 +268,16 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     }
 
     private static void vertex01(VertexConsumer pConsumer, org.joml.Matrix4f pMatrix, int pAlpha, int r, int g, int b) {
-        pConsumer.vertex(pMatrix, 0.0F, 0.0F, 0.0F).color(255, 255, 255, pAlpha).uv(0.5F, 0.5F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0.0F, 1.0F, 0.0F).endVertex();
+        pConsumer.addVertex(pMatrix, 0.0F, 0.0F, 0.0F).setColor(255, 255, 255, pAlpha).setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(0.0F, 1.0F, 0.0F);
     }
     private static void vertex2(VertexConsumer pConsumer, org.joml.Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
-        pConsumer.vertex(pMatrix, -HALF_SQRT_3 * pLength, pWidth, -0.5F * pLength).color(r, g, b, alpha).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0.0F, 1.0F, 0.0F).endVertex();
+        pConsumer.addVertex(pMatrix, -HALF_SQRT_3 * pLength, pWidth, -0.5F * pLength).setColor(r, g, b, alpha).setUv(0.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(0.0F, 1.0F, 0.0F);
     }
     private static void vertex3(VertexConsumer pConsumer, org.joml.Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
-        pConsumer.vertex(pMatrix, HALF_SQRT_3 * pLength, pWidth, -0.5F * pLength).color(r, g, b, alpha).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0.0F, 1.0F, 0.0F).endVertex();
+        pConsumer.addVertex(pMatrix, HALF_SQRT_3 * pLength, pWidth, -0.5F * pLength).setColor(r, g, b, alpha).setUv(1.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(0.0F, 1.0F, 0.0F);
     }
     private static void vertex4(VertexConsumer pConsumer, org.joml.Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
-        pConsumer.vertex(pMatrix, 0.0F, pWidth, 1.0F * pLength).color(r, g, b, alpha).uv(0.5F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0.0F, 1.0F, 0.0F).endVertex();
+        pConsumer.addVertex(pMatrix, 0.0F, pWidth, 1.0F * pLength).setColor(r, g, b, alpha).setUv(0.5F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(0.0F, 1.0F, 0.0F);
     }
 
     @Override

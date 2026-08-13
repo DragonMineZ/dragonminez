@@ -8,7 +8,7 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
@@ -27,7 +27,7 @@ public class SacredKaiGeneration {
 	public static final ResourceKey<LevelStem> SACREDKAI_STEM = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkaiplanet"));
 	public static final ResourceKey<NoiseGeneratorSettings> SACREDKAI_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkaiplanet"));
 
-	public static void bootstrap(BootstapContext<LevelStem> context) {
+	public static void bootstrap(BootstrapContext<LevelStem> context) {
 		HolderGetter<Biome> biomeRegistry = context.lookup(Registries.BIOME);
 		HolderGetter<DimensionType> dimTypes = context.lookup(Registries.DIMENSION_TYPE);
 		HolderGetter<NoiseGeneratorSettings> noiseSettings = context.lookup(Registries.NOISE_SETTINGS);
@@ -62,7 +62,7 @@ public class SacredKaiGeneration {
 		));
 	}
 
-	public static void bootstrapNoise(BootstapContext<NoiseGeneratorSettings> context) {
+	public static void bootstrapNoise(BootstrapContext<NoiseGeneratorSettings> context) {
 		SurfaceRules.RuleSource bedrockRule = SurfaceRules.ifTrue(
 				SurfaceRules.verticalGradient("bedrock_floor", VerticalAnchor.aboveBottom(0), VerticalAnchor.aboveBottom(5)),
 				SurfaceRules.state(Blocks.BEDROCK.defaultBlockState())

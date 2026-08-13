@@ -156,7 +156,7 @@ public class RacialSkillLogic {
 		teleportBehindTarget(player, target);
 		target.addEffect(
 				new MobEffectInstance(
-						MainEffects.STUN.get(),
+						MainEffects.STUN,
 						duration,
 						0,
 						false,
@@ -166,7 +166,7 @@ public class RacialSkillLogic {
 		);
 		player.addEffect(
 				new MobEffectInstance(
-						MainEffects.STUN.get(),
+						MainEffects.STUN,
 						duration,
 						0,
 						false,
@@ -179,7 +179,7 @@ public class RacialSkillLogic {
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN, config.getBioAndroidCooldownSeconds() * 20);
 		player.addEffect(
 				new MobEffectInstance(
-						MainEffects.BIOANDROID_PASSIVE.get(),
+						MainEffects.BIOANDROID_PASSIVE,
 						config.getBioAndroidCooldownSeconds() * 20,
 						0,
 						false,

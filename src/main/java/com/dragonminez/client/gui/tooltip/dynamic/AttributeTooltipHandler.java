@@ -2,21 +2,22 @@ package com.dragonminez.client.gui.tooltip.dynamic;
 
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainEnchants;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraftforge.common.ForgeMod;
-
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.DecimalFormat;
@@ -33,91 +34,108 @@ public class AttributeTooltipHandler {
 	public static final int MODIFIER_BLUE = 0x5555FF;
 	public static final int MODIFIER_RED = 0xFF5555;
 
-	public static final Set<Attribute> PERCENT_ATTRIBUTES = Set.of(
+	public static final Set<Holder<Attribute>> PERCENT_ATTRIBUTES = Set.of(
 			Attributes.MOVEMENT_SPEED,
 			Attributes.KNOCKBACK_RESISTANCE
 	);
 
 	public static final Comparator<AttributeModifier> ATTRIBUTE_MODIFIER_COMPARATOR =
-			Comparator.comparing(AttributeModifier::getOperation).thenComparing((AttributeModifier a) -> -Math.abs(a.getAmount())).thenComparing(AttributeModifier::getId);
+			Comparator.comparing(AttributeModifier::operation)
+					.thenComparing((AttributeModifier a) -> -Math.abs(a.amount()))
+					.thenComparing(AttributeModifier::id);
+
+	public static boolean isPercentAttribute(Holder<Attribute> attribute) {
+		return PERCENT_ATTRIBUTES.contains(attribute) ||
+				attribute.equals(MainAttributes.CRIT_CHANCE) ||
+				attribute.equals(MainAttributes.CRIT_DAMAGE);
+	}
 
 	public static boolean isPercentAttribute(Attribute attribute) {
-		return PERCENT_ATTRIBUTES.contains(attribute) ||
-				attribute.equals(MainAttributes.CRIT_CHANCE.get()) ||
-				attribute.equals(MainAttributes.CRIT_DAMAGE.get());
+		if (attribute == null) return false;
+		if (attribute.equals(Attributes.MOVEMENT_SPEED.value()) || attribute.equals(Attributes.KNOCKBACK_RESISTANCE.value())) {
+			return true;
+		}
+		return attribute.equals(MainAttributes.CRIT_CHANCE.get()) || attribute.equals(MainAttributes.CRIT_DAMAGE.get());
 	}
 
 	public static boolean processVanillaAttributes(ItemStack stack, Consumer<Component> tooltip, @Nullable Player player) {
 		boolean needsShiftPrompt = false;
 
+		ItemAttributeModifiers actualModifiers = stack.getAttributeModifiers();
+		ItemAttributeModifiers defaultModifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+		if (defaultModifiers.modifiers().isEmpty()) {
+			defaultModifiers = stack.getItem().getDefaultAttributeModifiers(stack);
+		}
+
 		EquipmentSlot[] slots = {EquipmentSlot.MAINHAND, EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.OFFHAND};
 
 		for (EquipmentSlot slot : slots) {
-			Multimap<Attribute, AttributeModifier> actualModifiers = stack.getAttributeModifiers(slot);
-			Multimap<Attribute, AttributeModifier> defaultModifiers = stack.getItem().getDefaultAttributeModifiers(slot);
+			Multimap<Holder<Attribute>, AttributeModifier> actual = collectForSlot(actualModifiers, slot);
+			Multimap<Holder<Attribute>, AttributeModifier> defaults = collectForSlot(defaultModifiers, slot);
 
 			float enchantDamage = 0;
 			double critChanceBonus = 0;
 			double critDamageBonus = 0;
 
 			if (slot == EquipmentSlot.MAINHAND) {
-				enchantDamage = EnchantmentHelper.getDamageBonus(stack, MobType.UNDEFINED);
+				// MobType removed in 1.21; enchantment damage bonus is effect-driven now.
+				enchantDamage = 0;
 
-				int chanceLevel = stack.getEnchantmentLevel(MainEnchants.CRIT_CHANCE.get());
+				int chanceLevel = MainEnchants.level(stack, Minecraft.getInstance().level, MainEnchants.CRIT_CHANCE);
 				if (chanceLevel > 0) critChanceBonus = chanceLevel * 0.05D;
 
-				int damageLevel = stack.getEnchantmentLevel(MainEnchants.CRIT_DAMAGE.get());
+				int damageLevel = MainEnchants.level(stack, Minecraft.getInstance().level, MainEnchants.CRIT_DAMAGE);
 				if (damageLevel > 0) critDamageBonus = damageLevel * 0.05D;
 			}
 
-			if (actualModifiers.isEmpty() && enchantDamage <= 0 && critChanceBonus <= 0 && critDamageBonus <= 0) continue;
+			if (actual.isEmpty() && enchantDamage <= 0 && critChanceBonus <= 0 && critDamageBonus <= 0) continue;
 			tooltip.accept(Component.translatable("item.modifiers." + slot.getName()).withStyle(ChatFormatting.GRAY));
 
-			Set<Attribute> allAttributes = new LinkedHashSet<>(actualModifiers.keySet());
+			Set<Holder<Attribute>> allAttributes = new LinkedHashSet<>(actual.keySet());
 			if (enchantDamage > 0) allAttributes.add(Attributes.ATTACK_DAMAGE);
-			if (critChanceBonus > 0) allAttributes.add(MainAttributes.CRIT_CHANCE.get());
-			if (critDamageBonus > 0) allAttributes.add(MainAttributes.CRIT_DAMAGE.get());
+			if (critChanceBonus > 0) allAttributes.add(MainAttributes.CRIT_CHANCE);
+			if (critDamageBonus > 0) allAttributes.add(MainAttributes.CRIT_DAMAGE);
 
-			for (Attribute attr : allAttributes) {
-				if (attr.equals(ForgeMod.BLOCK_REACH.get()) || attr.equals(ForgeMod.ENTITY_REACH.get())) continue;
+			for (Holder<Attribute> attr : allAttributes) {
+				if (attr.equals(Attributes.BLOCK_INTERACTION_RANGE) || attr.equals(Attributes.ENTITY_INTERACTION_RANGE)) continue;
 
 				List<AttributeModifier> baseMods = new ArrayList<>();
 				List<AttributeModifier> extraMods = new ArrayList<>();
 
-				for (AttributeModifier mod : actualModifiers.get(attr)) {
-					if (defaultModifiers.containsEntry(attr, mod)) baseMods.add(mod);
+				for (AttributeModifier mod : actual.get(attr)) {
+					if (defaults.containsEntry(attr, mod)) baseMods.add(mod);
 					else extraMods.add(mod);
 				}
 
 				if (attr.equals(Attributes.ATTACK_DAMAGE) && enchantDamage > 0) {
-					extraMods.add(new AttributeModifier(UUID.randomUUID(), "Enchantment Damage", enchantDamage, AttributeModifier.Operation.ADDITION));
+					extraMods.add(com.dragonminez.common.util.AttributeMods.of(UUID.randomUUID(), "Enchantment Damage", enchantDamage, AttributeModifier.Operation.ADD_VALUE));
 				}
-				if (attr.equals(MainAttributes.CRIT_CHANCE.get()) && critChanceBonus > 0) {
-					extraMods.add(new AttributeModifier(UUID.randomUUID(), "Enchantment Crit Chance", critChanceBonus, AttributeModifier.Operation.ADDITION));
+				if (attr.equals(MainAttributes.CRIT_CHANCE) && critChanceBonus > 0) {
+					extraMods.add(com.dragonminez.common.util.AttributeMods.of(UUID.randomUUID(), "Enchantment Crit Chance", critChanceBonus, AttributeModifier.Operation.ADD_VALUE));
 				}
-				if (attr.equals(MainAttributes.CRIT_DAMAGE.get()) && critDamageBonus > 0) {
-					extraMods.add(new AttributeModifier(UUID.randomUUID(), "Enchantment Crit Damage", critDamageBonus, AttributeModifier.Operation.ADDITION));
+				if (attr.equals(MainAttributes.CRIT_DAMAGE) && critDamageBonus > 0) {
+					extraMods.add(com.dragonminez.common.util.AttributeMods.of(UUID.randomUUID(), "Enchantment Crit Damage", critDamageBonus, AttributeModifier.Operation.ADD_VALUE));
 				}
 
 				double playerBase = player != null && player.getAttributes().hasAttribute(attr) ? player.getAttributeBaseValue(attr) : 0.0;
 				if (attr.equals(Attributes.ATTACK_DAMAGE)) playerBase = 1.0;
 				if (attr.equals(Attributes.ATTACK_SPEED)) playerBase = 4.0;
-				if (attr.equals(MainAttributes.CRIT_CHANCE.get())) playerBase = 0.05;
-				if (attr.equals(MainAttributes.CRIT_DAMAGE.get())) playerBase = 1.5;
+				if (attr.equals(MainAttributes.CRIT_CHANCE)) playerBase = 0.05;
+				if (attr.equals(MainAttributes.CRIT_DAMAGE)) playerBase = 1.5;
 
 				double trueBase = playerBase;
 				for (AttributeModifier mod : baseMods) {
-					if (mod.getOperation() == AttributeModifier.Operation.ADDITION) trueBase += mod.getAmount();
-					else if (mod.getOperation() == AttributeModifier.Operation.MULTIPLY_BASE) trueBase += playerBase * mod.getAmount();
-					else if (mod.getOperation() == AttributeModifier.Operation.MULTIPLY_TOTAL) trueBase *= (1.0 + mod.getAmount());
+					if (mod.operation() == AttributeModifier.Operation.ADD_VALUE) trueBase += mod.amount();
+					else if (mod.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_BASE) trueBase += playerBase * mod.amount();
+					else if (mod.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) trueBase *= (1.0 + mod.amount());
 				}
 
 				double finalValue = trueBase;
 				extraMods.sort(ATTRIBUTE_MODIFIER_COMPARATOR);
 				for (AttributeModifier mod : extraMods) {
-					if (mod.getOperation() == AttributeModifier.Operation.ADDITION) finalValue += mod.getAmount();
-					else if (mod.getOperation() == AttributeModifier.Operation.MULTIPLY_BASE) finalValue += trueBase * mod.getAmount();
-					else if (mod.getOperation() == AttributeModifier.Operation.MULTIPLY_TOTAL) finalValue *= (1.0 + mod.getAmount());
+					if (mod.operation() == AttributeModifier.Operation.ADD_VALUE) finalValue += mod.amount();
+					else if (mod.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_BASE) finalValue += trueBase * mod.amount();
+					else if (mod.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) finalValue *= (1.0 + mod.amount());
 				}
 
 				boolean hasExtras = !extraMods.isEmpty();
@@ -142,6 +160,27 @@ public class AttributeTooltipHandler {
 		return needsShiftPrompt;
 	}
 
+	private static Multimap<Holder<Attribute>, AttributeModifier> collectForSlot(ItemAttributeModifiers modifiers, EquipmentSlot slot) {
+		Multimap<Holder<Attribute>, AttributeModifier> map = com.google.common.collect.HashMultimap.<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier>create();
+		if (modifiers == null) return map;
+		modifiers.forEach(slot, map::put);
+		return map;
+	}
+
+	public static MutableComponent createTotalComponent(Holder<Attribute> attribute, double value) {
+		boolean percent = isPercentAttribute(attribute);
+		String suffix = percent ? "%" : "";
+		double displayValue = percent ? value * 100 : value;
+
+		Component rawAttrDesc = Component.translatable(attribute.value().getDescriptionId());
+		Component attrDescNoIcon = IconUtil.getAttributeNameWithoutIcon(rawAttrDesc);
+
+		Component coloredStat = Component.translatable("attribute.modifier.equals.0", FORMAT.format(displayValue) + suffix, attrDescNoIcon);
+		Component finalStat = IconUtil.processIcon(rawAttrDesc, coloredStat);
+
+		return Component.empty().append(finalStat);
+	}
+
 	public static MutableComponent createTotalComponent(Attribute attribute, double value) {
 		boolean percent = isPercentAttribute(attribute);
 		String suffix = percent ? "%" : "";
@@ -156,15 +195,36 @@ public class AttributeTooltipHandler {
 		return Component.empty().append(finalStat);
 	}
 
-	public static MutableComponent createModifierComponent(Attribute attribute, AttributeModifier modifier) {
-		double value = modifier.getAmount();
+	public static MutableComponent createModifierComponent(Holder<Attribute> attribute, AttributeModifier modifier) {
+		double value = modifier.amount();
 		boolean isPositive = value > 0;
 		boolean percent = isPercentAttribute(attribute);
 
 		String suffix = percent ? "%" : "";
-		double displayValue = (percent || modifier.getOperation() != AttributeModifier.Operation.ADDITION) ? value * 100 : value;
+		double displayValue = (percent || modifier.operation() != AttributeModifier.Operation.ADD_VALUE) ? value * 100 : value;
 
-		String key = isPositive ? "attribute.modifier.plus." + modifier.getOperation().toValue() : "attribute.modifier.take." + modifier.getOperation().toValue();
+		String key = isPositive ? "attribute.modifier.plus." + modifier.operation().id() : "attribute.modifier.take." + modifier.operation().id();
+		String formattedValue = FORMAT.format(Math.abs(displayValue)) + suffix;
+		ChatFormatting color = isPositive ? ChatFormatting.BLUE : ChatFormatting.RED;
+
+		Component rawAttrDesc = Component.translatable(attribute.value().getDescriptionId());
+		Component attrDescNoIcon = IconUtil.getAttributeNameWithoutIcon(rawAttrDesc);
+
+		Component coloredStat = Component.translatable(key, formattedValue, attrDescNoIcon).withStyle(color);
+		Component finalStat = IconUtil.processIcon(rawAttrDesc, coloredStat);
+
+		return Component.empty().append(finalStat);
+	}
+
+	public static MutableComponent createModifierComponent(Attribute attribute, AttributeModifier modifier) {
+		double value = modifier.amount();
+		boolean isPositive = value > 0;
+		boolean percent = isPercentAttribute(attribute);
+
+		String suffix = percent ? "%" : "";
+		double displayValue = (percent || modifier.operation() != AttributeModifier.Operation.ADD_VALUE) ? value * 100 : value;
+
+		String key = isPositive ? "attribute.modifier.plus." + modifier.operation().id() : "attribute.modifier.take." + modifier.operation().id();
 		String formattedValue = FORMAT.format(Math.abs(displayValue)) + suffix;
 		ChatFormatting color = isPositive ? ChatFormatting.BLUE : ChatFormatting.RED;
 

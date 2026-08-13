@@ -2,7 +2,7 @@ package com.dragonminez.mixin.client;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.title.TitleFooterText;
-import net.minecraftforge.internal.BrandingControl;
+import net.neoforged.neoforge.internal.BrandingControl;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;

@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.block.custom;
 
+import com.mojang.serialization.MapCodec;
+
 import com.dragonminez.common.init.MainFluids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +21,13 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class NamekWaterlilyBlock extends BushBlock {
+	public static final MapCodec<NamekWaterlilyBlock> CODEC = simpleCodec(NamekWaterlilyBlock::new);
+
+	@Override
+	protected MapCodec<? extends BushBlock> codec() {
+		return CODEC;
+	}
+
 	protected static final VoxelShape AABB = Block.box(1.0D, 0.0D, 1.0D, 15.0D, 1.5D, 15.0D);
 
 	public NamekWaterlilyBlock(BlockBehaviour.Properties pProperties) {

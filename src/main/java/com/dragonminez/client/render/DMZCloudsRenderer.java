@@ -22,7 +22,12 @@ public class DMZCloudsRenderer {
 	private CloudStatus prevCloudsType;
 	private boolean generateClouds = true;
 
-	public void render(PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor) {
+	/**
+	 * Renders colored clouds fixed at the dimension cloud height (not stuck to the camera).
+	 * Matches vanilla 1.21 LevelRenderer: apply {@code modelViewMatrix} (frustum/view) before
+	 * cloud scale/translate so Y is {@code cloudHeight - camY}.
+	 */
+	public void render(PoseStack poseStack, Matrix4f modelViewMatrix, Matrix4f projectionMatrix, float partialTick, double camX, double camY, double camZ, Vec3 customColor) {
 		Minecraft mc = Minecraft.getInstance();
 		float cloudHeight = mc.level.effects().getCloudHeight();
 
@@ -41,6 +46,7 @@ public class DMZCloudsRenderer {
 		);
 		RenderSystem.depthMask(true);
 
+		// World-fixed cloud plane: relative Y so clouds sit at cloudHeight, not at player Y.
 		double time = (double) ((float) mc.level.getGameTime() + partialTick) * 0.03F;
 		double viewX = (camX + time) / 12.0D;
 		double viewY = (double) (cloudHeight - (float) camY + 0.33F);
@@ -71,23 +77,24 @@ public class DMZCloudsRenderer {
 
 		if (this.generateClouds) {
 			this.generateClouds = false;
-			BufferBuilder bufferbuilder = Tesselator.getInstance().getBuilder();
-
 			if (this.cloudBuffer != null) {
 				this.cloudBuffer.close();
 			}
 
 			this.cloudBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-			BufferBuilder.RenderedBuffer renderedBuffer = this.buildClouds(bufferbuilder, viewX, viewY, viewZ, customColor);
+			com.mojang.blaze3d.vertex.MeshData meshData = this.buildClouds(viewX, viewY, viewZ, customColor);
 			this.cloudBuffer.bind();
-			this.cloudBuffer.upload(renderedBuffer);
+			this.cloudBuffer.upload(meshData);
 			VertexBuffer.unbind();
 		}
 
-		RenderSystem.setShader(GameRenderer::getPositionTexColorNormalShader);
+		// Clouds format is POSITION_TEX_COLOR_NORMAL; use the dedicated clouds shader when available.
+		RenderSystem.setShader(GameRenderer::getRendertypeCloudsShader);
 		RenderSystem.setShaderTexture(0, CLOUDS_LOCATION);
 
 		poseStack.pushPose();
+		// Required in 1.21: without this, clouds are camera-locked instead of world-fixed at cloud Y.
+		poseStack.mulPose(modelViewMatrix);
 		poseStack.scale(12.0F, 1.0F, 12.0F);
 		poseStack.translate(-offsetX, offsetY, -offsetZ);
 
@@ -114,7 +121,7 @@ public class DMZCloudsRenderer {
 		RenderSystem.defaultBlendFunc();
 	}
 
-	private BufferBuilder.RenderedBuffer buildClouds(BufferBuilder builder, double x, double y, double z, Vec3 color) {
+	private com.mojang.blaze3d.vertex.MeshData buildClouds(double x, double y, double z, Vec3 color) {
 		float r = (float) color.x;
 		float g = (float) color.y;
 		float b = (float) color.z;
@@ -129,8 +136,8 @@ public class DMZCloudsRenderer {
 		float shadowG = g * 0.6F;
 		float shadowB = b * 0.6F;
 
-		RenderSystem.setShader(GameRenderer::getPositionTexColorNormalShader);
-		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL);
+		RenderSystem.setShader(GameRenderer::getRendertypeCloudsShader);
+		BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL);
 
 		float floorY = (float) Math.floor(y / 4.0D) * 4.0F;
 
@@ -141,49 +148,49 @@ public class DMZCloudsRenderer {
 					float f19 = (float) (l * 8);
 
 					if (floorY > -5.0F) {
-						builder.vertex(f18 + 0.0F, floorY + 0.0F, f19 + 8.0F).uv((f18 + 0.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).color(bottomR, bottomG, bottomB, 0.6F).normal(0.0F, -1.0F, 0.0F).endVertex();
-						builder.vertex(f18 + 8.0F, floorY + 0.0F, f19 + 8.0F).uv((f18 + 8.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).color(bottomR, bottomG, bottomB, 0.6F).normal(0.0F, -1.0F, 0.0F).endVertex();
-						builder.vertex(f18 + 8.0F, floorY + 0.0F, f19 + 0.0F).uv((f18 + 8.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).color(bottomR, bottomG, bottomB, 0.6F).normal(0.0F, -1.0F, 0.0F).endVertex();
-						builder.vertex(f18 + 0.0F, floorY + 0.0F, f19 + 0.0F).uv((f18 + 0.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).color(bottomR, bottomG, bottomB, 0.6F).normal(0.0F, -1.0F, 0.0F).endVertex();
+						builder.addVertex(f18 + 0.0F, floorY + 0.0F, f19 + 8.0F).setUv((f18 + 0.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(bottomR, bottomG, bottomB, 0.6F).setNormal(0.0F, -1.0F, 0.0F);
+						builder.addVertex(f18 + 8.0F, floorY + 0.0F, f19 + 8.0F).setUv((f18 + 8.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(bottomR, bottomG, bottomB, 0.6F).setNormal(0.0F, -1.0F, 0.0F);
+						builder.addVertex(f18 + 8.0F, floorY + 0.0F, f19 + 0.0F).setUv((f18 + 8.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(bottomR, bottomG, bottomB, 0.6F).setNormal(0.0F, -1.0F, 0.0F);
+						builder.addVertex(f18 + 0.0F, floorY + 0.0F, f19 + 0.0F).setUv((f18 + 0.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(bottomR, bottomG, bottomB, 0.6F).setNormal(0.0F, -1.0F, 0.0F);
 					}
 
 					if (floorY <= 5.0F) {
-						builder.vertex(f18 + 0.0F, floorY + 4.0F - 9.765625E-4F, f19 + 8.0F).uv((f18 + 0.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).color(r, g, b, 0.6F).normal(0.0F, 1.0F, 0.0F).endVertex();
-						builder.vertex(f18 + 8.0F, floorY + 4.0F - 9.765625E-4F, f19 + 8.0F).uv((f18 + 8.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).color(r, g, b, 0.6F).normal(0.0F, 1.0F, 0.0F).endVertex();
-						builder.vertex(f18 + 8.0F, floorY + 4.0F - 9.765625E-4F, f19 + 0.0F).uv((f18 + 8.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).color(r, g, b, 0.6F).normal(0.0F, 1.0F, 0.0F).endVertex();
-						builder.vertex(f18 + 0.0F, floorY + 4.0F - 9.765625E-4F, f19 + 0.0F).uv((f18 + 0.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).color(r, g, b, 0.6F).normal(0.0F, 1.0F, 0.0F).endVertex();
+						builder.addVertex(f18 + 0.0F, floorY + 4.0F - 9.765625E-4F, f19 + 8.0F).setUv((f18 + 0.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(r, g, b, 0.6F).setNormal(0.0F, 1.0F, 0.0F);
+						builder.addVertex(f18 + 8.0F, floorY + 4.0F - 9.765625E-4F, f19 + 8.0F).setUv((f18 + 8.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(r, g, b, 0.6F).setNormal(0.0F, 1.0F, 0.0F);
+						builder.addVertex(f18 + 8.0F, floorY + 4.0F - 9.765625E-4F, f19 + 0.0F).setUv((f18 + 8.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(r, g, b, 0.6F).setNormal(0.0F, 1.0F, 0.0F);
+						builder.addVertex(f18 + 0.0F, floorY + 4.0F - 9.765625E-4F, f19 + 0.0F).setUv((f18 + 0.0F) / 256.0F + (float) Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(r, g, b, 0.6F).setNormal(0.0F, 1.0F, 0.0F);
 					}
 
 					if (k > -1) {
 						for(int i1 = 0; i1 < 8; ++i1) {
-							builder.vertex(f18 + (float)i1 + 0.0F, floorY + 0.0F, f19 + 8.0F).uv((f18 + (float)i1 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(sideR, sideG, sideB, 0.6F).normal(-1.0F, 0.0F, 0.0F).endVertex();
-							builder.vertex(f18 + (float)i1 + 0.0F, floorY + 4.0F, f19 + 8.0F).uv((f18 + (float)i1 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(sideR, sideG, sideB, 0.6F).normal(-1.0F, 0.0F, 0.0F).endVertex();
-							builder.vertex(f18 + (float)i1 + 0.0F, floorY + 4.0F, f19 + 0.0F).uv((f18 + (float)i1 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(sideR, sideG, sideB, 0.6F).normal(-1.0F, 0.0F, 0.0F).endVertex();
-							builder.vertex(f18 + (float)i1 + 0.0F, floorY + 0.0F, f19 + 0.0F).uv((f18 + (float)i1 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(sideR, sideG, sideB, 0.6F).normal(-1.0F, 0.0F, 0.0F).endVertex();
+							builder.addVertex(f18 + (float)i1 + 0.0F, floorY + 0.0F, f19 + 8.0F).setUv((f18 + (float)i1 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(sideR, sideG, sideB, 0.6F).setNormal(-1.0F, 0.0F, 0.0F);
+							builder.addVertex(f18 + (float)i1 + 0.0F, floorY + 4.0F, f19 + 8.0F).setUv((f18 + (float)i1 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(sideR, sideG, sideB, 0.6F).setNormal(-1.0F, 0.0F, 0.0F);
+							builder.addVertex(f18 + (float)i1 + 0.0F, floorY + 4.0F, f19 + 0.0F).setUv((f18 + (float)i1 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(sideR, sideG, sideB, 0.6F).setNormal(-1.0F, 0.0F, 0.0F);
+							builder.addVertex(f18 + (float)i1 + 0.0F, floorY + 0.0F, f19 + 0.0F).setUv((f18 + (float)i1 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(sideR, sideG, sideB, 0.6F).setNormal(-1.0F, 0.0F, 0.0F);
 						}
 					}
 					if (k <= 1) {
 						for(int j2 = 0; j2 < 8; ++j2) {
-							builder.vertex(f18 + (float)j2 + 1.0F - 9.765625E-4F, floorY + 0.0F, f19 + 8.0F).uv((f18 + (float)j2 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(sideR, sideG, sideB, 0.6F).normal(1.0F, 0.0F, 0.0F).endVertex();
-							builder.vertex(f18 + (float)j2 + 1.0F - 9.765625E-4F, floorY + 4.0F, f19 + 8.0F).uv((f18 + (float)j2 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(sideR, sideG, sideB, 0.6F).normal(1.0F, 0.0F, 0.0F).endVertex();
-							builder.vertex(f18 + (float)j2 + 1.0F - 9.765625E-4F, floorY + 4.0F, f19 + 0.0F).uv((f18 + (float)j2 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(sideR, sideG, sideB, 0.6F).normal(1.0F, 0.0F, 0.0F).endVertex();
-							builder.vertex(f18 + (float)j2 + 1.0F - 9.765625E-4F, floorY + 0.0F, f19 + 0.0F).uv((f18 + (float)j2 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(sideR, sideG, sideB, 0.6F).normal(1.0F, 0.0F, 0.0F).endVertex();
+							builder.addVertex(f18 + (float)j2 + 1.0F - 9.765625E-4F, floorY + 0.0F, f19 + 8.0F).setUv((f18 + (float)j2 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(sideR, sideG, sideB, 0.6F).setNormal(1.0F, 0.0F, 0.0F);
+							builder.addVertex(f18 + (float)j2 + 1.0F - 9.765625E-4F, floorY + 4.0F, f19 + 8.0F).setUv((f18 + (float)j2 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 8.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(sideR, sideG, sideB, 0.6F).setNormal(1.0F, 0.0F, 0.0F);
+							builder.addVertex(f18 + (float)j2 + 1.0F - 9.765625E-4F, floorY + 4.0F, f19 + 0.0F).setUv((f18 + (float)j2 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(sideR, sideG, sideB, 0.6F).setNormal(1.0F, 0.0F, 0.0F);
+							builder.addVertex(f18 + (float)j2 + 1.0F - 9.765625E-4F, floorY + 0.0F, f19 + 0.0F).setUv((f18 + (float)j2 + 0.5F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + 0.0F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(sideR, sideG, sideB, 0.6F).setNormal(1.0F, 0.0F, 0.0F);
 						}
 					}
 					if (l > -1) {
 						for(int k2 = 0; k2 < 8; ++k2) {
-							builder.vertex(f18 + 0.0F, floorY + 4.0F, f19 + (float)k2 + 0.0F).uv((f18 + 0.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)k2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(shadowR, shadowG, shadowB, 0.6F).normal(0.0F, 0.0F, -1.0F).endVertex();
-							builder.vertex(f18 + 8.0F, floorY + 4.0F, f19 + (float)k2 + 0.0F).uv((f18 + 8.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)k2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(shadowR, shadowG, shadowB, 0.6F).normal(0.0F, 0.0F, -1.0F).endVertex();
-							builder.vertex(f18 + 8.0F, floorY + 0.0F, f19 + (float)k2 + 0.0F).uv((f18 + 8.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)k2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(shadowR, shadowG, shadowB, 0.6F).normal(0.0F, 0.0F, -1.0F).endVertex();
-							builder.vertex(f18 + 0.0F, floorY + 0.0F, f19 + (float)k2 + 0.0F).uv((f18 + 0.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)k2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(shadowR, shadowG, shadowB, 0.6F).normal(0.0F, 0.0F, -1.0F).endVertex();
+							builder.addVertex(f18 + 0.0F, floorY + 4.0F, f19 + (float)k2 + 0.0F).setUv((f18 + 0.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)k2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(shadowR, shadowG, shadowB, 0.6F).setNormal(0.0F, 0.0F, -1.0F);
+							builder.addVertex(f18 + 8.0F, floorY + 4.0F, f19 + (float)k2 + 0.0F).setUv((f18 + 8.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)k2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(shadowR, shadowG, shadowB, 0.6F).setNormal(0.0F, 0.0F, -1.0F);
+							builder.addVertex(f18 + 8.0F, floorY + 0.0F, f19 + (float)k2 + 0.0F).setUv((f18 + 8.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)k2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(shadowR, shadowG, shadowB, 0.6F).setNormal(0.0F, 0.0F, -1.0F);
+							builder.addVertex(f18 + 0.0F, floorY + 0.0F, f19 + (float)k2 + 0.0F).setUv((f18 + 0.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)k2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(shadowR, shadowG, shadowB, 0.6F).setNormal(0.0F, 0.0F, -1.0F);
 						}
 					}
 					if (l <= 1) {
 						for(int l2 = 0; l2 < 8; ++l2) {
-							builder.vertex(f18 + 0.0F, floorY + 4.0F, f19 + (float)l2 + 1.0F - 9.765625E-4F).uv((f18 + 0.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)l2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(shadowR, shadowG, shadowB, 0.6F).normal(0.0F, 0.0F, 1.0F).endVertex();
-							builder.vertex(f18 + 8.0F, floorY + 4.0F, f19 + (float)l2 + 1.0F - 9.765625E-4F).uv((f18 + 8.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)l2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(shadowR, shadowG, shadowB, 0.6F).normal(0.0F, 0.0F, 1.0F).endVertex();
-							builder.vertex(f18 + 8.0F, floorY + 0.0F, f19 + (float)l2 + 1.0F - 9.765625E-4F).uv((f18 + 8.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)l2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(shadowR, shadowG, shadowB, 0.6F).normal(0.0F, 0.0F, 1.0F).endVertex();
-							builder.vertex(f18 + 0.0F, floorY + 0.0F, f19 + (float)l2 + 1.0F - 9.765625E-4F).uv((f18 + 0.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)l2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).color(shadowR, shadowG, shadowB, 0.6F).normal(0.0F, 0.0F, 1.0F).endVertex();
+							builder.addVertex(f18 + 0.0F, floorY + 4.0F, f19 + (float)l2 + 1.0F - 9.765625E-4F).setUv((f18 + 0.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)l2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(shadowR, shadowG, shadowB, 0.6F).setNormal(0.0F, 0.0F, 1.0F);
+							builder.addVertex(f18 + 8.0F, floorY + 4.0F, f19 + (float)l2 + 1.0F - 9.765625E-4F).setUv((f18 + 8.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)l2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(shadowR, shadowG, shadowB, 0.6F).setNormal(0.0F, 0.0F, 1.0F);
+							builder.addVertex(f18 + 8.0F, floorY + 0.0F, f19 + (float)l2 + 1.0F - 9.765625E-4F).setUv((f18 + 8.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)l2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(shadowR, shadowG, shadowB, 0.6F).setNormal(0.0F, 0.0F, 1.0F);
+							builder.addVertex(f18 + 0.0F, floorY + 0.0F, f19 + (float)l2 + 1.0F - 9.765625E-4F).setUv((f18 + 0.0F) / 256.0F + (float)Mth.floor(x) / 256.0F, (f19 + (float)l2 + 0.5F) / 256.0F + (float)Mth.floor(z) / 256.0F).setColor(shadowR, shadowG, shadowB, 0.6F).setNormal(0.0F, 0.0F, 1.0F);
 						}
 					}
 				}
@@ -191,15 +198,15 @@ public class DMZCloudsRenderer {
 		} else {
 			for (int l1 = -32; l1 < 32; l1 += 32) {
 				for (int i2 = -32; i2 < 32; i2 += 32) {
-					builder.vertex(l1 + 0, floorY, i2 + 32).uv((l1 + 0) / 256.0F + (float) Mth.floor(x) / 256.0F, (i2 + 32) / 256.0F + (float) Mth.floor(z) / 256.0F).color(r, g, b, 0.6F).normal(0.0F, -1.0F, 0.0F).endVertex();
-					builder.vertex(l1 + 32, floorY, i2 + 32).uv((l1 + 32) / 256.0F + (float) Mth.floor(x) / 256.0F, (i2 + 32) / 256.0F + (float) Mth.floor(z) / 256.0F).color(r, g, b, 0.6F).normal(0.0F, -1.0F, 0.0F).endVertex();
-					builder.vertex(l1 + 32, floorY, i2 + 0).uv((l1 + 32) / 256.0F + (float) Mth.floor(x) / 256.0F, (i2 + 0) / 256.0F + (float) Mth.floor(z) / 256.0F).color(r, g, b, 0.6F).normal(0.0F, -1.0F, 0.0F).endVertex();
-					builder.vertex(l1 + 0, floorY, i2 + 0).uv((l1 + 0) / 256.0F + (float) Mth.floor(x) / 256.0F, (i2 + 0) / 256.0F + (float) Mth.floor(z) / 256.0F).color(r, g, b, 0.6F).normal(0.0F, -1.0F, 0.0F).endVertex();
+					builder.addVertex(l1 + 0, floorY, i2 + 32).setUv((l1 + 0) / 256.0F + (float) Mth.floor(x) / 256.0F, (i2 + 32) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(r, g, b, 0.6F).setNormal(0.0F, -1.0F, 0.0F);
+					builder.addVertex(l1 + 32, floorY, i2 + 32).setUv((l1 + 32) / 256.0F + (float) Mth.floor(x) / 256.0F, (i2 + 32) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(r, g, b, 0.6F).setNormal(0.0F, -1.0F, 0.0F);
+					builder.addVertex(l1 + 32, floorY, i2 + 0).setUv((l1 + 32) / 256.0F + (float) Mth.floor(x) / 256.0F, (i2 + 0) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(r, g, b, 0.6F).setNormal(0.0F, -1.0F, 0.0F);
+					builder.addVertex(l1 + 0, floorY, i2 + 0).setUv((l1 + 0) / 256.0F + (float) Mth.floor(x) / 256.0F, (i2 + 0) / 256.0F + (float) Mth.floor(z) / 256.0F).setColor(r, g, b, 0.6F).setNormal(0.0F, -1.0F, 0.0F);
 				}
 			}
 		}
 
-		return builder.end();
+		return builder.buildOrThrow();
 	}
 
 	public void close() {

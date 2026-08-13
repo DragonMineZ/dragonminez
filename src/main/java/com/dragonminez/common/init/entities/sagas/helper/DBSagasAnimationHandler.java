@@ -4,16 +4,37 @@ import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.AiTier;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.LocomotionMode;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
 
 public class DBSagasAnimationHandler {
+
+    /**
+     * Hysteresis band for the fly animation, as squared horizontal speed.
+     *
+     * <p>This was a single {@code > 0.15} test, which is a hair-trigger: a flying mob circling a
+     * target sits right on that line and its horizontal speed wobbles tick to tick, so the
+     * controller swapped between the fast and slow fly loops constantly. Each swap restarts a
+     * 5-tick transition, so the model never settled — the flicker seen on every flying saga mob.
+     * Raditz is the clearest case, since {@code setFlySpeed(0.35)} lands just under the old
+     * threshold of {@code sqrt(0.15) ≈ 0.387}.
+     *
+     * <p>Separate enter and exit points mean it takes a real change in speed to switch, and noise
+     * around either edge cannot flip it back and forth.
+     */
+    private static final double FLY_FAST_ENTER_SQR = 0.18D;
+    private static final double FLY_FAST_EXIT_SQR = 0.12D;
 
     public static <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
+        // Deliberately does NOT stand down for attacks. A punch is meant to layer over locomotion —
+        // arms swing while the legs keep walking — and stopping this controller mid-blend snaps
+        // every bone it was driving back to the model default, which pops on each swing. Casting
+        // gets away with STOP because that animation is long and full-body. The attack fix lives in
+        // attack_controller's transition length instead, in DBSagasEntity.registerControllers.
         if (entity.isEvading() || entity.isComboing()) {
             event.getController().setAnimationSpeed(1.0D);
             return PlayState.STOP;
@@ -38,7 +59,12 @@ public class DBSagasAnimationHandler {
         //FLY
         if (entity.isFlying()) {
             double currentSpeedSqr = entity.getDeltaMovement().x * entity.getDeltaMovement().x + entity.getDeltaMovement().z * entity.getDeltaMovement().z;
-            if (currentSpeedSqr > 0.15D) {
+            if (entity.isFlyAnimFast()) {
+                if (currentSpeedSqr < FLY_FAST_EXIT_SQR) entity.setFlyAnimFast(false);
+            } else if (currentSpeedSqr > FLY_FAST_ENTER_SQR) {
+                entity.setFlyAnimFast(true);
+            }
+            if (entity.isFlyAnimFast()) {
                 if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST4);
                 return event.setAndContinue(DBSagasAnimations.ANIM_FLY_FAST);
             }

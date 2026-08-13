@@ -1,6 +1,8 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.compat.AeroCamSyncCompat;
+import com.dragonminez.client.render.EntityPreviewRenderContext;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
@@ -23,12 +25,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.util.RenderUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -67,9 +69,9 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		poseStack.pushPose();
-		RenderUtils.translateToPivotPoint(poseStack, bone);
+		RenderUtil.translateToPivotPoint(poseStack, bone);
 		renderHair(poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
-		bufferSource.getBuffer(renderType);
+		if (renderType != null) bufferSource.getBuffer(renderType);
 		poseStack.popPose();
 
 		if (maskBuffer != null) {
@@ -79,14 +81,28 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	public void renderHair(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, float partialTick, int packedLight, int packedOverlay) {
 		if (animatable.isInvisible() && !animatable.isSpectator()) return;
-		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
+		Minecraft minecraft = Minecraft.getInstance();
+		if (animatable == minecraft.player
+				&& FirstPersonManager.shouldRenderFirstPerson(animatable)
+				&& !EntityPreviewRenderContext.isRendering()) return;
+		// DMZ replaces PlayerRenderer at HEAD, so Aero Cam Sync's own callback is not guaranteed
+		// to be active by the time GeckoLib renders this layer. Its presence is the stable compat
+		// signal: keep the complete DMZ model and let Aero Cam Sync position the camera around it.
+		// Same preview escape as the check above. A menu preview never reaches this branch
+		// (shouldRenderFirstPerson is false whenever a screen is open), but an in-world preview
+		// such as a HUD portrait does, and hiding its hair is exactly what the context exists
+		// to prevent.
+		if (FirstPersonManager.shouldRenderFirstPerson(animatable)
+				&& !AeroCamSyncCompat.isLoaded()
+				&& !EntityPreviewRenderContext.isRendering()) return;
 
 		ItemStack headItem = resolveHeadArmorStack(animatable);
 		if (!headItem.isEmpty()) {
-			ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(headItem.getItem());
+			ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(headItem.getItem());
 			if (itemId != null) {
 				List<String> allowedHelmets = ConfigManager.getServerConfig().getGameplay().getHelmetsThatKeepHair();
-				if (!allowedHelmets.contains(itemId.toString())) return;
+				boolean createGoggles = itemId.getNamespace().equals("create") && itemId.getPath().equals("goggles");
+				if (!createGoggles && !allowedHelmets.contains(itemId.toString())) return;
 			}
 		}
 
@@ -94,7 +110,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var stats = statsCap.orElse(new StatsData(animatable));
 		Character character = stats.getCharacter();
 
-		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+		if (animatable.hasEffect(MainEffects.CANDY)) return;
 
 		if (!HairManager.canUseHair(character)) return;
 
@@ -157,7 +173,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			if (nextForm != null && targetHair != null && targetRgb != null) {
 				int increment = 5 + Math.max(20, chargeMastery);
 				float ratePerTick = increment / 2000.0f;
-				float dt = Minecraft.getInstance().getDeltaFrameTime();
+				float dt = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 				curHairProgress = Math.min(1.0f, curHairProgress + ratePerTick * dt);
 				progressMap.put(entityId, curHairProgress);
 
@@ -170,7 +186,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				factor = curHairProgress;
 			}
 		} else if (curHairProgress > 0.0f) {
-				float dt = Minecraft.getInstance().getDeltaFrameTime();
+				float dt = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 				curHairProgress = Math.max(0.0f, curHairProgress - FADE_OUT_RATE * dt);
 				CustomHair fadeTarget = fadeTargetHairMap.get(entityId);
 
@@ -225,7 +241,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		boolean isCharging = stats.getStatus().isChargingKi() || stats.getStatus().isPermanentAura() || (stats.getStatus().isActionCharging() && (!stats.getStatus().getSelectedAction().equals(ActionMode.STACK) && !stats.getStatus().getSelectedAction().equals(ActionMode.FORM)));
 		float kiChargeProgress = kiChargeProgressMap.getOrDefault(entityId, 0.0f);
-		float dt = Minecraft.getInstance().getDeltaFrameTime();
+		float dt = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 
 		if (isCharging) kiChargeProgress = Math.min(1.0f, kiChargeProgress + dt * 0.25f);
 		else kiChargeProgress = Math.max(0.0f, kiChargeProgress - dt * 0.15f);

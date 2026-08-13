@@ -14,16 +14,20 @@ import net.minecraft.client.renderer.EffectInstance;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.io.IOException;
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 public class TaiyokenFlashHandler {
 
 	private static final ResourceLocation EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/taiyoken_flash.json");
@@ -33,8 +37,7 @@ public class TaiyokenFlashHandler {
 	private static int lastHeight = 0;
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.START) return;
+	public static void onClientTick(ClientTickEvent.Pre event) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null) {
 			TaiyokenBlindState.clear();
@@ -85,7 +88,7 @@ public class TaiyokenFlashHandler {
 		RenderSystem.disableCull();
 
 		if (iris) mc.getMainRenderTarget().bindWrite(false);
-		shader.process(event.getPartialTick());
+		shader.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
 		mc.getMainRenderTarget().bindWrite(false);
 
 		RenderSystem.enableCull();

@@ -3,53 +3,53 @@ package com.dragonminez.common.init;
 import com.dragonminez.Reference;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 public class MainParticles {
 
     public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES =
-            DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, Reference.MOD_ID);
+            DeferredRegister.create(BuiltInRegistries.PARTICLE_TYPE, Reference.MOD_ID);
 
-    public static final RegistryObject<SimpleParticleType> KI_FLASH =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_FLASH =
             PARTICLE_TYPES.register("ki_flash", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> KI_SPLASH =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_SPLASH =
             PARTICLE_TYPES.register("ki_splash", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> KI_SPLASH_WAVE =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_SPLASH_WAVE =
             PARTICLE_TYPES.register("ki_splash_wave", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> KI_TRAIL =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_TRAIL =
             PARTICLE_TYPES.register("ki_trail", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> KI_EXPLOSION_FLASH =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_EXPLOSION_FLASH =
             PARTICLE_TYPES.register("ki_explosion_flash", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> KI_EXPLOSION_SPLASH =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_EXPLOSION_SPLASH =
             PARTICLE_TYPES.register("ki_explosion_splash", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> KI_EXPLOSION=
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_EXPLOSION=
             PARTICLE_TYPES.register("ki_explosion", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> KI_SHEDDING =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_SHEDDING =
             PARTICLE_TYPES.register("ki_shedding", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> KI_LIGHTNING =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KI_LIGHTNING =
             PARTICLE_TYPES.register("ki_lightning", () -> new SimpleParticleType(true));
 
-    public static final RegistryObject<SimpleParticleType> KINTON =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> KINTON =
             PARTICLE_TYPES.register("kinton", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> DUST =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DUST =
             PARTICLE_TYPES.register("dust_particle", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> ROCK =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ROCK =
             PARTICLE_TYPES.register("rock_particle", () -> new SimpleParticleType(true));
 
-    public static final RegistryObject<SimpleParticleType> PUNCH_PARTICLE =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> PUNCH_PARTICLE =
             PARTICLE_TYPES.register("punch_particle", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> BLOCK_PARTICLE =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BLOCK_PARTICLE =
             PARTICLE_TYPES.register("block_particle", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> GUARD_BLOCK =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GUARD_BLOCK =
             PARTICLE_TYPES.register("guard_block_particle", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> SPARKS =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SPARKS =
             PARTICLE_TYPES.register("sparks_particle", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> AURA =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> AURA =
             PARTICLE_TYPES.register("aura_particle", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> DIVINE =
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DIVINE =
             PARTICLE_TYPES.register("divine_particle", () -> new SimpleParticleType(true));
 
 

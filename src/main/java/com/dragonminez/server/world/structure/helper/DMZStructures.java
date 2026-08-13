@@ -5,7 +5,7 @@ import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
@@ -34,7 +34,7 @@ public class DMZStructures {
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod");
 
-	public static void bootstrap(BootstapContext<Structure> context) {
+	public static void bootstrap(BootstrapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
 		HolderGetter<StructureTemplatePool> pools = context.lookup(Registries.TEMPLATE_POOL);
 

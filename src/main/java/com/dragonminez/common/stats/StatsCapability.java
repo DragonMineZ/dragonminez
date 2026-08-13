@@ -17,26 +17,39 @@ import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.world.structure.helper.QuestStructureHints;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.bus.api.IEventBus;
+import com.dragonminez.compat.capabilities.Capability;
+import com.dragonminez.compat.capabilities.CapabilityManager;
+import com.dragonminez.compat.capabilities.CapabilityToken;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID)
+@EventBusSubscriber(modid = Reference.MOD_ID)
 public class StatsCapability {
 	public static final Capability<StatsData> INSTANCE = CapabilityManager.get(new CapabilityToken<>() {
 	});
+	private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS =
+			DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, Reference.MOD_ID);
+	public static final DeferredHolder<AttachmentType<?>, AttachmentType<StatsProvider>> PLAYER_STATS =
+			ATTACHMENTS.register("player_stats", () -> AttachmentType
+					.serializable(holder -> new StatsProvider((Player) holder))
+					.copyOnDeath()
+					.build());
 
 	private static StatsData CLIENT_CACHE;
 
@@ -44,23 +57,14 @@ public class StatsCapability {
 		CLIENT_CACHE = null;
 	}
 
-	@SubscribeEvent
-	public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
-		event.register(StatsData.class);
-	}
-
-	@SubscribeEvent
-	public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
-		if (event.getObject() instanceof Player player) {
-			if (!player.getCapability(INSTANCE).isPresent()) event.addCapability(StatsProvider.ID, new StatsProvider(player));
-		}
+	public static void register(IEventBus modEventBus) {
+		ATTACHMENTS.register(modEventBus);
 	}
 
 	@SubscribeEvent
 	public static void onPlayerClone(PlayerEvent.Clone event) {
 		Player player = event.getEntity();
 		Player original = event.getOriginal();
-		original.reviveCaps();
 
 		TickHandler.registerForceKillGrace(player.getUUID());
 		StatsProvider.get(INSTANCE, player).ifPresent(newData -> {
@@ -72,9 +76,15 @@ public class StatsCapability {
 					else if (CLIENT_CACHE != null) newData.copyFrom(CLIENT_CACHE);
 				}
 			});
+			// Ensure attribute mirrors + pools on the new player entity after clone.
+			if (player instanceof ServerPlayer serverPlayer) {
+				com.dragonminez.server.events.players.StatsEvents.restoreStatsPoolsOnJoin(serverPlayer);
+			} else {
+				newData.reapplyStatAttributes();
+			}
 		});
-
-		original.invalidateCaps();
+		// Drop original provider mapping after clone copy.
+		StatsProvider.remove(original);
 	}
 
 	@SubscribeEvent
@@ -117,6 +127,8 @@ public class StatsCapability {
 					repairedSkills.forEach((oldName, newName) -> LogUtil.info(Env.SERVER, "Repaired skill for {}: '{}' -> '{}'", serverPlayer.getGameProfile().getName(), oldName, newName));
 				}
 				data.getSkills().setSkillActive("kisense", false);
+				// VIT/ENE fields from NBT → attributes + HP mod + reclamp max ki/stamina (like health fix).
+				com.dragonminez.server.events.players.StatsEvents.restoreStatsPoolsOnJoin(serverPlayer);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -124,9 +136,9 @@ public class StatsCapability {
 	}
 
 	@SubscribeEvent
-	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide) {
-			StatsProvider.get(INSTANCE, event.player).ifPresent(StatsData::tick);
+	public static void onPlayerTick(PlayerTickEvent.Post event) {
+		if (!event.getEntity().level().isClientSide) {
+			StatsProvider.get(INSTANCE, event.getEntity()).ifPresent(StatsData::tick);
 		}
 	}
 

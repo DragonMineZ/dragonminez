@@ -1,4 +1,5 @@
 package com.dragonminez.server.events.players.combat;
+import com.dragonminez.common.init.MainEnchants;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
@@ -42,17 +43,18 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class CombatEvent {
 	private static final Map<String, Long> LAST_PLAYER_HIT_GUARD_MS = new HashMap<>();
 	public static final String DMZ_LAST_ATTACKER_ID_TAG = "dmz_last_attacker_id";
@@ -85,16 +87,17 @@ public class CombatEvent {
 	}
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
-	public static void onLivingHurt(LivingHurtEvent event) {
+	public static void onLivingHurt(LivingDamageEvent.Pre event) {
 		DamageSource source = event.getSource();
-		final double[] currentDamage = {event.getAmount()};
+		final boolean[] cancelled = {false};
+		final double[] currentDamage = {event.getNewDamage()};
 		final boolean[] wasBlocked = {false};
 		final boolean[] wasParry = {false};
 		final boolean[] canceledByBlocking = {false};
 		final double[] passiveDefensePen = {0.0};
 
-		if (source.getEntity() instanceof LivingEntity livingAttacker && livingAttacker.hasEffect(MainEffects.STUN.get())) {
-			event.setCanceled(true);
+		if (source.getEntity() instanceof LivingEntity livingAttacker && livingAttacker.hasEffect(MainEffects.STUN)) {
+			cancelled[0] = true; event.setNewDamage(0f);
 			return;
 		}
 
@@ -107,18 +110,18 @@ public class CombatEvent {
 								.map(data -> data.getStatus().isFriendlyFistEnabled())
 								.orElse(false);
 
-						if (isSamePartyPvp || isFriendlyFist) event.setCanceled(true);
+						if (isSamePartyPvp || isFriendlyFist) cancelled[0] = true; event.setNewDamage(0f);
 					}
 				}
 			});
-			if (event.isCanceled()) return;
+			if (cancelled[0]) return;
 		}
 
 		if (isSpecificKiAttack(source)) NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.7f, 0.1f, 2, true), event.getEntity());
 
 		if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
-			if (attacker.hasEffect(MainEffects.STUN.get()) || attacker.isBlocking()) {
-				event.setCanceled(true);
+			if (attacker.hasEffect(MainEffects.STUN) || attacker.isBlocking()) {
+				cancelled[0] = true; event.setNewDamage(0f);
 				return;
 			}
 
@@ -127,7 +130,7 @@ public class CombatEvent {
 			String hitKey = attacker.getUUID() + ":" + livingTarget.getUUID();
 			long lastHit = LAST_PLAYER_HIT_GUARD_MS.getOrDefault(hitKey, 0L);
 			if ((now - lastHit) <= 35L) {
-				event.setCanceled(true);
+				cancelled[0] = true; event.setNewDamage(0f);
 				return;
 			}
 			LAST_PLAYER_HIT_GUARD_MS.put(hitKey, now);
@@ -140,7 +143,7 @@ public class CombatEvent {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (!attackerData.getStatus().isHasCreatedCharacter()) return;
 				if (attackerData.getStatus().isBlocking()) {
-					event.setCanceled(true);
+					cancelled[0] = true; event.setNewDamage(0f);
 					canceledByBlocking[0] = true;
 					return;
 				}
@@ -151,8 +154,8 @@ public class CombatEvent {
 						((PunchMachineEntity) event.getEntity()).processHit((float) currentDamage[0], attacker);
 						attackerData.getResources().addTrainingPoints(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
 					}
-					event.setCanceled(true);
-					event.setAmount(0);
+					cancelled[0] = true; event.setNewDamage(0f);
+					event.setNewDamage(0);
 					return;
 				}
 
@@ -173,7 +176,7 @@ public class CombatEvent {
 				}
 
 				DMZEvent.DamageModifyEvent modifyEvent = new DMZEvent.DamageModifyEvent(attacker, livingTarget, dmzDamage, 0.0, DMZEvent.DamageSourceType.MELEE);
-					if (MinecraftForge.EVENT_BUS.post(modifyEvent)) {
+					if (NeoForge.EVENT_BUS.post(modifyEvent).isCanceled()) {
 						dmzDamage = 0.0;
 					} else {
 						dmzDamage = Math.max(0.0, modifyEvent.getAmount());
@@ -290,8 +293,8 @@ public class CombatEvent {
 				if (isPunchMachine) {
 					((PunchMachineEntity) event.getEntity()).processHit((float) currentDamage[0], attacker);
 					attackerData.getResources().addTrainingPoints(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
-					event.setCanceled(true);
-					event.setAmount(0);
+					cancelled[0] = true; event.setNewDamage(0f);
+					event.setNewDamage(0);
 					return;
 				}
 
@@ -310,8 +313,8 @@ public class CombatEvent {
 			double healingReduction = 0.0;
 			if (source.getEntity() instanceof LivingEntity sourceLiving) {
 
-				int healMainHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.HEALING_REDUCTION.get(), sourceLiving.getMainHandItem());
-				int healOffHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.HEALING_REDUCTION.get(), sourceLiving.getOffhandItem());
+				int healMainHandLvl = MainEnchants.level(sourceLiving.getMainHandItem(), sourceLiving.level(), MainEnchants.HEALING_REDUCTION);
+				int healOffHandLvl = MainEnchants.level(sourceLiving.getOffhandItem(), sourceLiving.level(), MainEnchants.HEALING_REDUCTION);
 				double enchHealReduction = Math.max(healMainHandLvl, healOffHandLvl) * 0.05;
 
 				double skillHealReduction = 0.0;
@@ -369,7 +372,7 @@ public class CombatEvent {
 							victimData.getResources().removePoise((int) poiseDamage);
 							int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
 							victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
-							victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
+							victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD, regenCd, 0, false, false, true));
 							blockMultiplier = reductionMult;
 						}
 					}
@@ -413,7 +416,7 @@ public class CombatEvent {
 
 									int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
-									victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
+									victim.addEffect(new MobEffectInstance(MainEffects.POISE_CD, regenCd, 0, false, false, true));
 
 									if (isParry) {
 										wasParry[0] = true;
@@ -421,14 +424,14 @@ public class CombatEvent {
 										if (sourceEntity instanceof LivingEntity attackerLiving) {
 											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(), victim.getZ() - attackerLiving.getZ());
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
-											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
+											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER, 60, 1, false, false, true));
 											attackerLiving.getPersistentData().putLong("dmz_parry_penalty", System.currentTimeMillis() + 4000);
 
 											if (attackerLiving instanceof DBSagasEntity saga && saga.isComboing()) {
 												saga.interruptCombo();
-												saga.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_COMBO_STUN_TICKS, 0, false, false, true));
+												saga.addEffect(new MobEffectInstance(MainEffects.STUN, PARRY_COMBO_STUN_TICKS, 0, false, false, true));
 											} else if (!(attackerLiving instanceof Player)) {
-												attackerLiving.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_STUN_TICKS, 0, false, false, true));
+												attackerLiving.addEffect(new MobEffectInstance(MainEffects.STUN, PARRY_STUN_TICKS, 0, false, false, true));
 											}
 										}
 										if (MainDamageTypes.isKiblastDamage(source)) {
@@ -484,7 +487,7 @@ public class CombatEvent {
 										float finalDmg = (float) (estimatedPostMitigation * blockMultiplier);
 
 										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(sPlayer, source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null, (float)currentDamage[0], finalDmg, isParry, poiseDamage);
-										MinecraftForge.EVENT_BUS.post(blockEvent);
+										NeoForge.EVENT_BUS.post(blockEvent);
 
 										if (blockEvent.isCanceled()) {
 											wasBlocked[0] = false;
@@ -515,19 +518,19 @@ public class CombatEvent {
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.8f, 0.05f, 2, true), event.getEntity());
 		}
 
-		event.setAmount((float) currentDamage[0]);
+		event.setNewDamage((float) currentDamage[0]);
 
-		if (!event.isCanceled() && source.getMsgId().equals("player")
+		if (!cancelled[0] && source.getMsgId().equals("player")
 				&& source.getEntity() instanceof Player dmgAttacker) {
-			MinecraftForge.EVENT_BUS.post(new DMZEvent.DamageDealtEvent(
+			NeoForge.EVENT_BUS.post(new DMZEvent.DamageDealtEvent(
 					dmgAttacker, event.getEntity(), currentDamage[0], wasBlocked[0], wasParry[0], DMZEvent.DamageSourceType.MELEE));
 		}
 
-		if (!event.isCanceled()
+		if (!cancelled[0]
 				&& source.getMsgId().equals("player")
 				&& source.getEntity() instanceof Player attacker
 				&& attacker.level() instanceof ServerLevel serverLevel
-				&& event.getAmount() > 0.0F
+				&& event.getNewDamage() > 0.0F
 				&& !wasBlocked[0]
 				&& !wasParry[0]
 				&& attacker instanceof Player_DMZ dmzAttacker) {
@@ -535,6 +538,18 @@ public class CombatEvent {
 			if (currentAttack != null && currentAttack.attack() != null) {
 				SoundHelper.playSound(serverLevel, event.getEntity(), currentAttack.attack().impactSound());
 			}
+		}
+	}
+
+	/**
+	 * Punch machines are damage meters, not destructible mobs. Run after the combat
+	 * calculation so the displayed hit and training reward use the final DMZ damage,
+	 * then prevent that value from being applied to the machine's health.
+	 */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void protectPunchMachine(LivingDamageEvent.Pre event) {
+		if (event.getEntity() instanceof PunchMachineEntity) {
+			event.setNewDamage(0.0F);
 		}
 	}
 
@@ -574,10 +589,10 @@ public class CombatEvent {
 		attackerData.getResources().setCurrentStamina(0);
 		attackerData.getStatus().setBlocking(false);
 		int stunDuration = ConfigManager.getCombatConfig().getBlockBreakStunDurationTicks();
-		attacker.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
+		attacker.addEffect(new MobEffectInstance(MainEffects.STUN, stunDuration, 0, false, false, true));
 		int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
 		attackerData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
-		attacker.addEffect(new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true));
+		attacker.addEffect(new MobEffectInstance(MainEffects.POISE_CD, regenCd, 0, false, false, true));
 		attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), MainSounds.UNBLOCK.get(), SoundSource.PLAYERS, 1.0F, 0.9F + attacker.getRandom().nextFloat() * 0.1F);
 	}
 
@@ -607,8 +622,8 @@ public class CombatEvent {
 		} else if (MainDamageTypes.isStrikeAttackDamage(source)) {
 			sourcePen = 0.0;
 		} else {
-			int mainHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getMainHandItem());
-			int offHandLvl = EnchantmentHelper.getTagEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving.getOffhandItem());
+			int mainHandLvl = MainEnchants.level(sourceLiving.getMainHandItem(), sourceLiving.level(), MainEnchants.DEFENSE_PENETRATION);
+			int offHandLvl = MainEnchants.level(sourceLiving.getOffhandItem(), sourceLiving.level(), MainEnchants.DEFENSE_PENETRATION);
 			sourcePen = Math.max(mainHandLvl, offHandLvl) * 0.025;
 		}
 
@@ -627,7 +642,7 @@ public class CombatEvent {
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public static void overrideVanillaArmorReduction(LivingDamageEvent event) {
+	public static void overrideVanillaArmorReduction(LivingDamageEvent.Pre event) {
 		if (event.getEntity() instanceof Player victim) {
 			if (victim.getPersistentData().contains("dmz_raw_damage")) {
 				double rawDamage = victim.getPersistentData().getDouble("dmz_raw_damage");
@@ -701,12 +716,11 @@ public class CombatEvent {
 					if (defenseFullyNegated && rawDamage > 0.0
 							&& ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()) {
 						applyFullNegation(victim);
-						event.setAmount(0.0f);
-						event.setCanceled(true);
+						event.setNewDamage(0.0f);
 						return;
 					}
 
-					event.setAmount(finalDamage);
+					event.setNewDamage(finalDamage);
 				});
 
 				victim.getPersistentData().remove("dmz_raw_damage");

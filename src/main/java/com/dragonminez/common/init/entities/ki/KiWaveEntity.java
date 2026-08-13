@@ -1,7 +1,10 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.compat.CameraAimHelper;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.util.MultipartTargeting;
+import com.dragonminez.common.compat.SableCompat;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.particles.KiLightningParticle;
 import com.dragonminez.common.init.particles.KiSheddingParticle;
@@ -396,14 +399,17 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setFireTick(this.tickCount);
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
-            updatePositionRelativeToOwner(livingOwner, false);
+            updatePositionRelativeToOwner(livingOwner, false, CameraAimHelper.resolve(livingOwner));
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
     private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {
-        Vec3 look = owner.getLookAngle();
+        updatePositionRelativeToOwner(owner, isCasting, owner.getLookAngle());
+    }
+
+    private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting, Vec3 look) {
         Vec3 newPos;
 
         double centerX = owner.getX();
@@ -437,19 +443,19 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEAM_LENGTH, 0.0F);
-        this.entityData.define(FIXED_YAW, 0.0F);
-        this.entityData.define(FIXED_PITCH, 0.0F);
-        this.entityData.define(CAST_WAVE, 100);
-        this.entityData.define(CAST_SIZE, 1.0F);
-        this.entityData.define(OFFSET_X, 0.0F);
-        this.entityData.define(OFFSET_Y, 0.0F);
-        this.entityData.define(OFFSET_Z, 0.0F);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEAM_LENGTH, 0.0F);
+        builder.define(FIXED_YAW, 0.0F);
+        builder.define(FIXED_PITCH, 0.0F);
+        builder.define(CAST_WAVE, 100);
+        builder.define(CAST_SIZE, 1.0F);
+        builder.define(OFFSET_X, 0.0F);
+        builder.define(OFFSET_Y, 0.0F);
+        builder.define(OFFSET_Z, 0.0F);
 
-        this.entityData.define(CONTINUOUS_FOLLOW, false);
-        this.entityData.define(IS_FIRING, false);
+        builder.define(CONTINUOUS_FOLLOW, false);
+        builder.define(IS_FIRING, false);
     }
 
     public float getBeamLength() { return this.entityData.get(BEAM_LENGTH); }
@@ -550,20 +556,24 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 float targetLen = currentLen + currentSpeed;
                 Vec3 tipPos = startPos.add(dir.scale(targetLen));
 
-                this.destroyBlocksAtTip(tipPos);
-
                 HitResult hitResult = this.level().clip(new ClipContext(
                         startPos.add(dir.scale(currentLen)), tipPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this
                 ));
 
                 if (hitResult.getType() == HitResult.Type.BLOCK) {
-                    BlockPos hitPos = ((BlockHitResult)hitResult).getBlockPos();
+					BlockHitResult blockHit = (BlockHitResult) hitResult;
+					BlockPos hitPos = blockHit.getBlockPos();
+					Vec3 worldHit = SableCompat.projectToWorld(this.level(), blockHit.getLocation());
                     if (this.level().getBlockState(hitPos).getExplosionResistance(this.level(), hitPos, null) >= 1000) {
-                        targetLen = (float) hitResult.getLocation().distanceTo(startPos);
+						targetLen = (float) worldHit.distanceTo(startPos);
                         currentSpeed = 0.0F;
                         this.setKiSpeed(currentSpeed);
-                    }
-                }
+					} else {
+						destroyBlocksAt(hitPos);
+					}
+				} else {
+					destroyBlocksAtTip(tipPos);
+				}
 
                 this.setBeamLength(targetLen);
 
@@ -651,10 +661,13 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private boolean destroyBlocksAtTip(Vec3 tipPos) {
+		return destroyBlocksAt(BlockPos.containing(tipPos));
+	}
+
+	private boolean destroyBlocksAt(BlockPos center) {
         boolean hitSomething = false;
         float eatRadius = this.scaledDestructionRadius(this.getSize() * 3.2F);
         int bRad = Math.round(eatRadius);
-        BlockPos center = BlockPos.containing(tipPos);
         Level level = this.level();
 
         for (int x = -bRad; x <= bRad; x++) {

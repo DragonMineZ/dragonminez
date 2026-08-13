@@ -6,6 +6,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -21,7 +22,7 @@ public abstract class InGameHudMixin {
 	private static final int DMZ$SHIELD_SIZE = 18;
 
 	@Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
-	private void dragonminez$pre_renderCrosshair(GuiGraphics guiGraphics, CallbackInfo ci) {
+	private void dragonminez$pre_renderCrosshair(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
 		if (dragonminez$isBlocking() && dragonminez$crosshairVisible()) {
 			int x = (guiGraphics.guiWidth() - DMZ$SHIELD_SIZE) / 2;
 			int y = (guiGraphics.guiHeight() - DMZ$SHIELD_SIZE) / 2;
@@ -37,7 +38,7 @@ public abstract class InGameHudMixin {
 	}
 
 	@Inject(method = "renderCrosshair", at = @At("TAIL"))
-	private void dragonminez$post_renderCrosshair(GuiGraphics guiGraphics, CallbackInfo ci) {
+	private void dragonminez$post_renderCrosshair(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 

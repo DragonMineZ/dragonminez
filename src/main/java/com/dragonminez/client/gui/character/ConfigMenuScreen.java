@@ -25,8 +25,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -310,7 +310,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics, mouseX, mouseY, partialTick);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
@@ -503,7 +503,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int leftPanelX = getLeftPanelX();
@@ -517,12 +517,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		if ((overLeft || overRight) &&
 				uiMouseY >= panelY + 40 && uiMouseY <= panelY + 219) {
 
-			int scrollAmount = (int) Math.signum(delta);
+			int scrollAmount = (int) Math.signum(scrollY);
 			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - scrollAmount));
 			initConfigButtons();
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override

@@ -17,11 +17,11 @@ public class FlyStatusHandler implements IStatusEffectHandler {
     @Override
     public void handleStatusEffects(ServerPlayer player, StatsData data) {
         if (data.getSkills().isSkillActive("fly")) {
-            if (!player.hasEffect(MainEffects.FLY.get())) {
-                player.addEffect(new MobEffectInstance(MainEffects.FLY.get(), -1, 0, false, false, true));
+            if (!player.hasEffect(MainEffects.FLY)) {
+                player.addEffect(new MobEffectInstance(MainEffects.FLY, -1, 0, false, false, true));
             }
         } else {
-            player.removeEffect(MainEffects.FLY.get());
+            player.removeEffect(MainEffects.FLY);
         }
     }
 

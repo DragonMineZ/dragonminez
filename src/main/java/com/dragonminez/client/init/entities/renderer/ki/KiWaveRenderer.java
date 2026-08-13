@@ -36,7 +36,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
         PlayerEffectQueue.addKiAttack((stack, proj) -> {
             stack.pushPose();
-            stack.last().pose().set(basePose);
+            stack.last().pose().mul(basePose);
 
             float[] auraColor = entity.getRgbColorMain();
             float[] borderColor = entity.getRgbColorBorder();

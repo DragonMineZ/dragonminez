@@ -1,7 +1,7 @@
 package com.dragonminez.server.energy;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.energy.EnergyStorage;
+import net.neoforged.neoforge.energy.EnergyStorage;
 
 public class StarEnergyStorage extends EnergyStorage {
 	public StarEnergyStorage(int capacity, int maxTransfer) {

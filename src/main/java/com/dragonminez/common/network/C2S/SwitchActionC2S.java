@@ -9,7 +9,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -33,7 +33,7 @@ public class SwitchActionC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player != null) {
-				if (player.hasEffect(MainEffects.STUN.get())) return;
+				if (player.hasEffect(MainEffects.STUN)) return;
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					ActionMode newMode;
 					if (data.getStatus().getSelectedAction() != mode) {

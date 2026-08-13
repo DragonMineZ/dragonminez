@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.block.custom;
 
+import com.mojang.serialization.MapCodec;
+
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.block.entity.FuelGeneratorBlockEntity;
 import com.dragonminez.common.init.block.entity.KikonoStationBlockEntity;
@@ -24,10 +26,17 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
+
 import org.jetbrains.annotations.Nullable;
 
 public class FuelGeneratorBlock extends BaseEntityBlock {
+	public static final MapCodec<FuelGeneratorBlock> CODEC = simpleCodec(FuelGeneratorBlock::new);
+
+	@Override
+	protected MapCodec<? extends BaseEntityBlock> codec() {
+		return CODEC;
+	}
+
 	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 	public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
@@ -63,11 +72,11 @@ public class FuelGeneratorBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+	public InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
 		if (!pLevel.isClientSide()) {
 			BlockEntity entity = pLevel.getBlockEntity(pPos);
 			if (entity instanceof FuelGeneratorBlockEntity generator) {
-				NetworkHooks.openScreen((ServerPlayer) pPlayer, generator, pPos);
+				if (pPlayer instanceof ServerPlayer sp) sp.openMenu(generator, buf -> buf.writeBlockPos(pPos));
 			}
 		}
 		return InteractionResult.sidedSuccess(pLevel.isClientSide());

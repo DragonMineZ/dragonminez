@@ -105,7 +105,10 @@ public class GeneralServerConfig {
 		private Boolean gravityBonusEnabled = true;
 		private Double HTCTpMultiplier = 1.75;
 		private Boolean maxLevelValueInsteadOfStats = true;
-		private Integer maxValue = 10000;
+		// Long, not Integer: server owners set this well past Integer.MAX_VALUE (10000000000 is a
+		// real value in the wild). As an Integer, Gson aborts the whole parse with
+		// "Expected an int but was 10000000000", which takes the entire synced config down with it.
+		private Long maxValue = 10000L;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
@@ -224,7 +227,7 @@ public class GeneralServerConfig {
 		}
 
 		public Integer getMaxValue() {
-			return Math.max(1000, Math.min(maxValue, Integer.MAX_VALUE));
+			return (int) Math.max(1000L, Math.min(maxValue != null ? maxValue : 10000L, Integer.MAX_VALUE));
 		}
 
 		public Boolean getMaxLevelValueInsteadOfStats() {

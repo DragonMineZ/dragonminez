@@ -41,12 +41,7 @@ public class SagaOzaruEntity extends DBSagasEntity{
     protected void registerGoals() {
         super.registerGoals();
 
-        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false) {
-            @Override
-            protected double getAttackReachSqr(LivingEntity pAttackTarget) {
-                return 5.0D;
-            }
-        });
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false));
     }
 
     @Override

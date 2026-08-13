@@ -21,6 +21,6 @@ public class RedRibbonOutfitLayer<T extends RedRibbonSoldierEntity> extends GeoR
     @Override
     public void render(PoseStack poseStack, T animatable, BakedGeoModel bakedModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
         RenderType outfitType = RenderType.entityCutoutNoCull(OUTFIT_TEXTURE);
-        getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, outfitType, bufferSource.getBuffer(outfitType), partialTick, packedLight, packedOverlay, 1.0f, 1.0f, 1.0f, 1.0f);
+        getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, outfitType, bufferSource.getBuffer(outfitType), partialTick, packedLight, packedOverlay, com.dragonminez.client.render.util.RenderBufferUtil.packColor(1.0f, 1.0f, 1.0f, 1.0f));
     }
 }

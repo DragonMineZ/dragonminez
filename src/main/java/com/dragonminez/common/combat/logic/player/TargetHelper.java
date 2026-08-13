@@ -16,8 +16,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.entity.PartEntity;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.entity.PartEntity;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class TargetHelper {
 
@@ -70,7 +70,7 @@ public class TargetHelper {
         var targetTeam = target.getTeam();
 
         if (casterTeam == null || targetTeam == null) {
-            var id = ForgeRegistries.ENTITY_TYPES.getKey(target.getType());
+            var id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
             var mappedRelation = config.getPlayerRelations().get(id != null ? id.toString() : "");
             if (mappedRelation != null) return mappedRelation;
             if (target instanceof Animal) return Relation.coalesce(config.getPlayerRelationToPassives(), Relation.HOSTILE);
@@ -80,7 +80,7 @@ public class TargetHelper {
     }
 
     public static boolean isAttackableMount(Entity entity) {
-        if (entity instanceof Monster || isEntityHostileVehicle(ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()) != null ? ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString() : "")) {
+        if (entity instanceof Monster || isEntityHostileVehicle(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()) != null ? BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString() : "")) {
             return true;
         }
         return ConfigManager.getCombatConfig().getAllowAttackingMount();

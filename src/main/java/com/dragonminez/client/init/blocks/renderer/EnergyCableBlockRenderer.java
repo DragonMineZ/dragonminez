@@ -18,8 +18,8 @@ public class EnergyCableBlockRenderer extends GeoBlockRenderer<EnergyCableBlockE
 	}
 
 	@Override
-	public void preRender(PoseStack poseStack, EnergyCableBlockEntity animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-		super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+	public void preRender(PoseStack poseStack, EnergyCableBlockEntity animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
+		super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, colour);
 
 		BlockState state = animatable.getBlockState();
 

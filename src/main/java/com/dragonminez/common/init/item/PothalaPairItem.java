@@ -9,7 +9,9 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -54,11 +56,11 @@ public class PothalaPairItem extends Item {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
 		tooltip.add(Component.translatable("item.dragonminez.pothala.pair.tooltip.split").withStyle(ChatFormatting.GRAY));
 		tooltip.add(Component.translatable("item.dragonminez.pothala.pair.tooltip.aura").withStyle(ChatFormatting.GRAY));
 		appendPairIdTooltip(stack, tooltip);
-		super.appendHoverText(stack, level, tooltip, flag);
+		super.appendHoverText(stack, context, tooltip, flag);
 	}
 
 	private static void giveOrDrop(Player player, ItemStack stack) {
@@ -76,12 +78,13 @@ public class PothalaPairItem extends Item {
 	}
 
 	public static void setPairId(ItemStack stack, int id) {
-		stack.getOrCreateTag().putInt(PAIR_ID_KEY, id);
+		CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putInt(PAIR_ID_KEY, id));
 	}
 
 	public static int getPairId(ItemStack stack) {
-		CompoundTag tag = stack.getTag();
-		return tag != null ? tag.getInt(PAIR_ID_KEY) : 0;
+		CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+		CompoundTag tag = data.copyTag();
+		return tag.contains(PAIR_ID_KEY) ? tag.getInt(PAIR_ID_KEY) : 0;
 	}
 
 	public static void appendPairIdTooltip(ItemStack stack, List<Component> tooltip) {

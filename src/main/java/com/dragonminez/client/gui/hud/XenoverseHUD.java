@@ -15,7 +15,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraft.client.gui.LayeredDraw;
 
 import java.text.NumberFormat;
 import java.util.List;
@@ -42,9 +42,12 @@ public class XenoverseHUD {
 
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
-	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static final LayeredDraw.Layer HUD_XENOVERSE = (guiGraphics, deltaTracker) -> {
+		float partialTicks = deltaTracker.getGameTimeDeltaPartialTick(false);
+		int width = guiGraphics.guiWidth();
+		int height = guiGraphics.guiHeight();
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.renderDebug || mc.player == null) return;
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
 		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {

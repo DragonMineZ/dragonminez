@@ -13,10 +13,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.model.generators.ItemModelProvider;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Map;
 
@@ -30,7 +30,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		//Items (MainItems)
 		for (DragonRadarDefinition radarDefinition : DragonBallDefinitions.getRadars()) {
 			DragonRadarAssetDefinition assets = radarDefinition.resolveAssetDefinition();
-			RegistryObject<Item> item = MainItems.getDragonRadarItemOrThrow(radarDefinition.getId());
+			DeferredHolder<Item, ? extends Item> item = MainItems.getDragonRadarItemOrThrow(radarDefinition.getId());
 			if (assets != null && assets.getItemTexturePath().isPresent()) {
 				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getItemTexturePath().get()));
 			} else {
@@ -59,9 +59,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.HEALING_BUCKET);
 		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
 			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
-			for (Map.Entry<Integer, RegistryObject<Item>> entry : MainItems.getDragonBallBlockItems(setDefinition.getId()).entrySet()) {
+			for (Map.Entry<Integer, DeferredHolder<Item, ? extends Item>> entry : MainItems.getDragonBallBlockItems(setDefinition.getId()).entrySet()) {
 				int star = entry.getKey();
-				RegistryObject<Item> item = entry.getValue();
+				DeferredHolder<Item, ? extends Item> item = entry.getValue();
 				if (assets != null && assets.getInventoryTexturePathForStar(star).isPresent()) {
 					withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getInventoryTexturePathForStar(star).get()));
 				} else {
@@ -407,64 +407,64 @@ public class DMZItemModelProvider extends ItemModelProvider {
 
 	}
 
-	private void simpleItem(RegistryObject<Item> item) {
+	private void simpleItem(DeferredHolder<Item, ? extends Item> item) {
 		withExistingParent(item.getId().getPath(),
 				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
-	private void armorItem(RegistryObject<Item> item) {
+	private void armorItem(DeferredHolder<Item, ? extends Item> item) {
 		withExistingParent(item.getId().getPath(),
 				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/armors/" + item.getId().getPath()));
 	}
-	private void patternItem(RegistryObject<Item> item) {
+	private void patternItem(DeferredHolder<Item, ? extends Item> item) {
 		withExistingParent(item.getId().getPath(),
 				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/patterns/" + item.getId().getPath()));
 	}
-	private void blockItem(RegistryObject<Block> item) {
+	private void blockItem(DeferredHolder<Block, ? extends Block> item) {
 		withExistingParent(item.getId().getPath(),
 				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + item.getId().getPath()));
 	}
-	private void blockAsItem(RegistryObject<Block> item) {
+	private void blockAsItem(DeferredHolder<Block, ? extends Block> item) {
 		withExistingParent(item.getId().getPath(),
 				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
-	public void simpleBlockItem(RegistryObject<Block> block) {
-		this.withExistingParent(Reference.MOD_ID + ":" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
-				modLoc("block/" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath()));
+	public void simpleBlockItem(DeferredHolder<Block, ? extends Block> block) {
+		this.withExistingParent(Reference.MOD_ID + ":" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath(),
+				modLoc("block/" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath()));
 	}
-	public void trapdoorItem(RegistryObject<Block> block) {
-		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
-				modLoc("block/" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath() + "_bottom"));
-	}
-
-	public void fenceItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
-		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/fence_inventory"))
-				.texture("texture",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+	public void trapdoorItem(DeferredHolder<Block, ? extends Block> block) {
+		this.withExistingParent(BuiltInRegistries.BLOCK.getKey(block.get()).getPath(),
+				modLoc("block/" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath() + "_bottom"));
 	}
 
-	public void buttonItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
-		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/button_inventory"))
-				.texture("texture",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+	public void fenceItem(DeferredHolder<Block, ? extends Block> block, DeferredHolder<Block, ? extends Block> baseBlock) {
+		this.withExistingParent(BuiltInRegistries.BLOCK.getKey(block.get()).getPath(), mcLoc("block/fence_inventory"))
+				.texture("texture",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + BuiltInRegistries.BLOCK.getKey(baseBlock.get()).getPath()));
 	}
-	public void wallItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
-		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/wall_inventory"))
-				.texture("wall",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+
+	public void buttonItem(DeferredHolder<Block, ? extends Block> block, DeferredHolder<Block, ? extends Block> baseBlock) {
+		this.withExistingParent(BuiltInRegistries.BLOCK.getKey(block.get()).getPath(), mcLoc("block/button_inventory"))
+				.texture("texture",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + BuiltInRegistries.BLOCK.getKey(baseBlock.get()).getPath()));
 	}
-	private void saplingItem(RegistryObject<Block> item) {
+	public void wallItem(DeferredHolder<Block, ? extends Block> block, DeferredHolder<Block, ? extends Block> baseBlock) {
+		this.withExistingParent(BuiltInRegistries.BLOCK.getKey(block.get()).getPath(), mcLoc("block/wall_inventory"))
+				.texture("wall",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + BuiltInRegistries.BLOCK.getKey(baseBlock.get()).getPath()));
+	}
+	private void saplingItem(DeferredHolder<Block, ? extends Block> item) {
 		withExistingParent(item.getId().getPath(),
 				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + item.getId().getPath()));
 	}
-	private void generateArmorSetModels(Map<ArmorItem.Type, RegistryObject<Item>> armorSet) {
-		for (RegistryObject<Item> piece : armorSet.values()) {
+	private void generateArmorSetModels(Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> armorSet) {
+		for (DeferredHolder<Item, ? extends Item> piece : armorSet.values()) {
 			armorItem(piece);
 		}
 	}
-	private void handheldItem(RegistryObject<Item> item) {
+	private void handheldItem(DeferredHolder<Item, ? extends Item> item) {
 		withExistingParent(item.getId().getPath(),
 				ResourceLocation.parse("item/handheld")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));

@@ -22,14 +22,14 @@ public class VillagePoolInjector {
 				.registryOrThrow(Registries.PROCESSOR_LIST);
 
 		Holder<StructureProcessorList> empty = procs.getHolderOrThrow(
-				ResourceKey.create(Registries.PROCESSOR_LIST, new ResourceLocation("minecraft", "empty")));
+				ResourceKey.create(Registries.PROCESSOR_LIST, ResourceLocation.fromNamespaceAndPath("minecraft", "empty")));
 
 		inject(pools, empty, "minecraft:village/plains/houses", "dragonminez:cc_villager", 20);
 	}
 
 	private static void inject(Registry<StructureTemplatePool> pools, Holder<StructureProcessorList> processors,
 							   String poolId, String pieceId, int weight) {
-		StructureTemplatePool pool = pools.get(new ResourceLocation(poolId));
+		StructureTemplatePool pool = pools.get(ResourceLocation.parse(poolId));
 		if (pool == null) {
 			LogUtil.warn(Env.SERVER, "VillagePoolInjector: pool '" + poolId + "' not found, skipping '" + pieceId + "'.");
 			return;

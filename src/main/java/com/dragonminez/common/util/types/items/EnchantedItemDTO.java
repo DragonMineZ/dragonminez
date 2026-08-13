@@ -1,21 +1,17 @@
 package com.dragonminez.common.util.types.items;
 
 import com.google.gson.GsonBuilder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraftforge.registries.ForgeRegistries;
-
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter
-@Setter
-@NoArgsConstructor
+/**
+ * Enchanted item DTO. Enchantment application in 1.21 is datapack/registry-bound;
+ * runtime stacks are created unenchanted unless a registry lookup is provided later.
+ * JSON still stores enchantment ids for datapack/quest definitions.
+ */
 public class EnchantedItemDTO extends GenericItemDTO {
     protected Map<String, Integer> enchantments = new HashMap<>();
 
@@ -41,13 +37,9 @@ public class EnchantedItemDTO extends GenericItemDTO {
 
     @Override
     public ItemStack getItemStack() {
-        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(this.getItemId()));
+        var item = BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(this.getItemId()));
         if (item != null) {
-            var itemStack = new ItemStack(item, this.count);
-            if (this.enchantments != null && !this.enchantments.isEmpty()) {
-                EnchantmentHelper.setEnchantments(this.getEnchantmentMap(), itemStack);
-            }
-            return itemStack;
+            return new ItemStack(item, this.count);
         }
         return ItemStack.EMPTY;
     }
@@ -57,12 +49,17 @@ public class EnchantedItemDTO extends GenericItemDTO {
         return new GsonBuilder().setPrettyPrinting().create().toJson(this, EnchantedItemDTO.class);
     }
 
-    protected Map<Enchantment, Integer> getEnchantmentMap() {
-        Map<Enchantment, Integer> enchantments = new HashMap<>();
-        this.enchantments.keySet().forEach(key -> {
-            Enchantment value = ForgeRegistries.ENCHANTMENTS.getValue(ResourceLocation.tryParse(key));
-            enchantments.put(value, this.enchantments.get(key));
-        });
-        return enchantments;
+    @java.lang.SuppressWarnings("all")
+    public Map<String, Integer> getEnchantments() {
+        return this.enchantments;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public void setEnchantments(final Map<String, Integer> enchantments) {
+        this.enchantments = enchantments;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public EnchantedItemDTO() {
     }
 }

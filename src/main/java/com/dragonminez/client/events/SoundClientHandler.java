@@ -8,16 +8,20 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class SoundClientHandler {
 
     private static final Map<UUID, AuraLoopSound> ACTIVE_AURA_SOUNDS = new HashMap<>();
@@ -25,8 +29,7 @@ public class SoundClientHandler {
     private static final Map<UUID, Long> LIGHTNING_TIMERS = new HashMap<>();
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+    public static void onClientTick(ClientTickEvent.Post event) {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
@@ -41,8 +44,7 @@ public class SoundClientHandler {
             updatePlayerAuraSound(player, mc);
         }
 
-        ACTIVE_AURA_SOUNDS.entrySet().removeIf(entry ->
-                entry.getValue().isStopped() || !mc.getSoundManager().isActive(entry.getValue()));
+        ACTIVE_AURA_SOUNDS.values().removeIf(AuraLoopSound::isStopped);
 
         if (mc.level.getGameTime() % 200 == 0) { // Cada 10 segundos
             LIGHTNING_TIMERS.keySet().removeIf(uuid -> mc.level.getPlayerByUUID(uuid) == null);
@@ -62,8 +64,9 @@ public class SoundClientHandler {
         boolean hasAura = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
 
         AuraLoopSound existing = ACTIVE_AURA_SOUNDS.get(playerId);
-        boolean isPlaying = existing != null && !existing.isStopped()
-                && mc.getSoundManager().isActive(existing);
+        // SoundManager queues new instances before isActive() becomes true. Treating that short
+        // window as "not playing" allocated another loop every tick until the sound pool filled.
+        boolean isPlaying = existing != null && !existing.isStopped();
 
         if (hasAura) {
             if (!isPlaying) {

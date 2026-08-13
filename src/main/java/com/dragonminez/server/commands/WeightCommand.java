@@ -32,7 +32,7 @@ public class WeightCommand {
         );
     }
 
-    private static int giveWeight(CommandSourceStack source, int weightValue, Supplier<Item> item) {
+    private static int giveWeight(CommandSourceStack source, int weightValue, Supplier<? extends Item> item) {
         boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
         try {
             ServerPlayer player = source.getPlayerOrException();

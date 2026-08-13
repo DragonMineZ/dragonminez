@@ -81,7 +81,7 @@ public class TargetFinder {
                 .collect(Collectors.toList());
 
         if (player.level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel) {
-            for (net.minecraftforge.entity.PartEntity<?> part : clientLevel.getPartEntities()) {
+            for (net.neoforged.neoforge.entity.PartEntity<?> part : clientLevel.getPartEntities()) {
                 if (part.isAttackable() && !part.isSpectator() && part.getBoundingBox().intersects(box)
                         && TargetHelper.getRelation(player, part) != TargetHelper.Relation.FRIENDLY) {
                     targets.add(part);

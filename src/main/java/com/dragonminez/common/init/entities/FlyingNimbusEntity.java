@@ -19,11 +19,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceCache;
+import software.bernie.geckolib.animation.*;
+import software.bernie.geckolib.animation.PlayState;
 
 public class FlyingNimbusEntity extends Mob implements GeoEntity {
 
@@ -203,10 +203,9 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
     public LivingEntity getControllingPassenger() {
         return this.getFirstPassenger() instanceof LivingEntity entity ? entity : null;
     }
-
     @Override
-    public double getPassengersRidingOffset() {
-        return 0.9D;
+    protected net.minecraft.world.phys.Vec3 getPassengerAttachmentPoint(Entity entity, net.minecraft.world.entity.EntityDimensions dimensions, float partialTick) {
+        return new net.minecraft.world.phys.Vec3(0.0D, 0.9D, 0.0D);
     }
 
     @Override
@@ -217,7 +216,7 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
             float xOffset = 0.0f;
             float zOffset = (index == 0) ? 0.4F : -0.4F;
 
-            double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
+            double yOffset = 0.4D;
 
             float yaw = -this.getYRot() * ((float)Math.PI / 180F);
             Vec3 vec3 = (new Vec3(xOffset, 0.0D, zOffset)).yRot(yaw);

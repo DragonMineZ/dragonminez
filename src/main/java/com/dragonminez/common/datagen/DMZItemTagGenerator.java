@@ -9,8 +9,8 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,7 +44,7 @@ public class DMZItemTagGenerator extends ItemTagsProvider {
 				.add(MainBlocks.NAMEK_STRIPPED_SACRED_LOG.get().asItem())
 				.add(MainBlocks.NAMEK_STRIPPED_SACRED_WOOD.get().asItem());
 
-		this.tag(ItemTags.TOOLS)
+		this.tag(Tags.Items.TOOLS)
 				.add(MainItems.ARMOR_CRAFTING_KIT.get());
 
 		this.tag(Tags.Items.INGOTS)

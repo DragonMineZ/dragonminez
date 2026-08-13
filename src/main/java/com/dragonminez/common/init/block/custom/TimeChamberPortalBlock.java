@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.block.custom;
 
+import com.mojang.serialization.MapCodec;
+
 import com.dragonminez.common.init.block.entity.TimeChamberPortalBlockEntity;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
@@ -21,25 +23,34 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.common.util.ITeleporter;
+import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.function.Function;
-
 public class TimeChamberPortalBlock extends BaseEntityBlock {
+	public static final MapCodec<TimeChamberPortalBlock> CODEC = simpleCodec(TimeChamberPortalBlock::new);
+
+	@Override
+	protected MapCodec<? extends BaseEntityBlock> codec() {
+		return CODEC;
+	}
+
 
 	public TimeChamberPortalBlock() {
-		super(BlockBehaviour.Properties.copy(Blocks.QUARTZ_BLOCK).noLootTable().noParticlesOnBreak().strength(-1.0F, 3600000.0F));
+		this(BlockBehaviour.Properties.ofFullCopy(Blocks.QUARTZ_BLOCK).noLootTable().strength(-1.0F, 3600000.0F));
+	}
+
+	public TimeChamberPortalBlock(BlockBehaviour.Properties properties) {
+		super(properties);
 	}
 
     @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (pHand == InteractionHand.MAIN_HAND && !pLevel.isClientSide) {
+    public InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
+        if (!pLevel.isClientSide) {
             BlockEntity be = pLevel.getBlockEntity(pPos);
             if (!(be instanceof TimeChamberPortalBlockEntity tile)) return InteractionResult.FAIL;
 
@@ -95,7 +106,7 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
         BlockPos finalPos = null;
 
         if (structurePos != null) {
-            targetLevel.getChunk(structurePos.getX() >> 4, structurePos.getZ() >> 4, ChunkStatus.FULL, true);
+            targetLevel.getChunk(structurePos.getX() >> 4, structurePos.getZ() >> 4, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, true);
 
             finalPos = findPortalInStructureMeta(targetLevel, structurePos, targetStructureKey, targetBlock);
 
@@ -117,7 +128,7 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
 		var structureHolder = structureRegistry.getHolder(structureKey).orElse(null);
 		if (structureHolder == null) return null;
 
-		level.getChunk(structureCenter.getX() >> 4, structureCenter.getZ() >> 4, ChunkStatus.STRUCTURE_STARTS);
+		level.getChunk(structureCenter.getX() >> 4, structureCenter.getZ() >> 4, net.minecraft.world.level.chunk.status.ChunkStatus.STRUCTURE_STARTS);
 		StructureStart start = level.structureManager().getStructureAt(structureCenter, structureHolder.value());
 
 		// getStructureAt requires the probe position to be inside the structure's bounding box on
@@ -140,7 +151,7 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
 			// the portal may sit in a chunk adjacent to the located center.
 			for (int cx = boundingBox.minX() >> 4; cx <= boundingBox.maxX() >> 4; cx++) {
 				for (int cz = boundingBox.minZ() >> 4; cz <= boundingBox.maxZ() >> 4; cz++) {
-					level.getChunk(cx, cz, ChunkStatus.FULL, true);
+					level.getChunk(cx, cz, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, true);
 				}
 			}
 			for (BlockPos pos : BlockPos.betweenClosed(boundingBox.minX(), boundingBox.minY(), boundingBox.minZ(), boundingBox.maxX(), boundingBox.maxY(), boundingBox.maxZ())) {
@@ -169,7 +180,7 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
         int verticalRadius = 30;
 
         for (BlockPos p : candidates) {
-            level.getChunk(p.getX() >> 4, p.getZ() >> 4, ChunkStatus.FULL, true);
+            level.getChunk(p.getX() >> 4, p.getZ() >> 4, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, true);
 
             for (BlockPos checkPos : BlockPos.betweenClosed(
                     p.getX() - searchRadius, p.getY() - verticalRadius, p.getZ() - searchRadius,
@@ -185,13 +196,8 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
     }
 
 	private void teleportPlayer(Player player, ServerLevel targetLevel, BlockPos targetPos, float rotX) {
-		player.changeDimension(targetLevel, new ITeleporter() {
-			@Override
-			public Entity placeEntity(Entity entity, ServerLevel current, ServerLevel destination, float yaw, Function<Boolean, Entity> repositionEntity) {
-				return repositionEntity.apply(false);
-			}
-		});
-		player.teleportTo(targetLevel, targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5, Collections.emptySet(), rotX, 0);
+		Vec3 pos = new Vec3(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+		player.changeDimension(new DimensionTransition(targetLevel, pos, Vec3.ZERO, rotX, 0.0F, DimensionTransition.DO_NOTHING));
 	}
 
 	@Nullable

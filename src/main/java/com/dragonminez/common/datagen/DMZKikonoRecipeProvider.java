@@ -3,20 +3,20 @@ package com.dragonminez.common.datagen;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.datagen.builder.KikonoRecipeBuilder;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Map;
 import java.util.function.Consumer;
 
 public class DMZKikonoRecipeProvider {
-	private final Consumer<FinishedRecipe> consumer;
+	private final RecipeOutput consumer;
 
-	public DMZKikonoRecipeProvider(Consumer<FinishedRecipe> consumer) {
+	public DMZKikonoRecipeProvider(RecipeOutput consumer) {
 		this.consumer = consumer;
 	}
 
@@ -91,14 +91,14 @@ public class DMZKikonoRecipeProvider {
 		);
 	}
 
-	protected void buildFullArmorSet(String name, Map<ArmorItem.Type, RegistryObject<Item>> armorSet, Item pattern) {
+	protected void buildFullArmorSet(String name, Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> armorSet, Item pattern) {
 		buildHelmetRecipes(name, armorSet.get(ArmorItem.Type.HELMET).get(), pattern);
 		buildChestplateRecipes(name, armorSet.get(ArmorItem.Type.CHESTPLATE).get(), pattern);
 		buildLeggingsRecipes(name, armorSet.get(ArmorItem.Type.LEGGINGS).get(), pattern);
 		buildBootsRecipes(name, armorSet.get(ArmorItem.Type.BOOTS).get(), pattern);
 	}
 
-	protected void buildArmorNoHelmetSet(String name, Map<ArmorItem.Type, RegistryObject<Item>> armorSet, Item pattern) {
+	protected void buildArmorNoHelmetSet(String name, Map<ArmorItem.Type, DeferredHolder<Item, ? extends Item>> armorSet, Item pattern) {
 		buildChestplateRecipes(name, armorSet.get(ArmorItem.Type.CHESTPLATE).get(), pattern);
 		buildLeggingsRecipes(name, armorSet.get(ArmorItem.Type.LEGGINGS).get(), pattern);
 		buildBootsRecipes(name, armorSet.get(ArmorItem.Type.BOOTS).get(), pattern);

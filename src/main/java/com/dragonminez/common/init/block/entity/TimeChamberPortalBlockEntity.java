@@ -31,16 +31,16 @@ public class TimeChamberPortalBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag pTag) {
-        super.load(pTag);
+    protected void loadAdditional(CompoundTag pTag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(pTag, registries);
         if (pTag.contains("TargetPos")) {
-            this.cachedTargetPos = NbtUtils.readBlockPos(pTag.getCompound("TargetPos"));
+            this.cachedTargetPos = NbtUtils.readBlockPos(pTag, "TargetPos").orElse(null);
         }
     }
 
     @Override
-    protected void saveAdditional(CompoundTag pTag) {
-        super.saveAdditional(pTag);
+    protected void saveAdditional(CompoundTag pTag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(pTag, registries);
         if (this.cachedTargetPos != null) {
             pTag.put("TargetPos", NbtUtils.writeBlockPos(this.cachedTargetPos));
         }

@@ -3,8 +3,7 @@ package com.dragonminez.client.gui.tooltip.dynamic;
 import com.dragonminez.common.combat.weapon.WeaponAttributes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraftforge.common.ForgeMod;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -19,7 +18,7 @@ public class WeaponRangeTooltipHandler {
 		if (attributes != null && attributes.attackRange() > 0) {
 			double totalRange = attributes.attackRange();
 
-			Component rawAttrDesc = Component.translatable(ForgeMod.ENTITY_REACH.get().getDescriptionId());
+			Component rawAttrDesc = Component.translatable(Attributes.ENTITY_INTERACTION_RANGE.value().getDescriptionId());
 			Component attrDescNoIcon = IconUtil.getAttributeNameWithoutIcon(rawAttrDesc);
 			Component coloredStat = Component.translatable("attribute.modifier.equals.0", FORMAT.format(totalRange), attrDescNoIcon).withStyle(AttributeTooltipHandler.BASE_COLOR);
 			Component finalStat = IconUtil.processIcon(rawAttrDesc, coloredStat);

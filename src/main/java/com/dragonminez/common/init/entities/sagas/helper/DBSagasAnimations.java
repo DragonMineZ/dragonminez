@@ -1,6 +1,6 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
-import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.animation.RawAnimation;
 
 public class DBSagasAnimations {
 

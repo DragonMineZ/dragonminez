@@ -72,6 +72,6 @@ public class StoneSpikeFeature extends Feature<NoneFeatureConfiguration> {
 
 	public boolean canReplace(WorldGenLevel level, BlockPos pos) {
 		BlockState state = level.getBlockState(pos);
-		return state.isAir() || state.is(Blocks.DIRT) || state.is(Blocks.SNOW) || state.is(Blocks.GRASS) || state.liquid() || state.is(MainBlocks.ROCKY_DIRT.get()) || state.canBeReplaced();
+		return state.isAir() || state.is(Blocks.DIRT) || state.is(Blocks.SNOW) || state.is(Blocks.SHORT_GRASS) || state.liquid() || state.is(MainBlocks.ROCKY_DIRT.get()) || state.canBeReplaced();
 	}
 }

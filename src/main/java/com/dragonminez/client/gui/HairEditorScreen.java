@@ -28,7 +28,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import com.dragonminez.client.render.EntityPreviewRenderContext;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.network.chat.Component;
@@ -37,8 +37,8 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import java.util.Set;
 
@@ -767,7 +767,7 @@ public class HairEditorScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		panorama.render(partialTick, 1.0F);
+		panorama.render(graphics, this.width, this.height, 1.0F, partialTick);
 		renderCinematicBars(graphics);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
@@ -974,7 +974,7 @@ public class HairEditorScreen extends ScaledScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, new Quaternionf().rotateX(0), player);
+		EntityPreviewRenderContext.renderEntityInInventory(graphics, x, y, scale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, new Quaternionf().rotateX(0), player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;
@@ -1047,17 +1047,17 @@ public class HairEditorScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		double uiMouseX = toUiX(mouseX);
 		int previewZoneLeft = 12 + 141 + 16;
 
 		if (uiMouseX >= previewZoneLeft && !colorPickerVisible) {
-			targetZoom += (float) delta * 20.0f;
+			targetZoom += (float) scrollY * 20.0f;
 			targetZoom = Mth.clamp(targetZoom, 95.0f, 250.0f);
 			return true;
 		}
 
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	private boolean handleFaceSelectorClick(double mouseX, double mouseY) {

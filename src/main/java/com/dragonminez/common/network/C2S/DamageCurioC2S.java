@@ -1,9 +1,11 @@
 package com.dragonminez.common.network.C2S;
 
+import net.minecraft.world.entity.EquipmentSlot;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.function.Supplier;
@@ -46,7 +48,7 @@ public class DamageCurioC2S {
 					ItemStack stack = handler.getStacks().getStackInSlot(slotIndex);
 
 					if (!stack.isEmpty() && stack.isDamageableItem()) {
-						stack.hurtAndBreak(damageAmount, player, (entity) -> {});
+						stack.hurtAndBreak(damageAmount, player, EquipmentSlot.HEAD);
 
 						if (stack.isEmpty() || stack.getDamageValue() >= stack.getMaxDamage()) handler.getStacks().setStackInSlot(slotIndex, ItemStack.EMPTY);
 					}

@@ -26,7 +26,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -206,7 +206,7 @@ public final class NPCPlacementManager {
 			return;
 		}
 
-		EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(entityId);
+		EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(entityId);
 		if (entityType == null) {
 			LogUtil.warn(Env.SERVER, "NPCPlacementManager: unknown entity '{}' for placement '{}'", placement.entity(), placement.id());
 			return;

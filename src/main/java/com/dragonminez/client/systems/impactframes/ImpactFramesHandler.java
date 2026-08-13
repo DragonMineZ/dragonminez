@@ -15,11 +15,15 @@ import net.minecraft.client.renderer.EffectInstance;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
@@ -27,7 +31,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 public class ImpactFramesHandler {
 
 	private static final Queue<ImpactFrame> IMPACT_FRAMES = new ArrayDeque<>();
@@ -44,8 +48,7 @@ public class ImpactFramesHandler {
 	}
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.START) return;
+	public static void onClientTick(ClientTickEvent.Pre event) {
 
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null || mc.isPaused()) return;
@@ -103,7 +106,7 @@ public class ImpactFramesHandler {
 		RenderSystem.disableCull();
 
 		if (iris) mc.getMainRenderTarget().bindWrite(false);
-		impactFrameShader.process(event.getPartialTick());
+		impactFrameShader.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
 		mc.getMainRenderTarget().bindWrite(false);
 
 		RenderSystem.enableCull();

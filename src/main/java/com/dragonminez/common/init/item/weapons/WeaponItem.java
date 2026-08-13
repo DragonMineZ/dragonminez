@@ -3,6 +3,7 @@ package com.dragonminez.common.init.item.weapons;
 import com.dragonminez.common.init.item.tools.ToolTiers;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TooltipFlag;
@@ -17,7 +18,7 @@ public class WeaponItem extends SwordItem {
 	private final int enchantability;
 
 	public WeaponItem(int damageBase, float attackSpeed, int durability, int enchantability, String tag) {
-		super(ToolTiers.BLANK_WEAPON_TIER, damageBase, attackSpeed, new Properties().durability(durability).fireResistant());
+		super(ToolTiers.BLANK_WEAPON_TIER, new Properties().durability(durability).fireResistant().attributes(SwordItem.createAttributes(ToolTiers.BLANK_WEAPON_TIER, damageBase, attackSpeed)));
 		this.tag = tag;
 		this.enchantability = enchantability;
 	}
@@ -38,7 +39,7 @@ public class WeaponItem extends SwordItem {
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
+	public void appendHoverText(@NotNull ItemStack pStack, @NotNull Item.TooltipContext context, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
 		pTooltipComponents.add(Component.translatable("item.dragonminez." + this.tag + ".tooltip").withStyle(ChatFormatting.GRAY));
 	}
 }

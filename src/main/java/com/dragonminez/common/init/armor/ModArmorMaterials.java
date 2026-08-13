@@ -1,89 +1,66 @@
 package com.dragonminez.common.init.armor;
 
+import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainItems;
-import lombok.Getter;
 import net.minecraft.Util;
-import net.minecraft.sounds.SoundEvent;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.LazyLoadedValue;
-import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
-import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.level.ItemLike;
-import org.jspecify.annotations.NonNull;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.EnumMap;
-import java.util.function.Supplier;
+import java.util.List;
 
-public enum ModArmorMaterials implements ArmorMaterial {
-	BASIC("basic", 15, (EnumMap) Util.make(new EnumMap(ArmorItem.Type.class), (p_266655_) -> {
-		p_266655_.put(ArmorItem.Type.BOOTS, 1);
-		p_266655_.put(ArmorItem.Type.LEGGINGS, 2);
-		p_266655_.put(ArmorItem.Type.CHESTPLATE, 3);
-		p_266655_.put(ArmorItem.Type.HELMET, 1);
-	}), 10, SoundEvents.ARMOR_EQUIP_IRON, 0F, 0F, () -> {
-		return Ingredient.of(new ItemLike[]{Items.IRON_INGOT});
-	}),
-	KIKONO("kikono", 37, (EnumMap) Util.make(new EnumMap(ArmorItem.Type.class), (p_266655_) -> {
-		p_266655_.put(ArmorItem.Type.BOOTS, 16);
-		p_266655_.put(ArmorItem.Type.LEGGINGS, 26);
-		p_266655_.put(ArmorItem.Type.CHESTPLATE, 35);
-		p_266655_.put(ArmorItem.Type.HELMET, 2);
-	}), 25, SoundEvents.ARMOR_EQUIP_NETHERITE, 5F, 0.1F, () -> {
-		return Ingredient.of(new ItemLike[]{MainItems.KIKONO_SHARD.get()});
+/**
+ * 1.21 armor materials are registry entries ({@link Holder}&lt;{@link ArmorMaterial}&gt;), not an enum interface.
+ */
+public final class ModArmorMaterials {
+	public static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS =
+			DeferredRegister.create(Registries.ARMOR_MATERIAL, Reference.MOD_ID);
+
+	public static final DeferredHolder<ArmorMaterial, ArmorMaterial> BASIC = ARMOR_MATERIALS.register("basic", () -> {
+		EnumMap<ArmorItem.Type, Integer> defense = Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
+			map.put(ArmorItem.Type.BOOTS, 1);
+			map.put(ArmorItem.Type.LEGGINGS, 2);
+			map.put(ArmorItem.Type.CHESTPLATE, 3);
+			map.put(ArmorItem.Type.HELMET, 1);
+			map.put(ArmorItem.Type.BODY, 3);
+		});
+		return new ArmorMaterial(
+				defense,
+				10,
+				SoundEvents.ARMOR_EQUIP_IRON,
+				() -> Ingredient.of(Items.IRON_INGOT),
+				List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "basic"))),
+				0.0F,
+				0.0F
+		);
 	});
 
-	public static final StringRepresentable.EnumCodec<ArmorMaterials> CODEC = StringRepresentable.fromEnum(ArmorMaterials::values);
-	private static final EnumMap<ArmorItem.Type, Integer> HEALTH_FUNCTION_FOR_TYPE = (EnumMap) Util.make(new EnumMap(ArmorItem.Type.class), (p_266653_) -> {
-		p_266653_.put(ArmorItem.Type.BOOTS, 26);
-		p_266653_.put(ArmorItem.Type.LEGGINGS, 30);
-		p_266653_.put(ArmorItem.Type.CHESTPLATE, 32);
-		p_266653_.put(ArmorItem.Type.HELMET, 22);
+	public static final DeferredHolder<ArmorMaterial, ArmorMaterial> KIKONO = ARMOR_MATERIALS.register("kikono", () -> {
+		EnumMap<ArmorItem.Type, Integer> defense = Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
+			map.put(ArmorItem.Type.BOOTS, 16);
+			map.put(ArmorItem.Type.LEGGINGS, 26);
+			map.put(ArmorItem.Type.CHESTPLATE, 35);
+			map.put(ArmorItem.Type.HELMET, 2);
+			map.put(ArmorItem.Type.BODY, 35);
+		});
+		return new ArmorMaterial(
+				defense,
+				25,
+				SoundEvents.ARMOR_EQUIP_NETHERITE,
+				() -> Ingredient.of(MainItems.KIKONO_SHARD.get()),
+				List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kikono"))),
+				5.0F,
+				0.1F
+		);
 	});
-	@Getter
-	private final String name;
-	private final int durabilityMultiplier;
-	private final EnumMap<ArmorItem.Type, Integer> protectionFunctionForType;
-	@Getter
-	private final int enchantmentValue;
-	private final SoundEvent sound;
-	@Getter
-	private final float toughness;
-	@Getter
-	private final float knockbackResistance;
-	private final LazyLoadedValue<Ingredient> repairIngredient;
 
-	private ModArmorMaterials(String pName, int pDurabilityMultiplier, EnumMap pProtectionFunctionForType, int pEnchantmentValue, SoundEvent pSound, float pToughness, float pKnockbackResistance, Supplier pRepairIngredient) {
-		this.name = pName;
-		this.durabilityMultiplier = pDurabilityMultiplier;
-		this.protectionFunctionForType = pProtectionFunctionForType;
-		this.enchantmentValue = pEnchantmentValue;
-		this.sound = pSound;
-		this.toughness = pToughness;
-		this.knockbackResistance = pKnockbackResistance;
-		this.repairIngredient = new LazyLoadedValue(pRepairIngredient);
-	}
-
-	public int getDurabilityForType(ArmorItem.Type pType) {
-		return (Integer) HEALTH_FUNCTION_FOR_TYPE.get(pType) * this.durabilityMultiplier;
-	}
-
-	public int getDefenseForType(ArmorItem.Type pType) {
-		return (Integer) this.protectionFunctionForType.get(pType);
-	}
-
-	public SoundEvent getEquipSound() {
-		return this.sound;
-	}
-
-	public Ingredient getRepairIngredient() {
-		return (Ingredient) this.repairIngredient.get();
-	}
-
-	public String getSerializedName() {
-		return this.name;
-	}
+	private ModArmorMaterials() {}
 }

@@ -5,7 +5,7 @@ import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainFluids;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.placement.PlacementUtils;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -51,7 +51,7 @@ public class NamekConfiguredFeatures {
 	public static final ResourceKey<ConfiguredFeature<?, ?>> NAMEK_PATCH_SACRED_GRASS_KEY = registerKey("namek_patch_sacred_grass_configured");
 	public static final ResourceKey<ConfiguredFeature<?, ?>> NAMEK_SACRED_FLOWERS_KEY = registerKey("namek_sacred_flowers_configured");
 
-	public static void bootstrap(BootstapContext<ConfiguredFeature<?, ?>> context) {
+	public static void bootstrap(BootstrapContext<ConfiguredFeature<?, ?>> context) {
 		RuleTest stoneReplaceables = new BlockMatchTest(MainBlocks.NAMEK_STONE.get());
 		RuleTest deepslateReplaceables = new BlockMatchTest(MainBlocks.NAMEK_DEEPSLATE.get());
 		RuleTest dirtReplaceables = new BlockMatchTest(MainBlocks.NAMEK_DIRT.get());
@@ -193,7 +193,7 @@ public class NamekConfiguredFeatures {
 		return ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 	}
 
-	private static <FC extends FeatureConfiguration, F extends Feature<FC>> void register(BootstapContext<ConfiguredFeature<?, ?>> context, ResourceKey<ConfiguredFeature<?, ?>> key, F feature, FC configuration) {
+	private static <FC extends FeatureConfiguration, F extends Feature<FC>> void register(BootstrapContext<ConfiguredFeature<?, ?>> context, ResourceKey<ConfiguredFeature<?, ?>> key, F feature, FC configuration) {
 		context.register(key, new ConfiguredFeature<>(feature, configuration));
 	}
 }

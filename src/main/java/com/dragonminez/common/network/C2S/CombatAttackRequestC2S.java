@@ -11,7 +11,6 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.MeleeAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,20 +20,16 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import io.netty.handler.codec.DecoderException;
-
 import java.util.UUID;
 import java.util.function.Supplier;
 
-@Getter
 public class CombatAttackRequestC2S {
-
 	private static final int MAX_ENTITY_IDS = 64;
-
 	private final int comboCount;
 	private final boolean isSneaking;
 	private final int selectedSlot;
@@ -81,12 +76,10 @@ public class CombatAttackRequestC2S {
 				});
 			}
 		});
-
 		ctx.get().setPacketHandled(true);
 	}
 
-    private static final UUID SWEEPING_MODIFIER_UUID = UUID.fromString("99435a26-9fa8-48b4-a8eb-8438bf228eb3");
-
+	private static final UUID SWEEPING_MODIFIER_UUID = UUID.fromString("99435a26-9fa8-48b4-a8eb-8438bf228eb3");
 	private static final String LAST_MELEE_ATTACK_TIME_TAG = "dmz_last_melee_attack_time";
 	private static final int ATTACK_RATE_TOLERANCE_TICKS = 2;
 
@@ -95,30 +88,24 @@ public class CombatAttackRequestC2S {
 			int comboCount = request.getComboCount();
 			int selectedSlot = request.getSelectedSlot();
 			int[] entityIds = request.getEntityIds();
-
 			if (selectedSlot != player.getInventory().selected) {
 				LogUtil.warn(Env.SERVER, "Player {} tried to attack with mismatched selected slot", player.getName().getString());
 				return;
 			}
-
 			long gameTime = player.level().getGameTime();
 			long lastAttackTime = player.getPersistentData().getLong(LAST_MELEE_ATTACK_TIME_TAG);
 			int minInterval = Math.max(0, (int) Math.floor(player.getCurrentItemAttackStrengthDelay()) - ATTACK_RATE_TOLERANCE_TICKS);
 			if (lastAttackTime > 0 && gameTime - lastAttackTime < minInterval) return;
 			player.getPersistentData().putLong(LAST_MELEE_ATTACK_TIME_TAG, gameTime);
-
 			((PlayerAttackProperties) player).setComboCount(comboCount);
-
 			var hand = PlayerAttackHelper.getCurrentAttack(player, comboCount);
 			if (hand == null) {
 				((PlayerAttackProperties) player).setComboCount(-1);
 				return;
 			}
-
 			if (player.level() instanceof ServerLevel serverLevel) {
 				SoundHelper.playSound(serverLevel, player, player, hand.attack().swingSound());
 			}
-
 			float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
 			float animSpeedMultiplier = 12.0F / Math.max(cooldownTicks, 0.001F);
 			animSpeedMultiplier = Math.max(0.55F, Math.min(1.35F, animSpeedMultiplier));
@@ -126,77 +113,81 @@ public class CombatAttackRequestC2S {
 			boolean isOffhand = hand.isOffHand();
 			var animPacket = new MeleeAnimationS2C(player.getId(), animName, isOffhand, animSpeedMultiplier);
 			NetworkHandler.sendToTrackingEntity(animPacket, player);
-
 			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, true);
-
-			Multimap<Attribute, AttributeModifier> comboAttributes = null;
-
+			Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> comboAttributes = null;
 			if (hand.attack().damageMultiplier() != 1.0) {
-				comboAttributes = HashMultimap.create();
+				comboAttributes = com.google.common.collect.HashMultimap.<net.minecraft.core.Holder<Attribute>, AttributeModifier>create();
 				double baseDamage = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
 				double extraDamage = (baseDamage * hand.attack().damageMultiplier()) - baseDamage;
-				comboAttributes.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(UUID.randomUUID(), "Combo damage multiplier", extraDamage, AttributeModifier.Operation.ADDITION));
+				comboAttributes.put(Attributes.ATTACK_DAMAGE, com.dragonminez.common.util.AttributeMods.of(UUID.randomUUID(), "Combo damage multiplier", extraDamage, AttributeModifier.Operation.ADD_VALUE));
 				player.getAttributes().addTransientAttributeModifiers(comboAttributes);
 			}
-
-			Multimap<Attribute, AttributeModifier> dualWieldingAttributes = null;
+			Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> dualWieldingAttributes = null;
 			float dualWieldingMultiplier = PlayerAttackHelper.getDualWieldingAttackDamageMultiplier(player, hand);
-
 			if (dualWieldingMultiplier != 1.0F) {
-				dualWieldingAttributes = HashMultimap.create();
+				dualWieldingAttributes = com.google.common.collect.HashMultimap.<net.minecraft.core.Holder<Attribute>, AttributeModifier>create();
 				double baseDamage = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
 				double extraDamage = (baseDamage * dualWieldingMultiplier) - baseDamage;
-				dualWieldingAttributes.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(UUID.randomUUID(), "Dual wielding damage multiplier", extraDamage, AttributeModifier.Operation.ADDITION));
+				dualWieldingAttributes.put(Attributes.ATTACK_DAMAGE, com.dragonminez.common.util.AttributeMods.of(UUID.randomUUID(), "Dual wielding damage multiplier", extraDamage, AttributeModifier.Operation.ADD_VALUE));
 				player.getAttributes().addTransientAttributeModifiers(dualWieldingAttributes);
 			}
-
-			Multimap<Attribute, AttributeModifier> sweepingModifiers = HashMultimap.create();
-			int sweepingLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SWEEPING_EDGE, hand.itemStack());
+			Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> sweepingModifiers = com.google.common.collect.HashMultimap.<net.minecraft.core.Holder<Attribute>, AttributeModifier>create();
+			int sweepingLevel = 0; // sweeping is data-driven in 1.21; combat disables sweeping separately
 			if (sweepingLevel > 0) {
-				sweepingModifiers.put(Attributes.ATTACK_SPEED, new AttributeModifier(SWEEPING_MODIFIER_UUID, "Disable sweeping during attack", -100.0, AttributeModifier.Operation.ADDITION));
+				sweepingModifiers.put(Attributes.ATTACK_SPEED, com.dragonminez.common.util.AttributeMods.of(SWEEPING_MODIFIER_UUID, "Disable sweeping during attack", -100.0, AttributeModifier.Operation.ADD_VALUE));
 				player.getAttributes().addTransientAttributeModifiers(sweepingModifiers);
 			}
-
 			boolean firstHit = true;
 			for (int id : entityIds) {
 				Entity entity = TargetHelper.getEntityOrPart(player.level(), id);
 				if (entity == null) continue;
-
 				if (!TargetHelper.isAttackableMount(entity) && player.getVehicle() == entity) continue;
-
 				double maxRange = PlayerAttackHelper.getEffectiveAttackRange(player, hand.attributes().attackRange());
 				TargetHelper.Relation relation = TargetHelper.getRelation(player, entity);
-				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0D)) continue;
-
+				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0)) continue;
 				if (player.distanceToSqr(entity) <= (maxRange * maxRange) + 16.0) {
-
 					if (firstHit) {
 						player.getPersistentData().putBoolean("dmz_first_hit", true);
 						firstHit = false;
 					} else {
 						player.getPersistentData().putBoolean("dmz_first_hit", false);
 					}
-
 					TargetHelper.onSuccessfulAttack(player, entity, relation);
 					player.attack(entity);
 				}
-
 				if (entity instanceof LivingEntity livingEntity) {
-					((ConfigurableKnockback) livingEntity).setKnockbackMultiplier(1F);
+					((ConfigurableKnockback) livingEntity).setKnockbackMultiplier(1.0F);
 				}
 			}
-
 			player.getPersistentData().remove("dmz_first_hit");
 			player.resetLastActionTime();
-
 			if (comboAttributes != null) player.getAttributes().removeAttributeModifiers(comboAttributes);
 			if (dualWieldingAttributes != null) player.getAttributes().removeAttributeModifiers(dualWieldingAttributes);
 			if (hand.isOffHand()) PlayerAttackHelper.setAttributesForOffHandAttack(player, false);
 			if (!sweepingModifiers.isEmpty()) {
 				player.getAttributes().removeAttributeModifiers(sweepingModifiers);
 			}
-
 			((PlayerAttackProperties) player).setComboCount(-1);
 		});
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getComboCount() {
+		return this.comboCount;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public boolean isSneaking() {
+		return this.isSneaking;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getSelectedSlot() {
+		return this.selectedSlot;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int[] getEntityIds() {
+		return this.entityIds;
 	}
 }

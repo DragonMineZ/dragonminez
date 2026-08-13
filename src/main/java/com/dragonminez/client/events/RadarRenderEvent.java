@@ -15,11 +15,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 public class RadarRenderEvent {
 	private static final ResourceLocation RADAR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/radar.png");
 
@@ -53,8 +54,8 @@ public class RadarRenderEvent {
 	}
 
 	@SubscribeEvent
-	public static void onRenderGameOverlay(RenderGuiOverlayEvent.Pre event) {
-		if (!event.getOverlay().id().getPath().equals("hotbar")) return;
+	public static void onRenderGameOverlay(RenderGuiLayerEvent.Pre event) {
+		if (!event.getName().getPath().equals("hotbar")) return;
 
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.isPaused() || mc.player == null) return;
@@ -144,7 +145,8 @@ public class RadarRenderEvent {
 	}
 
 	private static int getRadarRange(ItemStack stack) {
-		int r = stack.getOrCreateTag().getInt("RadarRange");
+		var custom = stack.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY);
+		int r = custom.copyTag().getInt("RadarRange");
 		return (r == 0) ? 150 : r;
 	}
 

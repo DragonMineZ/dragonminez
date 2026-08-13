@@ -11,18 +11,17 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class GlobalTooltipEnhancer {
 
 	@SubscribeEvent
@@ -33,7 +32,10 @@ public class GlobalTooltipEnhancer {
 		boolean needsShiftPrompt = false;
 
 		EnchantmentColorHandler.colorizeEnchantmentNames(itemStack, lines);
-		Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(itemStack);
+		ItemEnchantments enchantments = itemStack.getOrDefault(net.minecraft.core.component.DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+		if (enchantments.isEmpty()) {
+			enchantments = itemStack.getOrDefault(net.minecraft.core.component.DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
+		}
 
 		if (!enchantments.isEmpty()) {
 			boolean isEnchantmentBook = itemStack.getItem() == Items.ENCHANTED_BOOK;
@@ -45,10 +47,14 @@ public class GlobalTooltipEnhancer {
 				for (int i = 0; i < lines.size(); i++) {
 					Component line = lines.get(i);
 					if (line.getContents() instanceof TranslatableContents t && t.getKey().startsWith("enchantment.")) {
-						for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
-							if (t.getKey().equals(entry.getKey().getDescriptionId())) {
+						for (var entry : enchantments.entrySet()) {
+							var holder = entry.getKey();
+							String descId = holder.unwrapKey()
+									.map(key -> net.minecraft.Util.makeDescriptionId("enchantment", key.location()))
+									.orElse("");
+							if (t.getKey().equals(descId)) {
 								List<Component> descList = new ArrayList<>();
-								EnchantmentTooltipHandler.insertDescription(entry.getKey(), entry.getValue(), descList::add);
+								EnchantmentTooltipHandler.insertDescription(holder, entry.getIntValue(), descList::add);
 								if (!descList.isEmpty()) {
 									lines.addAll(i + 1, descList);
 									i += descList.size();
@@ -110,7 +116,7 @@ public class GlobalTooltipEnhancer {
 	}
 
 	private static int findAdvancedTooltipStart(List<Component> lines, ItemStack stack) {
-		String registryName = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+		String registryName = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
 
 		for (int i = 0; i < lines.size(); i++) {
 			Component line = lines.get(i);

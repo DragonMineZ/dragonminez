@@ -10,8 +10,7 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class KikonoStationMenu extends AbstractContainerMenu {
 	public final KikonoStationBlockEntity blockEntity;
@@ -32,19 +31,18 @@ public class KikonoStationMenu extends AbstractContainerMenu {
 		addPlayerInv(inv);
 		addPlayerHotbar(inv);
 
-		this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-			int startX = 28;
-			int startY = 17;
-			for (int row = 0; row < 3; row++) {
-				for (int col = 0; col < 3; col++) {
-					this.addSlot(new SlotItemHandler(handler, col + row * 3, startX + col * 18, startY + row * 18));
-				}
+		var handler = this.blockEntity.getItemHandler();
+		int startX = 28;
+		int startY = 17;
+		for (int row = 0; row < 3; row++) {
+			for (int col = 0; col < 3; col++) {
+				this.addSlot(new SlotItemHandler(handler, col + row * 3, startX + col * 18, startY + row * 18));
 			}
+		}
 
-			this.addSlot(new SlotItemHandler(handler, 9, 89, 17));  // PATTERN (Slot 9)
-			this.addSlot(new SlotItemHandler(handler, 10, 89, 53)); // TEMPLATE/ARMOR (Slot 10)
-			this.addSlot(new SlotItemHandler(handler, 11, 141, 35)); // OUTPUT (Slot 11)
-		});
+		this.addSlot(new SlotItemHandler(handler, 9, 89, 17));  // PATTERN (Slot 9)
+		this.addSlot(new SlotItemHandler(handler, 10, 89, 53)); // TEMPLATE/ARMOR (Slot 10)
+		this.addSlot(new SlotItemHandler(handler, 11, 141, 35)); // OUTPUT (Slot 11)
 
 		addDataSlots(data);
 	}

@@ -7,7 +7,7 @@ import com.dragonminez.server.world.data.StructurePlanSavedData;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.QuartPos;

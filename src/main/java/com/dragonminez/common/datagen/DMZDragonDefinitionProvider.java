@@ -30,7 +30,12 @@ public class DMZDragonDefinitionProvider implements DataProvider {
 		}
 
 		for (DragonRadarDefinition definition : DragonBallDefinitions.getBootstrapRadars()) {
-			if (definition.getBallSetId() != null && setsById.containsKey(definition.getBallSetId())) {
+			// The pack format has one canonical radar.json per ball set. Additional
+			// built-in radars (for example the fused radar) are registered in code and
+			// must not race the canonical radar for the same output path.
+			if (definition.getBallSetId() != null
+					&& setsById.containsKey(definition.getBallSetId())
+					&& definition.getId().equals(definition.getBallSetId() + "_radar")) {
 				future = CompletableFuture.allOf(future, save(cachedOutput, definition.toJson(), "dragonballs/" + definition.getBallSetId() + "/definitions/radar.json"));
 			}
 		}

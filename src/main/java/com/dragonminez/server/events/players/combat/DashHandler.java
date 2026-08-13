@@ -25,7 +25,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 
 public class DashHandler {
 
@@ -37,7 +37,7 @@ public class DashHandler {
 	public static void handleDash(ServerPlayer player, float xInput, float zInput, boolean isDoubleDash) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			if (player.hasEffect(MainEffects.STUN.get())) return;
+			if (player.hasEffect(MainEffects.STUN)) return;
 			if (data.getStatus().isStunned()) return;
 
 			if (ComboManager.canTeleport(player.getUUID())) {
@@ -74,7 +74,7 @@ public class DashHandler {
 				int kiCost = (int) Math.ceil(baseDrain * 0.65);
 
 				DMZEvent.PlayerEvasionEvent evasionEvent = new DMZEvent.PlayerEvasionEvent(player, recentAttacker, 0, kiCost);
-				MinecraftForge.EVENT_BUS.post(evasionEvent);
+				NeoForge.EVENT_BUS.post(evasionEvent);
 
 				if (evasionEvent.isCanceled()) return;
 
@@ -151,7 +151,7 @@ public class DashHandler {
 			}
 
 			DMZEvent.PlayerDashEvent dashEvent = new DMZEvent.PlayerDashEvent(player, dashType, distance, kiCost);
-			MinecraftForge.EVENT_BUS.post(dashEvent);
+			NeoForge.EVENT_BUS.post(dashEvent);
 			if (dashEvent.isCanceled()) return;
 
 			distance = dashEvent.getDistance();
@@ -209,12 +209,12 @@ public class DashHandler {
 				data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
 				data.getCooldowns().setCooldown(Cooldowns.DOUBLEDASH_CD, doubleDashCdTicks);
 				data.getCooldowns().removeCooldown(Cooldowns.DASH_ACTIVE);
-				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
-				player.addEffect(new MobEffectInstance(MainEffects.DOUBLEDASH_CD.get(), doubleDashCdTicks, 0, false, false, true));
+				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD, dashCdTicks, 0, false, false, true));
+				player.addEffect(new MobEffectInstance(MainEffects.DOUBLEDASH_CD, doubleDashCdTicks, 0, false, false, true));
 			} else {
 				data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
 				data.getCooldowns().setCooldown(Cooldowns.DASH_ACTIVE, 15);
-				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
+				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD, dashCdTicks, 0, false, false, true));
 			}
 
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5F, 1.5F + player.getRandom().nextFloat() * 0.3F);

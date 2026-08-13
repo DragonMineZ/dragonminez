@@ -12,8 +12,8 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -108,9 +108,17 @@ public class StorageManager {
 	}
 
 	private static void applyLoadedData(ServerPlayer player, CompoundTag loadedData) {
-		MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
+		NeoForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			// Never let an empty secondary store wipe a richer in-memory / attachment load.
+			if (isEmptyOrZeroStatsBlob(loadedData) && stats.getStats().getTotalStats() > 0) {
+				LogUtil.info(Env.SERVER,
+						"Skipping async overwrite for {}: secondary store has empty Stats while live totals are {}",
+						player.getName().getString(), stats.getStats().getTotalStats());
+				return;
+			}
+
 			try {
 				stats.load(loadedData);
 			} catch (ClassNotFoundException e) {
@@ -124,9 +132,21 @@ public class StorageManager {
 			TransformationsHelper.ensureSelectedFormDefault(stats);
 			TransformationsHelper.ensureSelectedStackFormDefault(stats);
 
+			com.dragonminez.server.events.players.StatsEvents.restoreStatsPoolsOnJoin(player);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString());
+			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString()
+					+ " VIT=" + stats.getStats().getVitality()
+					+ " PWR=" + stats.getStats().getKiPower()
+					+ " ENE=" + stats.getStats().getEnergy());
 		});
+	}
+
+	/** True when Stats compound is missing or all six main stats are zero. */
+	private static boolean isEmptyOrZeroStatsBlob(CompoundTag loadedData) {
+		if (loadedData == null || !loadedData.contains("Stats")) return true;
+		CompoundTag s = loadedData.getCompound("Stats");
+		return s.getInt("STR") == 0 && s.getInt("SKP") == 0 && s.getInt("RES") == 0
+				&& s.getInt("VIT") == 0 && s.getInt("PWR") == 0 && s.getInt("ENE") == 0;
 	}
 
 	public static void savePlayer(ServerPlayer player) {
@@ -136,7 +156,7 @@ public class StorageManager {
 			if (!stats.isDataLoaded() && !stats.getStatus().isHasCreatedCharacter()) return;
 			CompoundTag dataToSave = stats.save();
 
-			MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataSaveEvent(player, dataToSave));
+			NeoForge.EVENT_BUS.post(new DMZEvent.PlayerDataSaveEvent(player, dataToSave));
 
 			String name = player.getScoreboardName();
 			UUID uuid = player.getUUID();

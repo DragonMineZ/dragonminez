@@ -10,7 +10,7 @@ import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ public class MultiItemWish extends Wish {
 	@Override
 	public void grant(ServerPlayer player) {
 		for (Tuple<String, Integer> itemInfo : items) {
-			Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemInfo.getA()));
+			Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemInfo.getA()));
 			if (item != null) {
 				giveOrDrop(player, new ItemStack(item, itemInfo.getB()));
 			} else {

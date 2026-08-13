@@ -25,7 +25,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -832,7 +832,7 @@ public class StoryCommand {
 		Saga saga = resolved != null ? resolved.saga() : null;
 		DMZEvent.QuestCompletedEvent completeEvent = new DMZEvent.QuestCompletedEvent(
 				player, questKey, saga, quest, PartyManager.getAllPartyMembers(player));
-		if (MinecraftForge.EVENT_BUS.post(completeEvent)) return;
+		if (NeoForge.EVENT_BUS.post(completeEvent).isCanceled()) return;
 
 		pqd.completeQuest(questKey);
 		if (questKey.equals(pqd.getTrackedQuestId())) {
@@ -848,7 +848,7 @@ public class StoryCommand {
 				player, questKey, resolved != null ? resolved.saga() : null,
 				quest, PartyManager.getAllPartyMembers(player),
 				DMZEvent.QuestFailEvent.FailureReason.FORCED_RESET);
-		return !MinecraftForge.EVENT_BUS.post(failEvent);
+		return !NeoForge.EVENT_BUS.post(failEvent).isCanceled();
 	}
 
 	/** Posts a fail event as part of a full data reset; returns true when the quest entry can be wiped. */
@@ -859,7 +859,7 @@ public class StoryCommand {
 				player, questKey, resolved != null ? resolved.saga() : null,
 				quest, PartyManager.getAllPartyMembers(player),
 				DMZEvent.QuestFailEvent.FailureReason.FORCED_RESET);
-		return !MinecraftForge.EVENT_BUS.post(failEvent);
+		return !NeoForge.EVENT_BUS.post(failEvent).isCanceled();
 	}
 
 	private static Set<String> collectKnownQuestKeys(PlayerQuestData pqd) {

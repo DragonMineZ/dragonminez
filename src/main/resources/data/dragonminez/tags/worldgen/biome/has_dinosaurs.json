@@ -1,0 +1,9 @@
+{
+  "values": [
+    "#minecraft:has_structure/village_savanna",
+    "#minecraft:is_badlands",
+    "#minecraft:is_mountain",
+    "#minecraft:is_hill",
+    "dragonminez:rocky"
+  ]
+}

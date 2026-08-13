@@ -1,5 +1,6 @@
 package com.dragonminez.server.world.npc;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -17,7 +18,7 @@ public class NPCPlacementSavedData extends SavedData {
 	private final Map<String, UUID> placements = new HashMap<>();
 
 	public static NPCPlacementSavedData get(ServerLevel level) {
-		return level.getDataStorage().computeIfAbsent(NPCPlacementSavedData::load, NPCPlacementSavedData::new, DATA_NAME);
+		return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(NPCPlacementSavedData::new, NPCPlacementSavedData::load), DATA_NAME);
 	}
 
 	public boolean hasPlacement(String placementId) {
@@ -42,7 +43,7 @@ public class NPCPlacementSavedData extends SavedData {
 		}
 	}
 
-	public static NPCPlacementSavedData load(CompoundTag tag) {
+	public static NPCPlacementSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
 		NPCPlacementSavedData data = new NPCPlacementSavedData();
 		CompoundTag placementsTag = tag.getCompound(PLACEMENTS_KEY);
 		for (String placementId : placementsTag.getAllKeys()) {
@@ -55,7 +56,7 @@ public class NPCPlacementSavedData extends SavedData {
 	}
 
 	@Override
-	public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
+	public @NotNull CompoundTag save(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
 		CompoundTag placementsTag = new CompoundTag();
 		for (Map.Entry<String, UUID> entry : placements.entrySet()) {
 			placementsTag.putString(entry.getKey(), entry.getValue().toString());
