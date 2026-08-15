@@ -48,12 +48,16 @@ public class MultiItemWish extends Wish {
 			JsonObject item = rawItem.getAsJsonObject();
 			String itemId = firstString(item, "itemId", "item_id", "a", "f_14413_");
 			Integer count = firstInt(item, "count", "amount", "b", "f_14414_");
-			if (itemId == null || count == null || count <= 0) {
+			if (itemId == null || itemId.isBlank() || !isValidItemId(itemId) || count == null || count <= 0) {
 				throw new JsonParseException("multi_wish item requires an item ID and a positive count");
 			}
 			items.add(new Tuple<>(itemId, count));
 		}
 		return new MultiItemWish(name, description, items);
+	}
+
+	private static boolean isValidItemId(String itemId) {
+		return ResourceLocation.isValidResourceLocation(ItemIdAliases.normalize(itemId));
 	}
 
 	private static String requiredString(JsonObject root, String key) {
@@ -73,7 +77,13 @@ public class MultiItemWish extends Wish {
 	private static Integer firstInt(JsonObject object, String... keys) {
 		for (String key : keys) {
 			JsonElement value = object.get(key);
-			if (value != null && !value.isJsonNull() && value.isJsonPrimitive()) return value.getAsInt();
+			if (value != null && !value.isJsonNull() && value.isJsonPrimitive()) {
+				try {
+					return value.getAsInt();
+				} catch (RuntimeException exception) {
+					throw new JsonParseException("multi_wish item count must be an integer", exception);
+				}
+			}
 		}
 		return null;
 	}

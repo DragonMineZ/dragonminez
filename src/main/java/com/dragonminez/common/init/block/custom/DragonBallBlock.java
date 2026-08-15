@@ -11,6 +11,7 @@ import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
 import com.dragonminez.server.events.DragonBallsHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.ResourceLocationException;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
@@ -185,7 +186,7 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 			return entityRegistryName.indexOf(':') >= 0
 					? ResourceLocation.parse(entityRegistryName)
 					: ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, entityRegistryName);
-		} catch (IllegalArgumentException exception) {
+		} catch (IllegalArgumentException | ResourceLocationException exception) {
 			return null;
 		}
 	}
