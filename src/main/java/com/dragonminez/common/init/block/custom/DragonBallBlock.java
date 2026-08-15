@@ -1,7 +1,9 @@
 package com.dragonminez.common.init.block.custom;
 
+import com.dragonminez.Reference;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
+import com.dragonminez.common.dragonball.DragonBallSetMatcher;
 import com.dragonminez.common.dragonball.DragonDefinition;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainSounds;
@@ -127,21 +129,24 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 		}
 
 		if (areAllDragonBallsNearby(level, pos, ballSetDefinition)) {
-			List<BlockPos> consumedPositions = removeAllDragonBalls(level, pos, ballSetDefinition);
-			if (level instanceof ServerLevel serverLevel) {
-				DragonBallsHandler.unregisterConsumedDragonBalls(serverLevel, consumedPositions, ballSetId);
-				if (summonDragon(serverLevel, pos, player, dragonDefinition)) {
-					MinecraftForge.EVENT_BUS.post(new DMZEvent.DragonSummonedEvent(
-							player,
-							serverLevel,
-							pos,
-							dragonDefinition,
-							ballSetDefinition,
-							consumedPositions
-					));
-					serverLevel.playSound(null, pos, MainSounds.SHENRON.get(), SoundSource.AMBIENT, 1.0F, 1.0F);
-				}
+			if (!(level instanceof ServerLevel serverLevel)) {
+				return InteractionResult.PASS;
 			}
+			if (!summonDragon(serverLevel, pos, player, dragonDefinition)) {
+				return InteractionResult.PASS;
+			}
+
+			List<BlockPos> consumedPositions = removeAllDragonBalls(level, pos, ballSetDefinition);
+			DragonBallsHandler.unregisterConsumedDragonBalls(serverLevel, consumedPositions, ballSetId);
+			MinecraftForge.EVENT_BUS.post(new DMZEvent.DragonSummonedEvent(
+					player,
+					serverLevel,
+					pos,
+					dragonDefinition,
+					ballSetDefinition,
+					consumedPositions
+			));
+			serverLevel.playSound(null, pos, MainSounds.SHENRON.get(), SoundSource.AMBIENT, 1.0F, 1.0F);
 			return InteractionResult.CONSUME;
 		}
 
@@ -149,7 +154,12 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 	}
 
 	private boolean summonDragon(ServerLevel serverLevel, BlockPos pos, Player player, DragonDefinition dragonDefinition) {
-		EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.fromNamespaceAndPath("dragonminez", dragonDefinition.getId()));
+		ResourceLocation entityLocation = resolveEntityLocation(dragonDefinition.getEntityRegistryName());
+		if (entityLocation == null) {
+			return false;
+		}
+
+		EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(entityLocation);
 		if (entityType == null) {
 			return false;
 		}
@@ -167,16 +177,29 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 		return serverLevel.addFreshEntity(dragon);
 	}
 
+	private static ResourceLocation resolveEntityLocation(String entityRegistryName) {
+		if (entityRegistryName == null || entityRegistryName.isBlank()) {
+			return null;
+		}
+		try {
+			return entityRegistryName.indexOf(':') >= 0
+					? ResourceLocation.parse(entityRegistryName)
+					: ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, entityRegistryName);
+		} catch (IllegalArgumentException exception) {
+			return null;
+		}
+	}
+
 	private boolean areAllDragonBallsNearby(Level level, BlockPos pos, DragonBallSetDefinition setDefinition) {
-		Set<DragonBallType> foundBalls = new HashSet<>();
+		Set<Integer> foundStars = new HashSet<>();
 		int radius = setDefinition.getSummonRadius();
 		for (BlockPos checkPos : BlockPos.betweenClosed(pos.offset(-radius, -radius, -radius), pos.offset(radius, radius, radius))) {
 			Block block = level.getBlockState(checkPos).getBlock();
 			if (block instanceof DragonBallBlock dragonBall && ballSetId.equals(dragonBall.getBallSetId())) {
-				foundBalls.add(dragonBall.getBallType());
+				foundStars.add(dragonBall.getBallType().getStars());
 			}
 		}
-		return foundBalls.size() == 7;
+		return DragonBallSetMatcher.containsAllRequiredStars(setDefinition.getStars(), foundStars);
 	}
 
 	private List<BlockPos> removeAllDragonBalls(Level level, BlockPos pos, DragonBallSetDefinition setDefinition) {

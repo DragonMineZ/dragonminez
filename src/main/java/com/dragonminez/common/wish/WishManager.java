@@ -111,27 +111,17 @@ public class WishManager {
 		File wishFile = wishDir.resolve("shenron.json").toFile();
 		List<Wish> defaultWishes = new ArrayList<>();
 
-		List<GenericItemDTO> senzu = new ArrayList<>();
-		senzu.add(new GenericItemDTO("dragonminez:senzu_bean", 16));
-		defaultWishes.add(new ItemListWish("wish.shenron.senzu.name", "wish.shenron.senzu.desc", senzu));
+		defaultWishes.add(new ItemWish("wish.shenron.senzu.name", "wish.shenron.senzu.desc", "dragonminez:senzu_bean", 16));
 
 		defaultWishes.add(new TPSWish("wish.shenron.tps.name", "wish.shenron.tps.desc", 5000));
 
-		List<GenericItemDTO> powerPole = new ArrayList<>();
-		powerPole.add(new GenericItemDTO("dragonminez:power_pole", 1));
-		defaultWishes.add(new ItemListWish("wish.shenron.powerpole.name", "wish.shenron.powerpole.desc", powerPole));
+		defaultWishes.add(new ItemWish("wish.shenron.powerpole.name", "wish.shenron.powerpole.desc", "dragonminez:power_pole", 1));
 
-		List<GenericItemDTO> mightFruit = new ArrayList<>();
-		mightFruit.add(new GenericItemDTO("dragonminez:might_tree_fruit", 16));
-		defaultWishes.add(new ItemListWish("wish.shenron.mightfruit.name", "wish.shenron.mightfruit.desc", mightFruit));
+		defaultWishes.add(new ItemWish("wish.shenron.mightfruit.name", "wish.shenron.mightfruit.desc", "dragonminez:might_tree_fruit", 16));
 
-		List<GenericItemDTO> namekCpu = new ArrayList<>();
-		namekCpu.add(new GenericItemDTO("dragonminez:t2_radar_cpu", 4));
-		defaultWishes.add(new ItemListWish("wish.shenron.namekcpu.name", "wish.shenron.namekcpu.desc", namekCpu));
+		defaultWishes.add(new ItemWish("wish.shenron.namekcpu.name", "wish.shenron.namekcpu.desc", "dragonminez:t2_radar_cpu", 4));
 
-		List<GenericItemDTO> saiyanShip = new ArrayList<>();
-		saiyanShip.add(new GenericItemDTO("dragonminez:saiyan_ship", 1));
-		defaultWishes.add(new ItemListWish("wish.shenron.saiyanship.name", "wish.shenron.saiyanship.desc", saiyanShip));
+		defaultWishes.add(new ItemWish("wish.shenron.saiyanship.name", "wish.shenron.saiyanship.desc", "dragonminez:saiyan_ship", 1));
 
 		defaultWishes.add(new PassiveResetWish("wish.shenron.racialskillreset.name", "wish.shenron.racialskillreset.desc"));
 		defaultWishes.add(new ReCustomizeWish("wish.shenron.customization.name", "wish.shenron.customization.desc"));
@@ -163,15 +153,11 @@ public class WishManager {
 		File wishFile = wishDir.resolve("porunga.json").toFile();
 		List<Wish> defaultWishes = new ArrayList<>();
 
-		List<GenericItemDTO> senzu = new ArrayList<>();
-		senzu.add(new GenericItemDTO("dragonminez:senzu_bean", 32));
-		defaultWishes.add(new ItemListWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", senzu));
+		defaultWishes.add(new ItemWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", "dragonminez:senzu_bean", 32));
 
 		defaultWishes.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 15000));
 
-		List<GenericItemDTO> braveSword = new ArrayList<>();
-		braveSword.add(new GenericItemDTO("dragonminez:brave_sword", 1));
-		defaultWishes.add(new ItemListWish("wish.porunga.bravesword.name", "wish.porunga.bravesword.desc",  braveSword));
+		defaultWishes.add(new ItemWish("wish.porunga.bravesword.name", "wish.porunga.bravesword.desc", "dragonminez:brave_sword", 1));
 
 		defaultWishes.add(new PassiveResetWish("wish.porunga.racialskillreset.name", "wish.porunga.racialskillreset.desc"));
 		defaultWishes.add(new ReCustomizeWish("wish.porunga.customization.name", "wish.porunga.customization.desc"));

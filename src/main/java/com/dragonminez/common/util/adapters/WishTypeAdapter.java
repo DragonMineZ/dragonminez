@@ -23,6 +23,9 @@ public class WishTypeAdapter implements JsonSerializer<Wish>, JsonDeserializer<W
 		if (target == null) {
 			throw new JsonParseException("Unknown wish type: " + type);
 		}
+		if (target == MultiItemWish.class) {
+			return MultiItemWish.fromJson(jsonObject);
+		}
 		return new GsonBuilder().create().fromJson(json, target);
 	}
 

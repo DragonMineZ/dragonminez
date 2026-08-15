@@ -2,6 +2,7 @@ package com.dragonminez.common.wish.wishes;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.util.ItemIdAliases;
 import com.dragonminez.common.wish.Wish;
 import com.google.gson.GsonBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -23,7 +24,7 @@ public class ItemWish extends Wish {
 
 	@Override
 	public void grant(ServerPlayer player) {
-		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
+		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(ItemIdAliases.normalize(itemId)));
 		if (item != null) {
 			giveOrDrop(player, new ItemStack(item, count));
 		} else {

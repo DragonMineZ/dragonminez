@@ -1,5 +1,6 @@
 package com.dragonminez.common.util.types.items;
 
+import com.dragonminez.common.util.ItemIdAliases;
 import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,7 +30,7 @@ public class GenericItemDTO {
     }
 
     public ItemStack getItemStack() {
-        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(this.getItemId()));
+        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(ItemIdAliases.normalize(this.getItemId())));
         if (item != null) {
             return new ItemStack(item, this.count);
         }
