@@ -15,6 +15,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.RacialSkillTextHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -318,47 +319,8 @@ public class RaceSelectionScreen extends ScaledScreen {
 		String racialSkill = ConfigManager.getRaceCharacter(currentRace).getRacialSkill();
 		if (racialSkill == null || racialSkill.isEmpty()) return;
 
-		String titleKey = "skill.dragonminez.racial_" + racialSkill;
-		String descKey = "skill.dragonminez.racial_" + racialSkill + ".desc";
-
-		Component titleComp = tr(titleKey);
-		String description = "";
-
-		switch (racialSkill) {
-			case "human" -> {
-				int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-				description = tr(descKey, regen).getString();
-			}
-			case "saiyan" -> {
-				int zenkaiHealth = (int) Math.round(config.getSaiyanZenkaiHealthRegen() * 100);
-				int zenkaiStat = (int) Math.round(config.getSaiyanZenkaiStatBoost() * 100);
-				int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-				int maxUses = config.getSaiyanZenkaiAmount();
-				description = tr(descKey, zenkaiHealth, zenkaiStat, cooldown, maxUses).getString();
-			}
-			case "namekian" -> {
-				int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
-				int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-				int maxUses = config.getNamekianAssimilationAmount();
-				description = tr(descKey, assimHealth, assimStat, maxUses).getString();
-			}
-			case "frostdemon" -> {
-				int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-				description = tr(descKey, tpBoost).getString();
-			}
-			case "bioandroid" -> {
-				int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
-				int cooldown = config.getBioAndroidCooldownSeconds();
-				description = tr(descKey, drainRatio, cooldown).getString();
-			}
-			case "majin" -> {
-				int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
-				int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-				int maxUses = config.getMajinAbsorptionAmount();
-				description = tr(descKey, absHealth, absStat, maxUses).getString();
-			}
-			default -> description = tr(descKey).getString();
-		}
+		Component titleComp = txt(RacialSkillTextHelper.getRacialSkillTitle(racialSkill));
+		String description = RacialSkillTextHelper.getRacialSkillDescription(racialSkill, config);
 
 		int uiWidth = getUiWidth();
 		int uiHeight = getUiHeight();
