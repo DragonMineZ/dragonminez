@@ -30,29 +30,16 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.function.Supplier;
 
-/**
- * Planta de agricultura con doble comportamiento:
- *  - Clic sobre tierra de cultivo (farmland) -> planta el cultivo asociado.
- *  - Clic al aire / bloque no cultivable -> se consume y aplica un efecto temporal.
- *
- * Cada planta aplica un MobEffect propio (mismo nombre que la planta) que otorga un bono plano de
- * estadística durante 15s vía el sistema de BonusStats (ver FarmingBuffStatusHandler). Si el jugador
- * ya tiene el efecto activo, no se vuelve a aplicar ni se consume la planta (anti-spam).
- *
- * Casos especiales:
- *  - VIT (Helecho): añade además Regeneración III vanilla.
- *  - ENE (Fruto Kaioshin): aplica un efecto de regeneración de ki de 5s (sin bono de stat).
- *  - MAESTRÍA (Loto Zenkai): al comerlo limpia efectos negativos y cooldowns (no da bono de stat).
- */
+
 public class StatPlantItem extends Item {
 
 	public enum StatType {
 		STR, SKP, RES, VIT, PWR, ENE, MASTERY
 	}
 
-	private static final int BUFF_DURATION = 20 * 15; // 15s
-	private static final int KI_REGEN_DURATION = 20 * 5; // 5s
-	private static final int REGEN_AMPLIFIER = 2; // Regeneración III
+	private static final int BUFF_DURATION = 20 * 15;
+	private static final int KI_REGEN_DURATION = 20 * 5;
+	private static final int REGEN_AMPLIFIER = 2;
 
 	private final StatType statType;
 	private final Supplier<? extends Block> cropBlock;
@@ -155,7 +142,6 @@ public class StatPlantItem extends Item {
 		};
 	}
 
-	/** Loto Zenkai: elimina efectos negativos y todos los cooldowns (fusión, dash, etc.). */
 	private void cleanse(ServerPlayer player, StatsData data) {
 		data.getCooldowns().clearCooldowns();
 		// Efectos vanilla dañinos.
@@ -164,7 +150,6 @@ public class StatPlantItem extends Item {
 				player.removeEffect(instance.getEffect());
 			}
 		}
-		// Debuffs y cooldowns propios de DMZ (categoría neutral, no los pilla el filtro anterior).
 		player.removeEffect(MainEffects.STUN.get());
 		player.removeEffect(MainEffects.STAGGER.get());
 		player.removeEffect(MainEffects.FUSION_CD.get());
