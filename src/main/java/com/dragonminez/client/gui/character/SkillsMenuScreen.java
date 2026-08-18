@@ -23,6 +23,7 @@ import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.*;
+import com.dragonminez.common.util.RacialSkillTextHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
@@ -1237,41 +1238,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (isClassPassive) {
 			description = tr("class.dragonminez." + statsData.getCharacter().getCharacterClass() + ".passive.desc").getString();
 		} else if (selectedSkill.startsWith("racial_")) {
-			switch (selectedSkill) {
-				case "racial_human" -> {
-					int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-					description = tr("skill.dragonminez.racial_human.desc", regen).getString();
-				}
-				case "racial_saiyan" -> {
-					int zenkaiHealth = (int) Math.round((config.getSaiyanZenkaiHealthRegen() * 100));
-					int zenkaiStat = (int) Math.round((config.getSaiyanZenkaiStatBoost() * 100));
-					int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-					int maxUses = config.getSaiyanZenkaiAmount();
-					int minLevel = config.getSaiyanZenkaiMinLevel();
-					description = tr("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown, maxUses, minLevel).getString();
-				}
-				case "racial_namekian" -> {
-					int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
-					int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-					int maxUses = config.getNamekianAssimilationAmount();
-					description = tr("skill.dragonminez.racial_namekian.desc", assimHealth, assimStat, maxUses).getString();
-				}
-				case "racial_frostdemon" -> {
-					int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-					description = tr("skill.dragonminez.racial_frostdemon.desc", tpBoost).getString();
-				}
-				case "racial_bioandroid" -> {
-					int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
-					int cooldown = config.getBioAndroidCooldownSeconds();
-					description = tr("skill.dragonminez.racial_bioandroid.desc", drainRatio, cooldown).getString();
-				}
-				case "racial_majin" -> {
-					int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
-					int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-					int maxUses = config.getMajinAbsorptionAmount();
-					description = tr("skill.dragonminez.racial_majin.desc", absHealth, absStat, maxUses).getString();
-				}
-			}
+			description = RacialSkillTextHelper.getRacialSkillDescription(selectedSkill, config);
 		} else description = tr("skill.dragonminez." + selectedSkill + ".desc").getString();
 
 		int startY = panelY + 40;
