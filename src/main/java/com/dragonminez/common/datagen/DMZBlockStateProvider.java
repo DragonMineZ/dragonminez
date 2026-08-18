@@ -9,6 +9,7 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.*;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
+import net.minecraftforge.client.model.generators.ConfiguredModel;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -54,6 +55,10 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 
 		saplingBlock(MainBlocks.NAMEK_AJISSA_SAPLING);
 		saplingBlock(MainBlocks.NAMEK_SACRED_SAPLING);
+
+		for (RegistryObject<Block> crop : MainBlocks.STAT_CROPS) {
+			cropBlock(crop);
+		}
 
 		//Ores Nuevos
 		blockWithItem(MainBlocks.GETE_BLOCK);
@@ -159,5 +164,20 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 	private void saplingBlock(RegistryObject<Block> blockRegistryObject) {
 		simpleBlock(blockRegistryObject.get(),
 				models().cross(ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath(), blockTexture(blockRegistryObject.get())).renderType("cutout"));
+	}
+
+	private static final int CROP_STAGES = 3;
+
+	private void cropBlock(RegistryObject<Block> cropRegistryObject) {
+		CropBlock crop = (CropBlock) cropRegistryObject.get();
+		String path = ForgeRegistries.BLOCKS.getKey(crop).getPath();
+		getVariantBuilder(crop).forAllStates(state -> {
+			int age = state.getValue(CropBlock.AGE);
+			int stage = age * CROP_STAGES / (CropBlock.MAX_AGE + 1);
+			ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_stage" + stage);
+			ModelFile model = models().singleTexture(path + "_stage" + stage,
+					ResourceLocation.parse("minecraft:block/crop"), "crop", texture).renderType("cutout");
+			return ConfiguredModel.builder().modelFile(model).build();
+		});
 	}
 }

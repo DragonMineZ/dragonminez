@@ -5,13 +5,17 @@ import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.block.custom.KikonoStationBlock;
+import net.minecraft.advancements.critereon.StatePropertiesPredicate;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
@@ -175,6 +179,29 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		this.add(MainBlocks.POTTED_SACRED_TRILLIUM_FLOWER.get(), createPotFlowerItemTable(MainBlocks.SACRED_TRILLIUM_FLOWER.get()));
 		this.add(MainBlocks.POTTED_AJISSA_SAPLING.get(), createPotFlowerItemTable(MainBlocks.NAMEK_AJISSA_SAPLING.get()));
 		this.add(MainBlocks.POTTED_SACRED_SAPLING.get(), createPotFlowerItemTable(MainBlocks.NAMEK_SACRED_SAPLING.get()));
+
+		this.add(MainBlocks.OOZARU_ROOT_CROP.get(), block -> statCropDrop(block, MainItems.OOZARU_ROOT.get()));
+		this.add(MainBlocks.KATCHIN_SPROUT_CROP.get(), block -> statCropDrop(block, MainItems.KATCHIN_SPROUT.get()));
+		this.add(MainBlocks.METEOR_FLOWER_CROP.get(), block -> statCropDrop(block, MainItems.METEOR_FLOWER.get()));
+		this.add(MainBlocks.AURA_LILY_CROP.get(), block -> statCropDrop(block, MainItems.AURA_LILY.get()));
+		this.add(MainBlocks.HERMIT_FERN_CROP.get(), block -> statCropDrop(block, MainItems.HERMIT_FERN.get()));
+		this.add(MainBlocks.KAIOSHIN_FRUIT_CROP.get(), block -> statCropDrop(block, MainItems.KAIOSHIN_FRUIT.get()));
+		this.add(MainBlocks.ZENKAI_LOTUS_CROP.get(), block -> statCropDrop(block, MainItems.ZENKAI_LOTUS.get()));
+		this.add(MainBlocks.NAMEK_MOSS_CROP.get(), block -> statCropDrop(block, MainItems.NAMEK_MOSS.get()));
+	}
+
+	protected LootTable.Builder statCropDrop(Block crop, ItemLike plant) {
+		LootItemBlockStatePropertyCondition.Builder mature = LootItemBlockStatePropertyCondition
+				.hasBlockStateProperties(crop)
+				.setProperties(StatePropertiesPredicate.Builder.properties()
+						.hasProperty(CropBlock.AGE, 7));
+		return this.applyExplosionDecay(crop, LootTable.lootTable()
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+						.add(LootItem.lootTableItem(plant)))
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+						.when(mature)
+						.add(LootItem.lootTableItem(plant)
+								.apply(SetItemCountFunction.setCount(ConstantValue.exactly(2.0F))))));
 	}
 
 

@@ -24,6 +24,7 @@ public final class MainTabs {
 
 					.title(Component.translatable("itemGroup.dragonminez.blocks"))
 					.displayItems((parameters, output) -> MainBlocks.BLOCK_REGISTER.getEntries().forEach((block) -> {
+						if (block.getId().getPath().endsWith("_crop")) return; // cultivos sin item propio
 						if (!block.getId().getPath().startsWith("namek_")) {
 							if (!block.getId().getPath().startsWith("sacred_")) {
 								if (!block.getId().getPath().endsWith("_flower")) {

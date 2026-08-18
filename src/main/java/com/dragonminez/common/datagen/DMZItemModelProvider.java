@@ -55,6 +55,17 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.HEART_MEDICINE);
 		simpleItem(MainItems.NAMEK_WATER_BUCKET);
 		simpleItem(MainItems.HEALING_BUCKET);
+		simpleItem(MainItems.EMPTY_CAPSULE);
+		simpleItem(MainItems.MASTERY_CAPSULE);
+		simpleItem(MainItems.TURTLE_SCALE);
+		simpleItem(MainItems.NAMEK_MOSS);
+		simpleItem(MainItems.OOZARU_ROOT);
+		simpleItem(MainItems.KATCHIN_SPROUT);
+		simpleItem(MainItems.METEOR_FLOWER);
+		simpleItem(MainItems.AURA_LILY);
+		simpleItem(MainItems.HERMIT_FERN);
+		simpleItem(MainItems.KAIOSHIN_FRUIT);
+		simpleItem(MainItems.ZENKAI_LOTUS);
 		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
 			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
 			for (Map.Entry<Integer, RegistryObject<Item>> entry : MainItems.getDragonBallBlockItems(setDefinition.getId()).entrySet()) {

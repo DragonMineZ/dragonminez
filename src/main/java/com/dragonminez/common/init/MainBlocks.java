@@ -332,6 +332,28 @@ public final class MainBlocks {
 			() -> new FlowerPotBlock(() -> ((FlowerPotBlock) Blocks.FLOWER_POT), MainBlocks.SACRED_FERN,
 					BlockBehaviour.Properties.copy(Blocks.POTTED_FERN).noOcclusion()));
 
+	//AGRICULTURA
+	public static final RegistryObject<Block> OOZARU_ROOT_CROP = registerBlockOnly("oozaru_root_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.OOZARU_ROOT));
+	public static final RegistryObject<Block> KATCHIN_SPROUT_CROP = registerBlockOnly("katchin_sprout_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.KATCHIN_SPROUT));
+	public static final RegistryObject<Block> METEOR_FLOWER_CROP = registerBlockOnly("meteor_flower_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.METEOR_FLOWER));
+	public static final RegistryObject<Block> AURA_LILY_CROP = registerBlockOnly("aura_lily_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.AURA_LILY));
+	public static final RegistryObject<Block> HERMIT_FERN_CROP = registerBlockOnly("hermit_fern_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.HERMIT_FERN));
+	public static final RegistryObject<Block> KAIOSHIN_FRUIT_CROP = registerBlockOnly("kaioshin_fruit_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.KAIOSHIN_FRUIT));
+	public static final RegistryObject<Block> ZENKAI_LOTUS_CROP = registerBlockOnly("zenkai_lotus_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.ZENKAI_LOTUS));
+	public static final RegistryObject<Block> NAMEK_MOSS_CROP = registerBlockOnly("namek_moss_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.NAMEK_MOSS, NAMEK_GRASS_BLOCK));
+
+	public static final java.util.List<RegistryObject<Block>> STAT_CROPS = java.util.List.of(
+			OOZARU_ROOT_CROP, KATCHIN_SPROUT_CROP, METEOR_FLOWER_CROP, AURA_LILY_CROP,
+			HERMIT_FERN_CROP, KAIOSHIN_FRUIT_CROP, ZENKAI_LOTUS_CROP, NAMEK_MOSS_CROP);
+
 	//LIQUIDOS
 	public static final RegistryObject<LiquidBlock> HEALING_LIQUID = BLOCK_REGISTER.register("healing_liquid_block",
 			() -> new LiquidBlock(MainFluids.SOURCE_HEALING, BlockBehaviour.Properties.copy(Blocks.WATER).noLootTable().liquid().replaceable()));

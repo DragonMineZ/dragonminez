@@ -43,6 +43,7 @@ public class DMZCommon {
 		MainRecipes.register(modEventBus);
 		MainMenus.register(modEventBus);
         MainEffects.register(modEventBus);
+		MainPotions.register(modEventBus);
 		MainEnchants.register(modEventBus);
 		MainLootModifiers.register(modEventBus);
         MainStructurePlacements.register(modEventBus);

@@ -52,5 +52,13 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> MASTERY_GAIN = EFFECTS.register("mastery_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x9B59D0));
 	public static final RegistryObject<MobEffect> MUTANT = EFFECTS.register("mutant", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xB14CE0));
 
+	// Farming plant buffs
+	public static final RegistryObject<MobEffect> OOZARU_ROOT = EFFECTS.register("oozaru_root", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xC0392B));
+	public static final RegistryObject<MobEffect> KATCHIN_SPROUT = EFFECTS.register("katchin_sprout", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x95A5A6));
+	public static final RegistryObject<MobEffect> METEOR_FLOWER = EFFECTS.register("meteor_flower", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xE67E22));
+	public static final RegistryObject<MobEffect> AURA_LILY = EFFECTS.register("aura_lily", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF1C40F));
+	public static final RegistryObject<MobEffect> HERMIT_FERN = EFFECTS.register("hermit_fern", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x27AE60));
+	public static final RegistryObject<MobEffect> KAIOSHIN_FRUIT = EFFECTS.register("kaioshin_fruit", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x3C7DFF));
+
     public static void register(IEventBus eventBus) { EFFECTS.register(eventBus); }
 }

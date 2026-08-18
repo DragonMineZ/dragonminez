@@ -7,6 +7,11 @@ import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.dragonball.DragonRadarRecipeDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainPotions;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraftforge.common.crafting.StrictNBTIngredient;
 import com.dragonminez.common.init.MainTags;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.*;
@@ -104,6 +109,42 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 						RecipeCategory.FOOD, MainItems.FROG_LEGS_COOKED.get(), 0.35f, 600)
 				.unlockedBy(getHasName(MainItems.FROG_LEGS_RAW.get()), has(MainItems.FROG_LEGS_RAW.get())).group(Reference.MOD_ID)
 				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "frog_legs_cooked_campfire"));
+
+		// AGRICULTURA
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, MainItems.NAMEK_MOSS.get(), 1)
+				.requires(Items.WHEAT_SEEDS)
+				.requires(MainItems.HEALING_BUCKET.get())
+				.unlockedBy(getHasName(MainItems.HEALING_BUCKET.get()), has(MainItems.HEALING_BUCKET.get()))
+				.group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek_moss"));
+		statPlant(pWriter, MainItems.OOZARU_ROOT.get(), Ingredient.of(MainItems.DINO_MEAT_RAW.get()), "oozaru_root");
+		statPlant(pWriter, MainItems.KATCHIN_SPROUT.get(), Ingredient.of(MainItems.TURTLE_SCALE.get()), "katchin_sprout");
+		statPlant(pWriter, MainItems.METEOR_FLOWER.get(), Ingredient.of(Items.GUNPOWDER), "meteor_flower");
+		statPlant(pWriter, MainItems.AURA_LILY.get(), Ingredient.of(Items.GLOWSTONE_DUST), "aura_lily");
+		statPlant(pWriter, MainItems.HERMIT_FERN.get(), Ingredient.of(MainItems.SENZU_BEAN.get()), "hermit_fern");
+		statPlant(pWriter, MainItems.KAIOSHIN_FRUIT.get(), Ingredient.of(Items.GOLDEN_APPLE), "kaioshin_fruit");
+		statPlant(pWriter, MainItems.ZENKAI_LOTUS.get(), Ingredient.of(Items.AMETHYST_SHARD), "zenkai_lotus");
+
+		// Escama de tortuga: se obtiene desde scute (fuente provisional, ajustable).
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, MainItems.TURTLE_SCALE.get())
+				.requires(Items.SCUTE)
+				.unlockedBy(getHasName(Items.SCUTE), has(Items.SCUTE)).group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "turtle_scale"));
+		// Cápsula vacía: cristal + redstone + hierro (crafteo inventado).
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.EMPTY_CAPSULE.get())
+				.pattern("G").pattern("R").pattern("I")
+				.define('G', Items.GLASS_PANE).define('R', Items.REDSTONE).define('I', Items.IRON_INGOT)
+				.unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT)).group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "empty_capsule"));
+
+		// Cápsulas de estadística: frasco curativo + ingrediente + cápsula vacía + planta.
+		statCapsule(pWriter, MainItems.RED_CAPSULE.get(), Ingredient.of(MainItems.DINO_MEAT_RAW.get()), MainItems.OOZARU_ROOT.get(), "str_capsule");
+		statCapsule(pWriter, MainItems.YELLOW_CAPSULE.get(), Ingredient.of(MainItems.TURTLE_SCALE.get()), MainItems.KATCHIN_SPROUT.get(), "res_capsule");
+		statCapsule(pWriter, MainItems.PURPLE_CAPSULE.get(), Ingredient.of(Items.GUNPOWDER), MainItems.METEOR_FLOWER.get(), "skp_capsule");
+		statCapsule(pWriter, MainItems.ORANGE_CAPSULE.get(), Ingredient.of(Items.GLOWSTONE_DUST), MainItems.AURA_LILY.get(), "pwr_capsule");
+		statCapsule(pWriter, MainItems.GREEN_CAPSULE.get(), Ingredient.of(MainItems.SENZU_BEAN.get()), MainItems.HERMIT_FERN.get(), "vit_capsule");
+		statCapsule(pWriter, MainItems.BLUE_CAPSULE.get(), Ingredient.of(Items.GOLDEN_APPLE), MainItems.KAIOSHIN_FRUIT.get(), "ene_capsule");
+		statCapsule(pWriter, MainItems.MASTERY_CAPSULE.get(), Ingredient.of(Items.AMETHYST_SHARD), MainItems.ZENKAI_LOTUS.get(), "mastery_capsule");
 
 		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, MainBlocks.NAMEK_AJISSA_PRESSURE_PLATE.get(), 1)
 				.pattern("##")
@@ -1150,6 +1191,28 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, result)
 				.requires(base).requires(MainItems.GETE_INGOT.get())
 				.unlockedBy(getHasName(MainItems.GETE_INGOT.get()), has(MainItems.GETE_INGOT.get())).group(Reference.MOD_ID)
+				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
+	}
+
+	// Cápsula de estadística: frasco curativo + ingrediente + cápsula vacía + 2 plantas -> cápsula.
+	private void statCapsule(Consumer<FinishedRecipe> w, ItemLike result, Ingredient ingredient, ItemLike plant, String id) {
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, result)
+				.requires(curativeFlask())
+				.requires(ingredient)
+				.requires(MainItems.EMPTY_CAPSULE.get())
+				.requires(plant, 2)
+				.unlockedBy(getHasName(MainItems.EMPTY_CAPSULE.get()), has(MainItems.EMPTY_CAPSULE.get())).group(Reference.MOD_ID)
+				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
+	}
+
+	private Ingredient curativeFlask() {
+		return StrictNBTIngredient.of(MainPotions.createCurativeFlask());
+	}
+
+	private void statPlant(Consumer<FinishedRecipe> w, ItemLike result, Ingredient ingredient, String id) {
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, result)
+				.requires(MainItems.NAMEK_MOSS.get(), 4).requires(ingredient, 2)
+				.unlockedBy(getHasName(MainItems.NAMEK_MOSS.get()), has(MainItems.NAMEK_MOSS.get())).group(Reference.MOD_ID)
 				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
 	}
 }

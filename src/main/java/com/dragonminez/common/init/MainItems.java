@@ -9,6 +9,7 @@ import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.init.item.consumables.*;
+import com.dragonminez.common.init.item.farming.*;
 import com.dragonminez.common.init.item.entities.BlackNimbusItem;
 import com.dragonminez.common.init.item.entities.FlyingNimbusItem;
 import com.dragonminez.common.init.item.entities.PunchMachineItem;
@@ -43,6 +44,9 @@ public final class MainItems {
 	public static final RegistryObject<Item> GREEN_CAPSULE = ITEM_REGISTER.register("green_capsule", () -> new CapsuleItem(CapsuleType.VIT));
 	public static final RegistryObject<Item> ORANGE_CAPSULE = ITEM_REGISTER.register("orange_capsule", () -> new CapsuleItem(CapsuleType.PWR));
 	public static final RegistryObject<Item> BLUE_CAPSULE = ITEM_REGISTER.register("blue_capsule", () -> new CapsuleItem(CapsuleType.ENE));
+	public static final RegistryObject<Item> EMPTY_CAPSULE = regItem("empty_capsule");
+	public static final RegistryObject<Item> MASTERY_CAPSULE = ITEM_REGISTER.register("mastery_capsule",
+			MasteryCapsuleItem::new);
 
 	public static final RegistryObject<Item> GETE_RED_CAPSULE = ITEM_REGISTER.register("gete_red_capsule", () -> new CapsuleItem(CapsuleType.STR, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final RegistryObject<Item> GETE_PURPLE_CAPSULE = ITEM_REGISTER.register("gete_purple_capsule", () -> new CapsuleItem(CapsuleType.SKP, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
@@ -73,6 +77,27 @@ public final class MainItems {
 			() -> new FoodItem(2, 2.4f, 64));
 	public static final RegistryObject<Item> FROG_LEGS_COOKED = ITEM_REGISTER.register("frog_legs_cooked",
 			() -> new FoodItem(5, 4.8f, 64));
+
+	//AGRICULTURA
+	// Escama de tortuga: ingrediente de la cápsula de RES (y del Brote Katchin). Se obtiene desde scute.
+	public static final RegistryObject<Item> TURTLE_SCALE = regItem("turtle_scale");
+	// Reactivo base (crafteo + alquimia). También plantable SOLO sobre namek_grass_block (ver NamekMossItem).
+	public static final RegistryObject<Item> NAMEK_MOSS = ITEM_REGISTER.register("namek_moss",
+			NamekMossItem::new);
+	public static final RegistryObject<Item> OOZARU_ROOT = ITEM_REGISTER.register("oozaru_root",
+			() -> new StatPlantItem(StatPlantItem.StatType.STR, MainBlocks.OOZARU_ROOT_CROP));
+	public static final RegistryObject<Item> KATCHIN_SPROUT = ITEM_REGISTER.register("katchin_sprout",
+			() -> new StatPlantItem(StatPlantItem.StatType.RES, MainBlocks.KATCHIN_SPROUT_CROP));
+	public static final RegistryObject<Item> METEOR_FLOWER = ITEM_REGISTER.register("meteor_flower",
+			() -> new StatPlantItem(StatPlantItem.StatType.SKP, MainBlocks.METEOR_FLOWER_CROP));
+	public static final RegistryObject<Item> AURA_LILY = ITEM_REGISTER.register("aura_lily",
+			() -> new StatPlantItem(StatPlantItem.StatType.PWR, MainBlocks.AURA_LILY_CROP));
+	public static final RegistryObject<Item> HERMIT_FERN = ITEM_REGISTER.register("hermit_fern",
+			() -> new StatPlantItem(StatPlantItem.StatType.VIT, MainBlocks.HERMIT_FERN_CROP));
+	public static final RegistryObject<Item> KAIOSHIN_FRUIT = ITEM_REGISTER.register("kaioshin_fruit",
+			() -> new StatPlantItem(StatPlantItem.StatType.ENE, MainBlocks.KAIOSHIN_FRUIT_CROP));
+	public static final RegistryObject<Item> ZENKAI_LOTUS = ITEM_REGISTER.register("zenkai_lotus",
+			() -> new StatPlantItem(StatPlantItem.StatType.MASTERY, MainBlocks.ZENKAI_LOTUS_CROP));
 
 	//POTHALAS
 	public static final RegistryObject<Item> POTHALA_LEFT =

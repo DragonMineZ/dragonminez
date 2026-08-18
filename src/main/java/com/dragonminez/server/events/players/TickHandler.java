@@ -1148,6 +1148,7 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new MajinReviveHandler());
+		STATUS_EFFECT_HANDLERS.add(new FarmingBuffStatusHandler());
 	}
 
 	public static void registerActionModeHandler(String actionMode, IActionModeHandler actionModeHandler) {

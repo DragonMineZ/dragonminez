@@ -5,6 +5,8 @@ import com.dragonminez.common.dragonball.DragonBallDataPackResources;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainPotions;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
@@ -25,8 +27,16 @@ import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FlowerPotBlock;
+import net.minecraftforge.common.brewing.BrewingRecipe;
+import net.minecraftforge.common.brewing.BrewingRecipeRegistry;
+import net.minecraftforge.common.crafting.StrictNBTIngredient;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -138,6 +148,13 @@ public class ModCommonEvents {
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.SACRED_FERN.getId(), MainBlocks.POTTED_SACRED_FERN);
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_AJISSA_SAPLING.getId(), MainBlocks.POTTED_AJISSA_SAPLING);
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_SACRED_SAPLING.getId(), MainBlocks.POTTED_SACRED_SAPLING);
+
+			ItemStack waterBottle = PotionUtils.setPotion(new ItemStack(Items.POTION), Potions.WATER);
+			ItemStack curativePotion = MainPotions.createCurativeFlask();
+			BrewingRecipeRegistry.addRecipe(new BrewingRecipe(
+					StrictNBTIngredient.of(waterBottle),
+					Ingredient.of(MainItems.NAMEK_MOSS.get()),
+					curativePotion));
 
 			Regions.register(new OverworldRegion(40));
 			SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, Reference.MOD_ID, OverworldSurfaceRules.makeRules());
