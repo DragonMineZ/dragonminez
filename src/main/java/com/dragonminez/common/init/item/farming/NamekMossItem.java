@@ -9,11 +9,6 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Musgo de Namek: reactivo base de la agricultura (crafteo + alquimia). Además puede plantarse,
- * pero <b>solo sobre el bloque de hierba de Namek</b> ({@code namek_grass_block}); al madurar el
- * cultivo suelta más musgo, haciéndolo renovable en Namek.
- */
 public class NamekMossItem extends Item {
 
 	public NamekMossItem() {

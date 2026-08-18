@@ -21,13 +21,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/**
- * Cápsula de Maestría: al usarla otorga maestría a la transformación activa del jugador (capada al
- * máximo de esa forma). Es el equivalente "cápsula" del Loto Zenkai; se craftea con Loto Zenkai.
- */
+
 public class MasteryCapsuleItem extends Item {
 
-	/** Maestría otorgada por cápsula (cantidad fija, capada al máximo de la forma). */
 	private static final double MASTERY_GAIN = 5.0;
 
 	public MasteryCapsuleItem() {
