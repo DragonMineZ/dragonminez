@@ -15,5 +15,4 @@ public abstract class Wish {
 
     public abstract void grant(ServerPlayer player);
 
-    public abstract String toJson();
 }

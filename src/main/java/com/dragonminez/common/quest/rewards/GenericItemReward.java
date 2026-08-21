@@ -5,7 +5,6 @@ import com.dragonminez.common.util.types.items.GenericItemDTO;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -29,7 +28,7 @@ public class GenericItemReward extends QuestReward {
 	public void giveReward(ServerPlayer player, double rewardMultiplier) {
 		int scaledCount = scaledCount(rewardMultiplier);
 		if (scaledCount <= 0) return;
-		// Build through the DTO so enchantments, potion data and armour trims survive.
+		// Built through the DTO so enchantments, potion data and armour trims are kept.
 		ItemStack stack = itemReward.getItemStack();
 		if (stack.isEmpty()) return;
 		stack.setCount(scaledCount);
@@ -59,9 +58,7 @@ public class GenericItemReward extends QuestReward {
 		return Component.translatable(
 				"gui.dragonminez.quests.rewards.item",
 				shownCount,
-				Component.translatable(
-						"item." + ResourceLocation.parse(itemReward.getItemId()).toLanguageKey()
-				)
+				Component.translatable("item." + itemReward.getItemId().toLanguageKey())
 		);
 	}
 }

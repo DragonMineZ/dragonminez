@@ -1,22 +1,22 @@
 package com.dragonminez.common.util.types.items;
 
-import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.minecraft.resources.ResourceLocation;
 
-import java.util.Map;
+import java.util.List;
 
+/** A tipped arrow. Carries the same potion tags as a potion; see {@link PotionDTO}. */
 @Getter
 @Setter
 @NoArgsConstructor
 public class TippedArrowDTO extends PotionDTO {
-    public TippedArrowDTO(String potion, Integer count, Map<String, Integer> mobEffects) {
-        super("tipped_arrow", "minecraft:tipped_arrow", count, potion, mobEffects);
-    }
 
-    @Override
-    public String toJson() {
-        return new GsonBuilder().setPrettyPrinting().create().toJson(this, TippedArrowDTO.class);
-    }
+	public static final String ITEM_TYPE = "tipped_arrow";
+	private static final ResourceLocation TIPPED_ARROW_ID = new ResourceLocation("minecraft", "tipped_arrow");
+
+	public TippedArrowDTO(ResourceLocation potion, int count, List<PotionEffectDTO> mobEffects) {
+		super(ITEM_TYPE, TIPPED_ARROW_ID, count, potion, mobEffects);
+	}
 }
