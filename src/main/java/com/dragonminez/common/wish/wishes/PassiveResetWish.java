@@ -5,7 +5,6 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.Wish;
-import com.google.gson.GsonBuilder;
 import net.minecraft.server.level.ServerPlayer;
 
 public class PassiveResetWish extends Wish {
@@ -38,8 +37,4 @@ public class PassiveResetWish extends Wish {
 		});
 	}
 
-	@Override
-	public String toJson() {
-		return new GsonBuilder().setPrettyPrinting().create().toJson(this, PassiveResetWish.class);
-	}
 }

@@ -1,7 +1,6 @@
 package com.dragonminez.common.wish.wishes;
 
 import com.dragonminez.common.wish.Wish;
-import com.google.gson.GsonBuilder;
 import net.minecraft.server.level.ServerPlayer;
 
 public class CommandWish extends Wish {
@@ -20,8 +19,4 @@ public class CommandWish extends Wish {
 		}
 	}
 
-	@Override
-	public String toJson() {
-		return new GsonBuilder().setPrettyPrinting().create().toJson(this, CommandWish.class);
-	}
 }

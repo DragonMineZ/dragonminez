@@ -7,7 +7,7 @@ import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallPackManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
-import com.google.gson.Gson;
+import com.dragonminez.common.util.gson.GsonUtils;
 import com.google.gson.JsonElement;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -34,7 +34,9 @@ public class DragonWishRegistry extends SimpleJsonResourceReloadListener {
 	private static Map<String, List<Wish>> serverWishes = Map.of();
 	private static Map<String, List<Wish>> clientWishes = Map.of();
 
-	private DragonWishRegistry() { super(new Gson(), ROOT_DIRECTORY); }
+	private DragonWishRegistry() {
+		super(GsonUtils.GSON, ROOT_DIRECTORY);
+	}
 
 	@Override
 	protected void apply(@NonNull Map<ResourceLocation, JsonElement> ignored, @NonNull ResourceManager resourceManager, @NonNull ProfilerFiller profiler) {

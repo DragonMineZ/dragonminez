@@ -28,6 +28,7 @@ import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.QuestPrerequisites;
 import com.dragonminez.common.quest.Saga;
+import com.dragonminez.common.quest.rewards.GenericItemReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.dragonminez.common.quest.QuestTextFormatter;
@@ -1854,7 +1855,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			if (blockVisible) {
 				int iconX = x + 8;
 				ItemStack iconStack = rewardIconStack(reward);
-				ItemStack tooltipStack = reward.getType() == QuestReward.RewardType.ITEM ? iconStack : null;
+				ItemStack tooltipStack = (reward.getType() == QuestReward.RewardType.ITEM
+							|| reward.getType() == QuestReward.RewardType.GENERIC_ITEM) ? iconStack : null;
 
 				if (iconStack != null) {
 					graphics.renderItem(iconStack, iconX, blockTop);
@@ -1928,6 +1930,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				if (reward instanceof ItemReward itemReward) {
 					Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemReward.getItemId()));
 					return new ItemStack(item, Math.max(1, itemReward.getCount()));
+				}
+				return null;
+			}
+			case GENERIC_ITEM -> {
+				if (reward instanceof GenericItemReward genericItemReward) {
+					ItemStack stack = genericItemReward.getItemReward().getItemStack();
+					return stack.isEmpty() ? null : stack;
 				}
 				return null;
 			}

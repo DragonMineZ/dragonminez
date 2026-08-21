@@ -3,7 +3,6 @@ package com.dragonminez.common.wish.wishes;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.wish.Wish;
-import com.google.gson.GsonBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -39,8 +38,4 @@ public class ItemWish extends Wish {
 		}
 	}
 
-	@Override
-	public String toJson() {
-		return new GsonBuilder().setPrettyPrinting().create().toJson(this, ItemWish.class);
-	}
 }

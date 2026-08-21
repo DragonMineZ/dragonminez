@@ -2,13 +2,12 @@ package com.dragonminez.common.wish;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.common.util.WishTypeAdapter;
+import com.dragonminez.common.util.gson.GsonUtils;
 import com.dragonminez.common.wish.wishes.*;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Tuple;
 import net.minecraft.world.level.Level;
 
 import java.io.File;
@@ -20,11 +19,6 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class WishManager {
-	private static final Gson GSON = new GsonBuilder()
-			.registerTypeAdapter(Wish.class, new WishTypeAdapter())
-			.setPrettyPrinting()
-			.create();
-
 	public static void init() {}
 
 	public static void loadWishes(MinecraftServer server) {
@@ -74,10 +68,10 @@ public class WishManager {
 
 	private static void loadWishConfig(Path path, Map<String, List<Wish>> merged) {
 		try {
-			JsonArray rootArray = GSON.fromJson(Files.readString(path), JsonArray.class);
+			JsonArray rootArray = GsonUtils.GSON.fromJson(Files.readString(path), JsonArray.class);
 			List<Wish> wishes = new ArrayList<>();
 			for (JsonElement element : rootArray) {
-				wishes.add(GSON.fromJson(element, Wish.class));
+				wishes.add(GsonUtils.GSON.fromJson(element, Wish.class));
 			}
 			String dragonId = path.getFileName().toString().replace(".json", "");
 			merged.put(dragonId, List.copyOf(wishes));
@@ -88,93 +82,22 @@ public class WishManager {
 	}
 
 	private static void createDefaultShenronWishes(Path wishDir) {
-		File wishFile = wishDir.resolve("shenron.json").toFile();
-		List<Wish> defaultWishes = new ArrayList<>();
-
-		defaultWishes.add(new ItemWish("wish.shenron.senzu.name", "wish.shenron.senzu.desc", "dragonminez:senzu_bean", 16));
-		defaultWishes.add(new TPSWish("wish.shenron.tps.name", "wish.shenron.tps.desc", 5000));
-		defaultWishes.add(new ItemWish("wish.shenron.powerpole.name", "wish.shenron.powerpole.desc", "dragonminez:power_pole", 1));
-		defaultWishes.add(new ItemWish("wish.shenron.mightfruit.name", "wish.shenron.mightfruit.desc", "dragonminez:might_tree_fruit", 16));
-		defaultWishes.add(new ItemWish("wish.shenron.namekcpu.name", "wish.shenron.namekcpu.desc", "dragonminez:t2_radar_cpu", 4));
-		defaultWishes.add(new ItemWish("wish.shenron.saiyanship.name", "wish.shenron.saiyanship.desc", "dragonminez:saiyan_ship", 1));
-		defaultWishes.add(new PassiveResetWish("wish.shenron.racialskillreset.name", "wish.shenron.racialskillreset.desc"));
-		defaultWishes.add(new ReCustomizeWish("wish.shenron.customization.name", "wish.shenron.customization.desc"));
-		defaultWishes.add(new ChangeDifficultyWish("wish.shenron.changedifficulty.name", "wish.shenron.changedifficulty.desc"));
-		defaultWishes.add(new ResetStoryWish("wish.shenron.resetstory.name", "wish.shenron.resetstory.desc"));
-		defaultWishes.add(new CommandWish("wish.shenron.revive.name", "wish.shenron.revive.desc", "dmzrevive %player%"));
-
-		List<Tuple<String, Integer>> materials = new ArrayList<>();
-		materials.add(new Tuple<>("dragonminez:kikono_shard", 32));
-		materials.add(new Tuple<>("minecraft:iron_ingot", 64));
-		defaultWishes.add(new MultiItemWish("wish.shenron.materials.name", "wish.shenron.materials.desc", materials));
-
-		List<Tuple<String, Integer>> strongest = new ArrayList<>();
-		strongest.add(new Tuple<>("dragonminez:strongest_armor_chestplate", 1));
-		strongest.add(new Tuple<>("dragonminez:strongest_armor_leggings", 1));
-		strongest.add(new Tuple<>("dragonminez:strongest_armor_boots", 1));
-		defaultWishes.add(new MultiItemWish("wish.shenron.strongest.name", "wish.shenron.strongest.desc", strongest));
-
-		try (FileWriter writer = new FileWriter(wishFile)) {
-			Type listType = new TypeToken<ArrayList<Wish>>() {
-			}.getType();
-			GSON.toJson(defaultWishes, listType, writer);
-		} catch (IOException e) {
-			LogUtil.error(Env.COMMON, "Could not create default wishes for Shenron", e);
-		}
-
+		writeDefaultWishes(wishDir, "shenron", DefaultWishes.shenron());
 	}
 
 	private static void createDefaultPorungaWishes(Path wishDir) {
-		File wishFile = wishDir.resolve("porunga.json").toFile();
-		List<Wish> defaultWishes = new ArrayList<>();
+		writeDefaultWishes(wishDir, "porunga", DefaultWishes.porunga());
+	}
 
-		defaultWishes.add(new ItemWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", "dragonminez:senzu_bean", 32));
-		defaultWishes.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 15000));
-		defaultWishes.add(new ItemWish("wish.porunga.bravesword.name", "wish.porunga.bravesword.desc", "dragonminez:brave_sword", 1));
-		defaultWishes.add(new PassiveResetWish("wish.porunga.racialskillreset.name", "wish.porunga.racialskillreset.desc"));
-		defaultWishes.add(new ReCustomizeWish("wish.porunga.customization.name", "wish.porunga.customization.desc"));
-		defaultWishes.add(new RelocateStatsWish("wish.porunga.relocatestats.name", "wish.porunga.relocatestats.desc"));
-		defaultWishes.add(new ChangeDifficultyWish("wish.porunga.changedifficulty.name", "wish.porunga.changedifficulty.desc"));
-		defaultWishes.add(new ResetStoryWish("wish.porunga.resetstory.name", "wish.porunga.resetstory.desc"));
-		defaultWishes.add(new CommandWish("wish.porunga.revive.name", "wish.porunga.revive.desc", "dmzrevive %player%"));
-
-		List<Tuple<String, Integer>> materials = new ArrayList<>();
-		materials.add(new Tuple<>("dragonminez:kikono_shard", 64));
-		materials.add(new Tuple<>("minecraft:iron_ingot", 128));
-		defaultWishes.add(new MultiItemWish("wish.porunga.materials.name", "wish.porunga.materials.desc", materials));
-
-		List<Tuple<String, Integer>> invincible = new ArrayList<>();
-		invincible.add(new Tuple<>("dragonminez:invencible_armor_helmet", 1));
-		invincible.add(new Tuple<>("dragonminez:invencible_armor_chestplate", 1));
-		invincible.add(new Tuple<>("dragonminez:invencible_armor_leggings", 1));
-		invincible.add(new Tuple<>("dragonminez:invencible_armor_boots", 1));
-		defaultWishes.add(new MultiItemWish("wish.porunga.invincible.name", "wish.porunga.invincible.desc", invincible));
-
-		List<Tuple<String, Integer>> invincibleBlue = new ArrayList<>();
-		invincibleBlue.add(new Tuple<>("dragonminez:invencible_blue_armor_helmet", 1));
-		invincibleBlue.add(new Tuple<>("dragonminez:invencible_blue_armor_chestplate", 1));
-		invincibleBlue.add(new Tuple<>("dragonminez:invencible_blue_armor_leggings", 1));
-		invincibleBlue.add(new Tuple<>("dragonminez:invencible_blue_armor_boots", 1));
-		defaultWishes.add(new MultiItemWish("wish.porunga.invincible_blue.name", "wish.porunga.invincible_blue.desc", invincibleBlue));
-
-		List<Tuple<String, Integer>> potaraYellow = new ArrayList<>();
-		potaraYellow.add(new Tuple<>("dragonminez:pothala_left", 1));
-		potaraYellow.add(new Tuple<>("dragonminez:pothala_right", 1));
-		defaultWishes.add(new MultiItemWish("wish.porunga.pothala_yellow.name", "wish.porunga.pothala_yellow.desc", potaraYellow));
-
-		List<Tuple<String, Integer>> potaraGreen = new ArrayList<>();
-		potaraGreen.add(new Tuple<>("dragonminez:green_pothala_left", 1));
-		potaraGreen.add(new Tuple<>("dragonminez:green_pothala_right", 1));
-		defaultWishes.add(new MultiItemWish("wish.porunga.pothala_green.name", "wish.porunga.pothala_green.desc", potaraGreen));
-
+	private static void writeDefaultWishes(Path wishDir, String dragonId, List<Wish> defaultWishes) {
+		File wishFile = wishDir.resolve(dragonId + ".json").toFile();
 		try (FileWriter writer = new FileWriter(wishFile)) {
 			Type listType = new TypeToken<ArrayList<Wish>>() {
 			}.getType();
-			GSON.toJson(defaultWishes, listType, writer);
+			GsonUtils.GSON.toJson(defaultWishes, listType, writer);
 		} catch (IOException e) {
-			LogUtil.error(Env.COMMON, "Could not create default wishes for Porunga", e);
+			LogUtil.error(Env.COMMON, "Could not create default wishes for " + dragonId, e);
 		}
-
 	}
 
 	public static Map<String, List<Wish>> getAllWishes() {

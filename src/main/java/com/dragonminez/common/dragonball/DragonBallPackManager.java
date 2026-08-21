@@ -2,11 +2,9 @@ package com.dragonminez.common.dragonball;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.common.util.WishTypeAdapter;
+import com.dragonminez.common.util.gson.GsonUtils;
 import com.dragonminez.common.wish.Wish;
 import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import net.minecraftforge.fml.loading.FMLPaths;
 
@@ -22,7 +20,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public final class DragonBallPackManager {
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().registerTypeAdapter(Wish.class, new WishTypeAdapter()).create();
 	private static final Type WISH_LIST_TYPE = new TypeToken<ArrayList<Wish>>() {}.getType();
 	private static final String ROOT_FOLDER_NAME = "dragonballs";
 	private static LoadedDefinitions current = new LoadedDefinitions();
@@ -96,7 +93,7 @@ public final class DragonBallPackManager {
 	private static void loadFolderFile(Path path, LoadedDefinitions loaded) {
 		String normalized = path.toString().replace('\\', '/');
 		try (Reader reader = Files.newBufferedReader(path)) {
-			JsonObject root = GSON.fromJson(reader, JsonObject.class);
+			JsonObject root = GsonUtils.GSON.fromJson(reader, JsonObject.class);
 			if (root == null) return;
 			readDefinition(normalized, root, loaded);
 		} catch (Exception exception) {
@@ -111,7 +108,7 @@ public final class DragonBallPackManager {
 			for (ZipEntry entry : entries) {
 				if (entry.isDirectory() || !entry.getName().endsWith(".json")) continue;
 				try (BufferedReader reader = new BufferedReader(new InputStreamReader(zip.getInputStream(entry)))) {
-					JsonObject root = GSON.fromJson(reader, JsonObject.class);
+					JsonObject root = GsonUtils.GSON.fromJson(reader, JsonObject.class);
 					if (root == null) continue;
 					readDefinition(entry.getName().replace('\\', '/'), root, loaded);
 				} catch (Exception exception) {
@@ -153,7 +150,7 @@ public final class DragonBallPackManager {
 		if (normalizedPath.endsWith("/definitions/wishes.json")) {
 			if (root.has("dragon") && root.has("wishes")) {
 				String dragonId = root.get("dragon").getAsString();
-				List<Wish> wishes = GSON.fromJson(root.getAsJsonArray("wishes"), WISH_LIST_TYPE);
+				List<Wish> wishes = GsonUtils.GSON.fromJson(root.getAsJsonArray("wishes"), WISH_LIST_TYPE);
 				loaded.wishes.put(dragonId, wishes == null ? List.of() : List.copyOf(wishes));
 			}
 			return;
