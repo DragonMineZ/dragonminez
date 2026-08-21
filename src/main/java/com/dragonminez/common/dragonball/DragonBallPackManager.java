@@ -2,7 +2,9 @@ package com.dragonminez.common.dragonball;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.common.util.WishTypeAdapter;
+import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
+import com.dragonminez.common.util.adapters.WishTypeAdapter;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
 import com.dragonminez.common.wish.Wish;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
@@ -22,7 +24,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public final class DragonBallPackManager {
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().registerTypeAdapter(Wish.class, new WishTypeAdapter()).create();
+	private static final Gson GSON = new GsonBuilder()
+			.registerTypeAdapter(Wish.class, new WishTypeAdapter())
+			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
+			.setPrettyPrinting()
+			.create();
 	private static final Type WISH_LIST_TYPE = new TypeToken<ArrayList<Wish>>() {}.getType();
 	private static final String ROOT_FOLDER_NAME = "dragonballs";
 	private static LoadedDefinitions current = new LoadedDefinitions();

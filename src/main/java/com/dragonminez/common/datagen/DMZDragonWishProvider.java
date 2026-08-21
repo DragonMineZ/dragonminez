@@ -3,7 +3,9 @@ package com.dragonminez.common.datagen;
 import com.dragonminez.Reference;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonDefinition;
-import com.dragonminez.common.util.WishTypeAdapter;
+import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
+import com.dragonminez.common.util.adapters.WishTypeAdapter;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.wishes.*;
 import com.google.gson.Gson;
@@ -20,7 +22,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class DMZDragonWishProvider implements DataProvider {
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().registerTypeAdapter(Wish.class, new WishTypeAdapter()).create();
+	private static final Gson GSON = new GsonBuilder()
+			.registerTypeAdapter(Wish.class, new WishTypeAdapter())
+			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
+			.setPrettyPrinting()
+			.create();
 	private final PackOutput output;
 	public DMZDragonWishProvider(PackOutput output) { this.output = output; }
 

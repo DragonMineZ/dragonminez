@@ -2,7 +2,9 @@ package com.dragonminez.common.wish;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.common.util.WishTypeAdapter;
+import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
+import com.dragonminez.common.util.adapters.WishTypeAdapter;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
 import com.dragonminez.common.wish.wishes.*;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.*;
@@ -22,6 +24,7 @@ import java.util.*;
 public class WishManager {
 	private static final Gson GSON = new GsonBuilder()
 			.registerTypeAdapter(Wish.class, new WishTypeAdapter())
+			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
 			.setPrettyPrinting()
 			.create();
 

@@ -36,8 +36,13 @@ public abstract class QuestReward {
 
 	public abstract Component getDescription();
 
+	public Component getDescription(double rewardMultiplier) {
+		return getDescription();
+	}
+
 	public enum RewardType {
 		ITEM,
+		GENERIC_ITEM,
 		COMMAND,
 		TPS,
 		SKILL,

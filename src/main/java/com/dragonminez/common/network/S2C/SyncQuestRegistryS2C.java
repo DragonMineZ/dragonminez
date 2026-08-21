@@ -26,9 +26,12 @@ import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.AlignmentReward;
 import com.dragonminez.common.quest.rewards.CommandReward;
+import com.dragonminez.common.quest.rewards.GenericItemReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
+import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
 import com.dragonminez.server.world.structure.helper.QuestStructureHints;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -53,7 +56,9 @@ import java.util.function.Supplier;
  */
 public class SyncQuestRegistryS2C {
 
-	private static final Gson GSON = new GsonBuilder().create();
+	private static final Gson GSON = new GsonBuilder()
+			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
+			.create();
 
 	private final String sagasJson;
 	private final String questsJson;
@@ -315,6 +320,8 @@ public class SyncQuestRegistryS2C {
 		} else if (reward instanceof ItemReward item) {
 			obj.addProperty("item", item.getItemId());
 			obj.addProperty("count", item.getCount());
+		} else if (reward instanceof GenericItemReward genericItemReward) {
+			obj.add("itemReward", GSON.toJsonTree(genericItemReward.getItemReward()));
 		} else if (reward instanceof CommandReward command) {
 			obj.addProperty("command", command.getCommand());
 		} else if (reward instanceof SkillReward skill) {

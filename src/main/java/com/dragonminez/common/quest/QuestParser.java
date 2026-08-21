@@ -17,12 +17,17 @@ import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.AlignmentReward;
+import com.dragonminez.common.quest.rewards.GenericItemReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import com.dragonminez.common.quest.rewards.TransformationReward;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.util.adapters.GenericItemTypeAdapter;
+import com.dragonminez.common.util.types.items.GenericItemDTO;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -41,6 +46,10 @@ import java.util.List;
  * Central parser for the unified quest JSON format.
  */
 public class QuestParser {
+	private static final Gson GSON = new GsonBuilder()
+			.registerTypeAdapter(GenericItemDTO.class, new GenericItemTypeAdapter())
+			.setPrettyPrinting()
+			.create();
 
 	/**
 	 * Parses a quest from the unified quest JSON format.
@@ -292,6 +301,13 @@ public class QuestParser {
 				int count = json.has("count") ? json.get("count").getAsInt() : 1;
 				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
 				yield (item != Items.AIR) ? new ItemReward(new ItemStack(item, count)) : null;
+			}
+			case "GENERIC_ITEM" -> {
+				GenericItemDTO genericItem = GSON.fromJson(
+						json.getAsJsonObject("itemReward"),
+						GenericItemDTO.class
+				);
+				yield (genericItem != null) ? new GenericItemReward(genericItem) : null;
 			}
 			case "TPS" -> new TPSReward(json.get("amount").getAsInt());
 			case "ALIGNMENT" -> new AlignmentReward(json.get("amount").getAsInt());
