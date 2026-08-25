@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +28,11 @@ public class DMZCuriosItem extends Item implements ICurioItem {
 
 	public CurioType getCurioType() {
 		return curioType;
+	}
+
+	@Override
+	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+		if (!level.isClientSide) PothalaPairItem.reservePairId(stack, level);
 	}
 
 	@Override

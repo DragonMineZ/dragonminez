@@ -1,9 +1,9 @@
 package com.dragonminez.common.init.item;
 
+import com.dragonminez.server.world.data.PothalaPairSavedData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -32,14 +32,14 @@ public class PothalaPairItem extends Item {
 
 	@Override
 	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-		if (!level.isClientSide) ensurePairId(stack, level.random);
+		if (!level.isClientSide) ensurePairId(stack, level);
 	}
 
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
 		ItemStack pair = player.getItemInHand(hand);
 		if (!level.isClientSide) {
-			int pairId = ensurePairId(pair, level.random);
+			int pairId = ensurePairId(pair, level);
 
 			ItemStack left = new ItemStack(leftEarring.get());
 			ItemStack right = new ItemStack(rightEarring.get());
@@ -65,14 +65,25 @@ public class PothalaPairItem extends Item {
 		if (!player.addItem(stack)) player.drop(stack, false);
 	}
 
-	public static int ensurePairId(ItemStack stack, RandomSource random) {
+	public static int ensurePairId(ItemStack stack, Level level) {
 		int pairId = getPairId(stack);
-		if (pairId == 0) {
-			pairId = random.nextInt();
-			if (pairId == 0) pairId = 1;
-			setPairId(stack, pairId);
+		if (level.isClientSide || level.getServer() == null) return pairId;
+
+		PothalaPairSavedData data = PothalaPairSavedData.get(level.getServer());
+		if (pairId != 0) {
+			data.reserve(pairId);
+			return pairId;
 		}
+
+		pairId = data.issue(level.random);
+		setPairId(stack, pairId);
 		return pairId;
+	}
+
+	public static void reservePairId(ItemStack stack, Level level) {
+		int pairId = getPairId(stack);
+		if (pairId == 0 || level.isClientSide || level.getServer() == null) return;
+		PothalaPairSavedData.get(level.getServer()).reserve(pairId);
 	}
 
 	public static void setPairId(ItemStack stack, int id) {
@@ -88,7 +99,7 @@ public class PothalaPairItem extends Item {
 		int pairId = getPairId(stack);
 		if (pairId != 0) {
 			tooltip.add(Component.translatable("item.dragonminez.pothala.pair_id",
-					String.format("%08X", pairId)).withStyle(ChatFormatting.GRAY));
+					Integer.toString(pairId)).withStyle(ChatFormatting.GRAY));
 		}
 	}
 }
