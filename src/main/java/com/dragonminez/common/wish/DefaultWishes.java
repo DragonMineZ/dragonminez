@@ -86,14 +86,12 @@ public final class DefaultWishes {
 				MainItems.INVENCIBLE_BLUE_ARMOR));
 
 		List<GenericItemDTO> pothalaYellow = new ArrayList<>();
-		pothalaYellow.add(new GenericItemDTO(MainItems.POTHALA_LEFT.getId(), 1));
-		pothalaYellow.add(new GenericItemDTO(MainItems.POTHALA_RIGHT.getId(), 1));
+		pothalaYellow.add(new GenericItemDTO(MainItems.POTHALA_PAIR.getId(), 1));
 		wishes.add(new ItemListWish("wish.porunga.pothala_yellow.name", "wish.porunga.pothala_yellow.desc",
 				pothalaYellow));
 
 		List<GenericItemDTO> pothalaGreen = new ArrayList<>();
-		pothalaGreen.add(new GenericItemDTO(MainItems.GREEN_POTHALA_LEFT.getId(), 1));
-		pothalaGreen.add(new GenericItemDTO(MainItems.GREEN_POTHALA_RIGHT.getId(), 1));
+		pothalaGreen.add(new GenericItemDTO(MainItems.GREEN_POTHALA_PAIR.getId(), 1));
 		wishes.add(new ItemListWish("wish.porunga.pothala_green.name", "wish.porunga.pothala_green.desc",
 				pothalaGreen));
 
