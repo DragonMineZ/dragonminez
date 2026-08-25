@@ -1,0 +1,32 @@
+{
+  "id": "sacred_lands",
+  "title": "dmz.sidequest.sacred_lands.name",
+  "description": "dmz.sidequest.sacred_lands.desc",
+  "type": "SIDEQUEST",
+  "category": "exploration",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "namek_explorer"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:village_sacred"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 3600
+    }
+  ]
+}

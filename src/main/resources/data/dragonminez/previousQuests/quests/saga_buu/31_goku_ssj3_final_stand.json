@@ -1,0 +1,53 @@
+{
+  "id": 31,
+  "title": "dmz.quest.buu31.name",
+  "description": "dmz.quest.buu31.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 30
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 2260
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:sacredkaiplanet"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_goku_end_ssj3",
+      "count": 1,
+      "health": 542500.0,
+      "meleeDamage": 22800.0,
+      "kiDamage": 20740.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 223200
+    }
+  ]
+}

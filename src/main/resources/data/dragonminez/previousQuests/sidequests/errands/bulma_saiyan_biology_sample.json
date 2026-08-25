@@ -1,0 +1,47 @@
+{
+  "id": "bulma_saiyan_biology_sample",
+  "title": "dmz.sidequest.bulma_saiyan_biology_sample.name",
+  "description": "dmz.sidequest.bulma_saiyan_biology_sample.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 6
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_raditz",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 3
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 7500
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import java.util.Map;
 
 public class Techniques {
 	public static final int SLOT_COUNT = 8;
+	public static final int MAX_UNLOCKED_TECHNIQUES = 256;
 
 	@Getter
 	private final Map<String, TechniqueData> unlockedTechniques = new HashMap<>();
@@ -25,11 +26,14 @@ public class Techniques {
 	@Setter
 	private transient int homingTargetId = -1;
 
+	private final transient Map<String, Float> fractionalXpRemainder = new HashMap<>();
+
 	public Techniques() {
 		for (int i = 0; i < SLOT_COUNT; i++) equippedSlots[i] = "";
 	}
 
 	public void unlockTechnique(TechniqueData data) {
+		if (!unlockedTechniques.containsKey(data.getId()) && unlockedTechniques.size() >= MAX_UNLOCKED_TECHNIQUES) return;
 		unlockedTechniques.put(data.getId(), data);
 	}
 
@@ -123,6 +127,9 @@ public class Techniques {
 	public void equipOrSwapTechnique(int slotIndex, String techniqueId) {
 		if (slotIndex < 0 || slotIndex >= SLOT_COUNT) return;
 
+		boolean isEmpty = techniqueId == null || techniqueId.isEmpty();
+		if (!isEmpty && !unlockedTechniques.containsKey(techniqueId)) return;
+
 		int existingSlot = -1;
 		for (int i = 0; i < SLOT_COUNT; i++) {
 			if (equippedSlots[i].equals(techniqueId)) {
@@ -146,6 +153,16 @@ public class Techniques {
 	public void addExperienceToTechnique(String id, int amount) {
 		if (unlockedTechniques.containsKey(id)) {
 			unlockedTechniques.get(id).addExperience(amount);
+		}
+	}
+
+	public void addFractionalExperienceToTechnique(String id, float amount) {
+		if (amount <= 0.0f || !unlockedTechniques.containsKey(id)) return;
+		float total = fractionalXpRemainder.merge(id, amount, Float::sum);
+		int whole = (int) total;
+		if (whole > 0) {
+			unlockedTechniques.get(id).addExperience(whole);
+			fractionalXpRemainder.put(id, total - whole);
 		}
 	}
 

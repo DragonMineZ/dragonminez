@@ -1,0 +1,51 @@
+{
+  "id": "chi_chi_provisions",
+  "title": "dmz.sidequest.chichi_provisions.name",
+  "description": "dmz.sidequest.chichi_provisions.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "goku",
+  "turn_in": "goku",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 5
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:cooked_beef",
+      "count": 32
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:bread",
+      "count": 32
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:golden_carrot",
+      "count": 8
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 800
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:golden_apple",
+      "count": 5
+    }
+  ]
+}

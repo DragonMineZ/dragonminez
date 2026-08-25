@@ -1,0 +1,46 @@
+{
+  "id": 16,
+  "title": "dmz.quest.frieza16.name",
+  "description": "dmz.quest.frieza16.desc",
+  "type": "SAGA",
+  "category": "saga_frieza",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 15
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 360
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:namek"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "DIMENSION",
+      "dimension": "minecraft:overworld"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 28800
+    }
+  ]
+}

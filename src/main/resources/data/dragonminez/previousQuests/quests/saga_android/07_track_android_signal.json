@@ -1,0 +1,46 @@
+{
+  "id": 7,
+  "title": "dmz.quest.android7.name",
+  "description": "dmz.quest.android7.desc",
+  "type": "SAGA",
+  "category": "saga_android",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 6
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 700
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "BIOME",
+      "biome": "#minecraft:is_mountain"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 9800
+    }
+  ]
+}

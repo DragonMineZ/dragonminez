@@ -1,0 +1,49 @@
+{
+  "id": "bulma_weapon_analysis",
+  "title": "dmz.sidequest.bulma_weapon_analysis.name",
+  "description": "dmz.sidequest.bulma_weapon_analysis.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_radar_parts"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:iron_sword",
+      "count": 1
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone",
+      "count": 12
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:copper_ingot",
+      "count": 8
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1800
+    }
+  ]
+}

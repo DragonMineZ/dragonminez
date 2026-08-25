@@ -15,6 +15,9 @@ public class UpdateStatC2S {
 		CHARGE_KI, DESCEND, ACTION_CHARGE, BLOCK
 	}
 
+	private static final String BLOCK_END_TIME_TAG = "dmz_block_end_time";
+	private static final long BLOCK_REACTIVATION_DELAY_MS = 250L;
+
 	private final StatAction statusKey;
     private final boolean value;
 
@@ -59,8 +62,16 @@ public class UpdateStatC2S {
 						if (data.getStatus().isActionCharging() != msg.value) data.getStatus().setActionCharging(msg.value);
 						break;
 					case BLOCK:
-						if (data.getStatus().isBlocking() != msg.value) data.getStatus().setBlocking(msg.value);
-						if (msg.value) data.getStatus().setLastBlockTime(System.currentTimeMillis());
+						long now = System.currentTimeMillis();
+						if (msg.value) {
+							if (data.getStatus().isBlocking()) break;
+							if (now - player.getPersistentData().getLong(BLOCK_END_TIME_TAG) < BLOCK_REACTIVATION_DELAY_MS) break;
+							data.getStatus().setBlocking(true);
+							data.getStatus().setLastBlockTime(now);
+						} else if (data.getStatus().isBlocking()) {
+							data.getStatus().setBlocking(false);
+							player.getPersistentData().putLong(BLOCK_END_TIME_TAG, now);
+						}
 						break;
                 }
             });

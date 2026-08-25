@@ -70,7 +70,9 @@ public class Skills {
 		var formSkills = ConfigManager.getSkillsConfig().getFormSkills();
 		for (Skill skill : skillMap.values()) {
 			String skillName = skill.getName().toLowerCase();
-			if (!formSkills.contains(skillName)) skill.setMaxLevel(calculateMaxLevel(skillName));
+			if (formSkills.contains(skillName)) continue;
+			int newMax = calculateMaxLevel(skillName);
+			if (newMax > 0) skill.setMaxLevel(newMax);
 		}
 	}
 
@@ -213,7 +215,10 @@ public class Skills {
 				Skill skill = Skill.load(skillTag);
 
 				String skillName = skill.getName().toLowerCase();
-				if (!ConfigManager.getSkillsConfig().getFormSkills().contains(skillName)) skill.setMaxLevel(calculateMaxLevel(skillName));
+				if (!ConfigManager.getSkillsConfig().getFormSkills().contains(skillName)) {
+					int newMax = calculateMaxLevel(skillName);
+					if (newMax > 0) skill.setMaxLevel(newMax);
+				}
 				skillMap.put(skillName, skill);
 			}
 		}

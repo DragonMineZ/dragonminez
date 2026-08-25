@@ -1,0 +1,58 @@
+{
+  "id": "bulma_gravity_mk2",
+  "title": "dmz.sidequest.bulma_gravity_mk2.name",
+  "description": "dmz.sidequest.bulma_gravity_mk2.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_gete_discovery"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 11
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:timechamber"
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_ingot",
+      "count": 4
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:piston",
+      "count": 8
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:heavy_weighted_pressure_plate",
+      "count": 4
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 40000
+    }
+  ]
+}

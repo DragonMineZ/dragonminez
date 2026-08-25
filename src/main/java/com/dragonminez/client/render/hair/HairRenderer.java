@@ -72,7 +72,7 @@ public class HairRenderer {
 			inertiaForward = Mth.clamp(fwd * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaSide = Mth.clamp(-side * gain, -INERTIA_MAX, INERTIA_MAX);
 			inertiaLift = Mth.clamp(vert * gain, -INERTIA_MAX, INERTIA_MAX);
-			if (chargeProgress > 0.0f) inertiaLift += KI_CHARGE_LIFT * physicsLodMultiplier * chargeProgress;
+			if (chargeProgress > 0.0f) inertiaLift -= KI_CHARGE_LIFT * physicsLodMultiplier * chargeProgress;
 		}
 
 		if (!useFromOnly && !useToOnly) {
@@ -307,6 +307,17 @@ public class HairRenderer {
 
 		float sizeFactor = 1.0f;
 
+		float localInertiaX = 0.0f;
+		float localInertiaZ = 0.0f;
+		if (time != 0 && (inertiaForward != 0.0f || inertiaSide != 0.0f || inertiaLift != 0.0f)) {
+			Vector3f inertiaLocal = new Vector3f(-inertiaSide, -inertiaLift, inertiaForward);
+			inertiaLocal.rotateX((float) Math.toRadians(-rotX));
+			inertiaLocal.rotateY((float) Math.toRadians(-rotY));
+			inertiaLocal.rotateZ((float) Math.toRadians(-rotZ));
+			localInertiaX = inertiaLocal.z;
+			localInertiaZ = -inertiaLocal.x;
+		}
+
 		for (int i = 0; i < length; i++) {
 			float cubeW = baseW * sizeFactor;
 			float cubeH = baseH * sizeFactor * stretchFactor;
@@ -331,8 +342,8 @@ public class HairRenderer {
 
 					float altCurrentSwayAmount = Mth.lerp(chargeProgress, baseSwayAmount, targetSwayAmount);
 
-					segCurveX += waveX * MICRO_SWAY * altCurrentSwayAmount * seg + (inertiaForward - inertiaLift) * seg;
-					segCurveZ += waveZ * MICRO_SWAY * 0.5f * altCurrentSwayAmount * seg + inertiaSide * seg;
+					segCurveX += waveX * MICRO_SWAY * altCurrentSwayAmount * seg + localInertiaX * seg;
+					segCurveZ += waveZ * MICRO_SWAY * 0.5f * altCurrentSwayAmount * seg + localInertiaZ * seg;
 				}
 
 				applyRotation(poseStack, segCurveX, curveY, segCurveZ);

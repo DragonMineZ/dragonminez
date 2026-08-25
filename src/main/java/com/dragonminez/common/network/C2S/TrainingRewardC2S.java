@@ -3,6 +3,8 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TrainingConfig;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.TrainingSessionTracker;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -14,6 +16,8 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class TrainingRewardC2S {
+	private static final long MIN_CLAIM_INTERVAL_TICKS = 100L;
+
 	private final String minigameId;
 	private final int levelsCleared;
 
@@ -37,6 +41,13 @@ public class TrainingRewardC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null || levelsCleared <= 0) return;
 
+			long now = player.level().getGameTime();
+			if (!PacketRateLimiter.allow(player.getUUID(), "training_reward", now, MIN_CLAIM_INTERVAL_TICKS)) return;
+
+			int plausibleLevels = TrainingSessionTracker.plausibleLevels(player.getUUID(), now);
+			if (plausibleLevels <= 0) return;
+			int clampedLevelsCleared = Math.min(levelsCleared, plausibleLevels);
+
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(statsData -> {
 				TrainingConfig config = ConfigManager.getTrainingConfig();
 				TrainingConfig.MinigameSettings settings = config.getSettings(minigameId);
@@ -44,7 +55,7 @@ public class TrainingRewardC2S {
 				int currentTpc = statsData.getSingleStatCost(statsData.getStats().getTotalStats());
 				float tpsPerLevel = config.computeTpsPerLevel(currentTpc, settings);
 
-				float totalReward = tpsPerLevel * levelsCleared;
+				float totalReward = tpsPerLevel * clampedLevelsCleared;
 				float limit = settings.getTpsLimitPerGame();
 				if (limit > 0 && totalReward > limit) totalReward = limit;
 				if (totalReward <= 0) return;

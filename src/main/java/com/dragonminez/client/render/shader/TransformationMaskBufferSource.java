@@ -5,6 +5,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexMultiConsumer;
+import lombok.Setter;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 
@@ -18,9 +19,14 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 	private final LazyMaskBuffers maskBufferSource = new LazyMaskBuffers();
 	@Nullable
 	private MultiBufferSource delegate;
+	@Setter
 	private boolean maskCaptureEnabled = true;
+	@Setter
 	private boolean includeOriginal = true;
+	@Setter
 	private boolean forceCaptureAll = false;
+	@Setter
+	private boolean maskCaptureBlocked = false;
 	private int packedR = 255;
 	private int packedG = 255;
 	private int packedB = 255;
@@ -30,19 +36,8 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		this.maskCaptureEnabled = true;
 		this.includeOriginal = true;
 		this.forceCaptureAll = false;
+		this.maskCaptureBlocked = false;
 		return this;
-	}
-
-	public void setMaskCaptureEnabled(boolean enabled) {
-		this.maskCaptureEnabled = enabled;
-	}
-
-	public void setForceCaptureAll(boolean forceCaptureAll) {
-		this.forceCaptureAll = forceCaptureAll;
-	}
-
-	public void setIncludeOriginal(boolean includeOriginal) {
-		this.includeOriginal = includeOriginal;
 	}
 
 	public void setEntityColors(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB) {
@@ -53,7 +48,7 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 
 	@Override
 	public VertexConsumer getBuffer(RenderType renderType) {
-		if (!this.maskCaptureEnabled && !this.forceCaptureAll) {
+		if (this.maskCaptureBlocked || (!this.maskCaptureEnabled && !this.forceCaptureAll)) {
 			if (this.delegate == null || !this.includeOriginal) {
 				return new EmptyVertexConsumer();
 			}
@@ -85,6 +80,7 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		this.maskCaptureEnabled = true;
 		this.includeOriginal = true;
 		this.forceCaptureAll = false;
+		this.maskCaptureBlocked = false;
 	}
 
 	private static final class LazyMaskBuffers {

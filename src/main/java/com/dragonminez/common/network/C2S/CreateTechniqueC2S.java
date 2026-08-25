@@ -13,6 +13,8 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class CreateTechniqueC2S {
+	private static final int MAX_NAME_LENGTH = 64;
+
 	private final String name;
 	private final String type;
 	private final String utility;
@@ -97,7 +99,9 @@ public class CreateTechniqueC2S {
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				KiAttackData technique = new KiAttackData();
-				technique.setName((name == null || name.trim().isEmpty()) ? "New Skill" : name.trim());
+				String safeName = (name == null || name.trim().isEmpty()) ? "New Skill" : name.trim();
+				if (safeName.length() > MAX_NAME_LENGTH) safeName = safeName.substring(0, MAX_NAME_LENGTH);
+				technique.setName(safeName);
 				technique.setAuthor(player.getName().getString());
 				technique.setId(com.dragonminez.common.stats.techniques.TechniqueData.generateId(technique.getAuthor(), technique.getName()));
 

@@ -160,6 +160,12 @@ public class SkillManager {
             KiBlastEntity airVolley = new KiBlastEntity(user.level(), user);
             airVolley.setupKiAirVolley(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorOutline(), 30);
         });
+
+        // 21. DOUBLE SUNDAY (Raditz)
+        REGISTRY.put(21, (user, target, dmg) -> {
+            KiWaveEntity doubleSunday = new KiWaveEntity(user.level(), user);
+            doubleSunday.setupDoubleSunday(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 40);
+        });
     }
 
     public static void execute(int id, DBSagasEntity user, LivingEntity target) {
@@ -170,20 +176,24 @@ public class SkillManager {
         }
     }
 
+    private static final float VOLLEY_HIT_DIVISOR = 8.0F;
+
+    private static final float SINGLE_IMPACT_HIT_DIVISOR = 4.0F;
+
     public static float getCalculatedDamage(int id, DBSagasEntity user) {
         float kiDmg = user.getKiBlastDamage();
         float meleeDmg = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE);
+
+        DBSagasEntity.KiSkillType type = DBSagasEntity.KiSkillType.fromId(id);
+        float mult = type != null ? type.getTier().getDamageMultiplier() : DBSagasEntity.Tier.MEDIUM.getDamageMultiplier();
+
         return switch (id) {
-            case 6 -> 0.0F;
-            case 7 -> meleeDmg;
-            case 10, 11, 20 -> kiDmg / 4.0F;
-            case 12 -> meleeDmg * 3.0F;
-            case 13 -> kiDmg / 2.0F;
-            case 14 -> kiDmg * 1.5F;
-            case 15, 18 -> kiDmg * 2.0F;
-            case 17 -> kiDmg * 1.8F;
-            case 19 -> meleeDmg * 2.0F;
-            default -> kiDmg;
+            case 6 -> 0.0F;                             // Ki Barrier: defensive, no damage
+            case 7, 12, 19 -> meleeDmg * mult;          // Oozaru Roar / Blue Hurricane / Majin Candy: melee-scaled
+            case 13 -> kiDmg * mult / 3.0F;             // Triple Laser: 3 instances (ticks 10/20/30)
+            case 10, 20 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley: random spray, per-bullet
+            case 11 -> kiDmg * mult / SINGLE_IMPACT_HIT_DIVISOR; // Basic ki blast: single concentrated impact
+            default -> kiDmg * mult;                    // every other ki skill: single ki-scaled hit
         };
     }
 
@@ -192,7 +202,7 @@ public class SkillManager {
             case 4 -> 10;
             case 11 -> 12;
             case 12, 14, 17 -> 30;
-            case 13, 16, 18 -> 40;
+            case 13, 16, 18, 21 -> 40;
             case 19 -> 35;
             case 15 -> 60;
             default -> 60;

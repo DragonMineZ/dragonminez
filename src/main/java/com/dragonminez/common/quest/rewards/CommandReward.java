@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 public class CommandReward extends QuestReward {
 	@Getter
 	private final String command;
+	@Getter
 	private final String translationKey;
 
 	public CommandReward(String command, String translationKey) {
@@ -27,7 +28,8 @@ public class CommandReward extends QuestReward {
 		if (translationKey != null && !translationKey.isEmpty()) {
 			return Component.translatable(translationKey);
 		} else {
-			return Component.translatable("gui.dragonminez.quests.rewards.command", command);
+			String display = command.startsWith("/") ? command : "/" + command;
+			return Component.literal(display);
 		}
 	}
 }

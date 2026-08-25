@@ -1,0 +1,31 @@
+{
+  "id": "world_explorer",
+  "title": "dmz.sidequest.explorer.name",
+  "description": "dmz.sidequest.explorer.desc",
+  "type": "SIDEQUEST",
+  "category": "exploration",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "objectives": [
+    {
+      "type": "BIOME",
+      "biome": "minecraft:plains"
+    },
+    {
+      "type": "BIOME",
+      "biome": "minecraft:desert"
+    },
+    {
+      "type": "BIOME",
+      "biome": "minecraft:forest"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 800
+    }
+  ]
+}

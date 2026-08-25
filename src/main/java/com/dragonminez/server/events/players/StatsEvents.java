@@ -22,6 +22,7 @@ import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.passives.PassiveEventHandler;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
@@ -38,6 +39,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -70,6 +72,8 @@ public class StatsEvents {
 
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
 	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
+	public static final UUID TURBO_SPEED_UUID = UUID.fromString("b3f4a1d2-6c8e-4b0a-9f21-7d5e3c9a1b64");
+	private static final double TURBO_SPEED_BONUS = 0.30;
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
 	public static final UUID KI_WEAPON_ATTACK_SPEED_UUID = UUID.fromString("a3b1c5d7-9e2f-4a6b-8c1d-5f7e9a0b2c4d");
@@ -332,8 +336,6 @@ public class StatsEvents {
 	@SubscribeEvent
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		Player attacker = resolveAttackerPlayer(event.getSource().getEntity(), event.getSource().getDirectEntity());
-		if (attacker == null) return;
 		boolean[] addAlignment = new boolean[]{false};
 		boolean[] removeAlignment = new boolean[]{false};
 
@@ -343,8 +345,14 @@ public class StatsEvents {
 					addAlignment[0] = true;
 				else removeAlignment[0] = true;
 				if (victimData.getStatus().isHasCreatedCharacter()) {
-					if (!ConfigManager.getServerConfig().getMutant().getKeepMutantOnDeath() && victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME) && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
+					boolean wasMutant = victimData.getEffects().hasEffect(MutantManager.EFFECT_NAME);
+					boolean keepMutant = ConfigManager.getServerConfig().getMutant().getKeepMutantOnDeath();
+					if (wasMutant && !keepMutant && victim instanceof ServerPlayer mutantVictim) MutantManager.revoke(mutantVictim, victimData);
 					victimData.getEffects().removeAllEffects();
+					if (wasMutant && keepMutant) {
+						victimData.getEffects().addEffect(MutantManager.EFFECT_NAME, 1.0, -1);
+						if (victim instanceof ServerPlayer mutantVictim) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(mutantVictim), mutantVictim);
+					}
 					victimData.getSecondaryStatEffects().clear();
 					victimData.getStatus().setChargingKi(false);
 					victimData.getStatus().setActionCharging(false);
@@ -355,6 +363,9 @@ public class StatsEvents {
 				}
 			});
 		}
+
+		Player attacker = resolveAttackerPlayer(event.getSource().getEntity(), event.getSource().getDirectEntity());
+		if (attacker == null) return;
 
 		if (removesAlignment(event.getEntity())) removeAlignment[0] = true;
 		if (addsAlignment(event.getEntity())) addAlignment[0] = true;
@@ -740,12 +751,21 @@ public class StatsEvents {
 							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
 						}
 					}
+
+					boolean turboActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura();
+					double expectedTurboBonus = turboActive ? TURBO_SPEED_BONUS : 0.0;
+					AttributeModifier existingTurbo = speedAttr.getModifier(TURBO_SPEED_UUID);
+					double currentTurboBonus = existingTurbo != null ? existingTurbo.getAmount() : 0.0;
+
+					if (expectedTurboBonus != currentTurboBonus) {
+						speedAttr.removeModifier(TURBO_SPEED_UUID);
+						if (expectedTurboBonus > 0) {
+							speedAttr.addTransientModifier(new AttributeModifier(TURBO_SPEED_UUID, "Turbo Speed Bonus", expectedTurboBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+						}
+					}
 				}
 
 				if (attackSpeedAttr != null) {
-					// Ki weapons act as fake weapons: apply their configured attack speed as a flat
-					// modifier (e.g. -2.4 -> base 4.0 becomes 1.6, like a real sword). Applied before
-					// the form multiplier below so forms scale the adjusted Ki weapon speed.
 					double expectedKi = 0.0;
 					if (PlayerAttackHelper.isKiWeaponActive(serverPlayer)) {
 						var kiCfg = ConfigManager.getCombatConfig().getKiWeaponConfig(data.getStatus().getKiWeaponType());
@@ -868,55 +888,35 @@ public class StatsEvents {
 	}
 
 	@SubscribeEvent
-	public static void onPlayerInteractEntity(PlayerInteractEvent.EntityInteract event) {
-		if (event.getLevel().isClientSide) return;
-		if (!(event.getTarget() instanceof ServerPlayer target)) return;
-		ServerPlayer source = (ServerPlayer) event.getEntity();
-		if (!source.getMainHandItem().isEmpty()) return;
+	public static void onFallDamageKiNegation(LivingHurtEvent event) {
+		if (!event.getSource().is(DamageTypes.FALL)) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, source).ifPresent(sData -> {
-			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(tData -> {
+		float damage = event.getAmount();
+		if (damage <= 0) return;
 
-				if (!tData.getStatus().isBlocking()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
 
-				boolean sHasRight = hasPothala(source, "right");
-				boolean tHasLeft = hasPothala(target, "left");
+			float currentKi = data.getResources().getCurrentEnergy();
+			if (currentKi <= 0) return;
 
-				boolean sameColor = checkPothalaColorMatch(source, target);
+			float kiPerDamage = 3.0f;
+			float fullCost = damage * kiPerDamage;
 
-				if (sHasRight && tHasLeft && sameColor) {
-					FusionLogic.executePothala(source, target, sData, tData);
-					event.setCanceled(true);
-				}
-			});
+			if (currentKi >= fullCost) {
+				data.getResources().removeEnergy(fullCost);
+				event.setCanceled(true);
+			} else {
+				float negatableDamage = currentKi / kiPerDamage;
+				data.getResources().removeEnergy(currentKi);
+				event.setAmount(damage - negatableDamage);
+			}
+
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
 	}
 
-	private static ItemStack getHeadTechStack(ServerPlayer player) {
-		return CuriosUtil.getFirstStackForItem(player, "head_tech", "pothala");
-	}
-
-	private static boolean hasPothala(ServerPlayer player, String side) {
-		ItemStack headTech = getHeadTechStack(player);
-		if (headTech.isEmpty()) return false;
-
-		if (side.equals("left") && (headTech.getItem() == MainItems.POTHALA_LEFT.get() || headTech.getItem() == MainItems.GREEN_POTHALA_LEFT.get())) {
-			return true;
-		}
-		return side.equals("right") && (headTech.getItem() == MainItems.POTHALA_RIGHT.get() || headTech.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
-	}
-
-	private static boolean checkPothalaColorMatch(ServerPlayer p1, ServerPlayer p2) {
-		ItemStack p1Tech = getHeadTechStack(p1);
-		ItemStack p2Tech = getHeadTechStack(p2);
-
-		if (p1Tech.isEmpty() || p2Tech.isEmpty()) return false;
-
-		boolean p1IsGreen = p1Tech.getItem().getDescriptionId().contains("green");
-		boolean p2IsGreen = p2Tech.getItem().getDescriptionId().contains("green");
-
-		return p1IsGreen == p2IsGreen;
-	}
 
     @SubscribeEvent
     public static void onEntitySize(EntityEvent.Size event) {

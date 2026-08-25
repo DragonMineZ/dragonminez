@@ -16,6 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -34,6 +35,13 @@ public class RadarRenderEvent {
 	private static List<BlockPos> clientNamekPositions = new ArrayList<>();
 	private static Map<String, List<BlockPos>> clientPositionsBySet = new HashMap<>();
 
+
+	@SubscribeEvent
+	public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
+		clientEarthPositions = new ArrayList<>();
+		clientNamekPositions = new ArrayList<>();
+		clientPositionsBySet = new HashMap<>();
+	}
 
 	public static void updateRadarData(List<BlockPos> earth, List<BlockPos> namek, Map<String, List<BlockPos>> positionsBySet) {
 		clientEarthPositions = earth;

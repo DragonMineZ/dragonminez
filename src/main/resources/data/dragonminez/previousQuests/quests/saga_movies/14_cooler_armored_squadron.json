@@ -1,0 +1,84 @@
+{
+  "id": 14,
+  "title": "dmz.quest.movies14.name",
+  "description": "dmz.quest.movies14.desc",
+  "type": "SAGA",
+  "category": "saga_movies",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 13
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 150
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:rocky"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 5
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_neiz",
+      "count": 1,
+      "health": 5304.0,
+      "meleeDamage": 309.0,
+      "kiDamage": 357.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_salza",
+      "count": 1,
+      "health": 6409.0,
+      "meleeDamage": 377.0,
+      "kiDamage": 441.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_dore",
+      "count": 1,
+      "health": 7514.0,
+      "meleeDamage": 421.0,
+      "kiDamage": 524.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 24400
+    }
+  ]
+}

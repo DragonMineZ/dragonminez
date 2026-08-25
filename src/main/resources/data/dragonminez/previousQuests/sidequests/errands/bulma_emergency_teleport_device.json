@@ -1,0 +1,50 @@
+{
+  "id": "bulma_emergency_teleport_device",
+  "title": "dmz.sidequest.bulma_emergency_teleport_device.name",
+  "description": "dmz.sidequest.bulma_emergency_teleport_device.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 8
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:ender_pearl",
+      "count": 12
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:obsidian",
+      "count": 8
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone_block",
+      "count": 3
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 140000
+    }
+  ]
+}

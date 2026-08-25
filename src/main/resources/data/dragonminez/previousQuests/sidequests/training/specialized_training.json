@@ -1,0 +1,49 @@
+{
+  "id": "specialized_training",
+  "title": "dmz.sidequest.specializedtr.name",
+  "description": "dmz.sidequest.specializedtr.desc",
+  "type": "SIDEQUEST",
+  "category": "training",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "gravity_chamber"
+      },
+      {
+        "type": "LEVEL",
+        "minLevel": 15
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 20
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:obsidian",
+      "count": 20
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 9000
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:enderpearl",
+      "count": 16
+    }
+  ]
+}

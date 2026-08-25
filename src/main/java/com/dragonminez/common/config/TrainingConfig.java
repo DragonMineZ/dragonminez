@@ -7,10 +7,10 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 public class TrainingConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
+	private String configVersion;
 
 	private double rewardBaseCoefficient = 3.4;
 	private double rewardCostExponent = 0.6;

@@ -19,7 +19,7 @@ public class GravityGameScreen extends BaseMinigameScreen {
 	private int controlLineY;
 	private float indicatorY;
 	private double holdProgress;
-	private int requiredSide = -1; // -1 = left, 1 = right
+	private int neededSide = -1;
 	private int wrongFlashSide = 0;
 	private int wrongFlashTicks = 0;
 
@@ -37,13 +37,13 @@ public class GravityGameScreen extends BaseMinigameScreen {
 		this.controlLineY = barTop + (int) (cfg.getBarHeight() * cfg.getControlLineFraction());
 		this.indicatorY = barTop + 20;
 		this.holdProgress = 0;
-		this.requiredSide = random.nextBoolean() ? -1 : 1;
+		this.neededSide = random.nextBoolean() ? -1 : 1;
 		this.wrongFlashTicks = 0;
 	}
 
 	@Override
 	protected void onStart() {
-		requiredSide = random.nextBoolean() ? -1 : 1;
+		neededSide = random.nextBoolean() ? -1 : 1;
 	}
 
 	private double gravity() {
@@ -71,18 +71,18 @@ public class GravityGameScreen extends BaseMinigameScreen {
 	protected boolean onKey(int keyCode) {
 		int side = sideForKey(keyCode);
 		if (side == 0) return false;
-		tap(side);
+		pushSide(side);
 		return true;
 	}
 
 	@Override
 	protected boolean onMouseClick(double mouseX, double mouseY, int button) {
 		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-			tap(-1);
+			pushSide(-1);
 			return true;
 		}
 		if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-			tap(1);
+			pushSide(1);
 			return true;
 		}
 		return false;
@@ -94,12 +94,12 @@ public class GravityGameScreen extends BaseMinigameScreen {
 		return 0;
 	}
 
-	private void tap(int side) {
-		if (side == requiredSide) {
+	private void pushSide(int side) {
+		if (side == neededSide) {
 			indicatorY -= (float) cfg.getRisePerTap();
 			if (indicatorY < barTop) indicatorY = barTop;
 			playHit(false);
-			requiredSide = random.nextBoolean() ? -1 : 1;
+			neededSide = random.nextBoolean() ? -1 : 1;
 		} else {
 			indicatorY += (float) (cfg.getWrongPressDescentMultiplier() * gravity());
 			wrongFlashSide = side;
@@ -112,7 +112,7 @@ public class GravityGameScreen extends BaseMinigameScreen {
 	protected void onLevelCleared() {
 		holdProgress = 0;
 		indicatorY = barTop + 20;
-		requiredSide = random.nextBoolean() ? -1 : 1;
+		neededSide = random.nextBoolean() ? -1 : 1;
 	}
 
 	@Override
@@ -142,7 +142,7 @@ public class GravityGameScreen extends BaseMinigameScreen {
 	private void drawSideArrow(GuiGraphics graphics, int x, int y, String symbol, int side) {
 		int color = 0xFF707070;
 		if (wrongFlashTicks > 0 && wrongFlashSide == side) color = 0xFFFF3030;
-		else if (requiredSide == side) color = 0xFFFFE030;
+		else if (neededSide == side) color = 0xFFFFE030;
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(x, y, 0);

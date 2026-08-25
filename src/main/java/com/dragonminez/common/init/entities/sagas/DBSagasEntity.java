@@ -2,7 +2,11 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.clash.BeamClashManager;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -53,6 +57,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -61,7 +66,10 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextureVariant {
 
@@ -89,32 +97,56 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         AOE_BURST
     }
 
+    /**
+     * Balance tier shared by ki skills and melee combos.
+     * <p>{@code damageMultiplier} is the TOTAL damage an attack deals expressed as a factor of the
+     * relevant stat (ki blast damage or attack damage). Multi-hit attacks split this total across
+     * their hits. {@code cooldownFactor} scales the per-entity cooldown so stronger attacks fire
+     * less often.
+     */
+    @Getter
+    public enum Tier {
+        WEAK(1.25F, 1.0F),
+        MEDIUM(1.5F, 1.5F),
+        STRONG(1.75F, 2.0F);
+
+        private final float damageMultiplier;
+        private final float cooldownFactor;
+
+        Tier(float damageMultiplier, float cooldownFactor) {
+            this.damageMultiplier = damageMultiplier;
+            this.cooldownFactor = cooldownFactor;
+        }
+    }
+
     @Getter
     public enum KiSkillType {
-        KAMEHAMEHA(1, SkillRole.RANGED_TRAVEL),
-        GALICK_GUN(2, SkillRole.RANGED_TRAVEL),
-        MAKANKOSAPPO(3, SkillRole.HITSCAN),
-        KI_LASER(4, SkillRole.HITSCAN),
-        KI_EXPLOSION(5, SkillRole.AOE_BURST),
-        KI_BARRIER(6, SkillRole.DEFENSIVE),
-        OOZARU_ROAR(7, SkillRole.AOE_BURST),
-        GENERIC_KI_WAVE(8, SkillRole.RANGED_TRAVEL),
-        OOZARU_BEAM(9, SkillRole.RANGED_TRAVEL),
-        KI_VOLLEY(10, SkillRole.PROJECTILE_FAST),
-        KI_SMALL(11, SkillRole.PROJECTILE_FAST),
-        BLUE_HURRICANE(12, SkillRole.AOE_BURST),
-        TRIPLE_LASER(13, SkillRole.HITSCAN),
-        KIENZAN(14, SkillRole.HITSCAN),
-        DEATH_BALL(15, SkillRole.GUARD_BREAK),
-        MASENKO(16, SkillRole.RANGED_TRAVEL),
-        BIG_BANG(17, SkillRole.GUARD_BREAK),
-        FINAL_FLASH(18, SkillRole.RANGED_TRAVEL),
-        MAJIN_CANDY(19, SkillRole.ZONING),
-        KI_AIR_VOLLEY(20, SkillRole.ZONING);
+        KAMEHAMEHA(1, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        GALICK_GUN(2, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        MAKANKOSAPPO(3, SkillRole.HITSCAN, Tier.MEDIUM),
+        KI_LASER(4, SkillRole.HITSCAN, Tier.WEAK),
+        KI_EXPLOSION(5, SkillRole.AOE_BURST, Tier.MEDIUM),
+        KI_BARRIER(6, SkillRole.DEFENSIVE, Tier.WEAK),
+        OOZARU_ROAR(7, SkillRole.AOE_BURST, Tier.STRONG),
+        GENERIC_KI_WAVE(8, SkillRole.RANGED_TRAVEL, Tier.WEAK),
+        OOZARU_BEAM(9, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        KI_VOLLEY(10, SkillRole.PROJECTILE_FAST, Tier.WEAK),
+        KI_SMALL(11, SkillRole.PROJECTILE_FAST, Tier.WEAK),
+        BLUE_HURRICANE(12, SkillRole.AOE_BURST, Tier.STRONG),
+        TRIPLE_LASER(13, SkillRole.HITSCAN, Tier.MEDIUM),
+        KIENZAN(14, SkillRole.HITSCAN, Tier.MEDIUM),
+        DEATH_BALL(15, SkillRole.GUARD_BREAK, Tier.STRONG),
+        MASENKO(16, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        BIG_BANG(17, SkillRole.GUARD_BREAK, Tier.STRONG),
+        FINAL_FLASH(18, SkillRole.RANGED_TRAVEL, Tier.STRONG),
+        MAJIN_CANDY(19, SkillRole.ZONING, Tier.STRONG),
+        KI_AIR_VOLLEY(20, SkillRole.ZONING, Tier.WEAK),
+        DOUBLE_SUNDAY(21, SkillRole.RANGED_TRAVEL, Tier.STRONG);
 
         private final int id;
         private final SkillRole role;
-        KiSkillType(int id, SkillRole role) { this.id = id; this.role = role; }
+        private final Tier tier;
+        KiSkillType(int id, SkillRole role, Tier tier) { this.id = id; this.role = role; this.tier = tier; }
 
         public static KiSkillType fromId(int id) {
             for (KiSkillType type : values()) {
@@ -131,17 +163,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     @Getter
     public enum ComboType {
-        BASIC(0), AIR(1), KI_CHARGE_ATTACK(2), METEOR_COMBINATION(3), ANDROID_ABSORPTION(4),
-        GUM_PUNCH(5), GUM_EXPAND(6), SLEEP_RECOVERY(7), RAPID_KICKS(8);
+        BASIC(0, Tier.MEDIUM), AIR(1, Tier.MEDIUM), KI_CHARGE_ATTACK(2, Tier.STRONG),
+        METEOR_COMBINATION(3, Tier.STRONG), ANDROID_ABSORPTION(4, Tier.STRONG),
+        GUM_PUNCH(5, Tier.MEDIUM), GUM_EXPAND(6, Tier.WEAK), SLEEP_RECOVERY(7, Tier.WEAK),
+        RAPID_KICKS(8, Tier.WEAK);
 
         private final int id;
-        ComboType(int id) { this.id = id; }
+        private final Tier tier;
+        ComboType(int id, Tier tier) { this.id = id; this.tier = tier; }
 
         public static ComboType fromId(int id) {
             for (ComboType type : values()) {
                 if (type.id == id) return type;
             }
             return null;
+        }
+
+        public static Tier tierOf(int id) {
+            ComboType type = fromId(id);
+            return type != null ? type.tier : Tier.MEDIUM;
         }
 	}
 
@@ -176,10 +216,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private static final int SKILL_GRACE_TICKS = 80;
 
-    public static final float SKILL_COOLDOWN_MULTIPLIER = 1.5F;
-    private static final int POST_CAST_LOCKOUT = 80;
+    public static final float SKILL_COOLDOWN_MULTIPLIER = 2.0F;
+    private static final int POST_CAST_LOCKOUT = 100;
+    private static final int GLOBAL_ACTION_LOCKOUT = 60;
     private static final float CAST_COMMIT_CHANCE = 0.5F;
     private int postCastCooldown = 0;
+    private int globalActionCooldown = 0;
+    private int knockbackLockTicks = 0;
+    private int kiHitSlowTicks = 0;
+    // Ki beams (e.g. kamehameha) re-hit roughly every 20 ticks; keep the slow active
+    // slightly longer so the enemy stays visibly pushed back for the whole beam.
+    private static final int KI_HIT_SLOW_TICKS = 22;
+    private static final double KI_HIT_FLY_SLOW_FACTOR = 0.2D;
 
     protected int castTimer = 0;
     protected int transformTick = 0;
@@ -215,8 +263,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Getter @Setter protected double defaultMovementSpeed = 0.25D;
     @Getter @Setter protected double defaultAttackSpeed = 4.0D;
 
+    @Setter
     @Getter private AiTier aiTier = AiTier.SIMPLE;
-    public void setAiTier(AiTier tier) { this.aiTier = tier; }
 
     public void setAiTierById(int id) {
         AiTier[] values = AiTier.values();
@@ -269,7 +317,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         public KiSkill(int id, int cooldown, float size, int colorMain, int colorBorder, int colorOutline) {
             this.id = id;
-            this.cooldownMax = Math.max(1, Math.round(cooldown * SKILL_COOLDOWN_MULTIPLIER));
+            KiSkillType type = KiSkillType.fromId(id);
+            float tierFactor = type != null ? type.getTier().getCooldownFactor() : 1.0F;
+            this.cooldownMax = Math.max(1, Math.round(cooldown * SKILL_COOLDOWN_MULTIPLIER * tierFactor));
             this.currentCooldown = 0;
             this.size = size;
             this.colorMain = colorMain;
@@ -281,8 +331,97 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
+    private PartEntity<?>[] hitboxParts;
+    private static final UUID GLOBAL_GATE_KEY = new UUID(0L, 0L);
+    private final Map<UUID, Long> partHitGate = new HashMap<>();
+
     protected DBSagasEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        if (this.hasHitboxParts()) {
+            this.hitboxParts = this.createHitboxParts();
+            this.noCulling = true;
+            this.refreshDimensions();
+        }
+    }
+
+    public boolean hasHitboxParts() {
+        return false;
+    }
+
+    protected DBSagasPart[] createHitboxParts() {
+        return new DBSagasPart[0];
+    }
+
+    protected EntityDimensions getCoreDimensions() {
+        return null;
+    }
+
+    @Override
+    public boolean isMultipartEntity() {
+        return this.hitboxParts != null;
+    }
+
+    @Override
+    public PartEntity<?>[] getParts() {
+        return this.hitboxParts;
+    }
+
+    @Override
+    public void setId(int pId) {
+        super.setId(pId);
+        if (this.hitboxParts != null) {
+            for (int i = 0; i < this.hitboxParts.length; i++) {
+                this.hitboxParts[i].setId(pId + i + 1);
+            }
+        }
+    }
+
+    @Override
+    public EntityDimensions getDimensions(Pose pPose) {
+        if (this.hasHitboxParts()) {
+            EntityDimensions core = this.getCoreDimensions();
+            if (core != null) return core;
+        }
+        return super.getDimensions(pPose);
+    }
+
+    private void positionHitboxParts() {
+        if (this.hitboxParts == null) return;
+
+        Vec3 forward = Vec3.directionFromRotation(0.0F, this.yBodyRot);
+        Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
+
+        for (PartEntity<?> generic : this.hitboxParts) {
+            if (!(generic instanceof DBSagasPart part)) continue;
+            double cx = this.getX() + forward.x * part.forwardOffset + side.x * part.sideOffset;
+            double cz = this.getZ() + forward.z * part.forwardOffset + side.z * part.sideOffset;
+            double cy = this.getY() + part.yOffset - part.getBbHeight() / 2.0;
+
+            double prevX = part.getX(), prevY = part.getY(), prevZ = part.getZ();
+            part.setPos(cx, cy, cz);
+            part.xo = part.xOld = prevX;
+            part.yo = part.yOld = prevY;
+            part.zo = part.zOld = prevZ;
+        }
+
+        if (!this.partHitGate.isEmpty()) {
+            long now = this.level().getGameTime();
+            this.partHitGate.values().removeIf(tick -> tick < now);
+        }
+    }
+
+    public boolean receivePartDamage(DamageSource pSource, float pAmount, DBSagasPart part) {
+        if (this.isInvulnerableTo(pSource)) return false;
+
+        long now = this.level().getGameTime();
+        Entity attacker = pSource.getEntity();
+        UUID key = attacker != null ? attacker.getUUID() : GLOBAL_GATE_KEY;
+
+        Long last = this.partHitGate.get(key);
+        if (last != null && last == now) return false;
+        this.partHitGate.put(key, now);
+
+        return this.hurt(pSource, pAmount);
     }
 
     public void setSkillColors(int mainColor, int borderColor, int outlineColor) {
@@ -467,7 +606,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public boolean isComboReady() {
-        return this.comboEnabled && this.currentComboCooldown <= 0;
+        return this.comboEnabled && this.currentComboCooldown <= 0 && this.globalActionCooldown <= 0;
     }
 
     public boolean isDashReady() {
@@ -542,12 +681,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false) {
             @Override
             public boolean canUse() {
-                return DBSagasEntity.this.isMeleeAllowed() && super.canUse();
+                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && super.canUse();
             }
 
             @Override
             public boolean canContinueToUse() {
-                return DBSagasEntity.this.isMeleeAllowed() && super.canContinueToUse();
+                return DBSagasEntity.this.isMeleeAllowed() && !DBSagasEntity.this.isStunned() && super.canContinueToUse();
             }
 
             @Override
@@ -634,6 +773,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public void tick() {
         super.tick();
 
+        if (this.hitboxParts != null) {
+            this.positionHitboxParts();
+        }
+
         if (!this.level().isClientSide) {
 
             if (!this.isAlive()) {
@@ -642,7 +785,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 return;
             }
 
-            this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming());
+            if (this.isStunned()) {
+                if (this.isCasting()) this.stopCasting();
+                if (this.isComboing()) this.stopCombo();
+                this.getNavigation().stop();
+            }
+
+            if (this.kiHitSlowTicks > 0) this.kiHitSlowTicks--;
+
+            this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming() || this.isStunned());
 
             if (this.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight();
 
@@ -661,6 +812,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.canUseZanzoken && this.currentZanzokenCooldown > 0) this.currentZanzokenCooldown--;
                     if (this.currentDashCooldown > 0) this.currentDashCooldown--;
                     if (this.postCastCooldown > 0) this.postCastCooldown--;
+                    if (this.globalActionCooldown > 0) this.globalActionCooldown--;
 
                     for (KiSkill skill : this.skillPool) {
                         if (skill.currentCooldown > 0) {
@@ -777,7 +929,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.isComboing()) {
                         this.comboTimer++;
                         handleComboLogic();
-                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null && !clashing) {
+                    } else if (this.aiTier == AiTier.SIMPLE && this.currentComboCooldown <= 0 && this.globalActionCooldown <= 0 && !this.isCasting() && this.getTarget() != null && !clashing && !this.isStunned()) {
                         if (this.distanceTo(this.getTarget()) < 6.0D) {
                             this.startComboAuto();
                         }
@@ -792,7 +944,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     } else {
                         if (this.decisionCooldown > 0) this.decisionCooldown--;
                         if (this.decisionCooldown <= 0 && !this.isCasting() && !this.isComboing()
-                                && !this.isZanzoken() && !this.isEvading() && !clashing) {
+                                && !this.isZanzoken() && !this.isEvading() && !clashing && !this.isStunned()) {
                             this.decisionCooldown = DECISION_INTERVAL;
                             this.runBrainDecision();
                         }
@@ -804,10 +956,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 this.transformTick++;
                 if (this.handleTransformationLogic(this.transformTick, 80)) {
                     if (!this.level().isClientSide) {
-                        EntityType<? extends DBSagasEntity> nextFormType = this.getNextTransform();
-                        if (nextFormType != null) {
-                            DBSagasEntity nextForm = nextFormType.create(this.level());
-                            this.finishTransformationSpawn(nextForm, this.spawnsNewFormFullHealth());
+                        if (!this.canTransform()) {
+                            this.setTransforming(false);
+                            this.transformTick = 0;
+                        } else {
+                            EntityType<? extends DBSagasEntity> nextFormType = this.getNextTransform();
+                            if (nextFormType != null) {
+                                DBSagasEntity nextForm = nextFormType.create(this.level());
+                                this.finishTransformationSpawn(nextForm, this.spawnsNewFormFullHealth());
+                            }
                         }
                     }
                 }
@@ -907,7 +1064,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             return false;
         }
 
-        if (this.postCastCooldown > 0) {
+        if (this.postCastCooldown > 0 || this.globalActionCooldown > 0) {
             return false;
         }
 
@@ -1035,7 +1192,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     @Override
     public void travel(Vec3 pTravelVector) {
-        if (this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken()) {
+        if (this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken() || this.isStunned()) {
             this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
             super.travel(Vec3.ZERO);
             return;
@@ -1105,14 +1262,22 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.set(CURRENT_COMBO_ID, -1);
         this.comboTimer = 0;
         this.comboTarget = null;
+        this.globalActionCooldown = GLOBAL_ACTION_LOCKOUT;
 
         if (this.isCharge()) {
             this.setKiCharge(false);
         }
     }
 
+    public void interruptCombo() {
+        if (this.isComboing()) this.stopCombo();
+        this.currentComboCooldown = this.comboCooldownMax;
+    }
+
     public void startCombo(int comboId) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.isStunned()) return;
+        if (this.globalActionCooldown > 0) return;
         if (this.getTarget() == null) return;
 
         int resolved = comboId;
@@ -1130,7 +1295,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.setComboing(true);
         this.entityData.set(CURRENT_COMBO_ID, resolved);
         this.comboTimer = 0;
-        this.currentComboCooldown = this.comboCooldownMax;
+        this.currentComboCooldown = Math.round(this.comboCooldownMax * ComboType.tierOf(resolved).getCooldownFactor());
     }
 
     public void startComboAuto() {
@@ -1285,6 +1450,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return this.aiTier == AiTier.SIMPLE || this.meleeAllowed;
     }
 
+    public boolean isStunned() {
+        return this.hasEffect(MainEffects.STUN.get());
+    }
+
     public String getQuestTeam() {
         return this.getPersistentData().getString(QuestService.QUEST_TEAM_TAG);
     }
@@ -1340,6 +1509,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (actuallyHurt && !this.level().isClientSide) {
 
+            if (pSource.is(MainDamageTypes.KIBLAST)) {
+                // While being struck by a ki technique (e.g. a kamehameha beam) the enemy
+                // should be pushed/slowed instead of continuing to cruise at full flight speed.
+                this.kiHitSlowTicks = KI_HIT_SLOW_TICKS;
+            }
+
             if (this.getHealth() <= 0.0F && this.canTransform() && !isAbsoluteDeath) {
                 this.setHealth(1.0F);
                 this.deathTime = 0;
@@ -1347,7 +1522,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 return false;
             }
 
-            if (!this.isTransforming() && this.getHealth() <= (this.getMaxHealth() / 2.0F)) {
+            if (!this.isTransforming() && this.getHealth() <= (this.getMaxHealth() * this.resolveTransformTriggerFraction())) {
                 if (this.canTransform()) this.startTransformation();
             }
 
@@ -1369,7 +1544,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     protected boolean canTransform() {
-        return this.hasTransformation() && !this.transformationDisabled;
+        if (!this.hasTransformation() || this.transformationDisabled) return false;
+        return !this.getPersistentData().getBoolean("dmz_quest_no_transform");
+    }
+
+    private static final String[] TRANSFORM_OVERRIDE_TAGS = {
+            "dmz_quest_tf_hp_abs", "dmz_quest_tf_melee_abs", "dmz_quest_tf_ki_abs",
+            "dmz_quest_tf_hp_mult", "dmz_quest_tf_melee_mult", "dmz_quest_tf_ki_mult",
+            "dmz_quest_tf_trigger"
+    };
+
+    /**
+     * Fraction of max health (0..1) at which this enemy triggers its transformation.
+     * Resolves a per-quest override first, then the global config default, then 0.5.
+     */
+    private double resolveTransformTriggerFraction() {
+        if (this.getPersistentData().contains("dmz_quest_tf_trigger")) {
+            return Mth.clamp(this.getPersistentData().getDouble("dmz_quest_tf_trigger"), 0.0D, 1.0D);
+        }
+        return ConfigManager.getEntityTransformDefaults().triggerHealthFractionOr(0.5D);
     }
 
     @Override
@@ -1389,11 +1582,19 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public boolean doHurtTarget(Entity pEntity) {
         if (this.isTransforming()) return false;
         if (this.isCasting() || this.isComboing()) return false;
+        if (this.isStunned()) return false;
         return super.doHurtTarget(pEntity);
     }
 
     protected void handleCommonCombatMovement(LivingEntity target, boolean isActionActive) {
         if (this.level().isClientSide) return;
+
+        if (this.knockbackLockTicks > 0) {
+            this.knockbackLockTicks--;
+            this.getNavigation().stop();
+            if (target != null) rotateBodyToTarget(target);
+            return;
+        }
 
         if (isActionActive) {
             this.getNavigation().stop();
@@ -1430,6 +1631,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         } else this.setNoGravity(false);
     }
 
+    public void lockKnockback(int ticks) {
+        this.knockbackLockTicks = Math.max(this.knockbackLockTicks, ticks);
+    }
+
     public void rotateBodyToTarget(LivingEntity target) {
         double d0 = target.getX() - this.getX();
         double d2 = target.getZ() - this.getZ();
@@ -1440,7 +1645,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void moveTowardsTargetInAir(LivingEntity target) {
-        if (this.isCasting() || this.isComboing() || this.isEvading() || this.isZanzoken()) return;
+        if (this.isCasting() || this.isComboing() || this.isEvading() || this.isZanzoken() || this.isStunned()) return;
         double flyspeed = this.getFlySpeed();
 
         double distance = this.distanceTo(target);
@@ -1452,6 +1657,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
         if (this.isFlyingFast()) {
             flyspeed *= 2.0D;
+        }
+
+        // Being struck by a ki technique should bleed off flight speed so the enemy
+        // crawls forward (or is pushed back) instead of cruising through the beam.
+        if (this.kiHitSlowTicks > 0) {
+            this.setFlyingFast(false);
+            flyspeed *= KI_HIT_FLY_SLOW_FACTOR;
         }
 
         double dx = target.getX() - this.getX();
@@ -1471,6 +1683,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void startCasting(int type) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.isStunned()) return;
+        if (this.globalActionCooldown > 0) return;
         if (BeamClashManager.isClashing(this.getUUID())) return;
         this.setCasting(true);
         this.setSkillType(type);
@@ -1486,12 +1700,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.castTimer = 0;
         this.setSkillType(0);
         this.postCastCooldown = POST_CAST_LOCKOUT;
+        this.globalActionCooldown = GLOBAL_ACTION_LOCKOUT;
 
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
     }
 
     public boolean isSkillCastReady() {
-        return this.postCastCooldown <= 0;
+        return this.postCastCooldown <= 0 && this.globalActionCooldown <= 0;
     }
 
     protected boolean handleTransformationLogic(int transformTick, int duration) {
@@ -1519,14 +1734,50 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                         this.getPersistentData().getInt("dmz_quest_texture_variant"));
             }
 
-            double scaledMaxHealth = this.getMaxHealth() * 1.5D;
+            EntitiesConfig.TransformSettings transformCfg = ConfigManager.getEntityTransformDefaults();
+            CompoundTag pd = this.getPersistentData();
+            com.dragonminez.common.quest.Difficulty difficulty =
+                    com.dragonminez.common.quest.Difficulty.fromName(pd.getString("dmz_difficulty"));
+
+            // Health: an absolute quest override (party-scaled at spawn, difficulty-scaled here) wins;
+            // otherwise scale the previous form's max health by the quest/config multiplier
+            // (difficulty is already baked into that value from the initial spawn).
+            double scaledMaxHealth;
+            if (pd.contains("dmz_quest_tf_hp_abs")) {
+                scaledMaxHealth = pd.getDouble("dmz_quest_tf_hp_abs") * difficulty.hpMultiplier();
+            } else {
+                double hpMult = pd.contains("dmz_quest_tf_hp_mult")
+                        ? pd.getDouble("dmz_quest_tf_hp_mult")
+                        : transformCfg.healthMultiplierOr(1.5D);
+                scaledMaxHealth = this.getMaxHealth() * hpMult;
+            }
+            scaledMaxHealth = Math.max(1.0D, scaledMaxHealth);
             if (newEntity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
                 newEntity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(scaledMaxHealth);
             }
 
-            newEntity.setKiBlastDamage(this.getKiBlastDamage() * 1.5F);
+            double scaledKiDamage;
+            if (pd.contains("dmz_quest_tf_ki_abs")) {
+                scaledKiDamage = pd.getDouble("dmz_quest_tf_ki_abs") * difficulty.damageMultiplier();
+            } else {
+                double kiMult = pd.contains("dmz_quest_tf_ki_mult")
+                        ? pd.getDouble("dmz_quest_tf_ki_mult")
+                        : transformCfg.kiMultiplierOr(1.5D);
+                scaledKiDamage = this.getKiBlastDamage() * kiMult;
+            }
+            newEntity.setKiBlastDamage((float) scaledKiDamage);
+
             if (newEntity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
-                newEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5D);
+                double scaledMelee;
+                if (pd.contains("dmz_quest_tf_melee_abs")) {
+                    scaledMelee = pd.getDouble("dmz_quest_tf_melee_abs") * difficulty.damageMultiplier();
+                } else {
+                    double meleeMult = pd.contains("dmz_quest_tf_melee_mult")
+                            ? pd.getDouble("dmz_quest_tf_melee_mult")
+                            : transformCfg.meleeMultiplierOr(1.5D);
+                    scaledMelee = this.getAttributeValue(Attributes.ATTACK_DAMAGE) * meleeMult;
+                }
+                newEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(scaledMelee);
             }
 
             if (fullHealth) {
@@ -1556,6 +1807,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 			}
 			if (this.getPersistentData().contains(QuestService.QUEST_OBJECTIVE_INDEX_TAG)) {
 				newEntity.getPersistentData().putInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG, this.getPersistentData().getInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG));
+			}
+
+			// Carry the quest transform overrides forward so multi-stage transforms keep tuning.
+			for (String tag : TRANSFORM_OVERRIDE_TAGS) {
+				if (pd.contains(tag)) {
+					newEntity.getPersistentData().putDouble(tag, pd.getDouble(tag));
+				}
+			}
+
+			if (this.transformationDisabled || pd.getBoolean("dmz_quest_no_transform")) {
+				newEntity.setTransformationDisabled(true);
+				newEntity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
 			}
 
 			level.addFreshEntity(newEntity);

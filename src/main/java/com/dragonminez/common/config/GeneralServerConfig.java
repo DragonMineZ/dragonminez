@@ -6,20 +6,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 @NoArgsConstructor
 public class GeneralServerConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
+	private String configVersion;
 
 	private WorldGenConfig worldGen = new WorldGenConfig();
 	private GameplayConfig gameplay = new GameplayConfig();
@@ -27,7 +22,19 @@ public class GeneralServerConfig {
 	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
+	private CraftingConfig crafting = new CraftingConfig();
 	private StorageConfig storage = new StorageConfig();
+	private DeveloperConfig developer = new DeveloperConfig();
+
+	@Getter
+	@NoArgsConstructor
+	public static class DeveloperConfig {
+		private Boolean reportJsonProblemsInChat = true;
+
+		public Boolean isReportJsonProblemsInChat() {
+			return reportJsonProblemsInChat == null || reportJsonProblemsInChat;
+		}
+	}
 
 	@Getter
 	@NoArgsConstructor
@@ -40,6 +47,9 @@ public class GeneralServerConfig {
 		private Integer structureMinDistanceFromSpawn = 0;
 		private Integer structureMaxDistanceFromSpawn = 4000;
 		private Integer structureMinDistanceBetween = 250;
+
+		private Integer structureSpacing = 6000;
+		private Integer structureSeparation = 2000;
 
 		public Integer getDBSpawnRange() {
 			return Math.max(100, Math.min(dbSpawnRange, 6000));
@@ -63,6 +73,16 @@ public class GeneralServerConfig {
 			int value = structureMinDistanceBetween != null ? structureMinDistanceBetween : 250;
 			return Math.max(0, value);
 		}
+
+		public Integer getStructureSpacingBlocks() {
+			int value = structureSpacing != null ? structureSpacing : 6000;
+			return Math.max(256, value);
+		}
+
+		public Integer getStructureSeparationBlocks() {
+			int value = structureSeparation != null ? structureSeparation : 2000;
+			return Math.max(0, Math.min(value, getStructureSpacingBlocks() - 16));
+		}
 	}
 
 	@Getter
@@ -70,13 +90,14 @@ public class GeneralServerConfig {
 	public static class GameplayConfig {
 		private Boolean forceCharacterCreation = true;
 		private Boolean commandOutputOnConsole = true;
-		private Integer reviveCooldownSeconds = 300;
+		private Integer reviveCooldownSeconds = 180;
 		private Boolean babaTempReturnEnabled = true;
 		private Integer babaTempReturnSeconds = 3600;
 		private Integer babaTempReturnLimit = 3;
 		private Boolean babaHardcoreEnabled = false;
 		private Double babaHardcoreCooldownGrowth = 0.5;
 		private Double tpGainMultiplier = 1.0;
+		private Double increaseTPGainRelativeToTPCost = 0.5;
 		private Double globalTPCostMultiplier = 1.0;
 		private Integer minTPCost = 16;
 		private Integer maxTPDiscount = 140;
@@ -87,7 +108,7 @@ public class GeneralServerConfig {
 		private Integer tpPerBlockMined = 1;
 		private Integer tpPerItemCrafted = 1;
 		private Boolean gravityBonusEnabled = true;
-		private Double HTCTpMultiplier = 2.5;
+		private Double HTCTpMultiplier = 1.75;
 		private Double otherworldDeadTpMultiplier = 2.0;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
@@ -96,6 +117,7 @@ public class GeneralServerConfig {
 		private Boolean createDefaultSagas = true;
 		private Boolean sideQuestsEnabled = true;
 		private Boolean createDefaultSideQuests = true;
+		private Boolean autoUpdateQuests = true;
 		private Double defaultQuestPartyMultiplier = 1.45;
 		private Integer senzuCooldownTicks = 240;
 		private Integer senzuGiftCooldownTicks = 18000;
@@ -112,6 +134,8 @@ public class GeneralServerConfig {
 		private Integer partyMaxMembers = -1;
 		private Integer partyMaxLevelGap = 500;
 		private Double partyTpShareRatio = 0.5;
+		private Double enemyHealthPerPartyPlayer = 1.25;
+		private Double enemyDamagePerPartyPlayer = 1.1;
 		private Integer instantTransmissionPlayerRangePerLevel = 200;
 
 		private Double easyModeHPMultiplier = 0.75;
@@ -122,6 +146,9 @@ public class GeneralServerConfig {
 		private Double hardModeDamageMultiplier = 1.5;
 		private Double hardModeTPMultiplier = 1.25;
 		private Double hardModeQuestRewardMultiplier = 1.25;
+
+		/** TP reward decay applied per story reset (wish): run 1 = 100%, run 2 = 50%, run 3 = 25%, ... Set to 1.0 to disable. */
+		private Double storyResetTPMultiplier = 0.5;
 
 		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
 				"dragonminez:invencible_armor_helmet",
@@ -146,7 +173,8 @@ public class GeneralServerConfig {
 		public List<TpBoost> getTpGainBoosts(TpSource source) {
 			if (tpGainBoosts == null) return Arrays.asList(TpBoost.values());
 			List<TpBoost> boosts = tpGainBoosts.get(source);
-			return boosts != null ? boosts : List.of();
+			if (boosts == null) return List.of();
+			return boosts.stream().filter(Objects::nonNull).toList();
 		}
 
 		public Integer getReviveCooldownSeconds() {
@@ -183,6 +211,10 @@ public class GeneralServerConfig {
 
 		public Double getTpsGainMultiplier() {
 			return Math.max(0, Math.min(tpGainMultiplier, Double.MAX_VALUE));
+		}
+
+		public Double getIncreaseTPGainRelativeToTPCost() {
+			return Math.max(0.0, increaseTPGainRelativeToTPCost != null ? increaseTPGainRelativeToTPCost : 0.5);
 		}
 
 		public Double getGlobalTpCostMultiplier() {
@@ -272,6 +304,14 @@ public class GeneralServerConfig {
 			return Math.max(0.0, Math.min(partyTpShareRatio, 10.0));
 		}
 
+		public Double getEnemyHealthPerPartyPlayer() {
+			return Math.max(1.0, enemyHealthPerPartyPlayer != null ? enemyHealthPerPartyPlayer : 1.25);
+		}
+
+		public Double getEnemyDamagePerPartyPlayer() {
+			return Math.max(1.0, enemyDamagePerPartyPlayer != null ? enemyDamagePerPartyPlayer : 1.1);
+		}
+
 		public Integer getInstantTransmissionPlayerRangePerLevel() {
 			if (instantTransmissionPlayerRangePerLevel == null) return 200;
 			return Math.max(0, Math.min(instantTransmissionPlayerRangePerLevel, Integer.MAX_VALUE));
@@ -311,6 +351,10 @@ public class GeneralServerConfig {
 
 		public Double getHardModeQuestRewardMultiplier() {
 			return Math.max(0.0, hardModeQuestRewardMultiplier != null ? hardModeQuestRewardMultiplier : 1.25);
+		}
+
+		public Double getStoryResetTPMultiplier() {
+			return Math.min(1.0, Math.max(0.0, storyResetTPMultiplier != null ? storyResetTPMultiplier : 0.5));
 		}
 	}
 
@@ -378,15 +422,16 @@ public class GeneralServerConfig {
 		private Boolean humanRacialSkill = true;
 		private Double humanKiRegenBoost = 1.40;
 		private Boolean saiyanRacialSkill = true;
+		private Integer saiyanZenkaiMinLevel = 100;
 		private Integer saiyanZenkaiAmount = 3;
 		private Double saiyanZenkaiHealthRegen = 0.20;
-		private Double saiyanZenkaiStatBoost = 0.10;
+		private Double saiyanZenkaiStatBoost = 0.075;
 		private String[] saiyanZenkaiBoosts = {"STR", "SKP", "PWR"};
 		private Integer saiyanZenkaiCooldownSeconds = 900;
 		private Boolean namekianRacialSkill = true;
 		private Integer namekianAssimilationAmount = 4;
 		private Double namekianAssimilationHealthRegen = 0.35;
-		private Double namekianAssimilationStatBoost = 0.15;
+		private Double namekianAssimilationStatBoost = 0.075;
 		private String[] namekianAssimilationBoosts = {"STR", "SKP", "PWR"};
 		private Boolean namekianAssimilationOnNamekNpcs = true;
 		private Boolean frostDemonRacialSkill = true;
@@ -406,6 +451,10 @@ public class GeneralServerConfig {
 
 		public Double getHumanKiRegenBoost() {
 			return Math.max(0, Math.min(humanKiRegenBoost, Double.MAX_VALUE));
+		}
+
+		public Integer getSaiyanZenkaiMinLevel() {
+			return Math.max(0, Math.min(saiyanZenkaiMinLevel != null ? saiyanZenkaiMinLevel : 100, Integer.MAX_VALUE));
 		}
 
 		public Integer getSaiyanZenkaiAmount() {
@@ -479,10 +528,10 @@ public class GeneralServerConfig {
 
 		private Double strPracticeMultiplier = 1.0;
 		private Double skpPracticeMultiplier = 1.0;
-		private Double resPracticeMultiplier = 1.0;
-		private Double vitPracticeMultiplier = 1.0;
+		private Double resPracticeMultiplier = 1.5;
+		private Double vitPracticeMultiplier = 0.5;
 		private Double pwrPracticeMultiplier = 1.0;
-		private Double enePracticeMultiplier = 1.0;
+		private Double enePracticeMultiplier = 1.5;
 
 		private Double staminaSpentXpRatio = 0.1;
 		private Double energySpentXpRatio = 0.1;
@@ -519,10 +568,10 @@ public class GeneralServerConfig {
 			return switch (statName.toUpperCase()) {
 				case "STR" -> clampNonNeg(strPracticeMultiplier, 1.0);
 				case "SKP" -> clampNonNeg(skpPracticeMultiplier, 1.0);
-				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.0);
-				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 1.0);
+				case "RES" -> clampNonNeg(resPracticeMultiplier, 1.5);
+				case "VIT" -> clampNonNeg(vitPracticeMultiplier, 0.5);
 				case "PWR" -> clampNonNeg(pwrPracticeMultiplier, 1.0);
-				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.0);
+				case "ENE" -> clampNonNeg(enePracticeMultiplier, 1.5);
 				default -> 1.0;
 			};
 		}
@@ -671,6 +720,11 @@ public class GeneralServerConfig {
 		private Double tpHeavyMultiplier = 2.5;
 		private Double maxWeightPenalty = 0.6;
 		private Double maxWeightRequested = 100000d;
+
+		private Double gravityRoomMk2Relief = 0.5;
+		private Double gravityRoomMk2Falloff = 3.0;
+		private Double gravityRoomMk3Relief = 0.8;
+		private Double gravityRoomMk3Falloff = 1.5;
 
 		private Double loadDrainComfort = 1.15;
 		private Double loadDrainIdeal = 1.3;
@@ -859,6 +913,24 @@ public class GeneralServerConfig {
 			return Math.max(0.0, Math.min(value, Double.MAX_VALUE));
 		}
 
+		public Double getGravityRoomMk2Relief() {
+			Double value = gravityRoomMk2Relief != null ? gravityRoomMk2Relief : 0.5;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getGravityRoomMk2Falloff() {
+			return clampNonNeg(gravityRoomMk2Falloff, 3.0);
+		}
+
+		public Double getGravityRoomMk3Relief() {
+			Double value = gravityRoomMk3Relief != null ? gravityRoomMk3Relief : 0.8;
+			return Math.max(0.0, Math.min(value, 1.0));
+		}
+
+		public Double getGravityRoomMk3Falloff() {
+			return clampNonNeg(gravityRoomMk3Falloff, 1.5);
+		}
+
 		public Double getLoadDrainComfort() {
 			return Math.max(0.0, loadDrainComfort != null ? loadDrainComfort : 1.15);
 		}
@@ -979,5 +1051,17 @@ public class GeneralServerConfig {
 		public Boolean getKeepMutantOnDeath() {
 			return keepMutantOnDeath != null && keepMutantOnDeath;
 		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class CraftingConfig {
+		private Boolean copyEnchantmentsFromTemplate = false;
+		private Boolean copyWeaponLevelFromTemplate = false;
+		private Boolean copyWeaponLevelProgressFromTemplate = false;
+		private Boolean copyApotheosisRarityFromTemplate = false;
+		private Boolean copyApotheosisAffixesFromTemplate = false;
+		private Boolean copyApotheosisSocketsFromTemplate = false;
+		private Boolean copyApotheosisGemsFromTemplate = false;
 	}
 }

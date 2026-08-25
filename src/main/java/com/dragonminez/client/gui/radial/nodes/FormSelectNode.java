@@ -4,6 +4,7 @@ import com.dragonminez.client.gui.radial.AbstractRadialNode;
 import com.dragonminez.client.gui.radial.FormPreview;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.network.C2S.ExecuteActionC2S;
 import com.dragonminez.common.network.C2S.SelectFormC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsData;
@@ -83,6 +84,13 @@ public class FormSelectNode extends AbstractRadialNode {
 	@Override
 	public void onSelect(StatsData stats) {
 		NetworkHandler.sendToServer(new SelectFormC2S(group, form, stack));
+		playToggle(true);
+	}
+
+	@Override
+	public void onDoubleSelect(StatsData stats) {
+		NetworkHandler.sendToServer(new SelectFormC2S(group, form, stack));
+		NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
 		playToggle(true);
 	}
 }

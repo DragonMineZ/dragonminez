@@ -22,6 +22,7 @@ public class StorageManager {
 	private static IDataStorage activeStorage;
 	private static ScheduledExecutorService autoSaveScheduler;
 	private static ExecutorService dbExecutor;
+	private static final ConcurrentHashMap<UUID, CompletableFuture<Void>> saveChains = new ConcurrentHashMap<>();
 
 	public static void init() {
 		GeneralServerConfig.StorageConfig.StorageType type = ConfigManager.getServerConfig().getStorage().getStorageType();
@@ -38,6 +39,9 @@ public class StorageManager {
 		if (activeStorage != null) {
 			activeStorage.init();
 			int threads = ConfigManager.getServerConfig().getStorage().getThreadPoolSize();
+			if (dbExecutor != null) {
+				shutdownDbExecutor();
+			}
 			dbExecutor = Executors.newFixedThreadPool(threads);
 			LogUtil.info(Env.SERVER, "Storage initialized with " + threads + " async threads.");
 			startAutoSave();
@@ -65,6 +69,22 @@ public class StorageManager {
 		}
 		if (activeStorage != null) {
 			activeStorage.shutdown();
+		}
+		if (dbExecutor != null) {
+			shutdownDbExecutor();
+			dbExecutor = null;
+		}
+	}
+
+	private static void shutdownDbExecutor() {
+		dbExecutor.shutdown();
+		try {
+			if (!dbExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+				dbExecutor.shutdownNow();
+			}
+		} catch (InterruptedException e) {
+			dbExecutor.shutdownNow();
+			Thread.currentThread().interrupt();
 		}
 	}
 
@@ -121,12 +141,17 @@ public class StorageManager {
 			String name = player.getScoreboardName();
 			UUID uuid = player.getUUID();
 
-			dbExecutor.submit(() -> {
-				try {
-					activeStorage.saveData(uuid, name, dataToSave);
-				} catch (Exception e) {
-					LogUtil.error(Env.SERVER, "Failed to save data async for " + name, e);
-				}
+			saveChains.compute(uuid, (id, previous) -> {
+				CompletableFuture<Void> previousStage = previous != null ? previous : CompletableFuture.completedFuture(null);
+				CompletableFuture<Void> chained = previousStage.thenRunAsync(() -> {
+					try {
+						activeStorage.saveData(uuid, name, dataToSave);
+					} catch (Exception e) {
+						LogUtil.error(Env.SERVER, "Failed to save data async for " + name, e);
+					}
+				}, dbExecutor);
+				chained.whenComplete((v, ex) -> saveChains.remove(uuid, chained));
+				return chained;
 			});
 		});
 	}

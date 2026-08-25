@@ -24,5 +24,18 @@ public class DMZEntityTypeTagGenerator extends EntityTypeTagsProvider {
 				.add(MainEntities.SAGA_FRIEZA_SOLDIER.get())
 				.add(MainEntities.SAGA_FRIEZA_SOLDIER2.get())
 				.add(MainEntities.SAGA_FRIEZA_SOLDIER3.get());
+
+		this.tag(MainTags.EntityTypes.SAIBAMEN)
+				.add(MainEntities.SAGA_SAIBAMAN.get())
+				.add(MainEntities.SAGA_SAIBAMAN2.get())
+				.add(MainEntities.SAGA_SAIBAMAN3.get())
+				.add(MainEntities.SAGA_SAIBAMAN4.get())
+				.add(MainEntities.SAGA_SAIBAMAN5.get())
+				.add(MainEntities.SAGA_SAIBAMAN6.get());
+
+		this.tag(MainTags.EntityTypes.RED_RIBBON_ROBOTS)
+				.add(MainEntities.RED_RIBBON_ROBOT1.get())
+				.add(MainEntities.RED_RIBBON_ROBOT2.get())
+				.add(MainEntities.RED_RIBBON_ROBOT3.get());
 	}
 }

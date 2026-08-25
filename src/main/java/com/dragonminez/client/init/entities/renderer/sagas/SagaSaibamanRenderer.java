@@ -1,8 +1,8 @@
 package com.dragonminez.client.init.entities.renderer.sagas;
 
-import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.model.sagas.DBSaibamanModel;
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLayer;
+import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaItemInHandLayer;
 import com.dragonminez.common.init.entities.sagas.SagaSaibamanEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -16,6 +16,9 @@ public class SagaSaibamanRenderer<T extends SagaSaibamanEntity> extends GeoEntit
     public SagaSaibamanRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new DBSaibamanModel<>());
         this.shadowRadius = 0.4f;
+
+        this.addRenderLayer(new DMZSagaItemInHandLayer<>(this));
+        this.addRenderLayer(new DMZSagaArmorLayer<>(this));
     }
 
     @Override

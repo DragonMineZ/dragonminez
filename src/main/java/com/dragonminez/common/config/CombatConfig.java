@@ -15,10 +15,10 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class CombatConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
+	private String configVersion;
 
 	private Double staminaConsumptionRatio = 0.083;
 	private Double blockStaminaCost = 0.25;
@@ -26,8 +26,8 @@ public class CombatConfig {
 	private Integer baselineFormDrain = 80;
 	private Boolean killPlayersOnCombatLogout = true;
 
-	private Double kiProtectionMitigationPerLevel = 0.01;
-	private Double kiProtectionCostRatio = 0.5;
+	private Double kiProtectionMitigationPerLevel = 0.025;
+	private Double kiProtectionCostRatio = 0.15;
 
 	private Double kiInfusionDamagePerLevel = 0.025;
 	private Double kiInfusionBaseCostPct = 2.5;
@@ -37,8 +37,19 @@ public class CombatConfig {
 	private Double enchantmentDamageReductionCap = 0.85;
 	private Double defenseDecayOnGuardBreak = 0.66;
 	private Double flatMitigationFactor = 0.10;
-	private Double flatMitigationMaxAbsorbFraction = 0.5;
-	private Double defenseReductionScale = 0.25;
+	private Double flatMitigationMaxAbsorbFraction = 0.82;
+	private Double defenseReductionScale = 0.11;
+
+	private Boolean enableAdaptativeDefenseMitigation = true;
+	private Double adaptativeMitigationParityRatio = 1.0;
+	private Double adaptativeMitigationParityValue = 0.25;
+	private Double adaptativeMitigationZeroRatio = 5.0;
+	private Double adaptativeDefenseMitigationCap = 0.65;
+
+	private Boolean cancelDamageEventIfMitigationTooHigh = true;
+	private Double cancelDamageMitigationThreshold = 2.5;
+
+	private Boolean accurateMobBattlePower = true;
 
 	private Boolean enableBlocking = true;
 	private Boolean enableParrying = true;
@@ -128,11 +139,43 @@ public class CombatConfig {
 	}
 
 	public double getFlatMitigationMaxAbsorbFraction() {
-		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.5;
+		return flatMitigationMaxAbsorbFraction != null ? Math.max(0.0, Math.min(1.0, flatMitigationMaxAbsorbFraction)) : 0.82;
 	}
 
 	public double getDefenseReductionScale() {
-		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.25;
+		return defenseReductionScale != null ? Math.max(0.01, defenseReductionScale) : 0.11;
+	}
+
+	public boolean getEnableAdaptativeDefenseMitigation() {
+		return enableAdaptativeDefenseMitigation == null || enableAdaptativeDefenseMitigation;
+	}
+
+	public double getAdaptativeMitigationParityRatio() {
+		return adaptativeMitigationParityRatio != null ? Math.max(1.0E-4, adaptativeMitigationParityRatio) : 1.0;
+	}
+
+	public double getAdaptativeMitigationParityValue() {
+		return adaptativeMitigationParityValue != null ? Math.max(0.0, Math.min(1.0, adaptativeMitigationParityValue)) : 0.25;
+	}
+
+	public double getAdaptativeMitigationZeroRatio() {
+		return adaptativeMitigationZeroRatio != null ? Math.max(getAdaptativeMitigationParityRatio() + 1.0E-4, adaptativeMitigationZeroRatio) : 5.0;
+	}
+
+	public double getAdaptativeDefenseMitigationCap() {
+		return adaptativeDefenseMitigationCap != null ? Math.max(0.0, Math.min(1.0, adaptativeDefenseMitigationCap)) : 0.70;
+	}
+
+	public boolean getCancelDamageEventIfMitigationTooHigh() {
+		return cancelDamageEventIfMitigationTooHigh == null || cancelDamageEventIfMitigationTooHigh;
+	}
+
+	public double getCancelDamageMitigationThreshold() {
+		return cancelDamageMitigationThreshold != null ? Math.max(1.0, cancelDamageMitigationThreshold) : 3.0;
+	}
+
+	public boolean getAccurateMobBattlePower() {
+		return accurateMobBattlePower == null || accurateMobBattlePower;
 	}
 
 	public KiWeaponConfig getKiWeaponConfig(String type) {

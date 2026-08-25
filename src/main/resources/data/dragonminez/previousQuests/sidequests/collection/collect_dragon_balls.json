@@ -1,0 +1,44 @@
+{
+  "id": "collect_dragon_balls",
+  "title": "dmz.sidequest.collect_dballs.name",
+  "description": "dmz.sidequest.collect_dballs.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 5
+      },
+      {
+        "type": "QUEST",
+        "questId": "bulma_radar_parts"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "DRAGON_SUMMON",
+      "dragon": "shenron",
+      "ball_set": "earth"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 6600
+    }
+  ]
+}

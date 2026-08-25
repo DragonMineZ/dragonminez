@@ -12,18 +12,22 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class RaceStatsConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
 
 	@Setter
-	private double configVersion;
-
+	private String configVersion;
 	private final Map<String, ClassStats> classes = new HashMap<>();
+	private static final int MAX_TRACKED_CLASSES = 64;
 
 	public ClassStats getClassStats(String characterClass) {
-		if (!this.classes.containsKey(characterClass)) {
-			this.classes.put(characterClass, new ClassStats());
+		ClassStats existing = this.classes.get(characterClass);
+		if (existing != null) return existing;
+		if (characterClass != null && this.classes.size() < MAX_TRACKED_CLASSES) {
+			ClassStats created = new ClassStats();
+			this.classes.put(characterClass, created);
+			return created;
 		}
-		return this.classes.get(characterClass);
+		return new ClassStats();
 	}
 
 	public Collection<String> getAllClasses() {
@@ -36,11 +40,11 @@ public class RaceStatsConfig {
 	public static class ClassStats {
 		private BaseStats baseStats = new BaseStats();
 		private StatScaling statScaling = new StatScaling();
-		private Double baseHp5 = 5.0;
-		private Double hp5VitScaling = 0.05;
+		private Double baseHp5 = 1.25;
+		private Double hp5VitScaling = 0.0375;
 
 		private Double baseEp5 = 10.0;
-		private Double ep5EneScaling = 0.1;
+		private Double ep5EneScaling = 0.2;
 
 		private Double baseSp5 = 10.0;
 		private Double sp5StmScaling = 0.1;

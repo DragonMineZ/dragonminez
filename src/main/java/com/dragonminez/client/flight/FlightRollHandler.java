@@ -41,8 +41,8 @@ public class FlightRollHandler {
 		if (isPlayerFlying(player) && FlySkillEvent.getInstance().isFlyingFast(player)) {
 
 			float input = 0;
-			if (player.input.left) input += 1;
-			if (player.input.right) input -= 1;
+			if (player.input.left) input -= 1;
+			if (player.input.right) input += 1;
 
 			float keyForce = input * ROLL_ACCELERATION;
 			float mouseForce = deltaYaw * MOUSE_SENSITIVITY;

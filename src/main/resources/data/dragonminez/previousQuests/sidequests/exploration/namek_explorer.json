@@ -1,0 +1,37 @@
+{
+  "id": "namek_explorer",
+  "title": "dmz.sidequest.namek_explorer.name",
+  "description": "dmz.sidequest.namek_explorer.desc",
+  "type": "SIDEQUEST",
+  "category": "exploration",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 8
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "BIOME",
+      "biome": "dragonminez:ajissa_plains"
+    },
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:village_ajissa"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1600
+    }
+  ]
+}

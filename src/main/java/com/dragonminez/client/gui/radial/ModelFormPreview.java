@@ -48,16 +48,16 @@ public final class ModelFormPreview {
 			InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
+			graphics.pose().popPose();
+
+			player.yBodyRot = yBodyRotO;
+			player.setYRot(yRotO);
+			player.setXRot(xRotO);
+			player.yHeadRotO = yHeadRotO;
+			player.yHeadRot = yHeadRot;
+
+			restorePreview(swap);
 		}
-		graphics.pose().popPose();
-
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
-
-		restorePreview(swap);
 	}
 
 	private static int adjustedScale(int baseScale) {

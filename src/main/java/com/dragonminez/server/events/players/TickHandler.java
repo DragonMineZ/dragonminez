@@ -9,6 +9,7 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.item.PothalaPairItem;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
@@ -24,7 +25,9 @@ import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
+import com.dragonminez.common.util.CuriosUtil;
 import com.dragonminez.common.util.TransformationItemCostHelper;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
@@ -32,6 +35,7 @@ import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.BabaReviveService;
+import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.GravityStateSync;
 import com.dragonminez.server.util.PotionEffectHelper;
@@ -71,16 +75,18 @@ public class TickHandler {
 	private static final int REGEN_INTERVAL = 20;
 	private static final int SYNC_INTERVAL = 10;
 	private static final int FORCED_KILL_GRACE_TICKS = 40;
+	private static final int OTHERWORLD_TP_GRACE_TICKS = 10;
 	private static final int AURA_LIGHT_INTERVAL = 2;
 	private static final int AURA_LIGHT_LEVEL = 12;
 	private static final int AURA_LIGHT_STEP = 1;
-	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
+	public static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
 	private static final Map<UUID, Integer> masterySecondsByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> chargeTicksByPlayer = new HashMap<>();
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
 	private static final Map<UUID, Integer> auraLightLevels = new HashMap<>();
 	private static final Map<UUID, Integer> forceKillGraceByPlayer = new HashMap<>();
+	private static final Map<UUID, Integer> otherworldTpGraceByPlayer = new HashMap<>();
 
 	static {
 		registerActionModeHandlers();
@@ -136,6 +142,14 @@ public class TickHandler {
 				}
 			}
 
+            boolean flyingSkillActive = data.getSkills().isSkillActive("fly");
+            if (flyingSkillActive && serverPlayer.getDeltaMovement().y < 0.0D
+                    && !TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data)) {
+                serverPlayer.setDeltaMovement(serverPlayer.getDeltaMovement().x, 0.0D, serverPlayer.getDeltaMovement().z);
+                serverPlayer.resetFallDistance();
+                serverPlayer.hasImpulse = true;
+            }
+
 			if (!isStunned) handleTechniqueCharge(serverPlayer, data);
 
 			boolean shouldRegen = tickCounter >= REGEN_INTERVAL && !serverPlayer.isDeadOrDying();
@@ -189,7 +203,10 @@ public class TickHandler {
 			boolean wasExecuting = serverPlayer.getPersistentData().getBoolean("dmz_was_executing_ki");
 
 			if (isMovementRestricted) {
-				serverPlayer.setDeltaMovement(0, serverPlayer.getDeltaMovement().y < 0 ? serverPlayer.getDeltaMovement().y : 0, 0);
+				boolean flying = data.getSkills().isSkillActive("fly");
+				double restrictedY = flying ? 0.0D : Math.min(serverPlayer.getDeltaMovement().y, 0.0D);
+				serverPlayer.setDeltaMovement(0, restrictedY, 0);
+				if (flying) serverPlayer.resetFallDistance();
 				serverPlayer.hasImpulse = true;
 				serverPlayer.setJumping(false);
 				serverPlayer.setSprinting(false);
@@ -204,8 +221,82 @@ public class TickHandler {
 				}
 
 				serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", true);
-			} else if (wasExecuting) {
-				serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+			} else {
+
+
+				if (wasExecuting) serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+			}
+
+			if (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
+				serverPlayer.setDeltaMovement(0, Math.min(serverPlayer.getDeltaMovement().y, 0.0D), 0);
+				serverPlayer.hasImpulse = true;
+				serverPlayer.setJumping(false);
+				serverPlayer.setSprinting(false);
+				serverPlayer.setYRot(serverPlayer.yRotO);
+				serverPlayer.setXRot(serverPlayer.xRotO);
+				serverPlayer.yHeadRot = serverPlayer.yHeadRotO;
+				serverPlayer.yBodyRot = serverPlayer.yBodyRotO;
+			}
+
+			if (serverPlayer.tickCount % 10 == 0
+					&& data.getStatus().getPotaraPoseTimer() == 0
+					&& !data.getStatus().isFused()
+					&& data.getStatus().getFusionPartnerUUID() == null) {
+				ItemStack head = CuriosUtil.getFirstStackForItem(serverPlayer, "head_tech", "pothala");
+				Item counterpart = pothalaLeftCounterpart(head.getItem());
+				int pairId = counterpart != null ? PothalaPairItem.getPairId(head) : 0;
+				if (pairId != 0) {
+					for (ServerPlayer other : serverPlayer.level().getEntitiesOfClass(ServerPlayer.class,
+							serverPlayer.getBoundingBox().inflate(20.0D), p -> p != serverPlayer)) {
+						StatsData otherData = StatsProvider.get(StatsCapability.INSTANCE, other).orElse(null);
+						if (otherData == null || otherData.getStatus().getPotaraPoseTimer() > 0
+								|| otherData.getStatus().isFused() || otherData.getStatus().getFusionPartnerUUID() != null) continue;
+						if (serverPlayer.distanceTo(other) > 20.0f) continue;
+						ItemStack otherHead = CuriosUtil.getFirstStackForItem(other, "head_tech", "pothala");
+						if (otherHead.getItem() == counterpart && PothalaPairItem.getPairId(otherHead) == pairId) {
+							startPotaraPose(serverPlayer, data, other, otherData);
+							break;
+						}
+					}
+				}
+			}
+
+			if (data.getStatus().getPotaraPoseTimer() > 0) {
+				UUID potaraPartnerUUID = data.getStatus().getPotaraPartnerUUID();
+				ServerPlayer potaraPartner = potaraPartnerUUID != null ? serverPlayer.getServer().getPlayerList().getPlayer(potaraPartnerUUID) : null;
+				if (potaraPartner == null || !potaraPartner.isAlive() || serverPlayer.distanceTo(potaraPartner) > 24.0f) {
+					clearPotaraPose(data);
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				} else {
+					int elapsed = data.getStatus().getPotaraPoseTimer();
+					double dx = potaraPartner.getX() - serverPlayer.getX();
+					double dy = potaraPartner.getY() - serverPlayer.getY();
+					double dz = potaraPartner.getZ() - serverPlayer.getZ();
+					double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+					double speed = Math.min(2.5, 0.02 + elapsed * elapsed * 0.0015);
+					if (dist > 0.05) {
+						double step = Math.min(speed, dist) / dist;
+						serverPlayer.setDeltaMovement(dx * step, dy * step, dz * step);
+						serverPlayer.hurtMarked = true;
+					} else {
+						serverPlayer.setDeltaMovement(0, 0, 0);
+					}
+					serverPlayer.setJumping(false);
+					serverPlayer.setSprinting(false);
+					serverPlayer.fallDistance = 0;
+					data.getStatus().setPotaraPoseTimer(elapsed + 1);
+
+					if (data.getStatus().isPotaraLeader() && (dist < 1.4 || elapsed > 200)) {
+						clearPotaraPose(data);
+						StatsData partnerData = StatsProvider.get(StatsCapability.INSTANCE, potaraPartner).orElse(null);
+						if (partnerData != null) {
+							clearPotaraPose(partnerData);
+							FusionLogic.executePothala(serverPlayer, potaraPartner, data, partnerData);
+						} else {
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+						}
+					}
+				}
 			}
 
 			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
@@ -250,8 +341,14 @@ public class TickHandler {
 					data.getStatus().setRenderKatana(renderKatanaTarget);
 				}
 
-				ItemStack backItem = ItemStack.EMPTY;
-				boolean holdingOtherWeapon = false;
+				// backWeapon names the weapon the player OWNS, whether it is in hand or not, so
+				// it does not change when the weapon is merely drawn or stowed. That matters:
+				// this block runs only every 5 ticks and then still has to reach the client, so
+				// a field that flipped on every draw would leave the client disagreeing for up
+				// to 500ms with the hand it can already see, and the sheath would blink out.
+				// The client derives drawn state from the held item instead, which is instant.
+				ItemStack heldWeapon = ItemStack.EMPTY;
+				ItemStack stowedWeapon = ItemStack.EMPTY;
 				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
 					ItemStack stack = serverPlayer.getInventory().getItem(i);
 					if (stack.isEmpty()) continue;
@@ -259,24 +356,47 @@ public class TickHandler {
 
 					if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get() || item == MainItems.POWER_POLE.get()) {
 						boolean isHeld = serverPlayer.getMainHandItem().getItem() == item || serverPlayer.getOffhandItem().getItem() == item;
-						if (isHeld) holdingOtherWeapon = true;
-						else if (backItem == ItemStack.EMPTY) backItem = item.getDefaultInstance();
+						if (isHeld) {
+							if (heldWeapon == ItemStack.EMPTY) heldWeapon = item.getDefaultInstance();
+						} else if (stowedWeapon == ItemStack.EMPTY) {
+							stowedWeapon = item.getDefaultInstance();
+						}
 					}
 				}
+
+				// A held weapon takes the slot, because its sheath is the one that should stay
+				// on the back. The Z Sword is the exception: it has no sheath bone and renders
+				// nothing while held, so letting it claim the slot would blank the back and
+				// hide a weapon that is genuinely stowed there.
+				boolean heldHasSheath = heldWeapon != ItemStack.EMPTY && heldWeapon.getItem() != MainItems.Z_SWORD.get();
+				ItemStack backItem;
+				if (heldHasSheath) backItem = heldWeapon;
+				else if (stowedWeapon != ItemStack.EMPTY) backItem = stowedWeapon;
+				else backItem = heldWeapon;
+
+				boolean weaponDrawn = heldWeapon != ItemStack.EMPTY;
 
 				String newBackWeapon = backItem != ItemStack.EMPTY ? backItem.getDescriptionId() : "";
 				String currentBackWeapon = data.getStatus().getBackWeapon();
+				// Edge detection only, never read by the client, so it stays out of StatsData and
+				// its save contract. Same idiom as dmz_ki_anim_active further up this method.
+				boolean wasDrawn = serverPlayer.getPersistentData().getBoolean("dmz_weapon_drawn");
 
-				if (!currentBackWeapon.equals(newBackWeapon)) {
-					if (!playedSound) {
-						if (!newBackWeapon.isEmpty()) {
-							serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-						} else if (holdingOtherWeapon) {
-							serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_OUT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-						}
+				if (!playedSound) {
+					if (weaponDrawn && !wasDrawn) {
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_OUT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+					} else if (!weaponDrawn && wasDrawn && !newBackWeapon.isEmpty()) {
+						// Only when it is still owned. Dying with a drawn weapon, dropping it or
+						// clearing it is not sheathing it, and must not play the sheathing sound.
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+					} else if (currentBackWeapon.isEmpty() && !newBackWeapon.isEmpty() && !weaponDrawn) {
+						// Newly acquired and it went straight onto the back.
+						serverPlayer.level().playSound(null, serverPlayer.blockPosition(), MainSounds.SWORD_IN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 					}
-					data.getStatus().setBackWeapon(newBackWeapon);
 				}
+
+				if (weaponDrawn != wasDrawn) serverPlayer.getPersistentData().putBoolean("dmz_weapon_drawn", weaponDrawn);
+				if (!currentBackWeapon.equals(newBackWeapon)) data.getStatus().setBackWeapon(newBackWeapon);
 
 				ItemStack scouterStack = CuriosUtil.getFirstStackForItem(serverPlayer, "head_tech", "scouter");
 				if (!scouterStack.isEmpty()) {
@@ -298,6 +418,8 @@ public class TickHandler {
 				}
 			}
 
+			handleOtherworldTransfer(serverPlayer, data, playerId);
+
 			if (tickCounter % 20 == 0) {
 				handleActionCharge(serverPlayer, data);
 				handleActiveFormDrains(serverPlayer, data);
@@ -306,13 +428,6 @@ public class TickHandler {
 				GravityStateSync.sync(serverPlayer);
 				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 					BabaReviveService.tickTempReturn(serverPlayer, data);
-					if (!data.getStatus().isAlive() && data.getStatus().getTempReturnTimer() <= 0
-							&& !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
-						if (!serverPlayer.isSpectator() && !serverPlayer.isCreative()) {
-							ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
-							serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);
-						}
-					}
 				}
 
 				if (data.getStatus().isAndroidUpgraded() && (data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm() == null)) {
@@ -325,12 +440,36 @@ public class TickHandler {
 		});
 	}
 
+	private static void handleOtherworldTransfer(ServerPlayer serverPlayer, StatsData data, UUID playerId) {
+		boolean shouldTransfer = ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()
+				&& !data.getStatus().isAlive()
+				&& data.getStatus().getTempReturnTimer() <= 0
+				&& !serverPlayer.isSpectator() && !serverPlayer.isCreative()
+				&& !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY);
+
+		if (!shouldTransfer) {
+			otherworldTpGraceByPlayer.remove(playerId);
+			return;
+		}
+
+		int grace = otherworldTpGraceByPlayer.getOrDefault(playerId, 0) + 1;
+		if (grace < OTHERWORLD_TP_GRACE_TICKS) {
+			otherworldTpGraceByPlayer.put(playerId, grace);
+			return;
+		}
+
+		otherworldTpGraceByPlayer.remove(playerId);
+		ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
+		if (otherworld != null) serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);
+	}
+
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) return;
 
         serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
         CHARGING_CACHE.remove(serverPlayer.getUUID());
+        otherworldTpGraceByPlayer.remove(serverPlayer.getUUID());
 
         StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
             data.getStatus().setChargingKi(false);
@@ -579,11 +718,12 @@ public class TickHandler {
 			data.getResources().setCurrentEnergy(newEnergy);
 
 			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
-				data.getCharacter().clearActiveForm(player);
-				data.getCharacter().clearActiveStackForm(player);
+				data.getCharacter().clearActiveForm(player, false);
+				data.getCharacter().clearActiveStackForm(player, false);
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
 				player.refreshDimensions();
+				player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.NO_KI_FORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 				player.sendSystemMessage(Component.translatable("message.dragonminez.form.drained_ki"), true);
 			}
 		}
@@ -902,6 +1042,29 @@ public class TickHandler {
 		return null;
 	}
 
+	private static void clearPotaraPose(StatsData data) {
+		data.getStatus().setPotaraPoseTimer(0);
+		data.getStatus().setPotaraPartnerUUID(null);
+		data.getStatus().setPotaraLeader(false);
+	}
+
+	private static void startPotaraPose(ServerPlayer leader, StatsData leaderData, ServerPlayer partner, StatsData partnerData) {
+		leaderData.getStatus().setPotaraPoseTimer(1);
+		leaderData.getStatus().setPotaraPartnerUUID(partner.getUUID());
+		leaderData.getStatus().setPotaraLeader(true);
+		partnerData.getStatus().setPotaraPoseTimer(1);
+		partnerData.getStatus().setPotaraPartnerUUID(leader.getUUID());
+		partnerData.getStatus().setPotaraLeader(false);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
+	}
+
+	private static Item pothalaLeftCounterpart(Item rightItem) {
+		if (rightItem == MainItems.POTHALA_RIGHT.get()) return MainItems.POTHALA_LEFT.get();
+		if (rightItem == MainItems.GREEN_POTHALA_RIGHT.get()) return MainItems.GREEN_POTHALA_LEFT.get();
+		return null;
+	}
+
 	private static boolean playerOwnsKiProjectile(ServerPlayer player) {
 		List<AbstractKiProjectile> list = player.level().getEntitiesOfClass(
 				AbstractKiProjectile.class, player.getBoundingBox().inflate(48.0D));
@@ -943,7 +1106,7 @@ public class TickHandler {
 
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()
 				&& !SaiyanForms.SUPER_SAIYAN_4.equals(data.getCharacter().getActiveForm())) {
-			data.getCharacter().clearActiveForm(player);
+			TransformationsHelper.revertToBaseForm(player, data);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			player.refreshDimensions();
@@ -962,81 +1125,26 @@ public class TickHandler {
 
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
 
-			double totalOffense = data.getMeleeDamage() + data.getStrikeDamage() + data.getKiDamage();
-			double ratioTolerance = 1.5;
+			int energyDrain = (int) Math.round(data.getEffectiveEnergyDrain());
+			int staminaDrain = (int) Math.round(data.getEffectiveStaminaDrain());
+			double healthDrain = Math.round(data.getEffectiveHealthDrain());
 
-			double formCostMultiplier;
-			boolean hasFormMult = hasActiveForm && data.getCharacter().getActiveFormData() != null;
-			boolean hasStackMult = hasActiveStackForm && data.getCharacter().getActiveStackFormData() != null;
-			if (hasFormMult && hasStackMult) {
-				formCostMultiplier = (data.getCharacter().getActiveFormData().getMaxCostMultiplier()
-						+ data.getCharacter().getActiveStackFormData().getMaxCostMultiplier()) / 2.0;
-			} else if (hasFormMult) {
-				formCostMultiplier = data.getCharacter().getActiveFormData().getMaxCostMultiplier();
-			} else if (hasStackMult) {
-				formCostMultiplier = data.getCharacter().getActiveStackFormData().getMaxCostMultiplier();
-			} else {
-				formCostMultiplier = 1.0;
-			}
-			double offenseCostFactor = Math.min(1.0, formCostMultiplier);
-			double reducedOffense = totalOffense * offenseCostFactor;
-
-			double maxEnergy = data.getMaxEnergy();
-			double baseEnergyDrain = data.getAdjustedEnergyDrain();
-			double finalEnergyDrain = 0.0;
-
-			if (baseEnergyDrain > 0.0) {
-				double energyRatio = Math.max(1.0, reducedOffense / Math.max(1.0, maxEnergy * ratioTolerance));
-
-				double formRawEneDrain = 0.0;
-				if (hasActiveForm && data.getCharacter().getActiveFormData() != null) {
-					formRawEneDrain += Math.max(0.0, data.getCharacter().getActiveFormData().getEnergyDrain());
-				}
-				if (hasActiveStackForm && data.getCharacter().getActiveStackFormData() != null) {
-					formRawEneDrain += Math.max(0.0, data.getCharacter().getActiveStackFormData().getEnergyDrain());
-				}
-
-				double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01) * 0.75;
-				finalEnergyDrain = (baseEnergyDrain * energyRatio) + percentageEnergy;
-			}
-
-			double maxStamina = data.getMaxStamina();
-			double baseStaminaDrain = data.getAdjustedStaminaDrain();
-			double finalStaminaDrain = 0.0;
-
-			if (baseStaminaDrain > 0.0) {
-				double staminaRatio = Math.max(1.0, reducedOffense / Math.max(1.0, maxStamina * ratioTolerance));
-				double percentageStamina = maxStamina * 0.005;
-				finalStaminaDrain = (baseStaminaDrain * staminaRatio) + percentageStamina;
-			}
-
-			double maxHealth = player.getMaxHealth();
-			double baseHealthDrain = data.getAdjustedHealthDrain();
-			double finalHealthDrain = 0.0;
-
-			if (baseHealthDrain > 0.0) {
-				double healthRatio = Math.max(1.0, reducedOffense / Math.max(1.0, maxHealth * ratioTolerance));
-				double percentageHealth = maxHealth * 0.005;
-				finalHealthDrain = (baseHealthDrain * healthRatio) + percentageHealth;
-			}
-
-			int energyDrain = (int) Math.round(finalEnergyDrain);
-			int staminaDrain = (int) Math.round(finalStaminaDrain);
-			double healthDrain = Math.round(finalHealthDrain);
-
-			boolean hasEnoughEnergy = data.getResources().getCurrentEnergy() >= energyDrain;
-			boolean hasEnoughStamina = data.getResources().getCurrentStamina() >= staminaDrain;
-			boolean hasEnoughHealth = player.getHealth() > healthDrain;
+			boolean hasEnoughEnergy = energyDrain <= 0 || data.getResources().getCurrentEnergy() >= energyDrain;
+			boolean hasEnoughStamina = staminaDrain <= 0 || data.getResources().getCurrentStamina() >= staminaDrain;
+			boolean hasEnoughHealth = healthDrain <= 0 || player.getHealth() > healthDrain;
 
 			if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
 				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain);
+				else if (energyDrain < 0) data.getResources().addEnergy(-energyDrain);
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
+				else if (staminaDrain < 0) data.getResources().addStamina(-staminaDrain);
 				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
+				else if (healthDrain < 0) player.setHealth((float) Math.min(player.getMaxHealth(), player.getHealth() - healthDrain));
 			} else {
 				data.getCharacter().clearActiveStackForm(player);
 				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
-				data.getCharacter().clearActiveForm(player);
+				TransformationsHelper.revertToBaseForm(player, data);
 				TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 				player.refreshDimensions();
@@ -1094,7 +1202,7 @@ public class TickHandler {
 
 	private static void clearTransformationForMissingDurationItem(ServerPlayer player, StatsData data, boolean baseForm) {
 		if (baseForm) {
-			data.getCharacter().clearActiveForm(player);
+			TransformationsHelper.revertToBaseForm(player, data);
 			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 		} else {
@@ -1136,9 +1244,7 @@ public class TickHandler {
 	public static void registerStatusEffectHandlers() {
 		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioDrainHandler());
-		STATUS_EFFECT_HANDLERS.add(new DashStatusHandler());
-		STATUS_EFFECT_HANDLERS.add(new DoubleDashStatusHandler());
-		STATUS_EFFECT_HANDLERS.add(new TeleportCdStatusHandler());
+		STATUS_EFFECT_HANDLERS.add(new CooldownEffectHandler());
 		STATUS_EFFECT_HANDLERS.add(new FlyStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new FusionStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new KiChargeStatusHandler());
@@ -1146,8 +1252,6 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MutantStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
-		STATUS_EFFECT_HANDLERS.add(new BioPassiveHandler());
-		STATUS_EFFECT_HANDLERS.add(new MajinReviveHandler());
 		STATUS_EFFECT_HANDLERS.add(new FarmingBuffStatusHandler());
 	}
 

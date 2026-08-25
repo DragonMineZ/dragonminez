@@ -1,0 +1,49 @@
+{
+  "id": "bulma_power_level_detector",
+  "title": "dmz.sidequest.bulma_power_level_detector.name",
+  "description": "dmz.sidequest.bulma_power_level_detector.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_scouter_bioscan"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone",
+      "count": 20
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:glass",
+      "count": 16
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:amethyst_shard",
+      "count": 8
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 36000
+    }
+  ]
+}

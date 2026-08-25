@@ -333,12 +333,14 @@ public class RaceSelectionScreen extends ScaledScreen {
 				int zenkaiHealth = (int) Math.round(config.getSaiyanZenkaiHealthRegen() * 100);
 				int zenkaiStat = (int) Math.round(config.getSaiyanZenkaiStatBoost() * 100);
 				int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-				description = tr(descKey, zenkaiHealth, zenkaiStat, cooldown).getString();
+				int maxUses = config.getSaiyanZenkaiAmount();
+				description = tr(descKey, zenkaiHealth, zenkaiStat, cooldown, maxUses).getString();
 			}
 			case "namekian" -> {
 				int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
 				int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-				description = tr(descKey, assimHealth, assimStat).getString();
+				int maxUses = config.getNamekianAssimilationAmount();
+				description = tr(descKey, assimHealth, assimStat, maxUses).getString();
 			}
 			case "frostdemon" -> {
 				int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
@@ -352,7 +354,8 @@ public class RaceSelectionScreen extends ScaledScreen {
 			case "majin" -> {
 				int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
 				int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-				description = tr(descKey, absHealth, absStat).getString();
+				int maxUses = config.getMajinAbsorptionAmount();
+				description = tr(descKey, absHealth, absStat, maxUses).getString();
 			}
 			default -> description = tr(descKey).getString();
 		}

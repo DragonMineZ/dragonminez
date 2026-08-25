@@ -1,0 +1,51 @@
+{
+  "id": "goku_healing_pod",
+  "title": "dmz.sidequest.goku_healing.name",
+  "description": "dmz.sidequest.goku_healing.desc",
+  "type": "SIDEQUEST",
+  "category": "story",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "goku",
+  "turn_in": "goku",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 11
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "STRUCTURE",
+        "structure": "dragonminez:elder_guru"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_friezasoldier01",
+      "count": 20,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "goku"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 24000
+    }
+  ]
+}

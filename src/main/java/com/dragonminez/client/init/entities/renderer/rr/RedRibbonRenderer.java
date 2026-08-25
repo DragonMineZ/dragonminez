@@ -1,6 +1,8 @@
 package com.dragonminez.client.init.entities.renderer.rr;
 
 import com.dragonminez.client.init.entities.model.rr.RedRibbonModel;
+import com.dragonminez.client.init.entities.renderer.rr.layer.DMZRedRibbonArmorLayer;
+import com.dragonminez.client.init.entities.renderer.rr.layer.DMZRedRibbonItemInHandLayer;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -14,6 +16,9 @@ public class RedRibbonRenderer<T extends RedRibbonEntity> extends GeoEntityRende
     public RedRibbonRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new RedRibbonModel<>());
         this.shadowRadius = 0.8f;
+
+        this.addRenderLayer(new DMZRedRibbonItemInHandLayer<>(this));
+        this.addRenderLayer(new DMZRedRibbonArmorLayer<>(this));
     }
 
     @Override

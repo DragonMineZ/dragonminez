@@ -124,6 +124,11 @@ public final class MainSounds {
     public static final RegistryObject<SoundEvent> MAJIN_ABSORB = registerSoundEvent("majin_absorb");
     public static final RegistryObject<SoundEvent> TRANSFORM_ON = registerSoundEvent("transform_on");
 	public static final RegistryObject<SoundEvent> TRANSFORM_OFF = registerSoundEvent("transform_off");
+    public static final RegistryObject<SoundEvent> INSTA_FORM_ON = registerSoundEvent("insta_form_on");
+    public static final RegistryObject<SoundEvent> INSTA_FORM_OFF = registerSoundEvent("insta_form_off");
+    public static final RegistryObject<SoundEvent> NO_KI_FORM = registerSoundEvent("no_ki_form");
+    public static final RegistryObject<SoundEvent> STACK_FORM = registerSoundEvent("stack_form");
+
     public static final RegistryObject<SoundEvent> FUSION = registerSoundEvent("fusion");
     public static final RegistryObject<SoundEvent> OOZARU_FIST = registerSoundEvent("oozaru_fist");
     public static final RegistryObject<SoundEvent> DRAGON_FIST = registerSoundEvent("dragon_fist");
@@ -156,8 +161,21 @@ public final class MainSounds {
     public static final RegistryObject<SoundEvent> KI_KAME_CHARGE = registerSoundEvent("ki_kame_charge");
     public static final RegistryObject<SoundEvent> KI_KAME_FIRE = registerSoundEvent("ki_kame_fire");
     public static final RegistryObject<SoundEvent> KI_DISK_CHARGE = registerSoundEvent("ki_disk_charge");
+    public static final RegistryObject<SoundEvent> KI_DISK_FIRE = registerSoundEvent("ki_disk_fire");
+    public static final RegistryObject<SoundEvent> KI_BURNING_CHARGE = registerSoundEvent("ki_burning_charge");
+    public static final RegistryObject<SoundEvent> KI_BURNING_FIRE = registerSoundEvent("ki_burning_fire");
+    public static final RegistryObject<SoundEvent> KI_FINALFLASH_CHARGE = registerSoundEvent("ki_finalflash_charge");
+    public static final RegistryObject<SoundEvent> KI_FINALFLASH_FIRE = registerSoundEvent("ki_finalflash_fire");
+    public static final RegistryObject<SoundEvent> KI_SPIRITBOMB_CHARGE = registerSoundEvent("ki_spiritbomb_charge");
+    public static final RegistryObject<SoundEvent> KI_SPIRITBOMB_FIRE = registerSoundEvent("ki_spiritbomb_fire");
+    public static final RegistryObject<SoundEvent> KI_SUPERNOVA_CHARGE = registerSoundEvent("ki_supernova_charge");
+    public static final RegistryObject<SoundEvent> KI_SUPERNOVA_FIRE = registerSoundEvent("ki_supernova_fire");
+    public static final RegistryObject<SoundEvent> KI_BEAM_CHARGE = registerSoundEvent("ki_beam_charge");
+    public static final RegistryObject<SoundEvent> KI_BEAM_FIRE = registerSoundEvent("ki_beam_fire");
 
-	public static final RegistryObject<SoundEvent> OOZARU_HEARTBEAT = registerSoundEvent("oozaru_heartbeat");
+
+
+    public static final RegistryObject<SoundEvent> OOZARU_HEARTBEAT = registerSoundEvent("oozaru_heartbeat");
 	public static final RegistryObject<SoundEvent> OOZARU_GROWL_PLAYER = registerSoundEvent("oozaru_growl_player");
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_GROWL = registerSoundEvent("vegeta_oozaru_growl");
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_DEATH = registerSoundEvent("vegeta_oozaru_death");

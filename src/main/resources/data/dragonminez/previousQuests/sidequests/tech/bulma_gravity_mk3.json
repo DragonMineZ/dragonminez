@@ -1,0 +1,49 @@
+{
+  "id": "bulma_gravity_mk3",
+  "title": "dmz.sidequest.bulma_gravity_mk3.name",
+  "description": "dmz.sidequest.bulma_gravity_mk3.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_gravity_mk2"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 1
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_block",
+      "count": 2
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:netherite_ingot",
+      "count": 2
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 72000
+    }
+  ]
+}

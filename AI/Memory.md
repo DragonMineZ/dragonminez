@@ -110,6 +110,17 @@ Use this schema for each memory entry:
 
 Add durable memories below this line, newest first.
 
+### 2026-07-12 - Post Shaders Must Output Alpha 1.0 Before The Vanilla Blit Pass
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: `src/main/resources/assets/dragonminez/shaders/`
+- Summary: Vanilla's `blit` post program blends with `srcalpha`/`1-srcalpha` (it is not an overwrite), and undrawn horizon/fog pixels in the main buffer carry alpha 0, so a post pass that forwards `color.a` makes the swap-back blit drop those pixels and show the render target's clear color (black horizon, hardware/scene dependent).
+- Guidance: Any `.fsh` used in a `shaders/post` chain whose result is blitted back to `minecraft:main` via the vanilla `blit` pass must write `fragColor` with alpha `1.0` (see `gravity_red.fsh`, `kisense_grayscale.fsh`, `impact_frame.fsh`, `taiyoken_flash.fsh`).
+- Do Not: Do not propagate the sampled framebuffer alpha (`color.a`) through a post pass that feeds the vanilla `blit`.
+- Verification: Stand in an active Gravity Device zone at high gravity and look at the horizon; it must tint red instead of turning black.
+
 ### 2026-05-27 - Contiguous Kill Objectives Track Together
 
 - Type: pitfall

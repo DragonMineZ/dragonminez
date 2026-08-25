@@ -57,4 +57,12 @@ public enum Difficulty {
             case NORMAL -> 1.0;
         };
     }
+
+    public int aiTierId() {
+        return switch (this) {
+            case EASY -> 1;
+            case NORMAL -> 2;
+            case HARD -> 3;
+        };
+    }
 }

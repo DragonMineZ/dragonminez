@@ -1,0 +1,46 @@
+{
+  "id": 1,
+  "title": "dmz.quest.future1.name",
+  "description": "dmz.quest.future1.desc",
+  "type": "SAGA",
+  "category": "saga_future",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 15
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1380
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "TALK_TO",
+      "npcId": "trunks"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 25600
+    }
+  ]
+}

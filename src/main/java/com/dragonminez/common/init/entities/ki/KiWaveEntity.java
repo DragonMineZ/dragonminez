@@ -1,10 +1,13 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.particles.KiLightningParticle;
 import com.dragonminez.common.init.particles.KiSheddingParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -251,7 +254,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
-        this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+        this.playInitialSound(MainSounds.KI_FINALFLASH_CHARGE.get());
         this.setCastOffsets(0.0F, -0.3F, 0.4F);
         updatePositionRelativeToOwner(owner, true);
         if (!this.level().isClientSide) {
@@ -280,6 +283,28 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     public void setupFinalFlashPlayer(LivingEntity owner, float damage, float speed, float size) {
         this.setupFinalFlashPlayer(owner, damage, speed, size, 0xFFFFFF);
+    }
+
+    public void setupDoubleSunday(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime) {
+        this.setKiRenderType(5);
+        this.setSize(size);
+        this.setCastSize(size / 2.0F);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setCastWave(castTime);
+        this.setMaxLife(castTime * 2);
+        this.playInitialSound(MainSounds.KI_FINALFLASH_CHARGE.get());
+        this.setCastOffsets(0.0F, 0.4F, 0.5F);
+        updatePositionRelativeToOwner(owner, true);
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    public void setupDoubleSunday(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
+        this.setupDoubleSunday(owner, damage, speed, color, colorBorder, 0xFFFFFF, size, castTime);
     }
 
     public void setupKiOozaru(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime) {
@@ -494,7 +519,15 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             if (!isFiring) {
                 if (this.tickCount == 1) {
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
+                    if (this.getKiRenderType() == 3 || this.getKiRenderType() == 5) {
+                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_FINALFLASH_CHARGE.get(), SoundSource.HOSTILE, 0.7F, 1.0F);
+                    } else {
+                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.7F, 1.0F);
+                    }
+                }
+
+                if (this.getKiRenderType() == 1 && this.tickCount == 1) {
+                    this.playSound(MainSounds.KI_KAME_CHARGE.get(), 0.7F, 1.0F);
                 }
             } else {
                 if (this.isClashLocked()) {
@@ -510,7 +543,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
                 if (this.tickCount % 5 == 0) {
                     Vec3 tipPosForSound = startPos.add(dir.scale(currentLen));
-                    this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
+                    net.minecraft.sounds.SoundEvent fireSound = (this.getKiRenderType() == 3 || this.getKiRenderType() == 5) ? MainSounds.KI_FINALFLASH_FIRE.get() : MainSounds.KI_KAME_FIRE.get();
+                    this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, fireSound, SoundSource.HOSTILE, 0.7F, 1.0F);
                 }
 
                 float targetLen = currentLen + currentSpeed;
@@ -603,7 +637,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         double vy = offsetY * 0.1D;
         double vz = offsetZ * 0.1D;
 
-        net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+        Particle p = Minecraft.getInstance().particleEngine.createParticle(
                 MainParticles.KI_LIGHTNING.get(),
                 pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ,
                 vx, vy, vz
@@ -618,7 +652,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private boolean destroyBlocksAtTip(Vec3 tipPos) {
         boolean hitSomething = false;
-        float eatRadius = this.scaledDestructionRadius(this.getSize() * 2.5F);
+        float eatRadius = this.scaledDestructionRadius(this.getSize() * 3.2F);
         int bRad = Math.round(eatRadius);
         BlockPos center = BlockPos.containing(tipPos);
         Level level = this.level();
@@ -713,10 +747,12 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private void damageEntitiesInBeam(Vec3 start, Vec3 dir, float length) {
         Vec3 end = start.add(dir.scale(length));
-        double searchRadius = this.getSize() * 1.0;
-        AABB searchBox = new AABB(start, end).inflate(searchRadius);
 
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
+        double cilindroRadio = this.getSize() * 1.5D;
+
+        AABB searchBox = new AABB(start, end).inflate(cilindroRadio);
+
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), searchBox);
         int hitInterval = 20;
 
         for (LivingEntity target : targets) {
@@ -724,10 +760,15 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (target.is(this.getOwner())) continue;
             if (target.invulnerableTime > 0) continue;
 
-            float hitPrecision = this.getSize() / 2.0F;
-            AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
-
-            boolean intersects = targetBox.clip(start, end).isPresent() || targetBox.contains(start);
+            float hitPrecision = (float) cilindroRadio;
+            boolean intersects = false;
+            for (AABB hb : MultipartTargeting.hitBoxes(target)) {
+                AABB targetBox = hb.inflate(hitPrecision);
+                if (targetBox.clip(start, end).isPresent() || targetBox.contains(start)) {
+                    intersects = true;
+                    break;
+                }
+            }
 
             if (intersects) {
                 boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
@@ -752,10 +793,10 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private void explodeAndDie(Vec3 pos) {
-        float explosionRadius = this.getSize() * 4.5F;
+        float explosionRadius = this.getSize() * 5.5F;
 
         AABB damageArea = new AABB(pos, pos).inflate(explosionRadius);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), damageArea);
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
                 boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());

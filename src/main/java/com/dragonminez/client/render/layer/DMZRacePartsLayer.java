@@ -5,6 +5,7 @@ import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
@@ -16,6 +17,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -45,6 +47,14 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation BRAVE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
 	private static final ResourceLocation BRAVE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/brave_sword.png");
 	private static final ResourceLocation POWER_POLE_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
+
+	private static  float BRAVE_BACK_X = 0.7F;
+	private static  float BRAVE_BACK_Y = 2.0F;
+	private static  float BRAVE_BACK_Z = 0.15F;
+	private static  float BRAVE_BACK_ROT_X = 0.0F;
+	private static  float BRAVE_BACK_ROT_Y = 0.0F;
+	private static  float BRAVE_BACK_ROT_Z = 135.0f;
+	private static  float BRAVE_BACK_SCALE = 0.9F;
 	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/weapons/power_pole.png");
 
 	private static final ResourceLocation WEIGHTED_ITEMS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/weighted_items.geo.json");
@@ -154,7 +164,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (partsModel == null) return;
 
 		RenderType partsRenderType = RenderType.entityTranslucent(RACES_PARTS_TEXTURE);
-		int phase = TransformationsHelper.getKaiokenPhase(stats);
+		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
+		float[] formTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
+		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 		float[] topAuraColor = getTopAuraColor(stats);
 
 		float[] accessoryColor = character.getRgbHairColor();
@@ -206,7 +218,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 							colorToTint = resolveBodyColor1(stats);
 						}
 
-						float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], phase, topAuraColor, tintProgress);
+						float[] tintedColor = applyAuraTint(colorToTint[0], colorToTint[1], colorToTint[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 
 						if (boneName.contains("horn") && character.getRaceName().equals("frostdemon")) {
 							tintedColor = ColorUtils.hexToRgb("#1A1A1A");
@@ -232,7 +244,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 						syncTargetBoneAndParents(antennaBone, playerModel);
 					}
 					float[] antennaColor = resolveBodyColor1(stats);
-					float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], phase, topAuraColor, tintProgress);
+					float[] tintedColor = applyAuraTint(antennaColor[0], antennaColor[1], antennaColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				}
 			}
@@ -253,7 +265,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 						syncTargetBoneAndParents(earsBone, playerModel);
 					}
 
-					float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], phase, topAuraColor, tintProgress);
+					float[] tintedColor = applyAuraTint(majinBodyColor[0], majinBodyColor[1], majinBodyColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
 					renderTargetedBone(earsBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				}
 			}
@@ -278,6 +290,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
 
 			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
+				RenderType tailRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
 				partsModel.getBone("tailenrolled").ifPresent(targetBone -> {
 					syncTargetBoneAndParents(targetBone, playerModel);
 					float[] tailColor = ColorUtils.hexToRgb("#572117");
@@ -308,8 +321,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 						}
 					}
 
-					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], phase, topAuraColor, tintProgress);
-					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], formTintColor, formTintIntensity, topAuraColor, tintProgress);
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, tailRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				});
 			}
 		}
@@ -364,15 +377,17 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		return color;
 	}
 
-	private float[] applyAuraTint(float r, float g, float b, int kaiokenPhase, float[] auraColor, float tintProgress) {
-		float intensity = kaiokenPhase > 0 ? Math.min(0.6f, kaiokenPhase * 0.1f) : 0.4f * tintProgress;
+	private float[] applyAuraTint(float r, float g, float b, float[] formTintColor, float formTintIntensity, float[] auraColor, float tintProgress) {
+		boolean hasFormTint = formTintIntensity > 0.0f && formTintColor != null;
+		float intensity = hasFormTint ? Mth.clamp(formTintIntensity, 0.0f, 1.0f) : 0.4f * tintProgress;
 		intensity *= AuraTintTracker.darkTintScale(r, g, b);
 
 		if (intensity <= 0.001f) return new float[]{r, g, b};
 
-		float newR = r * (1.0f - intensity) + (auraColor[0] * intensity);
-		float newG = g * (1.0f - intensity) + (auraColor[1] * intensity);
-		float newB = b * (1.0f - intensity) + (auraColor[2] * intensity);
+		float[] target = hasFormTint ? formTintColor : auraColor;
+		float newR = r * (1.0f - intensity) + (target[0] * intensity);
+		float newG = g * (1.0f - intensity) + (target[1] * intensity);
+		float newB = b * (1.0f - intensity) + (target[2] * intensity);
 
 		return new float[]{newR, newG, newB};
 	}
@@ -427,8 +442,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 	private void renderPothala(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight, ItemStack stack) {
-		boolean hasPothalaRight = stack.getItem().getDescriptionId().contains("pothala_right");
-		boolean hasPothalaLeft = stack.getItem().getDescriptionId().contains("pothala_left");
+		String headTechId = stack.getItem().getDescriptionId();
+		boolean hasPothalaPair = headTechId.contains("pothala_pair");
+		boolean hasPothalaRight = hasPothalaPair || headTechId.contains("pothala_right");
+		boolean hasPothalaLeft = hasPothalaPair || headTechId.contains("pothala_left");
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
@@ -474,7 +491,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
 		if (accModel == null) return;
 
-		RenderType accRenderType = RenderType.entityTranslucentCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
+		RenderType accRenderType = ModRenderTypes.scouterLens(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png"));
 
 		accModel.getBone("radar").ifPresent(bone -> {
 			syncTargetBoneAndParents(bone, playerModel);
@@ -551,27 +568,75 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			}
 		}
 
-		if (stats.getStatus().getBackWeapon() == null || stats.getStatus().getBackWeapon().isEmpty()) return;
+		String backWeapon = stats.getStatus().getBackWeapon();
 
-		if (stats.getStatus().getBackWeapon().equals(MainItems.POWER_POLE.get().getDescriptionId())) {
-			BakedGeoModel powerpole = getGeoModel().getBakedModel(POWER_POLE_MODEL);
-			if (powerpole != null) {
-				RenderType type = RenderType.entityCutoutNoCull(POWER_POLE_TEXTURE);
-				renderWeaponFromBodyAnchor(powerpole, "baculo", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+		if (backWeapon == null || backWeapon.isEmpty()) return;
+
+		// backWeapon only names the weapon the player owns. Whether it is in hand right now
+		// is read straight off the entity, which costs no server round trip, so the sheath
+		// never blinks out while a stale value catches up. Held items are synced for every
+		// player, so this is correct for other players too.
+		if (backWeapon.equals(MainItems.POWER_POLE.get().getDescriptionId())) {
+			renderPowerPoleOnBack(poseStack, animatable, playerBodyBone, bufferSource, partialTick, packedLight, isHolding(animatable, MainItems.POWER_POLE.get()));
+		} else if (backWeapon.equals(MainItems.Z_SWORD.get().getDescriptionId())) {
+			// The Z Sword model carries no sheath bone, so it just leaves the back when drawn.
+			if (!isHolding(animatable, MainItems.Z_SWORD.get())) {
+				BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
+				if (zModel != null) {
+					RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
+					renderWeaponFromBodyAnchor(zModel, "espada", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+				}
 			}
-		} else if (stats.getStatus().getBackWeapon().equals(MainItems.Z_SWORD.get().getDescriptionId())) {
-			BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
-			if (zModel != null) {
-				RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
-				renderWeaponFromBodyAnchor(zModel, "espada", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
-			}
-		} else if (stats.getStatus().getBackWeapon().equals(MainItems.BRAVE_SWORD.get().getDescriptionId())) {
-			BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
-			if (braveModel != null) {
-				RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
-				renderWeaponFromBodyAnchor(braveModel, "espadatrunks", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 0.9f);
-			}
+		} else if (backWeapon.equals(MainItems.BRAVE_SWORD.get().getDescriptionId())) {
+			renderBraveSwordOnBack(poseStack, animatable, playerBodyBone, bufferSource, partialTick, packedLight, isHolding(animatable, MainItems.BRAVE_SWORD.get()));
 		}
+	}
+
+	private static boolean isHolding(AbstractClientPlayer player, Item item) {
+		return player.getMainHandItem().is(item) || player.getOffhandItem().is(item);
+	}
+
+	/**
+	 * Renders the Brave Sword on the player's back. With {@code scabbardOnly} the sword
+	 * bone is hidden so only the scabbard draws, which is what stays behind while the
+	 * sword itself is in hand.
+	 */
+	private void renderBraveSwordOnBack(PoseStack poseStack, T animatable, GeoBone playerBodyBone, MultiBufferSource bufferSource, float partialTick, int packedLight, boolean scabbardOnly) {
+		BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
+		if (braveModel == null) return;
+
+		GeoBone blade = scabbardOnly ? braveModel.getBone("espada").orElse(null) : null;
+		boolean bladeWasHidden = blade != null && blade.isHidden();
+		if (blade != null) blade.setHidden(true);
+
+		RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
+		poseStack.pushPose();
+		poseStack.translate(BRAVE_BACK_X, BRAVE_BACK_Y, BRAVE_BACK_Z);
+		if (BRAVE_BACK_ROT_X != 0.0F) poseStack.mulPose(Axis.XP.rotationDegrees(BRAVE_BACK_ROT_X));
+		if (BRAVE_BACK_ROT_Y != 0.0F) poseStack.mulPose(Axis.YP.rotationDegrees(BRAVE_BACK_ROT_Y));
+		if (BRAVE_BACK_ROT_Z != 0.0F) poseStack.mulPose(Axis.ZP.rotationDegrees(BRAVE_BACK_ROT_Z));
+		renderWeaponFromBodyAnchor(braveModel, "espadatrunks", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, BRAVE_BACK_SCALE);
+		poseStack.popPose();
+
+		if (blade != null) blade.setHidden(bladeWasHidden);
+	}
+
+	/**
+	 * Renders the Power Pole on the player's back. With {@code holsterOnly} the pole bone
+	 * is hidden so only the holster draws.
+	 */
+	private void renderPowerPoleOnBack(PoseStack poseStack, T animatable, GeoBone playerBodyBone, MultiBufferSource bufferSource, float partialTick, int packedLight, boolean holsterOnly) {
+		BakedGeoModel powerpole = getGeoModel().getBakedModel(POWER_POLE_MODEL);
+		if (powerpole == null) return;
+
+		GeoBone pole = holsterOnly ? powerpole.getBone("palo").orElse(null) : null;
+		boolean poleWasHidden = pole != null && pole.isHidden();
+		if (pole != null) pole.setHidden(true);
+
+		RenderType type = RenderType.entityCutoutNoCull(POWER_POLE_TEXTURE);
+		renderWeaponFromBodyAnchor(powerpole, "baculo", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+
+		if (pole != null) pole.setHidden(poleWasHidden);
 	}
 
 	private void renderWeaponFromBodyAnchor(BakedGeoModel weaponModel, String anchorBoneName, GeoBone playerBodyBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType type, float partialTick, int packedLight, float scale) {

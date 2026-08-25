@@ -38,7 +38,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class MajinAbsorptionTracker {
 
-	private static final double ABSORB_RANGE = 3.0;
+	private static final double ABSORB_RANGE = 8.0;
 	private static final float FADE_IN = 0.06f;
 	private static final float FADE_OUT = 0.10f;
 

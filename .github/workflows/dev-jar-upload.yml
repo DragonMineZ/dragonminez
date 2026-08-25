@@ -241,9 +241,23 @@ jobs:
           cleanup_report="$(
             ssh "${ssh_opts[@]}" "$remote" "python3 - '$DMZ_VPS_UPLOAD_DIR'" <<'PY'
           from pathlib import Path
+          import json
           import sys
+          import urllib.request
 
           upload_dir = Path(sys.argv[1])
+
+          # The bot may have builds awaiting staff review (or already published with a
+          # live public download button) for much longer than it takes for a couple more
+          # pushes to land. Ask it which files are still in play before pruning anything,
+          # and skip cleanup entirely rather than risk deleting a file still in use.
+          try:
+              with urllib.request.urlopen("http://127.0.0.1:8088/dmz-dev-jar/protected", timeout=5) as response:
+                  protected = set(json.load(response).get("protected", []))
+          except Exception as error:
+              print(f"::warning::Could not reach dev jar protected-artifacts endpoint ({error}); skipping cleanup this run.")
+              sys.exit(0)
+
           artifacts = sorted(
               (
                   path
@@ -253,14 +267,19 @@ jobs:
               key=lambda path: (path.stat().st_mtime, path.name),
               reverse=True,
           )
+
+          prunable = [path for path in artifacts if path.name not in protected]
           removed = []
-          for path in artifacts[2:]:
+          for path in prunable[2:]:
               path.unlink()
               removed.append(path.name)
 
-          print(f"Kept {min(len(artifacts), 2)} dev jar artifact(s); removed {len(removed)} old artifact(s).")
+          kept_protected = sorted(path.name for path in artifacts if path.name in protected)
+          print(f"Kept {min(len(prunable), 2)} recent dev jar artifact(s); protected {len(kept_protected)}; removed {len(removed)} old artifact(s).")
           for name in removed:
               print(f"Removed old dev jar artifact: {name}")
+          for name in kept_protected:
+              print(f"Protected (published or pending review, never pruned): {name}")
           PY
           )"
 

@@ -3,6 +3,7 @@ package com.dragonminez.server.events.players.statuseffect;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -10,6 +11,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 
 import java.util.HashMap;
@@ -21,9 +23,7 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
 
     @Override
     public void handleStatusEffects(ServerPlayer player, StatsData data) {
-        if (!data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) {
-            player.removeEffect(MainEffects.SAIYAN_PASSIVE.get());
-        }
+
     }
 
     @Override
@@ -36,12 +36,15 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
         if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getSaiyanRacialSkill() && ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("saiyan")) {
             handleSaiyanPassive(serverPlayer, data);
         } else if (SAIYAN_ZENKAI_SECONDS.containsKey(serverPlayer.getUUID())) resetSaiyanZenkaiTimer(serverPlayer);
-        if (!data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) serverPlayer.removeEffect(MainEffects.SAIYAN_PASSIVE.get());
     }
 
     private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {
         GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 
+        if (data.getLevel() < config.getSaiyanZenkaiMinLevel()) {
+            resetSaiyanZenkaiTimer(player);
+            return;
+        }
         if (data.getResources().getRacialSkillCount() >= config.getSaiyanZenkaiAmount()) {
             resetSaiyanZenkaiTimer(player);
             return;
@@ -55,6 +58,12 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
         if (player.getHealth() <= maxHealth * 0.15) {
             int seconds = SAIYAN_ZENKAI_SECONDS.getOrDefault(player.getUUID(), 0) + 1;
             SAIYAN_ZENKAI_SECONDS.put(player.getUUID(), seconds);
+
+            int remaining = 8 - seconds;
+            if (remaining > 0) {
+                player.displayClientMessage(
+                        Component.translatable("message.dragonminez.racial.zenkai.approaching", remaining), true);
+            }
         } else {
             resetSaiyanZenkaiTimer(player);
             return;
@@ -65,14 +74,16 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
 
             double boostMult = config.getSaiyanZenkaiStatBoost();
             String[] statsToBoost = config.getSaiyanZenkaiBoosts();
+            int maxBonus = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 
             for (String statKey : statsToBoost) {
                 int currentStat = getStatValue(data, statKey);
-                int bonus = (int) Math.max(1, currentStat * boostMult);
+                int bonus = (int) Math.max(1, Math.min(maxBonus, currentStat * boostMult));
                 data.getBonusStats().addBonusSplit(statKey, "Zenkai_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
             }
 
             player.displayClientMessage(Component.translatable("message.dragonminez.racial.zenkai.used"), true);
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
             data.getResources().addRacialSkillCount(1);
             data.getCooldowns().setCooldown(Cooldowns.ZENKAI, config.getSaiyanZenkaiCooldownSeconds() * 20);

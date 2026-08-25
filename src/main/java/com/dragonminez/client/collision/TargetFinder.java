@@ -73,11 +73,22 @@ public class TargetFinder {
     }
 
     private static List<Entity> getInitialTargets(Player player, Entity cursorTarget, double attackRange) {
-        return player.level().getEntitiesOfClass(Entity.class, player.getBoundingBox().inflate(attackRange + 1.0))
+        var box = player.getBoundingBox().inflate(attackRange + 1.0);
+        List<Entity> targets = player.level().getEntitiesOfClass(Entity.class, box)
                 .stream()
                 .filter(e -> e != player && e.isAttackable() && !e.isSpectator())
                 .filter(e -> TargetHelper.getRelation(player, e) != TargetHelper.Relation.FRIENDLY)
                 .collect(Collectors.toList());
+
+        if (player.level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel) {
+            for (net.minecraftforge.entity.PartEntity<?> part : clientLevel.getPartEntities()) {
+                if (part.isAttackable() && !part.isSpectator() && part.getBoundingBox().intersects(box)
+                        && TargetHelper.getRelation(player, part) != TargetHelper.Relation.FRIENDLY) {
+                    targets.add(part);
+                }
+            }
+        }
+        return targets;
     }
 
     private static List<Entity> filterTargetsByOBB(List<Entity> entities, Vec3 origin, OrientedBoundingBox obb) {

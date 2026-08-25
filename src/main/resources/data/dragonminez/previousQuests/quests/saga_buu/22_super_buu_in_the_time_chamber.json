@@ -1,0 +1,53 @@
+{
+  "id": 22,
+  "title": "dmz.quest.buu22.name",
+  "description": "dmz.quest.buu22.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 21
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 2020
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:time_chamber"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_superbuu",
+      "count": 1,
+      "health": 472500.0,
+      "meleeDamage": 19800.0,
+      "kiDamage": 17850.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 208800
+    }
+  ]
+}

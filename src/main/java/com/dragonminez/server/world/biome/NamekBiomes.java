@@ -62,6 +62,8 @@ public class NamekBiomes {
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_LAPIS_ORE_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_DIAMOND_ORE_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_KIKONO_ORE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_GETE_DEBRIS_LARGE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_GETE_DEBRIS_SMALL_PLACED);
 
 		biomeBuilder.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, NamekPlacedFeatures.NAMEK_PATCH_GRASS_PLAIN);
 		biomeBuilder.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, NamekPlacedFeatures.NAMEK_PLAINS_FLOWERS);
@@ -96,6 +98,8 @@ public class NamekBiomes {
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_LAPIS_ORE_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_DIAMOND_ORE_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_KIKONO_ORE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_GETE_DEBRIS_LARGE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_GETE_DEBRIS_SMALL_PLACED);
 
 		biomeBuilder.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, NamekPlacedFeatures.NAMEK_PATCH_SACRED_GRASS_PLAIN);
 		biomeBuilder.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, NamekPlacedFeatures.NAMEK_SACRED_FLOWERS);
@@ -125,6 +129,8 @@ public class NamekBiomes {
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_LAPIS_ORE_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_DIAMOND_ORE_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_KIKONO_ORE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_GETE_DEBRIS_LARGE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, NamekPlacedFeatures.NAMEK_GETE_DEBRIS_SMALL_PLACED);
 
 		return biome(spawnBuilder, biomeBuilder, 6530427);
 	}

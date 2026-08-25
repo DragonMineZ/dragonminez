@@ -20,6 +20,9 @@ public class MainStructurePlacements {
 	public static final RegistryObject<StructurePlacementType<BiomeAwareUniquePlacement>> BIOME_AWARE_PLACEMENT =
 			PLACEMENTS.register("biome_aware_placement", () -> () -> BiomeAwareUniquePlacement.CODEC);
 
+	public static final RegistryObject<StructurePlacementType<WideRandomSpreadPlacement>> WIDE_RANDOM_SPREAD =
+			PLACEMENTS.register("wide_random_spread", () -> () -> WideRandomSpreadPlacement.CODEC);
+
     public static void register(IEventBus eventBus) {
         PLACEMENTS.register(eventBus);
     }

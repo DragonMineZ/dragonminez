@@ -4,16 +4,18 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.spacepod.SpacePodDestinationDefinition;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 public class TravelToPlanetC2S {
@@ -36,6 +38,11 @@ public class TravelToPlanetC2S {
 			ServerPlayer player = context.get().getSender();
 			if (player == null) return;
 
+			boolean dead = StatsProvider.get(StatsCapability.INSTANCE, player)
+					.map(data -> !data.getStatus().isAlive())
+					.orElse(false);
+			if (dead) return;
+
 			ServerLevel currentLevel = player.serverLevel();
 			SpacePodDestinationDefinition destination = SpacePodDestinationRegistry.getServerDestination(destinationId);
 			if (destination == null || !destination.unlockRules().test(player)) {
@@ -53,16 +60,10 @@ public class TravelToPlanetC2S {
 				return;
 			}
 
+			Entity vehicle = player.getVehicle();
 			player.stopRiding();
-			List<SpacePodEntity> nearbyPods = currentLevel.getEntitiesOfClass(
-					SpacePodEntity.class,
-					player.getBoundingBox().inflate(10.0D)
-			);
-
-			for (SpacePodEntity pod : nearbyPods) {
-				if (!pod.isVehicle()) {
-					pod.discard();
-				}
+			if (vehicle instanceof SpacePodEntity ownPod) {
+				ownPod.discard();
 			}
 
 			Vec3 targetPos = destination.resolvePosition(player.position());

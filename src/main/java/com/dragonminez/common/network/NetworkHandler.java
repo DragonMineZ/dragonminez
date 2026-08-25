@@ -357,6 +357,12 @@ public class NetworkHandler {
 				.consumerMainThread(GravityDeviceUpdateC2S::handle)
 				.add();
 
+		net.messageBuilder(DynamicGrowthToggleC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DynamicGrowthToggleC2S::new)
+				.encoder(DynamicGrowthToggleC2S::encode)
+				.consumerMainThread(DynamicGrowthToggleC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */
@@ -526,6 +532,12 @@ public class NetworkHandler {
 				.decoder(GravityZoneSyncS2C::new)
 				.encoder(GravityZoneSyncS2C::encode)
 				.consumerMainThread(GravityZoneSyncS2C::handle)
+				.add();
+
+		net.messageBuilder(KnockbackFlightS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KnockbackFlightS2C::new)
+				.encoder(KnockbackFlightS2C::encode)
+				.consumerMainThread(KnockbackFlightS2C::handle)
 				.add();
 	}
 

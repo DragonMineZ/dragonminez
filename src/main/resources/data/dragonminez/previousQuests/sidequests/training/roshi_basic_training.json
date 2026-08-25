@@ -1,0 +1,32 @@
+{
+  "id": "roshi_basic_training",
+  "title": "dmz.sidequest.roshi_basic.name",
+  "description": "dmz.sidequest.roshi_basic.desc",
+  "type": "SIDEQUEST",
+  "category": "training",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "roshi",
+  "turn_in": "roshi",
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "minecraft:zombie",
+      "count": 10,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "roshi"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 600
+    }
+  ]
+}

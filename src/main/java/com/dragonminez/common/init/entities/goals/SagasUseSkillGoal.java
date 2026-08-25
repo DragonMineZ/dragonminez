@@ -20,7 +20,7 @@ public class SagasUseSkillGoal extends Goal {
             return false;
         }
 
-        if (this.entity.getTarget() == null || this.entity.isCasting() || this.entity.isComboing() || this.entity.isEvading()) {
+        if (this.entity.getTarget() == null || this.entity.isCasting() || this.entity.isComboing() || this.entity.isEvading() || this.entity.isStunned()) {
             return false;
         }
 

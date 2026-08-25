@@ -4,6 +4,8 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.alignment.NpcDispositionService;
+import com.dragonminez.common.diagnostics.JsonKeys;
+import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import com.dragonminez.server.world.structure.helper.StructureLocator;
@@ -125,17 +127,28 @@ public final class NPCPlacementManager {
 		}
 	}
 
+	private static final String PLACEMENTS_LABEL = "npcs/" + PLACEMENTS_FILE;
+	private static final java.util.Set<String> ROOT_KEYS = java.util.Set.of("placements", "schema");
+	private static final java.util.Set<String> PLACEMENT_KEYS = java.util.Set.of("id", "entity", "dimension",
+			"npc_id", "model", "texture", "structure", "x", "y", "z", "yaw", "pitch", "surface",
+			"relative_to_spawn", "enabled", "override", "alignment", "relation");
+
 	private static List<NPCPlacement> parsePlacements(@Nullable JsonObject root) {
 		if (root == null || !root.has("placements") || !root.get("placements").isJsonArray()) {
 			return List.of();
 		}
 
+		JsonLoadReport.clear("npcs");
+		JsonKeys.checkObject("npcs", PLACEMENTS_LABEL, "", root, ROOT_KEYS);
+
 		List<NPCPlacement> parsed = new ArrayList<>();
+		int index = 0;
 		for (JsonElement element : root.getAsJsonArray("placements")) {
 			if (!element.isJsonObject()) {
 				continue;
 			}
 
+			JsonKeys.checkObject("npcs", PLACEMENTS_LABEL, "placements[" + index++ + "]", element.getAsJsonObject(), PLACEMENT_KEYS);
 			NPCPlacement placement = parsePlacement(element.getAsJsonObject());
 			if (placement != null) {
 				parsed.add(placement);
@@ -264,16 +277,19 @@ public final class NPCPlacementManager {
 
 	@Nullable
 	private static Entity findPlacedEntity(ServerLevel level, String placementId) {
-		Entity first = null;
+		List<Entity> matches = new ArrayList<>();
 		for (Entity entity : level.getAllEntities()) {
-			if (placementId.equals(entity.getPersistentData().getString(PLACEMENT_TAG))) {
-				if (first == null) {
-					first = entity;
-				} else {
-					entity.discard();
-					LogUtil.warn(Env.SERVER, "NPCPlacementManager: removed duplicate entity for placement '{}'", placementId);
-				}
+			if (entity != null && placementId.equals(entity.getPersistentData().getString(PLACEMENT_TAG))) {
+				matches.add(entity);
 			}
+		}
+		if (matches.isEmpty()) {
+			return null;
+		}
+		Entity first = matches.get(0);
+		for (int i = 1; i < matches.size(); i++) {
+			matches.get(i).discard();
+			LogUtil.warn(Env.SERVER, "NPCPlacementManager: removed duplicate entity for placement '{}'", placementId);
 		}
 		return first;
 	}

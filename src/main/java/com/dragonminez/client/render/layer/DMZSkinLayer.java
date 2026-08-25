@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -49,13 +50,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			"armorRightLeg", "armorRightBoot"
 	};
 
-	private int currentKaiokenPhase = 0;
+	private float[] currentFormTintColor = null;
+	private float currentFormTintIntensity = 0.0f;
 	private float currentTintProgress = 0.0f;
 	private float[] currentAuraColor = new float[]{1.0f, 1.0f, 1.0f};
 
 	private static final String SSJ4_FUR_LAYER = "ssj4fur";
 
 	private static final int WOUND_OPACITY_PASSES = 4;
+
+	private static final float SPECTATOR_ALPHA = 0.35f;
+	private static final float SPECTATOR_HEAD_ALPHA = 0.15f;
 
 	private float currentSsj4Alpha = 0.0f;
 	private float[] currentSsj4Color = null;
@@ -84,25 +89,42 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		this.currentTintProgress = tintProgress;
 		this.currentAuraColor = getTopAuraColor(stats);
-		this.currentKaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
+		FormConfig.FormData tintForm = resolveTintForm(stats);
+		this.currentFormTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
+		this.currentFormTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
 
 		Ssj4Overlay ssj4 = resolveSsj4Overlay(stats);
 		float[] ssj4Color = ssj4 != null ? ssj4.color() : null;
 		float ssj4Target = ssj4 != null ? ssj4.target() : 0.0f;
 
-		float alpha = player.isSpectator() ? 0.15f : 1.0f;
+		float alpha = player.isSpectator() ? SPECTATOR_ALPHA : 1.0f;
+		float headAlpha = player.isSpectator() ? SPECTATOR_HEAD_ALPHA : 1.0f;
 		TransformationMaskBufferSource maskBuffer = bufferSource instanceof TransformationMaskBufferSource mask ? mask : null;
 
 		List<BodyLayerFadeTracker.FadingLayer> fadingLayers = new ArrayList<>();
 		SkinGathererProvider.BodyLayerSink geoConsumer = new SkinGathererProvider.BodyLayerSink() {
 			@Override
 			public void base(ResourceLocation texture, float[] color) {
-				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
+				RenderType baseType = alpha < 1.0f ? RenderType.entityTranslucent(texture) : RenderType.entityCutoutNoCull(texture);
+				renderLayerWholeModel(model, poseStack, bufferSource, animatable, baseType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
 			}
 
 			@Override
-			public void fading(String layerId, ResourceLocation texture, float[] color) {
-				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color));
+			public void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha) {
+				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color, targetAlpha));
+			}
+		};
+
+		SkinGathererProvider.BodyLayerSink overlayConsumer = new SkinGathererProvider.BodyLayerSink() {
+			@Override
+			public void base(ResourceLocation texture, float[] color) {
+				RenderType overlayType = alpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(texture) : ModRenderTypes.skinOverlayCutout(texture);
+				renderLayerWholeModel(model, poseStack, bufferSource, animatable, overlayType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
+			}
+
+			@Override
+			public void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha) {
+				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color, targetAlpha));
 			}
 		};
 
@@ -112,17 +134,21 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(SSJ4_FUR_LAYER, furTex, ssj4.color(), ssj4.target()));
 		}
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(player, stats, partialTick, geoConsumer);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(true);
 		renderFadingBodyLayers(model, poseStack, animatable, bufferSource, playerId, gameTime, fadingLayers, partialTick, packedLight, packedOverlay, alpha);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(false);
 
 		this.currentSsj4Alpha = PREVIEW_MODE ? ssj4Target : BodyLayerFadeTracker.getProgress(playerId, SSJ4_FUR_LAYER);
 		this.currentSsj4Color = ssj4Color != null ? ssj4Color : BodyLayerFadeTracker.getColor(playerId, SSJ4_FUR_LAYER);
 
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(false);
 		renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
-		SkinGathererProvider.INSTANCE.gatherTattooLayers(player, stats, partialTick, geoConsumer);
-		SkinGathererProvider.INSTANCE.gatherEffectLayers(player, stats, partialTick, geoConsumer);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(true);
+		SkinGathererProvider.INSTANCE.gatherTattooLayers(player, stats, partialTick, overlayConsumer);
+		SkinGathererProvider.INSTANCE.gatherEffectLayers(player, stats, partialTick, overlayConsumer);
 		renderWounds(model, poseStack, animatable, bufferSource, player, partialTick, packedLight, packedOverlay, alpha);
-		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
+		if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(false);
+		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, headAlpha);
 		if (maskBuffer != null) maskBuffer.setMaskCaptureEnabled(true);
 
 		bufferSource.getBuffer(renderType);
@@ -402,18 +428,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			renderFadingColoredLayer(model, poseStack, animatable, bufferSource, ssj4Eyes, this.currentSsj4Color, pt, pl, po, alpha * this.currentSsj4Alpha);
 		}
 
-        float[] finalBodyColor = skin;
-        if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
-
-            float redness = 0.5F;
-
-            float newR = Math.min(1.0F, skin[0] + redness);
-            float newG = skin[1] * (1.0F - (redness * 0.5F));
-            float newB = skin[2] * (1.0F - (redness * 0.5F));
-
-            finalBodyColor = new float[]{newR, newG, newB};
-        }
-
         if(legendaryGroup && (character.getActiveForm().equals("shiyoken") || character.getActiveForm().equals("shin_shiyoken") || character.getActiveForm().equals("chou_shiyoken"))){
 
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "shiyoken_eye0.png", ColorUtils.hexToRgb("#FFFFFF"), pt, pl, po, alpha, true);
@@ -421,8 +435,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         }
 
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", finalBodyColor, pt, pl, po, alpha, false);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", finalBodyColor, pt, pl, po, alpha, false);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha, false);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "humansaiyan_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha, false);
 	}
 
 	private void renderNamekianFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float pt, int pl, int po, float alpha) {
@@ -451,9 +465,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         float[] eyeBgColor = isFifth ? ColorUtils.hexToRgb("#D11A11") :
                 (isMetalCore ? ColorUtils.hexToRgb("#242424") : ColorUtils.hexToRgb("#F2F2F2"));
-		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_0.png")).getPath(), eyeBgColor, pt, pl, po, alpha);
-		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_1.png")).getPath(), eye1, pt, pl, po, alpha);
-		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_2.png")).getPath(), eye2, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_" + character.getEyesType() + "_0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_0_0.png")).getPath(), eyeBgColor, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_" + character.getEyesType() + "_1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_0_1.png")).getPath(), eye1, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_" + character.getEyesType() + "_2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "frostdemon_eye_0_2.png")).getPath(), eye2, pt, pl, po, alpha);
 
 		if (isFifth) {
 			renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "frostdemon_fifth_mouth.png", skin, pt, pl, po, alpha, true);
@@ -551,8 +565,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha, boolean applyTransformationTint) {
-		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
-		renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(getSafeTexture(loc)), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, applyTransformationTint);
+		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
+		RenderType renderType = alpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(loc) : ModRenderTypes.skinOverlayCutout(loc);
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, applyTransformationTint);
 	}
 
 	public record Ssj4Overlay(String key, float[] color, float target) {}
@@ -622,7 +637,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			float a = baseAlpha * entry.alpha();
 			if (a <= 0.001f) continue;
 			float[] color = entry.color();
-			RenderType renderType = a < 1.0f ? RenderType.entityTranslucent(entry.texture()) : RenderType.entityCutoutNoCull(entry.texture());
+			RenderType renderType = a < 1.0f ? ModRenderTypes.skinOverlayTranslucent(entry.texture()) : ModRenderTypes.skinOverlayCutout(entry.texture());
 			renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, a, true);
 		}
 	}
@@ -645,7 +660,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderWoundLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float partialTick, int packedLight, int packedOverlay, float alpha) {
 		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
-		RenderType renderType = RenderType.entityTranslucent(loc);
+		RenderType renderType = ModRenderTypes.skinOverlayTranslucent(loc);
 		for (int pass = 0; pass < WOUND_OPACITY_PASSES; pass++) {
 			renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
 		}
@@ -653,13 +668,24 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderFadingColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha) {
 		ResourceLocation loc = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path));
-		RenderType renderType = alpha < 1.0f ? RenderType.entityTranslucent(loc) : RenderType.entityCutoutNoCull(loc);
+		RenderType renderType = alpha < 1.0f ? ModRenderTypes.skinOverlayTranslucent(loc) : ModRenderTypes.skinOverlayCutout(loc);
 		renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
+	}
+
+	public static FormConfig.FormData resolveTintForm(StatsData stats) {
+		var character = stats.getCharacter();
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().hasTint()) {
+			return character.getActiveStackFormData();
+		}
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasTint()) {
+			return character.getActiveFormData();
+		}
+		return null;
 	}
 
 	private float[] applyColorTint(float[] rgb, StatsData stats) {
 		if (rgb == null || rgb.length < 3) return rgb;
-		if (this.currentKaiokenPhase <= 0 && this.currentTintProgress <= 0.0f) return rgb;
+		if (this.currentFormTintIntensity <= 0.0f && this.currentTintProgress <= 0.0f) return rgb;
 
 		float[] tinted = rgb.clone();
 		tintInPlace(tinted);
@@ -667,18 +693,18 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private void tintInPlace(float[] rgb) {
-		if (this.currentKaiokenPhase > 0) {
-			applyKaiokenToRgb(rgb, this.currentKaiokenPhase);
+		if (this.currentFormTintIntensity > 0.0f && this.currentFormTintColor != null) {
+			applyFormTintToRgb(rgb, this.currentFormTintColor, this.currentFormTintIntensity);
 		} else if (this.currentTintProgress > 0.0f) {
 			applyAuraTintToRgb(rgb, this.currentAuraColor, 0.2f * this.currentTintProgress);
 		}
 	}
 
-	private void applyKaiokenToRgb(float[] rgb, int phase) {
-		float intensity = Math.min(0.6f, phase * 0.1f) * AuraTintTracker.darkTintScale(rgb);
-		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + intensity, 0.0f, 1.0f);
-		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity), 0.0f, 1.0f);
-		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity), 0.0f, 1.0f);
+	private void applyFormTintToRgb(float[] rgb, float[] tint, float intensity) {
+		intensity = Mth.clamp(intensity, 0.0f, 1.0f) * AuraTintTracker.darkTintScale(rgb);
+		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + tint[0] * intensity, 0.0f, 1.0f);
+		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity) + tint[1] * intensity, 0.0f, 1.0f);
+		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity) + tint[2] * intensity, 0.0f, 1.0f);
 	}
 
 	private void applyAuraTintToRgb(float[] rgb, float[] auraRgb, float intensity) {

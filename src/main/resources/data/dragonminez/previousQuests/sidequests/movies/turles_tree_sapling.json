@@ -1,0 +1,52 @@
+{
+  "id": "turles_tree_sapling",
+  "title": "dmz.sidequest.turles_tree_sapling.name",
+  "description": "dmz.sidequest.turles_tree_sapling.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "piccolo",
+  "turn_in": "piccolo",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 10
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_turles",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:oak_sapling",
+      "count": 12
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:apple",
+      "count": 16
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "piccolo"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 112000
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package com.dragonminez.common.util;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
@@ -9,6 +10,7 @@ import com.dragonminez.common.util.lists.SaiyanForms;
 
 import java.util.*;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -122,12 +124,12 @@ public class TransformationsHelper {
 		return unlockedForms;
 	}
 
-	private static String getSkillNameForType(String formType) {
+	public static String getSkillNameForType(String formType) {
 		String lower = formType.toLowerCase();
-		if (lower.contains("super")) return "superforms";
-		else if (lower.contains("legendary")) return "legendaryforms";
-		else if (lower.contains("god")) return "godforms";
-		else if (lower.contains("android")) return "androidforms";
+		if (lower.contains("superform")) return "superforms";
+		else if (lower.contains("legendaryform")) return "legendaryforms";
+		else if (lower.contains("godform")) return "godforms";
+		else if (lower.contains("androidform")) return "androidforms";
 		else return formType;
 	}
 
@@ -173,7 +175,9 @@ public class TransformationsHelper {
 			if (dot <= 0 || dot >= entry.length() - 1) continue;
 			String reqGroup = entry.substring(0, dot);
 			String reqForm = entry.substring(dot + 1);
-			double have = statsData.getCharacter().getFormMasteries().getMastery(reqGroup, reqForm);
+			double have = Math.max(
+					statsData.getCharacter().getFormMasteries().getMastery(reqGroup, reqForm),
+					statsData.getCharacter().getStackFormMasteries().getMastery(reqGroup, reqForm));
 			boolean met = have >= need;
 			sawValid = true;
 			if (any) {
@@ -202,6 +206,24 @@ public class TransformationsHelper {
 				.toList();
 	}
 
+	private static boolean meetsFreeTransformMasteryFor(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
+		if (formData == null) return false;
+		if (statsData.getPlayer() != null && statsData.getPlayer().isCreative()) return true;
+		if (isFirstUnlockedForm(statsData, groupName, formData, stack)) return true;
+		double have = stack
+				? statsData.getCharacter().getStackFormMasteries().getMastery(groupName, formData.getName())
+				: statsData.getCharacter().getFormMasteries().getMastery(groupName, formData.getName());
+		return have >= formData.getAllowFreeTransformOnMastery();
+	}
+
+	private static boolean isFirstUnlockedForm(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
+		if (formData == null) return false;
+		List<FormConfig.FormData> unlocked = stack
+				? getUnlockedStackForms(statsData, groupName)
+				: getUnlockedForms(statsData, statsData.getCharacter().getRaceName(), groupName);
+		return !unlocked.isEmpty() && unlocked.get(0).getName().equalsIgnoreCase(formData.getName());
+	}
+
 	public static List<String> getSelectableStackFormNames(StatsData statsData, String groupName) {
 		if (groupName == null || groupName.isEmpty()) return Collections.emptyList();
 		List<FormConfig.FormData> unlockedForms = getUnlockedStackForms(statsData, groupName);
@@ -212,21 +234,7 @@ public class TransformationsHelper {
 	}
 
 	private static boolean isFormSelectable(StatsData statsData, String groupName, FormConfig.FormData formData, boolean stack) {
-		double mastery = stack
-				? statsData.getCharacter().getStackFormMasteries().getMastery(groupName, formData.getName())
-				: statsData.getCharacter().getFormMasteries().getMastery(groupName, formData.getName());
-
-		boolean canAlways = formData.getCanAlwaysTransform()
-				&& mastery >= formData.getAllowAlwaysTransformOnMastery();
-
-		boolean usedBefore = stack
-				? statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(groupName).contains(formData.getName())
-				: statsData.getCharacter().getFormsUsedBefore().getFormGroup(groupName).contains(formData.getName());
-		boolean directIfUsed = formData.getDirectTransformationIfUsed()
-				&& usedBefore
-				&& mastery >= formData.getDirectTransformIfUsedOnMastery();
-
-		return canAlways || directIfUsed;
+		return meetsFreeTransformMasteryFor(statsData, groupName, formData, stack);
 	}
 
 	public static String getGroupWithFirstAvailableForm(StatsData statsData) {
@@ -405,12 +413,53 @@ public class TransformationsHelper {
 		return selectedGroup;
 	}
 
+	public static String getTransformTargetGroup(StatsData statsData) {
+		var character = statsData.getCharacter();
+		String selectedGroup = character.getSelectedFormGroup();
+		if (character.hasActiveForm()) {
+			if (selectedGroup != null && !selectedGroup.isEmpty() && !selectedGroup.equalsIgnoreCase(character.getActiveFormGroup())) {
+				return selectedGroup;
+			}
+			return character.getActiveFormGroup();
+		}
+		return selectedGroup;
+	}
+
+	public static boolean isCrossGroupTransform(StatsData statsData) {
+		var character = statsData.getCharacter();
+		if (!character.hasActiveForm()) return false;
+		String selectedGroup = character.getSelectedFormGroup();
+		return selectedGroup != null && !selectedGroup.isEmpty() && !selectedGroup.equalsIgnoreCase(character.getActiveFormGroup());
+	}
+
+	public static boolean needsFreeTransformMastery(StatsData statsData) {
+		var character = statsData.getCharacter();
+		String group = getTransformTargetGroup(statsData);
+		if (group == null || group.isEmpty()) return false;
+		if (character.hasActiveForm() && group.equalsIgnoreCase(character.getActiveFormGroup())) return false;
+		return getNextFormCandidate(statsData) != null;
+	}
+
+	public static boolean meetsFreeTransformMastery(StatsData statsData) {
+		FormConfig.FormData candidate = getNextFormCandidate(statsData);
+		if (candidate == null) return false;
+		return meetsFreeTransformMasteryFor(statsData, getTransformTargetGroup(statsData), candidate, false);
+	}
+
+	public static void revertToBaseForm(ServerPlayer player, StatsData statsData) {
+		if (statsData.getStatus().isAndroidUpgraded()) {
+			statsData.getCharacter().setActiveForm("androidforms", "androidbase");
+		} else {
+			statsData.getCharacter().clearActiveForm(player);
+		}
+	}
+
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
 		FormConfig.FormData nextFormConfig = getNextFormCandidate(statsData);
 		if (nextFormConfig == null) return null;
 
 		String race = statsData.getCharacter().getRaceName();
-		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		String group = getTransformTargetGroup(statsData);
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return null;
 
@@ -419,7 +468,7 @@ public class TransformationsHelper {
 
 	public static FormConfig.FormData getNextFormCandidate(StatsData statsData) {
 		String race = statsData.getCharacter().getRaceName();
-		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		String group = getTransformTargetGroup(statsData);
 		if (group == null || group.isEmpty()) return null;
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return null;
@@ -433,9 +482,10 @@ public class TransformationsHelper {
 		if (!isAndroidUpgraded && isAndroidGroup) return null;
 		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) return null;
 
+		boolean crossGroup = isCrossGroupTransform(statsData);
 		String currentFormName = statsData.getCharacter().getActiveForm();
 		FormConfig.FormData nextFormConfig = null;
-		if (currentFormName == null || currentFormName.isEmpty()) {
+		if (crossGroup || currentFormName == null || currentFormName.isEmpty()) {
 			FormConfig.FormData selected = config.getForm(statsData.getCharacter().getSelectedForm());
 			if (selected != null && isOozaruGroupNext && !hasTailNext && isTailOnlyOozaruForm(selected.getName())) {
 				for (FormConfig.FormData f : config.getForms().values()) {
@@ -464,7 +514,7 @@ public class TransformationsHelper {
 		if (candidate == null) return false;
 
 		String race = statsData.getCharacter().getRaceName();
-		String group = statsData.getCharacter().hasActiveForm() ? statsData.getCharacter().getActiveFormGroup() : statsData.getCharacter().getSelectedFormGroup();
+		String group = getTransformTargetGroup(statsData);
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return false;
 
@@ -681,5 +731,9 @@ public class TransformationsHelper {
 	public static boolean isInstantTransmissionBlocked(StatsData requester, StatsData target) {
 		if (target.getStatus().isAndroidUpgraded()) return true;
 		return hasGodFormActive(target) && requester.getSkills().getSkillLevel("godforms") < 1;
+	}
+
+	public static boolean hasAntiKiCloak(Player target) {
+		return CuriosUtil.getFirstStackForItem(target, "head_tech", "anti_ki_cloak").getItem() == MainItems.ANTI_KI_CLOAK.get();
 	}
 }

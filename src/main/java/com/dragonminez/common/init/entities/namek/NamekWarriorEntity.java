@@ -69,7 +69,6 @@ public class NamekWarriorEntity extends PathfinderMob implements GeoEntity {
         super(pEntityType, pLevel);
 
         VillageAlertSystem.registerWarrior(this);
-        this.setPersistenceRequired();
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(750);
 		}

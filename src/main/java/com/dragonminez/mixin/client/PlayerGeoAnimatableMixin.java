@@ -77,7 +77,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private boolean dragonminez$isShootingKi = false;
 	@Unique private String dragonminez$currentMeleeAnim = null;
 	@Unique private String dragonminez$currentPoseAnim = null;
+	@Unique private boolean dragonminez$poseInstantResume = false;
 	@Unique private float dragonminez$currentMeleeSpeed = 1.0F;
+
+	@Unique private static final int POSE_TRANSITION_TICKS = 4;
 
 	@Unique private String dragonminez$currentKiAnim = null;
 	@Unique private String dragonminez$lastKiAnim = null;
@@ -163,6 +166,33 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		return (float) Mth.clamp(dragonminez$horizSpeed / baseline, 0.6, 1.8);
 	}
 
+	@Unique private static final double FUSION_PAIR_RANGE_SQ = 64.0;
+
+	@Unique
+	private AbstractClientPlayer dragonminez$findFusionPartner(AbstractClientPlayer player) {
+		AbstractClientPlayer partner = null;
+		double bestSq = Double.MAX_VALUE;
+		for (var other : player.level().players()) {
+			if (other == player || !(other instanceof AbstractClientPlayer candidate)) continue;
+			boolean otherFusing = StatsProvider.get(StatsCapability.INSTANCE, other)
+					.map(d -> d.getStatus().isActionCharging() && d.getStatus().getSelectedAction() == ActionMode.FUSION)
+					.orElse(false);
+			if (!otherFusing) continue;
+			double dSq = player.distanceToSqr(other);
+			if (dSq <= FUSION_PAIR_RANGE_SQ && dSq < bestSq) {
+				bestSq = dSq;
+				partner = candidate;
+			}
+		}
+		return partner;
+	}
+
+	@Unique
+	private AbstractClientPlayer dragonminez$findPotaraPartner(AbstractClientPlayer player, java.util.UUID partnerUUID) {
+		if (partnerUUID == null) return null;
+		return player.level().getPlayerByUUID(partnerUUID) instanceof AbstractClientPlayer candidate ? candidate : null;
+	}
+
 	@Unique
 	private RawAnimation dragonminez$resolveFlyAnimation(AbstractClientPlayer player) {
 		Minecraft mc = Minecraft.getInstance();
@@ -180,15 +210,16 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return FLY_IDLE;
 		}
 
-		Vec3 motion = player.getDeltaMovement();
-		double horizontal = motion.horizontalDistance();
-		if (horizontal < 0.04) return FLY_IDLE;
+		double moveX = player.getX() - player.xOld;
+		double moveZ = player.getZ() - player.zOld;
+		double horizontal = Math.sqrt(moveX * moveX + moveZ * moveZ);
+		if (horizontal < 0.01) return FLY_IDLE;
 
 		float yawRad = player.yBodyRot * Mth.DEG_TO_RAD;
 		double sin = Mth.sin(yawRad);
 		double cos = Mth.cos(yawRad);
-		double forwardComp = -motion.x * sin + motion.z * cos;
-		double rightComp = -motion.x * cos - motion.z * sin;
+		double forwardComp = -moveX * sin + moveZ * cos;
+		double rightComp = -moveX * cos - moveZ * sin;
 
 		if (Math.abs(forwardComp) >= Math.abs(rightComp)) {
 			return forwardComp >= 0 ? FLY_FRONT : FLY_BACK;
@@ -212,7 +243,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
 		registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
 		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
-		registrar.add(new AnimationController<>(this, "pose_controller", 4, this::posePredicate));
+		registrar.add(new AnimationController<>(this, "pose_controller", POSE_TRANSITION_TICKS, this::posePredicate));
 		registrar.add(new AnimationController<>(this, "ki_controller", 4, this::kiPredicate));
 		registrar.add(new AnimationController<>(this, "eat_controller", 3, this::eatPredicate));
 	}
@@ -260,6 +291,19 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return state.setAndContinue(IDLE);
 
+		if (data.getStatus().getPotaraPoseTimer() > 0) {
+			AbstractClientPlayer potaraPartner = dragonminez$findPotaraPartner(player, data.getStatus().getPotaraPartnerUUID());
+			if (potaraPartner != null) {
+				AbstractClientPlayer leader = player.getUUID().compareTo(potaraPartner.getUUID()) < 0 ? player : potaraPartner;
+				double refRad = Math.toRadians(leader.getYRot());
+				double rightX = -Math.cos(refRad);
+				double rightZ = -Math.sin(refRad);
+				double side = (player.getX() - potaraPartner.getX()) * rightX + (player.getZ() - potaraPartner.getZ()) * rightZ;
+				return state.setAndContinue(side > 0 ? FUSION_POTHALA_LEFT : FUSION_POTHALA_RIGHT);
+			}
+			return state.setAndContinue(FUSION_POTHALA_RIGHT);
+		}
+
 		boolean isDraining = data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE);
 		boolean flySkillActive = data.getSkills().isSkillActive("fly");
 		boolean isChargingKi = data.getStatus().isChargingKi();
@@ -293,6 +337,18 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return state.setAndContinue(TRANSFORMATION);
 		} else if (isTransforming && actionMode.equals(ActionMode.RACIAL)) {
 			return state.setAndContinue(ABSORB);
+		} else if (isTransforming && actionMode.equals(ActionMode.FUSION)) {
+			AbstractClientPlayer fusionPartner = dragonminez$findFusionPartner(player);
+			if (fusionPartner != null) {
+				AbstractClientPlayer leader = player.getUUID().compareTo(fusionPartner.getUUID()) < 0 ? player : fusionPartner;
+				double refRad = Math.toRadians(leader.getYRot());
+				double rightX = -Math.cos(refRad);
+				double rightZ = -Math.sin(refRad);
+				double side = (player.getX() - fusionPartner.getX()) * rightX + (player.getZ() - fusionPartner.getZ()) * rightZ;
+				state.getController().setAnimationSpeed(0.583D);
+				return state.setAndContinue(side > 0 ? FUSION_DANCE_LEFT : FUSION_DANCE_RIGHT);
+			}
+			return state.setAndContinue(TRANSFORMATION);
 		} else if (isTransforming) {
 			return state.setAndContinue(TRANSFORMATION);
 		}
@@ -378,7 +434,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	private <T extends GeoAnimatable> PlayState posePredicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 
-		if (dragonminez$attackAnimTicks > 0) return PlayState.STOP;
+		if (dragonminez$attackAnimTicks > 0) {
+			dragonminez$poseInstantResume = true;
+			return PlayState.STOP;
+		}
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
 		if (dragonminez$isShootingKi) return PlayState.STOP;
 		if (dragonminez$currentKiAnim != null) return PlayState.STOP;
@@ -389,6 +448,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		if (data != null && (data.getStatus().isBlocking() || data.getStatus().isChargingKi())) return PlayState.STOP;
 
 		if (dragonminez$currentPoseAnim == null || dragonminez$currentPoseAnim.isEmpty()) return PlayState.STOP;
+
+		state.getController().transitionLength(dragonminez$poseInstantResume ? 0 : POSE_TRANSITION_TICKS);
+		dragonminez$poseInstantResume = false;
 
 		return state.setAndContinue(AnimationCache.getLoop(dragonminez$currentPoseAnim));
 	}
@@ -659,6 +721,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Override
+	public double getBoneResetTime() {
+		return (dragonminez$attackAnimTicks > 0 || dragonminez$combatGraceFrames > 0) ? 0.0D : 5.0D;
+	}
+
+	@Override
 	public void dragonminez$setFlying(boolean flying) {
 		this.dragonminez$isFlying = flying;
 	}
@@ -700,7 +767,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			return;
 		}
 
-		String resolved = CombatAnimationResolver.resolveAttack(animationName, isOffhand);
+		ItemStack attackingStack = isOffhand ? self.getOffhandItem() : self.getMainHandItem();
+		boolean armSpecific = !attackingStack.isEmpty() && !PlayerAttackHelper.isTwoHandedWielding(self);
+		boolean useLeftArm = armSpecific && (isOffhand != (self.getMainArm() == HumanoidArm.LEFT));
+		String resolved = CombatAnimationResolver.resolveAttack(animationName, useLeftArm);
 		this.dragonminez$currentMeleeAnim = resolved.isEmpty() ? "fallback" : resolved;
 		this.dragonminez$currentMeleeSpeed = Math.max(0.15F, speedMultiplier);
 		this.dragonminez$isOffhandAttack = isOffhand;
@@ -726,9 +796,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Override
 	public float dragonminez$getCombatPlacementWeight() {
-		if (dragonminez$attackAnimTicks > 0) return 1.0F;
-		if (dragonminez$combatGraceFrames > 0) return Math.min(1.0F, dragonminez$combatGraceFrames / 8.0F);
-		return 0.0F;
+		// Snap the held item between combat placement and its rest grip: full weight while the
+		// attack animation plays, none the moment it ends (no eased "swing back" of the item).
+		return dragonminez$attackAnimTicks > 0 ? 1.0F : 0.0F;
 	}
 
 	@Override

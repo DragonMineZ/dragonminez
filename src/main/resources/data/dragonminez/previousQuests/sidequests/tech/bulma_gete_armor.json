@@ -1,0 +1,49 @@
+{
+  "id": "bulma_gete_armor",
+  "title": "dmz.sidequest.bulma_gete_armor.name",
+  "description": "dmz.sidequest.bulma_gete_armor.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_gete_discovery"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_ingot",
+      "count": 8
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:kikono_cloth",
+      "count": 4
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 48000
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:pattern_gete",
+      "count": 1
+    }
+  ]
+}

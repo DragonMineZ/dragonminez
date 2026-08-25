@@ -1,0 +1,68 @@
+{
+  "id": 1,
+  "title": "dmz.quest.buu1.name",
+  "description": "dmz.quest.buu1.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 15
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1420
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_goten",
+      "count": 1,
+      "health": 175000.0,
+      "meleeDamage": 7200.0,
+      "kiDamage": 6630.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_gohan_end_base",
+      "count": 1,
+      "health": 217000.0,
+      "meleeDamage": 9000.0,
+      "kiDamage": 8160.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 129600
+    }
+  ]
+}

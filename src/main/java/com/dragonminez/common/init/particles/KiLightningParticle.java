@@ -72,7 +72,11 @@ public class KiLightningParticle extends TextureSheetParticle {
         }
 
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            return new KiLightningParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites);
+            try {
+                return new KiLightningParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

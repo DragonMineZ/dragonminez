@@ -1,0 +1,39 @@
+{
+  "id": "piccolo_kami_fusion",
+  "title": "dmz.sidequest.piccolo_kami.name",
+  "description": "dmz.sidequest.piccolo_kami.desc",
+  "type": "SIDEQUEST",
+  "category": "exploration",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "piccolo",
+  "turn_in": "piccolo",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 10
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:kamilookout"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "piccolo"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 52000
+    }
+  ]
+}

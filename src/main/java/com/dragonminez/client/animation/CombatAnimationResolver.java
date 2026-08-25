@@ -56,10 +56,13 @@ public final class CombatAnimationResolver {
         return id;
     }
 
-    public static String resolveAttack(String animationId, boolean isOffhand) {
+    public static String resolveAttack(String animationId, boolean useLeftArm) {
         ensureLoaded();
         String resolved = sanitizeAnimationId(animationId);
-        if (isOffhand && resolved.contains("right")) resolved = resolved.replace("right", "left");
+        if (useLeftArm && resolved.contains("right")) {
+            String mirrored = toPlayableKey(resolved.replace("right", "left"));
+            if (!mirrored.isEmpty()) return mirrored;
+        }
         return toPlayableKey(resolved);
     }
 

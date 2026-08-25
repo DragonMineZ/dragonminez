@@ -98,9 +98,6 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (!HairManager.canUseHair(character)) return;
 
-		CustomHair effectiveHair = HairManager.getEffectiveHair(character);
-		if (effectiveHair == null || effectiveHair.isEmpty()) return;
-
 		CustomHair hairFrom = character.getHairBase();
 		float[] rgbFrom = character.getRgbHairColor();
 
@@ -194,20 +191,23 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			lastCleanupMs = nowMs;
 		}
 
-		int phase = TransformationsHelper.getKaiokenPhase(stats);
+		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
+		float[] formTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
+		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
+		boolean hasFormTint = formTintIntensity > 0.0f && formTintColor != null;
 		boolean shouldFadeIn = stats.getStatus().isChargingKi() || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
 		float auraTintProgress = AuraTintTracker.update(entityId, gameTime, shouldFadeIn);
 
-		if (phase > 0 || auraTintProgress > 0.0f) {
+		if (hasFormTint || auraTintProgress > 0.0f) {
 			float[] baseFrom = rgbFrom;
 			float[] baseTo = rgbTo;
 			rgbFrom = baseFrom.clone();
 			rgbTo = baseTo == baseFrom ? rgbFrom : baseTo.clone();
 		}
 
-		if (phase > 0) {
-			applyKaiokenToRgb(rgbFrom, phase);
-			applyKaiokenToRgb(rgbTo, phase);
+		if (hasFormTint) {
+			applyFormTintToRgb(rgbFrom, formTintColor, formTintIntensity);
+			applyFormTintToRgb(rgbTo, formTintColor, formTintIntensity);
 		} else if (auraTintProgress > 0.0f) {
 			float[] rgbAura = character.getRgbAuraColor();
 			FormConfig.FormData activeFormData = character.hasActiveForm() ? character.getActiveFormData() : null;
@@ -234,6 +234,8 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		else kiChargeProgressMap.remove(entityId);
 
 		publishHairBaseColor(entityId, gameTime, rgbFrom, rgbTo, factor);
+
+		if ((hairFrom == null || hairFrom.isEmpty()) && (hairTo == null || hairTo.isEmpty())) return;
 
 		poseStack.pushPose();
 		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, overrideFrom, forceTo, partialTick, packedLight, packedOverlay, alpha, physicsLodMultiplier, kiChargeProgress);
@@ -356,11 +358,11 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		return fallback;
 	}
 
-	private void applyKaiokenToRgb(float[] rgb, int phase) {
-		float intensity = Math.min(0.6f, phase * 0.1f) * AuraTintTracker.darkTintScale(rgb);
-		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + (1.0f * intensity), 0, 1);
-		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity), 0, 1);
-		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity), 0, 1);
+	private void applyFormTintToRgb(float[] rgb, float[] tint, float intensity) {
+		intensity = Mth.clamp(intensity, 0.0f, 1.0f) * AuraTintTracker.darkTintScale(rgb);
+		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + tint[0] * intensity, 0, 1);
+		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity) + tint[1] * intensity, 0, 1);
+		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity) + tint[2] * intensity, 0, 1);
 	}
 
 	private void applyAuraTintToRgb(float[] rgb, float[] auraRgb, float intensity) {

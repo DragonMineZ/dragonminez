@@ -71,7 +71,11 @@ public class KiExplosionFlashParticle extends TextureSheetParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double dx, double dy, double dz) {
-            return new KiExplosionFlashParticle(level, x, y, z, dx, dy, dz, this.spriteSet);
+            try {
+                return new KiExplosionFlashParticle(level, x, y, z, dx, dy, dz, this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

@@ -55,7 +55,11 @@ public class KiSplashParticle extends TextureSheetParticle {
         public Provider(SpriteSet spriteSet) { this.spriteSet = spriteSet; }
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
-            return new KiSplashParticle(level, x, y, z, r, g, b, this.spriteSet);
+            try {
+                return new KiSplashParticle(level, x, y, z, r, g, b, this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

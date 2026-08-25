@@ -1,0 +1,49 @@
+{
+  "id": "bulma_gete_enhancements",
+  "title": "dmz.sidequest.bulma_gete_enhancements.name",
+  "description": "dmz.sidequest.bulma_gete_enhancements.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_gete_armor"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_ingot",
+      "count": 6
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:lapis_block",
+      "count": 4
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 60000
+    },
+    {
+      "type": "COMMAND",
+      "command": "give %player% minecraft:enchanted_book{StoredEnchantments:[{id:\"dragonminez:ki_conductivity\",lvl:2},{id:\"dragonminez:gravity_forged\",lvl:2}]} 1",
+      "translationKey": "dmz.sidequest.reward.gete_enchant_book"
+    }
+  ]
+}

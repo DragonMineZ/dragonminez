@@ -25,6 +25,8 @@ import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PacketRateLimiter;
+import com.dragonminez.common.network.TrainingSessionTracker;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWeaponRegistryS2C;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
@@ -52,7 +54,6 @@ import com.dragonminez.server.world.structure.helper.StructureLocator;
 import com.mojang.brigadier.ParseResults;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -87,6 +88,7 @@ import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.CriticalHitEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
@@ -100,6 +102,8 @@ import net.minecraftforge.registries.RegistryObject;
 
 import java.util.*;
 
+import static com.dragonminez.common.diagnostics.JsonLoadReport.logConsoleReport;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeCommonEvents {
 
@@ -111,35 +115,46 @@ public class ForgeCommonEvents {
 
 		Int2ObjectMap<List<VillagerTrades.ItemListing>> trades = event.getTrades();
 
-		// Nivel 1 (Novato)
 		trades.get(1).add(mapTrade(DMZStructures.GOKU_HOUSE, "dragonminez.goku_house",
 				new ItemStack(MainItems.DINO_MEAT_COOKED.get(), 10)));
 		trades.get(1).add(mapTrade(DMZStructures.ROSHI_HOUSE, "dragonminez.roshi_house",
 				new ItemStack(Items.COD, 8)));
 
-		// Nivel 2 (Aprendiz)
 		trades.get(2).add(mapTrade(DMZStructures.PICCOLO_HOUSE, "dragonminez.piccolo_house",
 				new ItemStack(Items.WATER_BUCKET, 1)));
 		trades.get(2).add(mapTrade(DMZStructures.YAMCHA_HOUSE, "dragonminez.yamcha_house",
 				new ItemStack(Items.BONE, 1)));
 
-		// Nivel 3 (Oficial)
 		trades.get(3).add(mapTrade(DMZStructures.KAMILOOKOUT, "dragonminez.kamilookout",
 				new ItemStack(Items.SPRUCE_SAPLING, 1)));
 		trades.get(3).add(mapTrade(DMZStructures.CELL_ARENA, "dragonminez.cell_arena",
 				new ItemStack(MainItems.T1_RADAR_CHIP.get(), 1)));
 
-		// Nivel 4 (Experto)
 		trades.get(4).add(mapTrade(DMZStructures.GERO_LAB, "dragonminez.gero_lab",
 				new ItemStack(Items.IRON_INGOT, 16)));
 		trades.get(4).add(mapTrade(DMZStructures.TRUNKS_SHIP, "dragonminez.trunks_ship",
 				new ItemStack(Items.IRON_SWORD, 1)));
 
-		// Nivel 5 (Maestro)
 		trades.get(5).add(mapTrade(DMZStructures.VEGETA_POD, "dragonminez.vegeta_pod",
 				new ItemStack(MainItems.RED_SCOUTER.get(), 1)));
 		trades.get(5).add(mapTrade(DMZStructures.BABIDI, "dragonminez.babidi",
 				new ItemStack(Items.ENDER_PEARL, 4)));
+	}
+
+	/**
+	 * Las ofertas de los comerciantes se persisten con el mapa ya generado; si la
+	 * estructura se resolvió o reubicó después, el mapa vendido quedaría obsoleto
+	 * (sin X o apuntando al sitio viejo). Antes de abrir el menú se regeneran las
+	 * ofertas de mapas cuyo objetivo ya no coincide con el plan actual.
+	 */
+	@SubscribeEvent
+	public static void onMerchantInteract(PlayerInteractEvent.EntityInteract event) {
+		if (event.getLevel().isClientSide()) return;
+		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+		if (!(event.getTarget() instanceof net.minecraft.world.entity.npc.AbstractVillager merchant)) return;
+		try {
+			CapsuleCorpMapTrade.refreshStaleMapOffers(serverLevel, merchant);
+		} catch (Exception ignored) {}
 	}
 
 	private static final int MAP_XP = 40;
@@ -203,6 +218,8 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
+			TrainingSessionTracker.end(player.getUUID());
+			PacketRateLimiter.clear(player.getUUID());
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout()) {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
@@ -249,27 +266,8 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (!data.getStatus().isAlive() && !hasValidRespawnPoint(player)) {
-					ServerLevel otherworld = player.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
-					player.teleportTo(otherworld, 0, 41, 10, 0, 0);
-				}
-				player.refreshDimensions();
-			});
+			player.refreshDimensions();
 		}
-	}
-
-	private static boolean hasValidRespawnPoint(ServerPlayer player) {
-		BlockPos respawnPos = player.getRespawnPosition();
-		if (respawnPos == null) return false;
-
-		ServerLevel respawnLevel = player.getServer().getLevel(player.getRespawnDimension());
-		if (respawnLevel == null) return false;
-
-		if (player.isRespawnForced()) return true;
-
-		return ServerPlayer.findRespawnPositionAndUseSpawnBlock(
-				respawnLevel, respawnPos, player.getRespawnAngle(), false, false).isPresent();
 	}
 
 	@SubscribeEvent
@@ -337,7 +335,6 @@ public class ForgeCommonEvents {
 				float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
 
 				if (isCrit) {
-					//serverLevel.sendParticles(MainParticles.CRIT_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);}
 				}
 				else serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
 			}
@@ -461,6 +458,8 @@ public class ForgeCommonEvents {
 		if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 			OtherworldRegionLoader.loadPreGeneratedRegions(event.getServer());
 		}
+
+		com.dragonminez.server.world.structure.helper.VillagePoolInjector.injectAll(event.getServer());
 	}
 
 	@SubscribeEvent
@@ -489,10 +488,13 @@ public class ForgeCommonEvents {
 		} else {
 			LogUtil.info(Env.COMMON, "DragonBalls generation is disabled in the config.");
 		}
+		logConsoleReport();
 	}
 
 	@SubscribeEvent
 	public static void onServerStarted(ServerStartedEvent event) {
+		com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.precomputeAndWait(event.getServer());
+
 		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 
 		if (otherworld != null) {
@@ -503,12 +505,20 @@ public class ForgeCommonEvents {
 	}
 
 	@SubscribeEvent
+	public static void onLevelTick(TickEvent.LevelTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) return;
+		if (!(event.level instanceof ServerLevel serverLevel)) return;
+		try {
+			com.dragonminez.server.world.structure.placement.StructureRepairManager.tick(serverLevel);
+		} catch (Throwable ignored) {
+		}
+	}
+
+	@SubscribeEvent
 	public static void onLevelLoad(LevelEvent.Load event) {
 		if (event.getLevel() instanceof ServerLevel serverLevel) {
 			try {
-				var chunkSource = serverLevel.getChunkSource();
-				com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.prewarm(
-						serverLevel.getSeed(), chunkSource.randomState(), chunkSource.getGeneratorState());
+				com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.onLevelLoad(serverLevel);
 			} catch (Throwable ignored) {
 			}
 
@@ -523,6 +533,7 @@ public class ForgeCommonEvents {
 	public void onServerStopping(ServerStoppingEvent event) {
 		StorageManager.shutdown();
 		com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.reset();
+		com.dragonminez.server.world.structure.placement.StructureRepairManager.reset();
 	}
 
 	@SubscribeEvent

@@ -179,6 +179,14 @@ dependencies {
     compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api"))
     runtimeOnly(fg.deobf("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1"))
 
+    // Lukas' Weapon Levelling
+    compileOnly(fg.deobf("curse.maven:weapon-leveling-644704:8400008"))
+
+    // Apotheosis
+    compileOnly(fg.deobf("curse.maven:placebo-283644:6274231"))
+    compileOnly(fg.deobf("curse.maven:apothic-attributes-898963:5634071"))
+    compileOnly(fg.deobf("curse.maven:apotheosis-313970:6461960"))
+
     // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
     compileOnly("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
@@ -213,6 +221,13 @@ dependencies {
         runtimeOnly(fg.deobf("curse.maven:xenon-564239:5752040"))
         runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
         runtimeOnly(fg.deobf("curse.maven:free-cam-557076:4643128"))
+        // Luka's Weapon Levelling for testing purposes only
+//        runtimeOnly(fg.deobf("curse.maven:architectury-api-419699:5137938"))
+//        runtimeOnly(fg.deobf("curse.maven:weapon-leveling-644704:8400008"))
+        // Apotheosis for testing purposes only
+//        runtimeOnly(fg.deobf("curse.maven:placebo-283644:6274231"))
+//        runtimeOnly(fg.deobf("curse.maven:apothic-attributes-898963:5634071"))
+//        runtimeOnly(fg.deobf("curse.maven:apotheosis-313970:6461960"))
     }
 
     // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)

@@ -1,0 +1,45 @@
+{
+  "id": "bulma_rare_mineral_survey",
+  "title": "dmz.sidequest.bulma_rare_mineral_survey.name",
+  "description": "dmz.sidequest.bulma_rare_mineral_survey.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 3
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:amethyst_shard",
+      "count": 8
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:copper_ingot",
+      "count": 12
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1600
+    }
+  ]
+}
