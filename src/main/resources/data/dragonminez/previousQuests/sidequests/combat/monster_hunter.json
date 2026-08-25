@@ -1,0 +1,40 @@
+{
+  "id": "monster_hunter",
+  "title": "dmz.sidequest.monster_hunter.name",
+  "description": "dmz.sidequest.monster_hunter.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "minecraft:zombie",
+      "count": 20,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "KILL",
+      "entity": "minecraft:skeleton",
+      "count": 20,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "KILL",
+      "entity": "minecraft:creeper",
+      "count": 10,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1200
+    }
+  ]
+}

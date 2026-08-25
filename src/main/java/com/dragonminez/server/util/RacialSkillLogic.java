@@ -15,6 +15,7 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.QuestEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -31,8 +32,10 @@ public class RacialSkillLogic {
 	public static void attemptRacialAction(ServerPlayer player) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			String race = data.getCharacter().getRaceName();
-			LivingEntity target = getTargetEntity(player, 3.0);
 			RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
+
+			double range = (config != null && "majin".equals(config.getRacialSkill())) ? 8.0 : 3.0;
+			LivingEntity target = getTargetEntity(player, range);
 
 			if (target == null) return;
 			if (target instanceof MastersEntity || target instanceof PunchMachineEntity) return;
@@ -83,10 +86,11 @@ public class RacialSkillLogic {
 
 		double boostMult = config.getNamekianAssimilationStatBoost();
 		String[] statsToBoost = config.getNamekianAssimilationBoosts();
+		int maxBonus = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 
 		for (String statKey : statsToBoost) {
 			int currentStat = getStatValue(data, statKey);
-			int bonus = (int) Math.max(1, currentStat * boostMult);
+			int bonus = (int) Math.max(1, Math.min(maxBonus, currentStat * boostMult));
 			data.getBonusStats().addBonusSplit(statKey, "Assimilation_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 		}
 
@@ -106,21 +110,20 @@ public class RacialSkillLogic {
 		}
 
 		double ratio = config.getMajinAbsorptionStatCopy();
+		int absorptionCap = data.getConfiguredMaxTotalStats();
 		boolean success = false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
 			StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
 				String[] stats = config.getMajinAbsorptionBoosts();
 				for (String stat : stats) {
-					int targetStatVal = getStatValue(targetData, stat);
-					int bonus = (int) Math.max(1, targetStatVal * ratio);
+					int bonus = cappedAbsorptionBonus(getStatValue(targetData, stat), ratio, absorptionCap);
 					data.getBonusStats().addBonusSplit(stat, "Absorption_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus, true);
 				}
 			});
 			success = true;
 		} else if (target instanceof Mob && config.getMajinAbsorptionOnMobs()) {
-			float maxHp = target.getMaxHealth();
-			int bonus = (int) Math.max(1, maxHp * ratio);
+			int bonus = cappedAbsorptionBonus(target.getMaxHealth(), ratio, absorptionCap);
 			String[] mobBonuses = config.getMajinAbsorptionBoosts();
 
 			for (String stat : mobBonuses) {
@@ -219,6 +222,7 @@ public class RacialSkillLogic {
 			float heal = (float) (user.getMaxHealth() * healRatio);
 			user.heal(heal);
 		}
+		QuestEvents.creditQuestKill(user, target);
 		target.kill();
 	}
 
@@ -238,6 +242,13 @@ public class RacialSkillLogic {
 			}
 		}
 		return null;
+	}
+
+	private static int cappedAbsorptionBonus(double sourceValue, double ratio, int cap) {
+		if (!Double.isFinite(sourceValue) || sourceValue <= 0) return 1;
+		double bonus = Math.min(sourceValue, cap) * ratio;
+		if (!Double.isFinite(bonus) || bonus < 1) return 1;
+		return (int) Math.min(bonus, cap);
 	}
 
 	private static int getStatValue(StatsData data, String statName) {

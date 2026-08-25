@@ -19,10 +19,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class GameRendererMixin {
 	@Shadow @Final private Camera mainCamera;
 
+	private static final float CAMERA_ROLL_SCALE = 0.8F;
+
     @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setup(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/world/entity/Entity;ZZF)V", shift = At.Shift.AFTER))
     private void dragonminez$applyFlightRoll(float partialTicks, long finishNanoTime, PoseStack poseStack, CallbackInfo ci) {
 		if (FlightRollHandler.hasActiveRoll() && ConfigManager.getUserConfig().getCameraMovementDuringFlight()) {
-			float roll = ((RollCamera) mainCamera).dragonminez$getRoll();
+			float roll = ((RollCamera) mainCamera).dragonminez$getRoll() * CAMERA_ROLL_SCALE;
 			if (Math.abs(roll) > 0.01F) poseStack.mulPose(Axis.ZP.rotationDegrees(roll));
 		}
     }

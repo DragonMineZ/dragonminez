@@ -2,6 +2,8 @@ package com.dragonminez.common.network;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.RadarRenderEvent;
+import com.dragonminez.client.events.FlySkillEvent;
+import com.dragonminez.client.flight.CombatFlightHandler;
 import com.dragonminez.client.gui.InstantTransmissionScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
@@ -13,6 +15,7 @@ import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Status;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
@@ -20,6 +23,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -153,6 +157,21 @@ public class ClientPacketHandler {
 				case KI_ANIMATION_STOP -> animatable.dragonminez$stopKiAnimation();
 			}
 		}
+	}
+
+	public static void handleKnockbackFlightPacket(double x, double y, double z) {
+		var player = Minecraft.getInstance().player;
+		if (player == null) return;
+
+		Vec3 knockback = new Vec3(x, y, z);
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (!data.getSkills().isSkillActive("fly")) return;
+			if (data.getStatus().getFlightMode() == Status.FLIGHT_COMBAT) {
+				CombatFlightHandler.injectKnockback(knockback);
+			} else {
+				FlySkillEvent.injectKnockback(knockback);
+			}
+		});
 	}
 
 	public static void handleMeleeAnimationPacket(int entityId, String animationName, boolean isOffhand, float speedMultiplier) {

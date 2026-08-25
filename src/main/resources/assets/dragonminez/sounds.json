@@ -847,10 +847,76 @@
       "dragonminez:ki_kame_fire"
     ]
   },
+  "ki_burning_charge": {
+    "subtitle": "sounds.dragonminez.ki_burning_charge",
+    "sounds": [
+      "dragonminez:ki_burning_charge"
+    ]
+  },
+  "ki_burning_fire": {
+    "subtitle": "sounds.dragonminez.ki_burning_fire",
+    "sounds": [
+      "dragonminez:ki_burning_fire"
+    ]
+  },
+  "ki_finalflash_charge": {
+    "subtitle": "sounds.dragonminez.ki_finalflash_charge",
+    "sounds": [
+      "dragonminez:ki_finalflash_charge"
+    ]
+  },
+  "ki_finalflash_fire": {
+    "subtitle": "sounds.dragonminez.ki_finalflash_fire",
+    "sounds": [
+      "dragonminez:ki_finalflash_fire"
+    ]
+  },
+  "ki_spiritbomb_charge": {
+    "subtitle": "sounds.dragonminez.ki_spiritbomb_charge",
+    "sounds": [
+      "dragonminez:ki_spiritbomb_charge"
+    ]
+  },
+  "ki_spiritbomb_fire": {
+    "subtitle": "sounds.dragonminez.ki_spiritbomb_fire",
+    "sounds": [
+      "dragonminez:ki_spiritbomb_fire"
+    ]
+  },
+  "ki_supernova_charge": {
+    "subtitle": "sounds.dragonminez.ki_supernova_charge",
+    "sounds": [
+      "dragonminez:ki_supernova_charge"
+    ]
+  },
+  "ki_supernova_fire": {
+    "subtitle": "sounds.dragonminez.ki_supernova_fire",
+    "sounds": [
+      "dragonminez:ki_supernova_fire"
+    ]
+  },
+  "ki_beam_charge": {
+    "subtitle": "sounds.dragonminez.ki_beam_charge",
+    "sounds": [
+      "dragonminez:ki_beam_charge"
+    ]
+  },
+  "ki_beam_fire": {
+    "subtitle": "sounds.dragonminez.ki_beam_fire",
+    "sounds": [
+      "dragonminez:ki_beam_fire"
+    ]
+  },
   "ki_disk_charge": {
     "subtitle": "sounds.dragonminez.ki_disk_charge",
     "sounds": [
       "dragonminez:ki_disk_charge"
+    ]
+  },
+  "ki_disk_fire": {
+    "subtitle": "sounds.dragonminez.ki_disk_fire",
+    "sounds": [
+      "dragonminez:ki_disk_fire"
     ]
   },
   "switch_off": {
@@ -1085,6 +1151,30 @@
     "subtitle": "sounds.dragonminez.majin_absorb",
     "sounds": [
       "dragonminez:majin_absorb"
+    ]
+  },
+  "insta_form_on": {
+    "subtitle": "sounds.dragonminez.insta_form_on",
+    "sounds": [
+      "dragonminez:insta_form_on"
+    ]
+  },
+  "insta_form_off": {
+    "subtitle": "sounds.dragonminez.insta_form_off",
+    "sounds": [
+      "dragonminez:insta_form_off"
+    ]
+  },
+  "no_ki_form": {
+    "subtitle": "sounds.dragonminez.no_ki_form",
+    "sounds": [
+      "dragonminez:no_ki_form"
+    ]
+  },
+  "stack_form": {
+    "subtitle": "sounds.dragonminez.stack_form",
+    "sounds": [
+      "dragonminez:stack_form"
     ]
   }
 }

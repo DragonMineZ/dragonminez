@@ -1,10 +1,15 @@
 package com.dragonminez.server.events.players.combat;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
@@ -18,8 +23,12 @@ import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraftforge.entity.PartEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -56,6 +65,7 @@ public class StrikeAttackHandler {
 	private static final Map<UUID, PendingStrike> PENDING = new HashMap<>();
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
 	private static final Map<UUID, RecentHit> RECENTLY_DAMAGED = new HashMap<>();
+	private static final Map<UUID, Integer> STRIKE_ANCHOR_PART = new HashMap<>();
 
 	public static void requestStrike(ServerPlayer player, int preferredTargetId) {
 		if (player.level().isClientSide) return;
@@ -97,7 +107,13 @@ public class StrikeAttackHandler {
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
 			if (immediateTarget != null) {
-				teleportToTargetFront(player, immediateTarget);
+				boolean faceTarget = !"dragon_fist".equals(strike.getId());
+				PartEntity<?> hitPart = nearestPartInSight(player, coneRange);
+					if (hitPart != null && hitPart.getParent() == immediateTarget) {
+						teleportToPartFront(player, hitPart, immediateTarget, faceTarget);
+					} else {
+						teleportToTargetFront(player, immediateTarget, faceTarget);
+					}
 				player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
 						MainSounds.TP_SHORT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
 				startStrike(player, immediateTarget, pending);
@@ -121,6 +137,7 @@ public class StrikeAttackHandler {
 	public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
 		UUID id = event.getEntity().getUUID();
 		PENDING.remove(id);
+		STRIKE_ANCHOR_PART.remove(id);
 		ActiveStrike active = ACTIVE.remove(id);
 		if (active != null && event.getEntity() instanceof ServerPlayer attacker) {
 			clearVictimStrikeLock(attacker, null, active.targetId());
@@ -182,7 +199,20 @@ public class StrikeAttackHandler {
 		PENDING.put(player.getUUID(), pending.withTicksRemaining(pending.ticksRemaining() - 1));
 	}
 
-	private static void processActive(ServerPlayer player) {
+    private static void processActive(ServerPlayer player) {
+        try {
+            processActiveInternal(player);
+        } catch (Exception e) {
+            LogUtil.error(Env.SERVER, "Error procesando ActiveStrike de " + player.getName().getString() + ", forzando cierre", e);
+            ActiveStrike active = ACTIVE.get(player.getUUID());
+            if (active != null) {
+                LivingEntity target = resolveLiving(player, active.targetId());
+                endStrike(player, target, active);
+            }
+        }
+    }
+
+	private static void processActiveInternal(ServerPlayer player) {
 		ActiveStrike active = ACTIVE.get(player.getUUID());
 		if (active == null) return;
 
@@ -193,43 +223,102 @@ public class StrikeAttackHandler {
 			return;
 		}
 
-		if ("dragon_fist".equals(active.techniqueId())) {
-			if (active.ticksElapsed() == 0) {
-				faceEntity(player, target);
-			}
+        if ("dragon_fist".equals(active.techniqueId())) {
 
-			if (active.ticksElapsed() == 5) {
-				SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
-				dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
-				dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
-			}
+            if (active.ticksElapsed() == 5) {
+                SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
+                dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
 
-			if (active.ticksElapsed() >= active.durationTicks()) {
-				endStrike(player, target, active);
-			} else {
-				ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
-			}
-			return;
-		}
+                try {
+                    dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
+                } catch (Exception e) {
+                }
+            }
 
-		if ("oozaru_fist".equals(active.techniqueId())) {
-			if (active.ticksElapsed() == 0) {
-				faceEntity(player, target);
-			}
+            if (active.ticksElapsed() >= active.durationTicks()) {
 
-			if (active.ticksElapsed() == 5) {
-				OzaruFistEntity ozaruFist = new OzaruFistEntity(player.level(), player);
-				ozaruFist.setupOzaruFist(player, (float) active.totalDamage(), 1.0f);
-				ozaruFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
-			}
+                if (!player.level().isClientSide) {
+                    try {
+                        KiExplosionVisualEntity explosion = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
+                        explosion.setPos(target.getX(), target.getY() + 1.0, target.getZ());
+                        explosion.setupExplosion(0xFFD700, 0xFF8C00, 5.0F);
+                        player.level().addFreshEntity(explosion);
+                    } catch (Exception e) {
+                    }
+                }
 
-			if (active.ticksElapsed() >= active.durationTicks()) {
-				endStrike(player, target, active);
-			} else {
-				ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
-			}
-			return;
-		}
+                endStrike(player, target, active);
+            } else {
+                ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
+            }
+            return;
+        }
+
+        if ("oozaru_fist".equals(active.techniqueId())) {
+            int currentTick = active.ticksElapsed();
+
+            if (currentTick < 10) {
+                Vec3 lookDownPos = player.getEyePosition().add(0, -10.0, 0);
+                player.lookAt(EntityAnchorArgument.Anchor.EYES, lookDownPos);
+                player.setXRot(90.0F);
+
+                freezeEntity(player);
+                freezeEntity(target);
+            }
+
+            else if (currentTick == 10) {
+                Vec3 lookDownPos = player.getEyePosition().add(0, -10.0, 0);
+                player.lookAt(EntityAnchorArgument.Anchor.EYES, lookDownPos);
+                player.setXRot(90.0F);
+
+                KiWaveEntity kamehameha = new KiWaveEntity(player.level(), player);
+                kamehameha.setupKiHame(player, (float) active.totalDamage() * 0.2F, 2.0F, 0.5F, 5);
+                kamehameha.setFiring(true);
+                kamehameha.setMaxLife(15);
+                kamehameha.setBlockDestructionEnabled(false);
+
+                player.level().addFreshEntity(kamehameha);
+                player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_KAME_FIRE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
+            }
+
+            else if (currentTick > 10 && currentTick < 20) {
+                faceStrikeTarget(player, target);
+                freezeEntity(target);
+            }
+
+            else if (currentTick == 20) {
+                faceStrikeTarget(player, target);
+
+                player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.OOZARU_GROWL_PLAYER.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 1.0F);
+
+                OzaruFistEntity ozaruFist = new OzaruFistEntity(player.level(), player);
+                ozaruFist.setupOzaruFist(player, (float) active.totalDamage(), 1.0f);
+
+                try {
+                    ozaruFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
+                } catch (Exception e) {
+                }
+            }
+
+            if (currentTick >= active.durationTicks()) {
+
+                if (!player.level().isClientSide) {
+                    try {
+                        KiExplosionVisualEntity explosion = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
+                        explosion.setPos(target.getX(), target.getY() + 1.0, target.getZ());
+                        explosion.setupExplosion(0xFFFFFF, 0x73FFEE, 3.0F);
+                        player.level().addFreshEntity(explosion);
+                    } catch (Exception e) {
+                    }
+                }
+
+                endStrike(player, target, active);
+            } else {
+                ACTIVE.put(player.getUUID(), active.withTicksElapsed(currentTick + 1));
+            }
+            return;
+        }
+
 
 		if ("meteor".equals(active.techniqueId())) {
 			if (target instanceof ServerPlayer targetPlayer) {
@@ -282,8 +371,7 @@ public class StrikeAttackHandler {
 				);
 
 				Vec3 pushDir = player.getLookAngle().normalize();
-				target.setDeltaMovement(pushDir.x * 2.5, 0.4, pushDir.z * 2.5);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * 2.5, 0.4, pushDir.z * 2.5));
 
 				playStrikeKnockbackAnimation(target);
 
@@ -305,7 +393,7 @@ public class StrikeAttackHandler {
 			int nextTick = active.ticksElapsed() + 1;
 
 			if (nextTick < 14) {
-				faceEntity(player, target);
+				faceStrikeTarget(player, target);
 				if (target instanceof ServerPlayer targetPlayer) {
 					faceEntity(targetPlayer, player);
 				} else {
@@ -348,10 +436,20 @@ public class StrikeAttackHandler {
 						0.7F
 				);
 
+				if (!player.level().isClientSide) {
+					try {
+						KiExplosionVisualEntity impact = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
+						impact.setPos(target.getX(), target.getY() + (target.getBbHeight() * 0.5), target.getZ());
+						impact.setupExplosion(0xFFFFFF, 0xF5C527, 0.5F);
+						player.level().addFreshEntity(impact);
+					} catch (Exception e) {
+					}
+					spawnSuperGodFistImpactParticles(player.serverLevel(), target);
+				}
+
 				Vec3 pushDir = player.getLookAngle().normalize();
 				double knockbackPower = 4.0;
-				target.setDeltaMovement(pushDir.x * knockbackPower, 0.6, pushDir.z * knockbackPower);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * knockbackPower, 0.6, pushDir.z * knockbackPower));
 
 				playStrikeKnockbackAnimation(target);
 
@@ -377,6 +475,8 @@ public class StrikeAttackHandler {
 
 		if ("deadly_dance".equals(active.techniqueId()) || "deadly_dance_vegetto".equals(active.techniqueId())) {
 
+			boolean vegetto = "deadly_dance_vegetto".equals(active.techniqueId());
+
 			if (target instanceof ServerPlayer targetPlayer) {
 				faceEntity(targetPlayer, player);
 			} else {
@@ -387,23 +487,36 @@ public class StrikeAttackHandler {
 
 			Vec3 lookVec = Vec3.directionFromRotation(0, player.getYRot()).normalize();
 
-			double advanceSpeed = 0.25;
-			player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
-			player.hurtMarked = true;
-
 			double distance = 1.5;
 			double targetX = player.getX() + lookVec.x * distance;
 			double targetY = player.getY();
 			double targetZ = player.getZ() + lookVec.z * distance;
 
-			target.setPos(targetX, targetY, targetZ);
-			target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
-			target.hurtMarked = true;
+			boolean blocked = player.horizontalCollision || !canOccupy(target, targetX, targetY, targetZ);
+
+			if (!blocked) {
+				double advanceSpeed = 0.25;
+				player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
+				player.hurtMarked = true;
+
+				target.setPos(targetX, targetY, targetZ);
+				target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
+				target.hurtMarked = true;
+			} else {
+				player.setDeltaMovement(0, player.getDeltaMovement().y, 0);
+				player.hurtMarked = true;
+				target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
+				target.hurtMarked = true;
+			}
 
 			int nextTick = active.ticksElapsed() + 1;
 
 			if (nextTick % active.hitIntervalTicks() == 0 && nextTick < 30) {
 				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+
+				if (!player.level().isClientSide) {
+					spawnDeadlyDanceHitParticles(player.serverLevel(), target, vegetto);
+				}
 
 				player.level().playSound(
 						null, target.getX(), target.getY(), target.getZ(),
@@ -418,6 +531,10 @@ public class StrikeAttackHandler {
 				applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
 				grantKillXpIfNeeded(player, target, active.techniqueId());
 
+				if (!player.level().isClientSide) {
+					spawnDeadlyDanceFinalParticles(player.serverLevel(), target, vegetto);
+				}
+
 				player.level().playSound(
 						null, target.getX(), target.getY(), target.getZ(),
 						MainSounds.CRITICO2.get(),
@@ -430,8 +547,7 @@ public class StrikeAttackHandler {
 				double upwardForce = 1.5;
 				double forwardForce = 0.5;
 
-				target.setDeltaMovement(pushDir.x * forwardForce, upwardForce, pushDir.z * forwardForce);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * forwardForce, upwardForce, pushDir.z * forwardForce));
 
 				playStrikeKnockbackAnimation(target);
 
@@ -458,7 +574,7 @@ public class StrikeAttackHandler {
 			int nextTick = active.ticksElapsed() + 1;
 
 			if (nextTick < 20) {
-				faceEntity(player, target);
+				faceStrikeTarget(player, target);
 				if (target instanceof ServerPlayer targetPlayer) {
 					faceEntity(targetPlayer, player);
 				} else {
@@ -484,8 +600,7 @@ public class StrikeAttackHandler {
 				player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.GOLPE1.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.0F);
 
 				Vec3 pushDir = player.getLookAngle().normalize();
-				target.setDeltaMovement(pushDir.x * 1.5, 0.4, pushDir.z * 1.5);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * 1.5, 0.4, pushDir.z * 1.5));
 				freezeEntity(player);
 			}
 			else if (nextTick < 15) {
@@ -509,8 +624,7 @@ public class StrikeAttackHandler {
 				player.level().playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 0.8F);
 
 				Vec3 pushDir = player.getLookAngle().normalize();
-				target.setDeltaMovement(pushDir.x * 3.5, 0.2, pushDir.z * 3.5);
-				target.hurtMarked = true;
+				KnockbackHelper.apply(target, new Vec3(pushDir.x * 3.5, 0.2, pushDir.z * 3.5));
 				playStrikeKnockbackAnimation(target);
 
 				freezeEntity(player);
@@ -553,9 +667,57 @@ public class StrikeAttackHandler {
 			return;
 		}
 
+		if ("wolf_fang".equals(active.techniqueId())) {
+			freezeEntity(player);
+			freezeEntity(target);
+			faceStrikeTarget(player, target);
+			if (target instanceof ServerPlayer targetPlayer) {
+				faceEntity(targetPlayer, player);
+			}
+			player.invulnerableTime = 20;
+
+			int wolfTick = active.ticksElapsed() + 1;
+			int wolfDuration = active.durationTicks();
+
+			if (wolfTick % active.hitIntervalTicks() == 0 && wolfTick < wolfDuration) {
+				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+			}
+
+			if (wolfTick < wolfDuration - 3 && wolfTick % 4 == 0) {
+				spawnWolfFangJab(player, target, wolfTick);
+			}
+
+			if (wolfTick >= wolfDuration) {
+				applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
+				grantKillXpIfNeeded(player, target, active.techniqueId());
+
+				double sx = target.getX();
+				double sy = target.getY() + target.getBbHeight() * 0.5;
+				double sz = target.getZ();
+
+				player.level().playSound(null, sx, sy, sz,
+						MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 0.7F);
+				player.level().playSound(null, sx, sy, sz,
+						MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.5F, 1.0F);
+				player.level().playSound(null, sx, sy, sz,
+						MainSounds.OOZARU_GROWL_PLAYER.get(), net.minecraft.sounds.SoundSource.PLAYERS, 3.0F, 1.15F);
+
+				if (!player.level().isClientSide) {
+					spawnWolfFangFinalParticles(player.serverLevel(), target);
+				}
+
+				applyKnockback(player, target, active.totalDamage());
+				endStrike(player, target, active);
+				return;
+			}
+
+			ACTIVE.put(player.getUUID(), active.withTicksElapsed(wolfTick));
+			return;
+		}
+
 		freezeEntity(player);
 		freezeEntity(target);
-		faceEntity(player, target);
+		faceStrikeTarget(player, target);
 		if (target instanceof ServerPlayer targetPlayer) {
 			faceEntity(targetPlayer, player);
 		}
@@ -611,6 +773,9 @@ public class StrikeAttackHandler {
 					0
 			);
 			ACTIVE.put(player.getUUID(), active);
+			// Grant invulnerability the instant the strike locks on, before the next tick's
+			// processActive runs, so the target can't land a free hit during the engage window.
+			player.invulnerableTime = 20;
 			MinecraftForge.EVENT_BUS.post(
 					new DMZEvent.StrikeAttackFireEvent(player, stats, strike, target));
 
@@ -618,7 +783,17 @@ public class StrikeAttackHandler {
 			//teleportToTargetFront(player, target);
 			setStrikeLocked(player, true);
 			setStrikeLocked(target, true);
-			faceEntity(player, target);
+
+			PartEntity<?> anchorPart = nearestPartInSight(player, CONE_RANGE_FLY);
+			if (anchorPart != null && anchorPart.getParent() == target) {
+				STRIKE_ANCHOR_PART.put(player.getUUID(), anchorPart.getId());
+			} else {
+				STRIKE_ANCHOR_PART.remove(player.getUUID());
+			}
+
+			if (!"dragon_fist".equals(pending.techniqueId())) {
+				faceStrikeTarget(player, target);
+			}
 			if (target instanceof ServerPlayer targetPlayer) {
 				faceEntity(targetPlayer, player);
 			}
@@ -628,6 +803,7 @@ public class StrikeAttackHandler {
 
 	private static void endStrike(ServerPlayer player, LivingEntity target, ActiveStrike active) {
 		ACTIVE.remove(player.getUUID());
+		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		setStrikeLocked(player, false);
 		clearVictimStrikeLock(player, target, active.targetId());
 		stopStrikeAnimation(player);
@@ -642,6 +818,7 @@ public class StrikeAttackHandler {
 
 	private static void failPending(ServerPlayer player, PendingStrike pending) {
 		PENDING.remove(player.getUUID());
+		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(pending.techniqueId());
 			int halfCooldown = Math.max(1, pending.cooldownTicks() / 2);
@@ -707,7 +884,52 @@ public class StrikeAttackHandler {
 				}
 			}
 		}
+		if (closest == null) closest = nearestPartParentInSight(player, range);
 		return Optional.ofNullable(closest);
+	}
+
+	private static LivingEntity nearestPartParentInSight(ServerPlayer player, double range) {
+		PartEntity<?> part = nearestPartInSight(player, range);
+		return part != null && part.getParent() instanceof LivingEntity parent ? parent : null;
+	}
+
+	private static PartEntity<?> nearestPartInSight(ServerPlayer player, double range) {
+		if (!(player.level() instanceof ServerLevel level)) return null;
+		Vec3 eyePos = player.getEyePosition();
+		Vec3 endPos = eyePos.add(player.getViewVector(1.0F).scale(range));
+
+		PartEntity<?> best = null;
+		double bestDist = range * range;
+		for (PartEntity<?> part : level.getPartEntities()) {
+			if (!(part.getParent() instanceof LivingEntity parent) || !parent.isAlive()) continue;
+			if (!TargetHelper.canAttack(player, parent, range)) continue;
+			if (player.distanceTo(part) > range + 8.0) continue;
+			if (!player.hasLineOfSight(part)) continue;
+
+			AABB box = part.getBoundingBox().inflate(part.getPickRadius());
+			if (box.contains(eyePos)) return part;
+
+			Optional<Vec3> hit = box.clip(eyePos, endPos);
+			if (hit.isPresent()) {
+				double dist = eyePos.distanceToSqr(hit.get());
+				if (dist < bestDist) {
+					best = part;
+					bestDist = dist;
+				}
+			}
+		}
+		return best;
+	}
+
+	private static void teleportToPartFront(ServerPlayer player, PartEntity<?> part, LivingEntity parent, boolean faceTarget) {
+		Vec3 center = part.getBoundingBox().getCenter();
+		Vec3 look = parent.getLookAngle();
+		if (look.horizontalDistanceSqr() < 1.0E-6) look = player.getLookAngle();
+
+		double distance = 1.3 + part.getBbWidth() * 0.5;
+		Vec3 teleportPos = center.subtract(look.scale(distance));
+		player.teleportTo(teleportPos.x, center.y - player.getEyeHeight(), teleportPos.z);
+		if (faceTarget) player.lookAt(EntityAnchorArgument.Anchor.EYES, center);
 	}
 
 	private static void dashForward(ServerPlayer player, boolean isFlying) {
@@ -723,7 +945,7 @@ public class StrikeAttackHandler {
 
 	private static LivingEntity findConeTarget(ServerPlayer player, double range, int preferredTargetId) {
 		if (preferredTargetId > 0) {
-			LivingEntity pref = player.level().getEntity(preferredTargetId) instanceof LivingEntity l ? l : null;
+			LivingEntity pref = TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(player.level(), preferredTargetId)) instanceof LivingEntity l ? l : null;
 			if (pref != null && pref.isAlive() && player.distanceTo(pref) <= range
 					&& isInFrontCone(player, pref) && player.hasLineOfSight(pref)
 					&& TargetHelper.canAttack(player, pref, range)) {
@@ -739,7 +961,7 @@ public class StrikeAttackHandler {
 						&& isInFrontCone(player, e)
 						&& player.hasLineOfSight(e)));
 
-		if (candidates.isEmpty()) return null;
+		if (candidates.isEmpty()) return nearestPartParentInSight(player, range);
 		if (candidates.size() == 1) return candidates.get(0);
 
 		RecentHit recent = RECENTLY_DAMAGED.get(player.getUUID());
@@ -780,14 +1002,14 @@ public class StrikeAttackHandler {
 		return look.dot(toTarget) >= CONE_HALF_ANGLE_COS;
 	}
 
-	private static void teleportToTargetFront(ServerPlayer player, LivingEntity target) {
+	private static void teleportToTargetFront(ServerPlayer player, LivingEntity target, boolean faceTarget) {
 		Vec3 targetPos = target.position();
 		Vec3 targetLook = target.getLookAngle();
 		Vec3 teleportPos = targetPos.subtract(targetLook.scale(1.3));
 
 		player.teleportTo(teleportPos.x, targetPos.y, teleportPos.z);
 
-		player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+		if (faceTarget) player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
 
 	}
 
@@ -825,14 +1047,175 @@ public class StrikeAttackHandler {
 	private static void applyKnockback(ServerPlayer player, LivingEntity target, double totalDamage) {
 		Vec3 dir = target.position().subtract(player.position()).normalize();
 		if (dir.lengthSqr() < 1.0E-6) dir = player.getLookAngle();
-		target.setDeltaMovement(dir.scale(KNOCKBACK_FORCE));
-		target.hurtMarked = true;
+		KnockbackHelper.apply(target, dir.scale(KNOCKBACK_FORCE));
 		playStrikeKnockbackAnimation(target);
 
 		MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || dir.y < -0.5
 				? MomentumImpactHandler.CollisionImpactType.GROUND
 				: MomentumImpactHandler.CollisionImpactType.WALL;
 		MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (totalDamage * IMPACT_DAMAGE_RATIO), dir);
+	}
+
+	private static void spawnSuperGodFistImpactParticles(ServerLevel level, LivingEntity target) {
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.5;
+		double z = target.getZ();
+
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 1.0, 1.0, 1.0, 1.0);
+
+		for (int i = 0; i < 8; i++) {
+			double ox = (level.random.nextDouble() - 0.5) * 0.8;
+			double oy = (level.random.nextDouble() - 0.5) * 0.8;
+			double oz = (level.random.nextDouble() - 0.5) * 0.8;
+			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, 0.96, 0.77, 0.15, 1.0);
+		}
+
+		level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, 18, 0.4, 0.4, 0.4, 0.6);
+		level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
+	}
+
+	private static boolean canOccupy(LivingEntity entity, double x, double y, double z) {
+		AABB moved = entity.getBoundingBox().move(x - entity.getX(), y - entity.getY(), z - entity.getZ());
+		return entity.level().noCollision(entity, moved);
+	}
+
+	private static final float[] DD_GOLD = {1.0F, 0.84F, 0.0F};
+	private static final float[] DD_CELESTE = {0.30F, 0.80F, 1.0F};
+	private static final float[] DD_YELLOW = {1.0F, 0.95F, 0.15F};
+	private static final float[] DD_YELLOW_DEEP = {1.0F, 0.78F, 0.05F};
+
+	private static float[] deadlyDanceColor(boolean vegetto, int i) {
+		if (vegetto) return (i % 2 == 0) ? DD_GOLD : DD_CELESTE;
+		return (i % 2 == 0) ? DD_YELLOW : DD_YELLOW_DEEP;
+	}
+
+	private static void spawnDeadlyDanceHitParticles(ServerLevel level, LivingEntity target, boolean vegetto) {
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.6;
+		double z = target.getZ();
+
+		float[] main = deadlyDanceColor(vegetto, 0);
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
+
+		int sparkCount = vegetto ? 2 : 1;
+		for (int i = 0; i < sparkCount; i++) {
+			float[] c = deadlyDanceColor(vegetto, i);
+			double ox = (level.random.nextDouble() - 0.5) * 0.9;
+			double oy = (level.random.nextDouble() - 0.5) * 0.9;
+			double oz = (level.random.nextDouble() - 0.5) * 0.9;
+			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, c[0], c[1], c[2], 1.0);
+		}
+
+		if (vegetto) {
+			level.sendParticles(ParticleTypes.CRIT, x, y, z, 2, 0.3, 0.3, 0.3, 0.6);
+			level.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 4, 0.3, 0.3, 0.3, 0.4);
+		}
+	}
+
+	private static void spawnDeadlyDanceFinalParticles(ServerLevel level, LivingEntity target, boolean vegetto) {
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.5;
+		double z = target.getZ();
+
+		float[] main = deadlyDanceColor(vegetto, 0);
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
+
+		if (!vegetto) {
+			for (int i = 0; i < 3; i++) {
+				double dirX = level.random.nextDouble() - 0.5;
+				double dirY = level.random.nextDouble() - 0.5;
+				double dirZ = level.random.nextDouble() - 0.5;
+				double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+				if (len < 1.0E-4) continue;
+				float[] c = deadlyDanceColor(false, i);
+				double radius = 0.5 + level.random.nextDouble() * 1.2;
+				double px = x + (dirX / len) * radius;
+				double py = y + (dirY / len) * radius;
+				double pz = z + (dirZ / len) * radius;
+				level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, c[0], c[1], c[2], 1.0);
+			}
+			level.sendParticles(ParticleTypes.CRIT, x, y, z, 4, 0.4, 0.4, 0.4, 0.5);
+			return;
+		}
+
+		for (int i = 0; i < 5; i++) {
+			double dirX = level.random.nextDouble() - 0.5;
+			double dirY = level.random.nextDouble() - 0.5;
+			double dirZ = level.random.nextDouble() - 0.5;
+			double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+			if (len < 1.0E-4) continue;
+			float[] c = deadlyDanceColor(true, i);
+			double radius = 0.5 + level.random.nextDouble() * 2.5;
+			double px = x + (dirX / len) * radius;
+			double py = y + (dirY / len) * radius;
+			double pz = z + (dirZ / len) * radius;
+			level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, c[0], c[1], c[2], 1.0);
+		}
+
+		int ringPoints = 5;
+		for (int i = 0; i < ringPoints; i++) {
+			double angle = (Math.PI * 2 * i) / ringPoints;
+			float[] c = deadlyDanceColor(true, i);
+			for (double ry : new double[]{-0.4, 0.4}) {
+				double px = x + Math.cos(angle) * 1.3;
+				double pz = z + Math.sin(angle) * 1.3;
+				level.sendParticles(MainParticles.SPARKS.get(), px, y + ry, pz, 0, c[0], c[1], c[2], 1.0);
+			}
+		}
+
+		level.sendParticles(ParticleTypes.CRIT, x, y, z, 30, 0.6, 0.6, 0.6, 0.8);
+		level.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 20, 0.5, 0.5, 0.5, 0.6);
+		level.sendParticles(ParticleTypes.FIREWORK, x, y, z, 40, 0.3, 0.3, 0.3, 0.35);
+		level.sendParticles(ParticleTypes.FLASH, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
+	}
+
+	private static void spawnWolfFangJab(ServerPlayer player, LivingEntity target, int beat) {
+		if (!(player.level() instanceof ServerLevel level)) return;
+
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.6;
+		double z = target.getZ();
+
+		SoundEvent[] punches = {
+				MainSounds.GOLPE1.get(), MainSounds.GOLPE2.get(), MainSounds.GOLPE3.get(),
+				MainSounds.GOLPE4.get(), MainSounds.GOLPE5.get(), MainSounds.GOLPE6.get()
+		};
+        SoundEvent punch = punches[Math.floorMod(beat / 4, punches.length)];
+		level.playSound(null, x, y, z, punch, net.minecraft.sounds.SoundSource.PLAYERS,
+				1.0F, 1.1F + (level.random.nextFloat() * 0.3F));
+
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 0.30, 0.62, 1.0, 1.0);
+
+		for (int i = 0; i < 4; i++) {
+			double ox = (level.random.nextDouble() - 0.5) * 0.7;
+			double oy = (level.random.nextDouble() - 0.5) * 0.7;
+			double oz = (level.random.nextDouble() - 0.5) * 0.7;
+			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, 0.25, 0.55, 1.0, 1.0);
+		}
+
+		level.sendParticles(ParticleTypes.CRIT, x, y, z, 6, 0.3, 0.3, 0.3, 0.5);
+	}
+
+	private static void spawnWolfFangFinalParticles(ServerLevel level, LivingEntity target) {
+		double x = target.getX();
+		double y = target.getY() + target.getBbHeight() * 0.5;
+		double z = target.getZ();
+
+		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 0.30, 0.62, 1.0, 1.0);
+
+		for (int i = 0; i < 90; i++) {
+			double dirX = level.random.nextDouble() - 0.5;
+			double dirY = level.random.nextDouble() - 0.5;
+			double dirZ = level.random.nextDouble() - 0.5;
+			double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+			if (len < 1.0E-4) continue;
+			double radius = 0.5 + level.random.nextDouble() * 2.5;
+			double px = x + (dirX / len) * radius;
+			double py = y + (dirY / len) * radius;
+			double pz = z + (dirZ / len) * radius;
+			level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, 0.25, 0.55, 1.0, 1.0);
+		}
+
 	}
 
 	private static void playStrikeAnimation(ServerPlayer player, String animationId) {
@@ -853,6 +1236,20 @@ public class StrikeAttackHandler {
 		if (source == null || target == null) return;
 		source.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
 		source.setYHeadRot(source.getYRot());
+	}
+
+	/** Faces the attacker at the locked multipart hitbox (its center) when there is one, else at the target. */
+	private static void faceStrikeTarget(ServerPlayer player, LivingEntity target) {
+		Integer partId = STRIKE_ANCHOR_PART.get(player.getUUID());
+		if (partId != null) {
+			var anchor = TargetHelper.getEntityOrPart(player.level(), partId);
+			if (anchor instanceof PartEntity<?> part && part.getParent() == target) {
+				player.lookAt(EntityAnchorArgument.Anchor.EYES, part.getBoundingBox().getCenter());
+				player.setYHeadRot(player.getYRot());
+				return;
+			}
+		}
+		faceEntity(player, target);
 	}
 
 	private static void playStrikeHitAnimation(LivingEntity target) {

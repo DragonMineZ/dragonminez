@@ -1,0 +1,61 @@
+{
+  "id": "bulma_anti_ki_cloak",
+  "title": "dmz.sidequest.bulma_anti_ki_cloak.name",
+  "description": "dmz.sidequest.bulma_anti_ki_cloak.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_scouter_threat_db"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 14
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_cell_jr",
+      "count": 5,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_ingot",
+      "count": 3
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:observer",
+      "count": 4
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 44000
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:anti_ki_cloak",
+      "count": 1
+    }
+  ]
+}

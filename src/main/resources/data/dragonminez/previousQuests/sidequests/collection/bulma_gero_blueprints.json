@@ -1,0 +1,49 @@
+{
+  "id": "bulma_gero_blueprints",
+  "title": "dmz.sidequest.bulma_gero.name",
+  "description": "dmz.sidequest.bulma_gero.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 6
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:gero_lab"
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone",
+      "count": 32
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:kikono_shard",
+      "count": 8
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 56000
+    }
+  ]
+}

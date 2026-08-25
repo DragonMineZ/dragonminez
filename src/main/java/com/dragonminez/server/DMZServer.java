@@ -19,6 +19,7 @@ public class DMZServer {
 		EffectsCommand.register(dispatcher);
 		SkillsCommand.register(dispatcher);
 		TechCommand.register(dispatcher);
+		CooldownsCommand.register(dispatcher);
 		FormsCommand.register(dispatcher);
 		PointsCommand.register(dispatcher);
 		DebugCommand.register(dispatcher);
@@ -34,6 +35,9 @@ public class DMZServer {
 		AlignmentCommand.register(dispatcher);
 		TailCommand.register(dispatcher);
 		HaloCommand.register(dispatcher);
+		RestoreCommand.register(dispatcher);
+		HairCommand.register(dispatcher);
+		ClassCommand.register(dispatcher);
 
 		LogUtil.info(Env.SERVER, "DragonMineZ Commands Registered");
 	}

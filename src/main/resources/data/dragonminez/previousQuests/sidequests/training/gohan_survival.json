@@ -1,0 +1,45 @@
+{
+  "id": "gohan_survival",
+  "title": "dmz.sidequest.gohan_survival.name",
+  "description": "dmz.sidequest.gohan_survival.desc",
+  "type": "SIDEQUEST",
+  "category": "training",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "piccolo",
+  "turn_in": "gohan",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 2
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:cooked_beef",
+      "count": 16
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:iron_sword",
+      "count": 1
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "gohan"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1000
+    }
+  ]
+}

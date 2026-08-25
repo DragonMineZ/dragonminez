@@ -55,6 +55,7 @@ public class RequestITTargetsC2S {
 					if (member.getUUID().equals(player.getUUID())) continue;
 					StatsData memberData = StatsProvider.get(StatsCapability.INSTANCE, member).orElse(null);
 					if (memberData == null || !memberData.getStatus().isHasCreatedCharacter()) continue;
+					if (TransformationsHelper.hasAntiKiCloak(member)) continue;
 					if (TransformationsHelper.isInstantTransmissionBlocked(data, memberData)) continue;
 
 					String memberDim = member.level().dimension().location().toString();
@@ -87,6 +88,7 @@ public class RequestITTargetsC2S {
 		if (!target.level().dimension().equals(self.level().dimension())) return false;
 		if (self.position().distanceTo(target.position()) > maxRange) return false;
 		if (target.isCreative() || target.isSpectator()) return false;
+		if (TransformationsHelper.hasAntiKiCloak(target)) return false;
 		if (TransformationsHelper.isInstantTransmissionBlocked(selfData, targetData)) return false;
 		if (targetData.getStatus().isFused() && !targetData.getStatus().isFusionLeader()) return false;
 

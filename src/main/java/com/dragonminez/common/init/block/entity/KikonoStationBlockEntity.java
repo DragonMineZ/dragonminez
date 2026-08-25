@@ -1,10 +1,13 @@
 package com.dragonminez.common.init.block.entity;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainRecipes;
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.menu.menutypes.KikonoStationMenu;
 import com.dragonminez.server.energy.StarEnergyStorage;
 import com.dragonminez.server.recipes.KikonoRecipe;
+import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
+import dev.shadowsoffire.apotheosis.adventure.socket.SocketHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -19,6 +22,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,6 +32,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
+import net.weaponleveling.api.LevelingAPI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
@@ -151,9 +156,13 @@ public class KikonoStationBlockEntity extends BlockEntity implements MenuProvide
 	}
 
 	private void craftItem(KikonoRecipe recipe) {
-		ItemStack result = recipe.getResultItem(null);
+		ItemStack result = getOutputWithEnchantments(
+				recipe.getResultItem(null),
+				itemHandler.getStackInSlot(10)
+		);
+
 		for (int i = 0; i <= 10; i++) itemHandler.extractItem(i, 1, false);
-		itemHandler.insertItem(11, result.copy(), false);
+		itemHandler.insertItem(11, result, false);
 	}
 
 	@Override
@@ -216,5 +225,48 @@ public class KikonoStationBlockEntity extends BlockEntity implements MenuProvide
 	@Override
 	public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
 		return new KikonoStationMenu(pContainerId, pPlayerInventory, this, this.data);
+	}
+
+	private ItemStack getOutputWithEnchantments(ItemStack itemStack, ItemStack template) {
+		var output = itemStack.copy();
+
+		if (ConfigManager.getServerConfig().getCrafting().getCopyEnchantmentsFromTemplate()) {
+			var enchantments = EnchantmentHelper.getEnchantments(template);
+			EnchantmentHelper.setEnchantments(enchantments, output);
+		}
+
+		if (ConfigManager.getServerConfig().getCrafting().getCopyWeaponLevelFromTemplate()) {
+			int level = LevelingAPI.getLevel(template);
+			LevelingAPI.updateLevel(output, level);
+		}
+
+		if (ConfigManager.getServerConfig().getCrafting().getCopyWeaponLevelProgressFromTemplate()) {
+			long progress = LevelingAPI.getLevelProgress(template);
+			LevelingAPI.updateLevelProgress(output, progress);
+		}
+
+		if (ConfigManager.getServerConfig().getCrafting().getCopyApotheosisRarityFromTemplate()) {
+			var rarity = AffixHelper.getRarity(template);
+			if (rarity.isBound()) {
+				AffixHelper.setRarity(output, rarity.get());
+			}
+		}
+
+		if (ConfigManager.getServerConfig().getCrafting().getCopyApotheosisAffixesFromTemplate()) {
+			var affixes = AffixHelper.getAffixes(template);
+			AffixHelper.setAffixes(output, affixes);
+		}
+
+		if (ConfigManager.getServerConfig().getCrafting().getCopyApotheosisSocketsFromTemplate()) {
+			var sockets = SocketHelper.getSockets(template);
+			SocketHelper.setSockets(output, sockets);
+
+			if (ConfigManager.getServerConfig().getCrafting().getCopyApotheosisGemsFromTemplate()) {
+				var socketedGems = SocketHelper.getGems(template);
+				SocketHelper.setGems(output, socketedGems);
+			}
+		}
+
+		return output;
 	}
 }

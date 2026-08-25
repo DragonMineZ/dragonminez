@@ -1,0 +1,8 @@
+{
+  "id": "android_saga",
+  "name": "dmz.saga.android_saga",
+  "requirements": {
+    "previousSaga": "frieza_saga"
+  },
+  "questFolder": "saga_android"
+}

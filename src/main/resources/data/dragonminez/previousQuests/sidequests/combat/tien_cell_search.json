@@ -1,0 +1,54 @@
+{
+  "id": "tien_cell_search",
+  "title": "dmz.sidequest.tien_cell.name",
+  "description": "dmz.sidequest.tien_cell.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "krillin",
+  "turn_in": "krillin",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 10
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "BIOME",
+        "biome": "minecraft:plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "minecraft:zombie",
+      "count": 30,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "KILL",
+      "entity": "minecraft:spider",
+      "count": 15,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 64000
+    }
+  ]
+}

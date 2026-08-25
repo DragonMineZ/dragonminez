@@ -5,16 +5,21 @@ import com.dragonminez.LogUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.io.*;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 public class JsonStorage implements IDataStorage {
@@ -48,6 +53,15 @@ public class JsonStorage implements IDataStorage {
 
 		try (Reader reader = Files.newBufferedReader(file)) {
 			JsonElement json = GSON.fromJson(reader, JsonElement.class);
+			if (json == null) return null;
+
+			if (json.isJsonObject()) {
+				JsonObject obj = json.getAsJsonObject();
+				if (obj.has("data") && obj.has("format") && "snbt".equals(obj.get("format").getAsString())) {
+					return TagParser.parseTag(obj.get("data").getAsString());
+				}
+			}
+
 			return (CompoundTag) JsonOps.INSTANCE.convertTo(NbtOps.INSTANCE, json);
 		} catch (Exception e) {
 			LogUtil.error(Env.SERVER, "Failed to load JSON data for " + playerUUID, e);
@@ -60,9 +74,19 @@ public class JsonStorage implements IDataStorage {
 		if (storageDir == null) return false;
 
 		Path file = storageDir.resolve(playerUUID.toString() + ".json");
-		try (Writer writer = Files.newBufferedWriter(file)) {
-			JsonElement json = NbtOps.INSTANCE.convertTo(JsonOps.INSTANCE, data);
-			GSON.toJson(json, writer);
+		Path tempFile = storageDir.resolve(playerUUID.toString() + ".json.tmp");
+		try {
+			try (Writer writer = Files.newBufferedWriter(tempFile)) {
+				JsonObject wrapper = new JsonObject();
+				wrapper.addProperty("format", "snbt");
+				wrapper.addProperty("data", NbtUtils.structureToSnbt(data));
+				GSON.toJson(wrapper, writer);
+			}
+			try {
+				Files.move(tempFile, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+			} catch (AtomicMoveNotSupportedException e) {
+				Files.move(tempFile, file, StandardCopyOption.REPLACE_EXISTING);
+			}
 			return true;
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Failed to save JSON data for " + playerName, e);

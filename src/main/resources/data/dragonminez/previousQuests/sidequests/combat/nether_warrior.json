@@ -1,0 +1,60 @@
+{
+  "id": "nether_warrior",
+  "title": "dmz.sidequest.nether_warrior.name",
+  "description": "dmz.sidequest.nether_warrior.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "monster_hunter"
+      },
+      {
+        "type": "LEVEL",
+        "minLevel": 5
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:the_nether"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "minecraft:blaze",
+      "count": 10,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "KILL",
+      "entity": "minecraft:wither_skeleton",
+      "count": 10,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 4500
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 3
+    }
+  ]
+}

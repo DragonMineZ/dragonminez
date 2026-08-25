@@ -6,17 +6,23 @@ import com.dragonminez.client.gui.MastersSkillsScreen;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.minigames.*;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.NPCActionC2S;
 import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.quest.Difficulty;
+import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.QuestTextFormatter;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import com.dragonminez.common.util.DMZTextPlaceholders;
@@ -67,6 +73,12 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	private float descScroll = 0, descTargetScroll = 0, descMaxScroll = 0;
 	private float objScroll = 0, objTargetScroll = 0, objMaxScroll = 0;
 	private float rewardScroll = 0, rewardTargetScroll = 0, rewardMaxScroll = 0;
+
+	private final ScrollbarState dialogueBar = new ScrollbarState();
+	private final ScrollbarState listBar = new ScrollbarState();
+	private final ScrollbarState descBar = new ScrollbarState();
+	private final ScrollbarState objBar = new ScrollbarState();
+	private final ScrollbarState rewardBar = new ScrollbarState();
 
 	private boolean isTrainingMode = false;
 
@@ -330,7 +342,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		dialogueMaxScroll = Math.max(0, diagLines.size() * (this.font.lineHeight + 2) - diagH);
 		dialogueTargetScroll = Mth.clamp(dialogueTargetScroll, 0, dialogueMaxScroll);
 
-		renderScrollableFormatted(guiGraphics, diagLines, diagX, diagY, diagW, diagH, dialogueScroll, dialogueMaxScroll);
+		renderScrollableFormatted(guiGraphics, dialogueBar, diagLines, diagX, diagY, diagW, diagH, dialogueScroll, dialogueMaxScroll);
 	}
 
 	private void renderQuestListSection(GuiGraphics guiGraphics, int uiMouseX, int uiMouseY) {
@@ -374,6 +386,8 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		guiGraphics.pose().popPose();
 		guiGraphics.disableScissor();
 
+		listBar.update(listX + listW, 2, listY, viewHeight, listMaxScroll);
+
 		if (listMaxScroll > 0) {
 			int scrollBarX = listX + listW;
 			guiGraphics.fill(scrollBarX, listY, scrollBarX + 2, listY + viewHeight, 0xFF333333);
@@ -406,7 +420,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		List<FormattedCharSequence> descLines = this.font.split(ph(tr(selected.quest.getDescription())).withStyle(ChatFormatting.GRAY), detailW - 8);
 		descMaxScroll = Math.max(0, descLines.size() * (this.font.lineHeight + 2) - 33);
 		descTargetScroll = Mth.clamp(descTargetScroll, 0, descMaxScroll);
-		renderScrollableFormatted(guiGraphics, descLines, detailX, descY, detailW, 33, descScroll, descMaxScroll);
+		renderScrollableFormatted(guiGraphics, descBar, descLines, detailX, descY, detailW, 33, descScroll, descMaxScroll);
 
 		int objY = detailY + 63;
 		List<FormattedCharSequence> objLines = new ArrayList<>();
@@ -416,25 +430,44 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		}
 		objMaxScroll = Math.max(0, objLines.size() * (this.font.lineHeight + 2) - 33);
 		objTargetScroll = Mth.clamp(objTargetScroll, 0, objMaxScroll);
-		renderScrollableFormatted(guiGraphics, objLines, detailX, objY, detailW, 33, objScroll, objMaxScroll);
+		renderScrollableFormatted(guiGraphics, objBar, objLines, detailX, objY, detailW, 33, objScroll, objMaxScroll);
 
 		int rewTitleY = detailY + 100;
 		TextUtil.drawStringWithBorder(guiGraphics, this.font, tr("gui.dragonminez.sidequest.rewards").withStyle(ChatFormatting.GOLD), detailX, rewTitleY, 0xFFFFFF);
 
 		int rewY = rewTitleY + 11;
 		List<FormattedCharSequence> rewLines = new ArrayList<>();
-		for (QuestReward reward : selected.quest.getRewards()) {
-			Component rewText = txt("  ").append(reward.getDescription()).withStyle(ChatFormatting.GREEN);
-			rewLines.addAll(this.font.split(rewText, detailW - 8));
+		PlayerQuestData questData = StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player)
+				.map(StatsData::getPlayerQuestData).orElse(null);
+		Difficulty difficulty = questData != null ? questData.getDifficulty() : Difficulty.NORMAL;
+		boolean tiered = QuestTextFormatter.hasRewardTiers(selected.quest.getRewards());
+		for (QuestTextFormatter.RewardGroup group : QuestTextFormatter.groupRewardsByDifficulty(selected.quest.getRewards(), false)) {
+			List<QuestReward> tierRewards = group.rewards();
+			boolean tierLocked = !group.difficulties().contains(difficulty);
+			if (tiered) {
+				Component header = QuestTextFormatter.describeRewardDifficulties(group.difficulties()).copy()
+						.withStyle(tierLocked ? ChatFormatting.DARK_GRAY : QuestTextFormatter.rewardDifficultyStyle(group.difficulties()));
+				rewLines.addAll(this.font.split(header, detailW - 8));
+			}
+			for (QuestReward reward : tierRewards) {
+				double rewardMultiplier = questData != null
+						? questData.rewardMultiplierFor(reward)
+						: difficulty.questRewardMultiplier();
+				Component rewText = txt("  ").append(reward.getDescription(rewardMultiplier))
+						.withStyle(tierLocked ? ChatFormatting.DARK_GRAY : ChatFormatting.GREEN);
+				rewLines.addAll(this.font.split(rewText, detailW - 8));
+			}
 		}
 		rewardMaxScroll = Math.max(0, rewLines.size() * (this.font.lineHeight + 2) - 33);
 		rewardTargetScroll = Mth.clamp(rewardTargetScroll, 0, rewardMaxScroll);
-		renderScrollableFormatted(guiGraphics, rewLines, detailX, rewY, detailW, 33, rewardScroll, rewardMaxScroll);
+		renderScrollableFormatted(guiGraphics, rewardBar, rewLines, detailX, rewY, detailW, 33, rewardScroll, rewardMaxScroll);
 	}
 
-	private void renderScrollableFormatted(GuiGraphics guiGraphics, List<FormattedCharSequence> lines, int x, int y, int width, int height, float currentScroll, float maxScroll) {
+	private void renderScrollableFormatted(GuiGraphics guiGraphics, ScrollbarState bar, List<FormattedCharSequence> lines, int x, int y, int width, int height, float currentScroll, float maxScroll) {
 		int lineHeight = this.font.lineHeight + 2;
 		int totalContentHeight = lines.size() * lineHeight;
+
+		bar.update(x + width - 4, 2, y, height, maxScroll);
 
 		guiGraphics.enableScissor(toScreenCoord(x), toScreenCoord(y), toScreenCoord(x + width), toScreenCoord(y + height));
 		guiGraphics.pose().pushPose();
@@ -473,6 +506,12 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
+		if (dialogueBar.tryStartDrag(uiMouseX, uiMouseY)) { dialogueTargetScroll = dialogueBar.scrollFor(uiMouseY); return true; }
+		if (listBar.tryStartDrag(uiMouseX, uiMouseY)) { listTargetScroll = listBar.scrollFor(uiMouseY); return true; }
+		if (descBar.tryStartDrag(uiMouseX, uiMouseY)) { descTargetScroll = descBar.scrollFor(uiMouseY); return true; }
+		if (objBar.tryStartDrag(uiMouseX, uiMouseY)) { objTargetScroll = objBar.scrollFor(uiMouseY); return true; }
+		if (rewardBar.tryStartDrag(uiMouseX, uiMouseY)) { rewardTargetScroll = rewardBar.scrollFor(uiMouseY); return true; }
+
 		int listY = panelY + 120;
 		int listX = panelX + 14;
 		int listW = Math.min(150, panelW - 20);
@@ -492,6 +531,29 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		}
 
 		return super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		double uiMouseY = toUiY(mouseY);
+		if (dialogueBar.isDragging()) { dialogueTargetScroll = dialogueBar.scrollFor(uiMouseY); return true; }
+		if (listBar.isDragging()) { listTargetScroll = listBar.scrollFor(uiMouseY); return true; }
+		if (descBar.isDragging()) { descTargetScroll = descBar.scrollFor(uiMouseY); return true; }
+		if (objBar.isDragging()) { objTargetScroll = objBar.scrollFor(uiMouseY); return true; }
+		if (rewardBar.isDragging()) { rewardTargetScroll = rewardBar.scrollFor(uiMouseY); return true; }
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		boolean wasDragging = dialogueBar.isDragging() || listBar.isDragging() || descBar.isDragging() || objBar.isDragging() || rewardBar.isDragging();
+		dialogueBar.stopDrag();
+		listBar.stopDrag();
+		descBar.stopDrag();
+		objBar.stopDrag();
+		rewardBar.stopDrag();
+		if (wasDragging) return true;
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override

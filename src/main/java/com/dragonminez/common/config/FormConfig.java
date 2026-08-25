@@ -10,8 +10,8 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 public class FormConfig {
-	public static final double CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
-	private double configVersion;
+	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+	private String configVersion;
 
 	private String groupName;
 	private String formType = "superforms";
@@ -69,6 +69,8 @@ public class FormConfig {
 		private String extraAuraType = "kakarot";
 		private Boolean hasLightnings = false;
 		private String lightningColor = "";
+		private String tintColor = "#FF0000";
+		private Double tintIntensity = 0.0;
 		private Float[] modelScaling = {0.9375f, 0.9375f, 0.9375f};
 		private Double strMultiplier = 1.0;
 		private Double skpMultiplier = 1.0;
@@ -95,12 +97,9 @@ public class FormConfig {
 		private Double unlockOnMastery = 0.0;
 		private Double stackOnMastery = 0.0;
 		private Double instantTransformOnMastery = 40.0;
-		private Double allowAlwaysTransformOnMastery = 0.0;
-		private Double directTransformIfUsedOnMastery = 0.0;
+		private Double allowFreeTransformOnMastery = 50.0;
 		private Boolean formStackable = true;
 		private Double stackDrainMultiplier = 2.0;
-		private Boolean canAlwaysTransform = false;
-		private Boolean directTransformationIfUsed = false;
 		private List<String> incompatibleWith = new ArrayList<>(List.of("ultimate.ultimate"));
 		private List<String> shareMasteryWith = new ArrayList<>();
 		private Double shareMasteryMultiplier = 1.0;
@@ -119,6 +118,7 @@ public class FormConfig {
 		private transient float[] rgbAuraColor;
 		private transient float[] rgbExtraFormColor;
 		private transient float[] rgbExtraAuraColor;
+		private transient float[] rgbTintColor;
 
 		public Double getStrMultiplier() {
 			return Math.max(0.01, strMultiplier);
@@ -216,12 +216,8 @@ public class FormConfig {
 			return Math.max(0, instantTransformOnMastery);
 		}
 
-		public Double getAllowAlwaysTransformOnMastery() {
-			return Math.max(0, allowAlwaysTransformOnMastery);
-		}
-
-		public Double getDirectTransformIfUsedOnMastery() {
-			return Math.max(0, directTransformIfUsedOnMastery);
+		public Double getAllowFreeTransformOnMastery() {
+			return Math.max(0, allowFreeTransformOnMastery != null ? allowFreeTransformOnMastery : 50.0);
 		}
 
 		public List<String> getIncompatibleWith() {
@@ -378,6 +374,23 @@ public class FormConfig {
 		public float[] getRgbExtraAuraColor() {
 			if (rgbExtraAuraColor == null) rgbExtraAuraColor = com.dragonminez.client.util.ColorUtils.hexToRgb(getExtraAuraColor());
 			return rgbExtraAuraColor;
+		}
+
+		public String getTintColor() {
+			return tintColor != null ? tintColor : "";
+		}
+
+		public double getTintIntensity() {
+			return tintIntensity != null ? Math.max(0.0, tintIntensity) : 0.0;
+		}
+
+		public float[] getRgbTintColor() {
+			if (rgbTintColor == null && tintColor != null && !tintColor.isEmpty()) rgbTintColor = com.dragonminez.client.util.ColorUtils.hexToRgb(tintColor);
+			return rgbTintColor;
+		}
+
+		public boolean hasTint() {
+			return getTintIntensity() > 0.0 && getRgbTintColor() != null;
 		}
 
 		@Setter

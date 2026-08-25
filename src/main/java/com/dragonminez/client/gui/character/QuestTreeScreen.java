@@ -6,7 +6,11 @@ import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.client.util.LocalizationUtil;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.config.SkillsConfig;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
@@ -30,6 +34,7 @@ import com.dragonminez.common.quest.QuestPrerequisites;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.rewards.GenericItemReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
+import com.dragonminez.common.quest.rewards.TransformationReward;
 import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.dragonminez.common.quest.QuestTextFormatter;
 import com.dragonminez.common.stats.StatsCapability;
@@ -53,6 +58,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
@@ -99,6 +105,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private TexturedTextButton partySecondaryButton;
 	private List<Component> actionButtonTooltip = List.of();
 	private long lastClickTime = 0;
+
+	// After pressing "start" on a quest that summons an enemy, close the menu once the server confirms the
+	// quest is actually accepted (status flips to ACCEPTED). Cleared on a timeout if no confirmation arrives.
+	private String pendingStartCloseKey = null;
+	private int pendingStartCloseTicks = 0;
 
 	private int currentSagaIndex = 0;
 	private final List<Saga> availableSagas = new ArrayList<>();
@@ -147,6 +158,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private float diffIntroMaxScroll = 0;
 	private final float[] diffOptScroll = new float[3];
 	private final float[] diffOptMaxScroll = new float[3];
+
+	private final ScrollbarState navBar = new ScrollbarState();
+	private final ScrollbarState descBar = new ScrollbarState();
+	private final ScrollbarState objBar = new ScrollbarState();
+	private final ScrollbarState rewardsBar = new ScrollbarState();
+	private final ScrollbarState diffIntroBar = new ScrollbarState();
+	private final ScrollbarState[] diffOptBars = { new ScrollbarState(), new ScrollbarState(), new ScrollbarState() };
 
 	private List<String> frameObjLinesCache = null;
 	private Quest frameObjLinesQuest = null;
@@ -260,7 +278,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private record DetailPanelLayout(int titleH, int rewardsH, int descH, int objectivesH) {
 	}
 
-	private record RewardBlock(QuestReward reward, List<String> lines, int height) {
+	private record RewardBlock(QuestReward reward, List<String> lines, int height, Component header, boolean locked, int headerColor) {
+		boolean isHeader() {
+			return header != null;
+		}
 	}
 
 	private record NodeRender(Quest quest, int pixelX, int pixelY, boolean blurred, boolean sidequest,
@@ -883,6 +904,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (isCompleted) {
 			boolean hasUnclaimedRewards = false;
 			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
+				if (!selectedQuest.getRewards().get(i).isUnlockedFor(questData.getDifficulty())) {
+					continue;
+				}
 				if (!isRewardClaimed(questData, currentSaga, selectedQuest, i)) {
 					hasUnclaimedRewards = true;
 					break;
@@ -964,6 +988,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						startResummonCooldown(selectedKey);
 						btn.visible = false;
 						pendingRefreshTicks = 5;
+						if (questSpawnsQuestEnemy(selectedQuest)) {
+							pendingStartCloseKey = selectedKey;
+							pendingStartCloseTicks = 60;
+						}
 					}
 				})
 				.build();
@@ -1009,6 +1037,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			Quest quest = QuestRegistry.getClientQuest(questKey);
 			if (quest == null || quest.getClaimMode() == Quest.ClaimMode.NPC_ONLY) continue;
 			for (int i = 0; i < quest.getRewards().size(); i++) {
+				if (!quest.getRewards().get(i).isUnlockedFor(questData.getDifficulty())) {
+					continue;
+				}
 				if (!questData.isRewardClaimed(questKey, i)) {
 					return true;
 				}
@@ -1169,6 +1200,33 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return false;
 	}
 
+	private boolean questSpawnsQuestEnemy(Quest quest) {
+		if (quest == null) return false;
+		for (QuestObjective objective : quest.getObjectives()) {
+			if (objective instanceof KillObjective killObjective
+					&& killObjective.getSpawnMode() == KillObjective.SpawnMode.QUEST) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void tickPendingStartClose() {
+		if (pendingStartCloseKey == null) return;
+		if (statsData != null) {
+			PlayerQuestData questData = statsData.getPlayerQuestData();
+			if (questData.getQuestStatus(pendingStartCloseKey) == PlayerQuestData.QuestStatus.ACCEPTED) {
+				pendingStartCloseKey = null;
+				pendingStartCloseTicks = 0;
+				onClose();
+				return;
+			}
+		}
+		if (--pendingStartCloseTicks <= 0) {
+			pendingStartCloseKey = null;
+		}
+	}
+
 	private boolean canStartQuest(Quest quest) {
 		if (statsData == null || availableSagas.isEmpty() || quest == null) return false;
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
@@ -1191,6 +1249,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		super.tick();
 		tickCount++;
 		enemyPreview.clientTick();
+		tickPendingStartClose();
 
 		if (tickCount >= 10) {
 			tickCount = 0;
@@ -1240,6 +1299,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	@Override
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (isNotAnimating()) this.renderBackground(graphics);
+
+		navBar.clear();
+		descBar.clear();
+		objBar.clear();
+		rewardsBar.clear();
+		diffIntroBar.clear();
+		for (ScrollbarState b : diffOptBars) b.clear();
 
 		long now = System.nanoTime();
 		if (lastRenderTime == 0) lastRenderTime = now;
@@ -1461,7 +1527,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderEnemyPreview(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
-		enemyPreview.setQuest(selectedQuest);
+		Difficulty previewDifficulty = Difficulty.NORMAL;
+		int previewPartySize = 1;
+		if (statsData != null) {
+			PlayerQuestData questData = statsData.getPlayerQuestData();
+			previewDifficulty = questData.getDifficulty();
+			previewPartySize = Math.max(1, questData.getPartyMemberIds().size());
+		}
+		enemyPreview.setQuest(selectedQuest, previewDifficulty, previewPartySize);
 		if (!enemyPreview.isActive()) return;
 
 		PanelRect base = getBaseLeftPanelRect();
@@ -1511,6 +1584,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.pose().popPose();
 		graphics.disableScissor();
 
+		navBar.update(listX + listW - 3, 2, listY, listH, navMaxScroll);
 		if (navMaxScroll > 0) {
 			int scrollBarX = listX + listW - 3;
 			graphics.fill(scrollBarX, listY, scrollBarX + 2, listY + listH, 0xFF333333);
@@ -1844,19 +1918,28 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int blockTop = originY;
 		int consumedChars = 0;
 		for (RewardBlock block : blocks) {
-			QuestReward reward = block.reward();
-			String desc = reward.getDescription().getString();
-			int rowVisible = Math.max(0, revealedChars - consumedChars);
-			consumedChars += desc.length() + 1;
-
 			boolean blockVisible = (blockTop + block.height()) >= originY + currentRewardsScroll
 					&& blockTop <= originY + viewHeight + currentRewardsScroll;
+
+			if (block.isHeader()) {
+				if (blockVisible) {
+					TextUtil.drawStringWithBorder(graphics, this.font, block.header(), x + 8, blockTop + 2, block.headerColor());
+				}
+				blockTop += block.height();
+				continue;
+			}
+
+			QuestReward reward = block.reward();
+			String desc = rewardDescription(reward).getString();
+			int rowVisible = Math.max(0, revealedChars - consumedChars);
+			consumedChars += desc.length() + 1;
 
 			if (blockVisible) {
 				int iconX = x + 8;
 				ItemStack iconStack = rewardIconStack(reward);
-				ItemStack tooltipStack = (reward.getType() == QuestReward.RewardType.ITEM
-							|| reward.getType() == QuestReward.RewardType.GENERIC_ITEM) ? iconStack : null;
+				boolean rewardIsItem = reward.getType() == QuestReward.RewardType.ITEM || reward.getType() == QuestReward.RewardType.GENERIC_ITEM;
+				ItemStack tooltipStack = rewardIsItem ? iconStack : null;
+				int textColor = block.locked() ? 0xFF777777 : 0xFFCCCCCC;
 
 				if (iconStack != null) {
 					graphics.renderItem(iconStack, iconX, blockTop);
@@ -1865,7 +1948,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				}
 
 				rewardHitboxes.add(new RewardHitbox(iconX, (int) (blockTop - currentRewardsScroll), iconSize,
-						tooltipStack, reward.getDescription()));
+						tooltipStack, rewardDescription(reward)));
 
 				int charsLeft = rowVisible;
 				int textY = blockTop;
@@ -1878,7 +1961,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						shownLine = fullLine.substring(0, Math.max(0, charsLeft));
 						charsLeft = 0;
 					}
-					TextUtil.drawStringWithBorder(graphics, this.font, txt(shownLine), x + 28, textY, 0xFFCCCCCC);
+					TextUtil.drawStringWithBorder(graphics, this.font, txt(shownLine), x + 28, textY, textColor);
 					textY += lineHeight;
 				}
 			}
@@ -1889,6 +1972,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.pose().popPose();
 		graphics.disableScissor();
 
+		rewardsBar.update(x + width - 6, 3, originY, viewHeight, rewardsMaxScroll);
 		if (rewardsMaxScroll > 0) {
 			int scrollBarX = x + width - 6;
 			graphics.fill(scrollBarX, originY, scrollBarX + 3, originY + viewHeight, 0xFF333333);
@@ -1904,12 +1988,31 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int textWidth = Math.max(20, width - 40);
 		int iconSize = 16;
 		int lineHeight = getDetailLineHeight();
-		for (QuestReward reward : getDisplayRewards(selectedQuest)) {
-			List<String> lines = wrapText(reward.getDescription().getString(), textWidth);
-			if (lines.isEmpty()) lines = List.of("");
-			int textBlockH = lines.size() * lineHeight;
-			int blockH = Math.max(iconSize + 2, textBlockH) + 4;
-			blocks.add(new RewardBlock(reward, lines, blockH));
+		Difficulty difficulty = statsData != null ? statsData.getPlayerQuestData().getDifficulty() : Difficulty.NORMAL;
+		Difficulty effective = difficulty != null ? difficulty : Difficulty.NORMAL;
+
+		List<QuestTextFormatter.RewardGroup> groups =
+				QuestTextFormatter.groupRewardsByDifficulty(selectedQuest.getRewards(), true);
+		boolean tiered = QuestTextFormatter.hasRewardTiers(selectedQuest.getRewards());
+
+		for (QuestTextFormatter.RewardGroup group : groups) {
+			if (group.rewards().isEmpty()) continue;
+
+			if (tiered) {
+				boolean groupLocked = !group.difficulties().contains(effective);
+				Component header = QuestTextFormatter.describeRewardDifficulties(group.difficulties());
+				int headerColor = QuestTextFormatter.rewardDifficultyColor(group.difficulties(), groupLocked);
+				blocks.add(new RewardBlock(null, List.of(header.getString()),
+						lineHeight + 4, header, groupLocked, headerColor));
+			}
+
+			for (QuestReward reward : group.rewards()) {
+				List<String> lines = wrapText(rewardDescription(reward).getString(), textWidth);
+				if (lines.isEmpty()) lines = List.of("");
+				int textBlockH = lines.size() * lineHeight;
+				int blockH = Math.max(iconSize + 2, textBlockH) + 4;
+				blocks.add(new RewardBlock(reward, lines, blockH, null, !reward.isUnlockedFor(effective), 0));
+			}
 		}
 		return blocks;
 	}
@@ -1917,11 +2020,35 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private List<QuestReward> getDisplayRewards(Quest quest) {
 		List<QuestReward> shown = new ArrayList<>();
 		if (quest == null) return shown;
-		for (QuestReward reward : quest.getRewards()) {
-			if (reward.getType() == QuestReward.RewardType.COMMAND) continue;
-			shown.add(reward);
+		for (QuestTextFormatter.RewardGroup group : QuestTextFormatter.groupRewardsByDifficulty(quest.getRewards(), true)) {
+			shown.addAll(group.rewards());
 		}
 		return shown;
+	}
+
+	private Component rewardDescription(QuestReward reward) {
+		if (reward instanceof TransformationReward transformation) {
+			String group = transformation.getFormGroup();
+			String form = transformation.getFormName();
+			if (isStackFormGroup(group)) {
+				return Component.translatable("race.dragonminez.stack.group." + group)
+						.append(": ")
+						.append(Component.translatable("race.dragonminez.stack.form." + group + "." + form));
+			}
+			String race = statsData != null ? statsData.getCharacter().getRaceName() : "";
+			return Component.translatable("race.dragonminez." + race + ".form." + group + "." + form);
+		}
+		double rewardMultiplier = statsData != null
+				? statsData.getPlayerQuestData().rewardMultiplierFor(reward)
+				: 1.0;
+		return reward.getDescription(rewardMultiplier);
+	}
+
+	private boolean isStackFormGroup(String formGroup) {
+		if (formGroup == null || formGroup.isEmpty()) return false;
+		FormConfig stackGroup = ConfigManager.getStackFormGroup(formGroup);
+		if (stackGroup == null || stackGroup.getFormType() == null) return false;
+		return ConfigManager.getSkillsConfig().getStackSkills().contains(stackGroup.getFormType().toLowerCase());
 	}
 
 	private ItemStack rewardIconStack(QuestReward reward) {
@@ -1945,6 +2072,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 			case SKILL -> {
 				return new ItemStack(MainItems.GETE_BLUE_CAPSULE.get());
+			}
+			case COMMAND -> {
+				return new ItemStack(Items.COMMAND_BLOCK);
+			}
+			case KI_TECHNIQUE -> {
+				return new ItemStack(MainItems.MERUS_LASER.get());
+			}
+			case TRANSFORMATION -> {
+				return new ItemStack(MainItems.MIGHT_TREE_FRUIT.get());
 			}
 			default -> {
 				return null;
@@ -1984,6 +2120,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 		graphics.pose().popPose();
 
+		descBar.update(x + width - 10, 3, descOriginY, viewHeight, descMaxScroll);
 		if (descMaxScroll > 0) {
 			int scrollBarX = x + width - 10;
 			graphics.fill(scrollBarX, descOriginY, scrollBarX + 3, descOriginY + viewHeight, 0xFF333333);
@@ -2039,9 +2176,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.pose().popPose();
 		graphics.disableScissor();
 
+		int objContentY = y + 18;
+		int objContentH = Math.max(8, height - 24);
+		objBar.update(x + width - 4, 2, objContentY, objContentH, objMaxScroll);
 		if (objMaxScroll > 0) {
-			int contentY = y + 18;
-			int contentH = Math.max(8, height - 24);
+			int contentY = objContentY;
+			int contentH = objContentH;
 			int scrollBarX = x + width - 4;
 			graphics.fill(scrollBarX, contentY, scrollBarX + 2, contentY + contentH, 0xFF333333);
 			float scrollPercent = objMaxScroll == 0 ? 0.0f : currentObjScroll / objMaxScroll;
@@ -2321,7 +2461,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < rewards.size(); i++) {
 			if (i > 0) builder.append('\n');
-			builder.append(rewards.get(i).getDescription().getString());
+			builder.append(rewardDescription(rewards.get(i)).getString());
 		}
 		return builder.toString();
 	}
@@ -2749,7 +2889,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		diffIntroMaxScroll = scrollMax(introLines, intro.height);
 		diffIntroScroll = Mth.clamp(diffIntroScroll, 0, diffIntroMaxScroll);
 		graphics.enableScissor(toScreenCoord(intro.x), toScreenCoord(intro.y), toScreenCoord(intro.right()), toScreenCoord(intro.bottom()));
-		TextUtil.renderScrollableText(graphics, this.font, introLines, intro.x, intro.y, intro.width, intro.height, diffIntroScroll, diffIntroMaxScroll, 0xFFAAAAAA, Style.EMPTY.withFont(DMZ_FONT));
+		TextUtil.renderScrollableText(graphics, this.font, diffIntroBar, introLines, intro.x, intro.y, intro.width, intro.height, diffIntroScroll, diffIntroMaxScroll, 0xFFAAAAAA, Style.EMPTY.withFont(DMZ_FONT));
 		graphics.disableScissor();
 
 		for (int i = 0; i < DIFFICULTY_OPTIONS.length; i++) {
@@ -2770,7 +2910,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			diffOptMaxScroll[i] = scrollMax(lines, textH);
 			diffOptScroll[i] = Mth.clamp(diffOptScroll[i], 0, diffOptMaxScroll[i]);
 			graphics.enableScissor(toScreenCoord(textX), toScreenCoord(textY), toScreenCoord(textX + textW), toScreenCoord(textY + textH));
-			TextUtil.renderScrollableText(graphics, this.font, lines, textX, textY, textW, textH, diffOptScroll[i], diffOptMaxScroll[i], 0xFFDCE6FF, Style.EMPTY.withFont(DMZ_FONT));
+			TextUtil.renderScrollableText(graphics, this.font, diffOptBars[i], lines, textX, textY, textW, textH, diffOptScroll[i], diffOptMaxScroll[i], 0xFFDCE6FF, Style.EMPTY.withFont(DMZ_FONT));
 			graphics.disableScissor();
 		}
 	}
@@ -2870,6 +3010,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
+
+		if (button == 0 && tryStartScrollbarDrag(uiMouseX, uiMouseY)) {
+			return true;
+		}
 
 		if (handleDifficultySelectClick(uiMouseX, uiMouseY, button)) {
 			return true;
@@ -2989,8 +3133,48 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return true;
 	}
 
+	private boolean tryStartScrollbarDrag(double mx, double my) {
+		if (navBar.tryStartDrag(mx, my)) { targetNavScroll = navBar.scrollFor(my); return true; }
+		if (descBar.tryStartDrag(mx, my)) { targetDescScroll = descBar.scrollFor(my); return true; }
+		if (objBar.tryStartDrag(mx, my)) { targetObjScroll = objBar.scrollFor(my); return true; }
+		if (rewardsBar.tryStartDrag(mx, my)) { targetRewardsScroll = rewardsBar.scrollFor(my); return true; }
+		if (diffIntroBar.tryStartDrag(mx, my)) { diffIntroScroll = diffIntroBar.scrollFor(my); return true; }
+		for (int i = 0; i < diffOptBars.length; i++) {
+			if (diffOptBars[i].tryStartDrag(mx, my)) { diffOptScroll[i] = diffOptBars[i].scrollFor(my); return true; }
+		}
+		return false;
+	}
+
+	private boolean updateScrollbarDrag(double my) {
+		if (navBar.isDragging()) { targetNavScroll = navBar.scrollFor(my); return true; }
+		if (descBar.isDragging()) { targetDescScroll = descBar.scrollFor(my); return true; }
+		if (objBar.isDragging()) { targetObjScroll = objBar.scrollFor(my); return true; }
+		if (rewardsBar.isDragging()) { targetRewardsScroll = rewardsBar.scrollFor(my); return true; }
+		if (diffIntroBar.isDragging()) { diffIntroScroll = diffIntroBar.scrollFor(my); return true; }
+		for (int i = 0; i < diffOptBars.length; i++) {
+			if (diffOptBars[i].isDragging()) { diffOptScroll[i] = diffOptBars[i].scrollFor(my); return true; }
+		}
+		return false;
+	}
+
+	private boolean stopScrollbarDrag() {
+		boolean any = navBar.isDragging() || descBar.isDragging() || objBar.isDragging()
+				|| rewardsBar.isDragging() || diffIntroBar.isDragging();
+		for (ScrollbarState b : diffOptBars) any |= b.isDragging();
+		navBar.stopDrag();
+		descBar.stopDrag();
+		objBar.stopDrag();
+		rewardsBar.stopDrag();
+		diffIntroBar.stopDrag();
+		for (ScrollbarState b : diffOptBars) b.stopDrag();
+		return any;
+	}
+
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (updateScrollbarDrag(toUiY(mouseY))) {
+			return true;
+		}
 		if (invitePopupOpen || confirmOverlayOpen) {
 			return true;
 		}
@@ -3011,6 +3195,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (stopScrollbarDrag()) {
+			return true;
+		}
 		if (invitePopupOpen || confirmOverlayOpen) {
 			return true;
 		}
@@ -3295,6 +3482,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean isCompleted = isQuestCompleted(pqd, saga, quest);
 		if (isCompleted) {
 			for (int i = 0; i < quest.getRewards().size(); i++) {
+				if (!quest.getRewards().get(i).isUnlockedFor(pqd.getDifficulty())) {
+					continue;
+				}
 				if (!isRewardClaimed(pqd, saga, quest, i)) {
 					return QuestNodeStatus.CLAIMABLE;
 				}

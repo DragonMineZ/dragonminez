@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.init.block.entity.GravityDeviceBlockEntity;
+import com.dragonminez.common.init.menu.menutypes.GravityDeviceMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -37,6 +38,7 @@ public class GravityDeviceUpdateC2S {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+			if (!(player.containerMenu instanceof GravityDeviceMenu menu) || !menu.getBlockPos().equals(pos)) return;
 			if (!player.level().isLoaded(pos)) return;
 			if (player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0) return;
 

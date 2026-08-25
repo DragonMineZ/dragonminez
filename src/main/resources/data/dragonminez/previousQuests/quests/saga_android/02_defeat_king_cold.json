@@ -1,0 +1,57 @@
+{
+  "id": 2,
+  "title": "dmz.quest.android2.name",
+  "description": "dmz.quest.android2.desc",
+  "type": "SAGA",
+  "category": "saga_android",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 1
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 470
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "dragonminez:rocky"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_king_cold",
+      "count": 1,
+      "health": 31500.0,
+      "meleeDamage": 1290.0,
+      "kiDamage": 1190.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 55440
+    }
+  ]
+}

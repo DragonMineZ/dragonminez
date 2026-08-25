@@ -1,6 +1,9 @@
 package com.dragonminez.server.events.players.combat;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
+import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.config.ConfigManager;
@@ -8,6 +11,7 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -34,11 +38,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
@@ -58,8 +59,11 @@ public class CombatEvent {
 	public static final String DMZ_LAST_HIT_TARGET_ID_TAG = "dmz_last_hit_target_id";
 	public static final String DMZ_LAST_HIT_TARGET_TIME_TAG = "dmz_last_hit_target_time";
 
+	private static final double VANILLA_UNARMED_ATTACK_DAMAGE = 1.0;
 	private static final double HEALING_REDUCTION_CAP = 0.40;
 	private static final int HEALING_REDUCTION_DURATION_TICKS = 120;
+	private static final int PARRY_COMBO_STUN_TICKS = 30;
+	private static final int PARRY_STUN_TICKS = 20;
 
 	private static void maybeForceCombatFly(Player player) {
 		if (!ConfigManager.getCombatConfig().getCombatFlyAutoSwitchOnDamage()) return;
@@ -141,6 +145,17 @@ public class CombatEvent {
 					return;
 				}
 
+				var attackerMainHand = attacker.getMainHandItem();
+				if (!attackerMainHand.isEmpty() && WeaponRegistry.getAttributes(attackerMainHand) == null) {
+					if (isPunchMachine) {
+						((PunchMachineEntity) event.getEntity()).processHit((float) currentDamage[0], attacker);
+						attackerData.getResources().addTrainingPoints(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
+					}
+					event.setCanceled(true);
+					event.setAmount(0);
+					return;
+				}
+
 				double baseDamage = currentDamage[0];
 				double dmzDamage = attackerData.getMeleeDamage();
 				double staminaDamage = attackerData.getMeleeDamageNoMultipliers();
@@ -181,8 +196,7 @@ public class CombatEvent {
 					Vec3 knockbackDir = new Vec3(mx, my, mz).normalize();
 					if (knockbackDir.lengthSqr() < 1.0E-6) knockbackDir = attacker.getLookAngle();
 
-					livingTarget.setDeltaMovement(knockbackDir.scale(1.8));
-					livingTarget.hurtMarked = true;
+					KnockbackHelper.apply(livingTarget, knockbackDir.scale(1.8));
 
 					MomentumImpactHandler.CollisionImpactType impactType = livingTarget.onGround() || knockbackDir.y < -0.5 ? MomentumImpactHandler.CollisionImpactType.GROUND : MomentumImpactHandler.CollisionImpactType.WALL;
 					MomentumImpactHandler.registerCollisionImpact(livingTarget, impactType, (float)(dmzDamage * 0.3), knockbackDir);
@@ -220,8 +234,9 @@ public class CombatEvent {
 
 				finalDmzDamage = dmzDamage * staminaRatio;
 
-				if (isEmptyHandOrNoDamageItem(attacker)) currentDamage[0] = finalDmzDamage;
-				else currentDamage[0] = baseDamage + finalDmzDamage;
+				// baseDamage is the player's full ATTACK_DAMAGE attribute total (weapon + armor + curios + potions),
+				// independent of what's held; only vanilla's unarmed baseline is netted out since DMZ's own melee stat replaces it.
+				currentDamage[0] = finalDmzDamage + Math.max(0.0, baseDamage - VANILLA_UNARMED_ATTACK_DAMAGE);
 
 				double normalMeleeDamage = currentDamage[0];
 				double kiWeaponBonus = 0.0;
@@ -330,6 +345,9 @@ public class CombatEvent {
 
 					double blockMultiplier = 1.0;
 
+					boolean estGuardBroken = victimData.getStatus().isStunEffect() && victimData.getResources().getCurrentPoise() <= 0;
+					double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], estGuardBroken, finalDefensePenetration);
+
 					boolean techCharging = victimData.getTechniques().isTechniqueCharging();
 					boolean techFiring = !techCharging && TechniqueDispatcher.isFiringKiAttack(victim);
 					boolean techActive = techCharging || techFiring;
@@ -341,7 +359,7 @@ public class CombatEvent {
 
 						double poiseDamageMultiplier = ConfigManager.getCombatConfig().getPoiseDamageMultiplier();
 						if (!(sourceEntity instanceof Player)) poiseDamageMultiplier *= 1.5;
-						float poiseDamage = (float) (currentDamage[0] * poiseDamageMultiplier * poiseMult);
+						float poiseDamage = (float) (estimatedPostMitigation * poiseDamageMultiplier * poiseMult);
 						float currentPoise = victimData.getResources().getCurrentPoise();
 
 						if (currentPoise - poiseDamage <= 0) {
@@ -372,13 +390,13 @@ public class CombatEvent {
 
 								double poiseMultiplier = ConfigManager.getCombatConfig().getPoiseDamageMultiplier();
 								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 1.5;
-								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
+								float poiseDamage = (float) (estimatedPostMitigation * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.66f;
 
 								float currentPoise = victimData.getResources().getCurrentPoise();
 								float currentStamina = victimData.getResources().getCurrentStamina();
-								int blockStaminaCost = (int) (event.getAmount() * ConfigManager.getCombatConfig().getBlockStaminaCost());
+								int blockStaminaCost = (int) (estimatedPostMitigation * ConfigManager.getCombatConfig().getBlockStaminaCost());
 
 								if (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0) {
 									doGuardBreak(victim, victimData);
@@ -405,14 +423,19 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
 											attackerLiving.getPersistentData().putLong("dmz_parry_penalty", System.currentTimeMillis() + 4000);
+
+											if (attackerLiving instanceof DBSagasEntity saga && saga.isComboing()) {
+												saga.interruptCombo();
+												saga.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_COMBO_STUN_TICKS, 0, false, false, true));
+											} else if (!(attackerLiving instanceof Player)) {
+												attackerLiving.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_STUN_TICKS, 0, false, false, true));
+											}
 										}
 										if (MainDamageTypes.isKiblastDamage(source)) {
 											divertKiProjectile(source, victim);
 										}
 										if (MainDamageTypes.isStrikeAttackDamage(source)) {
 											applyStrikeCounterGuardBreak(sourceEntity);
-											boolean isGuardBrokenTmp = victimData.getStatus().isStunEffect() && victimData.getResources().getCurrentPoise() <= 0;
-											double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp, finalDefensePenetration);
 											if (!(estimatedPostMitigation <= 0.0)) victimData.getResources().removeStamina((float) (estimatedPostMitigation * 0.5));
 										}
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
@@ -428,7 +451,7 @@ public class CombatEvent {
 											}
 										}
 									} else {
-										double defense = victimData.getDefense();
+										double defense = victimData.getDefenseLegacyUnits();
 										double reductionCap = ConfigManager.getCombatConfig().getBlockDamageReductionCap();
 										double reductionMin = ConfigManager.getCombatConfig().getBlockDamageReductionMin();
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
@@ -458,8 +481,6 @@ public class CombatEvent {
 									}
 
 									if (victim instanceof ServerPlayer sPlayer) {
-										boolean isGuardBrokenTmp = victimData.getStatus().isStunEffect() && victimData.getResources().getCurrentPoise() <= 0;
-										double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp, finalDefensePenetration);
 										float finalDmg = (float) (estimatedPostMitigation * blockMultiplier);
 
 										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(sPlayer, source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null, (float)currentDamage[0], finalDmg, isParry, poiseDamage);
@@ -605,13 +626,6 @@ public class CombatEvent {
 		return tech instanceof KiAttackData kiData ? kiData.getActualArmorPenetration() / 100.0 : 0.0;
 	}
 
-	private static boolean isEmptyHandOrNoDamageItem(Player player) {
-		ItemStack mainHand = player.getMainHandItem();
-		if (mainHand.isEmpty()) return true;
-		var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE);
-		return attackDamageModifier.isEmpty();
-	}
-
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public static void overrideVanillaArmorReduction(LivingDamageEvent event) {
 		if (event.getEntity() instanceof Player victim) {
@@ -623,6 +637,7 @@ public class CombatEvent {
 				StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(stats -> {
 					boolean isGuardBroken = stats.getStatus().isStunEffect() && stats.getResources().getCurrentPoise() <= 0;
 					double postMitigation = stats.calculatePostMitigationDamage(rawDamage, isGuardBroken, defensePenetration);
+						boolean defenseFullyNegated = postMitigation <= 0.0;
 
 					if (victim.getPersistentData().contains("dmz_block_multiplier")) {
 						postMitigation *= victim.getPersistentData().getDouble("dmz_block_multiplier");
@@ -683,12 +698,39 @@ public class CombatEvent {
 						}
 					}
 
+					if (defenseFullyNegated && rawDamage > 0.0
+							&& ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()) {
+						applyFullNegation(victim);
+						event.setAmount(0.0f);
+						event.setCanceled(true);
+						return;
+					}
+
 					event.setAmount(finalDamage);
 				});
 
 				victim.getPersistentData().remove("dmz_raw_damage");
 				victim.getPersistentData().remove("dmz_defense_pen");
 			}
+		}
+	}
+
+	private static final Map<java.util.UUID, Long> LAST_NEGATION_SOUND_TICK = new HashMap<>();
+
+	private static void applyFullNegation(LivingEntity target) {
+		target.setDeltaMovement(Vec3.ZERO);
+		target.hasImpulse = true;
+		target.hurtMarked = true;
+		target.invulnerableTime = Math.max(target.invulnerableTime, 10);
+		target.hurtTime = 0;
+		target.hurtDuration = 0;
+
+		long gameTime = target.level().getGameTime();
+		Long last = LAST_NEGATION_SOUND_TICK.get(target.getUUID());
+		if (last == null || gameTime - last >= 20L) {
+			LAST_NEGATION_SOUND_TICK.put(target.getUUID(), gameTime);
+			target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+					MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		}
 	}
 

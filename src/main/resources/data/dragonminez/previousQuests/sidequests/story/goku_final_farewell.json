@@ -1,0 +1,39 @@
+{
+  "id": "goku_final_farewell",
+  "title": "dmz.sidequest.goku_farewell.name",
+  "description": "dmz.sidequest.goku_farewell.desc",
+  "type": "SIDEQUEST",
+  "category": "story",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "goku",
+  "turn_in": "goku",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 15
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:kamilookout"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "goku"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 100000
+    }
+  ]
+}

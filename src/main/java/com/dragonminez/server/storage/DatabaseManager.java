@@ -12,12 +12,24 @@ import net.minecraft.nbt.NbtIo;
 import java.io.*;
 import java.sql.*;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class DatabaseManager implements IDataStorage {
+	private static final Pattern VALID_TABLE_NAME = Pattern.compile("^[A-Za-z0-9_]+$");
+	private static final String DEFAULT_TABLE = "player_data";
+
 	private HikariDataSource dataSource;
 	private boolean isConnected = false;
 
 	public DatabaseManager() {}
+
+	private static String sanitizeTableName(String tableName) {
+		if (tableName != null && VALID_TABLE_NAME.matcher(tableName).matches()) {
+			return tableName;
+		}
+		LogUtil.error(Env.SERVER, "Invalid storage table name '" + tableName + "'; falling back to '" + DEFAULT_TABLE + "'.");
+		return DEFAULT_TABLE;
+	}
 
 	@Override
 	public void init() {
@@ -47,7 +59,7 @@ public class DatabaseManager implements IDataStorage {
 
 		try {
 			dataSource = new HikariDataSource(hikariConfig);
-			createTable(config.getTable());
+			createTable(sanitizeTableName(config.getTable()));
 			isConnected = true;
 			LogUtil.info(Env.SERVER, "Database connected successfully!");
 		} catch (Exception e) {
@@ -85,7 +97,7 @@ public class DatabaseManager implements IDataStorage {
 	public boolean saveData(UUID uuid, String name, CompoundTag tag) {
 		if (!isConnected || dataSource == null) return false;
 
-		String tableName = ConfigManager.getServerConfig().getStorage().getTable();
+		String tableName = sanitizeTableName(ConfigManager.getServerConfig().getStorage().getTable());
 
 		String sql = "INSERT INTO " + tableName + " (uuid, name, data) VALUES (?, ?, ?) " +
 				"ON DUPLICATE KEY UPDATE name = ?, data = ?, last_updated = CURRENT_TIMESTAMP";
@@ -113,7 +125,7 @@ public class DatabaseManager implements IDataStorage {
 	public CompoundTag loadData(UUID uuid) {
 		if (!isConnected || dataSource == null) return null;
 
-		String tableName = ConfigManager.getServerConfig().getStorage().getTable();
+		String tableName = sanitizeTableName(ConfigManager.getServerConfig().getStorage().getTable());
 		String sql = "SELECT data FROM " + tableName + " WHERE uuid = ?";
 
 		try (Connection conn = dataSource.getConnection();

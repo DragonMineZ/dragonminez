@@ -1,0 +1,33 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "dragonminez:gete_sword",
+      "required": false
+    },
+    {
+      "id": "dragonminez:swords",
+      "required": false
+    },
+    {
+      "id": "dragonminez:yajirobe_katana",
+      "required": false
+    },
+    {
+      "id": "dragonminez:z_sword",
+      "required": false
+    },
+    {
+      "id": "dragonminez:brave_sword",
+      "required": false
+    },
+    {
+      "id": "dragonminez:dimensional_sword",
+      "required": false
+    },
+    {
+      "id": "dragonminez:power_pole",
+      "required": false
+    }
+  ]
+}

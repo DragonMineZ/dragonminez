@@ -1,0 +1,39 @@
+{
+  "id": "krillin_namek_scout",
+  "title": "dmz.sidequest.krillin_scout.name",
+  "description": "dmz.sidequest.krillin_scout.desc",
+  "type": "SIDEQUEST",
+  "category": "exploration",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "krillin",
+  "turn_in": "krillin",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 2
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:village_ajissa"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "krillin"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 12000
+    }
+  ]
+}

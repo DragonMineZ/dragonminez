@@ -1,0 +1,54 @@
+{
+  "id": "bulma_otherworld_drive",
+  "title": "dmz.sidequest.bulma_otherworld_drive.name",
+  "description": "dmz.sidequest.bulma_otherworld_drive.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 5
+      },
+      {
+        "type": "QUEST",
+        "questId": "bulma_radar_parts"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:ender_pearl",
+      "count": 8
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:obsidian",
+      "count": 12
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:redstone_block",
+      "count": 4
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 7500
+    }
+  ]
+}

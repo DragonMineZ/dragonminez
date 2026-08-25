@@ -1,0 +1,42 @@
+{
+  "id": "namek_elder_blessing",
+  "title": "dmz.sidequest.elder_blessing.name",
+  "description": "dmz.sidequest.elder_blessing.desc",
+  "type": "SIDEQUEST",
+  "category": "combat",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "guru",
+  "turn_in": "guru",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 2
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "#dragonminez:frieza_soldiers",
+      "count": 10,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "guru"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 9000
+    }
+  ]
+}

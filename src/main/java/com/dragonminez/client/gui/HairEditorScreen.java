@@ -331,12 +331,25 @@ public class HairEditorScreen extends ScaledScreen {
 				.textureSize(20, 20)
 				.message(Component.empty())
 				.onPress(btn -> {
-					String code = individualCodeBox.getValue();
-					CustomHair imported = HairManager.fromCode(code);
+					String code = individualCodeBox.getValue().trim();
+					CustomHair imported;
+					if (HairManager.isFullSetCode(code)) {
+						CustomHair[] set = HairManager.fromFullSetCode(code);
+						imported = (set != null && selectedStyle < set.length) ? set[selectedStyle] : null;
+					} else {
+						imported = HairManager.fromCode(code);
+					}
 					if (imported != null) {
 						workingHairs[selectedStyle] = imported;
 						syncHairToServer();
+						actionStatusText = tr("gui.dragonminez.hair_editor.status.imported");
+						actionStatusTimer = 60;
+						actionStatusColor = 0x55FF55;
 						rebuildWidgets();
+					} else {
+						actionStatusText = tr("gui.dragonminez.hair_editor.status.invalid");
+						actionStatusTimer = 60;
+						actionStatusColor = 0xFF5555;
 					}
 				})
 				.build());
@@ -368,6 +381,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(0, maxCubes + 1)
 				.value(curLenMap)
+				.step(0.5f)
 				.axis(AxisSlider.Axis.Y)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -386,6 +400,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(0.5f, maxWidth)
 				.value(strand != null ? strand.getScaleX() : 1.0f)
+				.step(0.1f)
 				.axis(AxisSlider.Axis.Y)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -402,6 +417,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(-180f, 180f)
 				.value(strand != null ? strand.getRotationX() : 0)
+				.step(1.0f)
 				.axis(AxisSlider.Axis.X)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -418,6 +434,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(-180f, 180f)
 				.value(strand != null ? strand.getRotationZ() : 0)
+				.step(1.0f)
 				.axis(AxisSlider.Axis.Z)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -434,6 +451,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(-180f, 180f)
 				.value(strand != null ? strand.getCurveX() : 0)
+				.step(1.0f)
 				.axis(AxisSlider.Axis.X)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -450,6 +468,7 @@ public class HairEditorScreen extends ScaledScreen {
 				.size(sliderWidth, 11)
 				.range(-180f, 180f)
 				.value(strand != null ? strand.getCurveZ() : 0)
+				.step(1.0f)
 				.axis(AxisSlider.Axis.Z)
 				.onValueChange(val -> {
 					HairStrand s = getSelectedStrand();
@@ -501,28 +520,32 @@ public class HairEditorScreen extends ScaledScreen {
 		initColorPicker();
 	}
 
+	private HairStrand getMirrorTarget() {
+		int col = selectedStrandIndex % currentFace.cols;
+		int row = selectedStrandIndex / currentFace.cols;
+		int mirrorCol = (currentFace.cols - 1) - col;
+
+		HairFace mirrorFace;
+		if (currentFace == HairFace.LEFT) {
+			mirrorFace = HairFace.RIGHT;
+		} else if (currentFace == HairFace.RIGHT) {
+			mirrorFace = HairFace.LEFT;
+		} else {
+			if (mirrorCol == col) return null;
+			mirrorFace = currentFace;
+		}
+
+		int mirrorIndex = row * currentFace.cols + mirrorCol;
+		return workingHairs[selectedStyle].getStrand(mirrorFace, mirrorIndex);
+	}
+
 	private void applyMirror() {
 		if (!mirrorEnabled) return;
 		HairStrand source = getSelectedStrand();
 		if (source == null) return;
 
-		HairFace mirrorFace = currentFace;
-		int mirrorIndex = selectedStrandIndex;
-
-		if (currentFace == HairFace.FRONT || currentFace == HairFace.BACK || currentFace == HairFace.TOP) {
-			int col = selectedStrandIndex % currentFace.cols;
-			int row = selectedStrandIndex / currentFace.cols;
-			int mirrorCol = (currentFace.cols - 1) - col;
-			if (mirrorCol == col) return;
-			mirrorIndex = row * currentFace.cols + mirrorCol;
-		} else if (currentFace == HairFace.LEFT) {
-			mirrorFace = HairFace.RIGHT;
-		} else if (currentFace == HairFace.RIGHT) {
-			mirrorFace = HairFace.LEFT;
-		}
-
-		HairStrand target = workingHairs[selectedStyle].getStrand(mirrorFace, mirrorIndex);
-		if (target != null) {
+		HairStrand target = getMirrorTarget();
+		if (target != null && target != source) {
 			target.setLength(source.getLength());
 			target.setLengthScale(source.getLengthScale());
 			target.setScale(source.getScaleX(), source.getScaleY(), source.getScaleZ());
@@ -534,23 +557,8 @@ public class HairEditorScreen extends ScaledScreen {
 
 	private void applyMirrorColor(String color) {
 		if (!mirrorEnabled) return;
-		HairFace mirrorFace = currentFace;
-		int mirrorIndex = selectedStrandIndex;
-
-		if (currentFace == HairFace.FRONT || currentFace == HairFace.BACK || currentFace == HairFace.TOP) {
-			int col = selectedStrandIndex % currentFace.cols;
-			int row = selectedStrandIndex / currentFace.cols;
-			int mirrorCol = (currentFace.cols - 1) - col;
-			if (mirrorCol == col) return;
-			mirrorIndex = row * currentFace.cols + mirrorCol;
-		} else if (currentFace == HairFace.LEFT) {
-			mirrorFace = HairFace.RIGHT;
-		} else if (currentFace == HairFace.RIGHT) {
-			mirrorFace = HairFace.LEFT;
-		}
-
-		HairStrand target = workingHairs[selectedStyle].getStrand(mirrorFace, mirrorIndex);
-		if (target != null) {
+		HairStrand target = getMirrorTarget();
+		if (target != null && target != getSelectedStrand()) {
 			target.setColor(color);
 		}
 	}
@@ -840,6 +848,8 @@ public class HairEditorScreen extends ScaledScreen {
 		renderStrandsGrid(graphics, leftPanelX, panelY, mouseX, mouseY);
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hair_editor.stylecode"), leftPanelX + 15, panelY + 162, 0xFFFFFF);
+
+		if (actionStatusTimer > 0) TextUtil.drawCenteredStringWithBorder(graphics, this.font, actionStatusText, leftPanelX + 70, panelY + 205, actionStatusColor);
 	}
 
 	private void renderStrandContent(GuiGraphics graphics) {

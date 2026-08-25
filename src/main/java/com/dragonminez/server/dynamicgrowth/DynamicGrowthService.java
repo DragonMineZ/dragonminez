@@ -45,6 +45,7 @@ public final class DynamicGrowthService {
 		if (!data.getStatus().isHasCreatedCharacter()) return;
 
 		DynamicGrowthData growth = data.getDynamicGrowth();
+		if (!growth.isGrowthEnabled(stat)) return;
 		long nowMs = System.currentTimeMillis();
 		double xp = baseXp;
 
@@ -64,6 +65,13 @@ public final class DynamicGrowthService {
 		xp *= cfg.getPracticeXpMultiplier();
 		xp *= cfg.getStatPracticeMultiplier(stat.key());
 		if (!Double.isFinite(xp) || xp <= 0.0) return;
+
+		int currentStat = data.getCurrentStatValue(stat.key());
+		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
+		if (requiredXp > 0) {
+			double perInstanceCap = requiredXp * 0.10;
+			if (xp > perInstanceCap) xp = perInstanceCap;
+		}
 
 		growth.addPracticeXp(stat, xp);
 		processLevelUps(player, data, stat);
@@ -122,14 +130,21 @@ public final class DynamicGrowthService {
 	private static void processLevelUps(ServerPlayer player, StatsData data, DynamicGrowthStat stat) {
 		DynamicGrowthData growth = data.getDynamicGrowth();
 
-		if (data.getMaxAllowedIncreaseForStat(stat.key(), 1) <= 0) return;
-
 		int currentStat = data.getCurrentStatValue(stat.key());
 		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
 		double availableXp = growth.getPracticeXp(stat);
-		if (requiredXp <= 0 || !Double.isFinite(availableXp) || availableXp < requiredXp) return;
+		boolean canIncrease = data.getMaxAllowedIncreaseForStat(stat.key(), 1) > 0;
 
-		growth.consumePracticeXp(stat, requiredXp);
+		if (!Double.isFinite(availableXp) || availableXp < 0.0
+				|| (!canIncrease && requiredXp > 0 && availableXp > requiredXp)) {
+			growth.resetPracticeXp(stat);
+			return;
+		}
+
+		if (!canIncrease) return;
+		if (requiredXp <= 0 || availableXp < requiredXp) return;
+
+		growth.resetPracticeXp(stat);
 		grantStatPoint(player, data, stat);
 		notifyStatGain(player, stat, data.getCurrentStatValue(stat.key()));
 

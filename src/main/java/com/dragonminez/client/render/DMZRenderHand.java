@@ -1,18 +1,17 @@
 package com.dragonminez.client.render;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.model.KiBladeModel;
-import com.dragonminez.client.model.KiScytheModel;
-import com.dragonminez.client.model.KiClawlanceModel;
 import com.dragonminez.client.model.KiWeaponModelLoader;
 import com.dragonminez.common.combat.logic.weapon.KiWeaponHelper;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.layer.AuraTintTracker;
 import com.dragonminez.client.render.layer.BodyLayerFadeTracker;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -54,15 +53,9 @@ import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-	public static final ResourceLocation KI_WEAPON_TEX = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
-
-	public static final KiScytheModel KI_SCYTHE_MODEL = new KiScytheModel(KiScytheModel.createBodyLayer().bakeRoot());
-	public static final KiBladeModel KI_BLADE_MODEL = new KiBladeModel(KiBladeModel.createBodyLayer().bakeRoot());
-	public static final KiClawlanceModel KI_CLAWLANCE_MODEL = new KiClawlanceModel(KiClawlanceModel.createBodyLayer().bakeRoot());
-
 	private static final float KI_GEO_TX = -0.06F;
-	private static final float KI_GEO_TY = 0.1F;
-	private static final float KI_GEO_TZ = -0.2F;
+	private static final float KI_GEO_TY = -0.03F;
+	private static final float KI_GEO_TZ = -0.1F;
 	private static final float KI_GEO_RX = 0.0F;
 	private static final float KI_GEO_RY = 15.0F;
 	private static final float KI_GEO_RZ = 0.0F;
@@ -131,7 +124,9 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 	private void renderHand(PoseStack pPoseStack, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer pPlayer, ModelPart pRendererArm, ModelPart pRendererArmwear) {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, pPlayer).orElse(new StatsData(pPlayer));
-		int kaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
+		FormConfig.FormData tintForm = DMZSkinLayer.resolveTintForm(stats);
+		final float[] formTintColor = tintForm != null ? tintForm.getRgbTintColor() : null;
+		final float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 
 		this.model.attackTime = 0.0F;
 		this.model.crouching = false;
@@ -146,13 +141,13 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		SkinGathererProvider.BodyLayerSink layerConsumer = new SkinGathererProvider.BodyLayerSink() {
 			@Override
 			public void base(ResourceLocation texture, float[] color) {
-				applyKaiokenTint(color, kaiokenPhase, colorBuffer);
+				applyFormTint(color, formTintColor, formTintIntensity, colorBuffer);
 				renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, texture, colorBuffer);
 			}
 
 			@Override
-			public void fading(String layerId, ResourceLocation texture, float[] color) {
-				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color));
+			public void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha) {
+				fadingLayers.add(new BodyLayerFadeTracker.FadingLayer(layerId, texture, color, targetAlpha));
 			}
 		};
 
@@ -162,7 +157,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
 		SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
 		SkinGathererProvider.INSTANCE.gatherEffectLayers(pPlayer, stats, pt, layerConsumer);
-		renderFadingHandLayers(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm, kaiokenPhase, fadingLayers);
+		renderFadingHandLayers(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm, formTintColor, formTintIntensity, fadingLayers);
 
 		renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm);
 	}
@@ -172,43 +167,18 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		String type = stats.getStatus().getKiWeaponType();
 		if (type == null || type.equalsIgnoreCase("none")) return;
 		float[] color = KiWeaponHelper.resolveColorForType(type, getKiColor(stats));
-		boolean isRight = arm == HumanoidArm.RIGHT;
 		String lower = type.toLowerCase();
 
 		ModelPart geoPart = KiWeaponModelLoader.get(lower);
-		if (geoPart != null) {
-			ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + lower + ".png");
-			ps.pushPose();
-			ps.translate(KI_GEO_TX, KI_GEO_TY, KI_GEO_TZ);
-			if (KI_GEO_RX != 0.0F) ps.mulPose(Axis.XP.rotationDegrees(KI_GEO_RX));
-			if (KI_GEO_RY != 0.0F) ps.mulPose(Axis.YP.rotationDegrees(KI_GEO_RY));
-			if (KI_GEO_RZ != 0.0F) ps.mulPose(Axis.ZP.rotationDegrees(KI_GEO_RZ));
-			renderKiPartTex(ps, buffer, light, geoPart, color, tex);
-			ps.popPose();
-			return;
-		}
+		if (geoPart == null) return;
 
+		ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/weapons/kiweapon_" + lower + ".png");
 		ps.pushPose();
-		switch (lower) {
-			case "blade" -> {
-				KI_BLADE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
-				ps.translate(isRight ? -0.02D : 0.15D, 0.1D, -0.1D);
-				ps.mulPose(Axis.XP.rotationDegrees(5.0F));
-				renderKiPart(ps, buffer, light, KI_BLADE_MODEL.right_arm, color);
-			}
-			case "scythe" -> {
-				KI_SCYTHE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
-				ps.translate(isRight ? -0.06D : 0.65D, 0.1D, isRight ? -0.2D : 0.5D);
-				ps.mulPose(Axis.YP.rotationDegrees(isRight ? 15.0F : -15.0F));
-				renderKiPart(ps, buffer, light, KI_SCYTHE_MODEL.scythe_right, color);
-			}
-			case "clawlance" -> {
-				KI_CLAWLANCE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
-				ps.translate(isRight ? -0.05D : 0.8D, isRight ? 0.0D : 0, isRight ? -0.3D : 0.5);
-				ps.mulPose(Axis.XP.rotationDegrees(isRight ? 25.0F : -05.0F));
-				renderKiPart(ps, buffer, light, KI_CLAWLANCE_MODEL.trident_right, color);
-			}
-		}
+		ps.translate(KI_GEO_TX, KI_GEO_TY, KI_GEO_TZ);
+		if (KI_GEO_RX != 0.0F) ps.mulPose(Axis.XP.rotationDegrees(KI_GEO_RX));
+		if (KI_GEO_RY != 0.0F) ps.mulPose(Axis.YP.rotationDegrees(KI_GEO_RY));
+		if (KI_GEO_RZ != 0.0F) ps.mulPose(Axis.ZP.rotationDegrees(KI_GEO_RZ));
+		renderKiPartTex(ps, buffer, light, geoPart, color, tex);
 		ps.popPose();
 	}
 
@@ -258,12 +228,12 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		out.add(new BodyLayerFadeTracker.FadingLayer("ssj4fur", tex, ssj4.color(), ssj4.target()));
 	}
 
-	private void renderFadingHandLayers(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, ModelPart arm, int kaiokenPhase, List<BodyLayerFadeTracker.FadingLayer> active) {
+	private void renderFadingHandLayers(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, ModelPart arm, float[] formTintColor, float formTintIntensity, List<BodyLayerFadeTracker.FadingLayer> active) {
 		int id = player.getId();
 		long gameTime = player.level().getGameTime();
 		for (BodyLayerFadeTracker.RenderEntry entry : BodyLayerFadeTracker.update(id, gameTime, active)) {
 			if (entry.alpha() <= 0.001F) continue;
-			applyKaiokenTint(entry.color(), kaiokenPhase, colorBuffer);
+			applyFormTint(entry.color(), formTintColor, formTintIntensity, colorBuffer);
 			renderPart(ps, buffer, light, arm, entry.texture(), colorBuffer, entry.alpha());
 		}
 	}
@@ -334,11 +304,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		return pEntity.getSkinTextureLocation();
 	}
 
-	private void renderKiPart(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color) {
-		VertexConsumer vc = buffer.getBuffer(ModRenderTypes.kiblast(KI_WEAPON_TEX));
-		part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
-	}
-
 	private void renderKiPartTex(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color, ResourceLocation texture) {
 		VertexConsumer vc = buffer.getBuffer(ModRenderTypes.kiblast(texture));
 		part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
@@ -354,18 +319,18 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		return kiColor;
 	}
 
-	private void applyKaiokenTint(float[] source, int phase, float[] dest) {
-		if (phase <= 0) {
+	private void applyFormTint(float[] source, float[] tint, float intensity, float[] dest) {
+		if (intensity <= 0.0f || tint == null) {
 			dest[0] = source[0];
 			dest[1] = source[1];
 			dest[2] = source[2];
 			return;
 		}
 
-		float intensity = Math.min(0.6f, phase * 0.1f);
-		dest[0] = source[0] * (1.0f - intensity) + intensity;
-		dest[1] = source[1] * (1.0f - intensity);
-		dest[2] = source[2] * (1.0f - intensity);
+		float i = Mth.clamp(intensity, 0.0f, 1.0f) * AuraTintTracker.darkTintScale(source);
+		dest[0] = Mth.clamp(source[0] * (1.0f - i) + tint[0] * i, 0.0f, 1.0f);
+		dest[1] = Mth.clamp(source[1] * (1.0f - i) + tint[1] * i, 0.0f, 1.0f);
+		dest[2] = Mth.clamp(source[2] * (1.0f - i) + tint[2] * i, 0.0f, 1.0f);
 	}
 
 	private void queueFirstPersonAura(AbstractClientPlayer player, PoseStack poseStack, int packedLight) {

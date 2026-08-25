@@ -17,7 +17,7 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 
 	private TrainingConfig.PrecisionConfig cfg;
 	private final Random random = new Random();
-	private final List<Circle> circles = new ArrayList<>();
+	private final List<Circle> targets = new ArrayList<>();
 	private final Deque<Boolean> outcomes = new ArrayDeque<>();
 
 	private int score;
@@ -35,7 +35,7 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 		this.score = cfg.getStartingScore();
 		this.nextThreshold = cfg.getStartingScore() + cfg.getLevelUpScoreBase();
 		this.spawnTimer = 0;
-		this.circles.clear();
+		this.targets.clear();
 		this.outcomes.clear();
 	}
 
@@ -51,7 +51,7 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 			spawnTimer = cfg.getSpawnIntervalTicks();
 		}
 
-		Iterator<Circle> it = circles.iterator();
+		Iterator<Circle> it = targets.iterator();
 		while (it.hasNext()) {
 			Circle c = it.next();
 			if (c.fading) {
@@ -65,7 +65,7 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 
 	private int countActive() {
 		int n = 0;
-		for (Circle c : circles) if (!c.fading) n++;
+		for (Circle c : targets) if (!c.fading) n++;
 		return n;
 	}
 
@@ -74,7 +74,7 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 		int marginY = Math.max(50, this.height / 6);
 		int x = marginX + random.nextInt(Math.max(1, this.width - 2 * marginX));
 		int y = marginY + random.nextInt(Math.max(1, this.height - 2 * marginY));
-		circles.add(new Circle(x, y, cfg.getOuterRingRadius()));
+		targets.add(new Circle(x, y, cfg.getOuterRingRadius()));
 	}
 
 	@Override
@@ -84,7 +84,7 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 		Circle target = null;
 		double bestTiming = Double.MAX_VALUE;
 		int half = cfg.getTargetRadius();
-		for (Circle c : circles) {
+		for (Circle c : targets) {
 			if (c.fading) continue;
 			if (Math.abs(mouseX - c.x) <= half && Math.abs(mouseY - c.y) <= half) {
 				double timing = Math.abs(c.ringRadius - cfg.getTargetRadius());
@@ -100,13 +100,13 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 		if (bestTiming <= cfg.getPerfectWindow()) {
 			score += cfg.getPerfectPoints();
 			playHit(true);
-			circles.remove(target);
+			targets.remove(target);
 			recordOutcome(true);
 			checkLevelUp();
 		} else if (bestTiming <= cfg.getGoodWindow()) {
 			score += cfg.getGoodPoints();
 			playHit(false);
-			circles.remove(target);
+			targets.remove(target);
 			recordOutcome(true);
 			checkLevelUp();
 		} else {
@@ -145,7 +145,7 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.level", level()), cx, 64, 0xFFFFD700);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.score", score, nextThreshold), cx, 76, 0xFFFFFFFF);
 
-		for (Circle c : circles) {
+		for (Circle c : targets) {
 			if (c.fading) {
 				int alpha = (int) (255 * ((float) c.fadeRemaining / cfg.getFadeOutTicks()));
 				int red = (alpha << 24) | 0x00FF3030;
@@ -158,7 +158,6 @@ public class PrecisionGameScreen extends BaseMinigameScreen {
 		}
 	}
 
-	/** Draws a 1px circle outline by plotting points around the circumference. */
 	private void drawCircle(GuiGraphics graphics, int cx, int cy, int radius, int color) {
 		int segments = Math.max(16, radius * 3);
 		for (int i = 0; i < segments; i++) {

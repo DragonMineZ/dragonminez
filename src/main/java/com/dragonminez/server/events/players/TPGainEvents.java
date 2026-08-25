@@ -9,9 +9,7 @@ import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.quest.PartyManager;
-import com.dragonminez.common.quest.QuestUnlocks;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
-import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.common.config.TpSource;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -89,7 +87,7 @@ public class TPGainEvents {
 				int passiveTp = ConfigManager.getServerConfig().getGameplay().getPassiveTpGain();
 				if (passiveTp > 0 && player.tickCount % 100 == 0) {
 					int boosted = data.applyTpBoosts(TpSource.PASSIVE, passiveTp);
-					data.getResources().addTrainingPoints(applyGravityRoom(player, boosted));
+					data.getResources().addTrainingPoints(boosted);
 				}
 
 				int tpTravel = ConfigManager.getServerConfig().getGameplay().getTpPer20BlocksTraveled();
@@ -160,17 +158,6 @@ public class TPGainEvents {
 		}
 	}
 
-	/**
-	 * Bulma's gravity-room upgrades: training inside the Hyperbolic Time Chamber
-	 * earns more TP once the player has completed the gravity-room sidequests. Mk.III overrides Mk.II.
-	 */
-	private static int applyGravityRoom(Player player, int tp) {
-		if (tp <= 0 || !player.level().dimension().equals(HTCDimension.HTC_KEY)) return tp;
-		if (QuestUnlocks.isCompleted(player, QuestUnlocks.GRAVITY_MK3)) return (int) Math.round(tp * 2.0);
-		if (QuestUnlocks.isCompleted(player, QuestUnlocks.GRAVITY_MK2)) return (int) Math.round(tp * 1.5);
-		return tp;
-	}
-
 	private static boolean isPlayerOwnedShadow(Entity entity) {
 		return entity instanceof ShadowDummyEntity
 				&& entity.getPersistentData().getBoolean(SummonPlayerShadowDummyC2S.TAG_PLAYER_SHADOW);
@@ -205,7 +192,7 @@ public class TPGainEvents {
 				int tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ratio * healthMult);
 				int killTp = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit() + tpsHealth);
 				int boostedTp = data.applyTpBoosts(TpSource.KILL, killTp);
-				int finalTp = applyPlayerShadowTpBonus(event.getEntity(), applyGravityRoom(attacker, boostedTp));
+				int finalTp = applyPlayerShadowTpBonus(event.getEntity(), boostedTp);
 				data.getResources().addTrainingPoints(finalTp);
 			}
 		});
@@ -221,7 +208,7 @@ public class TPGainEvents {
 					if (event.getAmount() >= 1) {
 						int baseTps = applyDynamicGrowthCombatTpMult(ConfigManager.getServerConfig().getGameplay().getTpPerHit());
 						int boostedTps = attackerData.applyTpBoosts(TpSource.HIT, baseTps);
-						int finalTps = applyPlayerShadowTpBonus(event.getEntity(), applyGravityRoom(attacker, boostedTps));
+						int finalTps = applyPlayerShadowTpBonus(event.getEntity(), boostedTps);
 						attackerData.getResources().addTrainingPoints(finalTps);
 					}
 				}

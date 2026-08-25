@@ -13,8 +13,10 @@ import com.dragonminez.common.network.C2S.FlyToggleC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.skills.Skill;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
@@ -55,13 +57,9 @@ public class FlySkillEvent {
 	private static int kiConsumptionTicks = 0;
 	private static final int KI_CONSUMPTION_INTERVAL = 20;
 
-	private static long lastFlyKeyPressTime = 0;
 	private static long pendingGroundActivationStartTime = 0;
 	private static boolean pendingGroundActivation = false;
 
-	private static boolean decelerationImmunity = false;
-	private static long immunityEndTime = 0;
-	private static final long BURST_DECELERATION_DURATION_MS = 1500;
 	private static final long DOUBLE_TAP_WINDOW_MS = 250;
 
 	private static boolean wasFlyingSkillActive = false;
@@ -100,8 +98,6 @@ public class FlySkillEvent {
 				}
 
 				long currentTime = System.currentTimeMillis();
-				boolean isDoubleTap = (currentTime - lastFlyKeyPressTime) <= DOUBLE_TAP_WINDOW_MS;
-				lastFlyKeyPressTime = currentTime;
 
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) return;
@@ -129,31 +125,6 @@ public class FlySkillEvent {
 					int energyCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * energyCostPercent);
 
 					if (!flySkill.isActive()) {
-						if (player.onGround() && isDoubleTap && flyLevel >= 5 && data.getStatus().getFlightMode() == Status.FLIGHT_SEARCH) {
-							int burstCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * 0.75);
-							if (player.isCreative() || data.getResources().getCurrentEnergy() >= energyCost + burstCost) {
-								pendingGroundActivation = false;
-								pendingFlightActivation = false;
-								decelerationImmunity = true;
-								immunityEndTime = currentTime + BURST_DECELERATION_DURATION_MS;
-
-								float flySpeedScale = getFlySpeedScale(player);
-								float levelMultiplier = 1.0F + (0.20F * flyLevel);
-								float maxSprint = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale * data.getResources().getFlightSpeedLimit() / 100;
-
-								player.jumpFromGround();
-								Vec3 look = player.getLookAngle();
-								double safeY = look.y < 0.2 ? 0.2 : look.y;
-
-								flightVector = new Vec3(look.x, safeY, look.z).normalize().scale(maxSprint * 3.5F);
-								player.setDeltaMovement(flightVector);
-
-								player.playSound(MainSounds.TRANSFORM_ON.get(), 1.0F, 1.0F);
-
-								NetworkHandler.sendToServer(new FlyToggleC2S(true, true));
-								return;
-							}
-						}
 
 						if (data.getResources().getCurrentEnergy() < energyCost) return;
 
@@ -161,18 +132,13 @@ public class FlySkillEvent {
 							pendingGroundActivation = true;
 							pendingGroundActivationStartTime = currentTime;
 							return;
-						} else NetworkHandler.sendToServer(new FlyToggleC2S(true, false));
+						} else NetworkHandler.sendToServer(new FlyToggleC2S(true));
 					} else pendingFlightDisable = !pendingFlightDisable;
 				});
 			}
 		}
 	}
 
-	/**
-	 * Entry point for the radial Utility Menu's Fly button: toggles flight exactly like tapping the
-	 * fly key (minus the double-tap burst), so it respects the player's flight mode, energy/skill
-	 * checks, the ground take-off hop and the graceful shutdown deceleration.
-	 */
 	public static void toggleFlightFromMenu() {
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer player = mc.player;
@@ -209,7 +175,7 @@ public class FlySkillEvent {
 			if (player.onGround()) {
 				pendingGroundActivation = true;
 				pendingGroundActivationStartTime = System.currentTimeMillis();
-			} else NetworkHandler.sendToServer(new FlyToggleC2S(true, false));
+			} else NetworkHandler.sendToServer(new FlyToggleC2S(true));
 		} else pendingFlightDisable = !pendingFlightDisable;
 	}
 
@@ -222,10 +188,8 @@ public class FlySkillEvent {
 
 		if (player == null) return;
 
-		boolean burstDecelActive = decelerationImmunity && System.currentTimeMillis() < immunityEndTime;
-
 		boolean startedGroundActivation = false;
-		if (pendingGroundActivation && !burstDecelActive) {
+		if (pendingGroundActivation) {
 			long elapsed = System.currentTimeMillis() - pendingGroundActivationStartTime;
 			if (elapsed >= DOUBLE_TAP_WINDOW_MS) {
 				player.jumpFromGround();
@@ -237,9 +201,9 @@ public class FlySkillEvent {
 			} else if (!player.onGround()) pendingGroundActivation = false;
 		}
 
-		if (pendingFlightActivation && !burstDecelActive) {
+		if (pendingFlightActivation) {
 			if (!startedGroundActivation && player.getDeltaMovement().y < 0 && !player.onGround()) {
-				NetworkHandler.sendToServer(new FlyToggleC2S(true, false));
+				NetworkHandler.sendToServer(new FlyToggleC2S(true));
 				pendingFlightActivation = false;
 			} else if (!startedGroundActivation && player.onGround()) {
 				pendingFlightActivation = false;
@@ -252,13 +216,13 @@ public class FlySkillEvent {
 			Skill flySkill = data.getSkills().getSkill("fly");
 			if (flySkill == null) return;
 
-			boolean isFlying = flySkill.isActive() || burstDecelActive;
+			boolean isFlying = flySkill.isActive();
 			int flightMode = data.getStatus().getFlightMode();
-			boolean isCombatFly = flightMode == Status.FLIGHT_COMBAT && !burstDecelActive;
+			boolean isCombatFly = flightMode == Status.FLIGHT_COMBAT;
 
 			if (isFlying && !wasFlyingSkillActive) {
 				if (isCombatFly) CombatFlightHandler.initFromMotion(player);
-				else if (!burstDecelActive) initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit());
+				else initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit());
 				lastFlightMode = flightMode;
 			}
 
@@ -270,22 +234,33 @@ public class FlySkillEvent {
 					CombatFlightHandler.reset();
 					initializeFlightVectorFromCurrentMotion(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit());
 				}
+				Component switchHint = Component.empty()
+						.append(KeyBinds.SECOND_FUNCTION_KEY.getTranslatedKeyMessage())
+						.append(" + ")
+						.append(KeyBinds.FLY_KEY.getTranslatedKeyMessage());
 				player.displayClientMessage(Component.translatable(
-						isCombatFly ? "dragonminez.flight.mode.switched.combat" : "dragonminez.flight.mode.switched.search"), true);
+						isCombatFly ? "dragonminez.flight.mode.switched.combat" : "dragonminez.flight.mode.switched.search",
+						switchHint), true);
 				lastFlightMode = flightMode;
 			}
 
+			boolean movementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStunned() || data.getStatus().isActionCharging();
+
 			if (isFlying) {
-				if (isCombatFly) {
+				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data)) {
+					flightVector = Vec3.ZERO;
+					player.setDeltaMovement(0.0D, 0.0D, 0.0D);
+					player.fallDistance = 0F;
+				} else if (isCombatFly) {
 					if (pendingFlightDisable) {
 						pendingFlightDisable = false;
-						NetworkHandler.sendToServer(new FlyToggleC2S(false, false));
+						NetworkHandler.sendToServer(new FlyToggleC2S(false));
 						CombatFlightHandler.reset();
 						resetFlightState();
 						return;
 					}
-					CombatFlightHandler.handle(player, data);
-				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit());
+					CombatFlightHandler.handle(player, data, movementRestricted);
+				} else handleFlightMovement(player, data.getSkills().getSkillLevel("fly"), data.getResources().getFlightSpeedLimit(), movementRestricted);
 				handleKiConsumption(player, data, flySkill);
 			} else if (!pendingFlightDisable) {
 				resetFlightState();
@@ -297,20 +272,20 @@ public class FlySkillEvent {
 		});
 	}
 
-	private static void handleFlightMovement(LocalPlayer player, int flyLevel, int flightSpeedLimit) {
+	private static void handleFlightMovement(LocalPlayer player, int flyLevel, int flightSpeedLimit, boolean movementRestricted) {
 		float flySpeedScale = getFlySpeedScale(player);
 		float levelMultiplier = 1.0F + (0.20F * flyLevel);
 		float maxNormalSpeed = NORMAL_MAX_SPEED * levelMultiplier * flySpeedScale * flightSpeedLimit / 100;
 		float maxSprintSpeed = SPRINT_MAX_SPEED * levelMultiplier * flySpeedScale * flightSpeedLimit / 100;
 
 		Minecraft mc = Minecraft.getInstance();
-		boolean isForward = mc.options.keyUp.isDown();
-		boolean isBack = mc.options.keyDown.isDown();
-		boolean isLeft = mc.options.keyLeft.isDown();
-		boolean isRight = mc.options.keyRight.isDown();
-		boolean isJump = mc.options.keyJump.isDown();
-		boolean isCrouch = mc.options.keyShift.isDown();
-		boolean isSprintingInput = player.isSprinting();
+		boolean isForward = !movementRestricted && mc.options.keyUp.isDown();
+		boolean isBack = !movementRestricted && mc.options.keyDown.isDown();
+		boolean isLeft = !movementRestricted && mc.options.keyLeft.isDown();
+		boolean isRight = !movementRestricted && mc.options.keyRight.isDown();
+		boolean isJump = !movementRestricted && mc.options.keyJump.isDown();
+		boolean isCrouch = !movementRestricted && mc.options.keyShift.isDown();
+		boolean isSprintingInput = !movementRestricted && player.isSprinting();
 
 		boolean hasInput = isForward || isBack || isLeft || isRight;
 
@@ -330,10 +305,7 @@ public class FlySkillEvent {
 		Vec3 targetDirection = Vec3.ZERO;
 
 		if (isForward) targetDirection = targetDirection.add(lookDir);
-		if (isBack) {
-			if (decelerationImmunity) decelerationImmunity = false;
-			targetDirection = targetDirection.add(lookDir.scale(-0.5));
-		}
+		if (isBack) targetDirection = targetDirection.add(lookDir.scale(-0.5));
 		if (isLeft) {
 			Vec3 leftDir = lookDir.yRot((float) Math.toRadians(90)).normalize();
 			targetDirection = targetDirection.add(new Vec3(leftDir.x, 0, leftDir.z).scale(0.7));
@@ -344,7 +316,6 @@ public class FlySkillEvent {
 		}
 
 		double currentSpeed = flightVector.length();
-		boolean burstDecelActive = decelerationImmunity && System.currentTimeMillis() < immunityEndTime;
 
 		if (pendingFlightDisable) {
 			double newSpeed = Math.max(0.0, currentSpeed - (EXIT_DECELERATION * flySpeedScale));
@@ -353,25 +324,9 @@ public class FlySkillEvent {
 
 			if (flightVector.lengthSqr() < 0.03) {
 				pendingFlightDisable = false;
-				NetworkHandler.sendToServer(new FlyToggleC2S(false, false));
+				NetworkHandler.sendToServer(new FlyToggleC2S(false));
 				resetFlightState();
 				return;
-			}
-		} else if (burstDecelActive) {
-			double newSpeed = currentSpeed - (DECELERATION * 8.0);
-			if (newSpeed <= maxSprintSpeed) {
-				newSpeed = maxSprintSpeed;
-				decelerationImmunity = false;
-			}
-
-			if (hasInput && targetDirection.length() > 0.001) {
-				targetDirection = targetDirection.normalize();
-				Vec3 currentDir = flightVector.normalize();
-				Vec3 mixedDir = new Vec3(Mth.lerp(0.15F, currentDir.x, targetDirection.x), Mth.lerp(0.15F, currentDir.y, targetDirection.y), Mth.lerp(0.15F, currentDir.z, targetDirection.z)).normalize();
-				flightVector = mixedDir.scale(newSpeed);
-				hovering = Math.min(1F, hovering + 0.1F);
-			} else {
-				flightVector = flightVector.normalize().scale(Math.max(newSpeed, 0.01));
 			}
 		} else if (hasInput && targetDirection.length() > 0.001) {
 			targetDirection = targetDirection.normalize();
@@ -410,9 +365,9 @@ public class FlySkillEvent {
 			verticalHover = 0;
 		} else handleHovering(player, isJump, isCrouch);
 
-		if (player.onGround() && !burstDecelActive && !pendingFlightActivation) {
+		if (player.onGround() && !pendingFlightActivation) {
 			pendingFlightDisable = false;
-			NetworkHandler.sendToServer(new FlyToggleC2S(false, false));
+			NetworkHandler.sendToServer(new FlyToggleC2S(false));
 			resetFlightState();
 		}
 	}
@@ -487,10 +442,14 @@ public class FlySkillEvent {
 			int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
 			if (data.getResources().getCurrentEnergy() <= energyCost) {
-				NetworkHandler.sendToServer(new FlyToggleC2S(false, false));
+				NetworkHandler.sendToServer(new FlyToggleC2S(false));
 				resetFlightState();
 			}
 		}
+	}
+
+	public static void injectKnockback(Vec3 knockback) {
+		flightVector = flightVector.add(knockback);
 	}
 
 	private static void resetFlightState() {
@@ -500,8 +459,6 @@ public class FlySkillEvent {
 		kiConsumptionTicks = 0;
 		pendingFlightDisable = false;
 		wasFlyingSkillActive = false;
-		decelerationImmunity = false;
-		immunityEndTime = 0;
 		wasSprintingInAir = false;
 		FlightRollHandler.reset();
 		FlightOrientationHandler.reset();

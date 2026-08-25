@@ -1,0 +1,39 @@
+{
+  "id": "namek_farewell",
+  "title": "dmz.sidequest.namek_farewell.name",
+  "description": "dmz.sidequest.namek_farewell.desc",
+  "type": "SIDEQUEST",
+  "category": "exploration",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "guru",
+  "turn_in": "guru",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "frieza_saga",
+        "questId": 15
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:village_sacred"
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "guru"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 18000
+    }
+  ]
+}

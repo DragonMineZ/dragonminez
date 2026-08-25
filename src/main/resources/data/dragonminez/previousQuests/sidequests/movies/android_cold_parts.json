@@ -1,0 +1,68 @@
+{
+  "id": "android_cold_parts",
+  "title": "dmz.sidequest.android_cold_parts.name",
+  "description": "dmz.sidequest.android_cold_parts.desc",
+  "type": "SIDEQUEST",
+  "category": "collection",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 22
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "BIOME",
+        "biome": "minecraft:snowy_plains"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_a14",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_a15",
+      "count": 1,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY"
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_scrap",
+      "count": 6
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 208000
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_ingot",
+      "count": 3
+    }
+  ]
+}

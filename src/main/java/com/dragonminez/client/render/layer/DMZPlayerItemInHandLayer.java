@@ -3,7 +3,6 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.WeaponGripProfile;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
-import com.dragonminez.common.combat.logic.player.PlayerAttackProperties;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -18,6 +17,7 @@ import net.minecraft.world.item.*;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
@@ -62,17 +62,12 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 	@Override
 	protected ItemStack getStackForBone(GeoBone bone, T animatable) {
 		String name = bone.getName();
-		boolean isCombatAnim = isCombatAnim(animatable);
 		boolean isTwoHanded = PlayerAttackHelper.isTwoHandedWielding(animatable);
 
 		boolean rightIsOffhand = name.equals(RIGHT_GRIP) && animatable.getMainArm() != HumanoidArm.RIGHT;
 		boolean leftIsOffhand  = name.equals(LEFT_GRIP)  && animatable.getMainArm() != HumanoidArm.LEFT;
 
 		if (isTwoHanded && (rightIsOffhand || leftIsOffhand)) return ItemStack.EMPTY;
-		if (isCombatAnim) {
-			if (name.equals(RIGHT_GRIP)) return animatable.getMainHandItem();
-			if (name.equals(LEFT_GRIP)) return animatable.getOffhandItem();
-		}
 
 		if (name.equals(RIGHT_GRIP)) return animatable.getMainArm() == HumanoidArm.RIGHT ? animatable.getMainHandItem() : animatable.getOffhandItem();
 		if (name.equals(LEFT_GRIP)) return animatable.getMainArm() == HumanoidArm.LEFT ? animatable.getMainHandItem() : animatable.getOffhandItem();
@@ -108,20 +103,22 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 
 		poseStack.pushPose();
 
-		boolean isCombatAnim = isCombatAnim(animatable);
-		float gripWeight = 1.0F - combatPlacementWeight(bone, animatable);
+		float combatWeight = combatPlacementWeight(bone, animatable);
+		boolean selfPosed = stack.getItem() instanceof GeoItem;
+
+		float gripWeight = (selfPosed && isLeft) ? 1.0F : (1.0F - combatWeight);
 
 		if (gripWeight > 0.0F) {
 			boolean isUsing = animatable.isUsingItem() && animatable.getUseItem() == stack;
 			String weaponType = resolveWeaponType(stack);
 			WeaponGripProfile profile = WeaponGripProfile.resolve(stack.getItem(), isUsing, weaponType);
 
-			boolean applyAsLeft = isLeft;
-			if (!isCombatAnim && animatable.getMainArm() == HumanoidArm.LEFT) applyAsLeft = !isLeft;
+			boolean restFlip = !selfPosed && combatWeight <= 0.0F && animatable.getMainArm() == HumanoidArm.LEFT;
+			boolean applyAsLeft = selfPosed ? false : (restFlip ? !isLeft : isLeft);
 
 			applyGripEased(poseStack, profile, applyAsLeft, gripWeight);
 
-			if (!isCombatAnim && animatable.getMainArm() == HumanoidArm.LEFT) poseStack.translate(0.1 * gripWeight, 0, 0);
+			if (restFlip) poseStack.translate(0.1 * gripWeight, 0, 0);
 		}
 
 		float itemScale = resolveItemScale(animatable);
@@ -129,14 +126,6 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 
 		super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 		poseStack.popPose();
-	}
-
-	private boolean isCombatAnim(T animatable) {
-		if (!(animatable instanceof IPlayerAnimatable playerAnim) || !playerAnim.dragonminez$isPlayingCombatAnimation()) return false;
-		if (animatable instanceof PlayerAttackProperties props) {
-			return PlayerAttackHelper.getCurrentAttack(animatable, props.getComboCount()) != null;
-		}
-		return true;
 	}
 
 	private boolean useCombatPlacement(GeoBone bone, T animatable) {

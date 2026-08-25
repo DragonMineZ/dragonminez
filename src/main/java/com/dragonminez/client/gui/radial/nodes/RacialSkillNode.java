@@ -30,8 +30,8 @@ public class RacialSkillNode extends AbstractRadialNode {
 
 	@Override
 	public Component label(StatsData stats) {
-		if (isTailRace(stats)) return Component.translatable("gui.action.dragonminez.tail");
 		if (isActionRacial(stats)) return Component.translatable("gui.action.dragonminez.racial." + racialSkill(stats));
+		if (isTailRace(stats)) return Component.translatable("gui.action.dragonminez.tail");
 		return Component.empty();
 	}
 
@@ -50,8 +50,9 @@ public class RacialSkillNode extends AbstractRadialNode {
 
 	@Override
 	public boolean active(StatsData stats) {
+		if (isActionRacial(stats)) return stats.getStatus().getSelectedAction() == ActionMode.RACIAL;
 		if (isTailRace(stats)) return stats.getStatus().isTailVisible();
-		return stats.getStatus().getSelectedAction() == ActionMode.RACIAL;
+		return false;
 	}
 
 	@Override
@@ -61,13 +62,13 @@ public class RacialSkillNode extends AbstractRadialNode {
 
 	@Override
 	public void onSelect(StatsData stats) {
-		if (isTailRace(stats)) {
-			boolean wasActive = stats.getStatus().isTailVisible();
-			NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_TAIL));
-			playToggle(!wasActive);
-		} else if (isActionRacial(stats)) {
+		if (isActionRacial(stats)) {
 			boolean wasActive = stats.getStatus().getSelectedAction() == ActionMode.RACIAL;
 			NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.RACIAL));
+			playToggle(!wasActive);
+		} else if (isTailRace(stats)) {
+			boolean wasActive = stats.getStatus().isTailVisible();
+			NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_TAIL));
 			playToggle(!wasActive);
 		}
 	}

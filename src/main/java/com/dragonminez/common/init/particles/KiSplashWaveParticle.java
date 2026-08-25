@@ -68,7 +68,11 @@ public class KiSplashWaveParticle extends TextureSheetParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double colorData, double sizeData, double unused) {
-            return new KiSplashWaveParticle(level, x, y, z, colorData, sizeData, unused, this.spriteSet);
+            try {
+                return new KiSplashWaveParticle(level, x, y, z, colorData, sizeData, unused, this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

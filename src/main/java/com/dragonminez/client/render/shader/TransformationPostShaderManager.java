@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -195,6 +196,11 @@ public final class TransformationPostShaderManager {
 	private static void updateTrackedPlayers(Minecraft mc) {
 		ACTIVE_MASK_PLAYERS.clear();
 		activeUniformState = null;
+
+		if (!ConfigManager.getUserConfig().getTransformationOutlines()) {
+			TRACKED_PLAYERS.clear();
+			return;
+		}
 
 		long frameId = mc.level.getGameTime();
 		UUID localPlayerId = mc.player.getUUID();

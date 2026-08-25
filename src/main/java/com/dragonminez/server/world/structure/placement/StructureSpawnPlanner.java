@@ -3,6 +3,7 @@ package com.dragonminez.server.world.structure.placement;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.server.world.data.StructurePlanSavedData;
 import com.dragonminez.server.world.structure.TallJigsawStructure;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -12,6 +13,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.QuartPos;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
@@ -28,14 +30,17 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class StructureSpawnPlanner {
 	private static final int EXCLUSION_CHUNK_RADIUS = 3;
@@ -45,10 +50,12 @@ public final class StructureSpawnPlanner {
 	private static final int RING_STEP = 64;
 	private static final int TAIL_EXTRA_RINGS = 256;
 	private static final int TAIL_CHUNK_STRIDE = 3;
-	private static final long BUILD_AWAIT_SECONDS = 5L;
+	private static final long STARTUP_WAIT_SECONDS = 30L;
+
 	private static final int FLATNESS_MAX_SPREAD = 20;
 	private static final int FLATNESS_SCAN_EXTRA_RINGS = 5;
 	private static final int ABSOLUTE_SCAN_CAP_RINGS = 96;
+	private static final long SEARCH_SAMPLE_BUDGET = 120_000L;
 
 	private static final TreeMap<Integer, BiomeAwareUniquePlacement> REGISTERED = new TreeMap<>();
 	private static final TreeMap<Integer, UniqueNearSpawnPlacement> NEAR_SPAWN_RESERVED = new TreeMap<>();
@@ -85,20 +92,121 @@ public final class StructureSpawnPlanner {
 		return buildEpoch != planEpoch;
 	}
 
-	public static void prewarm(long worldSeed, RandomState randomState, ChunkGeneratorStructureState state) {
-		if (randomState == null || state == null) return;
+	public static void onLevelLoad(ServerLevel level) {
+		if (level == null) return;
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return;
+
+		var chunkSource = level.getChunkSource();
+		ChunkGeneratorStructureState state = chunkSource.getGeneratorState();
+		RandomState randomState = chunkSource.randomState();
+		if (state == null || randomState == null) return;
 		BiomeSource biomeSource = getBiomeSourceReflection(state);
 		if (biomeSource == null) return;
-		PlanHolder holder = obtainHolder(worldSeed, biomeSource, randomState, state);
 
-		if (holder.started.compareAndSet(false, true)) {
-			long startNanos = System.nanoTime();
-			StructureAsyncResolver.buildPlanSync(holder);
-			long ms = (System.nanoTime() - startNanos) / 1_000_000L;
-			LogUtil.info(Env.SERVER, "[DMZ] Structure plan resolved synchronously at level load in " + ms + "ms.");
-		} else {
-			holder.awaitReady(BUILD_AWAIT_SECONDS);
+		PlanHolder holder = obtainHolder(level.getSeed(), biomeSource, randomState, state);
+
+		StructurePlanSavedData saved = StructurePlanSavedData.get(level);
+		Map<Integer, ChunkPos> savedPositions = saved.getPositions();
+		if (!savedPositions.isEmpty()) {
+			holder.publish(savedPositions);
+		}
+
+		if (saved.isResolved() && savedPositions.keySet().containsAll(expectedSalts(state, biomeSource))) {
+			holder.started.set(true);
+			return;
+		}
+
+		if (level.dimension().equals(Level.OVERWORLD)) {
+			if (holder.started.compareAndSet(false, true)) {
+				StructureAsyncResolver.buildPlanSync(holder);
+			}
+			return;
+		}
+
+		ensureBuildStarted(holder);
+	}
+
+	private static Set<Integer> expectedSalts(ChunkGeneratorStructureState state, BiomeSource biomeSource) {
+		Map<Integer, HolderSet<Biome>> structureBiomes = buildStructureBiomes(state);
+		Set<Integer> expected = new HashSet<>();
+		synchronized (StructureSpawnPlanner.class) {
+			for (BiomeAwareUniquePlacement placement : REGISTERED.values()) {
+				int salt = placement.placementSalt();
+				if (!structureBiomes.containsKey(salt)) continue;
+				if (!biomeSourceHasAny(biomeSource, placement.getValidBiomes())) continue;
+				expected.add(salt);
+			}
+		}
+		return expected;
+	}
+
+	/**
+	 * Currently published plan positions for this level's dimension, without
+	 * triggering a plan build. Empty until the plan is available.
+	 */
+	public static Map<Integer, ChunkPos> publishedPositions(ServerLevel level) {
+		PlanHolder holder = findExistingHolder(level);
+		if (holder == null) return Collections.emptyMap();
+		Map<Integer, ChunkPos> positions = holder.positions;
+		return positions == null ? Collections.emptyMap() : positions;
+	}
+
+	/**
+	 * Discards the planned position for one structure (e.g. because the terrain
+	 * turned out to be unusable) and re-runs the search for it in the background.
+	 * Already-resolved structures keep their positions.
+	 */
+	public static void relocate(ServerLevel level, int salt) {
+		PlanHolder holder = findExistingHolder(level);
+		if (holder == null) return;
+		synchronized (holder.writeLock) {
+			Map<Integer, ChunkPos> current = holder.positions;
+			if (current == null || !current.containsKey(salt)) return;
+			Map<Integer, ChunkPos> next = new HashMap<>(current);
+			holder.excluded.add(next.remove(salt));
+			holder.positions = Collections.unmodifiableMap(next);
+		}
+		StructurePlanSavedData.get(level).removePosition(salt);
+		LogUtil.info(Env.SERVER, "[DMZ] Relocating structure with salt " + salt
+				+ " in " + level.dimension().location() + "; previous site was unusable.");
+		StructureAsyncResolver.buildPlan(holder);
+	}
+
+	private static PlanHolder findExistingHolder(ServerLevel level) {
+		ChunkGeneratorStructureState state = level.getChunkSource().getGeneratorState();
+		BiomeSource biomeSource = getBiomeSourceReflection(state);
+		if (biomeSource == null) return null;
+		PlanHolder cached = lastHolder;
+		if (cached != null && cached.seed == level.getSeed() && cached.biomeSource == biomeSource) {
+			return cached;
+		}
+		return PLANS.get(new PlanKey(level.getSeed(), biomeSource));
+	}
+
+	public static void precomputeAndWait(MinecraftServer server) {
+		if (server == null) return;
+		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return;
+
+		PlanHolder overworldHolder = null;
+		for (ServerLevel level : server.getAllLevels()) {
+			try {
+				var chunkSource = level.getChunkSource();
+				ChunkGeneratorStructureState state = chunkSource.getGeneratorState();
+				RandomState randomState = chunkSource.randomState();
+				if (state == null || randomState == null) continue;
+				BiomeSource biomeSource = getBiomeSourceReflection(state);
+				if (biomeSource == null) continue;
+				onLevelLoad(level);
+				if (level.dimension().equals(Level.OVERWORLD)) {
+					overworldHolder = obtainHolder(level.getSeed(), biomeSource, randomState, state);
+				}
+			} catch (Throwable t) {
+				LogUtil.error(Env.SERVER, "[DMZ] Structure precompute failed for a level: " + t.getMessage());
+			}
+		}
+
+		if (overworldHolder != null && overworldHolder.positions == null) {
+			overworldHolder.awaitReady(STARTUP_WAIT_SECONDS);
 		}
 	}
 
@@ -111,11 +219,7 @@ public final class StructureSpawnPlanner {
 		ensureBuildStarted(holder);
 
 		Map<Integer, ChunkPos> positions = holder.positions;
-		if (positions == null) {
-			holder.awaitReady(BUILD_AWAIT_SECONDS);
-			positions = holder.positions;
-			if (positions == null) return null;
-		}
+		if (positions == null) return null;
 		return positions.get(placement.placementSalt());
 	}
 
@@ -184,9 +288,21 @@ public final class StructureSpawnPlanner {
 			if (pos != null) reservedBaseline.add(pos);
 		}
 
+		// Positions already resolved (loaded from the world save or from a previous
+		// build) are kept as-is; only missing structures are searched for. Sites
+		// that proved unusable (failed relocations) are avoided via spacing.
+		final Map<Integer, ChunkPos> existing = holder.positions;
+		if (existing != null) reservedBaseline.addAll(existing.values());
+		synchronized (holder.excluded) {
+			reservedBaseline.addAll(holder.excluded);
+		}
+
 		final List<BiomeAwareUniquePlacement> targets = new ArrayList<>();
 		for (BiomeAwareUniquePlacement placement : REGISTERED.values()) {
-			if (structureBiomes.get(placement.placementSalt()) != null) targets.add(placement);
+			if (structureBiomes.get(placement.placementSalt()) == null) continue;
+			if (!biomeSourceHasAny(biomeSource, placement.getValidBiomes())) continue;
+			if (existing != null && existing.containsKey(placement.placementSalt())) continue;
+			targets.add(placement);
 		}
 
 		final Map<Integer, ChunkPos> independent = new ConcurrentHashMap<>();
@@ -208,7 +324,8 @@ public final class StructureSpawnPlanner {
 			}
 			ChunkPos reconciled = searchNearest(placement, structureBiomes.get(salt), cache,
 					minRing, maxRing, accepted, spacingSqr, state, avoid,
-					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1);
+					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1,
+					new AtomicLong(SEARCH_SAMPLE_BUDGET));
 			if (reconciled != null) {
 				plan.put(salt, reconciled);
 				accepted.add(reconciled);
@@ -218,13 +335,6 @@ public final class StructureSpawnPlanner {
 		}
 
 		holder.publish(plan);
-
-		if (generator != null) {
-			for (ChunkPos planned : plan.values()) {
-				if (isStale(epoch)) break;
-				StructureAsyncResolver.forceGenerate(generator, planned);
-			}
-		}
 
 		long buildMs = (System.nanoTime() - buildStartNanos) / 1_000_000L;
 		if (!targets.isEmpty()) {
@@ -239,7 +349,36 @@ public final class StructureSpawnPlanner {
 			resolveTail(holder, notFound, structureBiomes, structureMinHeights, structureNames, cache,
 					maxRing, spacingSqr, accepted, state, avoid, epoch);
 		}
+
+		persistPlan(holder, epoch);
 		return notFound;
+	}
+
+	/**
+	 * Persists the fully-built plan (including tail-resolved positions) into the
+	 * dimension's SavedData. Marked complete only when every applicable structure
+	 * has a position, so partially-failed searches are retried on the next load.
+	 */
+	private static void persistPlan(PlanHolder holder, int epoch) {
+		if (isStale(epoch)) return;
+		Map<Integer, ChunkPos> positions = holder.positions;
+		if (positions == null) return;
+
+		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+		if (server == null) return;
+		ServerLevel level = null;
+		for (ServerLevel candidate : server.getAllLevels()) {
+			if (candidate.getChunkSource().getGeneratorState() == holder.state) {
+				level = candidate;
+				break;
+			}
+		}
+		if (level == null) return;
+
+		boolean complete = positions.keySet().containsAll(expectedSalts(holder.state, holder.biomeSource));
+		final ServerLevel targetLevel = level;
+		final Map<Integer, ChunkPos> snapshot = positions;
+		server.execute(() -> StructurePlanSavedData.get(targetLevel).setPositions(snapshot, complete));
 	}
 
 	private static void searchIndependent(List<BiomeAwareUniquePlacement> targets,
@@ -254,7 +393,8 @@ public final class StructureSpawnPlanner {
 			int salt = placement.placementSalt();
 			ChunkPos found = searchNearest(placement, structureBiomes.get(salt), cache,
 					minRing, maxRing, reservedBaseline, spacingSqr, state, avoid,
-					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1);
+					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1,
+					new AtomicLong(SEARCH_SAMPLE_BUDGET));
 			if (found != null) out.put(salt, found);
 		});
 
@@ -267,7 +407,8 @@ public final class StructureSpawnPlanner {
 				int salt = placement.placementSalt();
 				ChunkPos found = searchNearest(placement, structureBiomes.get(salt), cache,
 						minRing, maxRing, reservedBaseline, spacingSqr, state, avoid,
-						structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1);
+						structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1,
+						new AtomicLong(SEARCH_SAMPLE_BUDGET));
 				if (found != null) out.put(salt, found);
 			}
 		}
@@ -288,13 +429,14 @@ public final class StructureSpawnPlanner {
 			if (structBiomes == null) continue;
 			int minHeight = structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE);
 
+			AtomicLong budget = new AtomicLong(SEARCH_SAMPLE_BUDGET);
 			ChunkPos found = null;
 			int from = maxRing + 1;
-			while (found == null && from <= absoluteCap) {
+			while (found == null && from <= absoluteCap && budget.get() > 0) {
 				if (isStale(epoch)) return;
 				int to = Math.min(from + RING_STEP - 1, absoluteCap);
 				found = searchNearest(placement, structBiomes, cache, from, to, accepted, spacingSqr,
-						state, avoid, minHeight, epoch, TAIL_CHUNK_STRIDE);
+						state, avoid, minHeight, epoch, TAIL_CHUNK_STRIDE, budget);
 				from = to + 1;
 			}
 
@@ -307,7 +449,6 @@ public final class StructureSpawnPlanner {
 			accepted.add(found);
 			injectResolved(holder, placement.placementSalt(), found);
 			logPlacement(structureNames, salt, found);
-			StructureAsyncResolver.forceGenerate(cache.generator, found);
 		}
 	}
 
@@ -336,7 +477,7 @@ public final class StructureSpawnPlanner {
 	                              SampleCache cache, int minRing, int maxRing,
 	                              List<ChunkPos> accepted, double spacingSqr,
 	                              ChunkGeneratorStructureState state, List<Holder<StructureSet>> avoid,
-	                              int minHeight, int buildEpoch, int chunkStride) {
+	                              int minHeight, int buildEpoch, int chunkStride, AtomicLong budget) {
 		if (structureBiomes == null) return null;
 		ChunkPos bestNonOverlap = null;
 		int bestNonOverlapSpread = Integer.MAX_VALUE;
@@ -347,11 +488,15 @@ public final class StructureSpawnPlanner {
 			if (isStale(buildEpoch)) break;
 			if (ring - minRing > ABSOLUTE_SCAN_CAP_RINGS) break;
 			if (firstValidRing >= 0 && ring - firstValidRing > FLATNESS_SCAN_EXTRA_RINGS) break;
+			if (budget != null && budget.get() <= 0) break;
 			List<ChunkPos> candidates = ringChunks(ring);
 			for (int i = 0; i < candidates.size(); i++) {
 				if (chunkStride > 1 && (i % chunkStride) != 0) continue;
 				ChunkPos candidate = candidates.get(i);
 				if (tooClose(accepted, candidate.x, candidate.z, spacingSqr)) continue;
+				if (budget != null && budget.decrementAndGet() < 0) {
+					return bestNonOverlap != null ? bestNonOverlap : overlapFallback;
+				}
 				if (!biomePrefilter(placement, cache, candidate.x, candidate.z)) continue;
 				int spread = evaluateCandidate(structureBiomes, cache, candidate.x, candidate.z, minHeight);
 				if (spread < 0) continue;
@@ -398,6 +543,14 @@ public final class StructureSpawnPlanner {
 		return dx * dx + dz * dz;
 	}
 
+	private static boolean biomeSourceHasAny(BiomeSource biomeSource, HolderSet<Biome> validBiomes) {
+		if (biomeSource == null || validBiomes == null) return false;
+		for (Holder<Biome> biome : biomeSource.possibleBiomes()) {
+			if (validBiomes.contains(biome)) return true;
+		}
+		return false;
+	}
+
 	private static boolean biomePrefilter(BiomeAwareUniquePlacement placement, SampleCache cache,
 	                                      int chunkX, int chunkZ) {
 		for (Holder<Biome> biome : cache.columnBiomes(chunkX, chunkZ)) {
@@ -415,7 +568,12 @@ public final class StructureSpawnPlanner {
 
 		if (!structureBiomes.contains(terrain.cornerBiome())) return -1;
 
-		if (minHeight > Integer.MIN_VALUE && terrain.maxSurface() < minHeight) return -1;
+		if (minHeight > Integer.MIN_VALUE) {
+			if (terrain.maxSurface() < minHeight) return -1;
+			// TallJigsawStructure samples a 4x4 interior grid; the chunk-corner
+			// heights above can overestimate, so verify with the exact same grid.
+			if (cache.interiorMaxSurface(chunkX, chunkZ) < minHeight) return -1;
+		}
 
 		if (!terrain.cornerBiome().is(BiomeTags.IS_OCEAN)) {
 			if (terrain.cornerSurface() > terrain.floor()) return -1;
@@ -530,6 +688,7 @@ public final class StructureSpawnPlanner {
 		final LevelHeightAccessor heightAccessor;
 		private final ConcurrentHashMap<Long, List<Holder<Biome>>> columnBiomeCache = new ConcurrentHashMap<>();
 		private final ConcurrentHashMap<Long, ChunkTerrain> terrainCache = new ConcurrentHashMap<>();
+		private final ConcurrentHashMap<Long, Integer> interiorMaxCache = new ConcurrentHashMap<>();
 
 		SampleCache(BiomeSource biomeSource, RandomState randomState, ChunkGenerator generator,
 		            LevelHeightAccessor heightAccessor) {
@@ -541,13 +700,32 @@ public final class StructureSpawnPlanner {
 
 		List<Holder<Biome>> columnBiomes(int chunkX, int chunkZ) {
 			return columnBiomeCache.computeIfAbsent(ChunkPos.asLong(chunkX, chunkZ), key -> {
-				int quartX = QuartPos.fromBlock(chunkX << 4);
-				int quartZ = QuartPos.fromBlock(chunkZ << 4);
+				// Sample the chunk middle: jigsaw structures start at the middle
+				// block, and vanilla validates the biome there.
+				int quartX = QuartPos.fromBlock((chunkX << 4) + 8);
+				int quartZ = QuartPos.fromBlock((chunkZ << 4) + 8);
 				List<Holder<Biome>> column = new ArrayList<>(3);
 				for (int y = 160; y >= 64; y -= 48) {
 					column.add(biomeSource.getNoiseBiome(quartX, QuartPos.fromBlock(y), quartZ, randomState.sampler()));
 				}
 				return column;
+			});
+		}
+
+		/** Max WORLD_SURFACE_WG height over the same 4x4 interior grid TallJigsawStructure samples. */
+		int interiorMaxSurface(int chunkX, int chunkZ) {
+			return interiorMaxCache.computeIfAbsent(ChunkPos.asLong(chunkX, chunkZ), key -> {
+				int startX = chunkX << 4;
+				int startZ = chunkZ << 4;
+				int best = Integer.MIN_VALUE;
+				for (int dx = 0; dx < 16; dx += 4) {
+					for (int dz = 0; dz < 16; dz += 4) {
+						int h = generator.getFirstFreeHeight(startX + dx, startZ + dz,
+								Heightmap.Types.WORLD_SURFACE_WG, heightAccessor, randomState);
+						if (h > best) best = h;
+					}
+				}
+				return best;
 			});
 		}
 
@@ -559,22 +737,26 @@ public final class StructureSpawnPlanner {
 
 				int minSurface = Integer.MAX_VALUE;
 				int maxSurface = Integer.MIN_VALUE;
-				int cornerSurface = 0;
 				for (int dx = 0; dx <= 16; dx += 16) {
 					for (int dz = 0; dz <= 16; dz += 16) {
 						int h = generator.getFirstFreeHeight(startX + dx, startZ + dz, Heightmap.Types.WORLD_SURFACE_WG,
 								heightAccessor, randomState);
 						if (h < minSurface) minSurface = h;
 						if (h > maxSurface) maxSurface = h;
-						if (dx == 0 && dz == 0) cornerSurface = h;
 					}
 				}
 
-				Holder<Biome> biome = biomeSource.getNoiseBiome(QuartPos.fromBlock(startX),
-						QuartPos.fromBlock(cornerSurface), QuartPos.fromBlock(startZ), randomState.sampler());
-				int floor = generator.getFirstFreeHeight(startX, startZ, Heightmap.Types.OCEAN_FLOOR_WG,
+				// Middle column: jigsaw starts generate at the chunk middle and
+				// vanilla's final biome check samples there, not at the corner.
+				int midX = startX + 8;
+				int midZ = startZ + 8;
+				int midSurface = generator.getFirstFreeHeight(midX, midZ, Heightmap.Types.WORLD_SURFACE_WG,
 						heightAccessor, randomState);
-				return new ChunkTerrain(biome, minSurface, maxSurface, cornerSurface, floor);
+				Holder<Biome> biome = biomeSource.getNoiseBiome(QuartPos.fromBlock(midX),
+						QuartPos.fromBlock(midSurface), QuartPos.fromBlock(midZ), randomState.sampler());
+				int floor = generator.getFirstFreeHeight(midX, midZ, Heightmap.Types.OCEAN_FLOOR_WG,
+						heightAccessor, randomState);
+				return new ChunkTerrain(biome, minSurface, maxSurface, midSurface, floor);
 			});
 		}
 	}
@@ -590,6 +772,7 @@ public final class StructureSpawnPlanner {
 		final AtomicBoolean started = new AtomicBoolean(false);
 		final CountDownLatch ready = new CountDownLatch(1);
 		final Object writeLock = new Object();
+		final List<ChunkPos> excluded = Collections.synchronizedList(new ArrayList<>());
 		volatile Map<Integer, ChunkPos> positions = null;
 
 		PlanHolder(long seed, BiomeSource biomeSource, RandomState randomState, ChunkGeneratorStructureState state) {

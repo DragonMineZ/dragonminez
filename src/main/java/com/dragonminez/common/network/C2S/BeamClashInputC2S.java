@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.combat.clash.BeamClashManager;
+import com.dragonminez.common.network.PacketRateLimiter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -22,6 +23,7 @@ public class BeamClashInputC2S {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
+			if (!PacketRateLimiter.allow(player.getUUID(), "beam_clash_press", player.level().getGameTime(), 1L)) return;
 			BeamClashManager.handlePlayerPress(player);
 		});
 		ctx.get().setPacketHandled(true);

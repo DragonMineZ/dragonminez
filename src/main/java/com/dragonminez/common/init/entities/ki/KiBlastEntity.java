@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.combat.util.MultipartTargeting;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainEntities;
@@ -18,6 +20,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
@@ -621,6 +624,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (this.getOwner() instanceof LivingEntity livingOwner) {
 
             if (this.getKiRenderType() == 9) {
+                // The barrage emitter stays anchored to the caster (it doesn't fly), so we skip the trajectory
+                // logic below — but still fire the "_fire" animation (ki.barrage_fire) the same as every other ki.
+                if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
                 return;
             }
 
@@ -661,7 +667,17 @@ public class KiBlastEntity extends AbstractKiProjectile {
             this.shoot(newTrajectory.x, newTrajectory.y, newTrajectory.z, this.getKiSpeed(), 0.0F);
             this.hasImpulse = true;
 
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (this.random.nextFloat() * 0.2F));
+            SoundEvent fireSound;
+            if ("burning_attack".equals(this.getTechniqueId())) {
+                fireSound = MainSounds.KI_BURNING_FIRE.get();
+            } else if (this.getKiRenderType() == 5) {
+                fireSound = MainSounds.KI_SPIRITBOMB_FIRE.get();
+            } else if (this.getKiRenderType() == 6) {
+                fireSound = MainSounds.KI_SUPERNOVA_FIRE.get();
+            } else {
+                fireSound = MainSounds.KIBLAST_ATTACK.get();
+            }
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), fireSound, SoundSource.PLAYERS, 0.7F, 1.0F);
         }
 
         if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
@@ -742,23 +758,28 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 if (!this.level().isClientSide) {
                     if (!isCasting) {
                         if (type == 9) {
-                            if (this.tickCount % 4 == 0) {
+                            // Xenoverse-style max Volley: a dense, rapid stream of blasts converging toward where the
+                            // caster aims. Fast cadence (every 2 ticks) + tight spread (focused, not a scattered
+                            // shotgun) + full flight speed sell the "super rush" look.
+                            if (this.tickCount % 2 == 0) {
                                 for (int i = 0; i < 5; i++) {
                                     KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
                                     bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
+                                    bullet.setTechniqueId(this.getTechniqueId());
 
-                                    bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed() / 2, 15.0F);
+                                    bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 6.0F);
                                     this.level().addFreshEntity(bullet);
                                 }
 
                                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                                        MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.5F + (this.random.nextFloat() * 0.5F));
+                                        MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.6F + (this.random.nextFloat() * 0.5F));
                             }
                         } else if (type == 10) {
                             if (this.tickCount % 2 == 0) {
                                 for (int i = 0; i < 10; i++) {
                                     KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
                                     bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
+                                    bullet.setTechniqueId(this.getTechniqueId());
 
                                     double spawnX = owner.getX();
                                     double spawnY = owner.getY() + (owner.getBbHeight() / 2.0D);
@@ -834,7 +855,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         if (!this.level().isClientSide) {
-            if (!isCasting) {
+            if(isCasting){
+                if (type == 5 && this.tickCount == 1) {
+                    this.playSound(MainSounds.KI_SPIRITBOMB_CHARGE.get(), 0.7F, 1.0F);
+                }  else if (type == 6 && this.tickCount == 1) {
+                    this.playSound(MainSounds.KI_SUPERNOVA_CHARGE.get(), 0.7F, 1.0F);
+                }
+            } else {
                 if (this.isDetonating) {
                     this.processDetonation();
                     return;
@@ -991,14 +1018,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private void pulseAreaDamage() {
         AABB area = this.getBoundingBox().inflate(5.0D);
-        List<LivingEntity> nearby = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> nearby = MultipartTargeting.collectTargets(this.level(), area);
 
         Vec3 center = new Vec3(this.getX(), this.getVisualCenterY(), this.getZ());
         double radius = this.getSize() / 2.0D;
-        double radiusSq = radius * radius;
 
         for (LivingEntity target : nearby) {
-            if (target.distanceToSqr(center) <= radiusSq + 25.0D) {
+            if (MultipartTargeting.withinRadius(target, center, radius + 5.0D)) {
                 if (this.shouldDamage(target)) {
                     boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
                     if (wasHit) this.onSuccessfulHit(target);
@@ -1119,11 +1145,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         if ((type == 5 || type == 6) && !this.level().isClientSide) {
             this.isDetonating = true;
-            this.maxDetonationRadius = (this.getSize() / 2.0F) * 4.5F;
+            this.maxDetonationRadius = (this.getSize() / 2.0F) * 5.0F;
             this.currentDetonationRadius = 0.0F;
             this.setDeltaMovement(0, 0, 0);
 
-            AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(this.maxDetonationRadius);            List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
+            AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(this.maxDetonationRadius);            List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), damageArea);
             for (LivingEntity target : targets) {
                 if (this.shouldDamage(target)) {
                     boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
@@ -1149,11 +1175,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
             return;
         }
 
-        float explosionRadius = (this.getSize() / 2.0F) * 2.2F;
+        float explosionRadius = (this.getSize() / 2.0F) * 3.0F;
         float visualParticleSize = explosionRadius * 1.8F;
 
         AABB damageArea = new AABB(this.getX(), centerY, this.getZ(), this.getX(), centerY, this.getZ()).inflate(explosionRadius);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), damageArea);
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
                 boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
@@ -1234,7 +1260,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     private boolean destroyBlocksInPath() {
         boolean hitSomething = false;
-        float eatRadius = this.scaledDestructionRadius(this.getSize() * 1.4f);
+        float eatRadius = this.scaledDestructionRadius(this.getSize() * 2.0f);
         int bRad = Math.round(eatRadius);
         BlockPos center = BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ());
         Level level = this.level();

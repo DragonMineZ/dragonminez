@@ -1,0 +1,69 @@
+{
+  "id": 3,
+  "title": "dmz.quest.buu3.name",
+  "description": "dmz.quest.buu3.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 2
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1500
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "TIME",
+        "mode": "REAL_TIME",
+        "milliseconds": 600000
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_kid_trunks",
+      "count": 1,
+      "health": 189000.0,
+      "meleeDamage": 7800.0,
+      "kiDamage": 7140.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_vegeta_end_base",
+      "count": 1,
+      "health": 245000.0,
+      "meleeDamage": 10200.0,
+      "kiDamage": 9350.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 151200
+    }
+  ]
+}

@@ -52,6 +52,8 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.POTHALA_RIGHT);
 		simpleItem(MainItems.GREEN_POTHALA_LEFT);
 		simpleItem(MainItems.GREEN_POTHALA_RIGHT);
+		simpleItem(MainItems.POTHALA_PAIR);
+		simpleItem(MainItems.GREEN_POTHALA_PAIR);
 		simpleItem(MainItems.HEART_MEDICINE);
 		simpleItem(MainItems.NAMEK_WATER_BUCKET);
 		simpleItem(MainItems.HEALING_BUCKET);
@@ -292,8 +294,18 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		patternItem(MainItems.PATTERN_XENO_GOKU);
 		patternItem(MainItems.PATTERN_YARDRAT);
 		patternItem(MainItems.PATTERN_ZAMASU);
+        patternItem(MainItems.PATTERN_VERGIL);
+        patternItem(MainItems.PATTERN_XENO_GOKU_PATREON);
+        patternItem(MainItems.PATTERN_COOLER_SOLDIER);
+        patternItem(MainItems.PATTERN_CAPSULE_CORP);
+        patternItem(MainItems.PATTERN_A20);
+        patternItem(MainItems.PATTERN_GERO);
+        patternItem(MainItems.PATTERN_KING_VEGETA);
+        patternItem(MainItems.PATTERN_GREAT_SAIYAMAN_2);
+        patternItem(MainItems.PATTERN_RADITZ);
+        patternItem(MainItems.PATTERN_A14);
 
-		//Minerales
+        //Minerales
 		simpleItem(MainItems.GETE_SCRAP);
 		simpleItem(MainItems.GETE_INGOT);
 		simpleItem(MainItems.KIKONO_SHARD);

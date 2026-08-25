@@ -1,0 +1,37 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "dragonminez:a20_armor_helmet",
+      "required": false
+    },
+    {
+      "id": "dragonminez:chaoz_armor_helmet",
+      "required": false
+    },
+    {
+      "id": "dragonminez:great_saiyaman_armor_helmet",
+      "required": false
+    },
+    {
+      "id": "dragonminez:great_saiyaman_armor_2_helmet",
+      "required": false
+    },
+    {
+      "id": "dragonminez:invencible_armor_helmet",
+      "required": false
+    },
+    {
+      "id": "dragonminez:invencible_blue_armor_helmet",
+      "required": false
+    },
+    {
+      "id": "dragonminez:piccolo_armor_helmet",
+      "required": false
+    },
+    {
+      "id": "dragonminez:slug_armor_helmet",
+      "required": false
+    }
+  ]
+}

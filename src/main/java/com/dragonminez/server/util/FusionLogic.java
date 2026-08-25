@@ -3,6 +3,7 @@ package com.dragonminez.server.util;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.PartyManager;
@@ -11,6 +12,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -108,6 +110,7 @@ public class FusionLogic {
 		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
 		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
 		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
+		leader.level().playSound(null, leader.getX(), leader.getY(), leader.getZ(), MainSounds.FUSION.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		damageEarring(leader);
 		damageEarring(partner);
 	}
@@ -299,6 +302,13 @@ public class FusionLogic {
 		ItemStack stack = CuriosUtil.getFirstStackForItem(player, "head_tech", "pothala");
 		if (!stack.isEmpty()) {
 			stack.hurtAndBreak(1, player, (entity) -> {});
+		}
+	}
+
+	public static void breakPothala(ServerPlayer player) {
+		ItemStack stack = CuriosUtil.getFirstStackForItem(player, "head_tech", "pothala");
+		if (!stack.isEmpty() && stack.getItem().getDescriptionId().contains("pothala")) {
+			stack.hurtAndBreak(stack.getMaxDamage() + 1, player, (entity) -> {});
 		}
 	}
 }

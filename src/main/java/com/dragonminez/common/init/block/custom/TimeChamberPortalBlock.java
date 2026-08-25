@@ -12,6 +12,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -58,19 +59,24 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
                 }
                 else {
                     targetPos = findTargetAndCache(targetLevel, false, pPlayer, tile, this);
-
-                    if (targetPos != null) {
-                        BlockEntity targetBE = targetLevel.getBlockEntity(targetPos.below());
-                        if (targetBE instanceof TimeChamberPortalBlockEntity targetTile) {
-                            targetTile.setCachedTarget(pPos.above());
-                        }
-                    }
+                    // Note: we intentionally do NOT record the entry portal into the HTC-side
+                    // block entity. Leaving the Time Chamber must always resolve the KamiLookout
+                    // structure so the player is returned to Kami's Lookout, never to an arbitrary
+                    // (or admin-placed) entry portal.
                 }
 
                 if (targetPos != null) {
                     teleportPlayer(pPlayer, targetLevel, targetPos, onHTC ? 180 : 90);
                 } else {
-                    BlockPos backup = onHTC ? targetLevel.getSharedSpawnPos() : new BlockPos(0, 130, 0);
+                    BlockPos backup;
+                    if (onHTC) {
+                        // Even if the portal block itself could not be pinpointed, always land the
+                        // player at Kami's Lookout structure rather than the world spawn.
+                        BlockPos kami = StructureLocator.locateStructure(targetLevel, DMZStructures.KAMILOOKOUT, BlockPos.ZERO);
+                        backup = kami != null ? kami : targetLevel.getSharedSpawnPos();
+                    } else {
+                        backup = new BlockPos(0, 130, 0);
+                    }
                     teleportPlayer(pPlayer, targetLevel, backup, 90);
                 }
             }
@@ -114,8 +120,29 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
 		level.getChunk(structureCenter.getX() >> 4, structureCenter.getZ() >> 4, ChunkStatus.STRUCTURE_STARTS);
 		StructureStart start = level.structureManager().getStructureAt(structureCenter, structureHolder.value());
 
+		// getStructureAt requires the probe position to be inside the structure's bounding box on
+		// every axis, including Y. The located center uses a fixed Y that may fall outside the
+		// structure, so fall back to any start referenced by the center chunk (Y-agnostic).
+		if (start == null || !start.isValid()) {
+			Structure targetStructure = structureHolder.value();
+			for (StructureStart candidate : level.structureManager()
+					.startsForStructure(new ChunkPos(structureCenter), s -> s == targetStructure)) {
+				if (candidate != null && candidate.isValid()) {
+					start = candidate;
+					break;
+				}
+			}
+		}
+
 		if (start != null && start.isValid()) {
 			var boundingBox = start.getBoundingBox();
+			// Force-load every chunk the structure occupies so its blocks are actually placed;
+			// the portal may sit in a chunk adjacent to the located center.
+			for (int cx = boundingBox.minX() >> 4; cx <= boundingBox.maxX() >> 4; cx++) {
+				for (int cz = boundingBox.minZ() >> 4; cz <= boundingBox.maxZ() >> 4; cz++) {
+					level.getChunk(cx, cz, ChunkStatus.FULL, true);
+				}
+			}
 			for (BlockPos pos : BlockPos.betweenClosed(boundingBox.minX(), boundingBox.minY(), boundingBox.minZ(), boundingBox.maxX(), boundingBox.maxY(), boundingBox.maxZ())) {
 				if (level.getBlockState(pos).is(targetBlock)) return pos.above();
 			}

@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -31,6 +32,11 @@ public class DragonBallsHandler {
 	private static final Queue<Runnable> generationQueue = new ConcurrentLinkedQueue<>();
 	private static final int PENDING_RESCAN_INTERVAL = 100;
 	private static int pendingRescanTimer = 0;
+
+	private static final int RADAR_SYNC_INTERVAL = 100;
+	private static int radarSyncTimer = 0;
+
+	private static final double NEARBY_GEN_RANGE_SQR = 128.0 * 128.0;
 
 	public static void scatterDragonBalls(ServerLevel level, String setId) {
 		DragonBallSetDefinition definition = DragonBallDefinitions.getBallSet(setId);
@@ -109,9 +115,39 @@ public class DragonBallsHandler {
 			pendingRescanTimer = 0;
 			rescanPendingBalls(level);
 		}
+		if (event.level instanceof ServerLevel level && level.dimension().equals(Level.OVERWORLD)
+				&& ++radarSyncTimer >= RADAR_SYNC_INTERVAL) {
+			radarSyncTimer = 0;
+			syncRadar(level);
+		}
+		if (event.level instanceof ServerLevel level) {
+			generateNearbyPendingBalls(level);
+		}
 		while (!generationQueue.isEmpty()) {
 			Runnable task = generationQueue.poll();
 			if (task != null) task.run();
+		}
+	}
+
+	private static void generateNearbyPendingBalls(ServerLevel level) {
+		List<ServerPlayer> players = level.players();
+		if (players.isEmpty()) return;
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSetsForDimension(level.dimension())) {
+			Map<Integer, List<BlockPos>> pending = data.getPendingBalls(definition.getId());
+			pending.forEach((star, targets) -> {
+				for (BlockPos target : new ArrayList<>(targets)) {
+					if (!level.isLoaded(target)) continue;
+					for (ServerPlayer player : players) {
+						double dx = player.getX() - (target.getX() + 0.5);
+						double dz = player.getZ() - (target.getZ() + 0.5);
+						if (dx * dx + dz * dz <= NEARBY_GEN_RANGE_SQR) {
+							generationQueue.add(() -> generateBallSafely(level, definition, star, target));
+							break;
+						}
+					}
+				}
+			});
 		}
 	}
 
@@ -131,10 +167,34 @@ public class DragonBallsHandler {
 
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			syncRadarForPlayer(player);
+			scheduleDelayedSync(player, 40);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
 	}
 
+	@SubscribeEvent
+	public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) syncRadarForPlayer(player);
+	}
+
+	private static void scheduleDelayedSync(ServerPlayer player, int delayTicks) {
+		player.server.tell(new net.minecraft.server.TickTask(player.server.getTickCount() + delayTicks, () -> {
+			if (player.hasDisconnected()) return;
+			syncRadarForPlayer(player);
+		}));
+	}
+
 	private static void generateBallSafely(ServerLevel level, DragonBallSetDefinition definition, int star, BlockPos targetXZ) {
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		List<BlockPos> pendingForStar = data.getPendingBalls(definition.getId()).get(star);
+		if (pendingForStar == null || !pendingForStar.contains(targetXZ)) return;
+
 		int x = targetXZ.getX();
 		int z = targetXZ.getZ();
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
@@ -164,7 +224,6 @@ public class DragonBallsHandler {
 
 		if (!success || level.getBlockState(realPos).getBlock() != block) return;
 
-		DragonBallSavedData data = DragonBallSavedData.get(level);
 		data.getPendingBalls(definition.getId()).get(star).remove(targetXZ);
 
 		if (!data.getActiveBalls(definition.getId()).get(star).contains(realPos)) data.getActiveBalls(definition.getId()).get(star).add(realPos);
@@ -202,31 +261,34 @@ public class DragonBallsHandler {
 
 	public static void syncRadar(ServerLevel level) {
 		if (level == null) return;
-		Map<String, List<BlockPos>> positionsBySet = new HashMap<>();
-		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) {
-			ServerLevel setLevel = level.getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));
-			if (setLevel != null) {
-				DragonBallSavedData data = DragonBallSavedData.get(setLevel);
-				positionsBySet.put(definition.getId(), new ArrayList<>(data.getAllKnownPositionsForRadar(definition.getId())));
-			}
-		}
-		List<BlockPos> earthPositions = new ArrayList<>(positionsBySet.getOrDefault("earth", List.of()));
-		List<BlockPos> namekPositions = new ArrayList<>(positionsBySet.getOrDefault("namek", List.of()));
-		NetworkHandler.sendToAllPlayers(new RadarSyncS2C(earthPositions, namekPositions, positionsBySet));
+		RadarSyncS2C packet = buildRadarPacket(level.getServer());
+		if (packet != null) NetworkHandler.sendToAllPlayers(packet);
 	}
 
 	public static void syncRadarForPlayer(ServerPlayer player) {
 		if (player == null) return;
+		RadarSyncS2C packet = buildRadarPacket(player.serverLevel().getServer());
+		if (packet != null) NetworkHandler.sendToPlayer(packet, player);
+	}
+
+	/**
+	 * Collects radar positions for every ball set across ALL of its valid dimensions. A set is only
+	 * skipped for a dimension that isn't currently loaded (null level); other dimensions of the same
+	 * set still contribute, so a partially-loaded multi-dimension set never wipes the client radar.
+	 */
+	private static RadarSyncS2C buildRadarPacket(net.minecraft.server.MinecraftServer server) {
+		if (server == null) return null;
 		Map<String, List<BlockPos>> positionsBySet = new HashMap<>();
 		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) {
-			ServerLevel setLevel = player.serverLevel().getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));
-			if (setLevel != null) {
-				DragonBallSavedData data = DragonBallSavedData.get(setLevel);
-				positionsBySet.put(definition.getId(), new ArrayList<>(data.getAllKnownPositionsForRadar(definition.getId())));
+			List<BlockPos> positions = positionsBySet.computeIfAbsent(definition.getId(), ignored -> new ArrayList<>());
+			for (net.minecraft.resources.ResourceLocation dimension : definition.getValidDimensions()) {
+				ServerLevel setLevel = server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, dimension));
+				if (setLevel == null) continue;
+				positions.addAll(DragonBallSavedData.get(setLevel).getAllKnownPositionsForRadar(definition.getId()));
 			}
 		}
 		List<BlockPos> earthPositions = new ArrayList<>(positionsBySet.getOrDefault("earth", List.of()));
 		List<BlockPos> namekPositions = new ArrayList<>(positionsBySet.getOrDefault("namek", List.of()));
-		NetworkHandler.sendToPlayer(new RadarSyncS2C(earthPositions, namekPositions, positionsBySet), player);
+		return new RadarSyncS2C(earthPositions, namekPositions, positionsBySet);
 	}
 }

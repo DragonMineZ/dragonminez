@@ -4,8 +4,11 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
@@ -16,14 +19,22 @@ import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.world.dimension.SacredKaiDimension;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.MobEffectEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -42,6 +53,9 @@ public class EntitiesEvents {
 
 	private static final double QUEST_TETHER_RANGE_SQR = 31250.0;
 	private static final double SHADOW_DUMMY_TETHER_SQR = 100.0 * 100.0;
+
+	private static final int QUEST_COMBAT_TICK_INTERVAL = 20;
+	private static final int QUEST_COMBAT_GRACE_TICKS = 100;
 
 	@SubscribeEvent
 	public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
@@ -98,6 +112,54 @@ public class EntitiesEvents {
 		if (cow.getRandom().nextBoolean()) {
 			cow.setVariant(MushroomCow.MushroomType.BROWN);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onStunnedEntityAttack(LivingAttackEvent event) {
+		if (event.getEntity().level().isClientSide()) return;
+		if (event.getSource().getDirectEntity() instanceof LivingEntity attacker
+				&& attacker.hasEffect(MainEffects.STUN.get())) {
+			event.setCanceled(true);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onStunApplied(MobEffectEvent.Added event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide() || entity instanceof Player) return;
+		if (event.getEffectInstance().getEffect() != MainEffects.STUN.get()) return;
+
+		if (entity instanceof DBSagasEntity saga && saga.isCasting()) {
+			saga.stopCasting();
+		}
+
+		List<AbstractKiProjectile> owned = entity.level().getEntitiesOfClass(AbstractKiProjectile.class,
+				entity.getBoundingBox().inflate(64.0),
+				p -> p.getOwner() != null && p.getOwner().getUUID().equals(entity.getUUID()));
+		for (AbstractKiProjectile projectile : owned) projectile.discard();
+	}
+
+	@SubscribeEvent
+	public static void onStunnedEntityTick(LivingEvent.LivingTickEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide() || entity instanceof Player) return;
+		if (!entity.hasEffect(MainEffects.STUN.get())) return;
+
+		Vec3 movement = entity.getDeltaMovement();
+		entity.setDeltaMovement(0.0D, Math.min(movement.y, 0.0D), 0.0D);
+		if (entity instanceof Mob mob) {
+			mob.getNavigation().stop();
+			mob.setJumping(false);
+		}
+	}
+
+	private static final int KI_SLOW_DURATION_TICKS = 30;
+
+	@SubscribeEvent
+	public static void onKiHitSlow(LivingHurtEvent event) {
+		if (event.getEntity().level().isClientSide()) return;
+		if (!MainDamageTypes.isKiblastDamage(event.getSource())) return;
+		event.getEntity().addEffect(new MobEffectInstance(MainEffects.KI_SLOW.get(), KI_SLOW_DURATION_TICKS, 0, false, false, true));
 	}
 
 	private static void applyStatsToEntity(LivingEntity entity, double health, double melee, double ki) {
@@ -171,6 +233,49 @@ public class EntitiesEvents {
 		}
 	}
 
+	@SubscribeEvent
+	public static void onQuestCombatTick(LivingEvent.LivingTickEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide() || entity.tickCount % QUEST_COMBAT_TICK_INTERVAL != 0) return;
+		if (!(entity instanceof Mob mob)) return;
+		if (!mob.getPersistentData().contains(QuestService.QUEST_KEY_TAG)
+				|| !mob.getPersistentData().contains(QuestService.QUEST_OWNER_TAG)) return;
+
+		MinecraftServer server = mob.getServer();
+		if (server == null) return;
+
+		UUID ownerUUID;
+		try {
+			ownerUUID = UUID.fromString(mob.getPersistentData().getString(QuestService.QUEST_OWNER_TAG));
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+
+		boolean anyLivingGuardian = false;
+		ServerPlayer nearestLivingInRange = null;
+		double nearestSqr = Double.MAX_VALUE;
+		for (ServerPlayer guardian : questGuardians(server, ownerUUID)) {
+			if (guardian.isDeadOrDying() || guardian.isSpectator()) continue;
+			anyLivingGuardian = true;
+			if (guardian.level() != mob.level()) continue;
+			double distSqr = mob.distanceToSqr(guardian);
+			if (distSqr <= QUEST_TETHER_RANGE_SQR && distSqr < nearestSqr) {
+				nearestSqr = distSqr;
+				nearestLivingInRange = guardian;
+			}
+		}
+
+		if (!anyLivingGuardian) {
+			if (mob.tickCount >= QUEST_COMBAT_GRACE_TICKS) mob.discard();
+			return;
+		}
+
+		LivingEntity current = mob.getTarget();
+		if ((current == null || !current.isAlive()) && nearestLivingInRange != null) {
+			mob.setTarget(nearestLivingInRange);
+		}
+	}
+
 	public static void cleanupQuestEntities(ServerLevel level, UUID playerUUID) {
 		String uuidStr = playerUUID.toString();
 		MinecraftServer server = level.getServer();
@@ -228,9 +333,20 @@ public class EntitiesEvents {
 		if (!event.getLevel().isClientSide && event.getTarget() instanceof MastersEntity master) {
 			ServerPlayer player = (ServerPlayer) event.getEntity();
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				// Only players who know Instant Transmission can memorize a master's Ki signature.
+				if (data.getSkills().getSkillLevel("instant_transmission") < 1) return;
+
+				String masterId = master.getStringUUID();
+				boolean alreadyKnown = data.getCharacter().getInteractedMasters().containsKey(masterId);
+
 				String dimId = player.level().dimension().location().toString();
-				data.getCharacter().addInteractedMaster(master.getStringUUID(), master.getName().getString(), dimId, master.blockPosition());
+				data.getCharacter().addInteractedMaster(masterId, master.getName().getString(), dimId, master.blockPosition());
 				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
+
+				if (!alreadyKnown) {
+					player.displayClientMessage(
+							Component.translatable("message.dragonminez.instant_transmission.ki_learned", master.getName()), false);
+				}
 			});
 		}
 	}

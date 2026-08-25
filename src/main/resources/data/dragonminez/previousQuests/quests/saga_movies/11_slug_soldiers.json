@@ -1,0 +1,62 @@
+{
+  "id": 11,
+  "title": "dmz.quest.movies11.name",
+  "description": "dmz.quest.movies11.desc",
+  "type": "SAGA",
+  "category": "saga_movies",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 10
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 95
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:plains"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 6
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_slug_soldier",
+      "count": 8,
+      "health": 1040.0,
+      "meleeDamage": 66.0,
+      "kiDamage": 91.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 18100
+    }
+  ]
+}

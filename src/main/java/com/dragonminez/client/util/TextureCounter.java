@@ -101,6 +101,16 @@ public class TextureCounter {
             return count > 0 ? count - 1 : 0;
         }
 
+        if (race.equals("bioandroid")) {
+            for (int i = 0; i <= 100; i++) {
+                String basePath = "textures/entity/races/bioandroid/base_" + i + "_layer1.png";
+                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath);
+                if (resourceManager.getResource(location).isPresent()) count++;
+                else break;
+            }
+            return count > 0 ? count - 1 : -1;
+        }
+
         if (isNativeLayered) {
             for (int i = 0; i <= 100; i++) {
                 String basePath = "textures/entity/races/" + race + "/bodytype_" + i + "_layer1.png";

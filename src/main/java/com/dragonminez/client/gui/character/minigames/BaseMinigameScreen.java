@@ -38,7 +38,7 @@ public abstract class BaseMinigameScreen extends Screen {
 	protected final String minigameId;
 	private final String howToKey;
 	protected int levelsCleared = 0;
-	protected State state = State.READY;
+	protected State stage = State.READY;
 	@Setter
 	protected UltimateChallenge challenge = null;
 
@@ -52,7 +52,7 @@ public abstract class BaseMinigameScreen extends Screen {
 	}
 
 	protected boolean isPlaying() {
-		return state == State.PLAYING;
+		return stage == State.PLAYING;
 	}
 
 	protected int level() {
@@ -63,7 +63,7 @@ public abstract class BaseMinigameScreen extends Screen {
 		levelsCleared++;
 		playUi(SoundEvents.PLAYER_LEVELUP, 1.2F, 0.5f);
 		if (challenge != null && levelsCleared >= challenge.targetLevel()) {
-			this.state = State.FINISHED;
+			this.stage = State.FINISHED;
 			challenge.onStageComplete();
 			return;
 		}
@@ -71,8 +71,8 @@ public abstract class BaseMinigameScreen extends Screen {
 	}
 
 	protected void endGame() {
-		if (state != State.PLAYING) return;
-		this.state = State.FINISHED;
+		if (stage != State.PLAYING) return;
+		this.stage = State.FINISHED;
 		if (challenge != null) {
 			stopTrainingAnimation();
 			challenge.onFail();
@@ -109,7 +109,7 @@ public abstract class BaseMinigameScreen extends Screen {
 	}
 
 	protected void startGame() {
-		this.state = State.PLAYING;
+		this.stage = State.PLAYING;
 		startTrainingAnimation();
 		onStart();
 	}
@@ -147,7 +147,7 @@ public abstract class BaseMinigameScreen extends Screen {
 	@Override
 	public void tick() {
 		super.tick();
-		if (state == State.PLAYING) tickGame();
+		if (stage == State.PLAYING) tickGame();
 	}
 
 	@Override
@@ -160,9 +160,9 @@ public abstract class BaseMinigameScreen extends Screen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(howToKey), this.width / 2, this.height - 16, 0xFFB0B0B0);
 		drawBigTitle(graphics);
 
-		if (state == State.PLAYING) drawRunningHud(graphics);
-		if (state == State.READY) renderReadyOverlay(graphics);
-		else if (state == State.FINISHED) renderFinishedOverlay(graphics);
+		if (stage == State.PLAYING) drawRunningHud(graphics);
+		if (stage == State.READY) renderReadyOverlay(graphics);
+		else if (stage == State.FINISHED) renderFinishedOverlay(graphics);
 
 		super.render(graphics, mouseX, mouseY, partialTick);
 	}
@@ -237,7 +237,7 @@ public abstract class BaseMinigameScreen extends Screen {
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		switch (state) {
+		switch (stage) {
 			case READY -> {
 				if (keyCode == GLFW.GLFW_KEY_ESCAPE) quitToHub();
 				else startGame();
@@ -260,7 +260,7 @@ public abstract class BaseMinigameScreen extends Screen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		switch (state) {
+		switch (stage) {
 			case READY -> {
 				startGame();
 				return true;

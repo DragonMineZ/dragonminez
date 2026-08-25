@@ -17,6 +17,7 @@ import com.dragonminez.common.init.item.entities.SaiyanShipItem;
 import com.dragonminez.common.init.item.tools.ToolTiers;
 import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.item.weapons.*;
+import com.dragonminez.common.init.item.weapons.DimensionalSwordItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.*;
@@ -108,6 +109,10 @@ public final class MainItems {
 			ITEM_REGISTER.register("green_pothala_left", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
 	public static final RegistryObject<Item> GREEN_POTHALA_RIGHT =
 			ITEM_REGISTER.register("green_pothala_right", () -> new DMZCuriosItem(new Item.Properties().fireResistant().stacksTo(1).defaultDurability(3), DMZCuriosItem.CurioType.HEAD_TECH));
+	public static final RegistryObject<Item> POTHALA_PAIR =
+			ITEM_REGISTER.register("pothala_pair", () -> new PothalaPairItem(new Item.Properties().fireResistant().stacksTo(1), () -> POTHALA_LEFT.get(), () -> POTHALA_RIGHT.get()));
+	public static final RegistryObject<Item> GREEN_POTHALA_PAIR =
+			ITEM_REGISTER.register("green_pothala_pair", () -> new PothalaPairItem(new Item.Properties().fireResistant().stacksTo(1), () -> GREEN_POTHALA_LEFT.get(), () -> GREEN_POTHALA_RIGHT.get()));
 
 	public static final RegistryObject<Item> RED_SCOUTER =
 			ITEM_REGISTER.register("red_scouter", () -> new DMZCuriosItem(new Item.Properties().stacksTo(1).fireResistant().defaultDurability(15), DMZCuriosItem.CurioType.HEAD_TECH));
@@ -126,6 +131,8 @@ public final class MainItems {
 			ITEM_REGISTER.register("z_sword", () -> new ZSwordItem());
 	public static final RegistryObject<SwordItem> BRAVE_SWORD =
 			ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem());
+    public static final RegistryObject<SwordItem> DIMENSIONAL_SWORD =
+            ITEM_REGISTER.register("dimensional_sword", () -> new DimensionalSwordItem());
 	public static final RegistryObject<SwordItem> POWER_POLE =
 			ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
 
@@ -306,6 +313,7 @@ public final class MainItems {
 	//MINERALES
 	public static final RegistryObject<Item> GETE_SCRAP = regItem("gete_scrap");
 	public static final RegistryObject<Item> GETE_INGOT = regItem("gete_ingot");
+	public static final RegistryObject<Item> GETE_SMITHING_TEMPLATE = regItem("gete_smithing_template");
 	// Novel wave: Ki Accumulator consumable (restores ki/energy) + Anti-Ki Cloak curios (hides BP from scouters).
 	public static final RegistryObject<Item> KI_BATTERY = ITEM_REGISTER.register("ki_battery",
 			() -> new KiBatteryItem());

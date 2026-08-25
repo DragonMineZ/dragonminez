@@ -10,7 +10,8 @@ public class SparObjective extends KillObjective {
 
 	public SparObjective(String entityId, int count, double health, double meleeDamage, double kiDamage,
 						 SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier, boolean canTransform) {
-		super(entityId, count, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier, canTransform);
+		super(entityId, count, health, meleeDamage, kiDamage, spawnMode, countMode, textureVariant, aiTier, canTransform,
+				null, null, null, null, null, null, null);
 	}
 
 	@Override

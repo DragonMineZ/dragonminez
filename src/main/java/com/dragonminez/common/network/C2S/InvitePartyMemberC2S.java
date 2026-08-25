@@ -7,10 +7,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class InvitePartyMemberC2S {
+    private static final Map<UUID, Long> LAST_INVITE_TICK = new ConcurrentHashMap<>();
+    private static final long INVITE_COOLDOWN_TICKS = 60L;
+
     private final UUID targetPlayerId;
 
     public InvitePartyMemberC2S(UUID targetPlayerId) {
@@ -30,6 +35,11 @@ public class InvitePartyMemberC2S {
         context.enqueueWork(() -> {
             ServerPlayer inviter = context.getSender();
             if (inviter == null) return;
+
+            long now = inviter.level().getGameTime();
+            Long lastInvite = LAST_INVITE_TICK.get(inviter.getUUID());
+            if (lastInvite != null && now - lastInvite < INVITE_COOLDOWN_TICKS) return;
+            LAST_INVITE_TICK.put(inviter.getUUID(), now);
 
             ServerPlayer invitee = inviter.getServer().getPlayerList().getPlayer(targetPlayerId);
             if (invitee == null) return;

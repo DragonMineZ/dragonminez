@@ -1,0 +1,84 @@
+{
+  "id": 26,
+  "title": "dmz.quest.movies26.name",
+  "description": "dmz.quest.movies26.desc",
+  "type": "SAGA",
+  "category": "saga_movies",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "movies_saga",
+        "questId": 25
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1560
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "BIOME",
+        "biome": "minecraft:plains"
+      },
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 15
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_bujin",
+      "count": 1,
+      "health": 129500.0,
+      "meleeDamage": 5280.0,
+      "kiDamage": 4760.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_bido",
+      "count": 1,
+      "health": 210000.0,
+      "meleeDamage": 8400.0,
+      "kiDamage": 7480.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    },
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_zangya",
+      "count": 1,
+      "health": 154000.0,
+      "meleeDamage": 6000.0,
+      "kiDamage": 5440.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 1
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 145000
+    }
+  ]
+}

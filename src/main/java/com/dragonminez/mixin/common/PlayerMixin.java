@@ -17,8 +17,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin implements Player_DMZ, PlayerAttackProperties {
@@ -38,6 +41,16 @@ public abstract class PlayerMixin implements Player_DMZ, PlayerAttackProperties 
 	@Override
 	public void setComboCount(int comboCount) {
 		this.comboCount = comboCount;
+	}
+
+	@ModifyVariable(method = "attack", at = @At("STORE"), ordinal = 0)
+	private float dragonminez$floorAttackDamageForDmz(float attackDamage) {
+		if (attackDamage > 0.0F) return attackDamage;
+		Player self = (Player) (Object) this;
+		boolean created = StatsProvider.get(StatsCapability.INSTANCE, self)
+				.map(data -> data.getStatus().isHasCreatedCharacter())
+				.orElse(false);
+		return created ? 0.1F : attackDamage;
 	}
 
 	@Redirect(method = "attack", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerLevel;sendParticles(Lnet/minecraft/core/particles/ParticleOptions;DDDIDDDD)I"))

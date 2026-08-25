@@ -1,0 +1,40 @@
+{
+  "id": "earth_landmarks",
+  "title": "dmz.sidequest.earth_landmarks.name",
+  "description": "dmz.sidequest.earth_landmarks.desc",
+  "type": "SIDEQUEST",
+  "category": "exploration",
+  "parallel_objectives": true,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "world_explorer"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:roshi_house"
+    },
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:goku_house"
+    },
+    {
+      "type": "STRUCTURE",
+      "structure": "dragonminez:kamilookout"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1800
+    }
+  ]
+}

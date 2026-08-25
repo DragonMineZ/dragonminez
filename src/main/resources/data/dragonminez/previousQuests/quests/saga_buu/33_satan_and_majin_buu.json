@@ -1,0 +1,53 @@
+{
+  "id": 33,
+  "title": "dmz.quest.buu33.name",
+  "description": "dmz.quest.buu33.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 32
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 2300
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "dragonminez:sacredkaiplanet"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_buufat",
+      "count": 1,
+      "health": 437500.0,
+      "meleeDamage": 18300.0,
+      "kiDamage": 16660.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 2
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 187200
+    }
+  ]
+}

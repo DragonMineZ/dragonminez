@@ -553,11 +553,17 @@ public class Character {
 	}
 
 	public void clearActiveForm(LivingEntity entity) {
+		clearActiveForm(entity, true);
+	}
+
+	public void clearActiveForm(LivingEntity entity, boolean playSound) {
 		String oldGroup = activeFormGroup;
 		String oldForm = activeForm;
 		boolean hadForm = hasActiveForm();
 		if (entity != null && hadForm) {
-			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+			if (playSound) {
+				entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+			}
             entity.refreshDimensions();
         }
 		clearActiveForm();
@@ -612,20 +618,28 @@ public class Character {
 		this.activeStackFormGroup = groupName != null ? groupName : "";
 		this.activeStackForm = formName != null ? formName : "";
 		this.activeStackFormItemDurationTicks = 0;
+		updateOozaruCache();
 	}
 
 	public void clearActiveStackForm() {
 		this.activeStackFormGroup = "";
 		this.activeStackForm = "";
 		this.activeStackFormItemDurationTicks = 0;
+		updateOozaruCache();
 	}
 
 	public void clearActiveStackForm(LivingEntity entity) {
+		clearActiveStackForm(entity, true);
+	}
+
+	public void clearActiveStackForm(LivingEntity entity, boolean playSound) {
 		String oldGroup = activeStackFormGroup;
 		String oldForm = activeStackForm;
 		boolean hadForm = hasActiveStackForm();
 		if (entity != null && hadForm) {
-			entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+			if (playSound) {
+				entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), MainSounds.TRANSFORM_OFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+			}
             entity.refreshDimensions();
         }
 		clearActiveStackForm();
@@ -723,5 +737,6 @@ public class Character {
 		this.interactedMasters.putAll(other.interactedMasters);
 		this.knownMinigames.clear();
 		this.knownMinigames.addAll(other.knownMinigames);
+		updateOozaruCache();
 	}
 }

@@ -1,0 +1,50 @@
+{
+  "id": "chi_chi_gohan_worry",
+  "title": "dmz.sidequest.chichi_worry.name",
+  "description": "dmz.sidequest.chichi_worry.desc",
+  "type": "SIDEQUEST",
+  "category": "story",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "goku",
+  "turn_in": "goku",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "android_saga",
+        "questId": 14
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "minecraft:iron_sword",
+      "count": 1
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:cooked_beef",
+      "count": 16
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "goku"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 15000
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:golden_apple",
+      "count": 5
+    }
+  ]
+}

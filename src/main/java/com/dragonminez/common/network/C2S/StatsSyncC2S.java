@@ -159,9 +159,15 @@ public class StatsSyncC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				var character = data.getCharacter();
 
-				character.setRace(msg.raceName);
-				character.setGender(msg.gender);
-				character.setCharacterClass(msg.characterClass);
+				if (!data.getStatus().isHasCreatedCharacter()) {
+					character.setRace(msg.raceName);
+					character.setGender(msg.gender);
+					character.setCharacterClass(msg.characterClass);
+					if (ConfigManager.getRaceCharacter(msg.raceName) != null) character.setHasSaiyanTail(ConfigManager.getRaceCharacter(msg.raceName).getHasSaiyanTail());
+				} else if (ConfigManager.getRaceStats(character.getRaceName()).getAllClasses().contains(msg.characterClass)) {
+					// Race/gender stay locked after creation, but the recustomization wish may switch class
+					character.setCharacterClass(msg.characterClass);
+				}
 				character.setHairId(msg.hairId);
 				character.setHairBase(msg.customHair);
 				character.setBodyType(msg.bodyType);
@@ -179,7 +185,6 @@ public class StatsSyncC2S {
 				character.setEye2Color(msg.eye2Color);
 				character.setAuraColor(msg.auraColor);
 				character.setRenderHairBase(msg.renderHairBase);
-				if (ConfigManager.getRaceCharacter(msg.raceName) != null) data.getCharacter().setHasSaiyanTail(ConfigManager.getRaceCharacter(msg.raceName).getHasSaiyanTail());
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

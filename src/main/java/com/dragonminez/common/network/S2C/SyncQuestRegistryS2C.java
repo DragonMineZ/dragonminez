@@ -2,6 +2,7 @@ package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestObjectiveRegistry;
@@ -28,8 +29,10 @@ import com.dragonminez.common.quest.rewards.AlignmentReward;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.GenericItemReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
+import com.dragonminez.common.quest.rewards.KiTechniqueReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
+import com.dragonminez.common.quest.rewards.TransformationReward;
 import com.dragonminez.common.util.gson.GsonUtils;
 import com.dragonminez.server.world.structure.helper.QuestStructureHints;
 import com.google.gson.JsonArray;
@@ -46,6 +49,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -301,13 +305,16 @@ public class SyncQuestRegistryS2C {
 	private static JsonObject serializeReward(QuestReward reward) {
 		JsonObject obj = new JsonObject();
 
-		String typeStr = reward.getTypeKey();
-		if (reward.getDifficultyType() == QuestReward.DifficultyType.HARD) {
-			typeStr = "hard:" + typeStr;
-		} else if (reward.getDifficultyType() == QuestReward.DifficultyType.NORMAL) {
-			typeStr = "normal:" + typeStr;
+		obj.addProperty("type", reward.getTypeKey());
+
+		Set<Difficulty> difficulties = reward.getDifficulties();
+		if (difficulties != null && difficulties.size() < Difficulty.values().length) {
+			JsonArray difficultyArr = new JsonArray();
+			for (Difficulty difficulty : Difficulty.values()) {
+				if (difficulties.contains(difficulty)) difficultyArr.add(difficulty.name());
+			}
+			obj.add("difficulty", difficultyArr);
 		}
-		obj.addProperty("type", typeStr);
 
 		if (reward instanceof TPSReward tps) {
 			obj.addProperty("amount", tps.getAmount());
@@ -318,11 +325,21 @@ public class SyncQuestRegistryS2C {
 			obj.add("itemReward", GsonUtils.NETWORK.toJsonTree(genericItemReward.getItemReward()));
 		} else if (reward instanceof CommandReward command) {
 			obj.addProperty("command", command.getCommand());
+			if (command.getTranslationKey() != null && !command.getTranslationKey().isEmpty()) {
+				obj.addProperty("translationKey", command.getTranslationKey());
+			}
 		} else if (reward instanceof SkillReward skill) {
 			obj.addProperty("skill", skill.getSkill());
 			obj.addProperty("level", skill.getLevel());
 		} else if (reward instanceof AlignmentReward alignment) {
 			obj.addProperty("amount", alignment.getAmount());
+		} else if (reward instanceof TransformationReward transformation) {
+			obj.addProperty("formGroup", transformation.getFormGroup());
+			obj.addProperty("formName", transformation.getFormName());
+			obj.addProperty("mastery", transformation.getMastery());
+			obj.addProperty("stack", transformation.isStack());
+		} else if (reward instanceof KiTechniqueReward kiTechnique) {
+			obj.addProperty("code", kiTechnique.getTemplate().generateExportCode());
 		} else {
 			QuestRewardRegistry.writeSync(reward, obj);
 		}
@@ -404,6 +421,8 @@ public class SyncQuestRegistryS2C {
 				obj.addProperty("skill", condition.getSkill());
 				obj.addProperty("minLevel", condition.getSkillLevel());
 			}
+			case RACE -> obj.addProperty("race", condition.getRace());
+			case CLASS -> obj.addProperty("class", condition.getCharacterClass());
 		}
 
 		return obj;

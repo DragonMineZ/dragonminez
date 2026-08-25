@@ -1,0 +1,49 @@
+{
+  "id": "bulma_gete_retrofit",
+  "title": "dmz.sidequest.bulma_gete_retrofit.name",
+  "description": "dmz.sidequest.bulma_gete_retrofit.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_gete_armor"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_ingot",
+      "count": 6
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:netherite_ingot",
+      "count": 1
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 52000
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_smithing_template",
+      "count": 1
+    }
+  ]
+}

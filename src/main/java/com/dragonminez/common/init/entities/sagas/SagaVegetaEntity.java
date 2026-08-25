@@ -365,4 +365,47 @@ public class SagaVegetaEntity{
         }
 
     }
+    public static class SagaVegettoBaseEntity extends DBSagasEntity {
+
+        public SagaVegettoBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x00C0FF, 0x00C0FF);
+            this.addKiSkill(KiSkillType.BIG_BANG, 340, 1.7F, 0xE3FFFF, 0xE3FFFF);
+
+        }
+
+
+    }
+
+    public static class SagaVegettoSSJEntity extends DBSagasEntity {
+
+        public SagaVegettoSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setWildSense(true, 100);
+            this.setZanzoken(true, 200);
+
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 260, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.BIG_BANG, 340, 1.7F, 0xE3FFFF, 0xE3FFFF);
+            this.addKiSkill(KiSkillType.FINAL_FLASH, 400, 2.2F);
+
+        }
+
+    }
 }

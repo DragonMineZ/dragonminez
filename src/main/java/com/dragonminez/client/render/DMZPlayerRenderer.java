@@ -182,4 +182,10 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
 		return super.getRenderType(animatable, texture, bufferSource, partialTick);
 	}
+
+	@Override
+	public boolean shouldShowName(T animatable) {
+		if (animatable == Minecraft.getInstance().getCameraEntity()) return false;
+		return super.shouldShowName(animatable);
+	}
 }

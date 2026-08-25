@@ -76,7 +76,11 @@ public class KintonParticle extends TextureSheetParticle {
             double g = ((colorHex >> 8) & 0xFF) / 255.0;
             double b = (colorHex & 0xFF) / 255.0;
 
-            return new KintonParticle(level, x, y, z, r, g, b, this.spriteSet);
+            try {
+                return new KintonParticle(level, x, y, z, r, g, b, this.spriteSet);
+            } catch (NullPointerException e) {
+                return null;
+            }
         }
     }
 }

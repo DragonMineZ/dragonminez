@@ -3,10 +3,10 @@ package com.dragonminez.mixin.client;
 import com.dragonminez.client.clash.BeamClashCinematicCamera;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.flight.RollCamera;
+import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.client.render.firstperson.dto.DMZCameraBuffer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Camera.class)
@@ -32,6 +33,8 @@ public abstract class CameraMixin implements RollCamera {
 	public abstract Vec3 getPosition();
 
 	@Shadow protected abstract void setRotation(float yRot, float xRot);
+
+	@Shadow protected abstract void move(double x, double y, double z);
 
 	@Unique private float dragonminez$roll = 0F;
 	@Unique private float dragonminez$lastRoll = 0F;
@@ -93,6 +96,15 @@ public abstract class CameraMixin implements RollCamera {
 
 			DMZCameraBuffer.setFirstPersonShift(appliedShift);
 		}
+	}
+
+	@Redirect(
+			method = "setup",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;move(DDD)V", ordinal = 0)
+	)
+	private void dragonminez$shoulderSurf(Camera camera, double x, double y, double z, BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick) {
+		Vec3 move = OverShoulderCamera.computeMove(camera, level, entity, thirdPersonReverse, x, y, z, partialTick);
+		this.move(move.x, move.y, move.z);
 	}
 
 	@Override

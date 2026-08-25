@@ -51,6 +51,7 @@ public abstract class AbstractRadialNode implements RadialNode {
 		if (t.contains("android")) return icon("androidforms");
 		if (t.contains("kaioken")) return icon("kaioken");
 		if (t.contains("ultimate")) return icon("ultimate");
+		if (Minecraft.getInstance().getResourceManager().getResource(icon(t)).isPresent()) return icon(t);
 		return PLACEHOLDER;
 	}
 

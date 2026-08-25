@@ -1,5 +1,8 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.combat.logic.player.TargetHelper;
+import com.dragonminez.common.combat.util.MultipartTargeting;
+
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
@@ -43,9 +46,11 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
         this.setNoGravity(true);
     }
 
+    private static final int FIRING_WINDOW = 60;
+
     @Override
     public int getMaxHits() {
-        return 1;
+        return Math.max(1, FIRING_WINDOW / CONTINUOUS_HIT_INTERVAL);
     }
 
     public void setupCandyBeam(LivingEntity owner, float damage, float speed, int castTime) {
@@ -146,9 +151,8 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
                 owner.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
 
                 if (!this.level().isClientSide) {
-                    if (this.tickCount % 5 == 0) {
-                        target.hurt(MainDamageTypes.kiblast(this.level(), this, owner), this.getKiDamage());
-
+                    // Gated to ~1s pulses; the candy effect refreshes on each landed pulse.
+                    if (this.applyContinuousDamage(target)) {
                         target.addEffect(new MobEffectInstance(MainEffects.CANDY.get(), 200, 0, false, true));
                     }
                 }
@@ -167,7 +171,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
     @Override
     protected void onHitEntity(EntityHitResult result) {
         if (!this.level().isClientSide) {
-            Entity hitEntity = result.getEntity();
+            Entity hitEntity = TargetHelper.resolveHittable(result.getEntity());
             Entity owner = this.getOwner();
 
             if (hitEntity instanceof LivingEntity target && target != owner) {
@@ -181,7 +185,7 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
 
     private LivingEntity findNearestTarget(LivingEntity owner, double range) {
         AABB area = owner.getBoundingBox().inflate(range);
-        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), area);
 
         LivingEntity nearest = null;
         double minDistance = Double.MAX_VALUE;

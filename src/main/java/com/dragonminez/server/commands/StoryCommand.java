@@ -39,22 +39,22 @@ public class StoryCommand {
 	private static final int NPC_SEARCH_RADIUS = 16;
 
 	private static final SuggestionProvider<CommandSourceStack> QUEST_SUGGESTIONS = (context, builder) ->
-			SharedSuggestionProvider.suggest(new ArrayList<>(QuestRegistry.getAllQuests().keySet()), builder);
+			SharedSuggestionProvider.suggest(suggestionIds(QuestRegistry.getAllQuests().keySet()), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> QUEST_OR_ALL_SUGGESTIONS = (context, builder) -> {
-		List<String> suggestions = new ArrayList<>(QuestRegistry.getAllQuests().keySet());
+		List<String> suggestions = suggestionIds(QuestRegistry.getAllQuests().keySet());
 		suggestions.add("all");
 		return SharedSuggestionProvider.suggest(suggestions, builder);
 	};
 
 	private static final SuggestionProvider<CommandSourceStack> QUEST_OR_NONE_SUGGESTIONS = (context, builder) -> {
-		List<String> suggestions = new ArrayList<>(QuestRegistry.getAllQuests().keySet());
+		List<String> suggestions = suggestionIds(QuestRegistry.getAllQuests().keySet());
 		suggestions.add("none");
 		return SharedSuggestionProvider.suggest(suggestions, builder);
 	};
 
 	private static final SuggestionProvider<CommandSourceStack> SAGA_OR_ALL_SUGGESTIONS = (context, builder) -> {
-		List<String> suggestions = new ArrayList<>(QuestRegistry.getAllSagas().keySet());
+		List<String> suggestions = suggestionIds(QuestRegistry.getAllSagas().keySet());
 		suggestions.add("all");
 		return SharedSuggestionProvider.suggest(suggestions, builder);
 	};
@@ -175,15 +175,17 @@ public class StoryCommand {
 		);
 	}
 
-	/**
-	 * Normalizes quest/saga IDs by replacing '.' with ':'.
-	 * Minecraft's chat bar can have trouble with ':' in unquoted command arguments,
-	 * so players can type "saiyan_saga.1" instead of "saiyan_saga:1".
-	 * Tab-complete suggestions still show the real IDs (the client auto-quotes them).
-	 */
 	private static String normalizeId(String input) {
 		if (input == null) return null;
 		return input.replace('.', ':');
+	}
+
+	private static List<String> suggestionIds(Set<String> realIds) {
+		List<String> suggestions = new ArrayList<>();
+		for (String id : realIds) {
+			suggestions.add(id.replace(':', '.'));
+		}
+		return suggestions;
 	}
 
 	// ============================================================

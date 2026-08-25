@@ -1,0 +1,46 @@
+{
+  "id": "bulma_scouter_threat_db",
+  "title": "dmz.sidequest.bulma_scouter_threat_db.name",
+  "description": "dmz.sidequest.bulma_scouter_threat_db.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_scouter_bioscan"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_friezasoldier02",
+      "count": 15,
+      "spawn": "NATURAL",
+      "count_mode": "ANY_MATCHING"
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 4
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 24000
+    }
+  ]
+}

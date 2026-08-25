@@ -37,7 +37,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
@@ -46,7 +45,6 @@ import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.dragonminez.common.util.CuriosUtil;
 
 import java.util.Locale;
 
@@ -61,6 +59,7 @@ public class ClientStatsEvents {
 	private static long lastKiChargeTapTime = 0;
 	private static int kiBlastTimer = 0;
 	private static int blockLockTicks = 0;
+	private static final int BLOCK_REACTIVATION_LOCK_TICKS = 5;
 	private static boolean wasTransformKeyDown = false;
 	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
@@ -70,6 +69,10 @@ public class ClientStatsEvents {
 	private static boolean wasITKeyDown = false;
 	private static boolean itMenuOpened = false;
 	private static boolean wasRightClickDown = false;
+	private static boolean wasInstantTransformKeyDown = false;
+	private static final long TAP_ACTION_COOLDOWN_MS = 500;
+	private static long lastInstantTransformSent = 0;
+	private static long lastDescendSent = 0;
 
 	private static int activeChargeSlot = -1;
 	private static boolean chargeReleaseSent = false;
@@ -97,7 +100,6 @@ public class ClientStatsEvents {
 
 		if (localPlayer == null) return;
 
-		// Announce ActionMode changes in the action bar (runs every tick, even with a menu open).
 		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) {
 				lastActionMode = null;
@@ -146,6 +148,7 @@ public class ClientStatsEvents {
 			StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 				if (data.getStatus().isBlocking()) {
 					data.getStatus().setBlocking(false);
+					blockLockTicks = Math.max(blockLockTicks, BLOCK_REACTIVATION_LOCK_TICKS);
 					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
 				}
 			});
@@ -186,12 +189,20 @@ public class ClientStatsEvents {
 				}
 			}
 
+			if (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FUSION) {
+				localPlayer.setYRot(localPlayer.yRotO);
+				localPlayer.setXRot(localPlayer.xRotO);
+				localPlayer.yHeadRot = localPlayer.yHeadRotO;
+				localPlayer.yBodyRot = localPlayer.yBodyRotO;
+			}
+
 			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 			if (blockLockTicks > 0) blockLockTicks--;
 			if (isChargingTechnique || isDescendKeyPressed || blockLockTicks > 0) isBlockKeyDown = false;
 
+			boolean isStackMode = data.getStatus().getSelectedAction() == ActionMode.STACK;
 			var nextForm = TransformationsHelper.getNextAvailableForm(data);
-			boolean isOozaruNextForm = TransformationsHelper.isOozaruForm(nextForm);
+			boolean isOozaruNextForm = !isStackMode && TransformationsHelper.isOozaruForm(nextForm);
 			boolean canAutoChargeOozaru = !isActionRestricted && TransformationsHelper.shouldAutoChargeOozaru(localPlayer, data);
 			boolean shouldChargeAction = isActionKeyPressed || canAutoChargeOozaru;
 
@@ -199,6 +210,7 @@ public class ClientStatsEvents {
 			boolean handsEmpty = localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty();
 			if ((kiWeaponActive || isChargingTechnique) && data.getStatus().isBlocking() || Minecraft.getInstance().screen != null || (data.getStatus().isBlocking() && !handsEmpty)) {
 				data.getStatus().setBlocking(false);
+				blockLockTicks = Math.max(blockLockTicks, BLOCK_REACTIVATION_LOCK_TICKS);
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, false));
 			} else if (isBlockKeyDown != data.getStatus().isBlocking() && !PlayerAttackHelper.isKiWeaponActive(localPlayer)) {
 				if (isBlockKeyDown && !kiWeaponActive && localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty()) {
@@ -206,6 +218,7 @@ public class ClientStatsEvents {
 					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
 				} else if (!isBlockKeyDown) {
 					data.getStatus().setBlocking(isBlockKeyDown);
+					blockLockTicks = Math.max(blockLockTicks, BLOCK_REACTIVATION_LOCK_TICKS);
 					NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
 				}
 			}
@@ -231,7 +244,7 @@ public class ClientStatsEvents {
 				kiBlastTimer = 10;
 				blockLockTicks = 20;
 			}
-			// Beam clash QTE: while clashing, a fresh fire-key (right click) tap pushes the meter.
+
 			if (ClientBeamClashState.isActive() && isRightClickDown && !wasRightClickDown) {
 				NetworkHandler.sendToServer(new BeamClashInputC2S());
 			}
@@ -252,20 +265,25 @@ public class ClientStatsEvents {
 				lastTransformTapTime = 0;
 			} else if (isActionKeyPressed && !wasTransformKeyDown) {
 				if ((currentTime - lastTransformTapTime) <= 500) {
-					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
+					if ((currentTime - lastInstantTransformSent) >= TAP_ACTION_COOLDOWN_MS) {
+						NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
+						lastInstantTransformSent = currentTime;
+					}
 					lastTransformTapTime = 0;
 				} else lastTransformTapTime = currentTime;
 
-				if (data.getStatus().getSelectedAction() == ActionMode.FORM && TransformationsHelper.isNextFormMasteryBlocked(data)) {
-					FormConfig.FormData blocked = TransformationsHelper.getNextFormCandidate(data);
-					if (blocked != null) {
-						String group = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
-						Component formName = Component.translatable("race.dragonminez." + character.getRaceName() + ".form." + group + "." + blocked.getName());
-						localPlayer.displayClientMessage(Component.translatable("message.dragonminez.form.no_mastery", blocked.getUnlockOnMastery().intValue(), formName), true);
-					}
-				}
+				notifyMasteryBlocked(data, character, localPlayer);
 			}
 			wasTransformKeyDown = isActionKeyPressed;
+
+			boolean isInstantTransformKeyDown = KeyBinds.isChordDown(KeyBinds.INSTANT_TRANSFORM) && !isStunned;
+			if (isInstantTransformKeyDown && !wasInstantTransformKeyDown && !isOozaruNextForm
+					&& (currentTime - lastInstantTransformSent) >= TAP_ACTION_COOLDOWN_MS) {
+				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
+				lastInstantTransformSent = currentTime;
+				notifyMasteryBlocked(data, character, localPlayer);
+			}
+			wasInstantTransformKeyDown = isInstantTransformKeyDown;
 
 			if (isKiChargeKeyPressed && !wasKiChargeKeyDown) {
 				if ((currentTime - lastKiChargeTapTime) <= 500) {
@@ -294,21 +312,28 @@ public class ClientStatsEvents {
 			}
 			wasITKeyDown = isITKeyDown;
 
-			if (isKiChargeKeyPressed != data.getStatus().isChargingKi()) {
-				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.CHARGE_KI, isKiChargeKeyPressed));
+			boolean isLowerReleaseDown = KeyBinds.isChordDown(KeyBinds.LOWER_RELEASE) && !isStunned;
+			boolean chargeSignal = isKiChargeKeyPressed || isLowerReleaseDown;
+			boolean descendSignal = isDescendKeyPressed || isLowerReleaseDown;
+
+			if (chargeSignal != data.getStatus().isChargingKi()) {
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.CHARGE_KI, chargeSignal));
 			}
 
-			if (isDescendKeyPressed != data.getStatus().isDescending()) {
-				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.DESCEND, isDescendKeyPressed));
+			if (descendSignal != data.getStatus().isDescending()) {
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.DESCEND, descendSignal));
 			}
 
 			if (shouldChargeAction != data.getStatus().isActionCharging()) {
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.ACTION_CHARGE, shouldChargeAction));
 			}
 
-			boolean isDescendActionDown = isDescendKeyPressed && isActionKeyPressed;
-			if (isDescendActionDown && !wasDescendActionDown && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.STACK))) {
+			boolean isDescendActionDown = KeyBinds.isChordDown(KeyBinds.DESCEND) && !isStunned;
+			if (isDescendActionDown && !wasDescendActionDown
+					&& (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.STACK))
+					&& (currentTime - lastDescendSent) >= TAP_ACTION_COOLDOWN_MS) {
 				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, false));
+				lastDescendSent = currentTime;
 			}
 			wasDescendActionDown = isDescendActionDown;
 
@@ -321,7 +346,7 @@ public class ClientStatsEvents {
 				}
 			} else flightSound = null;
 
-			boolean hasScouter = !getScouterStack(localPlayer).isEmpty();
+			boolean hasScouter = KiSenseScan.hasScouter(localPlayer);
 			if (KeyBinds.KI_SENSE.consumeClick()) {
 				if (!hasScouter) {
 					Skill kiSense = data.getSkills().getSkill("kisense");
@@ -340,7 +365,7 @@ public class ClientStatsEvents {
 
 		net.minecraftforge.client.settings.KeyModifier bar1Mod = KeyBinds.TECHNIQUE_SLOTS[0].getKeyModifier();
 		net.minecraftforge.client.settings.KeyModifier bar2Mod = KeyBinds.TECHNIQUE_SLOTS[BAR_SLOTS].getKeyModifier();
-		boolean bar2DistinctHeld = bar2Mod != bar1Mod && KeyBinds.isModifierActive(bar2Mod);
+		boolean bar2DistinctHeld = bar2Mod != bar1Mod && KeyBinds.isBarModifierActive(bar2Mod);
 
 		boolean[] downNow = new boolean[TECHNIQUE_VISIBLE_SLOTS];
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) {
@@ -412,6 +437,17 @@ public class ClientStatsEvents {
 		}
 	}
 
+	private static void notifyMasteryBlocked(StatsData data, Character character, LocalPlayer localPlayer) {
+		if (data.getStatus().getSelectedAction() == ActionMode.FORM && TransformationsHelper.isNextFormMasteryBlocked(data)) {
+			FormConfig.FormData blocked = TransformationsHelper.getNextFormCandidate(data);
+			if (blocked != null) {
+				String group = character.hasActiveForm() ? character.getActiveFormGroup() : character.getSelectedFormGroup();
+				Component formName = Component.translatable("race.dragonminez." + character.getRaceName() + ".form." + group + "." + blocked.getName());
+				localPlayer.displayClientMessage(Component.translatable("message.dragonminez.form.no_mastery", blocked.getUnlockOnMastery().intValue(), formName), true);
+			}
+		}
+	}
+
 	private static boolean canActivateTechnique(StatsData data, LocalPlayer player) {
 		if (player.isSpectator()) return false;
 		if (data.getStatus().isFused() && !data.getStatus().isFusionLeader()) return false;
@@ -437,9 +473,6 @@ public class ClientStatsEvents {
 		for (int i = 0; i < TECHNIQUE_VISIBLE_SLOTS; i++) wasSlotKeyDown[i] = false;
 	}
 
-	private static ItemStack getScouterStack(Player player) {
-		return CuriosUtil.getFirstStackForItem(player, "head_tech", "scouter");
-	}
 
 	@SubscribeEvent
 	public static void onKeyPressed(InputEvent.Key event) {
@@ -524,15 +557,9 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onMovementInput(MovementInputUpdateEvent event) {
-		boolean techMenu = KeyBinds.isAnyTechniqueModifierDown();
-		if (techMenu) {
-			event.getInput().shiftKeyDown = false;
-			event.getEntity().setSprinting(false);
-		}
-
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
-					|| data.getStatus().isActionCharging()) {
+					|| data.getStatus().isActionCharging() || data.getStatus().getPotaraPoseTimer() > 0) {
 				event.getInput().forwardImpulse = 0;
 				event.getInput().leftImpulse = 0;
 				event.getInput().jumping = false;

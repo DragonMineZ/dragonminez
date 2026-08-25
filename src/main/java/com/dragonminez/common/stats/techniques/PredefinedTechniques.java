@@ -36,7 +36,7 @@ public class PredefinedTechniques {
 		registerKi("emperor_death_beam", "technique.dragonminez.emperor_death_beam", "Frieza", KiAttackData.KiType.LASER, 1.25F, 0xCE10E3, 0xCE10E3, 0.6F, 2.0F, 10, "ki.makkako");
         registerKi("makkanko", "technique.dragonminez.makkankosanpo", "Piccolo", KiAttackData.KiType.BEAM, 0.75F, 0xFFE53B, 0xC43BFF, 0.8F, 2.0F, 10, "ki.makkako");
         registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFFF00, 0xFFFF00, 0.4F, 1.5F, 10, "ki.barrage");
-		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 3.00F, 0xFFFF00, 0xFFFF00, 15.0F, 0.0F, 10, "ki.explosion");
+		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 2.25F, 0xFFFF00, 0xFFFF00, 15.0F, 0.0F, 10, "ki.explosion");
 		registerKi("soul_punisher", "technique.dragonminez.soul_punisher", "Gogeta", KiAttackData.KiType.MEDIUM_BALL, 3.50F, 0xFFFFFF, 0xFFFFFF, 5.0F, 0.5F, 45, "ki.kienzan");
 		registerKi("fake_moon", "technique.dragonminez.fake_moon", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 0.00F, 0xF5F3D0, 0xFFFFFF, 2.0F, 0.8F, 45, "ki.bigbang");
 		registerKi("taiyoken", "technique.dragonminez.taiyoken", "Tenshinhan", KiAttackData.KiType.SMALL_BALL, 0.00F, 0xFFFFFF, 0xFFFFFF, 1.0F, 0.1F, 45, "ki.bigbang");

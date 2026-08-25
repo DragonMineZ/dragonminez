@@ -20,6 +20,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.extras.DynamicGrowthMath;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
+import com.dragonminez.server.events.players.TickHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -240,14 +241,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	}
 
 	private double[] getDamageReductionPercentages() {
-		double defMult = statsData.getTotalMultiplier("DEF");
-		double transformDivider = defMult > 1.0 ? (1.0 + (defMult - 1.0) * 0.20) : 1.0;
 		double baseDefense = statsData.getDefense();
 
 		int maxValue = statsData.getConfiguredMaxValue();
 		double expectedMaxStats = statsData.isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * statsData.getStatScaling("DEF");
-		double k_factor = Math.max(100.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
+		double k_factor = Math.max(12.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
 
 		double baseReduction;
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
@@ -285,7 +284,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double mitigationReduction = 1.0 - ((1.0 - baseReduction) * (1.0 - enchReduction));
 		double mitigationReductionPct = Mth.clamp(mitigationReduction * 100.0, 0.0, 100.0);
 
-		return new double[]{mitigationReductionPct, transformDivider, enchReduction * 100.0};
+		return new double[]{mitigationReductionPct, enchReduction * 100.0};
 	}
 
 	private void renderMenuPanels(GuiGraphics graphics, int leftOffset, int rightOffset, int topOffset) {
@@ -688,7 +687,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		int requiredXp = DynamicGrowthMath.requiredXp(currentStat);
 		double currentXp = statsData.getDynamicGrowth().getPracticeXp(stat);
-		double percent = requiredXp <= 0 ? 100.0 : Math.min(100.0, currentXp / requiredXp * 100.0);
+		double percent = requiredXp <= 0 ? 100.0 : currentXp / requiredXp * 100.0;
+		if (!Double.isFinite(percent)) percent = 0.0;
+		percent = Math.max(0.0, Math.min(100.0, percent));
 		extras.add(txt("  " + String.format(Locale.US, "%.1f", currentXp) + " / " + requiredXp + " XP ("
 				+ String.format(Locale.US, "%.1f", percent) + "%)").withStyle(ChatFormatting.GREEN));
 	}
@@ -745,8 +746,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double strikeDamage = statsData.getStrikeDamage();
 		double maxStrikeDamage = statsData.getMaxStrikeDamage();
 		float stamina = statsData.getMaxStamina();
-		double defense = statsData.getDefense();
-		double maxDefense = statsData.getMaxDefense();
+		double defense = statsData.getFlatMitigation();
+		double maxDefense = statsData.getMaxFlatMitigation();
 		double health = Minecraft.getInstance().player.getMaxHealth();
 		double kiDamage = statsData.getKiDamage();
 		double maxKiDamage = statsData.getMaxKiDamage();
@@ -809,8 +810,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 									.append(txt(String.format(Locale.US, "%.1f/s", currentRegenSec)))
 									.withStyle(ChatFormatting.AQUA));
 						}
+						extras.add(tr("gui.dragonminez.character_stats.stamina_per_hit").append(": ")
+								.append(txt(NumberFormattingUtil.formatUpToOneDecimal(statsData.getStaminaPerHit())))
+								.withStyle(ChatFormatting.GOLD));
 						if (isTransformed) {
-							double stamDrain = statsData.getAdjustedStaminaDrain();
+							double stamDrain = statsData.getEffectiveStaminaDrain();
 							if (stamDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.cost", NumberFormattingUtil.formatUpToOneDecimal(stamDrain)).withStyle(ChatFormatting.RED));
 							else if (stamDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.regen", NumberFormattingUtil.formatUpToOneDecimal(Math.abs(stamDrain))).withStyle(ChatFormatting.GREEN));
 
@@ -837,16 +841,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 								.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 								.withStyle(ChatFormatting.AQUA));
 
-						if (pcts[1] > 1.0) {
-							extras.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
-									.append(txt(NumberFormattingUtil.formatUpToOneDecimal(pcts[1]) + " "))
-									.append(tr("gui.dragonminez.character_stats.dmg_taken"))
-									.withStyle(ChatFormatting.GOLD));
-						}
-
-						if (pcts[2] > 0) {
+						if (pcts[1] > 0) {
 							extras.add(tr("gui.dragonminez.character_stats.protection").append(": ")
-									.append(txt(NumberFormattingUtil.formatUpToTwoDecimals(pcts[2]) + "% "))
+									.append(txt(NumberFormattingUtil.formatUpToTwoDecimals(pcts[1]) + "% "))
 									.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 									.withStyle(ChatFormatting.LIGHT_PURPLE));
 						}
@@ -861,7 +858,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 									.withStyle(ChatFormatting.AQUA));
 						}
 						if (isTransformed) {
-							double hpDrain = statsData.getAdjustedHealthDrain();
+							double hpDrain = statsData.getEffectiveHealthDrain();
 							if (hpDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.cost", NumberFormattingUtil.formatUpToOneDecimal(hpDrain)).withStyle(ChatFormatting.RED));
 							else if (hpDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.regen", NumberFormattingUtil.formatUpToOneDecimal(Math.abs(hpDrain))).withStyle(ChatFormatting.GREEN));
 						}
@@ -883,7 +880,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 									.withStyle(ChatFormatting.AQUA));
 						}
 						if (isTransformed) {
-							double eneDrain = statsData.getAdjustedEnergyDrain();
+							double eneDrain = statsData.getEffectiveEnergyDrain();
 							if (eneDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.cost", NumberFormattingUtil.formatUpToOneDecimal(eneDrain)).withStyle(ChatFormatting.RED));
 							else if (eneDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.regen", NumberFormattingUtil.formatUpToOneDecimal(Math.abs(eneDrain))).withStyle(ChatFormatting.GREEN));
 						}
@@ -940,8 +937,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double strikeDamage = statsData.getStrikeDamage();
 		double maxStrikeDamage = statsData.getMaxStrikeDamage();
 		float stamina = statsData.getMaxStamina();
-		double defense = statsData.getDefense();
-		double maxDefense = statsData.getMaxDefense();
+		double defense = statsData.getFlatMitigation();
+		double maxDefense = statsData.getMaxFlatMitigation();
 		float health = statsData.getMaxHealth();
 		double kiDamage = statsData.getKiDamage();
 		double maxKiDamage = statsData.getMaxKiDamage();
@@ -1123,9 +1120,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			extras.add(tr("gui.dragonminez.character_stats.stamina").append(": ")
 					.append(txt(NumberFormattingUtil.formatUpToOneDecimal(stamina)))
 					.withStyle(ChatFormatting.AQUA));
+			extras.add(tr("gui.dragonminez.character_stats.stamina_per_hit").append(": ")
+					.append(txt(NumberFormattingUtil.formatUpToOneDecimal(statsData.getStaminaPerHit())))
+					.withStyle(ChatFormatting.GOLD));
 
 			if (isTransformed) {
-				double stamDrain = statsData.getAdjustedStaminaDrain();
+				double stamDrain = statsData.getEffectiveStaminaDrain();
 				if (stamDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.cost", NumberFormattingUtil.formatUpToOneDecimal(stamDrain)).withStyle(ChatFormatting.RED));
 				else if (stamDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.stamina.regen", NumberFormattingUtil.formatUpToOneDecimal(Math.abs(stamDrain))).withStyle(ChatFormatting.GREEN));
 
@@ -1144,16 +1144,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 					.withStyle(ChatFormatting.AQUA));
 
-			if (pcts[1] > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
-						.append(txt(NumberFormattingUtil.formatUpToOneDecimal(pcts[1]) + " "))
-						.append(tr("gui.dragonminez.character_stats.dmg_taken"))
-						.withStyle(ChatFormatting.GOLD));
-			}
-
-			if (pcts[2] > 0) {
+			if (pcts[1] > 0) {
 				extras.add(tr("gui.dragonminez.character_stats.protection").append(": ")
-						.append(txt(NumberFormattingUtil.formatUpToTwoDecimals(pcts[2]) + "% "))
+						.append(txt(NumberFormattingUtil.formatUpToTwoDecimals(pcts[1]) + "% "))
 						.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 						.withStyle(ChatFormatting.LIGHT_PURPLE));
 			}
@@ -1198,7 +1191,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					.withStyle(ChatFormatting.AQUA));
 
 			if (isTransformed) {
-				double eneDrain = statsData.getAdjustedEnergyDrain();
+				double eneDrain = statsData.getEffectiveEnergyDrain();
 				if (eneDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.cost", NumberFormattingUtil.formatUpToOneDecimal(eneDrain)).withStyle(ChatFormatting.RED));
 				else if (eneDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.regen", NumberFormattingUtil.formatUpToOneDecimal(Math.abs(eneDrain))).withStyle(ChatFormatting.GREEN));
 			}
@@ -1221,7 +1214,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					.withStyle(ChatFormatting.AQUA));
 
 			if (isTransformed) {
-				double hpDrain = statsData.getAdjustedHealthDrain();
+				double hpDrain = statsData.getEffectiveHealthDrain();
 				if (hpDrain > 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.cost", NumberFormattingUtil.formatUpToOneDecimal(hpDrain)).withStyle(ChatFormatting.RED));
 				else if (hpDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.regen", NumberFormattingUtil.formatUpToOneDecimal(Math.abs(hpDrain))).withStyle(ChatFormatting.GREEN));
 			}
@@ -1356,11 +1349,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			}
 			if (gravityTpBonus > 1.0) {
 				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.tp_bonus",
-						NumberFormattingUtil.formatUpToOneDecimal(gravityTpBonus)).withStyle(ChatFormatting.GREEN));
+						NumberFormattingUtil.formatUpToTwoDecimals(gravityTpBonus)).withStyle(ChatFormatting.GREEN));
 			}
 			if (weightTpMult > 1.01 && totalWeight > 0) {
 				extras.add(tr("gui.dragonminez.character_stats.gravity.tooltip.weight_bell",
-						NumberFormattingUtil.formatUpToOneDecimal(weightTpMult)).withStyle(ChatFormatting.AQUA));
+						NumberFormattingUtil.formatUpToTwoDecimals(weightTpMult)).withStyle(ChatFormatting.AQUA));
 			}
 
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(),
@@ -1392,8 +1385,53 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int centerY = getUiHeight() / 2;
 		int labelX = getUiWidth() - 137;
 		int y = centerY + 78;
+
+		double eps = 0.005;
+		List<Component> extras = new ArrayList<>();
+
+		double general = statsData.getTpGlobalMultiplier();
+		extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.general", NumberFormattingUtil.formatUpToTwoDecimals(general)).withStyle(ChatFormatting.GRAY));
+
+		double clazz = statsData.getTpClassMultiplier();
+		extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.class", NumberFormattingUtil.formatUpToTwoDecimals(clazz)).withStyle(ChatFormatting.AQUA));
+
+		if (statsData.isFrostDemonTpPassiveActive()) {
+			double frost = statsData.getTpFrostDemonMultiplier();
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.frost_demon", NumberFormattingUtil.formatUpToTwoDecimals(frost)).withStyle(ChatFormatting.LIGHT_PURPLE));
+		}
+
+		double htc = statsData.getTpHTCMultiplier();
+		if (Math.abs(htc - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.htc", NumberFormattingUtil.formatUpToTwoDecimals(htc)).withStyle(ChatFormatting.GOLD));
+		}
+
+		double gravity = ClientGravityState.getTpGravityMult();
+		if (Math.abs(gravity - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", NumberFormattingUtil.formatUpToTwoDecimals(gravity)).withStyle(ChatFormatting.GREEN));
+		}
+
+		double weightBell = ClientGravityState.getWeightTpMult();
+		if (Math.abs(weightBell - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.weight", NumberFormattingUtil.formatUpToTwoDecimals(weightBell)).withStyle(ChatFormatting.YELLOW));
+		}
+
+		double potionEffect = statsData.getTpPotionEffectMultiplier();
+		if (Math.abs(potionEffect - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", NumberFormattingUtil.formatUpToTwoDecimals(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE));
+		}
+
+		double mutantTp = statsData.getMutantTpMultiplier();
+		if (Math.abs(mutantTp - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant", NumberFormattingUtil.formatUpToTwoDecimals(mutantTp)).withStyle(ChatFormatting.DARK_PURPLE));
+		}
+
+		double progressionTp = statsData.getProgressionTpGainMultiplier();
+		if (Math.abs(progressionTp - 1.0) > eps) {
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.progression", NumberFormattingUtil.formatUpToTwoDecimals(progressionTp)).withStyle(ChatFormatting.GOLD));
+		}
+
 		double totalMultiplier = statsData.getTpTotalMultiplier();
-		String totalMult = NumberFormattingUtil.formatUpToOneDecimal(totalMultiplier);
+		String totalMult = NumberFormattingUtil.formatUpToTwoDecimals(totalMultiplier);
 
 		Component label = tr("gui.dragonminez.character_stats.tp_multiplier");
 		Component separator = txt(": ");
@@ -1413,38 +1451,6 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			List<Component> desc = new ArrayList<>();
 			desc.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.total", totalMult).withStyle(ChatFormatting.YELLOW));
 
-			List<Component> extras = new ArrayList<>();
-			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.general", NumberFormattingUtil.formatUpToOneDecimal(statsData.getTpGlobalMultiplier())).withStyle(ChatFormatting.GRAY));
-			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.class", NumberFormattingUtil.formatUpToOneDecimal(statsData.getTpClassMultiplier())).withStyle(ChatFormatting.AQUA));
-
-			if (statsData.isFrostDemonTpPassiveActive()) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.frost_demon", NumberFormattingUtil.formatUpToOneDecimal(statsData.getTpFrostDemonMultiplier())).withStyle(ChatFormatting.LIGHT_PURPLE));
-			}
-
-			double htc = statsData.getTpHTCMultiplier();
-			if (htc > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.htc", NumberFormattingUtil.formatUpToOneDecimal(htc)).withStyle(ChatFormatting.GOLD));
-			}
-
-			double gravity = ClientGravityState.getTpGravityMult();
-			if (gravity > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", NumberFormattingUtil.formatUpToOneDecimal(gravity)).withStyle(ChatFormatting.GREEN));
-			}
-
-			double weightBell = ClientGravityState.getWeightTpMult();
-			if (weightBell > 1.01) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.weight", NumberFormattingUtil.formatUpToOneDecimal(weightBell)).withStyle(ChatFormatting.YELLOW));
-			}
-
-			double potionEffect = statsData.getTpPotionEffectMultiplier();
-			if (potionEffect > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", NumberFormattingUtil.formatUpToOneDecimal(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE));
-			}
-
-			double mutantTp = statsData.getMutantTpMultiplier();
-			if (mutantTp > 1.0) {
-				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.mutant", NumberFormattingUtil.formatUpToOneDecimal(mutantTp)).withStyle(ChatFormatting.DARK_PURPLE));
-			}
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0x7CFDD6);
 		}
 	}
@@ -1525,9 +1531,10 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int level = statsData.getSkills().getSkillLevel("meditation");
 		if (level <= 0) return;
 		double base = energy ? baseEnergyRegenPerSec() : baseStaminaRegenPerSec();
-		double bonus = base * (level * 0.05);
+		double bonusPct = level * TickHandler.MEDITATION_BONUS_PER_LEVEL;
+		double bonus = base * bonusPct;
 		extras.add(tr("gui.dragonminez.character_stats.meditation_bonus",
-				NumberFormattingUtil.formatUpToOneDecimal(bonus), NumberFormattingUtil.formatUpToOneDecimal(level * 5.0)).withStyle(ChatFormatting.GREEN));
+				NumberFormattingUtil.formatUpToOneDecimal(bonus), NumberFormattingUtil.formatUpToOneDecimal(bonusPct * 100.0)).withStyle(ChatFormatting.GREEN));
 	}
 
 	private RaceStatsConfig.ClassStats currentClassStats() {

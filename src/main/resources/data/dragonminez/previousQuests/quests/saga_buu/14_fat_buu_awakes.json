@@ -1,0 +1,57 @@
+{
+  "id": 14,
+  "title": "dmz.quest.buu14.name",
+  "description": "dmz.quest.buu14.desc",
+  "type": "SAGA",
+  "category": "saga_buu",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "buu_saga",
+        "questId": 13
+      }
+    ]
+  },
+  "requirements": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "LEVEL",
+        "minLevel": 1780
+      },
+      {
+        "type": "DIMENSION",
+        "dimension": "minecraft:overworld"
+      },
+      {
+        "type": "STRUCTURE",
+        "structure": "dragonminez:babidi"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "entity": "dragonminez:saga_buufat",
+      "count": 1,
+      "health": 343000.0,
+      "meleeDamage": 14400.0,
+      "kiDamage": 12920.0,
+      "spawn": "QUEST",
+      "count_mode": "QUEST_SPAWNED_ONLY",
+      "AITier": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 151200
+    }
+  ]
+}

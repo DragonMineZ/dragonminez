@@ -1,0 +1,44 @@
+{
+  "id": "bulma_gete_discovery",
+  "title": "dmz.sidequest.bulma_gete_discovery.name",
+  "description": "dmz.sidequest.bulma_gete_discovery.desc",
+  "type": "SIDEQUEST",
+  "category": "tech",
+  "parallel_objectives": false,
+  "party_scaling": true,
+  "secret": false,
+  "claim_mode": "TREE_OR_NPC",
+  "quest_giver": "bulma",
+  "turn_in": "bulma",
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "QUEST",
+        "questId": "bulma_gero_blueprints"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_scrap",
+      "count": 3
+    },
+    {
+      "type": "TALK_TO",
+      "npcId": "bulma"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 24000
+    },
+    {
+      "type": "ITEM",
+      "item": "dragonminez:gete_ingot",
+      "count": 2
+    }
+  ]
+}

@@ -22,6 +22,9 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> STUN = EFFECTS.register("stun", () ->
 			new DMZEffect(false).addAttributeModifier(Attributes.MOVEMENT_SPEED, "7107DE5E-7CE8-4030-940E-514C1F160890",
 					-1.0D, AttributeModifier.Operation.MULTIPLY_TOTAL));
+	public static final RegistryObject<MobEffect> KI_SLOW = EFFECTS.register("ki_slow", () ->
+			new DMZEffect(false).addAttributeModifier(Attributes.MOVEMENT_SPEED, "E21BB9D6-BF78-4D05-83DE-497DA4664A43",
+					-0.9D, AttributeModifier.Operation.MULTIPLY_TOTAL));
 
 	// Placeholders, info for the player | Neutral
 	public static final RegistryObject<MobEffect> DASH_CD = EFFECTS.register("dash_cd", DMZEffect::new);

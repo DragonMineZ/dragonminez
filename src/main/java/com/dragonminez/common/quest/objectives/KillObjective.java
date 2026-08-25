@@ -11,6 +11,10 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
 @Getter
 public class KillObjective extends QuestObjective {
 	public enum SpawnMode {
@@ -34,8 +38,22 @@ public class KillObjective extends QuestObjective {
 	private final int aiTier;
 	private final boolean canTransform;
 
+	// --- Transform overrides (all nullable; null = fall back to the global EntitiesConfig defaults). ---
+	// Absolute stats for the transformed form take precedence over the multipliers when both are set.
+	private final Double transformHealth;
+	private final Double transformMeleeDamage;
+	private final Double transformKiDamage;
+	private final Double transformHealthMultiplier;
+	private final Double transformMeleeMultiplier;
+	private final Double transformKiMultiplier;
+	/** Fraction of max health (0..1) at which this enemy triggers its transformation. */
+	private final Double transformTriggerPercent;
+
 	public KillObjective(String entityId, int count, double health, double meleeDamage, double kiDamage,
-						 SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier, boolean canTransform) {
+						 SpawnMode spawnMode, CountMode countMode, int textureVariant, int aiTier, boolean canTransform,
+						 Double transformHealth, Double transformMeleeDamage, Double transformKiDamage,
+						 Double transformHealthMultiplier, Double transformMeleeMultiplier, Double transformKiMultiplier,
+						 Double transformTriggerPercent) {
 		super(ObjectiveType.KILL, count);
 		this.entityId = entityId;
 		this.count = count;
@@ -47,6 +65,13 @@ public class KillObjective extends QuestObjective {
 		this.textureVariant = textureVariant;
 		this.aiTier = aiTier;
 		this.canTransform = canTransform;
+		this.transformHealth = transformHealth;
+		this.transformMeleeDamage = transformMeleeDamage;
+		this.transformKiDamage = transformKiDamage;
+		this.transformHealthMultiplier = transformHealthMultiplier;
+		this.transformMeleeMultiplier = transformMeleeMultiplier;
+		this.transformKiMultiplier = transformKiMultiplier;
+		this.transformTriggerPercent = transformTriggerPercent;
 	}
 
 	@Override
@@ -83,12 +108,17 @@ public class KillObjective extends QuestObjective {
 			if (isTag()) {
 				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(entityId.substring(1)));
 				var tags = ForgeRegistries.ENTITY_TYPES.tags();
-				if (tags != null) {
-					for (EntityType<?> type : tags.getTag(tag)) {
-						return type;
-					}
+				if (tags == null) {
+					return null;
 				}
-				return null;
+				List<EntityType<?>> members = new ArrayList<>();
+				for (EntityType<?> type : tags.getTag(tag)) {
+					members.add(type);
+				}
+				if (members.isEmpty()) {
+					return null;
+				}
+				return members.get(ThreadLocalRandom.current().nextInt(members.size()));
 			}
 			return ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId));
 		} catch (Exception e) {

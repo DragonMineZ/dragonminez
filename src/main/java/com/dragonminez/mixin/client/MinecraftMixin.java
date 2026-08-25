@@ -49,6 +49,11 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Unique private int itemUseCooldown = 0;
 	@Unique private boolean isAttacking = false;
 	@Unique private boolean isAwaitingUpswing = false;
+	@Unique private boolean queuedAttack = false;
+	@Unique private int queuedAttackTicks = 0;
+
+	@Unique private static final float ATTACK_QUEUE_WINDOW_TICKS = 1.0F;
+	@Unique private static final int ATTACK_QUEUE_EXPIRY_TICKS = 4;
 
 	@Unique private static final float UPSWING_IMPACT_BIAS = 0.4F;
 	@Unique private static final int BLOCK_MINE_ATTACK_GRACE = 5;
@@ -79,6 +84,17 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		cir.setReturnValue(false);
 
 		if (itemUseCooldown > 0 || isAttacking || isAwaitingUpswing) return;
+
+		float cooldownProgress = player.getAttackStrengthScale(0.5F);
+		if (cooldownProgress < 1.0F) {
+			float remainingTicks = (1.0F - cooldownProgress) * player.getCurrentItemAttackStrengthDelay();
+			if (remainingTicks <= ATTACK_QUEUE_WINDOW_TICKS) {
+				queuedAttack = true;
+				queuedAttackTicks = 0;
+			}
+			return;
+		}
+		queuedAttack = false;
 
 		isAttacking = true;
 		isAwaitingUpswing = true;
@@ -168,7 +184,25 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 			}
 		} else isAttacking = false;
 
+		fireQueuedAttackIfReady();
+
 		if (player.tickCount % 2 == 0) evaluateTargetsInReach();
+	}
+
+	@Unique
+	private void fireQueuedAttackIfReady() {
+		if (!queuedAttack) return;
+		if (isAttacking || isAwaitingUpswing) {
+			queuedAttack = false;
+			return;
+		}
+		if (++queuedAttackTicks > ATTACK_QUEUE_EXPIRY_TICKS) {
+			queuedAttack = false;
+			return;
+		}
+		if (screen != null || player.getAttackStrengthScale(0.5F) < 1.0F) return;
+		queuedAttack = false;
+		this.startAttack();
 	}
 
 	@Unique
@@ -286,6 +320,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	@Override
 	public void cancelUpswing() {
 		upswingStack = null;
+		queuedAttack = false;
 		itemUseCooldown = 0;
 		setMiningCooldown(0);
 		isAwaitingUpswing = false;
