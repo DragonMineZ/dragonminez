@@ -21,7 +21,7 @@ import java.util.ArrayList;
 
 public final class QuestUpgrader {
 
-	public static final String DEFAULTS_VERSION = "2.1.2";
+	public static final String DEFAULTS_VERSION = "2.2.0";
 
 	static final String VERSION_KEY = "defaultsVersion";
 
