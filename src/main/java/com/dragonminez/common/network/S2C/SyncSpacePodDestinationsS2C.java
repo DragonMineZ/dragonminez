@@ -4,9 +4,9 @@ import com.dragonminez.common.network.CompressionUtil;
 import com.dragonminez.common.spacepod.SpacePodDestinationDefinition;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import com.dragonminez.compat.DistExecutor;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.List;
 import java.util.function.Supplier;

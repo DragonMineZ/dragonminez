@@ -4,13 +4,14 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class ScaledScreen extends Screen {
@@ -31,6 +32,18 @@ public abstract class ScaledScreen extends Screen {
 		super(title);
 	}
 
+	/**
+	 * Preserve Screen.render's 1.20.1 behavior used by every DMZ menu. In 1.21
+	 * vanilla added renderBackground here, which blurs custom panoramas, models,
+	 * and panels that DMZ deliberately renders before calling super.render.
+	 */
+	@Override
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		for (Renderable renderable : this.renderables) {
+			renderable.render(graphics, mouseX, mouseY, partialTick);
+		}
+	}
+
 	protected void updateUiScale() {
 		if (this.minecraft == null) {
 			uiScale = 1.0f;
@@ -48,6 +61,10 @@ public abstract class ScaledScreen extends Screen {
 
 		float newScale = calculateUiScale(window, multiplier);
 		if (newScale <= 0.0f || Float.isNaN(newScale) || Float.isInfinite(newScale)) newScale = 1.0f;
+		// GUI textures and the DMZ bitmap font are pixel art. Fractional pose scales
+		// make every texel span a non-integral number of screen pixels and blur the
+		// dialogue text, player preview, and panel borders.
+		newScale = Math.max(1.0f, (float) Math.floor(newScale));
 
 
 		uiScale = newScale;
@@ -168,8 +185,8 @@ public abstract class ScaledScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		return super.mouseScrolled(toUiX(mouseX), toUiY(mouseY), delta);
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		return super.mouseScrolled(toUiX(mouseX), toUiY(mouseY), scrollX, scrollY);
 	}
 
 	@Override

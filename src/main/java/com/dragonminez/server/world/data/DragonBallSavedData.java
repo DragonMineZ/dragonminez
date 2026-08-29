@@ -3,6 +3,7 @@ package com.dragonminez.server.world.data;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
@@ -38,7 +39,7 @@ public class DragonBallSavedData extends SavedData {
 	}
 
 	public static DragonBallSavedData get(ServerLevel level) {
-		return level.getDataStorage().computeIfAbsent(DragonBallSavedData::load, DragonBallSavedData::new, "dragon_balls_data");
+		return level.getDataStorage().computeIfAbsent(new net.minecraft.world.level.saveddata.SavedData.Factory<>(DragonBallSavedData::new, DragonBallSavedData::load), "dragon_balls_data");
 	}
 
 	public Map<Integer, List<BlockPos>> getActiveBalls(String setId) {
@@ -72,7 +73,7 @@ public class DragonBallSavedData extends SavedData {
 		setDirty();
 	}
 
-	public static DragonBallSavedData load(CompoundTag tag) {
+	public static DragonBallSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
 		DragonBallSavedData data = new DragonBallSavedData();
 		if (tag.contains("SetData")) {
 			CompoundTag setData = tag.getCompound("SetData");
@@ -96,7 +97,7 @@ public class DragonBallSavedData extends SavedData {
 	}
 
 	@Override
-	public @NotNull CompoundTag save(CompoundTag tag) {
+	public @NotNull CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
 		CompoundTag setData = new CompoundTag();
 		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBallSets()) {
 			String setId = definition.getId();
@@ -114,7 +115,7 @@ public class DragonBallSavedData extends SavedData {
 		for (int i = 0; i < list.size(); i++) {
 			CompoundTag item = list.getCompound(i);
 			int star = item.getInt("Star");
-			BlockPos pos = NbtUtils.readBlockPos(item.getCompound("Pos"));
+			BlockPos pos = NbtUtils.readBlockPos(item, "Pos").orElse(BlockPos.ZERO);
 			map.computeIfAbsent(star, ignored -> new ArrayList<>()).add(pos);
 		}
 	}

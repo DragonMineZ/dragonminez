@@ -9,7 +9,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 
 import java.util.HashMap;
@@ -125,7 +125,7 @@ public class TransformationItemCostHelper {
 		if (itemId != null && !itemId.isBlank()) {
 			ResourceLocation itemKey = getCachedResourceLocation(itemId);
 			if (itemKey == null) return false;
-			Item expectedItem = ForgeRegistries.ITEMS.getValue(itemKey);
+			Item expectedItem = BuiltInRegistries.ITEM.get(itemKey);
 			return expectedItem != null && expectedItem == stack.getItem();
 		}
 		if (itemTag != null && !itemTag.isBlank()) {
@@ -139,8 +139,9 @@ public class TransformationItemCostHelper {
 		if (nbtString == null || nbtString.isBlank()) return true;
 		CompoundTag requiredTag = getCachedNbt(nbtString);
 		if (requiredTag == null) return false;
-		CompoundTag stackTag = stack.getTag();
-		if (stackTag == null) return false;
+		CompoundTag stackTag = stack.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+				net.minecraft.world.item.component.CustomData.EMPTY).copyTag();
+		if (stackTag.isEmpty()) return false;
 		return NbtUtils.compareNbt(requiredTag, stackTag, true);
 	}
 

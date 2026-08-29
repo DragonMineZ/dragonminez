@@ -74,10 +74,10 @@ public class KiAreaEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(AREA_RADIUS, 5.0f);
-        this.entityData.define(CAST_TIME, 40);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(AREA_RADIUS, 5.0f);
+        builder.define(CAST_TIME, 40);
     }
 
     @Override

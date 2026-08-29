@@ -1,4 +1,5 @@
 package com.dragonminez.server.events.players;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
@@ -49,17 +50,21 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityEvent;
-import net.minecraftforge.event.entity.living.*;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.EntityEvent;
+import net.neoforged.neoforge.event.entity.living.*;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
 import com.dragonminez.common.util.CuriosUtil;
 import top.theillusivec4.curios.api.CuriosApi;
 import com.dragonminez.common.init.item.WeightItem;
@@ -67,7 +72,7 @@ import com.dragonminez.common.init.item.WeightItem;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class StatsEvents {
 
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
@@ -101,16 +106,16 @@ public class StatsEvents {
 		return Math.max(0.001, multiplier);
 	}
 
-	private static void applyWeightAttributeModifier(Player player, net.minecraft.world.entity.ai.attributes.Attribute attribute, UUID uuid, String name, double amount) {
+	private static void applyWeightAttributeModifier(Player player, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, UUID uuid, String name, double amount) {
 		var inst = player.getAttribute(attribute);
 		if (inst != null) {
-			AttributeModifier existing = inst.getModifier(uuid);
+			AttributeModifier existing = inst.getModifier(com.dragonminez.common.util.AttributeMods.id(uuid));
 			if (amount == 0) {
-				if (existing != null) inst.removeModifier(uuid);
+				if (existing != null) inst.removeModifier(com.dragonminez.common.util.AttributeMods.id(uuid));
 			} else {
-				if (existing == null || Math.abs(existing.getAmount() - amount) > 0.001) {
-					if (existing != null) inst.removeModifier(uuid);
-					inst.addTransientModifier(new AttributeModifier(uuid, name, amount, AttributeModifier.Operation.MULTIPLY_BASE));
+				if (existing == null || Math.abs(existing.amount() - amount) > 0.001) {
+					if (existing != null) inst.removeModifier(com.dragonminez.common.util.AttributeMods.id(uuid));
+					inst.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(uuid, name, amount, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
 				}
 			}
 		}
@@ -134,9 +139,9 @@ public class StatsEvents {
 	}
 
 	@SubscribeEvent
-	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
-		Player player = event.player;
+	public static void onPlayerTick(PlayerTickEvent.Post event) {
+		if (event.getEntity().level().isClientSide) return;
+		Player player = event.getEntity();
 		if (!(player instanceof ServerPlayer serverPlayer)) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
@@ -152,7 +157,7 @@ public class StatsEvents {
 						if (stack.getItem() instanceof WeightItem) {
 							totalWeight[0] += WeightItem.getWeight(stack);
 						} else if (!stack.isEmpty()) {
-							totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
+							totalWeight[0] += stack.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY).copyTag().getInt("WeightValue");
 						}
 					}
 				}
@@ -262,6 +267,11 @@ public class StatsEvents {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> data.getSkills().setSkillActive("kisense", false));
 	}
 
+	/**
+	 * Apply VIT-scaled max health like 1.20.1. Effective HP is still limited by the
+	 * {@code generic.max_health} RangedAttribute max (rejoin-safe ceiling).
+	 * Full VIT is stored on field-backed stats; this only updates the living HP mod.
+	 */
 	public static void applyHealthBonus(ServerPlayer serverPlayer) {
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 			AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
@@ -270,29 +280,66 @@ public class StatsEvents {
 			float dmzHealthBonus = data.getHealthBonus();
 			if (!Float.isFinite(dmzHealthBonus) || dmzHealthBonus < 0) dmzHealthBonus = 0f;
 
-			AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
+			float healthBefore = serverPlayer.getHealth();
+			double maxBefore = maxHealthAttr.getValue();
 
-			if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
-				maxHealthAttr.removeModifier(DMZ_HEALTH_MODIFIER_UUID);
+			AttributeModifier existingModifier = maxHealthAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(DMZ_HEALTH_MODIFIER_UUID));
+			// Epsilon: float bonus vs double modifier amount — exact != thrash freezes multiplayer.
+			boolean needsUpdate = existingModifier == null
+					|| Math.abs(existingModifier.amount() - (double) dmzHealthBonus) > Math.max(1.0D, Math.abs(dmzHealthBonus) * 1.0e-5D);
 
+			if (needsUpdate) {
+				// Only when rewriting the mod (not every tick).
+				com.dragonminez.common.stats.GenericAttributes.ensureAttributeCeilings();
+				maxHealthAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(DMZ_HEALTH_MODIFIER_UUID));
 				if (dmzHealthBonus > 0) {
-					AttributeModifier healthModifier = new AttributeModifier(
-							DMZ_HEALTH_MODIFIER_UUID,
-							"DMZ Health Bonus",
-							dmzHealthBonus,
-							AttributeModifier.Operation.ADDITION
-					);
+					AttributeModifier healthModifier = com.dragonminez.common.util.AttributeMods.of(DMZ_HEALTH_MODIFIER_UUID, "DMZ Health Bonus", dmzHealthBonus, AttributeModifier.Operation.ADD_VALUE);
 					maxHealthAttr.addPermanentModifier(healthModifier);
-				}
-
-				if (serverPlayer.getHealth() > maxHealthAttr.getValue()) {
-					serverPlayer.setHealth((float) maxHealthAttr.getValue());
 				}
 			}
 
+			double maxAfter = maxHealthAttr.getValue();
+			if (!Double.isFinite(maxAfter) || maxAfter <= 0.0D) return;
+
+			// Grant HP for newly available max (ceiling open / VIT grew), like heal after set.
+			if (maxAfter > maxBefore + 0.01D) {
+				float gain = (float) (maxAfter - maxBefore);
+				serverPlayer.setHealth(Math.min((float) maxAfter, healthBefore + gain));
+			} else if (serverPlayer.getHealth() > maxAfter) {
+				serverPlayer.setHealth((float) maxAfter);
+			}
+
 			if (!data.hasInitializedHealth()) {
-				serverPlayer.setHealth((float) maxHealthAttr.getValue());
+				serverPlayer.setHealth((float) maxAfter);
 				data.setInitializedHealth(true);
+			}
+		});
+	}
+
+	/**
+	 * Login/clone/async load: re-push VIT/ENE/… fields onto attributes, refresh HP like health
+	 * fix, reclamp ki/stamina pools to the new maxes (same idea as heal after VIT).
+	 */
+	public static void restoreStatsPoolsOnJoin(ServerPlayer serverPlayer) {
+		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+			try {
+				com.dragonminez.common.stats.GenericAttributes.ensureAttributeCeilings();
+				data.reapplyStatAttributes();
+				// Force health mod recompute once on join.
+				AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
+				if (maxHealthAttr != null) {
+					maxHealthAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(DMZ_HEALTH_MODIFIER_UUID));
+				}
+				data.setInitializedHealth(false);
+				applyHealthBonus(serverPlayer);
+				if (serverPlayer instanceof com.dragonminez.common.util.IHealthFixable fixable) {
+					fixable.dragonminez$applyDeferredHealthRestore();
+				}
+				// Max ki/stamina from field ENE/RES — clamp current pools to live max (no wipe).
+				data.getResources().reclampToCurrentMax();
+			} catch (Exception e) {
+				com.dragonminez.LogUtil.error(com.dragonminez.Env.SERVER,
+						"restoreStatsPoolsOnJoin failed for " + serverPlayer.getGameProfile().getName(), e);
 			}
 		});
 	}
@@ -416,14 +463,14 @@ public class StatsEvents {
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOW)
-	public static void onEntityHit(LivingHurtEvent event) {
+	public static void onEntityHit(LivingDamageEvent.Pre event) {
 		if (event.getEntity().level().isClientSide) return;
 
 		if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
-					if (event.getAmount() >= 1 && !isMasteryBlacklisted(event.getEntity())) {
-						double damageScale = masteryDamageScale(event.getEntity(), event.getAmount());
+					if (event.getNewDamage() >= 1 && !isMasteryBlacklisted(event.getEntity())) {
+						double damageScale = masteryDamageScale(event.getEntity(), event.getNewDamage());
 
 						if (attackerData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
@@ -454,8 +501,8 @@ public class StatsEvents {
 			boolean fromEntity = event.getSource().getEntity() instanceof LivingEntity;
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (fromEntity && victimData.getStatus().isHasCreatedCharacter()) {
-					if (event.getAmount() >= 1 && !isMasteryBlacklisted(event.getSource().getEntity())) {
-						double damageScale = masteryDamageScale(victim, event.getAmount());
+					if (event.getNewDamage() >= 1 && !isMasteryBlacklisted(event.getSource().getEntity())) {
+						double damageScale = masteryDamageScale(victim, event.getNewDamage());
 
 						if (victimData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
@@ -485,7 +532,7 @@ public class StatsEvents {
 
 	private static boolean isMasteryBlacklisted(Entity entity) {
 		if (entity == null) return false;
-		ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+		ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
 		if (key == null) return false;
 		return ConfigManager.getCombatConfig().getMasteryBlacklistEntities().contains(key.toString());
 	}
@@ -503,9 +550,9 @@ public class StatsEvents {
 	private static final Map<Player, Long> lastHealingTime = new WeakHashMap<>();
 
 	@SubscribeEvent
-	public static void onLivingTick(TickEvent.PlayerTickEvent event) {
-		Player player = event.player;
-		if (player.level().isClientSide || event.phase != TickEvent.Phase.END) return;
+	public static void onLivingTick(PlayerTickEvent.Post event) {
+		Player player = event.getEntity();
+		if (player.level().isClientSide) return;
 		FluidState fluidState = player.level().getFluidState(player.blockPosition());
 		if (fluidState.isEmpty()) return;
 
@@ -562,7 +609,7 @@ public class StatsEvents {
 
 		Player player = event.getEntity();
 		ItemStack stack = event.getItemStack();
-		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(stack.getItem());
 		if (itemKey == null) return;
 		String itemId = itemKey.toString();
 		String namespace = itemKey.getNamespace();
@@ -582,7 +629,7 @@ public class StatsEvents {
 		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
 		ItemStack stack = event.getItem();
-		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(stack.getItem());
 		if (itemKey == null) return;
 		String itemId = itemKey.toString();
 		String namespace = itemKey.getNamespace();
@@ -602,8 +649,8 @@ public class StatsEvents {
 				FoodProperties foodProperties = stack.getFoodProperties(player);
 				if (foodProperties == null) return;
 
-				int foodGain = foodProperties.getNutrition();
-				float saturationGain = foodProperties.getSaturationModifier();
+				int foodGain = foodProperties.nutrition();
+				float saturationGain = foodProperties.saturation();
 
 				float healthFoodRecoveryPercentage = foodGain >= foodConfig.getMinHungerPoints()
 						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getHealthPercentageRecoveredPerHungerPoint()
@@ -659,12 +706,12 @@ public class StatsEvents {
 		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
 		ItemStack stack = event.getItem();
-		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(stack.getItem());
 		if (itemKey == null) return;
 		String itemId = itemKey.toString();
 
 		if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
-			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get()))
+			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN))
 				event.setCanceled(true);
 			else event.setDuration(1);
 		}
@@ -673,37 +720,73 @@ public class StatsEvents {
 	@SubscribeEvent
 	public static void onPlayerAttack(AttackEntityEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
+		if (event.getEntity().hasEffect(MainEffects.STUN)) event.setCanceled(true);
 	}
 
 	@SubscribeEvent
-	public static void onLivingAttack(LivingAttackEvent event) {
+	public static void onLivingAttack(LivingIncomingDamageEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker.hasEffect(MainEffects.STUN.get()))
+		if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker.hasEffect(MainEffects.STUN))
 			event.setCanceled(true);
 	}
 
 	@SubscribeEvent
-	public static void onPlayerInteract(PlayerInteractEvent event) {
+	public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+		handlePlayerInteract(event);
+	}
+
+	@SubscribeEvent
+	public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+		handlePlayerInteract(event);
+	}
+
+	@SubscribeEvent
+	public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+		handlePlayerInteract(event);
+	}
+
+	@SubscribeEvent
+	public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+		handlePlayerInteract(event);
+	}
+
+	@SubscribeEvent
+	public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+		handlePlayerInteract(event);
+	}
+
+	private static void handlePlayerInteract(PlayerInteractEvent event) {
 		if (event.getLevel().isClientSide) return;
 		if (event.getEntity() == null) return;
-		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
+		if (event.getEntity().hasEffect(MainEffects.STUN)
+				&& event instanceof net.neoforged.bus.api.ICancellableEvent cancellable) {
+			if (event instanceof PlayerInteractEvent.RightClickBlock rightClickBlock) {
+				rightClickBlock.setCancellationResult(net.minecraft.world.InteractionResult.FAIL);
+			} else if (event instanceof PlayerInteractEvent.RightClickItem rightClickItem) {
+				rightClickItem.setCancellationResult(net.minecraft.world.InteractionResult.FAIL);
+			} else if (event instanceof PlayerInteractEvent.EntityInteract entityInteract) {
+				entityInteract.setCancellationResult(net.minecraft.world.InteractionResult.FAIL);
+			} else if (event instanceof PlayerInteractEvent.EntityInteractSpecific entityInteractSpecific) {
+				entityInteractSpecific.setCancellationResult(net.minecraft.world.InteractionResult.FAIL);
+			}
+			cancellable.setCanceled(true);
+		}
 	}
 
 	@SubscribeEvent
 	public static void onLivingJump(LivingEvent.LivingJumpEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		if (event.getEntity().hasEffect(MainEffects.STUN.get()))
+		if (event.getEntity().hasEffect(MainEffects.STUN))
 			event.getEntity().setDeltaMovement(event.getEntity().getDeltaMovement().multiply(1, 0, 1));
 	}
 
 	@SubscribeEvent
-	public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
-		LivingEntity entity = event.getEntity();
+	public static void onLivingUpdate(EntityTickEvent.Post event) {
+		if (!(event.getEntity() instanceof LivingEntity entity)) return;
 		if (entity.level().isClientSide) return;
 
-		if (entity.hasEffect(MainEffects.STUN.get())) {
+		if (entity.hasEffect(MainEffects.STUN)) {
 			entity.setDeltaMovement(0, entity.getDeltaMovement().y, 0);
 			entity.setJumping(false);
 			entity.setSprinting(false);
@@ -742,25 +825,25 @@ public class StatsEvents {
 						}
 					}
 
-					AttributeModifier existingSpeed = speedAttr.getModifier(FORM_SPEED_UUID);
-					double currentBonus = existingSpeed != null ? existingSpeed.getAmount() : 0.0;
+					AttributeModifier existingSpeed = speedAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(FORM_SPEED_UUID));
+					double currentBonus = existingSpeed != null ? existingSpeed.amount() : 0.0;
 
 					if (expectedBonus != currentBonus) {
-						speedAttr.removeModifier(FORM_SPEED_UUID);
+						speedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(FORM_SPEED_UUID));
 						if (expectedBonus > 0) {
-							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+							speedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 						}
 					}
 
 					boolean turboActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura();
 					double expectedTurboBonus = turboActive ? TURBO_SPEED_BONUS : 0.0;
-					AttributeModifier existingTurbo = speedAttr.getModifier(TURBO_SPEED_UUID);
-					double currentTurboBonus = existingTurbo != null ? existingTurbo.getAmount() : 0.0;
+					AttributeModifier existingTurbo = speedAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(TURBO_SPEED_UUID));
+					double currentTurboBonus = existingTurbo != null ? existingTurbo.amount() : 0.0;
 
 					if (expectedTurboBonus != currentTurboBonus) {
-						speedAttr.removeModifier(TURBO_SPEED_UUID);
+						speedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(TURBO_SPEED_UUID));
 						if (expectedTurboBonus > 0) {
-							speedAttr.addTransientModifier(new AttributeModifier(TURBO_SPEED_UUID, "Turbo Speed Bonus", expectedTurboBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+							speedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(TURBO_SPEED_UUID, "Turbo Speed Bonus", expectedTurboBonus, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 						}
 					}
 				}
@@ -771,17 +854,12 @@ public class StatsEvents {
 						var kiCfg = ConfigManager.getCombatConfig().getKiWeaponConfig(data.getStatus().getKiWeaponType());
 						if (kiCfg != null) expectedKi = kiCfg.getAttackSpeed();
 					}
-					AttributeModifier existingKi = attackSpeedAttr.getModifier(KI_WEAPON_ATTACK_SPEED_UUID);
-					double currentKi = existingKi != null ? existingKi.getAmount() : 0.0;
+					AttributeModifier existingKi = attackSpeedAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(KI_WEAPON_ATTACK_SPEED_UUID));
+					double currentKi = existingKi != null ? existingKi.amount() : 0.0;
 					if (Math.abs(expectedKi - currentKi) > 1e-9) {
-						attackSpeedAttr.removeModifier(KI_WEAPON_ATTACK_SPEED_UUID);
+						attackSpeedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(KI_WEAPON_ATTACK_SPEED_UUID));
 						if (expectedKi != 0.0) {
-							attackSpeedAttr.addTransientModifier(new AttributeModifier(
-									KI_WEAPON_ATTACK_SPEED_UUID,
-									"Ki Weapon Attack Speed",
-									expectedKi,
-									AttributeModifier.Operation.ADDITION
-							));
+							attackSpeedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(KI_WEAPON_ATTACK_SPEED_UUID, "Ki Weapon Attack Speed", expectedKi, AttributeModifier.Operation.ADD_VALUE));
 						}
 					}
 				}
@@ -798,9 +876,9 @@ public class StatsEvents {
 					}
 
 					double base = attackSpeedAttr.getBaseValue();
-					double afterAdditions = base + attackSpeedAttr.getModifiers(AttributeModifier.Operation.ADDITION).stream().mapToDouble(AttributeModifier::getAmount).sum();
+					double afterAdditions = base + attackSpeedAttr.getModifiers().stream().filter(m -> m.operation() == AttributeModifier.Operation.ADD_VALUE).toList().stream().mapToDouble(AttributeModifier::amount).sum();
 					double intermediateSpeed = afterAdditions;
-					for (AttributeModifier m : attackSpeedAttr.getModifiers(AttributeModifier.Operation.MULTIPLY_BASE)) intermediateSpeed += afterAdditions * m.getAmount();
+					for (AttributeModifier m : attackSpeedAttr.getModifiers().stream().filter(m -> m.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_BASE).toList()) intermediateSpeed += afterAdditions * m.amount();
 
 					double expectedBonus;
 					if (intermediateSpeed > 0.0) {
@@ -808,24 +886,19 @@ public class StatsEvents {
 						expectedBonus = targetSpeed / intermediateSpeed - 1.0;
 					} else expectedBonus = 0.0;
 
-					AttributeModifier existingAttackSpeed = attackSpeedAttr.getModifier(FORM_ATTACK_SPEED_UUID);
-					double currentBonus = existingAttackSpeed != null ? existingAttackSpeed.getAmount() : 0.0;
+					AttributeModifier existingAttackSpeed = attackSpeedAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(FORM_ATTACK_SPEED_UUID));
+					double currentBonus = existingAttackSpeed != null ? existingAttackSpeed.amount() : 0.0;
 
 					if (Math.abs(expectedBonus - currentBonus) > 1e-9) {
-						attackSpeedAttr.removeModifier(FORM_ATTACK_SPEED_UUID);
+						attackSpeedAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(FORM_ATTACK_SPEED_UUID));
 						if (expectedBonus != 0.0) {
-							attackSpeedAttr.addTransientModifier(new AttributeModifier(
-									FORM_ATTACK_SPEED_UUID,
-									"Form Attack Speed Bonus",
-									expectedBonus,
-									AttributeModifier.Operation.MULTIPLY_TOTAL
-							));
+							attackSpeedAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(FORM_ATTACK_SPEED_UUID, "Form Attack Speed Bonus", expectedBonus, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 						}
 					}
 				}
 
-				AttributeInstance reachAttr = serverPlayer.getAttribute(ForgeMod.BLOCK_REACH.get());
-				AttributeInstance entityReachAttr = serverPlayer.getAttribute(ForgeMod.ENTITY_REACH.get());
+				AttributeInstance reachAttr = serverPlayer.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
+				AttributeInstance entityReachAttr = serverPlayer.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE);
 
 				Float[] scaling = data.getCharacter().getResolvedModelScaling();
 				float currentScaleY = scaling[1];
@@ -842,18 +915,18 @@ public class StatsEvents {
 				}
 
 				if (reachAttr != null) {
-					AttributeModifier existingReach = reachAttr.getModifier(FORM_REACH_UUID);
-					if ((existingReach != null ? existingReach.getAmount() : 0.0) != expectedReach) {
-						reachAttr.removeModifier(FORM_REACH_UUID);
-						if (expectedReach > 0) reachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", expectedReach, AttributeModifier.Operation.ADDITION));
+					AttributeModifier existingReach = reachAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(FORM_REACH_UUID));
+					if ((existingReach != null ? existingReach.amount() : 0.0) != expectedReach) {
+						reachAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(FORM_REACH_UUID));
+						if (expectedReach > 0) reachAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(FORM_REACH_UUID, "Form Reach Bonus", expectedReach, AttributeModifier.Operation.ADD_VALUE));
 					}
 				}
 
 				if (entityReachAttr != null) {
-					AttributeModifier existingEntityReach = entityReachAttr.getModifier(FORM_REACH_UUID);
-					if ((existingEntityReach != null ? existingEntityReach.getAmount() : 0.0) != expectedReach) {
-						entityReachAttr.removeModifier(FORM_REACH_UUID);
-						if (expectedReach > 0) entityReachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", expectedReach, AttributeModifier.Operation.ADDITION));
+					AttributeModifier existingEntityReach = entityReachAttr.getModifier(com.dragonminez.common.util.AttributeMods.id(FORM_REACH_UUID));
+					if ((existingEntityReach != null ? existingEntityReach.amount() : 0.0) != expectedReach) {
+						entityReachAttr.removeModifier(com.dragonminez.common.util.AttributeMods.id(FORM_REACH_UUID));
+						if (expectedReach > 0) entityReachAttr.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(FORM_REACH_UUID, "Form Reach Bonus", expectedReach, AttributeModifier.Operation.ADD_VALUE));
 					}
 				}
 			});
@@ -881,6 +954,7 @@ public class StatsEvents {
 		if (fallDistance <= safeHeight) {
 			player.resetFallDistance();
 			event.setCanceled(true);
+			event.setDamageMultiplier(0f);
 		} else {
 			float reducedDistance = fallDistance - safeHeight;
 			event.setDistance(reducedDistance);
@@ -888,11 +962,11 @@ public class StatsEvents {
 	}
 
 	@SubscribeEvent
-	public static void onFallDamageKiNegation(LivingHurtEvent event) {
+	public static void onFallDamageKiNegation(LivingDamageEvent.Pre event) {
 		if (!event.getSource().is(DamageTypes.FALL)) return;
 		if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-		float damage = event.getAmount();
+		float damage = event.getNewDamage();
 		if (damage <= 0) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -906,11 +980,11 @@ public class StatsEvents {
 
 			if (currentKi >= fullCost) {
 				data.getResources().removeEnergy(fullCost);
-				event.setCanceled(true);
+				event.setNewDamage(0f);
 			} else {
 				float negatableDamage = currentKi / kiPerDamage;
 				data.getResources().removeEnergy(currentKi);
-				event.setAmount(damage - negatableDamage);
+				event.setNewDamage(damage - negatableDamage);
 			}
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
@@ -920,7 +994,10 @@ public class StatsEvents {
     @SubscribeEvent
     public static void onEntitySize(EntityEvent.Size event) {
         Entity entity = event.getEntity();
-        if (!(entity instanceof Player)) return;
+        // During Player/ServerPlayer construction AttributeMap is still null. Touching
+        // attachments here materializes StatsProvider -> setPlayer -> getAttribute NPE.
+        if (!(entity instanceof Player player)) return;
+        if (player.getAttributes() == null) return;
 
         StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
             var character = data.getCharacter();
@@ -956,7 +1033,7 @@ public class StatsEvents {
 
             if (pose == Pose.DYING || pose == Pose.SLEEPING) {
                 event.setNewSize(EntityDimensions.fixed(0.2F, 0.2F));
-                event.setNewEyeHeight(0.2F);
+                event.setNewSize(event.getNewSize().withEyeHeight(0.2F));
                 return;
             }
 
@@ -986,7 +1063,7 @@ public class StatsEvents {
             float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
             float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
 
-            event.setNewEyeHeight(finalEyeHeight);
+            event.setNewSize(event.getNewSize().withEyeHeight(finalEyeHeight));
         });
     }
 }

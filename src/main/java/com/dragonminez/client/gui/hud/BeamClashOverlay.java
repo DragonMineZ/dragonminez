@@ -8,7 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraft.client.gui.LayeredDraw;
 
 public class BeamClashOverlay {
 
@@ -33,9 +33,12 @@ public class BeamClashOverlay {
 	private static final int SWEET_GREEN = 0x38E04B;
 	private static final int KNOB = 0xFFFFFFFF;
 
-	public static final IGuiOverlay HUD_BEAM_CLASH = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static final LayeredDraw.Layer HUD_BEAM_CLASH = (guiGraphics, deltaTracker) -> {
+		float partialTicks = deltaTracker.getGameTimeDeltaPartialTick(false);
+		int width = guiGraphics.guiWidth();
+		int height = guiGraphics.guiHeight();
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player == null || mc.options.renderDebug) return;
+		if (mc.player == null || mc.getDebugOverlay().showDebugScreen()) return;
 		if (!ClientBeamClashState.isActive()) return;
 
 		float advantage = Mth.clamp(ClientBeamClashState.advantage(), 0.0f, 1.0f);

@@ -10,29 +10,32 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderTooltipEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.network.chat.FormattedText;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 public class CustomTooltipHandler {
 
 	private static ItemStack lastTooltipItem = ItemStack.EMPTY;
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.END) return;
+	public static void onClientTick(ClientTickEvent.Post event) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.isPaused()) return;
 
-		float deltaTime = mc.getDeltaFrameTime() / 50.0f;
+		float deltaTime = mc.getTimer().getRealtimeDeltaTicks() / 50.0f;
 		TooltipDecor.updateTimer(deltaTime);
 	}
 
@@ -68,7 +71,7 @@ public class CustomTooltipHandler {
 				return;
 			}
 
-			if (!ItemStack.isSameItemSameTags(stack, lastTooltipItem)) {
+			if (!ItemStack.isSameItemSameComponents(stack, lastTooltipItem)) {
 				TooltipDecor.resetTimer();
 				lastTooltipItem = stack.copy();
 			}
@@ -80,8 +83,8 @@ public class CustomTooltipHandler {
 				baseColor = nameColor.getValue();
 			} else if (legacyColor != null) {
 				baseColor = legacyColor;
-			} else if (stack.getRarity() != null && stack.getRarity().color != null) {
-				Integer rColor = stack.getRarity().color.getColor();
+			} else if (stack.getRarity() != null && stack.getRarity().color() != null) {
+				Integer rColor = stack.getRarity().color().getColor();
 				if (rColor != null) baseColor = rColor;
 			}
 

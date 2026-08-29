@@ -26,10 +26,10 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -196,7 +196,7 @@ public class NamekVillagerEntity extends Villager implements GeoEntity {
         }
 
         public MerchantOffer createOffer() {
-            return new MerchantOffer(input, secInput, output, maxUses, xp, 0.15F);
+            return new MerchantOffer(new net.minecraft.world.item.trading.ItemCost(input.getItem(), input.getCount()), java.util.Optional.of(new net.minecraft.world.item.trading.ItemCost(secInput.getItem(), secInput.getCount())), output, maxUses, xp, 0.15F);
         }
     }
 

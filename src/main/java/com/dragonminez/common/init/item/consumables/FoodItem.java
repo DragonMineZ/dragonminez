@@ -8,9 +8,8 @@ public class FoodItem extends Item {
         super(new Properties().stacksTo(maxStack).food(
                 new FoodProperties.Builder()
                         .nutrition(hunger)
-                        .saturationMod(saturation)
-                        .meat()
-                        .alwaysEat()
+                        .saturationModifier(saturation)
+                        .alwaysEdible()
                         .build()
         ));
     }

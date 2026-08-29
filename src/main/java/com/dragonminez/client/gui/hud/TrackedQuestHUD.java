@@ -16,23 +16,23 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.client.gui.LayeredDraw;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class TrackedQuestHUD {
 
 	private static final int PANEL_WIDTH = 180;
 	private static final int MAX_TEXT_WIDTH = PANEL_WIDTH - 16;
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
-	public static final IGuiOverlay HUD_TRACKED_QUEST = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static final LayeredDraw.Layer HUD_TRACKED_QUEST = (guiGraphics, deltaTracker) -> {
+		float partialTicks = deltaTracker.getGameTimeDeltaPartialTick(false);
+		int width = guiGraphics.guiWidth();
+		int height = guiGraphics.guiHeight();
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.renderDebug || mc.player == null) return;
+		if (mc.getDebugOverlay().showDebugScreen() || mc.player == null) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();

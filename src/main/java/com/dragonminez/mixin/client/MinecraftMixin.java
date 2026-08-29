@@ -22,7 +22,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -109,7 +109,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		((MinecraftAccessor) this).setAttackCooldown(10000);
 
 		var event = new DMZClientEvent.PlayerAttackStart(player, hand);
-		MinecraftForge.EVENT_BUS.post(event);
+		NeoForge.EVENT_BUS.post(event);
 
 		playLocalAttackFeedback(hand);
 	}
@@ -226,7 +226,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		TargetFinder.TargetResult targetResult = TargetFinder.findAttackTargetResult(player, cursorTarget, upswingStack.attack(), attackRange);
 
 		var event = new DMZClientEvent.PlayerAttackHit(player, upswingStack, targetResult.entities, cursorTarget);
-		MinecraftForge.EVENT_BUS.post(event);
+		NeoForge.EVENT_BUS.post(event);
 
 		int[] entityIds = targetResult.entities.stream().mapToInt(Entity::getId).toArray();
 

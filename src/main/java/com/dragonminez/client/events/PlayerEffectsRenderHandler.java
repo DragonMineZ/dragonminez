@@ -13,23 +13,28 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import org.joml.Matrix4f;
+import org.joml.Matrix3f;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class PlayerEffectsRenderHandler {
 	private static final Set<Integer> CURRENT_FRAME_PLAYERS = new HashSet<>();
 
 	@SubscribeEvent
-	public static void onRenderTick(TickEvent.RenderTickEvent event) {
-		if (event.phase == TickEvent.Phase.START) {
+	public static void onRenderTick(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event) {
+		{
 			PlayerEffectQueue.getAndClearAuras();
 			PlayerEffectQueue.getAndClearSparks();
 			PlayerEffectQueue.getAndClearWeapons();
@@ -63,30 +68,34 @@ public class PlayerEffectsRenderHandler {
 				mc.getMainRenderTarget().bindWrite(false);
 				renderWeapons(mc, event);
 				renderEffects(mc, event);
-				TransformationPostShaderManager.processShaderpackOutline(event.getPartialTick());
+				TransformationPostShaderManager.processShaderpackOutline(event.getPartialTick().getGameTimeDeltaPartialTick(false));
 			}
 			return;
 		}
 
 		if (stage == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
 			renderWeapons(mc, event);
-		} else if (stage == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+		} else if (stage == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+			// 1.21 composites the particles/weather/fabulous targets after their
+			// stage callbacks. Drawing DMZ effects there makes terrain and water
+			// overwrite them. Draw once into the final main target instead.
+			mc.getMainRenderTarget().bindWrite(false);
 			renderEffects(mc, event);
 		}
 	}
 
 	private static void renderWeapons(Minecraft mc, RenderLevelStageEvent event) {
 		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-		PoseStack poseStack = event.getPoseStack();
+		PoseStack poseStack = createDeferredEffectPose(event);
 		KiWeaponRenderer.processWeapons(buffers, poseStack);
 		buffers.endBatch();
 	}
 
 	private static void renderEffects(Minecraft mc, RenderLevelStageEvent event) {
 		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-		PoseStack poseStack = event.getPoseStack();
+		PoseStack poseStack = createDeferredEffectPose(event);
 		Matrix4f projectionMatrix = event.getProjectionMatrix();
-		float partialTick = event.getPartialTick();
+		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		long gameTime = mc.level.getGameTime();
 
 		CURRENT_FRAME_PLAYERS.clear();
@@ -137,6 +146,20 @@ public class PlayerEffectsRenderHandler {
 		for (var task : entityEffects) task.render();
 
 		AuraRenderer.cleanCaches(CURRENT_FRAME_PLAYERS);
+	}
+
+	/**
+	 * Deferred effects need the same model-view transform as terrain and entities.
+	 * The stage PoseStack is not reliable at every 1.21 render stage, but NeoForge
+	 * exposes the actual model-view matrix explicitly. Rebuilding this from yaw and
+	 * pitch keeps X/Y alignment while producing a different view-space Z, causing
+	 * terrain behind an aura to incorrectly win the depth test.
+	 */
+	private static PoseStack createDeferredEffectPose(RenderLevelStageEvent event) {
+		PoseStack poseStack = new PoseStack();
+		poseStack.last().pose().set(event.getModelViewMatrix());
+		poseStack.last().normal().set(new Matrix3f(event.getModelViewMatrix()));
+		return poseStack;
 	}
 }
 

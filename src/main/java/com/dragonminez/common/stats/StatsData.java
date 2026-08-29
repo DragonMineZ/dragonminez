@@ -26,25 +26,20 @@ import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.server.events.players.statuseffect.TransformStatusHandler;
 import com.dragonminez.server.util.FusionLogic;
-import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.Enchantments;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-@Getter
 public class StatsData {
 	private static final double DEFENSE_FLAT_FOLD = 0.12;
-
 	private static final double STAT_COST_PER_POINT = 1.25;
 	private static final double STAT_COST_LATE_KNEE_FRACTION = 0.05;
 	private static final double STAT_COST_LATE_EXPONENT = 0.7;
-
 	private final Player player;
 	private final Stats stats;
 	private final Status status;
@@ -58,7 +53,6 @@ public class StatsData {
 	private final BonusStats bonusStats;
 	private final Techniques techniques;
 	private final DynamicGrowthData dynamicGrowth;
-
 	private boolean hasInitializedHealth = false;
 	private boolean isDataLoaded = false;
 
@@ -92,15 +86,12 @@ public class StatsData {
 	public int getLevel() {
 		int maxLevel = getConfiguredMaxValue();
 		if (maxLevel <= 1) return 1;
-
 		int initialStats = getInitialTotalStats();
 		int totalStats = Math.max(initialStats, stats.getTotalStats());
-
 		long maxTotalStatsForLevel = Math.max(initialStats, getConfiguredMaxTotalStatsRaw());
 		double denominator = Math.max(1.0, (double) maxTotalStatsForLevel - initialStats);
 		double progress = (totalStats - initialStats) / denominator;
 		progress = Math.max(0.0, Math.min(1.0, progress));
-
 		int computedLevel = 1 + (int) Math.floor(progress * (maxLevel - 1));
 		return Math.max(1, Math.min(maxLevel, computedLevel));
 	}
@@ -113,14 +104,30 @@ public class StatsData {
 		return ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats();
 	}
 
+	/**
+	 * Total budget across all six main stats: {@code maxValue * 6}.
+	 * Must use long — with maxValue=1e9 the product is 6e9 and must not clamp to
+	 * {@link Integer#MAX_VALUE} (that left only ~147M for RES and 0 for VIT/PWR/ENE).
+	 */
+	public long getConfiguredMaxTotalStatsLong() {
+		long raw = getConfiguredMaxTotalStatsRaw();
+		return raw < 0L ? Long.MAX_VALUE / 8L : raw;
+	}
+
+	/** Int view for UI; saturates at Integer.MAX_VALUE when the long budget is larger. */
 	public int getConfiguredMaxTotalStats() {
-		long rawMax = getConfiguredMaxTotalStatsRaw();
+		long rawMax = getConfiguredMaxTotalStatsLong();
 		return rawMax > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rawMax;
 	}
 
+	public long getRemainingAssignableStatsLong() {
+		long remaining = getConfiguredMaxTotalStatsLong() - stats.getTotalStats();
+		return Math.max(0L, remaining);
+	}
+
 	public int getRemainingAssignableStats() {
-		long remaining = (long) getConfiguredMaxTotalStats() - stats.getTotalStats();
-		return remaining <= 0 ? 0 : (int) Math.min(Integer.MAX_VALUE, remaining);
+		long remaining = getRemainingAssignableStatsLong();
+		return remaining <= 0L ? 0 : (int) Math.min(Integer.MAX_VALUE, remaining);
 	}
 
 	public int getCurrentStatValue(String statName) {
@@ -135,22 +142,40 @@ public class StatsData {
 		};
 	}
 
+	/**
+	 * How many points may still be spent on this stat (gameplay add / UI).
+	 * Uses long total budget so high maxValue configs (e.g. 1_000_000_000) work.
+	 */
 	public int getMaxAllowedIncreaseForStat(String statName, int requestedAmount) {
 		int safeRequested = Math.max(0, requestedAmount);
 		if (safeRequested <= 0) return 0;
+		long remainingTotal = getRemainingAssignableStatsLong();
+		if (remainingTotal <= 0L) return 0;
+		long allowedByTotal = Math.min(safeRequested, remainingTotal);
+		if (!isMaxLevelValueInsteadOfStats()) {
+			long remainingStat = Math.max(0L, (long) getConfiguredMaxValue() - getCurrentStatValue(statName));
+			allowedByTotal = Math.min(allowedByTotal, remainingStat);
+		} else {
+			// Even in "max level instead of per-stat" mode, never exceed configured per-stat max
+			// when the operator/config has set an explicit maxValue.
+			long remainingStat = Math.max(0L, (long) getConfiguredMaxValue() - getCurrentStatValue(statName));
+			allowedByTotal = Math.min(allowedByTotal, remainingStat);
+		}
+		return (int) Math.min(Integer.MAX_VALUE, allowedByTotal);
+	}
 
-		int remainingTotal = getRemainingAssignableStats();
-		if (remainingTotal <= 0) return 0;
-
-		int allowedByTotal = Math.min(safeRequested, remainingTotal);
-		if (isMaxLevelValueInsteadOfStats()) return allowedByTotal;
-
-		int remainingStat = Math.max(0, getConfiguredMaxValue() - getCurrentStatValue(statName));
-		return Math.min(allowedByTotal, remainingStat);
+	/**
+	 * Absolute admin/set target for one stat: clamp to [0, maxValue] only
+	 * (does not consume shared total budget — operators expect set = set).
+	 */
+	public int clampStatToConfiguredMax(int value) {
+		int max = getConfiguredMaxValue();
+		if (value < 0) return 0;
+		return Math.min(value, max);
 	}
 
 	private static final double K = 100.0;
-	private static final double BP_REF_VALUE = 1_200.0;
+	private static final double BP_REF_VALUE = 1200.0;
 	private static final double BP_CURVE_EXPONENT = 1.2;
 	private static final double SUPPORT_STAT_BP_WEIGHT = 0.5;
 
@@ -161,14 +186,12 @@ public class StatsData {
 
 	public double getBattlePowerExact() {
 		if (status.isAndroidUpgraded()) return Float.MAX_VALUE;
-
 		double str = stats.getStrength();
 		double skp = stats.getStrikePower();
 		double res = stats.getResistance();
 		double vit = stats.getVitality();
 		double pwr = stats.getKiPower();
 		double ene = stats.getEnergy();
-
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(str), true);
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(str), false);
 		double multBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(skp), true);
@@ -181,33 +204,22 @@ public class StatsData {
 		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(pwr), false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(ene), true);
 		double flatBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(ene), false);
-
-		double rawPower =
-				((str + multBonusStr) * getStatScaling("STR") * getTotalMultiplier("STR")) + (flatBonusStr * getStatScaling("STR"))
-				+ ((skp + multBonusSkp) * getStatScaling("SKP") * getTotalMultiplier("SKP")) + (flatBonusSkp * getStatScaling("SKP"))
-				+ ((res + multBonusDef) * getStatScaling("DEF") * getTotalMultiplier("RES")) + (flatBonusDef * getStatScaling("DEF"))
-				+ ((pwr + multBonusPwr) * getStatScaling("PWR") * getTotalMultiplier("PWR")) + (flatBonusPwr * getStatScaling("PWR"));
-
-		rawPower += SUPPORT_STAT_BP_WEIGHT * (
-				((vit + multBonusVit) * getStatScaling("VIT") * getTotalMultiplier("VIT")) + (flatBonusVit * getStatScaling("VIT"))
-				+ ((ene + multBonusEne) * getStatScaling("ENE") * getTotalMultiplier("ENE")) + (flatBonusEne * getStatScaling("ENE")));
-
+		double rawPower = ((str + multBonusStr) * getStatScaling("STR") * getTotalMultiplier("STR")) + (flatBonusStr * getStatScaling("STR")) + ((skp + multBonusSkp) * getStatScaling("SKP") * getTotalMultiplier("SKP")) + (flatBonusSkp * getStatScaling("SKP")) + ((res + multBonusDef) * getStatScaling("DEF") * getTotalMultiplier("RES")) + (flatBonusDef * getStatScaling("DEF")) + ((pwr + multBonusPwr) * getStatScaling("PWR") * getTotalMultiplier("PWR")) + (flatBonusPwr * getStatScaling("PWR"));
+		rawPower += SUPPORT_STAT_BP_WEIGHT * (((vit + multBonusVit) * getStatScaling("VIT") * getTotalMultiplier("VIT")) + (flatBonusVit * getStatScaling("VIT")) + ((ene + multBonusEne) * getStatScaling("ENE") * getTotalMultiplier("ENE")) + (flatBonusEne * getStatScaling("ENE")));
 		if (Double.isNaN(rawPower) || rawPower <= 0) return 0.0;
-
 		double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
 		double bp = BP_REF_VALUE * Math.pow(rawPower / K, BP_CURVE_EXPONENT) * releaseMultiplier;
-
 		if (Double.isNaN(bp) || bp <= 0) return 0.0;
 		return bp;
 	}
 
-	private double getSecondaryAttributeValue(net.minecraft.world.entity.ai.attributes.Attribute attribute, double fallback) {
+	private double getSecondaryAttributeValue(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double fallback) {
 		if (player == null) return fallback;
 		var instance = player.getAttribute(attribute);
 		return instance != null ? instance.getValue() : fallback;
 	}
 
-	private double getSecondaryAttributeBaseValue(net.minecraft.world.entity.ai.attributes.Attribute attribute, double fallback) {
+	private double getSecondaryAttributeBaseValue(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double fallback) {
 		if (player == null) return fallback;
 		var instance = player.getAttribute(attribute);
 		return instance != null ? instance.getBaseValue() : fallback;
@@ -238,7 +250,7 @@ public class StatsData {
 		double eneMult = getTotalMultiplier("ENE");
 		double flatBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy), true);
-		double secondaryMaxEnergy = getSecondaryAttributeValue(MainAttributes.MAX_ENERGY.get(), 20.0);
+		double secondaryMaxEnergy = getSecondaryAttributeValue(MainAttributes.MAX_ENERGY, 20.0);
 		return Math.min((float) (secondaryMaxEnergy + ((energy + multBonusEne) * eneScaling * eneMult) + (flatBonusEne * eneScaling)), Float.MAX_VALUE - 1);
 	}
 
@@ -248,7 +260,7 @@ public class StatsData {
 		double stmMult = getTotalMultiplier("STM");
 		double flatBonusStm = bonusStats.calculateBonus("STM", (int) Math.round(resistance), false);
 		double multBonusStm = bonusStats.calculateBonus("STM", (int) Math.round(resistance), true);
-		double secondaryMaxStamina = getSecondaryAttributeValue(MainAttributes.MAX_STAMINA.get(), 20.0);
+		double secondaryMaxStamina = getSecondaryAttributeValue(MainAttributes.MAX_STAMINA, 20.0);
 		double maxStamina = secondaryMaxStamina + ((resistance + multBonusStm) * stmScaling * stmMult) + (flatBonusStm * stmScaling);
 		return Math.min((float) Math.max(0.0, maxStamina), Float.MAX_VALUE - 1);
 	}
@@ -256,28 +268,21 @@ public class StatsData {
 	public double getStaminaRegenPerSecond() {
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(character.getRaceName());
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, character.getCharacterClass());
-
 		int baseVit = stats.getVitality();
 		double flatBonusVit = bonusStats.calculateBonus("VIT", baseVit, false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
 		double vitMult = getTotalMultiplier("VIT");
 		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
 		double sp5 = classStats.getBaseSp5() + (effectiveVit * classStats.getSp5StmScaling());
-
-		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), player);
+		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY, player);
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
-
 		int meditationLevel = skills.getSkillLevel("meditation");
 		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * TickHandler.MEDITATION_BONUS_PER_LEVEL) : 1.0;
-
 		double adjustedStaminaDrain = getAdjustedStaminaDrain();
 		double regenMultiplier = 1.0;
 		if (adjustedStaminaDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedStaminaDrain / 50.0));
-		else if (adjustedStaminaDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedStaminaDrain);
-
-		double actionMod = (player != null && player.getPersistentData().contains("dmz_stamina_regen_mod"))
-				? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
-
+		 else if (adjustedStaminaDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedStaminaDrain);
+		double actionMod = (player != null && player.getPersistentData().contains("dmz_stamina_regen_mod")) ? player.getPersistentData().getDouble("dmz_stamina_regen_mod") : 1.0;
 		double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult * regenMultiplier * actionMod * secondaryStatEffects.getMultiplier(SecondaryStatEffects.STM_REGEN);
 		return PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
 	}
@@ -285,51 +290,40 @@ public class StatsData {
 	public double getHealthRegenPerSecond() {
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(character.getRaceName());
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, character.getCharacterClass());
-
 		int baseVit = stats.getVitality();
 		double flatBonusVit = bonusStats.calculateBonus("VIT", baseVit, false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", baseVit, true);
 		double vitMult = getTotalMultiplier("VIT");
 		double effectiveVit = ((baseVit + multBonusVit) * vitMult) + flatBonusVit;
 		double hp5 = classStats.getBaseHp5() + (effectiveVit * classStats.getHp5VitScaling());
-
-		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), player);
+		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.VITALITY_RECOVERY, player);
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
-
 		double adjustedHealthDrain = getAdjustedHealthDrain();
 		double regenMultiplier = 1.0;
 		if (adjustedHealthDrain > 0.0) regenMultiplier = Math.max(0.0, 1.0 - (adjustedHealthDrain / 10.0));
-		else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
-
+		 else if (adjustedHealthDrain < 0.0) regenMultiplier = 1.0 + Math.abs(adjustedHealthDrain);
 		return (hp5 / 5.0) * enchMult * regenMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.HP_REGEN);
 	}
 
 	public double getEnergyRegenPerSecond(boolean activeCharging) {
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(character.getRaceName());
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, character.getCharacterClass());
-
 		float currentEnergy = resources.getCurrentEnergy();
 		float maxEnergy = getMaxEnergy();
-
 		int baseEne = stats.getEnergy();
 		double flatBonusEne = bonusStats.calculateBonus("ENE", baseEne, false);
 		double multBonusEne = bonusStats.calculateBonus("ENE", baseEne, true);
 		double eneMult = getTotalMultiplier("ENE");
 		double effectiveEne = ((baseEne + multBonusEne) * eneMult) + flatBonusEne;
 		double ep5 = classStats.getBaseEp5() + (effectiveEne * classStats.getEp5EneScaling());
-
-		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), player);
+		int totalEnchLvl = TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.ENERGY_RECOVERY, player);
 		double enchMult = TickHandler.getRecoveryMultiplier(totalEnchLvl);
-
 		int meditationLevel = skills.getSkillLevel("meditation");
 		double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * TickHandler.MEDITATION_BONUS_PER_LEVEL) : 1.0;
-
-		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY.get(), player));
+		double kiConductivityMult = TickHandler.getRecoveryMultiplier(TickHandler.getTotalArmorEnchantmentLevel(MainEnchants.KI_CONDUCTIVITY, player));
 		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult * kiConductivityMult;
 		double androidRegenMult = isAndroidRacialActive() ? 2.0 : 1.0;
-
 		double energyChange = 0;
-
 		if (activeCharging) {
 			int kiBoostLevel = skills.getSkillLevel("kiboost");
 			double kiBoostMult = 1.0 + (kiBoostLevel * 0.25);
@@ -339,12 +333,11 @@ public class StatsData {
 		} else if (currentEnergy < maxEnergy) {
 			energyChange += PotionEffectHelper.applyKiRegenMultiplier(player, baseRegenPerSecond) * androidRegenMult;
 		}
-
 		return energyChange * secondaryStatEffects.getMultiplier(SecondaryStatEffects.ENE_REGEN);
 	}
 
 	public float getMaxPoise() {
-		double secondaryMaxPoise = getSecondaryAttributeValue(MainAttributes.MAX_POISE.get(), 25.0);
+		double secondaryMaxPoise = getSecondaryAttributeValue(MainAttributes.MAX_POISE, 25.0);
 		return Math.min((float) (secondaryMaxPoise + getDefenseLegacyUnits()), Float.MAX_VALUE - 1);
 	}
 
@@ -354,7 +347,7 @@ public class StatsData {
 		double strMult = getTotalMultiplier("STR");
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
-		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE, 1.0);
 		return secondaryMeleeDamage + ((strength + multBonusStr) * strScaling * strMult) + (flatBonusStr * strScaling);
 	}
 
@@ -365,7 +358,7 @@ public class StatsData {
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
-		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE, 1.0);
 		return secondaryMeleeDamage + (((strength + multBonusStr) * strScaling * strMult) + (flatBonusStr * strScaling)) * releaseMultiplier;
 	}
 
@@ -375,7 +368,7 @@ public class StatsData {
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
-		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE, 1.0);
 		return secondaryMeleeDamage + (((strength + multBonusStr) * strScaling) + (flatBonusStr * strScaling)) * releaseMultiplier;
 	}
 
@@ -386,13 +379,11 @@ public class StatsData {
 		double strScaling = getStatScaling("STR");
 		double skpMult = getTotalMultiplier("SKP");
 		double strMult = getTotalMultiplier("STR");
-
 		double flatBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower), false);
 		double multBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower), true);
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
-
-		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
+		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE, 1.0);
 		return secondaryStrikeDamage + ((strikePower + multBonusSkp) * skpScaling * skpMult) + (flatBonusSkp * skpScaling) + (((strength + multBonusStr) * strScaling * strMult) + (flatBonusStr * strScaling)) * 0.25;
 	}
 
@@ -404,13 +395,11 @@ public class StatsData {
 		double skpMult = getTotalMultiplier("SKP");
 		double strMult = getTotalMultiplier("STR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-
 		double flatBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower), false);
 		double multBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower), true);
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
-
-		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
+		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE, 1.0);
 		double baseDamage = ((strikePower + multBonusSkp) * skpScaling * skpMult) + (flatBonusSkp * skpScaling) + (((strength + multBonusStr) * strScaling * strMult) + (flatBonusStr * strScaling)) * 0.25;
 		return secondaryStrikeDamage + baseDamage * releaseMultiplier;
 	}
@@ -421,13 +410,11 @@ public class StatsData {
 		double skpScaling = getStatScaling("SKP");
 		double strScaling = getStatScaling("STR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-
 		double flatBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower), false);
 		double multBonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower), true);
 		double flatBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), false);
 		double multBonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength), true);
-
-		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
+		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE, 1.0);
 		double baseDamage = ((strikePower + multBonusSkp) * skpScaling) + (flatBonusSkp * skpScaling) + (((strength + multBonusStr) * strScaling) + (flatBonusStr * strScaling)) * 0.25;
 		return secondaryStrikeDamage + baseDamage * releaseMultiplier;
 	}
@@ -438,7 +425,7 @@ public class StatsData {
 		double pwrMult = getTotalMultiplier("PWR");
 		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), false);
 		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), true);
-		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
+		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE, 0.0);
 		return secondaryKiDamage + ((kiPower + multBonusPwr) * pwrScaling * pwrMult) + (flatBonusPwr * pwrScaling);
 	}
 
@@ -449,7 +436,7 @@ public class StatsData {
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
 		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), false);
 		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), true);
-		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
+		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE, 0.0);
 		return secondaryKiDamage + (((kiPower + multBonusPwr) * pwrScaling * pwrMult) + (flatBonusPwr * pwrScaling)) * releaseMultiplier;
 	}
 
@@ -459,7 +446,7 @@ public class StatsData {
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
 		double flatBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), false);
 		double multBonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower), true);
-		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
+		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE, 0.0);
 		return secondaryKiDamage + (((kiPower + multBonusPwr) * pwrScaling) + (flatBonusPwr * pwrScaling)) * releaseMultiplier;
 	}
 
@@ -470,11 +457,9 @@ public class StatsData {
 		double multBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), true);
 		double armor = player.getArmorValue();
 		double toughness = getArmorToughnessValue();
-		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
-
+		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE, 0.0);
 		double statDef = ((resistance + multBonusDef) * defScaling) + (flatBonusDef * defScaling);
-		double armorComponent = (armor * 0.50) + (toughness * 0.70);
-
+		double armorComponent = (armor * 0.5) + (toughness * 0.7);
 		return (secondaryDefense + statDef + armorComponent) * secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);
 	}
 
@@ -486,50 +471,36 @@ public class StatsData {
 		double multBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), true);
 		double armor = player.getArmorValue();
 		double toughness = getArmorToughnessValue();
-		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
-
+		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE, 0.0);
 		double statDef = ((resistance + multBonusDef) * defScaling) + (flatBonusDef * defScaling);
-		double armorComponent = (armor * 0.50) + (toughness * 0.70);
-
+		double armorComponent = (armor * 0.5) + (toughness * 0.7);
 		return (secondaryDefense + statDef + armorComponent) * releaseMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);
 	}
 
 	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken, double armorPenetration) {
 		double defMult = getTotalMultiplier("DEF");
 		double baseDefense = getDefense() * Math.max(1.0, defMult);
-
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
-
 		double rawFlatMitigation = baseDefense;
-
-		if (ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()
-				&& incomingDamage > 0.0
-				&& rawFlatMitigation >= incomingDamage * ConfigManager.getCombatConfig().getCancelDamageMitigationThreshold()) {
+		if (ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh() && incomingDamage > 0.0 && rawFlatMitigation >= incomingDamage * ConfigManager.getCombatConfig().getCancelDamageMitigationThreshold()) {
 			return 0.0;
 		}
-
 		double flatAbsorbCap = incomingDamage * ConfigManager.getCombatConfig().getFlatMitigationMaxAbsorbFraction();
 		double flatMitigation = Math.min(rawFlatMitigation, flatAbsorbCap);
 		double postFlatDamage = Math.max(0.0, incomingDamage - flatMitigation);
-
 		int maxValue = getConfiguredMaxValue();
 		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
 		double k_factor = Math.max(12.0, expectedMaxDef * ConfigManager.getCombatConfig().getDefenseReductionScale());
-
 		double baseReduction;
 		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
-		else baseReduction = baseDefense / (k_factor - baseDefense);
-
+		 else baseReduction = baseDefense / (k_factor - baseDefense);
 		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
 		baseReduction = Math.min(baseReduction, baseCap);
-
 		double remainingDamage = postFlatDamage * (1.0 - baseReduction);
-
 		int totalProtection = 0;
-		if (player != null) totalProtection = TickHandler.getTotalArmorEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
-
+		if (player != null) totalProtection = TickHandler.getTotalArmorEnchantmentLevel(Enchantments.PROTECTION, player);
 		double enchReduction = 0.0;
 		if (totalProtection > 0) {
 			double rawEffective = 0.0;
@@ -548,15 +519,11 @@ public class StatsData {
 			double maxEnchReductionAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
 			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
 		}
-
 		double afterEnchant = remainingDamage * (1.0 - enchReduction);
-
-		if (ConfigManager.getCombatConfig().getEnableAdaptativeDefenseMitigation()
-				&& rawFlatMitigation > 0.0 && incomingDamage > 0.0) {
+		if (ConfigManager.getCombatConfig().getEnableAdaptativeDefenseMitigation() && rawFlatMitigation > 0.0 && incomingDamage > 0.0) {
 			double ratio = incomingDamage / rawFlatMitigation;
 			afterEnchant *= (1.0 - computeAdaptativeDefenseMitigation(ratio));
 		}
-
 		return afterEnchant;
 	}
 
@@ -598,8 +565,7 @@ public class StatsData {
 		boolean hasStackMult = character.hasActiveStackForm() && character.getActiveStackFormData() != null;
 		double formCostMultiplier;
 		if (hasFormMult && hasStackMult) {
-			formCostMultiplier = (character.getActiveFormData().getMaxCostMultiplier()
-					+ character.getActiveStackFormData().getMaxCostMultiplier()) / 2.0;
+			formCostMultiplier = (character.getActiveFormData().getMaxCostMultiplier() + character.getActiveStackFormData().getMaxCostMultiplier()) / 2.0;
 		} else if (hasFormMult) {
 			formCostMultiplier = character.getActiveFormData().getMaxCostMultiplier();
 		} else if (hasStackMult) {
@@ -620,7 +586,7 @@ public class StatsData {
 		double strScaling = getStatScaling("STR");
 		double strMult = getTotalMultiplier("STR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE, 1.0);
 		return secondaryMeleeDamage + (strength * strScaling * strMult) * releaseMultiplier;
 	}
 
@@ -632,7 +598,7 @@ public class StatsData {
 		double skpMult = getTotalMultiplier("SKP");
 		double strMult = getTotalMultiplier("STR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
+		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE, 1.0);
 		double baseDamage = (strikePower * skpScaling * skpMult) + (strength * strScaling * strMult) * 0.25;
 		return secondaryStrikeDamage + baseDamage * releaseMultiplier;
 	}
@@ -642,7 +608,7 @@ public class StatsData {
 		double pwrScaling = getStatScaling("PWR");
 		double pwrMult = getTotalMultiplier("PWR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
+		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE, 0.0);
 		return secondaryKiDamage + (kiPower * pwrScaling * pwrMult) * releaseMultiplier;
 	}
 
@@ -653,10 +619,8 @@ public class StatsData {
 		double rawEnergyRatio = getReducedOffense() / Math.max(1.0, maxEnergy * 1.5);
 		double energyRatio = Math.max(1.0, Math.sqrt(rawEnergyRatio));
 		double formRawEneDrain = 0.0;
-		if (character.hasActiveForm() && character.getActiveFormData() != null)
-			formRawEneDrain += Math.max(0.0, character.getActiveFormData().getEnergyDrain());
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null)
-			formRawEneDrain += Math.max(0.0, character.getActiveStackFormData().getEnergyDrain());
+		if (character.hasActiveForm() && character.getActiveFormData() != null) formRawEneDrain += Math.max(0.0, character.getActiveFormData().getEnergyDrain());
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) formRawEneDrain += Math.max(0.0, character.getActiveStackFormData().getEnergyDrain());
 		double percentageEnergy = maxEnergy * (formRawEneDrain * 0.01) * 0.75;
 		return (base * energyRatio) + percentageEnergy;
 	}
@@ -684,24 +648,19 @@ public class StatsData {
 		double stack = getStackFormMultiplier(statName);
 		double effect = getEffectsMultiplier(statName);
 		double secondary = statName.equalsIgnoreCase("DEF") ? 1.0 : secondaryStatEffects.getMultiplier(statName);
-
 		if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect * secondary;
-		else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0) + (secondary - 1.0);
+		 else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0) + (secondary - 1.0);
 	}
 
 	public double getFormMultiplier(String statName) {
 		String currentForm = character.getActiveForm();
 		String currentFormGroup = character.getActiveFormGroup();
-
 		if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) return 1.0;
 		if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0;
-
 		var formConfig = ConfigManager.getFormGroup(character.getRaceName(), currentFormGroup);
 		if (formConfig == null) return 1.0;
-
 		var formData = formConfig.getForm(currentForm);
 		if (formData == null) return 1.0;
-
 		double baseMult = switch (statName.toUpperCase()) {
 			case "STR" -> formData.getStrMultiplier();
 			case "SKP" -> formData.getSkpMultiplier();
@@ -713,7 +672,6 @@ public class StatsData {
 			case "ENE" -> formData.getEneMultiplier();
 			default -> 1.0;
 		};
-
 		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
 		double result = applyMasteryStatBonus(formData, baseMult, mastery);
 		return applyMutantFormPowerModifier(currentFormGroup, result);
@@ -722,18 +680,12 @@ public class StatsData {
 	private double applyMutantFormPowerModifier(String groupName, double multiplier) {
 		if (multiplier <= 1.0) return multiplier;
 		if (!effects.hasEffect("mutant")) return multiplier;
-
 		var mutantConfig = ConfigManager.getServerConfig() != null ? ConfigManager.getServerConfig().getMutant() : null;
 		if (mutantConfig == null) return multiplier;
-
 		String legendaryGroup = mutantConfig.getLegendaryGroupName();
 		if (groupName == null || !groupName.equalsIgnoreCase(legendaryGroup)) return multiplier;
-
 		boolean hasSkill = skills.getSkillLevel("legendaryforms") > 0;
-		double factor = hasSkill
-				? 1.0 + mutantConfig.getPowerBonusBoostWithSkill()
-				: 1.0 - mutantConfig.getPowerBonusReductionNoSkill();
-
+		double factor = hasSkill ? 1.0 + mutantConfig.getPowerBonusBoostWithSkill() : 1.0 - mutantConfig.getPowerBonusReductionNoSkill();
 		return 1.0 + (multiplier - 1.0) * factor;
 	}
 
@@ -776,30 +728,18 @@ public class StatsData {
 		String raceName = character.getRaceName();
 		Map<String, FormConfig> groups = ConfigManager.getAllFormsForRace(raceName);
 		if (groups == null || groups.isEmpty()) return null;
-
 		FormConfig.FormData best = null;
 		double bestAverage = -1.0;
 		for (Map.Entry<String, FormConfig> entry : groups.entrySet()) {
 			String groupName = entry.getKey();
 			FormConfig group = entry.getValue();
 			if (group == null) continue;
-
 			List<FormConfig.FormData> unlocked = TransformationsHelper.getUnlockedForms(this, raceName, groupName);
 			for (FormConfig.FormData formData : unlocked) {
 				if (formData == null) continue;
 				if (formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
-
 				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
-
-				double average = (
-						getMasteryAdjustedMultiplier(formData, "STR", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "SKP", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "DEF", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "VIT", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "PWR", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "ENE", mastery)
-				) / 6.0;
-
+				double average = (getMasteryAdjustedMultiplier(formData, "STR", mastery) + getMasteryAdjustedMultiplier(formData, "SKP", mastery) + getMasteryAdjustedMultiplier(formData, "DEF", mastery) + getMasteryAdjustedMultiplier(formData, "VIT", mastery) + getMasteryAdjustedMultiplier(formData, "PWR", mastery) + getMasteryAdjustedMultiplier(formData, "ENE", mastery)) / 6.0;
 				if (average > bestAverage) {
 					bestAverage = average;
 					best = formData;
@@ -812,8 +752,7 @@ public class StatsData {
 	private Object[] getBestUltimateBaseFormWithGroup() {
 		String raceName = character.getRaceName();
 		Map<String, FormConfig> groups = ConfigManager.getAllFormsForRace(raceName);
-		if (groups == null || groups.isEmpty()) return new Object[]{null, null};
-
+		if (groups == null || groups.isEmpty()) return new Object[] {null, null};
 		FormConfig.FormData best = null;
 		String bestGroup = null;
 		double bestAverage = -1.0;
@@ -821,23 +760,12 @@ public class StatsData {
 			String groupName = entry.getKey();
 			FormConfig group = entry.getValue();
 			if (group == null) continue;
-
 			List<FormConfig.FormData> unlocked = TransformationsHelper.getUnlockedForms(this, raceName, groupName);
 			for (FormConfig.FormData formData : unlocked) {
 				if (formData == null) continue;
 				if (formData.isIncompatibleWith(StackForms.GROUP_ULTIMATE, StackForms.ULTIMATE)) continue;
-
 				double mastery = character.getFormMasteries().getMastery(groupName, formData.getName());
-
-				double average = (
-						getMasteryAdjustedMultiplier(formData, "STR", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "SKP", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "DEF", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "VIT", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "PWR", mastery)
-								+ getMasteryAdjustedMultiplier(formData, "ENE", mastery)
-				) / 6.0;
-
+				double average = (getMasteryAdjustedMultiplier(formData, "STR", mastery) + getMasteryAdjustedMultiplier(formData, "SKP", mastery) + getMasteryAdjustedMultiplier(formData, "DEF", mastery) + getMasteryAdjustedMultiplier(formData, "VIT", mastery) + getMasteryAdjustedMultiplier(formData, "PWR", mastery) + getMasteryAdjustedMultiplier(formData, "ENE", mastery)) / 6.0;
 				if (average > bestAverage) {
 					bestAverage = average;
 					best = formData;
@@ -845,7 +773,7 @@ public class StatsData {
 				}
 			}
 		}
-		return new Object[]{bestGroup, best};
+		return new Object[] {bestGroup, best};
 	}
 
 	private boolean isUltimateStackFormActive() {
@@ -856,37 +784,30 @@ public class StatsData {
 	public double getStackFormMultiplier(String statName) {
 		String currentForm = character.getActiveStackForm();
 		String currentFormGroup = character.getActiveStackFormGroup();
-
 		if (currentForm == null || currentForm.isEmpty()) return 1.0;
 		if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0;
-
 		var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);
 		if (formConfig == null) return 1.0;
-
 		var formData = formConfig.getForm(currentForm);
 		if (formData == null) return 1.0;
 		if (StackForms.GROUP_ULTIMATE.equalsIgnoreCase(currentFormGroup) && !ConfigManager.getServerConfig().getGameplay().getUltimateFormFixedValue()) {
 			Object[] bestResult = getBestUltimateBaseFormWithGroup();
 			String bestGroup = (String) bestResult[0];
 			FormConfig.FormData bestForm = (FormConfig.FormData) bestResult[1];
-
 			double bestMult;
 			if (bestForm != null) {
 				double bestMastery = character.getFormMasteries().getMastery(bestGroup, bestForm.getName());
 				bestMult = getMasteryAdjustedMultiplier(bestForm, statName, bestMastery);
 			} else bestMult = 1.0;
-
 			double ultimateMult = getBaseFormMultiplier(formData, statName);
 			return bestMult + ultimateMult - 1.0;
 		}
-
 		double mastery = character.getStackFormMasteries().getMastery(currentFormGroup, currentForm);
 		return getMasteryAdjustedMultiplier(formData, statName, mastery);
 	}
 
 	public double getEffectsMultiplier(String statName) {
 		double rawEffect = effects.getTotalEffectMultiplier();
-
 		return switch (statName.toUpperCase()) {
 			case "STR", "SKP", "PWR" -> rawEffect;
 			case "DEF" -> 1.0 + ((rawEffect - 1.0) * 0.5);
@@ -908,55 +829,41 @@ public class StatsData {
 	public double getAdjustedStaminaDrainMultiplier() {
 		double baseDrainMult = 1.0;
 		double stackDrainMult = 1.0;
-
 		if (character.hasActiveForm() || character.hasActiveStackForm()) {
 			var formData = character.getActiveFormData();
 			var stackFormData = character.getActiveStackFormData();
 			if (character.hasActiveForm() && formData != null) baseDrainMult = formData.getStaminaDrainMultiplier();
 			if (character.hasActiveStackForm() && stackFormData != null) stackDrainMult = stackFormData.getStaminaDrainMultiplier();
 		}
-
 		return Math.max(0.001, baseDrainMult * stackDrainMult * getLoadDrainMultiplier());
 	}
 
 	public double getAdjustedEnergyDrain() {
 		if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 0.0;
-
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
 		var powerRelease = resources.getPowerRelease() / 100.0;
 		if (formData == null && stackFormData == null) return 0.0;
-
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
 			double baseDrain = formData.getEnergyDrain();
-			if (character.hasActiveStackForm() && stackFormData != null)
-				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-
+			if (character.hasActiveStackForm() && stackFormData != null) baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
 			double costFactor = getMasteryCostFactor(formData, mastery);
-
 			if (baseDrain < 0) adjustedBaseDrain = (baseDrain / costFactor) * powerRelease;
-			else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
+			 else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
 		}
-
 		double adjustedStackDrain = 0;
 		if (character.hasActiveStackForm() && stackFormData != null) {
 			double stackDrain = stackFormData.getEnergyDrain();
-			if (character.hasActiveForm() && formData != null)
-				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-
-			double stackMastery = isUltimateStackFormActive() ? 0.0
-					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+			if (character.hasActiveForm() && formData != null) stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+			double stackMastery = isUltimateStackFormActive() ? 0.0 : character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackCostFactor = getMasteryCostFactor(stackFormData, stackMastery);
-
 			if (stackDrain < 0) adjustedStackDrain = (stackDrain / stackCostFactor) * powerRelease;
-			else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
+			 else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
 		}
-
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-
 		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
 		if (scaledDrain == 0) return 0.0;
 		if (drainAmount < 0) return Math.min(-1, scaledDrain);
@@ -965,42 +872,30 @@ public class StatsData {
 
 	public double getAdjustedStaminaDrain() {
 		if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 0.0;
-
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
 		var powerRelease = resources.getPowerRelease() / 100.0;
 		if (formData == null && stackFormData == null) return 0.0;
-
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
 			double baseDrain = formData.getStaminaDrain();
-			if (character.hasActiveStackForm() && stackFormData != null)
-				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-
+			if (character.hasActiveStackForm() && stackFormData != null) baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
 			double costFactor = getMasteryCostFactor(formData, mastery);
-
 			if (baseDrain < 0) adjustedBaseDrain = (baseDrain / costFactor) * powerRelease;
-			else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
+			 else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
 		}
-
 		double adjustedStackDrain = 0;
 		if (character.hasActiveStackForm() && stackFormData != null) {
 			double stackDrain = stackFormData.getStaminaDrain();
-			if (character.hasActiveForm() && formData != null)
-				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-
-			double stackMastery = isUltimateStackFormActive() ? 0.0
-					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+			if (character.hasActiveForm() && formData != null) stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+			double stackMastery = isUltimateStackFormActive() ? 0.0 : character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackCostFactor = getMasteryCostFactor(stackFormData, stackMastery);
-
 			if (stackDrain < 0) adjustedStackDrain = (stackDrain / stackCostFactor) * powerRelease;
-			else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
+			 else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
 		}
-
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-
 		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
 		if (scaledDrain == 0) return 0.0;
 		if (drainAmount < 0) return Math.min(-1, scaledDrain);
@@ -1009,42 +904,30 @@ public class StatsData {
 
 	public double getAdjustedHealthDrain() {
 		if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 0.0;
-
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
 		var powerRelease = resources.getPowerRelease() / 100.0;
 		if (formData == null && stackFormData == null) return 0.0;
-
 		double adjustedBaseDrain = 0;
 		if (character.hasActiveForm() && formData != null) {
 			double baseDrain = formData.getHealthDrain();
-			if (character.hasActiveStackForm() && stackFormData != null)
-				baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-
+			if (character.hasActiveStackForm() && stackFormData != null) baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
 			double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
 			double costFactor = getMasteryCostFactor(formData, mastery);
-
 			if (baseDrain < 0) adjustedBaseDrain = (baseDrain / costFactor) * powerRelease;
-			else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
+			 else adjustedBaseDrain = (baseDrain * costFactor) * powerRelease;
 		}
-
 		double adjustedStackDrain = 0;
 		if (character.hasActiveStackForm() && stackFormData != null) {
 			double stackDrain = stackFormData.getHealthDrain();
-			if (character.hasActiveForm() && formData != null)
-				stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-
-			double stackMastery = isUltimateStackFormActive() ? 0.0
-					: character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+			if (character.hasActiveForm() && formData != null) stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+			double stackMastery = isUltimateStackFormActive() ? 0.0 : character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
 			double stackCostFactor = getMasteryCostFactor(stackFormData, stackMastery);
-
 			if (stackDrain < 0) adjustedStackDrain = (stackDrain / stackCostFactor) * powerRelease;
-			else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
+			 else adjustedStackDrain = (stackDrain * stackCostFactor) * powerRelease;
 		}
-
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
 		if (drainAmount == 0) return 0.0;
-
 		double scaledDrain = drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain() * getLoadDrainMultiplier();
 		if (scaledDrain == 0) return 0.0;
 		if (drainAmount < 0) return Math.min(-1, scaledDrain);
@@ -1052,32 +935,24 @@ public class StatsData {
 	}
 
 	public float[] snapshotMultiplierResources() {
-		return new float[]{getMaxHealth(), getMaxEnergy(), getMaxStamina()};
+		return new float[] {getMaxHealth(), getMaxEnergy(), getMaxStamina()};
 	}
 
 	public void restoreMultiplierGains(ServerPlayer player, float[] snapshot) {
 		if (snapshot == null || snapshot.length < 3) return;
-
 		StatsEvents.applyHealthBonus(player);
-
 		float newMaxHealth = getMaxHealth();
 		float healthDelta = newMaxHealth - snapshot[0];
 		if (healthDelta > 0) player.setHealth(Math.min(newMaxHealth, player.getHealth() + healthDelta));
-
 		float newMaxEnergy = getMaxEnergy();
 		float energyDelta = newMaxEnergy - snapshot[1];
 		if (energyDelta > 0) resources.setCurrentEnergy(Math.min(newMaxEnergy, resources.getCurrentEnergy() + energyDelta));
-
 		float newMaxStamina = getMaxStamina();
 		float staminaDelta = newMaxStamina - snapshot[2];
 		if (staminaDelta > 0) resources.setCurrentStamina(Math.min(newMaxStamina, resources.getCurrentStamina() + staminaDelta));
 	}
 
-	public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
-	                                       int hairId, CustomHair customHair,
-	                                       int bodyType, int eyesType, int noseType, int mouthType, int tattooType, float boobScale,
-	                                       String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
-	                                       String eye1Color, String eye2Color, String auraColor) {
+	public void initializeWithRaceAndClass(String raceName, String characterClass, String gender, int hairId, CustomHair customHair, int bodyType, int eyesType, int noseType, int mouthType, int tattooType, float boobScale, String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3, String eye1Color, String eye2Color, String auraColor) {
 		character.setRace(raceName);
 		character.setGender(gender);
 		character.setCharacterClass(characterClass);
@@ -1098,17 +973,11 @@ public class StatsData {
 		character.setEye2Color(eye2Color);
 		character.setAuraColor(auraColor);
 		status.setHasCreatedCharacter(true);
-
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
 		RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
-
 		if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
-
-		boolean hasDefaultStats = stats.getStrength() == 0 && stats.getStrikePower() == 0 &&
-				stats.getResistance() == 0 && stats.getVitality() == 0 &&
-				stats.getKiPower() == 0 && stats.getEnergy() == 0;
-
+		boolean hasDefaultStats = stats.getStrength() == 0 && stats.getStrikePower() == 0 && stats.getResistance() == 0 && stats.getVitality() == 0 && stats.getKiPower() == 0 && stats.getEnergy() == 0;
 		if (hasDefaultStats) {
 			stats.setStrength(baseStats.getStrength());
 			stats.setStrikePower(baseStats.getStrikePower());
@@ -1117,21 +986,18 @@ public class StatsData {
 			stats.setKiPower(baseStats.getKiPower());
 			stats.setEnergy(baseStats.getEnergy());
 		}
-
 		resources.setCurrentEnergy(getMaxEnergy());
 		resources.setCurrentStamina(getMaxStamina());
 		resources.setCurrentPoise(getMaxPoise());
 		resources.setPowerRelease(0);
 		resources.setAlignment(100);
 		character.setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(this));
-
 		updateTransformationSkillLimits(raceName);
 	}
 
 	public void updateTransformationSkillLimits(String raceName) {
 		skills.refreshNonFormSkillMaxLevels();
 		status.validateKiWeaponType();
-
 		RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
 		if (charConfig != null) {
 			Collection<String> formSkills = charConfig.getFormSkills();
@@ -1153,11 +1019,9 @@ public class StatsData {
 	public double getStatScaling(String statName) {
 		String raceName = character.getRaceName();
 		String characterClass = character.getCharacterClass();
-
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
 		RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
-
 		if (scaling == null) return switch (statName.toUpperCase()) {
 			case "STR" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getStrengthScaling();
 			case "SKP" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getStrikePowerScaling();
@@ -1168,7 +1032,6 @@ public class StatsData {
 			case "ENE" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getEnergyScaling();
 			default -> 1.0;
 		};
-
 		return switch (statName.toUpperCase()) {
 			case "STR" -> scaling.getStrengthScaling();
 			case "SKP" -> scaling.getStrikePowerScaling();
@@ -1188,19 +1051,15 @@ public class StatsData {
 
 	private int getInitialTotalStats() {
 		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
-		return baseStats.getStrength() + baseStats.getStrikePower() +
-				baseStats.getResistance() + baseStats.getVitality() +
-				baseStats.getKiPower() + baseStats.getEnergy();
+		return baseStats.getStrength() + baseStats.getStrikePower() + baseStats.getResistance() + baseStats.getVitality() + baseStats.getKiPower() + baseStats.getEnergy();
 	}
 
 	private RaceStatsConfig.BaseStats getInitialBaseStats() {
 		String raceName = character.getRaceName();
 		String characterClass = character.getCharacterClass();
-
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
 		RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
-
 		if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
 		return baseStats;
 	}
@@ -1211,7 +1070,6 @@ public class StatsData {
 
 	public int relocateStats(ServerPlayer serverPlayer) {
 		RaceStatsConfig.BaseStats baseStats = getInitialBaseStats();
-
 		int gained = 0;
 		gained += Math.max(0, stats.getStrength() - baseStats.getStrength());
 		gained += Math.max(0, stats.getStrikePower() - baseStats.getStrikePower());
@@ -1219,31 +1077,23 @@ public class StatsData {
 		gained += Math.max(0, stats.getVitality() - baseStats.getVitality());
 		gained += Math.max(0, stats.getKiPower() - baseStats.getKiPower());
 		gained += Math.max(0, stats.getEnergy() - baseStats.getEnergy());
-
 		if (gained <= 0) return 0;
-
 		float oldHealthBonus = getHealthBonus();
-
 		stats.setStrength(baseStats.getStrength());
 		stats.setStrikePower(baseStats.getStrikePower());
 		stats.setResistance(baseStats.getResistance());
 		stats.setVitality(baseStats.getVitality());
 		stats.setKiPower(baseStats.getKiPower());
 		stats.setEnergy(baseStats.getEnergy());
-
 		float newHealthBonus = getHealthBonus();
-		if (newHealthBonus < oldHealthBonus) {
-			var attribute = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
-			if (attribute != null) {
-				attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
-				attribute.addPermanentModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION));
+		if (newHealthBonus != oldHealthBonus) {
+			StatsEvents.applyHealthBonus(serverPlayer);
+			if (serverPlayer.getHealth() > serverPlayer.getMaxHealth()) {
+				serverPlayer.setHealth(serverPlayer.getMaxHealth());
 			}
-			if (serverPlayer.getHealth() > serverPlayer.getMaxHealth()) serverPlayer.setHealth(serverPlayer.getMaxHealth());
 		}
-
 		resources.setCurrentEnergy(Math.min(resources.getCurrentEnergy(), getMaxEnergy()));
 		resources.setCurrentStamina(Math.min(resources.getCurrentStamina(), getMaxStamina()));
-
 		resources.addPendingAttributePoints(gained);
 		return gained;
 	}
@@ -1253,9 +1103,7 @@ public class StatsData {
 	}
 
 	public boolean isHumanRacialActive() {
-		return ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-				&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
-				&& ConfigManager.getRaceCharacter(character.getRace()).getRacialSkill().equals("human");
+		return ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill() && ConfigManager.getRaceCharacter(character.getRace()).getRacialSkill().equals("human");
 	}
 
 	public boolean isAndroidRacialActive() {
@@ -1263,8 +1111,8 @@ public class StatsData {
 	}
 
 	public double getKiAttackCostModifier() {
-		if (isAndroidRacialActive()) return 0.50;
-		if (isHumanRacialActive())   return 0.75;
+		if (isAndroidRacialActive()) return 0.5;
+		if (isHumanRacialActive()) return 0.75;
 		return 1.0;
 	}
 
@@ -1294,7 +1142,6 @@ public class StatsData {
 		total += (getTpPotionEffectMultiplier() - 1.0);
 		total += (getDifficultyTpMultiplier() - 1.0);
 		total += (getTpWeightBellMultiplier() - 1.0);
-
 		if (ConfigManager.getServerConfig().getGameplay() != null) {
 			if (ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled()) {
 				total += (getTpGravityMultiplier() - 1.0);
@@ -1318,9 +1165,7 @@ public class StatsData {
 	}
 
 	public boolean isFrostDemonTpPassiveActive() {
-		return ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
-				&& ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill()
-				&& "frostdemon".equals(ConfigManager.getRaceCharacter(character.getRace()).getRacialSkill());
+		return ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill() && "frostdemon".equals(ConfigManager.getRaceCharacter(character.getRace()).getRacialSkill());
 	}
 
 	public double getTpFrostDemonMultiplier() {
@@ -1367,7 +1212,7 @@ public class StatsData {
 
 	public double getTpPotionEffectMultiplier() {
 		if (player == null) return 1.0;
-		return PotionEffectHelper.getMultiplierFromEffect(player, MainEffects.TP_GAIN.get(), "tp_gain");
+		return PotionEffectHelper.getMultiplierFromEffect(player, MainEffects.TP_GAIN, "tp_gain");
 	}
 
 	public double getMutantTpMultiplier() {
@@ -1379,7 +1224,6 @@ public class StatsData {
 	public double getTpTotalMultiplier() {
 		double finalTotal = getTpAdditiveMultiplier();
 		finalTotal += (getProgressionTpGainMultiplier() - 1.0);
-
 		return Math.max(0.0, finalTotal);
 	}
 
@@ -1393,7 +1237,9 @@ public class StatsData {
 				case CLASS -> total += (getTpClassMultiplier() - 1.0);
 				case RACIALSKILL -> total += (getTpFrostDemonMultiplier() - 1.0);
 				case HTC -> total += (getTpHTCMultiplier() - 1.0);
-				case GRAVITY -> { if (gravityEnabled) total += (getTpGravityMultiplier() - 1.0); }
+				case GRAVITY -> {
+					if (gravityEnabled) total += (getTpGravityMultiplier() - 1.0);
+				}
 				case WEIGHTS -> total += (getTpWeightBellMultiplier() - 1.0);
 				case GLOBAL -> total += (getTpGlobalMultiplier() - 1.0);
 				case POTION -> total += (getTpPotionEffectMultiplier() - 1.0);
@@ -1432,11 +1278,9 @@ public class StatsData {
 		double strength = ConfigManager.getServerConfig().getGameplay().getIncreaseTPGainRelativeToTPCost();
 		if (strength <= 0.0) return 1.0;
 		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return 1.0;
-
 		int maxCost = getSingleStatCost(getConfiguredMaxTotalStats());
 		if (maxCost <= 0) return 1.0;
 		int currentCost = getSingleStatCost(stats.getTotalStats());
-
 		double factor = Math.max(0.0, Math.min(1.0, (double) currentCost / maxCost));
 		return 1.0 + strength * factor;
 	}
@@ -1445,7 +1289,6 @@ public class StatsData {
 		double totalStats = Math.max(0.0, simulatedTotalStats);
 		double knee = getConfiguredMaxTotalStats() * STAT_COST_LATE_KNEE_FRACTION;
 		if (knee <= 0.0 || totalStats <= knee) return totalStats * STAT_COST_PER_POINT;
-
 		double kneeCost = knee * STAT_COST_PER_POINT;
 		double ratio = totalStats / knee;
 		return kneeCost + (kneeCost / STAT_COST_LATE_EXPONENT) * (Math.pow(ratio, STAT_COST_LATE_EXPONENT) - 1.0);
@@ -1454,22 +1297,16 @@ public class StatsData {
 	public int getSingleStatCost(int simulatedTotalStats) {
 		var dynamicGrowthConfig = ConfigManager.getServerConfig().getDynamicGrowth();
 		if (!dynamicGrowthConfig.isManualTpPurchasesEnabled()) return Integer.MAX_VALUE;
-
 		double globalMult = ConfigManager.getServerConfig().getGameplay().getGlobalTpCostMultiplier();
 		double raceMult = getRaceTpCostMultiplier();
 		double totalMult = globalMult * raceMult;
-
 		int minCost = ConfigManager.getServerConfig().getGameplay().getMinTPCost();
 		int discountThreshold = ConfigManager.getServerConfig().getGameplay().getMaxTPDiscount();
-
 		double baseCost = minCost + statCostVariableComponent(simulatedTotalStats);
-
 		int earlyGameDiscount = 0;
 		if (simulatedTotalStats < discountThreshold) earlyGameDiscount = discountThreshold - simulatedTotalStats;
-
 		int finalCost = (int) (baseCost * totalMult) - earlyGameDiscount;
 		finalCost = Math.max(minCost, finalCost);
-
 		double tpCostMultiplier = dynamicGrowthConfig.getAttributeTpCostMultiplier();
 		if (tpCostMultiplier > 1.0) {
 			double scaled = Math.ceil(finalCost * tpCostMultiplier);
@@ -1479,12 +1316,10 @@ public class StatsData {
 	}
 
 	public int calculateRecursiveCost(int statsToAdd, int maxStats) {
-		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled())
-			return statsToAdd <= 0 ? 0 : Integer.MAX_VALUE;
+		if (!ConfigManager.getServerConfig().getDynamicGrowth().isManualTpPurchasesEnabled()) return statsToAdd <= 0 ? 0 : Integer.MAX_VALUE;
 		int totalCost = 0;
 		int currentTotalStats = stats.getTotalStats();
 		int totalCap = getConfiguredMaxTotalStats();
-
 		for (int i = 0; i < statsToAdd; i++) {
 			if (currentTotalStats + i >= totalCap) break;
 			totalCost += getSingleStatCost(currentTotalStats + i);
@@ -1498,18 +1333,13 @@ public class StatsData {
 		int costAccumulated = 0;
 		int currentTotalStats = stats.getTotalStats();
 		int totalCap = getConfiguredMaxTotalStats();
-
 		while (statsIncreased < maxStatsToAdd) {
 			if (currentTotalStats + statsIncreased >= totalCap) break;
-
 			int costForNext = getSingleStatCost(currentTotalStats + statsIncreased);
-
 			if (costAccumulated + costForNext > availableTPs) break;
-
 			costAccumulated += costForNext;
 			statsIncreased++;
 		}
-
 		return statsIncreased;
 	}
 
@@ -1524,14 +1354,12 @@ public class StatsData {
 			int newEne = (currentStats.getEnergy() * keepPercentage) / 100;
 			float currentTPs = getResources().getTrainingPoints();
 			float newTPs = (currentTPs * keepPercentage) / 100;
-
 			currentStats.setStrength(Math.max(0, newStr));
 			currentStats.setStrikePower(Math.max(0, newSkp));
 			currentStats.setResistance(Math.max(0, newRes));
 			currentStats.setVitality(Math.max(0, newVit));
 			currentStats.setKiPower(Math.max(0, newPwr));
 			currentStats.setEnergy(Math.max(0, newEne));
-
 			getResources().setTrainingPoints(newTPs);
 		} else {
 			currentStats.setStrength(0);
@@ -1542,12 +1370,10 @@ public class StatsData {
 			currentStats.setEnergy(0);
 			getResources().setTrainingPoints(0);
 		}
-
 		if (getStatus().isFused()) FusionLogic.endFusion(player, this, false);
 		getCharacter().clearActiveForm(player);
 		getCharacter().clearActiveStackForm(player);
 		TransformStatusHandler.clearAllPersistentFormEffects(player);
-
 		getStatus().reset();
 		getResources().reset();
 		getResources().setPendingAttributePoints(0);
@@ -1557,22 +1383,19 @@ public class StatsData {
 		getPlayerQuestData().clearStoryResets();
 		getCharacter().clearInteractedMasters();
 		getDynamicGrowth().clear();
-
 		if (!keepSkills) {
 			getSkills().removeAllSkills();
 			getEffects().removeAllEffects();
 			getSecondaryStatEffects().clear();
 			getTechniques().clearAllTechniques();
 		}
-
 		getCooldowns().clearCooldowns();
 		getBonusStats().clearAllStats();
 		if (forceSaiyanTail) getCharacter().setHasSaiyanTail(true);
-
 		player.refreshDimensions();
 		player.setHealth(20.0F);
 		var attribute = player.getAttribute(Attributes.MAX_HEALTH);
-		if (attribute != null) attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+		if (attribute != null) attribute.removeModifier(com.dragonminez.common.util.AttributeMods.id(StatsEvents.DMZ_HEALTH_MODIFIER_UUID));
 		player.setHealth(20.0F);
 	}
 
@@ -1592,7 +1415,7 @@ public class StatsData {
 		nbt.put("SecondaryStatEffects", secondaryStatEffects.save());
 		nbt.put("PlayerQuestData", playerQuestData.serializeNBT());
 		nbt.put("BonusStats", bonusStats.save());
-		nbt.put("Techniques",  techniques.save());
+		nbt.put("Techniques", techniques.save());
 		nbt.put("DynamicGrowth", dynamicGrowth.save());
 		nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
 		return nbt;
@@ -1607,15 +1430,16 @@ public class StatsData {
 		if (nbt.contains("Skills")) skills.load(nbt.getCompound("Skills"));
 		if (nbt.contains("Effects")) effects.load(nbt.getCompound("Effects"));
 		if (nbt.contains("SecondaryStatEffects")) secondaryStatEffects.load(nbt.getCompound("SecondaryStatEffects"));
-		else secondaryStatEffects.clear();
+		 else secondaryStatEffects.clear();
 		if (nbt.contains("PlayerQuestData")) playerQuestData.deserializeNBT(nbt.getCompound("PlayerQuestData"));
-		else throw new ClassNotFoundException("PlayerQuestData not found in NBT. This is required for quest progression to work correctly. " +
-				"Please update the mod or re-generate your config files.");
+		 else throw new ClassNotFoundException("PlayerQuestData not found in NBT. This is required for quest progression to work correctly. " + "Please update the mod or re-generate your config files.");
 		if (nbt.contains("BonusStats")) bonusStats.load(nbt.getCompound("BonusStats"));
 		if (nbt.contains("Techniques")) techniques.load(nbt.getCompound("Techniques"));
 		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
+		// NeoForge attachment deserialize can run before AttributeInstances exist; re-push fields.
+		stats.applyToAttributes();
 		this.isDataLoaded = true;
 	}
 
@@ -1633,8 +1457,88 @@ public class StatsData {
 		this.techniques.copyFrom(other.techniques);
 		this.dynamicGrowth.copyFrom(other.dynamicGrowth);
 		this.hasInitializedHealth = other.hasInitializedHealth;
-		if (character.getRaceName() != null && !character.getRaceName().isEmpty())
-			updateTransformationSkillLimits(character.getRaceName());
+		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
+		stats.applyToAttributes();
 		this.isDataLoaded = true;
+	}
+
+	/** Re-bind live attribute mirrors after login/clone (NeoForge attach order). */
+	public void reapplyStatAttributes() {
+		stats.applyToAttributes();
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Player getPlayer() {
+		return this.player;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Stats getStats() {
+		return this.stats;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Status getStatus() {
+		return this.status;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Cooldowns getCooldowns() {
+		return this.cooldowns;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Character getCharacter() {
+		return this.character;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Resources getResources() {
+		return this.resources;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Skills getSkills() {
+		return this.skills;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Effects getEffects() {
+		return this.effects;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public SecondaryStatEffects getSecondaryStatEffects() {
+		return this.secondaryStatEffects;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public PlayerQuestData getPlayerQuestData() {
+		return this.playerQuestData;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public BonusStats getBonusStats() {
+		return this.bonusStats;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Techniques getTechniques() {
+		return this.techniques;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public DynamicGrowthData getDynamicGrowth() {
+		return this.dynamicGrowth;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public boolean isHasInitializedHealth() {
+		return this.hasInitializedHealth;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public boolean isDataLoaded() {
+		return this.isDataLoaded;
 	}
 }

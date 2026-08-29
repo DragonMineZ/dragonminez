@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.core.object.Color;
+import software.bernie.geckolib.util.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class SPBlueHurricaneRenderer<T extends SPBlueHurricaneEntity> extends GeoEntityRenderer<T> {

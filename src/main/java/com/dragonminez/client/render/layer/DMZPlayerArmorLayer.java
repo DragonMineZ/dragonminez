@@ -1,34 +1,41 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.Reference;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.armor.DbzArmorTextured;
+import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.ItemArmorGeoLayer;
 
 import javax.annotation.Nullable;
 
 public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends ItemArmorGeoLayer<T> {
+	private ArmorBaseModel dmzArmorModel;
 
 	public DMZPlayerArmorLayer(GeoRenderer<T> geoRenderer) {
 		super(geoRenderer);
@@ -38,6 +45,39 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel bakedModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (animatable.isSpectator()) return;
 		super.render(poseStack, animatable, bakedModel, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+	}
+
+	@Override
+	public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType,
+			MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight,
+			int packedOverlay) {
+		ItemStack stack = getArmorItemForBone(bone, animatable);
+		if (stack == null || !(stack.getItem() instanceof DbzArmorTextured)) {
+			super.renderForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick,
+					packedLight, packedOverlay);
+			return;
+		}
+
+		EquipmentSlot slot = getEquipmentSlotForBone(bone, stack, animatable);
+		HumanoidModel<?> armorModel = getModelForItem(bone, slot, stack, animatable);
+		ModelPart armorPart = getModelPartForBone(bone, slot, stack, animatable, armorModel);
+		if (armorPart.isEmpty() || bone.getCubes().isEmpty()) return;
+
+		poseStack.pushPose();
+		poseStack.scale(-1.0F, -1.0F, 1.0F);
+		prepModelPartForRender(poseStack, bone, armorPart);
+
+		VertexConsumer armorBuffer = getVanillaArmorBuffer(bufferSource, animatable, stack, slot, bone,
+				null, packedLight, packedOverlay, false);
+		armorPart.render(poseStack, armorBuffer, packedLight, packedOverlay, -1);
+
+		if (stack.hasFoil()) {
+			VertexConsumer glintBuffer = getVanillaArmorBuffer(bufferSource, animatable, stack, slot, bone,
+					null, packedLight, packedOverlay, true);
+			armorPart.render(poseStack, glintBuffer, packedLight, packedOverlay, -1);
+		}
+
+		poseStack.popPose();
 	}
 
     @Override
@@ -132,6 +172,35 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			case "armorLeftLeg", "armorLeftBoot" -> baseModel.leftLeg;
 			default -> super.getModelPartForBone(bone, slot, stack, animatable, baseModel);
 		};
+	}
+
+	@Override
+	protected HumanoidModel<?> getModelForItem(GeoBone bone, EquipmentSlot slot, ItemStack stack, T animatable) {
+		if (!(stack.getItem() instanceof DbzArmorTextured)) {
+			return super.getModelForItem(bone, slot, stack, animatable);
+		}
+
+		if (dmzArmorModel == null) {
+			dmzArmorModel = new ArmorBaseModel(Minecraft.getInstance().getEntityModels().bakeLayer(ArmorBaseModel.LAYER_LOCATION));
+		}
+		return dmzArmorModel;
+	}
+
+	@Override
+	protected VertexConsumer getVanillaArmorBuffer(MultiBufferSource bufferSource, T animatable, ItemStack stack,
+			EquipmentSlot slot, GeoBone bone, ArmorMaterial.Layer layer, int packedLight, int packedOverlay,
+			boolean glint) {
+		if (!(stack.getItem() instanceof DbzArmorTextured textured)) {
+			return super.getVanillaArmorBuffer(bufferSource, animatable, stack, slot, bone, layer,
+					packedLight, packedOverlay, glint);
+		}
+
+		if (glint) return bufferSource.getBuffer(RenderType.armorEntityGlint());
+
+		String namespace = Reference.MOD_ID;
+		if (stack.getItem() instanceof DbzArmorItem dbzArmor) namespace = dbzArmor.getModId();
+		ResourceLocation texture = ArmorTextureResolver.resolve(namespace, textured.getItemId(), slot, stack);
+		return bufferSource.getBuffer(RenderType.armorCutoutNoCull(texture));
 	}
 
 

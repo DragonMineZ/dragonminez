@@ -8,8 +8,8 @@ import com.dragonminez.common.stats.character.Character;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +26,7 @@ public class TextureCounter {
     private static final Map<String, Integer> TATTOO_TYPE_CACHE = new HashMap<>();
 
     public static ResourceLocation cache(String namespace, String path) {
-        return CACHE.computeIfAbsent(namespace + ":" + path, ResourceLocation::new);
+        return CACHE.computeIfAbsent(namespace + ":" + path, ResourceLocation::parse);
     }
 
     private static String normalizeRace(String race) {

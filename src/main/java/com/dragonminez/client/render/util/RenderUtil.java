@@ -6,11 +6,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.UseAnim;
 import org.joml.Vector3d;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.cache.object.GeoBone;
 
 public class RenderUtil {
 
-    public static void rotateHead(AbstractClientPlayer animatable, CoreGeoBone bone, float partialTick) {
+    public static void rotateHead(AbstractClientPlayer animatable, GeoBone bone, float partialTick) {
         final float lerpBodyRot = Mth.lerp(partialTick, animatable.yBodyRotO,
                 animatable.yBodyRot);
         final float lerpHeadRot = Mth.lerp(partialTick, animatable.yHeadRotO,
@@ -23,7 +23,7 @@ public class RenderUtil {
         bone.setRotY(-netHeadYaw * 0.017453292F);
     }
 
-    public static void animateHand(AbstractClientPlayer animatable, CoreGeoBone armBone,
+    public static void animateHand(AbstractClientPlayer animatable, GeoBone armBone,
                                    float partialTick, float ageInTicks) {
 
         // Solo aplicar animaciones procedurales para arco y ballesta
@@ -45,7 +45,7 @@ public class RenderUtil {
         // No aplicar otras animaciones procedurales, dejar que GeckoLib maneje el resto
     }
 
-    private static void animateBowHand(AbstractClientPlayer player, CoreGeoBone armBone, float ageInTicks) {
+    private static void animateBowHand(AbstractClientPlayer player, GeoBone armBone, float ageInTicks) {
         final boolean armIsLeft = armBone.getName().equals("left_arm");
 
         final float animTime = ageInTicks;
@@ -69,7 +69,7 @@ public class RenderUtil {
         armBone.setRotZ(armBone.getRotZ() + Mth.sin(animTime * 2.0F) * 0.02F);
     }
 
-    private static void animateCrossbowHand(AbstractClientPlayer player, CoreGeoBone armBone, float ageInTicks) {
+    private static void animateCrossbowHand(AbstractClientPlayer player, GeoBone armBone, float ageInTicks) {
         final boolean armIsLeft = armBone.getName().equals("left_arm");
         final float animTime = ageInTicks;
 
@@ -108,7 +108,7 @@ public class RenderUtil {
         }
     }
 
-    public static void playProceduralAnimations(AbstractClientPlayer player, CoreGeoBone bone,
+    public static void playProceduralAnimations(AbstractClientPlayer player, GeoBone bone,
                                                 float partialTick, float ageInTicks) {
         if (bone.getName().equals("head")) {
             RenderUtil.rotateHead(player, bone, partialTick);

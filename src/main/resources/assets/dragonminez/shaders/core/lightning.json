@@ -17,15 +17,6 @@
                  0.0, 0.0, 0.0, 1.0]
     },
     {
-      "name": "viewMatrix",
-      "type": "matrix4x4",
-      "count": 16,
-      "values": [1.0, 0.0, 0.0, 0.0,
-                 0.0, 1.0, 0.0, 0.0,
-                 0.0, 0.0, 1.0, 0.0,
-                 0.0, 0.0, 0.0, 1.0]
-    },
-    {
       "name": "projectionMatrix",
       "type": "matrix4x4",
       "count": 16,
@@ -33,21 +24,6 @@
                  0.0, 1.0, 0.0, 0.0,
                  0.0, 0.0, 1.0, 0.0,
                  0.0, 0.0, 0.0, 1.0]
-    },
-    {
-		"name": "normalMatrix",
-		"type": "matrix4x4",
-		"count": 16,
-		"values": [1.0, 0.0, 0.0, 0.0,
-				   0.0, 1.0, 0.0, 0.0,
-				   0.0, 0.0, 1.0, 0.0,
-				   0.0, 0.0, 0.0, 1.0]
-    },
-	{
-		"name": "view",
-		"type": "float",
-		"count": 3,
-		"values": [ 0.0, 0.0, 0.0 ]
     },
     {
 		"name": "time",
@@ -72,24 +48,6 @@
 		"type": "float",
 		"count": 1,
 		"values": [ 1.0 ]
-    },
-	{
-		"name": "alp2",
-		"type": "float",
-		"count": 1,
-		"values": [ 1.0 ]
-    },
-	{
-		"name": "power",
-		"type": "float",
-		"count": 1,
-		"values": [1.0]
-    },
-	{
-		"name": "divis",
-		"type": "float",
-		"count": 1,
-		"values": [1.0]
     },
 	{
 		  "name": "speedModifier",

@@ -154,7 +154,7 @@ public class EffectsCommand {
 
 	private static void clearFusionCooldown(ServerPlayer player, StatsData data) {
 		data.getCooldowns().removeCooldown(Cooldowns.FUSION_CD);
-		if (player.hasEffect(MainEffects.FUSION_CD.get())) player.removeEffect(MainEffects.FUSION_CD.get());
+		if (player.hasEffect(MainEffects.FUSION_CD)) player.removeEffect(MainEffects.FUSION_CD);
 	}
 
 	private static void clearPotaraPose(StatsData data) {

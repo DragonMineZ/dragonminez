@@ -2,7 +2,7 @@ package com.dragonminez.server.world.dimension;
 
 import com.dragonminez.Reference;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
@@ -16,7 +16,7 @@ public class SacredKaiDimension {
 	public static final ResourceKey<Level> SACREDKAI_KEY = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkaiplanet"));
 	public static final ResourceKey<DimensionType> SACREDKAI_TYPE = ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacredkaiplanet"));
 
-	public static void bootstrap(BootstapContext<DimensionType> context) {
+	public static void bootstrap(BootstrapContext<DimensionType> context) {
 		context.register(SACREDKAI_TYPE, new DimensionType(
 				OptionalLong.of(6000),
 				true,

@@ -34,7 +34,7 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
 
         PlayerEffectQueue.addKiAttack((stack, proj) -> {
             stack.pushPose();
-            stack.last().pose().set(basePose);
+            stack.last().pose().mul(basePose);
 
             float ageInTicks = entity.tickCount + partialTick;
             float scale = entity.getCurrentSize() * SHIELD_SURROUND_FACTOR * resolveAnchorModelScale(entity);

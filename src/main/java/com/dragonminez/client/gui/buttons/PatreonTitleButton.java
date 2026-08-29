@@ -5,12 +5,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class PatreonTitleButton extends Button {
-	private static final ResourceLocation PATREON_LOGO = new ResourceLocation("minecraft", "textures/gui/title/patreon_logo.png");
+	private static final ResourceLocation PATREON_LOGO = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/title/patreon_logo.png");
 
 	public PatreonTitleButton(int x, int y, int width, int height, Component message, OnPress onPress) {
 		super(x, y, width, height, message, onPress, DEFAULT_NARRATION);

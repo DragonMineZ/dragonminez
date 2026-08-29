@@ -114,15 +114,15 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(CURRENT_SIZE, 0.1F);
-        this.entityData.define(CAST_TIME, 0);
-        this.entityData.define(IS_FIRING, false);
-        this.entityData.define(FIRE_TICK, -1);
-        this.entityData.define(SHIELD_HOST, -1);
-        this.entityData.define(BARRIER_HP, 0.0F);
-        this.entityData.define(BARRIER_MAX_HP, 0.0F);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CURRENT_SIZE, 0.1F);
+        builder.define(CAST_TIME, 0);
+        builder.define(IS_FIRING, false);
+        builder.define(FIRE_TICK, -1);
+        builder.define(SHIELD_HOST, -1);
+        builder.define(BARRIER_HP, 0.0F);
+        builder.define(BARRIER_MAX_HP, 0.0F);
     }
 
     public void setBarrierMaxHp(float hp) { this.entityData.set(BARRIER_MAX_HP, Math.max(0.0F, hp)); }

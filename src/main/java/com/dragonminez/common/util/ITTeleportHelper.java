@@ -25,7 +25,7 @@ public final class ITTeleportHelper {
 		int ticks = Math.max(0, ConfigManager.getCombatConfig().getTeleportCooldownSeconds()) * 20;
 		if (ticks <= 0) return;
 		data.getCooldowns().setCooldown(Cooldowns.TELEPORT_CD, ticks);
-		player.addEffect(new MobEffectInstance(MainEffects.TELEPORT_CD.get(), ticks, 0, false, false, true));
+		player.addEffect(new MobEffectInstance(MainEffects.TELEPORT_CD, ticks, 0, false, false, true));
 	}
 
 	/** Finds a safe block to land on in a ring around {@code center}, falling back to {@code center.above()}. */

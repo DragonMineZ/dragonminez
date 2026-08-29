@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.server.world.feature.NamekPlacedFeatures;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -17,7 +17,7 @@ public class NamekBiomes {
 	public static final ResourceKey<Biome> SACRED_LAND = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacred_land"));
 	public static final ResourceKey<Biome> NAMEKIAN_RIVERS = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namekian_rivers"));
 
-	public static void bootstrap(BootstapContext<Biome> context) {
+	public static void bootstrap(BootstrapContext<Biome> context) {
 		context.register(AJISSA_PLAINS, ajissaPlains(context));
 		context.register(SACRED_LAND, sacredLand(context));
 		context.register(NAMEKIAN_RIVERS, namekRiver(context));
@@ -37,7 +37,7 @@ public class NamekBiomes {
         builder.addMobCharge(EntityType.AXOLOTL, 1.0D, 0.12D);
     }
 
-	private static Biome ajissaPlains(BootstapContext<Biome> context) {
+	private static Biome ajissaPlains(BootstrapContext<Biome> context) {
 		var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 
@@ -73,7 +73,7 @@ public class NamekBiomes {
 		return biome(spawnBuilder, biomeBuilder, 6530427);
 	}
 
-	private static Biome sacredLand(BootstapContext<Biome> context) {
+	private static Biome sacredLand(BootstrapContext<Biome> context) {
 		var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 
@@ -109,7 +109,7 @@ public class NamekBiomes {
 		return biome(spawnBuilder, biomeBuilder, 6530427);
 	}
 
-	private static Biome namekRiver(BootstapContext<Biome> context) {
+	private static Biome namekRiver(BootstrapContext<Biome> context) {
 		var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
 		var carvers = context.lookup(Registries.CONFIGURED_CARVER);
 

@@ -1,5 +1,9 @@
 package com.dragonminez.common.init.block.custom;
 
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.dragonball.DragonDefinition;
@@ -31,8 +35,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -41,6 +45,19 @@ import java.util.List;
 import java.util.Set;
 
 public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
+	private static final Codec<DragonBallType> BALL_TYPE_CODEC = Codec.intRange(1, 7)
+			.xmap(stars -> DragonBallType.values()[stars - 1], DragonBallType::getStars);
+	public static final MapCodec<DragonBallBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+			propertiesCodec(),
+			BALL_TYPE_CODEC.fieldOf("ball_type").forGetter(DragonBallBlock::getBallType),
+			Codec.STRING.fieldOf("ball_set").forGetter(DragonBallBlock::getBallSetId)
+	).apply(instance, DragonBallBlock::new));
+
+	@Override
+	protected MapCodec<? extends BaseEntityBlock> codec() {
+		return CODEC;
+	}
+
 	private static final VoxelShape SHAPE = Shapes.box(0.25D, 0.0D, 0.25D, 0.75D, 0.5D, 0.75D);
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -111,7 +128,7 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+	public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 		if (level.isClientSide) {
 			return InteractionResult.SUCCESS;
 		}
@@ -131,7 +148,7 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 			if (level instanceof ServerLevel serverLevel) {
 				DragonBallsHandler.unregisterConsumedDragonBalls(serverLevel, consumedPositions, ballSetId);
 				if (summonDragon(serverLevel, pos, player, dragonDefinition)) {
-					MinecraftForge.EVENT_BUS.post(new DMZEvent.DragonSummonedEvent(
+					NeoForge.EVENT_BUS.post(new DMZEvent.DragonSummonedEvent(
 							player,
 							serverLevel,
 							pos,
@@ -149,7 +166,7 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 	}
 
 	private boolean summonDragon(ServerLevel serverLevel, BlockPos pos, Player player, DragonDefinition dragonDefinition) {
-		EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.fromNamespaceAndPath("dragonminez", dragonDefinition.getId()));
+		EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath("dragonminez", dragonDefinition.getId()));
 		if (entityType == null) {
 			return false;
 		}

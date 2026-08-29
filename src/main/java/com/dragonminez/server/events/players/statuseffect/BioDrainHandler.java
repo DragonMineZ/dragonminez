@@ -54,7 +54,7 @@ public class BioDrainHandler implements IStatusEffectHandler {
 			} else {
 				data.getStatus().setDrainingTargetId(-1);
 				data.getCooldowns().removeCooldown(Cooldowns.DRAIN_ACTIVE);
-				player.removeEffect(MainEffects.STUN.get());
+				player.removeEffect(MainEffects.STUN);
 			}
 
 		} else {
@@ -69,7 +69,7 @@ public class BioDrainHandler implements IStatusEffectHandler {
 				player.playSound(MainSounds.KNOCKBACK_CHARACTER.get());
 			}
 			data.getStatus().setDrainingTargetId(-1);
-			player.removeEffect(MainEffects.STUN.get());
+			player.removeEffect(MainEffects.STUN);
 		}
 	}
 
@@ -101,7 +101,7 @@ public class BioDrainHandler implements IStatusEffectHandler {
 					target.hurtMarked = true;
 					data.getStatus().setDrainingTargetId(-1);
 					data.getCooldowns().removeCooldown(Cooldowns.DRAIN_ACTIVE);
-					player.removeEffect(MainEffects.STUN.get());
+					player.removeEffect(MainEffects.STUN);
 					target.kill();
 				}
 			}

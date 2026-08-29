@@ -5,7 +5,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -44,7 +44,7 @@ public class UpdateStatC2S {
             if (player == null) return;
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                    if (player.hasEffect(MainEffects.STUN.get()) && msg.statusKey != StatAction.BLOCK) {
+                    if (player.hasEffect(MainEffects.STUN) && msg.statusKey != StatAction.BLOCK) {
                       if (msg.statusKey == StatAction.CHARGE_KI && data.getStatus().isChargingKi()) data.getStatus().setChargingKi(false);
                       if (msg.statusKey == StatAction.DESCEND && data.getStatus().isDescending()) data.getStatus().setDescending(false);
                       if (msg.statusKey == StatAction.ACTION_CHARGE && data.getStatus().isActionCharging()) data.getStatus().setActionCharging(false);

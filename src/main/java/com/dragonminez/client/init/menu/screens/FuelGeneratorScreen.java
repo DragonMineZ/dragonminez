@@ -49,7 +49,7 @@ public class FuelGeneratorScreen extends AbstractContainerScreen<FuelGeneratorMe
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float delta) {
-		renderBackground(guiGraphics);
+		renderBackground(guiGraphics, pMouseX, pMouseY, delta);
 		super.render(guiGraphics, pMouseX, pMouseY, delta);
 		renderTooltip(guiGraphics, pMouseX, pMouseY);
 	}

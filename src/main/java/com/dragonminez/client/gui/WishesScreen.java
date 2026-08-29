@@ -15,8 +15,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +79,7 @@ public class WishesScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int uiMouseX = (int) toUiX(mouseX);
 		int uiMouseY = (int) toUiY(mouseY);
@@ -111,7 +111,7 @@ public class WishesScreen extends ScaledScreen {
 
 		maxScroll = Math.max(0, totalHeight - viewHeight);
 		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		float tickDelta = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
 
 		int scLeft = toScreenCoord(listLeft);
@@ -224,12 +224,12 @@ public class WishesScreen extends ScaledScreen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		if (maxScroll > 0) {
-			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
+			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(scrollY) * ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override

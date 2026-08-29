@@ -1,0 +1,7 @@
+{
+  "values": [
+    "#minecraft:has_structure/village_savanna",
+    "#minecraft:has_structure/village_plains",
+    "#minecraft:has_structure/village_snowy"
+  ]
+}

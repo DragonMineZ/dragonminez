@@ -8,9 +8,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -95,8 +93,7 @@ public class IncreaseStatC2S {
 			case "RES" -> {
 				float oldMaxStamina = data.getMaxStamina();
 				data.getStats().addResistance(amount);
-				float newMaxStamina = data.getMaxStamina();
-				if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+				data.getResources().grantMaxPoolIncrease(oldMaxStamina, data.getMaxStamina(), false);
 			}
 			case "VIT" -> {
 				float oldHealthBonus = data.getHealthBonus();
@@ -105,11 +102,9 @@ public class IncreaseStatC2S {
 				float healthDiff = newHealthBonus - oldHealthBonus;
 
 				if (healthDiff > 0) {
-					var attribute = player.getAttribute(Attributes.MAX_HEALTH);
-					if (attribute != null) {
-						attribute.removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
-						attribute.addPermanentModifier(new AttributeModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID, "DMZ Health", newHealthBonus, AttributeModifier.Operation.ADDITION));
-					}
+					// Route through applyHealthBonus so MAX_HEALTH ceiling is raised first
+					// (vanilla 1024 / AttributeFix 2048 clamps would silently discard the gain).
+					com.dragonminez.server.events.players.StatsEvents.applyHealthBonus(player);
 					player.heal(healthDiff);
 				}
 			}
@@ -117,8 +112,7 @@ public class IncreaseStatC2S {
 			case "ENE" -> {
 				float oldMaxEnergy = data.getMaxEnergy();
 				data.getStats().addEnergy(amount);
-				float newMaxEnergy = data.getMaxEnergy();
-				if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
+				data.getResources().grantMaxPoolIncrease(oldMaxEnergy, data.getMaxEnergy(), true);
 			}
 		}
 	}

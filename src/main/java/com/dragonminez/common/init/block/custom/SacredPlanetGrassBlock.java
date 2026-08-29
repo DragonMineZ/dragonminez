@@ -49,7 +49,7 @@ public class SacredPlanetGrassBlock extends Block implements BonemealableBlock {
 	}
 
 	@Override
-	public boolean isValidBonemealTarget(LevelReader levelReader, BlockPos pos, BlockState state, boolean isClient) {
+	public boolean isValidBonemealTarget(LevelReader levelReader, BlockPos pos, BlockState state) {
 		return levelReader.getBlockState(pos.above()).isAir();
 	}
 
@@ -71,7 +71,7 @@ public class SacredPlanetGrassBlock extends Block implements BonemealableBlock {
 
 			if (level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos.below()).is(this)) {
 				if (random.nextFloat() < 0.7F) {
-					level.setBlock(targetPos, Blocks.GRASS.defaultBlockState(), 3);
+					level.setBlock(targetPos, Blocks.SHORT_GRASS.defaultBlockState(), 3);
 				} else {
 					BlockState flower = pickRandomFlower(random);
 					if (flower != null) {

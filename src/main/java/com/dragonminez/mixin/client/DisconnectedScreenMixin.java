@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.BetaAccessVerificationScreen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class DisconnectedScreenMixin extends Screen {
 	@Shadow
 	@Final
-	private Component reason;
+	private DisconnectionDetails details;
 
 	protected DisconnectedScreenMixin(Component title) {
 		super(title);
@@ -25,10 +26,10 @@ public abstract class DisconnectedScreenMixin extends Screen {
 
 	@Inject(method = "init", at = @At("TAIL"))
 	private void dragonminez$addBetaAccessVerificationButton(CallbackInfo info) {
-		if (this.minecraft == null || this.reason == null) {
+		if (this.minecraft == null || this.details == null) {
 			return;
 		}
-		if (!BetaAccessVerification.isBetaAccessDisconnect(this.reason.getString())) {
+		if (!BetaAccessVerification.isBetaAccessDisconnect(this.details.reason().getString())) {
 			return;
 		}
 

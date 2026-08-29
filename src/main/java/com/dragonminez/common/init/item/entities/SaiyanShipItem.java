@@ -69,7 +69,7 @@ public class SaiyanShipItem extends Item {
 //    }
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
+	public void appendHoverText(@NotNull ItemStack pStack, @NotNull Item.TooltipContext context, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
 		pTooltipComponents.add(Component.translatable("item.dragonminez.saiyan_ship.tooltip").withStyle(ChatFormatting.GRAY));
 	}
 }

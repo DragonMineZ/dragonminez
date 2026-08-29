@@ -368,26 +368,25 @@ public class HairRenderer {
 	}
 
 	private static void renderCube(PoseStack poseStack, VertexConsumer buffer, float width, float height, float depth, float overlap, float r, float g, float b, int packedLight, int packedOverlay, float alpha) {
-		Matrix4f pose = poseStack.last().pose();
-		Matrix3f normal = poseStack.last().normal();
+		PoseStack.Pose pose = poseStack.last();
 
 		float hw = width / 2.0f;
 		float hd = depth / 2.0f;
 		float h = height;
 		float bottom = -overlap;
 
-		addQuad(buffer, pose, normal, -hw, bottom, -hd, hw, bottom, -hd, hw, bottom, hd, -hw, bottom, hd, 0, -1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, -hw, h, hd, hw, h, hd, hw, h, -hd, -hw, h, -hd, 0, 1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, -hw, bottom, -hd, -hw, h, -hd, hw, h, -hd, hw, bottom, -hd, 0, 0, -1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, hw, bottom, hd, hw, h, hd, -hw, h, hd, -hw, bottom, hd, 0, 0, 1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, hw, bottom, -hd, hw, h, -hd, hw, h, hd, hw, bottom, hd, 1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, -hw, bottom, hd, -hw, h, hd, -hw, h, -hd, -hw, bottom, -hd, -1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, -hw, bottom, -hd, hw, bottom, -hd, hw, bottom, hd, -hw, bottom, hd, 0, -1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, -hw, h, hd, hw, h, hd, hw, h, -hd, -hw, h, -hd, 0, 1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, -hw, bottom, -hd, -hw, h, -hd, hw, h, -hd, hw, bottom, -hd, 0, 0, -1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, hw, bottom, hd, hw, h, hd, -hw, h, hd, -hw, bottom, hd, 0, 0, 1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, hw, bottom, -hd, hw, h, -hd, hw, h, hd, hw, bottom, hd, 1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, -hw, bottom, hd, -hw, h, hd, -hw, h, -hd, -hw, bottom, -hd, -1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
 	}
 
-	private static void addQuad(VertexConsumer buffer, Matrix4f pose, Matrix3f normal, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float nx, float ny, float nz, float r, float g, float b, float u0, float v0, float u1, float v1, int packedLight, int packedOverlay, float alpha) {
-		buffer.vertex(pose, x1, y1, z1).color(r, g, b, alpha).uv(u0, v0).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
-		buffer.vertex(pose, x2, y2, z2).color(r, g, b, alpha).uv(u0, v1).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
-		buffer.vertex(pose, x3, y3, z3).color(r, g, b, alpha).uv(u1, v1).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
-		buffer.vertex(pose, x4, y4, z4).color(r, g, b, alpha).uv(u1, v0).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
+	private static void addQuad(VertexConsumer buffer, PoseStack.Pose pose, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float nx, float ny, float nz, float r, float g, float b, float u0, float v0, float u1, float v1, int packedLight, int packedOverlay, float alpha) {
+		buffer.addVertex(pose, x1, y1, z1).setColor(r, g, b, alpha).setUv(u0, v0).setOverlay(packedOverlay).setLight(packedLight).setNormal(pose, nx, ny, nz);
+		buffer.addVertex(pose, x2, y2, z2).setColor(r, g, b, alpha).setUv(u0, v1).setOverlay(packedOverlay).setLight(packedLight).setNormal(pose, nx, ny, nz);
+		buffer.addVertex(pose, x3, y3, z3).setColor(r, g, b, alpha).setUv(u1, v1).setOverlay(packedOverlay).setLight(packedLight).setNormal(pose, nx, ny, nz);
+		buffer.addVertex(pose, x4, y4, z4).setColor(r, g, b, alpha).setUv(u1, v0).setOverlay(packedOverlay).setLight(packedLight).setNormal(pose, nx, ny, nz);
 	}
 }

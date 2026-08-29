@@ -6,10 +6,10 @@ import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
-import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
@@ -36,7 +36,7 @@ public class SPDragonFistModel<T extends SPDragonFistEntity> extends GeoModel<T>
 
         // 1. Busca el hueso principal de tu modelo (Asegúrate de que se llame así en Blockbench)
         // Si tu hueso principal se llama "cuerpo" o "body", cámbialo aquí:
-        CoreGeoBone rootBone = this.getAnimationProcessor().getBone("root");
+        GeoBone rootBone = this.getAnimationProcessor().getBone("root");
 
         if (rootBone != null) {
             // 2. Obtenemos los ángulos bloqueados desde la entidad

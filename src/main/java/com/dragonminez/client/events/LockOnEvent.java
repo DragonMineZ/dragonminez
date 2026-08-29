@@ -11,8 +11,8 @@ import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
-import lombok.Getter;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
@@ -22,49 +22,72 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.event.RenderNameTagEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.RenderNameTagEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import org.joml.Matrix4f;
+import org.joml.Matrix3f;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
-
 import java.util.List;
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class LockOnEvent {
 	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
-	@Getter
 	private static LivingEntity lockedTarget = null;
 	private static int scanTickCounter = 0;
+	private static boolean markerVisible;
+	private static float markerX;
+	private static float markerY;
+	private static float markerHalfSize = 16.0F;
+
+	public static final LayeredDraw.Layer HUD_LOCK_ON = (gui, deltaTracker) -> {
+		if (!markerVisible || lockedTarget == null || !lockedTarget.isAlive()) return;
+
+		long time = System.currentTimeMillis();
+		boolean lod = Minecraft.getInstance().player != null && Minecraft.getInstance().player.distanceTo(lockedTarget) > 24.0;
+		float angle = lod ? 0.0F : (time % 3600L) / 10.0F;
+
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		RenderSystem.setShaderColor(0.0F, 1.0F, 1.0F, 0.9F);
+		gui.pose().pushPose();
+		gui.pose().translate(markerX, markerY, 0.0F);
+		gui.pose().mulPose(Axis.ZP.rotationDegrees(angle));
+		int size = Math.max(8, Math.round(markerHalfSize * 2.0F));
+		gui.blit(LOCK_ICON, -size / 2, -size / 2, size, size, 0.0F, 0.0F, 64, 64, 64, 64);
+		gui.pose().popPose();
+
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+		RenderSystem.disableBlend();
+	};
 
 	public static void toggleLock() {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null) return;
-
 		if (TaiyokenBlindState.isActive()) {
 			unlock();
 			return;
 		}
-
 		if (lockedTarget != null) {
 			unlock();
 			return;
 		}
-
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getSkills().hasSkill("kisense")) return;
-
 			int level = data.getSkills().getSkillLevel("kisense");
 			if (level <= 0) return;
-
 			double range = 15.0 + 5.0 * level;
 			if (data.getStatus().isAndroidUpgraded()) range += 25.0;
-
 			findTargetInFront(player, range, data).ifPresent(target -> {
 				lockedTarget = target;
 				player.playSound(MainSounds.LOCKON.get());
@@ -74,181 +97,132 @@ public class LockOnEvent {
 
 	public static void unlock() {
 		lockedTarget = null;
+		markerVisible = false;
 	}
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.END) return;
+	public static void onClientTick(ClientTickEvent.Post event) {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null || lockedTarget == null) return;
-
 		if (com.dragonminez.client.systems.taiyoken.TaiyokenBlindState.isActive()) {
 			unlock();
 			return;
 		}
-
 		scanTickCounter++;
 		if (scanTickCounter >= 5) {
 			scanTickCounter = 0;
-
 			if (!lockedTarget.isAlive()) {
 				unlock();
 				return;
 			}
-
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				int level = data.getSkills().getSkillLevel("kisense");
-
 				if (level <= 0 || data.getSkills().getSkill("kisense") == null) {
 					unlock();
 					return;
 				}
-
 				double maxRange = 15.0 + 5.0 * level;
 				if (data.getStatus().isAndroidUpgraded()) maxRange += 25.0;
-
 				if (player.distanceTo(lockedTarget) > maxRange) {
 					unlock();
 					return;
 				}
-
 				if (!KiSenseScan.canTarget(lockedTarget, data)) {
 					unlock();
 					return;
 				}
-
 				if (!player.hasLineOfSight(lockedTarget) && !data.getStatus().isAndroidUpgraded()) unlock();
 			});
 		}
 	}
 
 	@SubscribeEvent
-	public static void onRenderTick(TickEvent.RenderTickEvent event) {
-		if (event.phase != TickEvent.Phase.START) return;
+	public static void onRenderTick(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event) {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null || lockedTarget == null) return;
-
-		float partialTick = event.renderTickTime;
+		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		double targetX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());
 		double targetY = Mth.lerp(partialTick, lockedTarget.yo, lockedTarget.getY()) + lockedTarget.getBbHeight() * 0.5;
 		double targetZ = Mth.lerp(partialTick, lockedTarget.zo, lockedTarget.getZ());
 		Vec3 targetPos = new Vec3(targetX, targetY, targetZ);
 		Vec3 playerPos = player.getEyePosition(partialTick);
-
 		double dX = targetPos.x - playerPos.x;
 		double dY = targetPos.y - playerPos.y;
 		double dZ = targetPos.z - playerPos.z;
 		double dist = Math.sqrt(dX * dX + dZ * dZ);
-
 		float targetYaw = (float) (Mth.atan2(dZ, dX) * (180 / Math.PI)) - 90.0F;
 		float targetPitch = (float) -(Mth.atan2(dY, dist) * (180 / Math.PI));
-
 		float smoothFactor = 0.15F;
-
 		float newYaw = rotlerp(player.getYRot(), targetYaw, smoothFactor);
 		float newPitch = rotlerp(player.getXRot(), targetPitch, smoothFactor);
-
 		player.setYRot(newYaw);
 		player.setXRot(newPitch);
 	}
 
 	@SubscribeEvent
 	public static void onRenderWorldLast(RenderLevelStageEvent event) {
-		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
-		if (lockedTarget == null || !lockedTarget.isAlive()) return;
+		Minecraft mc = Minecraft.getInstance();
+		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+		if (lockedTarget == null || !lockedTarget.isAlive()) {
+			markerVisible = false;
+			return;
+		}
 
-		PoseStack poseStack = event.getPoseStack();
-		float partialTick = event.getPartialTick();
-
+		// Project the target during the world pass, then render the original rotating
+		// icon as a real GUI layer. This keeps it above every 1.21 framebuffer composite
+		// (Fabulous, Iris, Aeronautics/Sable) instead of letting later passes erase it.
+		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		double lerpX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());
 		double lerpY = Mth.lerp(partialTick, lockedTarget.yo, lockedTarget.getY());
 		double lerpZ = Mth.lerp(partialTick, lockedTarget.zo, lockedTarget.getZ());
-
 		Vec3 cameraPos = event.getCamera().getPosition();
+		Vector4f view = new Vector4f(
+				(float) (lerpX - cameraPos.x),
+				(float) ((lerpY - cameraPos.y) + lockedTarget.getBbHeight() * 0.5F),
+				(float) (lerpZ - cameraPos.z), 1.0F).mul(event.getModelViewMatrix());
+		Vector4f clip = new Vector4f(view).mul(event.getProjectionMatrix());
+		if (clip.w <= 0.001F) {
+			markerVisible = false;
+			return;
+		}
 
-		poseStack.pushPose();
-		poseStack.translate(lerpX - cameraPos.x, (lerpY - cameraPos.y) + lockedTarget.getBbHeight() * 0.5, lerpZ - cameraPos.z);
+		float ndcX = clip.x / clip.w;
+		float ndcY = clip.y / clip.w;
+		float ndcZ = clip.z / clip.w;
+		if (ndcZ < -1.0F || ndcZ > 1.0F || Math.abs(ndcX) > 1.15F || Math.abs(ndcY) > 1.15F) {
+			markerVisible = false;
+			return;
+		}
 
-		poseStack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
+		int guiWidth = mc.getWindow().getGuiScaledWidth();
+		int guiHeight = mc.getWindow().getGuiScaledHeight();
+		markerX = (ndcX * 0.5F + 0.5F) * guiWidth;
+		markerY = (0.5F - ndcY * 0.5F) * guiHeight;
 
-		float scale = 0.04F;
-		poseStack.scale(-scale, -scale, scale);
-
-		RenderSystem.setShader(GameRenderer::getPositionTexShader);
-		RenderSystem.setShaderTexture(0, LOCK_ICON);
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-		RenderSystem.disableDepthTest();
-		RenderSystem.depthMask(false);
-		RenderSystem.depthFunc(GL11.GL_ALWAYS);
-
-		boolean lod = Minecraft.getInstance().player != null && Minecraft.getInstance().player.distanceTo(lockedTarget) > 24.0;
-		long time = lod ? 0L : System.currentTimeMillis();
-		float angle1 = (time % 3600L) / 10.0f;
-		float angle2 = -((time % 7200L) / 20.0f);
-
-		float size = 16.0f;
-
-		poseStack.pushPose();
-		poseStack.mulPose(Axis.ZP.rotationDegrees(angle1));
-		drawTextureQuad(poseStack, size, 0.0F, 1.0F, 1.0F, 0.9F);
-		poseStack.popPose();
-
-		poseStack.pushPose();
-		poseStack.mulPose(Axis.ZP.rotationDegrees(angle2));
-		poseStack.scale(1.5f, 1.5f, 1.5f);
-		poseStack.translate(0, 0, 0.05f);
-		drawTextureQuad(poseStack, size, 0.0F, 1.0F, 1.0F, 0.5F);
-		poseStack.popPose();
-
-		RenderSystem.depthFunc(GL11.GL_LEQUAL);
-		RenderSystem.depthMask(true);
-		RenderSystem.enableDepthTest();
-		RenderSystem.disableBlend();
-		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-
-		poseStack.popPose();
-	}
-
-	private static void drawTextureQuad(PoseStack poseStack, float size, float r, float g, float b, float a) {
-		RenderSystem.setShaderColor(r, g, b, a);
-
-		Matrix4f matrix = poseStack.last().pose();
-		Tesselator tesselator = Tesselator.getInstance();
-		BufferBuilder builder = tesselator.getBuilder();
-
-		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-		builder.vertex(matrix, -size, size, 0).uv(0, 1).endVertex();
-		builder.vertex(matrix, size, size, 0).uv(1, 1).endVertex();
-		builder.vertex(matrix, size, -size, 0).uv(1, 0).endVertex();
-		builder.vertex(matrix, -size, -size, 0).uv(0, 0).endVertex();
-
-		tesselator.end();
+		Vector4f edge = new Vector4f(view.x + 0.64F, view.y, view.z, 1.0F).mul(event.getProjectionMatrix());
+		float edgeNdcX = edge.w > 0.001F ? edge.x / edge.w : ndcX;
+		markerHalfSize = Mth.clamp(Math.abs(edgeNdcX - ndcX) * guiWidth * 0.5F, 8.0F, 64.0F);
+		markerVisible = true;
 	}
 
 	private static Optional<LivingEntity> findTargetInFront(Player player, double range, StatsData data) {
 		Vec3 eyePos = player.getEyePosition();
 		Vec3 viewVec = player.getViewVector(1.0F);
 		Vec3 endPos = eyePos.add(viewVec.scale(range));
-		AABB searchBox = player.getBoundingBox().expandTowards(viewVec.scale(range)).inflate(1.0D);
-
-		List<LivingEntity> list = player.level().getEntitiesOfClass(LivingEntity.class, searchBox,
-				e -> e != player && e.isAlive() && e.isPickable() && canTarget(e, data));
-
+		AABB searchBox = player.getBoundingBox().expandTowards(viewVec.scale(range)).inflate(1.0);
+		List<LivingEntity> list = player.level().getEntitiesOfClass(LivingEntity.class, searchBox, e -> e != player && e.isAlive() && e.isPickable() && canTarget(e, data));
 		LivingEntity closest = null;
 		double closestDist = range * range;
-
 		for (LivingEntity e : list) {
 			AABB axisalignedbb = e.getBoundingBox().inflate(e.getPickRadius());
 			Optional<Vec3> hit = axisalignedbb.clip(eyePos, endPos);
 			if (e.isInvisible() || e.isInvisibleTo(player) || !player.hasLineOfSight(e)) continue;
-
 			if (axisalignedbb.contains(eyePos)) {
-				if (closestDist >= 0.0D) {
+				if (closestDist >= 0.0) {
 					closest = e;
-					closestDist = 0.0D;
+					closestDist = 0.0;
 				}
 			} else if (hit.isPresent()) {
 				double dist = eyePos.distanceToSqr(hit.get());
@@ -275,5 +249,10 @@ public class LockOnEvent {
 		if (KiSenseScan.isCloaked(targetPlayer)) return false;
 		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
 		return true;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public static LivingEntity getLockedTarget() {
+		return LockOnEvent.lockedTarget;
 	}
 }

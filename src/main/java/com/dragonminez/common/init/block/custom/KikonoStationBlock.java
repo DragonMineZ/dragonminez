@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.block.custom;
 
+import com.mojang.serialization.MapCodec;
+
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.block.entity.KikonoStationBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -24,10 +26,17 @@ import net.minecraft.world.level.block.state.properties.*;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 import org.jetbrains.annotations.Nullable;
 
 public class KikonoStationBlock extends BaseEntityBlock {
+	public static final MapCodec<KikonoStationBlock> CODEC = simpleCodec(KikonoStationBlock::new);
+
+	@Override
+	protected MapCodec<? extends BaseEntityBlock> codec() {
+		return CODEC;
+	}
+
 	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 	public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
 
@@ -88,13 +97,13 @@ public class KikonoStationBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public void playerWillDestroy(Level pLevel, BlockPos pPos, BlockState pState, Player pPlayer) {
+	public BlockState playerWillDestroy(Level pLevel, BlockPos pPos, BlockState pState, Player pPlayer) {
 		if (!pLevel.isClientSide) {
 			if (pPlayer.isCreative()) {
 				preventCreativeDropFromBottomPart(pLevel, pPos, pState, pPlayer);
 			}
 		}
-		super.playerWillDestroy(pLevel, pPos, pState, pPlayer);
+		return super.playerWillDestroy(pLevel, pPos, pState, pPlayer);
 	}
 
 	protected static void preventCreativeDropFromBottomPart(Level pLevel, BlockPos pPos, BlockState pState, Player pPlayer) {
@@ -123,17 +132,13 @@ public class KikonoStationBlock extends BaseEntityBlock {
 	}
 
 	@Override
-	public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+	public InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
 		if (!pLevel.isClientSide()) {
-			BlockPos targetPos = pPos;
-
-			if (pState.getValue(HALF) == DoubleBlockHalf.UPPER) {
-				targetPos = pPos.below();
-			}
+			BlockPos targetPos = pState.getValue(HALF) == DoubleBlockHalf.UPPER ? pPos.below() : pPos;
 
 			BlockEntity entity = pLevel.getBlockEntity(targetPos);
 			if (entity instanceof KikonoStationBlockEntity station) {
-				NetworkHooks.openScreen((ServerPlayer) pPlayer, station, targetPos);
+				if (pPlayer instanceof ServerPlayer sp) sp.openMenu(station, buf -> buf.writeBlockPos(targetPos));
 			} else {
 				throw new IllegalStateException("Container provider missing at " + targetPos);
 			}

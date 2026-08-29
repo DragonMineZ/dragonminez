@@ -6,12 +6,13 @@ import com.dragonminez.client.render.DMZRendererCache;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class FirstPersonListener {
 
 	@SubscribeEvent
@@ -30,8 +31,8 @@ public class FirstPersonListener {
 		if (!renderer.shouldRender(player, event.getFrustum(), player.getX(), player.getY(), player.getZ())) return;
 
 		final MultiBufferSource.BufferSource source = Minecraft.getInstance().renderBuffers().bufferSource();
-		renderer.render(player, player.getYRot(), event.getPartialTick(), event.getPoseStack(), source,
-				renderer.getPackedLightCoords(player, event.getPartialTick()));
+		renderer.render(player, player.getYRot(), event.getPartialTick().getGameTimeDeltaPartialTick(false), event.getPoseStack(), source,
+				renderer.getPackedLightCoords(player, event.getPartialTick().getGameTimeDeltaPartialTick(false)));
 		source.endBatch();
 	}
 }

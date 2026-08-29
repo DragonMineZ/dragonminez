@@ -1,5 +1,7 @@
 package com.dragonminez.server.events.players.statuseffect;
 
+import net.minecraft.core.Holder;
+
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -9,13 +11,13 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,27 +37,27 @@ public class TransformStatusHandler implements IStatusEffectHandler {
     public void handleStatusEffects(ServerPlayer player, StatsData data) {
         if (data.getStatus().isActionCharging()) {
             if (data.getStatus().getSelectedAction().equals(ActionMode.FORM)) {
-                if (!player.hasEffect(MainEffects.TRANSFORM.get())) {
-                    player.addEffect(new MobEffectInstance(MainEffects.TRANSFORM.get(), -1, 0, false, false, true));
+                if (!player.hasEffect(MainEffects.TRANSFORM)) {
+                    player.addEffect(new MobEffectInstance(MainEffects.TRANSFORM, -1, 0, false, false, true));
                 }
             } else if (data.getStatus().getSelectedAction().equals(ActionMode.STACK)) {
-                if (!player.hasEffect(MainEffects.STACK_TRANSFORM.get())) {
-                    player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORM.get(), -1, 0, false, false, true));
+                if (!player.hasEffect(MainEffects.STACK_TRANSFORM)) {
+                    player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORM, -1, 0, false, false, true));
                 }
             }
         } else {
-            player.removeEffect(MainEffects.TRANSFORM.get());
-            player.removeEffect(MainEffects.STACK_TRANSFORM.get());
+            player.removeEffect(MainEffects.TRANSFORM);
+            player.removeEffect(MainEffects.STACK_TRANSFORM);
         }
     }
 
     @Override
     public void onPlayerTick(ServerPlayer player, StatsData data) {
         if (data.getCharacter().getActiveForm() == null || data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm().equals("base")) {
-            player.removeEffect(MainEffects.TRANSFORM.get());
+            player.removeEffect(MainEffects.TRANSFORM);
         }
         if (data.getCharacter().getActiveStackForm() == null || data.getCharacter().getActiveStackForm().isEmpty() || data.getCharacter().getActiveStackForm().equals("base")) {
-            player.removeEffect(MainEffects.STACK_TRANSFORM.get());
+            player.removeEffect(MainEffects.STACK_TRANSFORM);
         }
 
         CompoundTag effectTag = getOrCreateEffectTag(player);
@@ -84,10 +86,10 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         }
 
         if (formChanged && activeForm != null) {
-            MinecraftForge.EVENT_BUS.post(new DMZEvent.FormChangeEvent(player, lastFormGroup, lastForm, activeFormGroup, activeForm));
+            NeoForge.EVENT_BUS.post(new DMZEvent.FormChangeEvent(player, lastFormGroup, lastForm, activeFormGroup, activeForm));
         }
         if (stackChanged && activeStackForm != null) {
-            MinecraftForge.EVENT_BUS.post(new DMZEvent.StackFormChangeEvent(player, lastStackGroup, lastStackForm, activeStackGroup, activeStackForm));
+            NeoForge.EVENT_BUS.post(new DMZEvent.StackFormChangeEvent(player, lastStackGroup, lastStackForm, activeStackGroup, activeStackForm));
         }
 
         FormConfig.FormData formData = resolveRegularFormData(data, activeFormGroup, activeForm, player);
@@ -100,22 +102,22 @@ public class TransformStatusHandler implements IStatusEffectHandler {
             applyTemporaryEffects(player, stackFormData, "stack", activeStackGroup, activeStackForm);
         }
 
-        Map<MobEffect, PersistentEffectAccumulator> persistentEffects = new HashMap<>();
+        Map<Holder<MobEffect>, PersistentEffectAccumulator> persistentEffects = new HashMap<>();
         collectPersistentEffects(persistentEffects, formData, "form", activeFormGroup, activeForm, player);
         collectPersistentEffects(persistentEffects, stackFormData, "stack", activeStackGroup, activeStackForm, player);
 
-        Set<MobEffect> desiredPersistentTypes = persistentEffects.keySet();
-        Set<MobEffect> previousPersistentTypes = readTrackedPersistentEffects(effectTag);
+        Set<Holder<MobEffect>> desiredPersistentTypes = persistentEffects.keySet();
+        Set<Holder<MobEffect>> previousPersistentTypes = readTrackedPersistentEffects(effectTag);
 
-        for (MobEffect effect : previousPersistentTypes) {
+        for (Holder<MobEffect> effect : previousPersistentTypes) {
             if (!desiredPersistentTypes.contains(effect) && player.hasEffect(effect)) {
                 LogUtil.info(Env.SERVER, LOG_PREFIX + "Removing persistent effect '{}' from {} because no active transformation now provides it.", getEffectId(effect), player.getScoreboardName());
                 player.removeEffect(effect);
             }
         }
 
-        for (Map.Entry<MobEffect, PersistentEffectAccumulator> entry : persistentEffects.entrySet()) {
-            MobEffect effect = entry.getKey();
+        for (Map.Entry<Holder<MobEffect>, PersistentEffectAccumulator> entry : persistentEffects.entrySet()) {
+            Holder<MobEffect> effect = entry.getKey();
             PersistentEffectAccumulator accumulator = entry.getValue();
             MobEffectInstance instance = new MobEffectInstance(effect, -1, accumulator.getFinalAmplifier(), accumulator.ambient, accumulator.visible, accumulator.showIcon);
             boolean added = player.addEffect(instance);
@@ -200,7 +202,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
                 continue;
             }
 
-            MobEffect effect = resolveMobEffect(effectConfig.getEffectId());
+            Holder<MobEffect> effect = resolveMobEffect(effectConfig.getEffectId());
             if (effect == null) {
                 LogUtil.warn(Env.SERVER,
                         LOG_PREFIX + "Failed to resolve temporary effect '{}' for {} source '{}'/'{}'.",
@@ -236,7 +238,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         }
     }
 
-    private void collectPersistentEffects(Map<MobEffect, PersistentEffectAccumulator> persistentEffects, FormConfig.FormData formData, String sourceType, String group, String form, ServerPlayer player) {
+    private void collectPersistentEffects(Map<Holder<MobEffect>, PersistentEffectAccumulator> persistentEffects, FormConfig.FormData formData, String sourceType, String group, String form, ServerPlayer player) {
         if (formData == null) {
             return;
         }
@@ -246,7 +248,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
                 continue;
             }
 
-            MobEffect effect = resolveMobEffect(effectConfig.getEffectId());
+            Holder<MobEffect> effect = resolveMobEffect(effectConfig.getEffectId());
             if (effect == null) {
                 LogUtil.warn(Env.SERVER,
                         LOG_PREFIX + "Failed to resolve persistent effect '{}' for {} source '{}'/'{}'.",
@@ -291,7 +293,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
             return;
         }
         CompoundTag effectTag = persistentData.getCompound(TAG_ROOT);
-        for (MobEffect effect : readTrackedPersistentEffects(effectTag)) {
+        for (Holder<MobEffect> effect : readTrackedPersistentEffects(effectTag)) {
             if (player.hasEffect(effect)) {
                 player.removeEffect(effect);
                 LogUtil.info(Env.SERVER, LOG_PREFIX + "Removing persistent effect '{}' from {} due to character reset.", getEffectId(effect), player.getScoreboardName());
@@ -300,8 +302,8 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         persistentData.remove(TAG_ROOT);
     }
 
-    private static Set<MobEffect> readTrackedPersistentEffects(CompoundTag effectTag) {
-        Set<MobEffect> tracked = new HashSet<>();
+    private static Set<Holder<MobEffect>> readTrackedPersistentEffects(CompoundTag effectTag) {
+        Set<Holder<MobEffect>> tracked = new HashSet<Holder<MobEffect>>();
         if (!effectTag.contains("trackedPersistentEffects")) {
             return tracked;
         }
@@ -315,7 +317,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
             if (part == null || part.isBlank()) {
                 continue;
             }
-            MobEffect effect = resolveMobEffect(part.trim());
+            Holder<MobEffect> effect = resolveMobEffect(part.trim());
             if (effect != null) {
                 tracked.add(effect);
             }
@@ -323,9 +325,9 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         return tracked;
     }
 
-    private void writeTrackedPersistentEffects(CompoundTag effectTag, Set<MobEffect> effects) {
+    private void writeTrackedPersistentEffects(CompoundTag effectTag, Set<Holder<MobEffect>> effects) {
         StringBuilder builder = new StringBuilder();
-        for (MobEffect effect : effects) {
+        for (Holder<MobEffect> effect : effects) {
             if (builder.length() > 0) {
                 builder.append(';');
             }
@@ -334,7 +336,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         effectTag.putString("trackedPersistentEffects", builder.toString());
     }
 
-    private static MobEffect resolveMobEffect(String rawEffectId) {
+    private static Holder<MobEffect> resolveMobEffect(String rawEffectId) {
         if (rawEffectId == null || rawEffectId.isBlank()) {
             return null;
         }
@@ -344,7 +346,7 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         if (location == null) {
             return null;
         }
-        return ForgeRegistries.MOB_EFFECTS.getValue(location);
+        return BuiltInRegistries.MOB_EFFECT.getHolder(location).orElse(null);
     }
 
     private static String normalizeEffectId(String effectId) {
@@ -360,8 +362,8 @@ public class TransformStatusHandler implements IStatusEffectHandler {
         };
     }
 
-    private static String getEffectId(MobEffect effect) {
-        ResourceLocation key = ForgeRegistries.MOB_EFFECTS.getKey(effect);
+    private static String getEffectId(Holder<MobEffect> effect) {
+        ResourceLocation key = effect.unwrapKey().map(k -> k.location()).orElse(null);
         return key != null ? key.toString() : "unknown";
     }
 

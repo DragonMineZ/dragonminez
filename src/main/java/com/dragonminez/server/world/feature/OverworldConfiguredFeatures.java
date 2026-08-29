@@ -2,7 +2,7 @@ package com.dragonminez.server.world.feature;
 
 import com.dragonminez.Reference;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -14,7 +14,7 @@ public class OverworldConfiguredFeatures {
     public static final ResourceKey<ConfiguredFeature<?, ?>> KARST_PILLAR_KEY = createKey("karst_pillar");
     public static final ResourceKey<ConfiguredFeature<?, ?>> ROCKY_CLIFF_KEY = createKey("rocky_cliff");
 
-	public static void bootstrap(BootstapContext<ConfiguredFeature<?, ?>> context) {
+	public static void bootstrap(BootstrapContext<ConfiguredFeature<?, ?>> context) {
 		context.register(STONE_SPIKE_KEY, new ConfiguredFeature<>(OverworldFeatures.STONE_SPIKE.get(), NoneFeatureConfiguration.INSTANCE));
         context.register(ROCKY_PEAK_KEY, new ConfiguredFeature<>(OverworldFeatures.ROCKY_PEAK.get(), NoneFeatureConfiguration.INSTANCE));
         context.register(KARST_PILLAR_KEY, new ConfiguredFeature<>(OverworldFeatures.KARST_PILLAR.get(), NoneFeatureConfiguration.INSTANCE));

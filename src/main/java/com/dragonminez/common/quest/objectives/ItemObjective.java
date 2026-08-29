@@ -6,7 +6,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 @Getter
 public class ItemObjective extends QuestObjective {
@@ -15,14 +14,14 @@ public class ItemObjective extends QuestObjective {
 
     public ItemObjective(Item item, int count) {
         super(ObjectiveType.ITEM, count);
-        this.itemId = ForgeRegistries.ITEMS.getKey(item).toString();
+        this.itemId = BuiltInRegistries.ITEM.getKey(item).toString();
         this.count = count;
     }
 
 	@Override
     public boolean checkProgress(Object... params) {
         if (params.length > 0 && params[0] instanceof ItemStack stack) {
-            Item requiredItem = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
+            Item requiredItem = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
             if (stack.is(requiredItem)) {
                 addProgress(stack.getCount());
                 return isCompleted();

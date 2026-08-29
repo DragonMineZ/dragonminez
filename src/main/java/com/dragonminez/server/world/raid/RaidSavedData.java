@@ -1,6 +1,7 @@
 package com.dragonminez.server.world.raid;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -24,10 +25,10 @@ public class RaidSavedData extends SavedData {
 
 	public static RaidSavedData get(MinecraftServer server) {
 		DimensionDataStorage storage = server.getLevel(Level.OVERWORLD).getDataStorage();
-		return storage.computeIfAbsent(RaidSavedData::load, RaidSavedData::new, FILE_NAME);
+		return storage.computeIfAbsent(new SavedData.Factory<>(RaidSavedData::new, RaidSavedData::load), FILE_NAME);
 	}
 
-	public static RaidSavedData load(CompoundTag tag) {
+	public static RaidSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
 		RaidSavedData data = new RaidSavedData();
 		ListTag list = tag.getList("Raids", Tag.TAG_COMPOUND);
 		for (int i = 0; i < list.size(); i++) {
@@ -38,7 +39,7 @@ public class RaidSavedData extends SavedData {
 	}
 
 	@Override
-	public CompoundTag save(CompoundTag tag) {
+	public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
 		ListTag list = new ListTag();
 		for (Raid raid : raids.values()) {
 			if (!raid.isFinished()) list.add(raid.save());

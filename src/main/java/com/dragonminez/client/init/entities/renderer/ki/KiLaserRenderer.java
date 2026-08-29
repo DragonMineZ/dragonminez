@@ -32,7 +32,7 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
 
         PlayerEffectQueue.addKiAttack((stack, proj) -> {
             stack.pushPose();
-            stack.last().pose().set(basePose);
+            stack.last().pose().mul(basePose);
 
             int renderType = entity.getKiRenderType();
             float alphaMultiplier = 1.0F;

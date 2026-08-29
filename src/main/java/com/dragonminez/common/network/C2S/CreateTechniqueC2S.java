@@ -1,14 +1,17 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraftforge.network.NetworkEvent;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -96,6 +99,7 @@ public class CreateTechniqueC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
+			LogUtil.info(Env.SERVER, "Received custom technique creation request '{}' from {}", name, player.getName().getString());
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				KiAttackData technique = new KiAttackData();
@@ -106,7 +110,9 @@ public class CreateTechniqueC2S {
 				technique.setId(com.dragonminez.common.stats.techniques.TechniqueData.generateId(technique.getAuthor(), technique.getName()));
 
 				if (data.getTechniques().getUnlockedTechniques().containsKey(technique.getId())) {
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					LogUtil.warn(Env.SERVER, "Rejected custom technique '{}': duplicate id {}", safeName, technique.getId());
+					player.displayClientMessage(Component.literal("A technique named \"" + safeName + "\" already exists."), true);
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 					return;
 				}
 
@@ -153,13 +159,22 @@ public class CreateTechniqueC2S {
 
 				int tpCost = Math.max(0, Math.round(technique.getTpCost()));
 				if (data.getResources().getTrainingPoints() < tpCost) {
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					LogUtil.warn(Env.SERVER, "Rejected custom technique '{}': needs {} TP but player has {}", safeName, tpCost, data.getResources().getTrainingPoints());
+					player.displayClientMessage(Component.literal("Not enough TP: this technique costs " + tpCost + " TP."), true);
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
+					return;
+				}
+				if (data.getTechniques().getUnlockedTechniques().size() >= com.dragonminez.common.stats.techniques.Techniques.MAX_UNLOCKED_TECHNIQUES) {
+					LogUtil.warn(Env.SERVER, "Rejected custom technique '{}': technique limit reached", safeName);
+					player.displayClientMessage(Component.literal("Technique limit reached."), true);
 					return;
 				}
 				if (tpCost > 0) data.getResources().removeTrainingPoints(tpCost);
 
 				data.getTechniques().unlockTechnique(technique);
-				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+				LogUtil.info(Env.SERVER, "Registered custom technique '{}' as {} for {}", safeName, technique.getId(), player.getName().getString());
+				player.displayClientMessage(Component.literal("Created technique: " + safeName), true);
+				NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 			});
 		});
 		context.setPacketHandled(true);

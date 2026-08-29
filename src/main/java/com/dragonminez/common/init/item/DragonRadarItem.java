@@ -4,8 +4,8 @@ import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.quest.QuestUnlocks;
-import lombok.Getter;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -13,27 +13,31 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Arrays;
 import java.util.List;
 
-@Getter
 @ParametersAreNonnullByDefault
 public class DragonRadarItem extends Item {
 	public static final String NBT_RANGE = "RadarRange";
 	private static final int COOLDOWN_TICKS = 20 * 16;
-
-	/** Bulma sidequest ids that gate radar upgrades. */
+	/**
+	 * Bulma sidequest ids that gate radar upgrades.
+	 */
 	public static final String QUEST_RADAR_AMPLIFIER = "bulma_radar_amplifier";
 	public static final String QUEST_PROXIMITY_HUD = "bulma_proximity_hud";
-	/** Extra long-range tier unlocked by the radar amplifier sidequest. */
+	/**
+	 * Extra long-range tier unlocked by the radar amplifier sidequest.
+	 */
 	private static final int AMPLIFIED_RANGE = 600;
 
-	/** Whether the given player has completed a quest — works on both sides (stats are synced). */
+	/**
+	 * Whether the given player has completed a quest — works on both sides (stats are synced).
+	 */
 	public static boolean hasCompletedQuest(Player player, String questId) {
 		return QuestUnlocks.isCompleted(player, questId);
 	}
@@ -52,26 +56,21 @@ public class DragonRadarItem extends Item {
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-
 		if (hand == InteractionHand.OFF_HAND && !player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty()) {
 			return InteractionResultHolder.fail(stack);
 		}
-
 		if (player.getCooldowns().isOnCooldown(this)) {
 			return InteractionResultHolder.fail(stack);
 		}
-
 		player.playSound(MainSounds.DRAGONRADAR.get());
-
 		if (!world.isClientSide()) {
 			DragonRadarDefinition definition = getDefinition();
-			int currentRange = stack.getOrCreateTag().getInt(NBT_RANGE);
+			int currentRange = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getInt(NBT_RANGE);
 			int[] ranges = definition == null ? new int[0] : effectiveRanges(definition, player);
 			int newRange = ranges.length == 0 ? currentRange : getNextRange(ranges, currentRange);
-			stack.getOrCreateTag().putInt(NBT_RANGE, newRange);
+			CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putInt(NBT_RANGE, newRange));
 			player.displayClientMessage(Component.translatable("gui.dmzradar.range", newRange), true);
 		}
-
 		player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
 		return InteractionResultHolder.sidedSuccess(stack, world.isClientSide());
 	}
@@ -98,10 +97,15 @@ public class DragonRadarItem extends Item {
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, List<Component> tooltip, @NotNull TooltipFlag isAdvanced) {
+	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, List<Component> tooltip, @NotNull TooltipFlag isAdvanced) {
 		DragonRadarDefinition definition = getDefinition();
 		if (definition != null) {
 			tooltip.add(Component.translatable(definition.getTooltipKey()).withStyle(ChatFormatting.GRAY));
 		}
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public String getRadarDefinitionId() {
+		return this.radarDefinitionId;
 	}
 }

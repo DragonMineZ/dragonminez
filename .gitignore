@@ -35,7 +35,7 @@ run
 run-data
 
 # otros mas
-test
+/test/
 generated
 
 # Files from Forge MDK

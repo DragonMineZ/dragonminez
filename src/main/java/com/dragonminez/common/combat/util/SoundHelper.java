@@ -10,7 +10,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Random;
@@ -42,7 +42,7 @@ public class SoundHelper {
         if (soundLoc == null) {
             soundLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, sound.id());
         }
-        return ForgeRegistries.SOUND_EVENTS.getValue(soundLoc);
+        return BuiltInRegistries.SOUND_EVENT.get(soundLoc);
     }
 
     public static float computePitch(WeaponAttributes.Sound sound) {

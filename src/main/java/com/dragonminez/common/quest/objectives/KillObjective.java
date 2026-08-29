@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import javax.annotation.Nullable;
 
@@ -96,7 +96,7 @@ public class KillObjective extends QuestObjective {
 				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(entityId.substring(1)));
 				return type.builtInRegistryHolder().is(tag);
 			}
-			return type.equals(ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId)));
+			return type.equals(BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(entityId)));
 		} catch (Exception e) {
 			return false;
 		}
@@ -107,20 +107,16 @@ public class KillObjective extends QuestObjective {
 		try {
 			if (isTag()) {
 				TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.parse(entityId.substring(1)));
-				var tags = ForgeRegistries.ENTITY_TYPES.tags();
-				if (tags == null) {
-					return null;
-				}
 				List<EntityType<?>> members = new ArrayList<>();
-				for (EntityType<?> type : tags.getTag(tag)) {
-					members.add(type);
+				for (var holder : BuiltInRegistries.ENTITY_TYPE.getTagOrEmpty(tag)) {
+					members.add(holder.value());
 				}
 				if (members.isEmpty()) {
 					return null;
 				}
 				return members.get(ThreadLocalRandom.current().nextInt(members.size()));
 			}
-			return ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(entityId));
+			return BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(entityId));
 		} catch (Exception e) {
 			return null;
 		}

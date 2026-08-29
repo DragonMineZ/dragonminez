@@ -5,6 +5,7 @@ import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.render.shader.UtilityMenuBlur;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
@@ -21,15 +22,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import com.dragonminez.client.render.EntityPreviewRenderContext;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
@@ -105,6 +106,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 	@Override
 	protected void init() {
+		UtilityMenuBlur.stop();
 		super.init();
 		startOpenTransition();
 
@@ -164,7 +166,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		float tickDelta = Minecraft.getInstance().getTimer().getRealtimeDeltaTicks();
 
 		if (panoramaFade < 1.0f) panoramaFade = Math.min(1.0f, panoramaFade + (tickDelta * 0.05f));
 
@@ -265,11 +267,12 @@ public class RaceSelectionScreen extends ScaledScreen {
 		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
 	}
 
-	private void renderPanorama(GuiGraphics graphics, float partialTick) {
+	@Override
+	protected void renderPanorama(GuiGraphics graphics, float partialTick) {
 		if (previousPanorama != null && panoramaFade < 1.0f) {
-			previousPanorama.render(partialTick, 1.0f);
-			if (currentPanorama != null) currentPanorama.render(partialTick, panoramaFade);
-		} else if (currentPanorama != null) currentPanorama.render(partialTick, 1.0f);
+			previousPanorama.render(graphics, this.width, this.height, 1.0f, partialTick);
+			if (currentPanorama != null) currentPanorama.render(graphics, this.width, this.height, panoramaFade, partialTick);
+		} else if (currentPanorama != null) currentPanorama.render(graphics, this.width, this.height, 1.0f, partialTick);
 	}
 
 	private void renderRaceInfo(GuiGraphics graphics) {
@@ -406,7 +409,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		EntityPreviewRenderContext.renderEntityInInventory(graphics, x, y, adjustedScale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;

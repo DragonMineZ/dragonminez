@@ -5,14 +5,14 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainItems;
 import com.google.gson.JsonObject;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import java.util.function.Consumer;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class ShapedDragonRadarRecipeDefinition extends DragonRadarRecipeDefinition {
 	private final String chipItemId;
@@ -28,9 +28,9 @@ public class ShapedDragonRadarRecipeDefinition extends DragonRadarRecipeDefiniti
 	public String getCpuItemId() { return cpuItemId; }
 
 	@Override
-	public void buildRecipes(Consumer<FinishedRecipe> output, DragonRadarDefinition radarDefinition) {
-		Item chipItem = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(chipItemId));
-		Item cpuItem = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(cpuItemId));
+	public void buildRecipes(RecipeOutput output, DragonRadarDefinition radarDefinition) {
+		Item chipItem = BuiltInRegistries.ITEM.get(ResourceLocation.parse(chipItemId));
+		Item cpuItem = BuiltInRegistries.ITEM.get(ResourceLocation.parse(cpuItemId));
 		if (chipItem == null || cpuItem == null) throw new IllegalStateException("Missing radar recipe ingredient for radar '" + radarDefinition.getId() + "'");
 		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.getDragonRadarItemOrThrow(radarDefinition.getId()).get(), 1)
 			.pattern("OCO")
@@ -54,11 +54,11 @@ public class ShapedDragonRadarRecipeDefinition extends DragonRadarRecipeDefiniti
 
 
 	private static String getHasName(Item item) {
-		ResourceLocation key = ForgeRegistries.ITEMS.getKey(item);
+		ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
 		return "has_" + (key == null ? "item" : key.getPath());
 	}
 
-	private static InventoryChangeTrigger.TriggerInstance has(Item item) {
+	private static net.minecraft.advancements.Criterion<InventoryChangeTrigger.TriggerInstance> has(Item item) {
 		return InventoryChangeTrigger.TriggerInstance.hasItems(item);
 	}
 

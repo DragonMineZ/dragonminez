@@ -8,9 +8,9 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 @SuppressWarnings("unused")
 public final class MainTabs {
@@ -19,7 +19,7 @@ public final class MainTabs {
 	public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS_REGISTER =
 			DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Reference.MOD_ID);
 
-	public static final RegistryObject<CreativeModeTab> BLOQUES_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_blocks_tab",
+	public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BLOQUES_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_blocks_tab",
 			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainBlocks.DBALL4_BLOCK.get()))
 
 					.title(Component.translatable("itemGroup.dragonminez.blocks"))
@@ -41,7 +41,7 @@ public final class MainTabs {
 					})).build()
 	);
 
-	public static final RegistryObject<CreativeModeTab> NAMEK_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_namek_tab",
+	public static final DeferredHolder<CreativeModeTab, CreativeModeTab> NAMEK_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_namek_tab",
 			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainBlocks.NAMEK_GRASS_BLOCK.get()))
 
 					.title(Component.translatable("itemGroup.dragonminez.namek"))
@@ -58,7 +58,7 @@ public final class MainTabs {
 					})).build()
 	);
 
-	public static final RegistryObject<CreativeModeTab> ITEMS_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_items_tab",
+	public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ITEMS_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_items_tab",
 			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainItems.POTHALA_RIGHT.get()))
 
 					.title(Component.translatable("itemGroup.dragonminez.items"))
@@ -71,7 +71,7 @@ public final class MainTabs {
 					})).build()
 	);
 
-	public static final RegistryObject<CreativeModeTab> ARMORS_TAB =  CREATIVE_TABS_REGISTER.register("dragonminez_armors_tab",
+	public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ARMORS_TAB =  CREATIVE_TABS_REGISTER.register("dragonminez_armors_tab",
 			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainItems.BARDOCK_DBZ_ARMOR.get(ArmorItem.Type.CHESTPLATE).get()))
 
 					.title(Component.translatable("itemGroup.dragonminez.armors"))
@@ -84,7 +84,7 @@ public final class MainTabs {
 					})).build()
 	);
 
-	public static final RegistryObject<CreativeModeTab> ORES_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_ores_tab",
+	public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ORES_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_ores_tab",
 			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainBlocks.GETE_ORE.get()))
 
 					.title(Component.translatable("itemGroup.dragonminez.ores"))

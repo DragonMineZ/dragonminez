@@ -10,11 +10,11 @@ public class MightFruitStatusHandler implements IStatusEffectHandler {
     @Override
     public void handleStatusEffects(ServerPlayer player, StatsData data) {
         if (data.getEffects().hasEffect("mightfruit")) {
-            if (!player.hasEffect(MainEffects.MIGHTFRUIT.get())) {
-                player.addEffect(new MobEffectInstance(MainEffects.MIGHTFRUIT.get(), data.getEffects().getEffectDuration("mightfruit"), 0, false, false, true));
+            if (!player.hasEffect(MainEffects.MIGHTFRUIT)) {
+                player.addEffect(new MobEffectInstance(MainEffects.MIGHTFRUIT, data.getEffects().getEffectDuration("mightfruit"), 0, false, false, true));
             }
         } else {
-            player.removeEffect(MainEffects.MIGHTFRUIT.get());
+            player.removeEffect(MainEffects.MIGHTFRUIT);
         }
     }
 

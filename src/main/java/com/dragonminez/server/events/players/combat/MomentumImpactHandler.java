@@ -19,11 +19,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import com.dragonminez.Reference;
 
 import java.util.HashMap;
@@ -31,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class MomentumImpactHandler {
 	private static final Map<UUID, CollisionImpactContext> COLLISION_IMPACTS = new HashMap<>();
 	private static final java.util.Set<UUID> IMPACT_ANIM_PLAYING = new java.util.HashSet<>();
@@ -54,10 +59,10 @@ public class MomentumImpactHandler {
 	) {}
 
 	@SubscribeEvent
-	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.side.isClient() || event.phase != TickEvent.Phase.END) return;
+	public static void onPlayerTick(PlayerTickEvent.Post event) {
+		if (event.getEntity().level().isClientSide) return;
 
-		ServerPlayer player = (ServerPlayer) event.player;
+		ServerPlayer player = (ServerPlayer) event.getEntity();
 		Vec3 currentPos = player.position();
 
 		boolean wasOnGround = player.getPersistentData().getBoolean("dmz_was_grounded");
@@ -98,11 +103,11 @@ public class MomentumImpactHandler {
 	}
 
 	@SubscribeEvent
-	public static void onLivingTick(LivingEvent.LivingTickEvent event) {
-		LivingEntity living = event.getEntity();
+	public static void onLivingTick(EntityTickEvent.Post event) {
+		if (!(event.getEntity() instanceof LivingEntity living)) return;
 		if (living.level().isClientSide) return;
 
-		if (IMPACT_ANIM_PLAYING.contains(living.getUUID()) && !living.hasEffect(MainEffects.STUN.get())) {
+		if (IMPACT_ANIM_PLAYING.contains(living.getUUID()) && !living.hasEffect(MainEffects.STUN)) {
 			IMPACT_ANIM_PLAYING.remove(living.getUUID());
 			stopImpactAnimation(living);
 		}
@@ -125,7 +130,7 @@ public class MomentumImpactHandler {
 		COLLISION_IMPACTS.remove(living.getUUID());
 		playImpactAnimation(living, impact.type());
 		if (living instanceof ServerPlayer) IMPACT_ANIM_PLAYING.add(living.getUUID());
-		living.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 30, 0, false, false, true));
+		living.addEffect(new MobEffectInstance(MainEffects.STUN, 30, 0, false, false, true));
 		living.level().playSound(null, living.getX(), living.getY(), living.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
 		if (living.level() instanceof ServerLevel serverLevel) {

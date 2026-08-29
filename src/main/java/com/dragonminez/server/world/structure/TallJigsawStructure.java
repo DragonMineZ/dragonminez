@@ -2,6 +2,7 @@ package com.dragonminez.server.world.structure;
 
 import com.dragonminez.server.world.structure.helper.MainStructureTypes;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -14,11 +15,13 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pools.JigsawPlacement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import net.minecraft.world.level.levelgen.structure.structures.JigsawStructure;
+import net.minecraft.world.level.levelgen.structure.pools.alias.PoolAliasLookup;
 
 import java.util.Optional;
 
 public class TallJigsawStructure extends Structure {
-	public static final Codec<TallJigsawStructure> CODEC = RecordCodecBuilder.create(instance ->
+	public static final MapCodec<TallJigsawStructure> CODEC = RecordCodecBuilder.mapCodec(instance ->
 			instance.group(
 					settingsCodec(instance),
 					StructureTemplatePool.CODEC.fieldOf("start_pool").forGetter(s -> s.startPool),
@@ -92,7 +95,8 @@ public class TallJigsawStructure extends Structure {
 
 		BlockPos start = new BlockPos(sx, startY, sz);
 		return JigsawPlacement.addPieces(context, this.startPool, this.startJigsawName,
-				this.maxDepth, start, this.useExpansionHack, Optional.empty(), this.maxDistanceFromCenter);
+				this.maxDepth, start, this.useExpansionHack, Optional.empty(), this.maxDistanceFromCenter,
+				PoolAliasLookup.EMPTY, JigsawStructure.DEFAULT_DIMENSION_PADDING, JigsawStructure.DEFAULT_LIQUID_SETTINGS);
 	}
 
 	public int getMinStartY() {

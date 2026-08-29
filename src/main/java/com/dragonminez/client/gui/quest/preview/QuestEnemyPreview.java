@@ -22,9 +22,9 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.core.registries.BuiltInRegistries;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
@@ -236,7 +236,7 @@ public class QuestEnemyPreview {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, entity);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, new org.joml.Vector3f(0.0F, 0.0F, 0.0F), pose, cameraOrientation, entity);
 		graphics.pose().popPose();
 	}
 
@@ -388,16 +388,13 @@ public class QuestEnemyPreview {
 			ResourceLocation tagId = ResourceLocation.tryParse(id.substring(1));
 			if (tagId == null) return null;
 			TagKey<EntityType<?>> tag = TagKey.create(Registries.ENTITY_TYPE, tagId);
-			var tags = ForgeRegistries.ENTITY_TYPES.tags();
-			if (tags != null) {
-				for (EntityType<?> type : tags.getTag(tag)) {
-					return type;
-				}
+			for (var holder : BuiltInRegistries.ENTITY_TYPE.getTagOrEmpty(tag)) {
+				return holder.value();
 			}
 			return null;
 		}
 		ResourceLocation rl = ResourceLocation.tryParse(id);
-		return rl == null ? null : ForgeRegistries.ENTITY_TYPES.getValue(rl);
+		return rl == null ? null : BuiltInRegistries.ENTITY_TYPE.get(rl);
 	}
 
 	/** Discard cached dummy entities (call on screen close). */

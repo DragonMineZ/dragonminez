@@ -17,17 +17,21 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID)
+@EventBusSubscriber(modid = Reference.MOD_ID)
 public class DragonBallsHandler {
 	private static final Queue<Runnable> generationQueue = new ConcurrentLinkedQueue<>();
 	private static final int PENDING_RESCAN_INTERVAL = 100;
@@ -109,18 +113,18 @@ public class DragonBallsHandler {
 	}
 
 	@SubscribeEvent
-	public static void onLevelTick(TickEvent.LevelTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.level.isClientSide) return;
-		if (event.level instanceof ServerLevel level && ++pendingRescanTimer >= PENDING_RESCAN_INTERVAL) {
+	public static void onLevelTick(LevelTickEvent.Post event) {
+		if (event.getLevel().isClientSide) return;
+		if (event.getLevel() instanceof ServerLevel level && ++pendingRescanTimer >= PENDING_RESCAN_INTERVAL) {
 			pendingRescanTimer = 0;
 			rescanPendingBalls(level);
 		}
-		if (event.level instanceof ServerLevel level && level.dimension().equals(Level.OVERWORLD)
+		if (event.getLevel() instanceof ServerLevel level && level.dimension().equals(Level.OVERWORLD)
 				&& ++radarSyncTimer >= RADAR_SYNC_INTERVAL) {
 			radarSyncTimer = 0;
 			syncRadar(level);
 		}
-		if (event.level instanceof ServerLevel level) {
+		if (event.getLevel() instanceof ServerLevel level) {
 			generateNearbyPendingBalls(level);
 		}
 		while (!generationQueue.isEmpty()) {

@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.compat.SableCompat;
+import com.dragonminez.common.compat.CameraAimHelper;
 import com.dragonminez.common.combat.util.MultipartTargeting;
 
 import com.dragonminez.client.util.ColorUtils;
@@ -608,8 +610,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 this.setDeltaMovement(0, 0, 0);
             } else {
                 if (this.getOwner() instanceof LivingEntity owner) {
-                    Vec3 look = owner.getLookAngle();
-                    this.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
+                    Vec3 look = CameraAimHelper.resolve(owner);
+                    this.shootFromRotation(owner, CameraAimHelper.pitch(look), CameraAimHelper.yaw(owner, look), 0.0F, this.getKiSpeed(), 0.0F);
                 }
             }
             //this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 2.0F);
@@ -631,7 +633,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             }
 
             Vec3 eyePos = livingOwner.getEyePosition();
-            Vec3 lookDir = livingOwner.getLookAngle();
+			Vec3 lookDir = CameraAimHelper.resolve(livingOwner);
             double reach = 100.0D;
             Vec3 endPos = eyePos.add(lookDir.scale(reach));
 
@@ -642,10 +644,12 @@ public class KiBlastEntity extends AbstractKiProjectile {
                     livingOwner
             ));
 
-            if (blockHit.getType() != BlockHitResult.Type.MISS) {
-                endPos = blockHit.getLocation();
-                reach = eyePos.distanceTo(endPos);
-            }
+			if (blockHit.getType() != BlockHitResult.Type.MISS) {
+				// Sable returns the impacted ship block in plot-local coordinates. The launch
+				// trajectory must target that block's projected world position, not the distant plot.
+				endPos = SableCompat.projectToWorld(this.level(), blockHit.getLocation());
+				reach = eyePos.distanceTo(endPos);
+			}
 
             AABB searchBox = livingOwner.getBoundingBox().expandTowards(lookDir.scale(reach)).inflate(1.0D);
             for (Entity entity : this.level().getEntities(livingOwner, searchBox, e -> !e.isSpectator() && e.isPickable())) {
@@ -704,7 +708,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     public void tick() {
-        if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
+        if (this.level().isClientSide && this.isControllable()
+                && this.getOwner() instanceof Player player && player.isLocalPlayer()) {
+            CameraAimHelper.trackLocalSokidan(this.getId(), this.isActivelyControlledSokidan());
+        }
+        if (!this.level().isClientSide && !this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
             this.fireHability(this.getMaxLife() - this.tickCount);
         }
 
@@ -835,9 +843,10 @@ public class KiBlastEntity extends AbstractKiProjectile {
             return;
         }
 
-        if (!isCasting && this.isParked() && ownerEntity instanceof LivingEntity owner) {
+        if (this.isActivelyControlledSokidan() && ownerEntity instanceof LivingEntity owner) {
             Vec3 eyePos = owner.getEyePosition();
-            Vec3 look = owner.getLookAngle();
+            // Both copies receive a fresh camera direction before simulating this tick.
+            Vec3 look = CameraAimHelper.resolve(owner);
 
             Vec3 targetPos = eyePos.add(look.scale(this.getParkedDistance()));
             Vec3 diff = targetPos.subtract(this.position());
@@ -850,8 +859,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 this.setPos(targetPos.x, targetPos.y, targetPos.z);
             }
 
-            this.setYRot(owner.getYRot());
-            this.setXRot(owner.getXRot());
+            this.setYRot(CameraAimHelper.yaw(owner, look));
+            this.setXRot(CameraAimHelper.pitch(look));
+            if (!this.level().isClientSide) this.hasImpulse = true;
         }
 
         if (!this.level().isClientSide) {
@@ -963,18 +973,18 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(CAST_TIME, 0);
-        this.entityData.define(OFFSET_X, 0.0F);
-        this.entityData.define(OFFSET_Y, 0.0F);
-        this.entityData.define(OFFSET_Z, 0.0F);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CAST_TIME, 0);
+        builder.define(OFFSET_X, 0.0F);
+        builder.define(OFFSET_Y, 0.0F);
+        builder.define(OFFSET_Z, 0.0F);
 
-        this.entityData.define(IS_CONTROLLABLE, false);
-        this.entityData.define(IS_PARKED, false);
-        this.entityData.define(PARKED_DISTANCE, 0.0F);
+        builder.define(IS_CONTROLLABLE, false);
+        builder.define(IS_PARKED, false);
+        builder.define(PARKED_DISTANCE, 0.0F);
 
-        this.entityData.define(IS_FIRING, false);
+        builder.define(IS_FIRING, false);
 
     }
 
@@ -994,11 +1004,54 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public boolean isFiring() { return this.entityData.get(IS_FIRING); }
     public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
 
+    public boolean isActivelyControlledSokidan() {
+        return this.isFiring() && this.isParked() && this.isControllable();
+    }
 
+    private boolean isLocallyPredictedSokidan() {
+        return this.level().isClientSide && this.isActivelyControlledSokidan()
+                && this.getOwner() instanceof Player player && player.isLocalPlayer();
+    }
+
+    /**
+     * The controlling client predicts its own parked Sokidan from immediate local camera aim. DMZ's
+     * ten-tick entity tracking interval would otherwise snap that prediction back to the delayed
+     * server path. Other clients accept the authoritative update forced for active control ticks.
+     */
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+        if (!this.isLocallyPredictedSokidan()) super.lerpTo(x, y, z, yRot, xRot, steps);
+    }
+
+    @Override
+    public void lerpMotion(double x, double y, double z) {
+        if (!this.isLocallyPredictedSokidan()) super.lerpMotion(x, y, z);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(net.minecraft.network.syncher.EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (IS_PARKED.equals(key) && this.level().isClientSide && this.isControllable()
+                && this.getOwner() instanceof Player player && player.isLocalPlayer()) {
+            CameraAimHelper.trackLocalSokidan(this.getId(), this.isActivelyControlledSokidan());
+            this.setDeltaMovement(this.isParked() ? Vec3.ZERO : CameraAimHelper.resolve(player).scale(this.getKiSpeed()));
+        }
+    }
+
+
+    /**
+     * Holds a charging blast in position relative to its owner.
+     *
+     * <p>Called every tick from {@link #tick()} on both sides, so it uses entity rotation rather
+     * than {@code CameraAimHelper}'s server-only persistent data.
+     */
     private void updatePositionRelativeToOwner(LivingEntity owner) {
         Vec3 look = owner.getLookAngle();
         Vec3 worldUp = new Vec3(0, 1, 0);
         Vec3 right = look.cross(worldUp).normalize();
+        if (right.lengthSqr() < 1.0E-6D) {
+            right = new Vec3(1, 0, 0);
+        }
 
         // Usar worldUp directamente en vez de right.cross(look)
         Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
@@ -1198,7 +1251,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                         if (x * x + y * y + z * z <= destructionRadius * destructionRadius) {
                             BlockPos targetPos = center.offset(x, y, z);
                             if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
-                                this.setKiBlockToAir(targetPos, 2);
+								this.setKiBlockToAir(targetPos, 2);
                             }
                         }
                     }

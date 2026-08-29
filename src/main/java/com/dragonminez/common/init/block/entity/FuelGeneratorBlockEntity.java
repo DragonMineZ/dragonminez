@@ -6,6 +6,7 @@ import com.dragonminez.common.init.menu.menutypes.FuelGeneratorMenu;
 import com.dragonminez.server.energy.StarEnergyStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.MenuProvider;
@@ -19,22 +20,19 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.*;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animatable.instance.SingletonAnimatableInstanceCache;
+import software.bernie.geckolib.animation.*;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.util.RenderUtil;
 
 public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvider, GeoBlockEntity {
 	private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
@@ -43,7 +41,7 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 		protected void onContentsChanged(int slot) { setChanged(); }
 		@Override
 		public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-			return ForgeHooks.getBurnTime(stack, RecipeType.SMELTING) > 0;
+			return stack.getBurnTime(RecipeType.SMELTING) > 0;
 		}
 	};
 
@@ -53,9 +51,6 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 		@Override
 		public boolean canReceive() { return false; }
 	};
-
-	private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-	private LazyOptional<IEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
 
 	protected final ContainerData data;
 	private int burnTime;
@@ -89,18 +84,12 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 		};
 	}
 
-	@Override
-	public void onLoad() {
-		super.onLoad();
-		lazyItemHandler = LazyOptional.of(() -> itemHandler);
-		lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
+	public IItemHandler getItemHandler() {
+		return itemHandler;
 	}
 
-	@Override
-	public void invalidateCaps() {
-		super.invalidateCaps();
-		lazyItemHandler.invalidate();
-		lazyEnergyHandler.invalidate();
+	public IEnergyStorage getEnergyStorage() {
+		return energyStorage;
 	}
 
 	public void tick(Level pLevel, BlockPos pPos, BlockState pState) {
@@ -124,7 +113,7 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 			ItemStack fuel = itemHandler.getStackInSlot(0);
 			Item fuelItem = fuel.getItem();
 			if (!fuel.isEmpty()) {
-				int fuelTime = ForgeHooks.getBurnTime(fuel, RecipeType.SMELTING);
+				int fuelTime = fuel.getBurnTime(RecipeType.SMELTING);
 				if (fuelTime > 0) {
 					this.burnTime = fuelTime;
 					this.maxBurnTime = fuelTime;
@@ -147,51 +136,33 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 		if (changed) setChanged();
 	}
 
-	private boolean canBurn() {
-		return energyStorage.getEnergyStored() < energyStorage.getMaxEnergyStored();
-	}
-
-	private void startBurn() {
-		ItemStack fuel = itemHandler.getStackInSlot(0);
-		if (!fuel.isEmpty()) {
-			int time = ForgeHooks.getBurnTime(fuel, RecipeType.SMELTING);
-			if (time > 0) {
-				burnTime = time;
-				maxBurnTime = time;
-				fuel.shrink(1);
-				setChanged();
-			}
-		}
-	}
-
 	private void distributeEnergy() {
-		if(energyStorage.getEnergyStored() <= 0) return;
+		if (energyStorage.getEnergyStored() <= 0 || level == null) return;
 
 		for (Direction dir : Direction.values()) {
-			BlockEntity be = level.getBlockEntity(worldPosition.relative(dir));
-			if (be != null) {
-				be.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).ifPresent(e -> {
-					if (e.canReceive()) {
-						int sent = e.receiveEnergy(Math.min(energyStorage.getEnergyStored(), 256), false);
-						energyStorage.extractEnergy(sent, false);
-					}
-				});
+			BlockPos neighbor = worldPosition.relative(dir);
+			IEnergyStorage target = level.getCapability(Capabilities.EnergyStorage.BLOCK, neighbor, dir.getOpposite());
+			if (target != null && target.canReceive()) {
+				int sent = target.receiveEnergy(Math.min(energyStorage.getEnergyStored(), 256), false);
+				energyStorage.extractEnergy(sent, false);
 			}
 		}
 	}
 
 	@Override
-	protected void saveAdditional(CompoundTag pTag) {
-		pTag.put("inventory", itemHandler.serializeNBT());
+	protected void saveAdditional(CompoundTag pTag, HolderLookup.Provider registries) {
+		pTag.put("inventory", itemHandler.serializeNBT(registries));
 		pTag.putInt("burnTime", burnTime);
 		energyStorage.saveNBT(pTag);
-		super.saveAdditional(pTag);
+		super.saveAdditional(pTag, registries);
 	}
 
 	@Override
-	public void load(CompoundTag pTag) {
-		super.load(pTag);
-		itemHandler.deserializeNBT(pTag.getCompound("inventory"));
+	protected void loadAdditional(CompoundTag pTag, HolderLookup.Provider registries) {
+		super.loadAdditional(pTag, registries);
+		if (pTag.contains("inventory")) {
+			itemHandler.deserializeNBT(registries, pTag.getCompound("inventory"));
+		}
 		burnTime = pTag.getInt("burnTime");
 		energyStorage.loadNBT(pTag);
 	}
@@ -199,13 +170,6 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 	@Override
 	public Component getDisplayName() {
 		return Component.translatable("block.dragonminez.fuel_generator");
-	}
-
-	@Override
-	public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-		if(cap == ForgeCapabilities.ITEM_HANDLER) return lazyItemHandler.cast();
-		if(cap == ForgeCapabilities.ENERGY) return lazyEnergyHandler.cast();
-		return super.getCapability(cap, side);
 	}
 
 	@Override
@@ -224,7 +188,7 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 
 	@Override
 	public double getTick(Object blockEntity) {
-		return RenderUtils.getCurrentTick();
+		return RenderUtil.getCurrentTick();
 	}
 
 	@Nullable
@@ -232,4 +196,5 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 	public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
 		return new FuelGeneratorMenu(pContainerId, pPlayerInventory, this, this.data);
 	}
+
 }

@@ -3,15 +3,11 @@ package com.dragonminez.common.stats.character;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
-import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 
-@Getter
-@Setter
 public class Resources {
     private float currentEnergy;
     private float currentStamina;
@@ -51,27 +47,51 @@ public class Resources {
     }
 
     private static float roundToQuarter(float value) {
-        return Math.round(value * 4.0f) / 4.0f;
+        return Math.round(value * 4.0F) / 4.0F;
     }
 
     private static float truncateToInt(float value) {
         return (float) Math.floor(value);
     }
 
-    public int getPowerRelease() { return release; }
+    private static final float LARGE_POOL_THRESHOLD = 1_000_000.0F;
+
+    /**
+     * Clamp ki/stamina with double math so pools at high ENE/RES (1e8–1e9 max) can reach max.
+     * Quarter steps only below {@link #LARGE_POOL_THRESHOLD}.
+     */
+    private static float clampPool(double value, float max) {
+        if (!(max > 0.0F) || !Double.isFinite(value)) {
+            return 0.0F;
+        }
+        double v = Math.min(Math.max(0.0, value), (double) max);
+        if (v >= (double) max - Math.max(4.0 * Math.ulp(max), 1.0)) {
+            return max;
+        }
+        if (v < LARGE_POOL_THRESHOLD) {
+            return roundToQuarter((float) v);
+        }
+        return (float) v;
+    }
+
+    public int getPowerRelease() {
+        return release;
+    }
 
     public void setCurrentEnergy(float energy) {
         if (energy <= 1) setPowerRelease(0);
-        this.currentEnergy = roundToQuarter(Math.min(Math.max(0, energy), statsData.getMaxEnergy()));
+        float max = statsData != null ? statsData.getMaxEnergy() : 0.0F;
+        this.currentEnergy = clampPool(energy, max);
     }
 
     public void setCurrentStamina(float stamina) {
-        float max = Math.max(0, statsData.getMaxStamina());
-        this.currentStamina = roundToQuarter(Math.min(Math.max(0, stamina), max));
+        float max = statsData != null ? Math.max(0.0F, statsData.getMaxStamina()) : 0.0F;
+        this.currentStamina = clampPool(stamina, max);
     }
 
     public void setCurrentPoise(float poise) {
-        this.currentPoise = roundToQuarter(Math.min(Math.max(0, poise), statsData.getMaxPoise()));
+        float max = statsData != null ? statsData.getMaxPoise() : 0.0F;
+        this.currentPoise = roundToQuarter((float) Math.min(Math.max(0.0, (double) poise), Math.max(0.0, (double) max)));
     }
 
     public void setPowerRelease(int release) {
@@ -103,43 +123,91 @@ public class Resources {
         this.pendingAttributePoints = Math.max(0, points);
     }
 
-    public void addPendingAttributePoints(int amount) { setPendingAttributePoints(pendingAttributePoints + amount); }
+    public void addPendingAttributePoints(int amount) {
+        setPendingAttributePoints(pendingAttributePoints + amount);
+    }
 
-    public void removePendingAttributePoints(int amount) { setPendingAttributePoints(pendingAttributePoints - amount); }
+    public void removePendingAttributePoints(int amount) {
+        setPendingAttributePoints(pendingAttributePoints - amount);
+    }
 
     public void setRacialSkillCount(int count) {
         this.racialSkillCount = Math.max(0, count);
     }
 
-    public void addEnergy(float amount) { setCurrentEnergy(currentEnergy + amount); }
-    public void addStamina(float amount) { setCurrentStamina(currentStamina + amount); }
-    public void addPoise(float amount) { setCurrentPoise(currentPoise + amount); }
-    public void addAlignment(int amount) { setAlignment(alignment + amount); }
+    public void addEnergy(float amount) {
+        setCurrentEnergy((float) ((double) currentEnergy + (double) amount));
+    }
+
+    public void addStamina(float amount) {
+        setCurrentStamina((float) ((double) currentStamina + (double) amount));
+    }
+
+    public void addPoise(float amount) {
+        setCurrentPoise(currentPoise + amount);
+    }
+
+    /**
+     * When max energy/stamina grows (VIT-style heal for pools): grant the delta with double math,
+     * or snap full if the bar was full before.
+     */
+    public void grantMaxPoolIncrease(float oldMax, float newMax, boolean energy) {
+        if (!(newMax > oldMax)) return;
+        double cur = energy ? currentEnergy : currentStamina;
+        boolean wasFull = oldMax <= 0.0F || cur >= (double) oldMax - Math.max(4.0 * Math.ulp(oldMax), 1.0);
+        if (wasFull) {
+            if (energy) setCurrentEnergy(newMax);
+            else setCurrentStamina(newMax);
+            return;
+        }
+        double next = cur + ((double) newMax - (double) oldMax);
+        if (energy) setCurrentEnergy((float) Math.min(newMax, next));
+        else setCurrentStamina((float) Math.min(newMax, next));
+    }
+
+    /** After login / max recompute: snap near-full float pools to exact max; never invent fill. */
+    public void reclampToCurrentMax() {
+        if (statsData == null) return;
+        float maxE = statsData.getMaxEnergy();
+        float maxS = statsData.getMaxStamina();
+        float maxP = statsData.getMaxPoise();
+        if (maxE > 0.0F) this.currentEnergy = clampPool(this.currentEnergy, maxE);
+        if (maxS > 0.0F) this.currentStamina = clampPool(this.currentStamina, maxS);
+        if (maxP > 0.0F) {
+            this.currentPoise = roundToQuarter((float) Math.min(Math.max(0.0, (double) this.currentPoise), (double) maxP));
+        }
+    }
+
+    public void addAlignment(int amount) {
+        setAlignment(alignment + amount);
+    }
 
     public void addTrainingPoints(float amount) {
         addTrainingPoints(amount, true);
     }
+
     public void addTrainingPoints(float amount, boolean shareWithParty) {
         if (amount <= 0 || player == null) {
             setTrainingPoints(trainingPoints + amount);
             return;
         }
-
         float oldValue = this.trainingPoints;
         DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, (int) oldValue, (int) amount, shareWithParty);
-
-        if (!MinecraftForge.EVENT_BUS.post(event)) {
+        if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
             setTrainingPoints(oldValue + event.getTpGain());
         }
     }
 
-    public void addRacialSkillCount(int amount) { setRacialSkillCount(racialSkillCount + amount); }
+    public void addRacialSkillCount(int amount) {
+        setRacialSkillCount(racialSkillCount + amount);
+    }
 
     public void removeEnergy(float amount) {
         float before = currentEnergy;
         setCurrentEnergy(currentEnergy - amount);
         awardDynamicGrowthEnergy(before - currentEnergy);
     }
+
     public void removeStamina(float amount) {
         float before = currentStamina;
         setCurrentStamina(currentStamina - amount);
@@ -157,9 +225,18 @@ public class Resources {
             DynamicGrowthService.awardEnergySpent(serverPlayer, statsData, spent);
         }
     }
-    public void removePoise(float amount) { setCurrentPoise(currentPoise - amount); }
-    public void removeAlignment(int amount) { setAlignment(alignment - amount); }
-    public void removeTrainingPoints(float amount) { setTrainingPoints(trainingPoints - amount); }
+
+    public void removePoise(float amount) {
+        setCurrentPoise(currentPoise - amount);
+    }
+
+    public void removeAlignment(int amount) {
+        setAlignment(alignment - amount);
+    }
+
+    public void removeTrainingPoints(float amount) {
+        setTrainingPoints(trainingPoints - amount);
+    }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -178,24 +255,18 @@ public class Resources {
 
     public void load(CompoundTag tag) {
         if (tag.contains("CurrentEnergy", 5)) this.currentEnergy = tag.getFloat("CurrentEnergy");
-        else this.currentEnergy = tag.getInt("CurrentEnergy");
-
+         else this.currentEnergy = tag.getInt("CurrentEnergy");
         if (tag.contains("CurrentStamina", 5)) this.currentStamina = tag.getFloat("CurrentStamina");
-        else this.currentStamina = tag.getInt("CurrentStamina");
-
+         else this.currentStamina = tag.getInt("CurrentStamina");
         if (tag.contains("CurrentPoise", 5)) this.currentPoise = tag.getFloat("CurrentPoise");
-        else this.currentPoise = tag.getInt("CurrentPoise");
-
+         else this.currentPoise = tag.getInt("CurrentPoise");
         this.release = tag.getInt("Release");
         this.releaseLimit = tag.getInt("ReleaseLimit");
         this.actionCharge = tag.getInt("FormRelease");
         this.alignment = tag.getInt("Alignment");
-
         if (tag.contains("TrainingPointsF", 5)) this.trainingPoints = tag.getFloat("TrainingPointsF");
-        else this.trainingPoints = tag.getInt("TrainingPoints");
-
+         else this.trainingPoints = tag.getInt("TrainingPoints");
         this.pendingAttributePoints = tag.getInt("PendingAttributePoints");
-
         this.racialSkillCount = tag.getInt("ZenkaiCount");
     }
 
@@ -210,5 +281,80 @@ public class Resources {
         this.trainingPoints = other.trainingPoints;
         this.pendingAttributePoints = other.pendingAttributePoints;
         this.racialSkillCount = other.racialSkillCount;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public float getCurrentEnergy() {
+        return this.currentEnergy;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public float getCurrentStamina() {
+        return this.currentStamina;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public float getCurrentPoise() {
+        return this.currentPoise;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public int getRelease() {
+        return this.release;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public int getReleaseLimit() {
+        return this.releaseLimit;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public int getActionCharge() {
+        return this.actionCharge;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public int getAlignment() {
+        return this.alignment;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public float getTrainingPoints() {
+        return this.trainingPoints;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public int getPendingAttributePoints() {
+        return this.pendingAttributePoints;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public int getRacialSkillCount() {
+        return this.racialSkillCount;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public Player getPlayer() {
+        return this.player;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public StatsData getStatsData() {
+        return this.statsData;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public void setRelease(final int release) {
+        this.release = release;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public void setPlayer(final Player player) {
+        this.player = player;
+    }
+
+    @java.lang.SuppressWarnings("all")
+    public void setStatsData(final StatsData statsData) {
+        this.statsData = statsData;
     }
 }

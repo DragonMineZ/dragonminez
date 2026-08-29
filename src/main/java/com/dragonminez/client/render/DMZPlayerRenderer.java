@@ -27,7 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
@@ -56,17 +56,20 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	public void reRender(GeoRenderLayer<T> calledFrom, BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
 						 T animatable, RenderType renderType, VertexConsumer buffer, float partialTick,
-						 int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+						 int packedLight, int packedOverlay, int colour) {
 		this.caller = calledFrom;
 		super.reRender(model, poseStack, bufferSource, animatable, renderType, buffer, partialTick,
-				packedLight, packedOverlay, red, green, blue, alpha);
+				packedLight, packedOverlay, colour);
 		this.caller = null;
 	}
 
 	@Override
-	public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-		float finalAlpha = animatable.isSpectator() ? 0.15f : alpha;
-		super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, finalAlpha);
+	public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
+		int finalColour = colour;
+		if (animatable.isSpectator()) {
+			finalColour = (38 << 24) | (colour & 0x00FFFFFF); // ~0.15 alpha
+		}
+		super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, finalColour);
 		BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
 	}
 
@@ -108,10 +111,11 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		poseStack.pushPose();
 
-		boolean shaderPack = IrisCompat.isShaderPackInUse();
+		boolean hudPortrait = EntityPreviewRenderContext.isHudPortrait();
+		boolean shaderPack = !hudPortrait && IrisCompat.isShaderPackInUse();
 		boolean captureMask = !shaderPack || TransformationPostShaderManager.isShaderpackMainPass();
 
-		TransformationPostShaderManager.MaskData maskData = captureMask ? TransformationPostShaderManager.getEntityMaskData(entity) : null;
+		TransformationPostShaderManager.MaskData maskData = !hudPortrait && captureMask ? TransformationPostShaderManager.getEntityMaskData(entity) : null;
 		TransformationMaskBufferSource maskBufferSource = null;
 		if (maskData != null) {
 			maskBufferSource = TransformationPostShaderManager.getMaskBufferSource();
@@ -125,7 +129,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			);
 		}
 
-		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
+		if (!hudPortrait && FlySkillEvent.getInstance().isFlyingFast(entity)) {
 			float roll = entity == Minecraft.getInstance().player ? FlightRollHandler.getRoll(partialTick) : 0f;
 			float pitch = entity.getViewXRot(partialTick);
 			float pivotY = entity.getBbHeight() / 2f;
@@ -139,7 +143,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		poseStack.scale(scalingX, scalingY, scalingZ);
 
-		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		boolean isAuraActive = !hudPortrait && (stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura());
 
 		if (isAuraActive) {
 			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
@@ -174,6 +178,12 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (EntityPreviewRenderContext.isHudPortrait()
+					&& !(renderLayer instanceof DMZPlayerArmorLayer
+					|| renderLayer instanceof DMZCustomArmorLayer
+					|| renderLayer instanceof DMZRacePartsLayer
+					|| renderLayer instanceof DMZSkinLayer
+					|| renderLayer instanceof DMZHairLayer)) continue;
 			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
 	}

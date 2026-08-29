@@ -176,7 +176,7 @@ public class GravityLogic {
 					if (stack.getItem() instanceof WeightItem) {
 						totalWeight[0] += WeightItem.getWeight(stack);
 					} else if (!stack.isEmpty()) {
-						totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
+						totalWeight[0] += stack.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY).copyTag().getInt("WeightValue");
 					}
 				}
 			}
@@ -349,8 +349,8 @@ public class GravityLogic {
 		AttributeInstance attackSpeed = player.getAttribute(Attributes.ATTACK_SPEED);
 
 		if (movementSpeed == null || attackSpeed == null) return;
-		movementSpeed.removeModifier(GRAVITY_SPEED_UUID);
-		attackSpeed.removeModifier(GRAVITY_ATTACK_SPEED_UUID);
+		movementSpeed.removeModifier(com.dragonminez.common.util.AttributeMods.id(GRAVITY_SPEED_UUID));
+		attackSpeed.removeModifier(com.dragonminez.common.util.AttributeMods.id(GRAVITY_ATTACK_SPEED_UUID));
 
 		double weightPenalty = getWeightPenaltyFactor(player);
 
@@ -370,20 +370,10 @@ public class GravityLogic {
 		attackPenalty = Math.min(config.getMaxAttackPenalty(), attackPenalty + weightPenalty);
 
 		if (movePenalty > 0) {
-			movementSpeed.addTransientModifier(new AttributeModifier(
-					GRAVITY_SPEED_UUID,
-					"Gravity movement penalty",
-					-movePenalty,
-					AttributeModifier.Operation.MULTIPLY_TOTAL
-			));
+			movementSpeed.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(GRAVITY_SPEED_UUID, "Gravity movement penalty", -movePenalty, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 		}
 		if (attackPenalty > 0) {
-			attackSpeed.addTransientModifier(new AttributeModifier(
-					GRAVITY_ATTACK_SPEED_UUID,
-					"Gravity attack speed penalty",
-					-attackPenalty,
-					AttributeModifier.Operation.MULTIPLY_TOTAL
-			));
+			attackSpeed.addTransientModifier(com.dragonminez.common.util.AttributeMods.of(GRAVITY_ATTACK_SPEED_UUID, "Gravity attack speed penalty", -attackPenalty, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 		}
 
 		applyStatReduction(player, config);

@@ -11,7 +11,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.GenericDirtMessageScreen;
+import net.minecraft.client.gui.screens.GenericMessageScreen;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.ProgressScreen;
 import net.minecraft.client.gui.screens.ReceivingLevelScreen;
@@ -113,13 +113,13 @@ public final class SkinCacheManager {
     }
 
     public static ResourceLocation resolveTexture(String username) {
-        if (username == null || username.isEmpty()) return DefaultPlayerSkin.getDefaultSkin();
+        if (username == null || username.isEmpty()) return DefaultPlayerSkin.getDefaultTexture();
         String key = username.toLowerCase();
         ResourceLocation loc = registered.get(key);
         if (loc != null) return loc;
 
         if (initialized && !index.containsKey(key)) queueResolve(username, false);
-        return DefaultPlayerSkin.getDefaultSkin();
+        return DefaultPlayerSkin.getDefaultTexture();
     }
 
     private static void queueResolve(String username, boolean forceRecheck) {
@@ -171,12 +171,12 @@ public final class SkinCacheManager {
     private static boolean canDownloadNow() {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null) return false;
-        if (mc.getOverlay() != null) return false;
+        if (mc.getConnection() != null) return false;
         Screen screen = mc.screen;
         return !(screen instanceof LevelLoadingScreen
                 || screen instanceof ReceivingLevelScreen
                 || screen instanceof ProgressScreen
-                || screen instanceof GenericDirtMessageScreen);
+                || screen instanceof GenericMessageScreen);
     }
 
     private static void resolveBlocking(String username, boolean forceRecheck) {

@@ -8,7 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 @Getter
 public class ItemReward extends QuestReward {
@@ -17,7 +17,7 @@ public class ItemReward extends QuestReward {
 
 	public ItemReward(ItemStack itemStack) {
 		super(RewardType.ITEM);
-		this.itemId = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
+		this.itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).toString();
 		this.count = itemStack.getCount();
 	}
 
@@ -28,7 +28,7 @@ public class ItemReward extends QuestReward {
 
 	@Override
 	public void giveReward(ServerPlayer player, double rewardMultiplier) {
-		Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
+		Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
 		if (item == null) return;
 		int scaledCount = scaledCount(rewardMultiplier);
 		if (scaledCount <= 0) return;

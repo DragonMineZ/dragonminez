@@ -11,13 +11,13 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class BetaAccessVerificationScreen extends Screen {
+public class BetaAccessVerificationScreen extends UnblurredScreen {
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 	private static final int CONTENT_WIDTH = 320;
 
@@ -62,7 +62,7 @@ public class BetaAccessVerificationScreen extends Screen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
 		int centerX = this.width / 2;
 		int y = this.height / 2 - 80;

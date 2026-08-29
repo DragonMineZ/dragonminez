@@ -89,7 +89,7 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
             data.getCooldowns().setCooldown(Cooldowns.ZENKAI, config.getSaiyanZenkaiCooldownSeconds() * 20);
             player.addEffect(
                     new MobEffectInstance(
-                            MainEffects.SAIYAN_PASSIVE.get(),
+                            MainEffects.SAIYAN_PASSIVE,
                             config.getSaiyanZenkaiCooldownSeconds() * 20,
                             0,
                             false,

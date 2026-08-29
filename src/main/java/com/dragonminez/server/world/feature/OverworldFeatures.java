@@ -4,23 +4,23 @@ import com.dragonminez.Reference;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 public class OverworldFeatures {
 	public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(Registries.FEATURE, Reference.MOD_ID);
 
-	public static final RegistryObject<Feature<NoneFeatureConfiguration>> STONE_SPIKE = FEATURES.register("stone_spike",
+	public static final DeferredHolder<Feature<?>, Feature<NoneFeatureConfiguration>> STONE_SPIKE = FEATURES.register("stone_spike",
 			() -> new StoneSpikeFeature(NoneFeatureConfiguration.CODEC));
 
-    public static final RegistryObject<Feature<NoneFeatureConfiguration>> ROCKY_PEAK = FEATURES.register("rocky_peak",
+    public static final DeferredHolder<Feature<?>, Feature<NoneFeatureConfiguration>> ROCKY_PEAK = FEATURES.register("rocky_peak",
             () -> new RockyPeakFeature(NoneFeatureConfiguration.CODEC));
 
-    public static final RegistryObject<Feature<NoneFeatureConfiguration>> KARST_PILLAR = FEATURES.register("karst_pillar",
+    public static final DeferredHolder<Feature<?>, Feature<NoneFeatureConfiguration>> KARST_PILLAR = FEATURES.register("karst_pillar",
             () -> new KarstPillarFeature(NoneFeatureConfiguration.CODEC));
 
-    public static final RegistryObject<Feature<NoneFeatureConfiguration>> ROCKY_CLIFF = FEATURES.register("rocky_cliff",
+    public static final DeferredHolder<Feature<?>, Feature<NoneFeatureConfiguration>> ROCKY_CLIFF = FEATURES.register("rocky_cliff",
             () -> new RockyCliffFeature(NoneFeatureConfiguration.CODEC));
 
     public static void register(IEventBus eventBus) {

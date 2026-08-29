@@ -108,7 +108,9 @@ public class OtherworldRegionLoader {
 		Set<String> blockNames = new HashSet<>();
 		RegionCoordinates coordinates = RegionCoordinates.parse(fileName);
 
-		try (RegionFile regionFile = new RegionFile(regionFilePath, regionFilePath.getParent(), false)) {
+		try (RegionFile regionFile = new RegionFile(
+				new net.minecraft.world.level.chunk.storage.RegionStorageInfo("dragonminez", net.minecraft.world.level.Level.OVERWORLD, "otherworld_scan"),
+				regionFilePath, regionFilePath.getParent(), false)) {
 			for (int localX = 0; localX < 32; localX++) {
 				for (int localZ = 0; localZ < 32; localZ++) {
 					ChunkPos chunkPos = new ChunkPos(coordinates.regionX() * 32 + localX, coordinates.regionZ() * 32 + localZ);

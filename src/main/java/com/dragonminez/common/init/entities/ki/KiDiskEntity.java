@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.compat.CameraAimHelper;
+
 import com.dragonminez.common.combat.util.MultipartTargeting;
 
 import com.dragonminez.client.util.ColorUtils;
@@ -106,13 +108,13 @@ public class KiDiskEntity extends AbstractKiProjectile {
         this.setFireTick(this.tickCount);
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
-            Vec3 lookDir = livingOwner.getLookAngle();
+            Vec3 lookDir = CameraAimHelper.resolve(livingOwner);
             Vec3 spawnPos = livingOwner.getEyePosition().add(lookDir.scale(0.5D));
 
             this.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
-            this.shootFromRotation(livingOwner, livingOwner.getXRot(), livingOwner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
-
-            this.setDeltaMovement(lookDir.scale(this.getKiSpeed()));
+            this.shoot(lookDir.x, lookDir.y, lookDir.z, this.getKiSpeed(), 0.0F);
+            this.setYRot(CameraAimHelper.yaw(livingOwner, lookDir));
+            this.setXRot(CameraAimHelper.pitch(lookDir));
 
             this.playSound(MainSounds.KI_DISK_FIRE.get(), 0.7F, 1.5F);
         }
@@ -122,7 +124,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
     @Override
     public void tick() {
-        if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
+        if (!this.level().isClientSide && !this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
             this.fireHability(this.getMaxLife() - this.tickCount);
         }
 
@@ -284,13 +286,13 @@ public class KiDiskEntity extends AbstractKiProjectile {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(CAST_TIME, 0);
-        this.entityData.define(OFFSET_X, 0.0F);
-        this.entityData.define(OFFSET_Y, 0.0F);
-        this.entityData.define(OFFSET_Z, 0.0F);
-        this.entityData.define(IS_FIRING, false);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CAST_TIME, 0);
+        builder.define(OFFSET_X, 0.0F);
+        builder.define(OFFSET_Y, 0.0F);
+        builder.define(OFFSET_Z, 0.0F);
+        builder.define(IS_FIRING, false);
     }
 
     public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }

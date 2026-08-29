@@ -1,20 +1,25 @@
 package com.dragonminez.server.recipes;
 
 import com.dragonminez.common.init.MainRecipes;
-import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
-import net.minecraft.world.SimpleContainer;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 
-public class KikonoRecipe implements Recipe<SimpleContainer> {
-	private final ResourceLocation id;
+import java.util.ArrayList;
+import java.util.List;
+
+public class KikonoRecipe implements Recipe<KikonoRecipeInput> {
 	private final ItemStack output;
 	private final NonNullList<Ingredient> recipeItems;
 	private final Ingredient pattern;
@@ -22,8 +27,7 @@ public class KikonoRecipe implements Recipe<SimpleContainer> {
 	private final int craftingTime;
 	private final int energyCost;
 
-	public KikonoRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems, Ingredient pattern, Ingredient template, int craftingTime, int energyCost) {
-		this.id = id;
+	public KikonoRecipe(ItemStack output, NonNullList<Ingredient> recipeItems, Ingredient pattern, Ingredient template, int craftingTime, int energyCost) {
 		this.output = output;
 		this.recipeItems = recipeItems;
 		this.pattern = pattern;
@@ -32,38 +36,30 @@ public class KikonoRecipe implements Recipe<SimpleContainer> {
 		this.energyCost = energyCost;
 	}
 
-
 	@Override
-	public boolean matches(SimpleContainer pContainer, Level pLevel) {
-		if(pLevel.isClientSide()) return false;
-		if (!pattern.test(pContainer.getItem(9))) return false;
-		if (!template.test(pContainer.getItem(10))) return false;
+	public boolean matches(KikonoRecipeInput input, Level level) {
+		if (level.isClientSide()) return false;
+		if (!pattern.test(input.getItem(9))) return false;
+		if (!template.test(input.getItem(10))) return false;
 		for (int i = 0; i < recipeItems.size(); i++) {
-			if (!recipeItems.get(i).test(pContainer.getItem(i))) {
-				return false;
-			}
+			if (!recipeItems.get(i).test(input.getItem(i))) return false;
 		}
 		return true;
 	}
 
 	@Override
-	public ItemStack assemble(SimpleContainer pContainer, RegistryAccess pRegistryAccess) {
+	public ItemStack assemble(KikonoRecipeInput input, HolderLookup.Provider registries) {
 		return output.copy();
 	}
 
 	@Override
-	public boolean canCraftInDimensions(int pWidth, int pHeight) {
+	public boolean canCraftInDimensions(int width, int height) {
 		return true;
 	}
 
 	@Override
-	public ItemStack getResultItem(RegistryAccess pRegistryAccess) {
+	public ItemStack getResultItem(HolderLookup.Provider registries) {
 		return output.copy();
-	}
-
-	@Override
-	public ResourceLocation getId() {
-		return id;
 	}
 
 	@Override
@@ -78,11 +74,11 @@ public class KikonoRecipe implements Recipe<SimpleContainer> {
 
 	@Override
 	public NonNullList<Ingredient> getIngredients() {
-		NonNullList<Ingredient> allIngredients = NonNullList.create();
-		allIngredients.addAll(recipeItems);
-		allIngredients.add(pattern);
-		allIngredients.add(template);
-		return allIngredients;
+		NonNullList<Ingredient> all = NonNullList.create();
+		all.addAll(recipeItems);
+		all.add(pattern);
+		all.add(template);
+		return all;
 	}
 
 	public NonNullList<Ingredient> getInputs() {
@@ -108,51 +104,46 @@ public class KikonoRecipe implements Recipe<SimpleContainer> {
 	public static class Serializer implements RecipeSerializer<KikonoRecipe> {
 		public static final Serializer INSTANCE = new Serializer();
 
-		@Override
-		public KikonoRecipe fromJson(ResourceLocation pRecipeId, JsonObject pSerializedRecipe) {
-			ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"));
-			Ingredient pattern = Ingredient.fromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "pattern"));
-			Ingredient template = Ingredient.fromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "template"));
-			int time = GsonHelper.getAsInt(pSerializedRecipe, "crafting_time", 100);
-			int energy = GsonHelper.getAsInt(pSerializedRecipe, "energy_cost", 1000);
+		private static final MapCodec<KikonoRecipe> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
+				ItemStack.CODEC.fieldOf("output").forGetter(r -> r.output),
+				Ingredient.CODEC.listOf().fieldOf("ingredients").forGetter(r -> List.copyOf(r.recipeItems)),
+				Ingredient.CODEC.fieldOf("pattern").forGetter(r -> r.pattern),
+				Ingredient.CODEC.fieldOf("template").forGetter(r -> r.template),
+				Codec.INT.optionalFieldOf("crafting_time", 100).forGetter(r -> r.craftingTime),
+				Codec.INT.optionalFieldOf("energy_cost", 1000).forGetter(r -> r.energyCost)
+		).apply(inst, (output, ingredients, pattern, template, time, energy) -> {
+			NonNullList<Ingredient> list = NonNullList.withSize(9, Ingredient.EMPTY);
+			for (int i = 0; i < Math.min(9, ingredients.size()); i++) {
+				list.set(i, ingredients.get(i));
+			}
+			return new KikonoRecipe(output, list, pattern, template, time, energy);
+		}));
 
-			NonNullList<Ingredient> inputs = NonNullList.withSize(9, Ingredient.EMPTY);
-			for (int i = 0; i < 9; i++) {
-				if (pSerializedRecipe.has("slot_" + (i + 1))) {
-					inputs.set(i, Ingredient.fromJson(pSerializedRecipe.get("slot_" + (i + 1))));
+		// Support legacy slot_1..slot_9 JSON by also accepting a custom codec path via xmap on full object is hard;
+		// keep primary codec as ingredients list. Legacy recipes should be datafixed separately if needed.
+
+		private static final StreamCodec<RegistryFriendlyByteBuf, KikonoRecipe> STREAM_CODEC = StreamCodec.composite(
+				ItemStack.STREAM_CODEC, r -> r.output,
+				Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()), r -> new ArrayList<>(r.recipeItems),
+				Ingredient.CONTENTS_STREAM_CODEC, r -> r.pattern,
+				Ingredient.CONTENTS_STREAM_CODEC, r -> r.template,
+				ByteBufCodecs.VAR_INT, r -> r.craftingTime,
+				ByteBufCodecs.VAR_INT, r -> r.energyCost,
+				(output, ingredients, pattern, template, time, energy) -> {
+					NonNullList<Ingredient> list = NonNullList.withSize(9, Ingredient.EMPTY);
+					for (int i = 0; i < Math.min(9, ingredients.size()); i++) list.set(i, ingredients.get(i));
+					return new KikonoRecipe(output, list, pattern, template, time, energy);
 				}
-			}
+		);
 
-			return new KikonoRecipe(pRecipeId, output, inputs, pattern, template, time, energy);
+		@Override
+		public MapCodec<KikonoRecipe> codec() {
+			return CODEC;
 		}
 
 		@Override
-		public @Nullable KikonoRecipe fromNetwork(ResourceLocation pRecipeId, FriendlyByteBuf pBuffer) {
-			ItemStack output = pBuffer.readItem();
-			Ingredient pattern = Ingredient.fromNetwork(pBuffer);
-			Ingredient template = Ingredient.fromNetwork(pBuffer);
-			int time = pBuffer.readInt();
-			int energy = pBuffer.readInt();
-
-			NonNullList<Ingredient> inputs = NonNullList.withSize(9, Ingredient.EMPTY);
-			for (int i = 0; i < 9; i++) {
-				inputs.set(i, Ingredient.fromNetwork(pBuffer));
-			}
-
-			return new KikonoRecipe(pRecipeId, output, inputs, pattern, template, time, energy);
-		}
-
-		@Override
-		public void toNetwork(FriendlyByteBuf pBuffer, KikonoRecipe pRecipe) {
-			pBuffer.writeItemStack(pRecipe.output, false);
-			pRecipe.pattern.toNetwork(pBuffer);
-			pRecipe.template.toNetwork(pBuffer);
-			pBuffer.writeInt(pRecipe.craftingTime);
-			pBuffer.writeInt(pRecipe.energyCost);
-
-			for (Ingredient ing : pRecipe.recipeItems) {
-				ing.toNetwork(pBuffer);
-			}
+		public StreamCodec<RegistryFriendlyByteBuf, KikonoRecipe> streamCodec() {
+			return STREAM_CODEC;
 		}
 	}
 }

@@ -28,15 +28,19 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.entity.PartEntity;
+import net.neoforged.neoforge.entity.PartEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +49,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.ArrayList;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Reference.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class StrikeAttackHandler {
 	private static final int CONNECT_WINDOW_TICKS = 10;
 	private static final double CONNECT_RANGE = 4.0;
@@ -104,7 +108,7 @@ public class StrikeAttackHandler {
 					CONNECT_WINDOW_TICKS
 			);
 
-			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
+			NeoForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
 			if (immediateTarget != null) {
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
@@ -125,9 +129,9 @@ public class StrikeAttackHandler {
 	}
 
 	@SubscribeEvent
-	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
-		if (!(event.player instanceof ServerPlayer player)) return;
+	public static void onPlayerTick(PlayerTickEvent.Post event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
 		processPending(player);
 		processActive(player);
@@ -752,7 +756,7 @@ public class StrikeAttackHandler {
 			DMZEvent.DamageModifyEvent modifyEvent =
 					new DMZEvent.DamageModifyEvent(player, target, totalDamage, 0.0,
 							DMZEvent.DamageSourceType.STRIKE);
-			totalDamage = MinecraftForge.EVENT_BUS.post(modifyEvent) ? 0.0 : Math.max(0.0, modifyEvent.getAmount());
+			totalDamage = NeoForge.EVENT_BUS.post(modifyEvent).isCanceled() ? 0.0 : Math.max(0.0, modifyEvent.getAmount());
 
 			int durationTicks = Math.max(20, pending.durationTicks());
 			int hitCount = Math.max(1, (int) Math.ceil(durationTicks / (double) HIT_INTERVAL_TICKS));
@@ -776,7 +780,7 @@ public class StrikeAttackHandler {
 			// Grant invulnerability the instant the strike locks on, before the next tick's
 			// processActive runs, so the target can't land a free hit during the engage window.
 			player.invulnerableTime = 20;
-			MinecraftForge.EVENT_BUS.post(
+			NeoForge.EVENT_BUS.post(
 					new DMZEvent.StrikeAttackFireEvent(player, stats, strike, target));
 
 			applyStrikeDamage(player, target, perHitDamage, pending.techniqueId(), false);

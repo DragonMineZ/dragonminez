@@ -22,14 +22,13 @@ public class AuraMeshFactory {
 		if (billboardQuad == null) {
 			billboardQuad = new VertexBuffer(VertexBuffer.Usage.STATIC);
 			Tesselator tesselator = Tesselator.getInstance();
-			BufferBuilder builder = tesselator.getBuilder();
-			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-			builder.vertex(-1.0f, -1.0f, 0.0f).uv(0.0f, 1.0f).endVertex();
-			builder.vertex(1.0f, -1.0f, 0.0f).uv(1.0f, 1.0f).endVertex();
-			builder.vertex(1.0f, 1.0f, 0.0f).uv(1.0f, 0.0f).endVertex();
-			builder.vertex(-1.0f, 1.0f, 0.0f).uv(0.0f, 0.0f).endVertex();
+			BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+			builder.addVertex(-1.0f, -1.0f, 0.0f).setUv(0.0f, 1.0f);
+			builder.addVertex(1.0f, -1.0f, 0.0f).setUv(1.0f, 1.0f);
+			builder.addVertex(1.0f, 1.0f, 0.0f).setUv(1.0f, 0.0f);
+			builder.addVertex(-1.0f, 1.0f, 0.0f).setUv(0.0f, 0.0f);
 			billboardQuad.bind();
-			billboardQuad.upload(builder.end());
+			billboardQuad.upload(builder.buildOrThrow());
 			VertexBuffer.unbind();
 		}
 		return billboardQuad;
@@ -39,14 +38,13 @@ public class AuraMeshFactory {
 		if (groundQuad == null) {
 			groundQuad = new VertexBuffer(VertexBuffer.Usage.STATIC);
 			Tesselator tesselator = Tesselator.getInstance();
-			BufferBuilder builder = tesselator.getBuilder();
-			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-			builder.vertex(-1.0f, 0.0f, -1.0f).uv(0.0f, 0.0f).endVertex();
-			builder.vertex(-1.0f, 0.0f, 1.0f).uv(0.0f, 1.0f).endVertex();
-			builder.vertex(1.0f, 0.0f, 1.0f).uv(1.0f, 1.0f).endVertex();
-			builder.vertex(1.0f, 0.0f, -1.0f).uv(1.0f, 0.0f).endVertex();
+			BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+			builder.addVertex(-1.0f, 0.0f, -1.0f).setUv(0.0f, 0.0f);
+			builder.addVertex(-1.0f, 0.0f, 1.0f).setUv(0.0f, 1.0f);
+			builder.addVertex(1.0f, 0.0f, 1.0f).setUv(1.0f, 1.0f);
+			builder.addVertex(1.0f, 0.0f, -1.0f).setUv(1.0f, 0.0f);
 			groundQuad.bind();
-			groundQuad.upload(builder.end());
+			groundQuad.upload(builder.buildOrThrow());
 			VertexBuffer.unbind();
 		}
 		return groundQuad;
@@ -58,14 +56,13 @@ public class AuraMeshFactory {
 			float u0 = frame / 4.0f;
 			float u1 = (frame + 1) / 4.0f;
 			VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
-			BufferBuilder builder = Tesselator.getInstance().getBuilder();
-			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-			builder.vertex(-1.0f, -1.0f, 0.0f).uv(u0, 1.0f).endVertex();
-			builder.vertex(1.0f, -1.0f, 0.0f).uv(u1, 1.0f).endVertex();
-			builder.vertex(1.0f, 1.0f, 0.0f).uv(u1, 0.0f).endVertex();
-			builder.vertex(-1.0f, 1.0f, 0.0f).uv(u0, 0.0f).endVertex();
+			BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+			builder.addVertex(-1.0f, -1.0f, 0.0f).setUv(u0, 1.0f);
+			builder.addVertex(1.0f, -1.0f, 0.0f).setUv(u1, 1.0f);
+			builder.addVertex(1.0f, 1.0f, 0.0f).setUv(u1, 0.0f);
+			builder.addVertex(-1.0f, 1.0f, 0.0f).setUv(u0, 0.0f);
 			vb.bind();
-			vb.upload(builder.end());
+			vb.upload(builder.buildOrThrow());
 			VertexBuffer.unbind();
 			billboardFrames[frame] = vb;
 		}
@@ -78,14 +75,13 @@ public class AuraMeshFactory {
 			float u0 = frame / 4.0f;
 			float u1 = (frame + 1) / 4.0f;
 			VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
-			BufferBuilder builder = Tesselator.getInstance().getBuilder();
-			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-			builder.vertex(-1.0f, 0.0f, -1.0f).uv(u0, 0.0f).endVertex();
-			builder.vertex(-1.0f, 0.0f, 1.0f).uv(u0, 1.0f).endVertex();
-			builder.vertex(1.0f, 0.0f, 1.0f).uv(u1, 1.0f).endVertex();
-			builder.vertex(1.0f, 0.0f, -1.0f).uv(u1, 0.0f).endVertex();
+			BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+			builder.addVertex(-1.0f, 0.0f, -1.0f).setUv(u0, 0.0f);
+			builder.addVertex(-1.0f, 0.0f, 1.0f).setUv(u0, 1.0f);
+			builder.addVertex(1.0f, 0.0f, 1.0f).setUv(u1, 1.0f);
+			builder.addVertex(1.0f, 0.0f, -1.0f).setUv(u1, 0.0f);
 			vb.bind();
-			vb.upload(builder.end());
+			vb.upload(builder.buildOrThrow());
 			VertexBuffer.unbind();
 			groundFrames[frame] = vb;
 		}

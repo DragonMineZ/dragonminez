@@ -127,13 +127,12 @@ public class TooltipDecor {
 
 		RenderSystem.setShader(GameRenderer::getPositionTexShader);
 		Tesselator tesselator = Tesselator.getInstance();
-		BufferBuilder bufferbuilder = tesselator.getBuilder();
-		bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-		bufferbuilder.vertex(matrix4f, (float)x, (float)y + height, 0.0F).uv(minU, maxV).endVertex();
-		bufferbuilder.vertex(matrix4f, (float)x + width, (float)y + height, 0.0F).uv(maxU, maxV).endVertex();
-		bufferbuilder.vertex(matrix4f, (float)x + width, (float)y, 0.0F).uv(maxU, minV).endVertex();
-		bufferbuilder.vertex(matrix4f, (float)x, (float)y, 0.0F).uv(minU, minV).endVertex();
-		tesselator.end();
+		BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+		bufferbuilder.addVertex(matrix4f, (float)x, (float)y + height, 0.0F).setUv(minU, maxV);
+		bufferbuilder.addVertex(matrix4f, (float)x + width, (float)y + height, 0.0F).setUv(maxU, maxV);
+		bufferbuilder.addVertex(matrix4f, (float)x + width, (float)y, 0.0F).setUv(maxU, minV);
+		bufferbuilder.addVertex(matrix4f, (float)x, (float)y, 0.0F).setUv(minU, minV);
+		com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
 	}
 
 	public static void drawGradientRect(Matrix4f mat, int z, int left, int top, int right, int bottom, int startColor, int endColor) {
@@ -149,14 +148,12 @@ public class TooltipDecor {
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
-		Tesselator tess = Tesselator.getInstance();
-		BufferBuilder buff = tess.getBuilder();
-		buff.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-		buff.vertex(mat, left, top, z).color(f1, f2, f3, f).endVertex();
-		buff.vertex(mat, left, bottom, z).color(f5, f6, f7, f4).endVertex();
-		buff.vertex(mat, right, bottom, z).color(f5, f6, f7, f4).endVertex();
-		buff.vertex(mat, right, top, z).color(f1, f2, f3, f).endVertex();
-		tess.end();
+		BufferBuilder buff = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+		buff.addVertex(mat, left, top, z).setColor(f1, f2, f3, f);
+		buff.addVertex(mat, left, bottom, z).setColor(f5, f6, f7, f4);
+		buff.addVertex(mat, right, bottom, z).setColor(f5, f6, f7, f4);
+		buff.addVertex(mat, right, top, z).setColor(f1, f2, f3, f);
+		com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buff.buildOrThrow());
 		RenderSystem.disableBlend();
 	}
 
@@ -173,14 +170,12 @@ public class TooltipDecor {
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
-		Tesselator tess = Tesselator.getInstance();
-		BufferBuilder buff = tess.getBuilder();
-		buff.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-		buff.vertex(mat, right, top, z).color(f5, f6, f7, f4).endVertex();
-		buff.vertex(mat, left, top, z).color(f1, f2, f3, f).endVertex();
-		buff.vertex(mat, left, bottom, z).color(f1, f2, f3, f).endVertex();
-		buff.vertex(mat, right, bottom, z).color(f5, f6, f7, f4).endVertex();
-		tess.end();
+		BufferBuilder buff = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+		buff.addVertex(mat, right, top, z).setColor(f5, f6, f7, f4);
+		buff.addVertex(mat, left, top, z).setColor(f1, f2, f3, f);
+		buff.addVertex(mat, left, bottom, z).setColor(f1, f2, f3, f);
+		buff.addVertex(mat, right, bottom, z).setColor(f5, f6, f7, f4);
+		com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buff.buildOrThrow());
 		RenderSystem.disableBlend();
 	}
 }

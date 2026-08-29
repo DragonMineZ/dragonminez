@@ -19,10 +19,10 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
-import software.bernie.geckolib.util.RenderUtils;
+import software.bernie.geckolib.util.RenderUtil;
 
 import javax.annotation.Nullable;
 
@@ -49,12 +49,12 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 		poseStack.pushPose();
 
 		float combatWeight = combatPlacementWeight(bone, animatable);
-		RenderUtils.translateToPivotPoint(poseStack, bone);
+		RenderUtil.translateToPivotPoint(poseStack, bone);
 		rotateBoneScaled(poseStack, bone, 1.0F - combatWeight);
 
 		renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 
-		bufferSource.getBuffer(renderType);
+		if (renderType != null) bufferSource.getBuffer(renderType);
 		poseStack.popPose();
 	}
 

@@ -20,13 +20,13 @@ import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Set;
 
 public class DMZBlockLootTables extends BlockLootSubProvider {
-	public DMZBlockLootTables() {
-		super(Set.of(), FeatureFlags.REGISTRY.allFlags());
+	public DMZBlockLootTables(net.minecraft.core.HolderLookup.Provider registries) {
+		super(Set.of(), FeatureFlags.REGISTRY.allFlags(), registries);
 	}
 
 	@Override
@@ -184,14 +184,14 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 				this.applyExplosionDecay(pBlock,
 						LootItem.lootTableItem(item)
 								.apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0F, 5.0F)))
-								.apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE))));
+								.apply(SetItemCountFunction.setCount(ConstantValue.exactly(1)))));
 	}
 	protected LootTable.Builder CopperOreDrop(Block pBlock, Item item) {
 		return createSilkTouchDispatchTable(pBlock,
 				this.applyExplosionDecay(pBlock,
 						LootItem.lootTableItem(item)
 								.apply(SetItemCountFunction.setCount(UniformGenerator.between(2.0F, 6.0F)))
-								.apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE))));
+								.apply(SetItemCountFunction.setCount(ConstantValue.exactly(1)))));
 	}
 
 	//Ores que dropeen un solo item (Ej: Diamante, Oro)
@@ -200,7 +200,7 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 				this.applyExplosionDecay(pBlock,
 						LootItem.lootTableItem(item)
 								.apply(SetItemCountFunction.setCount(ConstantValue.exactly(1)))
-								.apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE))));
+								.apply(SetItemCountFunction.setCount(ConstantValue.exactly(1)))));
 	}
 
 	protected LootTable.Builder SilkTouchBlockDrop(Block pBlock, Block pDrop) {
@@ -208,9 +208,9 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 				.withPool(LootPool.lootPool()
 						.setRolls(ConstantValue.exactly(1))
 						.add(LootItem.lootTableItem(pBlock)
-								.when(HAS_SILK_TOUCH))
+								.when(this.hasSilkTouch()))
 						.add(LootItem.lootTableItem(pDrop)
-								.when(HAS_NO_SILK_TOUCH)));
+								.when(this.doesNotHaveSilkTouch())));
 	}
 	protected LootTable.Builder ShearsOnlyDrop(Block pBlock) {
 		return LootTable.lootTable()
@@ -224,6 +224,6 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 
 	@Override
 	protected Iterable<Block> getKnownBlocks() {
-		return MainBlocks.BLOCK_REGISTER.getEntries().stream().map(RegistryObject::get)::iterator;
+		return () -> MainBlocks.BLOCK_REGISTER.getEntries().stream().<Block>map(DeferredHolder::get).iterator();
 	}
 }

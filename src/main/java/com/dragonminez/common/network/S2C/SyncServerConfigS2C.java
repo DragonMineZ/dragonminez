@@ -3,9 +3,9 @@ package com.dragonminez.common.network.S2C;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.CompressionUtil;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import com.dragonminez.compat.DistExecutor;
+import com.dragonminez.compat.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

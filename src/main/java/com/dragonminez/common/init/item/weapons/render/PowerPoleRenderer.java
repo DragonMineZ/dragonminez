@@ -19,7 +19,7 @@ public class PowerPoleRenderer extends GeoItemRenderer<PowerPoleItem> {
 	}
 
 	@Override
-	public void actuallyRender(PoseStack poseStack, PowerPoleItem animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+	public void actuallyRender(PoseStack poseStack, PowerPoleItem animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
 
 		// Hide the holster while the pole is held, then put it back. BakedGeoModel
 		// instances are cached per model file in GeckoLibCache and shared by every
@@ -29,7 +29,7 @@ public class PowerPoleRenderer extends GeoItemRenderer<PowerPoleItem> {
 		boolean wasHidden = holster != null && holster.isHidden();
 		if (holster != null) holster.setHidden(true);
 
-		super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+		super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, colour);
 
 		if (holster != null) holster.setHidden(wasHidden);
 

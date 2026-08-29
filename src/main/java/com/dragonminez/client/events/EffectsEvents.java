@@ -13,27 +13,30 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class EffectsEvents {
 	private static boolean isBioAndroidDrainingCache = false;
 	private static boolean isChargingFormCache = false;
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.END) return;
+	public static void onClientTick(ClientTickEvent.Post event) {
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
 		if (player == null) return;
 
-		if (player.hasEffect(MainEffects.STUN.get())) {
+		if (player.hasEffect(MainEffects.STUN)) {
 			isBioAndroidDrainingCache = StatsProvider.get(StatsCapability.INSTANCE, player)
 					.map(data -> "bioandroid".equals(data.getCharacter().getRaceName()) && data.getStatus().getDrainingTargetId() != -1)
 					.orElse(false);
@@ -105,8 +108,8 @@ public class EffectsEvents {
             }
         }
 
-		if (player.hasEffect(MainEffects.STAGGER.get())) {
-			int amplifier = player.getEffect(MainEffects.STAGGER.get()).getAmplifier();
+		if (player.hasEffect(MainEffects.STAGGER)) {
+			int amplifier = player.getEffect(MainEffects.STAGGER).getAmplifier();
 			float baseIntensity = 1.5F + (amplifier * 0.8F);
 
 			float yawShake = (float) (Math.sin(time * 0.5D) * baseIntensity * 0.8F + Math.sin(time * 1.2D) * baseIntensity * 0.4F);
@@ -139,19 +142,18 @@ public class EffectsEvents {
 	}
 
 	@SubscribeEvent
-	public static void renderStaggerOverlay(RenderGuiOverlayEvent.Post event) {
-		if (event.getOverlay() == VanillaGuiOverlay.CROSSHAIR.type()) {
+	public static void renderStaggerOverlay(RenderGuiLayerEvent.Post event) {
+		if (VanillaGuiLayers.CROSSHAIR.equals(event.getName())) {
 			Minecraft mc = Minecraft.getInstance();
 			Player player = mc.player;
 
-			if (player != null && player.hasEffect(MainEffects.STAGGER.get())) {
-				int amplifier = player.getEffect(MainEffects.STAGGER.get()).getAmplifier();
+			if (player != null && player.hasEffect(MainEffects.STAGGER)) {
+				int amplifier = player.getEffect(MainEffects.STAGGER).getAmplifier();
 				float blurStrength = 0.3F + (amplifier * 0.15F);
 
-				int width = event.getWindow().getGuiScaledWidth();
-				int height = event.getWindow().getGuiScaledHeight();
-
 				GuiGraphics graphics = event.getGuiGraphics();
+				int width = graphics.guiWidth();
+				int height = graphics.guiHeight();
 
 				RenderSystem.enableBlend();
 				RenderSystem.defaultBlendFunc();
@@ -167,21 +169,20 @@ public class EffectsEvents {
 	}
 
 	@SubscribeEvent
-	public static void renderStunOverlay(RenderGuiOverlayEvent.Post event) {
-		if (event.getOverlay() == VanillaGuiOverlay.VIGNETTE.type()) {
+	public static void renderStunOverlay(RenderGuiLayerEvent.Post event) {
+		if (VanillaGuiLayers.CAMERA_OVERLAYS.equals(event.getName())) {
 			Minecraft mc = Minecraft.getInstance();
 			Player player = mc.player;
 
-			if (player != null && player.hasEffect(MainEffects.STUN.get())) {
+			if (player != null && player.hasEffect(MainEffects.STUN)) {
 				if (isBioAndroidDrainingCache) return;
 
-				int amplifier = player.getEffect(MainEffects.STUN.get()).getAmplifier();
+				int amplifier = player.getEffect(MainEffects.STUN).getAmplifier();
 				float blurStrength = 0.3F + (amplifier * 0.15F);
 
-				int width = event.getWindow().getGuiScaledWidth();
-				int height = event.getWindow().getGuiScaledHeight();
-
 				GuiGraphics graphics = event.getGuiGraphics();
+				int width = graphics.guiWidth();
+				int height = graphics.guiHeight();
 
 				RenderSystem.enableBlend();
 				RenderSystem.defaultBlendFunc();

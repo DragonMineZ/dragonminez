@@ -101,8 +101,8 @@ public final class QuestLocationHelper {
 
 		try {
 			ResourceLocation structRL = ResourceLocation.parse(targetStructure);
-			ResourceKey<Structure> structKey = ResourceKey.create(Registries.STRUCTURE, structRL);
-			return level.structureManager().getStructureWithPieceAt(pos, structKey).isValid();
+			Structure structure = level.registryAccess().registryOrThrow(Registries.STRUCTURE).get(structRL);
+			return structure != null && level.structureManager().getStructureWithPieceAt(pos, structure).isValid();
 		} catch (Exception e) {
 			return false;
 		}

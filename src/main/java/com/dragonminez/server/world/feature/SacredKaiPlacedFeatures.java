@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.data.worldgen.placement.PlacementUtils;
 import net.minecraft.data.worldgen.placement.VegetationPlacements;
@@ -31,7 +31,7 @@ public class SacredKaiPlacedFeatures {
 	public static final ResourceKey<PlacedFeature> STONE_SPIKE_PLACED = registerKey("sacredkai_stone_spike_placed");
 	public static final ResourceKey<PlacedFeature> WATER_LAKE_PLACED = registerKey("sacredkai_water_lake_placed");
 
-	public static void bootstrap(BootstapContext<PlacedFeature> context) {
+	public static void bootstrap(BootstrapContext<PlacedFeature> context) {
 		HolderGetter<ConfiguredFeature<?, ?>> configured = context.lookup(Registries.CONFIGURED_FEATURE);
 
 		register(context, OAK_TREE_PLACED, configured.getOrThrow(TreeFeatures.OAK),
@@ -82,7 +82,7 @@ public class SacredKaiPlacedFeatures {
 		return ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 	}
 
-	private static void register(BootstapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key, Holder<ConfiguredFeature<?, ?>> configuration, List<PlacementModifier> modifiers) {
+	private static void register(BootstrapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key, Holder<ConfiguredFeature<?, ?>> configuration, List<PlacementModifier> modifiers) {
 		context.register(key, new PlacedFeature(configuration, List.copyOf(modifiers)));
 	}
 }

@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 @Getter
 @Setter
@@ -29,7 +29,7 @@ public class GenericItemDTO {
     }
 
     public ItemStack getItemStack() {
-        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(this.getItemId()));
+        var item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(this.getItemId()));
         if (item != null) {
             return new ItemStack(item, this.count);
         }

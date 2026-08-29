@@ -3,15 +3,12 @@ package com.dragonminez.common.stats.techniques;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.TechniqueConfig;
 import com.dragonminez.common.stats.StatsData;
-import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.util.Mth;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -28,46 +25,51 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-@Getter
-@Setter
 public class KiAttackData extends TechniqueData {
-	public enum KiType { SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION, SHIELD, BARRAGE, AREA }
-	public enum Utility { DAMAGE, HEAL }
 
-	public enum SecondaryEffectType { NONE, BUFF, DEBUFF }
-	public enum AffectedStat { STR, SKP, DEF, STM_REGEN, HP_REGEN, ENE_REGEN, PWR }
+	public enum KiType {
+		SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION, SHIELD, BARRAGE, AREA;
+	}
+
+
+	public enum Utility {
+		DAMAGE, HEAL;
+	}
+
+
+	public enum SecondaryEffectType {
+		NONE, BUFF, DEBUFF;
+	}
+
+
+	public enum AffectedStat {
+		STR, SKP, DEF, STM_REGEN, HP_REGEN, ENE_REGEN, PWR;
+	}
 
 	private static final int MAX_IMPORT_NBT_BYTES = 64 * 1024;
 	private static final int MAX_IMPORT_CODE_LENGTH = 16 * 1024;
-
 	public static final int MIN_SECONDARY_INTENSITY = 5;
 	public static final int MAX_SECONDARY_INTENSITY = 50;
 	public static final int MIN_SECONDARY_DURATION = 1;
 	public static final int MAX_SECONDARY_DURATION = 8;
-	public static final float SECONDARY_COST_FACTOR = 0.25f;
-
+	public static final float SECONDARY_COST_FACTOR = 0.25F;
 	private static final String CODE_PREFIX = "DMZK1:";
 	private static final String BASE62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
 	private List<String> allowedRaces = new ArrayList<>();
 	private KiType kiType;
 	private String animation;
 	private Utility utility;
-
 	private int colorInterior;
 	private int colorExterior;
 	private int colorOutline;
-
 	private float damageMultiplier;
 	private float speed;
 	private float size;
 	private int armorPenetration;
-
 	private SecondaryEffectType secondaryEffectType = SecondaryEffectType.NONE;
 	private AffectedStat affectedStat;
 	private float secondaryIntensity;
 	private int secondaryDuration;
-
 	private int damageLevel = 0;
 	private int castTimeLevel = 0;
 	private int cooldownLevel = 0;
@@ -75,35 +77,37 @@ public class KiAttackData extends TechniqueData {
 	private int sizeLevel = 0;
 	private int armorPenLevel = 0;
 
-	public KiAttackData() { super(); }
+	public KiAttackData() {
+		super();
+	}
 
 	@Override
-	public TechniqueType getType() { return TechniqueType.KI_ATTACK; }
+	public TechniqueType getType() {
+		return TechniqueType.KI_ATTACK;
+	}
 
 	private static float getTypeMultiplier(KiType type) {
 		return switch (type) {
-			case SMALL_BALL -> 1.0f;
-			case MEDIUM_BALL -> 1.4f;
-			case GIANT_BALL -> 2.2f;
-			case WAVE -> 1.6f;
-			case LASER -> 0.8f;
-			case BEAM -> 1.4f;
-			case DISK -> 1.2f;
-			case EXPLOSION -> 2.6f;
-			case SHIELD -> 1.6f;
-			case BARRAGE -> 1.4f;
-			case AREA -> 1.8f;
+			case SMALL_BALL -> 1.0F;
+			case MEDIUM_BALL -> 1.4F;
+			case GIANT_BALL -> 2.2F;
+			case WAVE -> 1.6F;
+			case LASER -> 0.8F;
+			case BEAM -> 1.4F;
+			case DISK -> 1.2F;
+			case EXPLOSION -> 2.6F;
+			case SHIELD -> 1.6F;
+			case BARRAGE -> 1.4F;
+			case AREA -> 1.8F;
 		};
 	}
 
 	public String getAnimationPrefix() {
 		if (this.animation != null && !this.animation.isEmpty()) return this.animation;
-
 		if (PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
 			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
 			if (predefined != null && predefined.getAnimation() != null && !predefined.getAnimation().isEmpty()) return predefined.getAnimation();
 		}
-
 		return switch (kiType != null ? kiType : KiType.SMALL_BALL) {
 			case BARRAGE -> "ki.barrage";
 			case GIANT_BALL -> "ki.large_ball";
@@ -118,8 +122,8 @@ public class KiAttackData extends TechniqueData {
 
 	private static float getUtilityMultiplier(Utility util) {
 		return switch (util) {
-			case DAMAGE -> 1.0f;
-			case HEAL -> 1.25f;
+			case DAMAGE -> 1.0F;
+			case HEAL -> 1.25F;
 		};
 	}
 
@@ -134,25 +138,42 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public static final int KI_TIME_MULTIPLIER = 20;
-	public static final float HEAL_OUTPUT_FACTOR = 0.4f;
+	public static final float HEAL_OUTPUT_FACTOR = 0.4F;
 
 	public float getOutputMultiplier() {
-		return getEffectiveUtility() == Utility.HEAL ? HEAL_OUTPUT_FACTOR : 1.0f;
+		return getEffectiveUtility() == Utility.HEAL ? HEAL_OUTPUT_FACTOR : 1.0F;
 	}
 
-	public float getActualDamageMultiplier() { return damageMultiplier; }
-	public float getActualSpeed() { return speed; }
-	public float getActualSize() { return size; }
-	public int getActualArmorPenetration() { return Math.min(100, armorPenetration); }
-	public int getActualCastTime() { return getBaseChargeTicks(); }
-	public static final float COOLDOWN_LEVEL_REDUCTION = 0.025f;
-	public static final float COOLDOWN_MAX_REDUCTION = 0.5f;
+	public float getActualDamageMultiplier() {
+		return damageMultiplier;
+	}
+
+	public float getActualSpeed() {
+		return speed;
+	}
+
+	public float getActualSize() {
+		return size;
+	}
+
+	public int getActualArmorPenetration() {
+		return Math.min(100, armorPenetration);
+	}
+
+	public int getActualCastTime() {
+		return getBaseChargeTicks();
+	}
+
+	public static final float COOLDOWN_LEVEL_REDUCTION = 0.025F;
+	public static final float COOLDOWN_MAX_REDUCTION = 0.5F;
 
 	public float getCooldownLevelMultiplier() {
-		return Math.max(1.0f - COOLDOWN_MAX_REDUCTION, 1.0f - Math.max(0, cooldownLevel) * COOLDOWN_LEVEL_REDUCTION);
+		return Math.max(1.0F - COOLDOWN_MAX_REDUCTION, 1.0F - Math.max(0, cooldownLevel) * COOLDOWN_LEVEL_REDUCTION);
 	}
 
-	public int getActualCooldown() { return Math.round(cooldown * KI_TIME_MULTIPLIER * getCooldownLevelMultiplier()); }
+	public int getActualCooldown() {
+		return Math.round(cooldown * KI_TIME_MULTIPLIER * getCooldownLevelMultiplier());
+	}
 
 	public boolean isInstantCast() {
 		return kiType == KiType.SMALL_BALL || kiType == KiType.LASER;
@@ -168,8 +189,8 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public static float costMultiplier(float percent) {
-		if (percent <= 100.0f) return Math.max(0.0f, percent) / 100.0f;
-		return 1.0f + (percent - 100.0f) / (OVERCHARGE_MAX_PERCENT - 100.0f);
+		if (percent <= 100.0F) return Math.max(0.0F, percent) / 100.0F;
+		return 1.0F + (percent - 100.0F) / (OVERCHARGE_MAX_PERCENT - 100.0F);
 	}
 
 	public void setSecondaryIntensity(float value) {
@@ -185,8 +206,7 @@ public class KiAttackData extends TechniqueData {
 		if (affectedStat == null) return false;
 		if (secondaryIntensity <= 0 || secondaryDuration <= 0) return false;
 		Utility u = this.utility != null ? this.utility : Utility.DAMAGE;
-		return (secondaryEffectType == SecondaryEffectType.BUFF && u == Utility.HEAL)
-				|| (secondaryEffectType == SecondaryEffectType.DEBUFF && u == Utility.DAMAGE);
+		return (secondaryEffectType == SecondaryEffectType.BUFF && u == Utility.HEAL) || (secondaryEffectType == SecondaryEffectType.DEBUFF && u == Utility.DAMAGE);
 	}
 
 	public float secondaryCostWeight() {
@@ -194,21 +214,20 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	private static float secondaryCostWeight(SecondaryEffectType type, float intensity, int duration) {
-		if (type == null || type == SecondaryEffectType.NONE) return 0f;
-		float intensityNorm = Mth.clamp((intensity - MIN_SECONDARY_INTENSITY) / (float) (MAX_SECONDARY_INTENSITY - MIN_SECONDARY_INTENSITY), 0f, 1f);
-		float durationNorm = Mth.clamp((duration - MIN_SECONDARY_DURATION) / (float) (MAX_SECONDARY_DURATION - MIN_SECONDARY_DURATION), 0f, 1f);
-		return intensityNorm * 0.6f + durationNorm * 0.4f;
+		if (type == null || type == SecondaryEffectType.NONE) return 0.0F;
+		float intensityNorm = Mth.clamp((intensity - MIN_SECONDARY_INTENSITY) / (float) (MAX_SECONDARY_INTENSITY - MIN_SECONDARY_INTENSITY), 0.0F, 1.0F);
+		float durationNorm = Mth.clamp((duration - MIN_SECONDARY_DURATION) / (float) (MAX_SECONDARY_DURATION - MIN_SECONDARY_DURATION), 0.0F, 1.0F);
+		return intensityNorm * 0.6F + durationNorm * 0.4F;
 	}
 
 	public float secondaryCostMultiplier() {
-		return 1f + SECONDARY_COST_FACTOR * secondaryCostWeight();
+		return 1.0F + SECONDARY_COST_FACTOR * secondaryCostWeight();
 	}
 
 	@Override
 	public double getCalculatedCost(StatsData statsData) {
 		double damageDone = statsData.getKiDamageNoForms() * getActualDamageMultiplier();
 		double complexityFactor = (getActualSize() * 5.0) + (getActualSpeed() * 5.0) + (getActualArmorPenetration() * 0.2);
-
 		float typeMult = getTypeMultiplier(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
 		float utilMult = getUtilityMultiplier(this.utility != null ? this.utility : Utility.DAMAGE);
 		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig().getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
@@ -222,21 +241,17 @@ public class KiAttackData extends TechniqueData {
 		TechniqueConfig.TechniqueTypeConfig cfg = ConfigManager.getTechniqueConfig().getKiTypeConfig(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
 		int baseMin = Math.max(0, cfg.getMinXPCost());
 		double multiplier = Math.max(0.0, cfg.getXpCostMultiplier());
-
-		float initialDamage = Math.max(0.0f, this.damageMultiplier - (this.damageLevel * 0.05f));
-		float initialSize = Math.max(0.0f, this.size - (this.sizeLevel * 0.1f));
-		float initialSpeed = Math.max(0.0f, this.speed - (this.speedLevel * 0.05f));
+		float initialDamage = Math.max(0.0F, this.damageMultiplier - (this.damageLevel * 0.05F));
+		float initialSize = Math.max(0.0F, this.size - (this.sizeLevel * 0.1F));
+		float initialSpeed = Math.max(0.0F, this.speed - (this.speedLevel * 0.05F));
 		int initialArmorPen = Math.max(0, this.armorPenetration - this.armorPenLevel);
-
 		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		float initialComplexity = getWeightedComplexity(initialDamage, sizeComplexityRatio(resolvedType, initialSize), initialSpeed, initialArmorPen);
 		int totalUpgrades = getTotalUpgradeCount();
-
 		int complexityBase = baseMin + (int) Math.round(initialComplexity * 10.0);
 		int scaledBase = (int) Math.round(complexityBase * multiplier);
 		int upgradeExtra = (int) Math.round(totalUpgrades * Math.max(0.0, complexityBase * (multiplier - 1.0)));
 		int computed = Math.max(0, scaledBase + upgradeExtra);
-
 		int max = cfg.getMaxXPCost();
 		if (max >= 0) computed = Math.min(computed, max);
 		return Math.max(0, computed);
@@ -262,7 +277,6 @@ public class KiAttackData extends TechniqueData {
 	public boolean canUpgradeStat(String statName) {
 		KiType type = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		if ("damage".equals(statName) || "cooldown".equals(statName)) return true;
-
 		return switch (type) {
 			case SMALL_BALL -> "speed".equals(statName);
 			case MEDIUM_BALL -> "speed".equals(statName) || "armor_pen".equals(statName);
@@ -275,34 +289,23 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	private int getTotalUpgradeCount() {
-		return Math.max(0, damageLevel)
-				+ Math.max(0, sizeLevel)
-				+ Math.max(0, speedLevel)
-				+ Math.max(0, armorPenLevel)
-				+ Math.max(0, castTimeLevel)
-				+ Math.max(0, cooldownLevel);
+		return Math.max(0, damageLevel) + Math.max(0, sizeLevel) + Math.max(0, speedLevel) + Math.max(0, armorPenLevel) + Math.max(0, castTimeLevel) + Math.max(0, cooldownLevel);
 	}
 
-	private static final float MAX_DAMAGE_MULT = 2.5f;
+	private static final float MAX_DAMAGE_MULT = 2.5F;
 
 	private static float getWeightedComplexity(float damage, float sizeRatio01, float speed, int armorPen) {
-		float maxStat = 20.0f;
+		float maxStat = 20.0F;
 		int maxArmorPen = 100;
-
-		float damageWeight = 10.0f;
-		float sizeWeight = 4.0f;
-		float speedWeight = 3.0f;
-		float armorPenWeight = 2.0f;
-
-		float damageRatio = Mth.clamp(damage / MAX_DAMAGE_MULT, 0f, 1f);
-		float sizeRatio = Mth.clamp(sizeRatio01, 0f, 1f);
+		float damageWeight = 10.0F;
+		float sizeWeight = 4.0F;
+		float speedWeight = 3.0F;
+		float armorPenWeight = 2.0F;
+		float damageRatio = Mth.clamp(damage / MAX_DAMAGE_MULT, 0.0F, 1.0F);
+		float sizeRatio = Mth.clamp(sizeRatio01, 0.0F, 1.0F);
 		float speedRatio = speed / maxStat;
 		float armorPenRatio = (float) armorPen / maxArmorPen;
-
-		return (damageRatio * damageWeight) +
-				(sizeRatio * sizeWeight) +
-				(speedRatio * speedWeight) +
-				(armorPenRatio * armorPenWeight);
+		return (damageRatio * damageWeight) + (sizeRatio * sizeWeight) + (speedRatio * speedWeight) + (armorPenRatio * armorPenWeight);
 	}
 
 	public void calculateDerivedValues() {
@@ -310,19 +313,15 @@ public class KiAttackData extends TechniqueData {
 		Utility resolvedUtil = utility != null ? utility : Utility.DAMAGE;
 		float typeMult = getTypeMultiplier(resolvedType);
 		float utilMult = getUtilityMultiplier(resolvedUtil);
-
 		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);
-
 		float complexity = getWeightedComplexity(normalized[0], sizeComplexityRatio(resolvedType, normalized[1]), normalized[2], Math.round(normalized[3]));
-		float tpBase = (80.0f + complexity * 100.0f) * typeMult * utilMult * secondaryCostMultiplier();
+		float tpBase = (80.0F + complexity * 100.0F) * typeMult * utilMult * secondaryCostMultiplier();
 		this.tpCost = Math.max(10, Math.round(tpBase));
-
 		if (!PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
-			float initialDamage = Math.max(0.0f, normalized[0] - (damageLevel * 0.05f));
-			float initialSize = Math.max(0.0f, normalized[1] - (sizeLevel * 0.1f));
-			float initialSpeed = Math.max(0.0f, normalized[2] - (speedLevel * 0.05f));
+			float initialDamage = Math.max(0.0F, normalized[0] - (damageLevel * 0.05F));
+			float initialSize = Math.max(0.0F, normalized[1] - (sizeLevel * 0.1F));
+			float initialSpeed = Math.max(0.0F, normalized[2] - (speedLevel * 0.05F));
 			int initialArmorPen = Math.max(0, Math.round(normalized[3]) - armorPenLevel);
-
 			float initialComplexity = getWeightedComplexity(initialDamage, sizeComplexityRatio(resolvedType, initialSize), initialSpeed, initialArmorPen);
 			this.castTime = 0;
 			int rawCooldown = computeDerivedCooldown(resolvedType, resolvedUtil, initialComplexity);
@@ -362,16 +361,13 @@ public class KiAttackData extends TechniqueData {
 		if (bytes == null || bytes.length == 0) return "";
 		BigInteger value = new BigInteger(1, bytes);
 		if (value.equals(BigInteger.ZERO)) return String.valueOf(alphabet.charAt(0));
-
 		StringBuilder result = new StringBuilder();
 		BigInteger base = BigInteger.valueOf(alphabet.length());
-
 		while (value.compareTo(BigInteger.ZERO) > 0) {
 			BigInteger[] divmod = value.divideAndRemainder(base);
 			result.append(alphabet.charAt(divmod[1].intValue()));
 			value = divmod[0];
 		}
-
 		return result.reverse().toString();
 	}
 
@@ -379,14 +375,12 @@ public class KiAttackData extends TechniqueData {
 		if (encoded == null || encoded.isEmpty()) return new byte[0];
 		BigInteger value = BigInteger.ZERO;
 		BigInteger base = BigInteger.valueOf(alphabet.length());
-
 		for (int i = 0; i < encoded.length(); i++) {
 			char c = encoded.charAt(i);
 			int digit = alphabet.indexOf(c);
 			if (digit < 0) throw new IllegalArgumentException("Invalid char: " + c);
 			value = value.multiply(base).add(BigInteger.valueOf(digit));
 		}
-
 		byte[] bytes = value.toByteArray();
 		if (bytes.length > 1 && bytes[0] == 0) {
 			byte[] result = new byte[bytes.length - 1];
@@ -403,7 +397,6 @@ public class KiAttackData extends TechniqueData {
 			DataOutputStream dataOut = new DataOutputStream(nbtOut);
 			NbtIo.write(tag, dataOut);
 			dataOut.close();
-
 			byte[] compressed = compressOptimized(nbtOut.toByteArray());
 			return CODE_PREFIX + encodeBigInt(compressed, BASE62_ALPHABET);
 		} catch (Exception e) {
@@ -415,16 +408,14 @@ public class KiAttackData extends TechniqueData {
 	public static KiAttackData importFromCode(String code) {
 		if (code == null || code.isEmpty()) return null;
 		if (code.length() > MAX_IMPORT_CODE_LENGTH) return null;
-
 		if (!code.startsWith(CODE_PREFIX)) {
 			try {
 				byte[] data = Base64.getUrlDecoder().decode(code);
 				if (data.length > MAX_IMPORT_NBT_BYTES) return null;
 				ByteArrayInputStream bais = new ByteArrayInputStream(data);
 				GZIPInputStream gzip = new GZIPInputStream(bais);
-				CompoundTag tag = NbtIo.read(new DataInputStream(gzip), new NbtAccounter(MAX_IMPORT_NBT_BYTES));
+				CompoundTag tag = NbtIo.read(new DataInputStream(gzip), NbtAccounter.create(MAX_IMPORT_NBT_BYTES));
 				gzip.close();
-
 				KiAttackData attack = new KiAttackData();
 				attack.load(tag);
 				attack.setId(UUID.randomUUID().toString());
@@ -435,15 +426,12 @@ public class KiAttackData extends TechniqueData {
 				return null;
 			}
 		}
-
 		try {
 			byte[] bytes = decodeBigInt(code.substring(CODE_PREFIX.length()), BASE62_ALPHABET);
 			byte[] decompressed = decompressOptimized(bytes);
-
 			ByteArrayInputStream byteIn = new ByteArrayInputStream(decompressed);
 			DataInputStream dataIn = new DataInputStream(byteIn);
-			CompoundTag tag = NbtIo.read(dataIn, new NbtAccounter(MAX_IMPORT_NBT_BYTES));
-
+			CompoundTag tag = NbtIo.read(dataIn, NbtAccounter.create(MAX_IMPORT_NBT_BYTES));
 			KiAttackData attack = new KiAttackData();
 			attack.load(tag);
 			attack.setId(UUID.randomUUID().toString());
@@ -463,7 +451,6 @@ public class KiAttackData extends TechniqueData {
 		this.armorPenLevel = 0;
 		this.castTimeLevel = 0;
 		this.cooldownLevel = 0;
-
 		KiType resolvedType = this.kiType != null ? this.kiType : KiType.SMALL_BALL;
 		float[] normalized = normalizeStatsForType(resolvedType, this.damageMultiplier, this.size, this.speed, this.armorPenetration);
 		this.damageMultiplier = normalized[0];
@@ -483,11 +470,9 @@ public class KiAttackData extends TechniqueData {
 		tag.putFloat("TpCost", this.tpCost);
 		tag.putInt("CastTime", this.castTime);
 		tag.putInt("Cooldown", this.cooldown);
-
 		ListTag racesTag = new ListTag();
 		for (String race : allowedRaces) racesTag.add(StringTag.valueOf(race));
 		tag.put("AllowedRaces", racesTag);
-
 		tag.putString("KiType", kiType != null ? kiType.name() : "");
 		tag.putString("Animation", animation != null ? animation : "");
 		tag.putString("Utility", utility != null ? utility.name() : "");
@@ -521,23 +506,27 @@ public class KiAttackData extends TechniqueData {
 		this.tpCost = tag.contains("TpCost") ? tag.getFloat("TpCost") : 0;
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
-
 		this.allowedRaces.clear();
 		ListTag racesTag = tag.getList("AllowedRaces", 8);
 		for (int i = 0; i < racesTag.size(); i++) {
 			this.allowedRaces.add(racesTag.getString(i));
 		}
-
-		try { this.kiType = KiType.valueOf(tag.getString("KiType")); } catch (Exception e) { this.kiType = KiType.SMALL_BALL; }
+		try {
+			this.kiType = KiType.valueOf(tag.getString("KiType"));
+		} catch (Exception e) {
+			this.kiType = KiType.SMALL_BALL;
+		}
 		this.animation = tag.getString("Animation");
-		try { this.utility = Utility.valueOf(tag.getString("Utility")); } catch (Exception e) { this.utility = Utility.DAMAGE; }
+		try {
+			this.utility = Utility.valueOf(tag.getString("Utility"));
+		} catch (Exception e) {
+			this.utility = Utility.DAMAGE;
+		}
 		if (this.utility == Utility.HEAL && !allowsHealUtility(this.kiType)) this.utility = Utility.DAMAGE;
-
 		if ((this.animation == null || this.animation.isEmpty()) && PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
 			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
 			if (predefined != null) this.animation = predefined.getAnimation();
 		}
-
 		this.colorInterior = tag.getInt("ColorInterior");
 		this.colorExterior = tag.getInt("ColorExterior");
 		this.colorOutline = tag.getInt("ColorOutline");
@@ -551,12 +540,18 @@ public class KiAttackData extends TechniqueData {
 		this.cooldownLevel = tag.getInt("CooldownLevel");
 		this.speedLevel = tag.getInt("SpeedLevel");
 		this.sizeLevel = tag.getInt("SizeLevel");
-
-		try { this.secondaryEffectType = SecondaryEffectType.valueOf(tag.getString("SecondaryEffectType")); }
-		catch (Exception e) { this.secondaryEffectType = SecondaryEffectType.NONE; }
+		try {
+			this.secondaryEffectType = SecondaryEffectType.valueOf(tag.getString("SecondaryEffectType"));
+		} catch (Exception e) {
+			this.secondaryEffectType = SecondaryEffectType.NONE;
+		}
 		String affected = tag.getString("AffectedStat");
 		if (affected == null || affected.isEmpty()) this.affectedStat = null;
-		else try { this.affectedStat = AffectedStat.valueOf(affected); } catch (Exception e) { this.affectedStat = null; }
+		 else try {
+			this.affectedStat = AffectedStat.valueOf(affected);
+		} catch (Exception e) {
+			this.affectedStat = null;
+		}
 		setSecondaryIntensity(tag.getFloat("SecondaryIntensity"));
 		setSecondaryDuration(tag.getInt("SecondaryDuration"));
 	}
@@ -564,16 +559,10 @@ public class KiAttackData extends TechniqueData {
 	public static float[] normalizeStatsForType(KiType type, float damage, float size, float speed, int armorPen) {
 		KiType resolvedType = type != null ? type : KiType.SMALL_BALL;
 		float normalizedDamage = Mth.clamp(damage, getMinDamageForType(resolvedType), getMaxDamageForType(resolvedType));
-		float normalizedSize = usesCustomSize(resolvedType)
-				? Mth.clamp(size, getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType))
-				: getDefaultSizeForType(resolvedType);
-		float normalizedSpeed = usesCustomSpeed(resolvedType)
-				? Mth.clamp(speed, getMinSpeedForType(resolvedType), getMaxSpeedForType(resolvedType))
-				: getDefaultSpeedForType(resolvedType);
-		float normalizedArmorPen = usesCustomArmorPen(resolvedType)
-				? Mth.clamp(armorPen, 0, getMaxArmorPenForType(resolvedType))
-				: getDefaultArmorPenForType(resolvedType);
-		return new float[]{normalizedDamage, normalizedSize, normalizedSpeed, normalizedArmorPen};
+		float normalizedSize = usesCustomSize(resolvedType) ? Mth.clamp(size, getMinSizeForType(resolvedType), getMaxSizeForType(resolvedType)) : getDefaultSizeForType(resolvedType);
+		float normalizedSpeed = usesCustomSpeed(resolvedType) ? Mth.clamp(speed, getMinSpeedForType(resolvedType), getMaxSpeedForType(resolvedType)) : getDefaultSpeedForType(resolvedType);
+		float normalizedArmorPen = usesCustomArmorPen(resolvedType) ? Mth.clamp(armorPen, 0, getMaxArmorPenForType(resolvedType)) : getDefaultArmorPenForType(resolvedType);
+		return new float[] {normalizedDamage, normalizedSize, normalizedSpeed, normalizedArmorPen};
 	}
 
 	public static boolean usesCustomSize(KiType type) {
@@ -585,18 +574,18 @@ public class KiAttackData extends TechniqueData {
 
 	public static float getMinSizeForType(KiType type) {
 		return switch (type) {
-			case SMALL_BALL -> 1.0f;
-			case MEDIUM_BALL -> 7.5f;
-			case GIANT_BALL -> 15.0f;
-			default -> 0.1f;
+			case SMALL_BALL -> 1.0F;
+			case MEDIUM_BALL -> 7.5F;
+			case GIANT_BALL -> 15.0F;
+			default -> 0.1F;
 		};
 	}
 
 	public static float getMaxSizeForType(KiType type) {
 		return switch (type) {
-			case MEDIUM_BALL -> 12.5f;
-			case SMALL_BALL -> 5.0f;
-			default -> 20.0f;
+			case MEDIUM_BALL -> 12.5F;
+			case SMALL_BALL -> 5.0F;
+			default -> 20.0F;
 		};
 	}
 
@@ -626,35 +615,35 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public static float getMinDamageForType(KiType type) {
-		if (isLargeDamageTier(type)) return 1.0f;
-		if (isMediumDamageTier(type)) return 0.5f;
-		return 0.20f;
+		if (isLargeDamageTier(type)) return 1.0F;
+		if (isMediumDamageTier(type)) return 0.5F;
+		return 0.2F;
 	}
 
 	public static float getMaxDamageForType(KiType type) {
-		if (isLargeDamageTier(type)) return 2.0f;
-		if (isMediumDamageTier(type)) return 1.0f;
-		return 0.40f;
+		if (isLargeDamageTier(type)) return 2.0F;
+		if (isMediumDamageTier(type)) return 1.0F;
+		return 0.4F;
 	}
 
 	public static float getDefaultDamageForType(KiType type) {
-		if (isLargeDamageTier(type)) return 1.5f;
-		if (isMediumDamageTier(type)) return 0.75f;
-		return 0.30f;
+		if (isLargeDamageTier(type)) return 1.5F;
+		if (isMediumDamageTier(type)) return 0.75F;
+		return 0.3F;
 	}
 
 	public static float getMinSpeedForType(KiType type) {
-		return 0.1f;
+		return 0.1F;
 	}
 
 	public static float getMaxSpeedForType(KiType type) {
 		return switch (type) {
-			case SMALL_BALL, LASER -> 2.0f;
-			case DISK -> 1.75f;
-			case MEDIUM_BALL, BEAM, BARRAGE -> 1.5f;
-			case WAVE -> 1.25f;
-			case GIANT_BALL -> 0.75f;
-			default -> 1.0f;
+			case SMALL_BALL, LASER -> 2.0F;
+			case DISK -> 1.75F;
+			case MEDIUM_BALL, BEAM, BARRAGE -> 1.5F;
+			case WAVE -> 1.25F;
+			case GIANT_BALL -> 0.75F;
+			default -> 1.0F;
 		};
 	}
 
@@ -665,20 +654,20 @@ public class KiAttackData extends TechniqueData {
 		};
 	}
 
-	private static final float LARGE_OVERLOAD_KI_FACTOR = 2.0f;
+	private static final float LARGE_OVERLOAD_KI_FACTOR = 2.0F;
 
 	private static float largeOverloadKiMultiplier(KiType type, float damage) {
-		if (!isLargeDamageTier(type) || damage <= 2.0f) return 1.0f;
-		return 1.0f + (damage - 2.0f) * LARGE_OVERLOAD_KI_FACTOR;
+		if (!isLargeDamageTier(type) || damage <= 2.0F) return 1.0F;
+		return 1.0F + (damage - 2.0F) * LARGE_OVERLOAD_KI_FACTOR;
 	}
 
 	public static float getDefaultSizeForType(KiType type) {
 		return switch (type) {
-			case GIANT_BALL -> 17.5f;
-			case MEDIUM_BALL -> 10.0f;
-			case EXPLOSION -> 8.0f;
-			case SMALL_BALL -> 3.0f;
-			default -> 1.0f;
+			case GIANT_BALL -> 17.5F;
+			case MEDIUM_BALL -> 10.0F;
+			case EXPLOSION -> 8.0F;
+			case SMALL_BALL -> 3.0F;
+			default -> 1.0F;
 		};
 	}
 
@@ -687,14 +676,14 @@ public class KiAttackData extends TechniqueData {
 		if (usesCustomSize(resolved)) {
 			float min = getMinSizeForType(resolved);
 			float max = getMaxSizeForType(resolved);
-			if (max <= min) return 0f;
-			return Mth.clamp((size - min) / (max - min), 0f, 1f);
+			if (max <= min) return 0.0F;
+			return Mth.clamp((size - min) / (max - min), 0.0F, 1.0F);
 		}
-		return Mth.clamp(getDefaultSizeForType(resolved) / 20.0f, 0f, 1f);
+		return Mth.clamp(getDefaultSizeForType(resolved) / 20.0F, 0.0F, 1.0F);
 	}
 
 	public static float getDefaultSpeedForType(KiType type) {
-		return Math.min(1.0f, getMaxSpeedForType(type));
+		return Math.min(1.0F, getMaxSpeedForType(type));
 	}
 
 	public static int getDefaultArmorPenForType(KiType type) {
@@ -706,10 +695,210 @@ public class KiAttackData extends TechniqueData {
 		float typeMult = getTypeMultiplier(resolved);
 		float utilMult = getUtilityMultiplier(util != null ? util : Utility.DAMAGE);
 		float cdTypeMult = switch (resolved) {
-			case SMALL_BALL, LASER, DISK -> 0.5f;
-			default -> 1.0f;
+			case SMALL_BALL, LASER, DISK -> 0.5F;
+			default -> 1.0F;
 		};
-		float base = (20.0f + initialComplexity * 4.0f) * typeMult * utilMult * cdTypeMult;
+		float base = (20.0F + initialComplexity * 4.0F) * typeMult * utilMult * cdTypeMult;
 		return Math.max(10, Math.min(600, Math.round(base)));
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public List<String> getAllowedRaces() {
+		return this.allowedRaces;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public KiType getKiType() {
+		return this.kiType;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public String getAnimation() {
+		return this.animation;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public Utility getUtility() {
+		return this.utility;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getColorInterior() {
+		return this.colorInterior;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getColorExterior() {
+		return this.colorExterior;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getColorOutline() {
+		return this.colorOutline;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public float getDamageMultiplier() {
+		return this.damageMultiplier;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public float getSpeed() {
+		return this.speed;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public float getSize() {
+		return this.size;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getArmorPenetration() {
+		return this.armorPenetration;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public SecondaryEffectType getSecondaryEffectType() {
+		return this.secondaryEffectType;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public AffectedStat getAffectedStat() {
+		return this.affectedStat;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public float getSecondaryIntensity() {
+		return this.secondaryIntensity;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getSecondaryDuration() {
+		return this.secondaryDuration;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getDamageLevel() {
+		return this.damageLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getCastTimeLevel() {
+		return this.castTimeLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getCooldownLevel() {
+		return this.cooldownLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getSpeedLevel() {
+		return this.speedLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getSizeLevel() {
+		return this.sizeLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public int getArmorPenLevel() {
+		return this.armorPenLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setAllowedRaces(final List<String> allowedRaces) {
+		this.allowedRaces = allowedRaces;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setKiType(final KiType kiType) {
+		this.kiType = kiType;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setAnimation(final String animation) {
+		this.animation = animation;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setUtility(final Utility utility) {
+		this.utility = utility;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setColorInterior(final int colorInterior) {
+		this.colorInterior = colorInterior;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setColorExterior(final int colorExterior) {
+		this.colorExterior = colorExterior;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setColorOutline(final int colorOutline) {
+		this.colorOutline = colorOutline;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setDamageMultiplier(final float damageMultiplier) {
+		this.damageMultiplier = damageMultiplier;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setSpeed(final float speed) {
+		this.speed = speed;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setSize(final float size) {
+		this.size = size;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setArmorPenetration(final int armorPenetration) {
+		this.armorPenetration = armorPenetration;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setSecondaryEffectType(final SecondaryEffectType secondaryEffectType) {
+		this.secondaryEffectType = secondaryEffectType;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setAffectedStat(final AffectedStat affectedStat) {
+		this.affectedStat = affectedStat;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setDamageLevel(final int damageLevel) {
+		this.damageLevel = damageLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setCastTimeLevel(final int castTimeLevel) {
+		this.castTimeLevel = castTimeLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setCooldownLevel(final int cooldownLevel) {
+		this.cooldownLevel = cooldownLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setSpeedLevel(final int speedLevel) {
+		this.speedLevel = speedLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setSizeLevel(final int sizeLevel) {
+		this.sizeLevel = sizeLevel;
+	}
+
+	@java.lang.SuppressWarnings("all")
+	public void setArmorPenLevel(final int armorPenLevel) {
+		this.armorPenLevel = armorPenLevel;
 	}
 }

@@ -34,7 +34,7 @@ public abstract class CameraMixin implements RollCamera {
 
 	@Shadow protected abstract void setRotation(float yRot, float xRot);
 
-	@Shadow protected abstract void move(double x, double y, double z);
+	@Shadow protected abstract void move(float zoom, float dy, float dx);
 
 	@Unique private float dragonminez$roll = 0F;
 	@Unique private float dragonminez$lastRoll = 0F;
@@ -100,11 +100,11 @@ public abstract class CameraMixin implements RollCamera {
 
 	@Redirect(
 			method = "setup",
-			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;move(DDD)V", ordinal = 0)
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;move(FFF)V", ordinal = 0)
 	)
-	private void dragonminez$shoulderSurf(Camera camera, double x, double y, double z, BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick) {
+	private void dragonminez$shoulderSurf(Camera camera, float x, float y, float z, BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick) {
 		Vec3 move = OverShoulderCamera.computeMove(camera, level, entity, thirdPersonReverse, x, y, z, partialTick);
-		this.move(move.x, move.y, move.z);
+		this.move((float)move.x, (float)move.y, (float)move.z);
 	}
 
 	@Override

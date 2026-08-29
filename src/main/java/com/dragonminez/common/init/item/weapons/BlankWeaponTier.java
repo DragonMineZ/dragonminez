@@ -1,5 +1,8 @@
 package com.dragonminez.common.init.item.weapons;
 
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.crafting.Ingredient;
 
@@ -35,10 +38,6 @@ public class BlankWeaponTier implements Tier {
 		return this.attackDamageBonus;
 	}
 
-	@Override
-	public int getLevel() {
-		return this.level; // Nivel de minería
-	}
 
 	@Override
 	public int getEnchantmentValue() {
@@ -48,5 +47,10 @@ public class BlankWeaponTier implements Tier {
 	@Override
 	public Ingredient getRepairIngredient() {
 		return this.repairIngredient;
+	}
+
+	@Override
+	public TagKey<Block> getIncorrectBlocksForDrops() {
+		return BlockTags.INCORRECT_FOR_WOODEN_TOOL;
 	}
 }
