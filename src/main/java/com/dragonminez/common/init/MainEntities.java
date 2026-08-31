@@ -56,6 +56,8 @@ public class MainEntities {
 
     public static List<RegistryObject<? extends EntityType<? extends Mob>>> getSagaEntities() {
         return List.of(
+                //SAGA CLÁSICO
+
                 // SAGA SAIYAN
                 SAGA_GOKU_EARLY, SAGA_GOKU_EARLY_NOWEIGHTS, SAGA_PICCOLO_EARLY, SAGA_CHAOZ,
                 SAGA_SAIBAMAN, SAGA_SAIBAMAN2, SAGA_SAIBAMAN3, SAGA_SAIBAMAN4, SAGA_SAIBAMAN5, SAGA_SAIBAMAN6,
@@ -351,6 +353,15 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "majin_skill").toString()));
 
     // SAGAS ENTITY
+
+    /* SAGA CLASICO */
+
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaKidGokuEntity>> SAGA_KID_GOKU =
+            ENTITY_TYPES.register("saga_kid_goku",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaKidGokuEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_goku").toString()));
+
     public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuEarlyEntity>> SAGA_GOKU_EARLY =
             ENTITY_TYPES.register("saga_goku_early",
                     () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuEarlyEntity::new, MobCategory.MONSTER)

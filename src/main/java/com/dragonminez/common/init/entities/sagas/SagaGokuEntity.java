@@ -10,6 +10,25 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 public class SagaGokuEntity{
 
+    //KID GOKU
+    public static class SagaKidGokuEntity extends DBSagasEntity {
+
+        public SagaKidGokuEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setKiBlastSpeed(1.0F);
+            this.setEvade(true, 300);
+            this.setDBZStyle(0);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 350, 1.0F);
+        }
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_kid_goku";
+        }
+
+    }
+
     // GOKU EARLY
     public static class SagaGokuEarlyEntity extends DBSagasEntity {
 
