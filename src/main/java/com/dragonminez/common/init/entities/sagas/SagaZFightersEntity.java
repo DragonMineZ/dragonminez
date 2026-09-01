@@ -21,6 +21,20 @@ import java.util.List;
 
 public class SagaZFightersEntity {
 
+    public static class KidKrillinEntity extends DBSagasEntity {
+
+        public KidKrillinEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setDBZStyle(0);
+            this.setisKid(true);
+        }
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_kid_goku";
+        }
+
+    }
+
     public static class SagaKrillinEntity extends DBSagasEntity {
 
         public SagaKrillinEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
@@ -69,6 +83,22 @@ public class SagaZFightersEntity {
 
     }
 
+    public static class OolongTransformedEntity extends DBSagasEntity {
+        public OolongTransformedEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setCanFly(false);
+            this.setDBZStyle(2);
+            this.setScaleVal(1.2f);
+        }
+    }
+    public static class OolongEntity extends DBSagasEntity {
+        public OolongEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setCanFly(false);
+            this.setDBZStyle(0);
+        }
+    }
+
     public static class SagaTeenYamchaEntity extends DBSagasEntity {
 
         public SagaTeenYamchaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
@@ -85,7 +115,6 @@ public class SagaZFightersEntity {
         public String getGeckolibModelName() {
             return "saga_yamcha";
         }
-
     }
 
     public static class SagaYamchaEntity extends DBSagasEntity {

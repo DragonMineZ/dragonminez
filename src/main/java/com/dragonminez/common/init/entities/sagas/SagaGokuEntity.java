@@ -21,6 +21,8 @@ public class SagaGokuEntity{
             this.setEvade(true, 300);
             this.setDBZStyle(0);
             this.addKiSkill(KiSkillType.KAMEHAMEHA, 350, 1.0F);
+            this.setisKid(true);
+
         }
         @Override
         public String getGeckolibModelName() {
