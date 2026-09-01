@@ -287,6 +287,12 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                             .sized(1.9f, 1.8f)
                             .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "giant_fish").toString()));
+    public static final RegistryObject<EntityType<GiantTurtleEntity>> GIANT_TURTLE =
+            ENTITY_TYPES.register("giant_turtle",
+                    () -> EntityType.Builder.of(GiantTurtleEntity::new, MobCategory.CREATURE)
+                            .sized(0.9f, 0.9f)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "giant_turtle").toString()));
 
     public static final RegistryObject<EntityType<BanditEntity>> BANDIT =
             ENTITY_TYPES.register("bandit",
@@ -1278,6 +1284,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
         event.register(GIANT_FISH.get(), SpawnPlacements.Type.IN_WATER,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 GiantFishEntity::canSpawnHere,
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
+
+        event.register(GIANT_TURTLE.get(), SpawnPlacements.Type.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                GiantTurtleEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
     }
 

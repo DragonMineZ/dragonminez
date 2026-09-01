@@ -1,0 +1,10 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#dragonminez:has_giant_turtle",
+  "spawners": [{
+    "type": "dragonminez:giant_turtle",
+    "weight": 8,
+    "minCount": 1,
+    "maxCount": 2
+  }]
+}

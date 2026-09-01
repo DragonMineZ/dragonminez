@@ -134,6 +134,19 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.GIANT_FISH_RAW.get()), has(MainItems.GIANT_FISH_RAW.get())).group(Reference.MOD_ID)
 				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "giant_fish_cooked_campfire"));
 
+		SimpleCookingRecipeBuilder.smelting(Ingredient.of(MainItems.GIANT_TURTLE_RAW.get()),
+						RecipeCategory.FOOD, MainItems.GIANT_TURTLE_COOKED.get(), 0.35f, 200)
+				.unlockedBy(getHasName(MainItems.GIANT_TURTLE_RAW.get()), has(MainItems.GIANT_TURTLE_RAW.get())).group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "giant_turtle_cooked"));
+		SimpleCookingRecipeBuilder.smoking(Ingredient.of(MainItems.GIANT_TURTLE_RAW.get()),
+						RecipeCategory.FOOD, MainItems.GIANT_TURTLE_COOKED.get(), 0.35f, 100)
+				.unlockedBy(getHasName(MainItems.GIANT_TURTLE_RAW.get()), has(MainItems.GIANT_TURTLE_RAW.get())).group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "giant_turtle_cooked_smoking"));
+		SimpleCookingRecipeBuilder.campfireCooking(Ingredient.of(MainItems.GIANT_TURTLE_RAW.get()),
+						RecipeCategory.FOOD, MainItems.GIANT_TURTLE_COOKED.get(), 0.35f, 600)
+				.unlockedBy(getHasName(MainItems.GIANT_TURTLE_RAW.get()), has(MainItems.GIANT_TURTLE_RAW.get())).group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "giant_turtle_cooked_campfire"));
+
 		// AGRICULTURA
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, MainItems.NAMEK_MOSS.get(), 1)
 				.requires(Items.WHEAT_SEEDS)
