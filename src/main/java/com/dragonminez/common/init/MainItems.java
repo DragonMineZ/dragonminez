@@ -78,6 +78,10 @@ public final class MainItems {
 			() -> new FoodItem(2, 2.4f, 64));
 	public static final RegistryObject<Item> FROG_LEGS_COOKED = ITEM_REGISTER.register("frog_legs_cooked",
 			() -> new FoodItem(5, 4.8f, 64));
+	public static final RegistryObject<Item> GIANT_FISH_RAW = ITEM_REGISTER.register("giant_fish_raw",
+			() -> new FoodItem(5, 2.4f, 64));
+	public static final RegistryObject<Item> GIANT_FISH_COOKED = ITEM_REGISTER.register("giant_fish_cooked",
+			() -> new FoodItem(12, 9.4f, 64));
 
 	//AGRICULTURA
 	// Escama de tortuga: ingrediente de la cápsula de RES (y del Brote Katchin). Se obtiene desde scute.
@@ -528,6 +532,8 @@ public final class MainItems {
 			new ForgeSpawnEggItem(MainEntities.NAMEK_FROG, 0x22C96B, 0xD62B52, new Item.Properties()));
 	public static final RegistryObject<Item> GINYU_FROG_SE = ITEM_REGISTER.register("ginyu_frog_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.NAMEK_FROG_GINYU, 0x22C96B, 0x6D0480, new Item.Properties()));
+	public static final RegistryObject<Item> GIANT_FISH_SE = ITEM_REGISTER.register("giant_fish_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.GIANT_FISH, 0x2E6E9E, 0xD9E4EC, new Item.Properties()));
 	public static final RegistryObject<Item> SOLDIER01_SE = ITEM_REGISTER.register("soldier01_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.SAGA_FRIEZA_SOLDIER, 0x010714, 0xE6E7EB, new Item.Properties()));
 	public static final RegistryObject<Item> SOLDIER02_SE = ITEM_REGISTER.register("soldier02_spawn_egg", () ->

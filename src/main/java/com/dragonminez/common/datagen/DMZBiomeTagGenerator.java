@@ -61,6 +61,12 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.HAS_WOODLAND_MANSION)
 				.addTag(BiomeTags.IS_JUNGLE);
 
+		this.tag(MainTags.Biomes.HAS_GIANT_FISH)
+				.replace(false)
+				.addTag(BiomeTags.IS_DEEP_OCEAN)
+				.addTag(BiomeTags.IS_OCEAN)
+				.add(NamekBiomes.NAMEKIAN_RIVERS);
+
 		this.tag(MainTags.Biomes.HAS_ROBOTS)
 				.replace(false)
 				.addTag(BiomeTags.HAS_VILLAGE_SAVANNA)

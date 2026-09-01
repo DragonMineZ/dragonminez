@@ -115,6 +115,7 @@ public class ModCommonEvents {
         event.put(MainEntities.CC_NAMEKIAN.get(), NamekTraderEntity.createAttributes().build());
         event.put(MainEntities.NAMEK_WARRIOR.get(), NamekWarriorEntity.createAttributes().build());
         event.put(MainEntities.SABERTOOTH.get(), SabertoothEntity.createAttributes().build());
+        event.put(MainEntities.GIANT_FISH.get(), GiantFishEntity.createAttributes());
 
         event.put(MainEntities.BANDIT.get(), BanditEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT1.get(), RobotEntity.createAttributes().build());

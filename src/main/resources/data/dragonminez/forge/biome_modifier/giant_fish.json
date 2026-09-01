@@ -1,0 +1,10 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#dragonminez:has_giant_fish",
+  "spawners": [{
+    "type": "dragonminez:giant_fish",
+    "weight": 6,
+    "minCount": 1,
+    "maxCount": 2
+  }]
+}

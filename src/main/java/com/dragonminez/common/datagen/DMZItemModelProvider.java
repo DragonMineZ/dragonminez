@@ -96,6 +96,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		withExistingParent(MainItems.DINO_KID.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.NAMEK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.GINYU_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.GIANT_FISH_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SOLDIER01_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SOLDIER02_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.SOLDIER03_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
@@ -121,6 +122,8 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.DINO_TAIL_COOKED);
 		simpleItem(MainItems.FROG_LEGS_RAW);
 		simpleItem(MainItems.FROG_LEGS_COOKED);
+		simpleItem(MainItems.GIANT_FISH_RAW);
+		simpleItem(MainItems.GIANT_FISH_COOKED);
 
 		//Armaduras (DEJAR A-Z POR FAVOR Q SINO ME PIERDO XD)
 		generateArmorSetModels(MainItems.A13_ARMOR);

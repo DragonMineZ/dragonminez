@@ -675,6 +675,7 @@ public class ConfigManager {
 		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR2, 150.0, 12.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR3, 75.0, 10.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.SABERTOOTH, 30.0, 5.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.GIANT_FISH, 80.0, 8.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.BANDIT, 75.0, 10.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_SOLDIER, 40.0, 5.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT1, 120.0, 15.0, 0.0);

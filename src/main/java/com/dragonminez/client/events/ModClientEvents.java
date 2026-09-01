@@ -231,6 +231,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.CC_NAMEKIAN.get(), NamekianRenderer::new);
         event.registerEntityRenderer(MainEntities.NAMEK_WARRIOR.get(), NamekianWarriorRenderer::new);
         event.registerEntityRenderer(MainEntities.SABERTOOTH.get(), DinosRenderer::new);
+        event.registerEntityRenderer(MainEntities.GIANT_FISH.get(), GiantFishRenderer::new);
 
         event.registerEntityRenderer(MainEntities.BANDIT.get(), RedRibbonRenderer::new);
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT1.get(), RobotRRRenderer::new);

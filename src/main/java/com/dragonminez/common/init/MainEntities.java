@@ -281,6 +281,12 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(NamekFrogGinyuEntity::new, MobCategory.AMBIENT)
                             .sized(0.4f, 0.4f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek_frog_ginyu").toString()));
+    public static final RegistryObject<EntityType<GiantFishEntity>> GIANT_FISH =
+            ENTITY_TYPES.register("giant_fish",
+                    () -> EntityType.Builder.of(GiantFishEntity::new, MobCategory.WATER_CREATURE)
+                            .sized(1.9f, 1.8f)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "giant_fish").toString()));
 
     public static final RegistryObject<EntityType<BanditEntity>> BANDIT =
             ENTITY_TYPES.register("bandit",
@@ -1268,6 +1274,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
         for (RegistryObject<? extends EntityType<? extends Mob>> rrE : redRibbonEntities) {
             registerRedRibbonSpawn(event, rrE.get());
         }
+
+        event.register(GIANT_FISH.get(), SpawnPlacements.Type.IN_WATER,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                GiantFishEntity::canSpawnHere,
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
     }
 
     private static <T extends Mob> void registerSagaSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
