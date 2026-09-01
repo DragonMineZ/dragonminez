@@ -57,6 +57,7 @@ public class MainEntities {
     public static List<RegistryObject<? extends EntityType<? extends Mob>>> getSagaEntities() {
         return List.of(
                 //SAGA CLÁSICO
+                SAGA_KID_GOKU,
 
                 // SAGA SAIYAN
                 SAGA_GOKU_EARLY, SAGA_GOKU_EARLY_NOWEIGHTS, SAGA_PICCOLO_EARLY, SAGA_CHAOZ,
@@ -68,7 +69,7 @@ public class MainEntities {
                 SAGA_CUI, SAGA_DODORIA, SAGA_VEGETA_NAMEK, SAGA_ZARBON, SAGA_ZARBON_TRANSF,
                 SAGA_GULDO, SAGA_RECOOME, SAGA_BURTER, SAGA_JEICE, SAGA_GINYU, SAGA_GINYU_GOKU, SAGA_NAIL,
                 SAGA_FREEZER_FIRST, SAGA_FREEZER_SECOND, SAGA_FREEZER_THIRD, SAGA_FREEZER_BASE, SAGA_FREEZER_FP,
-                SAGA_KID_GOHAN, SAGA_KRILLIN, SAGA_TIEN_EARLY, SAGA_YAMCHA, SAGA_GOKU_MID_BASE, SAGA_GOKU_MID_SSJ,
+                SAGA_KID_GOHAN, SAGA_KRILLIN, SAGA_TIEN_EARLY, SAGA_TEEN_YAMCHA, SAGA_YAMCHA, SAGA_GOKU_MID_BASE, SAGA_GOKU_MID_SSJ,
 
                 // SAGA ANDROIDES / CELL
                 SAGA_MECHA_FRIEZA, SAGA_KING_COLD, SAGA_DRGERO, SAGA_A19, SAGA_A18, SAGA_A17, SAGA_A16,
@@ -564,6 +565,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaTienShinhanEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_tien_early").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaTeenYamchaEntity>> SAGA_TEEN_YAMCHA =
+            ENTITY_TYPES.register("saga_teen_yamcha",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaTeenYamchaEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_teen_yamcha").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.SagaYamchaEntity>> SAGA_YAMCHA =
             ENTITY_TYPES.register("saga_yamcha",
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaYamchaEntity::new, MobCategory.MONSTER)

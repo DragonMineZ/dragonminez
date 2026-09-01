@@ -78,6 +78,7 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_KI_DISC = RawAnimation.begin().thenPlay("ki_kienzan");
     public static final RawAnimation ANIM_KI_LASER = RawAnimation.begin().thenPlay("ki_laser");
     public static final RawAnimation ANIM_KIOZARU = RawAnimation.begin().thenPlay("ki_oozaru");
+    public static final RawAnimation ANIM_WOLF_FANG = RawAnimation.begin().thenPlay("skp.wolf_fang");
 
     public static final RawAnimation ANIM_COMBO1 = RawAnimation.begin().thenPlay("combo1");
     public static final RawAnimation ANIM_COMBO2 = RawAnimation.begin().thenPlay("combo2");

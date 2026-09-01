@@ -141,7 +141,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         FINAL_FLASH(18, SkillRole.RANGED_TRAVEL, Tier.STRONG),
         MAJIN_CANDY(19, SkillRole.ZONING, Tier.STRONG),
         KI_AIR_VOLLEY(20, SkillRole.ZONING, Tier.WEAK),
-        DOUBLE_SUNDAY(21, SkillRole.RANGED_TRAVEL, Tier.STRONG);
+        DOUBLE_SUNDAY(21, SkillRole.RANGED_TRAVEL, Tier.STRONG),
+        WOLF_FANG(22, SkillRole.GUARD_BREAK, Tier.MEDIUM);
 
         private final int id;
         private final SkillRole role;
@@ -879,9 +880,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     }
 
                     if (this.castTimer == 1) {
-                        if (skill != 7 && skill != 13) {
+                        if (skill != 7 && skill != 13 && skill != 22) {
                             executeSkillEffect(skill);
                         }
+                    }
+
+                    // Wolf Fang is a melee rush, not a one-shot projectile: it needs its own
+                    // per-tick beat (engage, jabs, final blow) like the player-side strike attack.
+                    if (skill == 22) {
+                        SkillManager.tickWolfFang(this, this.getTarget(), this.castTimer);
                     }
 
                     if (skill == 7 && this.castTimer == 30) {

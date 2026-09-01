@@ -126,6 +126,7 @@ public class DBSagasAnimationHandler {
                 case 18: return event.setAndContinue(DBSagasAnimations.ANIM_KI_FINALFLASH);
                 case 19: return event.setAndContinue(DBSagasAnimations.ANIM_KI_LASER);
                 case 20: return event.setAndContinue(DBSagasAnimations.ANIM_KI_EXPLOSION);
+                case 22: return event.setAndContinue(DBSagasAnimations.ANIM_WOLF_FANG);
                 default: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
             }
         }
