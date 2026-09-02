@@ -20,7 +20,7 @@ public class SagaGokuEntity{
             this.setKiBlastSpeed(1.0F);
             this.setEvade(true, 300);
             this.setDBZStyle(0);
-            this.addKiSkill(KiSkillType.KAMEHAMEHA, 350, 1.0F);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 350, 0.5F);
             this.setisKid(true);
 
         }

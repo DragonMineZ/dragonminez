@@ -57,7 +57,8 @@ public class MainEntities {
     public static List<RegistryObject<? extends EntityType<? extends Mob>>> getSagaEntities() {
         return List.of(
                 //SAGA CLÁSICO
-                SAGA_KID_GOKU, SAGA_KID_KRILLIN, SAGA_OOLONG, SAGA_OOLONG_TRANSFORMED,
+                SAGA_KID_GOKU, SAGA_KID_KRILLIN, SAGA_OOLONG, SAGA_OOLONG_TRANSFORMED, SAGA_GIRAN, SAGA_NAM,
+                SAGA_JACKIE_CHUN, SAGA_JACKIE_CHUN_FP,
 
                 // SAGA SAIYAN
                 SAGA_GOKU_EARLY, SAGA_GOKU_EARLY_NOWEIGHTS, SAGA_PICCOLO_EARLY, SAGA_CHAOZ,
@@ -372,17 +373,17 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaGokuEntity.SagaKidGokuEntity>> SAGA_KID_GOKU =
             ENTITY_TYPES.register("saga_kid_goku",
                     () -> EntityType.Builder.of(SagaGokuEntity.SagaKidGokuEntity::new, MobCategory.MONSTER)
-                            .sized(0.5f, 1.3f)
+                            .sized(0.5f, 1.1f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_goku").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.OolongEntity>> SAGA_OOLONG =
             ENTITY_TYPES.register("saga_oolong",
                     () -> EntityType.Builder.of(SagaZFightersEntity.OolongEntity::new, MobCategory.MONSTER)
-                            .sized(0.5f, 1.3f)
+                            .sized(0.5f, 1.1f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_oolong").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.OolongTransformedEntity>> SAGA_OOLONG_TRANSFORMED =
             ENTITY_TYPES.register("saga_oolong_transformed",
                     () -> EntityType.Builder.of(SagaZFightersEntity.OolongTransformedEntity::new, MobCategory.MONSTER)
-                            .sized(0.9f, 2.3f)
+                            .sized(1.2f, 2.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_oolong_transformed").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.SagaTeenYamchaEntity>> SAGA_TEEN_YAMCHA =
             ENTITY_TYPES.register("saga_teen_yamcha",
@@ -392,8 +393,28 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaZFightersEntity.KidKrillinEntity>> SAGA_KID_KRILLIN =
             ENTITY_TYPES.register("saga_kid_krillin",
                     () -> EntityType.Builder.of(SagaZFightersEntity.KidKrillinEntity::new, MobCategory.MONSTER)
-                            .sized(0.5f, 1.3f)
+                            .sized(0.5f, 1.1f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_krillin").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.GiranEntity>> SAGA_GIRAN =
+            ENTITY_TYPES.register("saga_giran",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.GiranEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 2.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_giran").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.NamEntity>> SAGA_NAM =
+            ENTITY_TYPES.register("saga_nam",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.NamEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_nam").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.JackieChunEntity>> SAGA_JACKIE_CHUN =
+            ENTITY_TYPES.register("saga_jackie_chun",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.JackieChunEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_jackie_chun").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.JackieChunFPEntity>> SAGA_JACKIE_CHUN_FP =
+            ENTITY_TYPES.register("saga_jackie_chun_fp",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.JackieChunFPEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 2.7f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_jackie_chun_fp").toString()));
     /* SAGA SAIYAN */
     public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuEarlyEntity>> SAGA_GOKU_EARLY =
             ENTITY_TYPES.register("saga_goku_early",

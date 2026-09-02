@@ -1,6 +1,9 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.MainGameRules;
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.entities.IBattlePower;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -8,15 +11,20 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
+import java.util.EnumSet;
 import java.util.List;
 
 public class SagaZFightersEntity {
@@ -88,7 +96,7 @@ public class SagaZFightersEntity {
             super(pEntityType, pLevel);
             this.setCanFly(false);
             this.setDBZStyle(2);
-            this.setScaleVal(1.2f);
+            this.setScaleVal(1.5f);
         }
     }
     public static class OolongEntity extends DBSagasEntity {
@@ -96,6 +104,7 @@ public class SagaZFightersEntity {
             super(pEntityType, pLevel);
             this.setCanFly(false);
             this.setDBZStyle(0);
+            this.setisKid(true);
         }
     }
 
@@ -331,5 +340,236 @@ public class SagaZFightersEntity {
 
     }
 
+    public static class GiranEntity extends DBSagasEntity {
 
+        public GiranEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setDBZStyle(2);
+            this.setScaleVal(1.3f);
+        }
+
+    }
+
+    public static class NamEntity extends DBSagasEntity {
+
+        private static final double LEAP_POWER = 1.15D;
+        private static final double DIVE_SPEED = 1.7D;
+        private static final double CRATER_RADIUS = 1.6D;
+        private static final double IMPACT_RADIUS = 3.0D;
+        private static final float IMPACT_DAMAGE_MULT = 2.0F;
+        private static final float INDESTRUCTIBLE_HARDNESS = 50.0F;
+
+        private Vec3 diveDir = Vec3.ZERO;
+
+        public NamEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setDBZStyle(0);
+        }
+
+        @Override
+        protected void registerGoals() {
+            super.registerGoals();
+            this.goalSelector.addGoal(2, new LeapSlamGoal(this));
+        }
+
+        void beginLeap() {
+            this.getNavigation().stop();
+            Vec3 motion = this.getDeltaMovement();
+            this.setDeltaMovement(motion.x * 0.2D, LEAP_POWER, motion.z * 0.2D);
+            this.hasImpulse = true;
+            this.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.0F, 0.7F);
+        }
+
+        boolean isPastApex() {
+            return this.getDeltaMovement().y <= 0.0D;
+        }
+
+        void beginDive(LivingEntity target) {
+            Vec3 aim = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D).subtract(this.position());
+            Vec3 dir = aim.lengthSqr() < 1.0E-4D ? new Vec3(0.0D, -1.0D, 0.0D) : aim.normalize();
+            this.diveDir = new Vec3(dir.x, Math.min(dir.y, -0.4D), dir.z).normalize();
+            this.sustainDive();
+        }
+
+        void sustainDive() {
+            this.setDeltaMovement(this.diveDir.scale(DIVE_SPEED));
+            this.hasImpulse = true;
+        }
+
+        boolean hasLanded() {
+            return this.onGround() || this.horizontalCollision || this.verticalCollision;
+        }
+
+        void slamImpact() {
+            if (this.level().isClientSide) return;
+
+            float damage = (float) (this.getAttributeValue(Attributes.ATTACK_DAMAGE) * IMPACT_DAMAGE_MULT);
+            DamageSource source = this.level().damageSources().mobAttack(this);
+
+            List<LivingEntity> hit = this.level().getEntitiesOfClass(LivingEntity.class,
+                    this.getBoundingBox().inflate(IMPACT_RADIUS));
+
+            for (LivingEntity victim : hit) {
+                if (victim == this) continue;
+                victim.hurt(source, damage);
+                Vec3 push = victim.position().subtract(this.position());
+                push = push.lengthSqr() < 1.0E-4D ? new Vec3(0.0D, 1.0D, 0.0D) : push.normalize();
+                victim.push(push.x * 0.6D, 0.45D, push.z * 0.6D);
+            }
+
+            if (this.level() instanceof ServerLevel serverLevel) {
+                this.crater(serverLevel);
+                serverLevel.sendParticles(MainParticles.DUST.get(),
+                        this.getX(), this.getY() + 0.1D, this.getZ(), 45, 1.3D, 0.15D, 1.3D, 0.05D);
+            }
+
+            this.playSound(SoundEvents.GENERIC_EXPLODE, 0.7F, 1.5F);
+        }
+
+        private void crater(ServerLevel level) {
+            BlockPos center = this.blockPosition();
+            int r = (int) Math.ceil(CRATER_RADIUS);
+
+            for (int x = -r; x <= r; x++) {
+                for (int y = -r; y <= 0; y++) {
+                    for (int z = -r; z <= r; z++) {
+                        if (x * x + y * y + z * z > CRATER_RADIUS * CRATER_RADIUS) continue;
+
+                        BlockPos pos = center.offset(x, y, z);
+                        BlockState state = level.getBlockState(pos);
+                        if (state.isAir()) continue;
+
+                        float hardness = state.getDestroySpeed(level, pos);
+                        if (hardness < 0.0F || hardness >= INDESTRUCTIBLE_HARDNESS) continue;
+                        if (!MainGameRules.canKiGrief(level, pos, this)) continue;
+
+                        level.destroyBlock(pos, true);
+                    }
+                }
+            }
+        }
+
+        static class LeapSlamGoal extends Goal {
+
+            private static final int COOLDOWN = 360;
+            private static final double MIN_RANGE = 4.0D;
+            private static final double MAX_RANGE = 18.0D;
+            private static final int MAX_RISE_TICKS = 20;
+            private static final int MAX_DIVE_TICKS = 40;
+
+            private final NamEntity nam;
+            private int cooldown;
+            private int phaseTicks;
+            private boolean diving;
+            private boolean finished;
+
+            LeapSlamGoal(NamEntity nam) {
+                this.nam = nam;
+                setFlags(EnumSet.of(Flag.MOVE, Flag.JUMP, Flag.LOOK));
+            }
+
+            @Override
+            public boolean canUse() {
+                if (this.cooldown > 0) {
+                    this.cooldown--;
+                    return false;
+                }
+                if (this.nam.isStunned() || !this.nam.onGround()) return false;
+
+                LivingEntity target = this.nam.getTarget();
+                if (target == null || !target.isAlive()) return false;
+
+                double dist = this.nam.distanceTo(target);
+                return dist >= MIN_RANGE && dist <= MAX_RANGE && this.nam.getSensing().hasLineOfSight(target);
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                LivingEntity target = this.nam.getTarget();
+                return !this.finished && target != null && target.isAlive();
+            }
+
+            @Override
+            public boolean requiresUpdateEveryTick() {
+                return true;
+            }
+
+            @Override
+            public void start() {
+                this.diving = false;
+                this.finished = false;
+                this.phaseTicks = 0;
+                this.nam.beginLeap();
+            }
+
+            @Override
+            public void stop() {
+                this.cooldown = COOLDOWN;
+                this.diving = false;
+                this.finished = false;
+                this.phaseTicks = 0;
+            }
+
+            @Override
+            public void tick() {
+                LivingEntity target = this.nam.getTarget();
+                if (target == null) {
+                    this.finished = true;
+                    return;
+                }
+
+                this.phaseTicks++;
+                this.nam.getLookControl().setLookAt(target, 30.0F, 30.0F);
+
+                if (!this.diving) {
+                    if (this.nam.isPastApex() || this.phaseTicks >= MAX_RISE_TICKS) {
+                        this.diving = true;
+                        this.phaseTicks = 0;
+                        this.nam.beginDive(target);
+                    }
+                    return;
+                }
+
+                this.nam.sustainDive();
+
+                if (this.phaseTicks > 1
+                        && (this.nam.hasLanded() || this.nam.distanceTo(target) <= 2.0D || this.phaseTicks >= MAX_DIVE_TICKS)) {
+                    this.nam.slamImpact();
+                    this.finished = true;
+                }
+            }
+        }
+    }
+
+    public static class JackieChunEntity extends DBSagasEntity {
+
+        public JackieChunEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setEvade(true, 300);
+            this.setDBZStyle(0);
+            this.setScaleVal(0.85f);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 400, 0.5F);
+
+        }
+    }
+
+    public static class JackieChunFPEntity extends DBSagasEntity {
+
+        public JackieChunFPEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setEvade(true, 300);
+            this.setDBZStyle(0);
+            this.setScaleVal(1.4f);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 400, 0.5F);
+
+        }
+    }
 }
