@@ -334,7 +334,7 @@ public class SagaZFightersEntity {
 
             this.setCanFly(false);
             this.setAuraColor(0xFFFFFF);
-            this.setKiBlastSpeed(1.4F);
+            this.setKiBlastSpeed(1.0F);
             this.setDBZStyle(0);
         }
 

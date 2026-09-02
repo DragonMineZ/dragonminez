@@ -110,6 +110,14 @@
 					]
 				},
 				{
+					"name": "right_item_hand",
+					"parent": "right_forearm",
+					"pivot": [-6.5, 14, 0],
+					"locators": {
+						"locator": [-6, 14, 0]
+					}
+				},
+				{
 					"name": "left_arm",
 					"parent": "waist",
 					"pivot": [5.25, 22, 0],
