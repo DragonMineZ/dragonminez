@@ -31,6 +31,28 @@ public class SagaGokuEntity{
 
     }
 
+    public static class SagaGokuT23Entity extends DBSagasEntity {
+
+        public SagaGokuT23Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setAuraColor(0xFFFFFF);
+            this.setDBZStyle(0);
+            this.setEvade(true, 120);
+            this.setKiBlastSpeed(1.2F);
+            this.setAllowedCombos(300, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 250, 1.2F);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku";
+        }
+
+    }
+
     // GOKU EARLY
     public static class SagaGokuEarlyEntity extends DBSagasEntity {
 

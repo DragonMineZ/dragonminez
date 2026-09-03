@@ -339,4 +339,27 @@ public class SagaRedRibbonEntities {
 
     }
 
+    public static class TaoPaiPaiCyborgEntity extends DBSagasEntity {
+
+        private static final int DODONPA_COLOR = 0xFFE661;
+
+        public TaoPaiPaiCyborgEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setDBZStyle(1);
+            this.setEvade(true, 100);
+            this.setKiBlastSpeed(1.4F);
+
+            this.addKiSkill(KiSkillType.KI_LASER, 400, 1.0F, DODONPA_COLOR, DODONPA_COLOR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, DODONPA_COLOR, DODONPA_COLOR);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_tao_pai_pai";
+        }
+
+    }
+
 }

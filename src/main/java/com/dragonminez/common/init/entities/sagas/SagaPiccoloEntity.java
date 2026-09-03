@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
@@ -213,6 +214,74 @@ public class SagaPiccoloEntity{
                 this.playSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.7F);
             }
             return hurt;
+        }
+
+    }
+
+    public static class MajuniaEntity extends DBSagasEntity {
+
+        private static final int KI_COLOR = 0xFFF554;
+
+        public MajuniaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setEvade(true, 120);
+            this.setAllowedCombos(350, ComboType.BASIC, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 300, 1.2F, KI_COLOR, KI_COLOR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.2F, KI_COLOR, KI_COLOR);
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_MAJUNIA_GIANT.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {
+            return false;
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_piccolo";
+        }
+
+    }
+
+    public static class MajuniaGiantEntity extends DBSagasEntity {
+
+        private static final int KI_COLOR = 0xFFF554;
+
+        public MajuniaGiantEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setDBZStyle(2);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.6F);
+            this.setScaleVal(5.0f);
+
+            this.addKiSkill(KiSkillType.OOZARU_ROAR, 500, 15.5F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 70, 1.4F, KI_COLOR, KI_COLOR);
+
+            this.setDefaultMovementSpeed(0.22D);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.22D);
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.95D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_piccolo";
         }
 
     }

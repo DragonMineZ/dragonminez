@@ -202,6 +202,47 @@ public class SagaZFightersEntity {
 
     }
 
+    public static class TienT23Entity extends DBSagasEntity {
+
+        private static final int DODONPA_COLOR = 0xFFE661;
+
+        public TienT23Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setDBZStyle(0);
+            this.setEvade(true, 100);
+            this.setKiBlastSpeed(1.4F);
+            this.setAllowedCombos(300, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.KI_LASER, 100, 1.0F, DODONPA_COLOR, DODONPA_COLOR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, DODONPA_COLOR, DODONPA_COLOR);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku";
+        }
+
+    }
+
+    public static class YamchaT23Entity extends DBSagasEntity {
+
+        public YamchaT23Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setAuraColor(0xFFFFFF);
+            this.setDBZStyle(0);
+            this.setEvade(true, 150);
+            this.setKiBlastSpeed(1.2F);
+
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 250);
+            this.addKiSkill(KiSkillType.WOLF_FANG, 400);
+        }
+    }
+
     public static class YajirobeEntity extends DBSagasEntity {
         public YajirobeEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
@@ -701,5 +742,19 @@ public class SagaZFightersEntity {
 
     }
 
+    public static class ChiChiEntity extends DBSagasEntity {
+        public ChiChiEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setEvade(true, 300);
+            this.setDBZStyle(0);
+        }
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_videl";
+        }
+
+    }
 
 }
