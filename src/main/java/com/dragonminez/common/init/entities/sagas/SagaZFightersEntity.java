@@ -1,8 +1,13 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.alignment.AlignmentBand;
 import com.dragonminez.common.init.MainGameRules;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -10,12 +15,17 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -26,6 +36,7 @@ import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.UUID;
 
 public class SagaZFightersEntity {
 
@@ -91,6 +102,8 @@ public class SagaZFightersEntity {
 
     }
 
+
+
     public static class OolongTransformedEntity extends DBSagasEntity {
         public OolongTransformedEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
@@ -114,6 +127,7 @@ public class SagaZFightersEntity {
             super(pEntityType, pLevel);
 
             this.setCanFly(false);
+            this.setScaleVal(0.9f);
             this.setDBZStyle(0);
             this.setEvade(true, 100);
             this.addKiSkill(KiSkillType.WOLF_FANG, 400);
@@ -124,6 +138,26 @@ public class SagaZFightersEntity {
         public String getGeckolibModelName() {
             return "saga_yamcha";
         }
+    }
+
+    public static class YoungYamchaEntity extends DBSagasEntity {
+
+        public YoungYamchaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setDBZStyle(0);
+            this.setEvade(true, 200);
+
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 300);
+            this.addKiSkill(KiSkillType.WOLF_FANG, 500);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_young_yamcha";
+        }
+
     }
 
     public static class SagaYamchaEntity extends DBSagasEntity {
@@ -145,6 +179,37 @@ public class SagaZFightersEntity {
             return "saga_yamcha";
         }
 
+    }
+
+    public static class YoungTienEntity extends DBSagasEntity {
+        private static final int DODONPA_COLOR = 0xFFE661;
+        public YoungTienEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setDBZStyle(0);
+            this.setEvade(true, 100);
+            this.setKiBlastSpeed(1.4F);
+
+            this.addKiSkill(KiSkillType.KI_LASER, 100, 1.0F, DODONPA_COLOR, DODONPA_COLOR);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, DODONPA_COLOR, DODONPA_COLOR);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_young_yamcha";
+        }
+
+    }
+
+    public static class YajirobeEntity extends DBSagasEntity {
+        public YajirobeEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setDBZStyle(0);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.KATANA_YAJIROBE.get()));
+        }
     }
 
     public static class SagaShinEntity extends DBSagasEntity {
@@ -572,4 +637,69 @@ public class SagaZFightersEntity {
 
         }
     }
+
+    public static class InvisibleManEntity extends DBSagasEntity {
+
+        public InvisibleManEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(false);
+            this.setDBZStyle(0);
+            this.setInvisible(true);
+        }
+
+    }
+
+    public static class AkkumanEntity extends DBSagasEntity {
+
+        private static final double MOVE_SPEED = 0.38D;
+        private static final UUID EVIL_BONUS_ID = UUID.fromString("0f2f4a1c-6b3d-4c0e-9a71-5c8d2e7b4a10");
+        private static final AttributeModifier EVIL_BONUS =
+                new AttributeModifier(EVIL_BONUS_ID, "Akkuman evil alignment bonus", 1.0D, AttributeModifier.Operation.MULTIPLY_TOTAL);
+
+        public AkkumanEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+
+            this.setDefaultMovementSpeed(MOVE_SPEED);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(MOVE_SPEED);
+        }
+
+        @Override
+        public boolean doHurtTarget(Entity pTarget) {
+            AttributeInstance attack = this.getAttribute(Attributes.ATTACK_DAMAGE);
+            boolean boosted = attack != null && pTarget instanceof Player player && hasEvilAlignment(player);
+
+            if (boosted) attack.addTransientModifier(EVIL_BONUS);
+
+            try {
+                return super.doHurtTarget(pTarget);
+            } finally {
+                if (boosted) attack.removeModifier(EVIL_BONUS);
+            }
+        }
+
+        private static boolean hasEvilAlignment(Player player) {
+            StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+            if (data == null) return false;
+
+            return AlignmentBand.fromValue(data.getResources().getAlignment()) == AlignmentBand.EVIL;
+        }
+
+    }
+
+
+    public static class MaskedWarriorEntity extends DBSagasEntity {
+        public MaskedWarriorEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setCanFly(false);
+            this.setDBZStyle(0);
+            this.setAllowedCombos(500, ComboType.RAPID_KICKS);
+        }
+
+    }
+
+
 }

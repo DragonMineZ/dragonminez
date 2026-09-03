@@ -57,7 +57,7 @@ public class SagaRedRibbonEntities {
             super(pEntityType, pLevel);
 
             this.setCanFly(false);
-            this.setDBZStyle(0);
+            this.setDBZStyle(2);
             this.setScaleVal(1.4f);
         }
 

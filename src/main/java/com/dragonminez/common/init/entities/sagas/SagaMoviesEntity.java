@@ -855,6 +855,7 @@ public class SagaMoviesEntity {
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.42D);
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(8.0D);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.DIMENSIONAL_SWORD.get()));
         }
     }
 

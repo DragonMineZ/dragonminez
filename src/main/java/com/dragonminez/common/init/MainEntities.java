@@ -60,7 +60,8 @@ public class MainEntities {
                 SAGA_KID_GOKU, SAGA_KID_KRILLIN, SAGA_OOLONG, SAGA_OOLONG_TRANSFORMED, SAGA_GIRAN, SAGA_NAM,
                 SAGA_JACKIE_CHUN, SAGA_JACKIE_CHUN_FP, SAGA_COLONEL_SILVER, SAGA_GENERAL_BLUE,
                 SAGA_WORLD_TOURNAMENT_ANNOUNCER, SAGA_NINJA_MURASAKI, SAGA_SERGEANT_METALLIC, SAGA_A8,
-                SAGA_TAO_PAI_PAI, SAGA_GENERAL_RED, SAGA_GENERAL_BLACK_ROBOT,
+                SAGA_TAO_PAI_PAI, SAGA_GENERAL_RED, SAGA_GENERAL_BLACK_ROBOT, SAGA_MUMMY, SAGA_INVISIBLE_MAN, SAGA_AKKUMAN, SAGA_MASKED_WARRIOR, SAGA_YOUNG_YAMCHA, SAGA_YOUNG_TIEN, SAGA_YAJIROBE, SAGA_TAMBOURINE, SAGA_DRUM, SAGA_PICCOLO_DAIMAO_OLD, SAGA_PICCOLO_DAIMAO_YOUNG,
+                SAGA_PILAF_ROBOT, SAGA_SHU_ROBOT, SAGA_MAI_ROBOT, SAGA_PILAF_ROBOT_FUSED,
 
                 // SAGA SAIYAN
                 SAGA_GOKU_EARLY, SAGA_GOKU_EARLY_NOWEIGHTS, SAGA_PICCOLO_EARLY, SAGA_CHAOZ,
@@ -437,6 +438,84 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaRedRibbonEntities.SergeantMetallicEntity::new, MobCategory.MONSTER)
                             .sized(1.0f, 2.7f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a8").toString()));
+    public static final RegistryObject<EntityType<SagaPilafEntities.PilafRobotEntity>> SAGA_PILAF_ROBOT =
+            ENTITY_TYPES.register("saga_pilaf_robot",
+                    () -> EntityType.Builder.of(SagaPilafEntities.PilafRobotEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 1.45f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_pilaf_robot").toString()));
+    public static final RegistryObject<EntityType<SagaPilafEntities.ShuRobotEntity>> SAGA_SHU_ROBOT =
+            ENTITY_TYPES.register("saga_shu_robot",
+                    () -> EntityType.Builder.of(SagaPilafEntities.ShuRobotEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 2.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_shu_robot").toString()));
+    public static final RegistryObject<EntityType<SagaPilafEntities.MaiRobotEntity>> SAGA_MAI_ROBOT =
+            ENTITY_TYPES.register("saga_mai_robot",
+                    () -> EntityType.Builder.of(SagaPilafEntities.MaiRobotEntity::new, MobCategory.MONSTER)
+                            .sized(1.6f, 4.1f)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_mai_robot").toString()));
+    public static final RegistryObject<EntityType<SagaPilafEntities.FusedPilafRobotEntity>> SAGA_PILAF_ROBOT_FUSED =
+            ENTITY_TYPES.register("saga_pilaf_robot_fused",
+                    () -> EntityType.Builder.of(SagaPilafEntities.FusedPilafRobotEntity::new, MobCategory.MONSTER)
+                            .sized(1.8f, 5.2f)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_pilaf_robot_fused").toString()));
+    public static final RegistryObject<EntityType<SagaPiccoloEntity.PiccoloDaimaoOldEntity>> SAGA_PICCOLO_DAIMAO_OLD =
+            ENTITY_TYPES.register("saga_piccolo_daimao_old",
+                    () -> EntityType.Builder.of(SagaPiccoloEntity.PiccoloDaimaoOldEntity::new, MobCategory.MONSTER)
+                            .sized(0.9f, 2.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_piccolo_daimao_old").toString()));
+    public static final RegistryObject<EntityType<SagaPiccoloEntity.PiccoloDaimaoYoungEntity>> SAGA_PICCOLO_DAIMAO_YOUNG =
+            ENTITY_TYPES.register("saga_piccolo_daimao_young",
+                    () -> EntityType.Builder.of(SagaPiccoloEntity.PiccoloDaimaoYoungEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 2.6f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_piccolo_daimao_young").toString()));
+    public static final RegistryObject<EntityType<SagaPiccoloEntity.DrumEntity>> SAGA_DRUM =
+            ENTITY_TYPES.register("saga_drum",
+                    () -> EntityType.Builder.of(SagaPiccoloEntity.DrumEntity::new, MobCategory.MONSTER)
+                            .sized(1.4f, 4.1f)
+                            .clientTrackingRange(10)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_drum").toString()));
+    public static final RegistryObject<EntityType<SagaPiccoloEntity.TambourineEntity>> SAGA_TAMBOURINE =
+            ENTITY_TYPES.register("saga_tambourine",
+                    () -> EntityType.Builder.of(SagaPiccoloEntity.TambourineEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.2f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_tambourine").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.YajirobeEntity>> SAGA_YAJIROBE =
+            ENTITY_TYPES.register("saga_yajirobe",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.YajirobeEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_yajirobe").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.YoungTienEntity>> SAGA_YOUNG_TIEN =
+            ENTITY_TYPES.register("saga_young_tien",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.YoungTienEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_young_tien").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.YoungYamchaEntity>> SAGA_YOUNG_YAMCHA =
+            ENTITY_TYPES.register("saga_young_yamcha",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.YoungYamchaEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_young_yamcha").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.MaskedWarriorEntity>> SAGA_MASKED_WARRIOR =
+            ENTITY_TYPES.register("saga_masked_warrior",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.MaskedWarriorEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.9f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_masked_warrior").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.AkkumanEntity>> SAGA_AKKUMAN =
+            ENTITY_TYPES.register("saga_akkuman",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.AkkumanEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.9f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_akkuman").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.InvisibleManEntity>> SAGA_INVISIBLE_MAN =
+            ENTITY_TYPES.register("saga_invisible_man",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.InvisibleManEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.9f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_invisible_man").toString()));
+    public static final RegistryObject<EntityType<SagaRedRibbonEntities.SergeantMetallicEntity>> SAGA_MUMMY =
+            ENTITY_TYPES.register("saga_mummy",
+                    () -> EntityType.Builder.of(SagaRedRibbonEntities.SergeantMetallicEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 2.7f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_mummy").toString()));
     public static final RegistryObject<EntityType<SagaRedRibbonEntities.GeneralBlackRobotEntity>> SAGA_GENERAL_BLACK_ROBOT =
             ENTITY_TYPES.register("saga_general_black_robot",
                     () -> EntityType.Builder.of(SagaRedRibbonEntities.GeneralBlackRobotEntity::new, MobCategory.MONSTER)
