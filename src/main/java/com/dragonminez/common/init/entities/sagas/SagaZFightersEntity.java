@@ -749,6 +749,7 @@ public class SagaZFightersEntity {
             this.setCanFly(false);
             this.setEvade(true, 300);
             this.setDBZStyle(0);
+            this.setScaleVal(0.93f);
         }
         @Override
         public String getGeckolibModelName() {

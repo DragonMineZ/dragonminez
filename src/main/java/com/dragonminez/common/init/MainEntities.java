@@ -56,7 +56,7 @@ public class MainEntities {
 
     public static List<RegistryObject<? extends EntityType<? extends Mob>>> getSagaEntities() {
         return List.of(
-                //SAGA CLÁSICO
+                //SAGA CLÃSICO
                 SAGA_KID_GOKU, SAGA_KID_KRILLIN, SAGA_OOLONG, SAGA_OOLONG_TRANSFORMED, SAGA_GIRAN, SAGA_NAM,
                 SAGA_JACKIE_CHUN, SAGA_JACKIE_CHUN_FP, SAGA_COLONEL_SILVER, SAGA_GENERAL_BLUE,
                 SAGA_WORLD_TOURNAMENT_ANNOUNCER, SAGA_NINJA_MURASAKI, SAGA_SERGEANT_METALLIC, SAGA_A8,
@@ -96,7 +96,7 @@ public class MainEntities {
                 SAGA_BUU_FAT, SAGA_EVILBUU, SAGA_SUPERBUU, SAGA_SUPERBUU_PICCOLO, SAGA_SUPERBUU_GOTENKS, SAGA_SUPERBUU_GOHAN, SAGA_KIDBUU,
                 SAGA_VEGETTO_BASE, SAGA_VEGETTO_SSJ,
 
-                // PELÍCULAS
+                // PELÃCULAS
                 SAGA_GARLICK_JR, SAGA_GARLICK_JR_TRANSFORMED, SAGA_DR_WHEELO, SAGA_TURLES,
                 SAGA_SLUG_SOLDIER, SAGA_SLUG, SAGA_SLUG_GIANT,
                 SAGA_DORE, SAGA_SALZA, SAGA_NEIZ, SAGA_COOLER, SAGA_COOLER_5TA, SAGA_GETE_ROBOT, SAGA_METAL_COOLER, SAGA_METAL_COOLER_CORE,
@@ -650,11 +650,13 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
             ENTITY_TYPES.register("saga_ozaruvegeta",
                     () -> EntityType.Builder.of(SagaOzaruEntity::new, MobCategory.MONSTER)
                             .sized(6.5f, 10.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ozaruvegeta").toString()));
     public static final RegistryObject<EntityType<SagaOzaruEntity>> SAGA_OZARU =
             ENTITY_TYPES.register("saga_ozaru",
                     () -> EntityType.Builder.of(SagaOzaruEntity::new, MobCategory.MONSTER)
                             .sized(6.5f, 10.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ozaru").toString()));
 
     /*
@@ -1168,6 +1170,7 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
             ENTITY_TYPES.register("saga_slug_giant",
                     () -> EntityType.Builder.of(SagaMoviesEntity.SlugGiantEntity::new, MobCategory.MONSTER)
                             .sized(4.5f, 12.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_slug_giant").toString()));
 
     // Cooler
@@ -1215,6 +1218,7 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
             ENTITY_TYPES.register("saga_metal_cooler_core",
                     () -> EntityType.Builder.of(SagaMoviesEntity.MetalCoolerCoreEntity::new, MobCategory.MONSTER)
                             .sized(4.5f, 12.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_metal_cooler_core").toString()));
 
     // Super Android 13
@@ -1308,6 +1312,7 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
             ENTITY_TYPES.register("saga_bio_broly_giant",
                     () -> EntityType.Builder.of(SagaMoviesEntity.BioBrolyGiganteEntity::new, MobCategory.MONSTER)
                             .sized(4.5f, 12.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_bio_broly_giant").toString()));
 
     // Janemba & Paikuhan
@@ -1320,6 +1325,7 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
             ENTITY_TYPES.register("saga_janemba_fat",
                     () -> EntityType.Builder.of(SagaMoviesEntity.JanembaGordoEntity::new, MobCategory.MONSTER)
                             .sized(7.5f, 12.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_janemba_fat").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.SuperJanembaEntity>> SAGA_SUPER_JANEMBA =
             ENTITY_TYPES.register("saga_super_janemba",
@@ -1332,21 +1338,25 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
             ENTITY_TYPES.register("saga_hirudegarn",
                     () -> EntityType.Builder.of(SagaMoviesEntity.HirudegarnEntity::new, MobCategory.MONSTER)
                             .sized(7.5f, 12.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_hirudegarn").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN_INCOMPLETE_1 =
             ENTITY_TYPES.register("saga_hirudegarn_incomplete1",
                     () -> EntityType.Builder.of(SagaMoviesEntity.HirudegarnEntity::new, MobCategory.MONSTER)
                             .sized(7.5f, 12.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_hirudegarn_incomplete1").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN_INCOMPLETE_2 =
             ENTITY_TYPES.register("saga_hirudegarn_incomplete2",
                     () -> EntityType.Builder.of(SagaMoviesEntity.HirudegarnEntity::new, MobCategory.MONSTER)
                             .sized(7.5f, 12.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_hirudegarn_incomplete2").toString()));
     public static final RegistryObject<EntityType<SagaMoviesEntity.SuperHirudegarnEntity>> SAGA_SUPER_HIRUDEGARN =
             ENTITY_TYPES.register("saga_super_hirudegarn",
                     () -> EntityType.Builder.of(SagaMoviesEntity.SuperHirudegarnEntity::new, MobCategory.MONSTER)
                             .sized(7.5f, 12.0f)
+                            .clientTrackingRange(10)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_super_hirudegarn").toString()));
 
     public static final RegistryObject<EntityType<ShadowDummyEntity>> SHADOW_DUMMY =

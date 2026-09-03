@@ -10,6 +10,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -282,6 +283,31 @@ public class SagaPiccoloEntity{
         @Override
         public String getGeckolibModelName() {
             return "saga_piccolo";
+        }
+
+        /**
+         * The physics box stays small and the big volume lives in the parts. A single
+         * 4x11 AABB would make the engine sweep ~500 block positions for collision every
+         * tick, which is what makes giants stutter on weaker machines.
+         */
+        @Override
+        public boolean hasHitboxParts() {
+            return true;
+        }
+
+        @Override
+        protected EntityDimensions getCoreDimensions() {
+            return EntityDimensions.scalable(2.5F, 5.0F);
+        }
+
+        @Override
+        protected DBSagasPart[] createHitboxParts() {
+            // Registered 4.0x11. Tune offsets/sizes in-game.
+            return new DBSagasPart[] {
+                    new DBSagasPart(this, "legs", 3.5F, 4.5F, 0.0F, 0.0F, 2.2F),
+                    new DBSagasPart(this, "torso", 4.0F, 4.5F, 0.0F, 0.0F, 6.5F),
+                    new DBSagasPart(this, "head", 3.5F, 3.5F, 0.5F, 0.0F, 10.0F)
+            };
         }
 
     }
