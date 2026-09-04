@@ -190,7 +190,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastSize(0.2f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0x4FF7FF, 0x4FF7FF, colorOutline);
+        this.setColors(0xEDF4FF, 0x29D8FF, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(0);
@@ -200,7 +200,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size) {
-        this.setupKiHamePlayer(owner, damage, speed, size, 0xFFFFFF);
+        this.setupKiHamePlayer(owner, damage, speed, size, 0x0077FF);
     }
 
     public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
