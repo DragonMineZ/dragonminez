@@ -15,7 +15,7 @@ public class Dino1Entity extends DinoGlobalEntity {
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 100.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.20D)
+                .add(Attributes.MOVEMENT_SPEED, 0.3D)
                 .add(Attributes.ATTACK_DAMAGE, 8.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
     }

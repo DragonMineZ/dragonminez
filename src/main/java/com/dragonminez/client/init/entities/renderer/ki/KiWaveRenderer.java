@@ -26,6 +26,15 @@ import java.util.Random;
 public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
     private static final ResourceLocation TEXTURE_WAVE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave.png");
 
+    private static final float MUZZLE_FLAME_SCALE = 1.55F;
+    private static final float DOUBLE_WAVE_BALL_SCALE = 0.82F;
+    private static final int   BLOTCH_SHELL_COUNT = 3;
+    private static final float BLOTCH_SHELL_PERIOD = 13.0F;
+    private static final float BLOTCH_SHELL_START = 1.40F;
+    private static final float BLOTCH_SHELL_END = 2.90F;
+    private static final float BLOTCH_SHELL_CUT_START = 0.78F;
+    private static final float BLOTCH_SHELL_CUT_END = 0.93F;
+
     public KiWaveRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
     }
@@ -100,18 +109,25 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
 
-        poseStack.pushPose();
         float ballScale = currentWidth * 1.5F;
-        poseStack.scale(ballScale, ballScale, ballScale);
 
-        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-        shader.safeGetUniform("alphaMult").set(1.0f * fadeAlpha);
-        shader.safeGetUniform("zCut").set(-1.0f);
-        shader.apply();
-        sphereMesh.bind();
-        sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
-        poseStack.popPose();
-        VertexBuffer.unbind();
+        if (!isFiring) {
+            poseStack.pushPose();
+            poseStack.scale(ballScale, ballScale, ballScale);
+
+            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+            shader.safeGetUniform("alphaMult").set(1.0f * fadeAlpha);
+            shader.safeGetUniform("zCut").set(-1.0f);
+            shader.safeGetUniform("blotchMode").set(1.0f);
+            shader.safeGetUniform("flameMode").set(1.0f);
+            shader.apply();
+            sphereMesh.bind();
+            sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
+            poseStack.popPose();
+            VertexBuffer.unbind();
+            shader.safeGetUniform("blotchMode").set(0.0f);
+            shader.safeGetUniform("flameMode").set(0.0f);
+        }
 
         if (isFiring) {
             float length = Math.max(entity.getBeamLength(), 0.1F);
@@ -133,7 +149,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             shader.safeGetUniform("zCut").set(-1.0f);
             VertexBuffer.unbind();
 
-            // Ball at the beam tip (was missing on the generic wave).
             poseStack.pushPose();
             poseStack.translate(0.0F, 0.0F, length);
             float endBallScale = currentWidth * 1.5F;
@@ -141,11 +156,23 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
             shader.safeGetUniform("alphaMult").set(1.0f * fadeAlpha);
             shader.safeGetUniform("zCut").set(-1.0f);
+            shader.safeGetUniform("blotchMode").set(1.0f);
+            shader.safeGetUniform("flameMode").set(1.0f);
             shader.apply();
             sphereMesh.bind();
             sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
             poseStack.popPose();
             VertexBuffer.unbind();
+            shader.safeGetUniform("blotchMode").set(0.0f);
+            shader.safeGetUniform("flameMode").set(0.0f);
+
+            poseStack.pushPose();
+            poseStack.translate(0.0F, 0.0F, length);
+            poseStack.scale(endBallScale, endBallScale, endBallScale);
+            renderBlotchShells(poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha);
+            poseStack.popPose();
+
+            renderMuzzleFlame(entity, poseStack, proj, auraColor, borderColor, ageInTicks, ballScale * MUZZLE_FLAME_SCALE, fadeAlpha);
         }
 
         poseStack.popPose();
@@ -160,7 +187,8 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         boolean isFiring = entity.isFiring();
         float currentWidth = (!isFiring) ? (castTime > 0.1f && ageInTicks <= castTime ? targetCastSize * (ageInTicks / castTime) : targetCastSize) : finalSize;
 
-        float basePulse = 1.0F + (float) Math.sin(ageInTicks * 1.5F) * 0.15F;
+        // Only the fired beam breathes; the charge ball is held steady.
+        float basePulse = isFiring ? (1.0F + (float) Math.sin(ageInTicks * 1.5F) * 0.15F) : 1.0F;
         float width = currentWidth * basePulse;
 
         float yaw = entity.getYRot();
@@ -173,7 +201,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             poseStack.pushPose();
             float startBallScale = width * 1.5F;
             poseStack.scale(startBallScale, startBallScale, startBallScale);
-            renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha);
+            renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, false);
             poseStack.popPose();
             poseStack.popPose();
             return;
@@ -196,9 +224,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.pushPose();
         Vec3 startPosSphere = dir.scale(0.1D);
         poseStack.translate(startPosSphere.x, startPosSphere.y, startPosSphere.z);
-        float startBallScaleDisp = width * 1.5F;
-        poseStack.scale(startBallScaleDisp, startBallScaleDisp, startBallScaleDisp);
-        renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha);
+        renderMuzzleFlame(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width * 1.5F * MUZZLE_FLAME_SCALE, fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
@@ -206,7 +232,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.translate(endPosSphere.x, endPosSphere.y, endPosSphere.z);
         float endBallScaleDisp = width * 2.5F;
         poseStack.scale(endBallScaleDisp, endBallScaleDisp, endBallScaleDisp);
-        renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha);
+        renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, true);
         poseStack.popPose();
 
         poseStack.popPose();
@@ -221,7 +247,8 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float chargeProgress = (castTime > 0.1F) ? Math.min(1.0F, ageInTicks / castTime) : 1.0F;
         float currentWidth = (!isFiring) ? (targetCastSize * chargeProgress) : finalSize;
 
-        float basePulse = 1.0F + (float) Math.sin(ageInTicks * 1.5F) * 0.15F;
+        // Only the fired beam breathes; the charge ball is held steady.
+        float basePulse = isFiring ? (1.0F + (float) Math.sin(ageInTicks * 1.5F) * 0.15F) : 1.0F;
         float width = currentWidth * basePulse;
 
         float yaw = entity.getYRot();
@@ -231,7 +258,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.pushPose();
 
         if (!isFiring) {
-            float startBallScale = width;
+            float startBallScale = width * DOUBLE_WAVE_BALL_SCALE;
             float initialSpread = 1.8F;
             float hitboxWidth = entity.getOwner() != null ? entity.getOwner().getBbWidth() : 0.5F;
             float holdTicks = 23F;
@@ -244,7 +271,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             poseStack.translate(lateralOffset, 0.0D, 0.0D);
             poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
             poseStack.scale(startBallScale, startBallScale, startBallScale);
-            renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha);
+            renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, false);
             poseStack.popPose();
 
             poseStack.pushPose();
@@ -252,7 +279,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             poseStack.translate(-lateralOffset, 0.0D, 0.0D);
             poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
             poseStack.scale(startBallScale, startBallScale, startBallScale);
-            renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha);
+            renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, false);
             poseStack.popPose();
 
             poseStack.popPose();
@@ -273,16 +300,15 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.pushPose();
         Vec3 startPos = dir.scale(0.1D);
         poseStack.translate(startPos.x, startPos.y, startPos.z);
-        float startBallScale = width * 1.8F;
-        poseStack.scale(startBallScale, startBallScale, startBallScale);
-        renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha);
+        renderMuzzleFlame(entity, poseStack, proj, auraColor, borderColor, ageInTicks, width * 1.5F * MUZZLE_FLAME_SCALE * DOUBLE_WAVE_BALL_SCALE, fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
         Vec3 endPos = dir.scale(length);
         poseStack.translate(endPos.x, endPos.y, endPos.z);
-        poseStack.scale(width * 2.5F, width * 2.5F, width * 2.5F);
-        renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha);
+        float endScale = width * 2.5F * DOUBLE_WAVE_BALL_SCALE;
+        poseStack.scale(endScale, endScale, endScale);
+        renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, true);
         poseStack.popPose();
 
         poseStack.popPose();
@@ -335,7 +361,49 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         lightningType.clearRenderState();
     }
 
-    private void renderKiSphereWithShader(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float alphaMultiplier) {
+    private void renderMuzzleFlame(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float scale, float alphaMultiplier) {
+        ShaderInstance shader = DMZShaders.ki3dShader;
+        if (shader == null) return;
+
+        float[] outlineColor = entity.getRgbColorOutline();
+        float breath = 1.0F + (float) Math.sin(ageInTicks * 3.1F) * 0.09F + (float) Math.sin(ageInTicks * 7.3F) * 0.04F;
+        float finalScale = scale * breath;
+
+        shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
+        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
+        shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
+        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
+        shader.safeGetUniform("ProjMat").set(proj);
+        shader.safeGetUniform("flameMode").set(1.0f);
+        shader.safeGetUniform("blotchMode").set(1.0f);
+
+        VertexBuffer mesh = KiMeshFactory.getSphereMesh();
+        mesh.bind();
+
+        poseStack.pushPose();
+        poseStack.scale(finalScale, finalScale, finalScale);
+        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+        shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
+        shader.safeGetUniform("zCut").set(-1.0f);
+        shader.safeGetUniform("zCutFar").set(2.0f);
+        shader.apply();
+        mesh.drawWithShader(poseStack.last().pose(), proj, shader);
+        poseStack.popPose();
+
+        VertexBuffer.unbind();
+        shader.safeGetUniform("flameMode").set(0.0f);
+        shader.safeGetUniform("blotchMode").set(0.0f);
+
+        poseStack.pushPose();
+        poseStack.scale(finalScale, finalScale, finalScale);
+        renderBlotchShells(poseStack, proj, coreColor, borderColor, ageInTicks, alphaMultiplier);
+        poseStack.popPose();
+
+        shader.clear();
+    }
+
+    /** withShells adds the flying debris; charge balls pass false so only the fire shows. */
+    private void renderKiSphereWithShader(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float alphaMultiplier, boolean withShells) {
         float[] outlineColor = entity.getRgbColorOutline();
         ShaderInstance shader = DMZShaders.ki3dShader;
         if (shader == null) return;
@@ -345,6 +413,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
         shader.safeGetUniform("time").set(ageInTicks / 20.0f);
         shader.safeGetUniform("ProjMat").set(proj);
+
+        shader.safeGetUniform("blotchMode").set(1.0f);
+        shader.safeGetUniform("flameMode").set(1.0f);
 
         VertexBuffer mesh = KiMeshFactory.getSphereMesh();
         mesh.bind();
@@ -357,6 +428,59 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
         poseStack.popPose();
         VertexBuffer.unbind();
+        shader.safeGetUniform("blotchMode").set(0.0f);
+        shader.safeGetUniform("flameMode").set(0.0f);
+
+        if (withShells) renderBlotchShells(poseStack, proj, coreColor, borderColor, ageInTicks, alphaMultiplier);
+
+        shader.clear();
+    }
+
+    private void renderBlotchShells(PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float alphaMultiplier) {
+        float cycles = ageInTicks / BLOTCH_SHELL_PERIOD;
+
+        for (int i = 0; i < BLOTCH_SHELL_COUNT; i++) {
+            float raw = cycles + (float) i / BLOTCH_SHELL_COUNT;
+            float phase = raw - (float) Math.floor(raw);
+            float seedTime = (float) Math.floor(raw) * 61.0F + i * 17.0F;
+
+            float spread = BLOTCH_SHELL_START + (BLOTCH_SHELL_END - BLOTCH_SHELL_START) * phase;
+            float cut = BLOTCH_SHELL_CUT_START + (BLOTCH_SHELL_CUT_END - BLOTCH_SHELL_CUT_START) * phase;
+
+            float envelope = (float) Math.sin(phase * Math.PI);
+            float alpha = envelope * envelope * alphaMultiplier * 0.9F;
+            if (alpha <= 0.01F) continue;
+
+            drawBlotchShell(poseStack, proj, coreColor, borderColor, seedTime, spread, cut, alpha);
+        }
+    }
+
+    private void drawBlotchShell(PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float spread, float cut, float alphaMultiplier) {
+        ShaderInstance shader = DMZShaders.ki3dShader;
+        if (shader == null) return;
+
+        shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
+        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
+        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
+        shader.safeGetUniform("ProjMat").set(proj);
+        shader.safeGetUniform("shellMode").set(1.0f);
+        shader.safeGetUniform("shellCut").set(cut);
+        shader.safeGetUniform("zCut").set(-1.0f);
+        shader.safeGetUniform("zCutFar").set(2.0f);
+
+        VertexBuffer mesh = KiMeshFactory.getSphereMesh();
+        mesh.bind();
+
+        poseStack.pushPose();
+        poseStack.scale(spread, spread, spread);
+        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+        shader.safeGetUniform("alphaMult").set(alphaMultiplier);
+        shader.apply();
+        mesh.drawWithShader(poseStack.last().pose(), proj, shader);
+        poseStack.popPose();
+
+        VertexBuffer.unbind();
+        shader.safeGetUniform("shellMode").set(0.0f);
         shader.clear();
     }
 
@@ -370,6 +494,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
         shader.safeGetUniform("time").set(ageInTicks / 20.0f);
         shader.safeGetUniform("ProjMat").set(proj);
+        shader.safeGetUniform("blotchMode").set(0.0f);
 
         VertexBuffer mesh = KiMeshFactory.getCylinderMesh();
         mesh.bind();

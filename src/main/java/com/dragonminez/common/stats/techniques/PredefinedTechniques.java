@@ -31,10 +31,10 @@ public class PredefinedTechniques {
 		registerKi("big_bang", "technique.dragonminez.big_bang", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 2.00F, 0x4FF7FF, 0x4FF7FF, 2.0F, 1.5F, 10, "ki.bigbang");
 		registerKi("burning_attack", "technique.dragonminez.burning_attack", "Trunks", KiAttackData.KiType.MEDIUM_BALL, 1.50F, 0xFFAA00, 0xFFAA00, 1.5F, 1.5F, 10, "ki.masenko");
 		registerKi("sokidan", "technique.dragonminez.sokidan", "Yamcha", KiAttackData.KiType.MEDIUM_BALL, 1.25F, 0x4FA9FF, 0x4FA9FF, 1.5F, 1.0F, 12, "ki.bigbang");
-		registerKi("final_flash", "technique.dragonminez.final_flash", "Vegeta", KiAttackData.KiType.WAVE, 2.50F, 0xFF9900, 0xFF9900, 1.5F, 1.2F, 10, "ki.finalflash");
-		registerKi("kamehameha", "technique.dragonminez.kamehameha", "Goku", KiAttackData.KiType.WAVE, 2.00F, 0x4FF7FF, 0x4FF7FF, 1.0F, 1.2F, 10, "ki.kameha");
-		registerKi("galick_gun", "technique.dragonminez.galick_gun", "Vegeta", KiAttackData.KiType.WAVE, 2.00F, 0xCE10E3, 0xAE10E3, 1.0F, 1.2F, 10, "ki.galick");
-		registerKi("masenko", "technique.dragonminez.masenko", "Gohan", KiAttackData.KiType.WAVE, 1.50F, 0xFFEA00, 0xFFEA00, 1.0F, 1.2F, 10, "ki.masenko");
+		registerKi("final_flash", "technique.dragonminez.final_flash", "Vegeta", KiAttackData.KiType.WAVE, 2.50F, 0xFF9900, 0xFF9900, 0.7F, 1.2F, 10, "ki.finalflash");
+		registerKi("kamehameha", "technique.dragonminez.kamehameha", "Goku", KiAttackData.KiType.WAVE, 2.00F, 0x4FF7FF, 0x4FF7FF, 0.6F, 1.2F, 10, "ki.kameha");
+		registerKi("galick_gun", "technique.dragonminez.galick_gun", "Vegeta", KiAttackData.KiType.WAVE, 2.00F, 0xCE10E3, 0xAE10E3, 0.6F, 1.2F, 10, "ki.galick");
+		registerKi("masenko", "technique.dragonminez.masenko", "Gohan", KiAttackData.KiType.WAVE, 1.50F, 0xFFEA00, 0xFFEA00, 0.4F, 1.2F, 10, "ki.masenko");
 		registerKi("kienzan", "technique.dragonminez.kienzan", "Krilin", KiAttackData.KiType.DISK, 1.50F, 0xFFEA00, 0xFFEA00, 1.0F, 1.5F, 10, "ki.kienzan");
 		registerKi("kienzan_doble", "technique.dragonminez.double_kienzan", "Krilin", KiAttackData.KiType.DISK, 1.75F, 0xFF00AA, 0xFF00AA, 1.0F, 1.5F, 10, "ki.kienzandoble");
 		registerKi("death_beam", "technique.dragonminez.death_beam", "Frieza", KiAttackData.KiType.LASER, 0.75F, 0xCE10E3, 0xCE10E3, 0.5F, 2.0F, 10, "ki.makkako");
