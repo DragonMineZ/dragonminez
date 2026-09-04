@@ -43,6 +43,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private static final ResourceLocation BLANK_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
 
 	private static final float[] DARK_GRAY = ColorUtils.hexToRgb("#383838");
+	private static final float[] WHITE = ColorUtils.hexToRgb("#FFFFFF");
 
 	private static final String[] ARMOR_BONES = {
 			"armorHead", "armorBody", "armorBody2", "armorLeggingsBody",
@@ -502,8 +503,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float[] b2, float pt, int pl, int po, float alpha) {
 		String folder = "textures/entity/races/majin/faces/";
 
-        if ("janemba_fat".equals(faceKey)) {
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_eye_0.png", DARK_GRAY, pt, pl, po, alpha);
+        if ("janemba_imperfect".equals(faceKey) || "janemba_fat".equals(faceKey)) {
+            float[] janembaEyeBg = "janemba_fat".equals(faceKey) ? WHITE : DARK_GRAY;
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_eye_0.png", janembaEyeBg, pt, pl, po, alpha);
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_eye_1.png", eye1, pt, pl, po, alpha);
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "janemba_mouth.png", skin, pt, pl, po, alpha);
             return;

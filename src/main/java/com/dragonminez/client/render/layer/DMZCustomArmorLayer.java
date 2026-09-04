@@ -215,9 +215,13 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             shouldRender = true;
             isMajinGordoTarget = true;
         }
-        else if (logicKey.equals("janemba_fat")) {
+        else if (logicKey.equals("janemba_imperfect")) {
             shouldRender = true;
             isMajinGordoTarget = true;
+        }
+        else if (logicKey.equals("janemba_fat")) {
+            isMajinGordoTarget = true;
+            if (isDbzArmor) shouldRender = true;
         }
         else if (SkinGathererProvider.modelFamily(logicKey).equals("custom")) {
             if (isDbzArmor) shouldRender = true;

@@ -1345,7 +1345,7 @@ public class DefaultFormsFactory {
 		innocence.setName(MajinForms.INNOCENCE_DEMON);
 		innocence.setUnlockOnSkillLevel(1);
 		innocence.setTransformationAnimation("transf.janemba");
-		innocence.setCustomModel("janemba_fat");
+		innocence.setCustomModel("janemba_imperfect");
 		innocence.setStrMultiplier(3.4);
 		innocence.setSkpMultiplier(3.4);
 		innocence.setDefMultiplier(2.625);
@@ -1370,7 +1370,10 @@ public class DefaultFormsFactory {
         giant_innocence_demon.setEnergyDrain(0.25);
         giant_innocence_demon.setHairType("empty");
         giant_innocence_demon.setBodyColor1("#FFFC82");
-        giant_innocence_demon.setModelScaling(new Float[]{3.0f, 3.0f, 3.0f});
+        giant_innocence_demon.setBodyColor2("#FFB8FD");
+        giant_innocence_demon.setEye1Color("#303030");
+        giant_innocence_demon.setEye2Color("#303030");
+        giant_innocence_demon.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
         setDefaultMasteryValues(giant_innocence_demon);
         giant_innocence_demon.setStackDrainMultiplier(2.0);
 
