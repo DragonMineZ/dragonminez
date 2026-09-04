@@ -1,6 +1,5 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
-import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
@@ -10,23 +9,11 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 public class ComboManager {
-
-    private static boolean isComboBlocked(DBSagasEntity user, LivingEntity target) {
-        if (!(target instanceof Player player)) return false;
-        var data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
-        if (data == null) return false;
-        if (!data.getStatus().isBlocking() || data.getStatus().isStunEffect()) return false;
-
-        Vec3 directionToUser = user.position().subtract(player.position()).normalize();
-        return player.getLookAngle().dot(directionToUser) > 0.0;
-    }
 
     public static void handleCombo(DBSagasEntity user, LivingEntity target, int comboId, int timer) {
         if (target == null || !target.isAlive() || !user.isAlive() || user.isTransforming()) {
@@ -102,9 +89,6 @@ public class ComboManager {
             target.hasImpulse = true;
         }
         if (timer == 25) {
-            if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
-            }
             user.stopCombo();
         }
     }
@@ -149,9 +133,6 @@ public class ComboManager {
         }
         if (timer == 35) {
             meleeHit(user, target, perHit, 0.0, 0.0);
-            if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, false, true));
-            }
         }
         if (timer == 45) {
             user.teleportTo(target.getX(), target.getY() + 4.0D, target.getZ());
@@ -251,12 +232,6 @@ public class ComboManager {
             Vec3 pushDir = target.position().subtract(user.position()).normalize();
             target.setDeltaMovement(pushDir.x * 5.0, 0.5, pushDir.z * 5.0);
             target.hasImpulse = true;
-        }
-
-        if (timer == 13) {
-            if (!isComboBlocked(user, target)) {
-                target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, true, true));
-            }
         }
 
         if (timer >= 20) {
