@@ -86,8 +86,8 @@ public class EffectsEvents {
 
             if (kiAttack instanceof KiWaveEntity wave) {
                 isActuallyFiring = wave.isFiring();
-            } else if (kiAttack instanceof KiBlastEntity) {
-                isActuallyFiring = true;
+            } else if (kiAttack instanceof KiBlastEntity blast) {
+                isActuallyFiring = blast.getKiRenderType() != 0;
             }
 
             if (kiAttack.isAlive() && isActuallyFiring) {
