@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.effects.RageScreamEffect;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
@@ -12,6 +13,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -103,6 +105,27 @@ public class EffectsEvents {
                     break;
                 }
             }
+        }
+
+        double rageScreamShakeRadius = 15.0D;
+        for (var mapEntry : RageScreamEffect.getActiveProgress().entrySet()) {
+            Entity source = player.level().getEntity(mapEntry.getKey());
+            if (source == null) continue;
+
+            double distance = player.distanceTo(source);
+            if (distance > rageScreamShakeRadius) continue;
+
+            float progress = mapEntry.getValue();
+            float fade = 1.0f - progress;
+            float intensity = (float) (1.0D - (distance / rageScreamShakeRadius)) * fade;
+
+            float shakePitch = (player.getRandom().nextFloat() - 0.5F) * 3.0F * intensity;
+            float shakeYaw = (player.getRandom().nextFloat() - 0.5F) * 3.0F * intensity;
+            float shakeRoll = (player.getRandom().nextFloat() - 0.5F) * 1.5F * intensity;
+
+            event.setPitch(event.getPitch() + shakePitch);
+            event.setYaw(event.getYaw() + shakeYaw);
+            event.setRoll(event.getRoll() + shakeRoll);
         }
 
 		if (player.hasEffect(MainEffects.STAGGER.get())) {

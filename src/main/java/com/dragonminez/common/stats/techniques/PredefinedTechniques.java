@@ -8,6 +8,7 @@ public class PredefinedTechniques {
 
 	public static final Map<String, KiAttackData> REGISTRY = new HashMap<>();
 	public static final Map<String, StrikeAttackData> STRIKE_REGISTRY = new HashMap<>();
+	public static final Map<String, EvasionAttackData> EVASION_REGISTRY = new HashMap<>();
 	public static final List<String> STRIKE_IDS = java.util.List.of(
 			"meteor",
 			"dragon_fist",
@@ -17,6 +18,10 @@ public class PredefinedTechniques {
 			"wolf_fang",
 			"oozaru_fist",
 			"super_god_fist"
+	);
+	public static final List<String> EVASION_IDS = java.util.List.of(
+			"taiyoken",
+			"rage_scream"
 	);
 
 	public void init() {
@@ -39,7 +44,8 @@ public class PredefinedTechniques {
 		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 2.25F, 0xFFFF00, 0xFFFF00, 15.0F, 0.0F, 10, "ki.explosion");
 		registerKi("soul_punisher", "technique.dragonminez.soul_punisher", "Gogeta", KiAttackData.KiType.MEDIUM_BALL, 3.50F, 0xFFFFFF, 0xFFFFFF, 5.0F, 0.5F, 45, "ki.kienzan");
 		registerKi("fake_moon", "technique.dragonminez.fake_moon", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 0.00F, 0xF5F3D0, 0xFFFFFF, 2.0F, 0.8F, 45, "ki.bigbang");
-		registerKi("taiyoken", "technique.dragonminez.taiyoken", "Tenshinhan", KiAttackData.KiType.SMALL_BALL, 0.00F, 0xFFFFFF, 0xFFFFFF, 1.0F, 0.1F, 45, "ki.bigbang");
+		registerEvasion("taiyoken", 0.00F, 30, 900, false);
+		registerEvasion("rage_scream", 1.2F, 60, 80, true);
 		registerStrike("skp.meteor", 1.25f, 40);
 		registerStrike("skp.dragon_fist", 2.5f, 50);
 		registerStrike("skp.deadly_dance_vegetto", 1.5f, 40);
@@ -90,5 +96,19 @@ public class PredefinedTechniques {
 		data.setDurationTicks(durationTicks);
 		data.applyConfigDefaults();
 		STRIKE_REGISTRY.put(id, data);
+	}
+
+	private void registerEvasion(String id, float damageMultiplier, int durationTicks, int cooldownTicks, boolean useSKP) {
+		EvasionAttackData data = new EvasionAttackData();
+		data.setId(id);
+		data.setName("technique.dragonminez." + id);
+		data.setAuthor("System");
+		data.setDamageMultiplier(damageMultiplier);
+		data.setDurationTicks(durationTicks);
+		data.setCooldown(cooldownTicks);
+		data.setAnimationId("evs." + id);
+		data.setUseStrikePower(useSKP);
+		data.setCastTime(0);
+		EVASION_REGISTRY.put(id, data);
 	}
 }

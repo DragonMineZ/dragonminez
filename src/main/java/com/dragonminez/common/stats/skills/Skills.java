@@ -104,6 +104,7 @@ public class Skills {
 		validNames.addAll(config.getStackSkills());
 		validNames.addAll(config.getKiSkills());
 		validNames.addAll(config.getStrikeSkills());
+		validNames.addAll(config.getEvasionSkills());
 		if (validNames.isEmpty()) return renamed;
 
 		List<String> invalidKeys = new ArrayList<>();

@@ -5,6 +5,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.mojang.brigadier.CommandDispatcher;
@@ -32,8 +33,12 @@ public class TechCommand {
 		var validStrike = config.getStrikeSkills().stream()
 				.filter(PredefinedTechniques.STRIKE_REGISTRY::containsKey)
 				.toList();
+		var validEvasion = config.getEvasionSkills().stream()
+				.filter(PredefinedTechniques.EVASION_REGISTRY::containsKey)
+				.toList();
 		java.util.List<String> all = new java.util.ArrayList<>(validTechs);
 		all.addAll(validStrike);
+		all.addAll(validEvasion);
 		return SharedSuggestionProvider.suggest(all, builder);
 	};
 
@@ -107,6 +112,11 @@ public class TechCommand {
 				} else if (PredefinedTechniques.STRIKE_REGISTRY.containsKey(id)) {
 					var template = PredefinedTechniques.STRIKE_REGISTRY.get(id);
 					var clone = new com.dragonminez.common.stats.techniques.StrikeAttackData();
+					clone.load(template.save());
+					data.getTechniques().unlockTechnique(clone);
+				} else if (PredefinedTechniques.EVASION_REGISTRY.containsKey(id)) {
+					EvasionAttackData template = PredefinedTechniques.EVASION_REGISTRY.get(id);
+					EvasionAttackData clone = new EvasionAttackData();
 					clone.load(template.save());
 					data.getTechniques().unlockTechnique(clone);
 				}
@@ -186,7 +196,8 @@ public class TechCommand {
 		var config = ConfigManager.getSkillsConfig();
 		boolean isKi = config.getKiSkills().contains(id) && PredefinedTechniques.REGISTRY.containsKey(id);
 		boolean isStrike = config.getStrikeSkills().contains(id) && PredefinedTechniques.STRIKE_REGISTRY.containsKey(id);
-		return !isKi && !isStrike;
+		boolean isEvasion = config.getEvasionSkills().contains(id) && PredefinedTechniques.EVASION_REGISTRY.containsKey(id);
+		return !isKi && !isStrike && !isEvasion;
 	}
 }
 

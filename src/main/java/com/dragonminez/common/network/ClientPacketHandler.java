@@ -1,5 +1,6 @@
 package com.dragonminez.common.network;
 
+import com.dragonminez.client.animation.EvasionAnimations;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.RadarRenderEvent;
 import com.dragonminez.client.events.FlySkillEvent;
@@ -153,7 +154,10 @@ public class ClientPacketHandler {
 				case EVASION -> animatable.dragonminez$triggerEvasion();
 				case DASH -> animatable.dragonminez$triggerDash(variant);
 				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
-				case KI_ANIMATION -> animatable.dragonminez$playKiAnimation(stringPayload, variant == 1);
+				case KI_ANIMATION -> {
+					String anim = stringPayload.startsWith("evs.") ? EvasionAnimations.resolve(stringPayload) : stringPayload;
+					animatable.dragonminez$playKiAnimation(anim, variant == 1);
+				}
 				case KI_ANIMATION_STOP -> animatable.dragonminez$stopKiAnimation();
 			}
 		}

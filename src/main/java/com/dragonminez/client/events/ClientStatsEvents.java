@@ -395,11 +395,11 @@ public class ClientStatsEvents {
 					int targetId = lockedTarget != null ? lockedTarget.getId() : -1;
 					NetworkHandler.sendToServer(new StrikeAttackC2S(targetId));
 					net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new DMZClientEvent.StrikeAttack(player, targetId));
-				} else if (t instanceof KiAttackData && "taiyoken".equals(id)) {
-						if (data.getCooldowns().hasCooldown("TechniqueCooldown_taiyoken")) continue;
+				} else if (t instanceof EvasionAttackData) {
+						if (data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) continue;
 						techniques.selectSlot(i);
 						NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(i));
-						NetworkHandler.sendToServer(new TaiyokenCastC2S());
+						NetworkHandler.sendToServer(new EvasionCastC2S(id));
 					} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) { if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(ki.getKiType())) continue; var lockedKiTarget = LockOnEvent.getLockedTarget(); int kiTargetId = lockedKiTarget != null ? lockedKiTarget.getId() : -1;
 					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i, kiTargetId));
 					else {
@@ -559,7 +559,8 @@ public class ClientStatsEvents {
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
-					|| data.getStatus().isActionCharging() || data.getStatus().getPotaraPoseTimer() > 0) {
+					|| data.getStatus().isActionCharging() || data.getStatus().getPotaraPoseTimer() > 0
+					|| data.getStatus().getEvasionLockTicks() > 0) {
 				event.getInput().forwardImpulse = 0;
 				event.getInput().leftImpulse = 0;
 				event.getInput().jumping = false;

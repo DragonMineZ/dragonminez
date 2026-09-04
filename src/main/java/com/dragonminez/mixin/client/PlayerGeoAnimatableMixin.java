@@ -244,8 +244,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
 		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
 		registrar.add(new AnimationController<>(this, "pose_controller", POSE_TRANSITION_TICKS, this::posePredicate));
-		registrar.add(new AnimationController<>(this, "ki_controller", 4, this::kiPredicate));
 		registrar.add(new AnimationController<>(this, "eat_controller", 3, this::eatPredicate));
+		// Registered last so its bone changes (root/waist) are applied after every other
+		// controller and always win — evasion techniques must always show their pose.
+		registrar.add(new AnimationController<>(this, "ki_controller", 4, this::kiPredicate));
 	}
 
 	@Unique

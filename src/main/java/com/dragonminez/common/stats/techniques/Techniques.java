@@ -183,7 +183,8 @@ public class Techniques {
 		ListTag unlockedTag = new ListTag();
 		for (TechniqueData tech : unlockedTechniques.values()) {
 			CompoundTag techTag = tech.save();
-			techTag.putString("TechClassType", tech instanceof KiAttackData ? "KI" : "STRIKE");
+			techTag.putString("TechClassType", tech instanceof KiAttackData ? "KI"
+					: tech instanceof EvasionAttackData ? "EVASION" : "STRIKE");
 			unlockedTag.add(techTag);
 		}
 		tag.put("UnlockedTechniques", unlockedTag);
@@ -208,7 +209,19 @@ public class Techniques {
 		for (int i = 0; i < unlockedTag.size(); i++) {
 			CompoundTag techTag = unlockedTag.getCompound(i);
 			String type = techTag.getString("TechClassType");
-			TechniqueData tech = type.equals("KI") ? new KiAttackData() : new StrikeAttackData();
+			String savedId = techTag.getString("Id");
+
+			if ("KI".equals(type) && PredefinedTechniques.EVASION_REGISTRY.containsKey(savedId)) {
+				EvasionAttackData template = PredefinedTechniques.EVASION_REGISTRY.get(savedId);
+				EvasionAttackData migrated = new EvasionAttackData();
+				migrated.load(template.save());
+				migrated.setExperience(techTag.contains("Experience") ? techTag.getInt("Experience") : 0);
+				this.unlockedTechniques.put(migrated.getId(), migrated);
+				continue;
+			}
+
+			TechniqueData tech = type.equals("KI") ? new KiAttackData()
+					: type.equals("EVASION") ? new EvasionAttackData() : new StrikeAttackData();
 			tech.load(techTag);
 			this.unlockedTechniques.put(tech.getId(), tech);
 		}
@@ -223,8 +236,10 @@ public class Techniques {
 		System.arraycopy(other.equippedSlots, 0, this.equippedSlots, 0, SLOT_COUNT);
 		this.unlockedTechniques.clear();
 		for (Map.Entry<String, TechniqueData> entry : other.unlockedTechniques.entrySet()) {
-			TechniqueData clone = entry.getValue() instanceof KiAttackData ? new KiAttackData() : new StrikeAttackData();
-			clone.load(entry.getValue().save());
+			TechniqueData source = entry.getValue();
+			TechniqueData clone = source instanceof KiAttackData ? new KiAttackData()
+					: source instanceof EvasionAttackData ? new EvasionAttackData() : new StrikeAttackData();
+			clone.load(source.save());
 			this.unlockedTechniques.put(entry.getKey(), clone);
 		}
 	}

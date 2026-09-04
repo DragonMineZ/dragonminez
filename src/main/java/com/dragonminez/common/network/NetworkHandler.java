@@ -291,12 +291,6 @@ public class NetworkHandler {
 				.consumerMainThread(com.dragonminez.common.network.C2S.StrikeAttackC2S::handle)
 				.add();
 
-		net.messageBuilder(TaiyokenCastC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(TaiyokenCastC2S::new)
-				.encoder(TaiyokenCastC2S::toBytes)
-				.consumerMainThread(TaiyokenCastC2S::handle)
-				.add();
-
 		net.messageBuilder(CombatAttackRequestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CombatAttackRequestC2S::new)
 				.encoder(CombatAttackRequestC2S::encode)
@@ -361,6 +355,12 @@ public class NetworkHandler {
 				.decoder(DynamicGrowthToggleC2S::new)
 				.encoder(DynamicGrowthToggleC2S::encode)
 				.consumerMainThread(DynamicGrowthToggleC2S::handle)
+				.add();
+
+		net.messageBuilder(EvasionCastC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(EvasionCastC2S::new)
+				.encoder(EvasionCastC2S::toBytes)
+				.consumerMainThread(EvasionCastC2S::handle)
 				.add();
 
 		/*
@@ -538,6 +538,12 @@ public class NetworkHandler {
 				.decoder(KnockbackFlightS2C::new)
 				.encoder(KnockbackFlightS2C::encode)
 				.consumerMainThread(KnockbackFlightS2C::handle)
+				.add();
+
+		net.messageBuilder(RageScreamVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RageScreamVfxS2C::new)
+				.encoder(RageScreamVfxS2C::encode)
+				.consumerMainThread(RageScreamVfxS2C::handle)
 				.add();
 	}
 

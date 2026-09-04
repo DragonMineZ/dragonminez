@@ -1100,6 +1100,14 @@ public class StatsData {
 		character.setAuraColor(auraColor);
 		status.setHasCreatedCharacter(true);
 
+		com.dragonminez.common.stats.techniques.KiAttackData rageScreamTemplate =
+				com.dragonminez.common.stats.techniques.PredefinedTechniques.REGISTRY.get("rage_scream");
+		if (rageScreamTemplate != null) {
+			com.dragonminez.common.stats.techniques.KiAttackData rageScreamClone = new com.dragonminez.common.stats.techniques.KiAttackData();
+			rageScreamClone.load(rageScreamTemplate.save());
+			techniques.unlockTechnique(rageScreamClone);
+		}
+
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
 		RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();

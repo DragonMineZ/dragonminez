@@ -24,6 +24,7 @@ public class SkillsConfig {
 	private final Map<String, SkillCosts> skills = new HashMap<>();
 	private final Map<String, List<String>> skillOfferings = new HashMap<>();
 	@ConfigNonPreservable private final List<String> strikeSkills = new ArrayList<>();
+	@ConfigNonPreservable private final List<String> evasionSkills = new ArrayList<>();
 
 	public SkillsConfig() {
 		createDefaults();
@@ -62,7 +63,8 @@ public class SkillsConfig {
 		kiSkills.add("final_explosion");
 		kiSkills.add("soul_punisher");
 		kiSkills.add("fake_moon");
-		kiSkills.add("taiyoken");
+		evasionSkills.add("taiyoken");
+		evasionSkills.add("rage_scream");
 
 		skills.put("ki_barrage", new SkillCosts(List.of(1000)));
 		skills.put("masenko", new SkillCosts(List.of(1500)));

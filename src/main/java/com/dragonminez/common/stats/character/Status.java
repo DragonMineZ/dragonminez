@@ -51,6 +51,7 @@ public class Status {
 	private UUID fusionPrevPartyId;
 	private boolean fusionPrevPartyLeader;
 	private int potaraPoseTimer;
+	private int evasionLockTicks;
 	private UUID potaraPartnerUUID;
 	private boolean potaraLeader;
 	private CompoundTag originalAppearance;
@@ -100,6 +101,7 @@ public class Status {
 		this.fusionPrevPartyId = null;
 		this.fusionPrevPartyLeader = false;
 		this.potaraPoseTimer = 0;
+		this.evasionLockTicks = 0;
 		this.potaraPartnerUUID = null;
 		this.potaraLeader = false;
 		this.originalAppearance = new CompoundTag();
@@ -149,6 +151,7 @@ public class Status {
 		this.fusionPrevPartyId = null;
 		this.fusionPrevPartyLeader = false;
 		this.potaraPoseTimer = 0;
+		this.evasionLockTicks = 0;
 		this.potaraPartnerUUID = null;
 		this.potaraLeader = false;
 		this.originalAppearance = new CompoundTag();
@@ -222,6 +225,7 @@ public class Status {
 		if (fusionPrevPartyId != null) tag.putUUID("FusionPrevPartyId", fusionPrevPartyId);
 		tag.putBoolean("FusionPrevPartyLeader", fusionPrevPartyLeader);
 		tag.putInt("PotaraPoseTimer", potaraPoseTimer);
+		tag.putInt("EvasionLockTicks", evasionLockTicks);
 		if (potaraPartnerUUID != null) tag.putUUID("PotaraPartnerUUID", potaraPartnerUUID);
 		tag.putBoolean("PotaraLeader", potaraLeader);
 		tag.put("OriginalAppearance", originalAppearance);
@@ -278,6 +282,7 @@ public class Status {
 		this.fusionPrevPartyId = tag.hasUUID("FusionPrevPartyId") ? tag.getUUID("FusionPrevPartyId") : null;
 		this.fusionPrevPartyLeader = tag.getBoolean("FusionPrevPartyLeader");
 		this.potaraPoseTimer = tag.getInt("PotaraPoseTimer");
+		this.evasionLockTicks = tag.getInt("EvasionLockTicks");
 		this.potaraPartnerUUID = tag.hasUUID("PotaraPartnerUUID") ? tag.getUUID("PotaraPartnerUUID") : null;
 		this.potaraLeader = tag.getBoolean("PotaraLeader");
 		if (tag.contains("OriginalAppearance")) this.originalAppearance = tag.getCompound("OriginalAppearance");
@@ -333,6 +338,7 @@ public class Status {
 		this.fusionPrevPartyId = other.fusionPrevPartyId;
 		this.fusionPrevPartyLeader = other.fusionPrevPartyLeader;
 		this.potaraPoseTimer = other.potaraPoseTimer;
+		this.evasionLockTicks = other.evasionLockTicks;
 		this.potaraPartnerUUID = other.potaraPartnerUUID;
 		this.potaraLeader = other.potaraLeader;
 		this.originalAppearance = other.originalAppearance.copy();
