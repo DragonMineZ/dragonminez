@@ -27,6 +27,7 @@
     { "name": "blotchMode", "type": "float", "count": 1, "values": [0.0] },
     { "name": "orbMode", "type": "float", "count": 1, "values": [0.0] },
     { "name": "splatMode", "type": "float", "count": 1, "values": [0.0] },
-    { "name": "splatLife", "type": "float", "count": 1, "values": [0.0] }
+    { "name": "splatLife", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "flameGain", "type": "float", "count": 1, "values": [1.0] }
   ]
 }

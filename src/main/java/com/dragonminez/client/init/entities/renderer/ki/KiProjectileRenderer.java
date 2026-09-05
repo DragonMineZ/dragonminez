@@ -2,6 +2,7 @@ package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
+import com.dragonminez.client.render.util.KiEmberRenderer;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
@@ -26,10 +27,11 @@ import org.joml.Matrix4f;
 
 public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
-    private static final ResourceLocation TEXTURE_KI_SPARKS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle1.png");
-    private static final ResourceLocation TEXTURE_KI_SPARKS2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle2.png");
     private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
     private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
+    /** Giant balls carry a heavier body of fire and shed correspondingly heavier debris. */
+    private static final float GIANT_FLAME_GAIN = 1.65F;
+    private static final float GIANT_EMBER_SCALE = 1.90F;
 
     public KiProjectileRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -100,24 +102,43 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                     drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, moonCore, moonOutline, moonOutline, 0.25F, ageInTicks, false, null);
                     stack.popPose();
                     break;
+                case 0:
+                    // Small blast wears the wave's CHARGING orb, not its fired ball: round
+                    // silhouette with the fire penned inside, and flakes that barely trail
+                    // because a charging orb has no forward wake to drag them into.
+                    stack.scale(0.5F, 0.5F, 0.5F);
+                    drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, true, 1.0F);
+                    KiEmberRenderer.render(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, 1.0F, KiEmberRenderer.LOCAL_BACK, KiEmberRenderer.CHARGE_BACKDRAFT, 1.0F);
+                    break;
+                case 1:
+                    // Medium blast wears the wave's FIRED ball: torn flame edge, debris and all.
+                    stack.scale(0.5F, 0.5F, 0.5F);
+                    drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, false, 1.0F);
+                    KiEmberRenderer.render(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, 1.0F, KiEmberRenderer.LOCAL_BACK, 1.0F, 1.0F);
+                    break;
+                case 2:
+                case 5:
+                    // Giant balls (large blast, spirit bomb): the same fired look turned up --
+                    // the fire churns harder and the flakes it sheds are far heavier.
+                    stack.scale(0.5F, 0.5F, 0.5F);
+                    drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, false, GIANT_FLAME_GAIN);
+                    KiEmberRenderer.render(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, 1.0F, KiEmberRenderer.LOCAL_BACK, 1.0F, GIANT_EMBER_SCALE);
+                    break;
                 case 6:
+                    // Supernova keeps its shake on top of the giant-ball treatment.
                     applyJitter(stack, ageInTicks, 0.01F);
                     stack.scale(0.5F, 0.5F, 0.5F);
-                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 1.0F, ageInTicks, true, null);
+                    drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, false, GIANT_FLAME_GAIN);
+                    KiEmberRenderer.render(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, 1.0F, KiEmberRenderer.LOCAL_BACK, 1.0F, GIANT_EMBER_SCALE);
                     break;
                 case 7:
+                    // Death ball is a giant ball like the rest. Its old look darkened the core
+                    // to 70% and stacked flat shells on top, which fought the core/border/outline
+                    // banding instead of being driven by it -- now it runs on the same three.
                     applyJitter(stack, ageInTicks, 0.03F);
                     stack.scale(2.0F, 2.0F, 2.0F);
-                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, ColorUtils.darkenColor(coreColor, 0.7F), borderColor, outlineColor, 1.0F, ageInTicks, false, null);
-                    float deathPulse = 1.0F + (float)Math.sin(ageInTicks * 0.3F) * 0.15F;
-                    stack.scale(deathPulse, deathPulse, deathPulse);
-                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, borderColor, outlineColor, outlineColor, 0.3F, ageInTicks, false, null);
-                    stack.scale(1.1F, 1.1F, 1.1F);
-                    int sparkCycle = (int) ageInTicks % 20;
-                    if (sparkCycle < 10) {
-                        ResourceLocation sparkTex = sparkCycle < 5 ? TEXTURE_KI_SPARKS : TEXTURE_KI_SPARKS2;
-                        drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, 0.8F, ageInTicks, false, sparkTex);
-                    }
+                    drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, false, GIANT_FLAME_GAIN);
+                    KiEmberRenderer.render(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, 1.0F, KiEmberRenderer.LOCAL_BACK, 1.0F, GIANT_EMBER_SCALE);
                     break;
                 case 9:
                     float separation = 1.5F;
@@ -153,6 +174,32 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
             stack.popPose();
             stack.popPose();
         });
+    }
+
+
+    /**
+     * The ki-wave ball look, so blasts and waves read as the same kind of energy.
+     *
+     * {@code orb} keeps the silhouette perfectly round with the fire penned inside, which is how
+     * a wave's charge orb reads; without it the edge tears the way a fired wave's ball does.
+     * {@code flameGain} scales how violently the fire churns.
+     */
+    private void drawKiBall(PoseStack stack, Matrix4f proj, float[] core, float[] border, float[] outline, float age, boolean orb, float flameGain) {
+        ShaderInstance shader = DMZShaders.ki3dShader;
+        if (shader == null) return;
+
+        shader.safeGetUniform("blotchMode").set(1.0f);
+        shader.safeGetUniform("flameMode").set(1.0f);
+        shader.safeGetUniform("orbMode").set(orb ? 1.0f : 0.0f);
+        shader.safeGetUniform("flameGain").set(flameGain);
+
+        drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, core, border, outline, 1.0F, age, true, null);
+
+        // Left set, these would bleed into every ki effect drawn after this one in the frame.
+        shader.safeGetUniform("blotchMode").set(0.0f);
+        shader.safeGetUniform("flameMode").set(0.0f);
+        shader.safeGetUniform("orbMode").set(0.0f);
+        shader.safeGetUniform("flameGain").set(1.0f);
     }
 
     private void applyJitter(PoseStack stack, float ageInTicks, float intensity) {

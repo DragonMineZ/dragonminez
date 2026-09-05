@@ -135,9 +135,9 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setupKiMakkankosanpo(owner, damage, speed, 0xFFFFFF, castTime);
     }
 
-    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setKiRenderType(0);
-        this.setSize(1.0f);
+        this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder, colorOutline);
@@ -149,13 +149,13 @@ public class KiLaserEntity extends AbstractKiProjectile{
         
     }
 
-    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
-        this.setupKiLaserPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF);
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setupKiLaserPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF, size);
     }
 
-    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, int colorOutline){
+    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, int colorOutline, float size){
         this.setKiRenderType(1);
-        this.setSize(1.0f);
+        this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0xFFE657, 0xF5A627, colorOutline);
@@ -167,8 +167,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
         
     }
 
-    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed){
-        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0x8B17CF);
+    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, float size){
+        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0x8B17CF, size);
     }
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
@@ -185,9 +185,9 @@ public class KiLaserEntity extends AbstractKiProjectile{
         
     }
 
-    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
+    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setKiRenderType(2);
-        this.setSize(1.0f);
+        this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder, colorOutline);
@@ -199,8 +199,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
     }
 
-    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
-        this.setupKiBeamPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF);
+    public void setupKiBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setupKiBeamPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF, size);
     }
 
 

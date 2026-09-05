@@ -17,6 +17,7 @@ uniform float blotchMode;
 uniform float orbMode;
 uniform float splatMode;
 uniform float splatLife;
+uniform float flameGain;
 
 in vec3 vNormal;
 in vec3 vViewDir;
@@ -179,10 +180,13 @@ void main() {
         float turb     = fbm(q * 1.5 + warp * 2.0 + vec3(0.0, -ft * 1.2, 0.0)) * 2.0 - 1.0;
         float turbFine = fbm2(q * 3.9 + warp * 1.2 + vec3(ft * 0.8, -ft * 1.7, 0.0)) * 2.667 - 1.0;
 
-        wobCore    = (turb * 0.50 + turbFine * 0.16) * orbInner;
-        wobBorder  = (turb * 0.42 + turbFine * 0.20) * orbInner;
-        wobOutline = (turb * 0.34 + turbFine * 0.26) * orbInner;
-        edgeBite   = turbFine * 0.13 * orbInner;
+        // flameGain scales how violently the fire churns; 1.0 is the standard beam, and the
+        // giant balls push it higher so their fire reads as a heavier body of energy.
+        float fg = orbInner * flameGain;
+        wobCore    = (turb * 0.50 + turbFine * 0.16) * fg;
+        wobBorder  = (turb * 0.42 + turbFine * 0.20) * fg;
+        wobOutline = (turb * 0.34 + turbFine * 0.26) * fg;
+        edgeBite   = turbFine * 0.13 * fg;
         hot        = smoothstep(CORE_LEVEL, CORE_LEVEL + 0.30, g + wobCore);
     }
 

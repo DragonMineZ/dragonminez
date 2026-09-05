@@ -113,15 +113,15 @@ public class TechniqueDispatcher {
                 } else if ("fake_moon".equals(data.getId())) {
                     medBall.setupFakeMoonPlayer(owner, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
                 } else if ("sokidan".equals(data.getId())) {
-                    medBall.setupSokidanPlayer(owner, realDamage, data.getSpeed(), 0xF7F723, 0xF7B736, data.getSize());
-                    medBall.setColors(0xFCFC5D, 0xF7F723, 0xF7B736);
+                    medBall.setupSokidanPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorOutline(), data.getSize());
+                    medBall.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else if("burning_attack".equals(data.getId())){
                     medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                     if (!level.isClientSide) level.playSound(null, medBall.getX(), medBall.getY(), medBall.getZ(), MainSounds.KI_BURNING_CHARGE.get(), SoundSource.PLAYERS, 4.0F, 1.0F);
                 } else {
                 medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
             }
-                medBall.setColorOutline("sokidan".equals(data.getId()) ? 0xF7B736 : data.getColorOutline());
+                medBall.setColorOutline(data.getColorOutline());
                 medBall.setKiType(kiTypeOrdinal);
                 medBall.setTechniqueId(data.getId());
                 medBall.setArmorPenetration(data.getArmorPenetration());
@@ -133,13 +133,16 @@ public class TechniqueDispatcher {
             case GIANT_BALL:
                 KiBlastEntity giantBall = new KiBlastEntity(level, owner);
                 if ("spiritbomb".equals(data.getId())) {
-                    giantBall.setupKiGenkiPlayer(owner, realDamage, data.getSpeed());
+                    giantBall.setupKiGenkiPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    giantBall.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else if ("supernova".equals(data.getId())) {
-                    giantBall.setupKiNovaPlayer(owner, realDamage, data.getSpeed());
+                    giantBall.setupKiNovaPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    giantBall.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else if ("supernova_cooler".equals(data.getId())) {
-                    giantBall.setupKiNovaCoolerPlayer(owner, realDamage, data.getSpeed());
+                    giantBall.setupKiNovaCoolerPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    giantBall.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else if ("death_ball".equals(data.getId())) {
-                    giantBall.setupKiDeathBallPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior());
+                    giantBall.setupKiDeathBallPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                     giantBall.setColorOutline(data.getColorOutline());
                 } else {
                     giantBall.setupKiLargeBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
@@ -156,12 +159,16 @@ public class TechniqueDispatcher {
                 KiWaveEntity wave = new KiWaveEntity(level, owner);
                 if ("kamehameha".equals(data.getId())) {
                     wave.setupKiHamePlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    wave.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else if ("galick_gun".equals(data.getId())) {
                     wave.setupKiGalickGunPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    wave.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else if ("final_flash".equals(data.getId())) {
                     wave.setupFinalFlashPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    wave.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else if ("masenko".equals(data.getId())) {
                     wave.setupKiMasenkoPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    wave.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                 } else {
                     wave.setupKiWavePlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
                     wave.setColorOutline(data.getColorOutline());
@@ -182,13 +189,8 @@ public class TechniqueDispatcher {
                 break;
             case LASER:
                 KiLaserEntity laser = new KiLaserEntity(level, owner);
-                if ("death_beam".equals(data.getId())) {
-                    laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), 0xFF59FF, 0xD859FF);
-                    laser.setColorOutline(0x9238F2);
-                } else {
-                    laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior());
-                    laser.setColorOutline(data.getColorOutline());
-                }
+                laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+                laser.setColorOutline(data.getColorOutline());
                 laser.setKiType(kiTypeOrdinal);
                 laser.setTechniqueId(data.getId());
                 laser.setArmorPenetration(data.getArmorPenetration());
@@ -199,13 +201,14 @@ public class TechniqueDispatcher {
             case BEAM:
                 KiLaserEntity beam = new KiLaserEntity(level, owner);
                 if ("makkanko".equals(data.getId())) {
-                    beam.setupKiMakkankosanpoPlayer(owner, realDamage, data.getSpeed());
+                    beam.setupKiMakkankosanpoPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    beam.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                     beam.setKiType(kiTypeOrdinal);
                     beam.setTechniqueId(data.getId());
                     beam.setArmorPenetration(data.getArmorPenetration());
                     beam.setHeal(isHeal);
                 } else {
-                    beam.setupKiBeamPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
+                    beam.setupKiBeamPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getColorOutline(), data.getSize());
                     beam.setKiType(kiTypeOrdinal);
                     beam.setTechniqueId(data.getId());
                     beam.setArmorPenetration(data.getArmorPenetration());
@@ -244,7 +247,7 @@ public class TechniqueDispatcher {
                 } else if ("kienzan".equals(data.getId())) {
                     KiDiskEntity disk = new KiDiskEntity(level, owner);
                     disk.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize());
-                    disk.setColors(0xfffb7d, data.getColorExterior(), 0xFFFFFF);
+                    disk.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
                     disk.setKiType(kiTypeOrdinal);
                     disk.setTechniqueId(data.getId());
                     disk.setArmorPenetration(data.getArmorPenetration());
@@ -281,13 +284,8 @@ public class TechniqueDispatcher {
             case EXPLOSION:
                 KiExplosionEntity explosion = new KiExplosionEntity(level, owner);
 
-                if ("final_explosion".equals(data.getId())) {
-                    explosion.setupExplosionPlayer(owner, realDamage, data.getSize(), 0xFFFA99, 0xFCF56A);
-                    explosion.setColorOutline(0xFFFFFC);
-                } else {
-                    explosion.setupExplosionPlayer(owner, realDamage, data.getSize(), data.getColorInterior(), data.getColorExterior());
-                    explosion.setColorOutline(data.getColorOutline());
-                }
+                explosion.setupExplosionPlayer(owner, realDamage, data.getSize(), data.getColorInterior(), data.getColorExterior());
+                explosion.setColorOutline(data.getColorOutline());
 
 
                 explosion.setKiType(kiTypeOrdinal);
@@ -325,7 +323,7 @@ public class TechniqueDispatcher {
                 if (isInitialSpawn) {
                     KiBlastEntity volley = new KiBlastEntity(level, owner);
 
-                    volley.setupKiVolleyPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), 40);
+                    volley.setupKiVolleyPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), 40, data.getSize());
                     volley.setColors(data.getColorInterior(), data.getColorExterior(), data.getColorOutline());
 
                     volley.setKiType(kiTypeOrdinal);

@@ -3,6 +3,7 @@ package com.dragonminez.client.init.entities.renderer.ki;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
+import com.dragonminez.client.render.util.KiEmberRenderer;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
@@ -29,19 +30,8 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     private static final float MUZZLE_FLAME_SCALE = 1.55F;
     private static final float DOUBLE_WAVE_BALL_SCALE = 0.82F;
-    private static final int   EMBER_COUNT = 10;
-    private static final float EMBER_PERIOD = 11.0F;
-    private static final float EMBER_IGNITE = 0.12F;
-    private static final float EMBER_FADE_FROM = 0.74F;
-    private static final float EMBER_R_START = 0.88F;
-    private static final float EMBER_R_END = 4.20F;
-    private static final float EMBER_SIZE_BIRTH = 0.46F;
-    private static final float EMBER_SIZE_DEATH = 0.10F;
-    private static final float EMBER_COOL = 0.7F;
-    private static final float EMBER_BACKDRAFT = 1.85F;
-    private static final float EMBER_CHARGE_BACKDRAFT = 0.35F;
+    /** Ticks of offset between the two orbs of a double wave, so they do not shed in mirror. */
     private static final float EMBER_PAIR_OFFSET = 6.5F;
-    private static final Vec3 LOCAL_BACK = new Vec3(0.0D, 0.0D, -1.0D);
     private static final float CHARGE_GROW_TICKS = 12.0F;
 
     public KiWaveRenderer(EntityRendererProvider.Context pContext) {
@@ -147,7 +137,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
             poseStack.pushPose();
             poseStack.scale(ballScale, ballScale, ballScale);
-            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, LOCAL_BACK, EMBER_CHARGE_BACKDRAFT);
+            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, KiEmberRenderer.LOCAL_BACK, KiEmberRenderer.CHARGE_BACKDRAFT);
             poseStack.popPose();
         }
 
@@ -191,10 +181,10 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             poseStack.pushPose();
             poseStack.translate(0.0F, 0.0F, length);
             poseStack.scale(endBallScale, endBallScale, endBallScale);
-            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, LOCAL_BACK, 1.0F);
+            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, KiEmberRenderer.LOCAL_BACK, 1.0F);
             poseStack.popPose();
 
-            renderMuzzleFlame(entity, poseStack, proj, auraColor, borderColor, ageInTicks, ballScale * MUZZLE_FLAME_SCALE, ballScale * MUZZLE_FLAME_SCALE, fadeAlpha, LOCAL_BACK, 1.0F);
+            renderMuzzleFlame(entity, poseStack, proj, auraColor, borderColor, ageInTicks, ballScale * MUZZLE_FLAME_SCALE, ballScale * MUZZLE_FLAME_SCALE, fadeAlpha, KiEmberRenderer.LOCAL_BACK, 1.0F);
         }
 
         poseStack.popPose();
@@ -227,7 +217,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
             poseStack.pushPose();
             poseStack.scale(startBallScale, startBallScale, startBallScale);
-            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, back, EMBER_CHARGE_BACKDRAFT);
+            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, back, KiEmberRenderer.CHARGE_BACKDRAFT);
             poseStack.popPose();
 
             poseStack.popPose();
@@ -309,7 +299,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, true);
             poseStack.popPose();
             poseStack.scale(startBallScale, startBallScale, startBallScale);
-            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, back, EMBER_CHARGE_BACKDRAFT);
+            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, back, KiEmberRenderer.CHARGE_BACKDRAFT);
             poseStack.popPose();
 
             poseStack.pushPose();
@@ -321,7 +311,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             renderKiSphereWithShader(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, true);
             poseStack.popPose();
             poseStack.scale(startBallScale, startBallScale, startBallScale);
-            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks + EMBER_PAIR_OFFSET, fadeAlpha, back, EMBER_CHARGE_BACKDRAFT);
+            renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks + EMBER_PAIR_OFFSET, fadeAlpha, back, KiEmberRenderer.CHARGE_BACKDRAFT);
             poseStack.popPose();
 
             poseStack.popPose();
@@ -484,85 +474,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.clear();
     }
 
+    /** Fire-ash flakes shed by the ball; see {@link KiEmberRenderer} for the model. */
     private void renderEmbers(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float alphaMultiplier, Vec3 back, float backdraft) {
-        ShaderInstance shader = DMZShaders.ki3dShader;
-        if (shader == null) return;
-
-        float[] outlineColor = entity.getRgbColorOutline();
-        float cycles = ageInTicks / EMBER_PERIOD;
-
-        shader.safeGetUniform("ProjMat").set(proj);
-        shader.safeGetUniform("zCut").set(-1.0f);
-        shader.safeGetUniform("zCutFar").set(2.0f);
-        shader.safeGetUniform("blotchMode").set(0.0f);
-        shader.safeGetUniform("flameMode").set(0.0f);
-        shader.safeGetUniform("splatMode").set(1.0f);
-        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
-        shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
-
-        VertexBuffer mesh = KiMeshFactory.getQuadMesh();
-        mesh.bind();
-
-        for (int i = 0; i < EMBER_COUNT; i++) {
-            float raw = cycles + (float) i / EMBER_COUNT;
-            float phase = raw - (float) Math.floor(raw);
-            int seed = i * 131 + (int) Math.floor(raw) * 7919;
-
-            float ignite = Math.min(1.0F, phase / EMBER_IGNITE);
-            float burnout = 1.0F - Mth.clamp((phase - EMBER_FADE_FROM) / (1.0F - EMBER_FADE_FROM), 0.0F, 1.0F);
-            float alpha = ignite * burnout * alphaMultiplier;
-            if (alpha <= 0.01F) continue;
-
-            float travel = 1.0F - (1.0F - phase) * (1.0F - phase);
-            float radius = EMBER_R_START + (EMBER_R_END - EMBER_R_START) * travel;
-            float size = Mth.lerp(travel, EMBER_SIZE_BIRTH, EMBER_SIZE_DEATH) * (0.75F + hash01(seed + 41) * 0.5F);
-            if (size <= 1.0E-4F) continue;
-
-            float dz = hash01(seed) * 2.0F - 1.0F;
-            float ring = (float) Math.sqrt(Math.max(0.0F, 1.0F - dz * dz));
-            float angle = hash01(seed + 97) * 2.0F * (float) Math.PI;
-            float dx = ring * (float) Math.cos(angle);
-            float dy = ring * (float) Math.sin(angle);
-
-            float drag = EMBER_BACKDRAFT * backdraft * travel * travel;
-
-            float cool = phase * phase * EMBER_COOL;
-            shader.safeGetUniform("colorCore").set(
-                    Mth.lerp(cool, coreColor[0], borderColor[0]),
-                    Mth.lerp(cool, coreColor[1], borderColor[1]),
-                    Mth.lerp(cool, coreColor[2], borderColor[2]));
-            shader.safeGetUniform("alphaMult").set(alpha);
-            shader.safeGetUniform("time").set(hash01(seed + 7) * 64.0f);
-            shader.safeGetUniform("splatLife").set(phase);
-
-            poseStack.pushPose();
-            poseStack.translate(dx * radius + back.x * drag, dy * radius + back.y * drag, dz * radius + back.z * drag);
-            faceCamera(poseStack);
-            poseStack.scale(size, size, size);
-            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
-            shader.apply();
-            mesh.drawWithShader(poseStack.last().pose(), proj, shader);
-            poseStack.popPose();
-        }
-
-        VertexBuffer.unbind();
-        shader.safeGetUniform("splatMode").set(0.0f);
-        shader.safeGetUniform("splatLife").set(0.0f);
-        shader.clear();
-    }
-
-    private static void faceCamera(PoseStack poseStack) {
-        Matrix4f m = poseStack.last().pose();
-        float scale = (float) Math.sqrt(m.m00() * m.m00() + m.m01() * m.m01() + m.m02() * m.m02());
-        m.m00(scale); m.m01(0.0F); m.m02(0.0F);
-        m.m10(0.0F); m.m11(scale); m.m12(0.0F);
-        m.m20(0.0F); m.m21(0.0F); m.m22(scale);
-    }
-
-    private static float hash01(int seed) {
-        int h = seed * 374761393 + 668265263;
-        h = (h ^ (h >>> 13)) * 1274126177;
-        return ((h ^ (h >>> 16)) & 0x7FFFFFFF) / (float) 0x7FFFFFFF;
+        KiEmberRenderer.render(poseStack, proj, coreColor, borderColor, entity.getRgbColorOutline(), ageInTicks, alphaMultiplier, back, backdraft, 1.0F);
     }
 
     private void renderKiCylinderWithShader(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float radius, float length, float alphaMultiplier, float cutRadius, float cutRadiusEnd) {
