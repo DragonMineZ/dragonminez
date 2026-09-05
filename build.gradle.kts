@@ -188,8 +188,8 @@ dependencies {
     compileOnly(fg.deobf("curse.maven:apotheosis-313970:6461960"))
 
     // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
-    compileOnly("org.projectlombok:lombok:1.18.46")
-    annotationProcessor("org.projectlombok:lombok:1.18.46")
+    compileOnly("org.projectlombok:lombok:1.18.48")
+    annotationProcessor("org.projectlombok:lombok:1.18.48")
 
     // Database libraries
 
