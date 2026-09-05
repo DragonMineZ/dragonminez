@@ -17,6 +17,7 @@ import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.racial.RacialStatUtil;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
@@ -1025,7 +1026,7 @@ public class StrikeAttackHandler {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techniqueId);
 			if (tech instanceof StrikeAttackData strike) {
-				int xpGain = strike.getXpGainPerHit();
+				int xpGain = RacialStatUtil.applyTechniqueXpBonus(stats, strike.getXpGainPerHit());
 				if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 			}
 			DynamicGrowthService.markCombat(stats);
@@ -1038,7 +1039,7 @@ public class StrikeAttackHandler {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			TechniqueData tech = stats.getTechniques().getUnlockedTechniques().get(techniqueId);
 			if (tech instanceof StrikeAttackData strike) {
-				int xpGain = strike.getXpGainPerKill();
+				int xpGain = RacialStatUtil.applyTechniqueXpBonus(stats, strike.getXpGainPerKill());
 				if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 			}
 		});

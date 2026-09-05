@@ -4,6 +4,7 @@ import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.layer.*;
+import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -137,7 +138,8 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			poseStack.translate(0, -pivotY, 0);
 		}
 
-		poseStack.scale(scalingX, scalingY, scalingZ);
+		float swellScale = BioSwellRenderState.bodyScale(entity);
+		poseStack.scale(scalingX * swellScale, scalingY * swellScale, scalingZ * swellScale);
 
 		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
 

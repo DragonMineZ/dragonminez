@@ -3,6 +3,7 @@ package com.dragonminez.common.passives;
 import com.dragonminez.Reference;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.quest.PartyManager;
+import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -88,6 +89,7 @@ public class PassiveEventHandler {
 	public static void onKiAttackFire(DMZEvent.KiAttackFireEvent event) {
 		StatsData data = event.getStatsData();
 		double mult = ClassPassives.get(data).kiCooldownMultiplier(data, event.getKiAttack());
+		mult *= MajinAbsorption.healTechniqueCooldownMultiplier(data, event.getKiAttack());
 		event.setCooldownTicks((int) Math.max(1, Math.round(event.getCooldownTicks() * mult)));
 	}
 

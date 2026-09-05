@@ -5,6 +5,8 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.racial.RacialContext;
+import com.dragonminez.common.racial.RacialRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
@@ -117,6 +119,7 @@ public class StatsCapability {
 					repairedSkills.forEach((oldName, newName) -> LogUtil.info(Env.SERVER, "Repaired skill for {}: '{}' -> '{}'", serverPlayer.getGameProfile().getName(), oldName, newName));
 				}
 				data.getSkills().setSkillActive("kisense", false);
+				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onLogin(new RacialContext(serverPlayer, data)));
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -140,6 +143,7 @@ public class StatsCapability {
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onRespawn(new RacialContext(serverPlayer, data)));
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -156,6 +160,7 @@ public class StatsCapability {
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onDimensionChange(new RacialContext(serverPlayer, data)));
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});

@@ -786,6 +786,10 @@ public class UtilityMenuScreen extends ScaledScreen {
 			selectNode(form);
 			return true;
 		}
+		if (node instanceof RacialSkillNode racial && racial.interactive(statsData)) {
+			racial.onSelect(statsData);
+			return true;
+		}
 		if (node != null && node.interactive(statsData) && !node.expandable(statsData)) {
 			node.onSelect(statsData);
 			return true;

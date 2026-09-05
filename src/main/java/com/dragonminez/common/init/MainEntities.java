@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonDefinition;
+import com.dragonminez.common.init.entities.bioandroid.CellJrEntity;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.*;
@@ -370,6 +371,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(MajinSkillEntity::new, MobCategory.CREATURE)
                             .sized(0.5f, 0.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "majin_skill").toString()));
+    public static final RegistryObject<EntityType<CellJrEntity>> BIO_CELL_JR =
+            ENTITY_TYPES.register("bio_cell_jr",
+                    () -> EntityType.Builder.of(CellJrEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 1.6f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bio_cell_jr").toString()));
 
     // SAGAS ENTITY
 

@@ -24,9 +24,20 @@ public class Cooldowns {
 	public static final String MAJIN_REVIVE_ACTIVE = "MajinReviveActive";
 	public static final String MAJIN_REVIVE_CD = "MajinReviveCooldown";
 	public static final String KNOCKDOWN_DURATION = "KnockdownDuration";
+	public static final String KNOCKDOWN_INVULN = "KnockdownInvulnerability";
 	public static final String STAMINA_PAUSE = "StaminaPause";
 	public static final String COMBAT_FLY_LOCK = "CombatFlyLock";
 	public static final String COMBATFLY_IMPULSE_CD = "CombatFlyImpulseCd";
+	public static final String ASSIMILATION = "Assimilation";
+	public static final String ABSORPTION = "Absorption";
+	public static final String ZENKAI_KNOCKOUT = "ZenkaiKnockout";
+	public static final String ZENKAI_TEMP_BUFF = "ZenkaiTempBuff";
+	public static final String ADRENALINE = "Adrenaline";
+	public static final String ADRENALINE_ACTIVE = "AdrenalineActive";
+	public static final String NAMEK_REGEN = "NamekRegen";
+	public static final String NAMEK_REGEN_ACTIVE = "NamekRegenActive";
+	public static final String BIO_EXPLODE_CD = "BioExplodeCooldown";
+	public static final String BIO_EXPLODE_RECOVERY = "BioExplodeRecovery";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

@@ -129,6 +129,7 @@ public class ModCommonEvents {
         event.put(MainEntities.ROBOT_XENOVERSE.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.PUNCH_MACHINE.get(), PunchMachineEntity.createAttributes().build());
         event.put(MainEntities.MAJIN_SKILL.get(), MajinSkillEntity.createAttributes().build());
+        event.put(MainEntities.BIO_CELL_JR.get(), DBSagasEntity.createAttributes().build());
 
     }
 

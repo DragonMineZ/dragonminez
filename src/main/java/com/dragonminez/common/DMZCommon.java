@@ -7,6 +7,13 @@ import com.dragonminez.common.events.ModCommonEvents;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.racial.RacialRegistry;
+import com.dragonminez.common.racial.impl.BioAndroidEvolution;
+import com.dragonminez.common.racial.impl.FrostDemonReserve;
+import com.dragonminez.common.racial.impl.HumanAdaptation;
+import com.dragonminez.common.racial.impl.MajinAbsorption;
+import com.dragonminez.common.racial.impl.NamekAssimilation;
+import com.dragonminez.common.racial.impl.SaiyanZenkai;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.world.feature.OverworldFeatures;
 import com.dragonminez.server.world.feature.SacredKaiFeatures;
@@ -21,6 +28,7 @@ public class DMZCommon {
 
     public static void init() {
 		LogUtil.info(Env.COMMON, "Initializing DragonMineZ Common...");
+		registerRacialAbilities();
         ConfigManager.initialize();
         QuestRegistry.init();
 		WishManager.init();
@@ -57,4 +65,13 @@ public class DMZCommon {
 		MainDamageTypes.register();
 
     }
+
+	private static void registerRacialAbilities() {
+		RacialRegistry.register(new SaiyanZenkai());
+		RacialRegistry.register(new NamekAssimilation());
+		RacialRegistry.register(new MajinAbsorption());
+		RacialRegistry.register(new HumanAdaptation());
+		RacialRegistry.register(new FrostDemonReserve());
+		RacialRegistry.register(new BioAndroidEvolution());
+	}
 }

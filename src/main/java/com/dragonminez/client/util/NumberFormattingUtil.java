@@ -15,13 +15,14 @@ public class NumberFormattingUtil {
     private static final DecimalFormat SCIENTIFIC_FORMATTER = new DecimalFormat("0.###E0", DecimalFormatSymbols.getInstance(Locale.US));
     private static final DecimalFormat FULL_TPS_FORMATTER = new DecimalFormat("#,##0.######", DecimalFormatSymbols.getInstance(Locale.US));
     private static final DecimalFormat COMPACT_NUMBER_FORMATTER = new DecimalFormat("0.##", DecimalFormatSymbols.getInstance(Locale.US));
+    private static final DecimalFormat TRIMMED_DECIMAL_FORMATTER = new DecimalFormat("#,##0.##", DecimalFormatSymbols.getInstance(Locale.US));
 
     public static boolean shouldUseCompactForm(double bp) {
         return bp > 999L;
     }
 
     public static String formatLargeNumber(double largeNumber) {
-        if (!shouldUseCompactForm(largeNumber)) return TWO_DECIMAL_FORMATTER.format(largeNumber);
+        if (!shouldUseCompactForm(largeNumber)) return TRIMMED_DECIMAL_FORMATTER.format(largeNumber);
 
         final String[] suffixes = {"K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"};
         final double[] scales = {1e3, 1e6, 1e9, 1e12, 1e15, 1e18, 1e21, 1e24, 1e27, 1e30, 1e33};

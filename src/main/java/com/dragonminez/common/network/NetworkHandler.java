@@ -545,6 +545,42 @@ public class NetworkHandler {
 				.encoder(RageScreamVfxS2C::encode)
 				.consumerMainThread(RageScreamVfxS2C::handle)
 				.add();
+
+		net.messageBuilder(RacialDataSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RacialDataSyncS2C::decode)
+				.encoder(RacialDataSyncS2C::encode)
+				.consumerMainThread(RacialDataSyncS2C::handle)
+				.add();
+
+		net.messageBuilder(RacialRequestS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RacialRequestS2C::new)
+				.encoder(RacialRequestS2C::encode)
+				.consumerMainThread(RacialRequestS2C::handle)
+				.add();
+
+		net.messageBuilder(RacialRequestReplyC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RacialRequestReplyC2S::new)
+				.encoder(RacialRequestReplyC2S::encode)
+				.consumerMainThread(RacialRequestReplyC2S::handle)
+				.add();
+
+		net.messageBuilder(RacialSlotActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RacialSlotActionC2S::new)
+				.encoder(RacialSlotActionC2S::encode)
+				.consumerMainThread(RacialSlotActionC2S::handle)
+				.add();
+
+		net.messageBuilder(NamekRegenC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(NamekRegenC2S::new)
+				.encoder(NamekRegenC2S::encode)
+				.consumerMainThread(NamekRegenC2S::handle)
+				.add();
+
+		net.messageBuilder(RacialSecondaryActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RacialSecondaryActionC2S::new)
+				.encoder(RacialSecondaryActionC2S::encode)
+				.consumerMainThread(RacialSecondaryActionC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
