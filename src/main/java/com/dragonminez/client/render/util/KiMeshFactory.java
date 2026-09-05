@@ -10,6 +10,30 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 public class KiMeshFactory {
 	private static VertexBuffer cachedSphereMesh;
 	private static VertexBuffer cachedCylinderMesh;
+	private static VertexBuffer cachedQuadMesh;
+
+	public static VertexBuffer getQuadMesh() {
+		if (cachedQuadMesh == null) {
+			cachedQuadMesh = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			BufferBuilder builder = Tesselator.getInstance().getBuilder();
+
+			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
+			quadVertex(builder, -1.0F, -1.0F, 0.0F, 0.0F);
+			quadVertex(builder,  1.0F, -1.0F, 1.0F, 0.0F);
+			quadVertex(builder,  1.0F,  1.0F, 1.0F, 1.0F);
+			quadVertex(builder, -1.0F,  1.0F, 0.0F, 1.0F);
+
+			cachedQuadMesh.bind();
+			cachedQuadMesh.upload(builder.end());
+			VertexBuffer.unbind();
+		}
+		return cachedQuadMesh;
+	}
+
+	private static void quadVertex(BufferBuilder builder, float x, float y, float u, float v) {
+		builder.vertex(x, y, 0.0F).color(255, 255, 255, 255).uv(u, v)
+				.overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0.0F, 0.0F, 1.0F).endVertex();
+	}
 
 	public static VertexBuffer getSphereMesh() {
 		if (cachedSphereMesh == null) {

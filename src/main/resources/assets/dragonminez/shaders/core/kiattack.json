@@ -25,7 +25,8 @@
     { "name": "zCutFar", "type": "float", "count": 1, "values": [2.0] },
     { "name": "flameMode", "type": "float", "count": 1, "values": [0.0] },
     { "name": "blotchMode", "type": "float", "count": 1, "values": [0.0] },
-    { "name": "shellMode", "type": "float", "count": 1, "values": [0.0] },
-    { "name": "shellCut", "type": "float", "count": 1, "values": [0.75] }
+    { "name": "orbMode", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "splatMode", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "splatLife", "type": "float", "count": 1, "values": [0.0] }
   ]
 }

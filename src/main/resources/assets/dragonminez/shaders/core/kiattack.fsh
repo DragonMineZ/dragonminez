@@ -14,8 +14,9 @@ uniform float zCut;
 uniform float zCutFar;
 uniform float flameMode;
 uniform float blotchMode;
-uniform float shellMode;
-uniform float shellCut;
+uniform float orbMode;
+uniform float splatMode;
+uniform float splatLife;
 
 in vec3 vNormal;
 in vec3 vViewDir;
@@ -31,6 +32,26 @@ const float EDGE_FADE     = 0.05;
 const float WOBBLE_CORE    = 0.17;
 const float WOBBLE_BORDER  = 0.11;
 const float WOBBLE_OUTLINE = 0.07;
+
+// Charge orb: fire is penned into the middle so the shell stays a clean round ball.
+const float ORB_SHELL_START = 0.02;
+const float ORB_SHELL_END   = 0.42;
+
+// Fire-ash sprites. FREQ/ROUGH set how broken the outline is, MORPH how fast it reshapes,
+// and the CUT pair how much of the flake has burned away between birth and death.
+const float SPLAT_FREQ      = 2.30;
+const float SPLAT_ROUGH     = 0.95;
+const float SPLAT_ASPECT    = 0.90;
+const float SPLAT_MORPH     = 1.40;
+const float SPLAT_CUT_YOUNG = 0.28;
+const float SPLAT_CUT_OLD   = 0.86;
+const float SPLAT_TOP       = 1.15;
+const float SPLAT_FEATHER   = 0.06;
+
+// Where the three colours sit inside the flake, as a fraction of its depth from the rim.
+const float SPLAT_RIM       = 0.10;
+const float SPLAT_MID       = 0.34;
+const float SPLAT_HOT       = 0.72;
 
 const float BLOTCH_STEPS = 4.0;
 const float FBM_MAX_INV  = 1.0667;
@@ -80,29 +101,48 @@ void main() {
     if (zCut > -0.5 && vLocalPos.z < zCut) discard;
     if (vLocalPos.z > zCutFar) discard;
 
-    vec3 p = vLocalPos;
-    float t = time;
+    // Fire-ash embers. The outline is a 2D slice of the value-noise field rather than a sum of
+    // angular harmonics: harmonics always close into a symmetric star, so every flake came out
+    // looking like the same flower turned around. A noise slice keyed on the seed gives shapes
+    // that differ structurally -- some round, some torn, some in pieces.
+    //
+    // The slice drifts with splatLife and the cut rises as the ember ages, so the flake keeps
+    // reshaping and is eaten away into fragments instead of merely scaling down. All three
+    // colours are banded on that same field, so they live inside the flake.
+    if (splatMode > 0.5) {
+        vec2 q = vUv * 2.0 - 1.0;
+        float s = time;
 
-    // Detached energy chunks flying OUTSIDE the ball. Drawn on an oversized sphere shell:
-    // the noise drives alpha instead of tint, and everything below shellCut is discarded, so
-    // only loose blobs survive. The caller sweeps shellCut upward over each shell's life.
-    if (shellMode > 0.5) {
-        float st = time * 1.1;
-        float sn = clamp(fbm(p * 5.2 + vec3(0.0, st * 0.9, st * 0.4)) * FBM_MAX_INV, 0.0, 1.0);
+        // Frozen per-ember orientation and aspect, so some flakes are round and some streak.
+        float rot = fract(s * 0.117) * 6.28318;
+        float aspect = 1.0 + fract(s * 0.311) * SPLAT_ASPECT;
+        float cs = cos(rot);
+        float sn = sin(rot);
+        vec2 qr = vec2(q.x * cs - q.y * sn, q.x * sn + q.y * cs);
 
-        // shellCut rises as the shell flies outward, so fewer and smaller chunks survive:
-        // the cloud thins out and breaks up instead of just drifting at constant density.
-        if (sn < shellCut) discard;
+        float d = length(vec2(qr.x * aspect, qr.y));
+        if (d > 1.0) discard;
 
-        float solid = clamp((sn - shellCut) / max(1.0 - shellCut, 0.001), 0.0, 1.0);
-        float level = solid < 0.5 ? 0.45 : 1.0;   // two flat levels keeps the cel look
+        float n = clamp(fbm(vec3(qr * SPLAT_FREQ, s + splatLife * SPLAT_MORPH)) * FBM_MAX_INV, 0.0, 1.0);
+        float dens = (1.0 - d) + (n - 0.5) * SPLAT_ROUGH;
 
-        vec3 shellCol = mix(colorBorder, colorCore, level);
-        float shellAlpha = alphaMult * globalAlpha * level;
-        if (bloomMode > 0.5) shellAlpha *= 0.85;
-        fragColor = vec4(shellCol, shellAlpha);
+        // Burning down: the surviving band narrows over the ember's life, so the flake crumbles.
+        float cut = mix(SPLAT_CUT_YOUNG, SPLAT_CUT_OLD, splatLife);
+        if (dens < cut) discard;
+
+        float depth = clamp((dens - cut) / max(SPLAT_TOP - cut, 0.001), 0.0, 1.0);
+        vec3 splatCol = colorOutline;
+        splatCol = mix(splatCol, colorBorder, smoothstep(SPLAT_RIM, SPLAT_MID, depth));
+        splatCol = mix(splatCol, colorCore, smoothstep(SPLAT_MID, SPLAT_HOT, depth));
+
+        float splatAlpha = alphaMult * globalAlpha * smoothstep(cut, cut + SPLAT_FEATHER, dens);
+        if (bloomMode > 0.5) splatAlpha *= 0.35 + 0.65 * depth;
+        fragColor = vec4(splatCol, splatAlpha);
         return;
     }
+
+    vec3 p = vLocalPos;
+    float t = time;
 
     float flameCore    = flameField(p, t, 1.35, 1.30);
     float flameBorder  = flameField(p, t, 1.00, 0.95);
@@ -116,6 +156,11 @@ void main() {
         float f = clamp(abs(dot(normalize(vViewDir), normalize(vNormal))), 0.0, 1.0);
         g = 1.0 - sqrt(max(0.0, 1.0 - f * f));
     }
+
+    // Radial mask for the charge orb: 0 at the rim, 1 in the middle. Multiplying the flame
+    // turbulence by it keeps the fire churning inside while the silhouette stays perfectly
+    // round -- the fired beam leaves it at 1.0 and keeps its torn edge.
+    float orbInner = (orbMode > 0.5) ? smoothstep(ORB_SHELL_START, ORB_SHELL_END, g) : 1.0;
 
     // Band offsets: gentle shimmer normally, churning fire lobes on the muzzle.
     float wobCore    = flameCore   * WOBBLE_CORE;
@@ -134,10 +179,10 @@ void main() {
         float turb     = fbm(q * 1.5 + warp * 2.0 + vec3(0.0, -ft * 1.2, 0.0)) * 2.0 - 1.0;
         float turbFine = fbm2(q * 3.9 + warp * 1.2 + vec3(ft * 0.8, -ft * 1.7, 0.0)) * 2.667 - 1.0;
 
-        wobCore    = turb * 0.50 + turbFine * 0.16;
-        wobBorder  = turb * 0.42 + turbFine * 0.20;
-        wobOutline = turb * 0.34 + turbFine * 0.26;
-        edgeBite   = turbFine * 0.13;
+        wobCore    = (turb * 0.50 + turbFine * 0.16) * orbInner;
+        wobBorder  = (turb * 0.42 + turbFine * 0.20) * orbInner;
+        wobOutline = (turb * 0.34 + turbFine * 0.26) * orbInner;
+        edgeBite   = turbFine * 0.13 * orbInner;
         hot        = smoothstep(CORE_LEVEL, CORE_LEVEL + 0.30, g + wobCore);
     }
 
@@ -165,13 +210,13 @@ void main() {
         float n = clamp(fbm(p * 4.3 + vec3(0.0, bt * 0.8, bt * 0.35)) * FBM_MAX_INV, 0.0, 1.0);
         blotchBand = min(floor(n * BLOTCH_STEPS), BLOTCH_STEPS - 1.0) / (BLOTCH_STEPS - 1.0);
 
-        col = mix(col, colorBorder, (1.0 - blotchBand) * 0.55);
-        col *= mix(0.52, 1.32, blotchBand);
+        col = mix(col, colorBorder, (1.0 - blotchBand) * 0.55 * orbInner);
+        col *= mix(1.0, mix(0.52, 1.32, blotchBand), orbInner);
     }
 
     vec3 finalColor = col;
 
-    float edgeCoord = (shapeMode > 0.5) ? g : (g + wobOutline + edgeBite);
+    float edgeCoord = (shapeMode > 0.5 || orbMode > 0.5) ? g : (g + wobOutline + edgeBite);
     float finalAlpha = alphaMult * smoothstep(0.0, EDGE_FADE, edgeCoord);
 
     if (texBlend > 0.0) {

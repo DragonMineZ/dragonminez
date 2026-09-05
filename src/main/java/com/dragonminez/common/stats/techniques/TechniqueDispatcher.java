@@ -175,6 +175,7 @@ public class TechniqueDispatcher {
                 if (isInitialSpawn) {
                     wave.setFiring(false);
                     wave.setMaxLife(99999);
+                    wave.setCastWave(data.getBaseChargeTicks());
                 } else wave.setFiring(true);
 
                 if (!level.isClientSide) level.addFreshEntity(wave);

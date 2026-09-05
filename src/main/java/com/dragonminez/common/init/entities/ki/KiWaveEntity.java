@@ -359,7 +359,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
-        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
         this.setCastOffsets(0.0F, 0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
         if (!this.level().isClientSide) {
@@ -381,7 +380,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setFiring(false);
         this.setCastWave(15);
         this.setMaxLife(99999);
-        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
         this.setCastOffsets(0.0F, 0.9F, 0.2F);
         updatePositionRelativeToOwner(owner, true);
     }
