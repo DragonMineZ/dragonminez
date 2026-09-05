@@ -56,6 +56,11 @@ public class SkinGathererProvider {
 
 		void base(ResourceLocation texture, float[] color);
 
+		/** Same as {@link #base} but drawn with a polygon offset, so decals never z-fight with the body layers. */
+		default void overlay(ResourceLocation texture, float[] color) {
+			base(texture, color);
+		}
+
 		void fading(String layerId, ResourceLocation texture, float[] color, float targetAlpha);
 
 		default void fading(String layerId, ResourceLocation texture, float[] color) {
@@ -76,6 +81,11 @@ public class SkinGathererProvider {
 
 	private void emitFadingLayer(BiConsumer<ResourceLocation, float[]> consumer, String layerId, ResourceLocation texture, float[] color) {
 		if (consumer instanceof BodyLayerSink sink) sink.fading(layerId, texture, color);
+		else consumer.accept(texture, color);
+	}
+
+	private void emitOverlayLayer(BiConsumer<ResourceLocation, float[]> consumer, ResourceLocation texture, float[] color) {
+		if (consumer instanceof BodyLayerSink sink) sink.overlay(texture, color);
 		else consumer.accept(texture, color);
 	}
 
@@ -186,7 +196,7 @@ public class SkinGathererProvider {
                 case "namekian", "namekian_orange", "namekian_buffed" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
                 case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_imperfect", "janemba_fat", "janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
                 case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp", "frostdemon_mecha", "frostdemon_metalcore" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
-                case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
+                case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra", "bioandroid_xeno", "bioandroid_xenofp" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
 				default -> {
 					boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
 					String genSuffix = hasGender ? (character.getGender().equals(Character.GENDER_FEMALE) ? "_female" : "_male") : "";
@@ -325,7 +335,7 @@ public class SkinGathererProvider {
     protected void resolveBodyBioAndroid(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
         String phase = switch (key) {
             case "bioandroid_semi" -> "semiperfect";
-            case "bioandroid_perfect", "bioandroid_ultra", "bioandroid_xeno" -> "perfect";
+            case "bioandroid_perfect", "bioandroid_ultra", "bioandroid_xeno", "bioandroid_xenofp" -> "perfect";
             case "bioandroid_base" -> "base";
             case "bioandroid" -> character.hasActiveForm() ? "perfect" : "base";
             default -> "perfect";
@@ -340,12 +350,7 @@ public class SkinGathererProvider {
         String prefix = "textures/entity/races/bioandroid/" + phase + "_" + bodyType + "_";
         String fallbackPrefix = "textures/entity/races/bioandroid/" + phase + "_0_";
 
-        float[] finalBodyColor = b1;
-        if(legendaryGroup){
-            finalBodyColor = ColorUtils.darkenColor(b1, 0.4f);
-        }
-
-        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), finalBodyColor);
+        consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
         consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
         consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
         consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer4.png"), getCachedTexture(fallbackPrefix + "layer4.png")), hair);
@@ -354,11 +359,13 @@ public class SkinGathererProvider {
             consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_STINGER_COLOR);
         }
 
-        if(legendaryGroup){
-            consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer1.png"), getCachedTexture("textures/entity/races/bioandroid/xenoform_layer1.png")), ColorUtils.hexToRgb("#FFFFFF"));
+        boolean xenoModel = key.equals("bioandroid_xeno") || key.equals("bioandroid_xenofp");
 
-            if (currentForm.equals("xenomax")){
-                consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer2.png"), getCachedTexture("textures/entity/races/bioandroid/xenoform_layer2.png")), ColorUtils.hexToRgb("#FFFFFF"));
+        if(legendaryGroup || xenoModel){
+            emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer1.png")), WHITE_COLOR);
+
+            if (xenoModel){
+                emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture("textures/entity/races/bioandroid/xenoform_layer2.png")), WHITE_COLOR);
             }
         }
     }

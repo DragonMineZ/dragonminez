@@ -1490,13 +1490,14 @@ public class DefaultFormsFactory {
 		ultraperfect.setEnergyDrain(0.28);
 		ultraperfect.setStaminaDrainMultiplier(3.5);
 		ultraperfect.setAttackSpeed(0.55);
-		ultraperfect.setEye1Color("#F6A6FF");
+		ultraperfect.setEye1Color("#BA1414");
 		ultraperfect.setEye2Color("#FFFFFF");
 		ultraperfect.setBodyColor1("");
 		ultraperfect.setBodyColor2("#FFFFFF");
-		ultraperfect.setBodyColor3("");
+		ultraperfect.setBodyColor3("#FFED61");
 		ultraperfect.setAuraColor("#FFFF69");
-		ultraperfect.setHasLightnings(true);
+        ultraperfect.setHairColor("#7C28B0");
+        ultraperfect.setHasLightnings(true);
 		ultraperfect.setLightningColor("#1AA1C7");
 		ultraperfect.setHairType("base");
 		setDefaultMasteryValues(ultraperfect);
@@ -1554,8 +1555,8 @@ public class DefaultFormsFactory {
         xenoFP.setAuraColor("#2C0A4A");
         xenoFP.setHasLightnings(true);
         xenoFP.setLightningColor("#340063");
-        xenoFP.setEye1Color("#FFFFFF");
-        xenoFP.setEye2Color("#FFFFFF");
+        xenoFP.setEye1Color("#BA1414");
+        xenoFP.setEye2Color("#BA1414");
         xenoFP.setBodyColor2("#DBC8C8");
         xenoFP.setBodyColor3("#4C3554");
         xenoFP.setHairColor("#4C3554");
@@ -1567,7 +1568,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData xenoMax = new FormConfig.FormData();
 		xenoMax.setName(BioAndroidForms.XENO_MAX);
 		xenoMax.setUnlockOnSkillLevel(3);
-		xenoMax.setCustomModel("bioandroid_xeno");
+		xenoMax.setCustomModel("bioandroid_xenofp");
 		xenoMax.setStrMultiplier(5.1);
 		xenoMax.setSkpMultiplier(5.1);
 		xenoMax.setDefMultiplier(3.6875);
@@ -1576,14 +1577,14 @@ public class DefaultFormsFactory {
         xenoMax.setAuraColor("#2C0A4A");
         xenoMax.setHasLightnings(true);
         xenoMax.setLightningColor("#340063");
-        xenoMax.setEye1Color("#FFFFFF");
-        xenoMax.setEye2Color("#FFFFFF");
+        xenoMax.setEye1Color("#BA1414");
+        xenoMax.setEye2Color("#BA1414");
         xenoMax.setBodyColor2("#DBC8C8");
         xenoMax.setBodyColor3("#4C3554");
         xenoMax.setHairColor("#4C3554");
         xenoMax.setHairType("base");
 		setDefaultMasteryValues(xenoMax);
-        xenoMax.setModelScaling(new Float[]{1.5f, 1.5f, 1.5f});
+        xenoMax.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
         xenoMax.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> bioLegendaryData = new LinkedHashMap<>();

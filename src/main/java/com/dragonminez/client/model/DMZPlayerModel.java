@@ -48,6 +48,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation BIO_ANDROID_PERFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
     private static final ResourceLocation BIO_ANDROID_ULTRA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_ultra.geo.json");
     private static final ResourceLocation BIO_ANDROID_XENO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_xeno.geo.json");
+    private static final ResourceLocation BIO_ANDROID_XENO_FP = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_xenofp.geo.json");
 
     private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
@@ -237,6 +238,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "bioandroid_perfect": return BIO_ANDROID_PERFECT;
             case "bioandroid_ultra": return BIO_ANDROID_ULTRA;
             case "bioandroid_xeno": return BIO_ANDROID_XENO;
+            case "bioandroid_xenofp": return BIO_ANDROID_XENO_FP;
 
         }
 
