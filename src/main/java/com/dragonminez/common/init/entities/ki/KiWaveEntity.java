@@ -54,6 +54,16 @@ public class KiWaveEntity extends AbstractKiProjectile {
      * cast offset is now scaled by that width downstream -- returning a measured value here
      * would apply the caster's size twice.
      */
+    /**
+     * While charging the orb is drawn at castSize * 1.5; once fired the beam is a cylinder of
+     * radius size. Either way the entity sits at the centre, so that radius is what has to clear
+     * the caster.
+     */
+    @Override
+    protected float castClearanceRadius() {
+        return this.isFiring() ? this.getSize() : this.getCastSize() * 1.5F;
+    }
+
     private float calcWaveForwardOffset(LivingEntity owner) {
         return 0.5F;
     }
@@ -425,7 +435,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         } else {
             // Clears the body first, then the same 2.2 a normal player got. Scaling the whole
             // distance instead would fling a giant's beam origin metres away from it.
-            newPos = hitboxCenter.add(look.scale((owner.getBbWidth() / 2.0D) + 2.2D));
+            newPos = hitboxCenter.add(look.scale((owner.getBbWidth() / 2.0D) + 2.2D + this.castClearanceRadius()));
         }
 
         this.setPos(newPos.x, newPos.y, newPos.z);

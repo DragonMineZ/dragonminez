@@ -414,13 +414,20 @@ public abstract class AbstractKiProjectile extends Projectile {
      * Offsets that already derive from the hitbox must be passed in player-equivalent units, or
      * they get scaled twice.
      */
-    protected static Vec3 castOffset(LivingEntity owner, Vec3 right, Vec3 up, Vec3 look,
-                                     float offsetX, float offsetY, float offsetZ) {
+    protected Vec3 castOffset(LivingEntity owner, Vec3 right, Vec3 up, Vec3 look,
+                              float offsetX, float offsetY, float offsetZ) {
         float widthScale = ownerWidthScale(owner);
         float heightScale = ownerScaleOf(owner);
+        // The offset places the attack's CENTRE, so its own radius has to be added or a
+        // power-scaled attack forms around the caster instead of in front of them.
         return right.scale(offsetX * widthScale)
                 .add(up.scale(offsetY * heightScale))
-                .add(look.scale(offsetZ * widthScale));
+                .add(look.scale(offsetZ * widthScale + this.castClearanceRadius()));
+    }
+
+    /** Radius of what actually gets drawn, so the attack clears the body it comes from. */
+    protected float castClearanceRadius() {
+        return this.getSize() * 0.5F;
     }
 
     protected Entity getKiGriefingSource() {
