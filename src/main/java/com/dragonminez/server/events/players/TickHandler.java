@@ -946,7 +946,8 @@ public class TickHandler {
 		}
 
 		boolean reachedCeiling = percent >= ceiling - 0.01f;
-		if ((!holding || instant) && (reachedCeiling || outOfKi)) {
+		boolean shouldFire = kiAttack.requiresFullCharge() ? (reachedCeiling || outOfKi) : (!holding || outOfKi);
+		if (shouldFire) {
 			resolveKiAttackOnRelease(player, data, techniques);
 			return;
 		}
@@ -954,13 +955,15 @@ public class TickHandler {
 		NetworkHandler.sendToTrackingEntityAndSelf(new TechniqueChargeSyncS2C(player.getId(), techniques.getTechniqueChargePercent(), true), player);
 	}
 
+	private static final float MIN_RELEASE_PERCENT = 10.0f;
+
 	private static void resolveKiAttackOnRelease(ServerPlayer player, StatsData data, Techniques techniques) {
 		float effectiveCharge = Math.min(techniques.getTechniqueChargePercent(), KiAttackData.OVERCHARGE_MAX_PERCENT);
 
 		var activeKi = findChargingEntity(player);
 
 		if (activeKi != null) {
-			if (effectiveCharge < 50.0f) {
+			if (effectiveCharge < MIN_RELEASE_PERCENT) {
 				activeKi.discard();
 			} else {
 				float chargeMultiplier = effectiveCharge / 100.0f;

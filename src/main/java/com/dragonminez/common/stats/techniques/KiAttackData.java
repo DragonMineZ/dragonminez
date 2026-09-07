@@ -158,6 +158,12 @@ public class KiAttackData extends TechniqueData {
 		return kiType == KiType.SMALL_BALL || kiType == KiType.LASER;
 	}
 
+	public boolean requiresFullCharge() {
+		return isInstantCast()
+				|| kiType == KiType.MEDIUM_BALL
+				|| kiType == KiType.GIANT_BALL;
+	}
+
 	public static final int OVERCHARGE_MAX_PERCENT = 175;
 	public static final int OVERCHARGE_TIER_PERCENT = 25;
 

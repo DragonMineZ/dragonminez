@@ -23,8 +23,8 @@ public class TechniqueDispatcher {
 	public static boolean executeKiAttack(LivingEntity owner, Level level, KiAttackData data, StatsData statsData, float chargeMultiplier) {
 		if (level.isClientSide) return false;
 
-		boolean isInitialSpawn = chargeMultiplier < 0.5f;
-		float clampedCharge = Mth.clamp(chargeMultiplier, 0.5f, 2.0f);
+		boolean isInitialSpawn = chargeMultiplier < 0.05f;
+		float clampedCharge = Mth.clamp(chargeMultiplier, 0.1f, 2.0f);
 		float damageCharge = (isInitialSpawn && data.isInstantCast()) ? 1.0f : clampedCharge;
 
 		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * data.getConfiguredDamageMultiplier() * damageCharge * data.getOutputMultiplier());
