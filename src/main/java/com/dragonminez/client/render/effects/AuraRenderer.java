@@ -378,7 +378,7 @@ public class AuraRenderer {
 
 		return new float[]{baseScale * modelScale[0], baseScale * modelScale[1], baseScale * modelScale[2]};
 	}
-    
+
 	private static float getReleaseScaleBonus(Player player, StatsData stats) {
 		int entityId = player.getId();
 		float target = stats.getSkills().hasSkill("kicontrol")
