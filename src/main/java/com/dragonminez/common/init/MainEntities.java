@@ -1368,8 +1368,8 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)
                     .sized(0.8F, 0.8F)
-                    .clientTrackingRange(4)
-                    .updateInterval(10)
+                    .clientTrackingRange(128)
+                    .updateInterval(1)
                     .fireImmune()
                     .build("ki_blast"));
     public static final RegistryObject<EntityType<SPBlueHurricaneEntity>> SP_BLUE_HURRICANE = ENTITY_TYPES.register("sp_blue_hurricane",

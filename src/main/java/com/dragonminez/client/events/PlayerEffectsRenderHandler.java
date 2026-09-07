@@ -11,6 +11,10 @@ import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -82,6 +86,30 @@ public class PlayerEffectsRenderHandler {
 		buffers.endBatch();
 	}
 
+	@SuppressWarnings("unchecked")
+	private static void enqueueExplosionBursts(Minecraft mc, PoseStack poseStack,
+	                                           MultiBufferSource buffers, float partialTick) {
+		if (mc.level == null) return;
+
+		Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
+
+		for (Entity entity : mc.level.entitiesForRendering()) {
+			if (!(entity instanceof KiExplosionVisualEntity burst)) continue;
+
+			EntityRenderer<KiExplosionVisualEntity> renderer =
+					(EntityRenderer<KiExplosionVisualEntity>) mc.getEntityRenderDispatcher().getRenderer(burst);
+			if (renderer == null) continue;
+
+			poseStack.pushPose();
+			poseStack.translate(
+					Mth.lerp(partialTick, burst.xOld, burst.getX()) - camera.x,
+					Mth.lerp(partialTick, burst.yOld, burst.getY()) - camera.y,
+					Mth.lerp(partialTick, burst.zOld, burst.getZ()) - camera.z);
+			renderer.render(burst, 0.0F, partialTick, poseStack, buffers, 15728880);
+			poseStack.popPose();
+		}
+	}
+
 	private static void renderEffects(Minecraft mc, RenderLevelStageEvent event) {
 		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
 		PoseStack poseStack = event.getPoseStack();
@@ -102,6 +130,8 @@ public class PlayerEffectsRenderHandler {
 
 		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, poseStack, buffers);
 		buffers.endBatch();
+
+		enqueueExplosionBursts(mc, poseStack, buffers, partialTick);
 
 		var kiAttacks = PlayerEffectQueue.getAndClearKiAttacks();
 		if (!kiAttacks.isEmpty()) {

@@ -649,34 +649,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private boolean destroyBlocksAtTip(Vec3 tipPos) {
-        boolean hitSomething = false;
-        float eatRadius = this.scaledDestructionRadius(this.getSize() * 3.2F);
-        int bRad = Math.round(eatRadius);
-        BlockPos center = BlockPos.containing(tipPos);
-        Level level = this.level();
-
-        for (int x = -bRad; x <= bRad; x++) {
-            for (int y = -bRad; y <= bRad; y++) {
-                for (int z = -bRad; z <= bRad; z++) {
-                    if (x * x + y * y + z * z <= eatRadius * eatRadius) {
-                        BlockPos targetPos = center.offset(x, y, z);
-                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000 && this.destroyKiBlock(targetPos, false)) {
-                            hitSomething = true;
-                            if (level instanceof ServerLevel serverLevel) {
-                                if (this.random.nextFloat() < 0.25F) {
-                                    serverLevel.sendParticles(
-                                            ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                                            targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
-                                            1, 0.5D, 0.5D, 0.5D, 0.05D
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return hitSomething;
+        return this.eatKiSphere(BlockPos.containing(tipPos), this.scaledDestructionRadius(this.getSize() * 4.0F));
     }
 
     private void spawnOriginSplash() {
@@ -791,7 +764,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private void explodeAndDie(Vec3 pos) {
-        float explosionRadius = this.getSize() * 5.5F;
+        float explosionRadius = this.getSize() * 4.0F;
 
         AABB damageArea = new AABB(pos, pos).inflate(explosionRadius);
         List<LivingEntity> targets = MultipartTargeting.collectTargets(this.level(), damageArea);
@@ -805,20 +778,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             BlockPos center = BlockPos.containing(pos);
 
-            float destructionRadius = this.scaledDestructionRadius(explosionRadius);
-            int blockRadius = Math.round(destructionRadius);
-            for (int x = -blockRadius; x <= blockRadius; x++) {
-                for (int y = -blockRadius; y <= blockRadius; y++) {
-                    for (int z = -blockRadius; z <= blockRadius; z++) {
-                        if (x * x + y * y + z * z <= destructionRadius * destructionRadius) {
-                            BlockPos targetPos = center.offset(x, y, z);
-                            if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
-                                this.setKiBlockToAir(targetPos, 2);
-                            }
-                        }
-                    }
-                }
-            }
+            this.carveKiSphere(center, this.scaledDestructionRadius(explosionRadius), 2);
 
             float visualParticleSize = explosionRadius * 2.4F;
             if (this.level() instanceof ServerLevel serverLevel) {
@@ -831,7 +791,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(pos.x, pos.y - 0.5, pos.z);
-                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 2.5F);
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getColorOutline(), this.getSize() * 1.8F);
                 this.level().addFreshEntity(explosionVisual);
             }
         }

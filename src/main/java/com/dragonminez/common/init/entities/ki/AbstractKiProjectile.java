@@ -33,8 +33,12 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -75,6 +79,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient int firingStartTick = -1;
 
     private static final float KI_INDESTRUCTIBLE_RESISTANCE = 1000.0F;
+    /** Floor for the render-distance calculation, in vanilla's "box size" units: 2 = 128 blocks. */
+    private static final double MIN_RENDER_SIZE = 2.0;
+    /** Embers fly out to several ball radii, so the culling box has to cover more than the ball. */
+    private static final double CULLING_INFLATE = 5.0;
 
     private UUID cachedOwnerUUID;
 
@@ -371,8 +379,6 @@ public abstract class AbstractKiProjectile extends Projectile {
         return owner != null ? owner : this;
     }
 
-    // Per-instance override to fully suppress block destruction for a specific projectile,
-    // regardless of griefing gamerules (e.g. the cosmetic kamehameha fired during oozaru_fist).
     private transient boolean blockDestructionEnabled = true;
 
     public void setBlockDestructionEnabled(boolean enabled) { this.blockDestructionEnabled = enabled; }
@@ -397,7 +403,104 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     protected float scaledDestructionRadius(float baseRadius) {
-        return (float) (baseRadius * this.getDestructionMultiplier());
+        float scaled = (float) (baseRadius * this.getDestructionMultiplier());
+        return Math.min(scaled, (float) this.getMaxDestructionRadius());
+    }
+
+    private double getMaxDestructionRadius() {
+        KiAttackData.KiType type;
+        try {
+            type = KiAttackData.KiType.valueOf(this.getKiType().name());
+        } catch (IllegalArgumentException e) {
+            type = KiAttackData.KiType.SMALL_BALL;
+        }
+        double configured = ConfigManager.getTechniqueConfig().getKiTypeConfig(type).getMaxDestructionRadius();
+        return configured > 0.0 ? configured : Double.MAX_VALUE;
+    }
+
+
+    protected void carveKiSphere(BlockPos center, float radius, int flags) {
+        this.carveKiSphere(center, 0.0F, radius, flags);
+    }
+
+    protected void carveKiSphere(BlockPos center, float innerRadius, float radius, int flags) {
+        if (this.level().isClientSide || !this.blockDestructionEnabled || radius <= 0.0F) return;
+
+        int r = Mth.ceil(radius);
+        MainGameRules.KiGriefGate gate = MainGameRules.griefGate(this.level(), new BoundingBox(
+                center.getX() - r, center.getY() - r, center.getZ() - r,
+                center.getX() + r, center.getY() + r, center.getZ() + r), this.getKiGriefingSource());
+        if (gate.deniesEverything()) return;
+
+        float radiusSq = radius * radius;
+        float innerSq = innerRadius * innerRadius;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                float flatSq = (float) (dx * dx + dz * dz);
+                if (flatSq > radiusSq) continue;
+
+                for (int dy = -r; dy <= r; dy++) {
+                    float distSq = flatSq + (float) (dy * dy);
+                    if (distSq > radiusSq || distSq <= innerSq) continue;
+
+                    cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
+                    BlockState state = this.level().getBlockState(cursor);
+                    if (state.isAir()) continue;
+                    if (state.getBlock() instanceof DragonBallBlock) continue;
+                    if (state.getExplosionResistance(this.level(), cursor, null) >= KI_INDESTRUCTIBLE_RESISTANCE) continue;
+                    if (!gate.canGrief(cursor)) continue;
+
+                    this.level().setBlock(cursor.immutable(), Blocks.AIR.defaultBlockState(), flags);
+                }
+            }
+        }
+    }
+
+
+    protected boolean eatKiSphere(BlockPos center, float radius) {
+        if (this.level().isClientSide || !this.blockDestructionEnabled || radius <= 0.0F) return false;
+
+        int r = Mth.ceil(radius);
+        MainGameRules.KiGriefGate gate = MainGameRules.griefGate(this.level(), new BoundingBox(
+                center.getX() - r, center.getY() - r, center.getZ() - r,
+                center.getX() + r, center.getY() + r, center.getZ() + r), this.getKiGriefingSource());
+        if (gate.deniesEverything()) return false;
+
+        boolean ateSomething = false;
+        float radiusSq = radius * radius;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        ServerLevel serverLevel = this.level() instanceof ServerLevel level ? level : null;
+
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                float flatSq = (float) (dx * dx + dz * dz);
+                if (flatSq > radiusSq) continue;
+
+                for (int dy = -r; dy <= r; dy++) {
+                    if (flatSq + (float) (dy * dy) > radiusSq) continue;
+
+                    cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
+                    BlockState state = this.level().getBlockState(cursor);
+                    if (state.isAir()) continue;
+                    if (state.getBlock() instanceof DragonBallBlock) continue;
+                    if (state.getExplosionResistance(this.level(), cursor, null) >= KI_INDESTRUCTIBLE_RESISTANCE) continue;
+                    if (!gate.canGrief(cursor)) continue;
+
+                    BlockPos pos = cursor.immutable();
+                    if (!this.level().destroyBlock(pos, false)) continue;
+                    ateSomething = true;
+
+                    if (serverLevel != null && this.random.nextFloat() < 0.25F) {
+                        serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                                1, 0.5D, 0.5D, 0.5D, 0.05D);
+                    }
+                }
+            }
+        }
+        return ateSomething;
     }
 
     protected boolean destroyKiBlock(BlockPos pos, boolean dropBlock) {
@@ -676,6 +779,31 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (SIZE.equals(pKey)) {
             this.refreshDimensions();
         }
+    }
+
+
+    /**
+     * Ki attacks are drawn far larger than they collide.
+     *
+     * Vanilla decides render distance from the collision box ({@code boxSize * 64}), and these
+     * entities scale that box by their size -- a small blast ends up with a box of ~0.4, so it
+     * vanished about 25 blocks out while still plainly visible on screen. The drawn effect is
+     * what matters here, so the distance keys off the attack's size with a generous floor.
+     */
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distanceSq) {
+        double visible = Math.max(this.getSize(), MIN_RENDER_SIZE) * 64.0 * getViewScale();
+        return distanceSq < visible * visible;
+    }
+
+    /**
+     * Frustum culling uses the collision box too, which makes the effect pop out at the edge of
+     * the screen: the shed embers alone reach several times the ball's radius, and a beam is
+     * drawn along its whole length. Inflating the culling box keeps it on screen.
+     */
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        return this.getBoundingBox().inflate(Math.max(this.getSize() * CULLING_INFLATE, 2.0D));
     }
 
     @Override

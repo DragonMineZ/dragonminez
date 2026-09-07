@@ -31,6 +31,9 @@ public class TechniqueConfig {
 		for (KiAttackData.KiType type : KiAttackData.KiType.values()) {
 			TechniqueTypeConfig cfg = TechniqueTypeConfig.defaults();
 			cfg.setCastTimeTicks(defaultCastTimeTicks(type));
+			cfg.setBaseSizeCap(defaultBaseSizeCap(type));
+			cfg.setTransformedSizeCap(defaultTransformedSizeCap(type));
+			cfg.setMaxDestructionRadius(defaultMaxDestructionRadius(type));
 			kiAttacks.put(type.name().toLowerCase(), cfg);
 		}
 		for (String strikeId : PredefinedTechniques.STRIKE_IDS) {
@@ -61,6 +64,38 @@ public class TechniqueConfig {
 			case "deadly_dance_vegetto" -> 200;
 			case "wolf_fang" -> 140;
 			default -> 160;
+		};
+	}
+
+	/** 0 means "do not scale this type with ki power" -- lasers keep their authored size. */
+	private static double defaultBaseSizeCap(KiAttackData.KiType type) {
+		return switch (type) {
+			case GIANT_BALL -> 15.0;
+			case EXPLOSION -> 12.0;
+			case MEDIUM_BALL -> 4.5;
+			case WAVE -> 2.0;
+			case BEAM, DISK -> 1.2;
+			case BARRAGE -> 1.5;
+			default -> 0.0;
+		};
+	}
+
+	private static double defaultTransformedSizeCap(KiAttackData.KiType type) {
+		return switch (type) {
+			case GIANT_BALL, EXPLOSION -> 25.0;
+			case MEDIUM_BALL -> 7.0;
+			case WAVE -> 5.0;
+			case BEAM, DISK -> 2.3;
+			case BARRAGE -> 2.5;
+			default -> 0.0;
+		};
+	}
+
+	private static double defaultMaxDestructionRadius(KiAttackData.KiType type) {
+		return switch (type) {
+			case GIANT_BALL, EXPLOSION -> 32.0;
+			case WAVE, BEAM, AREA -> 12.0;
+			default -> 6.0;
 		};
 	}
 
@@ -105,6 +140,14 @@ public class TechniqueConfig {
 		private double damageMultiplier = 1.0;
 		private double destructionMultiplier = 1.0;
 		private int castTimeTicks = 30;
+		/** Size ceiling in base form, before the technique's own XP upgrades are added on top. */
+		private double baseSizeCap = 0.0;
+		/** Size ceiling while transformed, or stacking a form such as Kaioken. */
+		private double transformedSizeCap = 0.0;
+		/** Ki power at which an attack sits at its authored size, and at which it hits the cap. */
+		private double sizePowerFloor = 100.0;
+		private double sizePowerCeiling = 1000000.0;
+		private double maxDestructionRadius = 12.0;
 
 		public static TechniqueTypeConfig defaults() {
 			return new TechniqueTypeConfig();

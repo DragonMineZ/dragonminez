@@ -8,8 +8,10 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 
 public class KiExplosionVisualEntity extends Entity {
+    private static final double MIN_RENDER_SIZE = 4.0;
     private static final EntityDataAccessor<Integer> COLOR_MAIN = SynchedEntityData.defineId(KiExplosionVisualEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> COLOR_BORDER = SynchedEntityData.defineId(KiExplosionVisualEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> COLOR_OUTLINE = SynchedEntityData.defineId(KiExplosionVisualEntity.class, EntityDataSerializers.INT);
@@ -22,6 +24,18 @@ public class KiExplosionVisualEntity extends Entity {
         super(pEntityType, pLevel);
 
         this.noPhysics = true;
+        this.noCulling = true;
+    }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distanceSq) {
+        double visible = Math.max(this.getMaxSize(), MIN_RENDER_SIZE) * 64.0 * getViewScale();
+        return distanceSq < visible * visible;
+    }
+
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        return this.getBoundingBox().inflate(Math.max(this.getMaxSize(), MIN_RENDER_SIZE));
     }
 
     public void setupExplosion(int colorMain, int colorBorder, float baseSize) {
