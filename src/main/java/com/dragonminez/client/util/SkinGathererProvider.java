@@ -56,7 +56,6 @@ public class SkinGathererProvider {
 
 		void base(ResourceLocation texture, float[] color);
 
-		/** Same as {@link #base} but drawn with a polygon offset, so decals never z-fight with the body layers. */
 		default void overlay(ResourceLocation texture, float[] color) {
 			base(texture, color);
 		}
@@ -264,7 +263,7 @@ public class SkinGathererProvider {
 		String basePath = "textures/entity/races/humansaiyan/oozaru_";
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer1.png"), getCachedTexture(basePath + "layer1.png")), bodyColor2);
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer2.png"), getCachedTexture(basePath + "layer2.png")), bodyColor);
-		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png"), getCachedTexture(basePath + "layer3.png")), WHITE_COLOR);
+		emitOverlayLayer(consumer, DMZSkinLayer.getSafeTexture(getCachedTexture(basePath + "layer3.png"), getCachedTexture(basePath + "layer3.png")), WHITE_COLOR);
 	}
 
     protected void resolveBodyNamekian(Character character, float[] c1, float[] c2, float[] c3, BiConsumer<ResourceLocation, float[]> consumer) {
