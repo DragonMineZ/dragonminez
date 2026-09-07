@@ -48,6 +48,9 @@ public class AuraRenderer {
 	private static final float PULSE_SPEED = 0.01f;
 	private static final float SHOULDER_LEAN_DEG_PER_BLOCK = 3.0f;
 	private static final float SHOULDER_LEAN_MAX_DEG = 6.0f;
+	private static final float AURA_RELEASE_CAP = 100.0f;
+	private static final float AURA_RELEASE_SCALE_BONUS = 0.35f;
+	private static final float AURA_RELEASE_LERP_PER_TICK = 0.02f;
 
 	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
@@ -55,6 +58,8 @@ public class AuraRenderer {
 	private static final Map<Integer, Long> COLOR_TICK_MAP = new ConcurrentHashMap<>();
 	private static final Map<Integer, Float> PULSE_PROGRESS = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> PULSE_LAST_RENDER_TIME = new ConcurrentHashMap<>();
+	private static final Map<Integer, Float> RELEASE_SCALE_PROGRESS = new ConcurrentHashMap<>();
+	private static final Map<Integer, Long> RELEASE_SCALE_TICK = new ConcurrentHashMap<>();
 	private static final Map<Integer, CachedAuraData> AURA_CACHE = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
 	private static VertexBuffer cachedLightningMesh;
@@ -138,7 +143,7 @@ public class AuraRenderer {
 		if (shader == null) return;
 
 		float[] modelScale = getModelScale(stats);
-		float[] auraScale = getAuraScale(stats, modelScale);
+		float[] auraScale = getAuraScale(player, stats, modelScale);
 		float animSpeed = (player.tickCount + partialTick) * 0.5f;
 		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 
@@ -333,6 +338,8 @@ public class AuraRenderer {
 		COLOR_TICK_MAP.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		PULSE_LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		PULSE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+		RELEASE_SCALE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+		RELEASE_SCALE_TICK.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 	}
 
 	private static float[] getModelScale(StatsData stats) {
@@ -355,7 +362,7 @@ public class AuraRenderer {
 		return new float[]{sX, sY, sZ};
 	}
 
-	private static float[] getAuraScale(StatsData stats, float[] modelScale) {
+	private static float[] getAuraScale(Player player, StatsData stats, float[] modelScale) {
 		float baseScale = 1.05f;
 		var character = stats.getCharacter();
 		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
@@ -367,7 +374,29 @@ public class AuraRenderer {
 			baseScale += 0.2f;
 		}
 
+		baseScale += getReleaseScaleBonus(player, stats);
+
 		return new float[]{baseScale * modelScale[0], baseScale * modelScale[1], baseScale * modelScale[2]};
+	}
+    
+	private static float getReleaseScaleBonus(Player player, StatsData stats) {
+		int entityId = player.getId();
+		float target = stats.getSkills().hasSkill("kicontrol")
+				? Mth.clamp(stats.getResources().getPowerRelease() / AURA_RELEASE_CAP, 0.0f, 1.0f)
+				: 0.0f;
+
+		float current = RELEASE_SCALE_PROGRESS.getOrDefault(entityId, target);
+		long lastTick = RELEASE_SCALE_TICK.getOrDefault(entityId, 0L);
+		long currentTick = player.tickCount;
+
+		if (currentTick != lastTick) {
+			long ticksElapsed = lastTick == 0L ? 1L : Math.max(1L, currentTick - lastTick);
+			current = Mth.approach(current, target, AURA_RELEASE_LERP_PER_TICK * ticksElapsed);
+			RELEASE_SCALE_TICK.put(entityId, currentTick);
+			RELEASE_SCALE_PROGRESS.put(entityId, current);
+		}
+
+		return AURA_RELEASE_SCALE_BONUS * current;
 	}
 
 	private static List<AuraLayer> getAuraLayers(Player player, StatsData stats, float partialTick) {
@@ -542,7 +571,7 @@ public class AuraRenderer {
 
 		float[] modelScale = getModelScale(stats);
 		float[] body = getBodyScale(stats);
-		float[] auraScale = getAuraScale(stats, modelScale);
+		float[] auraScale = getAuraScale(player, stats, modelScale);
 
 		data.modelScaleX = modelScale[0]; data.modelScaleY = modelScale[1]; data.modelScaleZ = modelScale[2];
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
@@ -598,7 +627,7 @@ public class AuraRenderer {
 
 		float[] modelScale = getModelScale(stats);
 		float[] body = getBodyScale(stats);
-		float[] auraScale = getAuraScale(stats, modelScale);
+		float[] auraScale = getAuraScale(player, stats, modelScale);
 
 		data.modelScaleX = modelScale[0]; data.modelScaleY = modelScale[1]; data.modelScaleZ = modelScale[2];
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
