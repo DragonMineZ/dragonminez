@@ -273,6 +273,7 @@ public class LockOnEvent {
 		StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).orElse(null);
 		if (targetData == null) return true;
 		if (KiSenseScan.isCloaked(targetPlayer)) return false;
+		if (KiSenseScan.isKiSuppressed(targetData)) return false;
 		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
 		return true;
 	}

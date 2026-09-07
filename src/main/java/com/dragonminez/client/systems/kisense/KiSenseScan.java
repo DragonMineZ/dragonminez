@@ -64,6 +64,7 @@ public final class KiSenseScan {
 		StatsData targetData = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).orElse(null);
 		if (targetData == null) return true;
 		if (isCloaked(targetPlayer)) return false;
+		if (isKiSuppressed(targetData)) return false;
 		if (targetData.getStatus().isAndroidUpgraded()) return false;
 		if (TransformationsHelper.hasGodFormActive(targetData) && myData.getSkills().getSkillLevel("godforms") <= 0) return false;
 		return true;
@@ -189,6 +190,10 @@ public final class KiSenseScan {
 
 	public static boolean isCloaked(Player target) {
 		return CuriosUtil.getFirstStackForItem(target, "head_tech", "anti_ki_cloak").getItem() == MainItems.ANTI_KI_CLOAK.get();
+	}
+
+	public static boolean isKiSuppressed(StatsData targetData) {
+		return targetData != null && targetData.getResources().getPowerRelease() <= 0;
 	}
 
 	public static boolean hasScouter(Player player) {
