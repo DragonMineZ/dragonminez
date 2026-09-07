@@ -1003,9 +1003,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
         Vec3 right = look.cross(worldUp).normalize();
 
         // Usar worldUp directamente en vez de right.cross(look)
-        Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
-                .add(worldUp.scale(this.entityData.get(OFFSET_Y)))  // <-- cambio aquí
-                .add(look.scale(this.entityData.get(OFFSET_Z)));
+        Vec3 offset = castOffset(owner, right, worldUp, look,
+                this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));  // <-- cambio aquí
 
         double centerX = owner.getX();
         double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);

@@ -149,7 +149,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
         Vec3 look = owner.getLookAngle();
         Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
         Vec3 up = right.cross(look).normalize();
-        Vec3 offset = right.scale(this.entityData.get(OFFSET_X)).add(up.scale(this.entityData.get(OFFSET_Y))).add(look.scale(this.entityData.get(OFFSET_Z)));
+        Vec3 offset = castOffset(owner, right, up, look,
+                this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));
         Vec3 newPos = owner.getEyePosition().add(offset);
         this.setPos(newPos.x, newPos.y, newPos.z);
     }

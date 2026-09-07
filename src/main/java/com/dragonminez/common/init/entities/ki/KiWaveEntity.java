@@ -49,8 +49,13 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private static final float MAX_RANGE = 300.0F; // uff
 
+    /**
+     * Player-equivalent forward clearance. It used to read the owner's width directly, but the
+     * cast offset is now scaled by that width downstream -- returning a measured value here
+     * would apply the caster's size twice.
+     */
     private float calcWaveForwardOffset(LivingEntity owner) {
-        return (owner.getBbWidth() / 2.0F) + 0.2F;
+        return 0.5F;
     }
 
     private float calcWaveCenterOffsetY(LivingEntity owner) {
@@ -413,13 +418,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
             Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
             Vec3 up = right.cross(look).normalize();
 
-            Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
-                    .add(up.scale(this.entityData.get(OFFSET_Y)))
-                    .add(look.scale(this.entityData.get(OFFSET_Z)));
+            Vec3 offset = castOffset(owner, right, up, look,
+                    this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));
 
             newPos = hitboxCenter.add(offset);
         } else {
-            newPos = hitboxCenter.add(look.scale(2.5D));
+            // Clears the body first, then the same 2.2 a normal player got. Scaling the whole
+            // distance instead would fling a giant's beam origin metres away from it.
+            newPos = hitboxCenter.add(look.scale((owner.getBbWidth() / 2.0D) + 2.2D));
         }
 
         this.setPos(newPos.x, newPos.y, newPos.z);
@@ -456,7 +462,11 @@ public class KiWaveEntity extends AbstractKiProjectile {
     public float getFixedPitch() { return this.entityData.get(FIXED_PITCH); }
     public int getCastWave() { return this.entityData.get(CAST_WAVE); }
     public void setCastWave(int ticks) { this.entityData.set(CAST_WAVE, ticks); }
-    public float getCastSize() { return this.entityData.get(CAST_SIZE); }
+    /**
+     * Cast size, scaled to the caster. The stored value is authored for a normal player, so a
+     * giant would otherwise charge a human-sized ball in a hand several times that big.
+     */
+    public float getCastSize() { return this.entityData.get(CAST_SIZE) * this.getOwnerScale(); }
     public void setCastSize(float size) { this.entityData.set(CAST_SIZE, size); }
     public void setCastOffsets(float offsetX, float offsetY, float offsetZ) {
         this.entityData.set(OFFSET_X, offsetX);

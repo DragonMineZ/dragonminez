@@ -79,6 +79,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     private transient int firingStartTick = -1;
 
     private static final float KI_INDESTRUCTIBLE_RESISTANCE = 1000.0F;
+    private static final float VANILLA_PLAYER_HEIGHT = 1.8F;
+    private static final float VANILLA_PLAYER_WIDTH = 0.6F;
+    /** Ceiling so an absurdly tall caster cannot fling the cast point off into space. */
+    private static final float MAX_OWNER_SCALE = 6.0F;
     /** Floor for the render-distance calculation, in vanilla's "box size" units: 2 = 128 blocks. */
     private static final double MIN_RENDER_SIZE = 2.0;
     /** Embers fly out to several ball radii, so the culling box has to cover more than the ball. */
@@ -372,6 +376,51 @@ public abstract class AbstractKiProjectile extends Projectile {
             }
         }
         return false;
+    }
+
+
+    /**
+     * How much bigger the caster is than a normal player, used to keep ki attacks in proportion.
+     *
+     * The cast offsets and cast sizes throughout the mod are authored against a 1.8-block player,
+     * so on an Oozaru or a fat Janemba the ball ended up buried near the body's centre at a size
+     * meant for a human hand. Height is the reference rather than width because these casters are
+     * humanoid: a wide model is not necessarily holding its hands further out.
+     */
+    public float getOwnerScale() {
+        return ownerScaleOf(this.getOwner() instanceof LivingEntity living ? living : null);
+    }
+
+    public static float ownerScaleOf(LivingEntity owner) {
+        if (owner == null) return 1.0F;
+        return Mth.clamp(owner.getBbHeight() / VANILLA_PLAYER_HEIGHT, 1.0F, MAX_OWNER_SCALE);
+    }
+
+
+    /** Width ratio against a normal player, for the axes that have to clear the body sideways. */
+    public static float ownerWidthScale(LivingEntity owner) {
+        if (owner == null) return 1.0F;
+        return Mth.clamp(owner.getBbWidth() / VANILLA_PLAYER_WIDTH, 1.0F, MAX_OWNER_SCALE);
+    }
+
+    /**
+     * Places a cast offset on a caster of any size.
+     *
+     * The three axes do not share a scale on purpose: a wide but short caster (a fat Janemba)
+     * needs the attack pushed further out to its side and further forward to clear its body, but
+     * NOT further up. Using one factor for all three put the ball above the shoulder on wide
+     * models and inside the chest on tall ones.
+     *
+     * Offsets that already derive from the hitbox must be passed in player-equivalent units, or
+     * they get scaled twice.
+     */
+    protected static Vec3 castOffset(LivingEntity owner, Vec3 right, Vec3 up, Vec3 look,
+                                     float offsetX, float offsetY, float offsetZ) {
+        float widthScale = ownerWidthScale(owner);
+        float heightScale = ownerScaleOf(owner);
+        return right.scale(offsetX * widthScale)
+                .add(up.scale(offsetY * heightScale))
+                .add(look.scale(offsetZ * widthScale));
     }
 
     protected Entity getKiGriefingSource() {

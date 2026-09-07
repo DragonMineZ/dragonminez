@@ -380,9 +380,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 offset;
 
         if (!this.isFiring()) {
-            offset = right.scale(this.entityData.get(OFFSET_X))
-                    .add(up.scale(this.entityData.get(OFFSET_Y)))
-                    .add(look.scale(this.entityData.get(OFFSET_Z)));
+            offset = castOffset(owner, right, up, look,
+                    this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));
         } else {
             double forwardDistance = (owner.getBbWidth() / 2.0D) + 0.3D;
 
