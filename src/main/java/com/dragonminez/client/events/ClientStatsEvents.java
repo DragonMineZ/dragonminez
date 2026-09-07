@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.hud.ScouterHUD;
+import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.systems.kisense.CombatIndicators;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.kisense.KiSenseState;
@@ -65,6 +66,8 @@ public class ClientStatsEvents {
 	private static long lastDashTime = 0;
 	private static boolean wasDashKeyDown = false;
 	private static boolean wasDescendActionDown = false;
+	private static boolean wasRacialSecondaryActionDown = false;
+	private static long lastRacialSecondarySent = 0;
 	private static long itKeyDownTime = 0;
 	private static boolean wasITKeyDown = false;
 	private static boolean itMenuOpened = false;
@@ -99,6 +102,13 @@ public class ClientStatsEvents {
 		LocalPlayer localPlayer = mc.player;
 
 		if (localPlayer == null) return;
+
+		if (mc.level != null && !mc.isPaused()) {
+			for (var player : mc.level.players()) {
+				StatsProvider.get(StatsCapability.INSTANCE, player)
+						.ifPresent(data -> BioSwellRenderState.tick(player, data));
+			}
+		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) {
@@ -204,7 +214,11 @@ public class ClientStatsEvents {
 			var nextForm = TransformationsHelper.getNextAvailableForm(data);
 			boolean isOozaruNextForm = !isStackMode && TransformationsHelper.isOozaruForm(nextForm);
 			boolean canAutoChargeOozaru = !isActionRestricted && TransformationsHelper.shouldAutoChargeOozaru(localPlayer, data);
-			boolean shouldChargeAction = isActionKeyPressed || canAutoChargeOozaru;
+			// Alt+G is the racial secondary action, so while RACIAL is selected the modifier must not
+			// also charge the primary one — otherwise the primary fires (and can stun) before the
+			// secondary packet is ever sent.
+			boolean racialSecondaryChord = isDescendKeyPressed && data.getStatus().getSelectedAction() == ActionMode.RACIAL;
+			boolean shouldChargeAction = (isActionKeyPressed && !racialSecondaryChord) || canAutoChargeOozaru;
 
 			boolean kiWeaponActive = PlayerAttackHelper.isKiWeaponActive(localPlayer);
 			boolean handsEmpty = localPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && localPlayer.getItemInHand(InteractionHand.OFF_HAND).isEmpty();
@@ -335,6 +349,14 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, false));
 				lastDescendSent = currentTime;
 			}
+			// Alt+G on the DESCEND chord doubles as the racial secondary action (Cell Jr dismiss, BioAndroid self-destruct trigger) while ActionMode.RACIAL is selected.
+			if (isDescendActionDown && !wasRacialSecondaryActionDown
+					&& data.getStatus().getSelectedAction().equals(ActionMode.RACIAL)
+					&& (currentTime - lastRacialSecondarySent) >= TAP_ACTION_COOLDOWN_MS) {
+				NetworkHandler.sendToServer(new com.dragonminez.common.network.C2S.RacialSecondaryActionC2S());
+				lastRacialSecondarySent = currentTime;
+			}
+			wasRacialSecondaryActionDown = isDescendActionDown;
 			wasDescendActionDown = isDescendActionDown;
 
 			boolean isFlying = data.getSkills().isSkillActive("fly") && !localPlayer.onGround() && !localPlayer.isInWater();

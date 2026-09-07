@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.HealContext;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
@@ -167,7 +168,10 @@ public class KiBarrierEntity extends AbstractKiProjectile {
             LivingEntity anchor = this.getAnchor();
             if (anchor != null && anchor.isAlive()) {
                 float healAmount = this.getBarrierHp() * HEAL_EXPIRE_RATIO;
-                if (healAmount > 0.0F) anchor.heal(healAmount);
+                if (healAmount > 0.0F) {
+                    final float healed = resolveMajinKiHealBonus(this.getOwner(), anchor, healAmount);
+                    HealContext.asAllyHeal(this.getOwner(), anchor, () -> anchor.heal(healed));
+                }
             }
         }
         this.playEndEffects(0.9F);

@@ -117,6 +117,7 @@ public class XenoverseHUD {
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
 				guiGraphics.blit(hud, 29, 23, 9, 81, (int) currentKiBarWidth, 4, 256, 256);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+				drawFrostDemonReserveOverlay(guiGraphics, data, raceName, maxKi, 29, 23);
 
 				guiGraphics.blit(hud, 28, 28, 9, 105, 100, 7, 256, 256);
 				guiGraphics.blit(hud, 43, 29, 24, 121, (int) currentStmBarWidth, 5, 256, 256);
@@ -169,6 +170,16 @@ public class XenoverseHUD {
 		else RenderSystem.setShaderColor(0.34f, 1.0f, 0.42f, 1.0f);
 		guiGraphics.blit(hud, x + start, y, u + start, v, chipWidth, height, 256, 256);
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+
+	private static void drawFrostDemonReserveOverlay(GuiGraphics guiGraphics, com.dragonminez.common.stats.StatsData data, String raceName, float maxKi, int barX, int barY) {
+		if (!"frostdemon".equalsIgnoreCase(raceName)) return;
+		float reserve = data.getRacialData().getEnergyReserve();
+		if (reserve <= 0) return;
+
+		int reserveWidth = Math.round(Mth.clamp(reserve / maxKi, 0.0f, 1.0f) * KI_BAR_MAX_WIDTH);
+		if (reserveWidth <= 0) return;
+		guiGraphics.fill(barX, barY, barX + reserveWidth, barY + 4, 0xFF14265E);
 	}
 
 	private static void drawScaledText(GuiGraphics guiGraphics, String text, int x, int y, float scale, int color) {

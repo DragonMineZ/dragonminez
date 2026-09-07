@@ -13,12 +13,8 @@ import java.util.List;
 
 public class ReleaseNode extends AbstractRadialNode {
 
-	private static int potentialUnlockLevel(StatsData stats) {
-		return stats.getSkills().hasSkill("potentialunlock") ? stats.getSkills().getSkillLevel("potentialunlock") : 0;
-	}
-
 	public static int maxRelease(StatsData stats) {
-		return 50 + potentialUnlockLevel(stats) * 5;
+		return stats.getMaxPowerRelease();
 	}
 
 	private int currentLimit(StatsData stats) {

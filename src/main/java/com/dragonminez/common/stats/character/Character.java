@@ -7,6 +7,9 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.racial.RacialContext;
+import com.dragonminez.common.racial.RacialRegistry;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.FormMasteries;
 import com.dragonminez.common.stats.extras.UsedForms;
 import com.dragonminez.common.init.MainSounds;
@@ -116,6 +119,7 @@ public class Character {
 	private transient float[] rgbAuraColor;
 
 	private transient boolean oozaruCached = false;
+	private transient StatsData statsData;
 
 	private Boolean armored;
 
@@ -578,6 +582,7 @@ public class Character {
 	}
 
 	public void gainMastery(String group, String form, double amount) {
+		amount = applyRacialMasteryMultiplier(amount);
 		addMasteryResolved(group, form, amount);
 
 		FormConfig.FormData formData = resolveFormData(group, form);
@@ -592,6 +597,13 @@ public class Character {
 			if (dot <= 0 || dot >= entry.length() - 1) continue;
 			addMasteryResolved(entry.substring(0, dot), entry.substring(dot + 1), shared);
 		}
+	}
+
+	private double applyRacialMasteryMultiplier(double amount) {
+		if (statsData == null || !(statsData.getPlayer() instanceof ServerPlayer serverPlayer)) return amount;
+		return RacialRegistry.forPlayer(statsData)
+				.map(ability -> ability.modifyMasteryGain(new RacialContext(serverPlayer, statsData), amount))
+				.orElse(amount);
 	}
 
 	private void addMasteryResolved(String group, String form, double amount) {

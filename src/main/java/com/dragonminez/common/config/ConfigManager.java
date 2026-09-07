@@ -3,6 +3,7 @@ package com.dragonminez.common.config;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.animation.AnimationCache;
+import com.dragonminez.common.config.migration.RacialConfigMigrator;
 import com.dragonminez.common.diagnostics.JsonLoadReport;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
@@ -293,6 +294,7 @@ public class ConfigManager {
 
 			JsonObject oldObj = oldParsed.getAsJsonObject();
 			JsonObject newObj = newTree.getAsJsonObject();
+			if (clazz == GeneralServerConfig.class) RacialConfigMigrator.migrate(oldObj);
 			int preserved = mergeMatchingValues(oldObj, newObj, baseline, clazz);
 
 			T merged = GSON.fromJson(newObj, clazz);

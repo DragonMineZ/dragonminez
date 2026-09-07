@@ -10,6 +10,7 @@ import com.dragonminez.common.network.S2C.RageScreamVfxS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TaiyokenBlindS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.racial.RacialStatUtil;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -89,7 +90,7 @@ public class EvasionAttackHandler {
 			if (!player.isCreative() && cost > 0) stats.getResources().removeEnergy((int) Math.ceil(cost));
 			stats.getCooldowns().setCooldown(cooldownKey, technique.getActualCooldown());
 
-			int xpGain = technique.getXpGainPerHit();
+			int xpGain = RacialStatUtil.applyTechniqueXpBonus(stats, technique.getXpGainPerHit());
 			if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 
 			int durationTicks = technique.getActualDurationTicks();

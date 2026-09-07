@@ -34,8 +34,7 @@ public class SetReleaseLimitC2S {
 			if (player == null) return;
 			if (player.hasEffect(MainEffects.STUN.get())) return;
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				int potentialUnlockLevel = data.getSkills().hasSkill("potentialunlock") ? data.getSkills().getSkillLevel("potentialunlock") : 0;
-				int maxRelease = 50 + (potentialUnlockLevel * 5);
+				int maxRelease = data.getMaxPowerRelease();
 
 				int newLimit;
 				if (limit <= 0) {

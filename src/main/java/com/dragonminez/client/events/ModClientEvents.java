@@ -246,6 +246,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.BLACK_NIMBUS.get(), BlackNimbusRenderer::new);
         event.registerEntityRenderer(MainEntities.ROBOT_XENOVERSE.get(), RedRibbonRenderer::new);
         event.registerEntityRenderer(MainEntities.PUNCH_MACHINE.get(), PunchMachineRenderer::new);
+        event.registerEntityRenderer(MainEntities.BIO_CELL_JR.get(), com.dragonminez.client.init.entities.renderer.bioandroid.CellJrRenderer::new);
 
 		for (var entity : MainEntities.getDragonWishEntities().values()) {
 			event.registerEntityRenderer(entity.get(), DragonDBRenderer::new);

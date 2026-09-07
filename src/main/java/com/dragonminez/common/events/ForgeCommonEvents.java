@@ -225,6 +225,8 @@ public class ForgeCommonEvents {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
 				}
 				endFusionIfNeeded(player);
+				com.dragonminez.common.racial.RacialRegistry.forPlayer(data).ifPresent(ability ->
+						ability.onLogout(new com.dragonminez.common.racial.RacialContext(player, data)));
 			});
 		}
 	}

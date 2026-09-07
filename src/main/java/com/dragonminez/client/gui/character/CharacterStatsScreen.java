@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.BonusNameFormatter;
 import com.dragonminez.client.util.NumberFormattingUtil;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -613,7 +614,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					extras.add(tr("gui.dragonminez.character_stats.bonus").withStyle(ChatFormatting.AQUA));
 					for (var bonus : bonuses) {
 						String opDisplay = bonus.operation.equals("*") ? "x" : bonus.operation;
-						String bonusText = bonus.name.replace("_", " ") + ": " + opDisplay + (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : String.format(Locale.US, "%.0f", bonus.value));
+						String bonusText = BonusNameFormatter.display(bonus.name) + ": " + opDisplay + (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : String.format(Locale.US, "%.0f", bonus.value));
 						extras.add(txt("  " + bonusText).withStyle(ChatFormatting.GREEN));
 					}
 				}

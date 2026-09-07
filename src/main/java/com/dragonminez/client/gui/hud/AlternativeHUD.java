@@ -129,6 +129,7 @@ public class AlternativeHUD {
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
 				guiGraphics.blit(hud, 3, 3, 3, 61, 7 + (int) currentKiBarWidth, 4, 128, 128);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+				drawFrostDemonReserveOverlay(guiGraphics, data, raceName, maxKi, 3, 3);
 				drawBarValues(guiGraphics, KI_NUMBER, currentKi, maxKi, 42, 3, tickTime);
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().scale(1.5f, 1.5f, 1.5f);
@@ -161,6 +162,16 @@ public class AlternativeHUD {
 		else RenderSystem.setShaderColor(0.34f, 1.0f, 0.42f, 1.0f);
 		guiGraphics.blit(hud, x + start, y, u + start, v, chipWidth, height, 128, 128);
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+
+	private static void drawFrostDemonReserveOverlay(GuiGraphics guiGraphics, com.dragonminez.common.stats.StatsData data, String raceName, float maxKi, int barX, int barY) {
+		if (!"frostdemon".equalsIgnoreCase(raceName)) return;
+		float reserve = data.getRacialData().getEnergyReserve();
+		if (reserve <= 0) return;
+
+		int reserveWidth = Math.round(Mth.clamp(reserve / maxKi, 0.0f, 1.0f) * BAR_MAX_WIDTH);
+		if (reserveWidth <= 0) return;
+		guiGraphics.fill(barX, barY, barX + reserveWidth, barY + 4, 0xFF14265E);
 	}
 
 	private static void drawBarValues(GuiGraphics guiGraphics, HudStatNumberAnimator animator, float current, float max, int x, int y, float tickTime) {

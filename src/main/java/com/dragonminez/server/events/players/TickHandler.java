@@ -18,7 +18,11 @@ import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.racial.RacialContext;
+import com.dragonminez.common.racial.RacialRegistry;
+import com.dragonminez.common.racial.impl.MajinAbsorption;
 import com.dragonminez.common.stats.*;
+import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.techniques.KiAttackData;
@@ -633,6 +637,8 @@ public class TickHandler {
 			return;
 		}
 		if (foodRegenMod <= 0.0) return;
+		// Writes health directly, so LivingHealEvent never sees it; the self-destruct block has to be checked here.
+		if (BioAndroidEvolution.isExplosionRecovering(data)) return;
 
 		float maxHealth = player.getMaxHealth();
 		if (currentHealth >= maxHealth) return;
@@ -793,9 +799,7 @@ public class TickHandler {
 
 	private static void handleActionCharge(ServerPlayer player, StatsData data) {
 		if (!data.getStatus().isActionCharging()) {
-			if (data.getResources().getActionCharge() > 0) {
-				data.getResources().setActionCharge(0);
-			}
+			if (data.getResources().getActionCharge() > 0) data.getResources().setActionCharge(0);
 			return;
 		}
 
@@ -827,7 +831,7 @@ public class TickHandler {
 	private static void chargePowerRelease(StatsData data, int chargeTicks, boolean descending) {
 		int currentRelease = data.getResources().getPowerRelease();
 		int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
-		int maxRelease = 50 + (potentialUnlockLevel * 5);
+		int maxRelease = data.getMaxPowerRelease();
 
 		int releaseLimit = data.getResources().getReleaseLimit();
 		if (releaseLimit > 0) maxRelease = Math.min(maxRelease, releaseLimit);
@@ -988,6 +992,7 @@ public class TickHandler {
 							double fireFraction = drainsOverLife ? 0.25 : 0.50;
 							int originalFireCost = (int) Math.round(fireFraction * base * costMult);
 							int modifiedFireCost = (int) Math.round(originalFireCost * data.getKiAttackCostModifier());
+							modifiedFireCost = MajinAbsorption.applyHealTechniqueCostReduction(data, kiAttack, modifiedFireCost);
 							if (modifiedFireCost > 0) data.getResources().removeEnergy(modifiedFireCost);
 
 							applyHumanKiPassiveDuringCharge(player, data, originalFireCost);
@@ -1128,7 +1133,10 @@ public class TickHandler {
 
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
 
-			int energyDrain = (int) Math.round(data.getEffectiveEnergyDrain());
+			int rawEnergyDrain = (int) Math.round(data.getEffectiveEnergyDrain());
+			int energyDrain = RacialRegistry.forPlayer(data)
+					.map(ability -> ability.consumeFormUpkeep(new RacialContext(player, data), rawEnergyDrain))
+					.orElse(rawEnergyDrain);
 			int staminaDrain = (int) Math.round(data.getEffectiveStaminaDrain());
 			double healthDrain = Math.round(data.getEffectiveHealthDrain());
 
@@ -1142,7 +1150,8 @@ public class TickHandler {
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
 				else if (staminaDrain < 0) data.getResources().addStamina(-staminaDrain);
 				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
-				else if (healthDrain < 0) player.setHealth((float) Math.min(player.getMaxHealth(), player.getHealth() - healthDrain));
+				else if (healthDrain < 0 && !BioAndroidEvolution.isExplosionRecovering(data))
+					player.setHealth((float) Math.min(player.getMaxHealth(), player.getHealth() - healthDrain));
 			} else {
 				data.getCharacter().clearActiveStackForm(player);
 				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
@@ -1246,7 +1255,7 @@ public class TickHandler {
 
 	public static void registerStatusEffectHandlers() {
 		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
-		STATUS_EFFECT_HANDLERS.add(new BioDrainHandler());
+		STATUS_EFFECT_HANDLERS.add(new RacialStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new CooldownEffectHandler());
 		STATUS_EFFECT_HANDLERS.add(new FlyStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new FusionStatusHandler());
@@ -1254,7 +1263,6 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MajinStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MutantStatusHandler());
-		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new FarmingBuffStatusHandler());
 	}
 

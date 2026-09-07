@@ -12,6 +12,7 @@ import com.dragonminez.common.config.TpBoost;
 import com.dragonminez.common.config.TpSource;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.racial.RacialData;
 import com.dragonminez.common.stats.character.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.extras.DynamicGrowthData;
@@ -59,6 +60,7 @@ public class StatsData {
 	private final BonusStats bonusStats;
 	private final Techniques techniques;
 	private final DynamicGrowthData dynamicGrowth;
+	private final RacialData racialData;
 
 	private boolean hasInitializedHealth = false;
 	private boolean isDataLoaded = false;
@@ -70,6 +72,7 @@ public class StatsData {
 		this.status = new Status();
 		this.cooldowns = new Cooldowns();
 		this.character = new Character();
+		this.character.setStatsData(this);
 		this.resources = new Resources();
 		this.resources.setPlayer(player);
 		this.resources.setStatsData(this);
@@ -80,6 +83,7 @@ public class StatsData {
 		this.bonusStats = new BonusStats();
 		this.techniques = new Techniques();
 		this.dynamicGrowth = new DynamicGrowthData();
+		this.racialData = new RacialData();
 	}
 
 	public boolean hasInitializedHealth() {
@@ -108,6 +112,23 @@ public class StatsData {
 
 	public int getConfiguredMaxValue() {
 		return ConfigManager.getServerConfig().getGameplay().getMaxValue();
+	}
+
+	public int getMaxPowerRelease() {
+		int potentialUnlockLevel = skills.hasSkill("potentialunlock") ? skills.getSkillLevel("potentialunlock") : 0;
+		int base = 50 + (potentialUnlockLevel * 5);
+
+		double racialMultiplier = com.dragonminez.common.racial.RacialRegistry.forPlayer(this)
+				.map(ability -> ability.maxReleaseMultiplier(this))
+				.orElse(1.0);
+		return (int) Math.floor(base * racialMultiplier);
+	}
+
+	private void migrateRacialDataFromLegacy() {
+		if (character.getRace() == null || character.getRace().isEmpty()) return;
+		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(character.getRace());
+		String racialSkill = raceConfig == null ? null : raceConfig.getRacialSkill();
+		racialData.migrateFromLegacy(racialSkill, resources.getRacialSkillCount(), bonusStats);
 	}
 
 	public boolean isMaxLevelValueInsteadOfStats() {
@@ -717,7 +738,15 @@ public class StatsData {
 
 		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
 		double result = applyMasteryStatBonus(formData, baseMult, mastery);
-		return applyMutantFormPowerModifier(currentFormGroup, result);
+		result = applyMutantFormPowerModifier(currentFormGroup, result);
+		return applyRacialFormPowerModifier(currentFormGroup, result);
+	}
+
+	private double applyRacialFormPowerModifier(String groupName, double multiplier) {
+		if (multiplier <= 1.0) return multiplier;
+		return com.dragonminez.common.racial.RacialRegistry.forPlayer(this)
+				.map(ability -> ability.modifyFormStatMultiplier(this, groupName, multiplier))
+				.orElse(multiplier);
 	}
 
 	private double applyMutantFormPowerModifier(String groupName, double multiplier) {
@@ -1611,6 +1640,7 @@ public class StatsData {
 		nbt.put("BonusStats", bonusStats.save());
 		nbt.put("Techniques",  techniques.save());
 		nbt.put("DynamicGrowth", dynamicGrowth.save());
+		nbt.put("RacialData", racialData.save());
 		nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
 		return nbt;
 	}
@@ -1631,6 +1661,8 @@ public class StatsData {
 		if (nbt.contains("BonusStats")) bonusStats.load(nbt.getCompound("BonusStats"));
 		if (nbt.contains("Techniques")) techniques.load(nbt.getCompound("Techniques"));
 		if (nbt.contains("DynamicGrowth")) dynamicGrowth.load(nbt.getCompound("DynamicGrowth"));
+		if (nbt.contains("RacialData")) racialData.load(nbt.getCompound("RacialData"));
+		else migrateRacialDataFromLegacy();
 		if (nbt.contains("HasInitializedHealth")) hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) updateTransformationSkillLimits(character.getRaceName());
 		this.isDataLoaded = true;
@@ -1649,6 +1681,7 @@ public class StatsData {
 		this.bonusStats.copyFrom(other.bonusStats);
 		this.techniques.copyFrom(other.techniques);
 		this.dynamicGrowth.copyFrom(other.dynamicGrowth);
+		this.racialData.copyFrom(other.racialData);
 		this.hasInitializedHealth = other.hasInitializedHealth;
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty())
 			updateTransformationSkillLimits(character.getRaceName());

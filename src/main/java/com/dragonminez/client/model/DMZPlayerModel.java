@@ -3,6 +3,7 @@ package com.dragonminez.client.model;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.RenderUtil;
+import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
@@ -331,6 +332,23 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         } catch (Exception ignored) {}
 
         applyBoobScale(animatable);
+        applyExplosionSwell(animatable);
+    }
+
+    private void applyExplosionSwell(T animatable) {
+        CoreGeoBone body = this.getAnimationProcessor().getBone("body");
+        if (body == null) return;
+
+        float[] scale = BioSwellRenderState.torsoScale(animatable);
+        if (scale == null) {
+            body.setScaleX(1.0f);
+            body.setScaleY(1.0f);
+            body.setScaleZ(1.0f);
+            return;
+        }
+        body.setScaleX(scale[0]);
+        body.setScaleY(scale[1]);
+        body.setScaleZ(scale[2]);
     }
 
     private void applyBoobScale(T animatable) {

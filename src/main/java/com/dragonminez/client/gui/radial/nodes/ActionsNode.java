@@ -17,6 +17,7 @@ public class ActionsNode extends CategoryNode {
 	protected List<RadialNode> buildChildren(StatsData stats) {
 		List<RadialNode> out = new ArrayList<>();
 		out.add(new RacialSkillNode());
+		out.add(new NamekRegenNode());
 		out.add(new FusionNode());
 		out.add(new ReleaseNode());
 		out.add(new KiWeaponsNode());
