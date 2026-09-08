@@ -15,6 +15,13 @@ public final class StructureAsyncResolver {
 		return thread;
 	});
 
+	private static final ExecutorService TAIL = Executors.newSingleThreadExecutor(runnable -> {
+		Thread thread = new Thread(runnable, "DMZ-StructureDeepSearch");
+		thread.setDaemon(true);
+		thread.setPriority(Thread.MIN_PRIORITY);
+		return thread;
+	});
+
 	private static final ForkJoinPool SEARCH_POOL = new ForkJoinPool(
 			Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 1)),
 			new SearchThreadFactory(),
@@ -26,21 +33,30 @@ public final class StructureAsyncResolver {
 	static void buildPlan(StructureSpawnPlanner.PlanHolder holder) {
 		COORDINATOR.submit(() -> {
 			try {
-				StructureSpawnPlanner.runBuild(holder, SEARCH_POOL);
+				StructureSpawnPlanner.runBuild(holder, SEARCH_POOL, false);
 			} catch (Throwable t) {
 				System.err.println("[DMZ] StructureAsyncResolver build failed: " + t.getMessage());
 				holder.publish(java.util.Collections.emptyMap());
 			}
 		});
 	}
-
 	static void buildPlanSync(StructureSpawnPlanner.PlanHolder holder) {
 		try {
-			StructureSpawnPlanner.runBuild(holder, SEARCH_POOL);
+			StructureSpawnPlanner.runBuild(holder, SEARCH_POOL, true);
 		} catch (Throwable t) {
 			System.err.println("[DMZ] StructureAsyncResolver sync build failed: " + t.getMessage());
 			holder.publish(java.util.Collections.emptyMap());
 		}
+	}
+
+	static void submitTail(Runnable tail) {
+		TAIL.submit(() -> {
+			try {
+				tail.run();
+			} catch (Throwable t) {
+				System.err.println("[DMZ] StructureAsyncResolver tail failed: " + t.getMessage());
+			}
+		});
 	}
 
 	private static final class SearchThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory {

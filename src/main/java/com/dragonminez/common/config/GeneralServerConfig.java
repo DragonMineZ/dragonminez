@@ -45,7 +45,7 @@ public class GeneralServerConfig {
 		private Integer dbSpawnRange = 1000;
 		private Integer dragonBallSets = 1;
 		private Integer structureMinDistanceFromSpawn = 0;
-		private Integer structureMaxDistanceFromSpawn = 4000;
+		private Integer structureMaxDistanceFromSpawn = 10000;
 		private Integer structureMinDistanceBetween = 250;
 
 		private Integer structureSpacing = 6000;

@@ -428,6 +428,11 @@ public class SkillsConfig {
 		yamchaSkills.add("ki_barrage");
 		skillOfferings.put("yamcha", yamchaSkills);
 
+		List<String> babaEarthSkills = new ArrayList<>();
+		babaEarthSkills.add("kicontrol");
+		babaEarthSkills.add("meditation");
+		skillOfferings.put("baba_earth", babaEarthSkills);
+
 		List<String> defaultSkills = new ArrayList<>();
 		defaultSkills.add("jump");
 		skillOfferings.put("default", defaultSkills);

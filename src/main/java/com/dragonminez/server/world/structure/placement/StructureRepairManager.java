@@ -3,6 +3,7 @@ package com.dragonminez.server.world.structure.placement;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.server.world.data.StructurePlanSavedData;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
@@ -19,21 +20,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Safety net for the unique-structure plan: once a planned chunk is fully
- * generated, verifies the structure actually exists there. If the chunk was
- * generated before the plan was ready (old worlds, async races) or vanilla
- * silently rejected the start (biome/height checks), the structure is placed
- * in-world directly, like /place does. If even that is impossible (e.g. the
- * terrain no longer satisfies the structure), the position is relocated.
- */
 public final class StructureRepairManager {
 	private static final int CHECK_INTERVAL_TICKS = 100;
 	private static final int MAX_RELOCATIONS = 2;
 
-	/** dimension#salt@chunk entries already verified/handled this session. */
 	private static final Set<String> HANDLED = ConcurrentHashMap.newKeySet();
-	/** dimension#salt → relocation attempts this session. */
 	private static final Map<String, Integer> RELOCATIONS = new ConcurrentHashMap<>();
 
 	private StructureRepairManager() {}
@@ -51,6 +42,8 @@ public final class StructureRepairManager {
 		Map<Integer, ChunkPos> positions = StructureSpawnPlanner.publishedPositions(level);
 		if (positions.isEmpty()) return;
 
+		StructurePlanSavedData plan = StructurePlanSavedData.get(level);
+
 		Map<Integer, Holder<Structure>> structuresBySalt = null;
 		for (Map.Entry<Integer, ChunkPos> entry : positions.entrySet()) {
 			int salt = entry.getKey();
@@ -58,9 +51,11 @@ public final class StructureRepairManager {
 			String saltKey = level.dimension().location() + "#" + salt;
 			String key = saltKey + "@" + pos.toLong();
 			if (HANDLED.contains(key)) continue;
+			if (plan.isBuilt(salt)) {
+				HANDLED.add(key);
+				continue;
+			}
 
-			// Only act once the chunk is fully generated and loaded (a player is
-			// nearby); ungenerated chunks get the structure through normal worldgen.
 			LevelChunk chunk = level.getChunkSource().getChunkNow(pos.x, pos.z);
 			if (chunk == null) continue;
 
@@ -74,12 +69,14 @@ public final class StructureRepairManager {
 			StructureStart start = chunk.getStartForStructure(structure.value());
 			if (start != null && start.isValid()) {
 				HANDLED.add(key);
+				plan.markBuilt(salt);
 				continue;
 			}
 
 			String name = structure.unwrapKey().map(k -> k.location().toString()).orElse("salt:" + salt);
 			if (forcePlace(level, structure.value(), pos)) {
 				HANDLED.add(key);
+				plan.markBuilt(salt);
 				LogUtil.info(Env.SERVER, "[DMZ] Materialized missing structure " + name
 						+ " at chunk " + pos.x + ", " + pos.z + " in " + level.dimension().location());
 			} else {
@@ -108,10 +105,6 @@ public final class StructureRepairManager {
 		return result;
 	}
 
-	/**
-	 * Generates and places the structure at the planned chunk, bypassing biome
-	 * checks (the planner already picked the site), mirroring vanilla /place.
-	 */
 	private static boolean forcePlace(ServerLevel level, Structure structure, ChunkPos chunkPos) {
 		try {
 			ChunkGenerator generator = level.getChunkSource().getGenerator();
@@ -133,8 +126,6 @@ public final class StructureRepairManager {
 								p.getMaxBlockX(), level.getMaxBuildHeight(), p.getMaxBlockZ()), p);
 			});
 
-			// Register the start and references so locate, maps and future
-			// verification passes see the structure as properly generated.
 			level.getChunk(chunkPos.x, chunkPos.z).setStartForStructure(structure, start);
 			ChunkPos.rangeClosed(min, max).forEach(p ->
 					level.getChunk(p.x, p.z).addReferenceForStructure(structure, chunkPos.toLong()));

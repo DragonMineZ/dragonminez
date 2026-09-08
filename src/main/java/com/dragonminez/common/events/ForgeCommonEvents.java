@@ -128,6 +128,8 @@ public class ForgeCommonEvents {
 
 		trades.get(3).add(mapTrade(DMZStructures.KAMILOOKOUT, "dragonminez.kamilookout",
 				new ItemStack(Items.SPRUCE_SAPLING, 1)));
+		trades.get(3).add(mapTrade(DMZStructures.BABA_PALACE, "dragonminez.baba_palace",
+				new ItemStack(Items.GLASS_BOTTLE, 6)));
 		trades.get(3).add(mapTrade(DMZStructures.CELL_ARENA, "dragonminez.cell_arena",
 				new ItemStack(MainItems.T1_RADAR_CHIP.get(), 1)));
 
@@ -142,12 +144,6 @@ public class ForgeCommonEvents {
 				new ItemStack(Items.ENDER_PEARL, 4)));
 	}
 
-	/**
-	 * Las ofertas de los comerciantes se persisten con el mapa ya generado; si la
-	 * estructura se resolvió o reubicó después, el mapa vendido quedaría obsoleto
-	 * (sin X o apuntando al sitio viejo). Antes de abrir el menú se regeneran las
-	 * ofertas de mapas cuyo objetivo ya no coincide con el plan actual.
-	 */
 	@SubscribeEvent
 	public static void onMerchantInteract(PlayerInteractEvent.EntityInteract event) {
 		if (event.getLevel().isClientSide()) return;

@@ -108,7 +108,8 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
                     case "guru":
                         idleAnim = "guru_idle";
                         break;
-                    case "uranai":
+                    case "baba":
+                    case "baba_earth":
                         idleAnim = "uranai_idle";
                         break;
                     case "toribot":

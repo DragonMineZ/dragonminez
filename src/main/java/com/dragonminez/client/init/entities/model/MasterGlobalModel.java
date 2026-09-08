@@ -23,9 +23,18 @@ public class MasterGlobalModel<T extends MastersEntity> extends GeoModel<T> {
     private static final Map<String, Boolean> TEXTURE_CACHE = new HashMap<>();
     private static final Map<String, Boolean> ANIM_CACHE = new HashMap<>();
 
+    private static final Map<String, String> ASSET_ALIASES = Map.of(
+            "master_uranai_earth", "master_uranai"
+    );
+
+    private static String assetName(MastersEntity animatable) {
+        String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
+        return ASSET_ALIASES.getOrDefault(name, name);
+    }
+
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
+        String name = assetName(animatable);
         ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/master/" + name + ".geo.json");
 
         boolean exists = MODEL_CACHE.computeIfAbsent(name, k -> resourceExists(original));
@@ -34,7 +43,7 @@ public class MasterGlobalModel<T extends MastersEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
-        String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
+        String name = assetName(animatable);
         ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/master/" + name + ".png");
 
         boolean exists = TEXTURE_CACHE.computeIfAbsent(name, k -> resourceExists(original));
@@ -43,7 +52,7 @@ public class MasterGlobalModel<T extends MastersEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
+        String name = assetName(animatable);
         ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/master/masters.animation.json");
 
         boolean exists = ANIM_CACHE.computeIfAbsent(name, k -> resourceExists(original));

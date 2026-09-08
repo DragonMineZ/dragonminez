@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -33,6 +34,9 @@ public class MainGameRules {
 	public static final GameRules.Key<GameRules.BooleanValue> ALLOW_KI_GRIEFING_MASTER_STRUCTURES =
 			GameRules.register("allowKiGriefingMasterStructures", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false));
 
+	public static final GameRules.Key<GameRules.BooleanValue> ALLOW_BUILDING_IN_ARENA_STRUCTURES =
+			GameRules.register("allowBuildingInArenaStructures", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false));
+
 	public static boolean canKiGrief(Level level, BlockPos pos, Entity source) {
 		boolean gameruleAllows;
 		if (source instanceof Player || source instanceof ServerPlayer) gameruleAllows = level.getGameRules().getBoolean(ALLOW_KI_GRIEFING_PLAYERS);
@@ -43,17 +47,27 @@ public class MainGameRules {
 	}
 
 	private static boolean isInMasterStructure(Level level, BlockPos pos) {
+		return isInsideTaggedStructure(level, pos, MainTags.Structures.KI_GRIEFING_PROTECTED);
+	}
+
+	public static boolean isInsideTaggedStructure(Level level, BlockPos pos, TagKey<Structure> tag) {
 		if (!(level instanceof ServerLevel serverLevel)) return false;
 		var registry = serverLevel.registryAccess().registryOrThrow(Registries.STRUCTURE);
 		for (Structure structure : serverLevel.structureManager().getAllStructuresAt(pos).keySet()) {
 			Holder<Structure> holder = registry.wrapAsHolder(structure);
-			if (!holder.is(MainTags.Structures.KI_GRIEFING_PROTECTED)) continue;
+			if (!holder.is(tag)) continue;
 			StructureStart start = serverLevel.structureManager().getStructureAt(pos, structure);
 			if (start.isValid() && start.getBoundingBox().inflatedBy(MASTER_STRUCTURE_MARGIN).isInside(pos)) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	public static boolean canModifyBlock(Level level, BlockPos pos, Player player) {
+		if (player != null && (player.isCreative() || player.isSpectator())) return true;
+		if (level.getGameRules().getBoolean(ALLOW_BUILDING_IN_ARENA_STRUCTURES)) return true;
+		return !isInsideTaggedStructure(level, pos, MainTags.Structures.BUILD_PROTECTED);
 	}
 
 	public static KiGriefGate griefGate(Level level, BoundingBox area, Entity source) {

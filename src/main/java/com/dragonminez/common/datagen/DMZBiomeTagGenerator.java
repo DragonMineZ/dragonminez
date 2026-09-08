@@ -123,6 +123,11 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.IS_MOUNTAIN)
 				.addOptionalTag(forge("is_mountain"));
 
+        this.tag(MainTags.Biomes.IS_GEROLAB)
+				.replace(false)
+				.addTag(MainTags.Biomes.IS_ROCKYBIOME)
+				.addTag(MainTags.Biomes.IS_MOUNTAINLIKE);
+
 		this.tag(MainTags.Biomes.IS_PLAINSLIKE)
 				.replace(false)
 				.addTag(BiomeTags.HAS_VILLAGE_PLAINS)

@@ -53,6 +53,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			"textures/gui/buttons/characterbuttons.png");
 	private static final Set<String> TEXT_MASTERS = Set.of("karin", "guru", "dende", "enma", "baba", "popo", "gero", "toribot", "babidi");
 	private static final Set<String> SERVICE_MASTERS = Set.of("piccolo", "roshi", "kingkai", "oldkai", "babidi");
+	private static final Set<String> TOURNAMENT_MASTERS = Set.of("baba_earth");
 
 	private static final int MAX_VISIBLE = 7;
 	private static final int ENTRY_HEIGHT = 18;
@@ -81,6 +82,8 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	private final ScrollbarState rewardBar = new ScrollbarState();
 
 	private boolean isTrainingMode = false;
+	/** Replaces the NPC's stage line until the screen closes, e.g. after pressing a service button. */
+	private MutableComponent overrideLine = null;
 
 	public QuestNPCDialogueScreen(String npcId, List<String> offerableQuestIds,
 	                              List<String> turnInQuestIds, List<String> inProgressQuestIds) {
@@ -232,6 +235,16 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 								.textureSize(74, 20)
 								.message(tr("gui.dragonminez.npc.services"))
 								.onPress(btn -> openServicesScreen())
+								.build());
+					} else if (TOURNAMENT_MASTERS.contains(npcId)) {
+						this.addRenderableWidget(new TexturedTextButton.Builder()
+								.position(getUiWidth() / 2 - 74, btnY)
+								.size(74, 20)
+								.texture(BUTTONS_TEXTURE)
+								.textureCoords(0, 28, 0, 48)
+								.textureSize(74, 20)
+								.message(tr("gui.dragonminez.npc.tournament"))
+								.onPress(btn -> overrideLine = tr("gui.dragonminez.lines." + npcId + ".tournament"))
 								.build());
 					} else {
 						this.addRenderableWidget(new TexturedTextButton.Builder()
@@ -639,6 +652,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	}
 
 	private MutableComponent dialogueLine() {
+		if (overrideLine != null) return ph(overrideLine.copy());
 		String stage = getDialogueStage();
 		String npcLine = "dialogue.dragonminez.story.sidequest." + npcId + "." + stage;
 		MutableComponent line = I18n.exists(npcLine) ? tr(npcLine)

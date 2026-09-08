@@ -26,19 +26,10 @@ import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Intercambio que entrega un mapa de exploración apuntando a una estructura del
- * mod, a cambio de un costo personalizado ({@code priceA} + {@code priceB}).
- *
- * <p>Usa {@link StructureLocator} (el mismo localizador que el comando del mod)
- * en vez de {@code findNearestMapStructure}, porque las estructuras de DMZ usan
- * placements personalizados que el localizador vanilla no resuelve de forma
- * fiable. El nombre del mapa se traduce como {@code "filled_map." + displayName}.
- */
 public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 
-	/** NBT del ItemStack del mapa con el id de la estructura destino. */
 	public static final String STRUCTURE_TAG = "dmz_structure";
+	public static final String PENDING_TAG = "dmz_pending";
 
 	private final ItemStack priceA;
 	private final ItemStack priceB;
@@ -70,19 +61,28 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		}
 
 		BlockPos pos = StructureLocator.locateStructure(serverLevel, this.destination, trader.blockPosition());
-		if (pos == null) {
-			return null;
-		}
 
-		ItemStack map = createMapStack(serverLevel, pos, this.destination, this.displayName, this.destinationType);
+        ItemStack map = pos != null
+				? createMapStack(serverLevel, pos, this.destination, this.displayName, this.destinationType)
+				: createPendingMapStack(this.destination, this.displayName);
 
-		return new MerchantOffer(
+		MerchantOffer offer = new MerchantOffer(
 				this.priceA.copy(),
 				this.priceB.copy(),
 				map,
 				this.maxUses,
 				this.villagerXp,
 				0.2F);
+		if (pos == null) offer.setToOutOfStock();
+		return offer;
+	}
+
+	private static ItemStack createPendingMapStack(ResourceKey<Structure> destination, String displayName) {
+		ItemStack map = new ItemStack(Items.FILLED_MAP);
+		map.setHoverName(Component.translatable("filled_map." + displayName));
+		map.getOrCreateTag().putString(STRUCTURE_TAG, destination.location().toString());
+		map.getOrCreateTag().putBoolean(PENDING_TAG, true);
+		return map;
 	}
 
 	private static ItemStack createMapStack(ServerLevel level, BlockPos pos, ResourceKey<Structure> destination,
@@ -95,14 +95,6 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		return map;
 	}
 
-	/**
-	 * Repara ofertas de mapas obsoletas. Los {@link MerchantOffer} se persisten
-	 * en el NBT del comerciante con el ItemStack del mapa ya generado; si la
-	 * estructura se resolvió/reubicó después (planes curados, reparación de
-	 * chunks), el mapa vendido apuntaría al sitio viejo o sin marcador. Se llama
-	 * al interactuar con el comerciante y regenera el mapa cuando su objetivo no
-	 * coincide con la posición planificada actual.
-	 */
 	public static void refreshStaleMapOffers(ServerLevel level, AbstractVillager merchant) {
 		MerchantOffers offers = merchant.getOffers();
 		for (int i = 0; i < offers.size(); i++) {
@@ -116,10 +108,13 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 			BlockPos pos = StructureLocator.locateStructure(level, key, merchant.blockPosition());
 			if (pos == null || matchesTarget(result, pos)) continue;
 
+			CompoundTag resultTag = result.getTag();
+			boolean wasPending = resultTag != null && resultTag.getBoolean(PENDING_TAG);
+
 			ItemStack fresh = createMapStack(level, pos, key,
 					Reference.MOD_ID + "." + key.location().getPath(), MapDecoration.Type.RED_X);
 			offers.set(i, new MerchantOffer(offer.getBaseCostA(), offer.getCostB(), fresh,
-					offer.getUses(), offer.getMaxUses(), offer.getXp(),
+					wasPending ? 0 : offer.getUses(), offer.getMaxUses(), offer.getXp(),
 					offer.getPriceMultiplier(), offer.getDemand()));
 		}
 	}
@@ -131,7 +126,6 @@ public class CapsuleCorpMapTrade implements VillagerTrades.ItemListing {
 		if (tag != null && tag.contains(STRUCTURE_TAG, Tag.TAG_STRING)) {
 			id = ResourceLocation.tryParse(tag.getString(STRUCTURE_TAG));
 		} else if (map.getHoverName().getContents() instanceof TranslatableContents translatable) {
-			// Mapas antiguos sin tag: "filled_map.dragonminez.<estructura>"
 			String prefix = "filled_map." + Reference.MOD_ID + ".";
 			String translationKey = translatable.getKey();
 			if (translationKey.startsWith(prefix)) {

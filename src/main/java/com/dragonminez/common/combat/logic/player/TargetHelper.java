@@ -45,7 +45,8 @@ public class TargetHelper {
         target = resolveHittable(target);
         if (attacker == target) return Relation.FRIENDLY;
 
-        if (target instanceof AllMastersEntity.MasterEnmaEntity || target instanceof AllMastersEntity.MasterUranaiEntity || target instanceof AllMastersEntity.MasterToribotEntity) {
+        if (target instanceof AllMastersEntity.MasterEnmaEntity || target instanceof AllMastersEntity.MasterUranaiEntity
+                || target instanceof AllMastersEntity.MasterUranaiEarthEntity || target instanceof AllMastersEntity.MasterToribotEntity) {
             return Relation.FRIENDLY;
         }
 

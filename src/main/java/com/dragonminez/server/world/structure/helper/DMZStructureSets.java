@@ -31,7 +31,8 @@ public class DMZStructureSets {
 			CELL_ARENA = createKey("cell_arena"), FRIEZA_SHIP = createKey("frieza_ship"),
 			PICCOLO_HOUSE = createKey("piccolo_house"), OLDKAI_PILLAR = createKey("oldkai_pillar"),
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
-			VEGETA_POD = createKey("vegeta_pod");
+			VEGETA_POD = createKey("vegeta_pod"),
+			BABA_PALACE = createKey("baba_palace");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -41,6 +42,8 @@ public class DMZStructureSets {
 				12345678, biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE));
 		unique(context, ROSHI_HOUSE, structures.getOrThrow(DMZStructures.ROSHI_HOUSE),
 				87654321, biomes.getOrThrow(BiomeTags.IS_OCEAN));
+		unique(context, BABA_PALACE, structures.getOrThrow(DMZStructures.BABA_PALACE),
+				31415926, biomes.getOrThrow(BiomeTags.IS_OCEAN));
 
 		context.register(TIMECHAMBER, new StructureSet(
 				structures.getOrThrow(DMZStructures.TIMECHAMBER),
@@ -69,7 +72,7 @@ public class DMZStructureSets {
 		));
 
 		unique(context, GERO_LAB, structures.getOrThrow(DMZStructures.GERO_LAB),
-				99887766, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
+				99887766, biomes.getOrThrow(MainTags.Biomes.IS_GEROLAB));
 		unique(context, BABIDI, structures.getOrThrow(DMZStructures.BABIDI),
 				18273645, biomes.getOrThrow(MainTags.Biomes.IS_MOUNTAINLIKE));
 		unique(context, CELL_ARENA, structures.getOrThrow(DMZStructures.CELL_ARENA),
@@ -77,7 +80,7 @@ public class DMZStructureSets {
 		unique(context, FRIEZA_SHIP, structures.getOrThrow(DMZStructures.FRIEZA_SHIP),
 				24681357, HolderSet.direct(biomes.getOrThrow(NamekBiomes.AJISSA_PLAINS)));
 		unique(context, PICCOLO_HOUSE, structures.getOrThrow(DMZStructures.PICCOLO_HOUSE),
-				36925814, biomes.getOrThrow(MainTags.Biomes.IS_LAND));
+				36925814, biomes.getOrThrow(MainTags.Biomes.IS_PLAINSLIKE));
 		unique(context, OLDKAI_PILLAR, structures.getOrThrow(DMZStructures.OLDKAI_PILLAR),
 				41258963, HolderSet.direct(biomes.getOrThrow(SacredKaiBiomes.SACREDKAI_PLAINS)));
 		unique(context, YAMCHA_HOUSE, structures.getOrThrow(DMZStructures.YAMCHA_HOUSE),

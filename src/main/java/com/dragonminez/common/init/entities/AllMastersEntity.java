@@ -224,6 +224,14 @@ public class AllMastersEntity {
         }
     }
 
+    public static class MasterUranaiEarthEntity extends MastersEntity {
+        public MasterUranaiEarthEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setPersistenceRequired();
+            this.masterName = "baba_earth";
+        }
+    }
+
 
 
 

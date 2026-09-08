@@ -51,7 +51,7 @@ public class MainEntities {
                 MASTER_KARIN, MASTER_GOKU, MASTER_KAIOSAMA, MASTER_ROSHI, MASTER_URANAI, MASTER_ENMA, MASTER_DENDE,
                 MASTER_GERO, MASTER_POPO, MASTER_GURU, MASTER_TORIBOT, MASTER_PICCOLO, MASTER_GOHAN, MASTER_BABIDI,
                 MASTER_OLDKAI, MASTER_CELL, MASTER_VEGETA, MASTER_FRIEZA, MASTER_TRUNKS, MASTER_YAMCHA, MASTER_KRILLIN,
-                MASTER_BEERUS, MASTER_WHIS
+                MASTER_BEERUS, MASTER_WHIS, MASTER_URANAI_EARTH
         );
     }
 
@@ -161,6 +161,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(AllMastersEntity.MasterUranaiEntity::new, MobCategory.CREATURE)
                             .sized(0.8f, 1.4f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_uranai").toString()));
+    public static final RegistryObject<EntityType<AllMastersEntity.MasterUranaiEarthEntity>> MASTER_URANAI_EARTH =
+            ENTITY_TYPES.register("master_uranai_earth",
+                    () -> EntityType.Builder.of(AllMastersEntity.MasterUranaiEarthEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_uranai_earth").toString()));
     public static final RegistryObject<EntityType<AllMastersEntity.MasterEnmaEntity>> MASTER_ENMA =
             ENTITY_TYPES.register("master_enma",
                     () -> EntityType.Builder.of(AllMastersEntity.MasterEnmaEntity::new, MobCategory.CREATURE)

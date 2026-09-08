@@ -22,6 +22,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:master_uranai_earth",
+      "required": false
+    },
+    {
       "id": "dragonminez:master_enma",
       "required": false
     },
