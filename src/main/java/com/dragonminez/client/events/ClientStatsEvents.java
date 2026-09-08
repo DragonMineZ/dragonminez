@@ -130,6 +130,12 @@ public class ClientStatsEvents {
 				var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 				if (stats == null || !stats.getStatus().isHasCreatedCharacter()) continue;
 
+				float bioSwell = BioSwellRenderState.swell(player);
+				if (bioSwell > 0.02f) {
+					spawnBioChargeDust(player, bioSwell);
+					if (player.onGround()) spawnFloatingRubble(player, 0.6f + bioSwell * 1.4f);
+				}
+
 				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
 				if (!isAuraActive) continue;
 
@@ -725,6 +731,29 @@ public class ClientStatsEvents {
 			double velZ = Math.sin(angle) * speedBase;
 
 			level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
+		}
+	}
+
+	/**
+	 * Dust blown outward while a bio android charges its self-destruct, ramping with the swell.
+	 * Driven by the synced swell, so it shows for every charging player in view, not just the local one.
+	 */
+	private static void spawnBioChargeDust(Player player, float swell) {
+		var level = player.level();
+		var random = player.getRandom();
+
+		int count = 4 + Mth.ceil(swell * 16.0f);
+		for (int i = 0; i < count; i++) {
+			double angle = random.nextDouble() * 2 * Math.PI;
+			double radius = (0.2 + random.nextDouble() * 1.3) * (0.5 + swell);
+
+			double x = player.getX() + Math.cos(angle) * radius;
+			double y = player.getY() + 0.1 + random.nextDouble() * 0.5 * swell;
+			double z = player.getZ() + Math.sin(angle) * radius;
+
+			double speed = (0.10 + random.nextDouble() * 0.18) * (0.4 + swell);
+			level.addParticle(MainParticles.DUST.get(), x, y, z,
+					Math.cos(angle) * speed, 0.0, Math.sin(angle) * speed);
 		}
 	}
 

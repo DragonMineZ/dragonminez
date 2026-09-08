@@ -24,6 +24,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
@@ -183,6 +184,14 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
 		return super.getRenderType(animatable, texture, bufferSource, partialTick);
+	}
+
+	@Override
+	public int getPackedOverlay(T animatable, float u) {
+		if (BioSwellRenderState.isFlashingWhite(animatable)) {
+			return OverlayTexture.pack(OverlayTexture.u(1.0F), 10);
+		}
+		return super.getPackedOverlay(animatable, u);
 	}
 
 	@Override

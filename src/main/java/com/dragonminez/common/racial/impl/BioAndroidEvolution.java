@@ -34,6 +34,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -53,6 +54,8 @@ public class BioAndroidEvolution implements RacialAbility {
 	private static final float EXPLODE_SURVIVAL_HEALTH_RATIO = 0.01f;
 	private static final String EXPLODE_ANIMATION = "base.explodecell";
 	private static final int BLAST_TICKS = 20;
+	private static final int BLAST_DUST_PER_TICK = 14;
+	private static final int EXPLODE_DUST_BURST = 140;
 	private static final int BLAST_COLOR_MAIN = 0xFFFC42;
 	private static final int BLAST_COLOR_BORDER = 0xFF8A3D;
 	private static final int BLAST_COLOR_OUTLINE = 0xFFFFFF;
@@ -290,7 +293,28 @@ public class BioAndroidEvolution implements RacialAbility {
 		float outer = maxRadius * (float) Math.cbrt(Math.min(1.0, tick / (double) BLAST_TICKS));
 
 		carveShell(ctx.player(), center, inner, outer);
+		spawnBlastDust(ctx.player(), center, outer, BLAST_DUST_PER_TICK);
 		if (tick >= BLAST_TICKS) racialData.setBioBlastCenter(null);
+	}
+
+	private static void spawnBlastDust(ServerPlayer source, Vec3 center, float radius, int count) {
+		if (!(source.level() instanceof ServerLevel serverLevel) || radius <= 0.1f) return;
+
+		RandomSource random = source.getRandom();
+		for (int i = 0; i < count; i++) {
+			double yaw = random.nextDouble() * Math.PI * 2.0;
+			double pitch = (random.nextDouble() - 0.5) * 0.7;
+			double dirX = Math.cos(yaw) * Math.cos(pitch);
+			double dirZ = Math.sin(yaw) * Math.cos(pitch);
+			double spread = radius * (0.75 + random.nextDouble() * 0.25);
+			double speed = 0.12 + random.nextDouble() * 0.18;
+
+			serverLevel.sendParticles(MainParticles.DUST.get(),
+					center.x + dirX * spread,
+					center.y + Math.sin(pitch) * spread,
+					center.z + dirZ * spread,
+					0, dirX * speed, 0.0, dirZ * speed, 1.0);
+		}
 	}
 
 	private static void carveShell(ServerPlayer source, Vec3 center, float inner, float outer) {
@@ -361,6 +385,11 @@ public class BioAndroidEvolution implements RacialAbility {
 		if (level instanceof ServerLevel serverLevel) {
 			serverLevel.sendParticles(MainParticles.KI_EXPLOSION.get(),
 					center.x, center.y, center.z, 0, radius * 1.8, 0.0, 0.0, 1.0);
+
+			serverLevel.sendParticles(MainParticles.DUST.get(),
+					center.x, player.getY() + 0.1, center.z,
+					EXPLODE_DUST_BURST, radius * 0.18, 0.35, radius * 0.18, 0.06);
+			spawnBlastDust(player, center, (float) radius * 0.2f, EXPLODE_DUST_BURST / 3);
 
 			KiExplosionVisualEntity visual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), level);
 			visual.setPos(center.x, center.y, center.z);
