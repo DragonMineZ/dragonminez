@@ -206,6 +206,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Boolean> IS_LIGHTNING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> LIGHTNING_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> TEXTURE_VARIANT = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_SUPERVILLAIN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -1260,6 +1261,26 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public int getTextureVariant() {return this.entityData.get(TEXTURE_VARIANT);}
     public void setTextureVariant(int variant) {this.entityData.set(TEXTURE_VARIANT, variant);}
 
+    public boolean isSupervillain() {return this.entityData.get(IS_SUPERVILLAIN);}
+    public void setSupervillain(boolean supervillain) {this.entityData.set(IS_SUPERVILLAIN, supervillain);}
+
+    private java.util.Set<java.util.UUID> raidTargets = null;
+    public void setRaidTargets(java.util.Set<java.util.UUID> targets) {this.raidTargets = targets;}
+
+    public static final String RAID_ID_TAG = "dmz_raid_id";
+    public static final String RAID_REPLACES_TAG = "dmz_raid_replaces";
+    public static final String RAID_SUPERVILLAIN_SOURCE_TAG = "dmz_pending_raid";
+
+    public boolean isValidRaidTarget(Entity entity) {
+        return this.raidTargets == null || (entity != null && this.raidTargets.contains(entity.getUUID()));
+    }
+    private boolean raidDormant = false;
+    public boolean isRaidDormant() {return this.raidDormant;}
+    public void setRaidDormant(boolean dormant) {
+        this.raidDormant = dormant;
+        if (dormant) super.setTarget(null);
+    }
+
     public int getComboId() {
         return this.entityData.get(CURRENT_COMBO_ID);
     }
@@ -1372,6 +1393,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         pCompound.putInt("DBZStyle", this.getDBZStyle());
         pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
+        pCompound.putBoolean("Supervillain", this.isSupervillain());
         pCompound.putBoolean("TransformationDisabled", this.transformationDisabled);
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
@@ -1403,6 +1425,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (pCompound.contains("CanFly") && pCompound.getBoolean("CanFly") && this.getFlySpeed() <= 0.0D) this.setFlySpeed(0.35D);
         if (pCompound.contains("TextureVariant")) {
             this.setTextureVariant(pCompound.getInt("TextureVariant"));
+        }
+        if (pCompound.contains("Supervillain")) {
+            this.setSupervillain(pCompound.getBoolean("Supervillain"));
         }
         if (pCompound.contains("TransformationDisabled")) {
             this.transformationDisabled = pCompound.getBoolean("TransformationDisabled");
@@ -1447,6 +1472,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(CURRENT_COMBO_ID, -1);
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
+        this.entityData.define(IS_SUPERVILLAIN, false);
         this.entityData.define(IS_ZANZOKEN, false);
         this.entityData.define(IS_KID, false);
         this.entityData.define(SCALE_VAL, 1.0F);
@@ -1489,6 +1515,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public void setTarget(LivingEntity pTarget) {
         if (pTarget != null && this.isQuestTeammate(pTarget)) return;
         if (pTarget != null && this.getPersistentData().getLong("dmz_taiyoken_blind_until") > this.level().getGameTime()) return;
+        // Raid mobs answer to the raid's participants and nobody else.
+        if (pTarget != null && !this.isValidRaidTarget(pTarget)) return;
+        // A raid boss stands its ground until its escort is dead. Being attacked wakes it (see hurt()),
+        // so walking up and hitting it is still a valid way to pull it early.
+        if (pTarget != null && this.raidDormant) return;
         super.setTarget(pTarget);
     }
 
@@ -1537,7 +1568,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             if (attacker instanceof LivingEntity livingAttacker) {
                 boolean isUntouchablePlayer = livingAttacker instanceof Player player && (player.isCreative() || player.isSpectator());
 
-                if (!this.isCasting() && !this.isComboing() && !isUntouchablePlayer) {
+                if (!this.isCasting() && !this.isComboing() && !isUntouchablePlayer
+                        && this.isValidRaidTarget(livingAttacker)) {
+                    this.raidDormant = false;
                     if (this.getTarget() != livingAttacker) this.setTarget(livingAttacker);
                 }
             }
@@ -1561,10 +1594,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             "dmz_quest_tf_trigger"
     };
 
-    /**
-     * Fraction of max health (0..1) at which this enemy triggers its transformation.
-     * Resolves a per-quest override first, then the global config default, then 0.5.
-     */
     private double resolveTransformTriggerFraction() {
         if (this.getPersistentData().contains("dmz_quest_tf_trigger")) {
             return Mth.clamp(this.getPersistentData().getDouble("dmz_quest_tf_trigger"), 0.0D, 1.0D);
@@ -1828,6 +1857,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 				newEntity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
 			}
 
+			if (pd.contains(RAID_ID_TAG)) {
+				newEntity.getPersistentData().putString(RAID_ID_TAG, pd.getString(RAID_ID_TAG));
+				newEntity.getPersistentData().putUUID(RAID_REPLACES_TAG, this.getUUID());
+				newEntity.setRaidTargets(this.raidTargets);
+				newEntity.setRaidDormant(this.raidDormant);
+			}
+			if (pd.contains(RAID_SUPERVILLAIN_SOURCE_TAG)) {
+				newEntity.getPersistentData().putString(RAID_SUPERVILLAIN_SOURCE_TAG,
+						pd.getString(RAID_SUPERVILLAIN_SOURCE_TAG));
+				newEntity.setSupervillain(this.isSupervillain());
+			}
+
 			level.addFreshEntity(newEntity);
 			this.discard();
 		}
@@ -1864,4 +1905,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);}
 
     public String getGeckolibModelName() {return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();}
+
+    public boolean usesRandomTextureVariant() {return false;}
 }

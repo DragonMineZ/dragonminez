@@ -188,5 +188,9 @@ public class ClientPacketHandler {
 		}
 	}
 
+	public static void handleRaidMusic(String soundId) {
+		com.dragonminez.client.systems.raid.RaidMusicManager.play(soundId);
+	}
+
 }
 

@@ -180,6 +180,8 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_GROWL = registerSoundEvent("vegeta_oozaru_growl");
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_DEATH = registerSoundEvent("vegeta_oozaru_death");
 
+	public static final RegistryObject<SoundEvent> RAID_OST_1 = registerSoundEvent("raid_ost_1");
+
 	private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
 		ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name);
 

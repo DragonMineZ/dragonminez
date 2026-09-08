@@ -49,6 +49,7 @@ public class ConfigManager {
 	private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez");
 	private static final Path STACK_FORMS_DIR = CONFIG_DIR.resolve("forms");
 	private static final Path RACES_DIR = CONFIG_DIR.resolve("races");
+	private static final Path RAIDS_DIR = CONFIG_DIR.resolve("raids");
 	private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin"};
 	private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin"));
 
@@ -59,6 +60,7 @@ public class ConfigManager {
 	private static final List<String> CACHED_CONFIG_FILES = new ArrayList<>();
 
 	private static Map<String, FormConfig> STACK_FORMS = new HashMap<>();
+	private static final Map<String, RaidDefinition> RAIDS = new LinkedHashMap<>();
 
 	private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
 	private static SkillsConfig SERVER_SYNCED_SKILLS;
@@ -91,6 +93,7 @@ public class ConfigManager {
 			loadGeneralConfigs();
 			loadAllRaces();
 			createOrLoadStackForms(true);
+			loadRaids();
 
 			LogUtil.info(Env.COMMON, "Configuration system initialized successfully");
 			LogUtil.info(Env.COMMON, "Loaded races: {}", LOADED_RACES);
@@ -115,10 +118,52 @@ public class ConfigManager {
 			loadGeneralConfigs();
 			loadAllRaces();
 			createOrLoadStackForms(true);
+			loadRaids();
 			LogUtil.info(Env.COMMON, "Configuration system reloaded successfully");
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Error reloading configuration system: {}", e.getMessage());
 		}
+	}
+
+	private static void loadRaids() throws IOException {
+		RAIDS.clear();
+		Files.createDirectories(RAIDS_DIR);
+
+		Map<String, RaidDefinition> shipped = RaidDefaults.create();
+		for (Map.Entry<String, RaidDefinition> entry : shipped.entrySet()) {
+			Path path = RAIDS_DIR.resolve(entry.getKey() + ".json");
+			RaidDefinition loaded = loadAndValidate(path, RaidDefinition.class, entry::getValue,
+					RaidDefinition::getConfigVersion, RaidDefinition::setConfigVersion,
+					RaidDefinition.CURRENT_VERSION, null);
+			if (loaded != null) RAIDS.put(entry.getKey(), loaded);
+		}
+
+		try (Stream<Path> stream = Files.list(RAIDS_DIR)) {
+			stream.filter(Files::isRegularFile)
+					.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.forEach(path -> {
+						String id = path.getFileName().toString();
+						id = id.substring(0, id.length() - 5);
+						if (shipped.containsKey(id)) return;
+
+						try {
+							RaidDefinition custom = LOADER.loadConfig(path, RaidDefinition.class);
+							if (custom != null) RAIDS.put(id, custom);
+						} catch (Exception e) {
+							LogUtil.error(Env.COMMON, "Could not read custom raid '{}': {}", id, e.getMessage());
+							JsonLoadReport.error("config", "raids/" + id + ".json",
+									"Malformed JSON: " + JsonLoadReport.rootCause(e) + " — this raid was skipped");
+						}
+					});
+		}
+
+		LogUtil.info(Env.COMMON, "Loaded {} raid definition(s): {}", RAIDS.size(), RAIDS.keySet());
+	}
+
+	/** Raid id to definition, in load order. Feed this to {@code RaidTypes.reload(...)}. */
+	public static Map<String, RaidDefinition> getRaids() {
+		return Collections.unmodifiableMap(RAIDS);
 	}
 
 	private static String peekConfigVersion(Path path) {
@@ -1403,11 +1448,6 @@ public class ConfigManager {
 		return config != null && config.getDefaultEntityStats() != null ? config.getDefaultEntityStats().get(registryName) : null;
 	}
 
-	/**
-	 * Global transform tuning (server-synced). Never returns null; a fresh
-	 * {@link EntitiesConfig.TransformSettings} is returned when unconfigured so
-	 * callers can rely on the {@code ...Or(fallback)} helpers.
-	 */
 	public static EntitiesConfig.TransformSettings getEntityTransformDefaults() {
 		EntitiesConfig config = getEntitiesConfig();
 		EntitiesConfig.TransformSettings transform = config != null ? config.getTransformDefaults() : null;

@@ -37,6 +37,7 @@ public final class PotionEffectHelper {
 
 	public static double applyTpGainMultiplier(LivingEntity entity, double baseValue) {
 		double multiplier = getMultiplierFromEffect(entity, MainEffects.TP_GAIN.get(), "tp_gain");
+		multiplier *= getMultiplierFromEffect(entity, MainEffects.WORLD_HERO.get(), "world_hero");
 		return baseValue * multiplier;
 	}
 

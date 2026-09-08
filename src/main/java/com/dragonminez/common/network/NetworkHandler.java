@@ -581,6 +581,12 @@ public class NetworkHandler {
 				.encoder(RacialSecondaryActionC2S::encode)
 				.consumerMainThread(RacialSecondaryActionC2S::handle)
 				.add();
+
+		net.messageBuilder(RaidMusicS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RaidMusicS2C::new)
+				.encoder(RaidMusicS2C::encode)
+				.consumerMainThread(RaidMusicS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

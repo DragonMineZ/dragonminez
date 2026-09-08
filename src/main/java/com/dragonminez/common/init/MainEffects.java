@@ -57,6 +57,10 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> MASTERY_GAIN = EFFECTS.register("mastery_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x9B59D0));
 	public static final RegistryObject<MobEffect> MUTANT = EFFECTS.register("mutant", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xB14CE0));
 
+	// Raids
+	public static final RegistryObject<MobEffect> RAID_WRATH = EFFECTS.register("raid_wrath", () -> new DMZEffect(MobEffectCategory.HARMFUL, 0x9B30D9));
+	public static final RegistryObject<MobEffect> WORLD_HERO = EFFECTS.register("world_hero", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF2C438));
+
 	// Farming plant buffs
 	public static final RegistryObject<MobEffect> OOZARU_ROOT = EFFECTS.register("oozaru_root", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xC0392B));
 	public static final RegistryObject<MobEffect> KATCHIN_SPROUT = EFFECTS.register("katchin_sprout", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x95A5A6));

@@ -18,6 +18,14 @@ import java.util.Map;
 public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
 
     private static final Map<ResourceLocation, Boolean> RESOURCE_CACHE = new HashMap<>();
+    private static final Map<String, Integer> VARIANT_COUNT_CACHE = new HashMap<>();
+
+    private static final int MAX_VARIANT_PROBE = 16;
+
+    public static void clearCache() {
+        RESOURCE_CACHE.clear();
+        VARIANT_COUNT_CACHE.clear();
+    }
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
@@ -31,6 +39,12 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
         int variant = animatable.getTextureVariant();
+
+        // Variant 0 means "nothing assigned it a look"; entities that opt in roll their own here.
+        // Anything that was assigned explicitly (quest objectives) is left alone.
+        if (variant == 0 && animatable.usesRandomTextureVariant()) {
+            variant = rollTextureVariant(animatable, name);
+        }
 
         String variantSuffix = (variant == 0) ? "" : "_" + variant;
         ResourceLocation variantTexture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + variantSuffix + ".png");
@@ -66,6 +80,26 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
             head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
             head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
         }
+    }
+
+    /**
+     * Picks one of the textures that actually ship for this entity. Keyed off the entity's UUID so the
+     * choice is stable across frames and reloads, and identical on every client that sees the mob.
+     */
+    private int rollTextureVariant(T animatable, String name) {
+        int count = VARIANT_COUNT_CACHE.computeIfAbsent(name, this::countTextureVariants);
+        if (count <= 1) return 0;
+        return Math.floorMod(animatable.getUUID().hashCode(), count);
+    }
+
+    /** The base texture plus every consecutive {@code _1}, {@code _2}… variant that exists. */
+    private int countTextureVariants(String name) {
+        int count = 1;
+        while (count <= MAX_VARIANT_PROBE && resourceExists(ResourceLocation.fromNamespaceAndPath(
+                Reference.MOD_ID, "textures/entity/sagas/" + name + "_" + count + ".png"))) {
+            count++;
+        }
+        return count;
     }
 
     private boolean resourceExists(ResourceLocation location) {

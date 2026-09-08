@@ -45,6 +45,7 @@ import com.dragonminez.server.commands.DMZPermissions;
 import com.dragonminez.server.commands.LocateCommand;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.storage.StorageManager;
+import com.dragonminez.server.world.raid.RaidTypes;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.*;
@@ -468,6 +469,7 @@ public class ForgeCommonEvents {
 	public static void onServerStarting(ServerStartingEvent event) {
 		StorageManager.init();
 		BetaWhitelist.reload();
+		RaidTypes.reload(ConfigManager.getRaids());
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
 		QuestRegistry.loadAll(event.getServer());

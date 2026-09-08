@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.client.systems.raid.RaidMusicManager;
 import com.dragonminez.common.init.sounds.AuraLoopSound;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -32,6 +33,7 @@ public class SoundClientHandler {
         if (mc.level == null) {
             ACTIVE_AURA_SOUNDS.clear();
             LIGHTNING_TIMERS.clear();
+            RaidMusicManager.stop();
             return;
         }
 

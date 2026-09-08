@@ -15,6 +15,7 @@ import com.dragonminez.client.init.blocks.renderer.FuelGeneratorBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.GravityDeviceBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.KikonoStationBlockRenderer;
 import com.dragonminez.client.init.entities.model.ki.*;
+import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.renderer.*;
 import com.dragonminez.client.init.entities.renderer.ki.*;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
@@ -98,6 +99,7 @@ public class ModClientEvents {
 			@Override
 			protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
 				TextureCounter.clearCache();
+				DBSagaModel.clearCache();
 				ArmorTextureResolver.clearCache();
 				CombatAnimationResolver.reload(resourceManager);
 				EvasionAnimations.reload(resourceManager);

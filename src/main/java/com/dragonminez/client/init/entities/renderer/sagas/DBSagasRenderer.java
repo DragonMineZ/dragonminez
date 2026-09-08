@@ -5,6 +5,7 @@ import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaItemInHandLayer;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLayer;
+import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaSupervillainLayer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -42,6 +43,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         this.addRenderLayer(new DMZSagaItemInHandLayer<>(this));
         this.addRenderLayer(new DMZSagaArmorLayer<>(this));
+        this.addRenderLayer(new SagaSupervillainLayer<>(this));
     }
 
     @Override

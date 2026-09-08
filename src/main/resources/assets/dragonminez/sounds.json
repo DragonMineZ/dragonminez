@@ -1176,5 +1176,14 @@
     "sounds": [
       "dragonminez:stack_form"
     ]
+  },
+  "raid_ost_1": {
+    "subtitle": "sounds.dragonminez.raid_ost_1",
+    "sounds": [
+      {
+        "name": "dragonminez:raid_ost_1",
+        "stream": true
+      }
+    ]
   }
 }

@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.storage.StorageManager;
+import com.dragonminez.server.world.raid.RaidTypes;
 import com.dragonminez.server.world.npc.NPCPlacementManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -53,6 +54,7 @@ public class ReloadCommand {
 			if (scope.includesConfig()) {
 				ConfigManager.clearServerSync();
 				ConfigManager.reload();
+				RaidTypes.reload(ConfigManager.getRaids());
 				StorageManager.reload();
 				NpcAlignmentRules.load(server);
 				NPCPlacementManager.load(server);

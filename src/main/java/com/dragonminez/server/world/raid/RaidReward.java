@@ -1,54 +1,97 @@
 package com.dragonminez.server.world.raid;
 
-import net.minecraft.core.BlockPos;
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
+import com.dragonminez.common.config.RaidDefinition;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
-public class RaidReward {
+public final class RaidReward {
 
-	private final List<Supplier<ItemStack>> itemRewards;
+	private RaidReward() {}
 
-	private RaidReward(List<Supplier<ItemStack>> itemRewards) {
-		this.itemRewards = itemRewards;
-	}
+	public static List<Component> grant(ServerLevel level, List<ServerPlayer> participants,
+										RaidDefinition.Rewards rewards) {
+		if (rewards == null || participants.isEmpty()) return List.of();
 
-	/** Grants this reward to every participant that completed the raid. */
-	public void grant(ServerLevel level, List<ServerPlayer> participants, BlockPos center) {
+		List<Component> summary = new ArrayList<>();
+		boolean first = true;
+
 		for (ServerPlayer player : participants) {
-			for (Supplier<ItemStack> supplier : itemRewards) {
-				ItemStack stack = supplier.get();
-				if (stack.isEmpty()) continue;
-				if (!player.getInventory().add(stack)) {
-					player.drop(stack, false);
-				}
-			}
+			grantTrainingPoints(player, rewards, first ? summary : null);
+			grantEffects(player, rewards, first ? summary : null);
+			grantItems(player, rewards, first ? summary : null);
+			first = false;
+		}
+		return summary;
+	}
+
+	private static void line(List<Component> summary, Component text) {
+		if (summary != null) summary.add(Component.translatable("raid.dragonminez.rewards.entry", text));
+	}
+
+	private static void grantTrainingPoints(ServerPlayer player, RaidDefinition.Rewards rewards, List<Component> summary) {
+		float points = rewards.trainingPointsOr(0.0F);
+		if (points <= 0.0F) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(
+				data -> data.getResources().addTrainingPoints(points, false));
+		line(summary, Component.translatable("raid.dragonminez.rewards.tp", (int) points));
+	}
+
+	private static void grantEffects(ServerPlayer player, RaidDefinition.Rewards rewards, List<Component> summary) {
+		if (rewards.getEffects() == null) return;
+
+		for (RaidDefinition.EffectReward reward : rewards.getEffects()) {
+			MobEffect effect = resolve(ForgeRegistries.MOB_EFFECTS, reward.getId(), "effect");
+			if (effect == null) continue;
+
+			int ticks = reward.durationTicksOr(20 * 600);
+			player.addEffect(new MobEffectInstance(effect, ticks, reward.amplifierOr(0), false, true, true));
+			line(summary, Component.translatable("raid.dragonminez.rewards.effect",
+					Component.translatable(effect.getDescriptionId()), ticks / 20 / 60));
 		}
 	}
 
-	public boolean isEmpty() {
-		return itemRewards.isEmpty();
+	private static void grantItems(ServerPlayer player, RaidDefinition.Rewards rewards, List<Component> summary) {
+		if (rewards.getItems() == null) return;
+
+		for (RaidDefinition.ItemReward reward : rewards.getItems()) {
+			Item item = resolve(ForgeRegistries.ITEMS, reward.getId(), "item");
+			if (item == null) continue;
+
+			ItemStack stack = new ItemStack(item, reward.countOr(1));
+			line(summary, Component.translatable("raid.dragonminez.rewards.item",
+					stack.getCount(), stack.getHoverName()));
+			if (!player.getInventory().add(stack)) player.drop(stack, false);
+		}
 	}
 
-	public static Builder builder() {
-		return new Builder();
-	}
+	private static <T> T resolve(net.minecraftforge.registries.IForgeRegistry<T> registry, String id, String what) {
+		if (id == null || id.isBlank()) return null;
 
-	public static class Builder {
-		private final List<Supplier<ItemStack>> itemRewards = new ArrayList<>();
-
-		public Builder item(Supplier<? extends Item> item, int count) {
-			this.itemRewards.add(() -> new ItemStack(item.get(), count));
-			return this;
+		ResourceLocation location = ResourceLocation.tryParse(id);
+		if (location == null) {
+			LogUtil.warn(Env.SERVER, "Raid reward has a malformed {} id '{}'; skipping it", what, id);
+			return null;
 		}
 
-		public RaidReward build() {
-			return new RaidReward(List.copyOf(itemRewards));
+		T value = registry.getValue(location);
+		if (value == null) {
+			LogUtil.warn(Env.SERVER, "Raid reward points at unknown {} '{}'; skipping it", what, id);
 		}
+		return value;
 	}
 }
