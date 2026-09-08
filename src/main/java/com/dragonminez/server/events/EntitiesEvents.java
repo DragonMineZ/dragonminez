@@ -9,6 +9,7 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import net.minecraft.world.damagesource.DamageSource;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
@@ -159,7 +160,12 @@ public class EntitiesEvents {
 	public static void onKiHitSlow(LivingHurtEvent event) {
 		if (event.getEntity().level().isClientSide()) return;
 		if (!MainDamageTypes.isKiblastDamage(event.getSource())) return;
+		if (isSmallKiBlast(event.getSource())) return;
 		event.getEntity().addEffect(new MobEffectInstance(MainEffects.KI_SLOW.get(), KI_SLOW_DURATION_TICKS, 0, false, false, true));
+	}
+	private static boolean isSmallKiBlast(DamageSource source) {
+		return source.getDirectEntity() instanceof AbstractKiProjectile projectile
+				&& projectile.getKiType() == AbstractKiProjectile.KiType.SMALL_BALL;
 	}
 
 	private static void applyStatsToEntity(LivingEntity entity, double health, double melee, double ki) {
