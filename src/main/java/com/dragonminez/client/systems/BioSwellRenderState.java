@@ -10,8 +10,6 @@ import java.util.UUID;
 
 public final class BioSwellRenderState {
 	private static final float BODY_GROWTH = 0.30f;
-	private static final float TORSO_WIDTH_GROWTH = 0.85f;
-	private static final float TORSO_HEIGHT_GROWTH = 0.35f;
 	private static final float EASE_PER_TICK = 0.18f;
 
 	private static final Map<UUID, Float> RENDERED = new HashMap<>();
@@ -39,10 +37,7 @@ public final class BioSwellRenderState {
 		return 1.0f + swell(player) * BODY_GROWTH;
 	}
 
-	public static float[] torsoScale(Player player) {
-		float swell = swell(player);
-		if (swell <= 0.0f) return null;
-		float width = 1.0f + swell * TORSO_WIDTH_GROWTH;
-		return new float[]{width, 1.0f + swell * TORSO_HEIGHT_GROWTH, width};
+	public static void clear() {
+		RENDERED.clear();
 	}
 }

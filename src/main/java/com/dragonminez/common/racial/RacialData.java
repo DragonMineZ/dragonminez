@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +48,10 @@ public class RacialData {
 	private String bioSelectedSkill = BIO_SKILL_DRAIN;
 
 	private float bioSwell;
+	private int bioChargeTicks;
+	private transient Vec3 bioBlastCenter;
+	private transient float bioBlastMaxRadius;
+	private transient int bioBlastTick;
 
 	private boolean bioSwellLocked;
 
@@ -89,6 +94,7 @@ public class RacialData {
 		tag.putDouble("CellJrStatPenalty", cellJrStatPenalty);
 		tag.putString("BioSelectedSkill", bioSelectedSkill);
 		tag.putFloat("BioSwell", bioSwell);
+		tag.putInt("BioChargeTicks", bioChargeTicks);
 		tag.putBoolean("BioSwellLocked", bioSwellLocked);
 		ListTag ownedTag = new ListTag();
 		for (String name : ownedBonusNames) ownedTag.add(StringTag.valueOf(name));
@@ -117,6 +123,7 @@ public class RacialData {
 		String storedSkill = tag.getString("BioSelectedSkill");
 		bioSelectedSkill = BIO_SKILL_EXPLODE.equals(storedSkill) ? BIO_SKILL_EXPLODE : BIO_SKILL_DRAIN;
 		bioSwell = tag.getFloat("BioSwell");
+		bioChargeTicks = tag.getInt("BioChargeTicks");
 		bioSwellLocked = tag.getBoolean("BioSwellLocked");
 		ownedBonusNames.clear();
 		ListTag ownedTag = tag.getList("OwnedBonusNames", Tag.TAG_STRING);
@@ -227,6 +234,7 @@ public class RacialData {
 		this.cellJrStatPenalty = other.cellJrStatPenalty;
 		this.bioSelectedSkill = other.bioSelectedSkill;
 		this.bioSwell = other.bioSwell;
+		this.bioChargeTicks = other.bioChargeTicks;
 		this.bioSwellLocked = other.bioSwellLocked;
 		this.ownedBonusNames.clear();
 		this.ownedBonusNames.addAll(other.ownedBonusNames);

@@ -3,7 +3,6 @@ package com.dragonminez.client.model;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.util.RenderUtil;
-import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
@@ -29,6 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
 
+    private static final String EXPLODE_ANIMATION = "base.explodecell";
+    private static final float EXPLODE_RESET_EASE = 0.25f;
+    private static final float EXPLODE_RESET_EPSILON = 0.01f;
     private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
     private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
     private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
@@ -332,24 +334,32 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         } catch (Exception ignored) {}
 
         applyBoobScale(animatable);
-        applyExplosionSwell(animatable);
+        clearExplosionHeadOffset(animatable);
     }
 
-    private void applyExplosionSwell(T animatable) {
-        CoreGeoBone body = this.getAnimationProcessor().getBone("body");
-        if (body == null) return;
+    private void clearExplosionHeadOffset(T animatable) {
+        if (animatable instanceof IPlayerAnimatable playerAnim
+                && EXPLODE_ANIMATION.equals(playerAnim.dragonminez$getCurrentPlayingAnimation())) return;
 
-        float[] scale = BioSwellRenderState.torsoScale(animatable);
-        if (scale == null) {
-            body.setScaleX(1.0f);
-            body.setScaleY(1.0f);
-            body.setScaleZ(1.0f);
-            return;
-        }
-        body.setScaleX(scale[0]);
-        body.setScaleY(scale[1]);
-        body.setScaleZ(scale[2]);
+        CoreGeoBone head = this.getAnimationProcessor().getBone("head");
+        if (head == null) return;
+
+        boolean settled = Math.abs(head.getPosX()) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getPosY()) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getPosZ()) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getScaleX() - 1.0f) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getScaleY() - 1.0f) < EXPLODE_RESET_EPSILON
+                && Math.abs(head.getScaleZ() - 1.0f) < EXPLODE_RESET_EPSILON;
+        if (settled) return;
+
+        head.setPosX(Mth.lerp(EXPLODE_RESET_EASE, head.getPosX(), 0.0f));
+        head.setPosY(Mth.lerp(EXPLODE_RESET_EASE, head.getPosY(), 0.0f));
+        head.setPosZ(Mth.lerp(EXPLODE_RESET_EASE, head.getPosZ(), 0.0f));
+        head.setScaleX(Mth.lerp(EXPLODE_RESET_EASE, head.getScaleX(), 1.0f));
+        head.setScaleY(Mth.lerp(EXPLODE_RESET_EASE, head.getScaleY(), 1.0f));
+        head.setScaleZ(Mth.lerp(EXPLODE_RESET_EASE, head.getScaleZ(), 1.0f));
     }
+
 
     private void applyBoobScale(T animatable) {
         CoreGeoBone boobas = this.getAnimationProcessor().getBone("boobas");

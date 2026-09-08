@@ -7,12 +7,15 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainGameRules;
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.bioandroid.CellJrEntity;
+import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.racial.RacialAbility;
 import com.dragonminez.common.racial.RacialContext;
@@ -26,16 +29,18 @@ import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -46,6 +51,11 @@ public class BioAndroidEvolution implements RacialAbility {
 	private static final int STUN_DURATION_TICKS = 120;
 	private static final int CELL_JR_CHARGE_SECONDS = 5;
 	private static final float EXPLODE_SURVIVAL_HEALTH_RATIO = 0.01f;
+	private static final String EXPLODE_ANIMATION = "base.explodecell";
+	private static final int BLAST_TICKS = 20;
+	private static final int BLAST_COLOR_MAIN = 0xFFFC42;
+	private static final int BLAST_COLOR_BORDER = 0xFF8A3D;
+	private static final int BLAST_COLOR_OUTLINE = 0xFFFFFF;
 	private static final float CHANNEL_SECONDS = 5.0f;
 	private static final float DRAIN_RANGE = 6.0f;
 
@@ -98,10 +108,7 @@ public class BioAndroidEvolution implements RacialAbility {
 		GeneralServerConfig.RacialSkillsConfig config = ctx.config();
 		String tier = resolveTier(data);
 		if (tier.equals("perfect")) return summonCellJr(ctx, player, data);
-		if (isExplodeSelected(data)) {
-			triggerExplosion(player, data, config.getBioandroid());
-			return true;
-		}
+		if (isExplodeSelected(data)) return false;
 
 		LivingEntity target = RacialCapture.findTarget(player, 3.0);
 		if (target == null) return true;
@@ -137,7 +144,8 @@ public class BioAndroidEvolution implements RacialAbility {
 	public void onTick(RacialContext ctx) {
 		StatsData data = ctx.data();
 
-		tickExplosionSwell(ctx, data);
+		tickExplosionCharge(ctx, data);
+		tickExplosionBlast(ctx, data);
 
 		ServerPlayer player = ctx.player();
 		int targetId = data.getStatus().getDrainingTargetId();
@@ -218,30 +226,99 @@ public class BioAndroidEvolution implements RacialAbility {
 		}
 	}
 
-	private static void tickExplosionSwell(RacialContext ctx, StatsData data) {
+	private static void tickExplosionCharge(RacialContext ctx, StatsData data) {
 		RacialData racialData = data.getRacialData();
-		float swell = racialData.getBioSwell();
+		GeneralServerConfig.BioAndroidRacialConfig config = ctx.config().getBioandroid();
+		int requiredTicks = Math.max(1, config.getExplodeChargeSeconds() * 20);
 
 		boolean charging = isExplodeSelected(data)
 				&& data.getStatus().isActionCharging()
 				&& data.getStatus().getSelectedAction() == ActionMode.RACIAL
 				&& canArmExplosion(ctx, data);
-		if (!charging && swell <= 0f && !racialData.isBioSwellLocked()) return;
 
-		GeneralServerConfig.BioAndroidRacialConfig config = ctx.config().getBioandroid();
 		if (charging) {
-			if (swell <= 0f) {
-				ctx.player().displayClientMessage(Component.translatable("message.dragonminez.racial.bioandroid.explode_charging"), true);
-				ctx.player().level().playSound(null, ctx.player().getX(), ctx.player().getY(), ctx.player().getZ(),
-						MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 0.6F);
-			}
-			swell = Math.min(1f, swell + 1f / Math.max(1, config.getExplodeChargeSeconds() * 20));
-		} else {
-			if (swell > 0f) racialData.setBioSwellLocked(true);
-			swell = Math.max(0f, swell - 1f / Math.max(1, config.getExplodeRevertSeconds() * 20));
-			if (swell <= 0f) racialData.setBioSwellLocked(false);
+			if (racialData.getBioChargeTicks() == 0) startExplosionCharge(ctx.player());
+			racialData.setBioChargeTicks(racialData.getBioChargeTicks() + 1);
+			racialData.setBioSwell(Math.min(1f, (float) racialData.getBioChargeTicks() / requiredTicks));
+			return;
 		}
+
+		if (racialData.getBioChargeTicks() > 0) {
+			boolean charged = racialData.getBioChargeTicks() >= requiredTicks;
+			racialData.setBioChargeTicks(0);
+			stopExplosionCharge(ctx.player());
+			if (charged) {
+				triggerExplosion(ctx.player(), data, config);
+				return;
+			}
+			racialData.setBioSwellLocked(true);
+		}
+
+		float swell = racialData.getBioSwell();
+		if (swell <= 0f) {
+			if (racialData.isBioSwellLocked()) racialData.setBioSwellLocked(false);
+			return;
+		}
+		swell = Math.max(0f, swell - 1f / Math.max(1, config.getExplodeRevertSeconds() * 20));
 		racialData.setBioSwell(swell);
+		if (swell <= 0f) racialData.setBioSwellLocked(false);
+	}
+
+	private static void startExplosionCharge(ServerPlayer player) {
+		player.displayClientMessage(Component.translatable("message.dragonminez.racial.bioandroid.explode_charging"), true);
+		player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+				MainSounds.TRANSFORM_ON.get(), SoundSource.PLAYERS, 1.0F, 0.6F);
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(),
+				TriggerAnimationS2C.AnimationType.KI_ANIMATION, 1, -1, EXPLODE_ANIMATION), player);
+	}
+
+	private static void stopExplosionCharge(ServerPlayer player) {
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(),
+				TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
+	}
+
+	private static void tickExplosionBlast(RacialContext ctx, StatsData data) {
+		RacialData racialData = data.getRacialData();
+		Vec3 center = racialData.getBioBlastCenter();
+		if (center == null) return;
+
+		int tick = racialData.getBioBlastTick() + 1;
+		racialData.setBioBlastTick(tick);
+
+		float maxRadius = racialData.getBioBlastMaxRadius();
+		float inner = maxRadius * (float) Math.cbrt((tick - 1) / (double) BLAST_TICKS);
+		float outer = maxRadius * (float) Math.cbrt(Math.min(1.0, tick / (double) BLAST_TICKS));
+
+		carveShell(ctx.player(), center, inner, outer);
+		if (tick >= BLAST_TICKS) racialData.setBioBlastCenter(null);
+	}
+
+	private static void carveShell(ServerPlayer source, Vec3 center, float inner, float outer) {
+		Level level = source.level();
+		BlockPos origin = BlockPos.containing(center.x, center.y, center.z);
+		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+
+		float outerSq = outer * outer;
+		float innerSq = inner * inner;
+		int bound = Mth.ceil(outer);
+
+		for (int x = -bound; x <= bound; x++) {
+			int yBound = Mth.floor(Math.sqrt(Math.max(0.0, outerSq - x * x)));
+			for (int y = -yBound; y <= yBound; y++) {
+				int zBound = Mth.floor(Math.sqrt(Math.max(0.0, outerSq - x * x - y * y)));
+				for (int z = -zBound; z <= zBound; z++) {
+					float distSq = x * x + y * y + z * z;
+					if (distSq <= innerSq) continue;
+
+					cursor.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
+					BlockState state = level.getBlockState(cursor);
+					if (state.isAir() || state.getExplosionResistance(level, cursor, null) >= 1200f) continue;
+					if (!MainGameRules.canKiGrief(level, cursor, source)) continue;
+
+					level.setBlock(cursor.immutable(), Blocks.AIR.defaultBlockState(), 2);
+				}
+			}
+		}
 	}
 
 	private static void warnExplosionUnavailable(RacialContext ctx, StatsData data) {
@@ -270,6 +347,7 @@ public class BioAndroidEvolution implements RacialAbility {
 	private static void triggerExplosion(ServerPlayer player, StatsData data, GeneralServerConfig.BioAndroidRacialConfig config) {
 		data.getRacialData().setBioSwell(0f);
 		data.getRacialData().setBioSwellLocked(false);
+		data.getRacialData().setBioChargeTicks(0);
 		data.getStatus().setActionCharging(false);
 		data.getResources().setActionCharge(0);
 		data.getCooldowns().setCooldown(Cooldowns.BIO_EXPLODE_CD, config.getExplodeCooldownSeconds() * 20);
@@ -281,18 +359,16 @@ public class BioAndroidEvolution implements RacialAbility {
 		Vec3 center = player.position().add(0, player.getBbHeight() / 2.0, 0);
 
 		if (level instanceof ServerLevel serverLevel) {
-			serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
-					center.x, center.y, center.z, 1, 0, 0, 0, 0);
-			for (int i = 0; i < 24; i++) {
-				double angle = (Math.PI * 2.0 / 24.0) * i;
-				double spread = radius * 0.6;
-				serverLevel.sendParticles(ParticleTypes.EXPLOSION,
-						center.x + Math.cos(angle) * spread, center.y + (i % 3) - 1.0, center.z + Math.sin(angle) * spread,
-						1, 0, 0, 0, 0);
-			}
+			serverLevel.sendParticles(MainParticles.KI_EXPLOSION.get(),
+					center.x, center.y, center.z, 0, radius * 1.8, 0.0, 0.0, 1.0);
+
+			KiExplosionVisualEntity visual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), level);
+			visual.setPos(center.x, center.y, center.z);
+			visual.setupExplosion(BLAST_COLOR_MAIN, BLAST_COLOR_BORDER, BLAST_COLOR_OUTLINE, (float) radius / 2.0F);
+			level.addFreshEntity(visual);
 		}
-		level.playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.KI_EXPLOSION_IMPACT.get(),
-				SoundSource.PLAYERS, 4.0F, 0.8F);
+		level.playSound(null, center.x, center.y, center.z, MainSounds.KI_EXPLOSION_IMPACT.get(),
+				SoundSource.PLAYERS, 5.0F, 0.6F);
 
 		boolean partyPvpEnabled = PartyManager.isPartyPvpEnabled(player);
 		List<LivingEntity> victims = level.getEntitiesOfClass(LivingEntity.class,
@@ -311,7 +387,9 @@ public class BioAndroidEvolution implements RacialAbility {
 			victim.hurt(MainDamageTypes.kiblast(level, player, player), (float) damage);
 		}
 
-		destroyTerrain(level, player, center, (float) radius);
+		data.getRacialData().setBioBlastCenter(center);
+		data.getRacialData().setBioBlastMaxRadius((float) radius);
+		data.getRacialData().setBioBlastTick(0);
 
 		if (config.getExplodeKillsUser()) {
 			player.hurt(player.damageSources().genericKill(), Float.MAX_VALUE);
@@ -328,21 +406,6 @@ public class BioAndroidEvolution implements RacialAbility {
 
 		NetworkHandler.sendToTrackingEntityAndSelf(
 				new StatsSyncS2C(player), player);
-	}
-
-	private static void destroyTerrain(Level level, ServerPlayer source, Vec3 center, float radius) {
-		int r = Math.round(radius);
-		for (int x = -r; x <= r; x++) {
-			for (int y = -r; y <= r; y++) {
-				for (int z = -r; z <= r; z++) {
-					if (x * x + y * y + z * z > radius * radius) continue;
-					BlockPos pos = BlockPos.containing(center.x + x, center.y + y, center.z + z);
-					if (!MainGameRules.canKiGrief(level, pos, source)) continue;
-					if (level.getBlockState(pos).getExplosionResistance(level, pos, null) >= 1200f) continue;
-					level.destroyBlock(pos, false);
-				}
-			}
-		}
 	}
 
 	public static String resolveTier(StatsData data) {

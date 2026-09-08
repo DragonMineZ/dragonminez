@@ -597,6 +597,7 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+		BioSwellRenderState.clear();
 		wasRightClickDown = false;
 		lastTransformTapTime = 0;
 		lastKiChargeTapTime = 0;
