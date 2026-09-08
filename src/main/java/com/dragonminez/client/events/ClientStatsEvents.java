@@ -546,6 +546,9 @@ public class ClientStatsEvents {
 				AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
 				if (formMod != null) totalModFactor *= (1.0 + formMod.getAmount());
 
+				AttributeModifier turboMod = speedAttr.getModifier(StatsEvents.TURBO_SPEED_UUID);
+				if (turboMod != null) totalModFactor *= (1.0 + turboMod.getAmount());
+
 				AttributeModifier gravityMod = speedAttr.getModifier(GravityLogic.GRAVITY_SPEED_UUID);
 				if (gravityMod != null) totalModFactor *= (1.0 + gravityMod.getAmount());
 
