@@ -65,6 +65,7 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.replace(false)
 				.addTag(BiomeTags.IS_DEEP_OCEAN)
 				.addTag(BiomeTags.IS_OCEAN)
+				.addTag(BiomeTags.IS_BEACH)
 				.add(NamekBiomes.NAMEKIAN_RIVERS);
 
 		this.tag(MainTags.Biomes.HAS_GIANT_TURTLE)

@@ -59,8 +59,8 @@ public class GiantFishEntity extends WaterAnimal implements GeoEntity, ITextureV
     public static final int VARIANT_COUNT = 4;
     public static final int SPECIAL_VARIANT = VARIANT_COUNT - 1;
     private static final float SPECIAL_CHANCE = 0.03F;
-    private static final int WATER_COLUMN_RADIUS = 2;
-    private static final int MIN_SPAWN_DEPTH = 4;
+    private static final int WATER_COLUMN_RADIUS = 1;
+    private static final int MIN_SPAWN_DEPTH = 2;
 
     public static final ResourceLocation[] TEXTURES = new ResourceLocation[VARIANT_COUNT];
 
