@@ -543,8 +543,8 @@ public class ClientStatsEvents {
 			if (speedAttr != null) {
 				double totalModFactor = 1.0;
 
-				AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
-				if (formMod != null) totalModFactor *= (1.0 + formMod.getAmount());
+				AttributeModifier speedMod = speedAttr.getModifier(StatsEvents.SPEED_UUID);
+				if (speedMod != null) totalModFactor *= (1.0 + speedMod.getAmount());
 
 				AttributeModifier turboMod = speedAttr.getModifier(StatsEvents.TURBO_SPEED_UUID);
 				if (turboMod != null) totalModFactor *= (1.0 + turboMod.getAmount());

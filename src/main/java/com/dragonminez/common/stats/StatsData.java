@@ -380,6 +380,33 @@ public class StatsData {
 		return secondaryMeleeDamage + ((strength + multBonusStr) * strScaling * strMult) + (flatBonusStr * strScaling);
 	}
 
+	public double getSpeed() {
+		CombatConfig combatConfig = ConfigManager.getCombatConfig();
+		if (combatConfig == null || !combatConfig.getEnableSpeedSystem()) return 1.0;
+
+		double resistance = stats.getResistance();
+		double flatBonusRes = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), false);
+		double multBonusRes = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), true);
+
+        double effectiveRes = resistance + multBonusRes + flatBonusRes;
+		double normalized = effectiveRes / combatConfig.getSpeedReferenceStat();
+
+		double formMultiplier = getFormMultiplier("SPEED") * getStackFormMultiplier("SPEED");
+		if (character.hasActiveForm() || character.hasActiveStackForm()) formMultiplier *= combatConfig.getTransformedSpeedCap();
+
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+
+		double speed = 1.0 + (normalized * formMultiplier * releaseMultiplier);
+		if (Double.isNaN(speed) || Double.isInfinite(speed) || speed < 1.0) return 1.0;
+		return speed;
+	}
+    
+	public double getMovementSpeedMultiplier() {
+		CombatConfig combatConfig = ConfigManager.getCombatConfig();
+		if (combatConfig == null || !combatConfig.getEnableSpeedSystem()) return 1.0;
+		return Math.min(combatConfig.getSpeedMovementCap(), getSpeed());
+	}
+
 	public double getMeleeDamage() {
 		double strength = stats.getStrength();
 		double strScaling = getStatScaling("STR");
@@ -733,6 +760,7 @@ public class StatsData {
 			case "VIT" -> formData.getVitMultiplier();
 			case "PWR" -> formData.getPwrMultiplier();
 			case "ENE" -> formData.getEneMultiplier();
+			case "SPEED" -> formData.getSpeedMultiplier();
 			default -> 1.0;
 		};
 
@@ -777,6 +805,7 @@ public class StatsData {
 			case "VIT" -> formData.getVitMultiplier();
 			case "PWR" -> formData.getPwrMultiplier();
 			case "ENE" -> formData.getEneMultiplier();
+			case "SPEED" -> formData.getSpeedMultiplier();
 			default -> 1.0;
 		};
 	}

@@ -78,8 +78,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StatsEvents {
 
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
-	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
+	public static final UUID SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 	public static final UUID TURBO_SPEED_UUID = UUID.fromString("b3f4a1d2-6c8e-4b0a-9f21-7d5e3c9a1b64");
+	public static final UUID SPEED_STEP_HEIGHT_UUID = UUID.fromString("5a2f8c14-7b93-4e6d-b0a5-8c3f1e94d762");
 	private static final double TURBO_SPEED_BONUS = 0.30;
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 	public static final UUID FORM_ATTACK_SPEED_UUID = UUID.fromString("f2e0aaf0-a4ab-4921-a5b0-f34cf1c3533b");
@@ -750,22 +751,38 @@ public class StatsEvents {
 				AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
 				AttributeInstance attackSpeedAttr = serverPlayer.getAttribute(Attributes.ATTACK_SPEED);
 				if (speedAttr != null) {
-					double expectedBonus = 0.0;
-					if (data.getCharacter().hasActiveForm()) {
-						FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-						if (activeForm != null) {
-							double multiplier = activeForm.getSpeedMultiplier();
-							if (multiplier != 1.0) expectedBonus = multiplier - 1.0;
+					// Redondeado para no reinstalar el modificador cada tick por ruido decimal.
+					double expectedBonus = Math.round((data.getMovementSpeedMultiplier() - 1.0) * 1000.0) / 1000.0;
+
+					AttributeModifier existingSpeed = speedAttr.getModifier(SPEED_UUID);
+					double currentBonus = existingSpeed != null ? existingSpeed.getAmount() : 0.0;
+
+					if (Math.abs(expectedBonus - currentBonus) > 1.0E-9) {
+						speedAttr.removeModifier(SPEED_UUID);
+						if (expectedBonus != 0.0) {
+							speedAttr.addTransientModifier(new AttributeModifier(SPEED_UUID, "DMZ Speed", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
 						}
 					}
 
-					AttributeModifier existingSpeed = speedAttr.getModifier(FORM_SPEED_UUID);
-					double currentBonus = existingSpeed != null ? existingSpeed.getAmount() : 0.0;
+					// A partir del umbral de velocidad el jugador sube bloques enteros de corrido,
+					// como si fueran escaleras, en vez de tener que saltarlos.
+					AttributeInstance stepHeightAttr = serverPlayer.getAttribute(ForgeMod.STEP_HEIGHT_ADDITION.get());
+					if (stepHeightAttr != null) {
+						var combatCfg = ConfigManager.getCombatConfig();
+						double expectedStep = 0.0;
+						if (combatCfg != null && combatCfg.getEnableSpeedSystem()
+								&& data.getSpeed() >= combatCfg.getSpeedStepAssistThreshold()) {
+							expectedStep = combatCfg.getSpeedStepAssistBonus();
+						}
 
-					if (expectedBonus != currentBonus) {
-						speedAttr.removeModifier(FORM_SPEED_UUID);
-						if (expectedBonus > 0) {
-							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+						AttributeModifier existingStep = stepHeightAttr.getModifier(SPEED_STEP_HEIGHT_UUID);
+						double currentStep = existingStep != null ? existingStep.getAmount() : 0.0;
+
+						if (Math.abs(expectedStep - currentStep) > 1.0E-9) {
+							stepHeightAttr.removeModifier(SPEED_STEP_HEIGHT_UUID);
+							if (expectedStep > 0) {
+								stepHeightAttr.addTransientModifier(new AttributeModifier(SPEED_STEP_HEIGHT_UUID, "DMZ Speed Step Assist", expectedStep, AttributeModifier.Operation.ADDITION));
+							}
 						}
 					}
 

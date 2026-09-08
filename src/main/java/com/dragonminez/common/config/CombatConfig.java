@@ -61,6 +61,20 @@ public class CombatConfig {
 	private Double blockDamageReductionMin = 0.05;
 	private Integer poiseRegenCooldown = 100;
 
+	private Boolean enableSpeedSystem = true;
+	private Double speedReferenceStat = 10000.0;
+	private Double transformedSpeedCap = 2.0;
+	private Double speedMovementCap = 3.0;
+
+	private Double speedStepAssistThreshold = 2.0;
+	private Double speedStepAssistBonus = 0.5;
+
+	private Boolean enableSpeedDodge = true;
+	private Double speedDodgeRatioAtLevel1 = 2.5;
+	private Double speedDodgeRatioAtMaxLevel = 1.4;
+	private Integer speedDodgeCooldownTicks = 10;
+	private Double nonPlayerAttackerSpeed = 1.0;
+
 	private Boolean enablePerfectEvasion = true;
 	private Integer perfectEvasionWindowMs = 200;
 	private Integer dashCooldownSeconds = 4;
@@ -129,6 +143,50 @@ public class CombatConfig {
 			new CompatibilitySpecifier("cutlass|scimitar|machete", "dragonminez:cutlass"),
 			new CompatibilitySpecifier("sword|blade", "dragonminez:sword")
 	));
+
+	public boolean getEnableSpeedSystem() {
+		return enableSpeedSystem == null || enableSpeedSystem;
+	}
+
+	public double getSpeedReferenceStat() {
+		return speedReferenceStat != null ? Math.max(1.0, speedReferenceStat) : 10000.0;
+	}
+
+	public double getTransformedSpeedCap() {
+		return transformedSpeedCap != null ? Math.max(0.01, transformedSpeedCap) : 2.0;
+	}
+
+	public double getSpeedMovementCap() {
+		return speedMovementCap != null ? Math.max(1.0, speedMovementCap) : 3.0;
+	}
+
+	public double getSpeedStepAssistThreshold() {
+		return speedStepAssistThreshold != null ? Math.max(1.0, speedStepAssistThreshold) : 2.0;
+	}
+
+	public double getSpeedStepAssistBonus() {
+		return speedStepAssistBonus != null ? Math.max(0.0, speedStepAssistBonus) : 0.5;
+	}
+
+	public boolean getEnableSpeedDodge() {
+		return enableSpeedDodge == null || enableSpeedDodge;
+	}
+
+	public double getSpeedDodgeRatioAtLevel1() {
+		return speedDodgeRatioAtLevel1 != null ? Math.max(1.0, speedDodgeRatioAtLevel1) : 2.5;
+	}
+
+	public double getSpeedDodgeRatioAtMaxLevel() {
+		return speedDodgeRatioAtMaxLevel != null ? Math.max(1.0, speedDodgeRatioAtMaxLevel) : 1.4;
+	}
+
+	public int getSpeedDodgeCooldownTicks() {
+		return speedDodgeCooldownTicks != null ? Math.max(0, speedDodgeCooldownTicks) : 10;
+	}
+
+	public double getNonPlayerAttackerSpeed() {
+		return nonPlayerAttackerSpeed != null ? Math.max(0.01, nonPlayerAttackerSpeed) : 1.0;
+	}
 
 	public float getUpswingMultiplier() {
 		return Math.max(0.2F, Math.min(1.0F, upswingMultiplier));

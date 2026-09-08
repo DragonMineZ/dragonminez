@@ -772,7 +772,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				"gui.dragonminez.character_stats.defense",
 				"gui.dragonminez.character_stats.health",
 				"gui.dragonminez.character_stats.ki_damage",
-				"gui.dragonminez.character_stats.max_energy"
+				"gui.dragonminez.character_stats.max_energy",
+				"gui.dragonminez.character_stats.speed"
 		};
 
 		boolean isTransformed = statsData.getCharacter().hasActiveForm() || statsData.getCharacter().hasActiveStackForm();
@@ -886,6 +887,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 							else if (eneDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.energy.regen", NumberFormattingUtil.formatUpToOneDecimal(Math.abs(eneDrain))).withStyle(ChatFormatting.GREEN));
 						}
 					}
+					case 7 -> appendSpeedTooltip(desc, extras);
 				}
 
 				if (i == 0 || i == 1) appendAttackSkillInfo(extras);
@@ -924,6 +926,45 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(NumberFormattingUtil.formatLargeNumber(health)), valueX + 15, labelStartY + 48, healthColor, 0x000000);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(NumberFormattingUtil.formatLargeNumber(kiDamage)), valueX + 15, labelStartY + 60, kiDamageColor, 0x000000);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(NumberFormattingUtil.formatLargeNumber(energy)), valueX + 15, labelStartY + 72, energyColor, 0x000000);
+
+		double speed = statsData.getSpeed();
+		int speedColor = Math.abs(speed - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(formatSpeedPercent(speed)), valueX + 15, labelStartY + 84, speedColor, 0x000000);
+	}
+
+	private static String formatSpeedPercent(double speedMultiplier) {
+		return NumberFormattingUtil.formatUpToOneDecimal(speedMultiplier * 100.0) + "%";
+	}
+
+	private void appendSpeedTooltip(List<Component> desc, List<Component> extras) {
+		double speed = statsData.getSpeed();
+		double movementCap = ConfigManager.getCombatConfig().getSpeedMovementCap();
+
+		desc.add(tr("gui.dragonminez.character_stats.speed.tooltip1"));
+		desc.add(tr("gui.dragonminez.character_stats.speed.tooltip2",
+				NumberFormattingUtil.formatLargeNumber(ConfigManager.getCombatConfig().getSpeedReferenceStat())).withStyle(ChatFormatting.YELLOW));
+
+		extras.add(tr("gui.dragonminez.character_stats.speed.movement").append(": ")
+				.append(txt(formatSpeedPercent(Math.min(movementCap, speed))))
+				.withStyle(ChatFormatting.AQUA));
+
+		if (speed > movementCap) {
+			extras.add(tr("gui.dragonminez.character_stats.speed.capped",
+					formatSpeedPercent(movementCap)).withStyle(ChatFormatting.GOLD));
+		}
+
+		int meditationLevel = statsData.getSkills().getSkillLevel("meditation");
+		if (meditationLevel > 0 && ConfigManager.getCombatConfig().getEnableSpeedDodge()) {
+			double atLevel1 = ConfigManager.getCombatConfig().getSpeedDodgeRatioAtLevel1();
+			double atMaxLevel = ConfigManager.getCombatConfig().getSpeedDodgeRatioAtMaxLevel();
+			double progress = (Math.min(meditationLevel, 10) - 1.0) / 9.0;
+			double requiredRatio = atLevel1 + (atMaxLevel - atLevel1) * progress;
+
+			extras.add(tr("gui.dragonminez.character_stats.speed.dodge",
+					formatSpeedPercent(speed / requiredRatio)).withStyle(ChatFormatting.LIGHT_PURPLE));
+		} else {
+			extras.add(tr("gui.dragonminez.character_stats.speed.dodge.locked").withStyle(ChatFormatting.DARK_GRAY));
+		}
 	}
 
 	private void renderStatisticsInfoHexagon(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -1220,6 +1261,24 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				else if (hpDrain < 0) extras.add(tr("gui.dragonminez.character_stats.form_drain.health.regen", NumberFormattingUtil.formatUpToOneDecimal(Math.abs(hpDrain))).withStyle(ChatFormatting.GREEN));
 			}
 
+			appendAdvancedHint(extras, false);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
+		}
+
+		double speed = statsData.getSpeed();
+		int speedY = hexCenterY + (int) maxRadius + 26;
+		Component speedComponent = tr("gui.dragonminez.character_stats.speed").append(": ")
+				.append(txt(formatSpeedPercent(speed)));
+		int speedTextWidth = font.width(speedComponent);
+		int speedColor = Math.abs(speed - 1.0) > 0.01 ? 0xFFFF00 : 0xFFD7AB;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, speedComponent, centerX, speedY, speedColor, 0x000000);
+
+		if (mouseX >= centerX - speedTextWidth / 2 && mouseX <= centerX + speedTextWidth / 2
+				&& mouseY >= speedY && mouseY <= speedY + font.lineHeight) {
+			Component title = tr("gui.dragonminez.character_stats.speed").withStyle(ChatFormatting.BOLD);
+			List<Component> desc = new ArrayList<>();
+			List<Component> extras = new ArrayList<>();
+			appendSpeedTooltip(desc, extras);
 			appendAdvancedHint(extras, false);
 			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
