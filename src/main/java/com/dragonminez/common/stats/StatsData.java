@@ -400,7 +400,7 @@ public class StatsData {
 		if (Double.isNaN(speed) || Double.isInfinite(speed) || speed < 1.0) return 1.0;
 		return speed;
 	}
-    
+
 	public double getMovementSpeedMultiplier() {
 		CombatConfig combatConfig = ConfigManager.getCombatConfig();
 		if (combatConfig == null || !combatConfig.getEnableSpeedSystem()) return 1.0;

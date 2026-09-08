@@ -23,21 +23,10 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/**
- * Evasion pasiva por diferencia de velocidad.
- *
- * <p>Si el defensor es suficientemente mas rapido que su atacante, el golpe cuerpo a cuerpo
- * simplemente no conecta. Es determinista, no hay azar: dos jugadores parejos nunca se
- * esquivan entre si, y la brecha necesaria baja segun el nivel de la skill de meditacion.
- *
- * <p>Solo cubre melee basico. Los strikes, el ki y el dano ambiental pasan de largo.
- */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SpeedDodgeHandler {
 
 	public static final String DODGE_CD = "SpeedDodgeCooldown";
-
-	/** Nivel maximo de la skill de meditacion, usado para interpolar el umbral. */
 	private static final int MAX_MEDITATION_LEVEL = 10;
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
@@ -60,7 +49,6 @@ public class SpeedDodgeHandler {
 			if (defender.hasEffect(MainEffects.STUN.get())) return;
 			if (defender.isSpectator()) return;
 
-			// El dash tiene prioridad: si el jugador acaba de usarlo, la pasiva no entra.
 			if (data.getCooldowns().hasCooldown(Cooldowns.DASH_ACTIVE)) return;
 			if (data.getCooldowns().hasCooldown(DODGE_CD)) return;
 
@@ -84,10 +72,6 @@ public class SpeedDodgeHandler {
 		});
 	}
 
-	/**
-	 * Umbral de ratio necesario para esquivar, interpolado entre el nivel 1 y el maximo.
-	 * A mayor nivel de meditacion, menos ventaja de velocidad hace falta.
-	 */
 	private static double getRequiredRatio(int meditationLevel, CombatConfig config) {
 		double atLevel1 = config.getSpeedDodgeRatioAtLevel1();
 		double atMaxLevel = config.getSpeedDodgeRatioAtMaxLevel();
@@ -96,11 +80,6 @@ public class SpeedDodgeHandler {
 		return atLevel1 + (atMaxLevel - atLevel1) * progress;
 	}
 
-	/**
-	 * Los mobs no tienen el stat de velocidad, asi que usan un valor de referencia
-	 * configurable en vez de derivarlo de su atributo de movimiento (que no es
-	 * comparable con el de un jugador).
-	 */
 	private static double getSpeedOf(LivingEntity entity, CombatConfig config) {
 		if (entity instanceof Player player) {
 			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -109,10 +88,6 @@ public class SpeedDodgeHandler {
 		return config.getNonPlayerAttackerSpeed();
 	}
 
-	/**
-	 * Solo melee directo. Deja pasar proyectiles, strikes, ki y cualquier dano
-	 * sin atacante fisico detras.
-	 */
 	private static boolean isBasicMelee(DamageSource source) {
 		if (source == null) return false;
 		if (source.getEntity() == null) return false;
