@@ -2,6 +2,8 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.RageScreamEffect;
+import com.dragonminez.client.systems.BioSwellRenderState;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
@@ -44,6 +46,12 @@ public class EffectsEvents {
 		isChargingFormCache = StatsProvider.get(StatsCapability.INSTANCE, player)
 				.map(data -> (data.getStatus().isAuraActive() && !data.getStatus().isPermanentAura())).orElse(false);
 	}
+
+	private static final double BIO_SHAKE_RANGE_MULT = 1.5D;
+	private static final float BIO_SHAKE_SELF_STRENGTH = 0.6F;
+	private static final float BIO_SHAKE_SELF_ROLL = 0.25F;
+	private static final float BIO_SHAKE_NEARBY_STRENGTH = 1.6F;
+	private static final float BIO_SHAKE_NEARBY_ROLL = 0.8F;
 
 	@SubscribeEvent
 	public static void onCameraSetup(ViewportEvent.ComputeCameraAngles event) {
@@ -105,6 +113,32 @@ public class EffectsEvents {
                     break;
                 }
             }
+        }
+
+        double bioShakeRadius = ConfigManager.getServerConfig().getRacialSkills().getBioandroid().getExplodeRadius() * BIO_SHAKE_RANGE_MULT;
+        for (Player charging : player.level().players()) {
+            float swell = BioSwellRenderState.swell(charging);
+            if (swell <= 0.0F) continue;
+
+            float intensity;
+            float strength;
+            float rollStrength;
+            if (charging == player) {
+                intensity = swell;
+                strength = BIO_SHAKE_SELF_STRENGTH;
+                rollStrength = BIO_SHAKE_SELF_ROLL;
+            } else {
+                double distance = player.distanceTo(charging);
+                if (distance > bioShakeRadius) continue;
+                intensity = (float) (1.0D - (distance / bioShakeRadius)) * swell;
+                strength = BIO_SHAKE_NEARBY_STRENGTH;
+                rollStrength = BIO_SHAKE_NEARBY_ROLL;
+            }
+
+            event.setPitch(event.getPitch() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
+            event.setYaw(event.getYaw() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
+            event.setRoll(event.getRoll() + (player.getRandom().nextFloat() - 0.5F) * rollStrength * intensity);
+            break;
         }
 
         double rageScreamShakeRadius = 15.0D;

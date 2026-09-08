@@ -591,7 +591,7 @@ public class GeneralServerConfig {
 		private Integer explodeChargeSeconds = 5;
 		private Integer explodeRevertSeconds = 4;
 		private Double explodeDamageRatio = 5.0;
-		private Integer explodeRadius = 12;
+		private Integer explodeRadius = 36;
 		private Boolean explodeKillsUser = false;
 		private Integer explodeKnockdownSeconds = 30;
 		private Integer explodeCooldownSeconds = 600;
