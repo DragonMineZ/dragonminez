@@ -90,6 +90,31 @@ public class CombatConfig {
 	private Double combatFlyImpulseKiCostPct = 0.05;
 	private Integer combatFlyImpulseCooldownTicks = 25;
 
+	private Boolean kiChargeInterruptOnHit = true;
+	private Boolean kiChargeDeflectsProjectiles = true;
+	private Integer kiChargeInterruptLockTicks = 10;
+
+	private Boolean enableKiSurge = true;
+	private Integer kiBurstTargetImmunitySeconds = 3;
+	private Double kiBurstRadius = 8.0;
+	private Double kiBurstKnockback = 1.4;
+	private Double surgeFillSeconds = 4.0;
+	private Double surgeDurationSeconds = 12.0;
+	private Integer surgeCooldownSeconds = 15;
+	private Double surgeDrainPerKiFraction = 1.5;
+	private Double surgeBurstDamageRatio = 0.25;
+	private Double surgeBurstRadius = 10.0;
+	private Double surgeBurstKnockback = 2.2;
+	private Double surgeKiCostMultiplier = 1.25;
+	private Double surgeKiDamageMultiplier = 1.15;
+	private Double surgeKiSpeedMultiplier = 1.25;
+	private Double surgeKiChargeSpeedMultiplier = 1.20;
+	private Double surgeMoveSpeedMultiplier = 1.25;
+	private Double surgeFlySpeedMultiplier = 1.25;
+	private Double surgeAttackSpeedMultiplier = 1.40;
+	private Double surgeAuraScaleMultiplier = 1.25;
+	private Double surgeAuraSpeedMultiplier = 1.50;
+
 	private Map<String, KiWeaponConfig> kiWeaponsConfig = new HashMap<>() {{
 		put("blade", new KiWeaponConfig(0.0, 0.25, 0.0, 0.075, -2.4, "#FFFFFF", "dragonminez:sword"));
 		put("scythe", new KiWeaponConfig(0.0, 0.45, 0.0, 0.105, -2.8, "#FFFFFF", "dragonminez:scythe"));

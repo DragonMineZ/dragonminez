@@ -235,6 +235,26 @@ public class Character {
 		return rgbAuraColor;
 	}
 
+	public String getActiveAuraColor() {
+		if (hasActiveStackForm()) {
+			FormConfig.FormData stackForm = getActiveStackFormData();
+			if (stackForm != null && stackForm.getAuraColor() != null && !stackForm.getAuraColor().isEmpty()) {
+				return stackForm.getAuraColor();
+			}
+		}
+		if (hasActiveForm()) {
+			FormConfig.FormData form = getActiveFormData();
+			if (form != null && form.getAuraColor() != null && !form.getAuraColor().isEmpty()) {
+				return form.getAuraColor();
+			}
+		}
+		return auraColor != null && !auraColor.isEmpty() ? auraColor : "#FFFFFF";
+	}
+
+	public float[] getActiveRgbAuraColor() {
+		return ColorUtils.hexToRgb(getActiveAuraColor());
+	}
+
 	public void updateOozaruCache() {
 		String raceName = this.getRaceName().toLowerCase();
 		String currentForm = this.getActiveForm();

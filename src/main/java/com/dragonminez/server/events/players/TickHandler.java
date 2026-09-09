@@ -128,6 +128,7 @@ public class TickHandler {
 				data.getStatus().setActionCharging(false);
 				data.getTechniques().clearTechniqueCharge();
 				data.getResources().setActionCharge(0);
+				KiSurgeService.breakSurge(serverPlayer, data);
 				if (!data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
 			} else if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 
@@ -202,7 +203,7 @@ public class TickHandler {
 				playerTickCounters.put(playerId, tickCounter);
 			}
 
-			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data);
+			boolean isMovementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(serverPlayer, data) || isChargingKi;
 			boolean isFiring = TechniqueDispatcher.isFiringKiAttack(serverPlayer);
 			boolean wasExecuting = serverPlayer.getPersistentData().getBoolean("dmz_was_executing_ki");
 
@@ -323,7 +324,9 @@ public class TickHandler {
 				if (chargeTicks % 2 == 0) chargePowerRelease(data, chargeTicks, isChargingKi && isDescending);
 			} else if (chargeTicksByPlayer.containsKey(playerId)) chargeTicksByPlayer.remove(playerId);
 
-			boolean auraFromActions = isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
+			KiSurgeService.tick(serverPlayer, data);
+
+			boolean auraFromActions = isChargingKi || data.getStatus().isSurgeActive() || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK));
 			boolean auraFromFlySprint = data.getSkills().isSkillActive("fly") && serverPlayer.isSprinting() && serverPlayer.getDeltaMovement().length() > 0.65F;
 			data.getStatus().setAuraActive(auraFromActions || auraFromFlySprint);
 
@@ -345,12 +348,6 @@ public class TickHandler {
 					data.getStatus().setRenderKatana(renderKatanaTarget);
 				}
 
-				// backWeapon names the weapon the player OWNS, whether it is in hand or not, so
-				// it does not change when the weapon is merely drawn or stowed. That matters:
-				// this block runs only every 5 ticks and then still has to reach the client, so
-				// a field that flipped on every draw would leave the client disagreeing for up
-				// to 500ms with the hand it can already see, and the sheath would blink out.
-				// The client derives drawn state from the held item instead, which is instant.
 				ItemStack heldWeapon = ItemStack.EMPTY;
 				ItemStack stowedWeapon = ItemStack.EMPTY;
 				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
@@ -919,6 +916,7 @@ public class TickHandler {
 		boolean outOfKi = false;
 		if (percent < ceiling - 0.01f) {
 			float rate = (percent < 100.0f) ? 100.0f / baseTicks : KiAttackData.OVERCHARGE_TIER_PERCENT / (float) baseTicks;
+			if (data.getStatus().isSurgeActive()) rate *= ConfigManager.getCombatConfig().getSurgeKiChargeSpeedMultiplier().floatValue();
 			float newP = Math.min(ceiling, percent + rate);
 
 			if (creative) percent = newP;
@@ -1145,7 +1143,7 @@ public class TickHandler {
 			boolean hasEnoughHealth = healthDrain <= 0 || player.getHealth() > healthDrain;
 
 			if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
-				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain);
+				if (energyDrain > 0) data.getResources().removeEnergy(energyDrain, false);
 				else if (energyDrain < 0) data.getResources().addEnergy(-energyDrain);
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
 				else if (staminaDrain < 0) data.getResources().addStamina(-staminaDrain);

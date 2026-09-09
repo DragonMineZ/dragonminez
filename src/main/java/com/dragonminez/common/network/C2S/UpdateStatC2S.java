@@ -3,6 +3,7 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.KiSurgeService;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -53,6 +54,7 @@ public class UpdateStatC2S {
 
                 switch (msg.statusKey) {
 					case CHARGE_KI:
+						if (msg.value && KiSurgeService.isChargeLocked(player)) break;
                         if (data.getStatus().isChargingKi() != msg.value) data.getStatus().setChargingKi(msg.value);
                         break;
 					case DESCEND:

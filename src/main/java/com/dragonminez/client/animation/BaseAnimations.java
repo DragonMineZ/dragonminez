@@ -33,6 +33,7 @@ public class BaseAnimations {
 	public static final RawAnimation MINING1 = RawAnimation.begin().thenPlay("base.mining1");
 	public static final RawAnimation MINING2 = RawAnimation.begin().thenPlay("base.mining2");
 	public static final RawAnimation KI_CHARGE = RawAnimation.begin().thenLoop("base.ki_charge");
+	public static final RawAnimation KI_OVERCHARGE = RawAnimation.begin().thenLoop("base.ki_overcharge");
 	public static final RawAnimation TRANSFORMATION = RawAnimation.begin().thenLoop("transf.generic");
 	public static final RawAnimation OOZARU_TRANSFORMATION = RawAnimation.begin().thenLoop("transf.ozaru");
 	public static final RawAnimation ABSORB = RawAnimation.begin().thenLoop("transf.absorb");

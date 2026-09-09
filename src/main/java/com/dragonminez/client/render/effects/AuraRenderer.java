@@ -62,6 +62,7 @@ public class AuraRenderer {
 	private static final Map<Integer, Long> RELEASE_SCALE_TICK = new ConcurrentHashMap<>();
 	private static final Map<Integer, CachedAuraData> AURA_CACHE = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
+	private static final Map<Integer, float[]> AURA_PHASE = new ConcurrentHashMap<>();
 	private static VertexBuffer cachedLightningMesh;
 
 	public static RenderType auraType(ResourceLocation texture) {
@@ -251,14 +252,7 @@ public class AuraRenderer {
 			var stats = StatsProvider.get(StatsCapability.INSTANCE, localPlayer).orElse(null);
 			if (stats != null) {
 				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
-				var character = stats.getCharacter();
-				boolean hasLightning = false;
-
-				if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-					hasLightning = character.getActiveStackFormData().getHasLightnings();
-				} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
-					hasLightning = character.getActiveFormData().getHasLightnings();
-				}
+				boolean hasLightning = AuraFxState.hasLightning(stats);
 
 				if (isAuraActive || hasLightning) {
 					currentFramePlayers.add(localPlayer.getId());
@@ -294,7 +288,6 @@ public class AuraRenderer {
 			CachedAuraData data = entry.getValue();
 
 			if (!currentFramePlayers.contains(playerId)) {
-				// entity ids get reused, so a cached player id can now point at any entity (e.g. a Bat) -> guard the cast
 				if (!(mc.level.getEntity(playerId) instanceof Player player) || !player.isAlive()) {
 					it.remove();
 					continue;
@@ -340,6 +333,7 @@ public class AuraRenderer {
 		PULSE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		RELEASE_SCALE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		RELEASE_SCALE_TICK.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+		AURA_PHASE.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 	}
 
 	private static float[] getModelScale(StatsData stats) {
@@ -375,15 +369,27 @@ public class AuraRenderer {
 		}
 
 		baseScale += getReleaseScaleBonus(player, stats);
+		baseScale *= (float) AuraFxState.auraScaleMultiplier(stats);
 
 		return new float[]{baseScale * modelScale[0], baseScale * modelScale[1], baseScale * modelScale[2]};
+	}
+
+	private static float auraPhase(Player player, float partialTick) {
+		int entityId = player.getId();
+		float now = player.tickCount + partialTick;
+		float[] state = AURA_PHASE.computeIfAbsent(entityId, k -> new float[]{now * 0.5f, now});
+
+		float delta = now - state[1];
+		if (delta > 0.0f && delta < 40.0f) state[0] += delta * 0.5f * (float) AuraFxState.auraSpeedMultiplier(player);
+		else if (delta != 0.0f) state[0] = now * 0.5f;
+		state[1] = now;
+		return state[0];
 	}
 
 	private static float getReleaseScaleBonus(Player player, StatsData stats) {
 		int entityId = player.getId();
 		float target = stats.getSkills().hasSkill("kicontrol")
-				? Mth.clamp(stats.getResources().getPowerRelease() / AURA_RELEASE_CAP, 0.0f, 1.0f)
-				: 0.0f;
+				? Mth.clamp(stats.getResources().getPowerRelease() / AURA_RELEASE_CAP, 0.0f, 1.0f) : 0.0f;
 
 		float current = RELEASE_SCALE_PROGRESS.getOrDefault(entityId, target);
 		long lastTick = RELEASE_SCALE_TICK.getOrDefault(entityId, 0L);
@@ -441,7 +447,6 @@ public class AuraRenderer {
 				COLOR_TICK_MAP.put(entityId, currentTick);
 				COLOR_PROGRESS_MAP.put(entityId, lastProgress);
 			}
-			// Sub-tick smoothing so the colour ramps cleanly between ticks.
 			chargeProgress = Math.max(0.0f, Math.min(1.0f, lastProgress + ratePerTick * partialTick));
 		} else COLOR_PROGRESS_MAP.put(entityId, 0.0f);
 
@@ -718,7 +723,7 @@ public class AuraRenderer {
 		ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_cross.png");
 		ResourceLocation sparkingTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/sparking_effects.png");
 
-		float animSpeed = (player.tickCount + partialTick) * 0.5f;
+		float animSpeed = auraPhase(player, partialTick);
 
 		shader.safeGetUniform("speed").set(animSpeed);
 		shader.safeGetUniform("ProjMat").set(projectionMatrix);
@@ -884,7 +889,7 @@ public class AuraRenderer {
 
 		poseStack.scale(sX, 1.0f, sZ);
 
-		float animSpeed = (player.tickCount + partialTick) * 0.5f;
+		float animSpeed = auraPhase(player, partialTick);
 
 		shader.safeGetUniform("speed").set(animSpeed);
 		shader.safeGetUniform("ProjMat").set(projectionMatrix);
@@ -947,30 +952,18 @@ public class AuraRenderer {
 	private static void renderSparksImpl(Player player, Matrix4f basePose, PoseStack poseStack, Matrix4f projectionMatrix, float partialTick, boolean isFirstPersonLocal) {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return;
-		var character = stats.getCharacter();
 
-		boolean hasLightning = false;
-		String lightningColorHex = "";
-
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getHasLightnings()) {
-			hasLightning = true;
-			lightningColorHex = character.getActiveStackFormData().getLightningColor();
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getHasLightnings()) {
-			hasLightning = true;
-			lightningColorHex = character.getActiveFormData().getLightningColor();
-		}
-
-		if (!hasLightning) return;
+		if (!AuraFxState.hasLightning(stats)) return;
 
 		ShaderInstance shader = DMZShaders.lightningShader;
 		if (shader == null) return;
 
 		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
-		float speedMod = isAuraActive ? 1.0f : 0.20f;
+		float speedMod = (isAuraActive ? 1.0f : 0.20f) * AuraFxState.lightningSpeedMultiplier(stats);
 		int maxBranches = isAuraActive ? 5 : 3;
 		float maxScale = isAuraActive ? 0.5f : 0.25f;
 
-		float[] colorRgb = ColorUtils.hexToRgb(lightningColorHex);
+		float[] colorRgb = ColorUtils.hexToRgb(AuraFxState.lightningColor(stats));
 		float time = (player.tickCount + partialTick) / 20.0f;
 
 		shader.safeGetUniform("projectionMatrix").set(projectionMatrix);

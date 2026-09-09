@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.RageScreamEffect;
 import com.dragonminez.client.systems.BioSwellRenderState;
+import com.dragonminez.client.systems.KiBurstShakeState;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
@@ -52,6 +53,10 @@ public class EffectsEvents {
 	private static final float BIO_SHAKE_SELF_ROLL = 0.25F;
 	private static final float BIO_SHAKE_NEARBY_STRENGTH = 1.6F;
 	private static final float BIO_SHAKE_NEARBY_ROLL = 0.8F;
+
+	private static final double KI_BURST_SHAKE_RANGE_MULT = 1.5D;
+	private static final float KI_BURST_SHAKE_OPENING = 1.2F;
+	private static final float KI_BURST_SHAKE_FULL = 2.8F;
 
 	@SubscribeEvent
 	public static void onCameraSetup(ViewportEvent.ComputeCameraAngles event) {
@@ -138,6 +143,29 @@ public class EffectsEvents {
             event.setPitch(event.getPitch() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
             event.setYaw(event.getYaw() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
             event.setRoll(event.getRoll() + (player.getRandom().nextFloat() - 0.5F) * rollStrength * intensity);
+            break;
+        }
+
+        for (var burstEntry : KiBurstShakeState.active().entrySet()) {
+            Entity source = player.level().getEntity(burstEntry.getKey());
+            if (source == null) continue;
+
+            KiBurstShakeState.Burst burst = burstEntry.getValue();
+            float intensity;
+            if (source == player) {
+                intensity = burst.fade();
+            } else {
+                double distance = player.distanceTo(source);
+                double reach = burst.radius() * KI_BURST_SHAKE_RANGE_MULT;
+                if (distance > reach) continue;
+                intensity = (float) (1.0D - (distance / reach)) * burst.fade();
+            }
+            if (intensity <= 0.0f) continue;
+
+            float strength = burst.isFull() ? KI_BURST_SHAKE_FULL : KI_BURST_SHAKE_OPENING;
+            event.setPitch(event.getPitch() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
+            event.setYaw(event.getYaw() + (player.getRandom().nextFloat() - 0.5F) * strength * intensity);
+            event.setRoll(event.getRoll() + (player.getRandom().nextFloat() - 0.5F) * strength * 0.5F * intensity);
             break;
         }
 

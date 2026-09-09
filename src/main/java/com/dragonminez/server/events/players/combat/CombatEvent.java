@@ -33,6 +33,7 @@ import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.KiSurgeService;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.server.level.ServerLevel;
@@ -48,8 +49,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.ProjectileImpactEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
@@ -347,6 +350,12 @@ public class CombatEvent {
 				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
 
+					// Getting hit breaks concentration: the charge and any partial surge drop.
+					// An already-active surge survives; only a guard break or stun cuts that short.
+					if (ConfigManager.getCombatConfig().getKiChargeInterruptOnHit() && victim instanceof ServerPlayer serverVictim) {
+						KiSurgeService.interruptCharge(serverVictim, victimData);
+					}
+
 					if (finalHealingReduction > 0.0)
 						victimData.getSecondaryStatEffects().apply(SecondaryStatEffects.HP_REGEN, -finalHealingReduction, HEALING_REDUCTION_DURATION_TICKS);
 
@@ -587,6 +596,7 @@ public class CombatEvent {
 		attackerData.getResources().setCurrentPoise(0);
 		attackerData.getResources().setCurrentStamina(0);
 		attackerData.getStatus().setBlocking(false);
+		if (attacker instanceof ServerPlayer serverPlayer) KiSurgeService.breakSurge(serverPlayer, attackerData);
 		int stunDuration = ConfigManager.getCombatConfig().getBlockBreakStunDurationTicks();
 		attacker.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
 		int regenCd = ConfigManager.getCombatConfig().getPoiseRegenCooldown();
@@ -660,6 +670,37 @@ public class CombatEvent {
 				event.setCanceled(true);
 			}
 		});
+	}
+
+	@SubscribeEvent
+	public static void deflectProjectilesWhileCharging(ProjectileImpactEvent event) {
+		if (!(event.getRayTraceResult() instanceof EntityHitResult hit)) return;
+		if (!(hit.getEntity() instanceof Player victim) || victim.level().isClientSide) return;
+		if (event.getProjectile() instanceof AbstractKiProjectile) return;
+		if (!ConfigManager.getCombatConfig().getKiChargeDeflectsProjectiles()) return;
+
+		Entity shooter = event.getProjectile().getOwner();
+		if (shooter != null && shooter.is(victim)) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
+			if (!data.getStatus().isChargingKi() || data.getStatus().isStunned()) return;
+			event.setCanceled(true);
+		});
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void keepSurgeBurstNonLethal(LivingDamageEvent event) {
+		LivingEntity victim = event.getEntity();
+		if (victim.level().isClientSide) return;
+		if (!victim.getPersistentData().getBoolean(KiSurgeService.NON_LETHAL_TAG)) return;
+
+		float headroom = victim.getHealth() - 1.0f;
+		if (headroom <= 0.0f) {
+			event.setCanceled(true);
+			return;
+		}
+		if (event.getAmount() > headroom) event.setAmount(headroom);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)

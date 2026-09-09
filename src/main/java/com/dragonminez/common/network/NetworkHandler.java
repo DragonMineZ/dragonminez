@@ -606,6 +606,12 @@ public class NetworkHandler {
 				.encoder(com.dragonminez.common.network.TournamentPackets.ActionC2S::encode)
 				.consumerMainThread(com.dragonminez.common.network.TournamentPackets.ActionC2S::handle)
 				.add();
+
+		net.messageBuilder(KiBurstVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KiBurstVfxS2C::new)
+				.encoder(KiBurstVfxS2C::encode)
+				.consumerMainThread(KiBurstVfxS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

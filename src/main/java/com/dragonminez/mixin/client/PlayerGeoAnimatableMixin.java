@@ -324,7 +324,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (player.isPassenger()) return state.setAndContinue(SIT);
 
-		if (isChargingKi && !isMoving && !isBlocking) return state.setAndContinue(KI_CHARGE);
+		if (isChargingKi && !isMoving && !isBlocking) {
+			boolean surgeCharging = data.getStatus().isKiBurstArmed() || data.getStatus().isSurgeActive();
+			return state.setAndContinue(surgeCharging ? KI_OVERCHARGE : KI_CHARGE);
+		}
 
 		if (isTransforming && actionMode.equals(ActionMode.FORM)) {
 			if (nextFormConfig != null && nextFormConfig.hasTransformationAnimation()) {
