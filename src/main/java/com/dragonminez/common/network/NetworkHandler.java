@@ -587,6 +587,25 @@ public class NetworkHandler {
 				.encoder(RaidMusicS2C::encode)
 				.consumerMainThread(RaidMusicS2C::handle)
 				.add();
+
+		net.messageBuilder(TournamentPackets.OpenBracketS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TournamentPackets.OpenBracketS2C::decode)
+				.encoder(TournamentPackets.OpenBracketS2C::encode)
+				.consumerMainThread(TournamentPackets.OpenBracketS2C::handle)
+				.add();
+
+		net.messageBuilder(TournamentPackets.CountdownS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TournamentPackets.CountdownS2C::decode)
+				.encoder(TournamentPackets.CountdownS2C::encode)
+				.consumerMainThread(TournamentPackets.CountdownS2C::handle)
+				.add();
+
+		net.messageBuilder(com.dragonminez.common.network.TournamentPackets.ActionC2S.class, id(),
+						NetworkDirection.PLAY_TO_SERVER)
+				.decoder(com.dragonminez.common.network.TournamentPackets.ActionC2S::new)
+				.encoder(com.dragonminez.common.network.TournamentPackets.ActionC2S::encode)
+				.consumerMainThread(com.dragonminez.common.network.TournamentPackets.ActionC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

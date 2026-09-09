@@ -793,6 +793,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 this.getNavigation().stop();
             }
 
+            if (this.combatFrozen) {
+                if (this.isCasting()) this.stopCasting();
+                if (this.isComboing()) this.stopCombo();
+                this.getNavigation().stop();
+                this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+                if (this.getTarget() != null) this.lookAt(this.getTarget(), 30.0F, 30.0F);
+            }
+
             if (this.kiHitSlowTicks > 0) this.kiHitSlowTicks--;
 
             this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming() || this.isStunned());
@@ -909,12 +917,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     }
                 }
 
-                if (this.aiTier == AiTier.SIMPLE && this.canUseWildSense && this.currentWildSenseCooldown <= 0 && this.getTarget() != null && !this.isCasting() && !this.isComboing() && !clashing) {
+                if (this.aiTier == AiTier.SIMPLE && this.canUseWildSense && this.currentWildSenseCooldown <= 0 && this.getTarget() != null && !this.isCasting() && !this.isComboing() && !clashing && !this.combatFrozen) {
                     this.performTeleport(this.getTarget());
                     this.currentWildSenseCooldown = this.wildSenseCooldownMax;
                 }
 
-                if (this.hurtTime > 0 && !this.isCasting() && !this.isComboing() && !this.isZanzoken()) {
+                if (this.hurtTime > 0 && !this.isCasting() && !this.isComboing() && !this.isZanzoken() && !this.combatFrozen) {
                     if (this.canUseZanzoken && this.currentZanzokenCooldown <= 0 && !this.isZanzoken()) {
                         this.performZanzoken();
                     }
@@ -1274,6 +1282,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public boolean isValidRaidTarget(Entity entity) {
         return this.raidTargets == null || (entity != null && this.raidTargets.contains(entity.getUUID()));
     }
+    /**
+     * Held still without losing its target: used for the countdown before a tournament bout, where
+     * the fighter must already be locked onto its challenger but must not act until the bell.
+     *
+     * <p>Distinct from {@link #raidDormant}, which clears the target and refuses new ones, and from
+     * {@code setNoAi}, which only stops goals and navigation — the skills, teleport and evasion in
+     * {@link #tick()} run outside the goal system and would still fire.
+     */
+    private boolean combatFrozen = false;
+    public boolean isCombatFrozen() {return this.combatFrozen;}
+    public void setCombatFrozen(boolean frozen) {
+        this.combatFrozen = frozen;
+        if (frozen) {
+            if (this.isCasting()) this.stopCasting();
+            if (this.isComboing()) this.stopCombo();
+            this.getNavigation().stop();
+        }
+    }
+
     private boolean raidDormant = false;
     public boolean isRaidDormant() {return this.raidDormant;}
     public void setRaidDormant(boolean dormant) {
@@ -1304,6 +1331,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void startCombo(int comboId) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.combatFrozen) return;
         if (this.isStunned()) return;
         if (this.globalActionCooldown > 0) return;
         if (this.getTarget() == null) return;
@@ -1365,6 +1393,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void performTeleport(LivingEntity target) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.combatFrozen) return;
         Vec3 targetLook = target.getLookAngle().normalize();
 
         double distanceBehind = 1.5D;
@@ -1619,6 +1648,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         if (this.isTransforming()) return false;
         if (this.isCasting() || this.isComboing()) return false;
         if (this.isStunned()) return false;
+        // Frozen for a countdown: no landing the first hit before the bell.
+        if (this.combatFrozen) return false;
         return super.doHurtTarget(pEntity);
     }
 
@@ -1719,6 +1750,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public void startCasting(int type) {
         if (this.isInSkillGracePeriod()) return;
+        if (this.combatFrozen) return;
         if (this.isStunned()) return;
         if (this.globalActionCooldown > 0) return;
         if (BeamClashManager.isClashing(this.getUUID())) return;

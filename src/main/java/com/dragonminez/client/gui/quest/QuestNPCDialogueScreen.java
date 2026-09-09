@@ -244,7 +244,10 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 								.textureCoords(0, 28, 0, 48)
 								.textureSize(74, 20)
 								.message(tr("gui.dragonminez.npc.tournament"))
-								.onPress(btn -> overrideLine = tr("gui.dragonminez.lines." + npcId + ".tournament"))
+								.onPress(btn -> NetworkHandler.sendToServer(
+										new com.dragonminez.common.network.TournamentPackets.ActionC2S(
+										com.dragonminez.common.network.TournamentPackets.ActionC2S.Action.OPEN_BRACKET,
+												entityId)))
 								.build());
 					} else {
 						this.addRenderableWidget(new TexturedTextButton.Builder()

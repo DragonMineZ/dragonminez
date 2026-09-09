@@ -122,6 +122,7 @@ public class QuestEvents {
 
 		if (event.getEntity() instanceof ServerPlayer deadPlayer) {
 			handlePlayerQuestFailure(deadPlayer);
+			com.dragonminez.server.world.tournament.Tournament.Manager.onPlayerDeath(deadPlayer);
 		}
 
 		if (!(event.getSource().getEntity() instanceof ServerPlayer killer)) {

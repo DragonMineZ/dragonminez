@@ -510,6 +510,7 @@ public class ForgeCommonEvents {
 		if (!(event.level instanceof ServerLevel serverLevel)) return;
 		try {
 			com.dragonminez.server.world.structure.placement.StructureRepairManager.tick(serverLevel);
+			com.dragonminez.server.world.tournament.Tournament.Manager.tick(serverLevel);
 		} catch (Throwable ignored) {
 		}
 	}
@@ -533,6 +534,7 @@ public class ForgeCommonEvents {
 	public void onServerStopping(ServerStoppingEvent event) {
 		StorageManager.shutdown();
 		com.dragonminez.server.world.structure.placement.StructureSpawnPlanner.reset();
+		com.dragonminez.server.world.tournament.Tournament.Manager.reset();
 		com.dragonminez.server.world.structure.placement.StructureRepairManager.reset();
 	}
 

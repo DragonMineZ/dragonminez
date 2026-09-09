@@ -26,7 +26,7 @@ public final class RaidFeedback {
 	private static final int VICTORY_ROCKETS = 6;
 	private static final double ROCKET_SPREAD = 5.0D;
 
-	private static final String VICTORY_MUSIC = "dragonminez:menu_music_12";
+	public static final String VICTORY_MUSIC = "dragonminez:menu_music_12";
 	private static final int HERO_LEVEL = 0;
 	private static final int HERO_DURATION_TICKS = 20 * 60 * 10;
 
@@ -67,7 +67,7 @@ public final class RaidFeedback {
 				80, 0.4, 0.8, 0.4, 0.35);
 	}
 
-	private static void launchFireworks(ServerLevel level, BlockPos center) {
+	public static void launchFireworks(ServerLevel level, BlockPos center) {
 		for (int i = 0; i < VICTORY_ROCKETS; i++) {
 			double x = center.getX() + 0.5 + (level.getRandom().nextDouble() - 0.5) * 2.0 * ROCKET_SPREAD;
 			double z = center.getZ() + 0.5 + (level.getRandom().nextDouble() - 0.5) * 2.0 * ROCKET_SPREAD;

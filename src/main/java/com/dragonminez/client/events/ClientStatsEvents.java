@@ -101,7 +101,11 @@ public class ClientStatsEvents {
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer localPlayer = mc.player;
 
-		if (localPlayer == null) return;
+		if (localPlayer == null) {
+			com.dragonminez.client.gui.tournament.TournamentOverlay.clear();
+			return;
+		}
+		if (!mc.isPaused()) com.dragonminez.client.gui.tournament.TournamentOverlay.tick();
 
 		if (mc.level != null && !mc.isPaused()) {
 			for (var player : mc.level.players()) {

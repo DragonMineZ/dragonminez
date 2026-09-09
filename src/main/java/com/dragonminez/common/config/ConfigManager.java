@@ -50,6 +50,7 @@ public class ConfigManager {
 	private static final Path STACK_FORMS_DIR = CONFIG_DIR.resolve("forms");
 	private static final Path RACES_DIR = CONFIG_DIR.resolve("races");
 	private static final Path RAIDS_DIR = CONFIG_DIR.resolve("raids");
+	private static final Path TOURNAMENTS_DIR = CONFIG_DIR.resolve("tournaments");
 	private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin"};
 	private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin"));
 
@@ -61,6 +62,7 @@ public class ConfigManager {
 
 	private static Map<String, FormConfig> STACK_FORMS = new HashMap<>();
 	private static final Map<String, RaidDefinition> RAIDS = new LinkedHashMap<>();
+	private static final Map<String, TournamentDefinition> TOURNAMENTS = new LinkedHashMap<>();
 
 	private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
 	private static SkillsConfig SERVER_SYNCED_SKILLS;
@@ -94,6 +96,7 @@ public class ConfigManager {
 			loadAllRaces();
 			createOrLoadStackForms(true);
 			loadRaids();
+			loadTournaments();
 
 			LogUtil.info(Env.COMMON, "Configuration system initialized successfully");
 			LogUtil.info(Env.COMMON, "Loaded races: {}", LOADED_RACES);
@@ -119,6 +122,7 @@ public class ConfigManager {
 			loadAllRaces();
 			createOrLoadStackForms(true);
 			loadRaids();
+			loadTournaments();
 			LogUtil.info(Env.COMMON, "Configuration system reloaded successfully");
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Error reloading configuration system: {}", e.getMessage());
@@ -164,6 +168,84 @@ public class ConfigManager {
 	/** Raid id to definition, in load order. Feed this to {@code RaidTypes.reload(...)}. */
 	public static Map<String, RaidDefinition> getRaids() {
 		return Collections.unmodifiableMap(RAIDS);
+	}
+
+	/** Mirrors {@link #loadRaids()}: shipped defaults get the version merge, extra files load as-is. */
+	private static void loadTournaments() throws IOException {
+		TOURNAMENTS.clear();
+		Files.createDirectories(TOURNAMENTS_DIR);
+
+		Map<String, TournamentDefinition> shipped = TournamentDefinition.Defaults.create();
+		for (Map.Entry<String, TournamentDefinition> entry : shipped.entrySet()) {
+			Path path = TOURNAMENTS_DIR.resolve(entry.getKey() + ".json");
+			TournamentDefinition loaded = loadAndValidate(path, TournamentDefinition.class, entry::getValue,
+					TournamentDefinition::getConfigVersion, TournamentDefinition::setConfigVersion,
+					TournamentDefinition.CURRENT_VERSION, null);
+			if (loaded != null) TOURNAMENTS.put(entry.getKey(), loaded);
+		}
+
+		try (Stream<Path> stream = Files.list(TOURNAMENTS_DIR)) {
+			stream.filter(Files::isRegularFile)
+					.filter(p -> p.toString().endsWith(".json"))
+					.filter(p -> !p.getFileName().toString().toLowerCase().startsWith("old_"))
+					.forEach(path -> {
+						String id = path.getFileName().toString();
+						id = id.substring(0, id.length() - 5);
+						if (shipped.containsKey(id)) return;
+
+						try {
+							TournamentDefinition custom = LOADER.loadConfig(path, TournamentDefinition.class);
+							if (custom != null) TOURNAMENTS.put(id, custom);
+						} catch (Exception e) {
+							LogUtil.error(Env.COMMON, "Could not read custom tournament '{}': {}", id, e.getMessage());
+							JsonLoadReport.error("config", "tournaments/" + id + ".json",
+									"Malformed JSON: " + JsonLoadReport.rootCause(e) + " — this tournament was skipped");
+						}
+					});
+		}
+
+		LogUtil.info(Env.COMMON, "Loaded {} tournament definition(s): {}", TOURNAMENTS.size(), TOURNAMENTS.keySet());
+	}
+
+	public static Map<String, TournamentDefinition> getTournaments() {
+		return Collections.unmodifiableMap(TOURNAMENTS);
+	}
+
+	/**
+	 * Records the ring position for a tournament and writes it back to its JSON, so the offset
+	 * only has to be measured once per structure rather than guessed.
+	 *
+	 * @param x offset in blocks from the structure's corner
+	 * @return false when the tournament is unknown or the file could not be written
+	 */
+	public static boolean saveTournamentRing(String id, int x, int y, int z) {
+		TournamentDefinition def = TOURNAMENTS.get(id);
+		if (def == null) return false;
+
+		TournamentDefinition.RingOffset ring = def.getRing();
+		if (ring == null) {
+			ring = new TournamentDefinition.RingOffset();
+			def.setRing(ring);
+		}
+		ring.setX(x);
+		ring.setY(y);
+		ring.setZ(z);
+
+		try {
+			LOADER.saveConfig(TOURNAMENTS_DIR.resolve(id + ".json"), def);
+			return true;
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Could not save ring position for tournament '{}': {}", id, e.getMessage());
+			return false;
+		}
+	}
+
+	/** Null when the id is unknown, disabled, or the file is missing fighters. */
+	public static TournamentDefinition getTournament(String id) {
+		if (id == null) return null;
+		TournamentDefinition def = TOURNAMENTS.get(id);
+		if (def == null || !def.isEnabled() || !def.isUsable()) return null;
+		return def;
 	}
 
 	private static String peekConfigVersion(Path path) {

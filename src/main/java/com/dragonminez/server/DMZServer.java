@@ -32,6 +32,7 @@ public class DMZServer {
 		ConfigCommand.register(dispatcher);
 		WeightCommand.register(dispatcher);
 		RaidCommand.register(dispatcher);
+		TournamentCommand.register(dispatcher);
 		AlignmentCommand.register(dispatcher);
 		TailCommand.register(dispatcher);
 		HaloCommand.register(dispatcher);
