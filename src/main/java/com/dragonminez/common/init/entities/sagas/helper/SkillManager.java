@@ -31,36 +31,42 @@ public class SkillManager {
         REGISTRY.put(1, (user, target, dmg) -> {
             KiWaveEntity kame = new KiWaveEntity(user.level(), user);
             kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 37);
+            applyColors(user, kame);
         });
 
         // 2. GALICK GUN
         REGISTRY.put(2, (user, target, dmg) -> {
             KiWaveEntity galick = new KiWaveEntity(user.level(), user);
             galick.setupKiGalickGun(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 37);
+            applyColors(user, galick);
         });
 
         // 3. MAKANKOSAPPO
         REGISTRY.put(3, (user, target, dmg) -> {
             KiLaserEntity makkanko = new KiLaserEntity(user.level(), user);
             makkanko.setupKiMakkankosanpo(user, dmg, user.getKiBlastSpeed() * 2.0F, 37);
+            applyColors(user, makkanko);
         });
 
         // 4. KI LASER
         REGISTRY.put(4, (user, target, dmg) -> {
             KiLaserEntity laser = new KiLaserEntity(user.level(), user);
             laser.setupKiLaser(user, dmg, user.getKiBlastSpeed() * 3.0F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 0);
+            applyColors(user, laser);
         });
 
         // 5. KI EXPLOSION
         REGISTRY.put(5, (user, target, dmg) -> {
             KiExplosionEntity explosion = new KiExplosionEntity(user.level(), user);
             explosion.setupKiExplosion(user, dmg, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 37);
+            applyColors(user, explosion);
         });
 
         // 6. KI BARRIER
         REGISTRY.put(6, (user, target, dmg) -> {
             KiBarrierEntity barrier = new KiBarrierEntity(user.level(), user);
             barrier.setupKiBarrier(user, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 37);
+            applyColors(user, barrier);
             barrier.setKiDamage(dmg);
         });
 
@@ -94,18 +100,21 @@ public class SkillManager {
         REGISTRY.put(9, (user, target, dmg) -> {
             KiWaveEntity oozaru = new KiWaveEntity(user.level(), user);
             oozaru.setupKiOozaru(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolSkillSize(), 37);
+            applyColors(user, oozaru);
         });
 
         // 10. KI VOLLEY
         REGISTRY.put(10, (user, target, dmg) -> {
             KiBlastEntity volley = new KiBlastEntity(user.level(), user);
             volley.setupKiVolley(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), 37);
+            applyColors(user, volley);
         });
 
         // 11. KI SMALL
         REGISTRY.put(11, (user, target, dmg) -> {
             KiBlastEntity small = new KiBlastEntity(user.level(), user);
             small.setupKiSmall(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain());
+            applyColors(user, small);
             small.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, user.getKiBlastSpeed(), 1.0F);
             user.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.0F + (user.getRandom().nextFloat() * 0.2F));
         });
@@ -120,36 +129,42 @@ public class SkillManager {
         REGISTRY.put(13, (user, target, dmg) -> {
             KiLaserEntity triple = new KiLaserEntity(user.level(), user);
             triple.setupKiLaser(user, dmg, user.getKiBlastSpeed() * 3.0F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 0);
+            applyColors(user, triple);
         });
 
         // 14. KIENZAN
         REGISTRY.put(14, (user, target, dmg) -> {
             KiDiskEntity disk = new KiDiskEntity(user.level(), user);
             disk.setupKiDisk(user, dmg, user.getKiBlastSpeed() * 1.2F, user.getCurrentPoolColorMain(), user.getCurrentPoolSkillSize(), 30);
+            applyColors(user, disk);
         });
 
         // 15. DEATH BALL
         REGISTRY.put(15, (user, target, dmg) -> {
             KiBlastEntity ball = new KiBlastEntity(user.level(), user);
             ball.setupKiDeathBall(user, dmg, user.getKiBlastSpeed() * 0.7F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 60);
+            applyColors(user, ball);
         });
 
         // 16. MASENKO
         REGISTRY.put(16, (user, target, dmg) -> {
             KiWaveEntity masenko = new KiWaveEntity(user.level(), user);
             masenko.setupKiMasenko(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 40);
+            applyColors(user, masenko);
         });
 
         // 17. BIG BANG
         REGISTRY.put(17, (user, target, dmg) -> {
             KiBlastEntity bigbang = new KiBlastEntity(user.level(), user);
             bigbang.setupKiBlast(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolSkillSize(), 30);
+            applyColors(user, bigbang);
         });
 
         // 18. FINAL FLASH
         REGISTRY.put(18, (user, target, dmg) -> {
             KiWaveEntity ff = new KiWaveEntity(user.level(), user);
             ff.setupFinalFlash(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 40);
+            applyColors(user, ff);
         });
 
         // 19. MAJIN CANDY
@@ -161,13 +176,20 @@ public class SkillManager {
         REGISTRY.put(20, (user, target, dmg) -> {
             KiBlastEntity airVolley = new KiBlastEntity(user.level(), user);
             airVolley.setupKiAirVolley(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorOutline(), 30);
+            applyColors(user, airVolley);
         });
 
         // 21. DOUBLE SUNDAY (Raditz)
         REGISTRY.put(21, (user, target, dmg) -> {
             KiWaveEntity doubleSunday = new KiWaveEntity(user.level(), user);
             doubleSunday.setupDoubleSunday(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 40);
+            applyColors(user, doubleSunday);
         });
+    }
+
+    private static void applyColors(DBSagasEntity user, AbstractKiProjectile projectile) {
+        projectile.setColors(user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                user.getCurrentPoolColorOutline());
     }
 
     public static void execute(int id, DBSagasEntity user, LivingEntity target) {

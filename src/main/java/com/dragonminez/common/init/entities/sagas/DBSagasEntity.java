@@ -121,9 +121,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     @Getter
     public enum KiSkillType {
-        KAMEHAMEHA(1, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
-        GALICK_GUN(2, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
-        MAKANKOSAPPO(3, SkillRole.HITSCAN, Tier.MEDIUM),
+        KAMEHAMEHA(1, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xEDF4FF, 0x29D8FF, 0x0077FF),
+        GALICK_GUN(2, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFAE5FF, 0xA63EF0, 0x7106BD),
+        MAKANKOSAPPO(3, SkillRole.HITSCAN, Tier.MEDIUM, 0xFFE657, 0xF5A627, 0x8B17CF),
         KI_LASER(4, SkillRole.HITSCAN, Tier.WEAK),
         KI_EXPLOSION(5, SkillRole.AOE_BURST, Tier.MEDIUM),
         KI_BARRIER(6, SkillRole.DEFENSIVE, Tier.WEAK),
@@ -136,9 +136,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         TRIPLE_LASER(13, SkillRole.HITSCAN, Tier.MEDIUM),
         KIENZAN(14, SkillRole.HITSCAN, Tier.MEDIUM),
         DEATH_BALL(15, SkillRole.GUARD_BREAK, Tier.STRONG),
-        MASENKO(16, SkillRole.RANGED_TRAVEL, Tier.MEDIUM),
+        MASENKO(16, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFFC85, 0xFCE062, 0xFFFFFF),
         BIG_BANG(17, SkillRole.GUARD_BREAK, Tier.STRONG),
-        FINAL_FLASH(18, SkillRole.RANGED_TRAVEL, Tier.STRONG),
+        FINAL_FLASH(18, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xFFFCD6, 0xFFEB52, 0xF5C020),
         MAJIN_CANDY(19, SkillRole.ZONING, Tier.STRONG),
         KI_AIR_VOLLEY(20, SkillRole.ZONING, Tier.WEAK),
         DOUBLE_SUNDAY(21, SkillRole.RANGED_TRAVEL, Tier.STRONG),
@@ -147,7 +147,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         private final int id;
         private final SkillRole role;
         private final Tier tier;
-        KiSkillType(int id, SkillRole role, Tier tier) { this.id = id; this.role = role; this.tier = tier; }
+        // Signature palette, mirroring PredefinedTechniques so an NPC Kamehameha looks like a
+        // player one. Outline -1 means "derive it from the border".
+        private final int colorMain;
+        private final int colorBorder;
+        private final int colorOutline;
+
+        KiSkillType(int id, SkillRole role, Tier tier) { this(id, role, tier, 0xFFFFFF, 0xFFFFFF, -1); }
+
+        KiSkillType(int id, SkillRole role, Tier tier, int colorMain, int colorBorder, int colorOutline) {
+            this.id = id; this.role = role; this.tier = tier;
+            this.colorMain = colorMain; this.colorBorder = colorBorder; this.colorOutline = colorOutline;
+        }
 
         public static KiSkillType fromId(int id) {
             for (KiSkillType type : values()) {
@@ -582,7 +593,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void addKiSkill(KiSkillType type, int cooldown, float size) {
-        this.addKiSkill(type, cooldown, size, 0xFFFFFF, 0xFFFFFF);
+        int outline = type.getColorOutline() >= 0
+                ? type.getColorOutline()
+                : ColorUtils.darkenColor(type.getColorBorder(), 0.6f);
+        this.addKiSkill(type, cooldown, size, type.getColorMain(), type.getColorBorder(), outline);
     }
 
     public void addKiSkill(KiSkillType type, int cooldown) {
