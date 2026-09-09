@@ -53,7 +53,8 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 			"textures/gui/buttons/characterbuttons.png");
 	private static final Set<String> TEXT_MASTERS = Set.of("karin", "guru", "dende", "enma", "baba", "popo", "gero", "toribot", "babidi");
 	private static final Set<String> SERVICE_MASTERS = Set.of("piccolo", "roshi", "kingkai", "oldkai", "babidi");
-	private static final Set<String> TOURNAMENT_MASTERS = Set.of("baba_earth");
+	private static final Set<String> TOURNAMENT_MASTERS =
+			com.dragonminez.common.config.TournamentDefinition.HOST_NPCS.keySet();
 
 	private static final int MAX_VISIBLE = 7;
 	private static final int ENTRY_HEIGHT = 18;

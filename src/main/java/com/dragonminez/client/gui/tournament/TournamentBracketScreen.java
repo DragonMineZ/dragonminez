@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.dragonminez.common.network.TournamentPackets;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.TournamentPackets;
 import com.dragonminez.server.world.tournament.Tournament;
@@ -61,6 +62,14 @@ public class TournamentBracketScreen extends Screen {
 	private static final int CARD_TOP = 58;
 	private static final int CARD_TEXT_TOP = 12;
 
+	private static final float PORTRAIT_SPAN = 0.80F;
+	private static final float PORTRAIT_HEADROOM = 0.30F;
+	private static final float PORTRAIT_PAD = 2.0F;
+
+	private static final float ZOOM_MIN = 0.55F;
+	private static final float ZOOM_MAX = 2.0F;
+	private static final float ZOOM_STEP = 0.12F;
+
 
 	private enum SlotState {
 		UPCOMING(0, 0),
@@ -86,6 +95,8 @@ public class TournamentBracketScreen extends Screen {
 	private float panX = 0;
 	private float panY = 0;
 	private boolean dragging = false;
+	private float zoom = 1.0F;
+	private String hoveredId = null;
 	private double dragStartX;
 	private double dragStartY;
 	private float dragStartPanX;
@@ -143,6 +154,7 @@ public class TournamentBracketScreen extends Screen {
 				: "tournament.dragonminez.format.bracket.line1", data.getSeeds().size()));
 		lines.add(Component.translatable("tournament.dragonminez.format.line2"));
 		lines.add(Component.translatable("tournament.dragonminez.format.line3"));
+		if (data.isLethal()) lines.add(Component.translatable("tournament.dragonminez.format.lethal"));
 
 		int x = centreX - CARD_WIDTH / 2;
 		int y = CARD_TOP;
@@ -153,9 +165,16 @@ public class TournamentBracketScreen extends Screen {
 
 		for (int i = 0; i < lines.size(); i++) {
 			graphics.drawCenteredString(this.font, dmz(lines.get(i)), centreX, lineY,
-					i == 0 ? 0xFFFFD700 : 0xFFE8F0FF);
+					lineColour(i, lines.size()));
 			lineY += this.font.lineHeight + 2;
 		}
+	}
+
+	// Title gold, the death warning red, everything between it plain.
+	private int lineColour(int index, int total) {
+		if (index == 0) return 0xFFFFD700;
+		if (data.isLethal() && index == total - 1) return 0xFFFF5555;
+		return 0xFFE8F0FF;
 	}
 
 	private void send(TournamentPackets.ActionC2S.Action action) {
@@ -178,8 +197,8 @@ public class TournamentBracketScreen extends Screen {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (dragging && button == 0) {
-			panX = dragStartPanX + (float) (mouseX - dragStartX);
-			panY = dragStartPanY + (float) (mouseY - dragStartY);
+			panX = dragStartPanX + (float) (mouseX - dragStartX) / zoom;
+			panY = dragStartPanY + (float) (mouseY - dragStartY) / zoom;
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -189,6 +208,19 @@ public class TournamentBracketScreen extends Screen {
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if (button == 0) dragging = false;
 		return super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		float previous = zoom;
+		zoom = Mth.clamp(zoom + (float) delta * ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
+		if (zoom == previous) return true;
+
+		// Anchor on the cursor so whatever slot it sits over stays under it.
+		float shift = 1.0F / zoom - 1.0F / previous;
+		panX += (float) (mouseX - this.width / 2.0F) * shift;
+		panY += (float) (mouseY - this.height / 2.0F) * shift;
+		return true;
 	}
 
 	@Override
@@ -203,9 +235,23 @@ public class TournamentBracketScreen extends Screen {
 		graphics.drawCenteredString(this.font, dmz(statusLine()), centreX, 46, 0xFFE8F0FF);
 
 		renderFormatCard(graphics, centreX);
-		renderLadder(graphics, centreX, mouseX, mouseY);
+
+		hoveredId = null;
+		float cx = this.width / 2.0F;
+		float cy = this.height / 2.0F;
+		graphics.pose().pushPose();
+		graphics.pose().translate(cx, cy, 0.0F);
+		graphics.pose().scale(zoom, zoom, 1.0F);
+		graphics.pose().translate(-cx, -cy, 0.0F);
+		renderLadder(graphics, centreX,
+				Math.round(cx + (mouseX - cx) / zoom), Math.round(cy + (mouseY - cy) / zoom));
+		graphics.pose().popPose();
 
 		super.render(graphics, mouseX, mouseY, partialTick);
+
+		if (hoveredId != null) {
+			graphics.renderComponentTooltip(this.font, tooltipFor(hoveredId), mouseX, mouseY);
+		}
 	}
 
 	private Component stars() {
@@ -290,7 +336,7 @@ public class TournamentBracketScreen extends Screen {
 				drawFrame(graphics, x, y, state);
 
 				if (mouseX >= x && mouseX <= x + SLOT_SIZE && mouseY >= y && mouseY <= y + SLOT_SIZE) {
-					graphics.renderComponentTooltip(this.font, tooltipFor(id), mouseX, mouseY);
+					hoveredId = id;
 				}
 			}
 
@@ -454,7 +500,7 @@ public class TournamentBracketScreen extends Screen {
 					x + SLOT_SIZE / 2, top - 14, states.get(i) == SlotState.CURRENT ? 0xFFFFD700 : 0xFF9FB4FF);
 
 			if (mouseX >= x && mouseX <= x + SLOT_SIZE && mouseY >= top && mouseY <= top + SLOT_SIZE) {
-				graphics.renderComponentTooltip(this.font, tooltipFor(id), mouseX, mouseY);
+				hoveredId = id;
 			}
 		}
 
@@ -504,15 +550,26 @@ public class TournamentBracketScreen extends Screen {
 		return type != null ? type.getDescription().copy() : Component.literal(id);
 	}
 
+	private int screenX(float ladderX) {
+		float centre = this.width / 2.0F;
+		return Math.round(centre + (ladderX - centre) * zoom);
+	}
+
+	private int screenY(float ladderY) {
+		float centre = this.height / 2.0F;
+		return Math.round(centre + (ladderY - centre) * zoom);
+	}
+
 	private void renderPortrait(GuiGraphics graphics, String id, int boxX, int boxY, boolean isPlayer, boolean greyed) {
 		LivingEntity entity = isPlayer ? Minecraft.getInstance().player : portraitFor(id);
 		if (entity == null) return;
 
-		float height = Math.max(0.6F, entity.getBbHeight());
-		int scale = Mth.clamp(Math.round((SLOT_SIZE * 1.6F) / height), 8, 140);
-		int feetY = boxY + Math.round(height * 0.82F * scale) + SLOT_SIZE / 4;
+		float height = Math.max(0.6F, entity.getBbHeight() * renderScale(entity));
+		int scale = Mth.clamp(Math.round((SLOT_SIZE - PORTRAIT_PAD * 2) / (height * PORTRAIT_SPAN)), 6, 140);
+		int feetY = boxY + Math.round(SLOT_SIZE * PORTRAIT_HEADROOM + height * scale);
 
-		graphics.enableScissor(boxX + 1, boxY + 1, boxX + SLOT_SIZE - 1, boxY + SLOT_SIZE - 1);
+		graphics.enableScissor(screenX(boxX + 1), screenY(boxY + 1),
+				screenX(boxX + SLOT_SIZE - 1), screenY(boxY + SLOT_SIZE - 1));
 		if (greyed) {
 			renderGreyedEntity(graphics, boxX + SLOT_SIZE / 2, feetY, scale, entity);
 		} else {
@@ -520,6 +577,10 @@ public class TournamentBracketScreen extends Screen {
 					scale, 0.0F, 0.0F, entity);
 		}
 		graphics.disableScissor();
+	}
+
+	private static float renderScale(LivingEntity entity) {
+		return entity instanceof DBSagasEntity saga ? Math.max(0.1F, saga.getScale()) : 1.0F;
 	}
 
 	private static void renderGreyedEntity(GuiGraphics graphics, int x, int y, int scale, LivingEntity entity) {

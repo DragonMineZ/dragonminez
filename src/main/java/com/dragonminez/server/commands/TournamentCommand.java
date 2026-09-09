@@ -33,18 +33,12 @@ public class TournamentCommand {
 								.executes(ctx -> setRing(ctx, StringArgumentType.getString(ctx, "tournament")))))
 				.then(Commands.literal("cooldown")
 						.then(Commands.literal("clear")
-								// No target given: whoever ran it, which is the common case while testing.
-								.executes(ctx -> clearCooldown(ctx, null, List.of(ctx.getSource().getPlayerOrException())))
 								.then(Commands.argument("players", EntityArgument.players())
 										.executes(ctx -> clearCooldown(ctx, null,
-												EntityArgument.getPlayers(ctx, "players"))))
-								.then(Commands.argument("tournament", StringArgumentType.word())
-										.suggests((c, b) -> SharedSuggestionProvider.suggest(
-												ConfigManager.getTournaments().keySet(), b))
-										.executes(ctx -> clearCooldown(ctx,
-												StringArgumentType.getString(ctx, "tournament"),
-												List.of(ctx.getSource().getPlayerOrException())))
-										.then(Commands.argument("players", EntityArgument.players())
+												EntityArgument.getPlayers(ctx, "players")))
+										.then(Commands.argument("tournament", StringArgumentType.word())
+												.suggests((c, b) -> SharedSuggestionProvider.suggest(
+														ConfigManager.getTournaments().keySet(), b))
 												.executes(ctx -> clearCooldown(ctx,
 														StringArgumentType.getString(ctx, "tournament"),
 														EntityArgument.getPlayers(ctx, "players"))))))));

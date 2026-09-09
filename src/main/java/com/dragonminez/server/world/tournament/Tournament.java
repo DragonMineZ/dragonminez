@@ -495,6 +495,12 @@ public final class Tournament {
 			return Progress.get(player.serverLevel()).getBracket(player.getUUID());
 		}
 
+		@Nullable
+		public static Bracket bracketOf(ServerPlayer player, String tournamentId) {
+			Bracket bracket = bracketOf(player);
+			return bracket != null && bracket.getTournamentId().equals(tournamentId) ? bracket : null;
+		}
+
 		public static boolean isFighting(ServerPlayer player) {
 			return ACTIVE.containsKey(player.getUUID());
 		}
@@ -506,8 +512,12 @@ public final class Tournament {
 
 			Progress data = Progress.get(player.serverLevel());
 
+			// One bracket at a time: a finished run elsewhere is fine to replace, a live one is not.
 			Bracket existing = data.getBracket(player.getUUID());
-			if (existing != null && existing.isActive()) return null;
+			if (existing != null && existing.isActive()) {
+				return existing.getTournamentId().equals(tournamentId) ? null
+						: Component.translatable("tournament.dragonminez.busy_elsewhere");
+			}
 
 			long cooldown = data.remainingCooldownSeconds(player.getUUID(), tournamentId);
 			if (cooldown > 0L) {
@@ -519,10 +529,10 @@ public final class Tournament {
 		}
 
 		@Nullable
-		public static Component beginMatch(ServerPlayer player, BlockPos ringCentre) {
+		public static Component beginMatch(ServerPlayer player, BlockPos ringCentre, String tournamentId) {
 			if (isFighting(player)) return Component.translatable("tournament.dragonminez.already_fighting");
 
-			Bracket bracket = bracketOf(player);
+			Bracket bracket = bracketOf(player, tournamentId);
 			if (bracket == null || !bracket.isActive()) {
 				return Component.translatable("tournament.dragonminez.not_entered");
 			}
@@ -617,6 +627,28 @@ public final class Tournament {
 			}
 
 			for (Runnable outcome : outcomes) outcome.run();
+		}
+
+		public static boolean isInNonLethalMatch(ServerPlayer player) {
+			ActiveMatch match = ACTIVE.get(player.getUUID());
+			if (match == null) return false;
+
+			Bracket bracket = bracketOf(player);
+			if (bracket == null) return false;
+
+			TournamentDefinition def = ConfigManager.getTournament(bracket.getTournamentId());
+			return def != null && !def.isLethal();
+		}
+
+		public static void knockOut(ServerPlayer player) {
+			ActiveMatch match = ACTIVE.remove(player.getUUID());
+			if (match == null) return;
+
+			player.setHealth(Math.max(1.0F, player.getMaxHealth() * 0.1F));
+			player.clearFire();
+			player.sendSystemMessage(Component.translatable("tournament.dragonminez.knockout")
+					.withStyle(ChatFormatting.RED));
+			loseMatch(player, match);
 		}
 
 		public static void onPlayerDeath(ServerPlayer player) {
@@ -818,17 +850,13 @@ public final class Tournament {
 
 		private static final double MAX_NPC_DISTANCE_SQR = 12.0D * 12.0D;
 
-		private static final Map<String, String> TOURNAMENT_BY_NPC = Map.of(
-				"baba_earth", "baba"
-		);
-
 		private Service() {}
 
 		public static void handleAction(ServerPlayer player, TournamentPackets.ActionC2S.Action action, int npcEntityId) {
 			MastersEntity npc = resolveNpc(player, npcEntityId);
 			if (npc == null) return;
 
-			String tournamentId = TOURNAMENT_BY_NPC.get(npc.getMasterName());
+			String tournamentId = TournamentDefinition.HOST_NPCS.get(npc.getMasterName());
 			if (tournamentId == null) return;
 
 			switch (action) {
@@ -847,7 +875,7 @@ public final class Tournament {
 						player.displayClientMessage(Component.translatable("tournament.dragonminez.no_ring"), true);
 						return;
 					}
-					Component refusal = Manager.beginMatch(player, ring);
+					Component refusal = Manager.beginMatch(player, ring, tournamentId);
 					if (refusal != null) player.displayClientMessage(refusal, true);
 				}
 			}
@@ -869,7 +897,7 @@ public final class Tournament {
 			}
 
 			Progress data = Progress.get(player.serverLevel());
-			Bracket bracket = data.getBracket(player.getUUID());
+			Bracket bracket = Manager.bracketOf(player, tournamentId);
 			boolean signUp = bracket == null || !bracket.isActive();
 
 			NetworkHandler.sendToPlayer(new TournamentPackets.OpenBracketS2C(
@@ -885,6 +913,7 @@ public final class Tournament {
 					bracket != null && bracket.isCompleted(),
 					bracket != null ? bracket.isGauntlet()
 							: def.formatOr(TournamentDefinition.Format.BRACKET) == TournamentDefinition.Format.GAUNTLET,
+					def.isLethal(),
 					signUp,
 					(int) data.remainingCooldownSeconds(player.getUUID(), tournamentId),
 					npcEntityId,

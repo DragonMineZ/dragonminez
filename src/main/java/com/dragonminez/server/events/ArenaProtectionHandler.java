@@ -14,6 +14,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.eventbus.api.Event;
@@ -111,6 +112,16 @@ public class ArenaProtectionHandler {
 				event.setCanceled(true);
 			}
 		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerHurt(LivingHurtEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		if (!Tournament.Manager.isInNonLethalMatch(player)) return;
+		if (player.getHealth() - event.getAmount() > 0.0F) return;
+
+		event.setCanceled(true);
+		Tournament.Manager.knockOut(player);
 	}
 
 	@SubscribeEvent

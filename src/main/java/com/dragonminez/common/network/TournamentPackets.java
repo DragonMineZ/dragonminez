@@ -34,6 +34,7 @@ public final class TournamentPackets {
 		private final boolean eliminated;
 		private final boolean completed;
 		private final boolean gauntlet;
+		private final boolean lethal;
 		private final boolean signUp;
 		private final int cooldownSeconds;
 		private final int npcEntityId;
@@ -44,7 +45,7 @@ public final class TournamentPackets {
 		public OpenBracketS2C(String tournamentId, String displayName, int difficultyStars,
 							  List<String> seeds, List<List<String>> winners, String semifinalist, String champion,
 							  int round, boolean eliminated, boolean completed,
-							  boolean gauntlet, boolean signUp, int cooldownSeconds, int npcEntityId,
+							  boolean gauntlet, boolean lethal, boolean signUp, int cooldownSeconds, int npcEntityId,
 							  Map<String, FighterStats> stats) {
 			this.stats = stats == null ? new HashMap<>() : stats;
 			this.tournamentId = tournamentId == null ? "" : tournamentId;
@@ -58,6 +59,7 @@ public final class TournamentPackets {
 			this.eliminated = eliminated;
 			this.completed = completed;
 			this.gauntlet = gauntlet;
+			this.lethal = lethal;
 			this.signUp = signUp;
 			this.cooldownSeconds = cooldownSeconds;
 			this.npcEntityId = npcEntityId;
@@ -80,6 +82,7 @@ public final class TournamentPackets {
 			buf.writeBoolean(msg.eliminated);
 			buf.writeBoolean(msg.completed);
 			buf.writeBoolean(msg.gauntlet);
+			buf.writeBoolean(msg.lethal);
 			buf.writeBoolean(msg.signUp);
 			buf.writeVarInt(msg.cooldownSeconds);
 			buf.writeInt(msg.npcEntityId);
@@ -113,6 +116,7 @@ public final class TournamentPackets {
 			boolean eliminated = buf.readBoolean();
 			boolean completed = buf.readBoolean();
 			boolean gauntlet = buf.readBoolean();
+			boolean lethal = buf.readBoolean();
 			boolean signUp = buf.readBoolean();
 			int cooldown = buf.readVarInt();
 			int npcId = buf.readInt();
@@ -124,7 +128,7 @@ public final class TournamentPackets {
 			}
 
 			return new OpenBracketS2C(tournamentId, displayName, stars, seeds, winners,
-					semifinalist, champion, round, eliminated, completed, gauntlet, signUp, cooldown, npcId, stats);
+					semifinalist, champion, round, eliminated, completed, gauntlet, lethal, signUp, cooldown, npcId, stats);
 		}
 
 		public static void handle(OpenBracketS2C msg, Supplier<NetworkEvent.Context> ctx) {
