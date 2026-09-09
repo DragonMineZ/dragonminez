@@ -61,7 +61,7 @@ public class MainEntities {
                 SAGA_KID_GOKU, SAGA_KID_KRILLIN, SAGA_OOLONG, SAGA_OOLONG_TRANSFORMED, SAGA_GIRAN, SAGA_NAM,
                 SAGA_JACKIE_CHUN, SAGA_JACKIE_CHUN_FP, SAGA_COLONEL_SILVER, SAGA_GENERAL_BLUE,
                 SAGA_WORLD_TOURNAMENT_ANNOUNCER, SAGA_NINJA_MURASAKI, SAGA_SERGEANT_METALLIC, SAGA_A8,
-                SAGA_TAO_PAI_PAI, SAGA_TAO_PAI_PAI_CYBORG, SAGA_GENERAL_RED, SAGA_GENERAL_BLACK_ROBOT, SAGA_MUMMY, SAGA_INVISIBLE_MAN, SAGA_AKKUMAN, SAGA_MASKED_WARRIOR, SAGA_YOUNG_YAMCHA, SAGA_YOUNG_TIEN, SAGA_GOKU_T23, SAGA_YAMCHA_T23, SAGA_TIEN_T23,
+                SAGA_TAO_PAI_PAI, SAGA_TAO_PAI_PAI_CYBORG, SAGA_GENERAL_RED, SAGA_GENERAL_BLACK_ROBOT, SAGA_MUMMY, SAGA_INVISIBLE_MAN, SAGA_AKKUMAN, SAGA_DRACULA, SAGA_MASKED_WARRIOR, SAGA_YOUNG_YAMCHA, SAGA_YOUNG_TIEN, SAGA_GOKU_T23, SAGA_YAMCHA_T23, SAGA_TIEN_T23,
                 SAGA_YAJIROBE, SAGA_CHICHI, SAGA_TAMBOURINE, SAGA_DRUM, SAGA_PICCOLO_DAIMAO_OLD, SAGA_PICCOLO_DAIMAO_YOUNG,
                 SAGA_MAJUNIA, SAGA_MAJUNIA_GIANT,
                 SAGA_PILAF_ROBOT, SAGA_SHU_ROBOT, SAGA_MAI_ROBOT, SAGA_PILAF_ROBOT_FUSED,
@@ -545,6 +545,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaZFightersEntity.MaskedWarriorEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.9f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_masked_warrior").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.DraculaEntity>> SAGA_DRACULA =
+            ENTITY_TYPES.register("saga_dracula",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.DraculaEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.9f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_dracula").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.AkkumanEntity>> SAGA_AKKUMAN =
             ENTITY_TYPES.register("saga_akkuman",
                     () -> EntityType.Builder.of(SagaZFightersEntity.AkkumanEntity::new, MobCategory.MONSTER)

@@ -732,6 +732,19 @@ public class SagaZFightersEntity {
     }
 
 
+    public static class DraculaEntity extends DBSagasEntity {
+        private static final double MOVE_SPEED = 0.30D;
+        public DraculaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+
+            this.setDefaultMovementSpeed(MOVE_SPEED);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(MOVE_SPEED);
+        }
+    }
+
     public static class MaskedWarriorEntity extends DBSagasEntity {
         public MaskedWarriorEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
