@@ -83,13 +83,16 @@ void main() {
 
     float speed = 14.0;
 
-    // Fast ridged noise for the flicker, plus a slower one that makes whole sheets of flame move.
-    vec3 noiseCoord = vec3(base.x * 3.5, base.y * 2.5 - (time * speed), base.z * 3.5);
+    // Ridged noise for the flicker, plus a slower one that makes whole sheets of flame move.
+    // Coarser than it looks like it should be on purpose: at high spatial frequency every vertex
+    // moves independently and the aura reads as noise rather than as fire. Bigger, sparser crests
+    // keep the aggression without the chaos.
+    vec3 noiseCoord = vec3(base.x * 2.4, base.y * 1.9 - (time * speed), base.z * 2.4);
     float n = 1.0 - abs(snoise(noiseCoord));
-    n = pow(n, 2.5);
+    n = pow(n, 3.2);
 
-    float macroNoise = snoise(vec3(base.x * 1.5, base.y * 1.0 - (time * 6.0), base.z * 1.5));
-    float displacement = (n * 0.75 + macroNoise * 0.35);
+    float macroNoise = snoise(vec3(base.x * 1.2, base.y * 0.85 - (time * 6.0), base.z * 1.2));
+    float displacement = (n * 0.72 + macroNoise * 0.26);
 
     float falloff = smoothstep(0.0, 0.10, height) * (1.0 - smoothstep(0.78, 1.0, height));
     float rise = 0.50 + 1.00 * height;
@@ -100,7 +103,7 @@ void main() {
 
     vec3 pos = base;
     pos.xz *= (auravar * auravar * (3.0 - 2.0 * auravar));
-    pos += dir * (wave * 0.95) * pow(auravar, 6.0);
+    pos += dir * (wave * 0.78) * pow(auravar, 6.0);
 
     vec3 nrm = normalize(mix(normalize(Normal), dir, 0.40));
 

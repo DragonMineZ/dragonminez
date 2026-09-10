@@ -30,9 +30,9 @@ public final class AuraTrailRenderer {
 	private static final float FADE_IN_SAMPLES = 4.0f;
 	private static final float MAX_HALF_WIDTH = 0.85f;
 	private static final float MIN_SEGMENT_SQR = 1.0e-6f;
+	private static final float ANCHOR_BACK = 0.75f;
 
-	private static final ResourceLocation DUMMY_TEXTURE =
-			ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+	private static final ResourceLocation DUMMY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
 
 	private static final Map<Integer, Deque<Vec3>> TRAILS = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> LAST_SAMPLE_TICK = new ConcurrentHashMap<>();
@@ -54,7 +54,11 @@ public final class AuraTrailRenderer {
 		LAST_SAMPLE_TICK.put(id, tick);
 
 		if (recording) {
-			points.addFirst(new Vec3(player.getX(), player.getY() + player.getBbHeight() * 0.5, player.getZ()));
+			Vec3 back = player.getViewVector(1.0f).scale(-ANCHOR_BACK);
+			points.addFirst(new Vec3(
+					player.getX() + back.x,
+					player.getY() + player.getBbHeight() * 0.5 + back.y,
+					player.getZ() + back.z));
 			while (points.size() > MAX_SAMPLES) points.removeLast();
 		} else {
 			if (!points.isEmpty()) points.removeLast();
@@ -80,12 +84,7 @@ public final class AuraTrailRenderer {
 
 		Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
 
-		List<Vec3> points = new ArrayList<>(recorded.size() + 1);
-		points.add(new Vec3(
-				Mth.lerp(partialTick, player.xo, player.getX()),
-				Mth.lerp(partialTick, player.yo, player.getY()) + player.getBbHeight() * 0.5,
-				Mth.lerp(partialTick, player.zo, player.getZ())));
-		points.addAll(recorded);
+		List<Vec3> points = new ArrayList<>(recorded);
 
 		int count = points.size();
 		Vec3[] left = new Vec3[count];
@@ -105,9 +104,10 @@ public final class AuraTrailRenderer {
 			if (side.lengthSqr() < MIN_SEGMENT_SQR) side = new Vec3(1.0, 0.0, 0.0);
 			side = side.normalize();
 
-			float age = (float) i / (count - 1);
+			float slid = Math.max(0.0f, i - partialTick);
+			float age = Mth.clamp(slid / (count - 1), 0.0f, 1.0f);
 			float halfWidth = MAX_HALF_WIDTH * (float) Math.pow(1.0f - age, 0.65);
-			float fadeIn = Math.min(1.0f, i / FADE_IN_SAMPLES);
+			float fadeIn = Math.min(1.0f, slid / FADE_IN_SAMPLES);
 			alphas[i] = alpha * fadeIn * (float) Math.pow(1.0f - age, 1.6);
 
 			left[i] = here.subtract(side.scale(halfWidth));

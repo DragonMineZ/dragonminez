@@ -26,6 +26,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -60,6 +61,14 @@ public class AuraRenderer {
 	 */
 	private static final float AURA_3D_FLIGHT_LEAD = 1.10f;
 	private static final float AURA_TRAIL_ALPHA = 0.55f;
+	/**
+	 * Offset along the aura's own axis while flying, replacing the 0.7 the standing aura uses along
+	 * world up. Derived so the flame sits on a horizontal body exactly the way it sits on an upright
+	 * one: root a little ahead of the head, tip trailing well past the feet. Anchoring is on the
+	 * body centre rather than the feet, because a flying player's model pivots there while its
+	 * hitbox stays vertical.
+	 */
+	private static final float AURA_2D_FLIGHT_OFFSET = 0.31f;
 	/**
 	 * How much of the flame's far wall survives. In first person the camera is inside the mesh by
 	 * construction — Minecraft keeps it at eye height and never leans it with the model — so the
@@ -765,8 +774,7 @@ public class AuraRenderer {
 
 		if (data.use3D) {
 			float alpha3D = ((isLocalPlayer && isFirstPerson) ? 0.15f : 1.0f) * alphaMultiplier * layer.alpha;
-			executeAura3DDraw(player, data, layer, poseStack, projectionMatrix, partialTick, alpha3D,
-					isLocalPlayer && isFirstPerson);
+			executeAura3DDraw(player, data, layer, poseStack, projectionMatrix, partialTick, alpha3D, isLocalPlayer && isFirstPerson);
 			return;
 		}
 
@@ -832,8 +840,15 @@ public class AuraRenderer {
 		float absPitch = Math.abs(cameraPitch);
 		float crossFactor = 0.0f;
 		float pitchSquash = 1.0f;
+		boolean flightBillboard = isFastFlying(player) && !isFirstPerson;
 
-		if (absPitch > 45.0f && !isFirstPerson) {
+		if (flightBillboard) {
+			float alignment = flightAxisAlignment(player, mc, partialTick);
+			if (alignment > 0.707f) {
+				crossFactor = (float) Math.pow((alignment - 0.707f) / 0.293f, 2.0);
+				pitchSquash = 1.0f - (crossFactor * 0.5f);
+			}
+		} else if (absPitch > 45.0f && !isFirstPerson) {
 			crossFactor = (float) Math.pow((absPitch - 45.0f) / 45.0f, 2.0);
 			pitchSquash = 1.0f - (crossFactor * 0.5f);
 		}
@@ -841,16 +856,18 @@ public class AuraRenderer {
 		if (crossFactor < 1.0f) {
 			poseStack.pushPose();
 
-			poseStack.translate(0.0, 0.05, 0.0);
-			poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
-			poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
-			if (OverShoulderCamera.isRunning()) {
-				float shoulderLean = (float) Mth.clamp(-OverShoulderCamera.getCurrentSide() * SHOULDER_LEAN_DEG_PER_BLOCK, -SHOULDER_LEAN_MAX_DEG, SHOULDER_LEAN_MAX_DEG);
-				poseStack.mulPose(Axis.ZP.rotationDegrees(shoulderLean));
+			poseStack.translate(0.0, flightBillboard ? player.getBbHeight() * 0.5f : 0.05f, 0.0);
+			if (!flightBillboard || !applyFlightAxisBillboard(poseStack, player, mc, partialTick, true)) {
+				poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
+				poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+				if (OverShoulderCamera.isRunning()) {
+					float shoulderLean = (float) Mth.clamp(-OverShoulderCamera.getCurrentSide() * SHOULDER_LEAN_DEG_PER_BLOCK, -SHOULDER_LEAN_MAX_DEG, SHOULDER_LEAN_MAX_DEG);
+					poseStack.mulPose(Axis.ZP.rotationDegrees(shoulderLean));
+				}
 			}
 			poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
 
-			poseStack.translate(0.0, 0.7, 0.0);
+			poseStack.translate(0.0, flightBillboard ? AURA_2D_FLIGHT_OFFSET : 0.7f, 0.0);
 
 			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
@@ -878,10 +895,12 @@ public class AuraRenderer {
 
 		if (crossFactor > 0.0f) {
 			poseStack.pushPose();
-			poseStack.translate(0.0, 0.05, 0.0);
-			poseStack.mulPose(Axis.YP.rotationDegrees(-mc.gameRenderer.getMainCamera().getYRot()));
-			if (cameraPitch < 0.0f) {
-				poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
+			poseStack.translate(0.0, flightBillboard ? player.getBbHeight() * 0.5f : 0.05f, 0.0);
+			if (!flightBillboard || !applyFlightAxisBillboard(poseStack, player, mc, partialTick, false)) {
+				poseStack.mulPose(Axis.YP.rotationDegrees(-mc.gameRenderer.getMainCamera().getYRot()));
+				if (cameraPitch < 0.0f) {
+					poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
+				}
 			}
 			poseStack.scale(finalScaleX, 1.0f, finalScaleZ);
 
@@ -900,15 +919,45 @@ public class AuraRenderer {
 		shader.clear();
 	}
 
-	/**
-	 * Extra lean, in degrees about the body-aligned X axis, that lays the 3D aura down together with
-	 * the player model. Zero while upright.
-	 *
-	 * <p>Fast flight leans PAST horizontal on purpose: at {@code 90 - pitch} the flame's tip ends up
-	 * where the feet are, so the aura trails behind like a comet instead of standing on a lying-down
-	 * body. Swimming and crawling use vanilla's own swim formula and are NOT inverted — the flame
-	 * follows the body towards the head.
-	 */
+	private static Vec3 flightAxis(Player player, float partialTick) {
+		Vec3 axis = player.getViewVector(partialTick).scale(-1.0);
+		return axis.lengthSqr() < 1.0e-6 ? new Vec3(0.0, 1.0, 0.0) : axis.normalize();
+	}
+
+	private static float flightAxisAlignment(Player player, Minecraft mc, float partialTick) {
+		Vec3 viewDir = new Vec3(mc.gameRenderer.getMainCamera().getLookVector());
+		return (float) Math.abs(viewDir.dot(flightAxis(player, partialTick)));
+	}
+
+	private static boolean applyFlightAxisBillboard(PoseStack poseStack, Player player, Minecraft mc,
+												   float partialTick, boolean faceCamera) {
+		Camera camera = mc.gameRenderer.getMainCamera();
+		Vec3 up = flightAxis(player, partialTick);
+
+		Vec3 reference;
+		if (faceCamera) {
+			Vec3 auraPos = new Vec3(Mth.lerp(partialTick, player.xo, player.getX()), Mth.lerp(partialTick, player.yo, player.getY()) + player.getBbHeight() * 0.5, Mth.lerp(partialTick, player.zo, player.getZ()));
+			reference = auraPos.subtract(camera.getPosition());
+		} else reference = new Vec3(camera.getLookVector());
+
+		Vec3 forward = reference.subtract(up.scale(reference.dot(up)));
+		if (forward.lengthSqr() < 1.0e-6) {
+			Vec3 cameraUp = new Vec3(camera.getUpVector());
+			forward = cameraUp.subtract(up.scale(cameraUp.dot(up)));
+		}
+		if (forward.lengthSqr() < 1.0e-6) return false;
+		forward = forward.normalize();
+
+		Vec3 right = up.cross(forward).normalize();
+
+		poseStack.mulPoseMatrix(new Matrix4f(
+				(float) right.x, (float) right.y, (float) right.z, 0.0f,
+				(float) up.x, (float) up.y, (float) up.z, 0.0f,
+				(float) forward.x, (float) forward.y, (float) forward.z, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f));
+		return true;
+	}
+
 	private static float auraLeanDegrees(Player player, float partialTick) {
 		if (isFastFlying(player)) return 90.0f - player.getViewXRot(partialTick);
 
@@ -925,11 +974,6 @@ public class AuraRenderer {
 				&& FlySkillEvent.getInstance().isFlyingFast(clientPlayer);
 	}
 
-	/**
-	 * Places one 3D aura layer on the player: turned with the body so the flame's ridges stay put
-	 * while the player spins, then scaled before the pivot translate so the whole flame follows the
-	 * character's model scale.
-	 */
 	private static void executeAura3DDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack,
 										  Matrix4f projectionMatrix, float partialTick, float alpha, boolean firstPerson) {
 		float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
@@ -944,20 +988,15 @@ public class AuraRenderer {
 		float pivot = Aura3DRenderer.pivotFactor(layer.type);
 
 		boolean fastFlying = isFastFlying(player);
-		// Keyed off the state, not off the angle: flying straight down happens to give lean == 0, and
-		// dropping the re-centring for that one frame would make the flame jump.
 		boolean laidDown = fastFlying || player.getSwimAmount(partialTick) > 0.0f;
 
 		poseStack.pushPose();
 		poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - bodyRot));
 
 		if (laidDown) {
-			// Pivot on the body's centre the way DMZPlayerRenderer does, then slide the flame along
-			// its own axis so its widest section — not its root — is what ends up on the body.
 			poseStack.translate(0.0f, player.getBbHeight() * 0.5f, 0.0f);
 			poseStack.mulPose(Axis.XP.rotationDegrees(auraLeanDegrees(player, partialTick)));
 			poseStack.translate(0.0f, -Aura3DRenderer.coreFactor(layer.type) * scaleY, 0.0f);
-			// Local +Y is "backwards" once inverted, so a negative step pushes the flame forward.
 			if (fastFlying) poseStack.translate(0.0f, -AURA_3D_FLIGHT_LEAD, 0.0f);
 		}
 
@@ -968,14 +1007,16 @@ public class AuraRenderer {
 		poseStack.popPose();
 	}
 
-	/** Drawn once per player, at the camera origin, because the ribbon carries world positions. */
-	private static void drawFlightTrail(Player player, CachedAuraData data, List<AuraLayer> layers,
-										PoseStack poseStack, Matrix4f projectionMatrix, float partialTick) {
-		if (!data.use3D || layers == null || layers.isEmpty()) return;
+	private static void drawFlightTrail(Player player, CachedAuraData data, List<AuraLayer> layers, PoseStack poseStack, Matrix4f projectionMatrix, float partialTick) {
+		if (layers == null || layers.isEmpty()) return;
 		AuraTrailRenderer.update(player, isFastFlying(player));
+
+		Minecraft mc = Minecraft.getInstance();
+		boolean ownTrailInFirstPerson = player == mc.player && mc.options.getCameraType().isFirstPerson();
+		if (ownTrailInFirstPerson) return;
+
 		AuraLayer top = layers.get(layers.size() - 1);
-		AuraTrailRenderer.render(player, top.color, data.alphaProgress * AURA_TRAIL_ALPHA * top.alpha,
-				poseStack, projectionMatrix, partialTick);
+		AuraTrailRenderer.render(player, top.color, data.alphaProgress * AURA_TRAIL_ALPHA * top.alpha, poseStack, projectionMatrix, partialTick);
 	}
 
 	private static void drawSinglePulse3D(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack,
