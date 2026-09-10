@@ -62,11 +62,13 @@ public class FormConfig {
 		private String eye1Color = "";
 		private String eye2Color = "";
 		private String auraType = "kakarot";
+		private String auraType3D = "smooth";
 		private Integer auraLayer = 0;
 		private String auraColor = "";
 		private Integer extraAuraLayer = -1;
 		private String extraAuraColor = "#FFFFFF";
 		private String extraAuraType = "kakarot";
+		private String extraAuraType3D = "smooth";
 		private Boolean hasLightnings = false;
 		private String lightningColor = "";
 		private String tintColor = "#FF0000";

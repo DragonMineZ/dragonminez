@@ -195,7 +195,7 @@ public class DMZKikonoRecipeProvider {
 	protected void buildPickaxeRecipes(String name, Item output, Item pattern, Item material, Item stick) {
 		KikonoRecipeBuilder.kikonize(output)
 				.pattern(pattern)
-				.template(Items.IRON_PICKAXE)
+				.template(Items.NETHERITE_PICKAXE)
 				.input(material)
 				.input(material)
 				.input(material)
@@ -213,7 +213,7 @@ public class DMZKikonoRecipeProvider {
 	protected void buildAxeRecipes(String name, Item output, Item pattern, Item material, Item stick) {
 		KikonoRecipeBuilder.kikonize(output)
 				.pattern(pattern)
-				.template(Items.IRON_AXE)
+				.template(Items.NETHERITE_AXE)
 				.input(material)
 				.input(material)
 				.input(Items.AIR)
@@ -231,7 +231,7 @@ public class DMZKikonoRecipeProvider {
 	protected void buildSwordRecipes(String name, Item output, Item pattern, Item material, Item stick) {
 		KikonoRecipeBuilder.kikonize(output)
 				.pattern(pattern)
-				.template(Items.IRON_SWORD)
+				.template(Items.NETHERITE_SWORD)
 				.input(Items.AIR)
 				.input(material)
 				.input(Items.AIR)
@@ -249,7 +249,7 @@ public class DMZKikonoRecipeProvider {
 	protected void buildShovelRecipes(String name, Item output, Item pattern, Item material, Item stick) {
 		KikonoRecipeBuilder.kikonize(output)
 				.pattern(pattern)
-				.template(Items.IRON_SHOVEL)
+				.template(Items.NETHERITE_SHOVEL)
 				.input(Items.AIR)
 				.input(material)
 				.input(Items.AIR)
@@ -267,7 +267,7 @@ public class DMZKikonoRecipeProvider {
 	protected void buildHoeRecipes(String name, Item output, Item pattern, Item material, Item stick) {
 		KikonoRecipeBuilder.kikonize(output)
 				.pattern(pattern)
-				.template(Items.IRON_HOE)
+				.template(Items.NETHERITE_HOE)
 				.input(material)
 				.input(material)
 				.input(Items.AIR)
@@ -285,7 +285,7 @@ public class DMZKikonoRecipeProvider {
 	protected void buildScytheRecipes(String name, Item output, Item pattern, Item material, Item stick) {
 		KikonoRecipeBuilder.kikonize(output)
 				.pattern(pattern)
-				.template(Items.IRON_SWORD)
+				.template(Items.NETHERITE_SWORD)
 				.input(Items.AIR)
 				.input(material)
 				.input(material)

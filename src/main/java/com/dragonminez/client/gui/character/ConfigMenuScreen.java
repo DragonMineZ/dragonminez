@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
 import com.dragonminez.client.gui.config.OverShoulderCameraScreen;
+import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -93,6 +94,14 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.transformationOutlines",
 				ConfigType.BOOLEAN, userConfig.getTransformationOutlines() ? 1 : 0, 0, 1,
 				v -> userConfig.setTransformationOutlines(v > 0)));
+
+		configOptions.add(new ConfigOption("config.aura3DPersonal",
+				ConfigType.BOOLEAN, userConfig.getAura3DPersonal() ? 1 : 0, 0, 1,
+				v -> userConfig.setAura3DPersonal(v > 0)));
+
+		configOptions.add(new ConfigOption("config.aura3DEntities",
+				ConfigType.BOOLEAN, userConfig.getAura3DEntities() ? 1 : 0, 0, 1,
+				v -> userConfig.setAura3DEntities(v > 0)));
 
 		configOptions.add(new ConfigOption("config.showAccumulativeDamage",
 				ConfigType.BOOLEAN, userConfig.getShowAccumulativeDamage() ? 1 : 0, 0, 1,
@@ -490,6 +499,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 		if ("config.menuScaleMultiplier".equals(option.key)) {
 			rebuildWidgetsWithoutTransition();
+		}
+
+		if ("config.aura3DPersonal".equals(option.key)) {
+			AuraModeState.pushLocalPreference();
 		}
 
 		if ("config.liveCrowdinTranslations".equals(option.key) && this.minecraft != null) {

@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.effects;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
@@ -26,6 +27,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -51,6 +53,20 @@ public class AuraRenderer {
 	private static final float AURA_RELEASE_CAP = 100.0f;
 	private static final float AURA_RELEASE_SCALE_BONUS = 0.35f;
 	private static final float AURA_RELEASE_LERP_PER_TICK = 0.02f;
+	/**
+	 * Fast-flight tuning. LEAD slides the whole flame forward along the flight axis so its base cap
+	 * clears the player's head — otherwise the first-person camera sits inside the cap and all you
+	 * see is a small round smear. The trail is a separate mesh appended past the flame's tip.
+	 */
+	private static final float AURA_3D_FLIGHT_LEAD = 1.10f;
+	private static final float AURA_TRAIL_ALPHA = 0.55f;
+	/**
+	 * How much of the flame's far wall survives. In first person the camera is inside the mesh by
+	 * construction — Minecraft keeps it at eye height and never leans it with the model — so the
+	 * interior has to stay visible or the aura disappears entirely from your own view.
+	 */
+	private static final float AURA_3D_BACKFACE = 0.02f;
+	private static final float AURA_3D_BACKFACE_FIRST_PERSON = 0.85f;
 
 	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
@@ -129,6 +145,7 @@ public class AuraRenderer {
 		float bodyScaleX, bodyScaleY, bodyScaleZ;
 		float modelScaleX, modelScaleY, modelScaleZ;
 		float alphaProgress;
+		boolean use3D;
 		BakedGeoModel playerModel;
 		List<AuraLayer> lastLayers;
 	}
@@ -137,7 +154,7 @@ public class AuraRenderer {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return;
 
-		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick);
+		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick, false);
 		if (activeLayers.isEmpty()) return;
 
 		ShaderInstance shader = DMZShaders.auraShader;
@@ -208,7 +225,7 @@ public class AuraRenderer {
 				if (FUSION_START_TIME.containsKey(playerId)) {
 					long timeSinceStart = gameTime - FUSION_START_TIME.get(playerId);
 					if (timeSinceStart < 60) {
-						List<AuraLayer> layers = getAuraLayers(player, stats, partialTick);
+						List<AuraLayer> layers = getAuraLayers(player, stats, partialTick, false);
 						if (!layers.isEmpty()) {
 							float[] color = layers.get(layers.size() - 1).color;
 							int r = (int) (color[0] * 255);
@@ -334,6 +351,11 @@ public class AuraRenderer {
 		RELEASE_SCALE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		RELEASE_SCALE_TICK.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		AURA_PHASE.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+		AuraTrailRenderer.forget(id -> currentFramePlayers.contains(id) || AURA_CACHE.containsKey(id));
+	}
+
+	private static boolean useAura3D(Player player) {
+		return Aura3DRenderer.isAvailable() && AuraModeState.isAura3D(player);
 	}
 
 	private static float[] getModelScale(StatsData stats) {
@@ -405,7 +427,21 @@ public class AuraRenderer {
 		return AURA_RELEASE_SCALE_BONUS * current;
 	}
 
-	private static List<AuraLayer> getAuraLayers(Player player, StatsData stats, float partialTick) {
+	private static String defaultAuraType(boolean use3D) {
+		return use3D ? Aura3DRenderer.DEFAULT_TYPE : "kakarot";
+	}
+
+	private static String formAuraType(FormConfig.FormData form, boolean use3D) {
+		if (form == null) return null;
+		return use3D ? form.getAuraType3D() : form.getAuraType();
+	}
+
+	private static String extraAuraType(FormConfig.FormData form, boolean use3D) {
+		if (form == null) return null;
+		return use3D ? form.getExtraAuraType3D() : form.getExtraAuraType();
+	}
+
+	private static List<AuraLayer> getAuraLayers(Player player, StatsData stats, float partialTick, boolean use3D) {
 		var character = stats.getCharacter();
 		int entityId = player.getId();
 
@@ -454,8 +490,9 @@ public class AuraRenderer {
 
 		String normalHex = character.getAuraColor();
 		float[] normalColor = character.getRgbAuraColor();
-		String normalType = ConfigManager.getRaceCharacter(character.getRace()) != null ?
-				ConfigManager.getRaceCharacter(character.getRace()).getAuraType() : "kakarot";
+		var raceCharacter = ConfigManager.getRaceCharacter(character.getRace());
+		String normalType = raceCharacter != null
+				? (use3D ? raceCharacter.getAuraType3D() : raceCharacter.getAuraType()) : defaultAuraType(use3D);
 		int normalLayerId = 0;
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
@@ -464,7 +501,8 @@ public class AuraRenderer {
 				normalHex = fd.getAuraColor();
 				normalColor = fd.getRgbAuraColor();
 			}
-			if (fd.getAuraType() != null && !fd.getAuraType().isEmpty()) normalType = fd.getAuraType();
+			String formType = formAuraType(fd, use3D);
+			if (formType != null && !formType.isEmpty()) normalType = formType;
 			normalLayerId = fd.getAuraLayer() != null ? fd.getAuraLayer() : 0;
 		}
 
@@ -475,7 +513,8 @@ public class AuraRenderer {
 			if (targetLayer == normalLayerId) {
 				normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
 			} else {
-				String targetType = nextForm.getAuraType() != null && !nextForm.getAuraType().isEmpty() ? nextForm.getAuraType() : normalType;
+				String nextType = formAuraType(nextForm, use3D);
+				String targetType = nextType != null && !nextType.isEmpty() ? nextType : normalType;
 				chargeLayer = new AuraLayer(targetType, targetLayer, ColorUtils.hexToRgb(targetHex), chargeProgress);
 			}
 		}
@@ -485,13 +524,14 @@ public class AuraRenderer {
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasExtraAura()) {
 			var fd = character.getActiveFormData();
-			putShifting(layerMap, fd.getExtraAuraLayer(), new AuraLayer(fd.getExtraAuraType(), fd.getExtraAuraLayer(), fd.getRgbExtraAuraColor()));
+			putShifting(layerMap, fd.getExtraAuraLayer(), new AuraLayer(extraAuraType(fd, use3D), fd.getExtraAuraLayer(), fd.getRgbExtraAuraColor()));
 		}
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
 			var fd = character.getActiveStackFormData();
 			String stackHex = fd.getAuraColor() != null && !fd.getAuraColor().isEmpty() ? fd.getAuraColor() : "#FFFFFF";
-			String stackType = fd.getAuraType() != null && !fd.getAuraType().isEmpty() ? fd.getAuraType() : "kakarot";
+			String stackFormType = formAuraType(fd, use3D);
+			String stackType = stackFormType != null && !stackFormType.isEmpty() ? stackFormType : defaultAuraType(use3D);
 			int stackLayerId = fd.getAuraLayer() != null ? fd.getAuraLayer() : 1;
 
 			float[] stackColor = (fd.getAuraColor() != null && !fd.getAuraColor().isEmpty()) ? fd.getRgbAuraColor() : ColorUtils.hexToRgb(stackHex);
@@ -503,12 +543,13 @@ public class AuraRenderer {
 			putLayer(layerMap, stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
 
 			if (fd.hasExtraAura()) {
-				putShifting(layerMap, fd.getExtraAuraLayer(), new AuraLayer(fd.getExtraAuraType(), fd.getExtraAuraLayer(), fd.getRgbExtraAuraColor()));
+				putShifting(layerMap, fd.getExtraAuraLayer(), new AuraLayer(extraAuraType(fd, use3D), fd.getExtraAuraLayer(), fd.getRgbExtraAuraColor()));
 			}
 
 		} else if (chargingStack && nextForm != null) {
 			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : "#FFFFFF";
-			String stackType = nextForm.getAuraType() != null && !nextForm.getAuraType().isEmpty() ? nextForm.getAuraType() : "kakarot";
+			String nextStackType = formAuraType(nextForm, use3D);
+			String stackType = nextStackType != null && !nextStackType.isEmpty() ? nextStackType : defaultAuraType(use3D);
 			int stackLayerId = nextForm.getAuraLayer() != null ? nextForm.getAuraLayer() : 1;
 
 			if (stackLayerId == normalLayerId) {
@@ -582,7 +623,8 @@ public class AuraRenderer {
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
 		data.auraScaleX = auraScale[0]; data.auraScaleY = auraScale[1]; data.auraScaleZ = auraScale[2];
 
-		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick);
+		data.use3D = useAura3D(player);
+		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick, data.use3D);
 		if (activeLayers.isEmpty()) return;
 		data.lastLayers = activeLayers;
 
@@ -602,6 +644,8 @@ public class AuraRenderer {
 			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress);
 			poseStack.popPose();
 		}
+
+		drawFlightTrail(player, data, activeLayers, poseStack, projectionMatrix, partialTick);
 
 		for (AuraLayer layer : activeLayers) {
 			poseStack.pushPose();
@@ -639,7 +683,8 @@ public class AuraRenderer {
 		data.auraScaleX = auraScale[0]; data.auraScaleY = auraScale[1]; data.auraScaleZ = auraScale[2];
 		data.playerModel = entry.playerModel();
 
-		List<AuraLayer> activeLayers = getAuraLayers(player, stats, entry.partialTick());
+		data.use3D = useAura3D(player);
+		List<AuraLayer> activeLayers = getAuraLayers(player, stats, entry.partialTick(), data.use3D);
 		if (activeLayers.isEmpty()) return;
 		data.lastLayers = activeLayers;
 
@@ -659,6 +704,8 @@ public class AuraRenderer {
 			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, entry.partialTick(), data.alphaProgress);
 			poseStack.popPose();
 		}
+
+		drawFlightTrail(player, data, activeLayers, poseStack, projectionMatrix, entry.partialTick());
 
 		for (AuraLayer layer : activeLayers) {
 			poseStack.pushPose();
@@ -701,6 +748,8 @@ public class AuraRenderer {
 		boolean isLocalPlayer = player == mc.player;
 		boolean isFirstPerson = isLocalPlayer && mc.options.getCameraType().isFirstPerson();
 
+		drawFlightTrail(player, data, activeLayers, poseStack, projectionMatrix, partialTick);
+
 		for (AuraLayer layer : activeLayers) {
 			poseStack.pushPose();
 			poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
@@ -711,10 +760,19 @@ public class AuraRenderer {
 	}
 
 	private static void executeAuraShaderDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, boolean isFirstPerson) {
-		ShaderInstance shader = DMZShaders.auraShader;
-		if (shader == null || alphaMultiplier <= 0.001f) return;
-
+		if (alphaMultiplier <= 0.001f) return;
 		boolean isLocalPlayer = player == mc.player;
+
+		if (data.use3D) {
+			float alpha3D = ((isLocalPlayer && isFirstPerson) ? 0.15f : 1.0f) * alphaMultiplier * layer.alpha;
+			executeAura3DDraw(player, data, layer, poseStack, projectionMatrix, partialTick, alpha3D,
+					isLocalPlayer && isFirstPerson);
+			return;
+		}
+
+		ShaderInstance shader = DMZShaders.auraShader;
+		if (shader == null) return;
+
 		float maxAlpha = (isLocalPlayer && isFirstPerson) ? 0.5f : 1.0f;
 		float finalAlpha = maxAlpha * alphaMultiplier * layer.alpha;
 
@@ -842,6 +900,99 @@ public class AuraRenderer {
 		shader.clear();
 	}
 
+	/**
+	 * Extra lean, in degrees about the body-aligned X axis, that lays the 3D aura down together with
+	 * the player model. Zero while upright.
+	 *
+	 * <p>Fast flight leans PAST horizontal on purpose: at {@code 90 - pitch} the flame's tip ends up
+	 * where the feet are, so the aura trails behind like a comet instead of standing on a lying-down
+	 * body. Swimming and crawling use vanilla's own swim formula and are NOT inverted — the flame
+	 * follows the body towards the head.
+	 */
+	private static float auraLeanDegrees(Player player, float partialTick) {
+		if (isFastFlying(player)) return 90.0f - player.getViewXRot(partialTick);
+
+		float swim = player.getSwimAmount(partialTick);
+		if (swim > 0.0f) {
+			float laidDown = player.isInWater() ? -90.0f - player.getViewXRot(partialTick) : -90.0f;
+			return Mth.lerp(swim, 0.0f, laidDown);
+		}
+		return 0.0f;
+	}
+
+	private static boolean isFastFlying(Player player) {
+		return player instanceof AbstractClientPlayer clientPlayer
+				&& FlySkillEvent.getInstance().isFlyingFast(clientPlayer);
+	}
+
+	/**
+	 * Places one 3D aura layer on the player: turned with the body so the flame's ridges stay put
+	 * while the player spins, then scaled before the pivot translate so the whole flame follows the
+	 * character's model scale.
+	 */
+	private static void executeAura3DDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack,
+										  Matrix4f projectionMatrix, float partialTick, float alpha, boolean firstPerson) {
+		float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
+		float boost = 1.0f + layer.layerId * 0.15f;
+		float time = auraPhase(player, partialTick) / 10.0f;
+
+		float width = Aura3DRenderer.widthFactor(layer.type) * boost;
+		float height = Aura3DRenderer.heightFactor(layer.type) * boost;
+		float scaleX = data.auraScaleX * width;
+		float scaleY = data.auraScaleY * height;
+		float scaleZ = data.auraScaleZ * width;
+		float pivot = Aura3DRenderer.pivotFactor(layer.type);
+
+		boolean fastFlying = isFastFlying(player);
+		// Keyed off the state, not off the angle: flying straight down happens to give lean == 0, and
+		// dropping the re-centring for that one frame would make the flame jump.
+		boolean laidDown = fastFlying || player.getSwimAmount(partialTick) > 0.0f;
+
+		poseStack.pushPose();
+		poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - bodyRot));
+
+		if (laidDown) {
+			// Pivot on the body's centre the way DMZPlayerRenderer does, then slide the flame along
+			// its own axis so its widest section — not its root — is what ends up on the body.
+			poseStack.translate(0.0f, player.getBbHeight() * 0.5f, 0.0f);
+			poseStack.mulPose(Axis.XP.rotationDegrees(auraLeanDegrees(player, partialTick)));
+			poseStack.translate(0.0f, -Aura3DRenderer.coreFactor(layer.type) * scaleY, 0.0f);
+			// Local +Y is "backwards" once inverted, so a negative step pushes the flame forward.
+			if (fastFlying) poseStack.translate(0.0f, -AURA_3D_FLIGHT_LEAD, 0.0f);
+		}
+
+		Aura3DRenderer.draw(poseStack, projectionMatrix, layer.type, layer.color, alpha, time,
+				scaleX, scaleY, scaleZ, pivot,
+				firstPerson ? AURA_3D_BACKFACE_FIRST_PERSON : AURA_3D_BACKFACE);
+
+		poseStack.popPose();
+	}
+
+	/** Drawn once per player, at the camera origin, because the ribbon carries world positions. */
+	private static void drawFlightTrail(Player player, CachedAuraData data, List<AuraLayer> layers,
+										PoseStack poseStack, Matrix4f projectionMatrix, float partialTick) {
+		if (!data.use3D || layers == null || layers.isEmpty()) return;
+		AuraTrailRenderer.update(player, isFastFlying(player));
+		AuraLayer top = layers.get(layers.size() - 1);
+		AuraTrailRenderer.render(player, top.color, data.alphaProgress * AURA_TRAIL_ALPHA * top.alpha,
+				poseStack, projectionMatrix, partialTick);
+	}
+
+	private static void drawSinglePulse3D(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack,
+										  Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, float progress) {
+		float expansion = 1.0f + (3.0f * progress);
+		float alphaCurve = (float) Math.sin(progress * Math.PI);
+		float boost = 1.0f + topLayer.layerId * 0.15f;
+		float time = auraPhase(player, partialTick) / 10.0f;
+		float spin = (player.level().getGameTime() + partialTick) * 2.5f;
+
+		Aura3DRenderer.drawGroundPulse(poseStack, projectionMatrix, topLayer.type, topLayer.color,
+				alphaCurve * 0.5f * alphaMultiplier * topLayer.alpha, time,
+				data.auraScaleX * expansion * boost * Aura3DRenderer.widthFactor(topLayer.type) * 0.75f,
+				data.auraScaleY * 0.22f,
+				spin);
+	}
+
 	private static void renderShaderPulseAura(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier) {
 		int playerId = player.getId();
 		long gameTime = player.level().getGameTime();
@@ -866,6 +1017,11 @@ public class AuraRenderer {
 	}
 
 	private static void drawSinglePulseInstance(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, float progress) {
+		if (data.use3D) {
+			drawSinglePulse3D(player, data, topLayer, poseStack, projectionMatrix, partialTick, alphaMultiplier, progress);
+			return;
+		}
+
 		float expansion = 1.0f + (6.0f * progress);
 		float alphaCurve = (float) Math.sin(progress * Math.PI);
 

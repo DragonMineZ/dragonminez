@@ -82,6 +82,7 @@ Player state is capability-based:
 - Clone (death/dimension): `onPlayerClone` revives caps, `newData.copyFrom(oldData)` (deep copies; PlayerQuestData round-trips through NBT), invalidates old caps. A client-side `static StatsData CLIENT_CACHE` preserves character-creation state across clone only.
 - Login sync (`onPlayerLogin`): sends every config file except `general-user` via `SyncServerConfigS2C` (first packet `reset=true`), `SyncQuestRegistryS2C`, then per-player fixes (visited dimension, unlock `saiyan_saga`, form-selection defaults, clear stun/knockdown/strike-lock, skill-name repair, deactivate kisense) and a full `StatsSyncS2C`.
 - Adding a state group requires updating ctor + `save()` + `load()` + `copyFrom()` together, and deciding which sync packet carries it.
+- `Character#aura3D` (NBT `Aura3D`) is a purely cosmetic flag that does not belong to gameplay state: it mirrors the owning client's `general-user` `aura3DPersonal` option so that every OTHER client renders that player's aura in the style its owner picked. The client pushes it with `AuraModeC2S` when the option is toggled, and `AuraModeState.reconcileLocal` re-pushes it whenever a `StatsSyncS2C` for the local player disagrees — that self-heals the login race against the async storage load, plus respawns and dimension changes, without a dedicated handshake. The viewer's own `aura3DEntities` option governs NPC auras instead, since entities have no owner.
 
 Sync packets (all decode into the same client-side `data.load(nbt)`):
 
@@ -132,6 +133,11 @@ Known dead code / traps inside ConfigManager:
 
 - The `config_defaults` template mechanism (`saveDefaultFromTemplate` reading `/assets/dragonminez/config_defaults/<name>`) points at a resource directory that does not exist; first-run generation silently falls back to no-arg constructor defaults. Do not assume templates seed files.
 - The 7-arg `applySyncedServerConfig(...)` batch method is unused dead code; real sync is the per-file `applySpecificSyncedConfig` path.
+
+Aura style (2D vs 3D) keys:
+
+- Every aura type field is doubled: `auraType` / `extraAuraType` name a **2D** billboard sprite set (`textures/entity/races/aura/<type>_aura.png` + `_cross.png`, default `kakarot`), while `auraType3D` / `extraAuraType3D` name a **3D** shader style (default `smooth`). Present on `FormConfig.FormData` and, for the base look, `RaceCharacterConfig`. Only `smooth` and `sparking` exist in 3D; anything else falls back to `smooth` via `Aura3DRenderer.resolveType` (the single fallback point — the getters are plain Lombok and may return null/empty, which is how a blank value still means "don't override the race-level type"). The 2D names were deliberately NOT renamed to `auraType2D`, to avoid breaking configs already in the wild.
+- Which of the two a viewer sees is NOT a config decision: see Player State (`Character#aura3D`) and `client/render/effects/AuraModeState`.
 
 Client/server config sync:
 

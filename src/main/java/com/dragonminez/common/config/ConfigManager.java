@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class ConfigManager {
-	public static final String CONFIG_VERSION = "2.2.1";
+	public static final String CONFIG_VERSION = "2.2.0";
 	public static final String CLIENT_ONLY_CONFIG = "general-user";
 
 	private static final String PREVIOUS_CONFIGS_ROOT = "/data/dragonminez/previousConfigs/";

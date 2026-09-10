@@ -64,6 +64,7 @@ public class Character {
 
 	private boolean hasSaiyanTail = false;
 	private boolean renderHairBase = true;
+	private boolean aura3D = false;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
@@ -436,6 +437,7 @@ public class Character {
 		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
 		tag.putBoolean("RenderHairBase", renderHairBase);
+		tag.putBoolean("Aura3D", aura3D);
 		tag.putBoolean("isArmored", armored);
 
 		ListTag mastersList = new ListTag();
@@ -509,6 +511,7 @@ public class Character {
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
 		this.renderHairBase = tag.getBoolean("RenderHairBase");
+		this.aura3D = tag.getBoolean("Aura3D");
 		this.armored = tag.getBoolean("isArmored");
 
 		this.interactedMasters.clear();
@@ -764,6 +767,7 @@ public class Character {
 		this.stackFormMasteries.copyFrom(other.stackFormMasteries);
 		this.hasSaiyanTail = other.hasSaiyanTail;
 		this.renderHairBase = other.renderHairBase;
+		this.aura3D = other.aura3D;
 		this.armored = other.armored;
 		this.interactedMasters.clear();
 		this.interactedMasters.putAll(other.interactedMasters);
