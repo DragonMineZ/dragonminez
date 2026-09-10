@@ -28,7 +28,7 @@ public class SagaGotenEntity {
 
         @Override
         public String getGeckolibModelName() {
-            return "saga_goten";
+            return "saga_kid_goku";
         }
 
         @Override
