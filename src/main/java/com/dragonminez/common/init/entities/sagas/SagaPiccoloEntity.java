@@ -379,7 +379,7 @@ public class SagaPiccoloEntity{
 
         @Override
         public String getGeckolibModelName() {
-            return "saga_piccolo";
+            return "saga_piccolo_kami";
         }
     }
 
