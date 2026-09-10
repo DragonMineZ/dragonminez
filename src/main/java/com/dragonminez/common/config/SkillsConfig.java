@@ -312,6 +312,7 @@ public class SkillsConfig {
 		skillOfferings.put("roshi", roshiSkills);
 
 		List<String> gokuSkills = new ArrayList<>();
+		gokuSkills.add("kicontrol");
 		gokuSkills.add("fly");
 		gokuSkills.add("instant_transmission");
 		gokuSkills.add("fusion");
@@ -323,6 +324,7 @@ public class SkillsConfig {
 		skillOfferings.put("goku", gokuSkills);
 
 		List<String> kingKaiSkills = new ArrayList<>();
+		kingKaiSkills.add("kicontrol");
 		kingKaiSkills.add("kaioken");
 		kingKaiSkills.add("potentialunlock");
 		kingKaiSkills.add("kimanipulation");
@@ -331,6 +333,7 @@ public class SkillsConfig {
 		skillOfferings.put("kingkai", kingKaiSkills);
 
 		List<String> vegetaSkills = new ArrayList<>();
+		vegetaSkills.add("kicontrol");
 		vegetaSkills.add("defense_penetration");
 		vegetaSkills.add("potentialunlock");
 		vegetaSkills.add("galick_gun");
@@ -342,12 +345,14 @@ public class SkillsConfig {
 		skillOfferings.put("vegeta", vegetaSkills);
 
 		List<String> oldKaiSkills = new ArrayList<>();
+		oldKaiSkills.add("kicontrol");
 		oldKaiSkills.add("ki_infusion");
 		oldKaiSkills.add("healing_reduction");
 		oldKaiSkills.add("soul_punisher");
 		skillOfferings.put("oldkai", oldKaiSkills);
 
 		List<String> gohanSkills = new ArrayList<>();
+		gohanSkills.add("kicontrol");
 		gohanSkills.add("kiboost");
 		gohanSkills.add("kiprotection");
 		gohanSkills.add("kisense");
@@ -367,6 +372,7 @@ public class SkillsConfig {
 		skillOfferings.put("piccolo", piccoloSkills);
 
 		List<String> krillinSkills = new ArrayList<>();
+		krillinSkills.add("kicontrol");
 		krillinSkills.add("sprint");
 		krillinSkills.add("kisense");
 		krillinSkills.add("kienzan");
@@ -377,13 +383,13 @@ public class SkillsConfig {
 		skillOfferings.put("krillin", krillinSkills);
 
 		List<String> friezaSkills = new ArrayList<>();
+		friezaSkills.add("kicontrol");
 		friezaSkills.add("fly");
 		friezaSkills.add("jump");
 		friezaSkills.add("sprint");
 		friezaSkills.add("kisense");
 		friezaSkills.add("meditation");
 		friezaSkills.add("potentialunlock");
-		friezaSkills.add("instant_transmission");
 		friezaSkills.add("death_beam");
 		friezaSkills.add("emperor_death_beam");
 		friezaSkills.add("supernova");
@@ -393,6 +399,7 @@ public class SkillsConfig {
 		skillOfferings.put("frieza", friezaSkills);
 
 		List<String> trunksSkills = new ArrayList<>();
+		trunksSkills.add("kicontrol");
 		trunksSkills.add("kiboost");
 		trunksSkills.add("kiprotection");
 		trunksSkills.add("burning_attack");
@@ -403,6 +410,7 @@ public class SkillsConfig {
 
 		List<String> cellSkills = new ArrayList<>();
 		cellSkills.add("kicontrol");
+		cellSkills.add("instant_transmission");
 		cellSkills.add("kimanipulation");
 		cellSkills.add("ki_infusion");
 		cellSkills.add("kiprotection");
@@ -434,6 +442,7 @@ public class SkillsConfig {
 		skillOfferings.put("baba_earth", babaEarthSkills);
 
 		List<String> defaultSkills = new ArrayList<>();
+		defaultSkills.add("kicontrol");
 		defaultSkills.add("jump");
 		skillOfferings.put("default", defaultSkills);
 	}
