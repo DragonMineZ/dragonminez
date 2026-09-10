@@ -6,6 +6,7 @@ import com.dragonminez.client.render.shader.SearchGrayscaleManager;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
+import com.dragonminez.client.render.util.RenderBufferUtil;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.kisense.KiSenseState;
 import com.dragonminez.common.config.ConfigManager;
@@ -62,14 +63,14 @@ public final class KiSenseAuraRenderer {
 		if (iris) {
 			mc.getMainRenderTarget().bindWrite(false);
 			SearchGrayscaleManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false), false);
-			renderAuras(mc, event, true);
+			renderAuras(mc, event);
 		} else {
 			SearchGrayscaleManager.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
-			renderAuras(mc, event, false);
+			renderAuras(mc, event);
 		}
 	}
 
-	private static void renderAuras(Minecraft mc, RenderLevelStageEvent event, boolean iris) {
+	private static void renderAuras(Minecraft mc, RenderLevelStageEvent event) {
 		StatsData myData = StatsProvider.get(StatsCapability.INSTANCE, mc.player).orElse(null);
 		if (myData == null) return;
 
@@ -87,7 +88,11 @@ public final class KiSenseAuraRenderer {
 		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		long gameTime = mc.level.getGameTime();
 
-		PoseStack poseStack = iris ? viewStack(mc) : event.getPoseStack();
+		// Not event.getPoseStack(): 1.21 hands the stage an identity PoseStack and keeps the camera
+		// rotation on RenderSystem.getModelViewStack(). VertexBuffer#drawWithShader below takes the
+		// model-view matrix explicitly and never reads RenderSystem, so without the view baked in here
+		// the auras render unrotated and slide off their entities every time the camera turns.
+		PoseStack poseStack = RenderBufferUtil.stageModelViewPose(event);
 		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 		RenderType renderType = auraType(tex);
 
@@ -162,14 +167,6 @@ public final class KiSenseAuraRenderer {
 
 	private static boolean isPassive(LivingEntity entity) {
 		return !(entity instanceof Player) && !(entity instanceof Enemy) && !(entity instanceof NeutralMob);
-	}
-
-	private static PoseStack viewStack(Minecraft mc) {
-		PoseStack stack = new PoseStack();
-		Camera cam = mc.gameRenderer.getMainCamera();
-		stack.mulPose(Axis.XP.rotationDegrees(cam.getXRot()));
-		stack.mulPose(Axis.YP.rotationDegrees(cam.getYRot() + 180.0F));
-		return stack;
 	}
 
 	private static RenderType auraType(ResourceLocation texture) {

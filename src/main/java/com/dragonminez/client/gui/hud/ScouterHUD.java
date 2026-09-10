@@ -51,6 +51,11 @@ public class ScouterHUD {
 	private static int strongestEntityID = -1;
 	private static double cachedBP = 0;
 	private static final double SCAN_RANGE = 50.0;
+	/** The lens sprite is 41 tall and blitted at this Y, so the frame spans FRAME_Y .. FRAME_Y + FRAME_HEIGHT. */
+	private static final int FRAME_Y = -20;
+	private static final int FRAME_HEIGHT = 41;
+	/** The 9x9 reticle sprite is drawn at 2x. */
+	private static final int RETICLE_SIZE = 18;
 	private static final int BP_LIMIT = 150000000;
 
 	private static ItemStack getScouterStack(Player player) {
@@ -210,11 +215,11 @@ public class ScouterHUD {
 
 	private static void renderScouterFrame(GuiGraphics gui, ResourceLocation texture) {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		gui.blit(texture, 0, -20, 0, 15, 7, 41, 128, 128);
+		gui.blit(texture, 0, FRAME_Y, 0, 15, 7, FRAME_HEIGHT, 128, 128);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.65F);
-		gui.blit(texture, 7, -20, 7, 15, 63, 41, 128, 128);
+		gui.blit(texture, 7, FRAME_Y, 7, 15, 63, FRAME_HEIGHT, 128, 128);
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		RenderSystem.disableBlend();
 	}
@@ -281,8 +286,12 @@ public class ScouterHUD {
 	}
 
 	private static void renderEntityInfo(GuiGraphics gui, ResourceLocation texture, boolean extraInfo, boolean isPlayer) {
+		// The reticle used to sit at y -30, which put two thirds of it above the lens: the frame only
+		// starts at FRAME_Y, so the ring floated on open sky above the scouter instead of on the glass.
+		// Centre it in the frame, the way the BP digits and direction arrows already sit inside it.
+		int reticleY = FRAME_Y + (FRAME_HEIGHT - RETICLE_SIZE) / 2;
 		gui.pose().pushPose();
-		gui.pose().translate(40, -30, 0);
+		gui.pose().translate(40, reticleY, 0);
 		gui.pose().scale(2.0f, 2.0f, 1.0f);
 		gui.blit(texture, 0, 0, 2, 73, 9, 9, 128, 128);
 		gui.pose().popPose();
