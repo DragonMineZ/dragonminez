@@ -40,13 +40,40 @@ public final class TournamentPackets {
 		private final int npcEntityId;
 		private final Map<String, FighterStats> stats;
 
+		private final boolean lockedByOther;
+		private final boolean yourTurn;
+		private final int turnSeconds;
+		private final List<String> queue;
+		private final List<Boolean> queueOut;
+		private final int activeIndex;
+		private final boolean push;
+		private final Map<String, String> slotNames;
+		private final String activeSlot;
+		private final int leaderIndex;
+		private final boolean partyLeader;
+
 		public record FighterStats(int health, int melee, int ki) {}
 
 		public OpenBracketS2C(String tournamentId, String displayName, int difficultyStars,
 							  List<String> seeds, List<List<String>> winners, String semifinalist, String champion,
 							  int round, boolean eliminated, boolean completed,
 							  boolean gauntlet, boolean lethal, boolean signUp, int cooldownSeconds, int npcEntityId,
-							  Map<String, FighterStats> stats) {
+							  Map<String, FighterStats> stats,
+							  boolean lockedByOther, boolean yourTurn, int turnSeconds,
+							  List<String> queue, List<Boolean> queueOut, int activeIndex, boolean push,
+							  Map<String, String> slotNames, String activeSlot,
+							  int leaderIndex, boolean partyLeader) {
+			this.leaderIndex = leaderIndex;
+			this.partyLeader = partyLeader;
+			this.slotNames = slotNames == null ? new HashMap<>() : slotNames;
+			this.activeSlot = activeSlot == null ? "" : activeSlot;
+			this.lockedByOther = lockedByOther;
+			this.yourTurn = yourTurn;
+			this.turnSeconds = turnSeconds;
+			this.queue = queue == null ? new ArrayList<>() : queue;
+			this.queueOut = queueOut == null ? new ArrayList<>() : queueOut;
+			this.activeIndex = activeIndex;
+			this.push = push;
 			this.stats = stats == null ? new HashMap<>() : stats;
 			this.tournamentId = tournamentId == null ? "" : tournamentId;
 			this.displayName = displayName == null ? "" : displayName;
@@ -93,6 +120,24 @@ public final class TournamentPackets {
 				buf.writeVarInt(entry.getValue().melee());
 				buf.writeVarInt(entry.getValue().ki());
 			}
+			buf.writeBoolean(msg.lockedByOther);
+			buf.writeBoolean(msg.yourTurn);
+			buf.writeVarInt(msg.turnSeconds);
+			buf.writeVarInt(msg.queue.size());
+			for (int i = 0; i < msg.queue.size(); i++) {
+				buf.writeUtf(msg.queue.get(i));
+				buf.writeBoolean(i < msg.queueOut.size() && msg.queueOut.get(i));
+			}
+			buf.writeInt(msg.activeIndex);
+			buf.writeBoolean(msg.push);
+			buf.writeVarInt(msg.slotNames.size());
+			for (Map.Entry<String, String> entry : msg.slotNames.entrySet()) {
+				buf.writeUtf(entry.getKey());
+				buf.writeUtf(entry.getValue());
+			}
+			buf.writeUtf(msg.activeSlot);
+			buf.writeInt(msg.leaderIndex);
+			buf.writeBoolean(msg.partyLeader);
 		}
 
 		public static OpenBracketS2C decode(FriendlyByteBuf buf) {
@@ -127,8 +172,30 @@ public final class TournamentPackets {
 				stats.put(buf.readUtf(), new FighterStats(buf.readVarInt(), buf.readVarInt(), buf.readVarInt()));
 			}
 
+			boolean lockedByOther = buf.readBoolean();
+			boolean yourTurn = buf.readBoolean();
+			int turnSeconds = buf.readVarInt();
+			int queueSize = buf.readVarInt();
+			List<String> queue = new ArrayList<>(queueSize);
+			List<Boolean> queueOut = new ArrayList<>(queueSize);
+			for (int i = 0; i < queueSize; i++) {
+				queue.add(buf.readUtf());
+				queueOut.add(buf.readBoolean());
+			}
+			int activeIndex = buf.readInt();
+			boolean push = buf.readBoolean();
+
+			int nameCount = buf.readVarInt();
+			Map<String, String> slotNames = new HashMap<>(nameCount);
+			for (int i = 0; i < nameCount; i++) slotNames.put(buf.readUtf(), buf.readUtf());
+			String activeSlot = buf.readUtf();
+			int leaderIndex = buf.readInt();
+			boolean partyLeader = buf.readBoolean();
+
 			return new OpenBracketS2C(tournamentId, displayName, stars, seeds, winners,
-					semifinalist, champion, round, eliminated, completed, gauntlet, lethal, signUp, cooldown, npcId, stats);
+					semifinalist, champion, round, eliminated, completed, gauntlet, lethal, signUp, cooldown, npcId,
+					stats, lockedByOther, yourTurn, turnSeconds, queue, queueOut, activeIndex, push, slotNames,
+					activeSlot, leaderIndex, partyLeader);
 		}
 
 		public static void handle(OpenBracketS2C msg, Supplier<NetworkEvent.Context> ctx) {

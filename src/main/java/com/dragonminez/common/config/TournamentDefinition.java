@@ -39,6 +39,9 @@ public class TournamentDefinition {
 	private Integer reentryCooldownSeconds;
 	private Integer victoryCooldownSeconds;
 	private Integer matchTimeoutSeconds;
+	private Integer nextRoundSeconds;
+	private Integer returnSeconds;
+	private Integer arrivalSeconds;
 
 	private Boolean lethal;
 
@@ -82,6 +85,18 @@ public class TournamentDefinition {
 
 	public int matchTimeoutSecondsOr(int fallback) {
 		return matchTimeoutSeconds != null ? Math.max(30, matchTimeoutSeconds) : fallback;
+	}
+
+	public int nextRoundSecondsOr(int fallback) {
+		return nextRoundSeconds != null ? Math.max(5, nextRoundSeconds) : fallback;
+	}
+
+	public int returnSecondsOr(int fallback) {
+		return returnSeconds != null ? Math.max(3, returnSeconds) : fallback;
+	}
+
+	public int arrivalSecondsOr(int fallback) {
+		return arrivalSeconds != null ? Math.max(5, arrivalSeconds) : fallback;
 	}
 
 	public boolean isLethal() {
@@ -183,6 +198,9 @@ public class TournamentDefinition {
 			def.setLethal(true);
 			def.setReentryCooldownSeconds(60 * 60);
 			def.setMatchTimeoutSeconds(420);
+			def.setNextRoundSeconds(30);
+			def.setReturnSeconds(15);
+			def.setArrivalSeconds(60);
 
 			TournamentDefinition.RingOffset ring = new TournamentDefinition.RingOffset();
 			ring.setX(37);
@@ -235,6 +253,9 @@ public class TournamentDefinition {
 			def.setFormat(TournamentDefinition.Format.GAUNTLET);
 			def.setReentryCooldownSeconds(20 * 60);
 			def.setMatchTimeoutSeconds(300);
+			def.setNextRoundSeconds(30);
+			def.setReturnSeconds(15);
+			def.setArrivalSeconds(60);
 
 			TournamentDefinition.RingOffset ring = new TournamentDefinition.RingOffset();
 			ring.setX(70);

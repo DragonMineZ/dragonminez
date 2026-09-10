@@ -606,6 +606,18 @@ public class NetworkHandler {
 				.encoder(com.dragonminez.common.network.TournamentPackets.ActionC2S::encode)
 				.consumerMainThread(com.dragonminez.common.network.TournamentPackets.ActionC2S::handle)
 				.add();
+
+		net.messageBuilder(PartyPackets.RequestStatsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(PartyPackets.RequestStatsC2S::new)
+				.encoder(PartyPackets.RequestStatsC2S::encode)
+				.consumerMainThread(PartyPackets.RequestStatsC2S::handle)
+				.add();
+
+		net.messageBuilder(PartyPackets.StatsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(PartyPackets.StatsS2C::decode)
+				.encoder(PartyPackets.StatsS2C::encode)
+				.consumerMainThread(PartyPackets.StatsS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

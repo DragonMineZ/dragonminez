@@ -105,23 +105,32 @@ public class ArenaProtectionHandler {
 			return;
 		}
 
-		if (target instanceof ServerPlayer player) {
-			UUID attackerOwner = Tournament.Manager.ownerOf(attacker);
-			if (attackerOwner != null && attackerOwner.equals(player.getUUID())
-					&& Tournament.Manager.isInGrace(player.getUUID(), gameTime)) {
-				event.setCanceled(true);
-			}
+		if (target instanceof ServerPlayer player
+				&& !Tournament.Manager.canDamageFighter(player, attacker, gameTime)) {
+			event.setCanceled(true);
 		}
 	}
 
 	@SubscribeEvent
 	public static void onPlayerHurt(LivingHurtEvent event) {
-		if (!(event.getEntity() instanceof ServerPlayer player)) return;
-		if (!Tournament.Manager.isInNonLethalMatch(player)) return;
-		if (player.getHealth() - event.getAmount() > 0.0F) return;
+		LivingEntity target = event.getEntity();
+		if (target == null || target.level().isClientSide()) return;
+
+		if (target instanceof ServerPlayer player) {
+			if (!Tournament.Manager.isInNonLethalMatch(player)) return;
+			if (player.getHealth() - event.getAmount() > 0.0F) return;
+
+			event.setCanceled(true);
+			Tournament.Manager.knockOut(player);
+			return;
+		}
+
+		if (!(target instanceof net.minecraft.world.entity.Mob mob)) return;
+		if (!Tournament.Manager.isNonLethalOpponent(mob)) return;
+		if (mob.getHealth() - event.getAmount() > 0.0F) return;
 
 		event.setCanceled(true);
-		Tournament.Manager.knockOut(player);
+		Tournament.Manager.knockOutOpponent(mob);
 	}
 
 	@SubscribeEvent

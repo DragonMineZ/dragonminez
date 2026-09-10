@@ -42,16 +42,16 @@ public final class TournamentOverlay {
 		ticksRemaining--;
 
 		if (ticksRemaining == FIGHT_TICKS) {
-			playBell(1.6F);
+			play(SoundEvents.ENDER_DRAGON_GROWL, 1.0F);
 		} else if (before > FIGHT_TICKS && (ticksRemaining - FIGHT_TICKS) % TICKS_PER_STEP == 0) {
-			playBell(1.0F);
+			play(SoundEvents.NOTE_BLOCK_PLING.value(), 1.0F);
 		}
 	}
 
-	private static void playBell(float pitch) {
+	private static void play(net.minecraft.sounds.SoundEvent sound, float pitch) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null) return;
-		mc.player.playSound(SoundEvents.NOTE_BLOCK_BELL.value(), 1.0F, pitch);
+		mc.player.playSound(sound, 1.0F, pitch);
 	}
 
 	public static final IGuiOverlay OVERLAY = TournamentOverlay::render;

@@ -90,7 +90,10 @@ public class TournamentBracketScreen extends Screen {
 
 	private static final Map<String, LivingEntity> PORTRAIT_CACHE = new HashMap<>();
 
-	private final TournamentPackets.OpenBracketS2C data;
+	private TournamentPackets.OpenBracketS2C data;
+	private int npcEntityId;
+	private int turnTicks;
+	private int cooldownTicks;
 
 	private float panX = 0;
 	private float panY = 0;
@@ -105,10 +108,50 @@ public class TournamentBracketScreen extends Screen {
 	private TournamentBracketScreen(TournamentPackets.OpenBracketS2C data) {
 		super(Component.translatable("tournament.dragonminez.title"));
 		this.data = data;
+		this.npcEntityId = data.getNpcEntityId();
+		this.turnTicks = data.getTurnSeconds() * 20;
+		this.cooldownTicks = data.getCooldownSeconds() * 20;
 	}
 
+	/**
+	 * Opens the ladder, or — for a background push — quietly refreshes it so participants can watch
+	 * the run move on while somebody else is in the ring.
+	 */
 	public static void open(TournamentPackets.OpenBracketS2C data) {
-		Minecraft.getInstance().setScreen(new TournamentBracketScreen(data));
+		Minecraft mc = Minecraft.getInstance();
+
+		if (mc.screen instanceof TournamentBracketScreen open
+				&& open.data.getTournamentId().equals(data.getTournamentId())) {
+			open.refresh(data);
+			return;
+		}
+		if (data.isPush()) return;
+
+		mc.setScreen(new TournamentBracketScreen(data));
+	}
+
+	private void refresh(TournamentPackets.OpenBracketS2C update) {
+		this.data = update;
+		if (update.getNpcEntityId() >= 0) this.npcEntityId = update.getNpcEntityId();
+		this.turnTicks = update.getTurnSeconds() * 20;
+		this.cooldownTicks = update.getCooldownSeconds() * 20;
+		this.rebuildWidgets();
+	}
+
+	/** The server only pushes on state changes, so the clocks run down here between them. */
+	@Override
+	public void tick() {
+		super.tick();
+		if (turnTicks > 0) turnTicks--;
+		if (cooldownTicks > 0) {
+			cooldownTicks--;
+			// The Enter button unlocks the moment the wait is over.
+			if (cooldownTicks == 0) rebuildWidgets();
+		}
+	}
+
+	private int turnSecondsLeft() {
+		return (turnTicks + 19) / 20;
 	}
 
 	@Override
@@ -116,11 +159,11 @@ public class TournamentBracketScreen extends Screen {
 		int buttonY = this.height - 34;
 
 		if (data.isSignUp()) {
-			if (data.getCooldownSeconds() <= 0) {
+			if (cooldownTicks <= 0 && !data.isLockedByOther() && data.isPartyLeader()) {
 				addModButton(this.width / 2 - BUTTON_WIDTH - 4, buttonY, "tournament.dragonminez.enter",
 						b -> send(TournamentPackets.ActionC2S.Action.SIGN_UP));
 			}
-		} else if (!data.isCompleted() && !data.isEliminated()) {
+		} else if (data.isYourTurn() && !data.isCompleted() && !data.isEliminated()) {
 			addModButton(this.width / 2 - BUTTON_WIDTH - 4, buttonY, "tournament.dragonminez.fight_next", b -> {
 				send(TournamentPackets.ActionC2S.Action.START_MATCH);
 				this.onClose();
@@ -178,7 +221,7 @@ public class TournamentBracketScreen extends Screen {
 	}
 
 	private void send(TournamentPackets.ActionC2S.Action action) {
-		NetworkHandler.sendToServer(new TournamentPackets.ActionC2S(action, data.getNpcEntityId()));
+		NetworkHandler.sendToServer(new TournamentPackets.ActionC2S(action, npcEntityId));
 	}
 
 	@Override
@@ -235,6 +278,7 @@ public class TournamentBracketScreen extends Screen {
 		graphics.drawCenteredString(this.font, dmz(statusLine()), centreX, 46, 0xFFE8F0FF);
 
 		renderFormatCard(graphics, centreX);
+		renderQueue(graphics, centreX);
 
 		hoveredId = null;
 		float cx = this.width / 2.0F;
@@ -261,9 +305,64 @@ public class TournamentBracketScreen extends Screen {
 		return Component.literal(sb.toString());
 	}
 
+	private void renderQueue(GuiGraphics graphics, int centreX) {
+		List<String> queue = data.getQueue();
+		if (queue.size() < 2) return;
+
+		int cardX = centreX - CARD_WIDTH / 2;
+		int y = CARD_TOP + CARD_HEIGHT + 2;
+		int lines = data.isSignUp() ? 3 : 2;
+		int cardHeight = 12 + lines * (this.font.lineHeight + 2);
+
+		graphics.fill(cardX, y, cardX + CARD_WIDTH, y + cardHeight, 0xC0101018);
+		graphics.renderOutline(cardX, y, CARD_WIDTH, cardHeight, 0xFF6D8CFF);
+
+		int lineY = y + 6;
+		graphics.drawCenteredString(this.font, dmz(Component.translatable("tournament.dragonminez.party.title")),
+				centreX, lineY, 0xFFFFD700);
+		lineY += this.font.lineHeight + 2;
+
+		int totalWidth = 0;
+		List<Component> names = new ArrayList<>();
+		for (int i = 0; i < queue.size(); i++) {
+			Component name = dmz(Component.literal(queue.get(i) + (i == data.getLeaderIndex() ? " ★" : "")));
+			names.add(name);
+			totalWidth += this.font.width(name) + 10;
+		}
+
+		int x = centreX - totalWidth / 2;
+		for (int i = 0; i < names.size(); i++) {
+			boolean out = i < data.getQueueOut().size() && data.getQueueOut().get(i);
+			int colour = out ? 0xFF7A7A85 : (i == data.getActiveIndex() ? 0xFFFFD700 : 0xFF9FFF9F);
+			graphics.drawString(this.font, names.get(i), x, lineY, colour, true);
+			x += this.font.width(names.get(i)) + 10;
+		}
+		lineY += this.font.lineHeight + 2;
+
+		if (!data.isSignUp()) return;
+
+		graphics.drawCenteredString(this.font, dmz(Component.translatable(data.isPartyLeader()
+						? "tournament.dragonminez.party.leader_starts"
+						: "tournament.dragonminez.party.leader_only")),
+				centreX, lineY, data.isPartyLeader() ? 0xFFE8F0FF : 0xFFFFAA55);
+	}
+
 	private Component statusLine() {
-		if (data.getCooldownSeconds() > 0) {
-			return Component.translatable("tournament.dragonminez.cooldown", formatDuration(data.getCooldownSeconds()));
+		if (data.isLockedByOther()) {
+			return Component.translatable("tournament.dragonminez.in_progress");
+		}
+		if (!data.isSignUp() && !data.isEliminated() && !data.isCompleted()) {
+			if (data.isYourTurn() && turnTicks > 0) {
+				return Component.translatable("tournament.dragonminez.next_round_timer", turnSecondsLeft());
+			}
+			if (!data.isYourTurn() && data.getActiveIndex() >= 0
+					&& data.getActiveIndex() < data.getQueue().size()) {
+				return Component.translatable("tournament.dragonminez.status.waiting",
+						data.getQueue().get(data.getActiveIndex()));
+			}
+		}
+		if (cooldownTicks > 0) {
+			return Component.translatable("tournament.dragonminez.cooldown", formatDuration((cooldownTicks + 19) / 20));
 		}
 		if (data.isCompleted()) return Component.translatable("tournament.dragonminez.status.champion");
 		if (data.isEliminated()) return Component.translatable("tournament.dragonminez.status.eliminated");
@@ -323,9 +422,9 @@ public class TournamentBracketScreen extends Screen {
 				int y = topRow + i * spacing + (spacing - SLOT_SIZE) / 2;
 				String id = slotAt(column, i, qRounds);
 
-				boolean isPlayerSlot = Tournament.Bracket.PLAYER_SLOT.equals(id);
-				boolean isNext = !data.isSignUp() && !data.isEliminated() && !data.isCompleted()
-						&& column == currentRound && isOpponentSlot(column, i, qRounds);
+				boolean isPlayerSlot = Tournament.Bracket.isPlayerSlot(id);
+				boolean isNext = !data.isSignUp() && !data.isCompleted()
+						&& column == currentRound && isCurrentBoutSlot(column, i, qRounds);
 
 				SlotState state = isPlayerSlot ? SlotState.PLAYER
 						: isNext ? SlotState.CURRENT
@@ -394,14 +493,15 @@ public class TournamentBracketScreen extends Screen {
 		return column == qRounds + 1 ? data.getSemifinalist() : data.getChampion();
 	}
 
-	private boolean isOpponentSlot(int column, int row, int qRounds) {
+	/** Both sides of the bout that is about to be fought light up. */
+	private boolean isCurrentBoutSlot(int column, int row, int qRounds) {
 		if (column >= qRounds) return true;
-		int playerPos = playerPosition(column);
-		return playerPos >= 0 && row == (playerPos ^ 1);
+		int position = activePosition(column);
+		return position >= 0 && (row == position || row == (position ^ 1));
 	}
 
-	private int playerPosition(int round) {
-		int seed = data.getSeeds().indexOf(Tournament.Bracket.PLAYER_SLOT);
+	private int activePosition(int round) {
+		int seed = data.getSeeds().indexOf(data.getActiveSlot());
 		return seed < 0 ? -1 : seed >> round;
 	}
 
@@ -542,6 +642,11 @@ public class TournamentBracketScreen extends Screen {
 					? Minecraft.getInstance().player.getName().copy()
 					: Component.translatable("tournament.dragonminez.you");
 		}
+		if (Tournament.Bracket.isPlayerSlot(id)) {
+			String name = data.getSlotNames().get(id);
+			return name != null ? Component.literal(name)
+					: Component.translatable("tournament.dragonminez.you");
+		}
 		if (id.isEmpty()) return Component.literal("-");
 
 		ResourceLocation location = ResourceLocation.tryParse(id);
@@ -561,8 +666,14 @@ public class TournamentBracketScreen extends Screen {
 	}
 
 	private void renderPortrait(GuiGraphics graphics, String id, int boxX, int boxY, boolean isPlayer, boolean greyed) {
-		LivingEntity entity = isPlayer ? Minecraft.getInstance().player : portraitFor(id);
-		if (entity == null) return;
+		LivingEntity entity = isPlayer ? playerPortrait(id) : portraitFor(id);
+		if (entity == null) {
+			if (isPlayer) {
+				graphics.drawCenteredString(this.font, dmz(slotName(id)),
+						boxX + SLOT_SIZE / 2, boxY + SLOT_SIZE / 2 - 4, greyed ? 0xFF7A7A85 : 0xFFFFFFFF);
+			}
+			return;
+		}
 
 		float height = Math.max(0.6F, entity.getBbHeight() * renderScale(entity));
 		int scale = Mth.clamp(Math.round((SLOT_SIZE - PORTRAIT_PAD * 2) / (height * PORTRAIT_SPAN)), 6, 140);
@@ -577,6 +688,16 @@ public class TournamentBracketScreen extends Screen {
 					scale, 0.0F, 0.0F, entity);
 		}
 		graphics.disableScissor();
+	}
+
+	private static LivingEntity playerPortrait(String slot) {
+		Minecraft mc = Minecraft.getInstance();
+		if (Tournament.Bracket.PLAYER_SLOT.equals(slot)) return mc.player;
+
+		java.util.UUID id = Tournament.Bracket.playerOf(slot);
+		if (id == null || mc.level == null) return mc.player;
+		if (mc.player != null && mc.player.getUUID().equals(id)) return mc.player;
+		return mc.level.getPlayerByUUID(id);
 	}
 
 	private static float renderScale(LivingEntity entity) {

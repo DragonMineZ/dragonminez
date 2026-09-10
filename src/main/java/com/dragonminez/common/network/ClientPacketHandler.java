@@ -114,6 +114,9 @@ public class ClientPacketHandler {
 				Component.translatable("toast.dragonminez.party.invite.desc", Component.literal(inviterName)),
 				StoryToast.Tone.INFO
 		));
+		if (mc.player != null) {
+			mc.player.playSound(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0F, 1.2F);
+		}
 	}
 
 	public static void handleQuestActionFeedback(Component message) {
