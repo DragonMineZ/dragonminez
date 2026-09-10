@@ -30,6 +30,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.util.Mth;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.phys.Vec3;
@@ -56,14 +57,39 @@ public class ForgeClientEvents {
 	private static int characterCreationOpenCooldownTicks = 0;
 	private static final int CHARACTER_CREATION_OPEN_COOLDOWN = 8;
 
+	/**
+	 * Above this, vanilla's health bar is not merely ugly but unrenderable.
+	 *
+	 * <p>{@code Gui#renderHearts} draws one sprite per half heart with no upper bound, so the
+	 * cost scales linearly with max health. DMZ stats reach 999,999,999, which asks vanilla for
+	 * hundreds of millions of blits in a single frame — a frame that never completes.
+	 */
+	private static final float VANILLA_SAFE_MAX_HEALTH = 200.0F;
+
+	/**
+	 * Hides the vanilla health bar, which DMZ replaces with its own.
+	 *
+	 * <p>The character-created cache alone is not a safe gate. It is populated from the DMZ stats
+	 * sync packet, but the player's max-health <i>attribute</i> arrives earlier, with the entity
+	 * itself. In that window vanilla renders DMZ-scale health as literal hearts and pegs the
+	 * render thread — and because the client is then too slow to process incoming packets, the
+	 * very sync that would set the cache never lands. The freeze starves the thing that would end
+	 * it, so on a heavy pack the window never closes and the client is dropped for a keepalive
+	 * timeout roughly 30 seconds later.
+	 *
+	 * <p>The health check below cannot starve, because it reads only an attribute already present
+	 * on the local player. Keep both conditions: the cache is the intended behaviour, this is the
+	 * floor that stops a sync delay from becoming an unrecoverable hang.
+	 */
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiLayerEvent.Pre event) {
-		if (Minecraft.getInstance().player != null) {
-			if (isHasCreatedCharacterCache) {
-				if (VanillaGuiLayers.PLAYER_HEALTH.equals(event.getName())) {
-					event.setCanceled(true);
-				}
-			}
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player == null) return;
+		if (!VanillaGuiLayers.PLAYER_HEALTH.equals(event.getName())) return;
+
+		if (isHasCreatedCharacterCache
+				|| player.getMaxHealth() + player.getAbsorptionAmount() > VANILLA_SAFE_MAX_HEALTH) {
+			event.setCanceled(true);
 		}
 	}
 

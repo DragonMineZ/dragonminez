@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.HudStatNumberAnimator;
+import com.dragonminez.client.render.util.RenderBufferUtil;
 import com.dragonminez.client.systems.kisense.CombatIndicators;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.dragonminez.client.systems.kisense.KiSenseState;
@@ -23,6 +24,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -34,7 +36,9 @@ import net.neoforged.fml.common.Mod;
 import org.joml.Matrix4f;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -45,11 +49,17 @@ public class KiSenseEvent {
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	private static final double LOD_DISTANCE = 24.0;
+	/** How far above an entity's hitbox the combat overlay floats, in blocks. */
+	private static final double OVERLAY_HEIGHT_ABOVE_ENTITY = 0.8;
 	private static final float BAR_MAX_WIDTH = 76.0f;
 	private static final float BAR_STACK = 10.0f;
 	private static final int DAMAGE_COLOR = 0xFF5555;
 	private static final int HEAL_COLOR = 0x55FF55;
 
+	/** One entity's overlay, captured while that entity renders and drawn once the level is done. */
+	private record PendingOverlay(LivingEntity entity, Matrix4f billboard, float partialTick) {}
+
+	private static final List<PendingOverlay> pendingOverlays = new ArrayList<>();
 	private static final Map<Integer, HudStatNumberAnimator> healthAnimators = new HashMap<>();
 	private static final Map<Integer, Float> lerpedHealthWidths = new HashMap<>();
 
@@ -79,32 +89,70 @@ public class KiSenseEvent {
 			}
 			KiSenseScan.tick(player, data, KiSenseState.getMode());
 			if (KiSenseState.isCombat()) CombatIndicators.tick();
-			else CombatIndicators.clear();
+			else {
+				CombatIndicators.clear();
+				pendingOverlays.clear();
+			}
 		});
 
 		lerpedHealthWidths.keySet().retainAll(KiSenseScan.getCombatEntities());
 		healthAnimators.keySet().retainAll(KiSenseScan.getCombatEntities());
 	}
 
+	/**
+	 * Captures the billboard for one sensed entity. Nothing is drawn here.
+	 *
+	 * <p>The entity pass is not the last thing 1.21 puts into the main target - clouds, weather and
+	 * the fabulous composites all follow it - and this overlay deliberately renders with the depth
+	 * test off so it stays readable through walls, which also means it writes no depth for those
+	 * later passes to fail against. Drawn here, a cloud behind an entity blends straight over its
+	 * bars. So capture the pose now, while the entity's own transform is on the stack, and replay it
+	 * after the level the way {@code PlayerEffectsRenderHandler} draws its deferred effects.</p>
+	 */
 	@SubscribeEvent
 	public static void onRenderNameTag(RenderNameTagEvent event) {
 		if (!KiSenseState.isCombat()) return;
 		if (!(event.getEntity() instanceof LivingEntity entity)) return;
 		if (!KiSenseScan.getCombatEntities().contains(entity.getId())) return;
-		renderCombatOverlay(event.getPoseStack(), entity, event.getPartialTick());
+
+		PoseStack poseStack = event.getPoseStack();
+		poseStack.pushPose();
+		RenderBufferUtil.nameplateBillboard(poseStack, entity, OVERLAY_HEIGHT_ABOVE_ENTITY);
+		pendingOverlays.add(new PendingOverlay(entity, new Matrix4f(poseStack.last().pose()), event.getPartialTick()));
+		poseStack.popPose();
+	}
+
+	@SubscribeEvent
+	public static void onRenderLevelStage(RenderLevelStageEvent event) {
+		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+		if (pendingOverlays.isEmpty()) return;
+
+		Minecraft mc = Minecraft.getInstance();
+		mc.getMainRenderTarget().bindWrite(false);
+
+		// The captured matrices are entity-local. 1.21 hands this stage no PoseStack at all and has
+		// already popped the camera rotation off RenderSystem's model-view stack, so rebuild the view
+		// from the event and replay each billboard on top of it - the same capture-and-replay the
+		// queued ki attacks use.
+		PoseStack poseStack = RenderBufferUtil.stageModelViewPose(event);
+		for (PendingOverlay pending : pendingOverlays) {
+			if (!pending.entity().isAlive()) continue;
+			poseStack.pushPose();
+			poseStack.last().pose().mul(pending.billboard());
+			renderCombatOverlay(poseStack, pending.entity(), pending.partialTick());
+			poseStack.popPose();
+		}
+		pendingOverlays.clear();
 	}
 
 	private static void renderCombatOverlay(PoseStack poseStack, LivingEntity entity, float partialTick) {
 		Minecraft mc = Minecraft.getInstance();
 		boolean lod = mc.player != null && mc.player.distanceTo(entity) > LOD_DISTANCE;
 
-		poseStack.pushPose();
-		poseStack.translate(0.0D, entity.getBbHeight() + 0.8D, 0.0D);
-		poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-
-		float scale = 0.025F;
-		poseStack.scale(-scale, -scale, scale);
-
+		// Blending is asked for rather than inherited: the level render ends with it disabled, and
+		// without it the transparent corners of the bar frames draw as solid blocks of stored colour.
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
 		RenderSystem.disableDepthTest();
 
 		float topY;
@@ -125,8 +173,7 @@ public class KiSenseEvent {
 		renderIndicators(poseStack, entity, partialTick, lod, topY);
 
 		RenderSystem.enableDepthTest();
-
-		poseStack.popPose();
+		RenderSystem.disableBlend();
 	}
 
 	private static void drawKiBar(PoseStack poseStack, StatsData data, float baseY) {
@@ -365,7 +412,7 @@ public class KiSenseEvent {
 		float maxU = (float) (u + width) / textureSize;
 		float minV = (float) v / textureSize;
 		float maxV = (float) (v + height) / textureSize;
-		com.dragonminez.client.render.util.RenderBufferUtil.drawTexturedQuad(
+		RenderBufferUtil.drawTexturedQuad(
 				poseStack.last().pose(), x, y, x + width, y + height, 0, minU, minV, maxU, maxV);
 	}
 

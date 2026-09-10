@@ -2,12 +2,12 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
-import com.dragonminez.client.render.effects.KiWeaponRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.shader.KiBloomRenderer;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
+import com.dragonminez.client.render.util.RenderBufferUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -23,7 +23,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import org.joml.Matrix4f;
-import org.joml.Matrix3f;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -37,7 +36,6 @@ public class PlayerEffectsRenderHandler {
 		{
 			PlayerEffectQueue.getAndClearAuras();
 			PlayerEffectQueue.getAndClearSparks();
-			PlayerEffectQueue.getAndClearWeapons();
 			PlayerEffectQueue.getAndClearFirstPersonAuras();
 			PlayerEffectQueue.getAndClearKiAttacks();
 			PlayerEffectQueue.getAndClearEntityEffects();
@@ -57,7 +55,6 @@ public class PlayerEffectsRenderHandler {
 			if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) {
 				PlayerEffectQueue.getAndClearAuras();
 				PlayerEffectQueue.getAndClearSparks();
-				PlayerEffectQueue.getAndClearWeapons();
 				PlayerEffectQueue.getAndClearFirstPersonAuras();
 				PlayerEffectQueue.getAndClearKiAttacks();
 				PlayerEffectQueue.getAndClearEntityEffects();
@@ -66,16 +63,13 @@ public class PlayerEffectsRenderHandler {
 			} else if (stage == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
 				TransformationPostShaderManager.setShaderpackMainPass(false);
 				mc.getMainRenderTarget().bindWrite(false);
-				renderWeapons(mc, event);
 				renderEffects(mc, event);
 				TransformationPostShaderManager.processShaderpackOutline(event.getPartialTick().getGameTimeDeltaPartialTick(false));
 			}
 			return;
 		}
 
-		if (stage == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-			renderWeapons(mc, event);
-		} else if (stage == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+		if (stage == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
 			// 1.21 composites the particles/weather/fabulous targets after their
 			// stage callbacks. Drawing DMZ effects there makes terrain and water
 			// overwrite them. Draw once into the final main target instead.
@@ -84,16 +78,9 @@ public class PlayerEffectsRenderHandler {
 		}
 	}
 
-	private static void renderWeapons(Minecraft mc, RenderLevelStageEvent event) {
-		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-		PoseStack poseStack = createDeferredEffectPose(event);
-		KiWeaponRenderer.processWeapons(buffers, poseStack);
-		buffers.endBatch();
-	}
-
 	private static void renderEffects(Minecraft mc, RenderLevelStageEvent event) {
 		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-		PoseStack poseStack = createDeferredEffectPose(event);
+		PoseStack poseStack = RenderBufferUtil.stageModelViewPose(event);
 		Matrix4f projectionMatrix = event.getProjectionMatrix();
 		float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 		long gameTime = mc.level.getGameTime();
@@ -146,20 +133,6 @@ public class PlayerEffectsRenderHandler {
 		for (var task : entityEffects) task.render();
 
 		AuraRenderer.cleanCaches(CURRENT_FRAME_PLAYERS);
-	}
-
-	/**
-	 * Deferred effects need the same model-view transform as terrain and entities.
-	 * The stage PoseStack is not reliable at every 1.21 render stage, but NeoForge
-	 * exposes the actual model-view matrix explicitly. Rebuilding this from yaw and
-	 * pitch keeps X/Y alignment while producing a different view-space Z, causing
-	 * terrain behind an aura to incorrectly win the depth test.
-	 */
-	private static PoseStack createDeferredEffectPose(RenderLevelStageEvent event) {
-		PoseStack poseStack = new PoseStack();
-		poseStack.last().pose().set(event.getModelViewMatrix());
-		poseStack.last().normal().set(new Matrix3f(event.getModelViewMatrix()));
-		return poseStack;
 	}
 }
 

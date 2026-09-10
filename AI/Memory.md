@@ -110,6 +110,18 @@ Use this schema for each memory entry:
 
 Add durable memories below this line, newest first.
 
+### 2026-09-10 - 1.21 Render Conventions The 1.20.1 Port Carried Over
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: `src/main/java/com/dragonminez/client/`
+- Summary: Ki Sense's entity overlay rendered nothing, then had clouds bleed through it, and its search auras drifted off their mobs, because three Minecraft 1.21 render conventions differ from 1.20.1 while the ported code still used the old ones.
+- Guidance: (1) Camera#rotation gained an extra 180 degrees about Y in 1.21, and vanilla answered by flipping the X sign of the nameplate billboard - `EntityRenderer#renderNameTag` now scales `(0.025F, -0.025F, 0.025F)`, not 1.20.1's `(-0.025F, -0.025F, 0.025F)`. Anything drawing above an entity must use `RenderBufferUtil.nameplateBillboard`, which owns those signs; the mirrored variant inverts quad winding and is silently back-face culled during the entity pass. (2) `RenderLevelStageEvent#getPoseStack()` is an identity stack in 1.21 - `LevelRenderer` keeps the camera rotation on `RenderSystem.getModelViewStack()` instead. `MultiBufferSource` and `BufferUploader` draws pick that up automatically, but `VertexBuffer#drawWithShader` takes the model-view matrix explicitly, so it needs the view supplied through `RenderBufferUtil.stageModelViewPose(event)`. (3) The entity pass is not the end of the main target - clouds, weather and the fabulous composites still follow it - so a world-space overlay drawn there with the depth test off (which also stops it writing depth) gets painted over; capture its pose during the entity pass and replay it at `AFTER_LEVEL`, and set blending explicitly there because the level render ends with blending disabled.
+- Do Not: Do not rebuild the view matrix from camera yaw and pitch. It lines up in X and Y but produces a different view-space Z, so terrain behind an effect wrongly wins the depth test.
+- Verification: With Ki Sense COMBAT active the bars, BP label and damage popups draw above mobs and players with readable, unmirrored text; with SEARCH active the auras stay locked to their entities while the camera turns, including with view bobbing on.
+- Related: `client/events/KiSenseEvent.java`, `client/render/effects/KiSenseAuraRenderer.java`, `client/render/util/RenderBufferUtil.java`, `client/events/PlayerEffectsRenderHandler.java`
+
 ### 2026-07-12 - Post Shaders Must Output Alpha 1.0 Before The Vanilla Blit Pass
 
 - Type: pitfall

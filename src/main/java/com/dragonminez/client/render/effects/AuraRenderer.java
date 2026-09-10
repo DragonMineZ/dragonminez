@@ -102,16 +102,31 @@ public class AuraRenderer {
 	private static void applyAndDraw(VertexBuffer mesh, PoseStack poseStack, Matrix4f projectionMatrix, ShaderInstance shader,
 									 ResourceLocation texture, float[] color, float alpha, float speed, boolean ground, boolean ignoreSceneDepth) {
 		mesh.bind();
+		// Both flags are captured and restored exactly. An earlier version disabled the stencil
+		// test and never re-enabled it, so after the local third-person aura drew, stencil testing
+		// stayed off for everything rendered afterwards — including DMZ's own stencil effects,
+		// which clear GL_STENCIL_BUFFER_BIT and then rely on the test being live. Restoring the
+		// prior value rather than forcing "enabled" matters because this runs mid-frame and the
+		// caller's state is not ours to assume.
+		boolean hadDepthTest = false;
+		boolean hadStencilTest = false;
 		if (ignoreSceneDepth) {
 			// RenderType state can be reapplied by VertexBuffer.drawWithShader on 1.21.
 			// Force this at the actual draw boundary for the local third-person aura.
+			hadDepthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+			hadStencilTest = GL11.glIsEnabled(GL11.GL_STENCIL_TEST);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
 			GL11.glDisable(GL11.GL_STENCIL_TEST);
 		}
 		mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
 		if (ignoreSceneDepth) {
-			GL11.glEnable(GL11.GL_DEPTH_TEST);
-			GL11.glDepthFunc(GL11.GL_LEQUAL);
+			if (hadDepthTest) {
+				GL11.glEnable(GL11.GL_DEPTH_TEST);
+				GL11.glDepthFunc(GL11.GL_LEQUAL);
+			}
+			if (hadStencilTest) {
+				GL11.glEnable(GL11.GL_STENCIL_TEST);
+			}
 		}
 	}
 
