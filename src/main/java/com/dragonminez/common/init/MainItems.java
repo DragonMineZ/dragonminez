@@ -56,7 +56,32 @@ public final class MainItems {
 	public static final RegistryObject<Item> GETE_ORANGE_CAPSULE = ITEM_REGISTER.register("gete_orange_capsule", () -> new CapsuleItem(CapsuleType.PWR, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final RegistryObject<Item> GETE_BLUE_CAPSULE = ITEM_REGISTER.register("gete_blue_capsule", () -> new CapsuleItem(CapsuleType.ENE, ChatFormatting.GOLD, "Gete", 3, Rarity.RARE));
 	public static final RegistryObject<Item> SENZU_BEAN = ITEM_REGISTER.register("senzu_bean",
-			() -> new FoodItem(20, 0.0f, 16));
+			() -> new SenzuBeanItem(SenzuBeanItem.SenzuType.ALL));
+	public static final RegistryObject<Item> SENZU_BEAN_BLUE = ITEM_REGISTER.register("senzu_bean_blue",
+			() -> new SenzuBeanItem(SenzuBeanItem.SenzuType.KI));
+	public static final RegistryObject<Item> SENZU_BEAN_RED = ITEM_REGISTER.register("senzu_bean_red",
+			() -> new SenzuBeanItem(SenzuBeanItem.SenzuType.HEALTH));
+	public static final RegistryObject<Item> SENZU_BEAN_YELLOW = ITEM_REGISTER.register("senzu_bean_yellow",
+			() -> new SenzuBeanItem(SenzuBeanItem.SenzuType.STAMINA));
+
+	public static final RegistryObject<Item> SENZU_BEAN_SEEDS_BLUE = ITEM_REGISTER.register("senzu_bean_seeds_blue",
+			() -> new SenzuSeedsItem(MainBlocks.SENZU_BLUE_CROP));
+	public static final RegistryObject<Item> SENZU_BEAN_SEEDS_RED = ITEM_REGISTER.register("senzu_bean_seeds_red",
+			() -> new SenzuSeedsItem(MainBlocks.SENZU_RED_CROP));
+	public static final RegistryObject<Item> SENZU_BEAN_SEEDS_YELLOW = ITEM_REGISTER.register("senzu_bean_seeds_yellow",
+			() -> new SenzuSeedsItem(MainBlocks.SENZU_YELLOW_CROP));
+
+	public static final RegistryObject<Item> SENZU_BEAN_BAG = ITEM_REGISTER.register("senzu_bean_bag",
+			() -> new SenzuBagItem(new Item.Properties().stacksTo(1)));
+
+	public static final RegistryObject<Item> MEDI_BUG_ANT = ITEM_REGISTER.register("medi_bug_ant",
+			() -> new FoodItem(2, 1.2f, 64));
+	public static final RegistryObject<Item> MEDI_BUG_BEETLE = ITEM_REGISTER.register("medi_bug_beetle",
+			() -> new FoodItem(2, 1.2f, 64));
+	public static final RegistryObject<Item> MEDI_BUG_RHINO = ITEM_REGISTER.register("medi_bug_rhino",
+			() -> new FoodItem(2, 1.2f, 64));
+	public static final RegistryObject<Item> MEDI_BUG_WORM = ITEM_REGISTER.register("medi_bug_worm",
+			() -> new FoodItem(2, 1.2f, 64));
 
 	public static final RegistryObject<Item> MIGHT_TREE_FRUIT = ITEM_REGISTER.register("might_tree_fruit",
 			MightTreeFruitItem::new);

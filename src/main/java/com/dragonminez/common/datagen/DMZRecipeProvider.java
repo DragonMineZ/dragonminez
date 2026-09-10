@@ -162,19 +162,28 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 		statPlant(pWriter, MainItems.KAIOSHIN_FRUIT.get(), Ingredient.of(Items.GOLDEN_APPLE), "kaioshin_fruit");
 		statPlant(pWriter, MainItems.ZENKAI_LOTUS.get(), Ingredient.of(Items.AMETHYST_SHARD), "zenkai_lotus");
 
-		// Escama de tortuga: se obtiene desde scute (fuente provisional, ajustable).
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.FOOD, MainItems.SENZU_BEAN.get(), 1)
+				.requires(MainItems.SENZU_BEAN_RED.get())
+				.requires(MainItems.SENZU_BEAN_BLUE.get())
+				.requires(MainItems.SENZU_BEAN_YELLOW.get())
+				.unlockedBy(getHasName(MainItems.SENZU_BEAN_RED.get()), has(MainItems.SENZU_BEAN_RED.get()))
+				.group(Reference.MOD_ID)
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "senzu_bean_from_colors"));
+
+		senzuSeeds(pWriter, MainItems.SENZU_BEAN_RED.get(), MainItems.SENZU_BEAN_SEEDS_RED.get(), "senzu_bean_seeds_red");
+		senzuSeeds(pWriter, MainItems.SENZU_BEAN_BLUE.get(), MainItems.SENZU_BEAN_SEEDS_BLUE.get(), "senzu_bean_seeds_blue");
+		senzuSeeds(pWriter, MainItems.SENZU_BEAN_YELLOW.get(), MainItems.SENZU_BEAN_SEEDS_YELLOW.get(), "senzu_bean_seeds_yellow");
+
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, MainItems.TURTLE_SCALE.get())
 				.requires(Items.SCUTE)
 				.unlockedBy(getHasName(Items.SCUTE), has(Items.SCUTE)).group(Reference.MOD_ID)
 				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "turtle_scale"));
-		// Cápsula vacía: cristal + redstone + hierro (crafteo inventado).
 		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, MainItems.EMPTY_CAPSULE.get())
 				.pattern("G").pattern("R").pattern("I")
 				.define('G', Items.GLASS_PANE).define('R', Items.REDSTONE).define('I', Items.IRON_INGOT)
 				.unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT)).group(Reference.MOD_ID)
 				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "empty_capsule"));
 
-		// Cápsulas de estadística: frasco curativo + ingrediente + cápsula vacía + planta.
 		statCapsule(pWriter, MainItems.RED_CAPSULE.get(), Ingredient.of(MainItems.DINO_MEAT_RAW.get()), MainItems.OOZARU_ROOT.get(), "str_capsule");
 		statCapsule(pWriter, MainItems.YELLOW_CAPSULE.get(), Ingredient.of(MainItems.TURTLE_SCALE.get()), MainItems.KATCHIN_SPROUT.get(), "res_capsule");
 		statCapsule(pWriter, MainItems.PURPLE_CAPSULE.get(), Ingredient.of(Items.GUNPOWDER), MainItems.METEOR_FLOWER.get(), "skp_capsule");
@@ -1244,6 +1253,13 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 
 	private Ingredient curativeFlask() {
 		return StrictNBTIngredient.of(MainPotions.createCurativeFlask());
+	}
+
+	private void senzuSeeds(Consumer<FinishedRecipe> w, ItemLike bean, ItemLike seeds, String id) {
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, seeds)
+				.requires(bean)
+				.unlockedBy(getHasName(bean), has(bean)).group(Reference.MOD_ID)
+				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
 	}
 
 	private void statPlant(Consumer<FinishedRecipe> w, ItemLike result, Ingredient ingredient, String id) {

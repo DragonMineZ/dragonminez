@@ -188,6 +188,24 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		this.add(MainBlocks.KAIOSHIN_FRUIT_CROP.get(), block -> statCropDrop(block, MainItems.KAIOSHIN_FRUIT.get()));
 		this.add(MainBlocks.ZENKAI_LOTUS_CROP.get(), block -> statCropDrop(block, MainItems.ZENKAI_LOTUS.get()));
 		this.add(MainBlocks.NAMEK_MOSS_CROP.get(), block -> statCropDrop(block, MainItems.NAMEK_MOSS.get()));
+
+		this.add(MainBlocks.SENZU_BLUE_CROP.get(), block -> senzuCropDrop(block, MainItems.SENZU_BEAN_SEEDS_BLUE.get(), MainItems.SENZU_BEAN_BLUE.get()));
+		this.add(MainBlocks.SENZU_RED_CROP.get(), block -> senzuCropDrop(block, MainItems.SENZU_BEAN_SEEDS_RED.get(), MainItems.SENZU_BEAN_RED.get()));
+		this.add(MainBlocks.SENZU_YELLOW_CROP.get(), block -> senzuCropDrop(block, MainItems.SENZU_BEAN_SEEDS_YELLOW.get(), MainItems.SENZU_BEAN_YELLOW.get()));
+	}
+
+	/** Siempre devuelve la semilla; al madurar suelta además la judía. */
+	protected LootTable.Builder senzuCropDrop(Block crop, ItemLike seeds, ItemLike bean) {
+		LootItemBlockStatePropertyCondition.Builder mature = LootItemBlockStatePropertyCondition
+				.hasBlockStateProperties(crop)
+				.setProperties(StatePropertiesPredicate.Builder.properties()
+						.hasProperty(CropBlock.AGE, 7));
+		return this.applyExplosionDecay(crop, LootTable.lootTable()
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+						.add(LootItem.lootTableItem(seeds)))
+				.withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+						.when(mature)
+						.add(LootItem.lootTableItem(bean))));
 	}
 
 	protected LootTable.Builder statCropDrop(Block crop, ItemLike plant) {

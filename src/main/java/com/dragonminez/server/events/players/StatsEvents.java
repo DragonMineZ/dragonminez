@@ -70,6 +70,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import com.dragonminez.common.util.CuriosUtil;
 import top.theillusivec4.curios.api.CuriosApi;
 import com.dragonminez.common.init.item.WeightItem;
+import com.dragonminez.common.init.item.consumables.SenzuBeanItem;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -625,7 +626,8 @@ public class StatsEvents {
 
 		if (!isModBlacklisted && !isItemBlacklisted) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
+				SenzuBeanItem senzu = stack.getItem() instanceof SenzuBeanItem bean ? bean : null;
+				boolean isSenzu = senzu != null;
 				boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
 
 				if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
@@ -669,14 +671,26 @@ public class StatsEvents {
 				float staminaAmount = (maxStamina * staminaTotalRecoveryPercentage);
 
 				if (isSenzu || isHeartMedicine) {
-					PassiveEventHandler.suppressHealingBonus = true;
-					player.heal(maxHealth - player.getHealth());
-					PassiveEventHandler.suppressHealingBonus = false;
-					data.getResources().setCurrentEnergy(maxEnergy);
-					data.getResources().setCurrentStamina(maxStamina);
+					// La medicina del corazón y la senzu verde restauran todo; las de color solo su recurso.
+					SenzuBeanItem.SenzuType senzuType = isSenzu ? senzu.getSenzuType() : SenzuBeanItem.SenzuType.ALL;
+
+					if (senzuType.restoresHealth()) {
+						PassiveEventHandler.suppressHealingBonus = true;
+						player.heal(maxHealth - player.getHealth());
+						PassiveEventHandler.suppressHealingBonus = false;
+					}
+					if (senzuType.restoresKi()) data.getResources().setCurrentEnergy(maxEnergy);
+					if (senzuType.restoresStamina()) data.getResources().setCurrentStamina(maxStamina);
 
 					int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
-					player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+					if (isSenzu) {
+						// Cooldown compartido: no se puede encadenar una senzu de cada color.
+						for (SenzuBeanItem bean : SenzuBeanItem.all()) {
+							player.getCooldowns().addCooldown(bean, cooldownTicks);
+						}
+					} else {
+						player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+					}
 				} else {
 					int durationSeconds = 6;
 					FOOD_REGEN_QUEUE.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new FoodRegenTask(durationSeconds, healAmount, energyAmount, staminaAmount));
@@ -694,7 +708,7 @@ public class StatsEvents {
 		if (itemKey == null) return;
 		String itemId = itemKey.toString();
 
-		if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
+		if (stack.getItem() instanceof SenzuBeanItem || itemId.equals("dragonminez:heart_medicine")) {
 			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get()))
 				event.setCanceled(true);
 			else event.setDuration(1);
