@@ -55,6 +55,11 @@ public class PartyCommand {
                 inviter.sendSystemMessage(Component.translatable("quest.dmz.party.invite.self").withStyle(ChatFormatting.RED));
                 return 0;
             }
+            if (result == PartyManager.InviteRequestResult.TOURNAMENT_ACTIVE) {
+                inviter.sendSystemMessage(Component.translatable("tournament.dragonminez.party_locked")
+                        .withStyle(ChatFormatting.RED));
+                return 0;
+            }
             if (result != PartyManager.InviteRequestResult.INVITED) return result == PartyManager.InviteRequestResult.SUGGESTED ? 1 : 0;
 
             invitee.sendSystemMessage(Component.translatable("quest.dmz.party.invite.received", inviter.getName()));
@@ -104,6 +109,11 @@ public class PartyCommand {
 
         if (result == PartyManager.InviteAcceptResult.PARTY_FULL) {
             player.sendSystemMessage(Component.translatable("quest.dmz.party.invite.party_full").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        if (result == PartyManager.InviteAcceptResult.TOURNAMENT_ACTIVE) {
+            player.sendSystemMessage(Component.translatable("tournament.dragonminez.party_locked").withStyle(ChatFormatting.RED));
             return 0;
         }
 

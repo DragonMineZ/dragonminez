@@ -61,6 +61,8 @@ public class InvitePartyMemberC2S {
                         Component.translatable("quest.dmz.party.invite.level_gap"));
                 case PARTY_FULL -> inviter.sendSystemMessage(
                         Component.translatable("quest.dmz.party.invite.party_full"));
+                case TOURNAMENT_ACTIVE -> inviter.sendSystemMessage(
+                        Component.translatable("tournament.dragonminez.party_locked"));
                 default -> {
                 }
             }

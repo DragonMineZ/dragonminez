@@ -113,6 +113,7 @@ public class QuestEvents {
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			QuestFieldSessions.clearAll(player);
+			com.dragonminez.server.world.tournament.Tournament.Manager.onPlayerLogout(player);
 		}
 	}
 

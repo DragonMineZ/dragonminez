@@ -51,6 +51,10 @@ public class TargetHelper {
         }
 
         if (target instanceof Player targetPlayer) {
+            if (com.dragonminez.server.world.tournament.Tournament.Manager
+                    .arePvpRivals(attacker.getUUID(), targetPlayer.getUUID())) {
+                return Relation.HOSTILE;
+            }
             if (PartyManager.areInSameParty(attacker, targetPlayer)) {
                 return PartyManager.isPartyPvpEnabled(attacker) ? Relation.HOSTILE : Relation.FRIENDLY;
             }
