@@ -618,6 +618,18 @@ public class NetworkHandler {
 				.encoder(PartyPackets.StatsS2C::encode)
 				.consumerMainThread(PartyPackets.StatsS2C::handle)
 				.add();
+
+		net.messageBuilder(KiBurstVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(KiBurstVfxS2C::new)
+				.encoder(KiBurstVfxS2C::encode)
+				.consumerMainThread(KiBurstVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(AuraModeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(AuraModeC2S::new)
+				.encoder(AuraModeC2S::encode)
+				.consumerMainThread(AuraModeC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

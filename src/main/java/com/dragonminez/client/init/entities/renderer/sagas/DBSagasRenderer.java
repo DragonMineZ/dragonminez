@@ -3,6 +3,8 @@ package com.dragonminez.client.init.entities.renderer.sagas;
 import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaItemInHandLayer;
+import com.dragonminez.client.render.effects.Aura3DRenderer;
+import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLayer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaSupervillainLayer;
@@ -95,15 +97,19 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         poseStack.pushPose();
 
         if (showAura) {
+            boolean use3D = Aura3DRenderer.isAvailable() && AuraModeState.entityPreference();
+
             if (entity.onGround()) {
                 poseStack.pushPose();
                 poseStack.translate(0.0, 0.05, 0.0);
-                renderPulseAura(entity, poseStack, mc, partialTick);
+                if (use3D) drawPulseAura3D(entity, poseStack, partialTick);
+                else renderPulseAura(entity, poseStack, mc, partialTick);
                 poseStack.popPose();
             }
 
             poseStack.pushPose();
-            executeAuraShaderDraw(entity, poseStack, mc, partialTick);
+            if (use3D) drawAura3D(entity, poseStack, partialTick);
+            else executeAuraShaderDraw(entity, poseStack, mc, partialTick);
             poseStack.popPose();
         }
 
@@ -139,6 +145,43 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         }
 
         return super.getRenderColor(animatable, partialTick, packedLight);
+    }
+
+    // Entities have no aura scale, so the flame is sized off the hitbox against a standard player.
+    private static final float STANDARD_PLAYER_HEIGHT = 1.8f;
+
+    private void drawAura3D(T animatable, PoseStack poseStack, float partialTick) {
+        String type = animatable.getAuraType3D();
+        float base = animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT;
+        float time = (animatable.tickCount + partialTick) / 20.0f;
+
+        float width = base * Aura3DRenderer.widthFactor(type);
+        Aura3DRenderer.draw(poseStack, RenderSystem.getProjectionMatrix(), type,
+                ColorUtils.rgbIntToFloat(animatable.getAuraColor()), 1.0f, time,
+                width, base * Aura3DRenderer.heightFactor(type), width, Aura3DRenderer.pivotFactor(type),
+                Aura3DRenderer.DEFAULT_BACKFACE);
+    }
+
+    private void drawPulseAura3D(T animatable, PoseStack poseStack, float partialTick) {
+        float height = animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT;
+        float time = (animatable.tickCount + partialTick) / 20.0f;
+        float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
+        float spin = (animatable.tickCount + partialTick) * 2.5f;
+
+        float phase = ((animatable.tickCount + partialTick) * 0.02f) % 1.0f;
+        drawPulseInstance3D(animatable, poseStack, height, color, time, spin, phase);
+        drawPulseInstance3D(animatable, poseStack, height, color, time, spin, (phase + 0.5f) % 1.0f);
+    }
+
+    private void drawPulseInstance3D(T animatable, PoseStack poseStack, float height, float[] color,
+                                     float time, float spin, float progress) {
+        float expansion = 1.0f + (3.0f * progress);
+        float alphaCurve = (float) Math.sin(progress * Math.PI);
+
+        String type = animatable.getAuraType3D();
+        Aura3DRenderer.drawGroundPulse(poseStack, RenderSystem.getProjectionMatrix(), type,
+                color, alphaCurve * 0.5f, time,
+                height * Aura3DRenderer.widthFactor(type) * expansion * 0.75f, height * 0.22f, spin);
     }
 
     private void renderPulseAura(T animatable, PoseStack poseStack, Minecraft mc, float partialTick) {

@@ -47,6 +47,13 @@ public class DMZItemTagGenerator extends ItemTagsProvider {
 		this.tag(ItemTags.TOOLS)
 				.add(MainItems.ARMOR_CRAFTING_KIT.get());
 
+		// Lo que acepta la Bolsa de Senzus (ampliable por datapack).
+		this.tag(MainTags.Items.SENZU_BEANS)
+				.add(MainItems.SENZU_BEAN.get())
+				.add(MainItems.SENZU_BEAN_BLUE.get())
+				.add(MainItems.SENZU_BEAN_RED.get())
+				.add(MainItems.SENZU_BEAN_YELLOW.get());
+
 		this.tag(Tags.Items.INGOTS)
 				.add(MainItems.GETE_SCRAP.get())
 				.add(MainItems.GETE_INGOT.get())

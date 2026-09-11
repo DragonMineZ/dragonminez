@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats.character;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
@@ -16,6 +17,7 @@ public class Resources {
     private float currentEnergy;
     private float currentStamina;
     private float currentPoise;
+    private float surgeCharge;
     private int release;
     private int releaseLimit;
     private int flightSpeedLimit;
@@ -31,6 +33,7 @@ public class Resources {
         this.currentEnergy = 0;
         this.currentStamina = 0;
         this.currentPoise = 0;
+        this.surgeCharge = 0;
         this.release = 5;
         this.releaseLimit = 0;
         this.flightSpeedLimit = 100;
@@ -45,6 +48,7 @@ public class Resources {
         this.currentEnergy = 0;
         this.currentStamina = 0;
         this.currentPoise = 0;
+        this.surgeCharge = 0;
         this.release = 5;
         this.releaseLimit = 0;
         this.flightSpeedLimit = 100;
@@ -75,6 +79,14 @@ public class Resources {
 
     public void setCurrentPoise(float poise) {
         this.currentPoise = roundToQuarter(Math.min(Math.max(0, poise), statsData.getMaxPoise()));
+    }
+
+    public void setSurgeCharge(float surgeCharge) {
+        this.surgeCharge = Math.min(100.0f, Math.max(0.0f, surgeCharge));
+    }
+
+    public boolean isSurgeFull() {
+        return surgeCharge >= 100.0f;
     }
 
     public void setPowerRelease(int release) {
@@ -139,10 +151,38 @@ public class Resources {
     public void addRacialSkillCount(int amount) { setRacialSkillCount(racialSkillCount + amount); }
 
     public void removeEnergy(float amount) {
-        float before = currentEnergy;
-        setCurrentEnergy(currentEnergy - amount);
-        awardDynamicGrowthEnergy(before - currentEnergy);
+        removeEnergy(amount, true);
     }
+
+    public void removeEnergy(float amount, boolean drainsSurge) {
+        boolean taxed = drainsSurge && amount > 0 && isSurgeTaxActive();
+        float requested = taxed
+                ? (float) (amount * ConfigManager.getCombatConfig().getSurgeKiCostMultiplier())
+                : amount;
+
+        float before = currentEnergy;
+        setCurrentEnergy(currentEnergy - requested);
+        float spent = before - currentEnergy;
+
+        awardDynamicGrowthEnergy(spent);
+        if (drainsSurge && spent > 0) drainSurgeFromKiSpent(spent);
+    }
+
+    private boolean isSurgeTaxActive() {
+        return statsData != null && statsData.getStatus().isSurgeActive();
+    }
+
+    private void drainSurgeFromKiSpent(float spent) {
+        if (surgeCharge <= 0 || statsData == null) return;
+        if (!(player instanceof ServerPlayer)) return;
+
+        float maxEnergy = statsData.getMaxEnergy();
+        if (maxEnergy <= 0) return;
+
+        double factor = ConfigManager.getCombatConfig().getSurgeDrainPerKiFraction();
+        setSurgeCharge(surgeCharge - (float) ((spent / maxEnergy) * 100.0 * factor));
+    }
+
     public void removeStamina(float amount) {
         float before = currentStamina;
         setCurrentStamina(currentStamina - amount);
@@ -169,6 +209,7 @@ public class Resources {
         tag.putFloat("CurrentEnergy", currentEnergy);
         tag.putFloat("CurrentStamina", currentStamina);
         tag.putFloat("CurrentPoise", currentPoise);
+        tag.putFloat("SurgeCharge", surgeCharge);
         tag.putInt("Release", release);
         tag.putInt("ReleaseLimit", releaseLimit);
         tag.putInt("FlightSpeed", flightSpeedLimit);
@@ -190,6 +231,8 @@ public class Resources {
         if (tag.contains("CurrentPoise", 5)) this.currentPoise = tag.getFloat("CurrentPoise");
         else this.currentPoise = tag.getInt("CurrentPoise");
 
+        this.surgeCharge = tag.getFloat("SurgeCharge");
+
         this.release = tag.getInt("Release");
         this.releaseLimit = tag.getInt("ReleaseLimit");
         this.flightSpeedLimit = tag.getInt("FlightSpeed");
@@ -208,6 +251,7 @@ public class Resources {
         this.currentEnergy = other.currentEnergy;
         this.currentStamina = other.currentStamina;
         this.currentPoise = other.currentPoise;
+        this.surgeCharge = other.surgeCharge;
         this.release = other.release;
         this.releaseLimit = other.releaseLimit;
         this.flightSpeedLimit = other.flightSpeedLimit;

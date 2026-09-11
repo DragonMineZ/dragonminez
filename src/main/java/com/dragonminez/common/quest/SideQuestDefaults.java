@@ -954,7 +954,6 @@ final class SideQuestDefaults {
 						rewItem("dragonminez:gete_orange_capsule", 1)
 				}));
 
-		// Retrofit kit: Bulma teaches you to upgrade netherite gear into Gete armor at a smithing table.
 		writeQuestFile(dir, "bulma_gete_retrofit.json", sidequest(
 				"bulma_gete_retrofit", "dmz.sidequest.bulma_gete_retrofit.name", "dmz.sidequest.bulma_gete_retrofit.desc",
 				"tech", false, "bulma", "bulma",
@@ -964,7 +963,7 @@ final class SideQuestDefaults {
 						objItem("minecraft:netherite_ingot", 1),
 						objTalkTo("bulma")
 				},
-				new JsonObject[]{ rewTPS(52000), rewItem("dragonminez:gete_smithing_template", 1) }));
+				new JsonObject[]{ rewTPS(52000), rewItem("dragonminez:pattern_gete", 1) }));
 
 		writeQuestFile(dir, "bulma_gravity_mk2.json", sidequest(
 				"bulma_gravity_mk2", "dmz.sidequest.bulma_gravity_mk2.name", "dmz.sidequest.bulma_gravity_mk2.desc",

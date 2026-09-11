@@ -36,6 +36,7 @@ public class XenoverseHUD {
 	private static final float HP_BAR_MAX_WIDTH = 137.0f;
 	private static final float KI_BAR_MAX_WIDTH = 114.0f;
 	private static final float STM_BAR_MAX_WIDTH = 85.0f;
+	private static final float SURGE_TINT = 0.45f;
 	private static final HudStatNumberAnimator HP_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.HEALTH);
 	private static final HudStatNumberAnimator KI_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.KI);
 	private static final HudStatNumberAnimator STM_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.STAMINA);
@@ -116,6 +117,16 @@ public class XenoverseHUD {
 				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
 				guiGraphics.blit(hud, 29, 23, 9, 81, (int) currentKiBarWidth, 4, 256, 256);
+
+				float surgeFraction = SurgeBarState.fraction(data);
+				if (surgeFraction > 0.0f) {
+					int surgeWidth = Math.round(surgeFraction * KI_BAR_MAX_WIDTH);
+					if (surgeWidth > 0) {
+						RenderSystem.setShaderColor(auraRgb[0] * SURGE_TINT, auraRgb[1] * SURGE_TINT, auraRgb[2] * SURGE_TINT, 1.0f);
+						guiGraphics.blit(hud, 29, 23, 9, 81, surgeWidth, 4, 256, 256);
+					}
+				}
+
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 				drawFrostDemonReserveOverlay(guiGraphics, data, raceName, maxKi, 29, 23);
 

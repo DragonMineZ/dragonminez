@@ -1,13 +1,13 @@
 package com.dragonminez.common.init.block.entity;
 
+import com.dragonminez.common.compat.ApotheosisCompat;
+import com.dragonminez.common.compat.WeaponLevelingCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainRecipes;
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.menu.menutypes.KikonoStationMenu;
 import com.dragonminez.server.energy.StarEnergyStorage;
 import com.dragonminez.server.recipes.KikonoRecipe;
-import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
-import dev.shadowsoffire.apotheosis.adventure.socket.SocketHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -32,7 +32,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import net.weaponleveling.api.LevelingAPI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
@@ -229,41 +228,34 @@ public class KikonoStationBlockEntity extends BlockEntity implements MenuProvide
 
 	private ItemStack getOutputWithEnchantments(ItemStack itemStack, ItemStack template) {
 		var output = itemStack.copy();
+		var crafting = ConfigManager.getServerConfig().getCrafting();
 
-		if (ConfigManager.getServerConfig().getCrafting().getCopyEnchantmentsFromTemplate()) {
+		if (crafting.getCopyEnchantmentsFromTemplate()) {
 			var enchantments = EnchantmentHelper.getEnchantments(template);
 			EnchantmentHelper.setEnchantments(enchantments, output);
 		}
 
-		if (ConfigManager.getServerConfig().getCrafting().getCopyWeaponLevelFromTemplate()) {
-			int level = LevelingAPI.getLevel(template);
-			LevelingAPI.updateLevel(output, level);
+		if (crafting.getCopyWeaponLevelFromTemplate()) {
+			WeaponLevelingCompat.copyLevel(template, output);
 		}
 
-		if (ConfigManager.getServerConfig().getCrafting().getCopyWeaponLevelProgressFromTemplate()) {
-			long progress = LevelingAPI.getLevelProgress(template);
-			LevelingAPI.updateLevelProgress(output, progress);
+		if (crafting.getCopyWeaponLevelProgressFromTemplate()) {
+			WeaponLevelingCompat.copyLevelProgress(template, output);
 		}
 
-		if (ConfigManager.getServerConfig().getCrafting().getCopyApotheosisRarityFromTemplate()) {
-			var rarity = AffixHelper.getRarity(template);
-			if (rarity.isBound()) {
-				AffixHelper.setRarity(output, rarity.get());
-			}
+		if (crafting.getCopyApotheosisRarityFromTemplate()) {
+			ApotheosisCompat.copyRarity(template, output);
 		}
 
-		if (ConfigManager.getServerConfig().getCrafting().getCopyApotheosisAffixesFromTemplate()) {
-			var affixes = AffixHelper.getAffixes(template);
-			AffixHelper.setAffixes(output, affixes);
+		if (crafting.getCopyApotheosisAffixesFromTemplate()) {
+			ApotheosisCompat.copyAffixes(template, output);
 		}
 
-		if (ConfigManager.getServerConfig().getCrafting().getCopyApotheosisSocketsFromTemplate()) {
-			var sockets = SocketHelper.getSockets(template);
-			SocketHelper.setSockets(output, sockets);
+		if (crafting.getCopyApotheosisSocketsFromTemplate()) {
+			ApotheosisCompat.copySockets(template, output);
 
-			if (ConfigManager.getServerConfig().getCrafting().getCopyApotheosisGemsFromTemplate()) {
-				var socketedGems = SocketHelper.getGems(template);
-				SocketHelper.setGems(output, socketedGems);
+			if (crafting.getCopyApotheosisGemsFromTemplate()) {
+				ApotheosisCompat.copyGems(template, output);
 			}
 		}
 

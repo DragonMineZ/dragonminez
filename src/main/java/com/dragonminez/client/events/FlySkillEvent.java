@@ -244,7 +244,7 @@ public class FlySkillEvent {
 				lastFlightMode = flightMode;
 			}
 
-			boolean movementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStunned() || data.getStatus().isActionCharging();
+			boolean movementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStunned() || data.getStatus().isActionCharging() || data.getStatus().isChargingKi();
 
 			if (isFlying) {
 				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data)) {
@@ -374,9 +374,14 @@ public class FlySkillEvent {
 
 	private static float getFlySpeedScale(LocalPlayer player) {
 		double attrValue = player.getAttributes().hasAttribute(EntityAttributes.FLY_SPEED.get()) ? player.getAttributeValue(EntityAttributes.FLY_SPEED.get()) : 0.0;
-		if (attrValue <= 0.0) return 1.0F;
-		double scale = attrValue / BASE_ATTRIBUTE_FLY_SPEED;
-		return (float) Mth.clamp(scale, 0.25, 4.0);
+		double scale = attrValue <= 0.0 ? 1.0 : Mth.clamp(attrValue / BASE_ATTRIBUTE_FLY_SPEED, 0.25, 4.0);
+		return (float) (scale * flightStateSpeedMultiplier(player));
+	}
+
+	public static double flightStateSpeedMultiplier(LocalPlayer player) {
+		return StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(StatsData::getFlightStateSpeedMultiplier)
+				.orElse(1.0);
 	}
 
 	private static void initializeFlightVectorFromCurrentMotion(LocalPlayer player, int flyLevel, int flightSpeedLimit) {

@@ -39,6 +39,7 @@ public class Cooldowns {
 	public static final String BIO_EXPLODE_CD = "BioExplodeCooldown";
 	public static final String BIO_EXPLODE_RECOVERY = "BioExplodeRecovery";
 	public static final String STRIKE_GLOBAL = "StrikeGlobalCooldown";
+	public static final String KI_SURGE_CD = "KiSurgeCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

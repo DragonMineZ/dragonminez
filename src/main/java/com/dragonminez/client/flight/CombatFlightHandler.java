@@ -5,6 +5,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.network.C2S.CombatFlyImpulseC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
@@ -180,9 +181,8 @@ public class CombatFlightHandler {
 
 	private static float getFlySpeedScale(LocalPlayer player) {
 		double attrValue = player.getAttributes().hasAttribute(EntityAttributes.FLY_SPEED.get()) ? player.getAttributeValue(EntityAttributes.FLY_SPEED.get()) : 0.0;
-		if (attrValue <= 0.0) return 1.0F;
-		double scale = attrValue / BASE_ATTRIBUTE_FLY_SPEED;
-		return (float) Mth.clamp(scale, 0.25, 4.0);
+		double scale = attrValue <= 0.0 ? 1.0 : Mth.clamp(attrValue / BASE_ATTRIBUTE_FLY_SPEED, 0.25, 4.0);
+		return (float) (scale * FlySkillEvent.flightStateSpeedMultiplier(player));
 	}
 
 	private static double getGroundDistance(LocalPlayer player) {

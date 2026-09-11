@@ -14,6 +14,9 @@ import java.io.IOException;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class DMZShaders {
 	public static ShaderInstance auraShader;
+	public static ShaderInstance auraSmooth3DShader;
+	public static ShaderInstance auraSparking3DShader;
+	public static ShaderInstance auraTrailShader;
 	public static ShaderInstance lightningShader;
 	public static ShaderInstance outlineShader;
 	public static ShaderInstance outlineMaskTexShader;
@@ -26,6 +29,21 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura"),
 						DefaultVertexFormat.POSITION_TEX),
 				shaderInstance -> auraShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_smooth"),
+						DefaultVertexFormat.POSITION_COLOR_NORMAL),
+				shaderInstance -> auraSmooth3DShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_sparking"),
+						DefaultVertexFormat.POSITION_COLOR_NORMAL),
+				shaderInstance -> auraSparking3DShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_trail"),
+						DefaultVertexFormat.POSITION_COLOR_NORMAL),
+				shaderInstance -> auraTrailShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning"),

@@ -11,6 +11,7 @@ import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
 import com.dragonminez.client.gui.quest.StoryToast;
 import com.dragonminez.client.clash.ClientBeamClashState;
+import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
@@ -60,6 +61,7 @@ public class ClientPacketHandler {
 				player.refreshDimensions();
 				player.refreshDisplayName();
 			});
+			AuraModeState.reconcileLocal(player);
 		}
 	}
 

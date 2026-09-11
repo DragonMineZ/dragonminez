@@ -32,6 +32,7 @@ public class RaceCharacterConfig {
 	private String racialSkill = "human";
 	private Boolean hasSaiyanTail = false;
 	private String auraType = "kakarot";
+	private String auraType3D = "smooth";
 	private Float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
 	private Integer defaultBodyType = 0;
 	private Integer defaultHairType = 0;

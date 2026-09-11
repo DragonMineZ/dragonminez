@@ -70,6 +70,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import com.dragonminez.common.util.CuriosUtil;
 import top.theillusivec4.curios.api.CuriosApi;
 import com.dragonminez.common.init.item.WeightItem;
+import com.dragonminez.common.init.item.consumables.SenzuBeanItem;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,6 +81,8 @@ public class StatsEvents {
 	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
 	public static final UUID SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 	public static final UUID TURBO_SPEED_UUID = UUID.fromString("b3f4a1d2-6c8e-4b0a-9f21-7d5e3c9a1b64");
+	public static final UUID SURGE_SPEED_UUID = UUID.fromString("7d41b9a6-0e52-4c37-8fb0-3a6c15d9e824");
+	public static final UUID SURGE_ATTACK_SPEED_UUID = UUID.fromString("4e83c027-9a1b-4d65-b3f8-6c20d74a1e9b");
 	public static final UUID SPEED_STEP_HEIGHT_UUID = UUID.fromString("5a2f8c14-7b93-4e6d-b0a5-8c3f1e94d762");
 	private static final double TURBO_SPEED_BONUS = 0.30;
 	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
@@ -107,6 +110,17 @@ public class StatsEvents {
 		}
 		double multiplier = 1.0 - (penalty / 10.5);
 		return Math.max(0.001, multiplier);
+	}
+
+	private static void applySpeedModifier(AttributeInstance attribute, UUID uuid, String name, double amount) {
+		AttributeModifier existing = attribute.getModifier(uuid);
+		double current = existing != null ? existing.getAmount() : 0.0;
+		if (Math.abs(amount - current) <= 1.0E-9) return;
+
+		attribute.removeModifier(uuid);
+		if (amount != 0.0) {
+			attribute.addTransientModifier(new AttributeModifier(uuid, name, amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+		}
 	}
 
 	private static void applyWeightAttributeModifier(Player player, net.minecraft.world.entity.ai.attributes.Attribute attribute, UUID uuid, String name, double amount) {
@@ -612,7 +626,8 @@ public class StatsEvents {
 
 		if (!isModBlacklisted && !isItemBlacklisted) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
+				SenzuBeanItem senzu = stack.getItem() instanceof SenzuBeanItem bean ? bean : null;
+				boolean isSenzu = senzu != null;
 				boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
 
 				if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
@@ -656,14 +671,26 @@ public class StatsEvents {
 				float staminaAmount = (maxStamina * staminaTotalRecoveryPercentage);
 
 				if (isSenzu || isHeartMedicine) {
-					PassiveEventHandler.suppressHealingBonus = true;
-					player.heal(maxHealth - player.getHealth());
-					PassiveEventHandler.suppressHealingBonus = false;
-					data.getResources().setCurrentEnergy(maxEnergy);
-					data.getResources().setCurrentStamina(maxStamina);
+					// La medicina del corazón y la senzu verde restauran todo; las de color solo su recurso.
+					SenzuBeanItem.SenzuType senzuType = isSenzu ? senzu.getSenzuType() : SenzuBeanItem.SenzuType.ALL;
+
+					if (senzuType.restoresHealth()) {
+						PassiveEventHandler.suppressHealingBonus = true;
+						player.heal(maxHealth - player.getHealth());
+						PassiveEventHandler.suppressHealingBonus = false;
+					}
+					if (senzuType.restoresKi()) data.getResources().setCurrentEnergy(maxEnergy);
+					if (senzuType.restoresStamina()) data.getResources().setCurrentStamina(maxStamina);
 
 					int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
-					player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+					if (isSenzu) {
+						// Cooldown compartido: no se puede encadenar una senzu de cada color.
+						for (SenzuBeanItem bean : SenzuBeanItem.all()) {
+							player.getCooldowns().addCooldown(bean, cooldownTicks);
+						}
+					} else {
+						player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+					}
 				} else {
 					int durationSeconds = 6;
 					FOOD_REGEN_QUEUE.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new FoodRegenTask(durationSeconds, healAmount, energyAmount, staminaAmount));
@@ -681,7 +708,7 @@ public class StatsEvents {
 		if (itemKey == null) return;
 		String itemId = itemKey.toString();
 
-		if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
+		if (stack.getItem() instanceof SenzuBeanItem || itemId.equals("dragonminez:heart_medicine")) {
 			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get()))
 				event.setCanceled(true);
 			else event.setDuration(1);
@@ -797,6 +824,18 @@ public class StatsEvents {
 							speedAttr.addTransientModifier(new AttributeModifier(TURBO_SPEED_UUID, "Turbo Speed Bonus", expectedTurboBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
 						}
 					}
+
+					double expectedSurgeBonus = data.getStatus().isSurgeActive()
+							? Math.max(0.0, ConfigManager.getCombatConfig().getSurgeMoveSpeedMultiplier() - 1.0)
+							: 0.0;
+					applySpeedModifier(speedAttr, SURGE_SPEED_UUID, "Ki Surge Speed", expectedSurgeBonus);
+				}
+
+				if (attackSpeedAttr != null) {
+					double expectedSurgeAttackSpeed = data.getStatus().isSurgeActive()
+							? Math.max(0.0, ConfigManager.getCombatConfig().getSurgeAttackSpeedMultiplier() - 1.0)
+							: 0.0;
+					applySpeedModifier(attackSpeedAttr, SURGE_ATTACK_SPEED_UUID, "Ki Surge Attack Speed", expectedSurgeAttackSpeed);
 				}
 
 				if (attackSpeedAttr != null) {

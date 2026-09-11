@@ -1191,7 +1191,7 @@ public class GeneralServerConfig {
 	@Getter
 	@NoArgsConstructor
 	public static class CraftingConfig {
-		private Boolean copyEnchantmentsFromTemplate = false;
+		private Boolean copyEnchantmentsFromTemplate = true;
 		private Boolean copyWeaponLevelFromTemplate = false;
 		private Boolean copyWeaponLevelProgressFromTemplate = false;
 		private Boolean copyApotheosisRarityFromTemplate = false;

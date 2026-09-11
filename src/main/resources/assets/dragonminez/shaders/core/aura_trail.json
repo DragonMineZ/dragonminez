@@ -1,0 +1,24 @@
+{
+  "vertex": "dragonminez:aura_trail",
+  "fragment": "dragonminez:aura_trail",
+  "attributes": [
+    "Position",
+    "Color",
+    "UV0"
+  ],
+  "samplers": [],
+  "uniforms": [
+    { "name": "modelMatrix", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "alp1", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "color1", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "color2", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] }
+  ],
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "oneminussrcalpha"
+  },
+  "cull": false
+}

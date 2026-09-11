@@ -21,8 +21,14 @@ import net.minecraftforge.registries.RegistryObject;
 import java.util.Map;
 
 public class DMZItemModelProvider extends ItemModelProvider {
+	private static final ExistingFileHelper.ResourceType ITEM_TEXTURE =
+			new ExistingFileHelper.ResourceType(net.minecraft.server.packs.PackType.CLIENT_RESOURCES, ".png", "textures");
+
+	private final ExistingFileHelper files;
+
 	public DMZItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
 		super(output, Reference.MOD_ID, existingFileHelper);
+		this.files = existingFileHelper;
 	}
 
 	@Override
@@ -31,7 +37,12 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		for (DragonRadarDefinition radarDefinition : DragonBallDefinitions.getRadars()) {
 			DragonRadarAssetDefinition assets = radarDefinition.resolveAssetDefinition();
 			RegistryObject<Item> item = MainItems.getDragonRadarItemOrThrow(radarDefinition.getId());
-			if (assets != null && assets.getItemTexturePath().isPresent()) {
+			// Varios radares comparten la misma asset definition (y por tanto la misma textura).
+			// Si existe un icono propio con el nombre de registro del item, ese manda.
+			ResourceLocation ownTexture = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath());
+			if (files.exists(ownTexture, ITEM_TEXTURE)) {
+				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ownTexture);
+			} else if (assets != null && assets.getItemTexturePath().isPresent()) {
 				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getItemTexturePath().get()));
 			} else {
 				simpleItem(item);
@@ -43,6 +54,17 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.NUBE_NEGRA_ITEM);
 		simpleItem(MainItems.NAVE_SAIYAN_ITEM);
 		simpleItem(MainItems.SENZU_BEAN);
+		simpleItem(MainItems.SENZU_BEAN_BLUE);
+		simpleItem(MainItems.SENZU_BEAN_RED);
+		simpleItem(MainItems.SENZU_BEAN_YELLOW);
+		simpleItem(MainItems.SENZU_BEAN_SEEDS_BLUE);
+		simpleItem(MainItems.SENZU_BEAN_SEEDS_RED);
+		simpleItem(MainItems.SENZU_BEAN_SEEDS_YELLOW);
+		simpleItem(MainItems.SENZU_BEAN_BAG);
+		simpleItem(MainItems.MEDI_BUG_ANT);
+		simpleItem(MainItems.MEDI_BUG_BEETLE);
+		simpleItem(MainItems.MEDI_BUG_RHINO);
+		simpleItem(MainItems.MEDI_BUG_WORM);
 		simpleItem(MainItems.RED_CAPSULE);
 		simpleItem(MainItems.YELLOW_CAPSULE);
 		simpleItem(MainItems.PURPLE_CAPSULE);

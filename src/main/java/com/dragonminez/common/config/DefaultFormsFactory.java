@@ -33,6 +33,7 @@ public class DefaultFormsFactory {
 		form.setPassiveMasteryEveryFiveSeconds(0.006);
 		form.setStackOnMastery(25.0);
 		form.setAuraType("kakarot");
+		form.setAuraType3D("smooth");
 		form.setAuraLayer(0);
 	}
 

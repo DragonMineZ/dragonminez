@@ -350,9 +350,17 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> NAMEK_MOSS_CROP = registerBlockOnly("namek_moss_crop",
 			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.NAMEK_MOSS, NAMEK_GRASS_BLOCK));
 
+	public static final RegistryObject<Block> SENZU_BLUE_CROP = registerBlockOnly("senzu_blue_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.SENZU_BEAN_SEEDS_BLUE));
+	public static final RegistryObject<Block> SENZU_RED_CROP = registerBlockOnly("senzu_red_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.SENZU_BEAN_SEEDS_RED));
+	public static final RegistryObject<Block> SENZU_YELLOW_CROP = registerBlockOnly("senzu_yellow_crop",
+			() -> new StatCropBlock(BlockBehaviour.Properties.copy(Blocks.WHEAT), MainItems.SENZU_BEAN_SEEDS_YELLOW));
+
 	public static final java.util.List<RegistryObject<Block>> STAT_CROPS = java.util.List.of(
 			OOZARU_ROOT_CROP, KATCHIN_SPROUT_CROP, METEOR_FLOWER_CROP, AURA_LILY_CROP,
-			HERMIT_FERN_CROP, KAIOSHIN_FRUIT_CROP, ZENKAI_LOTUS_CROP, NAMEK_MOSS_CROP);
+			HERMIT_FERN_CROP, KAIOSHIN_FRUIT_CROP, ZENKAI_LOTUS_CROP, NAMEK_MOSS_CROP,
+			SENZU_BLUE_CROP, SENZU_RED_CROP, SENZU_YELLOW_CROP);
 
 	//LIQUIDOS
 	public static final RegistryObject<LiquidBlock> HEALING_LIQUID = BLOCK_REGISTER.register("healing_liquid_block",

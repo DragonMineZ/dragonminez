@@ -55,7 +55,8 @@ public class MainTags {
 
 	public static class Items {
 		public static final TagKey<Item> NAMEK_ALOG = create("namek_alog"), NAMEK_SLOG = create("namek_slog"),
-		WEIGHTED_ITEMS = create("weighted_items");
+		WEIGHTED_ITEMS = create("weighted_items"),
+		SENZU_BEANS = create("senzu_beans");
 
 		private static TagKey<Item> create(String name) {
 		    return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
