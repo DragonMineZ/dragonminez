@@ -41,6 +41,8 @@ import java.util.Map;
 
 @Getter
 public class StatsData {
+	public static final double GLOBAL_HEALTH_MULTIPLIER = 3.0;
+
 	private static final double DEFENSE_FLAT_FOLD = 0.12;
 
 	private static final double STAT_COST_PER_POINT = 1.25;
@@ -247,7 +249,7 @@ public class StatsData {
 		double vitMult = getTotalMultiplier("VIT");
 		double flatBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), true);
-		return (float) Math.min(((vitality + multBonusVit) * vitScaling * vitMult) + (flatBonusVit * vitScaling), Float.MAX_VALUE - 1);
+		return (float) Math.min(((((vitality + multBonusVit) * vitScaling * vitMult) + (flatBonusVit * vitScaling)) * GLOBAL_HEALTH_MULTIPLIER), Float.MAX_VALUE - 1);
 	}
 
 	public float getMaxHealth() {

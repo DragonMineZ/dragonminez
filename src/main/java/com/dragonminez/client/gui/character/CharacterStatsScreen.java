@@ -757,7 +757,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double strScaling = statsData.getStatScaling("STR");
 		double skpScaling = statsData.getStatScaling("SKP");
 		double resScaling = statsData.getStatScaling("DEF");
-		double vitScaling = statsData.getStatScaling("VIT");
+		double vitScaling = statsData.getStatScaling("VIT") * StatsData.GLOBAL_HEALTH_MULTIPLIER;
 		double pwrScaling = statsData.getStatScaling("PWR");
 		double eneScaling = statsData.getStatScaling("ENE");
 		double stmScaling = statsData.getStatScaling("STM");
@@ -989,7 +989,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double strScaling = statsData.getStatScaling("STR");
 		double skpScaling = statsData.getStatScaling("SKP");
 		double resScaling = (statsData.getStatScaling("DEF") + statsData.getStatScaling("STM")) / 2;
-		double vitScaling = statsData.getStatScaling("VIT");
+		double vitScaling = statsData.getStatScaling("VIT") * StatsData.GLOBAL_HEALTH_MULTIPLIER;
 		double pwrScaling = statsData.getStatScaling("PWR");
 		double eneScaling = statsData.getStatScaling("ENE");
 
