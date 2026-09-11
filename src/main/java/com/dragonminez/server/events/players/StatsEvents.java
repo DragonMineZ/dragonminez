@@ -68,8 +68,6 @@ import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import com.dragonminez.common.util.CuriosUtil;
-import top.theillusivec4.curios.api.CuriosApi;
-import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.item.consumables.SenzuBeanItem;
 
 import java.util.*;
@@ -91,26 +89,6 @@ public class StatsEvents {
 
 	public static final UUID WEIGHT_MOVEMENT_SPEED_MOD_UUID = UUID.fromString("6f663f73-199f-431a-8c35-132d75a31742");
 	private static final UUID WEIGHT_ATTACK_SPEED_MOD_UUID = UUID.fromString("a1b2c3d4-e5f6-431a-8c35-132d75a31742");
-
-	private static double getWeightStatMultiplier(int level, int weight) {
-		if (weight <= 0) return 1.0;
-		double x = (double) level;
-		double w = (double) weight;
-		double penalty;
-		if (x <= 2 * w) {
-			penalty = 10.5 * (1.0 - Math.sqrt(x / (4.0 * w)));
-		} else {
-			double f2w = 10.5 * (1.0 - Math.sqrt((2.0 * w) / (4.0 * w)));
-			double innerDiv = (-w / (w + 10.0)) + 1.0;
-			double top = f2w / innerDiv;
-			double slope = -(top / (2.0 * (w + 10.0)));
-			double intercept = top;
-			double result = slope * x + intercept;
-			penalty = Math.max(0, result);
-		}
-		double multiplier = 1.0 - (penalty / 10.5);
-		return Math.max(0.001, multiplier);
-	}
 
 	private static void applySpeedModifier(AttributeInstance attribute, UUID uuid, String name, double amount) {
 		AttributeModifier existing = attribute.getModifier(uuid);
@@ -138,6 +116,16 @@ public class StatsEvents {
 		}
 	}
 
+	private static final String[] LEGACY_WEIGHT_BONUS_STATS = {"STR", "SKP", "PWR", "DEF", "STM"};
+
+	private static void clearLegacyWeightPenalty(ServerPlayer player, StatsData data) {
+		for (String stat : LEGACY_WEIGHT_BONUS_STATS) {
+			if (data.getBonusStats().hasBonus(stat, "Weights")) data.getBonusStats().removeBonus(stat, "Weights");
+		}
+		applyWeightAttributeModifier(player, Attributes.MOVEMENT_SPEED, WEIGHT_MOVEMENT_SPEED_MOD_UUID, "Weight Speed Penalty", 0);
+		applyWeightAttributeModifier(player, Attributes.ATTACK_SPEED, WEIGHT_ATTACK_SPEED_MOD_UUID, "Weight Attack Speed Penalty", 0);
+	}
+
 	private static final Map<UUID, List<FoodRegenTask>> FOOD_REGEN_QUEUE = new ConcurrentHashMap<>();
 
 	public static class FoodRegenTask {
@@ -163,69 +151,7 @@ public class StatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-
-			
-			int[] totalWeight = {0};
-			CuriosApi.getCuriosInventory(serverPlayer).ifPresent(inv -> {
-				var handler = inv.getCurios().get("weights");
-				if (handler != null) {
-					for (int i = 0; i < handler.getSlots(); i++) {
-						ItemStack stack = handler.getStacks().getStackInSlot(i);
-						if (stack.getItem() instanceof WeightItem) {
-							totalWeight[0] += WeightItem.getWeight(stack);
-						} else if (!stack.isEmpty()) {
-							totalWeight[0] += stack.getOrCreateTag().getInt("WeightValue");
-						}
-					}
-				}
-			});
-
-			if (totalWeight[0] > 0) {
-				double gravityMultiplier = GravityLogic.getGravityMultiplier(serverPlayer);
-				int effectiveWeight = (int) (totalWeight[0] * gravityMultiplier);
-
-				int currentBaseLevel = data.getLevel();
-				int totalBaseStats = data.getStats().getTotalStats();
-				int initialStats = totalBaseStats - (currentBaseLevel - 1) * 6;
-
-				double boostedTotal = 0;
-				boostedTotal += data.getStats().getStrength() * data.getTotalMultiplier("STR");
-				boostedTotal += data.getStats().getStrikePower() * data.getTotalMultiplier("SKP");
-				boostedTotal += data.getStats().getResistance() * data.getTotalMultiplier("RES");
-				boostedTotal += data.getStats().getVitality() * data.getTotalMultiplier("VIT");
-				boostedTotal += data.getStats().getKiPower() * data.getTotalMultiplier("PWR");
-				boostedTotal += data.getStats().getEnergy() * data.getTotalMultiplier("ENE");
-
-				double relativeLevel = ((boostedTotal - initialStats) / 6.0) + 1.0;
-
-				double multiplier = getWeightStatMultiplier((int) relativeLevel, effectiveWeight);
-
-				if (multiplier < 1.0) {
-					data.getBonusStats().addBonus("STR", "Weights", "*", multiplier);
-					data.getBonusStats().addBonus("SKP", "Weights", "*", multiplier);
-					data.getBonusStats().addBonus("PWR", "Weights", "*", multiplier);
-					data.getBonusStats().addBonus("DEF", "Weights", "*", multiplier);
-					data.getBonusStats().addBonus("STM", "Weights", "*", multiplier);
-				} else {
-					data.getBonusStats().removeBonus("STR", "Weights");
-					data.getBonusStats().removeBonus("SKP", "Weights");
-					data.getBonusStats().removeBonus("PWR", "Weights");
-					data.getBonusStats().removeBonus("DEF", "Weights");
-					data.getBonusStats().removeBonus("STM", "Weights");
-				}
-
-				double reductionModifier = multiplier - 1.0;
-				applyWeightAttributeModifier(serverPlayer, Attributes.MOVEMENT_SPEED, WEIGHT_MOVEMENT_SPEED_MOD_UUID, "Weight Speed Penalty", reductionModifier);
-				applyWeightAttributeModifier(serverPlayer, Attributes.ATTACK_SPEED, WEIGHT_ATTACK_SPEED_MOD_UUID, "Weight Attack Speed Penalty", reductionModifier);
-			} else {
-				data.getBonusStats().removeBonus("STR", "Weights");
-				data.getBonusStats().removeBonus("SKP", "Weights");
-				data.getBonusStats().removeBonus("PWR", "Weights");
-				data.getBonusStats().removeBonus("DEF", "Weights");
-				data.getBonusStats().removeBonus("STM", "Weights");
-				applyWeightAttributeModifier(serverPlayer, Attributes.MOVEMENT_SPEED, WEIGHT_MOVEMENT_SPEED_MOD_UUID, "Weight Speed Penalty", 0);
-				applyWeightAttributeModifier(serverPlayer, Attributes.ATTACK_SPEED, WEIGHT_ATTACK_SPEED_MOD_UUID, "Weight Attack Speed Penalty", 0);
-			}
+            if (serverPlayer.tickCount % 20 == 0) clearLegacyWeightPenalty(serverPlayer, data);
 
 			applyHealthBonus(serverPlayer);
 
