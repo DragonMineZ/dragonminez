@@ -38,6 +38,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 			}
 		}
 		simpleItem(MainItems.MIGHT_TREE_FRUIT);
+		simpleItem(MainItems.SATAN_BADGE);
 		simpleItem(MainItems.NUBE_ITEM);
 		simpleItem(MainItems.NUBE_NEGRA_ITEM);
 		simpleItem(MainItems.NAVE_SAIYAN_ITEM);

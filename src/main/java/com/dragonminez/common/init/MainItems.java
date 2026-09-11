@@ -60,6 +60,8 @@ public final class MainItems {
 
 	public static final RegistryObject<Item> MIGHT_TREE_FRUIT = ITEM_REGISTER.register("might_tree_fruit",
 			MightTreeFruitItem::new);
+	public static final RegistryObject<Item> SATAN_BADGE = ITEM_REGISTER.register("satan_badge",
+			() -> new Item(new Item.Properties()));
 	public static final RegistryObject<Item> DINO_MEAT_RAW = ITEM_REGISTER.register("raw_dino_meat",
 			() -> new FoodItem(4, 3.6f, 64));
 	public static final RegistryObject<Item> DINO_MEAT_COOKED = ITEM_REGISTER.register("cooked_dino_meat",

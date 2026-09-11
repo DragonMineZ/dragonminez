@@ -4,6 +4,11 @@
       "type": "directory",
       "source": "mob_effects",
       "prefix": "mob_effect/"
+    },
+    {
+      "type": "single",
+      "resource": "dragonminez:item/satan_badge",
+      "sprite": "dragonminez:world_hero"
     }
   ]
 }
