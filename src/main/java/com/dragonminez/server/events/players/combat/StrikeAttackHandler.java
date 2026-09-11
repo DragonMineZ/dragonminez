@@ -21,6 +21,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.racial.RacialStatUtil;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
@@ -84,6 +85,8 @@ public class StrikeAttackHandler {
 
 			String cooldownKey = getTechniqueCooldownKey(strike.getId());
 			if (stats.getCooldowns().hasCooldown(cooldownKey)) return;
+			// One strike at a time: owning several of them must not mean chaining them.
+			if (stats.getCooldowns().hasCooldown(Cooldowns.STRIKE_GLOBAL)) return;
 
 			double cost = strike.getCalculatedCost(stats);
 			if (stats.getResources().getCurrentEnergy() < cost) return;
@@ -864,6 +867,7 @@ public class StrikeAttackHandler {
 					? Math.max(1, active.cooldownTicks() / 2)
 					: active.cooldownTicks();
 			stats.getCooldowns().setCooldown(cooldownKey, cooldown);
+			applyGlobalStrikeCooldown(stats, 1.0f);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
 	}
@@ -875,9 +879,16 @@ public class StrikeAttackHandler {
 			String cooldownKey = getTechniqueCooldownKey(pending.techniqueId());
 			int halfCooldown = Math.max(1, pending.cooldownTicks() / 2);
 			stats.getCooldowns().setCooldown(cooldownKey, halfCooldown);
+			applyGlobalStrikeCooldown(stats, 0.5f);
 			stats.getResources().addEnergy((int) Math.ceil(pending.energyCost() * 0.4));
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
+	}
+
+	private static void applyGlobalStrikeCooldown(com.dragonminez.common.stats.StatsData stats, float ratio) {
+		int ticks = Math.round(ConfigManager.getCombatConfig().getStrikeGlobalCooldownTicks() * ratio);
+		if (ticks <= 0) return;
+		stats.getCooldowns().setCooldown(Cooldowns.STRIKE_GLOBAL, ticks);
 	}
 
 	private static LivingEntity resolvePreferredTarget(ServerPlayer player, int targetId) {

@@ -38,6 +38,7 @@ public class Cooldowns {
 	public static final String NAMEK_REGEN_ACTIVE = "NamekRegenActive";
 	public static final String BIO_EXPLODE_CD = "BioExplodeCooldown";
 	public static final String BIO_EXPLODE_RECOVERY = "BioExplodeRecovery";
+	public static final String STRIKE_GLOBAL = "StrikeGlobalCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();
