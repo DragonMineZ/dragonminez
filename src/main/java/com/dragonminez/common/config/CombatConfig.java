@@ -33,8 +33,8 @@ public class CombatConfig {
 	private Double kiInfusionBaseCostPct = 2.5;
 	private Double kiInfusionMaxCostPct = 7.5;
 
-	private Double baseDamageReductionCap = 0.75;
-	private Double enchantmentDamageReductionCap = 0.85;
+	private Double baseDamageReductionCap = 0.88;
+	private Double enchantmentDamageReductionCap = 0.93;
 	private Double defenseDecayOnGuardBreak = 0.66;
 	private Double flatMitigationFactor = 0.10;
 	private Double flatMitigationMaxAbsorbFraction = 0.82;
@@ -42,8 +42,8 @@ public class CombatConfig {
 
 	private Boolean enableAdaptativeDefenseMitigation = true;
 	private Double adaptativeMitigationParityRatio = 1.0;
-	private Double adaptativeMitigationParityValue = 0.25;
-	private Double adaptativeMitigationZeroRatio = 5.0;
+	private Double adaptativeMitigationParityValue = 0.35;
+	private Double adaptativeMitigationZeroRatio = 14.0;
 	private Double adaptativeDefenseMitigationCap = 0.65;
 
 	private Boolean cancelDamageEventIfMitigationTooHigh = true;

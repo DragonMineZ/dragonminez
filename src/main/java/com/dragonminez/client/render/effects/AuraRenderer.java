@@ -127,8 +127,72 @@ public class AuraRenderer {
 
 	private static void applyAndDraw(VertexBuffer mesh, PoseStack poseStack, Matrix4f projectionMatrix, ShaderInstance shader,
 									 ResourceLocation texture, float[] color, float alpha, float speed, boolean ground) {
+		if (capturingBloom && alpha > 0.01f) {
+			BLOOM_DRAWS.add(new BloomDraw(mesh, texture, new Matrix4f(poseStack.last().pose()),
+					new Matrix4f(projectionMatrix), color.clone(), alpha, speed));
+		}
 		mesh.bind();
 		mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+	}
+
+	private record BloomDraw(VertexBuffer mesh, ResourceLocation texture, Matrix4f modelMatrix,
+							 Matrix4f projectionMatrix, float[] color, float alpha, float speed) {}
+
+	private static final List<BloomDraw> BLOOM_DRAWS = new ArrayList<>();
+	private static boolean capturingBloom = false;
+
+	private static final float AURA_BLOOM_ALPHA = 0.9f;
+
+	public static void beginBloomCapture() {
+		BLOOM_DRAWS.clear();
+		capturingBloom = true;
+	}
+
+	public static void endBloomCapture() {
+		capturingBloom = false;
+	}
+
+	public static boolean hasBloomDraws() {
+		return !BLOOM_DRAWS.isEmpty();
+	}
+
+	/**
+	 * Redraws this frame's 2D aura quads into whatever target is bound, with the shader in bloom mode so
+	 * it writes glow instead of colour. The 3D auras are a different renderer and are not covered here.
+	 */
+	public static void renderBloomDraws() {
+		if (BLOOM_DRAWS.isEmpty()) return;
+		ShaderInstance shader = DMZShaders.auraShader;
+		if (shader == null) {
+			BLOOM_DRAWS.clear();
+			return;
+		}
+
+		try {
+			shader.safeGetUniform("bloomMode").set(1.0f);
+			for (BloomDraw draw : BLOOM_DRAWS) {
+				float[] c = draw.color();
+				shader.safeGetUniform("speed").set(draw.speed());
+				shader.safeGetUniform("ProjMat").set(draw.projectionMatrix());
+				shader.safeGetUniform("modelMatrix").set(draw.modelMatrix());
+				shader.safeGetUniform("color1").set(c[0] * 1.6f, c[1] * 1.6f, c[2] * 1.6f, 1.0f);
+				shader.safeGetUniform("color2").set(c[0] * 1.3f, c[1] * 1.3f, c[2] * 1.3f, 1.0f);
+				shader.safeGetUniform("color3").set(c[0], c[1], c[2], 0.85f);
+				shader.safeGetUniform("color4").set(c[0] * 0.75f, c[1] * 0.75f, c[2] * 0.75f, 0.65f);
+				shader.safeGetUniform("alp1").set(draw.alpha() * AURA_BLOOM_ALPHA);
+
+				RenderType type = auraType(draw.texture());
+				customSetup(type, draw.texture(), shader);
+				draw.mesh().bind();
+				draw.mesh().drawWithShader(draw.modelMatrix(), draw.projectionMatrix(), shader);
+				customClear(type);
+			}
+			VertexBuffer.unbind();
+		} finally {
+			shader.safeGetUniform("bloomMode").set(0.0f);
+			shader.clear();
+			BLOOM_DRAWS.clear();
+		}
 	}
 
 	public static class AuraLayer {
@@ -1103,7 +1167,7 @@ public class AuraRenderer {
 		customSetup(pulseRender, crossTex, shader);
 
 		VertexBuffer mesh = AuraMeshFactory.getGroundQuad();
-		applyAndDraw(mesh, poseStack, projectionMatrix, shader, crossTex, topLayer.color, alphaCurve * 0.6f * alphaMultiplier, animSpeed, true);
+		applyAndDraw(mesh, poseStack, projectionMatrix, shader, crossTex, topLayer.color, alphaCurve * 0.6f * alphaMultiplier * topLayer.alpha, animSpeed, true);
 
 		customClear(pulseRender);
 		VertexBuffer.unbind();
