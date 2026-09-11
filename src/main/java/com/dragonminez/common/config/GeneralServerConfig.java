@@ -548,6 +548,15 @@ public class GeneralServerConfig {
 		private Double adrenalineMoveSpeed = 0.25;
 		private Integer adrenalineCooldownSeconds = 180;
 
+		private Boolean androidBarrierEnabled = true;
+		private Integer androidBarrierMaxSeconds = 10;
+		private Integer androidBarrierCooldownSeconds = 30;
+		private Integer androidBarrierBrokenCooldownSeconds = 180;
+		private Double androidBarrierKiConversion = 0.50;
+		private Double androidBarrierSurgeOverflow = 0.50;
+		private Double androidBarrierBreakOverflow = 0.75;
+		private Double androidBarrierSize = 2.6;
+
 		public Double getKiRegenBoost() {
 			return Math.max(0, Math.min(kiRegenBoost, Double.MAX_VALUE));
 		}

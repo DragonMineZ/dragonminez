@@ -135,7 +135,14 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         return this.isFiring() && this.getBarrierHp() > 0.0F;
     }
 
+    public void setDecorative(boolean decorative) {
+        this.decorative = decorative;
+    }
+
+    private boolean decorative;
+
     public boolean protects(Entity entity) {
+        if (this.decorative) return false;
         LivingEntity anchor = this.getAnchor();
         return anchor != null && anchor.is(entity);
     }

@@ -15,6 +15,14 @@ public interface RacialAbility {
 		return false;
 	}
 
+	default boolean hasActiveAction(StatsData data) {
+		return hasActiveAction();
+	}
+
+	default boolean isSustainedAction(RacialContext ctx) {
+		return false;
+	}
+
 	default int chargeSeconds(RacialContext ctx) {
 		return 0;
 	}
@@ -35,6 +43,10 @@ public interface RacialAbility {
 
 	default double modifyDamageTaken(RacialContext ctx, double postMitigationDamage, DamageSource source) {
 		return postMitigationDamage;
+	}
+
+	default double modifyDamageTaken(RacialContext ctx, double postMitigationDamage, double rawDamage, DamageSource source) {
+		return modifyDamageTaken(ctx, postMitigationDamage, source);
 	}
 
 	default void onDamageTakenPost(RacialContext ctx, float damageTaken) {

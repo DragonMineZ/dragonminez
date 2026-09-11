@@ -33,7 +33,7 @@ public class RacialSkillNode extends AbstractRadialNode {
 	}
 
 	private boolean isActionRacial(StatsData stats) {
-		return RacialRegistry.get(racialSkill(stats)).map(a -> a.hasActiveAction()).orElse(false);
+		return RacialRegistry.get(racialSkill(stats)).map(a -> a.hasActiveAction(stats)).orElse(false);
 	}
 
 	@Override

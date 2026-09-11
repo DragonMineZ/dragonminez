@@ -25,6 +25,7 @@ import com.dragonminez.common.combat.HealContext;
 import com.dragonminez.common.racial.capture.RacialCapture;
 import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.racial.impl.AndroidBarrier;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
@@ -683,13 +684,19 @@ public class CombatEvent {
 		if (!(event.getRayTraceResult() instanceof EntityHitResult hit)) return;
 		if (!(hit.getEntity() instanceof Player victim) || victim.level().isClientSide) return;
 		if (event.getProjectile() instanceof AbstractKiProjectile) return;
-		if (!ConfigManager.getCombatConfig().getKiChargeDeflectsProjectiles()) return;
 
 		Entity shooter = event.getProjectile().getOwner();
 		if (shooter != null && shooter.is(victim)) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
+
+			if (AndroidBarrier.isActive(data)) {
+				event.setCanceled(true);
+				return;
+			}
+
+			if (!ConfigManager.getCombatConfig().getKiChargeDeflectsProjectiles()) return;
 			if (!data.getStatus().isChargingKi() || data.getStatus().isStunned()) return;
 			event.setCanceled(true);
 		});
@@ -767,7 +774,7 @@ public class CombatEvent {
 					if (victim instanceof ServerPlayer serverVictim) {
 						var racialAbility = RacialRegistry.forPlayer(stats);
 						if (racialAbility.isPresent()) {
-							postMitigation = racialAbility.get().modifyDamageTaken(new RacialContext(serverVictim, stats), postMitigation, event.getSource());
+							postMitigation = racialAbility.get().modifyDamageTaken(new RacialContext(serverVictim, stats), postMitigation, rawDamage, event.getSource());
 						}
 					}
 

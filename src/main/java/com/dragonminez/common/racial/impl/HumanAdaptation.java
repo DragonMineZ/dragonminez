@@ -30,6 +30,33 @@ public class HumanAdaptation implements RacialAbility {
 	}
 
 	@Override
+	public boolean hasActiveAction() {
+		return false;
+	}
+
+	@Override
+	public boolean hasActiveAction(StatsData data) {
+		return data.getStatus().isAndroidUpgraded();
+	}
+
+	@Override
+	public boolean isSustainedAction(RacialContext ctx) {
+		return ctx.data().getStatus().isAndroidUpgraded();
+	}
+
+	@Override
+	public boolean canActivate(RacialContext ctx) {
+		return AndroidBarrier.canHold(ctx);
+	}
+
+	@Override
+	public double modifyDamageTaken(RacialContext ctx, double postMitigationDamage, double rawDamage, DamageSource source) {
+		Double absorbed = AndroidBarrier.tryAbsorb(ctx, rawDamage, source);
+		if (absorbed != null) return absorbed;
+		return modifyDamageTaken(ctx, postMitigationDamage, source);
+	}
+
+	@Override
 	public double modifyTechniqueXpGain(RacialContext ctx, double amount) {
 		return amount * (1.0 + ctx.config().getHuman().getTechniqueXpBonus());
 	}
@@ -63,26 +90,32 @@ public class HumanAdaptation implements RacialAbility {
 		if (!data.getCooldowns().hasCooldown(Cooldowns.ADRENALINE_ACTIVE)) {
 			removeModifiers(player);
 		}
+
+		AndroidBarrier.tick(ctx);
 	}
 
 	@Override
 	public void onDeath(RacialContext ctx) {
 		removeModifiers(ctx.player());
+		AndroidBarrier.forceEnd(ctx, false);
 	}
 
 	@Override
 	public void onRespawn(RacialContext ctx) {
 		removeModifiers(ctx.player());
+		AndroidBarrier.forceEnd(ctx, false);
 	}
 
 	@Override
 	public void onDimensionChange(RacialContext ctx) {
 		removeModifiers(ctx.player());
+		AndroidBarrier.forceEnd(ctx, false);
 	}
 
 	@Override
 	public void onLogin(RacialContext ctx) {
 		removeModifiers(ctx.player());
+		AndroidBarrier.forceEnd(ctx, false);
 	}
 
 	private static void triggerAdrenaline(ServerPlayer player, StatsData data, GeneralServerConfig.HumanRacialConfig config) {
