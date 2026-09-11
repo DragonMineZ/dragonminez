@@ -572,6 +572,15 @@ public class KiAttackData extends TechniqueData {
 		this.colorInterior = tag.getInt("ColorInterior");
 		this.colorExterior = tag.getInt("ColorExterior");
 		this.colorOutline = tag.getInt("ColorOutline");
+
+		if (PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
+			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
+			if (predefined != null) {
+				this.colorInterior = predefined.getColorInterior();
+				this.colorExterior = predefined.getColorExterior();
+				this.colorOutline = predefined.getColorOutline();
+			}
+		}
 		this.damageMultiplier = tag.getFloat("DamageMultiplier");
 		this.speed = tag.getFloat("Speed");
 		this.size = tag.getFloat("Size");

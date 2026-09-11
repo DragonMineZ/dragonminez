@@ -28,7 +28,7 @@ public class PredefinedTechniques {
 		registerKi("spiritbomb", "technique.dragonminez.spiritbomb", "Goku", KiAttackData.KiType.GIANT_BALL, 3.00F, 0xC4FFFD, 0x00F8FF, 0xFFFFFF, 10.0F, 0.5F, 10, "ki.large_ball");
 		registerKi("supernova", "technique.dragonminez.supernova", "Frieza", KiAttackData.KiType.GIANT_BALL, 3.00F, 0xFF7438, 0xC92620, 0x800E0E, 10.0F, 0.5F, 10, "ki.large_ball");
 		registerKi("supernova_cooler", "technique.dragonminez.supernova_cooler", "Cooler", KiAttackData.KiType.GIANT_BALL, 3.50F, 0xFF3866, 0xA3143A, 0x4A0316, 10.5F, 0.5F, 10, "ki.large_ball");
-		registerKi("big_bang", "technique.dragonminez.big_bang", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 2.00F, 0x4FF7FF, 0x4FF7FF, 0x0077FF, 1.2F, 1.5F, 10, "ki.bigbang");
+		registerKi("big_bang", "technique.dragonminez.big_bang", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 2.00F, 0xE3FFFF, 0xE3FFFF, 0x889999, 1.2F, 1.5F, 10, "ki.bigbang");
 		registerKi("burning_attack", "technique.dragonminez.burning_attack", "Trunks", KiAttackData.KiType.MEDIUM_BALL, 1.50F, 0xFFF3D0, 0xFF7A1A, 0xC43A00, 2.0F, 1.5F, 10, "ki.masenko");
 		registerKi("sokidan", "technique.dragonminez.sokidan", "Yamcha", KiAttackData.KiType.MEDIUM_BALL, 1.25F, 0xFCFC5D, 0xF7F723, 0xF7B736, 1.5F, 1.0F, 12, "ki.bigbang");
 		registerKi("final_flash", "technique.dragonminez.final_flash", "Vegeta", KiAttackData.KiType.WAVE, 2.50F, 0xFFFCD6, 0xFFEB52, 0xF5C020, 0.7F, 1.2F, 10, "ki.finalflash");

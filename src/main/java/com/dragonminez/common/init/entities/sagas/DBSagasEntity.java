@@ -137,7 +137,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         KIENZAN(14, SkillRole.HITSCAN, Tier.MEDIUM),
         DEATH_BALL(15, SkillRole.GUARD_BREAK, Tier.STRONG),
         MASENKO(16, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFFC85, 0xFCE062, 0xFFFFFF),
-        BIG_BANG(17, SkillRole.GUARD_BREAK, Tier.STRONG),
+        BIG_BANG(17, SkillRole.GUARD_BREAK, Tier.STRONG, 0xE3FFFF, 0xE3FFFF, 0x889999),
         FINAL_FLASH(18, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xFFFCD6, 0xFFEB52, 0xF5C020),
         MAJIN_CANDY(19, SkillRole.ZONING, Tier.STRONG),
         KI_AIR_VOLLEY(20, SkillRole.ZONING, Tier.WEAK),

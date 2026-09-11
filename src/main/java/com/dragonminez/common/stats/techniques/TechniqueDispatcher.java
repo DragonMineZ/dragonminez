@@ -120,7 +120,8 @@ public class TechniqueDispatcher {
                     medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), castSize);
                     if (!level.isClientSide) level.playSound(null, medBall.getX(), medBall.getY(), medBall.getZ(), MainSounds.KI_BURNING_CHARGE.get(), SoundSource.PLAYERS, 4.0F, 1.0F);
                 } else {
-                medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), castSize);
+                medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(),
+                        data.getColorExterior(), data.getColorOutline(), castSize);
             }
                 medBall.setColorOutline(data.getColorOutline());
                 medBall.setKiType(kiTypeOrdinal);
