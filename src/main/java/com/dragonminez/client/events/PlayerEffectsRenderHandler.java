@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
-import com.dragonminez.client.render.shader.KiBloomRenderer;
+import com.dragonminez.client.render.shader.EffectBloomRenderer;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
@@ -150,18 +150,21 @@ public class PlayerEffectsRenderHandler {
 			RenderSystem.enableCull();
 			RenderSystem.depthMask(true);
 			RenderSystem.disableBlend();
-
-			if (!IrisCompat.isShaderPackInUse(gameTime)) {
-				KiBloomRenderer.render(kiAttacks, poseStack, projectionMatrix, partialTick);
-			}
-
-			if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(1.0f);
 		}
 
-		AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);
-		AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);
-		AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS);
-		AuraRenderer.processSparks(poseStack, projectionMatrix, isFirstPerson);
+		AuraRenderer.beginBloomCapture();
+		try {
+			AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);
+			AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);
+			AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS);
+			AuraRenderer.processSparks(poseStack, projectionMatrix, isFirstPerson);
+		} finally {
+			AuraRenderer.endBloomCapture();
+		}
+
+        EffectBloomRenderer.render(kiAttacks, poseStack, projectionMatrix, partialTick);
+
+		if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(1.0f);
 
 		var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();
 		for (var task : entityEffects) task.render();
