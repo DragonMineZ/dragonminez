@@ -6,9 +6,11 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
@@ -124,6 +126,38 @@ public class StrikeAttackHandler {
 			}
 		});
 	}
+	public static boolean interrupt(ServerPlayer player) {
+		if (player == null || player.level().isClientSide) return false;
+
+		UUID id = player.getUUID();
+		boolean interrupted = false;
+
+		PendingStrike pending = PENDING.get(id);
+		if (pending != null) {
+			failPending(player, pending);
+			interrupted = true;
+		}
+
+		ActiveStrike active = ACTIVE.get(id);
+		if (active != null) {
+			LivingEntity target = resolveLiving(player, active.targetId());
+			endStrike(player, target, active, true);
+			interrupted = true;
+		}
+
+		if (interrupted) discardStrikeProjectiles(player);
+		return interrupted;
+	}
+
+	/** Removes the fist entities this player still owns, so an interrupted strike stops hitting. */
+	private static void discardStrikeProjectiles(ServerPlayer player) {
+		for (AbstractKiProjectile projectile : player.level().getEntitiesOfClass(AbstractKiProjectile.class,
+				player.getBoundingBox().inflate(48.0))) {
+			if (!(projectile instanceof SPDragonFistEntity) && !(projectile instanceof OzaruFistEntity)) continue;
+			if (projectile.getOwner() != player) continue;
+			projectile.discard();
+		}
+	}
 
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -221,6 +255,16 @@ public class StrikeAttackHandler {
 
 		if (target == null || !target.isAlive() || !player.isAlive()) {
 			endStrike(player, target, active);
+			return;
+		}
+
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(stats -> stats.getStatus().isKnockedDown())
+				.orElse(false);
+		if (stunned) {
+			endStrike(player, target, active, true);
+			discardStrikeProjectiles(player);
 			return;
 		}
 
@@ -803,6 +847,10 @@ public class StrikeAttackHandler {
 	}
 
 	private static void endStrike(ServerPlayer player, LivingEntity target, ActiveStrike active) {
+		endStrike(player, target, active, false);
+	}
+
+	private static void endStrike(ServerPlayer player, LivingEntity target, ActiveStrike active, boolean interrupted) {
 		ACTIVE.remove(player.getUUID());
 		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		setStrikeLocked(player, false);
@@ -812,7 +860,10 @@ public class StrikeAttackHandler {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(active.techniqueId());
-			stats.getCooldowns().setCooldown(cooldownKey, active.cooldownTicks());
+			int cooldown = interrupted
+					? Math.max(1, active.cooldownTicks() / 2)
+					: active.cooldownTicks();
+			stats.getCooldowns().setCooldown(cooldownKey, cooldown);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
 	}
@@ -1239,7 +1290,6 @@ public class StrikeAttackHandler {
 		source.setYHeadRot(source.getYRot());
 	}
 
-	/** Faces the attacker at the locked multipart hitbox (its center) when there is one, else at the target. */
 	private static void faceStrikeTarget(ServerPlayer player, LivingEntity target) {
 		Integer partId = STRIKE_ANCHOR_PART.get(player.getUUID());
 		if (partId != null) {

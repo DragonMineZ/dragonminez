@@ -74,6 +74,7 @@ public class CombatEvent {
 	private static final int HEALING_REDUCTION_DURATION_TICKS = 120;
 	private static final int PARRY_COMBO_STUN_TICKS = 30;
 	private static final int PARRY_STUN_TICKS = 20;
+	private static final int PARRY_STRIKE_STUN_TICKS = 40;
 
 	private static void maybeForceCombatFly(Player player) {
 		if (!ConfigManager.getCombatConfig().getCombatFlyAutoSwitchOnDamage()) return;
@@ -569,7 +570,12 @@ public class CombatEvent {
 		if (!(sourceEntity instanceof Player attacker)) return;
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 			doGuardBreak(attacker, attackerData);
+
+			attacker.removeEffect(MainEffects.STUN.get());
+			attacker.addEffect(new MobEffectInstance(MainEffects.STUN.get(), PARRY_STRIKE_STUN_TICKS, 0, false, false, true));
+
 			if (attacker instanceof ServerPlayer serverPlayer) {
+				StrikeAttackHandler.interrupt(serverPlayer);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			}
 		});
