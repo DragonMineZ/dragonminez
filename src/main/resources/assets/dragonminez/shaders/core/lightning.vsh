@@ -89,7 +89,7 @@ void main() {
 
     vec4 pos = vec4(Position, 1.0);
 
-    float thickness = 0.3 * (1.0 - (t * 0.4));
+    float thickness = 0.42 * (1.0 - (t * 0.4));
     pos.x = Position.x * thickness;
     pos.z = Position.z * thickness;
 

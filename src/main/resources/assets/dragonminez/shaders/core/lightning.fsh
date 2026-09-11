@@ -15,8 +15,9 @@ void main(void) {
     float vDistFromCenter = length(vLocalXZ);
     float distNorm = clamp(vDistFromCenter / 0.15, 0.0, 1.0);
 
-    float coreFactor = 1.0 - smoothstep(0.0, 0.3, distNorm);
-    float glowFactor = 1.0 - smoothstep(0.2, 1.0, distNorm);
+    // The bright interior takes up most of the bolt; the coloured border is only the last sliver.
+    float coreFactor = 1.0 - smoothstep(0.0, 0.62, distNorm);
+    float glowFactor = 1.0 - smoothstep(0.62, 0.9, distNorm);
 
     vec3 coreColor = mix(color1, vec3(1.0), 0.7);
     vec3 finalColor = mix(color2, coreColor, coreFactor);
