@@ -250,7 +250,7 @@ public class StoryCommand {
 			Quest quest = QuestRegistry.getQuest(questKey);
 			if (quest == null) {
 				context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-						+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+						+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 				return 0;
 			}
 
@@ -313,7 +313,7 @@ public class StoryCommand {
 				Quest quest = QuestRegistry.getQuest(questKey);
 				if (quest == null) {
 					context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-							+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+							+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 					return 0;
 				}
 				questsToStart.add(Map.entry(questKey, quest));
@@ -368,7 +368,7 @@ public class StoryCommand {
 				Quest quest = QuestRegistry.getQuest(questKey);
 				if (quest == null) {
 					context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-							+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+							+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 					return 0;
 				}
 				questsToFinish.add(Map.entry(questKey, quest));
@@ -413,7 +413,7 @@ public class StoryCommand {
 
 			if (!"all".equalsIgnoreCase(questKey) && QuestRegistry.getQuest(questKey) == null) {
 				context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-						+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+						+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 				return 0;
 			}
 
@@ -469,7 +469,7 @@ public class StoryCommand {
 
 			if (!"all".equalsIgnoreCase(questKey) && QuestRegistry.getQuest(questKey) == null) {
 				context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-						+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+						+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 				return 0;
 			}
 
@@ -524,7 +524,7 @@ public class StoryCommand {
 
 			if (questKey != null && QuestRegistry.getQuest(questKey) == null) {
 				context.getSource().sendFailure(Component.literal("Quest not found: " + questKey
-						+ "  (tip: use '.' instead of ':' — e.g. saiyan_saga.1)"));
+						+ "  (tip: use '.' instead of ':' — e.g. classic_saga.1)"));
 				return 0;
 			}
 

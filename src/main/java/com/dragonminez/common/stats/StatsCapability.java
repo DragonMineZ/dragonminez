@@ -105,7 +105,7 @@ public class StatsCapability {
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				markCurrentDimensionVisited(serverPlayer, data);
 				PlayerQuestData questData = data.getPlayerQuestData();
-				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
+				if (questData.isSagaLocked("classic_saga")) questData.setSagaUnlocked("classic_saga", true);
 				TransformationsHelper.ensureSelectedFormDefault(data);
 				TransformationsHelper.ensureSelectedStackFormDefault(data);
 

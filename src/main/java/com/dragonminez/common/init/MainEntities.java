@@ -57,7 +57,7 @@ public class MainEntities {
 
     public static List<RegistryObject<? extends EntityType<? extends Mob>>> getSagaEntities() {
         return List.of(
-                //SAGA CLÃSICO
+                //SAGA CLASICO
                 SAGA_KID_GOKU, SAGA_KID_KRILLIN, SAGA_OOLONG, SAGA_OOLONG_TRANSFORMED, SAGA_GIRAN, SAGA_NAM,
                 SAGA_JACKIE_CHUN, SAGA_JACKIE_CHUN_FP, SAGA_COLONEL_SILVER, SAGA_GENERAL_BLUE,
                 SAGA_WORLD_TOURNAMENT_ANNOUNCER, SAGA_NINJA_MURASAKI, SAGA_SERGEANT_METALLIC, SAGA_A8,
@@ -97,7 +97,7 @@ public class MainEntities {
                 SAGA_BUU_FAT, SAGA_EVILBUU, SAGA_SUPERBUU, SAGA_SUPERBUU_PICCOLO, SAGA_SUPERBUU_GOTENKS, SAGA_SUPERBUU_GOHAN, SAGA_KIDBUU,
                 SAGA_VEGETTO_BASE, SAGA_VEGETTO_SSJ,
 
-                // PELÃCULAS
+                // PELICULAS
                 SAGA_GARLICK_JR, SAGA_GARLICK_JR_TRANSFORMED, SAGA_DR_WHEELO, SAGA_TURLES,
                 SAGA_SLUG_SOLDIER, SAGA_SLUG, SAGA_SLUG_GIANT,
                 SAGA_DORE, SAGA_SALZA, SAGA_NEIZ, SAGA_COOLER, SAGA_COOLER_5TA, SAGA_GETE_ROBOT, SAGA_METAL_COOLER, SAGA_METAL_COOLER_CORE,
@@ -112,29 +112,29 @@ public class MainEntities {
         );
     }
 
-private static Map<String, RegistryObject<EntityType<DragonWishEntity>>> registerDragonWishEntities() {
-    Map<String, RegistryObject<EntityType<DragonWishEntity>>> registered = new LinkedHashMap<>();
-    for (DragonDefinition definition : DragonBallDefinitions.getBootstrapDragons()) {
-        RegistryObject<EntityType<DragonWishEntity>> entity = ENTITY_TYPES.register(definition.getEntityRegistryName(),
-                () -> EntityType.Builder.<DragonWishEntity>of((type, level) -> new DragonWishEntity(type, level, definition.getId()), MobCategory.CREATURE)
-                        .sized(definition.getEntityWidth(), definition.getEntityHeight())
-                        .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, definition.getEntityRegistryName()).toString()));
-        registered.put(definition.getId(), entity);
+    private static Map<String, RegistryObject<EntityType<DragonWishEntity>>> registerDragonWishEntities() {
+        Map<String, RegistryObject<EntityType<DragonWishEntity>>> registered = new LinkedHashMap<>();
+        for (DragonDefinition definition : DragonBallDefinitions.getBootstrapDragons()) {
+            RegistryObject<EntityType<DragonWishEntity>> entity = ENTITY_TYPES.register(definition.getEntityRegistryName(),
+                    () -> EntityType.Builder.<DragonWishEntity>of((type, level) -> new DragonWishEntity(type, level, definition.getId()), MobCategory.CREATURE)
+                            .sized(definition.getEntityWidth(), definition.getEntityHeight())
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, definition.getEntityRegistryName()).toString()));
+            registered.put(definition.getId(), entity);
+        }
+        return Map.copyOf(registered);
     }
-    return Map.copyOf(registered);
-}
 
-public static RegistryObject<EntityType<DragonWishEntity>> getDragonWishEntityOrThrow(String dragonId) {
-    RegistryObject<EntityType<DragonWishEntity>> entity = DRAGON_WISH_ENTITIES.get(dragonId);
-    if (entity == null) {
-        throw new IllegalArgumentException("No dragon wish entity registered for dragon '" + dragonId + "'");
+    public static RegistryObject<EntityType<DragonWishEntity>> getDragonWishEntityOrThrow(String dragonId) {
+        RegistryObject<EntityType<DragonWishEntity>> entity = DRAGON_WISH_ENTITIES.get(dragonId);
+        if (entity == null) {
+            throw new IllegalArgumentException("No dragon wish entity registered for dragon '" + dragonId + "'");
+        }
+        return entity;
     }
-    return entity;
-}
 
-public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDragonWishEntities() {
-    return DRAGON_WISH_ENTITIES;
-}
+    public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDragonWishEntities() {
+        return DRAGON_WISH_ENTITIES;
+    }
 
     public static final RegistryObject<EntityType<AllMastersEntity.MasterKarinEntity>> MASTER_KARIN =
             ENTITY_TYPES.register("master_karin",
