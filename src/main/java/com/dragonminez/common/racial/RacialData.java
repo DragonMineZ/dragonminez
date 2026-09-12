@@ -36,6 +36,10 @@ public class RacialData {
 
 	private boolean adrenalineArmed = true;
 
+	private transient boolean androidBarrierActive;
+	private transient int androidBarrierTicks;
+	private transient int androidBarrierEntityId = -1;
+
 	private float energyReserve;
 	private boolean reserveActive;
 

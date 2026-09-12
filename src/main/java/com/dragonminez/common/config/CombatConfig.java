@@ -95,7 +95,6 @@ public class CombatConfig {
 	private Integer kiChargeInterruptLockTicks = 10;
 
 	private Boolean enableKiSurge = true;
-	private Integer kiBurstTargetImmunitySeconds = 3;
 	private Double kiBurstRadius = 8.0;
 	private Double kiBurstKnockback = 1.4;
 	private Double surgeFillSeconds = 4.0;

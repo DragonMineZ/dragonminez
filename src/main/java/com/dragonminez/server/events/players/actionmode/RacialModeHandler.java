@@ -20,6 +20,7 @@ public class RacialModeHandler implements IActionModeHandler {
     public int handleActionCharge(ServerPlayer player, StatsData data) {
         return RacialRegistry.forPlayer(data).map(ability -> {
             RacialContext ctx = new RacialContext(player, data);
+            if (ability.isSustainedAction(ctx)) return 0;
             int chargeSeconds = ability.chargeSeconds(ctx);
             if (chargeSeconds <= 0) {
                 ability.onActivate(ctx);

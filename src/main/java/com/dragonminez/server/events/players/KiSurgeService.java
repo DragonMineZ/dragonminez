@@ -32,7 +32,8 @@ import java.util.List;
 
 public final class KiSurgeService {
 	public static final String NON_LETHAL_TAG = "dmz_surge_non_lethal";
-	private static final String BURST_IMMUNITY_TAG = "dmz_ki_burst_immune_until";
+	private static final String WAS_CHARGING_TAG = "dmz_was_charging_ki_session";
+	private static final String EARNED_BURST_TAG = "dmz_earned_ki_burst";
 
 	private KiSurgeService() {}
 
@@ -67,10 +68,19 @@ public final class KiSurgeService {
 
 		boolean charging = status.isChargingKi() && !status.isDescending();
 
+		boolean wasCharging = player.getPersistentData().getBoolean(WAS_CHARGING_TAG);
+		if (charging && !wasCharging) {
+			player.getPersistentData().putBoolean(EARNED_BURST_TAG, resources.getCurrentEnergy() < data.getMaxEnergy());
+		}
+		player.getPersistentData().putBoolean(WAS_CHARGING_TAG, charging);
+
 		if (charging && !status.isKiBurstArmed() && resources.getCurrentEnergy() >= data.getMaxEnergy()
 				&& !data.getCooldowns().hasCooldown(Cooldowns.KI_SURGE_CD)) {
 			status.setKiBurstArmed(true);
-			triggerBurst(player, data, false);
+			if (player.getPersistentData().getBoolean(EARNED_BURST_TAG)) {
+				player.getPersistentData().putBoolean(EARNED_BURST_TAG, false);
+				triggerBurst(player, data, false);
+			}
 			sync(player);
 		}
 
@@ -92,6 +102,18 @@ public final class KiSurgeService {
 			triggerBurst(player, data, true);
 			sync(player);
 		}
+	}
+
+	public static void forceActivateSurge(ServerPlayer player, StatsData data) {
+		if (data.getStatus().isSurgeActive()) return;
+		if (!ConfigManager.getCombatConfig().getEnableKiSurge()) return;
+		if (data.getCooldowns().hasCooldown(Cooldowns.KI_SURGE_CD)) return;
+
+		data.getStatus().setKiBurstArmed(false);
+		data.getStatus().setSurgeActive(true);
+		data.getResources().setSurgeCharge(100.0f);
+		triggerBurst(player, data, true);
+		sync(player);
 	}
 
 	public static void interruptCharge(ServerPlayer player, StatsData data) {
@@ -182,11 +204,6 @@ public final class KiSurgeService {
 			if (victim instanceof Player victimPlayer && PartyManager.areInSameParty(player, victimPlayer) && !partyPvpEnabled) continue;
 
 			if (!full && battlePowerOf(victim) >= selfBattlePower) continue;
-
-			if (!full) {
-				if (level.getGameTime() < victim.getPersistentData().getLong(BURST_IMMUNITY_TAG)) continue;
-				victim.getPersistentData().putLong(BURST_IMMUNITY_TAG, level.getGameTime() + Math.max(1, config.getKiBurstTargetImmunitySeconds() * 20L));
-			}
 
 			double distance = victim.distanceTo(player);
 			double falloff = Math.max(0.0, 1.0 - (distance / radius));
