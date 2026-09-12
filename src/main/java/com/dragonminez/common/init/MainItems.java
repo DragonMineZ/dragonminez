@@ -3,6 +3,7 @@ package com.dragonminez.common.init;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.init.armor.DbzArmorPatrollerItem;
 import com.dragonminez.common.init.armor.ModArmorMaterials;
 import com.dragonminez.common.init.item.*;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
@@ -209,6 +210,8 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BROLY_SUPER_ARMOR = fullArmorNoHelmetSet("broly_super_armor", "broly_dbs");
 	// BROLY Z
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BROLY_Z_ARMOR = fullArmorNoHelmetSet("broly_z_armor", "broly_dbz");
+	// BRIGHTLY'S REGULAR WEAR
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> BRIGHTLYS_REGULAR_WEAR_ARMOR = fullArmorNoHelmetSet("brightlys_regular_wear_armor", "brightlys_regular_wear");
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> CAPSULE_CORP_ARMOR = fullArmorNoHelmetSet("capsule_corp_armor", "capsule_corp");
 	// CAULIFLA
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> CAULIFLA_ARMOR = fullArmorNoHelmetSet("caulifla_armor", "caulifla");
@@ -296,6 +299,8 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> THRAGG_ARMOR = fullArmorNoHelmetSet("thragg_armor", "thragg");
     public static final Map<ArmorItem.Type, RegistryObject<Item>> GILGAMESH_ARMOR = fullArmorNoHelmetSet("gilgamesh_armor", "gilgamesh");
 
+	// TAIYOU GI
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> TAIYOU_GI_ARMOR = fullArmorPatrollerNoHelmetSet("taiyou_gi_armor", "taiyou_gi");
     //TIEN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TIEN_ARMOR = fullArmorNoHelmetSet("tien_armor", "tenshinhan_armor");
 	//TRUNKS KID DBZ
@@ -304,6 +309,8 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TRUNKS_SUPER_ARMOR = fullArmorNoHelmetSet("trunks_super_armor", "trunks_dbs");
 	//TRUNKS Z
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TRUNKS_Z_ARMOR = fullArmorNoHelmetSet("trunks_z_armor", "trunks_armor");
+	//TRUNKS XENO
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> TRUNKS_XENO_ARMOR = fullArmorNoHelmetSet("trunks_xeno_armor", "trunks_xeno");
 	// TURLES
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TURLES_ARMOR = fullArmorNoHelmetSet("turles_armor", "turles_armor");
 	// VEGETA SAGA BUU
@@ -642,6 +649,23 @@ public final class MainItems {
 
 	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorCapeNoHelmetSet(String itemId, String textureId) {
 		return registerArmorSetCape(itemId, textureId, false);
+	}
+
+	private static Map<ArmorItem.Type, RegistryObject<Item>> registerArmorSetPatroller(String name, String texture, boolean hasHelmet) {
+		Map<ArmorItem.Type, RegistryObject<Item>> armorPieces = new HashMap<>();
+		if (hasHelmet) armorPieces.put(ArmorItem.Type.HELMET, ITEM_REGISTER.register(name + "_helmet", () -> new DbzArmorPatrollerItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), texture)));
+		armorPieces.put(ArmorItem.Type.CHESTPLATE, ITEM_REGISTER.register(name + "_chestplate", () -> new DbzArmorPatrollerItem(ModArmorMaterials.KIKONO, ArmorItem.Type.CHESTPLATE, new Item.Properties().fireResistant().stacksTo(1), texture)));
+		armorPieces.put(ArmorItem.Type.LEGGINGS, ITEM_REGISTER.register(name + "_leggings", () -> new DbzArmorPatrollerItem(ModArmorMaterials.KIKONO, ArmorItem.Type.LEGGINGS, new Item.Properties().fireResistant().stacksTo(1), texture)));
+		armorPieces.put(ArmorItem.Type.BOOTS, ITEM_REGISTER.register(name + "_boots", () -> new DbzArmorPatrollerItem(ModArmorMaterials.KIKONO, ArmorItem.Type.BOOTS, new Item.Properties().fireResistant().stacksTo(1), texture)));
+		return armorPieces;
+	}
+
+	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorPatrollerSet(String itemId, String textureId) {
+		return registerArmorSetPatroller(itemId, textureId, true);
+	}
+
+	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorPatrollerNoHelmetSet(String itemId, String textureId) {
+		return registerArmorSetPatroller(itemId, textureId, false);
 	}
 
 	private static Map<String, Map<Integer, RegistryObject<Item>>> registerDragonBallBlockItems() {

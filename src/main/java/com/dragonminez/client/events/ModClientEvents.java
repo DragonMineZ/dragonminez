@@ -30,6 +30,7 @@ import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
+import com.dragonminez.common.init.armor.client.model.ArmorPatrollerModel;
 import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
 import com.dragonminez.client.init.menu.screens.GravityDeviceScreen;
 import com.dragonminez.client.init.menu.screens.KikonoStationScreen;
@@ -274,6 +275,7 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions e) {
         e.registerLayerDefinition(ArmorBaseModel.LAYER_LOCATION, ArmorBaseModel::createBodyLayer);
+        e.registerLayerDefinition(ArmorPatrollerModel.LAYER_LOCATION, ArmorPatrollerModel::createBodyLayer);
     }
 
     @SubscribeEvent

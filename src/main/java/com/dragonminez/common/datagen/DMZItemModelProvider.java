@@ -242,6 +242,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
         generateArmorSetModels(MainItems.XENO_GOKU_PATREON_ARMOR);
         generateArmorSetModels(MainItems.VERGIL_ARMOR);
         generateArmorSetModels(MainItems.GREAT_SAIYAMAN_2_ARMOR);
+        generateArmorSetModels(MainItems.TAIYOU_GI_ARMOR);
+        generateArmorSetModels(MainItems.BRIGHTLYS_REGULAR_WEAR_ARMOR);
+        generateArmorSetModels(MainItems.TRUNKS_XENO_ARMOR);
 
         //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);

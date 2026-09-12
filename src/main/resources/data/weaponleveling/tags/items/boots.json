@@ -360,6 +360,18 @@
     {
       "id": "dragonminez:zamasu_armor_boots",
       "required": false
+    },
+    {
+      "id": "dragonminez:taiyou_gi_armor_boots",
+      "required": false
+    },
+    {
+      "id": "dragonminez:brightlys_regular_wear_armor_boots",
+      "required": false
+    },
+    {
+      "id": "dragonminez:trunks_xeno_armor_boots",
+      "required": false
     }
   ]
 }
