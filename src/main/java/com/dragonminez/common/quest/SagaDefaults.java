@@ -33,7 +33,8 @@ final class SagaDefaults {
 
 		Path dmzBase = sagaDir.getParent(); // <world>/dragonminez
 
-		writeSagaManifest(dmzBase, sagaDir, "saiyan_saga.json", "saiyan_saga", "dmz.saga.saiyan_saga", "", "saga_saiyan");
+		writeSagaManifest(dmzBase, sagaDir, "classic_saga.json", "classic_saga", "dmz.saga.classic_saga", "", "saga_classic");
+		writeSagaManifest(dmzBase, sagaDir, "saiyan_saga.json", "saiyan_saga", "dmz.saga.saiyan_saga", "classic_saga", "saga_saiyan");
 		writeSagaManifest(dmzBase, sagaDir, "frieza_saga.json", "frieza_saga", "dmz.saga.frieza_saga", "saiyan_saga", "saga_frieza");
 		writeSagaManifest(dmzBase, sagaDir, "android_saga.json", "android_saga", "dmz.saga.android_saga", "frieza_saga", "saga_android");
 		writeSagaManifest(dmzBase, sagaDir, "future_saga.json", "future_saga", "dmz.saga.future_saga", "android_saga", "saga_future");
