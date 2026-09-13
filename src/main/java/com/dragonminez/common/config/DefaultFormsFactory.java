@@ -1423,7 +1423,7 @@ public class DefaultFormsFactory {
 		semiPerfect.setDefMultiplier(1.5);
 		semiPerfect.setPwrMultiplier(1.75);
 		semiPerfect.setHairColor("");
-		semiPerfect.setEye1Color("#0095FF");
+		semiPerfect.setEye1Color("#BA1414");
 		semiPerfect.setEye2Color("#FFFFFF");
 		semiPerfect.setBodyColor1("");
 		semiPerfect.setBodyColor2("");

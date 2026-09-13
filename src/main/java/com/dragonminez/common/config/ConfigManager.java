@@ -994,10 +994,10 @@ public class ConfigManager {
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
 		config.setDefaultTattooType(0);
-		config.setDefaultBodyColor("#187600");
-		config.setDefaultBodyColor2("#9FE321");
-		config.setDefaultBodyColor3("#FF7600");
-		config.setDefaultHairColor("#187600");
+		config.setDefaultBodyColor("#396E14");
+		config.setDefaultBodyColor2("#c7b022");
+		config.setDefaultBodyColor3("#fa9a02");
+		config.setDefaultHairColor("#38628F");
 		config.setDefaultEye1Color("#2E2424");
 		config.setDefaultEye2Color("#F06F6E");
 		config.setDefaultAuraColor("#1AA700");
