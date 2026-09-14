@@ -299,6 +299,7 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.DUST.get(), DustParticle.Provider::new);
         event.registerSpriteSet(MainParticles.ROCK.get(), RockParticle.Provider::new);
         event.registerSpriteSet(MainParticles.DIVINE.get(), DivineParticle.Provider::new);
+        event.registerSpecial(MainParticles.FLYING_BLOCK.get(), new com.dragonminez.common.init.particles.FlyingBlockParticle.Provider());
 
     }
 

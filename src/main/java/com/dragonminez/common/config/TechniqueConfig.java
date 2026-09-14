@@ -63,6 +63,7 @@ public class TechniqueConfig {
 			case "super_god_fist", "kaioken_attack" -> 240;
 			case "deadly_dance_vegetto" -> 200;
 			case "wolf_fang" -> 140;
+			case "oozaru_slam" -> 120;
 			default -> 160;
 		};
 	}
@@ -118,7 +119,10 @@ public class TechniqueConfig {
 	public StrikeAttackConfig getStrikeConfig(String strikeId) {
 		if (strikeId == null || strikeId.isEmpty()) return StrikeAttackConfig.defaults();
 		StrikeAttackConfig config = strikeAttacks.get(strikeId.toLowerCase());
-		return config != null ? config : StrikeAttackConfig.defaults();
+		if (config != null) return config;
+		StrikeAttackConfig fallback = StrikeAttackConfig.defaults();
+		fallback.setCooldownTicks(defaultStrikeCooldownTicks(strikeId.toLowerCase()));
+		return fallback;
 	}
 
 	public EvasionAttackConfig getEvasionConfig(String evasionId) {

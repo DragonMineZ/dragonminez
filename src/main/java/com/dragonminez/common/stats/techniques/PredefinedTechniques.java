@@ -17,7 +17,8 @@ public class PredefinedTechniques {
 			"kaioken_attack",
 			"wolf_fang",
 			"oozaru_fist",
-			"super_god_fist"
+			"super_god_fist",
+			"oozaru_slam"
 	);
 	public static final List<String> EVASION_IDS = java.util.List.of(
 			"taiyoken",
@@ -43,6 +44,7 @@ public class PredefinedTechniques {
 		registerKi("ki_barrage", "technique.dragonminez.barrage", "Vegeta", KiAttackData.KiType.BARRAGE, 1.00F, 0xFFFF00, 0xFFFF00, 0xC8A000, 0.4F, 1.5F, 10, "ki.barrage");
 		registerKi("final_explosion", "technique.dragonminez.final_explosion", "Vegeta", KiAttackData.KiType.EXPLOSION, 2.25F, 0xFFFA99, 0xFCF56A, 0xFFFFFC, 25.0F, 0.0F, 10, "ki.explosion");
 		registerKi("soul_punisher", "technique.dragonminez.soul_punisher", "Gogeta", KiAttackData.KiType.MEDIUM_BALL, 3.50F, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 3.5F, 0.5F, 45, "ki.kienzan");
+		registerKi("mouth_blast", "technique.dragonminez.mouth_blast", "Oozaru", KiAttackData.KiType.WAVE, 1.75F, 0xF3C9FF, 0xC523DE, 0x7A0FA0, 0.8F, 1.2F, 12, "ki.explosion");
 		registerKi("fake_moon", "technique.dragonminez.fake_moon", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 0.00F, 0xF5F3D0, 0xFFFFFF, 0xFFFFFF, 2.0F, 0.8F, 45, "ki.bigbang");
 		registerEvasion("taiyoken", 0.00F, 30, 900, false);
 		registerEvasion("rage_scream", 1.2F, 60, 80, true);
@@ -54,6 +56,7 @@ public class PredefinedTechniques {
 		registerStrike("skp.wolf_fang", 1.25f, 35);
 		registerStrike("skp.oozaru_fist", 2.25f, 35);
 		registerStrike("skp.super_god_fist", 2.0f, 25);
+		registerStrike("skp.oozaru_slam", 1.5f, 15);
 	}
 
 	public static boolean isPredefinedTechniqueId(String techniqueId) {

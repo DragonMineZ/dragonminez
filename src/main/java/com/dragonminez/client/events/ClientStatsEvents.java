@@ -201,7 +201,8 @@ public class ClientStatsEvents {
 				isActionKeyPressed = false;
 				isBlockKeyDown = false;
 
-				if (isMovementRestricted && TechniqueDispatcher.isFiringKiAttack(localPlayer)) {
+				if (isMovementRestricted && TechniqueDispatcher.isFiringKiAttack(localPlayer)
+						&& !TechniqueDispatcher.isFiringSteerableKiAttack(localPlayer)) {
 					localPlayer.setYRot(localPlayer.yRotO);
 					localPlayer.setXRot(localPlayer.xRotO);
 					localPlayer.yHeadRot = localPlayer.yHeadRotO;

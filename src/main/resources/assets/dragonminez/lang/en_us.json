@@ -1210,6 +1210,7 @@
   "technique.dragonminez.final_explosion": "Final Explosion",
   "technique.dragonminez.soul_punisher": "Soul Punisher",
   "technique.dragonminez.fake_moon": "Fake Moon",
+  "technique.dragonminez.mouth_blast": "Mouth Blast",
   "technique.dragonminez.taiyoken": "Solar Flare",
   "technique.dragonminez.rage_scream": "Rage Scream",
   "technique.dragonminez.sokidan": "Spirit Ball",
@@ -1221,6 +1222,7 @@
   "technique.dragonminez.wolf_fang": "Wolf Fang",
   "technique.dragonminez.oozaru_fist": "Oozaru Fist",
   "technique.dragonminez.super_god_fist": "Super God Fist",
+  "technique.dragonminez.oozaru_slam": "Oozaru Slam",
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
   "effect.dragonminez.ki_slow": "Ki Slow",
@@ -3463,5 +3465,6 @@
   "death.attack.strike_attack.kaioken_attack": "%1$s was crushed by %2$s's Kaioken Assault",
   "death.attack.strike_attack.wolf_fang": "%1$s was shredded by %2$s's Wolf Fang Fist",
   "death.attack.strike_attack.oozaru_fist": "%1$s was smashed by %2$s's Oozaru Fist",
-  "death.attack.strike_attack.super_god_fist": "%1$s was obliterated by %2$s's Super God Fist"
+  "death.attack.strike_attack.super_god_fist": "%1$s was obliterated by %2$s's Super God Fist",
+  "death.attack.strike_attack.oozaru_slam": "%1$s was crushed by %2$s's Oozaru Slam"
 }

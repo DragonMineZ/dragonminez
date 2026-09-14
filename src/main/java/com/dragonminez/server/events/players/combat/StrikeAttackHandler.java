@@ -17,6 +17,7 @@ import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.KiBurstVfxS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.racial.RacialStatUtil;
@@ -65,6 +66,25 @@ public class StrikeAttackHandler {
 	private static final long RECENT_HIT_WINDOW_MS = 10_000L;
 	private static final String STRIKE_HIT_ANIM = "base.flyback";
 	private static final String STRIKE_KNOCKBACK_ANIM = "base.flyback";
+	private static final String OOZARU_SLAM_ID = "oozaru_slam";
+	private static final int SLAM_IMPACT_TICK = 2;
+	private static final int SLAM_DURATION_TICKS = 15;
+	private static final float SLAM_SHAKE_RADIUS = 6.0F;
+	private static final int SLAM_DUST_POINTS_PER_BLOCK = 10;
+	private static final int SLAM_DUST_MAX_POINTS = 56;
+	private static final double SLAM_RING_MAX_RADIUS = 5.0;
+	private static final int SLAM_RING_TICKS = 10;
+	private static final double SLAM_RING_DAMAGE_RATIO = 0.5;
+	private static final double SLAM_RING_HEIGHT = 1.5;
+	private static final double SLAM_RING_KNOCKBACK = 0.6;
+	private static final Map<UUID, SlamRing> SLAM_RINGS = new HashMap<>();
+	private static final int SLAM_DEBRIS_PER_BLOCK = 4;
+	private static final double SLAM_DEBRIS_SPREAD = 0.75;
+	private static final float SLAM_UNBLOCK_PITCH = 0.55F;
+	private static final float SLAM_PARRY_PITCH = 0.85F;
+	private static final double FRONT_REACH = 1.3;
+	private static final java.util.Set<String> TARGETLESS_STRIKES = java.util.Set.of(
+			"dragon_fist", "deadly_dance", "deadly_dance_vegetto", "super_god_fist", "wolf_fang");
 
 	private static final Map<UUID, PendingStrike> PENDING = new HashMap<>();
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
@@ -93,6 +113,12 @@ public class StrikeAttackHandler {
 
 			stats.getResources().removeEnergy((int) Math.ceil(cost));
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+
+			if (OOZARU_SLAM_ID.equals(strike.getId())) {
+				MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
+				startSlam(player, stats, strike);
+				return;
+			}
 
 			boolean isFlying = stats.getSkills().isSkillActive("fly");
 			double coneRange = isFlying ? CONE_RANGE_FLY : CONE_RANGE;
@@ -123,6 +149,8 @@ public class StrikeAttackHandler {
 				player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
 						MainSounds.TP_SHORT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
 				startStrike(player, immediateTarget, pending);
+			} else if (TARGETLESS_STRIKES.contains(strike.getId())) {
+				startTargetlessStrike(player, stats, strike, pending);
 			} else {
 				dashForward(player, isFlying);
 				PENDING.put(player.getUUID(), pending);
@@ -176,6 +204,7 @@ public class StrikeAttackHandler {
 		UUID id = event.getEntity().getUUID();
 		PENDING.remove(id);
 		STRIKE_ANCHOR_PART.remove(id);
+		SLAM_RINGS.remove(id);
 		ActiveStrike active = ACTIVE.remove(id);
 		if (active != null && event.getEntity() instanceof ServerPlayer attacker) {
 			clearVictimStrikeLock(attacker, null, active.targetId());
@@ -254,9 +283,15 @@ public class StrikeAttackHandler {
 		ActiveStrike active = ACTIVE.get(player.getUUID());
 		if (active == null) return;
 
-		LivingEntity target = resolveLiving(player, active.targetId());
+		if (OOZARU_SLAM_ID.equals(active.techniqueId())) {
+			processSlam(player, active);
+			return;
+		}
 
-		if (target == null || !target.isAlive() || !player.isAlive()) {
+		boolean targetless = active.targetId() == null;
+		LivingEntity target = targetless ? null : resolveLiving(player, active.targetId());
+
+		if (!player.isAlive() || (!targetless && (target == null || !target.isAlive()))) {
 			endStrike(player, target, active);
 			return;
 		}
@@ -277,15 +312,17 @@ public class StrikeAttackHandler {
                 SPDragonFistEntity dragonFist = new SPDragonFistEntity(player.level(), player);
                 dragonFist.setupDragonFist(player, (float) active.totalDamage(), 1.0f);
 
-                try {
-                    dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
-                } catch (Exception e) {
+                if (active.targetId() != null) {
+                    try {
+                        dragonFist.setStrikeStun(active.durationTicks() / 2, active.targetId());
+                    } catch (Exception e) {
+                    }
                 }
             }
 
             if (active.ticksElapsed() >= active.durationTicks()) {
 
-                if (!player.level().isClientSide) {
+                if (target != null && !player.level().isClientSide) {
                     try {
                         KiExplosionVisualEntity explosion = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
                         explosion.setPos(target.getX(), target.getY() + 1.0, target.getZ());
@@ -440,7 +477,7 @@ public class StrikeAttackHandler {
 
 			int nextTick = active.ticksElapsed() + 1;
 
-			if (nextTick < 14) {
+			if (nextTick < 14 && target != null) {
 				faceStrikeTarget(player, target);
 				if (target instanceof ServerPlayer targetPlayer) {
 					faceEntity(targetPlayer, player);
@@ -452,59 +489,76 @@ public class StrikeAttackHandler {
 			player.invulnerableTime = 20;
 
 			if (nextTick <= 12) {
-				target.invulnerableTime = 20;
+				if (target != null) {
+					target.invulnerableTime = 20;
 
-				double dist = player.distanceTo(target);
-				if (dist > 1.5) {
-					Vec3 dir = target.position().subtract(player.position()).normalize();
+					double dist = player.distanceTo(target);
+					if (dist > 1.5) {
+						Vec3 dir = target.position().subtract(player.position()).normalize();
+						double dashSpeed = 1.5;
+						player.setDeltaMovement(dir.x * dashSpeed, player.getDeltaMovement().y, dir.z * dashSpeed);
+						player.hurtMarked = true;
+						spawnSuperGodFistTrail(player);
+					} else {
+						freezeEntity(player);
+					}
+					freezeEntity(target);
+				} else if (findFrontVictim(player) != null) {
+					freezeEntity(player);
+				} else {
+					Vec3 dir = Vec3.directionFromRotation(0, player.getYRot()).normalize();
 					double dashSpeed = 1.5;
 					player.setDeltaMovement(dir.x * dashSpeed, player.getDeltaMovement().y, dir.z * dashSpeed);
 					player.hurtMarked = true;
-				} else {
-					freezeEntity(player);
+					spawnSuperGodFistTrail(player);
 				}
-				freezeEntity(target);
 			}
 			else if (nextTick == 13) {
-				target.invulnerableTime = 20;
+				if (target != null) {
+					target.invulnerableTime = 20;
+					freezeEntity(target);
+				}
 				freezeEntity(player);
-				freezeEntity(target);
 			}
 			else if (nextTick == 14) {
-				target.invulnerableTime = 0;
+				LivingEntity victim = strikeVictim(player, target);
+				Vec3 impactPos = strikeImpactPoint(player, victim, 0.5);
 
-				applyStrikeDamage(player, target, active.totalDamage(), active.techniqueId(), true);
-				grantKillXpIfNeeded(player, target, active.techniqueId());
+				if (victim != null) {
+					victim.invulnerableTime = 0;
+					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.totalDamage()), active.techniqueId(), true);
+					grantKillXpIfNeeded(player, victim, active.techniqueId());
+				}
 
 				player.level().playSound(
-						null, target.getX(), target.getY(), target.getZ(),
+						null, impactPos.x, impactPos.y, impactPos.z,
 						MainSounds.CRITICO2.get(),
 						net.minecraft.sounds.SoundSource.PLAYERS,
 						2.5F,
 						0.7F
 				);
 
-				if (!player.level().isClientSide) {
-					try {
-						KiExplosionVisualEntity impact = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
-						impact.setPos(target.getX(), target.getY() + (target.getBbHeight() * 0.5), target.getZ());
-						impact.setupExplosion(0xFFFFFF, 0xF5C527, 0.5F);
-						player.level().addFreshEntity(impact);
-					} catch (Exception e) {
-					}
-					spawnSuperGodFistImpactParticles(player.serverLevel(), target);
+				try {
+					KiExplosionVisualEntity impact = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
+					impact.setPos(impactPos.x, impactPos.y, impactPos.z);
+					impact.setupExplosion(0xFFFFFF, 0xF5C527, 0.5F);
+					player.level().addFreshEntity(impact);
+				} catch (Exception e) {
 				}
+				spawnSuperGodFistImpactParticles(player.serverLevel(), impactPos);
 
-				Vec3 pushDir = player.getLookAngle().normalize();
-				double knockbackPower = 4.0;
-				KnockbackHelper.apply(target, new Vec3(pushDir.x * knockbackPower, 0.6, pushDir.z * knockbackPower));
+				if (victim != null) {
+					Vec3 pushDir = player.getLookAngle().normalize();
+					double knockbackPower = 4.0;
+					KnockbackHelper.apply(victim, new Vec3(pushDir.x * knockbackPower, 0.6, pushDir.z * knockbackPower));
 
-				playStrikeKnockbackAnimation(target);
+					playStrikeKnockbackAnimation(victim);
 
-				MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || pushDir.y < -0.5
-						? MomentumImpactHandler.CollisionImpactType.GROUND
-						: MomentumImpactHandler.CollisionImpactType.WALL;
-				MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+					MomentumImpactHandler.CollisionImpactType impactType = victim.onGround() || pushDir.y < -0.5
+							? MomentumImpactHandler.CollisionImpactType.GROUND
+							: MomentumImpactHandler.CollisionImpactType.WALL;
+					MomentumImpactHandler.registerCollisionImpact(victim, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+				}
 
 				freezeEntity(player);
 			}
@@ -527,7 +581,7 @@ public class StrikeAttackHandler {
 
 			if (target instanceof ServerPlayer targetPlayer) {
 				faceEntity(targetPlayer, player);
-			} else {
+			} else if (target != null) {
 				faceEntity(target, player);
 			}
 
@@ -540,34 +594,40 @@ public class StrikeAttackHandler {
 			double targetY = player.getY();
 			double targetZ = player.getZ() + lookVec.z * distance;
 
-			boolean blocked = player.horizontalCollision || !canOccupy(target, targetX, targetY, targetZ);
+			boolean blocked = player.horizontalCollision || (target != null && !canOccupy(target, targetX, targetY, targetZ));
 
 			if (!blocked) {
 				double advanceSpeed = 0.25;
 				player.setDeltaMovement(lookVec.x * advanceSpeed, player.getDeltaMovement().y, lookVec.z * advanceSpeed);
 				player.hurtMarked = true;
 
-				target.setPos(targetX, targetY, targetZ);
-				target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
-				target.hurtMarked = true;
+				if (target != null) {
+					target.setPos(targetX, targetY, targetZ);
+					target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
+					target.hurtMarked = true;
+				}
 			} else {
 				player.setDeltaMovement(0, player.getDeltaMovement().y, 0);
 				player.hurtMarked = true;
-				target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
-				target.hurtMarked = true;
+				if (target != null) {
+					target.setDeltaMovement(0, target.getDeltaMovement().y, 0);
+					target.hurtMarked = true;
+				}
 			}
 
 			int nextTick = active.ticksElapsed() + 1;
 
 			if (nextTick % active.hitIntervalTicks() == 0 && nextTick < 30) {
-				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
-
-				if (!player.level().isClientSide) {
-					spawnDeadlyDanceHitParticles(player.serverLevel(), target, vegetto);
+				LivingEntity victim = strikeVictim(player, target);
+				if (victim != null) {
+					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.perHitDamage()), active.techniqueId(), false);
 				}
 
+				spawnDeadlyDanceHitParticles(player.serverLevel(), strikeImpactPoint(player, victim, 0.6), vegetto);
+
+				Vec3 soundPos = strikeImpactPoint(player, victim, 0.0);
 				player.level().playSound(
-						null, target.getX(), target.getY(), target.getZ(),
+						null, soundPos.x, soundPos.y, soundPos.z,
 						MainSounds.GOLPE1.get(),
 						net.minecraft.sounds.SoundSource.PLAYERS,
 						1.0F,
@@ -576,30 +636,34 @@ public class StrikeAttackHandler {
 			}
 
 			if (nextTick >= 30) {
-				applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
-				grantKillXpIfNeeded(player, target, active.techniqueId());
-
-				if (!player.level().isClientSide) {
-					spawnDeadlyDanceFinalParticles(player.serverLevel(), target, vegetto);
+				LivingEntity victim = strikeVictim(player, target);
+				if (victim != null) {
+					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.finalDamage()), active.techniqueId(), true);
+					grantKillXpIfNeeded(player, victim, active.techniqueId());
 				}
 
+				spawnDeadlyDanceFinalParticles(player.serverLevel(), strikeImpactPoint(player, victim, 0.5), vegetto);
+
+				Vec3 soundPos = strikeImpactPoint(player, victim, 0.0);
 				player.level().playSound(
-						null, target.getX(), target.getY(), target.getZ(),
+						null, soundPos.x, soundPos.y, soundPos.z,
 						MainSounds.CRITICO2.get(),
 						net.minecraft.sounds.SoundSource.PLAYERS,
 						2.0F,
 						1.0F
 				);
 
-				Vec3 pushDir = player.getLookAngle().normalize();
-				double upwardForce = 1.5;
-				double forwardForce = 0.5;
+				if (victim != null) {
+					Vec3 pushDir = player.getLookAngle().normalize();
+					double upwardForce = 1.5;
+					double forwardForce = 0.5;
 
-				KnockbackHelper.apply(target, new Vec3(pushDir.x * forwardForce, upwardForce, pushDir.z * forwardForce));
+					KnockbackHelper.apply(victim, new Vec3(pushDir.x * forwardForce, upwardForce, pushDir.z * forwardForce));
 
-				playStrikeKnockbackAnimation(target);
+					playStrikeKnockbackAnimation(victim);
 
-				MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0, 1, 0));
+					MomentumImpactHandler.registerCollisionImpact(victim, MomentumImpactHandler.CollisionImpactType.GROUND, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0, 1, 0));
+				}
 
 				endStrike(player, target, active);
 				return;
@@ -717,10 +781,12 @@ public class StrikeAttackHandler {
 
 		if ("wolf_fang".equals(active.techniqueId())) {
 			freezeEntity(player);
-			freezeEntity(target);
-			faceStrikeTarget(player, target);
-			if (target instanceof ServerPlayer targetPlayer) {
-				faceEntity(targetPlayer, player);
+			if (target != null) {
+				freezeEntity(target);
+				faceStrikeTarget(player, target);
+				if (target instanceof ServerPlayer targetPlayer) {
+					faceEntity(targetPlayer, player);
+				}
 			}
 			player.invulnerableTime = 20;
 
@@ -728,20 +794,27 @@ public class StrikeAttackHandler {
 			int wolfDuration = active.durationTicks();
 
 			if (wolfTick % active.hitIntervalTicks() == 0 && wolfTick < wolfDuration) {
-				applyStrikeDamage(player, target, active.perHitDamage(), active.techniqueId(), false);
+				LivingEntity victim = strikeVictim(player, target);
+				if (victim != null) {
+					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.perHitDamage()), active.techniqueId(), false);
+				}
 			}
 
 			if (wolfTick < wolfDuration - 3 && wolfTick % 4 == 0) {
-				spawnWolfFangJab(player, target, wolfTick);
+				spawnWolfFangJab(player, strikeImpactPoint(player, strikeVictim(player, target), 0.6), wolfTick);
 			}
 
 			if (wolfTick >= wolfDuration) {
-				applyStrikeDamage(player, target, active.finalDamage(), active.techniqueId(), true);
-				grantKillXpIfNeeded(player, target, active.techniqueId());
+				LivingEntity victim = strikeVictim(player, target);
+				if (victim != null) {
+					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.finalDamage()), active.techniqueId(), true);
+					grantKillXpIfNeeded(player, victim, active.techniqueId());
+				}
 
-				double sx = target.getX();
-				double sy = target.getY() + target.getBbHeight() * 0.5;
-				double sz = target.getZ();
+				Vec3 finalPos = strikeImpactPoint(player, victim, 0.5);
+				double sx = finalPos.x;
+				double sy = finalPos.y;
+				double sz = finalPos.z;
 
 				player.level().playSound(null, sx, sy, sz,
 						MainSounds.CRITICO2.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, 0.7F);
@@ -750,11 +823,9 @@ public class StrikeAttackHandler {
 				player.level().playSound(null, sx, sy, sz,
 						MainSounds.OOZARU_GROWL_PLAYER.get(), net.minecraft.sounds.SoundSource.PLAYERS, 3.0F, 1.15F);
 
-				if (!player.level().isClientSide) {
-					spawnWolfFangFinalParticles(player.serverLevel(), target);
-				}
+				spawnWolfFangFinalParticles(player.serverLevel(), finalPos);
 
-				applyKnockback(player, target, active.totalDamage());
+				if (victim != null) applyKnockback(player, victim, active.totalDamage());
 				endStrike(player, target, active);
 				return;
 			}
@@ -849,6 +920,241 @@ public class StrikeAttackHandler {
 		});
 	}
 
+	private static void startTargetlessStrike(ServerPlayer player, com.dragonminez.common.stats.StatsData stats, StrikeAttackData strike, PendingStrike pending) {
+		double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
+				ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
+
+		int durationTicks = Math.max(20, pending.durationTicks());
+		int hitCount = Math.max(1, (int) Math.ceil(durationTicks / (double) HIT_INTERVAL_TICKS));
+
+		ActiveStrike active = new ActiveStrike(
+				player.getUUID(),
+				null,
+				pending.techniqueId(),
+				pending.animationId(),
+				durationTicks,
+				pending.cooldownTicks(),
+				totalDamage,
+				(totalDamage * (1.0 - FINAL_HIT_RATIO)) / hitCount,
+				totalDamage * FINAL_HIT_RATIO,
+				HIT_INTERVAL_TICKS,
+				0
+		);
+		ACTIVE.put(player.getUUID(), active);
+		STRIKE_ANCHOR_PART.remove(player.getUUID());
+		player.invulnerableTime = 20;
+		setStrikeLocked(player, true);
+		playStrikeAnimation(player, pending.animationId());
+	}
+
+	private static LivingEntity strikeVictim(ServerPlayer player, LivingEntity target) {
+		return target != null ? target : findFrontVictim(player);
+	}
+
+	private static LivingEntity findFrontVictim(ServerPlayer player) {
+		Vec3 forward = Vec3.directionFromRotation(0.0F, player.getYRot()).normalize();
+		AABB area = player.getBoundingBox().move(forward.x * FRONT_REACH, 0.0, forward.z * FRONT_REACH).inflate(0.6, 0.2, 0.6);
+
+		LivingEntity closest = null;
+		double closestDist = Double.MAX_VALUE;
+		for (LivingEntity candidate : player.level().getEntitiesOfClass(LivingEntity.class, area,
+				e -> e != player && e.isAlive() && !e.isSpectator() && TargetHelper.canAttack(player, e, CONE_RANGE))) {
+			double dist = player.distanceToSqr(candidate);
+			if (dist < closestDist) {
+				closest = candidate;
+				closestDist = dist;
+			}
+		}
+		return closest;
+	}
+
+	private static double strikeHitDamage(ServerPlayer player, LivingEntity target, LivingEntity victim, double damage) {
+		if (target != null) return damage;
+		DMZEvent.DamageModifyEvent modifyEvent = new DMZEvent.DamageModifyEvent(
+				player, victim, damage, 0.0, DMZEvent.DamageSourceType.STRIKE);
+		return MinecraftForge.EVENT_BUS.post(modifyEvent) ? 0.0 : Math.max(0.0, modifyEvent.getAmount());
+	}
+
+	private static Vec3 strikeImpactPoint(ServerPlayer player, LivingEntity victim, double heightRatio) {
+		if (victim != null) return new Vec3(victim.getX(), victim.getY() + victim.getBbHeight() * heightRatio, victim.getZ());
+		Vec3 forward = Vec3.directionFromRotation(0.0F, player.getYRot()).normalize();
+		return new Vec3(player.getX() + forward.x * FRONT_REACH,
+				player.getY() + player.getBbHeight() * heightRatio,
+				player.getZ() + forward.z * FRONT_REACH);
+	}
+
+	private static void spawnSuperGodFistTrail(ServerPlayer player) {
+		ServerLevel level = player.serverLevel();
+		Vec3 motion = player.getDeltaMovement();
+		Vec3 center = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
+
+		for (int i = 0; i < 4; i++) {
+			Vec3 point = center.subtract(motion.scale(i / 4.0));
+			level.sendParticles(MainParticles.SPARKS.get(), point.x, point.y, point.z, 0, 0.96, 0.77, 0.15, 1.0);
+		}
+		level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 2, 0.15, 0.3, 0.15, 0.0);
+	}
+
+	private static void startSlam(ServerPlayer player, com.dragonminez.common.stats.StatsData stats, StrikeAttackData strike) {
+		double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
+				ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
+
+		ActiveStrike active = new ActiveStrike(
+				player.getUUID(),
+				null,
+				strike.getId(),
+				strike.getAnimationId(),
+				SLAM_DURATION_TICKS,
+				strike.getActualCooldown(),
+				totalDamage,
+				totalDamage,
+				totalDamage,
+				SLAM_DURATION_TICKS,
+				0
+		);
+		ACTIVE.put(player.getUUID(), active);
+		setStrikeLocked(player, true);
+		playStrikeAnimation(player, strike.getAnimationId());
+	}
+
+	private static void processSlam(ServerPlayer player, ActiveStrike active) {
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(stats -> stats.getStatus().isKnockedDown())
+				.orElse(false);
+		if (!player.isAlive() || stunned) {
+			endStrike(player, null, active, stunned);
+			return;
+		}
+
+		freezeEntity(player);
+
+		int tick = active.ticksElapsed();
+		if (tick == SLAM_IMPACT_TICK) slamGround(player, active);
+		else if (tick > SLAM_IMPACT_TICK && tick <= SLAM_IMPACT_TICK + SLAM_RING_TICKS) expandSlamRing(player, active, tick - SLAM_IMPACT_TICK);
+
+		if (tick + 1 >= active.durationTicks()) {
+			endStrike(player, null, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(tick + 1));
+	}
+
+	private static void slamGround(ServerPlayer player, ActiveStrike active) {
+		if (!(player.level() instanceof ServerLevel level)) return;
+
+		AABB hitbox = player.getBoundingBox();
+		Vec3 forward = Vec3.directionFromRotation(0.0F, player.getYRot()).normalize();
+		double reach = player.getBbWidth();
+		AABB area = hitbox.move(forward.x * reach, 0.0, forward.z * reach);
+		Vec3 impact = new Vec3(area.getCenter().x, hitbox.minY, area.getCenter().z);
+
+		List<LivingEntity> victims = level.getEntitiesOfClass(LivingEntity.class, area,
+				e -> e != player && e.isAlive() && !e.isSpectator()
+						&& TargetHelper.canAttack(player, e, CONE_RANGE));
+
+		java.util.Set<UUID> hit = new java.util.HashSet<>();
+		for (LivingEntity victim : victims) {
+			hit.add(victim.getUUID());
+			DMZEvent.DamageModifyEvent modifyEvent = new DMZEvent.DamageModifyEvent(
+					player, victim, active.totalDamage(), 0.0, DMZEvent.DamageSourceType.STRIKE);
+			double damage = MinecraftForge.EVENT_BUS.post(modifyEvent) ? 0.0 : Math.max(0.0, modifyEvent.getAmount());
+			applyStrikeDamage(player, victim, damage, active.techniqueId(), true);
+			grantKillXpIfNeeded(player, victim, active.techniqueId());
+		}
+		SLAM_RINGS.put(player.getUUID(), new SlamRing(impact, hit));
+
+		level.playSound(null, impact.x, impact.y, impact.z,
+				MainSounds.UNBLOCK.get(), net.minecraft.sounds.SoundSource.PLAYERS, 2.0F, SLAM_UNBLOCK_PITCH);
+		level.playSound(null, impact.x, impact.y, impact.z,
+				MainSounds.PARRY.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.6F, SLAM_PARRY_PITCH);
+		NetworkHandler.sendToTrackingEntityAndSelf(new KiBurstVfxS2C(player.getId(), false, SLAM_SHAKE_RADIUS), player);
+		spawnSlamRingDust(level, impact, Math.max(area.getXsize(), area.getZsize()) * 0.5);
+		spawnSlamDebris(level, area, impact);
+	}
+
+	private static void expandSlamRing(ServerPlayer player, ActiveStrike active, int ringTick) {
+		SlamRing ring = SLAM_RINGS.get(player.getUUID());
+		if (ring == null || !(player.level() instanceof ServerLevel level)) return;
+
+		Vec3 center = ring.center();
+		double radius = SLAM_RING_MAX_RADIUS * ringTick / SLAM_RING_TICKS;
+		double innerRadius = SLAM_RING_MAX_RADIUS * (ringTick - 1) / SLAM_RING_TICKS;
+		spawnSlamRingDust(level, center, radius);
+
+		AABB reach = new AABB(center.x - radius - 1.0, center.y - SLAM_RING_HEIGHT, center.z - radius - 1.0,
+				center.x + radius + 1.0, center.y + SLAM_RING_HEIGHT, center.z + radius + 1.0);
+
+		List<LivingEntity> candidates = level.getEntitiesOfClass(LivingEntity.class, reach,
+				e -> e != player && e.isAlive() && !e.isSpectator() && !ring.hit().contains(e.getUUID())
+						&& TargetHelper.canAttack(player, e, SLAM_RING_MAX_RADIUS + CONE_RANGE));
+
+		for (LivingEntity victim : candidates) {
+			double dx = victim.getX() - center.x;
+			double dz = victim.getZ() - center.z;
+			double distance = Math.sqrt(dx * dx + dz * dz);
+			double halfWidth = victim.getBbWidth() * 0.5;
+			if (distance + halfWidth < innerRadius || distance - halfWidth > radius) continue;
+
+			ring.hit().add(victim.getUUID());
+			double damage = strikeHitDamage(player, null, victim, active.totalDamage() * SLAM_RING_DAMAGE_RATIO);
+			applyStrikeDamage(player, victim, damage, active.techniqueId(), true);
+			grantKillXpIfNeeded(player, victim, active.techniqueId());
+
+			Vec3 push = distance > 1.0E-3 ? new Vec3(dx / distance, 0.0, dz / distance) : Vec3.ZERO;
+			KnockbackHelper.apply(victim, new Vec3(push.x * SLAM_RING_KNOCKBACK, 0.35, push.z * SLAM_RING_KNOCKBACK));
+		}
+	}
+
+	private static void spawnSlamRingDust(ServerLevel level, Vec3 center, double radius) {
+		int points = Math.min(SLAM_DUST_MAX_POINTS, Math.max(12, (int) Math.ceil(radius * SLAM_DUST_POINTS_PER_BLOCK)));
+		for (int i = 0; i < points; i++) {
+			double angle = Math.PI * 2.0 * i / points;
+			double cos = Math.cos(angle);
+			double sin = Math.sin(angle);
+			level.sendParticles(MainParticles.DUST.get(),
+					center.x + cos * radius, center.y + 0.1, center.z + sin * radius,
+					0, cos * 0.08, 0.02, sin * 0.08, 1.0);
+		}
+	}
+
+	private static void spawnSlamDebris(ServerLevel level, AABB area, Vec3 impact) {
+		AABB debrisArea = area.inflate(SLAM_DEBRIS_SPREAD, 0.0, SLAM_DEBRIS_SPREAD);
+		int groundY = net.minecraft.util.Mth.floor(impact.y - 0.01);
+		int minX = net.minecraft.util.Mth.floor(debrisArea.minX);
+		int maxX = net.minecraft.util.Mth.floor(debrisArea.maxX);
+		int minZ = net.minecraft.util.Mth.floor(debrisArea.minZ);
+		int maxZ = net.minecraft.util.Mth.floor(debrisArea.maxZ);
+
+		for (int x = minX; x <= maxX; x++) {
+			for (int z = minZ; z <= maxZ; z++) {
+				net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(x, groundY, z);
+				net.minecraft.world.level.block.state.BlockState state = level.getBlockState(pos);
+				if (state.isAir() || state.getRenderShape() != net.minecraft.world.level.block.RenderShape.MODEL) continue;
+
+				net.minecraft.core.particles.BlockParticleOption option =
+						new net.minecraft.core.particles.BlockParticleOption(MainParticles.FLYING_BLOCK.get(), state);
+
+				for (int i = 0; i < SLAM_DEBRIS_PER_BLOCK; i++) {
+					double px = x + level.random.nextDouble();
+					double pz = z + level.random.nextDouble();
+					double py = groundY + 1.05;
+
+					Vec3 outward = new Vec3(px - impact.x, 0.0, pz - impact.z);
+					if (outward.lengthSqr() < 1.0E-4) {
+						double angle = level.random.nextDouble() * Math.PI * 2.0;
+						outward = new Vec3(Math.cos(angle), 0.0, Math.sin(angle));
+					}
+					outward = outward.normalize();
+
+					double speed = 0.15 + level.random.nextDouble() * 0.2;
+					double lift = 0.35 + level.random.nextDouble() * 0.3;
+					level.sendParticles(option, px, py, pz, 0, outward.x * speed, lift, outward.z * speed, 1.0);
+				}
+			}
+		}
+	}
+
 	private static void endStrike(ServerPlayer player, LivingEntity target, ActiveStrike active) {
 		endStrike(player, target, active, false);
 	}
@@ -856,6 +1162,7 @@ public class StrikeAttackHandler {
 	private static void endStrike(ServerPlayer player, LivingEntity target, ActiveStrike active, boolean interrupted) {
 		ACTIVE.remove(player.getUUID());
 		STRIKE_ANCHOR_PART.remove(player.getUUID());
+		SLAM_RINGS.remove(player.getUUID());
 		setStrikeLocked(player, false);
 		clearVictimStrikeLock(player, target, active.targetId());
 		stopStrikeAnimation(player);
@@ -1119,10 +1426,10 @@ public class StrikeAttackHandler {
 		MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (totalDamage * IMPACT_DAMAGE_RATIO), dir);
 	}
 
-	private static void spawnSuperGodFistImpactParticles(ServerLevel level, LivingEntity target) {
-		double x = target.getX();
-		double y = target.getY() + target.getBbHeight() * 0.5;
-		double z = target.getZ();
+	private static void spawnSuperGodFistImpactParticles(ServerLevel level, Vec3 point) {
+		double x = point.x;
+		double y = point.y;
+		double z = point.z;
 
 		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 1.0, 1.0, 1.0, 1.0);
 
@@ -1152,10 +1459,10 @@ public class StrikeAttackHandler {
 		return (i % 2 == 0) ? DD_YELLOW : DD_YELLOW_DEEP;
 	}
 
-	private static void spawnDeadlyDanceHitParticles(ServerLevel level, LivingEntity target, boolean vegetto) {
-		double x = target.getX();
-		double y = target.getY() + target.getBbHeight() * 0.6;
-		double z = target.getZ();
+	private static void spawnDeadlyDanceHitParticles(ServerLevel level, Vec3 point, boolean vegetto) {
+		double x = point.x;
+		double y = point.y;
+		double z = point.z;
 
 		float[] main = deadlyDanceColor(vegetto, 0);
 		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
@@ -1175,10 +1482,10 @@ public class StrikeAttackHandler {
 		}
 	}
 
-	private static void spawnDeadlyDanceFinalParticles(ServerLevel level, LivingEntity target, boolean vegetto) {
-		double x = target.getX();
-		double y = target.getY() + target.getBbHeight() * 0.5;
-		double z = target.getZ();
+	private static void spawnDeadlyDanceFinalParticles(ServerLevel level, Vec3 point, boolean vegetto) {
+		double x = point.x;
+		double y = point.y;
+		double z = point.z;
 
 		float[] main = deadlyDanceColor(vegetto, 0);
 		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
@@ -1232,12 +1539,12 @@ public class StrikeAttackHandler {
 		level.sendParticles(ParticleTypes.FLASH, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
 	}
 
-	private static void spawnWolfFangJab(ServerPlayer player, LivingEntity target, int beat) {
+	private static void spawnWolfFangJab(ServerPlayer player, Vec3 point, int beat) {
 		if (!(player.level() instanceof ServerLevel level)) return;
 
-		double x = target.getX();
-		double y = target.getY() + target.getBbHeight() * 0.6;
-		double z = target.getZ();
+		double x = point.x;
+		double y = point.y;
+		double z = point.z;
 
 		SoundEvent[] punches = {
 				MainSounds.GOLPE1.get(), MainSounds.GOLPE2.get(), MainSounds.GOLPE3.get(),
@@ -1259,10 +1566,10 @@ public class StrikeAttackHandler {
 		level.sendParticles(ParticleTypes.CRIT, x, y, z, 6, 0.3, 0.3, 0.3, 0.5);
 	}
 
-	private static void spawnWolfFangFinalParticles(ServerLevel level, LivingEntity target) {
-		double x = target.getX();
-		double y = target.getY() + target.getBbHeight() * 0.5;
-		double z = target.getZ();
+	private static void spawnWolfFangFinalParticles(ServerLevel level, Vec3 point) {
+		double x = point.x;
+		double y = point.y;
+		double z = point.z;
 
 		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 0.30, 0.62, 1.0, 1.0);
 
@@ -1359,4 +1666,6 @@ public class StrikeAttackHandler {
 	}
 
 	private record RecentHit(UUID targetId, long timestamp) {}
+
+	private record SlamRing(Vec3 center, java.util.Set<UUID> hit) {}
 }

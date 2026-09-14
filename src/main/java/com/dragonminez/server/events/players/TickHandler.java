@@ -218,7 +218,7 @@ public class TickHandler {
 
 				if (serverPlayer.getPose() != Pose.STANDING) serverPlayer.setPose(Pose.STANDING);
 
-				if (isFiring) {
+				if (isFiring && !TechniqueDispatcher.isFiringSteerableKiAttack(serverPlayer)) {
 					serverPlayer.setYRot(serverPlayer.yRotO);
 					serverPlayer.setXRot(serverPlayer.xRotO);
 					serverPlayer.yHeadRot = serverPlayer.yHeadRotO;

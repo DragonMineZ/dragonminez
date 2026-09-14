@@ -1,6 +1,8 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -51,6 +53,14 @@ public class MainParticles {
             PARTICLE_TYPES.register("aura_particle", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> DIVINE =
             PARTICLE_TYPES.register("divine_particle", () -> new SimpleParticleType(true));
+    @SuppressWarnings("deprecation")
+    public static final RegistryObject<ParticleType<BlockParticleOption>> FLYING_BLOCK =
+            PARTICLE_TYPES.register("flying_block", () -> new ParticleType<BlockParticleOption>(false, BlockParticleOption.DESERIALIZER) {
+                @Override
+                public Codec<BlockParticleOption> codec() {
+                    return BlockParticleOption.codec(this);
+                }
+            });
 
 
     public static void register(IEventBus eventBus) {
