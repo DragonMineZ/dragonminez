@@ -19,7 +19,8 @@
     { "name": "alp2", "type": "float", "count": 1, "values": [ 1.0 ] },
     { "name": "power", "type": "float", "count": 1, "values": [ 1.0 ] },
     { "name": "divis", "type": "float", "count": 1, "values": [ 1.0 ] },
-    { "name": "backFace", "type": "float", "count": 1, "values": [ 0.02 ] }
+    { "name": "backFace", "type": "float", "count": 1, "values": [ 0.02 ] },
+    { "name": "bloomMode", "type": "float", "count": 1, "values": [ 0.0 ] }
   ],
   "blend": {
     "func": "add",

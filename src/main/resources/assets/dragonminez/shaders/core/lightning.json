@@ -80,6 +80,12 @@
 		"values": [ 1.0 ]
     },
 	{
+		"name": "bloomMode",
+		"type": "float",
+		"count": 1,
+		"values": [ 0.0 ]
+    },
+	{
 		"name": "power",
 		"type": "float",
 		"count": 1,

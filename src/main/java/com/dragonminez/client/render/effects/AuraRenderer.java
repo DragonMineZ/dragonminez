@@ -127,18 +127,12 @@ public class AuraRenderer {
 
 	private static void applyAndDraw(VertexBuffer mesh, PoseStack poseStack, Matrix4f projectionMatrix, ShaderInstance shader,
 									 ResourceLocation texture, float[] color, float alpha, float speed, boolean ground) {
-		if (capturingBloom && alpha > 0.01f) {
-			BLOOM_DRAWS.add(new BloomDraw(mesh, texture, new Matrix4f(poseStack.last().pose()),
-					new Matrix4f(projectionMatrix), color.clone(), alpha, speed));
-		}
+		captureAuraBloom(mesh, texture, poseStack.last().pose(), projectionMatrix, color, alpha, speed);
 		mesh.bind();
 		mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
 	}
 
-	private record BloomDraw(VertexBuffer mesh, ResourceLocation texture, Matrix4f modelMatrix,
-							 Matrix4f projectionMatrix, float[] color, float alpha, float speed) {}
-
-	private static final List<BloomDraw> BLOOM_DRAWS = new ArrayList<>();
+	private static final List<Runnable> BLOOM_DRAWS = new ArrayList<>();
 	private static boolean capturingBloom = false;
 
 	private static final float AURA_BLOOM_ALPHA = 0.9f;
@@ -152,45 +146,100 @@ public class AuraRenderer {
 		capturingBloom = false;
 	}
 
+	public static void resetBloomCapture() {
+		capturingBloom = false;
+		BLOOM_DRAWS.clear();
+	}
+
 	public static boolean hasBloomDraws() {
 		return !BLOOM_DRAWS.isEmpty();
 	}
 
-	/**
-	 * Redraws this frame's 2D aura quads into whatever target is bound, with the shader in bloom mode so
-	 * it writes glow instead of colour. The 3D auras are a different renderer and are not covered here.
-	 */
+	public static void captureBloom(Runnable redraw) {
+		if (capturingBloom) BLOOM_DRAWS.add(redraw);
+	}
+
+	public static void captureAuraBloom(VertexBuffer mesh, ResourceLocation texture, Matrix4f modelMatrix,
+										Matrix4f projectionMatrix, float[] color, float alpha, float speed) {
+		if (!capturingBloom || alpha <= 0.01f) return;
+		Matrix4f model = new Matrix4f(modelMatrix);
+		Matrix4f proj = new Matrix4f(projectionMatrix);
+		float[] c = color.clone();
+		BLOOM_DRAWS.add(() -> drawAuraBloom(mesh, texture, model, proj, c, alpha, speed));
+	}
+
+	private static void drawAuraBloom(VertexBuffer mesh, ResourceLocation texture, Matrix4f modelMatrix,
+									  Matrix4f projectionMatrix, float[] c, float alpha, float speed) {
+		ShaderInstance shader = DMZShaders.auraShader;
+		if (shader == null) return;
+
+		shader.safeGetUniform("bloomMode").set(1.0f);
+		shader.safeGetUniform("speed").set(speed);
+		shader.safeGetUniform("ProjMat").set(projectionMatrix);
+		shader.safeGetUniform("modelMatrix").set(modelMatrix);
+		shader.safeGetUniform("color1").set(c[0] * 1.6f, c[1] * 1.6f, c[2] * 1.6f, 1.0f);
+		shader.safeGetUniform("color2").set(c[0] * 1.3f, c[1] * 1.3f, c[2] * 1.3f, 1.0f);
+		shader.safeGetUniform("color3").set(c[0], c[1], c[2], 0.85f);
+		shader.safeGetUniform("color4").set(c[0] * 0.75f, c[1] * 0.75f, c[2] * 0.75f, 0.65f);
+		shader.safeGetUniform("alp1").set(alpha * AURA_BLOOM_ALPHA);
+
+		RenderType type = auraType(texture);
+		customSetup(type, texture, shader);
+		mesh.bind();
+		mesh.drawWithShader(modelMatrix, projectionMatrix, shader);
+		customClear(type);
+
+		VertexBuffer.unbind();
+		shader.safeGetUniform("bloomMode").set(0.0f);
+		shader.clear();
+	}
+
+	public static void captureLightningBloom(Matrix4f modelMatrix, Matrix4f normalMatrix, Matrix4f projectionMatrix,
+											 float time, float speedModifier, float[] color1, float[] color2, float alpha) {
+		if (!capturingBloom || alpha <= 0.01f) return;
+		Matrix4f model = new Matrix4f(modelMatrix);
+		Matrix4f normal = new Matrix4f(normalMatrix);
+		Matrix4f proj = new Matrix4f(projectionMatrix);
+		float[] c1 = color1.clone();
+		float[] c2 = color2.clone();
+		BLOOM_DRAWS.add(() -> drawLightningBloom(model, normal, proj, time, speedModifier, c1, c2, alpha));
+	}
+
+	private static void drawLightningBloom(Matrix4f modelMatrix, Matrix4f normalMatrix, Matrix4f projectionMatrix,
+										   float time, float speedModifier, float[] c1, float[] c2, float alpha) {
+		ShaderInstance shader = DMZShaders.lightningShader;
+		if (shader == null) return;
+
+		shader.safeGetUniform("bloomMode").set(1.0f);
+		shader.safeGetUniform("projectionMatrix").set(projectionMatrix);
+		shader.safeGetUniform("modelMatrix").set(modelMatrix);
+		shader.safeGetUniform("normalMatrix").set(normalMatrix);
+		shader.safeGetUniform("time").set(time);
+		shader.safeGetUniform("speedModifier").set(speedModifier);
+		shader.safeGetUniform("color1").set(c1[0], c1[1], c1[2]);
+		shader.safeGetUniform("color2").set(c2[0], c2[1], c2[2]);
+		shader.safeGetUniform("alp1").set(alpha);
+
+		ResourceLocation lightningTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+		RenderType type = lightningType(lightningTex);
+		customSetup(type, lightningTex, shader);
+		shader.apply();
+
+		VertexBuffer mesh = getLightningMesh();
+		mesh.bind();
+		mesh.drawWithShader(modelMatrix, projectionMatrix, shader);
+		VertexBuffer.unbind();
+
+		shader.safeGetUniform("bloomMode").set(0.0f);
+		shader.clear();
+		customClear(type);
+	}
+
 	public static void renderBloomDraws() {
 		if (BLOOM_DRAWS.isEmpty()) return;
-		ShaderInstance shader = DMZShaders.auraShader;
-		if (shader == null) {
-			BLOOM_DRAWS.clear();
-			return;
-		}
-
 		try {
-			shader.safeGetUniform("bloomMode").set(1.0f);
-			for (BloomDraw draw : BLOOM_DRAWS) {
-				float[] c = draw.color();
-				shader.safeGetUniform("speed").set(draw.speed());
-				shader.safeGetUniform("ProjMat").set(draw.projectionMatrix());
-				shader.safeGetUniform("modelMatrix").set(draw.modelMatrix());
-				shader.safeGetUniform("color1").set(c[0] * 1.6f, c[1] * 1.6f, c[2] * 1.6f, 1.0f);
-				shader.safeGetUniform("color2").set(c[0] * 1.3f, c[1] * 1.3f, c[2] * 1.3f, 1.0f);
-				shader.safeGetUniform("color3").set(c[0], c[1], c[2], 0.85f);
-				shader.safeGetUniform("color4").set(c[0] * 0.75f, c[1] * 0.75f, c[2] * 0.75f, 0.65f);
-				shader.safeGetUniform("alp1").set(draw.alpha() * AURA_BLOOM_ALPHA);
-
-				RenderType type = auraType(draw.texture());
-				customSetup(type, draw.texture(), shader);
-				draw.mesh().bind();
-				draw.mesh().drawWithShader(draw.modelMatrix(), draw.projectionMatrix(), shader);
-				customClear(type);
-			}
-			VertexBuffer.unbind();
+			for (Runnable draw : BLOOM_DRAWS) draw.run();
 		} finally {
-			shader.safeGetUniform("bloomMode").set(0.0f);
-			shader.clear();
 			BLOOM_DRAWS.clear();
 		}
 	}
@@ -1055,7 +1104,9 @@ public class AuraRenderer {
 		boolean laidDown = fastFlying || player.getSwimAmount(partialTick) > 0.0f;
 
 		poseStack.pushPose();
-		poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - bodyRot));
+		if (laidDown || Aura3DRenderer.followsBodyYaw(layer.type)) {
+			poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - bodyRot));
+		}
 
 		if (laidDown) {
 			poseStack.translate(0.0f, player.getBbHeight() * 0.5f, 0.0f);
@@ -1225,6 +1276,7 @@ public class AuraRenderer {
 		float maxScale = isAuraActive ? 0.5f : 0.25f;
 
 		float[] colorRgb = ColorUtils.hexToRgb(AuraFxState.lightningColor(stats));
+		float[] coreRgb = {Mth.lerp(0.8f, colorRgb[0], 1.0f), Mth.lerp(0.8f, colorRgb[1], 1.0f), Mth.lerp(0.8f, colorRgb[2], 1.0f)};
 		float time = (player.tickCount + partialTick) / 20.0f;
 
 		shader.safeGetUniform("projectionMatrix").set(projectionMatrix);
@@ -1235,11 +1287,7 @@ public class AuraRenderer {
 		boolean isFirstPerson = isLocalPlayer && Minecraft.getInstance().options.getCameraType().isFirstPerson();
 		float cameraAlpha = (isLocalPlayer && isFirstPerson) ? 0.25f : 1.0f;
 
-		shader.safeGetUniform("color1").set(
-				Mth.lerp(0.8f, colorRgb[0], 1.0f),
-				Mth.lerp(0.8f, colorRgb[1], 1.0f),
-				Mth.lerp(0.8f, colorRgb[2], 1.0f)
-		);
+		shader.safeGetUniform("color1").set(coreRgb[0], coreRgb[1], coreRgb[2]);
 		shader.safeGetUniform("color2").set(colorRgb[0], colorRgb[1], colorRgb[2]);
 		shader.safeGetUniform("alp1").set(cameraAlpha);
 		shader.safeGetUniform("alp2").set(0.1f * cameraAlpha);
@@ -1286,6 +1334,8 @@ public class AuraRenderer {
 			shader.apply();
 
 			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+			captureLightningBloom(poseStack.last().pose(), new Matrix4f(poseStack.last().normal()), projectionMatrix,
+					time, speedMod, coreRgb, colorRgb, cameraAlpha);
 			poseStack.popPose();
 		}
 

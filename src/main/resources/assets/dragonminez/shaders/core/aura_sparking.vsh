@@ -1,9 +1,5 @@
 #version 150
 
-// Sparking 3D aura: the frantic, aggressive one. Same flame-profile mesh as the smooth aura
-// (so the silhouette is wide at the base and thin at the top), driven by simplex noise instead
-// of clean travelling bands.
-
 in vec3 Position;
 in vec4 Color;
 in vec3 Normal;
@@ -12,12 +8,42 @@ out vec3 vNormalWorld;
 out vec3 v_viewDir;
 out float vHeight;
 out float vWave;
+out vec2 vDir;
 
 uniform mat4 modelMatrix;
 uniform mat4 ProjMat;
 uniform mat4 normalMatrix;
 uniform float time;
 uniform float auravar;
+uniform float layerPass;
+
+const float TAU = 6.28318530718;
+
+const float THIN_COLUMNS = 64.0;
+const float THIN_ROWS    = 24.0;
+const float THIN_AMP     = 0.30;
+const float THIN_SHARP   = 2.4;
+const float BIG_COLUMNS  = 32.0;
+const float BIG_ROWS     = 12.0;
+const float BIG_AMP      = 0.55;
+const float BIG_SHARP    = 2.8;
+const float ENVELOPE_SCALE = 1.3;
+const float ENVELOPE_FREQ_Y = 2.4;
+const float ENVELOPE_SPEED = 0.9;
+const float ENVELOPE_FLOOR = 0.30;
+const float COLOR_LAYER_SEED  = 37.0;
+const float COLOR_LAYER_RATE  = 0.63;
+const float COLOR_LAYER_PHASE = 5.3;
+const float COLOR_LAYER_AMP   = 1.25;
+const float BIG_RARITY   = 3.0;
+
+const float SPIKE_BURSTS = 3.0;
+const float SPIKE_LIFT = 0.65;
+const float SURGE_FREQ  = 2.4;
+const float SURGE_SPEED = 1.6;
+const float SURGE_DEPTH = 0.55;
+const float SIL_POWER   = 1.2;
+const float FRONT_SPIKE = 0.15;
 
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -77,41 +103,81 @@ float snoise(vec3 v) {
     return 42.0 * dot(m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
 }
 
+float hash11(float n) {
+    return fract(sin(n * 127.1 + 311.7) * 43758.5453);
+}
+
+float spikeLength(float id, float t, float rarity) {
+    float k = floor(t);
+    float life = fract(t);
+    float burst = smoothstep(0.0, 0.18, life) * (1.0 - smoothstep(0.40, 1.0, life));
+    float len = pow(hash11(id * 7.13 + k * 1.71), rarity);
+    return (0.25 + 0.75 * len) * (0.30 + 0.70 * burst);
+}
+
+float spikeLayer(float angle, float h, float columns, float rows, float sharp, float rarity, float seed, float t) {
+    float x = angle / TAU * columns;
+    float col = mod(floor(x), columns);
+    float across = 1.0 - abs(fract(x) * 2.0 - 1.0);
+
+    float y = h * rows + floor(hash11(col * 3.1 + seed) * 4.0) * 0.25;
+    float row = floor(y);
+    float f = fract(y);
+    float id = col * 131.0 + row + seed * 17.0;
+    float tip = 0.50 + floor(hash11(id + 2.0) * 2.0) * 0.25;
+    float along = f < tip ? f / tip : (1.0 - f) / (1.0 - tip);
+
+    float len = spikeLength(id, t * SPIKE_BURSTS * (0.7 + 0.6 * hash11(id + 9.0)) + hash11(id + 5.0) * 9.0, rarity);
+
+    float surge = abs(fract(h * SURGE_FREQ - t * SURGE_SPEED + hash11(col + seed * 5.0)) * 2.0 - 1.0);
+    surge = pow(surge, 1.6);
+    len *= 1.0 - SURGE_DEPTH * (1.0 - surge);
+
+    return pow(across, sharp) * pow(along, sharp * 0.6) * len;
+}
+
 void main() {
     vec3 base = Position;
-    float height = clamp(base.y * 0.5 + 0.5, 0.0, 1.0);
+    float h = clamp(base.y * 0.5 + 0.5, 0.0, 1.0);
+    float angle = atan(base.z, base.x);
+    vec3 n = normalize(Normal);
 
-    float speed = 14.0;
-
-    // Ridged noise for the flicker, plus a slower one that makes whole sheets of flame move.
-    // Coarser than it looks like it should be on purpose: at high spatial frequency every vertex
-    // moves independently and the aura reads as noise rather than as fire. Bigger, sparser crests
-    // keep the aggression without the chaos.
-    vec3 noiseCoord = vec3(base.x * 2.4, base.y * 1.9 - (time * speed), base.z * 2.4);
-    float n = 1.0 - abs(snoise(noiseCoord));
-    n = pow(n, 3.2);
-
-    float macroNoise = snoise(vec3(base.x * 1.2, base.y * 0.85 - (time * 6.0), base.z * 1.2));
-    float displacement = (n * 0.72 + macroNoise * 0.26);
-
-    float falloff = smoothstep(0.0, 0.10, height) * (1.0 - smoothstep(0.78, 1.0, height));
-    float rise = 0.50 + 1.00 * height;
-    float wave = displacement * falloff * rise;
-
-    vec3 radial = normalize(vec3(base.x, 0.0, base.z) + vec3(1e-4, 0.0, 0.0));
-    vec3 dir = normalize(mix(radial, vec3(0.0, 1.0, 0.0), 0.25 + 0.60 * height));
-
+    float grow = pow(auravar, 6.0);
     vec3 pos = base;
     pos.xz *= (auravar * auravar * (3.0 - 2.0 * auravar));
-    pos += dir * (wave * 0.78) * pow(auravar, 6.0);
 
-    vec3 nrm = normalize(mix(normalize(Normal), dir, 0.40));
+    vec4 restView = modelMatrix * vec4(pos, 1.0);
+    vec3 nView = normalize((normalMatrix * vec4(n, 0.0)).xyz);
+    float sil = pow(1.0 - abs(dot(normalize(-restView.xyz), nView)), SIL_POWER);
+    float silWeight = mix(FRONT_SPIKE, 1.0, sil);
+
+    float heightMask = smoothstep(0.02, 0.08, h) * (1.0 - smoothstep(0.95, 1.0, h));
+    float layerSeed = layerPass * COLOR_LAYER_SEED;
+    float spikeTime = time * mix(1.0, COLOR_LAYER_RATE, layerPass) + layerPass * COLOR_LAYER_PHASE;
+    float thin = spikeLayer(angle, h, THIN_COLUMNS, THIN_ROWS, THIN_SHARP, 1.5, 3.0 + layerSeed, spikeTime);
+    float big = spikeLayer(angle, h, BIG_COLUMNS, BIG_ROWS, BIG_SHARP, BIG_RARITY, 11.0 + layerSeed, spikeTime);
+    vec2 around = normalize(base.xz + n.xz * 0.05 + vec2(1e-6, 0.0));
+    float clusterNoise = snoise(vec3(around.x * ENVELOPE_SCALE + layerSeed, h * ENVELOPE_FREQ_Y - spikeTime * ENVELOPE_SPEED, around.y * ENVELOPE_SCALE));
+    float envelope = mix(ENVELOPE_FLOOR, 1.0, smoothstep(-0.3, 0.6, clusterNoise));
+    float spike = max(thin * THIN_AMP, big * BIG_AMP) * envelope * heightMask * mix(1.0, COLOR_LAYER_AMP, layerPass);
+    float amp = mix(0.85, 1.55, smoothstep(0.45, 0.95, h));
+
+    vec3 dir = normalize(n + vec3(0.0, SPIKE_LIFT * smoothstep(0.10, 0.45, h), 0.0));
+    pos += dir * spike * amp * silWeight * grow;
+
+    float flicker = snoise(vec3(base.x * 1.6, base.y * 1.2 - time * 7.0, base.z * 1.6));
+    vec3 radial = normalize(vec3(base.x, 0.0, base.z) + vec3(1e-4, 0.0, 0.0));
+    pos += radial * flicker * 0.03 * heightMask * grow;
+
+    float spikeNorm = clamp(spike / BIG_AMP, 0.0, 1.0);
+    vec3 nrm = normalize(mix(n, dir, 0.25 * spikeNorm));
 
     vec4 viewPos = modelMatrix * vec4(pos, 1.0);
     vNormalWorld = normalize((normalMatrix * vec4(nrm, 0.0)).xyz);
     v_viewDir = -viewPos.xyz;
-    vHeight = height;
-    vWave = wave;
+    vHeight = h;
+    vWave = clamp(spikeNorm * silWeight * 1.6, 0.0, 1.0);
+    vDir = base.xz;
 
     gl_Position = ProjMat * viewPos;
 }

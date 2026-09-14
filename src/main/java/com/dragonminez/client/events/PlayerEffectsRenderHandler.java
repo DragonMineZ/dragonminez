@@ -34,6 +34,7 @@ public class PlayerEffectsRenderHandler {
 	@SubscribeEvent
 	public static void onRenderTick(TickEvent.RenderTickEvent event) {
 		if (event.phase == TickEvent.Phase.START) {
+			AuraRenderer.resetBloomCapture();
 			PlayerEffectQueue.getAndClearAuras();
 			PlayerEffectQueue.getAndClearSparks();
 			PlayerEffectQueue.getAndClearWeapons();
@@ -50,6 +51,8 @@ public class PlayerEffectsRenderHandler {
 
 		boolean shaderPack = IrisCompat.isShaderPackInUse(mc.level.getGameTime());
 		RenderLevelStageEvent.Stage stage = event.getStage();
+
+		if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) AuraRenderer.beginBloomCapture();
 
 		if (shaderPack) {
 
@@ -152,12 +155,14 @@ public class PlayerEffectsRenderHandler {
 			RenderSystem.disableBlend();
 		}
 
-		AuraRenderer.beginBloomCapture();
 		try {
 			AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);
 			AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);
 			AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS);
 			AuraRenderer.processSparks(poseStack, projectionMatrix, isFirstPerson);
+
+			var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();
+			for (var task : entityEffects) task.render();
 		} finally {
 			AuraRenderer.endBloomCapture();
 		}
@@ -165,9 +170,6 @@ public class PlayerEffectsRenderHandler {
         EffectBloomRenderer.render(kiAttacks, poseStack, projectionMatrix, partialTick);
 
 		if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(1.0f);
-
-		var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();
-		for (var task : entityEffects) task.render();
 
 		AuraRenderer.cleanCaches(CURRENT_FRAME_PLAYERS);
 	}

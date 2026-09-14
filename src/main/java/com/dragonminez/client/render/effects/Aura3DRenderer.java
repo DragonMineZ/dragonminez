@@ -47,17 +47,16 @@ public final class Aura3DRenderer {
 		return SPARKING_TYPE.equals(resolvedType) ? AuraMeshFactory.getSparkingFlameMesh() : AuraMeshFactory.getSmoothFlameMesh();
 	}
 
-	/** Half-width of the flame, as a multiple of the caster's aura scale. */
 	public static float widthFactor(String type) {
-		return 1.15f;
+		return SPARKING_TYPE.equals(resolveType(type)) ? 1.35f : 1.15f;
 	}
 
-	/**
-	 * Half-height of the flame. Smooth tapers more gently than sparking, so it needs more room
-	 * above the head before it closes.
-	 */
+	public static boolean followsBodyYaw(String type) {
+		return !SPARKING_TYPE.equals(resolveType(type));
+	}
+
 	public static float heightFactor(String type) {
-		return SPARKING_TYPE.equals(resolveType(type)) ? 1.85f : 2.05f;
+		return SPARKING_TYPE.equals(resolveType(type)) ? 1.45f : 2.05f;
 	}
 
 	/**
@@ -77,7 +76,7 @@ public final class Aura3DRenderer {
 	 * pivot the aura on its own body rather than on its root when it is laid down with the player.
 	 */
 	public static float coreFactor(String type) {
-		return SPARKING_TYPE.equals(resolveType(type)) ? 0.18f : 0.45f;
+		return 0.45f;
 	}
 
 	private static float timeScale(String resolvedType, boolean pulse) {
@@ -98,8 +97,7 @@ public final class Aura3DRenderer {
 		poseStack.scale(scaleX, scaleY, scaleZ);
 		poseStack.translate(0.0f, pivot, 0.0f);
 
-		applyUniforms(shader, poseStack, projectionMatrix, color, alpha, time * timeScale(resolved, false), backFace);
-		drawMesh(meshFor(resolved), shader, poseStack, projectionMatrix);
+		drawAndCaptureBloom(resolved, shader, poseStack, projectionMatrix, color, alpha, time * timeScale(resolved, false), backFace);
 
 		poseStack.popPose();
 	}
@@ -117,10 +115,32 @@ public final class Aura3DRenderer {
 		poseStack.scale(radius, height, radius);
 		poseStack.translate(0.0f, 0.9f, 0.0f);
 
-		applyUniforms(shader, poseStack, projectionMatrix, color, alpha, time * timeScale(resolved, true), DEFAULT_BACKFACE);
-		drawMesh(meshFor(resolved), shader, poseStack, projectionMatrix);
+		drawAndCaptureBloom(resolved, shader, poseStack, projectionMatrix, color, alpha, time * timeScale(resolved, true), DEFAULT_BACKFACE);
 
 		poseStack.popPose();
+	}
+
+	private static void drawAndCaptureBloom(String resolved, ShaderInstance shader, PoseStack poseStack, Matrix4f projectionMatrix,
+											float[] color, float alpha, float time, float backFace) {
+		applyUniforms(shader, poseStack, projectionMatrix, color, alpha, time, backFace);
+		drawLayers(resolved, shader, poseStack, projectionMatrix);
+
+		Matrix4f pose = new Matrix4f(poseStack.last().pose());
+		Matrix3f normal = new Matrix3f(poseStack.last().normal());
+		Matrix4f proj = new Matrix4f(projectionMatrix);
+		float[] c = color.clone();
+		AuraRenderer.captureBloom(() -> {
+			ShaderInstance bloomShader = shaderFor(resolved);
+			if (bloomShader == null) return;
+			PoseStack replay = new PoseStack();
+			replay.last().pose().set(pose);
+			replay.last().normal().set(normal);
+
+			applyUniforms(bloomShader, replay, proj, c, alpha, time, backFace);
+			bloomShader.safeGetUniform("bloomMode").set(1.0f);
+			drawLayers(resolved, bloomShader, replay, proj);
+			bloomShader.safeGetUniform("bloomMode").set(0.0f);
+		});
 	}
 
 	private static void applyUniforms(ShaderInstance shader, PoseStack poseStack, Matrix4f projectionMatrix,
@@ -143,6 +163,16 @@ public final class Aura3DRenderer {
 		shader.safeGetUniform("power").set(6.0f);
 		shader.safeGetUniform("divis").set(0.02f);
 		shader.safeGetUniform("backFace").set(backFace);
+	}
+
+	private static void drawLayers(String resolved, ShaderInstance shader, PoseStack poseStack, Matrix4f projectionMatrix) {
+		VertexBuffer mesh = meshFor(resolved);
+		if (SPARKING_TYPE.equals(resolved)) {
+			shader.safeGetUniform("layerPass").set(1.0f);
+			drawMesh(mesh, shader, poseStack, projectionMatrix);
+			shader.safeGetUniform("layerPass").set(0.0f);
+		}
+		drawMesh(mesh, shader, poseStack, projectionMatrix);
 	}
 
 	private static void drawMesh(VertexBuffer mesh, ShaderInstance shader, PoseStack poseStack, Matrix4f projectionMatrix) {

@@ -141,7 +141,7 @@ public class AuraMeshFactory {
 
 	public static VertexBuffer getSparkingFlameMesh() {
 		if (sparkingFlame == null) {
-			sparkingFlame = buildFlameMesh(96, 64, 0.10f, t -> flare(t, 0.60, 0.35) * Math.pow(1.0 - t, 1.05));
+			sparkingFlame = buildFlameMesh(96, 128, 0.30f, t -> flare(t, 0.90, 0.25) * superTaper(t, 3.2));
 		}
 		return sparkingFlame;
 	}

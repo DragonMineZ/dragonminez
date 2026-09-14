@@ -238,6 +238,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         VertexBuffer mesh = AuraMeshFactory.getGroundQuad();
         mesh.bind();
         mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+        AuraRenderer.captureAuraBloom(mesh, crossTex, poseStack.last().pose(), projectionMatrix, color, alphaCurve * 0.6f, animSpeed);
 
         AuraRenderer.customClear(pulseRender);
         VertexBuffer.unbind();
@@ -300,6 +301,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             shader.apply();
             mesh.bind();
             mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+            AuraRenderer.captureAuraBloom(mesh, mainTex, poseStack.last().pose(), projectionMatrix, color, 1.0f - crossFactor, animSpeed);
             AuraRenderer.customClear(mainRender);
 
             poseStack.pushPose();
@@ -314,6 +316,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             shader.apply();
             mesh.bind();
             mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+            AuraRenderer.captureAuraBloom(mesh, sparkingTex, poseStack.last().pose(), projectionMatrix, color, (1.0f - crossFactor) * 0.8f, animSpeed);
             AuraRenderer.customClear(sparkingRender);
             poseStack.popPose();
 
@@ -342,6 +345,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             VertexBuffer groundMesh = AuraMeshFactory.getGroundQuad();
             groundMesh.bind();
             groundMesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+            AuraRenderer.captureAuraBloom(groundMesh, crossTex, poseStack.last().pose(), projectionMatrix, color, crossFactor, animSpeed);
             AuraRenderer.customClear(crossRender);
 
             poseStack.popPose();
@@ -361,6 +365,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         float maxScale = isAuraActive ? 0.5f : 0.25f;
 
         float[] colorRgb = ColorUtils.rgbIntToFloat(animatable.getLightningColor());
+        float[] coreRgb = {Mth.lerp(0.8f, colorRgb[0], 1.0f), Mth.lerp(0.8f, colorRgb[1], 1.0f), Mth.lerp(0.8f, colorRgb[2], 1.0f)};
         float time = (animatable.tickCount + partialTick) / 20.0f;
         Matrix4f projectionMatrix = RenderSystem.getProjectionMatrix();
 
@@ -368,11 +373,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         shader.safeGetUniform("time").set(time);
         shader.safeGetUniform("speedModifier").set(speedMod);
 
-        shader.safeGetUniform("color1").set(
-                Mth.lerp(0.8f, colorRgb[0], 1.0f),
-                Mth.lerp(0.8f, colorRgb[1], 1.0f),
-                Mth.lerp(0.8f, colorRgb[2], 1.0f)
-        );
+        shader.safeGetUniform("color1").set(coreRgb[0], coreRgb[1], coreRgb[2]);
         shader.safeGetUniform("color2").set(colorRgb[0], colorRgb[1], colorRgb[2]);
         shader.safeGetUniform("alp1").set(1.0f);
         shader.safeGetUniform("alp2").set(0.1f);
@@ -404,10 +405,13 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             poseStack.scale(scale, scale, scale);
 
             shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-            shader.safeGetUniform("normalMatrix").set(new Matrix4f(new Matrix3f(poseStack.last().normal())));
+            Matrix4f normalMatrix = new Matrix4f(new Matrix3f(poseStack.last().normal()));
+            shader.safeGetUniform("normalMatrix").set(normalMatrix);
             shader.apply();
 
             mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+            AuraRenderer.captureLightningBloom(poseStack.last().pose(), normalMatrix, projectionMatrix,
+                    time, speedMod, coreRgb, colorRgb, 1.0f);
             poseStack.popPose();
         }
 

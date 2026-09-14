@@ -15,6 +15,7 @@ uniform float divis;
 // the flame does not wash over the near one; raised in first person, where the camera is inside
 // the mesh by construction and would otherwise see nothing at all.
 uniform float backFace;
+uniform float bloomMode;
 
 out vec4 fragColor;
 
@@ -39,6 +40,11 @@ void main(void) {
     alpha *= 1.0 - 0.75 * smoothstep(0.40, 1.0, vHeight);
 
     if (facingRaw < 0.0) alpha *= backFace;
+
+    if (bloomMode > 0.5) {
+        fragColor = vec4(color, alpha * (0.55 + 0.45 * clamp(vWave, 0.0, 1.0)));
+        return;
+    }
 
     fragColor = vec4(color, alpha);
 }

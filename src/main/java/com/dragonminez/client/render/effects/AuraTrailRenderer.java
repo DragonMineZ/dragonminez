@@ -76,11 +76,21 @@ public final class AuraTrailRenderer {
 
 	public static void render(Player player, float[] color, float alpha, PoseStack poseStack,
 							  Matrix4f projectionMatrix, float partialTick) {
+		if (!renderRibbon(player, color, alpha, poseStack.last().pose(), projectionMatrix, partialTick, false)) return;
+
+		Matrix4f pose = new Matrix4f(poseStack.last().pose());
+		Matrix4f proj = new Matrix4f(projectionMatrix);
+		float[] c = color.clone();
+		AuraRenderer.captureBloom(() -> renderRibbon(player, c, alpha, pose, proj, partialTick, true));
+	}
+
+	private static boolean renderRibbon(Player player, float[] color, float alpha, Matrix4f pose,
+										Matrix4f projectionMatrix, float partialTick, boolean bloom) {
 		Deque<Vec3> recorded = TRAILS.get(player.getId());
-		if (recorded == null || recorded.size() < 2 || alpha <= 0.01f) return;
+		if (recorded == null || recorded.size() < 2 || alpha <= 0.01f) return false;
 
 		ShaderInstance shader = DMZShaders.auraTrailShader;
-		if (shader == null) return;
+		if (shader == null) return false;
 
 		Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
 
@@ -116,7 +126,7 @@ public final class AuraTrailRenderer {
 
 		int lastVisible = -1;
 		for (int i = count - 1; i > 0; i--) if (alphas[i] > 0.002f || alphas[i - 1] > 0.002f) { lastVisible = i; break; }
-		if (lastVisible < 1) return;
+		if (lastVisible < 1) return false;
 
 		BufferBuilder builder = Tesselator.getInstance().getBuilder();
 		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
@@ -133,10 +143,11 @@ public final class AuraTrailRenderer {
 
 		if (buffer == null) buffer = new VertexBuffer(VertexBuffer.Usage.DYNAMIC);
 
-		shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+		shader.safeGetUniform("modelMatrix").set(pose);
 		shader.safeGetUniform("ProjMat").set(projectionMatrix);
 		shader.safeGetUniform("time").set((player.tickCount + partialTick) / 20.0f);
 		shader.safeGetUniform("alp1").set(1.0f);
+		shader.safeGetUniform("bloomMode").set(bloom ? 1.0f : 0.0f);
 		shader.safeGetUniform("color1").set(
 				Mth.lerp(0.55f, color[0], 1.0f), Mth.lerp(0.55f, color[1], 1.0f), Mth.lerp(0.55f, color[2], 1.0f));
 		shader.safeGetUniform("color2").set(color[0] * 1.25f, color[1] * 1.25f, color[2] * 1.25f);
@@ -146,11 +157,13 @@ public final class AuraTrailRenderer {
 
 		buffer.bind();
 		buffer.upload(builder.end());
-		buffer.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+		buffer.drawWithShader(pose, projectionMatrix, shader);
 		VertexBuffer.unbind();
+		if (bloom) shader.safeGetUniform("bloomMode").set(0.0f);
 		shader.clear();
 
 		AuraRenderer.customClear(renderType);
+		return true;
 	}
 
 	private static void vertex(BufferBuilder builder, Vec3 pos, float alpha, float u, float v) {

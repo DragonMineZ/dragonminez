@@ -8,6 +8,7 @@ uniform vec3 color1;
 uniform vec3 color2;
 uniform float alp1;
 uniform float time;
+uniform float bloomMode;
 
 out vec4 fragColor;
 
@@ -38,5 +39,11 @@ void main() {
     float alpha = vColor.a * alp1 * dissolve;
 
     if (alpha < 0.004) discard;
+
+    if (bloomMode > 0.5) {
+        fragColor = vec4(color, alpha * (0.35 + 0.65 * body));
+        return;
+    }
+
     fragColor = vec4(color, alpha);
 }
