@@ -746,9 +746,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Override
-	public void dragonminez$triggerEvasion() {
+	public void dragonminez$triggerEvasion(int variant) {
 		this.dragonminez$isEvading = true;
-		this.dragonminez$evasionVariant = (int) (Math.random() * 4) + 1;
+		this.dragonminez$evasionVariant = variant >= 1 && variant <= 4 ? variant : (int) (Math.random() * 4) + 1;
 	}
 
 	@Override

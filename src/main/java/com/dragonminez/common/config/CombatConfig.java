@@ -74,6 +74,17 @@ public class CombatConfig {
 	private Double speedDodgeRatioAtMaxLevel = 1.4;
 	private Integer speedDodgeCooldownTicks = 10;
 	private Double nonPlayerAttackerSpeed = 1.0;
+	private Double speedDodgeBaseChance = 0.10;
+	private Double speedDodgeMaxChancePvp = 0.35;
+	private Double speedDodgeMaxChancePve = 0.50;
+	private Double speedDodgeMeditationChanceFloor = 0.60;
+	private Double speedDodgeFullChanceSpeedRatio = 2.0;
+	private Double speedDodgeBpRatioAtLevel1 = 2.0;
+	private Double speedDodgeBpRatioAtMaxLevel = 1.0;
+	private Double speedDodgeFullChanceBpRatio = 10.0;
+	private Double speedDodgeStreakMultiplier = 0.75;
+	private Integer speedDodgeStreakResetTicks = 60;
+	private Double speedDodgeStaminaCostPct = 0.03;
 
 	private Boolean enablePerfectEvasion = true;
 	private Integer perfectEvasionWindowMs = 200;
@@ -210,6 +221,50 @@ public class CombatConfig {
 
 	public double getNonPlayerAttackerSpeed() {
 		return nonPlayerAttackerSpeed != null ? Math.max(0.01, nonPlayerAttackerSpeed) : 1.0;
+	}
+
+	public double getSpeedDodgeBaseChance() {
+		return speedDodgeBaseChance != null ? Math.max(0.0, Math.min(1.0, speedDodgeBaseChance)) : 0.10;
+	}
+
+	public double getSpeedDodgeMaxChancePvp() {
+		return speedDodgeMaxChancePvp != null ? Math.max(0.0, Math.min(1.0, speedDodgeMaxChancePvp)) : 0.35;
+	}
+
+	public double getSpeedDodgeMaxChancePve() {
+		return speedDodgeMaxChancePve != null ? Math.max(0.0, Math.min(1.0, speedDodgeMaxChancePve)) : 0.50;
+	}
+
+	public double getSpeedDodgeMeditationChanceFloor() {
+		return speedDodgeMeditationChanceFloor != null ? Math.max(0.0, Math.min(1.0, speedDodgeMeditationChanceFloor)) : 0.60;
+	}
+
+	public double getSpeedDodgeFullChanceSpeedRatio() {
+		return speedDodgeFullChanceSpeedRatio != null ? Math.max(1.01, speedDodgeFullChanceSpeedRatio) : 2.0;
+	}
+
+	public double getSpeedDodgeBpRatioAtLevel1() {
+		return speedDodgeBpRatioAtLevel1 != null ? Math.max(0.01, speedDodgeBpRatioAtLevel1) : 2.0;
+	}
+
+	public double getSpeedDodgeBpRatioAtMaxLevel() {
+		return speedDodgeBpRatioAtMaxLevel != null ? Math.max(0.01, speedDodgeBpRatioAtMaxLevel) : 1.0;
+	}
+
+	public double getSpeedDodgeFullChanceBpRatio() {
+		return speedDodgeFullChanceBpRatio != null ? Math.max(1.01, speedDodgeFullChanceBpRatio) : 10.0;
+	}
+
+	public double getSpeedDodgeStreakMultiplier() {
+		return speedDodgeStreakMultiplier != null ? Math.max(0.0, Math.min(1.0, speedDodgeStreakMultiplier)) : 0.75;
+	}
+
+	public int getSpeedDodgeStreakResetTicks() {
+		return speedDodgeStreakResetTicks != null ? Math.max(0, speedDodgeStreakResetTicks) : 60;
+	}
+
+	public double getSpeedDodgeStaminaCostPct() {
+		return speedDodgeStaminaCostPct != null ? Math.max(0.0, Math.min(1.0, speedDodgeStaminaCostPct)) : 0.03;
 	}
 
 	public float getUpswingMultiplier() {

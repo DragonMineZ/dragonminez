@@ -6,7 +6,7 @@ public interface IPlayerAnimatable {
 	boolean dragonminez$isFlying();
 
 	void dragonminez$triggerDash(int direction);
-	void dragonminez$triggerEvasion();
+	void dragonminez$triggerEvasion(int variant);
 
 	void dragonminez$setShootingKi(boolean shootingKi);
 	boolean dragonminez$isShootingKi();

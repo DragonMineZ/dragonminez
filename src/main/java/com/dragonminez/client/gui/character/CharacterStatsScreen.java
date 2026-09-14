@@ -955,13 +955,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		int meditationLevel = statsData.getSkills().getSkillLevel("meditation");
 		if (meditationLevel > 0 && ConfigManager.getCombatConfig().getEnableSpeedDodge()) {
-			double atLevel1 = ConfigManager.getCombatConfig().getSpeedDodgeRatioAtLevel1();
-			double atMaxLevel = ConfigManager.getCombatConfig().getSpeedDodgeRatioAtMaxLevel();
-			double progress = (Math.min(meditationLevel, 10) - 1.0) / 9.0;
-			double requiredRatio = atLevel1 + (atMaxLevel - atLevel1) * progress;
+			var combatConfig = ConfigManager.getCombatConfig();
+			double pvpChance = com.dragonminez.server.events.players.combat.SpeedDodgeHandler.maxChance(meditationLevel, true, combatConfig);
+			double pveChance = com.dragonminez.server.events.players.combat.SpeedDodgeHandler.maxChance(meditationLevel, false, combatConfig);
 
 			extras.add(tr("gui.dragonminez.character_stats.speed.dodge",
-					formatSpeedPercent(speed / requiredRatio)).withStyle(ChatFormatting.LIGHT_PURPLE));
+					formatSpeedPercent(pvpChance), formatSpeedPercent(pveChance)).withStyle(ChatFormatting.LIGHT_PURPLE));
 		} else {
 			extras.add(tr("gui.dragonminez.character_stats.speed.dodge.locked").withStyle(ChatFormatting.DARK_GRAY));
 		}

@@ -156,7 +156,7 @@ public class ClientPacketHandler {
 		Player player = clientLevel.getPlayerByUUID(playerUUID);
 		if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
 			switch (animationType) {
-				case EVASION -> animatable.dragonminez$triggerEvasion();
+				case EVASION -> animatable.dragonminez$triggerEvasion(variant);
 				case DASH -> animatable.dragonminez$triggerDash(variant);
 				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
 				case KI_ANIMATION -> {
