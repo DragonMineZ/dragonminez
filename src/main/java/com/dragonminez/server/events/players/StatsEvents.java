@@ -46,7 +46,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -859,57 +860,46 @@ public class StatsEvents {
 		}
 	}
 
+	private static final float FALL_KI_PER_DAMAGE = 3.0f;
+	private static final float FALL_KI_MAX_FRACTION = 0.10f;
+
 	@SubscribeEvent
 	public static void onFall(LivingFallEvent event) {
 		if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-		final int[] jumpLevel = {0};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			if (!data.getSkills().hasSkill("jump") || !data.getSkills().isSkillActive("jump")) return;
-			jumpLevel[0] = data.getSkills().getSkillLevel("jump");
-		});
 
-		if (jumpLevel[0] <= 0) return;
+			if (data.getSkills().hasSkill("jump") && data.getSkills().isSkillActive("jump")) {
+				int jumpLevel = data.getSkills().getSkillLevel("jump");
+				if (jumpLevel > 0) {
+					float safeHeight = 1.25f + jumpLevel + 1.0f;
+					if (event.getDistance() <= safeHeight) {
+						player.resetFallDistance();
+						event.setCanceled(true);
+						return;
+					}
+					event.setDistance(event.getDistance() - safeHeight);
+				}
+			}
 
-		float maxHeight = 1.25f + (jumpLevel[0] * 1.0f);
-		float safeHeight = maxHeight + 1.0f;
-
-		float fallDistance = event.getDistance();
-
-		if (fallDistance <= safeHeight) {
-			player.resetFallDistance();
-			event.setCanceled(true);
-		} else {
-			float reducedDistance = fallDistance - safeHeight;
-			event.setDistance(reducedDistance);
-		}
-	}
-
-	@SubscribeEvent
-	public static void onFallDamageKiNegation(LivingHurtEvent event) {
-		if (!event.getSource().is(DamageTypes.FALL)) return;
-		if (!(event.getEntity() instanceof ServerPlayer player)) return;
-
-		float damage = event.getAmount();
-		if (damage <= 0) return;
-
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().isHasCreatedCharacter()) return;
+			MobEffectInstance jumpBoost = player.getEffect(MobEffects.JUMP);
+			float jumpReduction = jumpBoost == null ? 0.0f : jumpBoost.getAmplifier() + 1.0f;
+			float damage = Mth.ceil((event.getDistance() - 3.0f - jumpReduction) * event.getDamageMultiplier());
+			if (damage <= 0) return;
 
 			float currentKi = data.getResources().getCurrentEnergy();
 			if (currentKi <= 0) return;
 
-			float kiPerDamage = 3.0f;
-			float fullCost = damage * kiPerDamage;
+			float cost = Math.min(damage * FALL_KI_PER_DAMAGE, data.getMaxEnergy() * FALL_KI_MAX_FRACTION);
+			float paid = Math.min(currentKi, cost);
+			data.getResources().setCurrentEnergy(currentKi - paid);
 
-			if (currentKi >= fullCost) {
-				data.getResources().removeEnergy(fullCost);
+			if (paid >= cost) {
+				player.resetFallDistance();
 				event.setCanceled(true);
 			} else {
-				float negatableDamage = currentKi / kiPerDamage;
-				data.getResources().removeEnergy(currentKi);
-				event.setAmount(damage - negatableDamage);
+				event.setDamageMultiplier(event.getDamageMultiplier() * (1.0f - paid / cost));
 			}
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
