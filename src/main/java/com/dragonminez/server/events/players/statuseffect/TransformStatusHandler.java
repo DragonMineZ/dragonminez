@@ -6,7 +6,11 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.techniques.Techniques;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraftforge.common.MinecraftForge;
@@ -24,6 +28,18 @@ import java.util.Objects;
 import java.util.Set;
 
 public class TransformStatusHandler implements IStatusEffectHandler {
+
+    private static void enforceFormLoadout(ServerPlayer player, StatsData data) {
+        String group = data.getCharacter().getActiveFormGroup();
+        String form = data.getCharacter().getActiveForm();
+        boolean oozaru = SaiyanForms.GROUP_OOZARU.equalsIgnoreCase(group)
+                && (SaiyanForms.OOZARU.equalsIgnoreCase(form) || SaiyanForms.GOLDEN_OOZARU.equalsIgnoreCase(form));
+
+        Techniques techniques = data.getTechniques();
+        boolean changed = oozaru ? techniques.applyFormLoadout(Techniques.OOZARU_LOADOUT) : techniques.restoreFormLoadout();
+        if (changed) NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+    }
+
     private static final String LOG_PREFIX = "[DMZ-FORM-EFFECTS] ";
     private static final String TAG_ROOT = "dmzTransformMobEffects";
     private static final String TAG_LAST_FORM = "lastForm";
@@ -51,6 +67,8 @@ public class TransformStatusHandler implements IStatusEffectHandler {
 
     @Override
     public void onPlayerTick(ServerPlayer player, StatsData data) {
+        enforceFormLoadout(player, data);
+
         if (data.getCharacter().getActiveForm() == null || data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm().equals("base")) {
             player.removeEffect(MainEffects.TRANSFORM.get());
         }

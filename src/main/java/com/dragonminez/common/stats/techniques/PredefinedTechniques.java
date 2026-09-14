@@ -67,6 +67,26 @@ public class PredefinedTechniques {
 		return technique != null && isPredefinedTechniqueId(technique.getId());
 	}
 
+	public static TechniqueData copyOf(String techniqueId) {
+		if (techniqueId == null) return null;
+		if (REGISTRY.containsKey(techniqueId)) {
+			KiAttackData copy = new KiAttackData();
+			copy.load(REGISTRY.get(techniqueId).save());
+			return copy;
+		}
+		if (STRIKE_REGISTRY.containsKey(techniqueId)) {
+			StrikeAttackData copy = new StrikeAttackData();
+			copy.load(STRIKE_REGISTRY.get(techniqueId).save());
+			return copy;
+		}
+		if (EVASION_REGISTRY.containsKey(techniqueId)) {
+			EvasionAttackData copy = new EvasionAttackData();
+			copy.load(EVASION_REGISTRY.get(techniqueId).save());
+			return copy;
+		}
+		return null;
+	}
+
 	/**
 	 * @param colorIn     core colour, the hot middle of the ball
 	 * @param colorBorder the body colour banded around the core

@@ -4,8 +4,12 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class Techniques {
 	public static final int SLOT_COUNT = 8;
@@ -28,8 +32,66 @@ public class Techniques {
 
 	private final transient Map<String, Float> fractionalXpRemainder = new HashMap<>();
 
+	public static final String[] OOZARU_LOADOUT = {"mouth_blast", "oozaru_slam", "rage_scream"};
+	public static final int FORM_LOADOUT_SIZE = OOZARU_LOADOUT.length;
+
+	@Getter
+	private boolean formLoadoutActive = false;
+	private final String[] formLoadoutBackup = new String[FORM_LOADOUT_SIZE];
+	private final Set<String> formLoadoutGranted = new HashSet<>();
+
 	public Techniques() {
 		for (int i = 0; i < SLOT_COUNT; i++) equippedSlots[i] = "";
+		for (int i = 0; i < FORM_LOADOUT_SIZE; i++) formLoadoutBackup[i] = "";
+	}
+
+	public boolean applyFormLoadout(String[] loadout) {
+		boolean changed = false;
+		if (!formLoadoutActive) {
+			formLoadoutActive = true;
+			formLoadoutGranted.clear();
+			for (int i = 0; i < FORM_LOADOUT_SIZE; i++) formLoadoutBackup[i] = equippedSlots[i];
+			changed = true;
+		}
+
+		for (int i = 0; i < Math.min(loadout.length, FORM_LOADOUT_SIZE); i++) {
+			String id = loadout[i];
+			if (!unlockedTechniques.containsKey(id)) {
+				TechniqueData copy = PredefinedTechniques.copyOf(id);
+				if (copy == null) continue;
+				unlockedTechniques.put(id, copy);
+				formLoadoutGranted.add(id);
+				changed = true;
+			}
+			if (!id.equals(equippedSlots[i])) {
+				for (int j = 0; j < SLOT_COUNT; j++) {
+					if (j != i && id.equals(equippedSlots[j])) equippedSlots[j] = "";
+				}
+				equippedSlots[i] = id;
+				changed = true;
+			}
+		}
+		return changed;
+	}
+
+	public boolean restoreFormLoadout() {
+		if (!formLoadoutActive) return false;
+		formLoadoutActive = false;
+
+		for (String id : formLoadoutGranted) {
+			unlockedTechniques.remove(id);
+			if (chargingTechniqueId.equals(id)) clearTechniqueCharge();
+		}
+		for (int j = FORM_LOADOUT_SIZE; j < SLOT_COUNT; j++) {
+			if (formLoadoutGranted.contains(equippedSlots[j])) equippedSlots[j] = "";
+		}
+		for (int i = 0; i < FORM_LOADOUT_SIZE; i++) {
+			String previous = formLoadoutBackup[i];
+			equippedSlots[i] = previous != null && unlockedTechniques.containsKey(previous) ? previous : "";
+			formLoadoutBackup[i] = "";
+		}
+		formLoadoutGranted.clear();
+		return true;
 	}
 
 	public void unlockTechnique(TechniqueData data) {
@@ -189,6 +251,14 @@ public class Techniques {
 		}
 		tag.put("UnlockedTechniques", unlockedTag);
 
+		tag.putBoolean("FormLoadoutActive", formLoadoutActive);
+		CompoundTag backupTag = new CompoundTag();
+		for (int i = 0; i < FORM_LOADOUT_SIZE; i++) backupTag.putString("Slot" + i, formLoadoutBackup[i]);
+		tag.put("FormLoadoutBackup", backupTag);
+		ListTag grantedTag = new ListTag();
+		for (String id : formLoadoutGranted) grantedTag.add(StringTag.valueOf(id));
+		tag.put("FormLoadoutGranted", grantedTag);
+
 		return tag;
 	}
 
@@ -225,6 +295,13 @@ public class Techniques {
 			tech.load(techTag);
 			this.unlockedTechniques.put(tech.getId(), tech);
 		}
+
+		this.formLoadoutActive = tag.getBoolean("FormLoadoutActive");
+		CompoundTag backupTag = tag.getCompound("FormLoadoutBackup");
+		for (int i = 0; i < FORM_LOADOUT_SIZE; i++) this.formLoadoutBackup[i] = backupTag.getString("Slot" + i);
+		this.formLoadoutGranted.clear();
+		ListTag grantedTag = tag.getList("FormLoadoutGranted", Tag.TAG_STRING);
+		for (int i = 0; i < grantedTag.size(); i++) this.formLoadoutGranted.add(grantedTag.getString(i));
 	}
 
 	public void copyFrom(Techniques other) {
@@ -242,5 +319,9 @@ public class Techniques {
 			clone.load(source.save());
 			this.unlockedTechniques.put(entry.getKey(), clone);
 		}
+		this.formLoadoutActive = other.formLoadoutActive;
+		System.arraycopy(other.formLoadoutBackup, 0, this.formLoadoutBackup, 0, FORM_LOADOUT_SIZE);
+		this.formLoadoutGranted.clear();
+		this.formLoadoutGranted.addAll(other.formLoadoutGranted);
 	}
 }
