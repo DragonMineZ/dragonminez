@@ -53,6 +53,7 @@ public class EvasionAttackHandler {
 	private static final float DEFAULT_HITBOX = 1.8f;
 	private static final double RAGE_SCREAM_PULSE_KNOCKBACK = 0.35;
 	private static final double RAGE_SCREAM_VERTICAL_LIFT = 0.12;
+	private static final int SHARED_EVASION_COOLDOWN_TICKS = 60;
 
 	private static final Set<LivingEntity> BLINDED_MOBS = new HashSet<>();
 	private static final Map<UUID, ActiveEvasion> ACTIVE = new ConcurrentHashMap<>();
@@ -78,6 +79,7 @@ public class EvasionAttackHandler {
 			if (stats.getStatus().isFused() && !stats.getStatus().isFusionLeader()) return;
 			if (player.isSpectator()) return;
 			if (!player.getMainHandItem().isEmpty()) return;
+			if (ACTIVE.containsKey(player.getUUID())) return;
 
 			TechniqueData unlocked = stats.getTechniques().getUnlockedTechniques().get(techniqueId);
 			if (!(unlocked instanceof EvasionAttackData technique)) return;
@@ -95,6 +97,7 @@ public class EvasionAttackHandler {
 
 			int durationTicks = technique.getActualDurationTicks();
 			stats.getStatus().setEvasionLockTicks(durationTicks);
+			applySharedEvasionCooldown(stats, durationTicks + SHARED_EVASION_COOLDOWN_TICKS);
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			NetworkHandler.sendToTrackingEntityAndSelf(
@@ -108,6 +111,14 @@ public class EvasionAttackHandler {
 				default -> { }
 			}
 		});
+	}
+
+	private static void applySharedEvasionCooldown(StatsData stats, int ticks) {
+		for (TechniqueData data : stats.getTechniques().getUnlockedTechniques().values()) {
+			if (!(data instanceof EvasionAttackData)) continue;
+			String key = "TechniqueCooldown_" + data.getId();
+			if (stats.getCooldowns().getCooldown(key) < ticks) stats.getCooldowns().setCooldown(key, ticks);
+		}
 	}
 
 	private static void castTaiyoken(ServerPlayer caster) {
