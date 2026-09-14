@@ -165,13 +165,14 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.requires(MainItems.SENZU_BEAN_RED.get())
 				.requires(MainItems.SENZU_BEAN_BLUE.get())
 				.requires(MainItems.SENZU_BEAN_YELLOW.get())
+				.requires(MainItems.NAMEK_MOSS.get())
 				.unlockedBy(getHasName(MainItems.SENZU_BEAN_RED.get()), has(MainItems.SENZU_BEAN_RED.get()))
 				.group(Reference.MOD_ID)
 				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "senzu_bean_from_colors"));
 
-		senzuSeeds(pWriter, MainItems.SENZU_BEAN_RED.get(), MainItems.SENZU_BEAN_SEEDS_RED.get(), "senzu_bean_seeds_red");
-		senzuSeeds(pWriter, MainItems.SENZU_BEAN_BLUE.get(), MainItems.SENZU_BEAN_SEEDS_BLUE.get(), "senzu_bean_seeds_blue");
-		senzuSeeds(pWriter, MainItems.SENZU_BEAN_YELLOW.get(), MainItems.SENZU_BEAN_SEEDS_YELLOW.get(), "senzu_bean_seeds_yellow");
+		senzuSeeds(pWriter, MainItems.SENZU_BEAN_RED.get(), MainItems.GREEN_CAPSULE.get(), MainItems.SENZU_BEAN_SEEDS_RED.get(), "senzu_bean_seeds_red");
+		senzuSeeds(pWriter, MainItems.SENZU_BEAN_BLUE.get(), MainItems.BLUE_CAPSULE.get(), MainItems.SENZU_BEAN_SEEDS_BLUE.get(), "senzu_bean_seeds_blue");
+		senzuSeeds(pWriter, MainItems.SENZU_BEAN_YELLOW.get(), MainItems.YELLOW_CAPSULE.get(), MainItems.SENZU_BEAN_SEEDS_YELLOW.get(), "senzu_bean_seeds_yellow");
 
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, MainItems.TURTLE_SCALE.get())
 				.requires(Items.SCUTE)
@@ -1254,11 +1255,16 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 		return StrictNBTIngredient.of(MainPotions.createCurativeFlask());
 	}
 
-	private void senzuSeeds(Consumer<FinishedRecipe> w, ItemLike bean, ItemLike seeds, String id) {
+	private void senzuSeeds(Consumer<FinishedRecipe> w, ItemLike bean, ItemLike capsule, ItemLike seeds, String id) {
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, seeds)
 				.requires(bean)
 				.unlockedBy(getHasName(bean), has(bean)).group(Reference.MOD_ID)
 				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id));
+		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, seeds)
+				.requires(MainItems.NAMEK_MOSS.get())
+				.requires(capsule)
+				.unlockedBy(getHasName(capsule), has(capsule)).group(Reference.MOD_ID)
+				.save(w, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, id + "_from_capsule"));
 	}
 
 	private void statPlant(Consumer<FinishedRecipe> w, ItemLike result, Ingredient ingredient, String id) {

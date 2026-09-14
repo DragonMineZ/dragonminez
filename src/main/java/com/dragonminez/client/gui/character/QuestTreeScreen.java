@@ -387,6 +387,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private static final List<SagaCatalogEntry> SAGA_CATALOG = List.of(
+			new SagaCatalogEntry("classic_saga", "Classic Saga", false),
 			new SagaCatalogEntry("saiyan_saga", "Saiyan Saga", false),
 			new SagaCatalogEntry("frieza_saga", "Frieza Saga", false),
 			new SagaCatalogEntry("android_saga", "Cell Saga", false),
@@ -395,23 +396,21 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			new SagaCatalogEntry("movies_saga", "Movies Saga", false),
 			new SagaCatalogEntry("daima_saga", "Daima Saga", true),
 			new SagaCatalogEntry("gt_saga", "GT Saga", true),
-			new SagaCatalogEntry("dball_saga", "DBall Saga", true),
 			new SagaCatalogEntry("beerus_saga", "Beerus Saga", true),
 			new SagaCatalogEntry("rof_saga", "RoF Saga", true),
 			new SagaCatalogEntry("u7vsu6_saga", "U7vsU6 Saga", true)
 	);
 
 	private static final Map<String, Integer> SAGA_UI_ORDER = Map.ofEntries(
-			Map.entry("saiyan_saga", 0),
-			Map.entry("frieza_saga", 1),
-			Map.entry("android_saga", 2),
-			Map.entry("cell_saga", 2),
-			Map.entry("future_saga", 3),
-			Map.entry("buu_saga", 4),
-			Map.entry("movies_saga", 5),
-			Map.entry("daima_saga", 6),
-			Map.entry("gt_saga", 7),
-			Map.entry("dball_saga", 8),
+			Map.entry("classic_saga", 0),
+			Map.entry("saiyan_saga", 1),
+			Map.entry("frieza_saga", 2),
+			Map.entry("android_saga", 3),
+			Map.entry("future_saga", 4),
+			Map.entry("buu_saga", 5),
+			Map.entry("movies_saga", 6),
+			Map.entry("daima_saga", 7),
+			Map.entry("gt_saga", 8),
 			Map.entry("beerus_saga", 9),
 			Map.entry("rof_saga", 10),
 			Map.entry("u7vsu6_saga", 11)
