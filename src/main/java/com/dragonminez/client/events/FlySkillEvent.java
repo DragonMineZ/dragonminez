@@ -343,7 +343,7 @@ public class FlySkillEvent {
 			hovering = Math.min(1F, hovering + 0.1F);
 		} else {
 			if (currentSpeed > 0.01) {
-				double newSpeed = Math.max(0, currentSpeed - DECELERATION);
+				double newSpeed = Math.max(0, currentSpeed - DECELERATION * levelMultiplier);
 				if (currentSpeed > 0.001) flightVector = flightVector.normalize().scale(newSpeed);
 				else flightVector = Vec3.ZERO;
 			} else flightVector = Vec3.ZERO;
@@ -363,7 +363,7 @@ public class FlySkillEvent {
 			player.setDeltaMovement(flightVector);
 			player.fallDistance = 0F;
 			verticalHover = 0;
-		} else handleHovering(player, isJump, isCrouch);
+		} else handleHovering(player, isJump, isCrouch, flyLevel);
 
 		if (player.onGround() && !pendingFlightActivation) {
 			pendingFlightDisable = false;
@@ -401,7 +401,13 @@ public class FlySkillEvent {
 		flightVector = currentMotion.normalize().scale(clamped);
 	}
 
-	private static void handleHovering(LocalPlayer player, boolean isJump, boolean isCrouch) {
+	public static double hoverDescentFactor(int flyLevel) {
+		int clampedLevel = Mth.clamp(flyLevel, 1, 10);
+		float t = (clampedLevel - 1) / (float) (10 - 1);
+		return Mth.lerp(t, 1.0F, 0.15F);
+	}
+
+	private static void handleHovering(LocalPlayer player, boolean isJump, boolean isCrouch, int flyLevel) {
 		if (isJump) {
 			if (verticalHover < 20) verticalHover = Mth.clamp(verticalHover + 1, -20, 20);
 		} else if (isCrouch) {
@@ -412,7 +418,7 @@ public class FlySkillEvent {
 		}
 
 		double yMovement;
-		if (verticalHover >= -3 && verticalHover <= 0 && !isJump && !isCrouch) yMovement = SLOW_DESCENT_RATE + (Math.sin(player.tickCount / 10F) / 200F);
+		if (verticalHover >= -3 && verticalHover <= 0 && !isJump && !isCrouch) yMovement = SLOW_DESCENT_RATE * hoverDescentFactor(flyLevel) + (Math.sin(player.tickCount / 10F) / 200F);
 		else if (verticalHover == 0) yMovement = Math.sin(player.tickCount / 10F) / 100F;
 		else yMovement = verticalHover / 60D;
 

@@ -95,7 +95,7 @@ public class CombatFlightHandler {
 		double targetY;
 		if (jump) targetY = maxVertical;
 		else if (descend) targetY = -maxVertical;
-		else targetY = PASSIVE_DESCENT;
+		else targetY = PASSIVE_DESCENT * FlySkillEvent.hoverDescentFactor(flyLevel);
 
 		Vec3 target = new Vec3(targetHorizontal.x, targetY, targetHorizontal.z);
 
