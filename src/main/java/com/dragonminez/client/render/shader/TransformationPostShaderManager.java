@@ -37,6 +37,7 @@ public final class TransformationPostShaderManager {
 	private static final String BLUR_H_PASS_NAME = Reference.MOD_ID + ":transformation_blur_h";
 	private static final String BLUR_V_PASS_NAME = Reference.MOD_ID + ":transformation_blur_v";
 	private static final String COMPOSITE_PASS_NAME = Reference.MOD_ID + ":transformation_composite";
+	private static final String BLOOM_SOURCE_PASS_NAME = Reference.MOD_ID + ":transformation_bloom_source";
 	private static final String MASK_TARGET = "entity_mask";
 
 	private static final float FIXED_GLOW_STRENGTH = 1.35f;
@@ -257,7 +258,7 @@ public final class TransformationPostShaderManager {
 				continue;
 			}
 
-			if (COMPOSITE_PASS_NAME.equals(passName)) {
+			if (COMPOSITE_PASS_NAME.equals(passName) || BLOOM_SOURCE_PASS_NAME.equals(passName)) {
 				applyUniform(effect, "BloomStrength", FIXED_BLOOM_STRENGTH);
 				applyUniform(effect, "GlowStrength", FIXED_GLOW_STRENGTH);
 			}

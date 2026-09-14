@@ -3,7 +3,8 @@
     "swap",
     "entity_mask",
     "colored_mask",
-    "h_blur"
+    "h_blur",
+    "outline_bloom"
   ],
   "passes": [
     {
@@ -22,12 +23,41 @@
       "outtarget": "entity_mask"
     },
     {
+      "name": "dragonminez:transformation_bloom_source",
+      "intarget": "colored_mask",
+      "outtarget": "outline_bloom",
+      "auxtargets": [
+        { "name": "GlowSampler", "id": "entity_mask" }
+      ]
+    },
+    {
+      "name": "dragonminez:ki_blur_h",
+      "intarget": "outline_bloom",
+      "outtarget": "h_blur"
+    },
+    {
+      "name": "dragonminez:ki_blur_v",
+      "intarget": "h_blur",
+      "outtarget": "outline_bloom"
+    },
+    {
+      "name": "dragonminez:ki_blur_h",
+      "intarget": "outline_bloom",
+      "outtarget": "h_blur"
+    },
+    {
+      "name": "dragonminez:ki_blur_v",
+      "intarget": "h_blur",
+      "outtarget": "outline_bloom"
+    },
+    {
       "name": "dragonminez:transformation_composite",
       "intarget": "minecraft:main",
       "outtarget": "swap",
       "auxtargets": [
         { "name": "ColoredMaskSampler", "id": "colored_mask" },
-        { "name": "GlowSampler", "id": "entity_mask" }
+        { "name": "GlowSampler", "id": "entity_mask" },
+        { "name": "BloomSampler", "id": "outline_bloom" }
       ]
     },
     {

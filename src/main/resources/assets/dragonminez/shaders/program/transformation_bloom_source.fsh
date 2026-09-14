@@ -1,19 +1,15 @@
 #version 150
 
 uniform sampler2D DiffuseSampler;
-uniform sampler2D ColoredMaskSampler;
 uniform sampler2D GlowSampler;
-uniform sampler2D BloomSampler;
 uniform float BloomStrength;
 uniform float GlowStrength;
-uniform float OutlineBloomStrength;
 
 in vec2 texCoord;
 out vec4 fragColor;
 
 void main() {
-	vec3 scene = texture(DiffuseSampler, texCoord).rgb;
-	vec4 coloredMask = texture(ColoredMaskSampler, texCoord);
+	vec4 coloredMask = texture(DiffuseSampler, texCoord);
 	vec4 blurred = texture(GlowSampler, texCoord);
 
 	float coverage = clamp(coloredMask.a, 0.0, 1.0);
@@ -24,12 +20,6 @@ void main() {
 	float ring = smoothstep(0.12, 0.5, exterior);
 	ring = clamp(ring * max(0.0, GlowStrength), 0.0, 1.0);
 
-	vec3 glow = blurredColor * exterior * max(0.0, BloomStrength);
-	vec3 outline = blurredColor * ring;
-
-	vec3 bloom = texture(BloomSampler, texCoord).rgb * max(0.0, OutlineBloomStrength);
-	bloom = bloom / (1.0 + bloom);
-
-	vec3 result = scene + outline + glow + bloom;
-	fragColor = vec4(clamp(result, 0.0, 1.0), 1.0);
+	vec3 source = blurredColor * ring + blurredColor * exterior * max(0.0, BloomStrength);
+	fragColor = vec4(clamp(source, 0.0, 1.0), 1.0);
 }

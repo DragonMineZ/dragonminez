@@ -18,6 +18,9 @@
 		},
 		{
 			"name": "GlowSampler"
+		},
+		{
+			"name": "BloomSampler"
 		}
 	],
 	"uniforms": [
@@ -52,6 +55,14 @@
 			"count": 1,
 			"values": [
 				2.2
+			]
+		},
+		{
+			"name": "OutlineBloomStrength",
+			"type": "float",
+			"count": 1,
+			"values": [
+				2.5
 			]
 		}
 	]
