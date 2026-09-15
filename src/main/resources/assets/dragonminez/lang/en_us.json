@@ -215,6 +215,7 @@
   "gui.dragonminez.character_stats.health": "Health",
   "gui.dragonminez.character_stats.health.tooltip1": "Your health points.",
   "gui.dragonminez.character_stats.health.tooltip2": "Increasing Vitality increases this value by %s per point",
+  "gui.dragonminez.character_stats.health.scaling_curve": "Each new point grants more, up to %s per point at %s Vitality",
   "gui.dragonminez.character_stats.ki_damage": "Ki DMG",
   "gui.dragonminez.character_stats.ki_damage.tooltip1": "The damage you deal to enemies with your Ki Attacks.",
   "gui.dragonminez.character_stats.ki_damage.tooltip2": "Increasing Ki Power increases this value by %s per point",

@@ -659,9 +659,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			if (mouseX >= centerX - 55 && mouseX <= centerX - 25) {
 				title = tr("gui.dragonminez.character_stats.vit").withStyle(ChatFormatting.BOLD);
 				desc.add(tr("gui.dragonminez.character_stats.vit.desc"));
+				Double vitScalingMax = scaling.getVitalityScalingMax();
+				String vitScalingText = String.format(Locale.US, "%.2f", scaling.getVitalityScaling())
+						+ (vitScalingMax != null ? String.format(Locale.US, " → %.2f", vitScalingMax) : "");
 				extras.add(tr("gui.dragonminez.customization.stat.scaling.hp").withStyle(ChatFormatting.GRAY)
 						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
-						.append(Component.literal(String.format(Locale.US, "%.2f", scaling.getVitalityScaling())).withStyle(ChatFormatting.GREEN)));
+						.append(Component.literal(vitScalingText).withStyle(ChatFormatting.GREEN)));
 				extras.add(tr("gui.dragonminez.customization.stat.regen.hp").withStyle(ChatFormatting.GRAY)
 						.append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
 						.append(Component.literal(String.format(Locale.US, "%.1f/s", classStats.getBaseHp5() * 0.2)).withStyle(ChatFormatting.YELLOW))

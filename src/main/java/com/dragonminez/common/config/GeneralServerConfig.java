@@ -112,6 +112,8 @@ public class GeneralServerConfig {
 		private Double otherworldDeadTpMultiplier = 2.0;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
+		private Double vitCurveKneeLevelMode = 0.45;
+		private Double vitCurveKneeStatMode = 0.9;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
@@ -259,6 +261,14 @@ public class GeneralServerConfig {
 
 		public Boolean getMaxLevelValueInsteadOfStats() {
 			return maxLevelValueInsteadOfStats != null ? maxLevelValueInsteadOfStats : true;
+		}
+
+		public Double getVitCurveKneeLevelMode() {
+			return Math.max(0.01, Math.min(vitCurveKneeLevelMode != null ? vitCurveKneeLevelMode : 0.45, 1.0));
+		}
+
+		public Double getVitCurveKneeStatMode() {
+			return Math.max(0.01, Math.min(vitCurveKneeStatMode != null ? vitCurveKneeStatMode : 0.9, 1.0));
 		}
 
 		public Integer getSenzuCooldownTicks() {

@@ -757,7 +757,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double strScaling = statsData.getStatScaling("STR");
 		double skpScaling = statsData.getStatScaling("SKP");
 		double resScaling = statsData.getStatScaling("DEF");
-		double vitScaling = statsData.getStatScaling("VIT") * StatsData.GLOBAL_HEALTH_MULTIPLIER;
+		double vitScaling = statsData.getVitalityScalingAt(statsData.getStats().getVitality());
 		double pwrScaling = statsData.getStatScaling("PWR");
 		double eneScaling = statsData.getStatScaling("ENE");
 		double stmScaling = statsData.getStatScaling("STM");
@@ -853,6 +853,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					case 4 -> {
 						desc.add(tr("gui.dragonminez.character_stats.health.tooltip1"));
 						desc.add(tr("gui.dragonminez.character_stats.health.tooltip2", NumberFormattingUtil.formatUpToOneDecimal(vitScaling)).withStyle(ChatFormatting.YELLOW));
+						appendVitalityCurveInfo(desc);
 						if (classStats != null) {
 							double currentRegenSec = (classStats.getBaseHp5() + (statsData.getStats().getVitality() * statsData.getTotalMultiplier("VIT") * classStats.getHp5VitScaling())) * 0.2;
 							extras.add(Component.translatable("gui.dragonminez.customization.stat.regen.hp").append(": ")
@@ -936,6 +937,14 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		return NumberFormattingUtil.formatUpToOneDecimal(speedMultiplier * 100.0) + "%";
 	}
 
+	private void appendVitalityCurveInfo(List<Component> desc) {
+		double maxScaling = statsData.getVitalityScalingMax();
+		if (Math.abs(maxScaling - statsData.getStatScaling("VIT")) < 0.001) return;
+		desc.add(tr("gui.dragonminez.character_stats.health.scaling_curve",
+				NumberFormattingUtil.formatUpToOneDecimal(maxScaling),
+				NumberFormattingUtil.formatLargeNumber(statsData.getVitalityCurveKnee())).withStyle(ChatFormatting.GOLD));
+	}
+
 	private void appendSpeedTooltip(List<Component> desc, List<Component> extras) {
 		double speed = statsData.getSpeed();
 		double movementCap = ConfigManager.getCombatConfig().getSpeedMovementCap();
@@ -988,7 +997,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		double strScaling = statsData.getStatScaling("STR");
 		double skpScaling = statsData.getStatScaling("SKP");
 		double resScaling = (statsData.getStatScaling("DEF") + statsData.getStatScaling("STM")) / 2;
-		double vitScaling = statsData.getStatScaling("VIT") * StatsData.GLOBAL_HEALTH_MULTIPLIER;
+		double vitScaling = statsData.getVitalityScalingAt(statsData.getStats().getVitality());
 		double pwrScaling = statsData.getStatScaling("PWR");
 		double eneScaling = statsData.getStatScaling("ENE");
 
@@ -1248,6 +1257,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			desc.add(tr("gui.dragonminez.character_stats.health.tooltip1"));
 			desc.add(tr("gui.dragonminez.character_stats.health.tooltip2",
 					NumberFormattingUtil.formatUpToOneDecimal(vitScaling)).withStyle(ChatFormatting.YELLOW));
+			appendVitalityCurveInfo(desc);
 
 			List<Component> extras = new ArrayList<>();
 			extras.add(tr("gui.dragonminez.character_stats.health").append(": ")

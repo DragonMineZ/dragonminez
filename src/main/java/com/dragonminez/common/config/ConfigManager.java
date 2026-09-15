@@ -1052,6 +1052,8 @@ public class ConfigManager {
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
 	}
 
+	private static final double DEFAULT_VIT_SCALING_MAX_RATIO = 4.0;
+
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
 
@@ -1161,6 +1163,7 @@ public class ConfigManager {
 		scaling.setDefenseScaling(defScale);
 		scaling.setStaminaScaling(stmScale);
 		scaling.setVitalityScaling(vitScale);
+		scaling.setVitalityScalingMax(vitScale * DEFAULT_VIT_SCALING_MAX_RATIO);
 		scaling.setKiPowerScaling(pwrScale);
 		scaling.setEnergyScaling(eneScale);
 	}
