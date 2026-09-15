@@ -803,6 +803,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (previousSaga == null) return true;
 
 		PlayerQuestData pqd = statsData.getPlayerQuestData();
+		for (Quest q : saga.getQuests()) {
+			if (pqd.getQuestStatus(PlayerQuestData.sagaQuestKey(saga.getId(), q.getId())) != PlayerQuestData.QuestStatus.NOT_STARTED) {
+				return true;
+			}
+		}
 		for (Quest q : previousSaga.getQuests()) {
 			if (!pqd.isQuestCompleted(PlayerQuestData.sagaQuestKey(previousSaga.getId(), q.getId()))) {
 				return false;
