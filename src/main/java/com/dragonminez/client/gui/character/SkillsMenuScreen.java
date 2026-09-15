@@ -1283,8 +1283,14 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		} else if (selectedSkill.startsWith("racial_")) {
 			switch (selectedSkill) {
 				case "racial_human" -> {
-					int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-					description = tr("skill.dragonminez.racial_human.desc", regen).getString();
+					var human = config.getHuman();
+					description = tr("skill.dragonminez.racial_human.desc",
+							percent(human.getTechniqueXpBonus()), percent(human.getAdrenalineThreshold()), human.getAdrenalineSeconds(),
+							percent(human.getAdrenalineDamageReduction()), percent(human.getAdrenalineAttackSpeed()),
+							percent(human.getAdrenalineMoveSpeed()), human.getAdrenalineCooldownSeconds(),
+							human.getAndroidBarrierMaxSeconds(), percent(human.getAndroidBarrierKiConversion()),
+							percent(human.getAndroidBarrierSurgeOverflow()), percent(human.getAndroidBarrierBreakOverflow()),
+							human.getAndroidBarrierCooldownSeconds(), human.getAndroidBarrierBrokenCooldownSeconds()).getString();
 				}
 				case "racial_saiyan" -> {
 					int zenkaiHealth = (int) Math.round((config.getSaiyanZenkaiHealthRegen() * 100));
@@ -1666,5 +1672,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				if (androidUpgradedOverridden) status.setAndroidUpgraded(androidUpgradedO);
 			}
 		}
+	}
+
+	private static int percent(double ratio) {
+		return (int) Math.round(ratio * 100);
 	}
 }

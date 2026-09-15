@@ -326,8 +326,14 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 		switch (racialSkill) {
 			case "human" -> {
-				int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-				description = tr(descKey, regen).getString();
+				var human = config.getHuman();
+				description = tr(descKey,
+						percent(human.getTechniqueXpBonus()), percent(human.getAdrenalineThreshold()), human.getAdrenalineSeconds(),
+						percent(human.getAdrenalineDamageReduction()), percent(human.getAdrenalineAttackSpeed()),
+						percent(human.getAdrenalineMoveSpeed()), human.getAdrenalineCooldownSeconds(),
+						human.getAndroidBarrierMaxSeconds(), percent(human.getAndroidBarrierKiConversion()),
+						percent(human.getAndroidBarrierSurgeOverflow()), percent(human.getAndroidBarrierBreakOverflow()),
+						human.getAndroidBarrierCooldownSeconds(), human.getAndroidBarrierBrokenCooldownSeconds()).getString();
 			}
 			case "saiyan" -> {
 				int zenkaiHealth = (int) Math.round(config.getSaiyanZenkaiHealthRegen() * 100);
@@ -620,5 +626,9 @@ public class RaceSelectionScreen extends ScaledScreen {
 		if (duration <= 0L) return 1.0f;
 		long elapsed = System.currentTimeMillis() - animationStartTime;
 		return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
+	}
+
+	private static int percent(double ratio) {
+		return (int) Math.round(ratio * 100);
 	}
 }
