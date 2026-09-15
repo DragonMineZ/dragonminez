@@ -54,28 +54,17 @@ public class AuraRenderer {
 	private static final float AURA_RELEASE_CAP = 100.0f;
 	private static final float AURA_RELEASE_SCALE_BONUS = 0.35f;
 	private static final float AURA_RELEASE_LERP_PER_TICK = 0.02f;
-	/**
-	 * Fast-flight tuning. LEAD slides the whole flame forward along the flight axis so its base cap
-	 * clears the player's head — otherwise the first-person camera sits inside the cap and all you
-	 * see is a small round smear. The trail is a separate mesh appended past the flame's tip.
-	 */
 	private static final float AURA_3D_FLIGHT_LEAD = 1.10f;
 	private static final float AURA_TRAIL_ALPHA = 0.55f;
-	/**
-	 * Offset along the aura's own axis while flying, replacing the 0.7 the standing aura uses along
-	 * world up. Derived so the flame sits on a horizontal body exactly the way it sits on an upright
-	 * one: root a little ahead of the head, tip trailing well past the feet. Anchoring is on the
-	 * body centre rather than the feet, because a flying player's model pivots there while its
-	 * hitbox stays vertical.
-	 */
 	private static final float AURA_2D_FLIGHT_OFFSET = 0.31f;
-	/**
-	 * How much of the flame's far wall survives. In first person the camera is inside the mesh by
-	 * construction — Minecraft keeps it at eye height and never leans it with the model — so the
-	 * interior has to stay visible or the aura disappears entirely from your own view.
-	 */
 	private static final float AURA_3D_BACKFACE = 0.02f;
 	private static final float AURA_3D_BACKFACE_FIRST_PERSON = 0.85f;
+
+	private static final float AURA_MERGE_SIZE_DIVISOR = 1.25f;
+	private static final float AURA_MERGE_LEADER_COLOR_WEIGHT = 1.5f;
+	private static final float AURA_2D_MERGE_WIDTH = 1.1f;
+	private static final float AURA_2D_MERGE_HEIGHT = 2.0f;
+	private static final float AURA_3D_VISIBLE_HEIGHT = 1.8f;
 
 	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
 	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
@@ -365,13 +354,24 @@ public class AuraRenderer {
 
 	public static void processThirdPersonAuras(Minecraft mc, PoseStack poseStack, Matrix4f projectionMatrix, Set<Integer> currentFramePlayers, boolean isFirstPerson, boolean isCameraColliding) {
 		var auras = PlayerEffectQueue.getAndClearAuras();
+		List<PreparedAura> prepared = new ArrayList<>(auras.size());
 		for (var entry : auras) {
 			Player player = entry.player();
 			boolean isLocalPlayer = player == mc.player;
 
 			if (!isFirstPerson || isCameraColliding || !isLocalPlayer) {
 				currentFramePlayers.add(player.getId());
-				renderShaderAura(entry, poseStack, mc, projectionMatrix);
+				PreparedAura aura = prepareShaderAura(entry);
+				if (aura != null) prepared.add(aura);
+			}
+		}
+
+		for (List<PreparedAura> group : groupTouchingAuras(prepared)) {
+			if (group.size() == 1) {
+				PreparedAura aura = group.get(0);
+				drawShaderAura(aura.player(), aura.data(), aura.layers(), aura.position(), aura.partialTick(), poseStack, mc, projectionMatrix);
+			} else {
+				drawMergedAura(group, poseStack, mc, projectionMatrix);
 			}
 		}
 	}
@@ -777,10 +777,12 @@ public class AuraRenderer {
 		}
 	}
 
-	private static void renderShaderAura(PlayerEffectQueue.AuraRenderEntry entry, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix) {
+	private record PreparedAura(Player player, CachedAuraData data, List<AuraLayer> layers, Vec3 position, float partialTick, float battlePower, boolean mergeable) {}
+
+	private static PreparedAura prepareShaderAura(PlayerEffectQueue.AuraRenderEntry entry) {
 		var player = entry.player();
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		if (stats == null) return;
+		if (stats == null) return null;
 
 		int playerId = player.getId();
 		CachedAuraData data = AURA_CACHE.computeIfAbsent(playerId, k -> new CachedAuraData());
@@ -807,34 +809,153 @@ public class AuraRenderer {
 
 		data.use3D = useAura3D(player);
 		List<AuraLayer> activeLayers = getAuraLayers(player, stats, entry.partialTick(), data.use3D);
-		if (activeLayers.isEmpty()) return;
+		if (activeLayers.isEmpty()) return null;
 		data.lastLayers = activeLayers;
 
+		float partialTick = entry.partialTick();
+		Vec3 position = new Vec3(Mth.lerp(partialTick, player.xo, player.getX()), Mth.lerp(partialTick, player.yo, player.getY()), Mth.lerp(partialTick, player.zo, player.getZ()));
+
+		boolean mergeable = !isFastFlying(player) && player.getSwimAmount(partialTick) <= 0.0f;
+
+		return new PreparedAura(player, data, activeLayers, position, partialTick, stats.getBattlePower(), mergeable);
+	}
+
+	private static void drawShaderAura(Player player, CachedAuraData data, List<AuraLayer> activeLayers, Vec3 position,
+									   float partialTick, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix) {
 		if (IrisCompat.isShaderPackInUse()) {
 			poseStack = shaderpackViewStack(mc);
 		}
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
-		double lerpX = Mth.lerp(entry.partialTick(), player.xo, player.getX());
-		double lerpY = Mth.lerp(entry.partialTick(), player.yo, player.getY());
-		double lerpZ = Mth.lerp(entry.partialTick(), player.zo, player.getZ());
+		double offsetX = position.x - cameraPos.x;
+		double offsetY = position.y - cameraPos.y;
+		double offsetZ = position.z - cameraPos.z;
 
 		if (player.onGround()) {
 			AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
 			poseStack.pushPose();
-			poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y + 0.05, lerpZ - cameraPos.z);
-			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, entry.partialTick(), data.alphaProgress);
+			poseStack.translate(offsetX, offsetY + 0.05, offsetZ);
+			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress);
 			poseStack.popPose();
 		}
 
-		drawFlightTrail(player, data, activeLayers, poseStack, projectionMatrix, entry.partialTick());
+		drawFlightTrail(player, data, activeLayers, poseStack, projectionMatrix, partialTick);
 
 		for (AuraLayer layer : activeLayers) {
 			poseStack.pushPose();
-			poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
-			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, entry.partialTick(), data.alphaProgress, false);
+			poseStack.translate(offsetX, offsetY, offsetZ);
+			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, false);
 			poseStack.popPose();
 		}
+	}
+
+	private static List<List<PreparedAura>> groupTouchingAuras(List<PreparedAura> auras) {
+		int count = auras.size();
+		int[] parent = new int[count];
+		for (int i = 0; i < count; i++) parent[i] = i;
+
+		for (int i = 0; i < count; i++) {
+			for (int j = i + 1; j < count; j++) {
+				if (!aurasTouch(auras.get(i), auras.get(j))) continue;
+				int rootI = findRoot(parent, i);
+				int rootJ = findRoot(parent, j);
+				if (rootI != rootJ) parent[rootJ] = rootI;
+			}
+		}
+
+		Map<Integer, List<PreparedAura>> groups = new LinkedHashMap<>();
+		for (int i = 0; i < count; i++) {
+			groups.computeIfAbsent(findRoot(parent, i), k -> new ArrayList<>()).add(auras.get(i));
+		}
+		return new ArrayList<>(groups.values());
+	}
+
+	private static int findRoot(int[] parent, int index) {
+		while (parent[index] != index) {
+			parent[index] = parent[parent[index]];
+			index = parent[index];
+		}
+		return index;
+	}
+
+	private static boolean aurasTouch(PreparedAura a, PreparedAura b) {
+		if (!a.mergeable() || !b.mergeable() || a.data().use3D != b.data().use3D) return false;
+
+		double dx = a.position().x - b.position().x;
+		double dz = a.position().z - b.position().z;
+		double reach = auraMergeRadius(a) + auraMergeRadius(b);
+		if (dx * dx + dz * dz > reach * reach) return false;
+
+		return Math.abs(a.position().y - b.position().y) < (auraMergeHeight(a) + auraMergeHeight(b)) * 0.5;
+	}
+
+	private static float auraMergeRadius(PreparedAura aura) {
+		AuraLayer top = aura.layers().get(aura.layers().size() - 1);
+		float boost = 1.0f + top.layerId * 0.15f;
+		float width = aura.data().use3D ? Aura3DRenderer.widthFactor(top.type) : AURA_2D_MERGE_WIDTH;
+		return aura.data().auraScaleX * width * boost;
+	}
+
+	private static float auraMergeHeight(PreparedAura aura) {
+		AuraLayer top = aura.layers().get(aura.layers().size() - 1);
+		float boost = 1.0f + top.layerId * 0.15f;
+		float height = aura.data().use3D ? Aura3DRenderer.heightFactor(top.type) * AURA_3D_VISIBLE_HEIGHT : AURA_2D_MERGE_HEIGHT;
+		return aura.data().auraScaleY * height * boost;
+	}
+
+	private static void drawMergedAura(List<PreparedAura> group, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix) {
+		PreparedAura leader = group.get(0);
+		for (PreparedAura aura : group) {
+			if (aura.battlePower() > leader.battlePower()) leader = aura;
+		}
+
+		float scaleX = 0.0f, scaleY = 0.0f, scaleZ = 0.0f;
+		double x = 0.0, y = 0.0, z = 0.0;
+		for (PreparedAura aura : group) {
+			scaleX += aura.data().auraScaleX;
+			scaleY += aura.data().auraScaleY;
+			scaleZ += aura.data().auraScaleZ;
+			x += aura.position().x;
+			y += aura.position().y;
+			z += aura.position().z;
+		}
+
+		CachedAuraData leaderData = leader.data();
+		CachedAuraData merged = new CachedAuraData();
+		merged.auraScaleX = scaleX / AURA_MERGE_SIZE_DIVISOR;
+		merged.auraScaleY = scaleY / AURA_MERGE_SIZE_DIVISOR;
+		merged.auraScaleZ = scaleZ / AURA_MERGE_SIZE_DIVISOR;
+		merged.bodyScaleX = leaderData.bodyScaleX; merged.bodyScaleY = leaderData.bodyScaleY; merged.bodyScaleZ = leaderData.bodyScaleZ;
+		merged.modelScaleX = leaderData.modelScaleX; merged.modelScaleY = leaderData.modelScaleY; merged.modelScaleZ = leaderData.modelScaleZ;
+		merged.alphaProgress = leaderData.alphaProgress;
+		merged.use3D = leaderData.use3D;
+		merged.playerModel = leaderData.playerModel;
+		merged.lastLayers = blendMergedLayers(leader, group);
+
+		int members = group.size();
+		Vec3 centre = new Vec3(x / members, y / members, z / members);
+		drawShaderAura(leader.player(), merged, merged.lastLayers, centre, leader.partialTick(), poseStack, mc, projectionMatrix);
+	}
+
+	private static List<AuraLayer> blendMergedLayers(PreparedAura leader, List<PreparedAura> group) {
+		List<AuraLayer> blended = new ArrayList<>(leader.layers().size());
+		for (int i = 0; i < leader.layers().size(); i++) {
+			AuraLayer base = leader.layers().get(i);
+			float r = 0.0f, g = 0.0f, b = 0.0f, totalWeight = 0.0f;
+
+			for (PreparedAura aura : group) {
+				List<AuraLayer> layers = aura.layers();
+				float[] color = layers.get(Math.min(i, layers.size() - 1)).color;
+				float weight = aura == leader ? AURA_MERGE_LEADER_COLOR_WEIGHT : 1.0f;
+				r += color[0] * weight;
+				g += color[1] * weight;
+				b += color[2] * weight;
+				totalWeight += weight;
+			}
+
+			blended.add(new AuraLayer(base.type, base.layerId, new float[]{r / totalWeight, g / totalWeight, b / totalWeight}, base.alpha));
+		}
+		return blended;
 	}
 
 	private static boolean renderShaderGhostAura(Player player, CachedAuraData data, PoseStack poseStack, Minecraft mc, float partialTick, Matrix4f projectionMatrix) {

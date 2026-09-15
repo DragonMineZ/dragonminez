@@ -19,8 +19,6 @@ public final class Aura3DRenderer {
 
 	public static final String DEFAULT_TYPE = "smooth";
 	private static final String SPARKING_TYPE = "sparking";
-
-	/** Barely-there far wall: enough to hint at volume without washing the near wall out. */
 	public static final float DEFAULT_BACKFACE = 0.02f;
 
 	private static final ResourceLocation DUMMY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
@@ -48,7 +46,7 @@ public final class Aura3DRenderer {
 	}
 
 	public static float widthFactor(String type) {
-		return SPARKING_TYPE.equals(resolveType(type)) ? 1.35f : 1.15f;
+		return SPARKING_TYPE.equals(resolveType(type)) ? 1.25f : 1.15f;
 	}
 
 	public static boolean followsBodyYaw(String type) {
@@ -56,25 +54,13 @@ public final class Aura3DRenderer {
 	}
 
 	public static float heightFactor(String type) {
-		return SPARKING_TYPE.equals(resolveType(type)) ? 1.45f : 2.05f;
+		return SPARKING_TYPE.equals(resolveType(type)) ? 1.65f : 2.05f;
 	}
 
-	/**
-	 * Height of the flame's centre in mesh units. At 0.80 the rounded base cap ends exactly at the
-	 * caster's feet, whatever the height factor is.
-	 */
 	public static float pivotFactor(String type) {
 		return 0.80f;
 	}
 
-	/**
-	 * Sparking animates far faster than smooth, so its noise is slowed down here rather than in the
-	 * shader — that keeps the body and the ground shockwave independently tunable.
-	 */
-	/**
-	 * Height of the flame's widest section, in the same mesh units as {@link #pivotFactor}. Used to
-	 * pivot the aura on its own body rather than on its root when it is laid down with the player.
-	 */
 	public static float coreFactor(String type) {
 		return 0.45f;
 	}

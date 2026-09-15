@@ -95,27 +95,16 @@ public class AuraMeshFactory {
 		return buffer;
 	}
 
-	/**
-	 * Rounds the base off to a closed bowl over the bottom {@code capSpan} of the height. Without it
-	 * the mesh is an open tube: you look straight into the hollow interior from below, which reads
-	 * as the aura being sliced off at the feet. Quarter ellipse, so it meets the body flat-tangent.
-	 */
 	private static double baseCap(double t, double capSpan) {
 		if (capSpan <= 0.0 || t >= capSpan) return 1.0;
 		double u = t / capSpan;
 		return Math.sqrt(Math.max(0.0, 1.0 - (1.0 - u) * (1.0 - u)));
 	}
 
-	/** Flare from the root up to the widest point of the flame. */
 	private static double flare(double t, double baseWidth, double riseSpan) {
 		return baseWidth + (1.0 - baseWidth) * Math.sin(Math.PI * 0.5 * Math.min(1.0, t / riseSpan));
 	}
 
-	/**
-	 * Superellipse quarter. Unlike a plain {@code (1-t)^p} taper — which draws a straight line and
-	 * therefore reads as a cone — this bows the outline outwards along its whole length and reaches
-	 * the tip with a vertical tangent, so the flame closes in a soft dome instead of a point.
-	 */
 	private static double superTaper(double t, double exponent) {
 		return Math.pow(1.0 - Math.pow(t, exponent), 1.0 / exponent);
 	}
@@ -141,8 +130,13 @@ public class AuraMeshFactory {
 
 	public static VertexBuffer getSparkingFlameMesh() {
 		if (sparkingFlame == null) {
-			sparkingFlame = buildFlameMesh(96, 128, 0.30f, t -> flare(t, 0.90, 0.25) * superTaper(t, 3.2));
+			sparkingFlame = buildFlameMesh(96, 128, 0.30f, t -> flare(t, 0.85, 0.30) * superTaper(t, 2.0) * neck(t, 0.40, 0.35));
 		}
 		return sparkingFlame;
+	}
+
+	private static double neck(double t, double start, double depth) {
+		double u = Math.min(1.0, Math.max(0.0, (t - start) / (1.0 - start)));
+		return 1.0 - depth * u * u * (3.0 - 2.0 * u);
 	}
 }
