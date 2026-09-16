@@ -1,64 +1,67 @@
 #version 150
 
-// Smooth 3D aura: steady, "clean" flame. The silhouette comes from the flame-profile mesh
-// (AuraMeshFactory#getFlameMesh); this shader only adds the licks that travel up it.
+// Smooth 3D aura. The mesh is a plain egg-shaped shell (AuraMeshFactory#getDropletMesh); every flame
+// tongue is pushed out of it here, so the silhouette reshapes every frame instead of being baked in.
+//
+// Tongues come from crossing two triangle waves: Peaks vertical ridges around the body and horizontal
+// bands climbing the shell. Their product is a lattice of diamonds that travels upwards, and a scrolling
+// noise field is added on top so the lattice never reads as regular.
 
 in vec3 Position;
-in vec4 Color;
-in vec3 Normal;
 
-out vec3 vNormalWorld;
-out vec3 v_viewDir;
-out float vHeight;
-out float vWave;
-
-uniform mat4 modelMatrix;
+uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
-uniform mat4 normalMatrix;
-uniform float time;
-uniform float auravar;
+uniform mat3 NormalMat;
+uniform sampler2D NoiseTex;
 
-const float PI = 3.14159265359;
+uniform vec3 Size;
+uniform float Time;
+uniform float Phase;
+uniform float Growth;
+uniform float Peaks;
+uniform float WaveFrequency;
+uniform float WaveAmplitude;
+uniform float NoiseDetail;
+uniform float UpwardBias;
 
-// Period 1, so an integer multiplier keeps the atan() seam at +-PI continuous.
+out vec3 vNormal;
+out vec3 vView;
+
+const float TAU = 6.28318530718;
+
 float triangleWave(float x) {
     return abs(fract(x) * 2.0 - 1.0);
 }
 
 void main() {
-    vec3 base = Position;
-    float h = clamp(base.y * 0.5 + 0.5, 0.0, 1.0);
+    vec3 p = Position;
 
-    // Angular ridges, twisted with height so the licks spiral up instead of running straight.
-    float angle = atan(base.z, base.x);
-    float ridges = triangleWave(angle * (11.0 / (2.0 * PI)) + h * 0.85 + time * 0.35);
-    ridges = pow(ridges, 1.35);
+    // Measured in whole turns: Peaks is an integer and the noise repeats once per turn, so both close up
+    // where atan() wraps at the back instead of leaving a seam.
+    float around = atan(p.z, p.x + 1.0e-6) / TAU;
+    float ridges = triangleWave(around * Peaks);
+    float bands = triangleWave(p.y * WaveFrequency - Phase);
 
-    // Bands travelling up the body, sharpened into points rather than soft bulges.
-    float travel = triangleWave(h * 2.6 - time * 5.5);
-    travel = pow(travel, 1.6);
+    float noise = texture(NoiseTex, vec2(around, p.y * 1.1 - Time)).r * 1.5 - 0.5;
+    float wave = ridges * bands + noise * NoiseDetail * 1.08;
 
-    // Nothing moves at the root or right at the tip, so the flame silhouette stays readable.
-    float falloff = smoothstep(0.0, 0.14, h) * (1.0 - smoothstep(0.90, 1.0, h));
-    float rise = 0.45 + 1.05 * h;
+    // Rooted at the base, strongest through the body, fading out over the top.
+    float envelope = smoothstep(-1.5, -0.2, p.y) * (1.0 - smoothstep(0.0, 2.3, p.y));
 
-    float wave = travel * ridges * falloff * rise;
+    vec3 shell = p * Size;
+    vec3 outward = normalize(shell + vec3(0.0, 1.0e-5, 0.0));
+    vec3 direction = normalize(mix(outward, vec3(0.0, 1.0, 0.0), UpwardBias));
 
-    // Outwards low down, upwards near the tip.
-    vec3 radial = normalize(vec3(base.x, 0.0, base.z) + vec3(1e-4, 0.0, 0.0));
-    vec3 dir = normalize(mix(radial, vec3(0.0, 1.0, 0.0), 0.30 + 0.55 * h));
+    // Ignition: the shell swells out of the body first and the tongues only burst once it is nearly full.
+    float swell = Growth * Growth * (3.0 - 2.0 * Growth);
+    shell.xz *= swell;
+    shell += direction * wave * WaveAmplitude * envelope * pow(Growth, 6.0);
 
-    vec3 pos = base;
-    pos.xz *= (auravar * auravar * (3.0 - 2.0 * auravar));
-    pos += dir * (wave * 0.55) * pow(auravar, 6.0);
-
-    vec3 n = normalize(mix(normalize(Normal), dir, 0.35));
-
-    vec4 viewPos = modelMatrix * vec4(pos, 1.0);
-    vNormalWorld = normalize((normalMatrix * vec4(n, 0.0)).xyz);
-    v_viewDir = -viewPos.xyz;
-    vHeight = h;
-    vWave = wave;
+    vec4 viewPos = ModelViewMat * vec4(shell, 1.0);
+    // The shell is a sphere at heart, so its displaced position doubles as the normal: the rim follows
+    // the tongues without the mesh carrying normals at all.
+    vNormal = NormalMat * shell;
+    vView = -viewPos.xyz;
 
     gl_Position = ProjMat * viewPos;
 }

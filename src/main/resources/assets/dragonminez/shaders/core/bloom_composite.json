@@ -1,0 +1,19 @@
+{
+  "vertex": "dragonminez:bloom_quad",
+  "fragment": "dragonminez:bloom_composite",
+  "attributes": [ "Position" ],
+  "samplers": [
+    { "name": "Bloom0" },
+    { "name": "Bloom1" },
+    { "name": "Bloom2" }
+  ],
+  "uniforms": [
+    { "name": "Intensity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Spread", "type": "float", "count": 1, "values": [ 0.6 ] }
+  ],
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  }
+}

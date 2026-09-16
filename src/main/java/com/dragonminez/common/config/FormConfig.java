@@ -44,6 +44,105 @@ public class FormConfig {
 	@Setter
 	@Getter
 	@NoArgsConstructor
+	public static class Aura3DStyle {
+		public static final Aura3DStyle DEFAULT = new Aura3DStyle();
+
+		/** Shell radius (x, z) and height (y), relative to the aura scale. */
+		private Float[] size = {1.10f, 1.17f, 1.02f};
+		/** Flame tongues around the body. Rounded to a whole number so the tongues close seamlessly. */
+		private Integer flamePeaks = 12;
+		/** Bands per unit of height: more bands, shorter tongues. */
+		private Float waveFrequency = 2.0f;
+		/** How fast the bands climb. Changes blend smoothly, the flame never jumps. */
+		private Float waveSpeed = 5.0f;
+		/** How far the tongues reach out of the shell. */
+		private Float waveAmplitude = 0.75f;
+		/** Turbulence layered over the tongues: 0 is a clean lattice, 1 is chaotic. */
+		private Float noiseDetail = 0.10f;
+		/** 0 pushes tongues straight out, 1 pulls them straight up. */
+		private Float upwardBias = 0.54f;
+		/** Opacity where the shell faces the camera. Keep it low: the body stays readable inside. */
+		private Float coreAlpha = 0.05f;
+		/** Opacity at the silhouette. */
+		private Float rimAlpha = 1.0f;
+		/** Sharpness of the core-to-rim falloff. */
+		private Float rimPower = 4.0f;
+		/** Lower values widen the rim band. */
+		private Float rimThreshold = 0.05f;
+		/** Colour facing the camera. Empty: the aura colour lightened towards white. */
+		private String coreColor = "";
+		/** Colour at the silhouette. Empty: the aura colour. */
+		private String rimColor = "";
+		/** Colour of the shimmering noise over the shell. Empty: no noise tint. */
+		private String noiseColor = "";
+		/** Strength of the glow this aura feeds into the bloom pass. */
+		private Float bloomIntensity = 1.0f;
+
+		public float getSizeX() { return size != null && size.length > 0 && size[0] != null ? Math.max(0.05f, size[0]) : 1.10f; }
+		public float getSizeY() { return size != null && size.length > 1 && size[1] != null ? Math.max(0.05f, size[1]) : 1.17f; }
+		public float getSizeZ() { return size != null && size.length > 2 && size[2] != null ? Math.max(0.05f, size[2]) : 1.02f; }
+		public int getFlamePeaks() { return flamePeaks != null ? Math.max(1, Math.min(64, flamePeaks)) : 12; }
+		public float getWaveFrequency() { return waveFrequency != null ? Math.max(0.0f, waveFrequency) : 2.0f; }
+		public float getWaveSpeed() { return waveSpeed != null ? waveSpeed : 5.0f; }
+		public float getWaveAmplitude() { return waveAmplitude != null ? Math.max(0.0f, waveAmplitude) : 0.75f; }
+		public float getNoiseDetail() { return noiseDetail != null ? Math.max(0.0f, noiseDetail) : 0.10f; }
+		public float getUpwardBias() { return upwardBias != null ? Math.max(0.0f, Math.min(1.0f, upwardBias)) : 0.54f; }
+		public float getCoreAlpha() { return coreAlpha != null ? Math.max(0.0f, Math.min(1.0f, coreAlpha)) : 0.05f; }
+		public float getRimAlpha() { return rimAlpha != null ? Math.max(0.0f, Math.min(1.0f, rimAlpha)) : 1.0f; }
+		public float getRimPower() { return rimPower != null ? Math.max(0.1f, rimPower) : 4.0f; }
+		public float getRimThreshold() { return rimThreshold != null ? Math.max(0.001f, rimThreshold) : 0.05f; }
+		public String getCoreColor() { return coreColor != null ? coreColor.trim() : ""; }
+		public String getRimColor() { return rimColor != null ? rimColor.trim() : ""; }
+		public String getNoiseColor() { return noiseColor != null ? noiseColor.trim() : ""; }
+		public float getBloomIntensity() { return bloomIntensity != null ? Math.max(0.0f, bloomIntensity) : 1.0f; }
+
+		public Aura3DStyle size(float x, float y, float z) {
+			this.size = new Float[]{x, y, z};
+			return this;
+		}
+
+		public Aura3DStyle waves(float frequency, float speed, float amplitude) {
+			this.waveFrequency = frequency;
+			this.waveSpeed = speed;
+			this.waveAmplitude = amplitude;
+			return this;
+		}
+
+		public Aura3DStyle turbulence(float noiseDetail, float upwardBias) {
+			this.noiseDetail = noiseDetail;
+			this.upwardBias = upwardBias;
+			return this;
+		}
+
+		public Aura3DStyle rim(float coreAlpha, float rimAlpha, float rimPower, float rimThreshold) {
+			this.coreAlpha = coreAlpha;
+			this.rimAlpha = rimAlpha;
+			this.rimPower = rimPower;
+			this.rimThreshold = rimThreshold;
+			return this;
+		}
+
+		public Aura3DStyle colors(String core, String rim, String noise) {
+			this.coreColor = core;
+			this.rimColor = rim;
+			this.noiseColor = noise;
+			return this;
+		}
+
+		public Aura3DStyle peaks(int peaks) {
+			this.flamePeaks = peaks;
+			return this;
+		}
+
+		public Aura3DStyle bloom(float intensity) {
+			this.bloomIntensity = intensity;
+			return this;
+		}
+	}
+
+	@Setter
+	@Getter
+	@NoArgsConstructor
 	public static class FormData {
 		private String name = "";
 		private Integer unlockOnSkillLevel = 0;
@@ -69,6 +168,8 @@ public class FormConfig {
 		private String extraAuraColor = "#FFFFFF";
 		private String extraAuraType = "kakarot";
 		private String extraAuraType3D = "smooth";
+		private Aura3DStyle aura3DStyle = new Aura3DStyle();
+		private Aura3DStyle extraAura3DStyle = new Aura3DStyle();
 		private Boolean hasLightnings = false;
 		private String lightningColor = "";
 		private String tintColor = "#FF0000";
@@ -306,6 +407,14 @@ public class FormConfig {
 
 		public String getExtraAuraType() {
 			return extraAuraType != null && !extraAuraType.isEmpty() ? extraAuraType : "kakarot";
+		}
+
+		public Aura3DStyle getAura3DStyle() {
+			return aura3DStyle != null ? aura3DStyle : Aura3DStyle.DEFAULT;
+		}
+
+		public Aura3DStyle getExtraAura3DStyle() {
+			return extraAura3DStyle != null ? extraAura3DStyle : Aura3DStyle.DEFAULT;
 		}
 
 		public OutlineShaderConfig getOutlineShader() {

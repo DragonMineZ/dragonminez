@@ -17,6 +17,9 @@ public class DMZShaders {
 	public static ShaderInstance auraSmooth3DShader;
 	public static ShaderInstance auraSparking3DShader;
 	public static ShaderInstance auraTrailShader;
+	public static ShaderInstance bloomDownShader;
+	public static ShaderInstance bloomBlurShader;
+	public static ShaderInstance bloomCompositeShader;
 	public static ShaderInstance lightningShader;
 	public static ShaderInstance outlineShader;
 	public static ShaderInstance outlineMaskTexShader;
@@ -32,7 +35,7 @@ public class DMZShaders {
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_smooth"),
-						DefaultVertexFormat.POSITION_COLOR_NORMAL),
+						DefaultVertexFormat.POSITION),
 				shaderInstance -> auraSmooth3DShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
@@ -44,6 +47,21 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_trail"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
 				shaderInstance -> auraTrailShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bloom_down"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> bloomDownShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bloom_blur"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> bloomBlurShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bloom_composite"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> bloomCompositeShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning"),
