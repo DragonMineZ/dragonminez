@@ -54,7 +54,6 @@ public class AuraRenderer {
 	private static final float SHOULDER_LEAN_MAX_DEG = 6.0f;
 	private static final float AURA_RELEASE_CAP = 100.0f;
 	private static final float AURA_RELEASE_SCALE_BONUS = 0.35f;
-	/** Aura scale of a character with no form, before model scaling. */
 	private static final float AURA_BASE_SCALE = 1.05f;
 	private static final float AURA_RELEASE_LERP_PER_TICK = 0.02f;
 	private static final float AURA_3D_FLIGHT_LEAD = 1.10f;
@@ -62,16 +61,13 @@ public class AuraRenderer {
 	private static final float AURA_2D_FLIGHT_OFFSET = 0.31f;
 	private static final float AURA_3D_BACKFACE = 0.02f;
 	private static final float AURA_3D_BACKFACE_FIRST_PERSON = 0.85f;
+	private static final float AURA_3D_FIRST_PERSON_ALPHA = 0.15f;
 
-	/** Smooth shell ignition and extinction, per second: it swells out of the body in a quarter second. */
 	private static final float SMOOTH_GROWTH_RATE = 4.0f;
 	private static final float SMOOTH_SHRINK_RATE = 3.0f;
-	/** How fast a layer eases into a new form's style; about half a second to settle. */
 	private static final float SMOOTH_STYLE_BLEND_RATE = 6.0f;
 	private static final float SMOOTH_FIRST_PERSON_ALPHA = 0.45f;
-	/** Fast flight pushes the shell this far ahead of the body, so the tongues stream out behind. */
 	private static final float SMOOTH_FLIGHT_LEAD = 0.25f;
-	/** Longest step the motion clock takes, so a hitch or a paused frame never makes the flame leap. */
 	private static final float MAX_MOTION_STEP = 0.1f;
 
 	private static final float AURA_MERGE_SIZE_DIVISOR = 1.25f;
@@ -1077,17 +1073,15 @@ public class AuraRenderer {
 
 	private static void executeAuraShaderDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, boolean isFirstPerson) {
 		boolean isLocalPlayer = player == mc.player;
-		if (data.use3D && Aura3DRenderer.isSmooth(layer.type)) {
-			executeSmoothDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson);
+		if (data.use3D) {
+			if (Aura3DRenderer.isSmooth(layer.type)) {
+				executeSmoothDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson);
+			} else {
+				executeAura3DDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson);
+			}
 			return;
 		}
 		if (alphaMultiplier <= 0.001f) return;
-
-		if (data.use3D) {
-			float alpha3D = ((isLocalPlayer && isFirstPerson) ? 0.15f : 1.0f) * alphaMultiplier * layer.alpha;
-			executeAura3DDraw(player, data, layer, poseStack, projectionMatrix, partialTick, alpha3D, isLocalPlayer && isFirstPerson);
-			return;
-		}
 
 		ShaderInstance shader = DMZShaders.auraShader;
 		if (shader == null) return;
@@ -1334,7 +1328,6 @@ public class AuraRenderer {
 		poseStack.pushPose();
 		poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - bodyRot));
 		if (laidDown) {
-			// Centre the shell on the body before tipping it along the flight axis.
 			poseStack.translate(0.0f, player.getBbHeight() * 0.5f, 0.0f);
 			poseStack.mulPose(Axis.XP.rotationDegrees(auraLeanDegrees(player, partialTick)));
 			poseStack.translate(0.0f, -Aura3DRenderer.SMOOTH_CENTER * scaleY, 0.0f);
@@ -1350,7 +1343,10 @@ public class AuraRenderer {
 	}
 
 	private static void executeAura3DDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack,
-										  Matrix4f projectionMatrix, float partialTick, float alpha, boolean firstPerson) {
+										  Matrix4f projectionMatrix, float partialTick, boolean firstPerson) {
+		LayerMotion motion = data.motions.get(layer.layerId);
+		if (motion == null || !motion.ready) return;
+
 		float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
 		float boost = 1.0f + layer.layerId * 0.15f;
 		float time = auraPhase(player, partialTick) / 10.0f;
@@ -1377,7 +1373,8 @@ public class AuraRenderer {
 			if (fastFlying) poseStack.translate(0.0f, -AURA_3D_FLIGHT_LEAD, 0.0f);
 		}
 
-		Aura3DRenderer.drawSparking(poseStack, projectionMatrix, layer.color, alpha, time,
+		float alpha = (firstPerson ? AURA_3D_FIRST_PERSON_ALPHA : 1.0f) * layer.alpha * smoothFade(data);
+		Aura3DRenderer.drawSparking(poseStack, projectionMatrix, motion.style, alpha, data.growth, time,
 				scaleX, scaleY, scaleZ, pivot,
 				firstPerson ? AURA_3D_BACKFACE_FIRST_PERSON : AURA_3D_BACKFACE);
 
@@ -1397,24 +1394,24 @@ public class AuraRenderer {
 	}
 
 	private static void drawSinglePulse3D(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack,
-										  Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, float progress) {
+										  Matrix4f projectionMatrix, float partialTick, float progress) {
+		LayerMotion motion = data.motions.get(topLayer.layerId);
+		if (motion == null || !motion.ready) return;
+
 		float expansion = 1.0f + (3.0f * progress);
 		float alphaCurve = (float) Math.sin(progress * Math.PI);
 		float boost = 1.0f + topLayer.layerId * 0.15f;
-		float time = auraPhase(player, partialTick) / 10.0f;
+		float alpha = alphaCurve * 0.5f * topLayer.alpha * smoothFade(data);
 		float spin = (player.level().getGameTime() + partialTick) * 2.5f;
 
 		float radius = data.auraScaleX * expansion * boost * Aura3DRenderer.widthFactor(topLayer.type) * 0.75f;
 		if (Aura3DRenderer.isSmooth(topLayer.type)) {
-			LayerMotion motion = data.motions.get(topLayer.layerId);
-			if (motion == null || !motion.ready) return;
-			Aura3DRenderer.drawSmoothGroundPulse(poseStack, projectionMatrix, motion.style,
-					alphaCurve * 0.5f * topLayer.alpha * smoothFade(data), (player.tickCount + partialTick) / 20.0f, motion.phase,
-					radius, data.auraScaleY * 0.22f, spin);
+			Aura3DRenderer.drawSmoothGroundPulse(poseStack, projectionMatrix, motion.style, alpha,
+					(player.tickCount + partialTick) / 20.0f, motion.phase, radius, data.auraScaleY * 0.22f, spin);
 			return;
 		}
-		Aura3DRenderer.drawSparkingGroundPulse(poseStack, projectionMatrix, topLayer.color,
-				alphaCurve * 0.5f * alphaMultiplier * topLayer.alpha, time, radius, data.auraScaleY * 0.22f, spin);
+		Aura3DRenderer.drawSparkingGroundPulse(poseStack, projectionMatrix, motion.style, alpha,
+				auraPhase(player, partialTick) / 10.0f, radius, data.auraScaleY * 0.22f, spin);
 	}
 
 	private static void renderShaderPulseAura(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier) {
@@ -1442,7 +1439,7 @@ public class AuraRenderer {
 
 	private static void drawSinglePulseInstance(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, float progress) {
 		if (data.use3D) {
-			drawSinglePulse3D(player, data, topLayer, poseStack, projectionMatrix, partialTick, alphaMultiplier, progress);
+			drawSinglePulse3D(player, data, topLayer, poseStack, projectionMatrix, partialTick, progress);
 			return;
 		}
 

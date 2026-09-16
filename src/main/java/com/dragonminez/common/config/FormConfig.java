@@ -77,6 +77,14 @@ public class FormConfig {
 		private String noiseColor = "";
 		/** Strength of the glow this aura feeds into the bloom pass. */
 		private Float bloomIntensity = 1.0f;
+		/** Sparking only: spike columns around the shell. The coarse spikes use half of this. */
+		private Integer spikeDensity = 32;
+		/** Sparking only: spike beats per second. Each beat fires a spike, holds it and kills it in place. */
+		private Float spikeBurstRate = 3.0f;
+		/** Sparking only: bias towards short spikes. Higher values make the long ones rarer. */
+		private Float spikeRarity = 3.0f;
+		/** Sparking only: where the outline band starts, measured from the silhouette inwards. Lower widens it. */
+		private Float bandStart = 0.50f;
 
 		public float getSizeX() { return size != null && size.length > 0 && size[0] != null ? Math.max(0.05f, size[0]) : 1.10f; }
 		public float getSizeY() { return size != null && size.length > 1 && size[1] != null ? Math.max(0.05f, size[1]) : 1.17f; }
@@ -95,6 +103,10 @@ public class FormConfig {
 		public String getRimColor() { return rimColor != null ? rimColor.trim() : ""; }
 		public String getNoiseColor() { return noiseColor != null ? noiseColor.trim() : ""; }
 		public float getBloomIntensity() { return bloomIntensity != null ? Math.max(0.0f, bloomIntensity) : 1.0f; }
+		public int getSpikeDensity() { return spikeDensity != null ? Math.max(4, Math.min(32, spikeDensity)) : 32; }
+		public float getSpikeBurstRate() { return spikeBurstRate != null ? Math.max(0.0f, spikeBurstRate) : 3.0f; }
+		public float getSpikeRarity() { return spikeRarity != null ? Math.max(0.1f, spikeRarity) : 3.0f; }
+		public float getBandStart() { return bandStart != null ? Math.max(0.05f, Math.min(0.95f, bandStart)) : 0.50f; }
 
 		public Aura3DStyle size(float x, float y, float z) {
 			this.size = new Float[]{x, y, z};
@@ -136,6 +148,14 @@ public class FormConfig {
 
 		public Aura3DStyle bloom(float intensity) {
 			this.bloomIntensity = intensity;
+			return this;
+		}
+
+		public Aura3DStyle spikes(int density, float burstRate, float rarity, float bandStart) {
+			this.spikeDensity = density;
+			this.spikeBurstRate = burstRate;
+			this.spikeRarity = rarity;
+			this.bandStart = bandStart;
 			return this;
 		}
 	}

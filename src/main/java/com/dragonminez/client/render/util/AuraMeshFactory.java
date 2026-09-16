@@ -13,6 +13,8 @@ import java.util.function.DoubleUnaryOperator;
 
 public class AuraMeshFactory {
 	public static final int DROPLET_RESOLUTION = 96;
+	private static final int SPARKING_RINGS = 72;
+	private static final int SPARKING_SEGMENTS = 128;
 
 	private static VertexBuffer billboardQuad;
 	private static VertexBuffer groundQuad;
@@ -113,12 +115,12 @@ public class AuraMeshFactory {
 		return groundQuad;
 	}
 
-	private static VertexBuffer buildFlameMesh(int rings, int segments, float capSpan, DoubleUnaryOperator body) {
+	private static VertexBuffer buildFlameMesh(int rings, int segments, DoubleUnaryOperator body) {
 		float[] radii = new float[rings + 1];
 		float peak = 0.0f;
 		for (int i = 0; i <= rings; i++) {
 			double t = (double) i / rings;
-			radii[i] = (float) (body.applyAsDouble(t) * baseCap(t, capSpan));
+			radii[i] = (float) body.applyAsDouble(t);
 			if (radii[i] > peak) peak = radii[i];
 		}
 		if (peak <= 0.0f) peak = 1.0f;
@@ -159,20 +161,6 @@ public class AuraMeshFactory {
 		return buffer;
 	}
 
-	private static double baseCap(double t, double capSpan) {
-		if (capSpan <= 0.0 || t >= capSpan) return 1.0;
-		double u = t / capSpan;
-		return Math.sqrt(Math.max(0.0, 1.0 - (1.0 - u) * (1.0 - u)));
-	}
-
-	private static double flare(double t, double baseWidth, double riseSpan) {
-		return baseWidth + (1.0 - baseWidth) * Math.sin(Math.PI * 0.5 * Math.min(1.0, t / riseSpan));
-	}
-
-	private static double superTaper(double t, double exponent) {
-		return Math.pow(1.0 - Math.pow(t, exponent), 1.0 / exponent);
-	}
-
 	private static float slopeAt(float[] radii, int index, int rings, float ringStep) {
 		int lo = Math.max(0, index - 1);
 		int hi = Math.min(rings, index + 1);
@@ -187,13 +175,14 @@ public class AuraMeshFactory {
 
 	public static VertexBuffer getSparkingFlameMesh() {
 		if (sparkingFlame == null) {
-			sparkingFlame = buildFlameMesh(96, 128, 0.30f, t -> flare(t, 0.85, 0.30) * superTaper(t, 2.0) * neck(t, 0.40, 0.35));
+			sparkingFlame = buildFlameMesh(SPARKING_RINGS, SPARKING_SEGMENTS, AuraMeshFactory::sparkingProfile);
 		}
 		return sparkingFlame;
 	}
 
-	private static double neck(double t, double start, double depth) {
-		double u = Math.min(1.0, Math.max(0.0, (t - start) / (1.0 - start)));
-		return 1.0 - depth * u * u * (3.0 - 2.0 * u);
+	private static double sparkingProfile(double t) {
+		double y = t * 2.0 - 1.0;
+		double bulge = 0.84 + 0.42 * Math.pow(1.0 - t, 1.25);
+		return bulge * Math.sqrt(Math.max(0.0, 1.0 - y * y));
 	}
 }
