@@ -2,7 +2,6 @@ package com.dragonminez.client.render.effects;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.FlySkillEvent;
-import com.dragonminez.client.render.camera.OverShoulderCamera;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -50,8 +49,14 @@ public class AuraRenderer {
 	private static final float HALF_SQRT_3 = (float) (Math.sqrt(3.0D) / 2.0D);
 	private static final float FADE_SPEED = 0.005f;
 	private static final float PULSE_SPEED = 0.01f;
-	private static final float SHOULDER_LEAN_DEG_PER_BLOCK = 3.0f;
-	private static final float SHOULDER_LEAN_MAX_DEG = 6.0f;
+	private static final Vec3 AURA_2D_UP = new Vec3(0.0, 1.0, 0.0);
+	private static final float AURA_2D_GROUND_LIFT = 0.05f;
+	private static final float AURA_2D_GROUND_OFFSET = 0.7f;
+	private static final float AURA_2D_CROSS_START_DEG = 45.0f;
+	private static final float AURA_2D_NEAR_FADE_SPAN = 0.9f;
+	private static final float AURA_2D_NEAR_FADE_MIN = 1.2f;
+	private static final float AURA_2D_NEAR_FADE_MAX = 2.2f;
+	private static final float AURA_2D_NEAR_FADE_FLOOR = 0.4f;
 	private static final float AURA_RELEASE_CAP = 100.0f;
 	private static final float AURA_RELEASE_SCALE_BONUS = 0.35f;
 	private static final float AURA_BASE_SCALE = 1.05f;
@@ -834,7 +839,8 @@ public class AuraRenderer {
 		for (AuraLayer layer : activeLayers) {
 			poseStack.pushPose();
 			poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
-			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, true);
+			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix,
+					new Vec3(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z), partialTick, data.alphaProgress, true);
 			poseStack.popPose();
 		}
 	}
@@ -908,7 +914,7 @@ public class AuraRenderer {
 		for (AuraLayer layer : activeLayers) {
 			poseStack.pushPose();
 			poseStack.translate(offsetX, offsetY, offsetZ);
-			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, false);
+			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, new Vec3(offsetX, offsetY, offsetZ), partialTick, data.alphaProgress, false);
 			poseStack.popPose();
 		}
 	}
@@ -1065,13 +1071,14 @@ public class AuraRenderer {
 		for (AuraLayer layer : activeLayers) {
 			poseStack.pushPose();
 			poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
-			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, isFirstPerson);
+			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix,
+					new Vec3(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z), partialTick, data.alphaProgress, isFirstPerson);
 			poseStack.popPose();
 		}
 		return true;
 	}
 
-	private static void executeAuraShaderDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, boolean isFirstPerson) {
+	private static void executeAuraShaderDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, Vec3 cameraOffset, float partialTick, float alphaMultiplier, boolean isFirstPerson) {
 		boolean isLocalPlayer = player == mc.player;
 		if (data.use3D) {
 			if (Aura3DRenderer.isSmooth(layer.type)) {
@@ -1138,81 +1145,88 @@ public class AuraRenderer {
 			return;
 		}
 
-		float cameraPitch = mc.gameRenderer.getMainCamera().getXRot();
-		float absPitch = Math.abs(cameraPitch);
-		float crossFactor = 0.0f;
-		float pitchSquash = 1.0f;
+		Camera camera = mc.gameRenderer.getMainCamera();
 		boolean flightBillboard = isFastFlying(player) && !isFirstPerson;
 
+		Vec3 auraUp = flightBillboard ? flightAxis(player, partialTick) : AURA_2D_UP;
+		double baseLift = flightBillboard ? player.getBbHeight() * 0.5f : AURA_2D_GROUND_LIFT;
+		double axisLift = (flightBillboard ? AURA_2D_FLIGHT_OFFSET : AURA_2D_GROUND_OFFSET) * finalScaleY;
+		Vec3 centre = cameraOffset.add(0.0, baseLift, 0.0).add(auraUp.scale(axisLift));
+
+		double centreDistance = centre.length();
+
+		float crossFactor = 0.0f;
+		float pitchSquash = 1.0f;
 		if (flightBillboard) {
 			float alignment = flightAxisAlignment(player, mc, partialTick);
 			if (alignment > 0.707f) {
 				crossFactor = (float) Math.pow((alignment - 0.707f) / 0.293f, 2.0);
 				pitchSquash = 1.0f - (crossFactor * 0.5f);
 			}
-		} else if (absPitch > 45.0f && !isFirstPerson) {
-			crossFactor = (float) Math.pow((absPitch - 45.0f) / 45.0f, 2.0);
-			pitchSquash = 1.0f - (crossFactor * 0.5f);
+		} else if (!isFirstPerson && centreDistance > 1.0e-4) {
+			float elevation = (float) Math.toDegrees(Math.asin(Mth.clamp(Math.abs(centre.dot(auraUp) / centreDistance), 0.0, 1.0)));
+			if (elevation > AURA_2D_CROSS_START_DEG) {
+				float t = (elevation - AURA_2D_CROSS_START_DEG) / (90.0f - AURA_2D_CROSS_START_DEG);
+				crossFactor = Mth.clamp(t * t, 0.0f, 1.0f);
+				pitchSquash = 1.0f - (crossFactor * 0.5f);
+			}
 		}
+
+		float fadeStart = Mth.clamp(finalScaleX * AURA_2D_NEAR_FADE_SPAN, AURA_2D_NEAR_FADE_MIN, AURA_2D_NEAR_FADE_MAX);
+		float fadeEnd = fadeStart * AURA_2D_NEAR_FADE_FLOOR;
+		finalAlpha *= (float) Mth.clamp((centreDistance - fadeEnd) / (fadeStart - fadeEnd), 0.0, 1.0);
+		if (finalAlpha <= 0.001f) return;
 
 		if (crossFactor < 1.0f) {
 			poseStack.pushPose();
 
-			poseStack.translate(0.0, flightBillboard ? player.getBbHeight() * 0.5f : 0.05f, 0.0);
-			if (!flightBillboard || !applyFlightAxisBillboard(poseStack, player, mc, partialTick, true)) {
-				poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
-				poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
-				if (OverShoulderCamera.isRunning()) {
-					float shoulderLean = (float) Mth.clamp(-OverShoulderCamera.getCurrentSide() * SHOULDER_LEAN_DEG_PER_BLOCK, -SHOULDER_LEAN_MAX_DEG, SHOULDER_LEAN_MAX_DEG);
-					poseStack.mulPose(Axis.ZP.rotationDegrees(shoulderLean));
-				}
+			poseStack.translate(0.0, baseLift, 0.0);
+			Vec3 facing = flightBillboard ? centre : new Vec3(camera.getLookVector()).scale(-1.0);
+			if (applyAxisBillboard(poseStack, camera, auraUp, facing)) {
+				poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
+
+				poseStack.translate(0.0, flightBillboard ? AURA_2D_FLIGHT_OFFSET : AURA_2D_GROUND_OFFSET, 0.0);
+
+				shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha);
+				shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+				RenderType mainRender = auraType(mainTex);
+				customSetup(mainRender, mainTex, shader);
+				applyAndDraw(mesh, poseStack, projectionMatrix, shader, mainTex, layer.color, (1.0f - crossFactor) * finalAlpha, animSpeed, false);
+				customClear(mainRender);
+
+				poseStack.pushPose();
+				float sparkingPulse = 1.0f + (float) Math.sin((player.tickCount + partialTick) * 0.2f) * 0.05f;
+				poseStack.scale(0.8f * sparkingPulse, 0.65f * sparkingPulse, 0.8f * sparkingPulse);
+
+				poseStack.translate(0.0, -0.25, 0.0);
+
+				RenderType sparkingRender = auraType(sparkingTex);
+				customSetup(sparkingRender, sparkingTex, shader);
+				shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha * 0.8f);
+				shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+				applyAndDraw(mesh, poseStack, projectionMatrix, shader, sparkingTex, layer.color, (1.0f - crossFactor) * finalAlpha * 0.8f, animSpeed, false);
+				customClear(sparkingRender);
+				poseStack.popPose();
 			}
-			poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
-
-			poseStack.translate(0.0, flightBillboard ? AURA_2D_FLIGHT_OFFSET : 0.7f, 0.0);
-
-			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha);
-			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			RenderType mainRender = auraType(mainTex);
-			customSetup(mainRender, mainTex, shader);
-			applyAndDraw(mesh, poseStack, projectionMatrix, shader, mainTex, layer.color, (1.0f - crossFactor) * finalAlpha, animSpeed, false);
-			customClear(mainRender);
-
-			poseStack.pushPose();
-			float sparkingPulse = 1.0f + (float) Math.sin((player.tickCount + partialTick) * 0.2f) * 0.05f;
-			poseStack.scale(0.8f * sparkingPulse, 0.65f * sparkingPulse, 0.8f * sparkingPulse);
-
-			poseStack.translate(0.0, -0.25, 0.0);
-
-			RenderType sparkingRender = auraType(sparkingTex);
-			customSetup(sparkingRender, sparkingTex, shader);
-			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha * 0.8f);
-			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			applyAndDraw(mesh, poseStack, projectionMatrix, shader, sparkingTex, layer.color, (1.0f - crossFactor) * finalAlpha * 0.8f, animSpeed, false);
-			customClear(sparkingRender);
-			poseStack.popPose();
 
 			poseStack.popPose();
 		}
 
 		if (crossFactor > 0.0f) {
 			poseStack.pushPose();
-			poseStack.translate(0.0, flightBillboard ? player.getBbHeight() * 0.5f : 0.05f, 0.0);
-			if (!flightBillboard || !applyFlightAxisBillboard(poseStack, player, mc, partialTick, false)) {
-				poseStack.mulPose(Axis.YP.rotationDegrees(-mc.gameRenderer.getMainCamera().getYRot()));
-				if (cameraPitch < 0.0f) {
-					poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
-				}
-			}
-			poseStack.scale(finalScaleX, 1.0f, finalScaleZ);
+			poseStack.translate(0.0, baseLift, 0.0);
+			if (applyAxisBillboard(poseStack, camera, auraUp, new Vec3(camera.getLookVector()))) {
+				if (!flightBillboard && centre.dot(auraUp) > 0.0) poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
+				poseStack.scale(finalScaleX, 1.0f, finalScaleZ);
 
-			shader.safeGetUniform("alp1").set(crossFactor * finalAlpha);
-			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			RenderType crossRender = auraType(crossTex);
-			customSetup(crossRender, crossTex, shader);
-			VertexBuffer groundMesh = AuraMeshFactory.getGroundQuad();
-			applyAndDraw(groundMesh, poseStack, projectionMatrix, shader, crossTex, layer.color, crossFactor * finalAlpha, animSpeed, true);
-			customClear(crossRender);
+				shader.safeGetUniform("alp1").set(crossFactor * finalAlpha);
+				shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+				RenderType crossRender = auraType(crossTex);
+				customSetup(crossRender, crossTex, shader);
+				VertexBuffer groundMesh = AuraMeshFactory.getGroundQuad();
+				applyAndDraw(groundMesh, poseStack, projectionMatrix, shader, crossTex, layer.color, crossFactor * finalAlpha, animSpeed, true);
+				customClear(crossRender);
+			}
 
 			poseStack.popPose();
 		}
@@ -1231,18 +1245,8 @@ public class AuraRenderer {
 		return (float) Math.abs(viewDir.dot(flightAxis(player, partialTick)));
 	}
 
-	private static boolean applyFlightAxisBillboard(PoseStack poseStack, Player player, Minecraft mc,
-												   float partialTick, boolean faceCamera) {
-		Camera camera = mc.gameRenderer.getMainCamera();
-		Vec3 up = flightAxis(player, partialTick);
-
-		Vec3 reference;
-		if (faceCamera) {
-			Vec3 auraPos = new Vec3(Mth.lerp(partialTick, player.xo, player.getX()), Mth.lerp(partialTick, player.yo, player.getY()) + player.getBbHeight() * 0.5, Mth.lerp(partialTick, player.zo, player.getZ()));
-			reference = auraPos.subtract(camera.getPosition());
-		} else reference = new Vec3(camera.getLookVector());
-
-		Vec3 forward = reference.subtract(up.scale(reference.dot(up)));
+	private static boolean applyAxisBillboard(PoseStack poseStack, Camera camera, Vec3 up, Vec3 facing) {
+		Vec3 forward = facing.subtract(up.scale(facing.dot(up)));
 		if (forward.lengthSqr() < 1.0e-6) {
 			Vec3 cameraUp = new Vec3(camera.getUpVector());
 			forward = cameraUp.subtract(up.scale(cameraUp.dot(up)));
@@ -1276,10 +1280,6 @@ public class AuraRenderer {
 				&& FlySkillEvent.getInstance().isFlyingFast(clientPlayer);
 	}
 
-	/**
-	 * Once per frame per aura owner: ignites or extinguishes the smooth shell, eases each layer's shown style
-	 * towards its target and climbs its bands. Real time rather than ticks, clamped, and frozen while paused.
-	 */
 	private static void advanceMotions(Player player, CachedAuraData data, List<AuraLayer> layers, boolean active) {
 		long now = Util.getNanos();
 		float dt = data.motionNanos == 0L ? 0.0f : Math.min(MAX_MOTION_STEP, (now - data.motionNanos) / 1.0e9f);
