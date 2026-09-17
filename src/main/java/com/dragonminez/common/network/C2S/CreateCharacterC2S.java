@@ -1,5 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.hair.HairStyleSlot;
+import com.dragonminez.common.hair.HairSanitizer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
@@ -42,7 +44,7 @@ public class CreateCharacterC2S {
 		this.className = character.getCharacterClass();
 		this.gender = character.getGender();
 		this.hairId = character.getHairId();
-		this.customHair = character.getHairBase();
+		this.customHair = character.getOwnHairStyle(HairStyleSlot.BASE);
 		this.bodyType = character.getBodyType();
 		this.eyesType = character.getEyesType();
 		this.noseType = character.getNoseType();
@@ -153,6 +155,7 @@ public class CreateCharacterC2S {
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isHasCreatedCharacter()) {
+					if (msg.customHair != null) HairSanitizer.sanitizeAndLog(msg.customHair, HairStyleSlot.BASE, player.getGameProfile().getName());
 					data.initializeWithRaceAndClass(msg.raceName, msg.className, msg.gender,
 							msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType, msg.boobScale,
 							msg.activeHeadBone, msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,

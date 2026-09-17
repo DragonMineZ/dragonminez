@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.config.CombatConfig;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.CustomHair;
@@ -1183,7 +1184,7 @@ public class StatsData {
 		character.setGender(gender);
 		character.setCharacterClass(characterClass);
 		character.setHairId(hairId);
-		if (customHair != null) character.setHairBase(customHair);
+		if (customHair != null) character.setHairStyle(HairStyleSlot.BASE, customHair);
 		character.setBodyType(bodyType);
 		character.setEyesType(eyesType);
 		character.setNoseType(noseType);

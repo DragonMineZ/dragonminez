@@ -2,13 +2,13 @@ package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
-import com.dragonminez.client.gui.HairEditorScreen;
+import com.dragonminez.client.gui.hair.HairEditorScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.render.effects.AuraRenderer;
-import com.dragonminez.client.render.hair.HairRenderer;
+import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ScrollbarState;
@@ -17,7 +17,6 @@ import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
-import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
@@ -1190,10 +1189,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		if (hasEmptyHeadBoneOption() && value == 0) {
 			character.setHairId(0);
 			character.setActiveHeadBone("");
-			character.setHairBase(new CustomHair());
-			character.setHairSSJ(new CustomHair());
-			character.setHairSSJ2(new CustomHair());
-			character.setHairSSJ3(new CustomHair());
+			character.clearHairStyles();
 			syncCharacter();
 			refreshScreenWidgets();
 			return;
@@ -1220,10 +1216,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			} else {
 				tokens.add("hair");
 				character.setHairId(newHairId);
-				character.setHairBase(new CustomHair());
-				character.setHairSSJ(new CustomHair());
-				character.setHairSSJ2(new CustomHair());
-				character.setHairSSJ3(new CustomHair());
+				character.clearHairStyles();
 			}
 		}
 
@@ -1744,7 +1737,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int originalMouth = character.getMouthType();
 		int originalTattoo = character.getTattooType();
 		String originalActiveBone = character.getActiveHeadBone();
-		boolean oldHairPhysics = HairRenderer.PHYSICS_ENABLED;
 
 		boolean[] hadTailState = {false};
 		boolean[] oldTailVisible = {true};
@@ -1811,7 +1803,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			}
 			case TATTOO_ONLY -> character.setTattooType(value);
 		}
-		HairRenderer.PHYSICS_ENABLED = false;
 
 		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
 		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
@@ -1877,7 +1868,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 320.0D);
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
-		try {
+		try (HairRenderContext.Scope hairScope = HairRenderContext.menuPreview()) {
 			InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
@@ -1906,7 +1897,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		character.setMouthType(originalMouth);
 		character.setTattooType(originalTattoo);
 		character.setActiveHeadBone(originalActiveBone);
-		HairRenderer.PHYSICS_ENABLED = oldHairPhysics;
 		}
 	}
 }

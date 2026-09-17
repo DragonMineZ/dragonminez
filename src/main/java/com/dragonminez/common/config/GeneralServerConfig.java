@@ -25,6 +25,56 @@ public class GeneralServerConfig {
 	private CraftingConfig crafting = new CraftingConfig();
 	private StorageConfig storage = new StorageConfig();
 	private DeveloperConfig developer = new DeveloperConfig();
+	private HairConfig hair = new HairConfig();
+
+	public HairConfig getHair() {
+		if (hair == null) hair = new HairConfig();
+		return hair;
+	}
+
+	public static class HairConfig {
+		private Integer maxSegmentsPerStrand = 12;
+		private Map<String, Float> maxStrandLength = defaultMaxStrandLength();
+		private Float maxStrandWidth = 8.0f;
+		private Float maxRootOffset = 2.0f;
+		private Integer maxTotalSegmentsPerStyle = 600;
+
+		private static Map<String, Float> defaultMaxStrandLength() {
+			Map<String, Float> map = new LinkedHashMap<>();
+			map.put("base", 20.0f);
+			map.put("ssj", 20.0f);
+			map.put("ssj2", 20.0f);
+			map.put("ssj3", 20.0f);
+			map.put("ssj4", 20.0f);
+			return map;
+		}
+
+		public int getMaxSegmentsPerStrand() {
+			int value = maxSegmentsPerStrand != null ? maxSegmentsPerStrand : 12;
+			return Math.max(1, Math.min(value, 32));
+		}
+
+		public float getMaxStrandLength(String hairType) {
+			Float value = maxStrandLength != null ? maxStrandLength.get(hairType) : null;
+			if (value == null || !Float.isFinite(value)) value = defaultMaxStrandLength().getOrDefault(hairType, 20.0f);
+			return Math.max(0.5f, Math.min(value, 128.0f));
+		}
+
+		public float getMaxStrandWidth() {
+			float value = maxStrandWidth != null && Float.isFinite(maxStrandWidth) ? maxStrandWidth : 8.0f;
+			return Math.max(0.25f, Math.min(value, 16.0f));
+		}
+
+		public float getMaxRootOffset() {
+			float value = maxRootOffset != null && Float.isFinite(maxRootOffset) ? maxRootOffset : 2.0f;
+			return Math.max(0.0f, Math.min(value, 4.0f));
+		}
+
+		public int getMaxTotalSegmentsPerStyle() {
+			int value = maxTotalSegmentsPerStyle != null ? maxTotalSegmentsPerStyle : 600;
+			return Math.max(1, Math.min(value, 68 * 32));
+		}
+	}
 
 	@Getter
 	@NoArgsConstructor
