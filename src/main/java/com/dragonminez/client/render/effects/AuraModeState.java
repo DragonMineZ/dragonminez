@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.effects;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.C2S.AuraModeC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -17,6 +18,11 @@ public final class AuraModeState {
 		return config != null && Boolean.TRUE.equals(config.getAura3DPersonal());
 	}
 
+	public static String localStyle() {
+		var config = ConfigManager.getUserConfig();
+		return FormConfig.sanitizeAura3DPreference(config != null ? config.getAura3DStyle() : null);
+	}
+
 	public static boolean entityPreference() {
 		var config = ConfigManager.getUserConfig();
 		return config != null && Boolean.TRUE.equals(config.getAura3DEntities());
@@ -29,9 +35,16 @@ public final class AuraModeState {
 		return stats != null && stats.getCharacter().isAura3D();
 	}
 
+	public static String style(Player player) {
+		if (player == null) return FormConfig.AURA_3D_SMOOTH;
+		if (player == Minecraft.getInstance().player) return localStyle();
+		StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		return stats != null ? stats.getCharacter().getAura3DType() : FormConfig.AURA_3D_SMOOTH;
+	}
+
 	public static void pushLocalPreference() {
 		if (Minecraft.getInstance().player == null) return;
-		NetworkHandler.sendToServer(new AuraModeC2S(localPreference()));
+		NetworkHandler.sendToServer(new AuraModeC2S(localPreference(), localStyle()));
 	}
 
 	public static void reconcileLocal(Player player) {
@@ -39,7 +52,8 @@ public final class AuraModeState {
 		if (player == null || player != mc.player) return;
 		StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return;
-		if (stats.getCharacter().isAura3D() == localPreference()) return;
+		if (stats.getCharacter().isAura3D() == localPreference()
+				&& stats.getCharacter().getAura3DType().equals(localStyle())) return;
 		pushLocalPreference();
 	}
 }

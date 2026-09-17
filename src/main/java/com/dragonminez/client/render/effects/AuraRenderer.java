@@ -51,6 +51,9 @@ public class AuraRenderer {
 	private static final float PULSE_SPEED = 0.01f;
 	private static final Vec3 AURA_2D_UP = new Vec3(0.0, 1.0, 0.0);
 	private static final float AURA_2D_GROUND_LIFT = 0.05f;
+	private static final float AURA_2D_BASE_MULTIPLIER = 2.2f;
+	private static final float GUI_AURA_EYE_DISTANCE = 8.0f;
+	private static final CachedAuraData GUI_AURA_DATA = new CachedAuraData();
 	private static final float AURA_2D_GROUND_OFFSET = 0.7f;
 	private static final float AURA_2D_CROSS_START_DEG = 45.0f;
 	private static final float AURA_2D_NEAR_FADE_SPAN = 0.9f;
@@ -164,10 +167,6 @@ public class AuraRenderer {
 		if (capturingBloom) BLOOM_DRAWS.add(redraw);
 	}
 
-	/**
-	 * The four colour bands the 2D aura shader maps its sprite to, hottest first. Brightened to sit at the same
-	 * strength as the 3D smooth aura, whose own colours are toned down in {@link AuraStyle}.
-	 */
 	public static void applyAuraColors(ShaderInstance shader, float[] color) {
 		shader.safeGetUniform("color1").set(Mth.lerp(0.55f, color[0], 1.0f), Mth.lerp(0.55f, color[1], 1.0f), Mth.lerp(0.55f, color[2], 1.0f), 1.0f);
 		shader.safeGetUniform("color2").set(color[0] * 1.75f, color[1] * 1.75f, color[2] * 1.75f, 1.0f);
@@ -262,7 +261,6 @@ public class AuraRenderer {
 		public int layerId;
 		public float[] color;
 		public float alpha;
-		/** Target look of a 3D smooth layer; null for 2D auras. */
 		public AuraStyle style;
 
 		public AuraLayer(String type, int layerId, float[] color) {
@@ -290,67 +288,112 @@ public class AuraRenderer {
 		Map<Integer, LayerMotion> motions = new HashMap<>();
 	}
 
-	/** What a smooth layer is currently showing: its style easing towards the layer's target, and how far its bands have climbed. */
 	private static final class LayerMotion {
 		final AuraStyle style = new AuraStyle();
 		boolean ready;
 		float phase;
 	}
 
-	public static void renderGuiAura(Player player, PoseStack poseStack, Matrix4f projectionMatrix, int x, int y, int scale, float partialTick, boolean guiMode) {
+	public static void renderGuiAura(Player player, PoseStack poseStack, Matrix4f projectionMatrix,
+									 int x, int y, int scale, float partialTick) {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return;
 
-		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick, false);
+		boolean use3D = useAura3D(player);
+		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick, use3D);
 		if (activeLayers.isEmpty()) return;
 
-		ShaderInstance shader = DMZShaders.auraShader;
-		if (shader == null) return;
-
+		CachedAuraData data = GUI_AURA_DATA;
+		float[] modelScale = getModelScale(stats);
+		float[] body = getBodyScale(stats);
 		float[] auraScale = getAuraScale(player, stats);
-		float animSpeed = (player.tickCount + partialTick) * 0.5f;
-		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-		RenderSystem.disableDepthTest();
-		RenderSystem.depthMask(false);
-		RenderSystem.disableCull();
+		data.modelScaleX = modelScale[0]; data.modelScaleY = modelScale[1]; data.modelScaleZ = modelScale[2];
+		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
+		data.auraScaleX = auraScale[0]; data.auraScaleY = auraScale[1]; data.auraScaleZ = auraScale[2];
+		data.use3D = use3D;
+		data.alphaProgress = 1.0f;
+		data.lastLayers = activeLayers;
+		advanceMotions(player, data, activeLayers, true);
+		data.growth = 1.0f;
+
+		Matrix4f placement = new Matrix4f(poseStack.last().pose()).translate(x, y, 50.0f)
+				.mul(new Matrix4f().scaling(scale, scale, -scale))
+				.rotateZ((float) Math.PI)
+				.translate(0.0f, 0.0f, GUI_AURA_EYE_DISTANCE);
+		Matrix4f auraProjection = new Matrix4f(projectionMatrix).mul(placement);
+
+		poseStack.pushPose();
+		poseStack.last().pose().identity();
+		poseStack.last().normal().identity();
+		poseStack.translate(0.0f, 0.0f, -GUI_AURA_EYE_DISTANCE);
 
 		for (AuraLayer layer : activeLayers) {
-			float finalScaleX = auraScale[0] * scale * 2.0f * (1.0f + (layer.layerId * 0.15f));
-			float finalScaleY = auraScale[1] * scale * 2.0f * (1.0f + layer.layerId * 0.15f);
-
-			poseStack.pushPose();
-			poseStack.translate(x, y - (finalScaleY - scale * 0.45f), 10.0D);
-			poseStack.scale(finalScaleX, -finalScaleY, 1.0f);
-
-			String typeStr = layer.type != null && !layer.type.isEmpty() ? layer.type.toLowerCase() : "kakarot";
-			ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
-
-			RenderSystem.setShaderTexture(0, mainTex);
-			RenderSystem.setShader(() -> shader);
-
-			shader.safeGetUniform("speed").set(animSpeed);
-			shader.safeGetUniform("ProjMat").set(projectionMatrix);
-			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			applyAuraColors(shader, layer.color);
-			shader.safeGetUniform("alp1").set(layer.alpha);
-			shader.apply();
-
-			mesh.bind();
-			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-
-			poseStack.popPose();
+			if (!use3D) {
+				drawGuiAura2D(player, data, layer, poseStack, auraProjection, partialTick);
+			} else if (Aura3DRenderer.isSmooth(layer.type)) {
+				executeSmoothDraw(player, data, layer, poseStack, auraProjection, partialTick, false, true);
+			} else {
+				executeAura3DDraw(player, data, layer, poseStack, auraProjection, partialTick, false, true);
+			}
 		}
 
-		VertexBuffer.unbind();
-		shader.clear();
-
+		poseStack.popPose();
 		RenderSystem.enableDepthTest();
 		RenderSystem.depthMask(true);
 		RenderSystem.enableCull();
 		RenderSystem.disableBlend();
+	}
+
+	private static void drawGuiAura2D(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack,
+									  Matrix4f projectionMatrix, float partialTick) {
+		ShaderInstance shader = DMZShaders.auraShader;
+		if (shader == null) return;
+
+		String typeStr = layer.type != null && !layer.type.isEmpty() ? layer.type.toLowerCase() : "kakarot";
+		ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
+		ResourceLocation sparkingTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/sparking_effects.png");
+
+		float animSpeed = auraPhase(player, partialTick);
+		float alpha = layer.alpha;
+		float boost = 1.0f + layer.layerId * 0.15f;
+		float finalScaleX = data.auraScaleX * AURA_2D_BASE_MULTIPLIER * boost;
+		float finalScaleY = data.auraScaleY * AURA_2D_BASE_MULTIPLIER * boost;
+		float finalScaleZ = data.auraScaleZ * AURA_2D_BASE_MULTIPLIER * boost;
+
+		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
+		shader.safeGetUniform("speed").set(animSpeed);
+		shader.safeGetUniform("ProjMat").set(projectionMatrix);
+		applyAuraColors(shader, layer.color);
+
+		poseStack.pushPose();
+		poseStack.translate(0.0, AURA_2D_GROUND_LIFT, 0.0);
+		poseStack.scale(finalScaleX, finalScaleY, finalScaleZ);
+		poseStack.translate(0.0, AURA_2D_GROUND_OFFSET, 0.0);
+
+		shader.safeGetUniform("alp1").set(alpha);
+		shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+		RenderType mainRender = auraType(mainTex);
+		customSetup(mainRender, mainTex, shader);
+		applyAndDraw(mesh, poseStack, projectionMatrix, shader, mainTex, layer.color, alpha, animSpeed, false);
+		customClear(mainRender);
+
+		poseStack.pushPose();
+		float pulse = 1.0f + (float) Math.sin((player.tickCount + partialTick) * 0.2f) * 0.05f;
+		poseStack.scale(0.8f * pulse, 0.65f * pulse, 0.8f * pulse);
+		poseStack.translate(0.0, -0.25, 0.0);
+
+		RenderType sparkingRender = auraType(sparkingTex);
+		customSetup(sparkingRender, sparkingTex, shader);
+		shader.safeGetUniform("alp1").set(alpha * 0.8f);
+		shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+		applyAndDraw(mesh, poseStack, projectionMatrix, shader, sparkingTex, layer.color, alpha * 0.8f, animSpeed, false);
+		customClear(sparkingRender);
+		poseStack.popPose();
+
+		poseStack.popPose();
+		VertexBuffer.unbind();
+		shader.clear();
 	}
 
 	public static void processFusionFlashes(Minecraft mc, long gameTime, float partialTick, PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
@@ -400,7 +443,6 @@ public class AuraRenderer {
 
 		Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
 		List<List<PreparedAura>> groups = groupTouchingAuras(prepared);
-		// Far to near, so overlapping translucent shells blend in the right order.
 		groups.sort(Comparator.comparingDouble((List<PreparedAura> group) -> group.get(0).position().distanceToSqr(camera)).reversed());
 		for (List<PreparedAura> group : groups) {
 			if (group.size() == 1) {
@@ -691,7 +733,6 @@ public class AuraRenderer {
 
 		AuraLayer normalLayer = new AuraLayer(normalType, normalLayerId, normalColor);
 		if (use3D) {
-			// Charging into a form on the same layer: the aura builds up towards that form's look.
 			normalLayer.style = AuraStyle.resolve(normalStyle, normalColor);
 			if (normalChargeStyle != null) normalLayer.style.blendTowards(AuraStyle.resolve(normalChargeStyle, normalColor), chargeProgress);
 		}
@@ -748,6 +789,13 @@ public class AuraRenderer {
 
 		List<AuraLayer> activeLayers = new ArrayList<>(layerMap.values());
 		activeLayers.sort(Comparator.comparingInt(l -> l.layerId));
+
+		if (use3D) {
+			String preference = AuraModeState.style(player);
+			for (AuraLayer layer : activeLayers) {
+				layer.type = FormConfig.resolveAura3DType(layer.type, preference);
+			}
+		}
 		return activeLayers;
 	}
 
@@ -1083,9 +1131,9 @@ public class AuraRenderer {
 		boolean isLocalPlayer = player == mc.player;
 		if (data.use3D) {
 			if (Aura3DRenderer.isSmooth(layer.type)) {
-				executeSmoothDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson);
+				executeSmoothDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson, false);
 			} else {
-				executeAura3DDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson);
+				executeAura3DDraw(player, data, layer, poseStack, projectionMatrix, partialTick, isLocalPlayer && isFirstPerson, false);
 			}
 			return;
 		}
@@ -1108,10 +1156,9 @@ public class AuraRenderer {
 		shader.safeGetUniform("ProjMat").set(projectionMatrix);
 		applyAuraColors(shader, layer.color);
 
-		float baseMultiplier = 2.2f;
-		float finalScaleX = data.auraScaleX * baseMultiplier * (1.0f + layer.layerId * 0.15f);
-		float finalScaleY = data.auraScaleY * baseMultiplier * (1.0f + layer.layerId * 0.15f);
-		float finalScaleZ = data.auraScaleZ * baseMultiplier * (1.0f + layer.layerId * 0.15f);
+		float finalScaleX = data.auraScaleX * AURA_2D_BASE_MULTIPLIER * (1.0f + layer.layerId * 0.15f);
+		float finalScaleY = data.auraScaleY * AURA_2D_BASE_MULTIPLIER * (1.0f + layer.layerId * 0.15f);
+		float finalScaleZ = data.auraScaleZ * AURA_2D_BASE_MULTIPLIER * (1.0f + layer.layerId * 0.15f);
 
 		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 
@@ -1313,7 +1360,7 @@ public class AuraRenderer {
 	}
 
 	private static void executeSmoothDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack,
-										  Matrix4f projectionMatrix, float partialTick, boolean firstPerson) {
+										  Matrix4f projectionMatrix, float partialTick, boolean firstPerson, boolean upright) {
 		LayerMotion motion = data.motions.get(layer.layerId);
 		if (motion == null || !motion.ready) return;
 
@@ -1323,8 +1370,8 @@ public class AuraRenderer {
 		float scaleY = data.auraScaleY * boost;
 		float scaleZ = data.auraScaleZ * boost;
 
-		boolean fastFlying = isFastFlying(player);
-		boolean laidDown = fastFlying || player.getSwimAmount(partialTick) > 0.0f;
+		boolean fastFlying = !upright && isFastFlying(player);
+		boolean laidDown = !upright && (fastFlying || player.getSwimAmount(partialTick) > 0.0f);
 
 		poseStack.pushPose();
 		poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - bodyRot));
@@ -1344,7 +1391,7 @@ public class AuraRenderer {
 	}
 
 	private static void executeAura3DDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack,
-										  Matrix4f projectionMatrix, float partialTick, boolean firstPerson) {
+										  Matrix4f projectionMatrix, float partialTick, boolean firstPerson, boolean upright) {
 		LayerMotion motion = data.motions.get(layer.layerId);
 		if (motion == null || !motion.ready) return;
 
@@ -1362,8 +1409,8 @@ public class AuraRenderer {
 		float scaleZ = data.auraScaleZ * width;
 		float pivot = Aura3DRenderer.pivotFactor(layer.type);
 
-		boolean fastFlying = isFastFlying(player);
-		boolean laidDown = fastFlying || player.getSwimAmount(partialTick) > 0.0f;
+		boolean fastFlying = !upright && isFastFlying(player);
+		boolean laidDown = !upright && (fastFlying || player.getSwimAmount(partialTick) > 0.0f);
 
 		poseStack.pushPose();
 		if (laidDown || Aura3DRenderer.followsBodyYaw(layer.type)) {

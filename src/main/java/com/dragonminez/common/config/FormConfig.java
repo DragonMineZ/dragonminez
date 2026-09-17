@@ -11,6 +11,11 @@ import java.util.*;
 @NoArgsConstructor
 public class FormConfig {
 	public static final String CURRENT_VERSION = ConfigManager.CONFIG_VERSION;
+
+	public static final String AURA_3D_SMOOTH = "smooth";
+	public static final String AURA_3D_SPARKING = "sparking";
+	public static final String AURA_3D_USER_PREFERENCE = "userPreference";
+
 	private String configVersion;
 
 	private String groupName;
@@ -41,49 +46,41 @@ public class FormConfig {
 		return forms.get(key);
 	}
 
+	public static String sanitizeAura3DPreference(String preference) {
+		return AURA_3D_SPARKING.equalsIgnoreCase(preference) ? AURA_3D_SPARKING : AURA_3D_SMOOTH;
+	}
+
+	public static String resolveAura3DType(String type, String preference) {
+		if (type == null || type.isBlank() || AURA_3D_USER_PREFERENCE.equalsIgnoreCase(type.trim())) {
+			return sanitizeAura3DPreference(preference);
+		}
+		return type;
+	}
+
 	@Setter
 	@Getter
 	@NoArgsConstructor
 	public static class Aura3DStyle {
 		public static final Aura3DStyle DEFAULT = new Aura3DStyle();
 
-		/** Shell radius (x, z) and height (y), relative to the aura scale. */
 		private Float[] size = {1.10f, 1.17f, 1.02f};
-		/** Flame tongues around the body. Rounded to a whole number so the tongues close seamlessly. */
 		private Integer flamePeaks = 12;
-		/** Bands per unit of height: more bands, shorter tongues. */
 		private Float waveFrequency = 2.0f;
-		/** How fast the bands climb. Changes blend smoothly, the flame never jumps. */
 		private Float waveSpeed = 5.0f;
-		/** How far the tongues reach out of the shell. */
 		private Float waveAmplitude = 0.75f;
-		/** Turbulence layered over the tongues: 0 is a clean lattice, 1 is chaotic. */
 		private Float noiseDetail = 0.10f;
-		/** 0 pushes tongues straight out, 1 pulls them straight up. */
 		private Float upwardBias = 0.54f;
-		/** Opacity where the shell faces the camera. Keep it low: the body stays readable inside. */
 		private Float coreAlpha = 0.05f;
-		/** Opacity at the silhouette. */
 		private Float rimAlpha = 1.0f;
-		/** Sharpness of the core-to-rim falloff. */
 		private Float rimPower = 4.0f;
-		/** Lower values widen the rim band. */
 		private Float rimThreshold = 0.05f;
-		/** Colour facing the camera. Empty: the aura colour lightened towards white. */
 		private String coreColor = "";
-		/** Colour at the silhouette. Empty: the aura colour. */
 		private String rimColor = "";
-		/** Colour of the shimmering noise over the shell. Empty: no noise tint. */
 		private String noiseColor = "";
-		/** Strength of the glow this aura feeds into the bloom pass. */
 		private Float bloomIntensity = 1.0f;
-		/** Sparking only: spike columns around the shell. The coarse spikes use half of this. */
 		private Integer spikeDensity = 32;
-		/** Sparking only: spike beats per second. Each beat fires a spike, holds it and kills it in place. */
 		private Float spikeBurstRate = 3.0f;
-		/** Sparking only: bias towards short spikes. Higher values make the long ones rarer. */
 		private Float spikeRarity = 3.0f;
-		/** Sparking only: where the outline band starts, measured from the silhouette inwards. Lower widens it. */
 		private Float bandStart = 0.50f;
 
 		public float getSizeX() { return size != null && size.length > 0 && size[0] != null ? Math.max(0.05f, size[0]) : 1.10f; }
@@ -181,13 +178,13 @@ public class FormConfig {
 		private String eye1Color = "";
 		private String eye2Color = "";
 		private String auraType = "kakarot";
-		private String auraType3D = "smooth";
+		private String auraType3D = AURA_3D_USER_PREFERENCE;
 		private Integer auraLayer = 0;
 		private String auraColor = "";
 		private Integer extraAuraLayer = -1;
 		private String extraAuraColor = "#FFFFFF";
 		private String extraAuraType = "kakarot";
-		private String extraAuraType3D = "smooth";
+		private String extraAuraType3D = AURA_3D_USER_PREFERENCE;
 		private Aura3DStyle aura3DStyle = new Aura3DStyle();
 		private Aura3DStyle extraAura3DStyle = new Aura3DStyle();
 		private Boolean hasLightnings = false;
@@ -444,7 +441,6 @@ public class FormConfig {
 		public List<MobEffectConfig> getMobEffects() {
 			return mobEffects != null ? mobEffects : Collections.emptyList();
 		}
-
 
 		public List<TriggerItemCost> getTriggerItemCosts() {
 			return triggerItemCosts != null ? triggerItemCosts : Collections.emptyList();

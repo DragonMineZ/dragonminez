@@ -33,7 +33,7 @@ public class DefaultFormsFactory {
 		form.setPassiveMasteryEveryFiveSeconds(0.006);
 		form.setStackOnMastery(25.0);
 		form.setAuraType("kakarot");
-		form.setAuraType3D("smooth");
+		form.setAuraType3D(FormConfig.AURA_3D_USER_PREFERENCE);
 		form.setAuraLayer(0);
 	}
 
@@ -58,13 +58,25 @@ public class DefaultFormsFactory {
 			case "majin" -> createMajinForms(formsPath, forms);
 			case "bioandroid" -> createBioAndroidForms(formsPath, forms);
 		}
+		forceGroupAura3D(forms, LEGENDARY_FORM_TYPE, FormConfig.AURA_3D_SPARKING);
+	}
+
+	private static final String LEGENDARY_FORM_TYPE = "legendaryforms";
+
+	private static void forceGroupAura3D(Map<String, FormConfig> forms, String formType, String auraType) {
+		for (FormConfig config : forms.values()) {
+			if (config == null || !formType.equalsIgnoreCase(config.getFormType())) continue;
+			for (FormConfig.FormData form : config.getForms().values()) {
+				if (form == null) continue;
+				form.setAuraType3D(auraType);
+				form.setExtraAuraType3D(auraType);
+			}
+		}
 	}
 
 	public void createDefaultStackForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		createDefaultKaiokenForms(formsPath, forms);
  		createDefaultUltimateForms(formsPath, forms);
-//        createDefaultUltraInstinctForms(formsPath, forms);
-//        createDefaultUltraEgoForms(formsPath, forms);
 	}
 
 	public void createDefaultKaiokenForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -217,7 +229,6 @@ public class DefaultFormsFactory {
 		stackFormData.put(StackForms.X4, x4);
 		stackFormData.put(StackForms.X10, x10);
 		stackFormData.put(StackForms.X20, x20);
-//        stackFormData.put(StackForms.X100, x100);
 		kaiokenForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_KAIOKEN, kaiokenForms);
@@ -232,6 +243,7 @@ public class DefaultFormsFactory {
 
 		FormConfig.FormData ultimate = new FormConfig.FormData();
 		ultimate.setName(StackForms.ULTIMATE);
+		ultimate.setAuraType3D(FormConfig.AURA_3D_SMOOTH);
 		ultimate.setCustomModel("finalbase");
 		ultimate.setUnlockOnSkillLevel(1);
 		ultimate.setAuraColor("#FFFFFF");

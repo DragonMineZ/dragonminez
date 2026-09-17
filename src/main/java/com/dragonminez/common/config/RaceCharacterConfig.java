@@ -32,7 +32,7 @@ public class RaceCharacterConfig {
 	private String racialSkill = "human";
 	private Boolean hasSaiyanTail = false;
 	private String auraType = "kakarot";
-	private String auraType3D = "smooth";
+	private String auraType3D = FormConfig.AURA_3D_USER_PREFERENCE;
 	private FormConfig.Aura3DStyle aura3DStyle = new FormConfig.Aura3DStyle();
 	private Float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
 	private Integer defaultBodyType = 0;

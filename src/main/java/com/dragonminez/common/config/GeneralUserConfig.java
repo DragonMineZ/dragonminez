@@ -41,6 +41,7 @@ public class GeneralUserConfig {
 	private Boolean transformationOutlines = true;
 	private Boolean aura3DPersonal = false;
 	private Boolean aura3DEntities = false;
+	private String aura3DStyle = FormConfig.AURA_3D_SMOOTH;
 
 	public static final String HAIR_PHYSICS_HIGH = "HIGH";
 	public static final String HAIR_PHYSICS_LOW = "LOW";
@@ -107,6 +108,11 @@ public class GeneralUserConfig {
 		return aura3DEntities;
 	}
 
+	public String getAura3DStyle() {
+		aura3DStyle = FormConfig.sanitizeAura3DPreference(aura3DStyle);
+		return aura3DStyle;
+	}
+
 	public Boolean getTransformationOutlines() {
 		if (transformationOutlines == null) transformationOutlines = true;
 		return transformationOutlines;
@@ -166,4 +172,3 @@ public class GeneralUserConfig {
 		this.menuScaleMultiplier = menuScaleMultiplier;
 	}
 }
-
