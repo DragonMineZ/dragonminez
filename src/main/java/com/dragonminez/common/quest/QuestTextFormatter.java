@@ -342,6 +342,9 @@ public final class QuestTextFormatter {
 
 	public static Component resolveBiomeName(String biomeId) {
 		ResourceLocation id = safeParse(biomeId != null && biomeId.startsWith("#") ? biomeId.substring(1) : biomeId);
+		if ("#dragonminez:is_plains".equals(biomeId)) {
+			return Component.translatable("gui.dragonminez.quests.biome.any_plains");
+		}
 		if (biomeId != null && biomeId.startsWith("#")) {
 			return Component.literal(humanizeResourceIdentifier(biomeId));
 		}

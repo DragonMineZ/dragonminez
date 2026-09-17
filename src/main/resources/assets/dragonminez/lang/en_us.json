@@ -343,6 +343,7 @@
   "gui.dragonminez.quests.requirement.stat": "Reach %s %s",
   "gui.dragonminez.quests.requirement.level": "Reach level %s",
   "gui.dragonminez.quests.requirement.biome": "Be in %s",
+  "gui.dragonminez.quests.biome.any_plains": "Any Plains",
   "gui.dragonminez.quests.requirement.structure": "Be in %s",
   "gui.dragonminez.quests.requirement.dimension": "Dimension: %s",
   "gui.dragonminez.quests.requirement.coords": "Approx. coords: %s, %s, %s",

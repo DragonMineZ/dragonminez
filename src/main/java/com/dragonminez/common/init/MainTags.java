@@ -37,7 +37,7 @@ public class MainTags {
 		HAS_SAIBAMANS = create("has_saibamans"), HAS_GIANT_FISH = create("has_giant_fish"), HAS_GIANT_TURTLE = create("has_giant_turtle"),
 		IS_ROCKYBIOME = create("is_rockybiome"), IS_SACREDKAI = create("is_sacredkai"), IS_LAND = create("is_land"),
 		IS_MOUNTAINLIKE = create("is_mountainlike"), IS_PLAINSLIKE = create("is_plainslike"), IS_DESERTLIKE = create("is_desertlike"),
-		IS_GEROLAB = create("is_gerolab");
+		IS_GEROLAB = create("is_gerolab"), IS_PLAINS = create("is_plains");
 
 		private static TagKey<Biome> create(String name) {
 			return TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
