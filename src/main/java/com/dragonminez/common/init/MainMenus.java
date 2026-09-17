@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.menu.menutypes.FuelGeneratorMenu;
 import com.dragonminez.common.init.menu.menutypes.GravityDeviceMenu;
 import com.dragonminez.common.init.menu.menutypes.KikonoStationMenu;
+import com.dragonminez.common.init.menu.menutypes.PatternStationMenu;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
@@ -22,6 +23,9 @@ public class MainMenus {
 
 	public static final RegistryObject<MenuType<KikonoStationMenu>> KIKONO_STATION_MENU =
 			registerMenuType("kikono_station_menu", KikonoStationMenu::new);
+
+	public static final RegistryObject<MenuType<PatternStationMenu>> PATTERN_STATION_MENU =
+			registerMenuType("pattern_station_menu", PatternStationMenu::new);
 
 	public static final RegistryObject<MenuType<GravityDeviceMenu>> GRAVITY_DEVICE_MENU =
 			registerMenuType("gravity_device_menu", GravityDeviceMenu::new);

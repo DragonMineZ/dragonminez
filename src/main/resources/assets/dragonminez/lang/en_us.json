@@ -1579,6 +1579,8 @@
   "block.dragonminez.time_chamber_portal": "Hyperbolic Time Chamber Portal Block",
   "block.dragonminez.kikono_station": "Dr. Kikono's Station",
   "block.dragonminez.fuel_generator": "Fuel Generator",
+  "block.dragonminez.pattern_station": "Pattern Station",
+  "container.dragonminez.pattern_station": "Pattern Station",
   "block.dragonminez.gravity_device": "Gravity Device",
   "entity.minecraft.villager.dragonminez.capsule_corp_assistant": "Capsule Corp Assistant",
   "poi_type.dragonminez.capsule_corp": "Capsule Corp Workstation",

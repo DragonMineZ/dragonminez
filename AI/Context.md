@@ -273,7 +273,7 @@ Split between Java registration, datagen output, and static resources:
 
 ## Datagen
 
-`common/datagen/DatagenManager` (mod-bus `GatherDataEvent`) registers providers: recipes (`DMZRecipeProvider`, plus `DMZKikonoRecipeProvider` used by it), loot tables, block states, item models, block/item/entity-type tags, worldgen (`DMZWorldGenProvider`) + biome tags, advancements, space pod destinations, dragon definitions, and dragon wishes.
+`common/datagen/DatagenManager` (mod-bus `GatherDataEvent`) registers providers: recipes (`DMZRecipeProvider`, plus `DMZKikonoRecipeProvider` and `DMZPatternRecipeProvider` used by it; the latter emits `dragonminez:pattern_crafting` 6x6 shaped recipes for the Pattern Station (per-Pattern dye pixel art of its chestplate) and fails datagen if two Patterns share a grid), loot tables, block states, item models, block/item/entity-type tags, worldgen (`DMZWorldGenProvider`) + biome tags, advancements, space pod destinations, dragon definitions, and dragon wishes.
 
 Run `.\gradlew.bat runData` after changing providers and review the `src/generated/resources/` diff (`.cache/` is excluded from packaging).
 
