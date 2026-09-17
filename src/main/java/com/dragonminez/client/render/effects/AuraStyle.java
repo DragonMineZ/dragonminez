@@ -5,7 +5,7 @@ import com.dragonminez.common.config.FormConfig;
 import net.minecraft.util.Mth;
 
 public final class AuraStyle {
-	private static final float CORE_LIGHTEN = 0.25f;
+	private static final float CORE_LIGHTEN = 0.45f;
 	private static final float[] WHITE = {1.0f, 1.0f, 1.0f};
 
 	public float sizeX, sizeY, sizeZ;
@@ -54,7 +54,11 @@ public final class AuraStyle {
 		else copy(ColorUtils.hexToRgb(c.getRimColor()), style.rimColor);
 
 		if (c.getCoreColor().isEmpty()) {
-			for (int i = 0; i < 3; i++) style.coreColor[i] = Mth.lerp(CORE_LIGHTEN, base[i], 1.0f);
+			float peak = Math.max(base[0], Math.max(base[1], base[2]));
+			for (int i = 0; i < 3; i++) {
+				float brightest = peak > 1.0e-4f ? base[i] / peak : base[i];
+				style.coreColor[i] = Mth.lerp(CORE_LIGHTEN, base[i], brightest);
+			}
 		} else copy(ColorUtils.hexToRgb(c.getCoreColor()), style.coreColor);
 
 		if (c.getNoiseColor().isEmpty()) {

@@ -60,6 +60,7 @@ public class AuraRenderer {
 	private static final float AURA_RELEASE_CAP = 100.0f;
 	private static final float AURA_RELEASE_SCALE_BONUS = 0.35f;
 	private static final float AURA_BASE_SCALE = 1.05f;
+	private static final float SPARKING_LAYER_WIDTH = 0.26f;
 	private static final float AURA_RELEASE_LERP_PER_TICK = 0.02f;
 	private static final float AURA_3D_FLIGHT_LEAD = 1.10f;
 	private static final float AURA_TRAIL_ALPHA = 0.55f;
@@ -306,8 +307,7 @@ public class AuraRenderer {
 		ShaderInstance shader = DMZShaders.auraShader;
 		if (shader == null) return;
 
-		float[] modelScale = getModelScale(stats);
-		float[] auraScale = getAuraScale(player, stats, modelScale);
+		float[] auraScale = getAuraScale(player, stats);
 		float animSpeed = (player.tickCount + partialTick) * 0.5f;
 		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 
@@ -536,7 +536,8 @@ public class AuraRenderer {
 		return new float[]{sX, sY, sZ};
 	}
 
-	private static float[] getAuraScale(Player player, StatsData stats, float[] modelScale) {
+	private static float[] getAuraScale(Player player, StatsData stats) {
+		float[] renderScale = getBodyScale(stats);
 		float baseScale = AURA_BASE_SCALE;
 		var character = stats.getCharacter();
 		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
@@ -551,7 +552,7 @@ public class AuraRenderer {
 		baseScale += getReleaseScaleBonus(player, stats);
 		baseScale *= (float) AuraFxState.auraScaleMultiplier(stats);
 
-		return new float[]{baseScale * modelScale[0], baseScale * modelScale[1], baseScale * modelScale[2]};
+		return new float[]{baseScale * renderScale[0], baseScale * renderScale[1], baseScale * renderScale[2]};
 	}
 
 	private static float auraPhase(Player player, float partialTick) {
@@ -805,7 +806,7 @@ public class AuraRenderer {
 
 		float[] modelScale = getModelScale(stats);
 		float[] body = getBodyScale(stats);
-		float[] auraScale = getAuraScale(player, stats, modelScale);
+		float[] auraScale = getAuraScale(player, stats);
 
 		data.modelScaleX = modelScale[0]; data.modelScaleY = modelScale[1]; data.modelScaleZ = modelScale[2];
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
@@ -869,7 +870,7 @@ public class AuraRenderer {
 
 		float[] modelScale = getModelScale(stats);
 		float[] body = getBodyScale(stats);
-		float[] auraScale = getAuraScale(player, stats, modelScale);
+		float[] auraScale = getAuraScale(player, stats);
 
 		data.modelScaleX = modelScale[0]; data.modelScaleY = modelScale[1]; data.modelScaleZ = modelScale[2];
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
@@ -1351,7 +1352,10 @@ public class AuraRenderer {
 		float boost = 1.0f + layer.layerId * 0.15f;
 		float time = auraPhase(player, partialTick) / 10.0f;
 
-		float width = Aura3DRenderer.widthFactor(layer.type) * boost;
+		float widthBoost = Aura3DRenderer.isSmooth(layer.type)
+				? boost
+				: 1.0f + layer.layerId * SPARKING_LAYER_WIDTH;
+		float width = Aura3DRenderer.widthFactor(layer.type) * widthBoost;
 		float height = Aura3DRenderer.heightFactor(layer.type) * boost;
 		float scaleX = data.auraScaleX * width;
 		float scaleY = data.auraScaleY * height;

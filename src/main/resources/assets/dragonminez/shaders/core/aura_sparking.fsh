@@ -1,9 +1,10 @@
 #version 150
 #extension GL_ARB_explicit_attrib_location : enable
 
+#moj_import <dragonminez:aura_color.glsl>
+
 // Sparking shading: a translucent shell whose silhouette is cut into needles, plus a brighter fringe pass
-// over the spikes. Location 1 records the glow into the bloom mask while the aura is drawn, so the pass
-// never needs a second draw of the mesh (see BloomPipeline).
+// over the spikes.
 //
 // The band that draws the outline is damped where the shell faces up or down (vUp): without that the caps
 // sit at grazing incidence from any side view and light up as solid plates, which is what used to close the
@@ -34,7 +35,6 @@ uniform float BloomPass;
 uniform float LayerPass;
 
 layout(location = 0) out vec4 fragColor;
-layout(location = 1) out vec4 bloomColor;
 
 const float TAU = 6.28318530718;
 const float STREAK_COLUMNS = 44.0;
@@ -45,8 +45,8 @@ const float FRINGE_ALPHA = 0.95;
 const float FRINGE_BLOOM = 0.60;
 
 const float SATURATION = 1.35;
-const float EDGE_WHITE = 0.55;
-const float LIP_WHITE = 0.60;
+const float EDGE_LIGHT = 0.55;
+const float LIP_LIGHT = 0.60;
 
 const float TONGUE_DEPTH = 0.45;
 const float TONGUE_ROWS = 20.0;
@@ -56,14 +56,16 @@ const float CLIMB_RATE = 0.16;
 const float TONGUE_FINE = 2.0;
 const float TONGUE_HEAT = 0.55;
 const float TONGUE_FLOOR = 0.55;
-const float TONGUE_WHITE_END = 0.60;
-const float SPIKE_WHITE_END = 0.30;
+const float TONGUE_LIGHT_END = 0.60;
+const float SPIKE_LIGHT_END = 0.30;
 const float TIP_BRIGHT = 1.20;
 
 // How far the shell has to tilt away from vertical before its band fades, and what is left on the caps.
 const float CAP_START = 0.55;
 const float CAP_END = 0.92;
 const float CAP_FLOOR = 0.25;
+
+const float INTERIOR_TINT = 0.25;
 
 float hash11(float n) {
     return fract(sin(n * 91.3 + 17.1) * 43758.5453);
@@ -121,7 +123,6 @@ void main(void) {
         if (fringeAlpha < 0.004) discard;
         vec4 glow = vec4(fringeTint, clamp(fringeAlpha * FRINGE_BLOOM * BloomIntensity, 0.0, 1.0));
         fragColor = BloomPass > 0.5 ? glow : vec4(fringeTint, fringeAlpha);
-        bloomColor = glow;
         return;
     }
 
@@ -146,25 +147,29 @@ void main(void) {
     streak *= smoothstep(0.10, 0.35, vHeight) * sideways;
 
     vec3 tipCol = clamp(tint * TIP_BRIGHT, 0.0, 1.0);
-    vec3 glowCol = mix(tint, vec3(1.0), EDGE_WHITE);
+    vec3 glowCol = auraHighlight(tint, EDGE_LIGHT);
     float rimGrad = clamp(pow(rim, RimPower) / RimThreshold, 0.0, 1.0);
     vec3 body = mix(CoreColor, tint, rimGrad);
 
     float hot = clamp(band + streak, 0.0, 1.0);
     vec3 color = mix(body, glowCol, hot);
     float lip = smoothstep(0.86, 1.0, rim) * sideways;
-    color = mix(color, vec3(1.0), lip * LIP_WHITE);
+    color = mix(color, auraHighlight(color, 1.0), lip * LIP_LIGHT);
 
     float tongueAlong = clamp((bandStart - rim) / max(bandStart - threshold, 1.0e-3), 0.0, 1.0);
-    vec3 tongueCol = mix(vec3(1.0), tipCol, smoothstep(TONGUE_WHITE_END, 1.0, tongueAlong));
+    vec3 tongueCol = mix(auraHighlight(tipCol, 1.0), tipCol, smoothstep(TONGUE_LIGHT_END, 1.0, tongueAlong));
     color = mix(color, tongueCol, tongueBody);
 
-    vec3 spikeCol = mix(vec3(1.0), tipCol, smoothstep(SPIKE_WHITE_END, 1.0, vWave));
+    vec3 spikeCol = mix(auraHighlight(tipCol, 1.0), tipCol, smoothstep(SPIKE_LIGHT_END, 1.0, vWave));
     color = mix(color, spikeCol, clamp(vWave * 2.0, 0.0, 1.0));
+    color = auraKeepSaturation(color, RimColor);
 
     float alpha = mix(CoreAlpha, RimAlpha, band);
     alpha = max(alpha, RimAlpha * clamp(vWave * 1.1 + streak * 0.85, 0.0, 1.0));
     alpha *= 1.0 - 0.45 * smoothstep(0.95, 1.0, vHeight) * (1.0 - vWave);
+
+    // A floor of coverage so the player and the background read through the shell tinted.
+    alpha = max(alpha, INTERIOR_TINT * clamp(Growth, 0.0, 1.0));
 
     if (facingRaw < 0.0) alpha *= max(BackFace, 0.45);
     alpha *= Alpha;
@@ -172,5 +177,4 @@ void main(void) {
     float glowWeight = clamp(hot + vWave + tongueBody * TONGUE_HEAT, 0.0, 1.0);
     vec4 glow = vec4(color, clamp(alpha * (0.35 + 0.65 * glowWeight) * BloomIntensity, 0.0, 1.0));
     fragColor = BloomPass > 0.5 ? glow : vec4(color, alpha);
-    bloomColor = glow;
 }
