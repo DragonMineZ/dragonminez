@@ -80,6 +80,29 @@ public class DMZKikonoRecipeProvider {
 		buildArmorNoHelmetSet("vegeta_gt", MainItems.VEGETA_GT_ARMOR, MainItems.PATTERN_VEGETA_GT.get());
 		buildArmorNoHelmetSet("videl", MainItems.VIDEL_ARMOR, MainItems.PATTERN_VIDEL.get());
 		buildArmorNoHelmetSet("whis", MainItems.WHIS_ARMOR, MainItems.PATTERN_WHIS.get());
+		buildArmorNoHelmetSet("a13", MainItems.A13_ARMOR, MainItems.PATTERN_A13.get());
+		buildArmorNoHelmetSet("a14", MainItems.A14_ARMOR, MainItems.PATTERN_A14.get());
+		buildFullArmorSet("a20", MainItems.A20_ARMOR, MainItems.PATTERN_A20.get());
+		buildArmorNoHelmetSet("capsule_corp", MainItems.CAPSULE_CORP_ARMOR, MainItems.PATTERN_CAPSULE_CORP.get());
+		buildFullArmorSet("chaoz", MainItems.CHAOZ_ARMOR, MainItems.PATTERN_CHAOZ.get());
+		buildArmorNoHelmetSet("cooler_soldier", MainItems.COOLER_SOLDIER_ARMOR, MainItems.PATTERN_COOLER_SOLDIER.get());
+		buildArmorNoHelmetSet("dragon_clan", MainItems.DRAGON_CLAN_ARMOR, MainItems.PATTERN_DRAGON_CLAN.get());
+		buildArmorNoHelmetSet("evil_buu", MainItems.EVIL_BUU_ARMOR, MainItems.PATTERN_EVIL_BUU.get());
+		buildArmorNoHelmetSet("fighter", MainItems.FIGHTER_ARMOR, MainItems.PATTERN_FIGHTER.get());
+		buildArmorNoHelmetSet("gero", MainItems.GERO_ARMOR, MainItems.PATTERN_GERO.get());
+		buildFullArmorSet("great_saiyaman_2", MainItems.GREAT_SAIYAMAN_2_ARMOR, MainItems.PATTERN_GREAT_SAIYAMAN_2.get());
+		buildArmorNoHelmetSet("kibito", MainItems.KIBITO_ARMOR, MainItems.PATTERN_KIBITO.get());
+		buildArmorNoHelmetSet("king_vegeta", MainItems.KING_VEGETA_ARMOR, MainItems.PATTERN_KING_VEGETA.get());
+		buildArmorNoHelmetSet("mighty_majin", MainItems.MIGHTY_MAJIN_ARMOR, MainItems.PATTERN_MIGHTY_MAJIN.get());
+		buildArmorNoHelmetSet("mystic", MainItems.MYSTIC_ARMOR, MainItems.PATTERN_MYSTIC.get());
+		buildArmorNoHelmetSet("raditz", MainItems.RADITZ_ARMOR, MainItems.PATTERN_RADITZ.get());
+		buildFullArmorSet("slug", MainItems.SLUG_ARMOR, MainItems.PATTERN_SLUG.get());
+		buildArmorNoHelmetSet("super_buu", MainItems.SUPER_BUU_ARMOR, MainItems.PATTERN_SUPER_BUU.get());
+		buildArmorNoHelmetSet("vergil", MainItems.VERGIL_ARMOR, MainItems.PATTERN_VERGIL.get());
+		buildArmorNoHelmetSet("warrior_clan", MainItems.WARRIOR_CLAN_ARMOR, MainItems.PATTERN_WARRIOR_CLAN.get());
+		buildArmorNoHelmetSet("wonder_majin", MainItems.WONDER_MAJIN_ARMOR, MainItems.PATTERN_WONDER_MAJIN.get());
+		buildArmorNoHelmetSet("xeno_goku", MainItems.XENO_GOKU_ARMOR, MainItems.PATTERN_XENO_GOKU.get());
+		buildArmorNoHelmetSet("xeno_goku_patreon", MainItems.XENO_GOKU_PATREON_ARMOR, MainItems.PATTERN_XENO_GOKU_PATREON.get());
 		buildToolSetNoSword("gete",
 				MainItems.GETE_PICKAXE.get(),
 				MainItems.GETE_AXE.get(),

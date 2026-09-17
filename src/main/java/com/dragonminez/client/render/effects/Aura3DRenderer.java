@@ -1,8 +1,14 @@
 package com.dragonminez.client.render.effects;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.shader.BloomPipeline;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
+import com.dragonminez.client.render.util.AuraNoiseTexture;
+import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.config.FormConfig;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.math.Axis;
@@ -12,18 +18,33 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public final class Aura3DRenderer {
 
 	public static final String DEFAULT_TYPE = "smooth";
 	private static final String SPARKING_TYPE = "sparking";
-
-	/** Barely-there far wall: enough to hint at volume without washing the near wall out. */
 	public static final float DEFAULT_BACKFACE = 0.02f;
 
+	public static final float SMOOTH_SCALE_REFERENCE = 1.05f * 0.9375f;
+	public static final float SMOOTH_CENTER = 1.15f;
+	private static final float SMOOTH_RADIUS = 0.80f;
+	private static final float SMOOTH_HALF_HEIGHT = 1.35f;
+	public static final float SMOOTH_BACKFACE = 0.01f;
+	public static final float SMOOTH_BACKFACE_INSIDE = 1.0f;
+
+	private static final float SPARKING_TIME_SCALE = 0.67f;
+	private static final float SPARKING_PULSE_TIME_SCALE = 0.50f;
+	private static final float SPARKING_WIDTH = 0.936f;
+	private static final float SPARKING_HEIGHT = 1.325f;
+	private static final float SPARKING_PIVOT = 0.889f;
+
 	private static final ResourceLocation DUMMY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+	private static final Map<Integer, AuraStyle> ENTITY_STYLES = new HashMap<>();
 
 	private Aura3DRenderer() {}
 
@@ -37,153 +58,246 @@ public final class Aura3DRenderer {
 		return SPARKING_TYPE.equals(normalized) ? SPARKING_TYPE : DEFAULT_TYPE;
 	}
 
-	private static ShaderInstance shaderFor(String resolvedType) {
-		ShaderInstance shader = SPARKING_TYPE.equals(resolvedType)
-				? DMZShaders.auraSparking3DShader : DMZShaders.auraSmooth3DShader;
-		return shader != null ? shader : DMZShaders.auraSmooth3DShader;
-	}
-
-	private static VertexBuffer meshFor(String resolvedType) {
-		return SPARKING_TYPE.equals(resolvedType) ? AuraMeshFactory.getSparkingFlameMesh() : AuraMeshFactory.getSmoothFlameMesh();
+	public static boolean isSmooth(String type) {
+		return DEFAULT_TYPE.equals(resolveType(type));
 	}
 
 	public static float widthFactor(String type) {
-		return SPARKING_TYPE.equals(resolveType(type)) ? 1.35f : 1.15f;
-	}
-
-	public static boolean followsBodyYaw(String type) {
-		return !SPARKING_TYPE.equals(resolveType(type));
+		return isSmooth(type) ? 0.90f : SPARKING_WIDTH;
 	}
 
 	public static float heightFactor(String type) {
-		return SPARKING_TYPE.equals(resolveType(type)) ? 1.45f : 2.05f;
+		return isSmooth(type) ? 1.80f : SPARKING_HEIGHT;
 	}
 
-	/**
-	 * Height of the flame's centre in mesh units. At 0.80 the rounded base cap ends exactly at the
-	 * caster's feet, whatever the height factor is.
-	 */
+	public static boolean followsBodyYaw(String type) {
+		return isSmooth(type);
+	}
+
 	public static float pivotFactor(String type) {
-		return 0.80f;
+		return isSmooth(type) ? 0.80f : SPARKING_PIVOT;
 	}
 
-	/**
-	 * Sparking animates far faster than smooth, so its noise is slowed down here rather than in the
-	 * shader — that keeps the body and the ground shockwave independently tunable.
-	 */
-	/**
-	 * Height of the flame's widest section, in the same mesh units as {@link #pivotFactor}. Used to
-	 * pivot the aura on its own body rather than on its root when it is laid down with the player.
-	 */
 	public static float coreFactor(String type) {
 		return 0.45f;
 	}
 
-	private static float timeScale(String resolvedType, boolean pulse) {
-		if (!SPARKING_TYPE.equals(resolvedType)) return 1.0f;
-		return pulse ? 0.50f : 0.67f;
-	}
-
-	public static void draw(PoseStack poseStack, Matrix4f projectionMatrix, String type, float[] color,
-							float alpha, float time, float scaleX, float scaleY, float scaleZ, float pivot,
-							float backFace) {
-		if (alpha <= 0.001f) return;
-
-		String resolved = resolveType(type);
-		ShaderInstance shader = shaderFor(resolved);
-		if (shader == null) return;
+	public static void drawSmooth(PoseStack poseStack, Matrix4f projection, AuraStyle style, float alpha, float growth,
+								  float time, float phase, float scaleX, float scaleY, float scaleZ, float backFace) {
+		ShaderInstance shader = DMZShaders.auraSmooth3DShader;
+		if (shader == null || style == null || alpha <= 0.001f || growth <= 0.001f) return;
 
 		poseStack.pushPose();
-		poseStack.scale(scaleX, scaleY, scaleZ);
-		poseStack.translate(0.0f, pivot, 0.0f);
-
-		drawAndCaptureBloom(resolved, shader, poseStack, projectionMatrix, color, alpha, time * timeScale(resolved, false), backFace);
-
+		poseStack.translate(0.0f, SMOOTH_CENTER * scaleY, 0.0f);
+		poseStack.scale(SMOOTH_RADIUS * scaleX, SMOOTH_HALF_HEIGHT * scaleY, SMOOTH_RADIUS * scaleZ);
+		drawShell(shader, poseStack, projection, style, alpha, growth, time, phase, backFace);
 		poseStack.popPose();
 	}
 
-	public static void drawGroundPulse(PoseStack poseStack, Matrix4f projectionMatrix, String type, float[] color,
-									   float alpha, float time, float radius, float height, float spinDegrees) {
-		if (alpha <= 0.001f) return;
-
-		String resolved = resolveType(type);
-		ShaderInstance shader = shaderFor(resolved);
-		if (shader == null) return;
+	public static void drawSmoothGroundPulse(PoseStack poseStack, Matrix4f projection, AuraStyle style, float alpha,
+											 float time, float phase, float radius, float height, float spinDegrees) {
+		ShaderInstance shader = DMZShaders.auraSmooth3DShader;
+		if (shader == null || style == null || alpha <= 0.001f) return;
 
 		poseStack.pushPose();
 		poseStack.mulPose(Axis.YP.rotationDegrees(spinDegrees));
 		poseStack.scale(radius, height, radius);
 		poseStack.translate(0.0f, 0.9f, 0.0f);
-
-		drawAndCaptureBloom(resolved, shader, poseStack, projectionMatrix, color, alpha, time * timeScale(resolved, true), DEFAULT_BACKFACE);
-
+		drawShell(shader, poseStack, projection, style, alpha, 1.0f, time, phase, SMOOTH_BACKFACE);
 		poseStack.popPose();
 	}
 
-	private static void drawAndCaptureBloom(String resolved, ShaderInstance shader, PoseStack poseStack, Matrix4f projectionMatrix,
-											float[] color, float alpha, float time, float backFace) {
-		applyUniforms(shader, poseStack, projectionMatrix, color, alpha, time, backFace);
-		drawLayers(resolved, shader, poseStack, projectionMatrix);
+	private static void drawShell(ShaderInstance shader, PoseStack poseStack, Matrix4f projection, AuraStyle style,
+								  float alpha, float growth, float time, float phase, float backFace) {
+		VertexBuffer mesh = AuraMeshFactory.getDropletMesh();
+		Matrix4f pose = poseStack.last().pose();
+		Matrix3f normal = poseStack.last().normal();
+		applySmoothUniforms(shader, normal, style, alpha, growth, time, phase, backFace);
 
-		Matrix4f pose = new Matrix4f(poseStack.last().pose());
-		Matrix3f normal = new Matrix3f(poseStack.last().normal());
-		Matrix4f proj = new Matrix4f(projectionMatrix);
-		float[] c = color.clone();
+		boolean captured = BloomPipeline.beginCapture();
+		try {
+			drawShellMesh(mesh, shader, pose, projection, 0.0f);
+		} finally {
+			if (captured) BloomPipeline.endCapture();
+		}
+		if (captured) return;
+
+		Matrix4f poseCopy = new Matrix4f(pose);
+		Matrix3f normalCopy = new Matrix3f(normal);
+		Matrix4f projectionCopy = new Matrix4f(projection);
+		AuraStyle styleCopy = new AuraStyle().copyFrom(style);
 		AuraRenderer.captureBloom(() -> {
-			ShaderInstance bloomShader = shaderFor(resolved);
+			ShaderInstance bloomShader = DMZShaders.auraSmooth3DShader;
 			if (bloomShader == null) return;
-			PoseStack replay = new PoseStack();
-			replay.last().pose().set(pose);
-			replay.last().normal().set(normal);
-
-			applyUniforms(bloomShader, replay, proj, c, alpha, time, backFace);
-			bloomShader.safeGetUniform("bloomMode").set(1.0f);
-			drawLayers(resolved, bloomShader, replay, proj);
-			bloomShader.safeGetUniform("bloomMode").set(0.0f);
+			applySmoothUniforms(bloomShader, normalCopy, styleCopy, alpha, growth, time, phase, backFace);
+			drawShellMesh(mesh, bloomShader, poseCopy, projectionCopy, 1.0f);
 		});
 	}
 
-	private static void applyUniforms(ShaderInstance shader, PoseStack poseStack, Matrix4f projectionMatrix,
-									  float[] color, float alpha, float time, float backFace) {
-		shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-		shader.safeGetUniform("ProjMat").set(projectionMatrix);
-		shader.safeGetUniform("normalMatrix").set(new Matrix4f(new Matrix3f(poseStack.last().normal())));
-		shader.safeGetUniform("time").set(time);
-		shader.safeGetUniform("auravar").set(1.0f);
-
-		float core = 0.55f;
-		shader.safeGetUniform("color1").set(
-				Mth.lerp(core, color[0], 1.0f),
-				Mth.lerp(core, color[1], 1.0f),
-				Mth.lerp(core, color[2], 1.0f));
-		shader.safeGetUniform("color2").set(color[0] * 1.25f, color[1] * 1.25f, color[2] * 1.25f);
-
-		shader.safeGetUniform("alp1").set(0.45f * alpha);
-		shader.safeGetUniform("alp2").set(0.85f * (float) Math.pow(alpha, 0.35));
-		shader.safeGetUniform("power").set(6.0f);
-		shader.safeGetUniform("divis").set(0.02f);
-		shader.safeGetUniform("backFace").set(backFace);
+	private static void applySmoothUniforms(ShaderInstance shader, Matrix3f normal, AuraStyle style, float alpha,
+											float growth, float time, float phase, float backFace) {
+		shader.setSampler("NoiseTex", AuraNoiseTexture.getId());
+		shader.safeGetUniform("NormalMat").set(normal);
+		shader.safeGetUniform("Size").set(style.sizeX, style.sizeY, style.sizeZ);
+		shader.safeGetUniform("Time").set(time);
+		shader.safeGetUniform("Phase").set(phase);
+		shader.safeGetUniform("Growth").set(Mth.clamp(growth, 0.0f, 1.0f));
+		shader.safeGetUniform("Peaks").set((float) Math.max(1, Math.round(style.peaks)));
+		shader.safeGetUniform("WaveFrequency").set(style.waveFrequency);
+		shader.safeGetUniform("WaveAmplitude").set(style.waveAmplitude);
+		shader.safeGetUniform("NoiseDetail").set(style.noiseDetail);
+		shader.safeGetUniform("UpwardBias").set(style.upwardBias);
+		shader.safeGetUniform("CoreColor").set(style.coreColor[0], style.coreColor[1], style.coreColor[2]);
+		shader.safeGetUniform("RimColor").set(style.rimColor[0], style.rimColor[1], style.rimColor[2]);
+		shader.safeGetUniform("NoiseColor").set(style.noiseColor[0], style.noiseColor[1], style.noiseColor[2]);
+		shader.safeGetUniform("NoiseFactor").set(style.noiseFactor);
+		shader.safeGetUniform("CoreAlpha").set(style.coreAlpha);
+		shader.safeGetUniform("RimAlpha").set(style.rimAlpha);
+		shader.safeGetUniform("RimPower").set(style.rimPower);
+		shader.safeGetUniform("RimThreshold").set(style.rimThreshold);
+		shader.safeGetUniform("Alpha").set(Mth.clamp(alpha, 0.0f, 1.0f));
+		shader.safeGetUniform("BackFace").set(backFace);
+		shader.safeGetUniform("BloomIntensity").set(style.bloomIntensity);
 	}
 
-	private static void drawLayers(String resolved, ShaderInstance shader, PoseStack poseStack, Matrix4f projectionMatrix) {
-		VertexBuffer mesh = meshFor(resolved);
-		if (SPARKING_TYPE.equals(resolved)) {
-			shader.safeGetUniform("layerPass").set(1.0f);
-			drawMesh(mesh, shader, poseStack, projectionMatrix);
-			shader.safeGetUniform("layerPass").set(0.0f);
+	private static void drawShellMesh(VertexBuffer mesh, ShaderInstance shader, Matrix4f pose, Matrix4f projection, float bloomPass) {
+		shader.safeGetUniform("BloomPass").set(bloomPass);
+
+		shader.apply();
+		RenderSystem.enableBlend();
+		RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+		RenderSystem.enableDepthTest();
+		RenderSystem.depthFunc(GL11.GL_LEQUAL);
+		RenderSystem.depthMask(false);
+		RenderSystem.disableCull();
+
+		mesh.bind();
+		mesh.drawWithShader(pose, projection, shader);
+		VertexBuffer.unbind();
+
+		RenderSystem.enableCull();
+		RenderSystem.depthMask(true);
+		RenderSystem.disableBlend();
+		RenderSystem.defaultBlendFunc();
+	}
+
+	public static void drawEntity(PoseStack poseStack, Matrix4f projection, String type, float[] color, float ageInTicks, float bodyScale) {
+		float time = ageInTicks / 20.0f;
+		AuraStyle style = entityStyle(color);
+		if (isSmooth(type)) {
+			drawSmooth(poseStack, projection, style, 1.0f, 1.0f, time, time * style.waveSpeed,
+					bodyScale, bodyScale, bodyScale, SMOOTH_BACKFACE);
+			return;
 		}
-		drawMesh(mesh, shader, poseStack, projectionMatrix);
+		float width = bodyScale * widthFactor(type);
+		drawSparking(poseStack, projection, style, 1.0f, 1.0f, time, width, bodyScale * heightFactor(type), width,
+				pivotFactor(type), DEFAULT_BACKFACE);
 	}
 
-	private static void drawMesh(VertexBuffer mesh, ShaderInstance shader, PoseStack poseStack, Matrix4f projectionMatrix) {
+	public static void drawEntityGroundPulse(PoseStack poseStack, Matrix4f projection, String type, float[] color, float alpha,
+											 float ageInTicks, float radius, float height, float spinDegrees) {
+		float time = ageInTicks / 20.0f;
+		AuraStyle style = entityStyle(color);
+		if (isSmooth(type)) {
+			drawSmoothGroundPulse(poseStack, projection, style, alpha, time, time * style.waveSpeed, radius, height, spinDegrees);
+			return;
+		}
+		drawSparkingGroundPulse(poseStack, projection, style, alpha, time, radius, height, spinDegrees);
+	}
+
+	private static AuraStyle entityStyle(float[] color) {
+		int key = ColorUtils.rgbToInt(color[0], color[1], color[2]);
+		return ENTITY_STYLES.computeIfAbsent(key, k -> AuraStyle.resolve(FormConfig.Aura3DStyle.DEFAULT, color.clone()));
+	}
+
+	public static void drawSparking(PoseStack poseStack, Matrix4f projection, AuraStyle style, float alpha, float growth,
+									float time, float scaleX, float scaleY, float scaleZ, float pivot, float backFace) {
+		ShaderInstance shader = DMZShaders.auraSparking3DShader;
+		if (shader == null || style == null || alpha <= 0.001f || growth <= 0.001f) return;
+
+		poseStack.pushPose();
+		poseStack.scale(scaleX, scaleY, scaleZ);
+		poseStack.translate(0.0f, pivot, 0.0f);
+		drawSparkingShell(shader, poseStack, projection, style, alpha, growth, time * SPARKING_TIME_SCALE, backFace);
+		poseStack.popPose();
+	}
+
+	public static void drawSparkingGroundPulse(PoseStack poseStack, Matrix4f projection, AuraStyle style,
+											   float alpha, float time, float radius, float height, float spinDegrees) {
+		ShaderInstance shader = DMZShaders.auraSparking3DShader;
+		if (shader == null || style == null || alpha <= 0.001f) return;
+
+		poseStack.pushPose();
+		poseStack.mulPose(Axis.YP.rotationDegrees(spinDegrees));
+		poseStack.scale(radius, height, radius);
+		poseStack.translate(0.0f, 0.9f, 0.0f);
+		drawSparkingShell(shader, poseStack, projection, style, alpha, 1.0f, time * SPARKING_PULSE_TIME_SCALE, DEFAULT_BACKFACE);
+		poseStack.popPose();
+	}
+
+	private static void drawSparkingShell(ShaderInstance shader, PoseStack poseStack, Matrix4f projection, AuraStyle style,
+										  float alpha, float growth, float time, float backFace) {
+		Matrix4f pose = poseStack.last().pose();
+		Matrix3f normal = poseStack.last().normal();
+		applySparkingUniforms(shader, normal, style, alpha, growth, time, backFace);
+
+		boolean captured = BloomPipeline.beginCapture();
+		try {
+			drawSparkingLayers(shader, pose, projection, 0.0f);
+		} finally {
+			if (captured) BloomPipeline.endCapture();
+		}
+		if (captured) return;
+
+		Matrix4f poseCopy = new Matrix4f(pose);
+		Matrix3f normalCopy = new Matrix3f(normal);
+		Matrix4f projectionCopy = new Matrix4f(projection);
+		AuraStyle styleCopy = new AuraStyle().copyFrom(style);
+		AuraRenderer.captureBloom(() -> {
+			ShaderInstance bloomShader = DMZShaders.auraSparking3DShader;
+			if (bloomShader == null) return;
+			applySparkingUniforms(bloomShader, normalCopy, styleCopy, alpha, growth, time, backFace);
+			drawSparkingLayers(bloomShader, poseCopy, projectionCopy, 1.0f);
+		});
+	}
+
+	private static void applySparkingUniforms(ShaderInstance shader, Matrix3f normal, AuraStyle style, float alpha,
+											  float growth, float time, float backFace) {
+		shader.safeGetUniform("NormalMat").set(normal);
+		shader.safeGetUniform("Size").set(style.sizeX, style.sizeY, style.sizeZ);
+		shader.safeGetUniform("Time").set(time);
+		shader.safeGetUniform("Growth").set(Mth.clamp(growth, 0.0f, 1.0f));
+		shader.safeGetUniform("SpikeDensity").set((float) Math.max(4, Math.round(style.spikeDensity)));
+		shader.safeGetUniform("SpikeBurstRate").set(style.spikeBurstRate);
+		shader.safeGetUniform("SpikeRarity").set(style.spikeRarity);
+		shader.safeGetUniform("BandStart").set(style.bandStart);
+		shader.safeGetUniform("WaveSpeed").set(style.waveSpeed);
+		shader.safeGetUniform("WaveAmplitude").set(style.waveAmplitude);
+		shader.safeGetUniform("NoiseDetail").set(style.noiseDetail);
+		shader.safeGetUniform("CoreColor").set(style.coreColor[0], style.coreColor[1], style.coreColor[2]);
+		shader.safeGetUniform("RimColor").set(style.rimColor[0], style.rimColor[1], style.rimColor[2]);
+		shader.safeGetUniform("CoreAlpha").set(style.coreAlpha);
+		shader.safeGetUniform("RimAlpha").set(style.rimAlpha);
+		shader.safeGetUniform("RimPower").set(style.rimPower);
+		shader.safeGetUniform("RimThreshold").set(style.rimThreshold);
+		shader.safeGetUniform("Alpha").set(Mth.clamp(alpha, 0.0f, 1.0f));
+		shader.safeGetUniform("BackFace").set(backFace);
+		shader.safeGetUniform("BloomIntensity").set(style.bloomIntensity);
+	}
+
+	private static void drawSparkingLayers(ShaderInstance shader, Matrix4f pose, Matrix4f projection, float bloomPass) {
+		VertexBuffer mesh = AuraMeshFactory.getSparkingFlameMesh();
+		shader.safeGetUniform("BloomPass").set(bloomPass);
+
 		RenderType renderType = AuraRenderer.auraType(DUMMY_TEXTURE);
 		AuraRenderer.customSetup(renderType, DUMMY_TEXTURE, shader);
 
-		shader.apply();
 		mesh.bind();
-		mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+		shader.safeGetUniform("LayerPass").set(1.0f);
+		mesh.drawWithShader(pose, projection, shader);
+		shader.safeGetUniform("LayerPass").set(0.0f);
+		mesh.drawWithShader(pose, projection, shader);
 		VertexBuffer.unbind();
-		shader.clear();
 
 		AuraRenderer.customClear(renderType);
 	}

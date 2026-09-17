@@ -41,8 +41,6 @@ import java.util.Map;
 
 @Getter
 public class StatsData {
-	public static final double GLOBAL_HEALTH_MULTIPLIER = 3.0;
-
 	private static final double DEFENSE_FLAT_FOLD = 0.12;
 
 	private static final double STAT_COST_PER_POINT = 1.25;
@@ -245,11 +243,47 @@ public class StatsData {
 
 	public float getHealthBonus() {
 		double vitality = stats.getVitality();
-		double vitScaling = getStatScaling("VIT");
 		double vitMult = getTotalMultiplier("VIT");
 		double flatBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), false);
 		double multBonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality), true);
-		return (float) Math.min(((((vitality + multBonusVit) * vitScaling * vitMult) + (flatBonusVit * vitScaling)) * GLOBAL_HEALTH_MULTIPLIER), Float.MAX_VALUE - 1);
+		double minScaling = getStatScaling("VIT");
+		double maxScaling = getVitalityScalingMax();
+		double knee = getVitalityCurveKnee();
+		double health = (vitalityCurveHealth(vitality + multBonusVit, minScaling, maxScaling, knee) * vitMult)
+				+ (flatBonusVit * vitalityScalingAt(vitality, minScaling, maxScaling, knee));
+		return (float) Math.min(health, Float.MAX_VALUE - 1);
+	}
+
+	public double getVitalityScalingAt(double vitality) {
+		return vitalityScalingAt(vitality, getStatScaling("VIT"), getVitalityScalingMax(), getVitalityCurveKnee());
+	}
+
+	public double getVitalityScalingMax() {
+		double minScaling = getStatScaling("VIT");
+		RaceStatsConfig.StatScaling scaling = getClassStats(ConfigManager.getRaceStats(character.getRaceName()), character.getCharacterClass()).getStatScaling();
+		Double maxScaling = scaling != null ? scaling.getVitalityScalingMax() : null;
+		return maxScaling != null ? Math.max(0.0, maxScaling) : minScaling;
+	}
+
+	public double getVitalityCurveKnee() {
+		var gameplay = ConfigManager.getServerConfig().getGameplay();
+		boolean levelMode = isMaxLevelValueInsteadOfStats();
+		double maxPossibleVit = levelMode ? getConfiguredMaxTotalStatsRaw() : getConfiguredMaxValue();
+		double kneeFraction = levelMode ? gameplay.getVitCurveKneeLevelMode() : gameplay.getVitCurveKneeStatMode();
+		return Math.max(1.0, maxPossibleVit * kneeFraction);
+	}
+
+	private static double vitalityScalingAt(double vitality, double minScaling, double maxScaling, double knee) {
+		double t = Math.max(0.0, Math.min(1.0, vitality / knee));
+		return minScaling + (maxScaling - minScaling) * t * t;
+	}
+
+	private static double vitalityCurveHealth(double vitality, double minScaling, double maxScaling, double knee) {
+		if (vitality <= 0) return vitality * minScaling;
+		double ramp = Math.min(vitality, knee);
+		double health = (minScaling * ramp) + ((maxScaling - minScaling) * ramp * ramp * ramp / (3.0 * knee * knee));
+		if (vitality > knee) health += maxScaling * (vitality - knee);
+		return health;
 	}
 
 	public float getMaxHealth() {

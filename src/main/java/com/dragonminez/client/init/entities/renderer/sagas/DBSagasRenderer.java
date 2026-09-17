@@ -147,40 +147,33 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         return super.getRenderColor(animatable, partialTick, packedLight);
     }
 
-    // Entities have no aura scale, so the flame is sized off the hitbox against a standard player.
     private static final float STANDARD_PLAYER_HEIGHT = 1.8f;
 
     private void drawAura3D(T animatable, PoseStack poseStack, float partialTick) {
-        String type = animatable.getAuraType3D();
-        float base = animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT;
-        float time = (animatable.tickCount + partialTick) / 20.0f;
-
-        float width = base * Aura3DRenderer.widthFactor(type);
-        Aura3DRenderer.draw(poseStack, RenderSystem.getProjectionMatrix(), type,
-                ColorUtils.rgbIntToFloat(animatable.getAuraColor()), 1.0f, time,
-                width, base * Aura3DRenderer.heightFactor(type), width, Aura3DRenderer.pivotFactor(type),
-                Aura3DRenderer.DEFAULT_BACKFACE);
+        Aura3DRenderer.drawEntity(poseStack, RenderSystem.getProjectionMatrix(), animatable.getAuraType3D(),
+                ColorUtils.rgbIntToFloat(animatable.getAuraColor()), animatable.tickCount + partialTick,
+                animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT);
     }
 
     private void drawPulseAura3D(T animatable, PoseStack poseStack, float partialTick) {
         float height = animatable.getBbHeight() / STANDARD_PLAYER_HEIGHT;
-        float time = (animatable.tickCount + partialTick) / 20.0f;
+        float age = animatable.tickCount + partialTick;
         float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
-        float spin = (animatable.tickCount + partialTick) * 2.5f;
+        float spin = age * 2.5f;
 
-        float phase = ((animatable.tickCount + partialTick) * 0.02f) % 1.0f;
-        drawPulseInstance3D(animatable, poseStack, height, color, time, spin, phase);
-        drawPulseInstance3D(animatable, poseStack, height, color, time, spin, (phase + 0.5f) % 1.0f);
+        float phase = (age * 0.02f) % 1.0f;
+        drawPulseInstance3D(animatable, poseStack, height, color, age, spin, phase);
+        drawPulseInstance3D(animatable, poseStack, height, color, age, spin, (phase + 0.5f) % 1.0f);
     }
 
     private void drawPulseInstance3D(T animatable, PoseStack poseStack, float height, float[] color,
-                                     float time, float spin, float progress) {
+                                     float age, float spin, float progress) {
         float expansion = 1.0f + (3.0f * progress);
         float alphaCurve = (float) Math.sin(progress * Math.PI);
 
         String type = animatable.getAuraType3D();
-        Aura3DRenderer.drawGroundPulse(poseStack, RenderSystem.getProjectionMatrix(), type,
-                color, alphaCurve * 0.5f, time,
+        Aura3DRenderer.drawEntityGroundPulse(poseStack, RenderSystem.getProjectionMatrix(), type,
+                color, alphaCurve * 0.5f, age,
                 height * Aura3DRenderer.widthFactor(type) * expansion * 0.75f, height * 0.22f, spin);
     }
 
@@ -223,10 +216,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
 
         float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
-        shader.safeGetUniform("color1").set(color[0] * 1.6f, color[1] * 1.6f, color[2] * 1.6f, 1.0f);
-        shader.safeGetUniform("color2").set(color[0] * 1.3f, color[1] * 1.3f, color[2] * 1.3f, 1.0f);
-        shader.safeGetUniform("color3").set(color[0] * 1.0f, color[1] * 1.0f, color[2] * 1.0f, 0.85f);
-        shader.safeGetUniform("color4").set(color[0] * 0.75f, color[1] * 0.75f, color[2] * 0.75f, 0.65f);
+        AuraRenderer.applyAuraColors(shader, color);
 
         shader.safeGetUniform("alp1").set(alphaCurve * 0.6f);
 
@@ -264,10 +254,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
 
-        shader.safeGetUniform("color1").set(color[0] * 1.6f, color[1] * 1.6f, color[2] * 1.6f, 1.0f);
-        shader.safeGetUniform("color2").set(color[0] * 1.3f, color[1] * 1.3f, color[2] * 1.3f, 1.0f);
-        shader.safeGetUniform("color3").set(color[0] * 1.0f, color[1] * 1.0f, color[2] * 1.0f, 0.85f);
-        shader.safeGetUniform("color4").set(color[0] * 0.75f, color[1] * 0.75f, color[2] * 0.75f, 0.65f);
+        AuraRenderer.applyAuraColors(shader, color);
 
         float cameraPitch = mc.gameRenderer.getMainCamera().getXRot();
         float cameraYaw = mc.gameRenderer.getMainCamera().getYRot();

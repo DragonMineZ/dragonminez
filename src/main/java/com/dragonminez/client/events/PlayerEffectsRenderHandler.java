@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
+import com.dragonminez.client.render.shader.BloomPipeline;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.shader.EffectBloomRenderer;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
@@ -35,6 +36,7 @@ public class PlayerEffectsRenderHandler {
 	public static void onRenderTick(TickEvent.RenderTickEvent event) {
 		if (event.phase == TickEvent.Phase.START) {
 			AuraRenderer.resetBloomCapture();
+			BloomPipeline.resetFrame();
 			PlayerEffectQueue.getAndClearAuras();
 			PlayerEffectQueue.getAndClearSparks();
 			PlayerEffectQueue.getAndClearWeapons();
@@ -78,7 +80,12 @@ public class PlayerEffectsRenderHandler {
 		if (stage == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
 			renderWeapons(mc, event);
 		} else if (stage == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
-			renderEffects(mc, event);
+			int fabulousLayer = BloomPipeline.bindMainIfFabulousLayer();
+			try {
+				renderEffects(mc, event);
+			} finally {
+				BloomPipeline.restoreFramebuffer(fabulousLayer);
+			}
 		}
 	}
 
@@ -167,11 +174,10 @@ public class PlayerEffectsRenderHandler {
 			AuraRenderer.endBloomCapture();
 		}
 
-        EffectBloomRenderer.render(kiAttacks, poseStack, projectionMatrix, partialTick);
+		EffectBloomRenderer.render(kiAttacks, poseStack, projectionMatrix);
 
 		if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("globalAlpha").set(1.0f);
 
 		AuraRenderer.cleanCaches(CURRENT_FRAME_PLAYERS);
 	}
 }
-

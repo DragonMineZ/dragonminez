@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.bioandroid;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.racial.impl.BioAndroidEvolution;
@@ -73,7 +74,7 @@ public class CellJrEntity extends DBSagasEntity {
 	public boolean isValidTarget(LivingEntity candidate) {
 		LivingEntity owner = resolveOwner();
 		if (owner == null) return false;
-		if (candidate == owner) return false;
+		if (candidate == owner || candidate instanceof MastersEntity) return false;
 		if (candidate instanceof CellJrEntity otherJr) return !owner.equals(otherJr.resolveOwner());
 
 		if (candidate instanceof ServerPlayer candidatePlayer && owner instanceof ServerPlayer ownerPlayer) {
@@ -85,6 +86,12 @@ public class CellJrEntity extends DBSagasEntity {
 			}
 		}
 		return true;
+	}
+
+	@Override
+	public void setTarget(LivingEntity target) {
+		if (target instanceof MastersEntity) return;
+		super.setTarget(target);
 	}
 
 	@Override

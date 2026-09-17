@@ -33,6 +33,7 @@ public class RaceCharacterConfig {
 	private Boolean hasSaiyanTail = false;
 	private String auraType = "kakarot";
 	private String auraType3D = "smooth";
+	private FormConfig.Aura3DStyle aura3DStyle = new FormConfig.Aura3DStyle();
 	private Float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
 	private Integer defaultBodyType = 0;
 	private Integer defaultHairType = 0;
@@ -48,6 +49,10 @@ public class RaceCharacterConfig {
 	private String defaultEye2Color = null;
 	private String defaultAuraColor = null;
 	private Map<String, FormSkillCost> formSkillsCosts = new HashMap<>();
+
+	public FormConfig.Aura3DStyle getAura3DStyle() {
+		return aura3DStyle != null ? aura3DStyle : FormConfig.Aura3DStyle.DEFAULT;
+	}
 
 	private FormSkillCost getFormSkillEntry(String form) {
 		if (form == null) return null;

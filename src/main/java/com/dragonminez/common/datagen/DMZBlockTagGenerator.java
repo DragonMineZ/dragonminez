@@ -69,6 +69,7 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 		//		.add(MainBlocks.INVISIBLE_LADDER_BLOCK.get());
 
 		this.tag(BlockTags.MINEABLE_WITH_AXE)
+				.add(MainBlocks.PATTERN_STATION.get())
 				.add(MainBlocks.NAMEK_AJISSA_LOG.get())
 				.add(MainBlocks.NAMEK_STRIPPED_AJISSA_LOG.get())
 				.add(MainBlocks.NAMEK_AJISSA_WOOD.get())

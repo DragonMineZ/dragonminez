@@ -38,6 +38,7 @@ final class SideQuestDefaults {
 	static void createDefaultSideQuestFiles(Path sideQuestDir) {
 		if (!ConfigManager.getServerConfig().getGameplay().getCreateDefaultSideQuests()) return;
 		dmzBase = sideQuestDir.getParent(); // <world>/dragonminez
+		createClassicCategory(sideQuestDir);
 		createTrainingCategory(sideQuestDir);
 		createExplorationCategory(sideQuestDir);
 		createCombatCategory(sideQuestDir);
@@ -152,6 +153,13 @@ final class SideQuestDefaults {
 	private static JsonObject objTalkTo(String npcId) {
 		JsonObject o = new JsonObject();
 		o.addProperty("type", "TALK_TO"); o.addProperty("npcId", npcId);
+		return o;
+	}
+
+	private static JsonObject objDeliver(String itemId, int count, String npcId) {
+		JsonObject o = new JsonObject();
+		o.addProperty("type", "DELIVER");
+		o.addProperty("item", itemId); o.addProperty("count", count); o.addProperty("npcId", npcId);
 		return o;
 	}
 
@@ -276,6 +284,98 @@ final class SideQuestDefaults {
 	}
 
 	// ========================================================================================
+	// Classic Saga Side-Quests
+	// ========================================================================================
+
+	private static void createClassicCategory(Path baseDir) {
+		Path dir = baseDir.resolve("classic");
+
+		writeQuestFile(dir, "classic_giant_fish_dinner.json", sidequest(
+				"classic_giant_fish_dinner", "dmz.sidequest.classic_giant_fish_dinner.name", "dmz.sidequest.classic_giant_fish_dinner.desc",
+				"collection", false, "goku", "goku",
+				prereqs("AND", condSaga("classic_saga", 1)),
+				new JsonObject[]{
+						objKill("dragonminez:giant_fish", 2),
+						objDeliver("dragonminez:giant_fish_cooked", 2, "goku"),
+						objTalkTo("goku")
+				},
+				new JsonObject[]{ rewTPS(600) }));
+
+		writeQuestFile(dir, "classic_village_night_watch.json", sidequest(
+				"classic_village_night_watch", "dmz.sidequest.classic_village_night_watch.name", "dmz.sidequest.classic_village_night_watch.desc",
+				"combat", true, null, null,
+				prereqs("AND", condSaga("classic_saga", 3)),
+				new JsonObject[]{
+						objKill("minecraft:zombie", 12),
+						objKill("minecraft:skeleton", 6)
+				},
+				new JsonObject[]{ rewTPS(800) }));
+
+		writeQuestFile(dir, "classic_kame_house_groceries.json", sidequest(
+				"classic_kame_house_groceries", "dmz.sidequest.classic_kame_house_groceries.name", "dmz.sidequest.classic_kame_house_groceries.desc",
+				"collection", false, "roshi", "roshi",
+				prereqs("AND", condSaga("classic_saga", 6)),
+				new JsonObject[]{
+						objDeliver("minecraft:cod", 8, "roshi"),
+						objDeliver("minecraft:bread", 8, "roshi"),
+						objTalkTo("roshi")
+				},
+				new JsonObject[]{ rewTPS(900) }));
+
+		writeQuestFile(dir, "classic_red_ribbon_patrol.json", sidequest(
+				"classic_red_ribbon_patrol", "dmz.sidequest.classic_red_ribbon_patrol.name", "dmz.sidequest.classic_red_ribbon_patrol.desc",
+				"combat", false, null, null,
+				prereqs("AND", condSaga("classic_saga", 13)),
+				new JsonObject[]{
+						objStructure("dragonminez:rrtower"),
+						objKill("dragonminez:red_ribbon_soldier", 8)
+				},
+				new JsonObject[]{ rewTPS(2000) }));
+
+		writeQuestFile(dir, "classic_korin_senzu_harvest.json", sidequest(
+				"classic_korin_senzu_harvest", "dmz.sidequest.classic_korin_senzu_harvest.name", "dmz.sidequest.classic_korin_senzu_harvest.desc",
+				"collection", false, "karin", "karin",
+				prereqs("AND", condSaga("classic_saga", 19)),
+				new JsonObject[]{
+						objDeliver("minecraft:wheat_seeds", 32, "karin"),
+						objTalkTo("karin")
+				},
+				new JsonObject[]{ rewTPS(1500), rewItem("dragonminez:senzu_bean", 2) }));
+
+		writeQuestFile(dir, "classic_baba_crystal_ball.json", sidequest(
+				"classic_baba_crystal_ball", "dmz.sidequest.classic_baba_crystal_ball.name", "dmz.sidequest.classic_baba_crystal_ball.desc",
+				"collection", false, "baba_earth", "baba_earth",
+				prereqs("AND", condSaga("classic_saga", 23)),
+				new JsonObject[]{
+						objDeliver("minecraft:glass", 8, "baba_earth"),
+						objDeliver("minecraft:amethyst_shard", 4, "baba_earth"),
+						objTalkTo("baba_earth")
+				},
+				new JsonObject[]{ rewTPS(1800) }));
+
+		writeQuestFile(dir, "classic_jackie_chun_rematch.json", sidequest(
+				"classic_jackie_chun_rematch", "dmz.sidequest.classic_jackie_chun_rematch.name", "dmz.sidequest.classic_jackie_chun_rematch.desc",
+				"training", false, "roshi", "roshi",
+				prereqs("AND", condSaga("classic_saga", 29)),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_jackie_chun_fp", 1, 1000, 50, 45),
+						objTalkTo("roshi")
+				},
+				new JsonObject[]{ rewTPS(2600) }));
+
+		writeQuestFile(dir, "classic_lookout_garden.json", sidequest(
+				"classic_lookout_garden", "dmz.sidequest.classic_lookout_garden.name", "dmz.sidequest.classic_lookout_garden.desc",
+				"collection", false, "popo", "popo",
+				prereqs("AND", condSaga("classic_saga", 46)),
+				new JsonObject[]{
+						objDeliver("minecraft:poppy", 12, "popo"),
+						objDeliver("minecraft:dandelion", 12, "popo"),
+						objTalkTo("popo")
+				},
+				new JsonObject[]{ rewTPS(2500) }));
+	}
+
+	// ========================================================================================
 	// Training Side-Quests
 	// ========================================================================================
 
@@ -305,7 +405,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "weighted_training.json", sidequest(
 				"weighted_training", "dmz.sidequest.weighted.name", "dmz.sidequest.weighted.desc",
 				"training", false, "roshi", "roshi",
-				prereqs("AND", condQuest("endurance_training"), condSaga("saiyan_saga", 2)),
+				prereqs("AND", condQuest("endurance_training"), condSaga("saiyan_saga", 3)),
 				new JsonObject[]{
 						objKill("minecraft:iron_golem", 3),
 						objItem("minecraft:iron_ingot", 32),
@@ -352,7 +452,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "tien_mountain_training.json", sidequest(
 				"tien_mountain_training", "dmz.sidequest.tien_mountain.name", "dmz.sidequest.tien_mountain.desc",
 				"training", false, "krillin", "krillin",
-				prereqs("AND", condSaga("saiyan_saga", 4)),
+				prereqs("AND", condSaga("saiyan_saga", 9)),
 				requirements("AND", condBiome("#minecraft:is_mountain")),
 				new JsonObject[]{
 						objKill("minecraft:iron_golem", 5),
@@ -363,7 +463,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "piccolo_wilderness_survival.json", sidequest(
 				"piccolo_wilderness_survival", "dmz.sidequest.piccolo_survival.name", "dmz.sidequest.piccolo_survival.desc",
 				"training", true, "piccolo", "piccolo",
-				prereqs("AND", condSaga("saiyan_saga", 4)),
+				prereqs("AND", condSaga("saiyan_saga", 9)),
 				requirements("AND", condBiome("minecraft:forest")),
 				new JsonObject[]{
 						objKill("minecraft:zombie", 20),
@@ -376,7 +476,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "gohan_survival.json", sidequest(
 				"gohan_survival", "dmz.sidequest.gohan_survival.name", "dmz.sidequest.gohan_survival.desc",
 				"training", false, "piccolo", "gohan",
-				prereqs("AND", condSaga("saiyan_saga", 2)),
+				prereqs("AND", condSaga("saiyan_saga", 3)),
 				new JsonObject[]{
 						objItem("minecraft:cooked_beef", 16),
 						objItem("minecraft:iron_sword", 1),
@@ -464,7 +564,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "namek_explorer.json", sidequest(
 				"namek_explorer", "dmz.sidequest.namek_explorer.name", "dmz.sidequest.namek_explorer.desc",
 				"exploration", true, null, null,
-				prereqs("AND", condSaga("saiyan_saga", 8)),
+				prereqs("AND", condSaga("saiyan_saga", 16)),
 				new JsonObject[]{
 						objBiome("dragonminez:ajissa_plains"),
 						objStructure("dragonminez:village_ajissa")
@@ -556,7 +656,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "red_ribbon_outpost.json", sidequest(
 				"red_ribbon_outpost", "dmz.sidequest.red_ribbon_outpost.name", "dmz.sidequest.red_ribbon_outpost.desc",
 				"combat", false, null, null,
-				prereqs("AND", condSaga("saiyan_saga", 4)),
+				prereqs("AND", condSaga("saiyan_saga", 9)),
 				new JsonObject[]{
 						objStructure("minecraft:pillager_outpost"),
 						objKill("minecraft:pillager", 15)
@@ -568,7 +668,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "yamcha_desert_bandit.json", sidequest(
 				"yamcha_desert_bandit", "dmz.sidequest.yamcha_bandit.name", "dmz.sidequest.yamcha_bandit.desc",
 				"combat", false, "yamcha", "yamcha",
-				prereqs("AND", condSaga("saiyan_saga", 2)),
+				prereqs("AND", condSaga("saiyan_saga", 3)),
 				requirements("AND", condBiome("minecraft:desert")),
 				new JsonObject[]{
 						objKill("dragonminez:bandit", 10),
@@ -694,7 +794,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "bulma_radar_parts.json", sidequest(
 				"bulma_radar_parts", "dmz.sidequest.bulma_radar.name", "dmz.sidequest.bulma_radar.desc",
 				"collection", false, "bulma", "bulma",
-				prereqs("AND", condSaga("saiyan_saga", 3)),
+				prereqs("AND", condSaga("saiyan_saga", 8)),
 				new JsonObject[]{
 						objItem("minecraft:redstone", 16),
 						objItem("minecraft:copper_ingot", 16),
@@ -706,7 +806,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "collect_dragon_balls.json", sidequest(
 				"collect_dragon_balls", "dmz.sidequest.collect_dballs.name", "dmz.sidequest.collect_dballs.desc",
 				"collection", false, "bulma", "bulma",
-				prereqs("AND", condSaga("saiyan_saga", 5), condQuest("bulma_radar_parts")),
+				prereqs("AND", condSaga("saiyan_saga", 11), condQuest("bulma_radar_parts")),
 				new JsonObject[]{
 						objDragonSummon("shenron", "earth"),
 						objTalkTo("bulma")
@@ -716,7 +816,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "chi_chi_provisions.json", sidequest(
 				"chi_chi_provisions", "dmz.sidequest.chichi_provisions.name", "dmz.sidequest.chichi_provisions.desc",
 				"collection", true, "goku", "goku",
-				prereqs("AND", condSaga("saiyan_saga", 5)),
+				prereqs("AND", condSaga("saiyan_saga", 11)),
 				new JsonObject[]{
 						objItem("minecraft:cooked_beef", 32),
 						objItem("minecraft:bread", 32),
@@ -888,7 +988,7 @@ final class SideQuestDefaults {
 		writeQuestFile(dir, "bulma_otherworld_drive.json", sidequest(
 				"bulma_otherworld_drive", "dmz.sidequest.bulma_otherworld_drive.name", "dmz.sidequest.bulma_otherworld_drive.desc",
 				"tech", false, "bulma", "bulma",
-				prereqs("AND", condSaga("saiyan_saga", 5), condQuest("bulma_radar_parts")),
+				prereqs("AND", condSaga("saiyan_saga", 11), condQuest("bulma_radar_parts")),
 				new JsonObject[]{
 						objItem("minecraft:ender_pearl", 8),
 						objItem("minecraft:obsidian", 12),
@@ -1046,7 +1146,7 @@ final class SideQuestDefaults {
 
 		writeQuestFile(dir, "bulma_rare_mineral_survey.json", sidequest(
 				"bulma_rare_mineral_survey", "dmz.sidequest.bulma_rare_mineral_survey.name", "dmz.sidequest.bulma_rare_mineral_survey.desc",
-				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 3)),
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 8)),
 				new JsonObject[]{ objItem("minecraft:amethyst_shard", 8), objItem("minecraft:copper_ingot", 12), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(1600) }));
 
@@ -1058,13 +1158,13 @@ final class SideQuestDefaults {
 
 		writeQuestFile(dir, "bulma_flight_stabilizer.json", sidequest(
 				"bulma_flight_stabilizer", "dmz.sidequest.bulma_flight_stabilizer.name", "dmz.sidequest.bulma_flight_stabilizer.desc",
-				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 4)),
+				"collection", true, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 9)),
 				new JsonObject[]{ objItem("minecraft:feather", 16), objItem("minecraft:redstone", 12), objItem("minecraft:gold_ingot", 4), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(3600) }));
 
 		writeQuestFile(dir, "bulma_saiyan_biology_sample.json", sidequest(
 				"bulma_saiyan_biology_sample", "dmz.sidequest.bulma_saiyan_biology_sample.name", "dmz.sidequest.bulma_saiyan_biology_sample.desc",
-				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 6)),
+				"combat", false, "bulma", "bulma", prereqs("AND", condSaga("saiyan_saga", 12)),
 				new JsonObject[]{ objQuestKill("dragonminez:saga_raditz", 1, 3450, 220, 139), objItem("minecraft:diamond", 3), objTalkTo("bulma") },
 				new JsonObject[]{ rewTPS(7500) }));
 

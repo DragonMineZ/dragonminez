@@ -1,50 +1,53 @@
 #version 150
+#extension GL_ARB_explicit_attrib_location : enable
 
-in vec3 vNormalWorld;
-in vec3 v_viewDir;
-in float vHeight;
-in float vWave;
+// Hollow shell shading: nearly clear where the shell faces the camera so the body stays readable, solid
+// along the silhouette where the tongues are. Location 1 records the same colour into the bloom mask while
+// the aura is drawn, so the glow never needs a second draw of the mesh (see BloomPipeline).
 
-uniform vec3 color1;
-uniform vec3 color2;
-uniform float alp1;
-uniform float alp2;
-uniform float power;
-uniform float divis;
-// Alpha kept on faces pointing away from the camera. Near zero normally, so the far wall of
-// the flame does not wash over the near one; raised in first person, where the camera is inside
-// the mesh by construction and would otherwise see nothing at all.
-uniform float backFace;
-uniform float bloomMode;
+in vec3 vNormal;
+in vec3 vView;
 
-out vec4 fragColor;
+uniform sampler2D NoiseTex;
+uniform float Time;
+uniform vec3 CoreColor;
+uniform vec3 RimColor;
+uniform vec3 NoiseColor;
+uniform float NoiseFactor;
+uniform float CoreAlpha;
+uniform float RimAlpha;
+uniform float RimPower;
+uniform float RimThreshold;
+uniform float Alpha;
+uniform float BackFace;
+uniform float BloomIntensity;
+// Set when this draw only feeds a separate bloom target (fallback when the mask cannot be attached).
+uniform float BloomPass;
 
-void main(void) {
-    vec3 N = normalize(vNormalWorld);
-    vec3 V = normalize(v_viewDir);
+layout(location = 0) out vec4 fragColor;
+layout(location = 1) out vec4 bloomColor;
 
-    float facingRaw = dot(V, N);
-    if (facingRaw < 0.0) N = -N;
+void main() {
+    vec3 N = normalize(vNormal);
+    vec3 V = normalize(vView);
 
-    float facing = abs(dot(V, N));
-    float edgeFactor = pow(1.0 - facing, power) / divis;
-    float blendFactor = clamp(edgeFactor, 0.0, 1.0);
+    float facing = dot(V, N);
+    float rim = clamp(pow(1.0 - abs(facing), RimPower) / RimThreshold, 0.0, 1.0);
 
-    vec3 color = mix(color1, color2, blendFactor);
-    float alpha = mix(alp1, alp2, blendFactor);
+    vec3 color = mix(CoreColor, RimColor, rim);
+    float alpha = mix(CoreAlpha, RimAlpha, rim);
 
-    // The moving licks read hotter than the body they grow out of.
-    color = mix(color, color2, clamp(vWave * 0.9, 0.0, 1.0));
+    // Shimmer keyed to the view-space normal, so it drifts across the shell as it turns and climbs.
+    vec2 shimmerUv = vec2(N.x * 0.25 + 0.5, (N.y * 0.5 + 0.5) * 0.25 - Time * 0.25);
+    float shimmer = texture(NoiseTex, shimmerUv).g;
+    vec3 tinted = mix(NoiseColor, color * mix(0.8, 1.0, shimmer), shimmer);
+    color = mix(color, tinted, NoiseFactor);
 
-    // A flame thins out towards the tip instead of ending on a hard edge.
-    alpha *= 1.0 - 0.75 * smoothstep(0.40, 1.0, vHeight);
+    // The far wall would wash over the near one; it is only raised when the camera sits inside the shell.
+    if (facing < 0.0) alpha *= BackFace;
+    alpha *= Alpha;
 
-    if (facingRaw < 0.0) alpha *= backFace;
-
-    if (bloomMode > 0.5) {
-        fragColor = vec4(color, alpha * (0.55 + 0.45 * clamp(vWave, 0.0, 1.0)));
-        return;
-    }
-
-    fragColor = vec4(color, alpha);
+    vec4 glow = vec4(color, clamp(alpha * BloomIntensity, 0.0, 1.0));
+    fragColor = BloomPass > 0.5 ? glow : vec4(color, alpha);
+    bloomColor = glow;
 }

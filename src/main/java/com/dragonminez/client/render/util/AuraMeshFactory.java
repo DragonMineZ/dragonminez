@@ -7,13 +7,79 @@ import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import org.joml.Vector3f;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 
 public class AuraMeshFactory {
+	public static final int DROPLET_RESOLUTION = 96;
+	private static final int SPARKING_RINGS = 72;
+	private static final int SPARKING_SEGMENTS = 128;
+
 	private static VertexBuffer billboardQuad;
 	private static VertexBuffer groundQuad;
-	private static VertexBuffer smoothFlame;
 	private static VertexBuffer sparkingFlame;
+	private static VertexBuffer fullscreenQuad;
+	private static final Map<Integer, VertexBuffer> DROPLETS = new HashMap<>();
+
+	public static VertexBuffer getFullscreenQuad() {
+		if (fullscreenQuad == null) {
+			fullscreenQuad = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			BufferBuilder builder = Tesselator.getInstance().getBuilder();
+			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+			builder.vertex(-1.0f, -1.0f, 0.0f).endVertex();
+			builder.vertex(1.0f, -1.0f, 0.0f).endVertex();
+			builder.vertex(1.0f, 1.0f, 0.0f).endVertex();
+			builder.vertex(-1.0f, 1.0f, 0.0f).endVertex();
+			fullscreenQuad.bind();
+			fullscreenQuad.upload(builder.end());
+			VertexBuffer.unbind();
+		}
+		return fullscreenQuad;
+	}
+
+	public static VertexBuffer getDropletMesh() {
+		return getDropletMesh(DROPLET_RESOLUTION);
+	}
+
+	public static VertexBuffer getDropletMesh(int resolution) {
+		return DROPLETS.computeIfAbsent(Math.max(8, resolution), AuraMeshFactory::buildDropletMesh);
+	}
+
+	private static VertexBuffer buildDropletMesh(int resolution) {
+		float[] heights = new float[resolution + 1];
+		float[] radii = new float[resolution + 1];
+		for (int i = 0; i <= resolution; i++) {
+			float t = (float) i / resolution;
+			float y = t * 2.0f - 1.0f;
+			float bulge = 0.8f + 0.5f * (float) Math.pow(1.0f - t, 1.5f);
+			heights[i] = y;
+			radii[i] = bulge * (float) Math.sqrt(Math.max(0.0f, 1.0f - y * y));
+		}
+
+		VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+		BufferBuilder builder = Tesselator.getInstance().getBuilder();
+		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+
+		double angleStep = (Math.PI * 2.0) / resolution;
+		for (int i = 0; i < resolution; i++) {
+			float y1 = heights[i], y2 = heights[i + 1];
+			float r1 = radii[i], r2 = radii[i + 1];
+			for (int j = 0; j < resolution; j++) {
+				float cos1 = (float) Math.cos(j * angleStep), sin1 = (float) Math.sin(j * angleStep);
+				float cos2 = (float) Math.cos((j + 1) * angleStep), sin2 = (float) Math.sin((j + 1) * angleStep);
+				builder.vertex(r1 * cos1, y1, r1 * sin1).endVertex();
+				builder.vertex(r1 * cos2, y1, r1 * sin2).endVertex();
+				builder.vertex(r2 * cos2, y2, r2 * sin2).endVertex();
+				builder.vertex(r2 * cos1, y2, r2 * sin1).endVertex();
+			}
+		}
+
+		buffer.bind();
+		buffer.upload(builder.end());
+		VertexBuffer.unbind();
+		return buffer;
+	}
 
 	public static VertexBuffer getBillboardQuad() {
 		if (billboardQuad == null) {
@@ -49,12 +115,12 @@ public class AuraMeshFactory {
 		return groundQuad;
 	}
 
-	private static VertexBuffer buildFlameMesh(int rings, int segments, float capSpan, DoubleUnaryOperator body) {
+	private static VertexBuffer buildFlameMesh(int rings, int segments, DoubleUnaryOperator body) {
 		float[] radii = new float[rings + 1];
 		float peak = 0.0f;
 		for (int i = 0; i <= rings; i++) {
 			double t = (double) i / rings;
-			radii[i] = (float) (body.applyAsDouble(t) * baseCap(t, capSpan));
+			radii[i] = (float) body.applyAsDouble(t);
 			if (radii[i] > peak) peak = radii[i];
 		}
 		if (peak <= 0.0f) peak = 1.0f;
@@ -95,31 +161,6 @@ public class AuraMeshFactory {
 		return buffer;
 	}
 
-	/**
-	 * Rounds the base off to a closed bowl over the bottom {@code capSpan} of the height. Without it
-	 * the mesh is an open tube: you look straight into the hollow interior from below, which reads
-	 * as the aura being sliced off at the feet. Quarter ellipse, so it meets the body flat-tangent.
-	 */
-	private static double baseCap(double t, double capSpan) {
-		if (capSpan <= 0.0 || t >= capSpan) return 1.0;
-		double u = t / capSpan;
-		return Math.sqrt(Math.max(0.0, 1.0 - (1.0 - u) * (1.0 - u)));
-	}
-
-	/** Flare from the root up to the widest point of the flame. */
-	private static double flare(double t, double baseWidth, double riseSpan) {
-		return baseWidth + (1.0 - baseWidth) * Math.sin(Math.PI * 0.5 * Math.min(1.0, t / riseSpan));
-	}
-
-	/**
-	 * Superellipse quarter. Unlike a plain {@code (1-t)^p} taper — which draws a straight line and
-	 * therefore reads as a cone — this bows the outline outwards along its whole length and reaches
-	 * the tip with a vertical tangent, so the flame closes in a soft dome instead of a point.
-	 */
-	private static double superTaper(double t, double exponent) {
-		return Math.pow(1.0 - Math.pow(t, exponent), 1.0 / exponent);
-	}
-
 	private static float slopeAt(float[] radii, int index, int rings, float ringStep) {
 		int lo = Math.max(0, index - 1);
 		int hi = Math.min(rings, index + 1);
@@ -132,17 +173,16 @@ public class AuraMeshFactory {
 		builder.vertex(x, y, z).color(255, 255, 255, 255).normal(normal.x(), normal.y(), normal.z()).endVertex();
 	}
 
-	public static VertexBuffer getSmoothFlameMesh() {
-		if (smoothFlame == null) {
-			smoothFlame = buildFlameMesh(96, 56, 0.10f, t -> flare(t, 0.55, 0.42) * superTaper(t, 1.6));
-		}
-		return smoothFlame;
-	}
-
 	public static VertexBuffer getSparkingFlameMesh() {
 		if (sparkingFlame == null) {
-			sparkingFlame = buildFlameMesh(96, 128, 0.30f, t -> flare(t, 0.90, 0.25) * superTaper(t, 3.2));
+			sparkingFlame = buildFlameMesh(SPARKING_RINGS, SPARKING_SEGMENTS, AuraMeshFactory::sparkingProfile);
 		}
 		return sparkingFlame;
+	}
+
+	private static double sparkingProfile(double t) {
+		double y = t * 2.0 - 1.0;
+		double bulge = 0.84 + 0.42 * Math.pow(1.0 - t, 1.25);
+		return bulge * Math.sqrt(Math.max(0.0, 1.0 - y * y));
 	}
 }
