@@ -17,6 +17,8 @@ public class DMZShaders {
 	public static ShaderInstance auraSmooth3DShader;
 	public static ShaderInstance auraSparking3DShader;
 	public static ShaderInstance auraTrailShader;
+	public static ShaderInstance auraBorderShader;
+	public static ShaderInstance auraBorderFieldShader;
 	public static ShaderInstance bloomDownShader;
 	public static ShaderInstance bloomBlurShader;
 	public static ShaderInstance bloomCompositeShader;
@@ -47,6 +49,16 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_trail"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
 				shaderInstance -> auraTrailShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_border"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> auraBorderShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_border_field"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> auraBorderFieldShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bloom_down"),

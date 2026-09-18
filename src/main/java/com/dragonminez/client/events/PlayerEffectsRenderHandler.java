@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
 import com.dragonminez.client.render.shader.BloomPipeline;
@@ -54,7 +55,10 @@ public class PlayerEffectsRenderHandler {
 		boolean shaderPack = IrisCompat.isShaderPackInUse(mc.level.getGameTime());
 		RenderLevelStageEvent.Stage stage = event.getStage();
 
-		if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) AuraRenderer.beginBloomCapture();
+		if (stage == RenderLevelStageEvent.Stage.AFTER_SKY) {
+			AuraRenderer.beginBloomCapture();
+			AuraBorderRenderer.beginCapture();
+		}
 
 		if (shaderPack) {
 
@@ -170,6 +174,8 @@ public class PlayerEffectsRenderHandler {
 
 			var entityEffects = PlayerEffectQueue.getAndClearEntityEffects();
 			for (var task : entityEffects) task.render();
+
+			AuraBorderRenderer.process(mc, poseStack, projectionMatrix);
 		} finally {
 			AuraRenderer.endBloomCapture();
 		}

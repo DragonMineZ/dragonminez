@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaItemInHandLayer;
 import com.dragonminez.client.render.effects.Aura3DRenderer;
+import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLayer;
@@ -63,7 +64,12 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         poseStack.scale(sc,sc,sc);
 
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, bufferSource, SagaSupervillainLayer.borderColor(entity), partialTick);
+        try {
+            super.render(entity, entityYaw, partialTick, poseStack, borderSource, packedLight);
+        } finally {
+            AuraBorderRenderer.end(borderSource);
+        }
 
 
         boolean showAura = entity.isTransforming() || entity.isCharge();
