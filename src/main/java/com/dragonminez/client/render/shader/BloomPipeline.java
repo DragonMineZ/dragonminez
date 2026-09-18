@@ -3,7 +3,6 @@ package com.dragonminez.client.render.shader;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.render.util.AuraMeshFactory;
-import com.dragonminez.client.render.util.IrisCompat;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -22,27 +21,22 @@ public final class BloomPipeline {
 	private static final float INTENSITY = 1.0f;
 	private static final float SPREAD = 0.6f;
 	private static final float[] TRANSPARENT = {0.0f, 0.0f, 0.0f, 0.0f};
-	private static final int[] CAPTURE_BUFFERS = {GL30.GL_COLOR_ATTACHMENT0, GL30.GL_COLOR_ATTACHMENT1};
 	private static final int[] REDRAW_BUFFERS = {GL30.GL_COLOR_ATTACHMENT0};
+	private static final int MAX_FAILURES = 3;
 
 	private static TextureTarget mask;
 	private static final TextureTarget[] levels = new TextureTarget[LEVELS];
 	private static final TextureTarget[] scratch = new TextureTarget[LEVELS];
 
-	private static final Attachment capture = new Attachment();
 	private static final Attachment redraw = new Attachment();
-	private static boolean captureUnsupported;
 	private static boolean redrawUnsupported;
+	private static int redrawFailures;
 
 	private static boolean maskCleared;
 	private static boolean pending;
 	private static int restoreFramebuffer;
 
 	private BloomPipeline() {}
-
-	public static boolean canCapture() {
-		return shadersReady() && !captureUnsupported && !IrisCompat.isShaderPackInUse();
-	}
 
 	public static void resetFrame() {
 		pending = false;
@@ -53,49 +47,21 @@ public final class BloomPipeline {
 		return pending;
 	}
 
-	public static boolean beginCapture() {
-		if (!canCapture()) return false;
-
-		Minecraft mc = Minecraft.getInstance();
-		RenderTarget main = mc.getMainRenderTarget();
-		int bound = GlStateManager.getBoundFramebuffer();
-		RenderTarget scene = sceneTarget(mc, main, bound);
-		if (scene == null) return false;
-
-		ensureTargets(main, bound);
-		int maskTexture = mask.getColorTextureId();
-		if (!capture.matches(scene.getColorTextureId(), maskTexture, scene.getDepthTextureId(), scene.isStencilEnabled())
-				&& !attach(capture, scene.getColorTextureId(), maskTexture, scene.getDepthTextureId(), scene.isStencilEnabled(), CAPTURE_BUFFERS)) {
-			captureUnsupported = true;
-			LogUtil.warn(Env.CLIENT, "Bloom capture framebuffer is not supported by this driver; effects fall back to redrawn bloom");
-			GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, bound);
-			return false;
-		}
-
-		restoreFramebuffer = bound;
-		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, capture.framebuffer);
-		clearMaskOnce(1);
-		pending = true;
-		return true;
-	}
-
-	public static void endCapture() {
-		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, restoreFramebuffer);
-	}
-
 	public static boolean beginRedraw(RenderTarget main) {
 		if (!shadersReady() || redrawUnsupported) return false;
 
 		int bound = GlStateManager.getBoundFramebuffer();
 		ensureTargets(main, bound);
 		int maskTexture = mask.getColorTextureId();
-		if (!redraw.matches(maskTexture, -1, main.getDepthTextureId(), main.isStencilEnabled())
-				&& !attach(redraw, maskTexture, -1, main.getDepthTextureId(), main.isStencilEnabled(), REDRAW_BUFFERS)) {
-			redrawUnsupported = true;
-			LogUtil.warn(Env.CLIENT, "Bloom redraw framebuffer is not supported by this driver; effects draw without bloom");
+		if (!bindComplete(redraw, maskTexture, -1, main.getDepthTextureId(), main.isStencilEnabled(), REDRAW_BUFFERS)) {
+			if (++redrawFailures >= MAX_FAILURES) {
+				redrawUnsupported = true;
+				LogUtil.warn(Env.CLIENT, "Bloom redraw framebuffer is not supported by this driver; effects draw without bloom");
+			}
 			GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, bound);
 			return false;
 		}
+		redrawFailures = 0;
 
 		restoreFramebuffer = bound;
 		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, redraw.framebuffer);
@@ -185,10 +151,10 @@ public final class BloomPipeline {
 			levels[i] = null;
 			scratch[i] = null;
 		}
-		capture.release();
 		redraw.release();
 		pending = false;
 		maskCleared = false;
+		redrawFailures = 0;
 	}
 
 	private static boolean shadersReady() {
@@ -257,6 +223,15 @@ public final class BloomPipeline {
 		target.clear(Minecraft.ON_OSX);
 		target.setFilterMode(GL11.GL_LINEAR);
 		return target;
+	}
+
+	private static boolean bindComplete(Attachment target, int color0, int color1, int depth, boolean stencil, int[] drawBuffers) {
+		if (target.matches(color0, color1, depth, stencil)) {
+			GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, target.framebuffer);
+			if (GlStateManager.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_COMPLETE) return true;
+			target.color0 = -1;
+		}
+		return attach(target, color0, color1, depth, stencil, drawBuffers);
 	}
 
 	private static boolean attach(Attachment target, int color0, int color1, int depth, boolean stencil, int[] drawBuffers) {

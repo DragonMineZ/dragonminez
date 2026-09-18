@@ -544,7 +544,7 @@ final class SideQuestDefaults {
 				"world_explorer", "dmz.sidequest.explorer.name", "dmz.sidequest.explorer.desc",
 				"exploration", true, null, null, null,
 				new JsonObject[]{
-						objBiome("minecraft:plains"),
+						objBiome("#dragonminez:is_plains"),
 						objBiome("minecraft:desert"),
 						objBiome("minecraft:forest")
 				},
@@ -707,7 +707,7 @@ final class SideQuestDefaults {
 				"tien_cell_search", "dmz.sidequest.tien_cell.name", "dmz.sidequest.tien_cell.desc",
 				"combat", true, "krillin", "krillin",
 				prereqs("AND", condSaga("android_saga", 10)),
-				requirements("AND", condBiome("minecraft:plains")),
+				requirements("AND", condBiome("#dragonminez:is_plains")),
 				new JsonObject[]{
 						objKill("minecraft:zombie", 30),
 						objKill("minecraft:spider", 15),
@@ -1332,7 +1332,7 @@ final class SideQuestDefaults {
 				"slug_aftermath", "dmz.sidequest.slug_aftermath.name", "dmz.sidequest.slug_aftermath.desc",
 				"combat", false, "guru", "guru",
 				prereqs("AND", condSaga("movies_saga", 13)),
-				requirements("AND", condBiome("minecraft:plains")),
+				requirements("AND", condBiome("#dragonminez:is_plains")),
 				new JsonObject[]{
 						objQuestKill("dragonminez:saga_slug_soldier", 20, 1040, 66, 91),
 						objTalkTo("guru")

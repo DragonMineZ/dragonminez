@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.gui.hair.HairEditorScreen;
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.client.gui.character.minigames.UltimateChallenge;
 import com.dragonminez.client.util.TextUtil;

@@ -7,6 +7,8 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.hair.HairPresets;
+import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.racial.RacialContext;
 import com.dragonminez.common.racial.RacialRegistry;
 import com.dragonminez.common.stats.StatsData;
@@ -23,6 +25,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.common.MinecraftForge;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,6 +68,7 @@ public class Character {
 	private boolean hasSaiyanTail = false;
 	private boolean renderHairBase = true;
 	private boolean aura3D = false;
+	private String aura3DType = FormConfig.AURA_3D_SMOOTH;
 
 	private final Map<String, MasterLocation> interactedMasters = new HashMap<>();
 
@@ -92,10 +96,7 @@ public class Character {
 	public static final String CLASS_WARRIOR = "warrior";
 
 	private int hairId;
-	private CustomHair hairBase = new CustomHair();
-	private CustomHair hairSSJ = new CustomHair();
-	private CustomHair hairSSJ2 = new CustomHair();
-	private CustomHair hairSSJ3 = new CustomHair();
+	private final EnumMap<HairStyleSlot, CustomHair> hairStyles = createEmptyHairStyles();
 	private String activeHeadBone = "";
 	private int bodyType;
 	private int eyesType;
@@ -231,6 +232,16 @@ public class Character {
 		if (rgbEye2Color == null) rgbEye2Color = ColorUtils.hexToRgb(eye2Color != null ? eye2Color : "#FFFFFF");
 		return rgbEye2Color;
 	}
+
+	public String getAura3DType() {
+		aura3DType = FormConfig.sanitizeAura3DPreference(aura3DType);
+		return aura3DType;
+	}
+
+	public void setAura3DType(String type) {
+		this.aura3DType = FormConfig.sanitizeAura3DPreference(type);
+	}
+
 	public float[] getRgbAuraColor() {
 		if (rgbAuraColor == null) rgbAuraColor = ColorUtils.hexToRgb(auraColor != null ? auraColor : "#FFFFFF");
 		return rgbAuraColor;
@@ -266,31 +277,48 @@ public class Character {
 				(raceName.equals("saiyan") && (Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.OOZARU) || Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.GOLDEN_OOZARU)));
 	}
 
+	private static EnumMap<HairStyleSlot, CustomHair> createEmptyHairStyles() {
+		EnumMap<HairStyleSlot, CustomHair> styles = new EnumMap<>(HairStyleSlot.class);
+		for (HairStyleSlot slot : HairStyleSlot.values()) styles.put(slot, new CustomHair());
+		return styles;
+	}
+
 	public CustomHair emptyHair() {
-		return HairManager.getPresetHair(5, this.hairColor);
+		return HairManager.getPresetStyle(HairPresets.BALD_PRESET_ID, HairStyleSlot.BASE);
+	}
+
+	public CustomHair getOwnHairStyle(HairStyleSlot slot) {
+		return hairStyles.get(slot);
+	}
+
+	public void setHairStyle(HairStyleSlot slot, CustomHair hair) {
+		hairStyles.put(slot, hair != null ? hair : new CustomHair());
+	}
+
+	public void clearHairStyles() {
+		for (HairStyleSlot slot : HairStyleSlot.values()) hairStyles.put(slot, new CustomHair());
+	}
+
+	public CustomHair getHairStyle(HairStyleSlot slot) {
+		if (this.hairId > 0) return HairManager.getPresetStyle(this.hairId, slot);
+		return resolveOwnStyle(hairStyles, slot);
+	}
+
+	public static CustomHair resolveOwnStyle(Map<HairStyleSlot, CustomHair> styles, HairStyleSlot slot) {
+		CustomHair own = styles.get(slot);
+		if (own != null && !own.isEmpty()) return own;
+		CustomHair base = styles.get(HairStyleSlot.BASE);
+		if (base == null) base = new CustomHair();
+		CustomHair ssj = styles.get(HairStyleSlot.SSJ);
+		return switch (slot) {
+			case BASE, SSJ -> base;
+			case SSJ2, SSJ3 -> ssj != null && !ssj.isEmpty() ? ssj : base;
+			case SSJ4 -> HairPresets.getDefaultSsj4();
+		};
 	}
 
 	public CustomHair getHairBase() {
-		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
-		return hairBase;
-	}
-
-	public CustomHair getHairSSJ() {
-		if (this.hairId > 0) return HairManager.getPresetHairSSJ(this.hairId, this.hairColor);
-		if (hairSSJ == null || hairSSJ.isEmpty()) return hairBase;
-		return hairSSJ;
-	}
-
-	public CustomHair getHairSSJ2() {
-		if (this.hairId > 0) return HairManager.getPresetHairSSJ2(this.hairId, this.hairColor);
-		if (hairSSJ2 == null || hairSSJ2.isEmpty()) return (hairSSJ != null && !hairSSJ.isEmpty()) ? hairSSJ : hairBase;
-		return hairSSJ2;
-	}
-
-	public CustomHair getHairSSJ3() {
-		if (this.hairId > 0) return HairManager.getPresetHairSSJ3(this.hairId, this.hairColor);
-		if (hairSSJ3 == null || hairSSJ3.isEmpty()) return (hairSSJ != null && !hairSSJ.isEmpty()) ? hairSSJ : hairBase;
-		return hairSSJ3;
+		return getHairStyle(HairStyleSlot.BASE);
 	}
 
 	public void setRace(String race) {
@@ -402,10 +430,7 @@ public class Character {
 		tag.putString("Gender", safeString(gender));
 		tag.putString("Class", safeString(characterClass));
 		tag.putInt("HairId", hairId);
-		tag.put("HairBase", hairBase.save());
-		tag.put("HairSSJ", hairSSJ.save());
-		tag.put("HairSSJ2", hairSSJ2.save());
-		tag.put("HairSSJ3", hairSSJ3.save());
+		for (HairStyleSlot slot : HairStyleSlot.values()) tag.put(slot.getNbtKey(), hairStyles.get(slot).save());
 		tag.putString("ActiveHeadBone", activeHeadBone != null ? activeHeadBone : "");
 		tag.putInt("BodyType", bodyType);
 		tag.putInt("EyesType", eyesType);
@@ -438,6 +463,7 @@ public class Character {
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
 		tag.putBoolean("RenderHairBase", renderHairBase);
 		tag.putBoolean("Aura3D", aura3D);
+		tag.putString("Aura3DType", getAura3DType());
 		tag.putBoolean("isArmored", armored);
 
 		ListTag mastersList = new ListTag();
@@ -470,10 +496,9 @@ public class Character {
 		this.gender = tag.getString("Gender");
 		this.characterClass = tag.getString("Class");
 		this.hairId = tag.getInt("HairId");
-		if (tag.contains("HairBase")) this.hairBase.load(tag.getCompound("HairBase"));
-		if (tag.contains("HairSSJ")) this.hairSSJ.load(tag.getCompound("HairSSJ"));
-		if (tag.contains("HairSSJ2")) this.hairSSJ2.load(tag.getCompound("HairSSJ2"));
-		if (tag.contains("HairSSJ3")) this.hairSSJ3.load(tag.getCompound("HairSSJ3"));
+		for (HairStyleSlot slot : HairStyleSlot.values()) {
+			hairStyles.put(slot, tag.contains(slot.getNbtKey()) ? CustomHair.fromTag(tag.getCompound(slot.getNbtKey())) : new CustomHair());
+		}
 		this.activeHeadBone = tag.getString("ActiveHeadBone");
 		this.bodyType = tag.getInt("BodyType");
 		this.eyesType = tag.getInt("EyesType");
@@ -512,6 +537,7 @@ public class Character {
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
 		this.renderHairBase = tag.getBoolean("RenderHairBase");
 		this.aura3D = tag.getBoolean("Aura3D");
+		setAura3DType(tag.getString("Aura3DType"));
 		this.armored = tag.getBoolean("isArmored");
 
 		this.interactedMasters.clear();
@@ -728,10 +754,7 @@ public class Character {
 		this.gender = other.gender;
 		this.characterClass = other.characterClass;
 		this.hairId = other.hairId;
-		this.hairBase = other.hairBase.copy();
-		this.hairSSJ = other.hairSSJ.copy();
-		this.hairSSJ2 = other.hairSSJ2.copy();
-		this.hairSSJ3 = other.hairSSJ3.copy();
+		for (HairStyleSlot slot : HairStyleSlot.values()) hairStyles.put(slot, other.hairStyles.get(slot).copy());
 		this.activeHeadBone = other.activeHeadBone;
 		this.bodyType = other.bodyType;
 		this.eyesType = other.eyesType;
@@ -768,6 +791,7 @@ public class Character {
 		this.hasSaiyanTail = other.hasSaiyanTail;
 		this.renderHairBase = other.renderHairBase;
 		this.aura3D = other.aura3D;
+		this.aura3DType = other.getAura3DType();
 		this.armored = other.armored;
 		this.interactedMasters.clear();
 		this.interactedMasters.putAll(other.interactedMasters);

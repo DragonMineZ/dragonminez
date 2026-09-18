@@ -289,14 +289,11 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				})
 				.build();
 
-		// TODO: no hay icono propio en el atlas MENU_BIG para esta 5a pestaña todavia -
-		// reutiliza temporalmente el mismo recorte que el boton de Strike (226,44) hasta
-		// que se aporte un icono real de "Evasion".
 		evasionButton = new ClippableTextureButton.Builder()
 				.position(hiddenX, buttonY + 128)
 				.size(26, 32)
 				.texture(MENU_BIG)
-				.textureCoords(226, 44, 226, 44)
+				.textureCoords(254, 44, 254, 44)
 				.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
 				.onPress(btn -> {
 					currentCategory = SkillCategory.EVASION;
@@ -993,7 +990,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int hotZoneX = hiddenX;
 		int hotZoneY = leftPanelY + 6;
 		int hotZoneWidth = (visibleX - hiddenX) + buttonWidth;
-		int hotZoneHeight = 133;
+		int hotZoneHeight = 165;
 
 		boolean overPanel = mouseX >= currentLeftX && mouseX < currentLeftX + panelWidth &&
 				mouseY >= leftPanelY && mouseY < leftPanelY + panelHeight;
@@ -1010,6 +1007,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		kiButton.setX(newX);
 		formsButton.setX(newX);
 		stacksButton.setX(newX);
+		evasionButton.setX(newX);
 
 		int scissorXScreen = toScreenCoord(currentLeftX + 141);
 		int scissorYScreen = toScreenCoord(0);
@@ -1019,6 +1017,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		kiButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
 		formsButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
 		stacksButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
+		evasionButton.setScissorRect(scissorXScreen, scissorYScreen, scissorRight, scissorBottom);
 	}
 
 	private float approach01(float current, float target, float step) {

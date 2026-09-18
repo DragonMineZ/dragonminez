@@ -1,9 +1,10 @@
 #version 150
 #extension GL_ARB_explicit_attrib_location : enable
 
+#moj_import <dragonminez:aura_color.glsl>
+
 // Hollow shell shading: nearly clear where the shell faces the camera so the body stays readable, solid
-// along the silhouette where the tongues are. Location 1 records the same colour into the bloom mask while
-// the aura is drawn, so the glow never needs a second draw of the mesh (see BloomPipeline).
+// along the silhouette where the tongues are.
 
 in vec3 vNormal;
 in vec3 vView;
@@ -18,14 +19,16 @@ uniform float CoreAlpha;
 uniform float RimAlpha;
 uniform float RimPower;
 uniform float RimThreshold;
+uniform float Growth;
 uniform float Alpha;
 uniform float BackFace;
 uniform float BloomIntensity;
-// Set when this draw only feeds a separate bloom target (fallback when the mask cannot be attached).
+// Set when this draw feeds the bloom mask instead of the scene.
 uniform float BloomPass;
 
 layout(location = 0) out vec4 fragColor;
-layout(location = 1) out vec4 bloomColor;
+
+const float INTERIOR_TINT = 0.25;
 
 void main() {
     vec3 N = normalize(vNormal);
@@ -42,6 +45,10 @@ void main() {
     float shimmer = texture(NoiseTex, shimmerUv).g;
     vec3 tinted = mix(NoiseColor, color * mix(0.8, 1.0, shimmer), shimmer);
     color = mix(color, tinted, NoiseFactor);
+    color = auraKeepSaturation(color, RimColor);
+
+    // A floor of coverage so the player and the background read through the shell tinted.
+    alpha = max(alpha, INTERIOR_TINT * clamp(Growth, 0.0, 1.0));
 
     // The far wall would wash over the near one; it is only raised when the camera sits inside the shell.
     if (facing < 0.0) alpha *= BackFace;
@@ -49,5 +56,4 @@ void main() {
 
     vec4 glow = vec4(color, clamp(alpha * BloomIntensity, 0.0, 1.0));
     fragColor = BloomPass > 0.5 ? glow : vec4(color, alpha);
-    bloomColor = glow;
 }

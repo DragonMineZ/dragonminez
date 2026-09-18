@@ -2,22 +2,23 @@ package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
-import com.dragonminez.client.gui.HairEditorScreen;
+import com.dragonminez.client.gui.hair.HairEditorScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.render.effects.AuraRenderer;
-import com.dragonminez.client.render.hair.HairRenderer;
+import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
-import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
@@ -61,6 +62,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private static final int LEFT_PANEL_X = 12;
 	private static final int LEFT_PANEL_WIDTH = 141;
 	private static final int AURA_MODEL_OFFSET = 55;
+	private static final int AURA_LABEL_Y = 134;
+	private static final int AURA_TYPE_ROW_Y = 152;
+	private static final int AURA_COLOR_ROW_Y = 160;
+	private static final int AURA_TYPE_STATES = 3;
 	private static final int PANEL_Z = 350;
 	private static final int LEFT_PANEL_HEIGHT = 213;
 	private static final int LEFT_PANEL_PADDING = 12;
@@ -300,8 +305,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void initAuraClassTab(int top) {
-		int y = top + 8;
-		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, top + 136, "auraColor"));
+		int y = top - 2;
+		initAuraPreferenceButtons(top);
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, top + AURA_COLOR_ROW_Y, "auraColor"));
 
 		String[] classes = getRaceClasses();
 		if (classes.length > 0) {
@@ -325,6 +331,40 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				}));
 			}
 		}
+	}
+
+	private void initAuraPreferenceButtons(int top) {
+		int arrowY = top + AURA_TYPE_ROW_Y - 3;
+		addRenderableWidget(createArrowButton(LEFT_PANEL_X + 18, arrowY, true, btn -> cycleAuraType(-1)));
+		addRenderableWidget(createArrowButton(LEFT_PANEL_X + LEFT_PANEL_WIDTH - 28, arrowY, false, btn -> cycleAuraType(1)));
+	}
+
+	private int auraTypeIndex() {
+		if (!AuraModeState.localPreference()) return 0;
+		return FormConfig.AURA_3D_SPARKING.equals(AuraModeState.localStyle()) ? 2 : 1;
+	}
+
+	private void cycleAuraType(int delta) {
+		var userConfig = ConfigManager.getUserConfig();
+		if (userConfig == null) return;
+
+		int next = Math.floorMod(auraTypeIndex() + delta, AURA_TYPE_STATES);
+		userConfig.setAura3DPersonal(next != 0);
+		if (next != 0) {
+			userConfig.setAura3DStyle(next == 2 ? FormConfig.AURA_3D_SPARKING : FormConfig.AURA_3D_SMOOTH);
+		}
+
+		ConfigManager.saveGeneralUserConfig();
+		AuraModeState.pushLocalPreference();
+		refreshScreenWidgets();
+	}
+
+	private String auraTypeKey() {
+		return switch (auraTypeIndex()) {
+			case 1 -> "gui.dragonminez.customization.aura.3d.smooth";
+			case 2 -> "gui.dragonminez.customization.aura.3d.sparking";
+			default -> "gui.dragonminez.customization.aura.2d";
+		};
 	}
 
 	private void onTabChanged() {
@@ -549,12 +589,17 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void renderAuraClassText(GuiGraphics graphics, int centerX, int top, int mouseX, int mouseY) {
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.class"), centerX, top + 8, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.class"), centerX, top - 2, 0xFF9B9B);
 		Component className = tr("class.dragonminez." + character.getCharacterClass());
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, className, centerX, top + 20, 0xFFFFFF);
-		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.aura"), centerX, top + 124, 0xFF9B9B);
-		renderBaseStatsInline(graphics, centerX, top + 44, mouseX, mouseY);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, className, centerX, top + 10, 0xFFFFFF);
+		renderBaseStatsInline(graphics, centerX, top + 34, mouseX, mouseY);
+		renderAuraOptions(graphics, centerX, top);
 		renderPassiveDescription(graphics);
+	}
+
+	private void renderAuraOptions(GuiGraphics graphics, int centerX, int top) {
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.aura"), centerX, top + AURA_LABEL_Y, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(auraTypeKey()), centerX, top + AURA_TYPE_ROW_Y, 0xFFFFFF);
 	}
 
 	private void renderPassiveDescription(GuiGraphics graphics) {
@@ -605,7 +650,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(String.valueOf(base.getKiPower())), centerX, row2Y + 12, 0xFFFFFF);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(String.valueOf(base.getEnergy())), centerX + 40, row2Y + 12, 0xFFFFFF);
 
-		int tpY = startY + 116;
+		int tpY = startY + 72;
 		Double tpGain = classStats.getTpGainMultiplier() != null ? classStats.getTpGainMultiplier() : 1.0;
 		Double tpCost = classStats.getTpCostMultiplier() != null ? classStats.getTpCostMultiplier() : 1.0;
 
@@ -769,7 +814,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			if (tab == TabId.AURA_CLASS) {
 				RenderSystem.enableBlend();
 				RenderSystem.defaultBlendFunc();
-				AuraRenderer.renderGuiAura(player, graphics.pose(), guiProjection, baseX, currentBaseY, adjustedScale, partialTick, true);
+				AuraRenderer.renderGuiAura(player, graphics.pose(), guiProjection, baseX, currentBaseY, adjustedScale, partialTick);
 			}
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
@@ -1186,14 +1231,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
 		boolean supportsHair = HairManager.canUseHair(character);
 
-		// "empty": strip every head accessory, leaving the head bare.
 		if (hasEmptyHeadBoneOption() && value == 0) {
 			character.setHairId(0);
 			character.setActiveHeadBone("");
-			character.setHairBase(new CustomHair());
-			character.setHairSSJ(new CustomHair());
-			character.setHairSSJ2(new CustomHair());
-			character.setHairSSJ3(new CustomHair());
+			character.clearHairStyles();
 			syncCharacter();
 			refreshScreenWidgets();
 			return;
@@ -1206,8 +1247,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			String bone = extraBones.get(local);
 			String category = headBoneCategory(bone);
 			boolean wasSelected = tokens.contains(bone);
-			// One bone per category: clicking another of the same family replaces it,
-			// clicking the active one again removes it.
 			tokens.removeIf(token -> !token.equals("hair") && headBoneCategory(token).equals(category));
 			if (!wasSelected) tokens.add(bone);
 		} else if (supportsHair) {
@@ -1220,10 +1259,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			} else {
 				tokens.add("hair");
 				character.setHairId(newHairId);
-				character.setHairBase(new CustomHair());
-				character.setHairSSJ(new CustomHair());
-				character.setHairSSJ2(new CustomHair());
-				character.setHairSSJ3(new CustomHair());
+				character.clearHairStyles();
 			}
 		}
 
@@ -1525,7 +1561,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		previewFormIndex = previewFormOptions.isEmpty() ? -1 : 0;
 	}
 
-
 	private ActiveFormSnapshot captureLocalPlayerFormSnapshot(LivingEntity player) {
 		final ActiveFormSnapshot[] snapshot = new ActiveFormSnapshot[1];
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
@@ -1744,7 +1779,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int originalMouth = character.getMouthType();
 		int originalTattoo = character.getTattooType();
 		String originalActiveBone = character.getActiveHeadBone();
-		boolean oldHairPhysics = HairRenderer.PHYSICS_ENABLED;
 
 		boolean[] hadTailState = {false};
 		boolean[] oldTailVisible = {true};
@@ -1811,7 +1845,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			}
 			case TATTOO_ONLY -> character.setTattooType(value);
 		}
-		HairRenderer.PHYSICS_ENABLED = false;
 
 		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
 		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
@@ -1877,7 +1910,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 320.0D);
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
-		try {
+		try (HairRenderContext.Scope hairScope = HairRenderContext.menuPreview()) {
 			InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, pose, cameraOrientation, player);
 		} finally {
 			DMZSkinLayer.PREVIEW_MODE = false;
@@ -1906,7 +1939,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		character.setMouthType(originalMouth);
 		character.setTattooType(originalTattoo);
 		character.setActiveHeadBone(originalActiveBone);
-		HairRenderer.PHYSICS_ENABLED = oldHairPhysics;
 		}
 	}
 }

@@ -1,7 +1,6 @@
 package com.dragonminez.client.render.effects;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.render.shader.BloomPipeline;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.AuraNoiseTexture;
@@ -114,13 +113,7 @@ public final class Aura3DRenderer {
 		Matrix3f normal = poseStack.last().normal();
 		applySmoothUniforms(shader, normal, style, alpha, growth, time, phase, backFace);
 
-		boolean captured = BloomPipeline.beginCapture();
-		try {
-			drawShellMesh(mesh, shader, pose, projection, 0.0f);
-		} finally {
-			if (captured) BloomPipeline.endCapture();
-		}
-		if (captured) return;
+		drawShellMesh(mesh, shader, pose, projection, 0.0f);
 
 		Matrix4f poseCopy = new Matrix4f(pose);
 		Matrix3f normalCopy = new Matrix3f(normal);
@@ -241,13 +234,7 @@ public final class Aura3DRenderer {
 		Matrix3f normal = poseStack.last().normal();
 		applySparkingUniforms(shader, normal, style, alpha, growth, time, backFace);
 
-		boolean captured = BloomPipeline.beginCapture();
-		try {
-			drawSparkingLayers(shader, pose, projection, 0.0f);
-		} finally {
-			if (captured) BloomPipeline.endCapture();
-		}
-		if (captured) return;
+		drawSparkingLayers(shader, pose, projection, 0.0f);
 
 		Matrix4f poseCopy = new Matrix4f(pose);
 		Matrix3f normalCopy = new Matrix3f(normal);

@@ -1,203 +1,359 @@
 package com.dragonminez.common.hair;
 
-import com.dragonminez.client.util.ColorUtils;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class HairStrand {
-    public static final int MAX_CUBE_COUNT = 8;
-    public static final int MAX_LENGTH = 50;
-    private int length = 0;
+	public static final int MAX_SEGMENTS = 32;
+	public static final float MIN_LENGTH = 0.1f;
+	public static final float MAX_LENGTH = 128.0f;
+	public static final float MIN_LENGTH_RATIO = 0.1f;
+	public static final float MAX_LENGTH_RATIO = 4.0f;
+	public static final float MIN_WIDTH = 0.1f;
+	public static final float MAX_WIDTH = 16.0f;
+	public static final float MIN_TAPER = 0.05f;
+	public static final float MAX_TAPER = 2.0f;
+	public static final float MIN_TAPER_CURVE = 0.25f;
+	public static final float MAX_TAPER_CURVE = 4.0f;
+	public static final float MAX_ROOT_OFFSET = 4.0f;
+	public static final float MAX_BEND = 3600.0f;
+	public static final float MAX_TWIST = 3600.0f;
 
-	private float lengthScale = 1.0f;
+	public static final int DEFAULT_SEGMENTS = 4;
+	public static final float DEFAULT_LENGTH = 6.0f;
+	public static final float DEFAULT_LENGTH_RATIO = 0.6f;
+	public static final float DEFAULT_WIDTH = 2.0f;
+	public static final float DEFAULT_DEPTH = 2.0f;
+	public static final float DEFAULT_TAPER = 0.6f;
+	public static final float DEFAULT_TAPER_CURVE = 1.0f;
 
-    private float rotationX = 0.0f;
-    private float rotationY = 0.0f;
-    private float rotationZ = 0.0f;
+	private int id;
+	private int segments;
+	private float length = DEFAULT_LENGTH;
+	private float lengthRatio = DEFAULT_LENGTH_RATIO;
+	private float width = DEFAULT_WIDTH;
+	private float depth = DEFAULT_DEPTH;
+	private float taper = DEFAULT_TAPER;
+	private float taperCurve = DEFAULT_TAPER_CURVE;
+	private float offsetX;
+	private float offsetY;
+	private float offsetZ;
+	private float rotationX;
+	private float rotationY;
+	private float rotationZ;
+	private float bendX;
+	private float bendY;
+	private float bendZ;
+	private float twist;
+	private HairJointStyle jointStyle = HairJointStyle.BLOCKS;
+	private String color;
+	private String tipColor;
+	private final TreeMap<Integer, HairSegmentOverride> overrides = new TreeMap<>();
 
-    private float scaleX = 1.0f;
-    private float scaleY = 1.0f;
-    private float scaleZ = 1.0f;
+	public HairStrand() {}
 
-    private float cubeWidth = 2.0f;
-    private float cubeHeight = 2.0f;
-    private float cubeDepth = 2.0f;
+	public HairStrand(int id) {
+		this.id = id;
+	}
 
-    private String color = null;
-    private transient float[] rgbColor;
+	public int getId() {
+		return id;
+	}
 
-    private float curveX = 0.0f;
-    private float curveY = 0.0f;
-    private float curveZ = 0.0f;
+	void setId(int id) {
+		this.id = id;
+	}
 
-    private int id = 0;
-    
-    public HairStrand() {}
-    
-    public HairStrand(int id) {
-        this.id = id;
-    }
+	public boolean isVisible() {
+		return segments > 0 && length > 0.0f;
+	}
 
-	public float getLengthScale() { return lengthScale; }
-	public void setLengthScale(float scale) { this.lengthScale = scale; }
+	public int getSegments() {
+		return segments;
+	}
 
-    public int getLength() { return length; }
-    
-    public void setLength(int length) {
-        this.length = Math.max(0, Math.min(MAX_LENGTH, length));
-    }
-    
-    public void addCube() {
-        if (length < MAX_LENGTH) {
-            length++;
-        }
-    }
-    
-    public void removeCube() {
-        if (length > 0) {
-            length--;
-        }
-    }
-    
-    public boolean isVisible() {
-        return length > 0;
-    }
+	public void setSegments(int segments) {
+		this.segments = Math.max(0, Math.min(MAX_SEGMENTS, segments));
+	}
 
-    public int getCubeCount() {
-        return length;
-    }
+	public float getLength() {
+		return length;
+	}
 
-    public float getStretchFactor() {
-		return lengthScale;
-    }
+	public void setLength(float length) {
+		this.length = HairMath.clampFinite(length, MIN_LENGTH, MAX_LENGTH, this.length);
+	}
 
-    public float getRotationX() { return rotationX; }
-    public float getRotationY() { return rotationY; }
-    public float getRotationZ() { return rotationZ; }
-    
-    public void setRotation(float x, float y, float z) {
-        this.rotationX = x;
-        this.rotationY = y;
-        this.rotationZ = z;
-    }
+	public float getLengthRatio() {
+		return lengthRatio;
+	}
 
-    public float getScaleX() { return scaleX; }
-    public float getScaleY() { return scaleY; }
-    public float getScaleZ() { return scaleZ; }
-    
-    public void setScale(float x, float y, float z) {
-        this.scaleX = Math.max(0.1f, x);
-        this.scaleY = Math.max(0.1f, y);
-        this.scaleZ = Math.max(0.1f, z);
-    }
+	public void setLengthRatio(float lengthRatio) {
+		this.lengthRatio = HairMath.clampFinite(lengthRatio, MIN_LENGTH_RATIO, MAX_LENGTH_RATIO, this.lengthRatio);
+	}
 
-    public float getCubeWidth() { return cubeWidth; }
-    public float getCubeHeight() { return cubeHeight; }
-    public float getCubeDepth() { return cubeDepth; }
+	public float getWidth() {
+		return width;
+	}
 
-    public float getCurveX() { return curveX; }
-    public float getCurveY() { return curveY; }
-    public float getCurveZ() { return curveZ; }
-    
-    public void setCurve(float x, float y, float z) {
-        this.curveX = x;
-        this.curveY = y;
-        this.curveZ = z;
-    }
+	public void setWidth(float width) {
+		this.width = HairMath.clampFinite(width, MIN_WIDTH, MAX_WIDTH, this.width);
+	}
 
-    public String getColor() { return color; }
-    public boolean hasCustomColor() { return color != null && !color.isEmpty(); }
+	public float getDepth() {
+		return depth;
+	}
 
-    public float[] getRgbColor() {
-        if (rgbColor == null) {
-            rgbColor = ColorUtils.hexToRgb(hasCustomColor() ? color : "#FFFFFF");
-        }
-        return rgbColor;
-    }
+	public void setDepth(float depth) {
+		this.depth = HairMath.clampFinite(depth, MIN_WIDTH, MAX_WIDTH, this.depth);
+	}
 
-    public void setColor(String color) {
-        this.color = color;
-        this.rgbColor = hasCustomColor() ? ColorUtils.hexToRgb(color) : null;
-    }
+	public float getTaper() {
+		return taper;
+	}
 
-    public int getId() { return id; }
-	protected void setId(int id) { this.id = id; }
+	public void setTaper(float taper) {
+		this.taper = HairMath.clampFinite(taper, MIN_TAPER, MAX_TAPER, this.taper);
+	}
 
-    public CompoundTag save() {
-        CompoundTag tag = new CompoundTag();
-        if (id != 0) tag.putInt("i", id);
-        if (length != 0) tag.putInt("l", length);
-		if (lengthScale != 1.0f) tag.putFloat("ls", lengthScale);
+	public float getTaperCurve() {
+		return taperCurve;
+	}
 
-        if (rotationX != 0.0f) tag.putFloat("rx", rotationX);
-        if (rotationY != 0.0f) tag.putFloat("ry", rotationY);
-        if (rotationZ != 0.0f) tag.putFloat("rz", rotationZ);
+	public void setTaperCurve(float taperCurve) {
+		this.taperCurve = HairMath.clampFinite(taperCurve, MIN_TAPER_CURVE, MAX_TAPER_CURVE, this.taperCurve);
+	}
 
-        if (scaleX != 1.0f) tag.putFloat("sx", scaleX);
-        if (scaleY != 1.0f) tag.putFloat("sy", scaleY);
-        if (scaleZ != 1.0f) tag.putFloat("sz", scaleZ);
+	public float getOffsetX() {
+		return offsetX;
+	}
 
-        if (cubeWidth != 2.0f) tag.putFloat("cw", cubeWidth);
-        if (cubeHeight != 2.0f) tag.putFloat("ch", cubeHeight);
-        if (cubeDepth != 2.0f) tag.putFloat("cd", cubeDepth);
+	public float getOffsetY() {
+		return offsetY;
+	}
 
-        if (curveX != 0.0f) tag.putFloat("cx", curveX);
-        if (curveY != 0.0f) tag.putFloat("cy", curveY);
-        if (curveZ != 0.0f) tag.putFloat("cz", curveZ);
+	public float getOffsetZ() {
+		return offsetZ;
+	}
 
-        if (color != null) tag.putString("c", color);
+	public void setOffset(float x, float y, float z) {
+		this.offsetX = HairMath.clampFinite(x, -MAX_ROOT_OFFSET, MAX_ROOT_OFFSET, offsetX);
+		this.offsetY = HairMath.clampFinite(y, -MAX_ROOT_OFFSET, MAX_ROOT_OFFSET, offsetY);
+		this.offsetZ = HairMath.clampFinite(z, -MAX_ROOT_OFFSET, MAX_ROOT_OFFSET, offsetZ);
+	}
 
-        return tag;
-    }
-    
-    public void load(CompoundTag tag) {
-        this.id = tag.contains("i") ? tag.getInt("i") : tag.getInt("Id");
-        this.length = tag.contains("l") ? tag.getInt("l") : tag.getInt("Length");
-		this.lengthScale = tag.contains("ls") ? tag.getFloat("ls") : (tag.contains("LengthScale") ? tag.getFloat("LengthScale") : 1.0f);
+	public float getRotationX() {
+		return rotationX;
+	}
 
-        this.rotationX = tag.contains("rx") ? tag.getFloat("rx") : tag.getFloat("RotX");
-        this.rotationY = tag.contains("ry") ? tag.getFloat("ry") : tag.getFloat("RotY");
-        this.rotationZ = tag.contains("rz") ? tag.getFloat("rz") : tag.getFloat("RotZ");
+	public float getRotationY() {
+		return rotationY;
+	}
 
-        this.scaleX = tag.contains("sx") ? tag.getFloat("sx") :
-                     (tag.contains("ScaleX") ? tag.getFloat("ScaleX") : 1.0f);
-        this.scaleY = tag.contains("sy") ? tag.getFloat("sy") :
-                     (tag.contains("ScaleY") ? tag.getFloat("ScaleY") : 1.0f);
-        this.scaleZ = tag.contains("sz") ? tag.getFloat("sz") :
-                     (tag.contains("ScaleZ") ? tag.getFloat("ScaleZ") : 1.0f);
+	public float getRotationZ() {
+		return rotationZ;
+	}
 
-        this.cubeWidth = tag.contains("cw") ? tag.getFloat("cw") :
-                        (tag.contains("CubeW") ? tag.getFloat("CubeW") : 2.0f);
-        this.cubeHeight = tag.contains("ch") ? tag.getFloat("ch") :
-                         (tag.contains("CubeH") ? tag.getFloat("CubeH") : 2.0f);
-        this.cubeDepth = tag.contains("cd") ? tag.getFloat("cd") :
-                        (tag.contains("CubeD") ? tag.getFloat("CubeD") : 2.0f);
+	public void setRotation(float x, float y, float z) {
+		this.rotationX = Float.isFinite(x) ? HairMath.wrapDegrees(x) : rotationX;
+		this.rotationY = Float.isFinite(y) ? HairMath.wrapDegrees(y) : rotationY;
+		this.rotationZ = Float.isFinite(z) ? HairMath.wrapDegrees(z) : rotationZ;
+	}
 
-        this.curveX = tag.contains("cx") ? tag.getFloat("cx") : tag.getFloat("CurveX");
-        this.curveY = tag.contains("cy") ? tag.getFloat("cy") : tag.getFloat("CurveY");
-        this.curveZ = tag.contains("cz") ? tag.getFloat("cz") : tag.getFloat("CurveZ");
+	public float getBendX() {
+		return bendX;
+	}
 
-		setColor(tag.contains("c") ? tag.getString("c") :
-                    (tag.contains("Color") ? tag.getString("Color") : null));
-    }
-    
-    public HairStrand copy() {
-        HairStrand copy = new HairStrand(this.id);
-        copy.length = this.length;
-		copy.lengthScale = this.lengthScale;
-        copy.rotationX = this.rotationX;
-        copy.rotationY = this.rotationY;
-        copy.rotationZ = this.rotationZ;
-        copy.scaleX = this.scaleX;
-        copy.scaleY = this.scaleY;
-        copy.scaleZ = this.scaleZ;
-        copy.cubeWidth = this.cubeWidth;
-        copy.cubeHeight = this.cubeHeight;
-        copy.cubeDepth = this.cubeDepth;
-        copy.curveX = this.curveX;
-        copy.curveY = this.curveY;
-        copy.curveZ = this.curveZ;
-        copy.color = this.color;
-        copy.rgbColor = this.rgbColor != null ? this.rgbColor.clone() : null;
-        return copy;
-    }
+	public float getBendY() {
+		return bendY;
+	}
+
+	public float getBendZ() {
+		return bendZ;
+	}
+
+	public void setBend(float x, float y, float z) {
+		this.bendX = HairMath.clampFinite(x, -MAX_BEND, MAX_BEND, bendX);
+		this.bendY = HairMath.clampFinite(y, -MAX_BEND, MAX_BEND, bendY);
+		this.bendZ = HairMath.clampFinite(z, -MAX_BEND, MAX_BEND, bendZ);
+	}
+
+	public float getTwist() {
+		return twist;
+	}
+
+	public void setTwist(float twist) {
+		this.twist = HairMath.clampFinite(twist, -MAX_TWIST, MAX_TWIST, this.twist);
+	}
+
+	public HairJointStyle getJointStyle() {
+		return jointStyle;
+	}
+
+	public void setJointStyle(HairJointStyle jointStyle) {
+		this.jointStyle = jointStyle != null ? jointStyle : HairJointStyle.BLOCKS;
+	}
+
+	public String getColor() {
+		return color;
+	}
+
+	public void setColor(String color) {
+		this.color = HairColors.normalize(color);
+	}
+
+	public String getTipColor() {
+		return tipColor;
+	}
+
+	public void setTipColor(String tipColor) {
+		this.tipColor = HairColors.normalize(tipColor);
+	}
+
+	public HairSegmentOverride getOverride(int index) {
+		return overrides.get(index);
+	}
+
+	public HairSegmentOverride getOrCreateOverride(int index) {
+		return overrides.computeIfAbsent(index, HairSegmentOverride::new);
+	}
+
+	public void removeOverride(int index) {
+		overrides.remove(index);
+	}
+
+	public void clearOverrides() {
+		overrides.clear();
+	}
+
+	public Collection<HairSegmentOverride> getOverrides() {
+		return overrides.values();
+	}
+
+	public void makeVisibleWithDefaults() {
+		if (isVisible()) return;
+		segments = DEFAULT_SEGMENTS;
+		length = DEFAULT_LENGTH;
+		lengthRatio = DEFAULT_LENGTH_RATIO;
+		width = DEFAULT_WIDTH;
+		depth = DEFAULT_DEPTH;
+		taper = DEFAULT_TAPER;
+		taperCurve = DEFAULT_TAPER_CURVE;
+	}
+
+	public void mirror() {
+		rotationY = HairMath.wrapDegrees(-rotationY);
+		rotationZ = HairMath.wrapDegrees(-rotationZ);
+		bendY = -bendY;
+		bendZ = -bendZ;
+		twist = -twist;
+		offsetX = -offsetX;
+		for (HairSegmentOverride override : overrides.values()) override.mirror();
+	}
+
+	public void copyFrom(HairStrand other) {
+		this.segments = other.segments;
+		this.length = other.length;
+		this.lengthRatio = other.lengthRatio;
+		this.width = other.width;
+		this.depth = other.depth;
+		this.taper = other.taper;
+		this.taperCurve = other.taperCurve;
+		this.offsetX = other.offsetX;
+		this.offsetY = other.offsetY;
+		this.offsetZ = other.offsetZ;
+		this.rotationX = other.rotationX;
+		this.rotationY = other.rotationY;
+		this.rotationZ = other.rotationZ;
+		this.bendX = other.bendX;
+		this.bendY = other.bendY;
+		this.bendZ = other.bendZ;
+		this.twist = other.twist;
+		this.jointStyle = other.jointStyle;
+		this.color = other.color;
+		this.tipColor = other.tipColor;
+		this.overrides.clear();
+		for (Map.Entry<Integer, HairSegmentOverride> entry : other.overrides.entrySet()) {
+			this.overrides.put(entry.getKey(), entry.getValue().copy());
+		}
+	}
+
+	public HairStrand copy() {
+		HairStrand copy = new HairStrand(id);
+		copy.copyFrom(this);
+		return copy;
+	}
+
+	public CompoundTag save() {
+		CompoundTag tag = new CompoundTag();
+		tag.putInt("i", id);
+		tag.putInt("sg", segments);
+		tag.putFloat("ln", length);
+		if (lengthRatio != 1.0f) tag.putFloat("lr", lengthRatio);
+		if (width != DEFAULT_WIDTH) tag.putFloat("w", width);
+		if (depth != DEFAULT_DEPTH) tag.putFloat("d", depth);
+		if (taper != 1.0f) tag.putFloat("tp", taper);
+		if (taperCurve != 1.0f) tag.putFloat("tg", taperCurve);
+		if (offsetX != 0.0f) tag.putFloat("ox", offsetX);
+		if (offsetY != 0.0f) tag.putFloat("oy", offsetY);
+		if (offsetZ != 0.0f) tag.putFloat("oz", offsetZ);
+		if (rotationX != 0.0f) tag.putFloat("rx", rotationX);
+		if (rotationY != 0.0f) tag.putFloat("ry", rotationY);
+		if (rotationZ != 0.0f) tag.putFloat("rz", rotationZ);
+		if (bendX != 0.0f) tag.putFloat("bx", bendX);
+		if (bendY != 0.0f) tag.putFloat("by", bendY);
+		if (bendZ != 0.0f) tag.putFloat("bz", bendZ);
+		if (twist != 0.0f) tag.putFloat("tw", twist);
+		if (jointStyle != HairJointStyle.BLOCKS) tag.putByte("js", (byte) jointStyle.ordinal());
+		if (color != null) tag.putString("c", color);
+		if (tipColor != null) tag.putString("tc", tipColor);
+
+		ListTag overrideList = new ListTag();
+		for (HairSegmentOverride override : overrides.values()) {
+			if (override.getIndex() < segments && !override.isIdentity()) overrideList.add(override.save());
+		}
+		if (!overrideList.isEmpty()) tag.put("so", overrideList);
+		return tag;
+	}
+
+	public void load(CompoundTag tag) {
+		this.id = tag.getInt("i");
+		setSegments(tag.getInt("sg"));
+		this.length = tag.contains("ln") ? HairMath.clampFinite(tag.getFloat("ln"), MIN_LENGTH, MAX_LENGTH, DEFAULT_LENGTH) : DEFAULT_LENGTH;
+		this.lengthRatio = tag.contains("lr") ? HairMath.clampFinite(tag.getFloat("lr"), MIN_LENGTH_RATIO, MAX_LENGTH_RATIO, 1.0f) : 1.0f;
+		this.width = tag.contains("w") ? HairMath.clampFinite(tag.getFloat("w"), MIN_WIDTH, MAX_WIDTH, DEFAULT_WIDTH) : DEFAULT_WIDTH;
+		this.depth = tag.contains("d") ? HairMath.clampFinite(tag.getFloat("d"), MIN_WIDTH, MAX_WIDTH, DEFAULT_DEPTH) : DEFAULT_DEPTH;
+		this.taper = tag.contains("tp") ? HairMath.clampFinite(tag.getFloat("tp"), MIN_TAPER, MAX_TAPER, 1.0f) : 1.0f;
+		this.taperCurve = tag.contains("tg") ? HairMath.clampFinite(tag.getFloat("tg"), MIN_TAPER_CURVE, MAX_TAPER_CURVE, 1.0f) : 1.0f;
+		this.offsetX = 0.0f;
+		this.offsetY = 0.0f;
+		this.offsetZ = 0.0f;
+		setOffset(tag.getFloat("ox"), tag.getFloat("oy"), tag.getFloat("oz"));
+		this.rotationX = 0.0f;
+		this.rotationY = 0.0f;
+		this.rotationZ = 0.0f;
+		setRotation(tag.getFloat("rx"), tag.getFloat("ry"), tag.getFloat("rz"));
+		this.bendX = 0.0f;
+		this.bendY = 0.0f;
+		this.bendZ = 0.0f;
+		setBend(tag.getFloat("bx"), tag.getFloat("by"), tag.getFloat("bz"));
+		this.twist = 0.0f;
+		setTwist(tag.getFloat("tw"));
+		this.jointStyle = HairJointStyle.byId(tag.getByte("js"));
+		this.color = tag.contains("c") ? HairColors.normalize(tag.getString("c")) : null;
+		this.tipColor = tag.contains("tc") ? HairColors.normalize(tag.getString("tc")) : null;
+		this.overrides.clear();
+		if (tag.contains("so", Tag.TAG_LIST)) {
+			ListTag overrideList = tag.getList("so", Tag.TAG_COMPOUND);
+			for (int i = 0; i < overrideList.size(); i++) {
+				HairSegmentOverride override = HairSegmentOverride.load(overrideList.getCompound(i));
+				if (override.getIndex() >= 0 && override.getIndex() < MAX_SEGMENTS) overrides.put(override.getIndex(), override);
+			}
+		}
+	}
 }

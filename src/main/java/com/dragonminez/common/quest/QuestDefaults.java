@@ -361,7 +361,7 @@ final class QuestDefaults {
 	}
 
 	private static JsonObject atTournament() {
-		return condBiome("minecraft:plains");
+		return condBiome("#dragonminez:is_plains");
 	}
 
 	private static JsonObject atRedRibbonBase() {
@@ -430,7 +430,7 @@ final class QuestDefaults {
 
 				// --- Red Ribbon Army Saga ---
 				step("classic", 13, "13_colonel_silver.json",
-						earthReq(12, condBiome("minecraft:plains")),
+						earthReq(12, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{ objKill("dragonminez:saga_colonel_silver", 1, 560, 26, 10) },
 						rewTPS(1500)),
 				step("classic", 14, "14_sergeant_metallic.json",
@@ -450,7 +450,7 @@ final class QuestDefaults {
 						new JsonObject[]{ objKill("dragonminez:saga_general_blue", 1, 820, 38, 20) },
 						rewTPS(1900)),
 				step("classic", 18, "18_tao_pai_pai_strikes.json",
-						earthReq(16, condBiome("minecraft:plains")),
+						earthReq(16, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{ objKill("dragonminez:saga_kid_goku", 1, 700, 34, 30, KID_GOKU_TURTLE_GI) },
 						rewTPS(2000)),
 				step("classic", 19, "19_sacred_water.json",
@@ -459,7 +459,7 @@ final class QuestDefaults {
 						rewTPS(1500), rewItem("dragonminez:red_capsule", 1), rewItem("dragonminez:green_capsule", 1),
 						rewItem("dragonminez:blue_capsule", 1)),
 				step("classic", 20, "20_tao_pai_pai_rematch.json",
-						earthReq(17, condBiome("minecraft:plains")),
+						earthReq(17, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{ objKill("dragonminez:saga_tao_pai_pai", 1, 950, 48, 36) },
 						rewTPS(2300)),
 				step("classic", 21, "21_general_red.json",
@@ -508,7 +508,7 @@ final class QuestDefaults {
 						rewTPS(2200)),
 				step("classic", 31, "31_22nd_tournament.json",
 						earthReq(23),
-						new JsonObject[]{ objBiome("minecraft:plains") },
+						new JsonObject[]{ objBiome("#dragonminez:is_plains") },
 						rewTPS(600)),
 				step("classic", 32, "32_tournament_yamcha.json",
 						earthReq(24, atTournament()),
@@ -612,7 +612,7 @@ final class QuestDefaults {
 		JsonObject prevClassic = prevQuest("classic_saga", 52);
 		writeSaga(questsDir.resolve("saga_saiyan"), "saiyan_saga", "saga_saiyan", prevClassic,
 				step("saiyan", 1, "01_defeat_raditz.json",
-						earthReq(31, condBiome("minecraft:plains")),
+						earthReq(31, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_raditz", 1, 1800, 90, 140)
 						},
@@ -625,13 +625,13 @@ final class QuestDefaults {
 						},
 						rewTPS(5000)),
 				step("saiyan", 3, "03_survive_wilderness_training.json",
-						earthReq(38, condBiome("minecraft:plains")),
+						earthReq(38, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:dino1", 1, 2200, 40, 0)
 						},
 						rewTPS(8000), rewItem("dragonminez:cooked_dino_meat", 8)),
 				step("saiyan", 4, "04_gohan_oozaru.json",
-						earthReq(40, condBiome("minecraft:plains")),
+						earthReq(40, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_ozaru", 1, 3200, 95, 0)
 						},
@@ -658,13 +658,13 @@ final class QuestDefaults {
 						},
 						rewTPS(8400)),
 				step("saiyan", 8, "08_kill_the_saibamans.json",
-						earthReq(45, condBiome("minecraft:plains")),
+						earthReq(45, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("#dragonminez:saibamen", 6, 1800, 80, 120)
 						},
 						rewTPS(8500)),
 				step("saiyan", 9, "09_hold_against_nappa.json",
-						earthReq(52, condBiome("minecraft:plains")),
+						earthReq(52, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_nappa", 1, 2800, 120, 160)
 						}, rewTPS(9500)),
@@ -888,13 +888,13 @@ final class QuestDefaults {
 						},
 						rewTPS(70000)),
 				step("android", 10, "10_defeat_cell_imperfect.json",
-						earthReq(1010, condBiome("minecraft:plains")),
+						earthReq(1010, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_cell_imperfect", 1, 110000, 4400, 4000)
 						},
 						rewTPS(78000)),
 				step("android", 11, "11_defeat_cell_semiperfect.json",
-						earthReq(1090, condBiome("minecraft:plains")),
+						earthReq(1090, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_cell_semiperfect", 1, 150000, 5800, 5300)
 						},
@@ -906,19 +906,19 @@ final class QuestDefaults {
 						},
 						rewTPS(86240)),
 				step("android", 13, "13_defeat_cell_perfect.json", // MERGE POINT: Todo vuelve a los stats originales desde aquí.
-						earthReq(1210, condBiome("minecraft:plains")),
+						earthReq(1210, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_cell_perfect", 1, 217000, 8700, 7990)
 						},
 						rewTPS(88480)),
 				step("android", 14, "14_defeat_cell_jrs.json",
-						earthReq(1330, condBiome("minecraft:plains")),
+						earthReq(1330, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_cell_jr", 7, 150500, 5940, 6545)
 						},
 						rewTPS(92960)),
 				step("android", 15, "15_defeat_cell_superperfect.json",
-						earthReq(1410, condBiome("minecraft:plains")),
+						earthReq(1410, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_cell_superperfect", 1, 287000, 11700, 10540)
 						},
@@ -941,21 +941,21 @@ final class QuestDefaults {
 						},
 						rewTPS(25600)),
 				step("future", 2, "02_train_with_trunks_and_gohan.json",
-						earthReq(1430, condBiome("minecraft:plains")),
+						earthReq(1430, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_ftrunks_base", 1, 182000, 7500, 6800),
 								objKill("dragonminez:saga_fgohan_base", 1, 196000, 8100, 7310)
 						},
 						rewTPS(70400)),
 				step("future", 3, "03_androids_ruined_plains.json",
-						earthReq(1470, condBiome("minecraft:plains")),
+						earthReq(1470, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_a17", 1, 217000, 9000, 8160),
 								objKill("dragonminez:saga_a18", 1, 210000, 8700, 7820)
 						},
 						rewTPS(83200)),
 				step("future", 4, "04_face_future_gohan.json",
-						earthReq(1510, condBiome("minecraft:plains")),
+						earthReq(1510, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_fgohan_ssj", 1, 238000, 9600, 8840)
 						},
@@ -968,7 +968,7 @@ final class QuestDefaults {
 						},
 						rewTPS(102400)),
 				step("future", 6, "06_imperfect_cell_of_the_future.json",
-						earthReq(1590, condBiome("minecraft:plains")),
+						earthReq(1590, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_cell_imperfect", 1, 266000, 11100, 10030)
 						},
@@ -991,7 +991,7 @@ final class QuestDefaults {
 
 		writeSaga(questsDir.resolve("saga_buu"), "buu_saga", "saga_buu", prevAndroid,
 				step("buu", 1, "01_train_with_goten_and_gohan.json",
-						earthReq(1450, condBiome("minecraft:plains")),
+						earthReq(1450, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_goten", 1, 175000, 7200, 6630),
 								objKill("dragonminez:saga_gohan_end_base", 1, 217000, 9000, 8160)
@@ -1013,37 +1013,37 @@ final class QuestDefaults {
 						},
 						rewTPS(151200)),
 				step("buu", 4, "04_enter_the_world_tournament.json",
-						earthReq(1570, condBiome("minecraft:plains")),
+						earthReq(1570, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objTalkTo("piccolo")
 						},
 						rewTPS(43200)),
 				step("buu", 5, "05_tournament_goten.json",
-						earthReq(1590, condBiome("minecraft:plains")),
+						earthReq(1590, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_goten", 1, 196000, 8100, 7310)
 						},
 						rewTPS(86400)),
 				step("buu", 6, "06_tournament_trunks.json",
-						earthReq(1610, condBiome("minecraft:plains")),
+						earthReq(1610, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_kid_trunks", 1, 210000, 8700, 7820)
 						},
 						rewTPS(93600)),
 				step("buu", 7, "07_tournament_krillin.json",
-						earthReq(1630, condBiome("minecraft:plains")),
+						earthReq(1630, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_krillin", 1, 217000, 9000, 8160)
 						},
 						rewTPS(93600)),
 				step("buu", 8, "08_tournament_shin.json",
-						earthReq(1650, condBiome("minecraft:plains")),
+						earthReq(1650, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_shin", 1, 231000, 9600, 8670)
 						},
 						rewTPS(100800)),
 				step("buu", 9, "09_tournament_spopovich.json",
-						earthReq(1670, condBiome("minecraft:plains")),
+						earthReq(1670, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_spopovitch", 1, 238000, 9900, 8840)
 						},
@@ -1098,7 +1098,7 @@ final class QuestDefaults {
 						},
 						rewTPS(108000)),
 				step("buu", 18, "18_goku_super_saiyan_three.json",
-						earthReq(1950, condBiome("minecraft:plains")),
+						earthReq(1950, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_goku_end_ssj3", 1, 437500, 18300, 16660)
 						},
@@ -1110,13 +1110,13 @@ final class QuestDefaults {
 						},
 						rewTPS(151200)),
 				step("buu", 20, "20_evil_buu_at_buus_house.json",
-						earthReq(1990, condBiome("minecraft:plains")),
+						earthReq(1990, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_evilbuu", 1, 402500, 16800, 15300)
 						},
 						rewTPS(187200)),
 				step("buu", 21, "21_krillin_and_android_18.json",
-						earthReq(2010, condBiome("minecraft:plains")),
+						earthReq(2010, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_krillin", 1, 273000, 11400, 10370),
 								objKill("dragonminez:saga_a18", 1, 315000, 13200, 11900)
@@ -1282,19 +1282,19 @@ final class QuestDefaults {
 						},
 						rewTPS(19000)),
 				step("movies", 11, "11_slug_soldiers.json",
-						earthReq(125, condBiome("minecraft:plains"), condSaga("saiyan_saga", 12)),
+						earthReq(125, condBiome("#dragonminez:is_plains"), condSaga("saiyan_saga", 12)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_slug_soldier", 8, 2000, 100, 150)
 						},
 						rewTPS(18100)),
 				step("movies", 12, "12_slug.json",
-						earthReq(130, condBiome("minecraft:plains"), condSaga("saiyan_saga", 12)),
+						earthReq(130, condBiome("#dragonminez:is_plains"), condSaga("saiyan_saga", 12)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_slug", 1, 14000, 600, 600)
 						},
 						rewTPS(21000)),
 				step("movies", 13, "13_giant_slug.json",
-						earthReq(140, condBiome("minecraft:plains"), condSaga("saiyan_saga", 12)),
+						earthReq(140, condBiome("#dragonminez:is_plains"), condSaga("saiyan_saga", 12)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_slug_giant", 1, 20000, 800, 800)
 						},
@@ -1375,7 +1375,7 @@ final class QuestDefaults {
 						},
 						rewTPS(143800), rewSkill("legendaryforms", 1)),
 				step("movies", 26, "26_bojack_allies.json",
-						earthReq(1590, condBiome("minecraft:plains"), condSaga("android_saga", 15)),
+						earthReq(1590, condBiome("#dragonminez:is_plains"), condSaga("android_saga", 15)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_bujin", 1, 129500, 5280, 4760),
 								objKill("dragonminez:saga_bido", 1, 210000, 8400, 7480),
@@ -1383,19 +1383,19 @@ final class QuestDefaults {
 						},
 						rewTPS(145000)),
 				step("movies", 27, "27_gokua.json",
-						earthReq(1600, condBiome("minecraft:plains"), condSaga("android_saga", 15)),
+						earthReq(1600, condBiome("#dragonminez:is_plains"), condSaga("android_saga", 15)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_gokua", 1, 217000, 8700, 7820)
 						},
 						rewTPS(147500)),
 				step("movies", 28, "28_bojack.json",
-						earthReq(1630, condBiome("minecraft:plains"), condSaga("android_saga", 15)),
+						earthReq(1630, condBiome("#dragonminez:is_plains"), condSaga("android_saga", 15)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_bojack", 1, 434000, 17400, 15980)
 						},
 						rewTPS(151200)),
 				step("movies", 29, "29_full_power_bojack.json",
-						earthReq(1680, condBiome("minecraft:plains"), condSaga("android_saga", 15)),
+						earthReq(1680, condBiome("#dragonminez:is_plains"), condSaga("android_saga", 15)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_bojack_fp", 1, 574000, 23400, 21080)
 						},
@@ -1450,19 +1450,19 @@ final class QuestDefaults {
 						},
 						rewTPS(437500), rewItem("dragonminez:dimensional_sword", 1)),
 				step("movies", 38, "38_hildegarn_half.json",
-						earthReq(2440, condBiome("minecraft:plains"), condSaga("buu_saga", 34)),
+						earthReq(2440, condBiome("#dragonminez:is_plains"), condSaga("buu_saga", 34)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_hirudegarn_incomplete2", 1, 1225000, 51600, 46920)
 						},
 						rewTPS(443800)),
 				step("movies", 39, "39_hildegarn_complete.json",
-						earthReq(2460, condBiome("minecraft:plains"), condSaga("buu_saga", 34)),
+						earthReq(2460, condBiome("#dragonminez:is_plains"), condSaga("buu_saga", 34)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_hirudegarn", 1, 1295000, 54600, 49300)
 						},
 						rewTPS(456200)),
 				step("movies", 40, "40_super_hildegarn.json",
-						earthReq(2490, condBiome("minecraft:plains"), condSaga("buu_saga", 34)),
+						earthReq(2490, condBiome("#dragonminez:is_plains"), condSaga("buu_saga", 34)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_super_hirudegarn", 1, 1540000, 64800, 58480)
 						},

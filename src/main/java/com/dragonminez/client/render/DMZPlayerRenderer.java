@@ -3,6 +3,7 @@ package com.dragonminez.client.render;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.animation.IPlayerAnimatable;
+import com.dragonminez.client.render.hair.HairRenderCapture;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
@@ -79,6 +80,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
+		HairRenderCapture.beginEntity(entity, poseStack);
 		((GeoModelAccessor) (Object) getGeoModel()).dmz$setLastRenderedInstance(-1L);
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);

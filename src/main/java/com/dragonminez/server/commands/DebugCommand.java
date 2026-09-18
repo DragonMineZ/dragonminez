@@ -1,5 +1,6 @@
 package com.dragonminez.server.commands;
 
+import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.StatsCapability;
@@ -134,10 +135,7 @@ public class DebugCommand {
 
 	private static CompoundTag withoutHairData(CompoundTag character) {
 		CompoundTag copy = character.copy();
-		copy.remove("HairBase");
-		copy.remove("HairSSJ");
-		copy.remove("HairSSJ2");
-		copy.remove("HairSSJ3");
+		for (HairStyleSlot slot : HairStyleSlot.values()) copy.remove(slot.getNbtKey());
 		return copy;
 	}
 

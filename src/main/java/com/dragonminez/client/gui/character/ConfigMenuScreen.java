@@ -11,6 +11,7 @@ import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.DynamicGrowthToggleC2S;
@@ -35,6 +36,8 @@ import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
 public class ConfigMenuScreen extends BaseMenuScreen {
+
+	private static final String AURA_STYLE_KEY = "config.aura3DStyle";
 
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
@@ -82,7 +85,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.firstPersonAnimated",
 				ConfigType.BOOLEAN, userConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
 				v -> userConfig.setFirstPersonAnimated(v > 0)));
-		
+
 		configOptions.add(new ConfigOption("config.impactFramesEnabled",
 				ConfigType.BOOLEAN, userConfig.isImpactFramesEnabled() ? 1 : 0, 0, 1,
 				v -> userConfig.setImpactFramesEnabled(v > 0)));
@@ -98,6 +101,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.aura3DPersonal",
 				ConfigType.BOOLEAN, userConfig.getAura3DPersonal() ? 1 : 0, 0, 1,
 				v -> userConfig.setAura3DPersonal(v > 0)));
+
+		configOptions.add(new ConfigOption("config.aura3DStyle",
+				ConfigType.INT, FormConfig.AURA_3D_SPARKING.equals(userConfig.getAura3DStyle()) ? 1 : 0, 0, 1,
+				v -> userConfig.setAura3DStyle(v > 0 ? FormConfig.AURA_3D_SPARKING : FormConfig.AURA_3D_SMOOTH)));
 
 		configOptions.add(new ConfigOption("config.aura3DEntities",
 				ConfigType.BOOLEAN, userConfig.getAura3DEntities() ? 1 : 0, 0, 1,
@@ -457,7 +464,11 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 			if (option.type != ConfigType.BOOLEAN && option.type != ConfigType.ACTION) {
 				String valueText;
-				if (option.type == ConfigType.FLOAT) {
+				if (AURA_STYLE_KEY.equals(option.key)) {
+					valueText = tr(option.value > 0
+							? "gui.dragonminez.customization.aura.sparking"
+							: "gui.dragonminez.customization.aura.smooth").getString();
+				} else if (option.type == ConfigType.FLOAT) {
 					valueText = String.format("%.2f", option.value);
 				} else {
 					valueText = String.valueOf((int) option.value);
@@ -501,7 +512,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			rebuildWidgetsWithoutTransition();
 		}
 
-		if ("config.aura3DPersonal".equals(option.key)) {
+		if ("config.aura3DPersonal".equals(option.key) || AURA_STYLE_KEY.equals(option.key)) {
 			AuraModeState.pushLocalPreference();
 		}
 
