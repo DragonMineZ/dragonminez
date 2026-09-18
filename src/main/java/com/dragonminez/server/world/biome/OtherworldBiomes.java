@@ -1,11 +1,13 @@
 package com.dragonminez.server.world.biome;
 
 import com.dragonminez.Reference;
+import com.dragonminez.server.world.feature.OtherworldPlacedFeatures;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.*;
+import net.minecraft.world.level.levelgen.GenerationStep;
 
 public class OtherworldBiomes {
 	public static final ResourceKey<Biome> OTHERWORLD = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "other_world"));
@@ -18,6 +20,9 @@ public class OtherworldBiomes {
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
 
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CONFIGURED_CARVER));
+
+		biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION, OtherworldPlacedFeatures.CRYSTAL_SPIKE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.LOCAL_MODIFICATIONS, OtherworldPlacedFeatures.CANDY_ORB_PLACED);
 
 		return new Biome.BiomeBuilder()
 				.hasPrecipitation(false)

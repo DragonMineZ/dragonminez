@@ -37,6 +37,9 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		axisBlock(((RotatedPillarBlock) MainBlocks.NAMEK_DEEPSLATE.get()), blockTexture(MainBlocks.NAMEK_DEEPSLATE.get()), blockTexture(MainBlocks.NAMEK_DEEPSLATE.get()));
 		blockWithItem(MainBlocks.TIME_CHAMBER_PORTAL);
 		blockWithItem(MainBlocks.OTHERWORLD_CLOUD);
+		blockWithItem(MainBlocks.HELL_GROUND);
+		blockWithItem(MainBlocks.HELL_STONE);
+		blockWithItem(MainBlocks.HELL_DEEPSTONE);
 
 		//Madera de Namek
 		blockWithItem(MainBlocks.NAMEK_AJISSA_PLANKS);

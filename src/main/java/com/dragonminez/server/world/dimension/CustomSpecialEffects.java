@@ -3,14 +3,17 @@ package com.dragonminez.server.world.dimension;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZCloudsRenderer;
 import com.dragonminez.client.util.ClientStateHelper;
+import com.dragonminez.server.world.gen.OtherworldGeneration;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import org.joml.Matrix4f;
@@ -34,22 +37,22 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 
 	@Override
 	public boolean isFoggyAt(int x, int y) {
-		return false; // False = No hay niebla | True = Hay niebla
+		return false;
 	}
 
 	@Override
 	public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
-		return false; // False = No se renderizan nubes | True = Se renderizan nubes
+		return false;
 	}
 
 	@Override
 	public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
-		return false; // True = No se renderiza el cielo | False = Se renderiza el cielo
+		return false;
 	}
 
 	@Override
 	public boolean renderSnowAndRain(ClientLevel level, int ticks, float partialTick, LightTexture lightTexture, double camX, double camY, double camZ) {
-		return false; // False = No se renderiza la lluvia | True = Se renderiza la lluvia
+		return false;
 	}
 
 	public static class NamekEffects extends CustomSpecialEffects {
@@ -164,18 +167,48 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 	}
 
 	public static class OtherWorldEffects extends CustomSpecialEffects {
+		private static final Vec3 HELL_SKY = new Vec3(0.851D, 0.290D, 0.106D);
+		private static final Vec3 CLOUD_SKY = new Vec3(0.808D, 0.494D, 0.741D);
+		private static final Vec3 TOURNAMENT_SKY = new Vec3(0.435D, 0.824D, 0.769D);
+		private static final int HELL_FADE_START = OtherworldGeneration.HELL_CEILING - 8;
+		private static final int HELL_FADE_END = OtherworldGeneration.LOWER_CLOUD_DECK + 20;
+		private static final int TOURNAMENT_FADE_START = OtherworldGeneration.TOURNAMENT_LEVEL + 2;
+		private static final int TOURNAMENT_FADE_END = OtherworldGeneration.TOURNAMENT_LEVEL + 46;
+
 		public OtherWorldEffects() {
-			super(192.0F, false, SkyType.NORMAL, false, false);
+			super(192.0F, false, SkyType.NORMAL, true, false);
 		}
 
 		@Override
 		public Vec3 getBrightnessDependentFogColor(Vec3 biomeFogColor, float daylight) {
-			return biomeFogColor.multiply((double)(daylight * 0.94F + 0.06F), (double)(daylight * 0.94F + 0.06F), (double)(daylight * 0.91F + 0.09F));
+			Vec3 layerColor = layerColor(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().y);
+			return layerColor.multiply((double)(daylight * 0.94F + 0.06F), (double)(daylight * 0.94F + 0.06F), (double)(daylight * 0.91F + 0.09F));
+		}
+
+		private static Vec3 layerColor(double cameraY) {
+			if (cameraY <= HELL_FADE_START) {
+				return HELL_SKY;
+			}
+			if (cameraY < HELL_FADE_END) {
+				return blend(HELL_SKY, CLOUD_SKY, (cameraY - HELL_FADE_START) / (HELL_FADE_END - HELL_FADE_START));
+			}
+			if (cameraY <= TOURNAMENT_FADE_START) {
+				return CLOUD_SKY;
+			}
+			if (cameraY < TOURNAMENT_FADE_END) {
+				return blend(CLOUD_SKY, TOURNAMENT_SKY, (cameraY - TOURNAMENT_FADE_START) / (TOURNAMENT_FADE_END - TOURNAMENT_FADE_START));
+			}
+			return TOURNAMENT_SKY;
+		}
+
+		private static Vec3 blend(Vec3 from, Vec3 to, double progress) {
+			double t = Mth.clamp(progress, 0.0D, 1.0D);
+			return new Vec3(Mth.lerp(t, from.x, to.x), Mth.lerp(t, from.y, to.y), Mth.lerp(t, from.z, to.z));
 		}
 
 		@Override
 		public boolean isFoggyAt(int x, int y) {
-			return Math.abs(x) > 64;
+			return false;
 		}
 
 		@Override

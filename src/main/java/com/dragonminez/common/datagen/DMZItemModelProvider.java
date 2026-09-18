@@ -391,6 +391,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_COPPER);
 		simpleBlockItem(MainBlocks.TIME_CHAMBER_PORTAL);
 		simpleBlockItem(MainBlocks.OTHERWORLD_CLOUD);
+		simpleBlockItem(MainBlocks.HELL_GROUND);
+		simpleBlockItem(MainBlocks.HELL_STONE);
+		simpleBlockItem(MainBlocks.HELL_DEEPSTONE);
 		simpleBlockItem(MainBlocks.GETE_ORE);
 
 		//Variantes de bloques

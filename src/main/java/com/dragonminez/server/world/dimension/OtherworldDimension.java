@@ -1,6 +1,7 @@
 package com.dragonminez.server.world.dimension;
 
 import com.dragonminez.Reference;
+import com.dragonminez.server.world.gen.OtherworldGeneration;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
@@ -26,12 +27,12 @@ public class OtherworldDimension {
 				10.0,
 				false,
 				false,
-				0,
-				320,
-				320,
+				OtherworldGeneration.WORLD_BOTTOM,
+				OtherworldGeneration.WORLD_TOP - OtherworldGeneration.WORLD_BOTTOM,
+				OtherworldGeneration.WORLD_TOP - OtherworldGeneration.WORLD_BOTTOM,
 				BlockTags.INFINIBURN_OVERWORLD,
 				CustomSpecialEffects.OTHERWORLD_EFFECTS,
-				0.0f,
+				0.35f,
 				new DimensionType.MonsterSettings(false, false, ConstantInt.of(0), 0)
 		));
 	}

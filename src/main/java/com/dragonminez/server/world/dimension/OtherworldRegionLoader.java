@@ -26,6 +26,7 @@ import java.util.Set;
 public class OtherworldRegionLoader {
 
 	private static final String RESOURCE_PATH = "/data/dragonminez/regions/otherworld/";
+	private static final String ENTITY_RESOURCE_PATH = "/data/dragonminez/regions/otherworld/entities/";
 	private static final long MIN_VALID_REGION_BYTES = 1024 * 1024;
 	private static final Set<String> GENERATED_TERRAIN_BLOCKS = Set.of(
 			"minecraft:air",
@@ -43,29 +44,46 @@ public class OtherworldRegionLoader {
 					.resolve("otherworld")
 					.resolve("region");
 
+			Path entityDestPath = worldPath
+					.resolve("dimensions")
+					.resolve(Reference.MOD_ID)
+					.resolve("otherworld")
+					.resolve("entities");
+
 			if (!Files.exists(regionDestPath)) {
 				LogUtil.info(Env.SERVER, "Creating region directory at: {}", regionDestPath);
 				Files.createDirectories(regionDestPath);
+			}
+
+			if (!Files.exists(entityDestPath)) {
+				Files.createDirectories(entityDestPath);
 			}
 
 			String[] regionFiles = {"r.0.0.mca", "r.0.1.mca", "r.0.2.mca", "r.0.-1.mca", "r.-1.0.mca", "r.-1.1.mca", "r.-1.2.mca", "r.-1.-1.mca"};
 
 			int copiedFiles = 0;
 			int repairedFiles = 0;
+			int copiedEntityFiles = 0;
 
 			for (String fileName : regionFiles) {
 				Path destFile = regionDestPath.resolve(fileName);
+				Path entityFile = entityDestPath.resolve(fileName);
 				RegionAction action = inspectExistingRegion(fileName, destFile);
 
 				if (action == RegionAction.COPY_MISSING && copyRegionFile(fileName, destFile)) {
 					copiedFiles++;
+					if (copyEntityFile(fileName, entityFile)) copiedEntityFiles++;
 				} else if (action.shouldRepair()) {
 					backupRegionFile(destFile, action);
 					if (copyRegionFile(fileName, destFile)) repairedFiles++;
+					if (Files.exists(entityFile)) backupRegionFile(entityFile, action);
+					if (copyEntityFile(fileName, entityFile)) copiedEntityFiles++;
+				} else if (!Files.exists(entityFile) && copyEntityFile(fileName, entityFile)) {
+					copiedEntityFiles++;
 				}
 			}
 
-			LogUtil.info(Env.SERVER, "Region loader finished. New: {}, Repaired: {}", copiedFiles, repairedFiles);
+			LogUtil.info(Env.SERVER, "Region loader finished. New: {}, Repaired: {}, Entity files: {}", copiedFiles, repairedFiles, copiedEntityFiles);
 
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Fatal IO error loading regions: {}", e.getMessage());
@@ -162,9 +180,7 @@ public class OtherworldRegionLoader {
 
 	private static boolean copyRegionFile(String fileName, Path destFile) {
 		String resourcePath = RESOURCE_PATH + fileName;
-		InputStream inputStream = OtherworldRegionLoader.class.getResourceAsStream(resourcePath);
-		if (inputStream == null) inputStream = OtherworldRegionLoader.class.getResourceAsStream(resourcePath.substring(1));
-		if (inputStream == null) inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath.substring(1));
+		InputStream inputStream = openBundledResource(resourcePath);
 
 		if (inputStream == null) {
 			LogUtil.error(Env.SERVER, "FATAL: Could not find {} in JAR resources at {}", fileName, resourcePath);
@@ -178,6 +194,26 @@ public class OtherworldRegionLoader {
 			LogUtil.error(Env.SERVER, "Failed to copy {}: {}", fileName, e.getMessage());
 			return false;
 		}
+	}
+
+	private static boolean copyEntityFile(String fileName, Path destFile) {
+		InputStream inputStream = openBundledResource(ENTITY_RESOURCE_PATH + fileName);
+		if (inputStream == null) return false;
+
+		try (InputStream stream = inputStream) {
+			Files.copy(stream, destFile, StandardCopyOption.REPLACE_EXISTING);
+			return true;
+		} catch (IOException e) {
+			LogUtil.error(Env.SERVER, "Failed to copy entity file {}: {}", fileName, e.getMessage());
+			return false;
+		}
+	}
+
+	private static InputStream openBundledResource(String resourcePath) {
+		InputStream inputStream = OtherworldRegionLoader.class.getResourceAsStream(resourcePath);
+		if (inputStream == null) inputStream = OtherworldRegionLoader.class.getResourceAsStream(resourcePath.substring(1));
+		if (inputStream == null) inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath.substring(1));
+		return inputStream;
 	}
 
 	enum RegionAction {

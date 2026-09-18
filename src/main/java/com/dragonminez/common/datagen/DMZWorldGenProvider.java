@@ -12,6 +12,8 @@ import com.dragonminez.server.world.feature.NamekConfiguredFeatures;
 import com.dragonminez.server.world.feature.NamekPlacedFeatures;
 import com.dragonminez.server.world.biome.SacredKaiBiomes;
 import com.dragonminez.server.world.dimension.SacredKaiDimension;
+import com.dragonminez.server.world.feature.OtherworldConfiguredFeatures;
+import com.dragonminez.server.world.feature.OtherworldPlacedFeatures;
 import com.dragonminez.server.world.feature.OverworldConfiguredFeatures;
 import com.dragonminez.server.world.feature.OverworldPlacedFeatures;
 import com.dragonminez.server.world.feature.SacredKaiConfiguredFeatures;
@@ -60,11 +62,13 @@ public class DMZWorldGenProvider extends DatapackBuiltinEntriesProvider {
 			})
 			.add(Registries.CONFIGURED_FEATURE, context -> {
 				NamekConfiguredFeatures.bootstrap(context);
+				OtherworldConfiguredFeatures.bootstrap(context);
 				OverworldConfiguredFeatures.bootstrap(context);
 				SacredKaiConfiguredFeatures.bootstrap(context);
 			})
 			.add(Registries.PLACED_FEATURE, context -> {
 				NamekPlacedFeatures.bootstrap(context);
+				OtherworldPlacedFeatures.bootstrap(context);
 				OverworldPlacedFeatures.bootstrap(context);
 				SacredKaiPlacedFeatures.bootstrap(context);
 			})
