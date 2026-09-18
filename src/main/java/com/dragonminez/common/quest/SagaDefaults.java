@@ -40,6 +40,7 @@ final class SagaDefaults {
 		writeSagaManifest(dmzBase, sagaDir, "future_saga.json", "future_saga", "dmz.saga.future_saga", "android_saga", "saga_future");
 		writeSagaManifest(dmzBase, sagaDir, "buu_saga.json", "buu_saga", "dmz.saga.buu_saga", "android_saga", "saga_buu");
 		writeSagaManifest(dmzBase, sagaDir, "movies_saga.json", "movies_saga", "dmz.saga.movies_saga", "", "saga_movies");
+		writeSagaManifest(dmzBase, sagaDir, "gt_saga.json", "gt_saga", "dmz.saga.gt_saga", "buu_saga", "saga_gt");
 	}
 
 	/**

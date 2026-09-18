@@ -7,6 +7,7 @@ import com.dragonminez.client.render.hair.HairRenderCapture;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
+import com.dragonminez.client.render.effects.AuraBorderRenderer;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.util.BoneVisibilityHandler;
@@ -154,16 +155,22 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
 		}
 
+		MultiBufferSource renderSource = bufferSource;
 		if (maskBufferSource != null) {
 			maskBufferSource.wrap(bufferSource);
 			maskBufferSource.setForceCaptureAll(true);
-			try {
-				super.render(entity, entityYaw, partialTick, poseStack, maskBufferSource, packedLight);
-			} finally {
+			renderSource = maskBufferSource;
+		}
+		MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, renderSource, AuraBorderRenderer.playerColor(entity, stats), partialTick);
+		try {
+			super.render(entity, entityYaw, partialTick, poseStack, borderSource, packedLight);
+		} finally {
+			AuraBorderRenderer.end(borderSource);
+			if (maskBufferSource != null) {
 				maskBufferSource.setForceCaptureAll(false);
 				maskBufferSource.setMaskCaptureEnabled(true);
 			}
-		} else super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+		}
 
 		if (isAuraActive) {
 			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();

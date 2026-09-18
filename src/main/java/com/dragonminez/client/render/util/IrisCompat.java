@@ -11,6 +11,7 @@ public final class IrisCompat {
 	private static boolean resolved = false;
 	private static Object apiInstance = null;
 	private static Method isShaderPackInUseMethod = null;
+	private static Method isRenderingShadowPassMethod = null;
 
 	private static long cachedFrame = Long.MIN_VALUE;
 	private static boolean cachedInUse = false;
@@ -29,6 +30,9 @@ public final class IrisCompat {
 				Method inUse = apiClass.getMethod("isShaderPackInUse");
 				apiInstance = instance;
 				isShaderPackInUseMethod = inUse;
+				try {
+					isRenderingShadowPassMethod = apiClass.getMethod("isRenderingShadowPass");
+				} catch (Throwable ignored) {}
 				return;
 			} catch (Throwable ignored) {}
 		}
@@ -39,6 +43,17 @@ public final class IrisCompat {
 		if (isShaderPackInUseMethod == null || apiInstance == null) return false;
 		try {
 			Object result = isShaderPackInUseMethod.invoke(apiInstance);
+			return result instanceof Boolean && (Boolean) result;
+		} catch (Throwable ignored) {
+			return false;
+		}
+	}
+
+	public static boolean isRenderingShadowPass() {
+		resolve();
+		if (isRenderingShadowPassMethod == null || apiInstance == null) return false;
+		try {
+			Object result = isRenderingShadowPassMethod.invoke(apiInstance);
 			return result instanceof Boolean && (Boolean) result;
 		} catch (Throwable ignored) {
 			return false;

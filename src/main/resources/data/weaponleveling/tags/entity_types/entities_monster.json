@@ -616,6 +616,174 @@
     {
       "id": "dragonminez:saga_super_hirudegarn",
       "required": false
+    },
+    {
+      "id": "dragonminez:saga_uub",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_majuub",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_gt",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_gt_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_gt_ssj3",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_gt_ssj4",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_gt",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_gt_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_gt_ssj4",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_gohan_gt",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_gohan_gt_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_gohan_gt_baby",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goten_gt",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goten_gt_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goten_gt_baby",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_trunks_gt",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_trunks_gt_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_trunks_gt_baby",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_pan",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_gogeta_ssj4",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_a18_gt",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_ledgic",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_bon_para",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_don_para",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_son_para",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_luud",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_rilldo",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_metal_rilldo",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_hyper_rilldo",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_super_baby_vegeta",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_super_baby_vegeta2",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_baby_golden_ozaru",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_baby",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_super_17",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_liang_xing_long",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_wu_xing_long",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_liu_xing_long",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_qi_xing_long",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_neo_shenron",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_eis_shenron",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_syn_shenron",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_omega_shenron",
+      "required": false
     }
   ]
 }

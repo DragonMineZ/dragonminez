@@ -1,0 +1,30 @@
+{
+  "vertex": "dragonminez:bloom_quad",
+  "fragment": "dragonminez:aura_border",
+  "attributes": [ "Position" ],
+  "samplers": [
+    { "name": "Mask" },
+    { "name": "Field" },
+    { "name": "NoiseTex" },
+    { "name": "SceneDepth" }
+  ],
+  "uniforms": [
+    { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "Center", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+    { "name": "Up", "type": "float", "count": 2, "values": [ 0.0, 1.0 ] },
+    { "name": "Thickness", "type": "float", "count": 1, "values": [ 16.0 ] },
+    { "name": "Id", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Seed", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Alpha", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Color", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "DepthParams", "type": "float", "count": 3, "values": [ -1.0, -0.1, 0.0 ] },
+    { "name": "BloomIntensity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "BloomPass", "type": "float", "count": 1, "values": [ 0.0 ] }
+  ],
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  }
+}

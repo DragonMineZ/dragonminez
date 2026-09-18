@@ -30,6 +30,7 @@ final class QuestDefaults {
 		createFutureSagaQuests(questsDir);
 		createBuuSagaQuests(questsDir);
 		createMoviesSagaQuests(questsDir);
+		createGTSagaQuests(questsDir);
 	}
 
 	private static void writeQuest(Path dir, String filename, JsonObject quest) {
@@ -110,6 +111,12 @@ final class QuestDefaults {
 		return o;
 	}
 
+	/** Keeps a quest-spawned enemy in the form it spawned in, for fights that reuse a transforming entity. */
+	private static JsonObject noTransform(JsonObject killObjective) {
+		killObjective.addProperty("canTransform", false);
+		return killObjective;
+	}
+
 	private static JsonObject objItem(String itemId, int count) {
 		JsonObject o = new JsonObject();
 		o.addProperty("type", "ITEM");
@@ -139,6 +146,14 @@ final class QuestDefaults {
 		o.addProperty("type", "SKILL");
 		o.addProperty("skill", skill);
 		o.addProperty("level", level);
+		return o;
+	}
+
+	private static JsonObject objDragonSummon(String dragonId, String ballSetId) {
+		JsonObject o = new JsonObject();
+		o.addProperty("type", "DRAGON_SUMMON");
+		o.addProperty("dragon", dragonId);
+		o.addProperty("ball_set", ballSetId);
 		return o;
 	}
 
@@ -1467,6 +1482,263 @@ final class QuestDefaults {
 								objKill("dragonminez:saga_super_hirudegarn", 1, 1540000, 64800, 58480)
 						},
 						rewTPS(475000), rewSkill("legendaryforms", 3))
+		);
+	}
+
+	// ========================================================================================
+	// GT Saga Quests (folder: saga_gt)
+	// ========================================================================================
+
+	private static JsonObject otherworldReq(int minLevel, JsonObject... extraConditions) {
+		return dimensionReq("dragonminez:otherworld", minLevel, extraConditions);
+	}
+
+	private static void createGTSagaQuests(Path questsDir) {
+		JsonObject prevBuu = prevQuest("buu_saga", 35);
+
+		writeSaga(questsDir.resolve("saga_gt"), "gt_saga", "saga_gt", prevBuu,
+				step("gt", 1, "01_goku_vs_uub.json",
+						earthReq(2400, condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{ objKill("dragonminez:saga_uub", 1, 645000, 27110, 24530) },
+						rewTPS(271000)),
+				step("gt", 2, "02_parts_for_bulma.json",
+						earthReq(2410),
+						new JsonObject[]{
+								objDeliver("dragonminez:radar_piece", 4, "bulma"),
+								objDeliver("minecraft:redstone_block", 8, "bulma"),
+								objDeliver("minecraft:iron_block", 8, "bulma"),
+								objDeliver("dragonminez:saiyan_ship", 1, "bulma")
+						},
+						rewTPS(97600), rewItem("dragonminez:dball_radar", 1)),
+				step("gt", 3, "03_ledgic.json",
+						namekReq(2440),
+						new JsonObject[]{ objKill("dragonminez:saga_ledgic", 1, 833500, 35020, 31690) },
+						rewTPS(350100)),
+				step("gt", 4, "04_para_para_brothers.json",
+						namekReq(2470),
+						new JsonObject[]{
+								objKill("dragonminez:saga_bon_para", 1, 384500, 16150, 14610),
+								objKill("dragonminez:saga_don_para", 1, 384500, 16150, 14610),
+								objKill("dragonminez:saga_son_para", 1, 384500, 16150, 14610)
+						},
+						rewTPS(345900)),
+				step("gt", 5, "05_luud.json",
+						namekReq(2500),
+						new JsonObject[]{ objKill("dragonminez:saga_luud", 1, 1006000, 42280, 38260) },
+						rewTPS(422600)),
+				step("gt", 6, "06_general_rilldo.json",
+						namekReq(2530),
+						new JsonObject[]{ objKill("dragonminez:saga_rilldo", 1, 851500, 35770, 32370) },
+						rewTPS(357600)),
+				step("gt", 7, "07_meta_rilldo.json",
+						namekReq(2560),
+						new JsonObject[]{ objKill("dragonminez:saga_metal_rilldo", 1, 963500, 40480, 36630) },
+						rewTPS(404600)),
+				step("gt", 8, "08_hyper_meta_rilldo.json",
+						namekReq(2600),
+						new JsonObject[]{ objKill("dragonminez:saga_hyper_rilldo", 1, 1135500, 47720, 43180) },
+						rewTPS(477000)),
+				step("gt", 9, "09_return_to_earth.json",
+						namekReq(2600),
+						new JsonObject[]{ objDimension("minecraft:overworld") },
+						rewTPS(113600)),
+
+				// --- Baby ---
+				step("gt", 10, "10_possessed_goten.json",
+						earthReq(2640, condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{ objKill("dragonminez:saga_goten_gt_baby", 1, 927000, 38950, 35250) },
+						rewTPS(389300)),
+				step("gt", 11, "11_possessed_gohan.json",
+						earthReq(2670, condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{ objKill("dragonminez:saga_gohan_gt_baby", 1, 998000, 41930, 37950) },
+						rewTPS(419200)),
+				step("gt", 12, "12_piccolo.json",
+						earthReq(2700, condBiome("#minecraft:is_mountain")),
+						new JsonObject[]{ objKill("dragonminez:saga_piccolo_kami", 1, 969500, 40740, 36870) },
+						rewTPS(407200)),
+				step("gt", 13, "13_vegeta_gt.json",
+						earthReq(2740, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_vegeta_gt", 1, 893500, 37540, 33970) },
+						rewTPS(375200)),
+				step("gt", 14, "14_super_baby_and_his_army.json",
+						earthReq(2780, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_super_baby_vegeta", 1, 974000, 40920, 37030),
+								objKill("dragonminez:saga_gohan_gt_baby", 1, 433000, 18180, 16460),
+								objKill("dragonminez:saga_goten_gt_baby", 1, 433000, 18180, 16460),
+								objKill("dragonminez:saga_trunks_gt_baby", 1, 433000, 18180, 16460)
+						},
+						rewTPS(600000)),
+				step("gt", 15, "15_uub_steps_in.json",
+						earthReq(2810, condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{ objKill("dragonminez:saga_uub", 1, 1050000, 44130, 39930) },
+						rewTPS(441100)),
+				step("gt", 16, "16_super_baby_vegeta_2.json",
+						earthReq(2850, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ noTransform(objKill("dragonminez:saga_super_baby_vegeta2", 1, 1251000, 52560, 47560)) },
+						rewTPS(525400)),
+				step("gt", 17, "17_majuub.json",
+						earthReq(2880, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_majuub", 1, 1161000, 48790, 44150) },
+						rewTPS(487700)),
+				step("gt", 18, "18_old_kai.json",
+						sacredKaiReq(2890),
+						new JsonObject[]{
+								objStructure("dragonminez:oldkai_pillar"),
+								objTalkTo("oldkai")
+						},
+						rewTPS(140300)),
+				step("gt", 19, "19_goku_regains_his_tail.json",
+						sacredKaiReq(2920),
+						new JsonObject[]{ objKill("dragonminez:saga_goku_gt", 1, 835500, 35110, 31770) },
+						rewTPS(350900)),
+				step("gt", 20, "20_golden_great_ape_baby.json",
+						earthReq(2960, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_super_baby_vegeta2", 1, 1104000, 46380, 41980) },
+						rewTPS(463700)),
+				step("gt", 21, "21_baby.json",
+						earthReq(3000, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_baby", 1, 1449000, 60880, 55100) },
+						rewTPS(608600), rewItem("dragonminez:senzu_bean", 3)),
+
+				// --- Super 17 ---
+				step("gt", 22, "22_trunks_falls.json",
+						earthReq(3030, condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{ objKill("dragonminez:saga_trunks_gt", 1, 964000, 40500, 36650) },
+						rewTPS(404900)),
+				step("gt", 23, "23_frieza_and_cell_in_hell.json",
+						otherworldReq(3060),
+						new JsonObject[]{
+								objKill("dragonminez:saga_frieza_base", 1, 786500, 33050, 29910),
+								objKill("dragonminez:saga_cell_perfect", 1, 786500, 33050, 29910)
+						},
+						rewTPS(520000)),
+				step("gt", 24, "24_saibamen_breakout.json",
+						otherworldReq(3090),
+						new JsonObject[]{ objKill("#dragonminez:saibamen", 8, 200500, 8420, 7620) },
+						rewTPS(481200)),
+				step("gt", 25, "25_hells_escapees.json",
+						otherworldReq(3120),
+						new JsonObject[]{
+								objKill("dragonminez:saga_general_blue", 1, 409000, 17180, 15550),
+								objKill("dragonminez:saga_hyper_rilldo", 1, 477000, 20040, 18140),
+								objKill("dragonminez:saga_puipui", 1, 409000, 17180, 15550),
+								objKill("dragonminez:saga_yakon", 1, 409000, 17180, 15550),
+								objKill("dragonminez:saga_nappa", 1, 409000, 17180, 15550)
+						},
+						rewTPS(560000)),
+				step("gt", 26, "26_the_z_fighters_fall.json",
+						earthReq(3160, condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{
+								noTransform(objKill("dragonminez:saga_gohan_gt", 1, 391500, 16450, 14880)),
+								noTransform(objKill("dragonminez:saga_goten_gt", 1, 391500, 16450, 14880)),
+								noTransform(objKill("dragonminez:saga_trunks_gt", 1, 391500, 16450, 14880)),
+								objKill("dragonminez:saga_majuub", 1, 391500, 16450, 14880),
+								objKill("dragonminez:saga_pan", 1, 391500, 16450, 14880),
+								noTransform(objKill("dragonminez:saga_vegeta_gt", 1, 391500, 16450, 14880))
+						},
+						rewTPS(620000)),
+				step("gt", 27, "27_super_17.json",
+						earthReq(3200, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_super_17", 1, 1720500, 72280, 65410) },
+						rewTPS(722500)),
+				step("gt", 28, "28_goku_super_saiyan_4.json",
+						earthReq(3240, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_goku_gt_ssj4", 1, 1616500, 67930, 61470) },
+						rewTPS(679000)),
+				step("gt", 29, "29_android_18_and_goku.json",
+						earthReq(3270, condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_a18_gt", 1, 823500, 34590, 31310),
+								noTransform(objKill("dragonminez:saga_goku_gt", 1, 823500, 34590, 31310))
+						},
+						rewTPS(520000)),
+				step("gt", 30, "30_super_17_rematch.json",
+						earthReq(3310, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_super_17", 1, 1994000, 83780, 75820) },
+						rewTPS(837500), rewItem("dragonminez:senzu_bean", 3)),
+
+				// --- Shadow Dragons ---
+				step("gt", 31, "31_the_cracked_dragon_balls.json",
+						earthReq(3320),
+						new JsonObject[]{ objDragonSummon("shenron", "earth") },
+						rewTPS(185200)),
+				step("gt", 32, "32_liang_xing_long.json",
+						earthReq(3350, condBiome("minecraft:swamp")),
+						new JsonObject[]{ objKill("dragonminez:saga_liang_xing_long", 1, 1571000, 66010, 59740) },
+						rewTPS(659900)),
+				step("gt", 33, "33_wu_xing_long.json",
+						earthReq(3380, condBiome("#minecraft:is_mountain")),
+						new JsonObject[]{ objKill("dragonminez:saga_wu_xing_long", 1, 1679500, 70560, 63860) },
+						rewTPS(705300)),
+				step("gt", 34, "34_liu_xing_long.json",
+						earthReq(3410, condBiome("#minecraft:is_beach")),
+						new JsonObject[]{ objKill("dragonminez:saga_liu_xing_long", 1, 1709500, 71820, 64990) },
+						rewTPS(717900)),
+				step("gt", 35, "35_qi_xing_long.json",
+						earthReq(3440, condBiome("#minecraft:is_forest")),
+						new JsonObject[]{ objKill("dragonminez:saga_qi_xing_long", 1, 1822500, 76570, 69290) },
+						rewTPS(765400)),
+				step("gt", 36, "36_neo_shenron.json",
+						earthReq(3480, condBiome("minecraft:desert")),
+						new JsonObject[]{ objKill("dragonminez:saga_neo_shenron", 1, 1950000, 81920, 74140) },
+						rewTPS(818900)),
+				step("gt", 37, "37_eis_shenron.json",
+						earthReq(3520, condBiome("#forge:is_snowy")),
+						new JsonObject[]{ objKill("dragonminez:saga_eis_shenron", 1, 1995000, 83820, 75850) },
+						rewTPS(837800)),
+				step("gt", 38, "38_syn_shenron.json",
+						earthReq(3560, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_syn_shenron", 1, 2129000, 89460, 80960) },
+						rewTPS(894200)),
+				step("gt", 39, "39_omega_shenron.json",
+						earthReq(3610, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_omega_shenron", 1, 2372000, 99660, 90180) },
+						rewTPS(996200)),
+				step("gt", 40, "40_goku_super_saiyan_4_returns.json",
+						earthReq(3650, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_goku_gt_ssj4", 1, 2051500, 86200, 78010) },
+						rewTPS(861700)),
+				step("gt", 41, "41_friends_at_full_power.json",
+						earthReq(3690, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_trunks_gt_ssj", 1, 667000, 28030, 25370),
+								objKill("dragonminez:saga_gohan_gt_ssj", 1, 667000, 28030, 25370),
+								objKill("dragonminez:saga_goten_gt_ssj", 1, 667000, 28030, 25370),
+								objKill("dragonminez:saga_pan", 1, 667000, 28030, 25370),
+								objKill("dragonminez:saga_majuub", 1, 667000, 28030, 25370)
+						},
+						rewTPS(880000)),
+				step("gt", 42, "42_two_super_saiyan_4s.json",
+						earthReq(3730, condBiome("dragonminez:rocky")),
+						new JsonObject[]{
+								objKill("dragonminez:saga_goku_gt_ssj4", 1, 1168500, 49100, 44440),
+								objKill("dragonminez:saga_vegeta_gt_ssj4", 1, 1168500, 49100, 44440)
+						},
+						rewTPS(900000)),
+				step("gt", 43, "43_omega_shenron_strikes_back.json",
+						earthReq(3770, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_omega_shenron", 1, 2686000, 112870, 102140) },
+						rewTPS(1128200)),
+				step("gt", 44, "44_gogeta_super_saiyan_4.json",
+						earthReq(3810, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_gogeta_ssj4", 1, 2845000, 119540, 108180) },
+						rewTPS(1195000)),
+				step("gt", 45, "45_lend_me_your_energy.json",
+						earthReq(3840, condBiome("#dragonminez:is_plains")),
+						new JsonObject[]{
+								noTransform(objKill("dragonminez:saga_trunks_gt", 1, 578000, 24290, 21980)),
+								noTransform(objKill("dragonminez:saga_gohan_gt", 1, 578000, 24290, 21980)),
+								noTransform(objKill("dragonminez:saga_goten_gt", 1, 578000, 24290, 21980)),
+								objKill("dragonminez:saga_pan", 1, 578000, 24290, 21980),
+								objKill("dragonminez:saga_majuub", 1, 578000, 24290, 21980),
+								noTransform(objKill("dragonminez:saga_vegeta_gt", 1, 578000, 24290, 21980))
+						},
+						rewTPS(930000)),
+				step("gt", 46, "46_omega_shenron_final.json",
+						earthReq(3880, condBiome("dragonminez:rocky")),
+						new JsonObject[]{ objKill("dragonminez:saga_omega_shenron", 1, 3161500, 132830, 120210) },
+						rewTPS(1327800), rewItem("dragonminez:senzu_bean", 5))
 		);
 	}
 }

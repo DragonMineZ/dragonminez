@@ -17,10 +17,13 @@ public class DMZShaders {
 	public static ShaderInstance auraSmooth3DShader;
 	public static ShaderInstance auraSparking3DShader;
 	public static ShaderInstance auraTrailShader;
+	public static ShaderInstance auraBorderShader;
+	public static ShaderInstance auraBorderFieldShader;
 	public static ShaderInstance bloomDownShader;
 	public static ShaderInstance bloomBlurShader;
 	public static ShaderInstance bloomCompositeShader;
 	public static ShaderInstance lightningShader;
+	public static ShaderInstance lightningBoltShader;
 	public static ShaderInstance outlineShader;
 	public static ShaderInstance outlineMaskTexShader;
 	public static ShaderInstance ki3dShader;
@@ -54,6 +57,16 @@ public class DMZShaders {
 				shaderInstance -> auraTrailShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_border"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> auraBorderShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_border_field"),
+						DefaultVertexFormat.POSITION),
+				shaderInstance -> auraBorderFieldShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "bloom_down"),
 						DefaultVertexFormat.POSITION),
 				shaderInstance -> bloomDownShader = shaderInstance);
@@ -72,6 +85,11 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
 				shaderInstance -> lightningShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning_bolt"),
+						DefaultVertexFormat.POSITION_TEX_COLOR),
+				shaderInstance -> lightningBoltShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask"),
