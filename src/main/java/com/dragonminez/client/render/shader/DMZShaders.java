@@ -23,6 +23,7 @@ public class DMZShaders {
 	public static ShaderInstance bloomBlurShader;
 	public static ShaderInstance bloomCompositeShader;
 	public static ShaderInstance lightningShader;
+	public static ShaderInstance lightningBoltShader;
 	public static ShaderInstance outlineShader;
 	public static ShaderInstance outlineMaskTexShader;
 	public static ShaderInstance ki3dShader;
@@ -79,6 +80,11 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
 				shaderInstance -> lightningShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning_bolt"),
+						DefaultVertexFormat.POSITION_TEX_COLOR),
+				shaderInstance -> lightningBoltShader = shaderInstance);
 
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask"),

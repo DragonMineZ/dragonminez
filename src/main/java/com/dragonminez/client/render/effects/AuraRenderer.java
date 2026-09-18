@@ -71,6 +71,7 @@ public class AuraRenderer {
 	private static final float AURA_3D_BACKFACE = 0.02f;
 	private static final float AURA_3D_BACKFACE_FIRST_PERSON = 0.85f;
 	private static final float AURA_3D_FIRST_PERSON_ALPHA = 0.15f;
+	private static final float LIGHTNING_FIRST_PERSON_ALPHA = 0.55f;
 
 	private static final float SMOOTH_GROWTH_RATE = 4.0f;
 	private static final float SMOOTH_SHRINK_RATE = 3.0f;
@@ -100,10 +101,6 @@ public class AuraRenderer {
 
 	public static RenderType auraType(ResourceLocation texture) {
 		return IrisCompat.isShaderPackInUse() ? ModRenderTypes.getCustomAuraCompat(texture) : ModRenderTypes.getCustomAura(texture);
-	}
-
-	public static RenderType lightningType(ResourceLocation texture) {
-		return IrisCompat.isShaderPackInUse() ? ModRenderTypes.getCustomLightningCompat(texture) : ModRenderTypes.getCustomLightning(texture);
 	}
 
 	public static void customSetup(RenderType type, ResourceLocation texture, ShaderInstance shader) {
@@ -204,47 +201,6 @@ public class AuraRenderer {
 		VertexBuffer.unbind();
 		shader.safeGetUniform("bloomMode").set(0.0f);
 		shader.clear();
-	}
-
-	public static void captureLightningBloom(Matrix4f modelMatrix, Matrix4f normalMatrix, Matrix4f projectionMatrix,
-											 float time, float speedModifier, float[] color1, float[] color2, float alpha) {
-		if (!capturingBloom || alpha <= 0.01f) return;
-		Matrix4f model = new Matrix4f(modelMatrix);
-		Matrix4f normal = new Matrix4f(normalMatrix);
-		Matrix4f proj = new Matrix4f(projectionMatrix);
-		float[] c1 = color1.clone();
-		float[] c2 = color2.clone();
-		BLOOM_DRAWS.add(() -> drawLightningBloom(model, normal, proj, time, speedModifier, c1, c2, alpha));
-	}
-
-	private static void drawLightningBloom(Matrix4f modelMatrix, Matrix4f normalMatrix, Matrix4f projectionMatrix,
-										   float time, float speedModifier, float[] c1, float[] c2, float alpha) {
-		ShaderInstance shader = DMZShaders.lightningShader;
-		if (shader == null) return;
-
-		shader.safeGetUniform("bloomMode").set(1.0f);
-		shader.safeGetUniform("projectionMatrix").set(projectionMatrix);
-		shader.safeGetUniform("modelMatrix").set(modelMatrix);
-		shader.safeGetUniform("normalMatrix").set(normalMatrix);
-		shader.safeGetUniform("time").set(time);
-		shader.safeGetUniform("speedModifier").set(speedModifier);
-		shader.safeGetUniform("color1").set(c1[0], c1[1], c1[2]);
-		shader.safeGetUniform("color2").set(c2[0], c2[1], c2[2]);
-		shader.safeGetUniform("alp1").set(alpha);
-
-		ResourceLocation lightningTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
-		RenderType type = lightningType(lightningTex);
-		customSetup(type, lightningTex, shader);
-		shader.apply();
-
-		VertexBuffer mesh = getLightningMesh();
-		mesh.bind();
-		mesh.drawWithShader(modelMatrix, projectionMatrix, shader);
-		VertexBuffer.unbind();
-
-		shader.safeGetUniform("bloomMode").set(0.0f);
-		shader.clear();
-		customClear(type);
 	}
 
 	public static void renderBloomDraws() {
@@ -1580,82 +1536,13 @@ public class AuraRenderer {
 
 		if (!AuraFxState.hasLightning(stats)) return;
 
-		ShaderInstance shader = DMZShaders.lightningShader;
-		if (shader == null) return;
-
 		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
-		float speedMod = (isAuraActive ? 1.0f : 0.20f) * AuraFxState.lightningSpeedMultiplier(stats);
-		int maxBranches = isAuraActive ? 5 : 3;
-		float maxScale = isAuraActive ? 0.5f : 0.25f;
-
 		float[] colorRgb = ColorUtils.hexToRgb(AuraFxState.lightningColor(stats));
-		float[] coreRgb = {Mth.lerp(0.8f, colorRgb[0], 1.0f), Mth.lerp(0.8f, colorRgb[1], 1.0f), Mth.lerp(0.8f, colorRgb[2], 1.0f)};
-		float time = (player.tickCount + partialTick) / 20.0f;
+		float alpha = isFirstPersonLocal ? LIGHTNING_FIRST_PERSON_ALPHA : 1.0f;
 
-		shader.safeGetUniform("projectionMatrix").set(projectionMatrix);
-		shader.safeGetUniform("time").set(time);
-		shader.safeGetUniform("speedModifier").set(speedMod);
-
-		boolean isLocalPlayer = player == Minecraft.getInstance().player;
-		boolean isFirstPerson = isLocalPlayer && Minecraft.getInstance().options.getCameraType().isFirstPerson();
-		float cameraAlpha = (isLocalPlayer && isFirstPerson) ? 0.25f : 1.0f;
-
-		shader.safeGetUniform("color1").set(coreRgb[0], coreRgb[1], coreRgb[2]);
-		shader.safeGetUniform("color2").set(colorRgb[0], colorRgb[1], colorRgb[2]);
-		shader.safeGetUniform("alp1").set(cameraAlpha);
-		shader.safeGetUniform("alp2").set(0.1f * cameraAlpha);
-		shader.safeGetUniform("power").set(3.0f);
-		shader.safeGetUniform("divis").set(1.0f);
-
-		ResourceLocation lightningTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
-		RenderType renderType = lightningType(lightningTex);
-		customSetup(renderType, lightningTex, shader);
-
-		shader.apply();
-		VertexBuffer mesh = getLightningMesh();
-		mesh.bind();
-
-		poseStack.pushPose();
-		poseStack.last().pose().set(basePose);
-
-		long tickInterval = isAuraActive ? 2L : 20L;
-		long timeHash = player.level().getGameTime() / tickInterval;
-		Random seededRand = new Random(player.getId() + timeHash);
-		float[] bScale = getBodyScale(stats);
-		float bbHeight = player.getBbHeight() * bScale[1];
-
-		for (int i = 0; i < maxBranches; i++) {
-			poseStack.pushPose();
-
-			float spread = isAuraActive ? 1.8f : 1.2f;
-			float randomY = seededRand.nextFloat() * bbHeight;
-
-			if (isFirstPersonLocal) {
-				randomY *= 0.4f;
-				poseStack.translate(0.0, -0.3f, 0.6f);
-			}
-
-			poseStack.translate((seededRand.nextFloat() - 0.5f) * spread, randomY, (seededRand.nextFloat() - 0.5f) * spread);
-			poseStack.mulPose(Axis.YP.rotationDegrees(seededRand.nextFloat() * 360));
-			poseStack.mulPose(Axis.ZP.rotationDegrees(90f + (seededRand.nextFloat() - 0.5f) * 40f));
-
-			float scale = 0.15f + seededRand.nextFloat() * maxScale;
-			poseStack.scale(scale, scale, scale);
-
-			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			shader.safeGetUniform("normalMatrix").set(poseStack.last().normal());
-			shader.apply();
-
-			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
-			captureLightningBloom(poseStack.last().pose(), new Matrix4f(poseStack.last().normal()), projectionMatrix,
-					time, speedMod, coreRgb, colorRgb, cameraAlpha);
-			poseStack.popPose();
-		}
-
-		poseStack.popPose();
-		VertexBuffer.unbind();
-		shader.clear();
-		customClear(renderType);
+		LightningBoltRenderer.draw(basePose, projectionMatrix, player.getId(), player.tickCount + partialTick,
+				LightningBoltRenderer.PLAYER_HEIGHT, LightningBoltRenderer.PLAYER_RADIUS, colorRgb, isAuraActive,
+				AuraFxState.lightningSpeedMultiplier(stats), alpha, isFirstPersonLocal);
 	}
 
 	private static void renderFusionFlash(Player player, float time, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {
