@@ -71,7 +71,7 @@ public class AuraRenderer {
 	private static final float AURA_3D_BACKFACE = 0.02f;
 	private static final float AURA_3D_BACKFACE_FIRST_PERSON = 0.85f;
 	private static final float AURA_3D_FIRST_PERSON_ALPHA = 0.15f;
-	private static final float LIGHTNING_FIRST_PERSON_ALPHA = 0.55f;
+	private static final float LIGHTNING_FIRST_PERSON_ALPHA = 0.275f;
 
 	private static final float SMOOTH_GROWTH_RATE = 4.0f;
 	private static final float SMOOTH_SHRINK_RATE = 3.0f;
@@ -1540,9 +1540,15 @@ public class AuraRenderer {
 		float[] colorRgb = ColorUtils.hexToRgb(AuraFxState.lightningColor(stats));
 		float alpha = isFirstPersonLocal ? LIGHTNING_FIRST_PERSON_ALPHA : 1.0f;
 
+		if (isFirstPersonLocal) {
+			LightningBoltRenderer.drawFirstPerson(projectionMatrix, player.getId(), player.tickCount + partialTick,
+					colorRgb, isAuraActive, AuraFxState.lightningSpeedMultiplier(stats), alpha);
+			return;
+		}
+
 		LightningBoltRenderer.draw(basePose, projectionMatrix, player.getId(), player.tickCount + partialTick,
 				LightningBoltRenderer.PLAYER_HEIGHT, LightningBoltRenderer.PLAYER_RADIUS, colorRgb, isAuraActive,
-				AuraFxState.lightningSpeedMultiplier(stats), alpha, isFirstPersonLocal);
+				AuraFxState.lightningSpeedMultiplier(stats), alpha);
 	}
 
 	private static void renderFusionFlash(Player player, float time, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {

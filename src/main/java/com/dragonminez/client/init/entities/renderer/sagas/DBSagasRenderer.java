@@ -354,6 +354,6 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         LightningBoltRenderer.draw(poseStack.last().pose(), RenderSystem.getProjectionMatrix(), animatable.getId(),
                 animatable.tickCount + partialTick, height * 1.05f, radius, ColorUtils.rgbIntToFloat(animatable.getLightningColor()),
-                charged, 1.0f, 1.0f, false);
+                charged, 1.0f, 1.0f);
     }
 }
