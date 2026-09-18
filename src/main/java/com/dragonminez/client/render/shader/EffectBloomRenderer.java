@@ -31,6 +31,7 @@ public final class EffectBloomRenderer {
 
 				if (hasKi) {
 					if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("bloomMode").set(1.0f);
+					if (DMZShaders.lightningShader != null) DMZShaders.lightningShader.safeGetUniform("bloomMode").set(1.0f);
 					bloomPass = true;
 					try {
 						for (KiRenderTask task : kiTasks) {
@@ -38,6 +39,7 @@ public final class EffectBloomRenderer {
 						}
 					} finally {
 						bloomPass = false;
+						if (DMZShaders.lightningShader != null) DMZShaders.lightningShader.safeGetUniform("bloomMode").set(0.0f);
 					}
 					if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("bloomMode").set(0.0f);
 				}

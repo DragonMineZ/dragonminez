@@ -1549,7 +1549,7 @@ public class AuraRenderer {
 
 			float w = 0.15f;
 			float h = 3.0f;
-			int segments = 20;
+			int segments = 30;
 			float segHeight = h / segments;
 
 			for (int i = 0; i < segments; i++) {
