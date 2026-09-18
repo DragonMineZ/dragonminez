@@ -3,6 +3,8 @@ package com.dragonminez.client.init.entities.renderer.ki;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
+import com.dragonminez.client.render.shader.EffectBloomRenderer;
+import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.KiEmberRenderer;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.ModRenderTypes;
@@ -12,6 +14,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -33,6 +36,11 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
     /** Ticks of offset between the two orbs of a double wave, so they do not shed in mirror. */
     private static final float EMBER_PAIR_OFFSET = 6.5F;
     private static final float CHARGE_GROW_TICKS = 12.0F;
+    private static final float CHARGE_RAYS_REACH = 11.0F;
+    private static final float CHARGE_RAYS_MIN_REACH = 4.0F;
+    private static final float CHARGE_RAYS_INTENSITY = 0.9F;
+    private static final float CHARGE_RAYS_BLOOM = 0.35F;
+    private static final float CHARGE_RAYS_FIRST_PERSON = 0.3F;
 
     public KiWaveRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -220,6 +228,10 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             renderEmbers(entity, poseStack, proj, auraColor, borderColor, ageInTicks, fadeAlpha, back, KiEmberRenderer.CHARGE_BACKDRAFT);
             poseStack.popPose();
 
+            if (entity.getKiRenderType() == 1) {
+                renderChargeRays(entity, poseStack, proj, auraColor, borderColor, ageInTicks, startBallScale, fadeAlpha);
+            }
+
             poseStack.popPose();
             return;
         }
@@ -398,6 +410,42 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         VertexBuffer.unbind();
         shader.clear();
         lightningType.clearRenderState();
+    }
+
+    private void renderChargeRays(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float ballRadius, float alphaMultiplier) {
+        ShaderInstance shader = DMZShaders.chargeRaysShader;
+        if (shader == null || ballRadius <= 0.001F) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        float charge = chargeScale(entity, ageInTicks);
+        float pulse = 0.85F + 0.15F * (float) Math.sin(ageInTicks * 0.9F);
+        float intensity = CHARGE_RAYS_INTENSITY * charge * pulse * alphaMultiplier;
+        if (EffectBloomRenderer.bloomPass) intensity *= CHARGE_RAYS_BLOOM;
+        if (mc.options.getCameraType().isFirstPerson() && entity.getOwner() == mc.player) intensity *= CHARGE_RAYS_FIRST_PERSON;
+        if (intensity <= 0.004F) return;
+
+        float rayScale = Math.max(ballRadius * CHARGE_RAYS_REACH, CHARGE_RAYS_MIN_REACH);
+
+        poseStack.pushPose();
+        poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
+        poseStack.scale(rayScale, rayScale, rayScale);
+
+        shader.safeGetUniform("ProjMat").set(proj);
+        shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
+        shader.safeGetUniform("seed").set((entity.getId() % 97) * 0.37f);
+        shader.safeGetUniform("intensity").set(intensity);
+        shader.safeGetUniform("innerRadius").set(ballRadius / rayScale);
+        shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
+        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
+
+        VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
+        mesh.bind();
+        mesh.drawWithShader(poseStack.last().pose(), proj, shader);
+        VertexBuffer.unbind();
+        shader.clear();
+
+        poseStack.popPose();
     }
 
     private void renderMuzzleFlame(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float scale, float steadyScale, float alphaMultiplier, Vec3 back, float backdraft) {

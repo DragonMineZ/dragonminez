@@ -12,6 +12,8 @@ import java.util.List;
 
 public final class EffectBloomRenderer {
 
+	public static boolean bloomPass = false;
+
 	private EffectBloomRenderer() {}
 
 	public static void render(List<KiRenderTask> kiTasks, PoseStack poseStack, Matrix4f projectionMatrix) {
@@ -29,8 +31,13 @@ public final class EffectBloomRenderer {
 
 				if (hasKi) {
 					if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("bloomMode").set(1.0f);
-					for (KiRenderTask task : kiTasks) {
-						task.render(poseStack, projectionMatrix);
+					bloomPass = true;
+					try {
+						for (KiRenderTask task : kiTasks) {
+							task.render(poseStack, projectionMatrix);
+						}
+					} finally {
+						bloomPass = false;
 					}
 					if (DMZShaders.ki3dShader != null) DMZShaders.ki3dShader.safeGetUniform("bloomMode").set(0.0f);
 				}

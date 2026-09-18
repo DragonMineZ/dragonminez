@@ -1,0 +1,25 @@
+{
+  "vertex": "dragonminez:shockwave",
+  "fragment": "dragonminez:charge_rays",
+  "attributes": [
+    "Position",
+    "UV"
+  ],
+  "samplers": [],
+  "uniforms": [
+    { "name": "modelMatrix", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "seed", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "intensity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "innerRadius", "type": "float", "count": 1, "values": [ 0.1 ] },
+    { "name": "colorCore", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "colorBorder", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] }
+  ],
+  "blend": {
+    "func": "add",
+    "srcrgb": "one",
+    "dstrgb": "1-srcalpha"
+  },
+  "cull": false
+}

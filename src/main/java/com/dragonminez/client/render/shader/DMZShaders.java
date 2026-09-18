@@ -27,6 +27,7 @@ public class DMZShaders {
 	public static ShaderInstance shockwaveShader;
 	public static ShaderInstance clawSlashShader;
 	public static ShaderInstance impactBurstShader;
+	public static ShaderInstance chargeRaysShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -100,5 +101,10 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "impact_burst"),
 						DefaultVertexFormat.POSITION_TEX),
 				shaderInstance -> impactBurstShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "charge_rays"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> chargeRaysShader = shaderInstance);
 	}
 }

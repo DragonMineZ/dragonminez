@@ -229,7 +229,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastSize(size / 2);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFAE5FF, 0xE25EFF, colorOutline);
+        this.setColors(0xF0E0FF, 0x7A2CF0, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
@@ -242,7 +242,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size, int castTime) {
-        this.setupKiGalickGun(owner, damage, speed, size, 0xAD0CF2, castTime);
+        this.setupKiGalickGun(owner, damage, speed, size, 0x4B0BB8, castTime);
     }
 
     public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size, int colorOutline) {
@@ -251,7 +251,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastSize(0.3f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFAE5FF, 0xA63EF0, colorOutline);
+        this.setColors(0xF0E0FF, 0x7A2CF0, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(0);
@@ -261,7 +261,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size) {
-        this.setupKiGalickGunPlayer(owner, damage, speed, size, 0x7106BD);
+        this.setupKiGalickGunPlayer(owner, damage, speed, size, 0x4B0BB8);
     }
 
     public void setupFinalFlash(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
