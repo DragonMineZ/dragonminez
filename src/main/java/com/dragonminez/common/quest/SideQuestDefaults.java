@@ -47,6 +47,7 @@ final class SideQuestDefaults {
 		createBulmaTechCategory(sideQuestDir);
 		createBulmaErrandsCategory(sideQuestDir);
 		createMoviesCategory(sideQuestDir);
+		createGTCategory(sideQuestDir);
 	}
 
 	// ---- Helpers ----
@@ -1408,6 +1409,115 @@ final class SideQuestDefaults {
 						objTalkTo("kingkai")
 				},
 				new JsonObject[]{ rewTPS(360000), rewItem("dragonminez:senzu_bean", 3) }));
+	}
+
+	// ========================================================================================
+	// GT Saga Side-Quests
+	// ========================================================================================
+
+	private static void createGTCategory(Path baseDir) {
+		Path dir = baseDir.resolve("gt");
+
+		writeQuestFile(dir, "gt_uub_village_supplies.json", sidequest(
+				"gt_uub_village_supplies", "dmz.sidequest.gt_uub_village_supplies.name", "dmz.sidequest.gt_uub_village_supplies.desc",
+				"collection", false, "goku", "goku",
+				prereqs("AND", condSaga("gt_saga", 1)),
+				new JsonObject[]{
+						objDeliver("minecraft:bread", 16, "goku"),
+						objDeliver("minecraft:cooked_beef", 16, "goku"),
+						objDeliver("minecraft:wheat_seeds", 32, "goku"),
+						objTalkTo("goku")
+				},
+				new JsonObject[]{ rewTPS(90000) }));
+
+		writeQuestFile(dir, "gt_ship_provisions.json", sidequest(
+				"gt_ship_provisions", "dmz.sidequest.gt_ship_provisions.name", "dmz.sidequest.gt_ship_provisions.desc",
+				"collection", false, "bulma", "bulma",
+				prereqs("AND", condSaga("gt_saga", 2)),
+				new JsonObject[]{
+						objDeliver("minecraft:cooked_porkchop", 24, "bulma"),
+						objDeliver("minecraft:baked_potato", 24, "bulma"),
+						objDeliver("minecraft:golden_apple", 4, "bulma"),
+						objTalkTo("bulma")
+				},
+				new JsonObject[]{ rewTPS(100000), rewItem("dragonminez:senzu_bean", 2) }));
+
+		writeQuestFile(dir, "gt_luud_scrap_metal.json", sidequest(
+				"gt_luud_scrap_metal", "dmz.sidequest.gt_luud_scrap_metal.name", "dmz.sidequest.gt_luud_scrap_metal.desc",
+				"collection", true, null, null,
+				prereqs("AND", condSaga("gt_saga", 5)),
+				new JsonObject[]{
+						objItem("minecraft:iron_ingot", 32),
+						objItem("minecraft:copper_ingot", 32),
+						objItem("minecraft:gold_ingot", 8)
+				},
+				new JsonObject[]{ rewTPS(140000) }));
+
+		writeQuestFile(dir, "gt_old_kai_reading.json", sidequest(
+				"gt_old_kai_reading", "dmz.sidequest.gt_old_kai_reading.name", "dmz.sidequest.gt_old_kai_reading.desc",
+				"collection", false, "oldkai", "oldkai",
+				prereqs("AND", condSaga("gt_saga", 18)),
+				requirements("AND", condDimension("dragonminez:sacredkaiplanet")),
+				new JsonObject[]{
+						objDeliver("minecraft:book", 8, "oldkai"),
+						objDeliver("minecraft:cake", 1, "oldkai"),
+						objTalkTo("oldkai")
+				},
+				new JsonObject[]{ rewTPS(110000) }));
+
+		writeQuestFile(dir, "gt_tuffle_cure.json", sidequest(
+				"gt_tuffle_cure", "dmz.sidequest.gt_tuffle_cure.name", "dmz.sidequest.gt_tuffle_cure.desc",
+				"collection", false, "dende", "dende",
+				prereqs("AND", condSaga("gt_saga", 21)),
+				new JsonObject[]{
+						objStructure("dragonminez:kamilookout"),
+						objDeliver("minecraft:water_bucket", 4, "dende"),
+						objDeliver("minecraft:glass_bottle", 16, "dende"),
+						objTalkTo("dende")
+				},
+				new JsonObject[]{ rewTPS(180000) }));
+
+		writeQuestFile(dir, "gt_hell_breakout_patrol.json", sidequest(
+				"gt_hell_breakout_patrol", "dmz.sidequest.gt_hell_breakout_patrol.name", "dmz.sidequest.gt_hell_breakout_patrol.desc",
+				"combat", true, null, null,
+				prereqs("AND", condSaga("gt_saga", 25)),
+				new JsonObject[]{
+						objKill("minecraft:zombie", 20),
+						objKill("minecraft:skeleton", 12),
+						objKill("minecraft:wither_skeleton", 4)
+				},
+				new JsonObject[]{ rewTPS(200000) }));
+
+		writeQuestFile(dir, "gt_pan_sparring.json", sidequest(
+				"gt_pan_sparring", "dmz.sidequest.gt_pan_sparring.name", "dmz.sidequest.gt_pan_sparring.desc",
+				"training", false, "gohan", "gohan",
+				prereqs("AND", condSaga("gt_saga", 30)),
+				new JsonObject[]{
+						objQuestKill("dragonminez:saga_pan", 1, 767000, 32200, 29200),
+						objTalkTo("gohan")
+				},
+				new JsonObject[]{ rewTPS(250000) }));
+
+		writeQuestFile(dir, "gt_haze_pollution.json", sidequest(
+				"gt_haze_pollution", "dmz.sidequest.gt_haze_pollution.name", "dmz.sidequest.gt_haze_pollution.desc",
+				"exploration", false, null, null,
+				prereqs("AND", condSaga("gt_saga", 32)),
+				new JsonObject[]{
+						objBiome("minecraft:swamp"),
+						objKill("minecraft:slime", 10),
+						objItem("minecraft:lily_pad", 8)
+				},
+				new JsonObject[]{ rewTPS(230000) }));
+
+		writeQuestFile(dir, "gt_goku_farewell.json", sidequest(
+				"gt_goku_farewell", "dmz.sidequest.gt_goku_farewell.name", "dmz.sidequest.gt_goku_farewell.desc",
+				"story", false, "goku", "goku",
+				prereqs("AND", condSaga("gt_saga", 46)),
+				new JsonObject[]{
+						objStructure("dragonminez:goku_house"),
+						objTalkTo("goku")
+				},
+				new JsonObject[]{ rewTPS(400000), rewItem("dragonminez:senzu_bean", 5) }));
 	}
 }
 

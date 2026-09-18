@@ -22,6 +22,11 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
 
     private static final int MAX_VARIANT_PROBE = 16;
 
+    // Robot XV stands in for any saga enemy whose art is missing. No model: its model and texture.
+    // Model but no texture: the entity's own model wearing the Robot XV texture.
+    private static final ResourceLocation FALLBACK_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/robotxv.geo.json");
+    private static final ResourceLocation FALLBACK_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/robotxv.png");
+
     public static void clearCache() {
         RESOURCE_CACHE.clear();
         VARIANT_COUNT_CACHE.clear();
@@ -29,14 +34,16 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        ResourceLocation original = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/sagas/" + animatable.getGeckolibModelName() + ".geo.json");
-
-        boolean exists = RESOURCE_CACHE.computeIfAbsent(original, this::resourceExists);
-        return exists ? original : ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/robotxv.geo.json");
+        ResourceLocation model = modelLocation(animatable);
+        return RESOURCE_CACHE.computeIfAbsent(model, this::resourceExists) ? model : FALLBACK_MODEL;
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
+        if (!RESOURCE_CACHE.computeIfAbsent(modelLocation(animatable), this::resourceExists)) {
+            return FALLBACK_TEXTURE;
+        }
+
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
         int variant = animatable.getTextureVariant();
 
@@ -62,7 +69,7 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
             }
         }
 
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/robotxv.png");
+        return FALLBACK_TEXTURE;
     }
 
     @Override
@@ -100,6 +107,10 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
             count++;
         }
         return count;
+    }
+
+    private static ResourceLocation modelLocation(DBSagasEntity animatable) {
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/sagas/" + animatable.getGeckolibModelName() + ".geo.json");
     }
 
     private boolean resourceExists(ResourceLocation location) {

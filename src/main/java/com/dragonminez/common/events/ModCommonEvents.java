@@ -88,7 +88,7 @@ public class ModCommonEvents {
                 MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER
         );
         var ozarus = List.of(
-                MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU
+                MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU, MainEntities.SAGA_BABY_GOLDEN_OZARU
         );
 
         for (var saibaman : saibamans) event.put((EntityType<? extends LivingEntity>) saibaman.get(), SagaSaibamanEntity.createAttributes().build());
