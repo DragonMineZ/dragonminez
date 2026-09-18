@@ -24,6 +24,9 @@ public class DMZShaders {
 	public static ShaderInstance outlineShader;
 	public static ShaderInstance outlineMaskTexShader;
 	public static ShaderInstance ki3dShader;
+	public static ShaderInstance shockwaveShader;
+	public static ShaderInstance clawSlashShader;
+	public static ShaderInstance impactBurstShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -82,5 +85,20 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kiattack"),
 						DefaultVertexFormat.NEW_ENTITY),
 				shaderInstance -> ki3dShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shockwave"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> shockwaveShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "claw_slash"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> clawSlashShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "impact_burst"),
+						DefaultVertexFormat.POSITION_TEX),
+				shaderInstance -> impactBurstShader = shaderInstance);
 	}
 }

@@ -1,7 +1,9 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
 import com.dragonminez.common.init.MainEffects;
-import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ClawSlashVfxS2C;
+import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
@@ -251,6 +253,17 @@ public class SkillManager {
     private static final int WOLF_FANG_JAB_INTERVAL = 4;
     private static final double WOLF_FANG_REACH = 4.0D;
     private static final double WOLF_FANG_KNOCKBACK_FORCE = 1.8D;
+    private static final int WOLF_FANG_VFX_COLOR = 0x2F5BFF;
+    private static final int WOLF_FANG_WAVE_COLOR = 0x4D9EFF;
+    private static final float WOLF_FANG_JAB_CLAW_SCALE = 1.7F;
+    private static final int WOLF_FANG_JAB_CLAW_TICKS = 8;
+    private static final float WOLF_FANG_FINAL_CLAW_SCALE = 3.4F;
+    private static final int WOLF_FANG_FINAL_CLAW_TICKS = 16;
+    private static final int WOLF_FANG_FINAL_CLAWS = 6;
+    private static final float WOLF_FANG_HIT_WAVE_SCALE = 1.8F;
+    private static final int WOLF_FANG_HIT_WAVE_TICKS = 7;
+    private static final float WOLF_FANG_FINAL_WAVE_SCALE = 4.5F;
+    private static final int WOLF_FANG_FINAL_WAVE_TICKS = 13;
 
     public static void tickWolfFang(DBSagasEntity user, LivingEntity target, int timer) {
         if (user.level().isClientSide) return;
@@ -297,6 +310,11 @@ public class SkillManager {
         float applied = damage;
         if (!finalHit && target.getHealth() - applied <= 1.0F) applied = Math.max(0.01F, target.getHealth() - 1.0F);
 
+        if (!finalHit) {
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
+                    WOLF_FANG_HIT_WAVE_SCALE * wolfFangSizeFactor(user), WOLF_FANG_WAVE_COLOR, WOLF_FANG_HIT_WAVE_TICKS), user);
+        }
+
         target.invulnerableTime = 0;
         target.hurt(user.damageSources().mobAttack(user), applied);
     }
@@ -312,16 +330,12 @@ public class SkillManager {
         level.playSound(null, impact.x, impact.y, impact.z, punch, net.minecraft.sounds.SoundSource.HOSTILE,
                 1.0F, 1.1F + (level.random.nextFloat() * 0.3F));
 
-        level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), impact.x, impact.y, impact.z, 0, 0.30, 0.62, 1.0, 1.0);
+        NetworkHandler.sendToTrackingEntity(new ClawSlashVfxS2C(impact.x, impact.y, impact.z,
+                WOLF_FANG_JAB_CLAW_SCALE * wolfFangSizeFactor(user), WOLF_FANG_VFX_COLOR, WOLF_FANG_JAB_CLAW_TICKS, 1, false), user);
+    }
 
-        for (int i = 0; i < 4; i++) {
-            double ox = (level.random.nextDouble() - 0.5) * 0.7;
-            double oy = (level.random.nextDouble() - 0.5) * 0.7;
-            double oz = (level.random.nextDouble() - 0.5) * 0.7;
-            level.sendParticles(MainParticles.SPARKS.get(), impact.x + ox, impact.y + oy, impact.z + oz, 0, 0.25, 0.55, 1.0, 1.0);
-        }
-
-        level.sendParticles(ParticleTypes.CRIT, impact.x, impact.y, impact.z, 6, 0.3, 0.3, 0.3, 0.5);
+    private static float wolfFangSizeFactor(DBSagasEntity user) {
+        return Math.max(1.0F, user.getBbHeight() / 1.8F);
     }
 
     private static void wolfFangFinish(DBSagasEntity user, LivingEntity target, Vec3 impact, float damage) {
@@ -331,21 +345,11 @@ public class SkillManager {
         user.level().playSound(null, impact.x, impact.y, impact.z, MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, 1.0F);
         user.level().playSound(null, impact.x, impact.y, impact.z, MainSounds.OOZARU_GROWL_PLAYER.get(), net.minecraft.sounds.SoundSource.HOSTILE, 3.0F, 1.15F);
 
-        if (user.level() instanceof ServerLevel level) {
-            level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), impact.x, impact.y, impact.z, 0, 0.30, 0.62, 1.0, 1.0);
-
-            for (int i = 0; i < 90; i++) {
-                double dirX = level.random.nextDouble() - 0.5;
-                double dirY = level.random.nextDouble() - 0.5;
-                double dirZ = level.random.nextDouble() - 0.5;
-                double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
-                if (len < 1.0E-4) continue;
-                double radius = 0.5 + level.random.nextDouble() * 2.5;
-                level.sendParticles(MainParticles.SPARKS.get(),
-                        impact.x + (dirX / len) * radius, impact.y + (dirY / len) * radius, impact.z + (dirZ / len) * radius,
-                        0, 0.25, 0.55, 1.0, 1.0);
-            }
-        }
+        float sizeFactor = wolfFangSizeFactor(user);
+        NetworkHandler.sendToTrackingEntity(new ClawSlashVfxS2C(impact.x, impact.y, impact.z,
+                WOLF_FANG_FINAL_CLAW_SCALE * sizeFactor, WOLF_FANG_VFX_COLOR, WOLF_FANG_FINAL_CLAW_TICKS, WOLF_FANG_FINAL_CLAWS, true), user);
+        NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(impact.x, impact.y, impact.z,
+                WOLF_FANG_FINAL_WAVE_SCALE * sizeFactor, WOLF_FANG_WAVE_COLOR, WOLF_FANG_FINAL_WAVE_TICKS), user);
 
         if (!wolfFangInReach(user, target)) return;
 

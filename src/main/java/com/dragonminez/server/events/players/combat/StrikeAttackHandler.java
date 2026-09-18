@@ -17,7 +17,10 @@ import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ClawSlashVfxS2C;
+import com.dragonminez.common.network.S2C.ImpactBurstVfxS2C;
 import com.dragonminez.common.network.S2C.KiBurstVfxS2C;
+import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.racial.RacialStatUtil;
@@ -83,6 +86,27 @@ public class StrikeAttackHandler {
 	private static final float SLAM_UNBLOCK_PITCH = 0.55F;
 	private static final float SLAM_PARRY_PITCH = 0.85F;
 	private static final double FRONT_REACH = 1.3;
+	private static final float SHOCKWAVE_HIT_SCALE = 1.8F;
+	private static final float SHOCKWAVE_FINAL_SCALE = 4.5F;
+	private static final int SHOCKWAVE_HIT_TICKS = 7;
+	private static final int SHOCKWAVE_FINAL_TICKS = 13;
+	private static final int WOLF_FANG_CLAW_COLOR = 0x2F5BFF;
+	private static final float WOLF_FANG_JAB_CLAW_SCALE = 1.7F;
+	private static final int WOLF_FANG_JAB_CLAW_TICKS = 8;
+	private static final float WOLF_FANG_FINAL_CLAW_SCALE = 3.4F;
+	private static final int WOLF_FANG_FINAL_CLAW_TICKS = 16;
+	private static final int WOLF_FANG_FINAL_CLAWS = 6;
+	private static final int GOD_FIST_COLOR_PRIMARY = 0xFFD23A;
+	private static final int GOD_FIST_COLOR_SECONDARY = 0xFF4A12;
+	private static final float GOD_FIST_BURST_SCALE = 5.5F;
+	private static final int GOD_FIST_BURST_TICKS = 18;
+	private static final int DEADLY_DANCE_COLOR_PRIMARY = 0xFFE23A;
+	private static final int DEADLY_DANCE_COLOR_SECONDARY = 0xFFA800;
+	private static final int DEADLY_DANCE_VEGETTO_COLOR_SECONDARY = 0x2FA8FF;
+	private static final float DEADLY_DANCE_HIT_BURST_SCALE = 1.7F;
+	private static final int DEADLY_DANCE_HIT_BURST_TICKS = 7;
+	private static final float DEADLY_DANCE_FINAL_BURST_SCALE = 4.8F;
+	private static final int DEADLY_DANCE_FINAL_BURST_TICKS = 16;
 	private static final java.util.Set<String> TARGETLESS_STRIKES = java.util.Set.of(
 			"dragon_fist", "deadly_dance", "deadly_dance_vegetto", "super_god_fist", "wolf_fang");
 
@@ -538,14 +562,8 @@ public class StrikeAttackHandler {
 						0.7F
 				);
 
-				try {
-					KiExplosionVisualEntity impact = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), player.level());
-					impact.setPos(impactPos.x, impactPos.y, impactPos.z);
-					impact.setupExplosion(0xFFFFFF, 0xF5C527, 0.5F);
-					player.level().addFreshEntity(impact);
-				} catch (Exception e) {
-				}
-				spawnSuperGodFistImpactParticles(player.serverLevel(), impactPos);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(impactPos, player.getLookAngle(),
+						GOD_FIST_BURST_SCALE, GOD_FIST_COLOR_PRIMARY, GOD_FIST_COLOR_SECONDARY, false, GOD_FIST_BURST_TICKS), player);
 
 				if (victim != null) {
 					Vec3 pushDir = player.getLookAngle().normalize();
@@ -623,7 +641,9 @@ public class StrikeAttackHandler {
 					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.perHitDamage()), active.techniqueId(), false);
 				}
 
-				spawnDeadlyDanceHitParticles(player.serverLevel(), strikeImpactPoint(player, victim, 0.6), vegetto);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(strikeImpactPoint(player, victim, 0.6), lookVec,
+						DEADLY_DANCE_HIT_BURST_SCALE, DEADLY_DANCE_COLOR_PRIMARY, deadlyDanceSecondaryColor(vegetto), vegetto,
+						DEADLY_DANCE_HIT_BURST_TICKS), player);
 
 				Vec3 soundPos = strikeImpactPoint(player, victim, 0.0);
 				player.level().playSound(
@@ -642,7 +662,10 @@ public class StrikeAttackHandler {
 					grantKillXpIfNeeded(player, victim, active.techniqueId());
 				}
 
-				spawnDeadlyDanceFinalParticles(player.serverLevel(), strikeImpactPoint(player, victim, 0.5), vegetto);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(strikeImpactPoint(player, victim, 0.5),
+						new Vec3(lookVec.x * 0.35, 1.0, lookVec.z * 0.35),
+						DEADLY_DANCE_FINAL_BURST_SCALE, DEADLY_DANCE_COLOR_PRIMARY, deadlyDanceSecondaryColor(vegetto), vegetto,
+						DEADLY_DANCE_FINAL_BURST_TICKS), player);
 
 				Vec3 soundPos = strikeImpactPoint(player, victim, 0.0);
 				player.level().playSound(
@@ -823,7 +846,12 @@ public class StrikeAttackHandler {
 				player.level().playSound(null, sx, sy, sz,
 						MainSounds.OOZARU_GROWL_PLAYER.get(), net.minecraft.sounds.SoundSource.PLAYERS, 3.0F, 1.15F);
 
-				spawnWolfFangFinalParticles(player.serverLevel(), finalPos);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ClawSlashVfxS2C(finalPos.x, finalPos.y, finalPos.z,
+						WOLF_FANG_FINAL_CLAW_SCALE, WOLF_FANG_CLAW_COLOR, WOLF_FANG_FINAL_CLAW_TICKS, WOLF_FANG_FINAL_CLAWS, true), player);
+				if (victim == null) {
+					NetworkHandler.sendToTrackingEntityAndSelf(new ShockwaveVfxS2C(finalPos.x, finalPos.y, finalPos.z,
+							SHOCKWAVE_FINAL_SCALE, shockwaveColor(active.techniqueId()), SHOCKWAVE_FINAL_TICKS), player);
+				}
 
 				if (victim != null) applyKnockback(player, victim, active.totalDamage());
 				endStrike(player, target, active);
@@ -1388,6 +1416,7 @@ public class StrikeAttackHandler {
 		if (!isFinalHit) if (target.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, target.getHealth() - 1.0F);
 
 		playStrikeHitAnimation(target);
+		spawnHitShockwave(player, target, techniqueId, isFinalHit);
 		target.hurt(MainDamageTypes.strikeAttack(player.level(), player, techniqueId), (float) damage);
 		RECENTLY_DAMAGED.put(player.getUUID(), new RecentHit(target.getUUID(), System.currentTimeMillis()));
 
@@ -1401,6 +1430,32 @@ public class StrikeAttackHandler {
 			DynamicGrowthService.markCombat(stats);
 			DynamicGrowthService.awardStrike(player, stats, target, finalDamage);
 		});
+	}
+
+	private static void spawnHitShockwave(ServerPlayer player, LivingEntity target, String techniqueId, boolean isFinalHit) {
+		if (OOZARU_SLAM_ID.equals(techniqueId)) return;
+
+		float sizeFactor = Math.max(1.0F, target.getBbHeight() / 1.8F);
+		float scale = (isFinalHit ? SHOCKWAVE_FINAL_SCALE : SHOCKWAVE_HIT_SCALE) * sizeFactor;
+		int lifetime = isFinalHit ? SHOCKWAVE_FINAL_TICKS : SHOCKWAVE_HIT_TICKS;
+
+		Vec3 center = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ());
+		Vec3 toAttacker = new Vec3(player.getX() - target.getX(), 0.0, player.getZ() - target.getZ());
+		if (toAttacker.lengthSqr() > 1.0E-4) center = center.add(toAttacker.normalize().scale(target.getBbWidth() * 0.5));
+
+		NetworkHandler.sendToTrackingEntityAndSelf(
+				new ShockwaveVfxS2C(center.x, center.y, center.z, scale, shockwaveColor(techniqueId), lifetime), player);
+	}
+
+	private static int shockwaveColor(String techniqueId) {
+		return switch (techniqueId) {
+			case "wolf_fang" -> 0x4D9EFF;
+			case "deadly_dance" -> 0xFFE23A;
+			case "deadly_dance_vegetto" -> DEADLY_DANCE_VEGETTO_COLOR_SECONDARY;
+			case "super_god_fist" -> 0xF5C527;
+			case "kaioken_attack" -> 0xFF5A3A;
+			default -> 0xFFF3D6;
+		};
 	}
 
 	private static void grantKillXpIfNeeded(ServerPlayer player, LivingEntity target, String techniqueId) {
@@ -1426,117 +1481,13 @@ public class StrikeAttackHandler {
 		MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (totalDamage * IMPACT_DAMAGE_RATIO), dir);
 	}
 
-	private static void spawnSuperGodFistImpactParticles(ServerLevel level, Vec3 point) {
-		double x = point.x;
-		double y = point.y;
-		double z = point.z;
-
-		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 1.0, 1.0, 1.0, 1.0);
-
-		for (int i = 0; i < 8; i++) {
-			double ox = (level.random.nextDouble() - 0.5) * 0.8;
-			double oy = (level.random.nextDouble() - 0.5) * 0.8;
-			double oz = (level.random.nextDouble() - 0.5) * 0.8;
-			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, 0.96, 0.77, 0.15, 1.0);
-		}
-
-		level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, 18, 0.4, 0.4, 0.4, 0.6);
-		level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
+	private static int deadlyDanceSecondaryColor(boolean vegetto) {
+		return vegetto ? DEADLY_DANCE_VEGETTO_COLOR_SECONDARY : DEADLY_DANCE_COLOR_SECONDARY;
 	}
 
 	private static boolean canOccupy(LivingEntity entity, double x, double y, double z) {
 		AABB moved = entity.getBoundingBox().move(x - entity.getX(), y - entity.getY(), z - entity.getZ());
 		return entity.level().noCollision(entity, moved);
-	}
-
-	private static final float[] DD_GOLD = {1.0F, 0.84F, 0.0F};
-	private static final float[] DD_CELESTE = {0.30F, 0.80F, 1.0F};
-	private static final float[] DD_YELLOW = {1.0F, 0.95F, 0.15F};
-	private static final float[] DD_YELLOW_DEEP = {1.0F, 0.78F, 0.05F};
-
-	private static float[] deadlyDanceColor(boolean vegetto, int i) {
-		if (vegetto) return (i % 2 == 0) ? DD_GOLD : DD_CELESTE;
-		return (i % 2 == 0) ? DD_YELLOW : DD_YELLOW_DEEP;
-	}
-
-	private static void spawnDeadlyDanceHitParticles(ServerLevel level, Vec3 point, boolean vegetto) {
-		double x = point.x;
-		double y = point.y;
-		double z = point.z;
-
-		float[] main = deadlyDanceColor(vegetto, 0);
-		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
-
-		int sparkCount = vegetto ? 2 : 1;
-		for (int i = 0; i < sparkCount; i++) {
-			float[] c = deadlyDanceColor(vegetto, i);
-			double ox = (level.random.nextDouble() - 0.5) * 0.9;
-			double oy = (level.random.nextDouble() - 0.5) * 0.9;
-			double oz = (level.random.nextDouble() - 0.5) * 0.9;
-			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, c[0], c[1], c[2], 1.0);
-		}
-
-		if (vegetto) {
-			level.sendParticles(ParticleTypes.CRIT, x, y, z, 2, 0.3, 0.3, 0.3, 0.6);
-			level.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 4, 0.3, 0.3, 0.3, 0.4);
-		}
-	}
-
-	private static void spawnDeadlyDanceFinalParticles(ServerLevel level, Vec3 point, boolean vegetto) {
-		double x = point.x;
-		double y = point.y;
-		double z = point.z;
-
-		float[] main = deadlyDanceColor(vegetto, 0);
-		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, main[0], main[1], main[2], 1.0);
-
-		if (!vegetto) {
-			for (int i = 0; i < 3; i++) {
-				double dirX = level.random.nextDouble() - 0.5;
-				double dirY = level.random.nextDouble() - 0.5;
-				double dirZ = level.random.nextDouble() - 0.5;
-				double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
-				if (len < 1.0E-4) continue;
-				float[] c = deadlyDanceColor(false, i);
-				double radius = 0.5 + level.random.nextDouble() * 1.2;
-				double px = x + (dirX / len) * radius;
-				double py = y + (dirY / len) * radius;
-				double pz = z + (dirZ / len) * radius;
-				level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, c[0], c[1], c[2], 1.0);
-			}
-			level.sendParticles(ParticleTypes.CRIT, x, y, z, 4, 0.4, 0.4, 0.4, 0.5);
-			return;
-		}
-
-		for (int i = 0; i < 5; i++) {
-			double dirX = level.random.nextDouble() - 0.5;
-			double dirY = level.random.nextDouble() - 0.5;
-			double dirZ = level.random.nextDouble() - 0.5;
-			double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
-			if (len < 1.0E-4) continue;
-			float[] c = deadlyDanceColor(true, i);
-			double radius = 0.5 + level.random.nextDouble() * 2.5;
-			double px = x + (dirX / len) * radius;
-			double py = y + (dirY / len) * radius;
-			double pz = z + (dirZ / len) * radius;
-			level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, c[0], c[1], c[2], 1.0);
-		}
-
-		int ringPoints = 5;
-		for (int i = 0; i < ringPoints; i++) {
-			double angle = (Math.PI * 2 * i) / ringPoints;
-			float[] c = deadlyDanceColor(true, i);
-			for (double ry : new double[]{-0.4, 0.4}) {
-				double px = x + Math.cos(angle) * 1.3;
-				double pz = z + Math.sin(angle) * 1.3;
-				level.sendParticles(MainParticles.SPARKS.get(), px, y + ry, pz, 0, c[0], c[1], c[2], 1.0);
-			}
-		}
-
-		level.sendParticles(ParticleTypes.CRIT, x, y, z, 30, 0.6, 0.6, 0.6, 0.8);
-		level.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 20, 0.5, 0.5, 0.5, 0.6);
-		level.sendParticles(ParticleTypes.FIREWORK, x, y, z, 40, 0.3, 0.3, 0.3, 0.35);
-		level.sendParticles(ParticleTypes.FLASH, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
 	}
 
 	private static void spawnWolfFangJab(ServerPlayer player, Vec3 point, int beat) {
@@ -1554,38 +1505,8 @@ public class StrikeAttackHandler {
 		level.playSound(null, x, y, z, punch, net.minecraft.sounds.SoundSource.PLAYERS,
 				1.0F, 1.1F + (level.random.nextFloat() * 0.3F));
 
-		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 0.30, 0.62, 1.0, 1.0);
-
-		for (int i = 0; i < 4; i++) {
-			double ox = (level.random.nextDouble() - 0.5) * 0.7;
-			double oy = (level.random.nextDouble() - 0.5) * 0.7;
-			double oz = (level.random.nextDouble() - 0.5) * 0.7;
-			level.sendParticles(MainParticles.SPARKS.get(), x + ox, y + oy, z + oz, 0, 0.25, 0.55, 1.0, 1.0);
-		}
-
-		level.sendParticles(ParticleTypes.CRIT, x, y, z, 6, 0.3, 0.3, 0.3, 0.5);
-	}
-
-	private static void spawnWolfFangFinalParticles(ServerLevel level, Vec3 point) {
-		double x = point.x;
-		double y = point.y;
-		double z = point.z;
-
-		level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, 0.30, 0.62, 1.0, 1.0);
-
-		for (int i = 0; i < 90; i++) {
-			double dirX = level.random.nextDouble() - 0.5;
-			double dirY = level.random.nextDouble() - 0.5;
-			double dirZ = level.random.nextDouble() - 0.5;
-			double len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
-			if (len < 1.0E-4) continue;
-			double radius = 0.5 + level.random.nextDouble() * 2.5;
-			double px = x + (dirX / len) * radius;
-			double py = y + (dirY / len) * radius;
-			double pz = z + (dirZ / len) * radius;
-			level.sendParticles(MainParticles.SPARKS.get(), px, py, pz, 0, 0.25, 0.55, 1.0, 1.0);
-		}
-
+		NetworkHandler.sendToTrackingEntityAndSelf(new ClawSlashVfxS2C(x, y, z,
+				WOLF_FANG_JAB_CLAW_SCALE, WOLF_FANG_CLAW_COLOR, WOLF_FANG_JAB_CLAW_TICKS, 1, false), player);
 	}
 
 	private static void playStrikeAnimation(ServerPlayer player, String animationId) {

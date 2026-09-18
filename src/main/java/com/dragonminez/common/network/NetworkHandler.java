@@ -630,6 +630,24 @@ public class NetworkHandler {
 				.encoder(AuraModeC2S::encode)
 				.consumerMainThread(AuraModeC2S::handle)
 				.add();
+
+		net.messageBuilder(ShockwaveVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ShockwaveVfxS2C::new)
+				.encoder(ShockwaveVfxS2C::encode)
+				.consumerMainThread(ShockwaveVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(ClawSlashVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ClawSlashVfxS2C::new)
+				.encoder(ClawSlashVfxS2C::encode)
+				.consumerMainThread(ClawSlashVfxS2C::handle)
+				.add();
+
+		net.messageBuilder(ImpactBurstVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ImpactBurstVfxS2C::new)
+				.encoder(ImpactBurstVfxS2C::encode)
+				.consumerMainThread(ImpactBurstVfxS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
