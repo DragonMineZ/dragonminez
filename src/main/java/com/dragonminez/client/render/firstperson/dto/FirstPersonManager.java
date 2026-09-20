@@ -13,6 +13,7 @@ import org.joml.Vector3f;
 public class FirstPersonManager {
 
 	public static boolean shouldRenderFirstPerson(Player player) {
+		if (com.dragonminez.client.render.effects.AfterimageEffect.isRendering()) return false;
 		if (player != Minecraft.getInstance().player) return false;
 		if (!ConfigManager.getUserConfig().getFirstPersonAnimated()) return false;
 		if (player.getMainHandItem().getItem() instanceof MapItem || player.getOffhandItem().getItem() instanceof MapItem) return false;

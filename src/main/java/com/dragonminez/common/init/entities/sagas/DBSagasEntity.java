@@ -9,6 +9,8 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ITextureVariant;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.network.S2C.AfterimageVfxS2C;
+import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.goals.SagasUseSkillGoal;
 import com.dragonminez.common.init.entities.ki.*;
@@ -459,6 +461,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.set(IS_ZANZOKEN, active);
     }
 
+    private static final int ZANZOKEN_AFTERIMAGE_TICKS = 60;
+
     private boolean isSafeTeleportLocation(double targetX, double targetY, double targetZ) {
         AABB targetBox = this.getBoundingBox().move(targetX - this.getX(), targetY - this.getY(), targetZ - this.getZ());
         return this.level().noCollision(this, targetBox);
@@ -474,6 +478,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private void executeZanzokenJump() {
         this.playSound(MainSounds.ZANZOKEN.get(), 1.0F, 1.0F);
         boolean teleported = false;
+        Vec3 afterimagePos = this.position();
+        float afterimageYaw = this.yBodyRot;
 
         if (this.getTarget() != null) {
             for (int i = 0; i < 10; i++) {
@@ -500,6 +506,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
             if (teleported) {
                 this.lookAt(this.getTarget(), 360, 360);
+                if (!this.level().isClientSide) {
+                    NetworkHandler.sendToTrackingEntity(new AfterimageVfxS2C(this.getId(), ZANZOKEN_AFTERIMAGE_TICKS,
+                            new Vec3[]{afterimagePos}, new float[]{afterimageYaw}, false), this);
+                }
             }
         }
 

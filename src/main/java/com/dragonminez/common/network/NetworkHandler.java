@@ -648,6 +648,12 @@ public class NetworkHandler {
 				.encoder(ImpactBurstVfxS2C::encode)
 				.consumerMainThread(ImpactBurstVfxS2C::handle)
 				.add();
+
+		net.messageBuilder(AfterimageVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(AfterimageVfxS2C::new)
+				.encoder(AfterimageVfxS2C::encode)
+				.consumerMainThread(AfterimageVfxS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

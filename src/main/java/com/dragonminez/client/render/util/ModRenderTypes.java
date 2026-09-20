@@ -372,6 +372,46 @@ public class ModRenderTypes extends RenderType {
         );
     }
 
+    private static final String POLYGON_OFFSET_LAYERING_TOKEN = "polygon_offset_layering";
+
+    private static final RenderStateShard.ShaderStateShard AFTERIMAGE_SHADER = new RenderStateShard.ShaderStateShard(() -> DMZShaders.afterimageShader);
+
+    private static final Function<ResourceLocation, RenderType> AFTERIMAGE = Util.memoize((pLocation) -> buildAfterimage(pLocation, false));
+    private static final Function<ResourceLocation, RenderType> AFTERIMAGE_OFFSET = Util.memoize((pLocation) -> buildAfterimage(pLocation, true));
+
+    private static RenderType buildAfterimage(ResourceLocation texture, boolean polygonOffset) {
+        CompositeState.CompositeStateBuilder builder = CompositeState.builder()
+                .setShaderState(AFTERIMAGE_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                .setLightmapState(LIGHTMAP)
+                .setWriteMaskState(COLOR_DEPTH_WRITE);
+        if (polygonOffset) builder.setLayeringState(POLYGON_OFFSET_LAYERING);
+
+        return create(
+                polygonOffset ? "dmz_afterimage_offset" : "dmz_afterimage",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                1536,
+                false,
+                false,
+                builder.createCompositeState(false)
+        );
+    }
+
+    @Nullable
+    public static RenderType afterimage(@Nullable RenderType sourceRenderType, boolean customShader) {
+        if (sourceRenderType == null || sourceRenderType.format() != DefaultVertexFormat.NEW_ENTITY) return null;
+        if (sourceRenderType.mode() != VertexFormat.Mode.QUADS) return null;
+        ResourceLocation texture = resolveSourceTexture(sourceRenderType);
+        if (texture == null) return null;
+        if (!customShader) return RenderType.entityTranslucent(texture);
+        boolean polygonOffset = sourceRenderType.toString().contains(POLYGON_OFFSET_LAYERING_TOKEN);
+        return polygonOffset ? AFTERIMAGE_OFFSET.apply(texture) : AFTERIMAGE.apply(texture);
+    }
+
     public static RenderType transformationMask() {
         return TRANSFORMATION_MASK;
     }

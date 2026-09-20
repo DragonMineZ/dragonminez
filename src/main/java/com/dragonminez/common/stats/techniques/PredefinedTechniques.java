@@ -22,7 +22,8 @@ public class PredefinedTechniques {
 	);
 	public static final List<String> EVASION_IDS = java.util.List.of(
 			"taiyoken",
-			"rage_scream"
+			"rage_scream",
+			"afterimage"
 	);
 
 	public void init() {
@@ -48,6 +49,7 @@ public class PredefinedTechniques {
 		registerKi("fake_moon", "technique.dragonminez.fake_moon", "Vegeta", KiAttackData.KiType.MEDIUM_BALL, 0.00F, 0xF5F3D0, 0xFFFFFF, 0xFFFFFF, 2.0F, 0.8F, 45, "ki.bigbang");
 		registerEvasion("taiyoken", 0.00F, 30, 900, false);
 		registerEvasion("rage_scream", 1.2F, 60, 80, true);
+		registerEvasion("afterimage", 0.00F, 60, 200, false);
 		registerStrike("skp.meteor", 1.25f, 40);
 		registerStrike("skp.dragon_fist", 2.5f, 50);
 		registerStrike("skp.deadly_dance_vegetto", 1.5f, 40);

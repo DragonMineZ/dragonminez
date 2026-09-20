@@ -52,6 +52,7 @@ public class TechniqueConfig {
 		return switch (evasionId) {
 			case "taiyoken" -> 900;
 			case "rage_scream" -> 80;
+			case "afterimage" -> 200;
 			default -> 80;
 		};
 	}
