@@ -56,6 +56,7 @@ public class AuraRenderer {
 	private static final CachedAuraData GUI_AURA_DATA = new CachedAuraData();
 	private static final float AURA_2D_GROUND_OFFSET = 0.7f;
 	private static final float AURA_2D_CROSS_START_DEG = 45.0f;
+	private static final float AURA_2D_MAX_VIEW_ELEVATION_DEG = 40.0f;
 	private static final float AURA_2D_NEAR_FADE_SPAN = 0.9f;
 	private static final float AURA_2D_NEAR_FADE_MIN = 1.2f;
 	private static final float AURA_2D_NEAR_FADE_MAX = 2.2f;
@@ -1169,6 +1170,8 @@ public class AuraRenderer {
 			}
 		} else if (!isFirstPerson && centreDistance > 1.0e-4) {
 			float elevation = (float) Math.toDegrees(Math.asin(Mth.clamp(Math.abs(centre.dot(auraUp) / centreDistance), 0.0, 1.0)));
+			float lookElevation = (float) Math.toDegrees(Math.asin(Mth.clamp(Math.abs(new Vec3(camera.getLookVector()).dot(auraUp)), 0.0, 1.0)));
+			elevation = Math.max(elevation, lookElevation);
 			if (elevation > AURA_2D_CROSS_START_DEG) {
 				float t = (elevation - AURA_2D_CROSS_START_DEG) / (90.0f - AURA_2D_CROSS_START_DEG);
 				crossFactor = Mth.clamp(t * t, 0.0f, 1.0f);
@@ -1186,7 +1189,9 @@ public class AuraRenderer {
 
 			poseStack.translate(0.0, baseLift, 0.0);
 			Vec3 facing = flightBillboard ? centre : new Vec3(camera.getLookVector()).scale(-1.0);
-			if (applyAxisBillboard(poseStack, camera, auraUp, facing)) {
+			float tilt = cameraTilt(auraUp, facing);
+			double pivot = !flightBillboard && tilt < 0.0f ? player.getBbHeight() : 0.0;
+			if (applyAxisBillboard(poseStack, camera, auraUp, facing, tilt, pivot)) {
 				poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
 
 				poseStack.translate(0.0, flightBillboard ? AURA_2D_FLIGHT_OFFSET : AURA_2D_GROUND_OFFSET, 0.0);
@@ -1219,7 +1224,7 @@ public class AuraRenderer {
 		if (crossFactor > 0.0f) {
 			poseStack.pushPose();
 			poseStack.translate(0.0, baseLift, 0.0);
-			if (applyAxisBillboard(poseStack, camera, auraUp, new Vec3(camera.getLookVector()))) {
+			if (applyAxisBillboard(poseStack, camera, auraUp, new Vec3(camera.getLookVector()), 0.0f, 0.0)) {
 				if (!flightBillboard && centre.dot(auraUp) > 0.0) poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
 				poseStack.scale(finalScaleX, 1.0f, finalScaleZ);
 
@@ -1249,22 +1254,41 @@ public class AuraRenderer {
 		return (float) Math.abs(viewDir.dot(flightAxis(player, partialTick)));
 	}
 
-	private static boolean applyAxisBillboard(PoseStack poseStack, Camera camera, Vec3 up, Vec3 facing) {
+	private static float cameraTilt(Vec3 up, Vec3 facing) {
+		double length = facing.length();
+		if (length < 1.0e-6) return 0.0f;
+		double elevation = Math.asin(Mth.clamp(facing.dot(up) / length, -1.0, 1.0));
+		double limit = Math.toRadians(AURA_2D_MAX_VIEW_ELEVATION_DEG);
+		return (float) (elevation - limit * Math.tanh(elevation / limit));
+	}
+
+	private static boolean applyAxisBillboard(PoseStack poseStack, Camera camera, Vec3 up, Vec3 facing, float tilt, double pivot) {
 		Vec3 forward = facing.subtract(up.scale(facing.dot(up)));
 		if (forward.lengthSqr() < 1.0e-6) {
 			Vec3 cameraUp = new Vec3(camera.getUpVector());
 			forward = cameraUp.subtract(up.scale(cameraUp.dot(up)));
+			if (facing.dot(up) > 0.0) forward = forward.scale(-1.0);
 		}
 		if (forward.lengthSqr() < 1.0e-6) return false;
 		forward = forward.normalize();
 
 		Vec3 right = up.cross(forward).normalize();
 
+		Vec3 cardUp = up;
+		if (tilt != 0.0f) {
+			double cos = Math.cos(tilt);
+			double sin = Math.sin(tilt);
+			cardUp = up.scale(cos).subtract(forward.scale(sin));
+			forward = forward.scale(cos).add(up.scale(sin));
+		}
+
+		poseStack.translate(up.x * pivot, up.y * pivot, up.z * pivot);
 		poseStack.mulPoseMatrix(new Matrix4f(
 				(float) right.x, (float) right.y, (float) right.z, 0.0f,
-				(float) up.x, (float) up.y, (float) up.z, 0.0f,
+				(float) cardUp.x, (float) cardUp.y, (float) cardUp.z, 0.0f,
 				(float) forward.x, (float) forward.y, (float) forward.z, 0.0f,
 				0.0f, 0.0f, 0.0f, 1.0f));
+		poseStack.translate(0.0, -pivot, 0.0);
 		return true;
 	}
 

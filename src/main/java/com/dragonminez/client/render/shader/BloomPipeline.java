@@ -50,6 +50,16 @@ public final class BloomPipeline {
 	public static boolean beginRedraw(RenderTarget main) {
 		if (!shadersReady() || redrawUnsupported) return false;
 
+		boolean scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
+		if (scissor) GL11.glDisable(GL11.GL_SCISSOR_TEST);
+		try {
+			return bindRedraw(main);
+		} finally {
+			if (scissor) GL11.glEnable(GL11.GL_SCISSOR_TEST);
+		}
+	}
+
+	private static boolean bindRedraw(RenderTarget main) {
 		int bound = GlStateManager.getBoundFramebuffer();
 		ensureTargets(main, bound);
 		int maskTexture = mask.getColorTextureId();

@@ -34,6 +34,7 @@ public final class KiSurgeService {
 	public static final String NON_LETHAL_TAG = "dmz_surge_non_lethal";
 	private static final String WAS_CHARGING_TAG = "dmz_was_charging_ki_session";
 	private static final String EARNED_BURST_TAG = "dmz_earned_ki_burst";
+	private static final double BURST_VISUAL_SCALE = 0.7;
 
 	private KiSurgeService() {}
 
@@ -175,12 +176,13 @@ public final class KiSurgeService {
 		int colorBorder = packColor(auraRgb, 0.65f);
 
 		if (level instanceof ServerLevel serverLevel) {
+			double visualRadius = radius * BURST_VISUAL_SCALE;
 			serverLevel.sendParticles(MainParticles.KI_EXPLOSION.get(),
-					center.x, center.y, center.z, 0, radius * 1.4, 0.0, 0.0, 1.0);
+					center.x, center.y, center.z, 0, visualRadius * 1.4, 0.0, 0.0, 1.0);
 
 			KiExplosionVisualEntity visual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), level);
 			visual.setPos(center.x, center.y, center.z);
-			visual.setupExplosion(colorMain, colorBorder, 0xFFFFFF, (float) radius / 2.0F);
+			visual.setupExplosion(colorMain, colorBorder, 0xFFFFFF, (float) visualRadius / 2.0F);
 			level.addFreshEntity(visual);
 		}
 
