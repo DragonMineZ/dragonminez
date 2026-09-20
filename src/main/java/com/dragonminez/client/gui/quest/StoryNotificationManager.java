@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.quest;
 
+import com.dragonminez.client.gui.hud.QuestNoticeHUD;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
@@ -61,7 +62,7 @@ public final class StoryNotificationManager {
 			}
 		}
 
-		mc.getToasts().addToast(new StoryToast(title, description, tone));
+		QuestNoticeHUD.push(title, description, tone);
 	}
 
 	private static Component resolveObjectiveText(Minecraft mc, StoryToastS2C message, Quest quest) {

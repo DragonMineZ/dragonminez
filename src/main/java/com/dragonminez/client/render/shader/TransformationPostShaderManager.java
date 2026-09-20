@@ -1,5 +1,7 @@
 package com.dragonminez.client.render.shader;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.render.util.IrisCompat;
@@ -47,6 +49,7 @@ public final class TransformationPostShaderManager {
 	private static final Set<UUID> ACTIVE_MASK_PLAYERS = new HashSet<>();
 
 	private static boolean loadedByManager = false;
+	private static boolean loadFailed = false;
 	@Nullable
 	private static ShaderUniformState activeUniformState;
 	private static TransformationMaskBufferSource maskBufferSource = new TransformationMaskBufferSource();
@@ -173,6 +176,7 @@ public final class TransformationPostShaderManager {
 
 	@Nullable
 	private static PostChain ensureShaderpackChain(Minecraft mc, RenderTarget main) {
+		if (loadFailed) return null;
 		if (shaderpackChain != null && shaderpackChainWidth == main.width && shaderpackChainHeight == main.height) {
 			return shaderpackChain;
 		}
@@ -186,12 +190,22 @@ public final class TransformationPostShaderManager {
 			shaderpackChain = null;
 			shaderpackChainWidth = -1;
 			shaderpackChainHeight = -1;
+			markLoadFailed();
 		}
 		return shaderpackChain;
 	}
 
 	public static void reset() {
 		clearState(Minecraft.getInstance(), true);
+	}
+
+	public static void onResourceReload() {
+		loadFailed = false;
+	}
+
+	private static void markLoadFailed() {
+		loadFailed = true;
+		LogUtil.error(Env.CLIENT, "Transformation outline shader failed to load; it stays disabled until the next resource reload");
 	}
 
 	private static void updateTrackedPlayers(Minecraft mc) {
@@ -273,8 +287,10 @@ public final class TransformationPostShaderManager {
 			return;
 		}
 
+		if (loadFailed) return;
 		mc.gameRenderer.loadEffect(TRANSFORMATION_EFFECT);
 		loadedByManager = isTransformationShaderActive(mc);
+		if (!loadedByManager) markLoadFailed();
 	}
 
 	private static void shutdownManagedShader(Minecraft mc) {

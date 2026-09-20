@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.gui.radial.AbstractRadialNode;
 import com.dragonminez.client.gui.radial.FormPreview;
@@ -146,7 +147,8 @@ public class UtilityMenuScreen extends ScaledScreen {
 	}
 
 	@Override
-	protected float computeDynamicScale(float availableScale) {
+	protected float computeDynamicScale(int guiWidth, int guiHeight) {
+		float availableScale = Math.max(1.0f, Math.min(guiWidth / (float) getMinGuiWidth(), guiHeight / (float) getMinGuiHeight()));
 		return availableScale * (2f / 3f) * ConfigManager.getUserConfig().getUtilityMenuScaleMultiplier();
 	}
 
@@ -537,7 +539,7 @@ public class UtilityMenuScreen extends ScaledScreen {
 
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderColor(r, g, b, alpha);
-		graphics.blit(safe, Math.round(x - half), Math.round(y - half), Math.round(size), Math.round(size), 0.0F, 0.0F, 18, 18, 18, 18);
+		HudRender.blit(graphics, safe, x - half, y - half, 0.0F, 0.0F, size, size, 18, 18, 18, 18);
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		RenderSystem.disableBlend();
 	}

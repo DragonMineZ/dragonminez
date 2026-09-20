@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.PartyPackets;
@@ -55,6 +56,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 	private float targetScroll = 0;
 	private float currentScroll = 0;
+	private float listSlide;
 	private float maxScroll = 0;
 	private boolean isDraggingScroll = false;
 
@@ -211,7 +213,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 	}
 
 	private void initActionButtons() {
-		int rightPanelX = getUiWidth() - 158 + getRightPanelSwitchOffset(1.0f);
+		int rightPanelX = getUiWidth() - 158 + Math.round(getRightPanelSwitchOffset(1.0f));
 		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 
@@ -237,7 +239,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 				btn -> executePlayerAction());
 		altBtn = menuButton(rightPanelX + 35, rightPanelY + 155, "gui.dragonminez.party.invite.reject",
 				btn -> answerInvite(false));
-		backBtn = menuButton(12 + getLeftPanelSwitchOffset(1.0f) + 35, rightPanelY + 180,
+		backBtn = menuButton(12 + Math.round(getLeftPanelSwitchOffset(1.0f)) + 35, rightPanelY + 180,
 				"gui.dragonminez.party.back", btn -> goBack());
 
 		int centreX = getUiWidth() / 2;
@@ -307,12 +309,12 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		refreshPlayerList();
 	}
 
-	private void updatePanelWidgetOffsets(int rightOffset) {
-		int rightPanelX = getUiWidth() - 158 + rightOffset;
+	private void updatePanelWidgetOffsets(float rightOffset) {
+		int rightPanelX = getUiWidth() - 158;
 
-		if (prevBtn != null) prevBtn.setX(rightPanelX + 20);
-		if (nextBtn != null) nextBtn.setX(rightPanelX + 116);
-		if (actionBtn != null) actionBtn.setX(rightPanelX + 35);
+		slideX(prevBtn, rightPanelX + 20, rightOffset);
+		slideX(nextBtn, rightPanelX + 116, rightOffset);
+		slideX(actionBtn, rightPanelX + 35, rightOffset);
 	}
 
 	private void shiftSelection(int direction) {
@@ -391,7 +393,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		renderMenuBackground(graphics, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -406,19 +408,28 @@ public class PartyMenuScreen extends BaseMenuScreen {
 			return;
 		}
 
-		int leftOffset = getLeftPanelSwitchOffset(partialTick);
-		int rightOffset = getRightPanelSwitchOffset(partialTick);
+		float leftOffset = getLeftPanelSwitchOffset(partialTick);
+		float rightOffset = getRightPanelSwitchOffset(partialTick);
 
 		updatePanelWidgetOffsets(rightOffset);
 
-		int leftPanelX = 12 + leftOffset;
-		int rightPanelX = getUiWidth() - 158 + rightOffset;
+		int leftPanelX = 12;
+		int rightPanelX = getUiWidth() - 158;
 		int centerY = getUiHeight() / 2;
 		int panelY = centerY - 105;
+		listSlide = leftOffset;
 
-		renderPanels(graphics, leftPanelX, rightPanelX, panelY);
-		renderPlayerList(graphics, leftPanelX, panelY, uiMouseX, uiMouseY);
+		graphics.pose().pushPose();
+		graphics.pose().translate(leftOffset, 0.0f, 0.0f);
+		renderLeftPanelFrame(graphics, leftPanelX, panelY);
+		renderPlayerList(graphics, leftPanelX, panelY, uiMouseX - Math.round(leftOffset), uiMouseY);
+		graphics.pose().popPose();
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(rightOffset, 0.0f, 0.0f);
+		renderRightPanelFrame(graphics, rightPanelX, panelY);
 		renderRightPanelDetails(graphics, rightPanelX, panelY);
+		graphics.pose().popPose();
 
 		renderCentralModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
@@ -433,8 +444,8 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(CARD_BG, x, y, WELCOME_WIDTH, WELCOME_HEIGHT,
-				0.0F, 0.0F, CARD_SOURCE_WIDTH, CARD_SOURCE_HEIGHT, CARD_SHEET, CARD_SHEET);
+		HudRender.blit(graphics, CARD_BG, x, y, 0.0F, 0.0F, WELCOME_WIDTH, WELCOME_HEIGHT,
+				CARD_SOURCE_WIDTH, CARD_SOURCE_HEIGHT, CARD_SHEET, CARD_SHEET);
 		RenderSystem.disableBlend();
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
@@ -465,20 +476,17 @@ public class PartyMenuScreen extends BaseMenuScreen {
 		return getUiHeight() / 2 - WELCOME_HEIGHT / 2 - 14;
 	}
 
-	private void renderPanels(GuiGraphics graphics, int leftX, int rightX, int panelY) {
-		RenderSystem.enableBlend();
+	private void renderLeftPanelFrame(GuiGraphics graphics, int leftX, int panelY) {
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		blit(graphics, MENU_BIG, leftX, panelY, 0, 0, 141, 213);
+		blit(graphics, MENU_BIG, leftX + 17, panelY + 10, 142, 22, 107, 21);
+	}
 
-		graphics.blit(MENU_BIG, leftX, panelY, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, leftX + 17, panelY + 10, 142, 22, 107, 21, 256, 256);
-
-		graphics.blit(MENU_BIG, rightX, panelY, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, rightX + 17, panelY + 10, 142, 22, 107, 21, 256, 256);
-		if (currentView != View.JOIN) {
-			graphics.blit(MENU_BIG, rightX + 31, panelY + 77, 142, 0, 79, 21, 256, 256);
-		}
-
-		RenderSystem.disableBlend();
+	private void renderRightPanelFrame(GuiGraphics graphics, int rightX, int panelY) {
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		blit(graphics, MENU_BIG, rightX, panelY, 0, 0, 141, 213);
+		blit(graphics, MENU_BIG, rightX + 17, panelY + 10, 142, 22, 107, 21);
+		if (currentView != View.JOIN) blit(graphics, MENU_BIG, rightX + 31, panelY + 77, 142, 0, 79, 21);
 	}
 
 	private void renderPlayerList(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
@@ -501,9 +509,9 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		maxScroll = Math.max(0, totalHeight - viewHeight);
 		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		currentScroll = Mth.lerp(Minecraft.getInstance().getDeltaFrameTime() * 0.4f, currentScroll, targetScroll);
+		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
 
-		graphics.enableScissor(toScreenCoord(panelX + 5), toScreenCoord(startY), toScreenCoord(panelX + 135), toScreenCoord(startY + viewHeight));
+		graphics.enableScissor(toScreenCoord(panelX + 5 + listSlide), toScreenCoord(startY), toScreenCoord(panelX + 135 + listSlide), toScreenCoord(startY + viewHeight));
 		graphics.pose().pushPose();
 		graphics.pose().translate(0, -currentScroll, 0);
 
@@ -713,7 +721,7 @@ public class PartyMenuScreen extends BaseMenuScreen {
 
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
-		int leftPanelX = 12 + getLeftPanelSwitchOffset(1.0f);
+		int leftPanelX = 12 + Math.round(getLeftPanelSwitchOffset(1.0f));
 		int centerY = getUiHeight() / 2;
 		int panelY = centerY - 105;
 

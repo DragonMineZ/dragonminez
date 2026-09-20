@@ -654,6 +654,12 @@ public class NetworkHandler {
 				.encoder(AfterimageVfxS2C::encode)
 				.consumerMainThread(AfterimageVfxS2C::handle)
 				.add();
+
+		net.messageBuilder(PartyPackets.HudSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(PartyPackets.HudSyncS2C::decode)
+				.encoder(PartyPackets.HudSyncS2C::encode)
+				.consumerMainThread(PartyPackets.HudSyncS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

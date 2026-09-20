@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.buttons;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.common.init.MainSounds;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -13,7 +14,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class CustomTextureButton extends Button {
+public class CustomTextureButton extends Button implements SubpixelWidget {
 
     private final ResourceLocation texture;
     private final int textureWidth;
@@ -23,6 +24,8 @@ public class CustomTextureButton extends Button {
     private final int hoverU;
     private final int hoverV;
 	private final SoundEvent sound;
+	private float subpixelX;
+	private float subpixelY;
 
     public CustomTextureButton(int x, int y, int width, int height, ResourceLocation texture,
                                int normalU, int normalV, int hoverU, int hoverV,
@@ -51,8 +54,18 @@ public class CustomTextureButton extends Button {
         int u = this.isHoveredOrFocused() ? hoverU : normalU;
         int v = this.isHoveredOrFocused() ? hoverV : normalV;
 
-        graphics.blit(texture, this.getX(), this.getY(), u, v, textureWidth, textureHeight);
+        HudRender.blit(graphics, texture, this.getX() + subpixelX, this.getY() + subpixelY, u, v, textureWidth, textureHeight, 256, 256);
     }
+
+	@Override
+	public void setSubpixelX(float offset) {
+		this.subpixelX = offset;
+	}
+
+	@Override
+	public void setSubpixelY(float offset) {
+		this.subpixelY = offset;
+	}
 
     public static class Builder {
         private int x, y, width, height;

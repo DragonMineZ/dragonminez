@@ -137,9 +137,8 @@ public class TransformationsHelper {
 		return statsData.getSkills().isUnlockedAtLevel(getSkillNameForType(formType), requiredLevel);
 	}
 
-	public static boolean hasMutantLegendaryAccess(StatsData statsData, String groupName) {
-		if (statsData == null || groupName == null) return false;
-		if (!statsData.getEffects().hasEffect("mutant")) return false;
+	public static boolean isMutantLegendaryGroup(String groupName) {
+		if (groupName == null) return false;
 		String legendaryGroup = "legendaryforms";
 		if (ConfigManager.getServerConfig() != null && ConfigManager.getServerConfig().getMutant() != null) {
 			legendaryGroup = ConfigManager.getServerConfig().getMutant().getLegendaryGroupName();
@@ -147,10 +146,25 @@ public class TransformationsHelper {
 		return groupName.equalsIgnoreCase(legendaryGroup);
 	}
 
+	public static boolean hasMutantLegendaryAccess(StatsData statsData, String groupName) {
+		if (statsData == null || !isMutantLegendaryGroup(groupName)) return false;
+		if (!statsData.getEffects().hasEffect("mutant")) return false;
+		return statsData.getStatus().isRageActive() || statsData.getResources().isRageFull();
+	}
+
+	public static boolean isRageBorrowedForm(StatsData statsData, String groupName, FormConfig.FormData formData) {
+		if (statsData == null || formData == null || !isMutantLegendaryGroup(groupName)) return false;
+		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), groupName);
+		if (config == null || config.getFormType() == null) return false;
+		return formData.getUnlockOnSkillLevel() > statsData.getSkills().getSkillLevel(getSkillNameForType(config.getFormType()));
+	}
+
 	private static boolean hasFormSkillAccess(StatsData statsData, String groupName, String formType, int requiredLevel) {
-		int effectiveRequiredLevel = requiredLevel;
-		if (hasMutantLegendaryAccess(statsData, groupName)) effectiveRequiredLevel = Math.max(0, requiredLevel - 1);
-		return isFormUnlocked(statsData, formType, effectiveRequiredLevel);
+		if (hasMutantLegendaryAccess(statsData, groupName)) {
+			int effectiveRequiredLevel = Math.max(0, requiredLevel - 1);
+			return effectiveRequiredLevel == 0 || isFormUnlocked(statsData, formType, effectiveRequiredLevel);
+		}
+		return isFormUnlocked(statsData, formType, requiredLevel);
 	}
 
 	private static boolean isStackFormUnlocked(StatsData statsData, String formType, int requiredLevel) {
@@ -252,7 +266,7 @@ public class TransformationsHelper {
 			if (!allTypes.contains(lowerType)) allTypes.add(lowerType);
 
 			boolean hasSkill = statsData.getSkills().getSkillLevel(getSkillNameForType(formType)) > 0;
-			boolean mutantLegendary = lowerType.contains("legendary") && statsData.getEffects().hasEffect("mutant");
+			boolean mutantLegendary = lowerType.contains("legendary") && hasMutantLegendaryAccess(statsData, config.getGroupName());
 			if ((hasSkill || mutantLegendary) && !preferredTypes.contains(lowerType)) preferredTypes.add(lowerType);
 		}
 

@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -132,7 +133,7 @@ public class InstantTransmissionScreen extends ScaledScreen {
 		beginUiScale(graphics);
 
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
+		HudRender.blit(graphics, MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
 				tr("gui.dragonminez.transmission.title"),
@@ -153,8 +154,7 @@ public class InstantTransmissionScreen extends ScaledScreen {
 
 		maxScroll = Math.max(0, totalHeight - viewHeight);
 		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
+		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
 
 		int scLeft = toScreenCoord(listLeft);
 		int scTop = toScreenCoord(listTop);

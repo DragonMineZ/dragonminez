@@ -14,6 +14,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import net.minecraft.world.entity.EntityType;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -77,6 +79,7 @@ public class ConfigManager {
 	private static boolean serverSyncActive = false;
 
 	private static GeneralUserConfig userConfig;
+	private static HudLayoutConfig hudLayoutConfig;
 	private static GeneralServerConfig serverConfig;
 	private static CombatConfig combatConfig;
 	private static TrainingConfig trainingConfig;
@@ -676,6 +679,7 @@ public class ConfigManager {
 
 	private static void loadGeneralConfigs() {
 		userConfig = loadAndValidate(CONFIG_DIR.resolve("general-user.json"), GeneralUserConfig.class, GeneralUserConfig::new, GeneralUserConfig::getConfigVersion, GeneralUserConfig::setConfigVersion, GeneralUserConfig.CURRENT_VERSION, null);
+		loadHudLayoutConfig();
 		serverConfig = loadAndValidate(CONFIG_DIR.resolve("general-server.json"), GeneralServerConfig.class, GeneralServerConfig::new, GeneralServerConfig::getConfigVersion, GeneralServerConfig::setConfigVersion, GeneralServerConfig.CURRENT_VERSION, "general-server.json");
 		combatConfig = loadAndValidate(CONFIG_DIR.resolve("combat.json"), CombatConfig.class, CombatConfig::new, CombatConfig::getConfigVersion, CombatConfig::setConfigVersion, CombatConfig.CURRENT_VERSION, null);
 		trainingConfig = loadAndValidate(CONFIG_DIR.resolve("training.json"), TrainingConfig.class, TrainingConfig::new, TrainingConfig::getConfigVersion, TrainingConfig::setConfigVersion, TrainingConfig.CURRENT_VERSION, null);
@@ -1230,6 +1234,45 @@ public class ConfigManager {
 		if (serverSyncActive && SERVER_SYNCED_TRAINING != null) return SERVER_SYNCED_TRAINING;
 		return trainingConfig != null ? trainingConfig : new TrainingConfig();
 	}
+	private static void loadHudLayoutConfig() {
+		if (FMLEnvironment.dist != Dist.CLIENT) {
+			hudLayoutConfig = new HudLayoutConfig();
+			return;
+		}
+		Path path = CONFIG_DIR.resolve(HudLayoutConfig.FILE_NAME + ".json");
+		boolean isNew = !Files.exists(path);
+		hudLayoutConfig = loadAndValidate(path, HudLayoutConfig.class, HudLayoutConfig::new, HudLayoutConfig::getConfigVersion, HudLayoutConfig::setConfigVersion, HudLayoutConfig.CURRENT_VERSION, null);
+		if (userConfig != null && userConfig.migrateLegacyHud(hudLayoutConfig, isNew)) {
+			saveHudLayoutConfig();
+			saveGeneralUserConfig();
+		}
+	}
+
+	public static HudLayoutConfig getHudLayoutConfig() {
+		if (hudLayoutConfig == null) hudLayoutConfig = new HudLayoutConfig();
+		return hudLayoutConfig;
+	}
+
+	public static void saveHudLayoutConfig() {
+		try { LOADER.saveConfig(CONFIG_DIR.resolve(HudLayoutConfig.FILE_NAME + ".json"), getHudLayoutConfig()); }
+		catch (IOException e) { LogUtil.error(Env.COMMON, "Error saving HUD layout: {}", e.getMessage()); }
+	}
+
+	public static void reloadHudLayoutConfig() {
+		Path path = CONFIG_DIR.resolve(HudLayoutConfig.FILE_NAME + ".json");
+		if (!Files.exists(path)) return;
+		try {
+			HudLayoutConfig loaded = LOADER.loadConfig(path, HudLayoutConfig.class);
+			if (loaded != null) hudLayoutConfig = loaded;
+		} catch (Exception e) {
+			LogUtil.warn(Env.COMMON, "Could not reload {}.json, keeping the layout in memory: {}", HudLayoutConfig.FILE_NAME, e.getMessage());
+		}
+	}
+
+	public static boolean isClientOnlyConfig(String configFile) {
+		return CLIENT_ONLY_CONFIG.equals(configFile) || HudLayoutConfig.FILE_NAME.equals(configFile);
+	}
+
 	public static void saveGeneralUserConfig() {
 		try { LOADER.saveConfig(CONFIG_DIR.resolve("general-user.json"), userConfig); }
 		catch (IOException e) { LogUtil.error(Env.COMMON, "Error saving user configuration: {}", e.getMessage()); }

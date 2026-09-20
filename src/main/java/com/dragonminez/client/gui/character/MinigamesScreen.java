@@ -48,6 +48,7 @@ public class MinigamesScreen extends BaseMenuScreen {
 	private int selectedIndex = 0;
 	private float descScrollY = 0;
 	private float targetDescScrollY = 0;
+	private float panelSlide;
 	private int descContentHeight = 0;
 	private int descViewportHeight = 0;
 	private final ScrollbarState descBar = new ScrollbarState();
@@ -171,37 +172,33 @@ public class MinigamesScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public void tick() {
-		super.tick();
-		this.descScrollY = Mth.lerp(0.5f, this.descScrollY, this.targetDescScrollY);
-	}
-
-	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		renderMenuBackground(graphics, partialTick);
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
 		applyZoom(graphics, partialTick);
+		this.descScrollY = Mth.lerp(frameEase(0.07f), this.descScrollY, this.targetDescScrollY);
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
-		int leftOffset = getLeftPanelSwitchOffset(partialTick);
+		float leftOffset = getLeftPanelSwitchOffset(partialTick);
 		graphics.pose().pushPose();
-		graphics.pose().translate(leftOffset, 0, 0);
-		renderLeftPanel(graphics, uiMouseX - leftOffset, uiMouseY);
+		graphics.pose().translate(leftOffset, 0.0f, 0.0f);
+		renderLeftPanel(graphics, uiMouseX - Math.round(leftOffset), uiMouseY);
 		graphics.pose().popPose();
 
-		int rightOffset = getRightPanelSwitchOffset(partialTick);
+		float rightOffset = getRightPanelSwitchOffset(partialTick);
+		panelSlide = rightOffset;
 		graphics.pose().pushPose();
-		graphics.pose().translate(rightOffset, 0, 0);
-		renderRightPanel(graphics, uiMouseX - rightOffset, uiMouseY);
+		graphics.pose().translate(rightOffset, 0.0f, 0.0f);
+		renderRightPanel(graphics, uiMouseX - Math.round(rightOffset), uiMouseY);
 		graphics.pose().popPose();
 
 		int rightBase = getUiWidth() - 158;
-		if (playButton != null) playButton.setX(rightBase + 18 + rightOffset);
-		if (shadowDecBtn != null) shadowDecBtn.setX(rightBase + 14 + rightOffset);
-		if (shadowIncBtn != null) shadowIncBtn.setX(rightBase + 113 + rightOffset);
+		slideX(playButton, rightBase + 18, rightOffset);
+		slideX(shadowDecBtn, rightBase + 14, rightOffset);
+		slideX(shadowIncBtn, rightBase + 113, rightOffset);
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
@@ -213,8 +210,8 @@ public class MinigamesScreen extends BaseMenuScreen {
 		int leftPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
+		blit(graphics, MENU_BIG, 12, centerY - 105, 0, 0, 141, 213);
+		blit(graphics, MENU_BIG, 29, centerY - 95, 142, 22, 107, 21);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.minigames.list").withStyle(ChatFormatting.BOLD),
 				leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
@@ -251,8 +248,8 @@ public class MinigamesScreen extends BaseMenuScreen {
 		int rightPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		blit(graphics, MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213);
+		blit(graphics, MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.minigame." + MINIGAMES[selectedIndex]).withStyle(ChatFormatting.BOLD),
 				rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
@@ -333,15 +330,16 @@ public class MinigamesScreen extends BaseMenuScreen {
 		descContentHeight = lines.size() * lineHeight;
 
 		graphics.enableScissor(
-				toScreenCoord(textX - 2),
+				toScreenCoord(textX - 2 + panelSlide),
 				toScreenCoord(top),
-				toScreenCoord(panelX + 130),
+				toScreenCoord(panelX + 130 + panelSlide),
 				toScreenCoord(top + descViewportHeight)
 		);
 
 		graphics.pose().pushPose();
+		graphics.pose().translate(0.0f, -descScrollY, 0.0f);
 		graphics.pose().scale(0.75f, 0.75f, 0.75f);
-		int drawY = top - (int) descScrollY;
+		int drawY = top;
 		for (FormattedCharSequence line : lines) {
 			TextUtil.drawStringWithBorder(graphics, this.font, line,
 					(int) (textX / 0.75f), (int) (drawY / 0.75f), 0xFFE0E0E0);

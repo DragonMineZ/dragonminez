@@ -1,10 +1,15 @@
 package com.dragonminez.common.config;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -16,26 +21,37 @@ public class GeneralUserConfig {
 
 	private Boolean firstPersonAnimated = true;
 	private boolean impactFramesEnabled = false;
-	private Boolean techniqueHotbarRightSide = false;
 	private Boolean alwaysVisibleHudValues = false;
 	private Boolean hideHudNumbers = false;
-	private Integer xenoverseHudPosX = 5;
-	private Integer xenoverseHudPosY = 5;
-	private Float xenoverseHudScale = 1.0f;
 	private Boolean advancedDescription = true;
 	private Boolean advancedDescriptionPercentage = true;
-	private Boolean alternativeHud = false;
+	public static final String HUD_STYLE_LEGACY_1 = "legacy 1";
+	public static final String HUD_STYLE_LEGACY_2 = "legacy 2";
+	public static final String HUD_STYLE_DEFAULT = "default";
+	public static final String HUD_STYLE_MINECRAFT = "minecraft";
+
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private String hudStyle = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Map<String, Map<String, HudPlacement>> hudLayout = null;
+
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean alternativeHud = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean techniqueHotbarRightSide = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer xenoverseHudPosX = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer xenoverseHudPosY = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Float xenoverseHudScale = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer healthBarPosX = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer healthBarPosY = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer energyBarPosX = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer energyBarPosY = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer staminaBarPosX = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer staminaBarPosY = null;
 	private Boolean hexagonStatsDisplay = false;
-	private Float menuScaleMultiplier = 1.0f;
+	public static final float DEFAULT_MENU_SCALE = 0.75f;
+	private Float menuScaleMultiplier = DEFAULT_MENU_SCALE;
 	private Float utilityMenuScaleMultiplier = 1.0f;
-	private Integer healthBarPosX = 10;
-	private Integer healthBarPosY = 20;
-	private Integer energyBarPosX = 10;
-	private Integer energyBarPosY = 10;
-	private Integer staminaBarPosX = 10;
-	private Integer staminaBarPosY = 10;
 	private Boolean cameraMovementDuringFlight = true;
-	private Boolean liveCrowdinTranslations = true;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean liveCrowdinTranslations = null;
+	private Boolean tutorialsEnabled = true;
+	private List<String> tutorialsSeen = new ArrayList<>();
 	private Boolean showAccumulativeDamage = true;
 	private Boolean taiyokenInvertPalette = false;
 	private Boolean transformationOutlines = true;
@@ -62,6 +78,40 @@ public class GeneralUserConfig {
 	private Float overShoulderUp = 0.35f;
 	private Float overShoulderSide = 1.45f;
 	private Float overShoulderSmoothing = 0.4f;
+
+	public boolean migrateLegacyHud(HudLayoutConfig target, boolean targetIsNew) {
+		boolean changed = false;
+		if (targetIsNew && (hudStyle != null || alternativeHud != null)) {
+			String legacyStyle = hudStyle != null ? HudLayoutConfig.normalizeStyle(hudStyle) : HUD_STYLE_DEFAULT;
+			if (Boolean.TRUE.equals(alternativeHud) && HUD_STYLE_DEFAULT.equals(legacyStyle)) legacyStyle = HUD_STYLE_MINECRAFT;
+			target.setStyle(legacyStyle);
+			changed = true;
+		}
+		if (hudLayout != null && !hudLayout.isEmpty() && target.getLayout().isEmpty()) {
+			target.getLayout().putAll(hudLayout);
+			changed = true;
+		}
+		if (hudStyle != null || hudLayout != null || alternativeHud != null) changed = true;
+		hudStyle = null;
+		hudLayout = null;
+		alternativeHud = null;
+		xenoverseHudPosX = xenoverseHudPosY = null;
+		xenoverseHudScale = null;
+		techniqueHotbarRightSide = null;
+		liveCrowdinTranslations = null;
+		healthBarPosX = healthBarPosY = energyBarPosX = energyBarPosY = staminaBarPosX = staminaBarPosY = null;
+		return changed;
+	}
+
+	public Boolean getTutorialsEnabled() {
+		if (tutorialsEnabled == null) tutorialsEnabled = true;
+		return tutorialsEnabled;
+	}
+
+	public List<String> getTutorialsSeen() {
+		if (tutorialsSeen == null) tutorialsSeen = new ArrayList<>();
+		return tutorialsSeen;
+	}
 
 	public Integer getOverShoulderMode() {
 		if (overShoulderMode == null || overShoulderMode < 0 || overShoulderMode > 2) overShoulderMode = 2;
@@ -124,7 +174,7 @@ public class GeneralUserConfig {
 	}
 
 	public Float getMenuScaleMultiplier() {
-		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
+		if (menuScaleMultiplier == null || !Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = DEFAULT_MENU_SCALE;
 		return menuScaleMultiplier;
 	}
 
@@ -141,32 +191,14 @@ public class GeneralUserConfig {
 		this.utilityMenuScaleMultiplier = utilityMenuScaleMultiplier;
 	}
 
-	public Float getXenoverseHudScale() {
-		if (xenoverseHudScale == null || !Float.isFinite(xenoverseHudScale) || xenoverseHudScale <= 0.0f) xenoverseHudScale = 1.0f;
-		return xenoverseHudScale;
-	}
-
-	public void setXenoverseHudScale(Float xenoverseHudScale) {
-		if (xenoverseHudScale == null || !Float.isFinite(xenoverseHudScale) || xenoverseHudScale <= 0.0f) {
-			this.xenoverseHudScale = 1.0f;
-			return;
-		}
-		this.xenoverseHudScale = xenoverseHudScale;
-	}
-
-	public Boolean getTechniqueHotbarRightSide() {
-		if (techniqueHotbarRightSide == null) techniqueHotbarRightSide = false;
-		return techniqueHotbarRightSide;
-	}
-
 	public Boolean getHideHudNumbers() {
 		if (hideHudNumbers == null) hideHudNumbers = false;
 		return hideHudNumbers;
 	}
 
 	public void setMenuScaleMultiplier(Float menuScaleMultiplier) {
-		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
-			this.menuScaleMultiplier = 1.0f;
+		if (menuScaleMultiplier == null || !Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
+			this.menuScaleMultiplier = DEFAULT_MENU_SCALE;
 			return;
 		}
 		this.menuScaleMultiplier = menuScaleMultiplier;
