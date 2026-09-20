@@ -109,6 +109,7 @@ public class SkillsConfig {
 		strikeSkills.add("super_god_fist");
 		strikeSkills.add("oozaru_slam");
 		strikeSkills.add("gum_punch");
+		strikeSkills.add("blue_hurricane");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -120,6 +121,7 @@ public class SkillsConfig {
 		skills.put("oozaru_fist",        new SkillCosts(List.of(15000)));
 		skills.put("oozaru_slam",        new SkillCosts(List.of(4000)));
 		skills.put("gum_punch",          new SkillCosts(List.of(4000)));
+		skills.put("blue_hurricane",     new SkillCosts(List.of(5000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);

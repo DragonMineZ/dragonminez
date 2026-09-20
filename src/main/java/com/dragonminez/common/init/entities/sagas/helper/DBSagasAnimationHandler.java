@@ -188,7 +188,10 @@ public class DBSagasAnimationHandler {
                 if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_5);
                 else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_5);
                 else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_5);
-
+            } else if (style == 5) {
+                if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_6);
+                else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_6);
+                else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_6);
             } else {
                 if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1);
                 else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2);

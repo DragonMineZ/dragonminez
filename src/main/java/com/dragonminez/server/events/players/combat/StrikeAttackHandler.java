@@ -14,6 +14,7 @@ import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
+import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
@@ -114,6 +115,7 @@ public class StrikeAttackHandler {
 	private static final int DEADLY_DANCE_HIT_BURST_TICKS = 7;
 	private static final float DEADLY_DANCE_FINAL_BURST_SCALE = 4.8F;
 	private static final int DEADLY_DANCE_FINAL_BURST_TICKS = 16;
+	private static final int BLUE_HURRICANE_CAST_TICKS = 15;
 	private static final java.util.Set<String> TARGETLESS_STRIKES = java.util.Set.of(
 			"dragon_fist", "deadly_dance", "deadly_dance_vegetto", "super_god_fist", "wolf_fang", "gum_punch");
 
@@ -169,6 +171,11 @@ public class StrikeAttackHandler {
 
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 
+			if (SPBlueHurricaneEntity.STRIKE_ID.equals(strike.getId())) {
+				startTargetlessStrike(player, stats, strike, pending, false);
+				return;
+			}
+
 			if (immediateTarget != null) {
 				boolean faceTarget = !"dragon_fist".equals(strike.getId());
 				PartEntity<?> hitPart = nearestPartInSight(player, coneRange);
@@ -181,7 +188,7 @@ public class StrikeAttackHandler {
 						MainSounds.TP_SHORT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
 				startStrike(player, immediateTarget, pending);
 			} else if (TARGETLESS_STRIKES.contains(strike.getId())) {
-				startTargetlessStrike(player, stats, strike, pending);
+				startTargetlessStrike(player, stats, strike, pending, true);
 			} else {
 				dashForward(player, isFlying);
 				PENDING.put(player.getUUID(), pending);
@@ -215,7 +222,7 @@ public class StrikeAttackHandler {
 	private static void discardStrikeProjectiles(ServerPlayer player) {
 		for (AbstractKiProjectile projectile : player.level().getEntitiesOfClass(AbstractKiProjectile.class,
 				player.getBoundingBox().inflate(48.0))) {
-			if (!(projectile instanceof SPDragonFistEntity) && !(projectile instanceof OzaruFistEntity)) continue;
+			if (!(projectile instanceof SPDragonFistEntity) && !(projectile instanceof OzaruFistEntity) && !(projectile instanceof SPBlueHurricaneEntity)) continue;
 			if (projectile.getOwner() != player) continue;
 			projectile.discard();
 		}
@@ -336,6 +343,21 @@ public class StrikeAttackHandler {
 			discardStrikeProjectiles(player);
 			return;
 		}
+
+        if (SPBlueHurricaneEntity.STRIKE_ID.equals(active.techniqueId())) {
+            if (active.ticksElapsed() == 0) {
+                int firingTicks = Math.max(20, active.durationTicks() - BLUE_HURRICANE_CAST_TICKS);
+                SPBlueHurricaneEntity hurricane = new SPBlueHurricaneEntity(player.level(), player);
+                hurricane.setupHurricane(player, (float) active.totalDamage(), 1.0f, BLUE_HURRICANE_CAST_TICKS, firingTicks);
+            }
+
+            if (active.ticksElapsed() >= active.durationTicks()) {
+                endStrike(player, null, active);
+            } else {
+                ACTIVE.put(player.getUUID(), active.withTicksElapsed(active.ticksElapsed() + 1));
+            }
+            return;
+        }
 
         if ("dragon_fist".equals(active.techniqueId())) {
 
@@ -1010,7 +1032,7 @@ public class StrikeAttackHandler {
 		});
 	}
 
-	private static void startTargetlessStrike(ServerPlayer player, com.dragonminez.common.stats.StatsData stats, StrikeAttackData strike, PendingStrike pending) {
+	private static void startTargetlessStrike(ServerPlayer player, com.dragonminez.common.stats.StatsData stats, StrikeAttackData strike, PendingStrike pending, boolean lockPlayer) {
 		double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
 				ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
 
@@ -1033,7 +1055,7 @@ public class StrikeAttackHandler {
 		ACTIVE.put(player.getUUID(), active);
 		STRIKE_ANCHOR_PART.remove(player.getUUID());
 		player.invulnerableTime = 20;
-		setStrikeLocked(player, true);
+		if (lockPlayer) setStrikeLocked(player, true);
 		playStrikeAnimation(player, pending.animationId());
 	}
 

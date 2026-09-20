@@ -49,6 +49,11 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_ATTACK3_5 = RawAnimation.begin().thenPlay("attack3_4");
     public static final RawAnimation ANIM_TRANSFORMATION5 = RawAnimation.begin().thenPlay("transformation_1");
 
+    // DUAL SWORDS = DBZSTYLE 5
+    public static final RawAnimation ANIM_ATTACK1_6 = RawAnimation.begin().thenPlay("attack1_6");
+    public static final RawAnimation ANIM_ATTACK2_6 = RawAnimation.begin().thenPlay("attack2_6");
+    public static final RawAnimation ANIM_ATTACK3_6 = RawAnimation.begin().thenPlay("attack3_6");
+
     // DEFAULT
     public static final RawAnimation ANIM_FLY = RawAnimation.begin().thenLoop("fly");
     public static final RawAnimation ANIM_FLY_FAST = RawAnimation.begin().thenLoop("fly_fast");

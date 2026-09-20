@@ -24,7 +24,7 @@ public class SagaGTVillainsEntity {
             this.setCanFly(true);
             this.setAuraColor(0x8A5CFF);
             this.setKiBlastSpeed(1.4F);
-            this.setDBZStyle(1);
+            this.setDBZStyle(5);
             this.setScaleVal(1.1F);
             this.setEvade(true, 120);
             this.setAllowedCombos(160, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
@@ -641,7 +641,6 @@ public class SagaGTVillainsEntity {
         }
     }
 
-    /** One-Star Dragon (Yi Xing Long / Syn Shenron) before he swallows the other Dragon Balls. */
     public static class SynShenronEntity extends DBSagasEntity {
 
         public SynShenronEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
@@ -665,7 +664,6 @@ public class SagaGTVillainsEntity {
         }
     }
 
-    /** Syn Shenron after absorbing the Dragon Balls: every Shadow Dragon's power at once. */
     public static class OmegaShenronEntity extends DBSagasEntity {
 
         public OmegaShenronEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
@@ -684,7 +682,6 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.DEATH_BALL, 420, 3.0F, 0x1A0033, 0x7B1FA2);
             this.addKiSkill(KiSkillType.KI_LASER, 150, 2.0F, 0xFFEBEE, 0xD50000);
             this.addKiSkill(KiSkillType.KI_BARRIER, 280, 2.3F, 0xE1F5FE, 0x4FC3F7);
-            this.addKiSkill(KiSkillType.BLUE_HURRICANE, 420, 1.5F);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 260, 2.0F, 0xFFE0B2, 0xFF6D00);
 
             this.setWildSense(true, 40);

@@ -1320,6 +1320,7 @@
   "technique.dragonminez.oozaru_fist": "Oozaru Fist",
   "technique.dragonminez.super_god_fist": "Super God Fist",
   "technique.dragonminez.gum_punch": "Gum Punch",
+  "technique.dragonminez.blue_hurricane": "Blue Hurricane",
   "technique.dragonminez.oozaru_slam": "Oozaru Slam",
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
@@ -3815,5 +3816,6 @@
   "death.attack.strike_attack.oozaru_fist": "%1$s was smashed by %2$s's Oozaru Fist",
   "death.attack.strike_attack.super_god_fist": "%1$s was obliterated by %2$s's Super God Fist",
   "death.attack.strike_attack.gum_punch": "%1$s was sent flying by %2$s's Gum Punch",
+  "death.attack.strike_attack.blue_hurricane": "%1$s was swept away by %2$s's Blue Hurricane",
   "death.attack.strike_attack.oozaru_slam": "%1$s was crushed by %2$s's Oozaru Slam"
 }

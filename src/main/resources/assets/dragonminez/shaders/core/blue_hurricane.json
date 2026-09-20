@@ -1,0 +1,36 @@
+{
+  "vertex": "dragonminez:blue_hurricane",
+  "fragment": "dragonminez:blue_hurricane",
+  "attributes": [
+    "Position",
+    "UV"
+  ],
+  "samplers": [],
+  "uniforms": [
+    { "name": "modelMatrix", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "time", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "seed", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "mode", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "height", "type": "float", "count": 1, "values": [ 12.0 ] },
+    { "name": "radiusBase", "type": "float", "count": 1, "values": [ 1.5 ] },
+    { "name": "radiusTop", "type": "float", "count": 1, "values": [ 4.0 ] },
+    { "name": "skirt", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "swayAmp", "type": "float", "count": 1, "values": [ 0.6 ] },
+    { "name": "spin", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "twist", "type": "float", "count": 1, "values": [ 1.2 ] },
+    { "name": "arms", "type": "float", "count": 1, "values": [ 3.0 ] },
+    { "name": "bodyAlpha", "type": "float", "count": 1, "values": [ 0.35 ] },
+    { "name": "intensity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "bloomMode", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "colorCore", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "colorBorder", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+    { "name": "colorOutline", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] }
+  ],
+  "blend": {
+    "func": "add",
+    "srcrgb": "one",
+    "dstrgb": "1-srcalpha"
+  },
+  "cull": false
+}

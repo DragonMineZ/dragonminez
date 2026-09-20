@@ -2,7 +2,6 @@ package com.dragonminez.client.init.entities.model.ki;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
-import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
