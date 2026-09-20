@@ -117,6 +117,18 @@ final class QuestDefaults {
 		return killObjective;
 	}
 
+	/**
+	 * Authors the form a quest enemy transforms into instead of leaving it to the entity transform
+	 * defaults (1.5x health and damage). Every stage after the first reads these same values, so a
+	 * multi-stage fight keeps the saga's intended power curve even if a server retunes those defaults.
+	 */
+	private static JsonObject transformStats(JsonObject killObjective, double hp, double melee, double ki) {
+		killObjective.addProperty("TransformHealth", hp);
+		killObjective.addProperty("TransformMeleeDamage", melee);
+		killObjective.addProperty("TransformKiDamage", ki);
+		return killObjective;
+	}
+
 	private static JsonObject objItem(String itemId, int count) {
 		JsonObject o = new JsonObject();
 		o.addProperty("type", "ITEM");
@@ -606,7 +618,7 @@ final class QuestDefaults {
 						rewTPS(5200)),
 				step("classic", 50, "50_tournament_piccolo.json",
 						earthReq(30, atTournament()),
-						new JsonObject[]{ objKill("dragonminez:saga_majunia", 1, 1650, 90, 130) },
+						new JsonObject[]{ noTransform(objKill("dragonminez:saga_majunia", 1, 1650, 90, 130)) },
 						rewTPS(6000)),
 				step("classic", 51, "51_giant_piccolo.json",
 						earthReq(30, atTournament()),
@@ -767,7 +779,7 @@ final class QuestDefaults {
 				step("frieza", 5, "05_defeat_zarbon.json",
 						namekReq(178, condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_zarbon", 1, 8500, 250, 280)
+								transformStats(objKill("dragonminez:saga_zarbon", 1, 6800, 250, 280), 10200, 290, 320)
 						},
 						rewTPS(24000)),
 				step("frieza", 6, "06_the_saiyan_prince.json",
@@ -816,7 +828,7 @@ final class QuestDefaults {
 				step("frieza", 13, "13_defeat_frieza_third.json",
 						namekReq(310, condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_frieza_second", 1, 30000, 950, 850)
+								transformStats(objKill("dragonminez:saga_frieza_second", 1, 24000, 950, 850), 36000, 1090, 980)
 						},
 						rewTPS(45000)),
 				step("frieza", 14, "14_defeat_frieza_base.json",
@@ -920,7 +932,7 @@ final class QuestDefaults {
 								objKill("dragonminez:shadow_dummy", 20, 7700, 420, 391)
 						},
 						rewTPS(86240)),
-				step("android", 13, "13_defeat_cell_perfect.json", // MERGE POINT: Todo vuelve a los stats originales desde aquí.
+				step("android", 13, "13_defeat_cell_perfect.json",
 						earthReq(1210, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
 								objKill("dragonminez:saga_cell_perfect", 1, 217000, 8700, 7990)
@@ -958,8 +970,8 @@ final class QuestDefaults {
 				step("future", 2, "02_train_with_trunks_and_gohan.json",
 						earthReq(1430, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_ftrunks_base", 1, 182000, 7500, 6800),
-								objKill("dragonminez:saga_fgohan_base", 1, 196000, 8100, 7310)
+								transformStats(objKill("dragonminez:saga_ftrunks_base", 1, 91000, 7500, 6800), 136500, 8620, 7820),
+								noTransform(objKill("dragonminez:saga_fgohan_base", 1, 196000, 8100, 7310))
 						},
 						rewTPS(70400)),
 				step("future", 3, "03_androids_ruined_plains.json",
@@ -1008,8 +1020,8 @@ final class QuestDefaults {
 				step("buu", 1, "01_train_with_goten_and_gohan.json",
 						earthReq(1450, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_goten", 1, 175000, 7200, 6630),
-								objKill("dragonminez:saga_gohan_end_base", 1, 217000, 9000, 8160)
+								transformStats(objKill("dragonminez:saga_goten", 1, 87500, 7200, 6630), 131000, 8280, 7620),
+								transformStats(objKill("dragonminez:saga_gohan_end_base", 1, 79000, 9000, 8160), 118500, 10350, 9380)
 						},
 						rewTPS(129600)),
 				step("buu", 2, "02_assemble_gravity_device_parts.json",
@@ -1023,8 +1035,8 @@ final class QuestDefaults {
 				step("buu", 3, "03_train_with_trunks_and_vegeta.json",
 						earthReq(1530, condRealTimeMinutes(10)),
 						new JsonObject[]{
-								objKill("dragonminez:saga_kid_trunks", 1, 189000, 7800, 7140),
-								objKill("dragonminez:saga_vegeta_end_base", 1, 245000, 10200, 9350)
+								transformStats(objKill("dragonminez:saga_kid_trunks", 1, 94500, 7800, 7140), 142000, 8970, 8210),
+								transformStats(objKill("dragonminez:saga_vegeta_end_base", 1, 89000, 10200, 9350), 133500, 11730, 10750)
 						},
 						rewTPS(151200)),
 				step("buu", 4, "04_enter_the_world_tournament.json",
@@ -1036,13 +1048,13 @@ final class QuestDefaults {
 				step("buu", 5, "05_tournament_goten.json",
 						earthReq(1590, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_goten", 1, 196000, 8100, 7310)
+								transformStats(objKill("dragonminez:saga_goten", 1, 98000, 8100, 7310), 147000, 9320, 8410)
 						},
 						rewTPS(86400)),
 				step("buu", 6, "06_tournament_trunks.json",
 						earthReq(1610, condBiome("#dragonminez:is_plains")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_kid_trunks", 1, 210000, 8700, 7820)
+								transformStats(objKill("dragonminez:saga_kid_trunks", 1, 105000, 8700, 7820), 157500, 10000, 8990)
 						},
 						rewTPS(93600)),
 				step("buu", 7, "07_tournament_krillin.json",
@@ -1096,7 +1108,7 @@ final class QuestDefaults {
 				step("buu", 15, "15_goku_and_vegeta_clash.json",
 						earthReq(1850, condBiome("dragonminez:rocky")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_goku_end_ssj2", 1, 322000, 13500, 12240),
+								noTransform(objKill("dragonminez:saga_goku_end_ssj2", 1, 322000, 13500, 12240)),
 								objKill("dragonminez:saga_vegeta_majin", 1, 336000, 14100, 12750)
 						},
 						rewTPS(158400)),
@@ -1121,7 +1133,7 @@ final class QuestDefaults {
 				step("buu", 19, "19_beach_training_with_gotenks.json",
 						earthReq(1970, condBiome("#minecraft:is_beach")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_gotenks", 1, 315000, 13200, 11900)
+								noTransform(objKill("dragonminez:saga_gotenks", 1, 315000, 13200, 11900))
 						},
 						rewTPS(151200)),
 				step("buu", 20, "20_evil_buu_at_buus_house.json",
@@ -1177,7 +1189,7 @@ final class QuestDefaults {
 				step("buu", 28, "28_face_vegetto.json",
 						earthReq(2210, condBiome("dragonminez:rocky")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_goku_end_ssj2", 1, 420000, 17700, 15980),
+								transformStats(objKill("dragonminez:saga_goku_end_ssj2", 1, 210000, 17700, 15980), 315000, 20360, 18380),
 								objKill("dragonminez:saga_vegeta_end_ssj2", 1, 420000, 17700, 15980)
 						},
 						rewTPS(244800)),
@@ -1281,7 +1293,7 @@ final class QuestDefaults {
 				step("movies", 8, "08_turles_goku.json",
 						earthReq(100, condBiome("dragonminez:rocky"), condSaga("saiyan_saga", 12)),
 						new JsonObject[]{
-								objKill("dragonminez:saga_goku_mid_base", 1, 4500, 250, 350)
+								transformStats(objKill("dragonminez:saga_goku_mid_base", 1, 3600, 250, 350), 5400, 290, 400)
 						},
 						rewTPS(14400)),
 				step("movies", 9, "09_turles_oozaru_gohan.json",
@@ -1352,7 +1364,7 @@ final class QuestDefaults {
 								objKill("dragonminez:saga_metal_cooler_core", 1, 78000, 3700, 3100)
 						},
 						rewTPS(74000)),
-				step("movies", 20, "20_androids_in_the_ice.json", // MERGE POINT: Todo vuelve a los stats originales desde aquí.
+				step("movies", 20, "20_androids_in_the_ice.json",
 						earthReq(730, condBiome("minecraft:snowy_plains"), condSaga("android_saga", 6)),
 						new JsonObject[]{
 								objKill("dragonminez:saga_a14", 1, 154000, 6000, 5440),
@@ -1374,7 +1386,7 @@ final class QuestDefaults {
 				step("movies", 23, "23_broly_base.json",
 						earthReq(1490, condBiome("dragonminez:rocky"), condSaga("android_saga", 15)),
 						new JsonObject[]{
-								objKill("dragonminez:saga_broly_base", 1, 434000, 17400, 15980)
+								transformStats(objKill("dragonminez:saga_broly_base", 1, 347000, 17400, 15980), 520500, 20010, 18380)
 						},
 						rewTPS(132500)),
 				step("movies", 24, "24_paragus.json",
@@ -1424,8 +1436,8 @@ final class QuestDefaults {
 				step("movies", 31, "31_goten_and_trunks.json",
 						earthReq(2060, condBiome("minecraft:snowy_plains"), condSaga("buu_saga", 22)),
 						new JsonObject[]{
-								objKill("dragonminez:saga_goten", 1, 350000, 14400, 13260),
-								objKill("dragonminez:saga_kid_trunks", 1, 378000, 15600, 14280)
+								transformStats(objKill("dragonminez:saga_goten", 1, 175000, 14400, 13260), 262500, 16560, 15250),
+								transformStats(objKill("dragonminez:saga_kid_trunks", 1, 189000, 15600, 14280), 283500, 17940, 16420)
 						},
 						rewTPS(312500)),
 				step("movies", 32, "32_legendary_broly_second_coming.json",
@@ -1493,6 +1505,10 @@ final class QuestDefaults {
 		return dimensionReq("dragonminez:otherworld", minLevel, extraConditions);
 	}
 
+	/** Vegeta's blue GT suit (Black Star and Baby arcs) and the maroon-sleeved one he wears afterwards. */
+	private static final int VEGETA_GT_EARLY = 0;
+	private static final int VEGETA_GT_LATE = 1;
+
 	private static void createGTSagaQuests(Path questsDir) {
 		JsonObject prevBuu = prevQuest("buu_saga", 35);
 
@@ -1558,12 +1574,13 @@ final class QuestDefaults {
 						rewTPS(407200)),
 				step("gt", 13, "13_vegeta_gt.json",
 						earthReq(2740, condBiome("dragonminez:rocky")),
-						new JsonObject[]{ objKill("dragonminez:saga_vegeta_gt", 1, 893500, 37540, 33970) },
+						// Base -> SSJ -> SSJ2. Split so the three stages still add up to the step's original budget.
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_vegeta_gt", 1, 325000, 37540, 33970, VEGETA_GT_EARLY), 487500, 43170, 39070) },
 						rewTPS(375200)),
 				step("gt", 14, "14_super_baby_and_his_army.json",
 						earthReq(2780, condBiome("dragonminez:rocky")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_baby_vegeta", 1, 974000, 40920, 37030),
+								transformStats(objKill("dragonminez:saga_baby_vegeta", 1, 487000, 40920, 37030), 730500, 47060, 42580),
 								objKill("dragonminez:saga_gohan_gt_baby", 1, 433000, 18180, 16460),
 								objKill("dragonminez:saga_goten_gt_baby", 1, 433000, 18180, 16460),
 								objKill("dragonminez:saga_trunks_gt_baby", 1, 433000, 18180, 16460)
@@ -1590,11 +1607,11 @@ final class QuestDefaults {
 						rewTPS(140300)),
 				step("gt", 19, "19_goku_regains_his_tail.json",
 						sacredKaiReq(2920),
-						new JsonObject[]{ objKill("dragonminez:saga_goku_gt", 1, 835500, 35110, 31770) },
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_goku_gt", 1, 304000, 35110, 31770), 456000, 40380, 36540) },
 						rewTPS(350900)),
 				step("gt", 20, "20_golden_great_ape_baby.json",
 						earthReq(2960, condBiome("dragonminez:rocky")),
-						new JsonObject[]{ objKill("dragonminez:saga_super_baby_vegeta2", 1, 1104000, 46380, 41980) },
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_super_baby_vegeta2", 1, 552000, 46380, 41980), 828000, 53340, 48280) },
 						rewTPS(463700)),
 				step("gt", 21, "21_baby.json",
 						earthReq(3000, condBiome("dragonminez:rocky")),
@@ -1604,7 +1621,7 @@ final class QuestDefaults {
 				// --- Super 17 ---
 				step("gt", 22, "22_trunks_falls.json",
 						earthReq(3030, condBiome("#dragonminez:is_plains")),
-						new JsonObject[]{ objKill("dragonminez:saga_trunks_gt", 1, 964000, 40500, 36650) },
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_trunks_gt", 1, 482000, 40500, 36650), 723000, 46580, 42150) },
 						rewTPS(404900)),
 				step("gt", 23, "23_frieza_and_cell_in_hell.json",
 						otherworldReq(3060),
@@ -1635,7 +1652,7 @@ final class QuestDefaults {
 								noTransform(objKill("dragonminez:saga_trunks_gt", 1, 391500, 16450, 14880)),
 								objKill("dragonminez:saga_majuub", 1, 391500, 16450, 14880),
 								objKill("dragonminez:saga_pan", 1, 391500, 16450, 14880),
-								noTransform(objKill("dragonminez:saga_vegeta_gt", 1, 391500, 16450, 14880))
+								noTransform(objKill("dragonminez:saga_vegeta_gt", 1, 391500, 16450, 14880, VEGETA_GT_LATE))
 						},
 						rewTPS(620000)),
 				step("gt", 27, "27_super_17.json",
@@ -1669,19 +1686,19 @@ final class QuestDefaults {
 						rewTPS(659900)),
 				step("gt", 33, "33_wu_xing_long.json",
 						earthReq(3380, condBiome("#minecraft:is_mountain")),
-						new JsonObject[]{ objKill("dragonminez:saga_wu_xing_long", 1, 1679500, 70560, 63860) },
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_wu_xing_long", 1, 839750, 70560, 63860), 1259500, 81140, 73440) },
 						rewTPS(705300)),
 				step("gt", 34, "34_liu_xing_long.json",
 						earthReq(3410, condBiome("#minecraft:is_beach")),
-						new JsonObject[]{ objKill("dragonminez:saga_liu_xing_long", 1, 1709500, 71820, 64990) },
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_liu_xing_long", 1, 854750, 71820, 64990), 1282000, 82590, 74740) },
 						rewTPS(717900)),
 				step("gt", 35, "35_qi_xing_long.json",
 						earthReq(3440, condBiome("#minecraft:is_forest")),
-						new JsonObject[]{ objKill("dragonminez:saga_qi_xing_long", 1, 1822500, 76570, 69290) },
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_qi_xing_long", 1, 911250, 76570, 69290), 1367000, 88060, 79680) },
 						rewTPS(765400)),
 				step("gt", 36, "36_neo_shenron.json",
 						earthReq(3480, condBiome("minecraft:desert")),
-						new JsonObject[]{ objKill("dragonminez:saga_neo_shenron", 1, 1950000, 81920, 74140) },
+						new JsonObject[]{ transformStats(objKill("dragonminez:saga_neo_shenron", 1, 975000, 81920, 74140), 1462500, 94210, 85260) },
 						rewTPS(818900)),
 				step("gt", 37, "37_eis_shenron.json",
 						earthReq(3520, condBiome("#forge:is_snowy")),
@@ -1732,7 +1749,7 @@ final class QuestDefaults {
 								noTransform(objKill("dragonminez:saga_goten_gt", 1, 578000, 24290, 21980)),
 								objKill("dragonminez:saga_pan", 1, 578000, 24290, 21980),
 								objKill("dragonminez:saga_majuub", 1, 578000, 24290, 21980),
-								noTransform(objKill("dragonminez:saga_vegeta_gt", 1, 578000, 24290, 21980))
+								noTransform(objKill("dragonminez:saga_vegeta_gt", 1, 578000, 24290, 21980, VEGETA_GT_LATE))
 						},
 						rewTPS(930000)),
 				step("gt", 46, "46_omega_shenron_final.json",
