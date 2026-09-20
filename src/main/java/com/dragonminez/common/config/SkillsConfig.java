@@ -67,6 +67,7 @@ public class SkillsConfig {
 		evasionSkills.add("taiyoken");
 		evasionSkills.add("rage_scream");
 		evasionSkills.add("afterimage");
+		evasionSkills.add("sleep_recovery");
 
 		skills.put("ki_barrage", new SkillCosts(List.of(1000)));
 		skills.put("masenko", new SkillCosts(List.of(1500)));
@@ -74,6 +75,7 @@ public class SkillsConfig {
 		skills.put("galick_gun", new SkillCosts(List.of(2000)));
 		skills.put("taiyoken", new SkillCosts(List.of(2000)));
 		skills.put("afterimage", new SkillCosts(List.of(2500)));
+		skills.put("sleep_recovery", new SkillCosts(List.of(3000)));
 		skills.put("death_beam", new SkillCosts(List.of(2500)));
 		skills.put("fake_moon", new SkillCosts(List.of(3000)));
 		skills.put("kienzan", new SkillCosts(List.of(3000)));

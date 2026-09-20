@@ -19,8 +19,11 @@ import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -35,6 +38,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -64,6 +68,9 @@ public class EvasionAttackHandler {
 	private static final double RAGE_SCREAM_VERTICAL_LIFT = 0.12;
 	private static final int SHARED_EVASION_COOLDOWN_TICKS = 60;
 
+	private static final int SLEEP_RECOVERY_PULSE_INTERVAL_TICKS = 10;
+	private static final float SLEEP_RECOVERY_TOTAL_HEAL = 0.20F;
+
 	private static final double AFTERIMAGE_RANGE = 24.0;
 	private static final double AFTERIMAGE_GAP = 0.9;
 	private static final double AFTERIMAGE_ILLUSION_GAP = 3.0;
@@ -81,11 +88,13 @@ public class EvasionAttackHandler {
 
 	private static final class ActiveEvasion {
 		final String techniqueId;
+		final int totalTicks;
 		int ticksRemaining;
 		int ticksSincePulse;
 
 		ActiveEvasion(String techniqueId, int totalTicks) {
 			this.techniqueId = techniqueId;
+			this.totalTicks = totalTicks;
 			this.ticksRemaining = totalTicks;
 			this.ticksSincePulse = 0;
 		}
@@ -149,6 +158,7 @@ public class EvasionAttackHandler {
 				case "afterimage" -> castAfterimage(player, afterimage, durationTicks);
 				case "taiyoken" -> castTaiyoken(player);
 				case "rage_scream" -> castRageScream(player, durationTicks);
+				case "sleep_recovery" -> castSleepRecovery(player);
 				default -> { }
 			}
 		});
@@ -278,6 +288,20 @@ public class EvasionAttackHandler {
 		LivingEntity newTarget = event.getNewTarget();
 		if (newTarget == null || event.getEntity().level().isClientSide()) return;
 		if (hasLostTrackOf(event.getEntity(), newTarget)) event.setCanceled(true);
+	}
+
+	private static void castSleepRecovery(ServerPlayer caster) {
+		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				SoundEvents.FOX_SLEEP, SoundSource.PLAYERS, 1.0F, 0.8F);
+	}
+
+	private static void sleepRecoveryPulse(ServerPlayer caster, int totalTicks) {
+		int pulses = Math.max(1, totalTicks / SLEEP_RECOVERY_PULSE_INTERVAL_TICKS);
+		caster.heal(caster.getMaxHealth() * SLEEP_RECOVERY_TOTAL_HEAL / pulses);
+		if (caster.level() instanceof ServerLevel serverLevel) {
+			serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, caster.getX(), caster.getY() + caster.getBbHeight(), caster.getZ(),
+					5, 0.5, 0.5, 0.5, 0.1);
+		}
 	}
 
 	private static void castTaiyoken(ServerPlayer caster) {
@@ -411,6 +435,14 @@ public class EvasionAttackHandler {
 				continue;
 			}
 
+			if ("sleep_recovery".equals(active.techniqueId)) {
+				active.ticksSincePulse++;
+				if (active.ticksSincePulse >= SLEEP_RECOVERY_PULSE_INTERVAL_TICKS) {
+					active.ticksSincePulse = 0;
+					sleepRecoveryPulse(caster, active.totalTicks);
+				}
+			}
+
 			if ("rage_scream".equals(active.techniqueId)) {
 				active.ticksSincePulse++;
 				if (active.ticksSincePulse >= RAGE_SCREAM_PULSE_INTERVAL_TICKS) {
@@ -441,11 +473,28 @@ public class EvasionAttackHandler {
 	public static void onLivingAttack(LivingAttackEvent event) {
 		if (event.getEntity().level().isClientSide()) return;
 		if (event.getSource().getEntity() == null) return;
-		if (ACTIVE.containsKey(event.getEntity().getUUID())) {
+		ActiveEvasion activeEvasion = ACTIVE.get(event.getEntity().getUUID());
+		if (activeEvasion != null && !"sleep_recovery".equals(activeEvasion.techniqueId)) {
 			event.setCanceled(true);
 		} else if (hasLostTrackOf(event.getEntity(), event.getSource().getEntity())) {
 			event.getEntity().getPersistentData().remove(AFTERIMAGE_LOST_UNTIL_TAG);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onLivingHurt(LivingHurtEvent event) {
+		if (event.getEntity().level().isClientSide() || event.getAmount() <= 0.0F) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		ActiveEvasion active = ACTIVE.get(player.getUUID());
+		if (active == null || !"sleep_recovery".equals(active.techniqueId)) return;
+
+		ACTIVE.remove(player.getUUID());
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			stats.getStatus().setEvasionLockTicks(0);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		});
+		NetworkHandler.sendToTrackingEntityAndSelf(
+				new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0), player);
 	}
 
 	@SubscribeEvent
