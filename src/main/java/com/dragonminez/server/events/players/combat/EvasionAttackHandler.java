@@ -55,6 +55,7 @@ public class EvasionAttackHandler {
 	private static final double TAIYOKEN_RANGE = 20.0;
 	private static final double TAIYOKEN_FULL_LOOK_DOT = 0.93;
 	private static final double TAIYOKEN_PARTIAL_LOOK_DOT = 0.5;
+	private static final double TAIYOKEN_NPC_DURATION_FACTOR = 0.5;
 
 	private static final int RAGE_SCREAM_PULSE_INTERVAL_TICKS = 5;
 	private static final double RAGE_SCREAM_BASE_RANGE = 5.0;
@@ -285,12 +286,21 @@ public class EvasionAttackHandler {
 		applyTaiyokenBlind(caster);
 	}
 
-	private static void applyTaiyokenBlind(ServerPlayer caster) {
+	public static void applyTaiyokenBlind(LivingEntity caster) {
+		boolean npcCaster = !(caster instanceof Player);
 		Vec3 casterEye = caster.getEyePosition();
 		AABB box = caster.getBoundingBox().inflate(TAIYOKEN_RANGE);
 
 		for (LivingEntity victim : caster.level().getEntitiesOfClass(LivingEntity.class, box,
 				e -> e != caster && e.isAlive() && e.isPickable())) {
+
+			if (npcCaster) {
+				if (victim instanceof Player victimPlayer) {
+					if (victimPlayer.isCreative() || victimPlayer.isSpectator()) continue;
+				} else if (!(victim instanceof Mob mob && mob.getTarget() == caster)) {
+					continue;
+				}
+			}
 
 			double distance = caster.distanceTo(victim);
 			if (distance > TAIYOKEN_RANGE) continue;
@@ -306,7 +316,8 @@ public class EvasionAttackHandler {
 			double distanceFrac = Mth.clamp(distance / TAIYOKEN_RANGE, 0.0, 1.0);
 			double seconds = fullLook ? 12.0 - 3.0 * distanceFrac : 9.0 - 3.0 * distanceFrac;
 
-			if (TargetHelper.getRelation(caster, victim) == TargetHelper.Relation.FRIENDLY) seconds *= 0.5;
+			if (caster instanceof Player playerCaster && TargetHelper.getRelation(playerCaster, victim) == TargetHelper.Relation.FRIENDLY) seconds *= 0.5;
+			if (npcCaster) seconds *= TAIYOKEN_NPC_DURATION_FACTOR;
 
 			int durationTicks = Math.max(1, (int) Math.round(seconds * 20.0));
 

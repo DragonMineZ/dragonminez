@@ -112,7 +112,7 @@ public class DBSagasAnimationHandler {
                 case 4: return event.setAndContinue(DBSagasAnimations.ANIM_KI_LASER);
                 case 5: return event.setAndContinue(DBSagasAnimations.ANIM_KI_EXPLOSION);
                 case 6: return event.setAndContinue(DBSagasAnimations.ANIM_KI_BARRIER);
-                case 7: return event.setAndContinue(DBSagasAnimations.ANIM_KI_EXPLOSION);
+                case 7: return event.setAndContinue(DBSagasAnimations.ANIM_RAGE_SCREAM);
                 case 8: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
                 case 9: return event.setAndContinue(DBSagasAnimations.ANIM_KIOZARU);
                 case 10: return event.setAndContinue(DBSagasAnimations.ANIM_KI_BARRAGE);
@@ -129,6 +129,7 @@ public class DBSagasAnimationHandler {
                 case 22: return event.setAndContinue(DBSagasAnimations.ANIM_WOLF_FANG);
                 case 23: return event.setAndContinue(DBSagasAnimations.ANIM_DRAGON_FIST);
                 case 24: return event.setAndContinue(DBSagasAnimations.ANIM_KI_KAME);
+                case 25: return event.setAndContinue(DBSagasAnimations.ANIM_TAIYOKEN);
                 default: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
             }
         }

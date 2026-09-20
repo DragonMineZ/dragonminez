@@ -96,7 +96,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         PROJECTILE_FAST,
         ZONING,
         DEFENSIVE,
-        AOE_BURST
+        AOE_BURST,
+        BLIND
     }
 
     /**
@@ -146,7 +147,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         DOUBLE_SUNDAY(21, SkillRole.RANGED_TRAVEL, Tier.STRONG),
         WOLF_FANG(22, SkillRole.GUARD_BREAK, Tier.MEDIUM),
         DRAGON_FIST(23, SkillRole.GUARD_BREAK, Tier.STRONG, 0xFFD700, 0xFF8C00, -1),
-        KAMEHAMEHA_X10(24, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFE3E3, 0xFF2A2A, 0xB00020);
+        KAMEHAMEHA_X10(24, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFE3E3, 0xFF2A2A, 0xB00020),
+        TAIYOKEN(25, SkillRole.BLIND, Tier.WEAK);
 
         private final int id;
         private final SkillRole role;
@@ -338,7 +340,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             KiSkillType type = KiSkillType.fromId(id);
             float tierFactor = type != null ? type.getTier().getCooldownFactor() : 1.0F;
             this.cooldownMax = Math.max(1, Math.round(cooldown * SKILL_COOLDOWN_MULTIPLIER * tierFactor));
-            this.currentCooldown = id == 23 ? this.cooldownMax / 2 : 0;
+            this.currentCooldown = (id == 23 || id == 25) ? this.cooldownMax / 2 : 0;
             this.size = size;
             this.colorMain = colorMain;
             this.colorBorder = colorBorder;
@@ -898,28 +900,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                         this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
                     }
 
-                    if (skill == 7 && this.level() instanceof ServerLevel serverLevel) {
-                        if (this.castTimer > 5 && this.castTimer < 30) {
-                            for (int i = 0; i < 25; i++) {
-                                double distance = 3.0D + this.random.nextDouble() * 2.0D;
-                                double angle = this.random.nextDouble() * Math.PI * 2.0D;
-                                double heightOffset = (this.random.nextDouble() - 0.5D) * this.getBbHeight();
-
-                                double spawnX = this.getX() + Math.cos(angle) * distance;
-                                double spawnY = this.getY() + (this.getBbHeight() / 2.0) + heightOffset;
-                                double spawnZ = this.getZ() + Math.sin(angle) * distance;
-
-                                double velX = (this.getX() - spawnX) * 0.15D;
-                                double velY = ((this.getY() + this.getBbHeight() * 0.8) - spawnY) * 0.15D;
-                                double velZ = (this.getZ() - spawnZ) * 0.15D;
-
-                                serverLevel.sendParticles(ParticleTypes.CLOUD, spawnX, spawnY, spawnZ, 0, velX, velY, velZ, 1.0D);
-                            }
-                        }
+                    if (skill == 7) {
+                        SkillManager.tickRoar(this, this.castTimer);
                     }
 
                     if (this.castTimer == 1) {
-                        if (skill != 7 && skill != 13 && skill != 22 && skill != 23) {
+                        if (skill != 7 && skill != 13 && skill != 22 && skill != 23 && skill != 25) {
                             executeSkillEffect(skill);
                         }
                     }
@@ -934,8 +920,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                         SkillManager.tickWolfFang(this, this.getTarget(), this.castTimer);
                     }
 
-                    if (skill == 7 && this.castTimer == 30) {
-                        executeSkillEffect(skill);
+                    if (skill == 25 && this.castTimer == SkillManager.TAIYOKEN_FLASH_TICK) {
+                        SkillManager.castTaiyoken(this);
                     }
 
                     if (skill == 13) {

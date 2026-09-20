@@ -24,6 +24,7 @@ public class SagaCellEntity {
 
             this.setAllowedCombos(150, ComboType.AIR, ComboType.ANDROID_ABSORPTION);
 
+            this.addKiSkill(KiSkillType.TAIYOKEN, 200);
             this.addKiSkill(KiSkillType.KAMEHAMEHA, 250, 1.0F);
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFFF554, 0xFFF554);
 

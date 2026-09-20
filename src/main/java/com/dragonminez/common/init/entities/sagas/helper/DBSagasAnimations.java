@@ -80,6 +80,8 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_KIOZARU = RawAnimation.begin().thenPlay("ki_oozaru");
     public static final RawAnimation ANIM_WOLF_FANG = RawAnimation.begin().thenPlay("skp.wolf_fang");
     public static final RawAnimation ANIM_DRAGON_FIST = RawAnimation.begin().thenPlay("skp.dragon_fist");
+    public static final RawAnimation ANIM_RAGE_SCREAM = RawAnimation.begin().thenLoop("evs.rage_scream");
+    public static final RawAnimation ANIM_TAIYOKEN = RawAnimation.begin().thenPlay("evs.taiyoken");
 
     public static final RawAnimation ANIM_COMBO1 = RawAnimation.begin().thenPlay("combo1");
     public static final RawAnimation ANIM_COMBO2 = RawAnimation.begin().thenPlay("combo2");
