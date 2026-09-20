@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.tournament;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -201,7 +202,7 @@ public class TournamentBracketScreen extends Screen {
 
 		int x = centreX - CARD_WIDTH / 2;
 		int y = CARD_TOP;
-		graphics.blit(CARD_BG, x, y, 0, 0, CARD_WIDTH, CARD_HEIGHT, CARD_SHEET, CARD_SHEET);
+		HudRender.blit(graphics, CARD_BG, x, y, 0, 0, CARD_WIDTH, CARD_HEIGHT, CARD_SHEET, CARD_SHEET);
 
 
 		int lineY = y + CARD_TEXT_TOP;
@@ -536,7 +537,7 @@ public class TournamentBracketScreen extends Screen {
 
 		if (framesTextureExists) {
 			if (state == SlotState.DEFEATED) graphics.setColor(0.45F, 0.45F, 0.50F, 1.0F);
-			graphics.blit(SLOT_FRAMES, x, y, state.u, state.v, SLOT_SIZE, SLOT_SIZE, FRAME_SHEET, FRAME_SHEET);
+			HudRender.blit(graphics, SLOT_FRAMES, x, y, state.u, state.v, SLOT_SIZE, SLOT_SIZE, FRAME_SHEET, FRAME_SHEET);
 			if (state == SlotState.DEFEATED) graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
 		} else {
 			graphics.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, switch (state) {

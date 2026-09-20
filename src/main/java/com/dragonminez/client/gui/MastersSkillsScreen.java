@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -285,7 +286,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		renderMenuBackground(graphics, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -321,7 +322,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		boolean overHotZone = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth && mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
 		boolean shouldReveal = overPanel || overHotZone;
 
-		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
+		float step = frameDelta() / 0.24f;
 		buttonRevealProgress = approach01(buttonRevealProgress, shouldReveal ? 1.0f : 0.0f, step);
 		float animProgress = easeInOutCubic(buttonRevealProgress);
 
@@ -357,8 +358,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int leftPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, leftPanelX, leftPanelY, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
+		HudRender.blit(graphics, MENU_BIG, leftPanelX, leftPanelY, 0, 0, 141, 213, 256, 256);
+		HudRender.blit(graphics, MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
 		renderSkillsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
 	}
@@ -372,8 +373,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		maxScroll = Math.max(0, totalHeight - viewHeight);
 		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
+		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
 
 		graphics.enableScissor(
 				toScreenCoord(panelX + 5),
@@ -446,13 +446,13 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) {
-			graphics.blit(MENU_BIG, rightPanelX, rightPanelY, 0, 0, 141, 213, 256, 256);
-			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+			HudRender.blit(graphics, MENU_BIG, rightPanelX, rightPanelY, 0, 0, 141, 213, 256, 256);
+			HudRender.blit(graphics, MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 		} else {
-			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
-			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
-			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
-			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
+			HudRender.blit(graphics, MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
+			HudRender.blit(graphics, MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+			HudRender.blit(graphics, MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
+			HudRender.blit(graphics, MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
 		}
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.info")
@@ -559,8 +559,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		maxDescScroll = Math.max(0, totalContentHeight - viewHeight);
 		targetDescScroll = Mth.clamp(targetDescScroll, 0, maxDescScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentDescScroll = Mth.lerp(tickDelta * 0.4f, currentDescScroll, targetDescScroll);
+		currentDescScroll = Mth.lerp(frameEase(), currentDescScroll, targetDescScroll);
 
 		TextUtil.renderScrollableText(graphics, this.font, wrappedDesc, boxX, descY, boxW, viewHeight, currentDescScroll, maxDescScroll, 0xFFCCCCCC);
 	}

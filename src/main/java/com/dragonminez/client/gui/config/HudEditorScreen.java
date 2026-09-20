@@ -22,6 +22,7 @@ import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.HudPlacement;
 import com.dragonminez.common.init.MainSounds;
+import com.google.gson.Gson;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -34,7 +35,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,11 +66,26 @@ public class HudEditorScreen extends Screen {
 	private static final int ACTION_ROW_Y = 42;
 	private static final int HINT_BOTTOM_OFFSET = 62;
 
+	private static final int HISTORY_LIMIT = 5;
+	private static final long NUDGE_MERGE_MS = 800L;
+	private static final float INACTIVE_BUTTON_ALPHA = 0.4f;
+	private static final Gson HISTORY_GSON = new Gson();
+
 	private enum Drag { NONE, MOVE, RESIZE }
 
+	private record Snapshot(HudStyle style, Map<String, Map<String, HudPlacement>> layout) {
+		private String key() {
+			return style.configName() + HISTORY_GSON.toJson(layout);
+		}
+	}
+
 	private final Screen parent;
-	private final HudStyle backupStyle;
-	private final Map<String, Map<String, HudPlacement>> backup = new LinkedHashMap<>();
+	private final Snapshot initial;
+	private final Deque<Snapshot> undoStack = new ArrayDeque<>();
+	private final Deque<Snapshot> redoStack = new ArrayDeque<>();
+	private Snapshot pending;
+	private HudElement lastNudged;
+	private long lastNudgeMs;
 	private final HudSmoother panelAlpha = new HudSmoother(0.08f, 0.01f);
 	private HudStyle style;
 	private final List<Float> guidesX = new ArrayList<>();
@@ -85,19 +103,69 @@ public class HudEditorScreen extends Screen {
 	private TexturedTextButton styleButton;
 	private TexturedTextButton toggleButton;
 	private TexturedTextButton extrasButton;
+	private TexturedTextButton undoButton;
+	private TexturedTextButton redoButton;
 	private boolean extras;
 	private boolean confirmed;
 
 	public HudEditorScreen(Screen parent) {
 		super(Component.translatable("gui.dragonminez.hud_editor.title"));
 		this.parent = parent;
+		ConfigManager.reloadHudLayoutConfig();
 		this.style = HudStyle.current();
-		this.backupStyle = this.style;
-		ConfigManager.getUserConfig().getHudLayout().forEach((styleName, placements) -> {
-			Map<String, HudPlacement> copy = new LinkedHashMap<>();
-			placements.forEach((id, placement) -> copy.put(id, placement.copy()));
-			backup.put(styleName, copy);
+		this.initial = snapshot();
+	}
+
+	private Snapshot snapshot() {
+		Map<String, Map<String, HudPlacement>> copy = new LinkedHashMap<>();
+		ConfigManager.getHudLayoutConfig().getLayout().forEach((group, placements) -> {
+			Map<String, HudPlacement> inner = new LinkedHashMap<>();
+			placements.forEach((id, placement) -> inner.put(id, placement.copy()));
+			copy.put(group, inner);
 		});
+		return new Snapshot(style, copy);
+	}
+
+	private void restore(Snapshot snapshot) {
+		Map<String, Map<String, HudPlacement>> layout = ConfigManager.getHudLayoutConfig().getLayout();
+		layout.clear();
+		snapshot.layout().forEach((group, placements) -> {
+			Map<String, HudPlacement> inner = new LinkedHashMap<>();
+			placements.forEach((id, placement) -> inner.put(id, placement.copy()));
+			layout.put(group, inner);
+		});
+		style = snapshot.style();
+		ConfigManager.getHudLayoutConfig().setStyle(style.configName());
+		if (styleButton != null) styleButton.setMessage(styleLabel());
+		if (selected != null && !elements().contains(selected)) selected = null;
+	}
+
+	private void record(Snapshot before) {
+		if (before == null || before.key().equals(snapshot().key())) return;
+		undoStack.addLast(before);
+		while (undoStack.size() > HISTORY_LIMIT) undoStack.removeFirst();
+		redoStack.clear();
+	}
+
+	private void act(Runnable change) {
+		Snapshot before = snapshot();
+		change.run();
+		record(before);
+		lastNudged = null;
+	}
+
+	private void undo() {
+		if (undoStack.isEmpty() || drag != Drag.NONE) return;
+		redoStack.addLast(snapshot());
+		restore(undoStack.removeLast());
+		lastNudged = null;
+	}
+
+	private void redo() {
+		if (redoStack.isEmpty() || drag != Drag.NONE) return;
+		undoStack.addLast(snapshot());
+		restore(redoStack.removeLast());
+		lastNudged = null;
 	}
 
 	@Override
@@ -105,12 +173,14 @@ public class HudEditorScreen extends Screen {
 		super.init();
 		HudLayout.setPreview(true);
 		buttons.clear();
-		this.styleButton = button(styleLabel(), b -> cycleStyle());
+		this.styleButton = button(styleLabel(), b -> act(this::cycleStyle));
 		this.extrasButton = button(extrasLabel(), b -> toggleExtras());
+		this.undoButton = button(tr("gui.dragonminez.hud_editor.undo", undoStack.size()), b -> undo());
+		this.redoButton = button(tr("gui.dragonminez.hud_editor.redo", redoStack.size()), b -> redo());
 		button(tr("gui.dragonminez.hud_editor.done"), b -> confirm());
 		button(tr("gui.dragonminez.hud_editor.cancel"), b -> cancel());
-		button(tr("gui.dragonminez.hud_editor.reset"), b -> reset());
-		this.toggleButton = button(tr("gui.dragonminez.hud_editor.hide"), b -> toggleVisible());
+		button(tr("gui.dragonminez.hud_editor.reset"), b -> act(this::reset));
+		this.toggleButton = button(tr("gui.dragonminez.hud_editor.hide"), b -> act(this::toggleVisible));
 		panelAlpha.snap(1.0f);
 		layoutPanel();
 	}
@@ -153,16 +223,19 @@ public class HudEditorScreen extends Screen {
 
 	private int styleRowLeft() {
 		int labelWidth = this.font.width(tr("gui.dragonminez.hud_editor.style"));
-		return (this.width - (labelWidth + BUTTON_GAP + BUTTON_WIDTH + BUTTON_GAP + BUTTON_WIDTH)) / 2;
+		return (this.width - (labelWidth + (BUTTON_GAP + BUTTON_WIDTH) * 4)) / 2;
 	}
 
 	private void layoutPanel() {
 		int labelWidth = this.font.width(tr("gui.dragonminez.hud_editor.style"));
 		styleButton.setPosition(styleRowLeft() + labelWidth + BUTTON_GAP, STYLE_ROW_Y);
-		extrasButton.setPosition(styleRowLeft() + labelWidth + BUTTON_GAP + BUTTON_WIDTH + BUTTON_GAP, STYLE_ROW_Y);
+		int rowX = styleRowLeft() + labelWidth + BUTTON_GAP;
+		extrasButton.setPosition(rowX + (BUTTON_WIDTH + BUTTON_GAP), STYLE_ROW_Y);
+		undoButton.setPosition(rowX + (BUTTON_WIDTH + BUTTON_GAP) * 2, STYLE_ROW_Y);
+		redoButton.setPosition(rowX + (BUTTON_WIDTH + BUTTON_GAP) * 3, STYLE_ROW_Y);
 		int x = (this.width - (BUTTON_WIDTH * 4 + BUTTON_GAP * 3)) / 2;
 		for (TexturedTextButton button : buttons) {
-			if (button == styleButton || button == extrasButton) continue;
+			if (button == styleButton || button == extrasButton || button == undoButton || button == redoButton) continue;
 			button.setPosition(x, ACTION_ROW_Y);
 			x += BUTTON_WIDTH + BUTTON_GAP;
 		}
@@ -171,7 +244,7 @@ public class HudEditorScreen extends Screen {
 	private void cycleStyle() {
 		HudStyle[] all = HudStyle.values();
 		style = all[(style.ordinal() + 1) % all.length];
-		ConfigManager.getUserConfig().setHudStyle(style.configName());
+		ConfigManager.getHudLayoutConfig().setStyle(style.configName());
 		selected = null;
 		styleButton.setMessage(styleLabel());
 	}
@@ -182,19 +255,12 @@ public class HudEditorScreen extends Screen {
 
 	private void confirm() {
 		confirmed = true;
-		ConfigManager.saveGeneralUserConfig();
+		ConfigManager.saveHudLayoutConfig();
 		this.minecraft.setScreen(parent);
 	}
 
 	private void cancel() {
-		Map<String, Map<String, HudPlacement>> layout = ConfigManager.getUserConfig().getHudLayout();
-		layout.clear();
-		backup.forEach((styleName, placements) -> {
-			Map<String, HudPlacement> restored = new LinkedHashMap<>();
-			placements.forEach((id, placement) -> restored.put(id, placement.copy()));
-			layout.put(styleName, restored);
-		});
-		ConfigManager.getUserConfig().setHudStyle(backupStyle.configName());
+		restore(initial);
 		confirmed = true;
 		this.minecraft.setScreen(parent);
 	}
@@ -240,21 +306,25 @@ public class HudEditorScreen extends Screen {
 		for (float y : guidesY) graphics.fill(0, Math.round(y), this.width, Math.round(y) + 1, GUIDE_COLOR);
 
 		toggleButton.active = selected != null;
+		undoButton.active = !undoStack.isEmpty();
+		redoButton.active = !redoStack.isEmpty();
+		undoButton.setMessage(tr("gui.dragonminez.hud_editor.undo", undoStack.size()));
+		redoButton.setMessage(tr("gui.dragonminez.hud_editor.redo", redoStack.size()));
 		boolean visible = selected == null || HudLayout.placement(style, selected).getVisible();
 		toggleButton.setMessage(tr(visible ? "gui.dragonminez.hud_editor.hide" : "gui.dragonminez.hud_editor.show"));
 
 		float alpha = panelAlpha.update(drag == Drag.NONE ? 1.0f : 0.0f);
 		layoutPanel();
 		for (TexturedTextButton button : buttons) {
-			button.setAlpha(alpha);
+			button.setAlpha(button.active ? alpha : alpha * INACTIVE_BUTTON_ALPHA);
 			button.visible = alpha > 0.02f;
 		}
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hud_editor.title"), this.width / 2, TITLE_Y, 0xFFFFD700);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hud_editor.hint"), this.width / 2, this.height - HINT_BOTTOM_OFFSET, 0xFFC8D0DC);
-		if ((selected != null && selected.isSkill()) || (hovered != null && hovered.isSkill())) {
-			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hud_editor.hint_skills"), this.width / 2, this.height - HINT_BOTTOM_OFFSET + 11, 0xFFC8D0DC);
-		}
+		boolean skillHint = (selected != null && selected.isSkill()) || (hovered != null && hovered.isSkill());
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr(skillHint ? "gui.dragonminez.hud_editor.hint_skills" : "gui.dragonminez.hud_editor.hint_history", HISTORY_LIMIT),
+				this.width / 2, this.height - HINT_BOTTOM_OFFSET + 11, 0xFFC8D0DC);
 		int labelAlpha = Math.round(alpha * 255.0f);
 		if (labelAlpha >= 8) {
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hud_editor.style"), styleRowLeft(), STYLE_ROW_Y + 6,
@@ -331,12 +401,14 @@ public class HudEditorScreen extends Screen {
 			HudElement target = elementAt(mouseX, mouseY);
 			if (target == null || !HudLayout.canMirror(style, target)) return false;
 			selected = target;
-			if (target.isSkill()) mirrorSkills();
-			else {
-				HudPlacement placement = HudLayout.placement(style, target).copy();
-				placement.setMirrored(!placement.getMirrored());
-				HudLayout.setPlacement(style, target, placement);
-			}
+			act(() -> {
+				if (target.isSkill()) mirrorSkills();
+				else {
+					HudPlacement placement = HudLayout.placement(style, target).copy();
+					placement.setMirrored(!placement.getMirrored());
+					HudLayout.setPlacement(style, target, placement);
+				}
+			});
 			this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
 			return true;
 		}
@@ -346,6 +418,7 @@ public class HudEditorScreen extends Screen {
 		if (grabbed >= 0) {
 			drag = Drag.RESIZE;
 			handle = grabbed;
+			pending = snapshot();
 			dragStart = box(selected);
 			captureGroup(selected.isSkill());
 			return true;
@@ -358,11 +431,17 @@ public class HudEditorScreen extends Screen {
 		grabX = (float) mouseX - dragStart.x();
 		grabY = (float) mouseY - dragStart.y();
 		drag = Drag.MOVE;
+		pending = snapshot();
 		return true;
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (pending != null) {
+			record(pending);
+			pending = null;
+			lastNudged = null;
+		}
 		drag = Drag.NONE;
 		handle = -1;
 		groupDrag = false;
@@ -549,6 +628,15 @@ public class HudEditorScreen extends Screen {
 			confirm();
 			return true;
 		}
+		if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Z) {
+			if (hasShiftDown()) redo();
+			else undo();
+			return true;
+		}
+		if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Y) {
+			redo();
+			return true;
+		}
 		if (selected != null) {
 			int step = hasShiftDown() ? 5 : 1;
 			int dx = keyCode == GLFW.GLFW_KEY_LEFT ? -step : keyCode == GLFW.GLFW_KEY_RIGHT ? step : 0;
@@ -559,7 +647,13 @@ public class HudEditorScreen extends Screen {
 				boolean visible = HudLayout.placement(style, selected).getVisible();
 				float x = Mth.clamp(current.x() + dx, 0.0f, Math.max(0.0f, this.width - current.width()));
 				float y = Mth.clamp(current.y() + dy, 0.0f, Math.max(0.0f, this.height - current.height()));
+				long now = System.currentTimeMillis();
+				boolean merge = lastNudged == selected && now - lastNudgeMs <= NUDGE_MERGE_MS;
+				Snapshot before = merge ? null : snapshot();
 				store(HudLayout.toPlacement(selected, x, y, current.width(), current.height(), current.scale(), this.width, this.height, visible));
+				record(before);
+				lastNudged = selected;
+				lastNudgeMs = now;
 				return true;
 			}
 		}
@@ -569,7 +663,7 @@ public class HudEditorScreen extends Screen {
 	@Override
 	public void removed() {
 		HudLayout.setPreview(false);
-		if (!confirmed) ConfigManager.saveGeneralUserConfig();
+		if (!confirmed) ConfigManager.saveHudLayoutConfig();
 		super.removed();
 	}
 

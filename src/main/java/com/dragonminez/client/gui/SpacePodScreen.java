@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
@@ -128,7 +129,7 @@ public class SpacePodScreen extends ScaledScreen {
 		beginUiScale(graphics);
 
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
+		HudRender.blit(graphics, MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
 				tr("gui.dragonminez.spacepod.title"),
@@ -150,8 +151,7 @@ public class SpacePodScreen extends ScaledScreen {
 
 		maxScroll = Math.max(0, totalHeight - viewHeight);
 		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
+		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
 
 		int scLeft = toScreenCoord(listLeft);
 		int scTop = toScreenCoord(listTop);
@@ -212,14 +212,14 @@ public class SpacePodScreen extends ScaledScreen {
 	private void renderDestinationIcon(GuiGraphics graphics, PlanetDestination dest, int x, int y) {
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		if (dest.iconTexture != null) {
-			graphics.blit(dest.iconTexture, x, y, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
+			HudRender.blit(graphics, dest.iconTexture, x, y, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
 			return;
 		}
 
 		int iconIndex = dest.iconIndex != null ? dest.iconIndex : 0;
 		int u = dest.unlocked ? ICON_X_COLOR : ICON_X_GRAY;
 		int v = ICON_Y_START + (iconIndex * ICON_Y_STEP);
-		graphics.blit(ICONS_TEXTURE, x, y, u, v, ICON_SIZE, ICON_SIZE, 256, 256);
+		HudRender.blit(graphics, ICONS_TEXTURE, x, y, u, v, ICON_SIZE, ICON_SIZE, 256, 256);
 	}
 
 	private Component destinationName(PlanetDestination destination) {

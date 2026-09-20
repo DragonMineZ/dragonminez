@@ -5,6 +5,10 @@ import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.gui.tutorial.TutorialButton;
+import com.dragonminez.client.gui.tutorial.TutorialManager;
+import com.dragonminez.client.gui.tutorial.TutorialRect;
+import com.dragonminez.client.gui.tutorial.TutorialStep;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
@@ -50,6 +54,8 @@ public class RaceSelectionScreen extends ScaledScreen {
 	private PanoramaRenderer previousPanorama;
 	private float panoramaFade = 1.0f;
 	private float carouselAnim = 0.0f;
+	private long lastFrameNanos;
+	private int racialInfoBottom;
 
 	protected static boolean GLOBAL_SWITCHING = false;
 
@@ -148,6 +154,38 @@ public class RaceSelectionScreen extends ScaledScreen {
 		addRenderableWidget(leftButton);
 		addRenderableWidget(rightButton);
 		addRenderableWidget(selectButton);
+
+		TutorialManager.request(this, TutorialManager.RACE_SELECTION, tutorialSteps());
+	}
+
+	private List<TutorialStep> tutorialSteps() {
+		String prefix = "gui.dragonminez.tutorial.race.";
+		List<TutorialStep> steps = new ArrayList<>();
+
+		steps.add(TutorialStep.of(prefix + "welcome")
+				.title(prefix + "welcome.title")
+				.centered()
+				.noSkip()
+				.button(TutorialButton.text("gui.dragonminez.tutorial.disable", TutorialButton.Behavior.STAY, () -> TutorialManager.setEnabled(false)))
+				.button(TutorialButton.text("gui.dragonminez.tutorial.next", TutorialButton.Behavior.NEXT, null))
+				.build());
+
+		steps.add(TutorialStep.of(prefix + "model")
+				.title(prefix + "model.title")
+				.highlight(() -> List.of(
+						TutorialRect.of(getUiWidth() / 2.0f - 50, getUiHeight() / 2.0f - 72, 110, 150),
+						TutorialRect.of(getUiWidth() / 2.0f - 88, getUiHeight() / 2.0f + 83, 190, 27)))
+				.passthrough()
+				.build());
+
+		steps.add(TutorialStep.of(prefix + "racial")
+				.title(prefix + "racial.title")
+				.highlightOne(() -> {
+					float top = getUiHeight() / 2.0f - 66;
+					return TutorialRect.of(getUiWidth() - 142, top, 138, Math.max(40, racialInfoBottom - top + 2));
+				})
+				.build());
+		return steps;
 	}
 
 	@Override
@@ -164,11 +202,13 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		long now = System.nanoTime();
+		float dt = lastFrameNanos == 0L ? 0.0f : Math.min(0.1f, (now - lastFrameNanos) / 1_000_000_000.0f);
+		lastFrameNanos = now;
 
-		if (panoramaFade < 1.0f) panoramaFade = Math.min(1.0f, panoramaFade + (tickDelta * 0.05f));
+		if (panoramaFade < 1.0f) panoramaFade = Math.min(1.0f, panoramaFade + dt);
 
-		if (Math.abs(carouselAnim) > 0.001f) carouselAnim = Mth.lerp(tickDelta * 0.35f, carouselAnim, 0.0f);
+		if (Math.abs(carouselAnim) > 0.001f) carouselAnim *= (float) Math.exp(-dt / 0.13f);
 		else carouselAnim = 0.0f;
 
 		renderPanorama(graphics, partialTick);
@@ -223,10 +263,14 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 			float xOffset = visualPos * 130f;
 			applyRaceDefaults(raceName);
-			int modelX = (int) (centerX + 5 + xOffset);
+			int modelX = Mth.floor(centerX + 5 + xOffset);
+			float modelFraction = centerX + 5 + xOffset - modelX;
 
 			RenderSystem.setShaderColor(alpha, alpha, alpha, 1.0f);
+			graphics.pose().pushPose();
+			graphics.pose().translate(modelFraction, 0.0f, 0.0f);
 			renderPlayerModel(graphics, modelX, modelBaseY, (int)(75 * scale), mouseX, mouseY);
+			graphics.pose().popPose();
 			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 			graphics.pose().pushPose();
@@ -235,7 +279,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 			RenderSystem.enableBlend();
 			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, alpha);
-			graphics.blit(MENU_BIG, -74, -7, 0, 215, 149, 21);
+			blit(graphics, MENU_BIG, -74, -7, 0, 215, 149, 21);
 			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 			RenderSystem.disableBlend();
 
@@ -251,7 +295,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 	private void renderCinematicBars(GuiGraphics guiGraphics) {
 		int totalBarHeight = (int) (this.height * 0.12);
-		int fadeSize = 60;
+		int fadeSize = Math.max(1, Math.round(60 * getUiScale()));
 		if (totalBarHeight <= fadeSize) totalBarHeight = fadeSize + 1;
 
 		int solidHeight = totalBarHeight - fadeSize;
@@ -386,6 +430,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX + 60, textY, 0xFFCCCCCC);
 			textY += 12;
 		}
+		racialInfoBottom = textY;
 
 		graphics.pose().popPose();
 	}

@@ -2,7 +2,6 @@ package com.dragonminez.client.crowdin;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.common.config.ConfigManager;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -83,33 +82,12 @@ public class CrowdinManager {
 			return Boolean.parseBoolean(override);
 		}
 
-		boolean production = isProductionEnvironment();
-		boolean defaultValue = production;
-		Boolean configuredValue = null;
-		try {
-			configuredValue = ConfigManager.getUserConfig().getLiveCrowdinTranslations();
-		} catch (Exception ignored) {
-		}
-
-		if (configuredValue == null) return defaultValue;
-		return configuredValue;
+		return true;
 	}
 
 	public static void clearCache() {
 		cachedLangData = null;
 		cachedLangCode = "";
-	}
-
-	private static boolean isProductionEnvironment() {
-		try {
-			Class<?> fmlLoaderClass = Class.forName("net.minecraftforge.fml.loading.FMLLoader");
-			Object result = fmlLoaderClass.getMethod("isProduction").invoke(null);
-			if (result instanceof Boolean bool) {
-				return bool;
-			}
-		} catch (Exception ignored) {
-		}
-		return false;
 	}
 
 	private static void fixColors(JsonObject json) {

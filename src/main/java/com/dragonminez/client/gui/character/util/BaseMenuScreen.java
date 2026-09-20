@@ -66,6 +66,16 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	}
 
 	@Override
+	protected int getMinGuiWidth() {
+		return 420;
+	}
+
+	@Override
+	public void applyMenuScaleChange() {
+		rebuildWidgetsWithoutTransition();
+	}
+
+	@Override
 	protected void init() {
 		super.init();
 		if (GLOBAL_SWITCHING) {
@@ -216,43 +226,44 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		pose.translate(-uiWidth / 2.0, -uiHeight / 2.0, 0);
 	}
 
-	protected int getLeftPanelSwitchOffset(float partialTick) {
-		if (panelSwitchState == PanelSwitchState.NONE) return 0;
+	protected float getLeftPanelSwitchOffset(float partialTick) {
+		if (panelSwitchState == PanelSwitchState.NONE) return 0.0f;
 		float p = getPanelSwitchProgress(partialTick);
 
-		if (panelSwitchState == PanelSwitchState.ENTERING) {
-			float eased = easeOutBack(p);
-			return Math.round((eased - 1.0f) * PANEL_SWITCH_DISTANCE);
-		}
-
-		float eased = easeInBack(p);
-		return Math.round(-eased * PANEL_SWITCH_DISTANCE);
+		if (panelSwitchState == PanelSwitchState.ENTERING) return (easeOutBack(p) - 1.0f) * PANEL_SWITCH_DISTANCE;
+		return -easeInBack(p) * PANEL_SWITCH_DISTANCE;
 	}
 
-	protected int getRightPanelSwitchOffset(float partialTick) {
-		if (panelSwitchState == PanelSwitchState.NONE) return 0;
+	protected float getRightPanelSwitchOffset(float partialTick) {
+		if (panelSwitchState == PanelSwitchState.NONE) return 0.0f;
 		float p = getPanelSwitchProgress(partialTick);
 
-		if (panelSwitchState == PanelSwitchState.ENTERING) {
-			float eased = easeOutBack(p);
-			return Math.round((1.0f - eased) * PANEL_SWITCH_DISTANCE);
-		}
-
-		float eased = easeInBack(p);
-		return Math.round(eased * PANEL_SWITCH_DISTANCE);
+		if (panelSwitchState == PanelSwitchState.ENTERING) return (1.0f - easeOutBack(p)) * PANEL_SWITCH_DISTANCE;
+		return easeInBack(p) * PANEL_SWITCH_DISTANCE;
 	}
 
-	protected int getTopPanelSwitchOffset(float partialTick) {
-		if (panelSwitchState == PanelSwitchState.NONE) return 0;
+	protected float getTopPanelSwitchOffset(float partialTick) {
+		if (panelSwitchState == PanelSwitchState.NONE) return 0.0f;
 		float p = getPanelSwitchProgress(partialTick);
 
-		if (panelSwitchState == PanelSwitchState.ENTERING) {
-			float eased = easeOutBack(p);
-			return Math.round((eased - 1.0f) * TOP_PANEL_SWITCH_DISTANCE);
-		}
+		if (panelSwitchState == PanelSwitchState.ENTERING) return (easeOutBack(p) - 1.0f) * TOP_PANEL_SWITCH_DISTANCE;
+		return -easeInBack(p) * TOP_PANEL_SWITCH_DISTANCE;
+	}
 
-		float eased = easeInBack(p);
-		return Math.round(-eased * TOP_PANEL_SWITCH_DISTANCE);
+	protected float getBottomPanelSwitchOffset(float partialTick) {
+		return -getTopPanelSwitchOffset(partialTick);
+	}
+
+	protected void renderMenuBackground(GuiGraphics graphics, float partialTick) {
+		float visibility = 1.0f;
+		if (transitionState == TransitionState.OPENING) visibility = getTransitionProgress(partialTick);
+		else if (transitionState == TransitionState.CLOSING) visibility = 1.0f - getTransitionProgress(partialTick);
+		visibility = Mth.clamp(visibility, 0.0f, 1.0f);
+		if (visibility <= 0.0f) return;
+
+		int top = Math.round(0xC0 * visibility) << 24 | 0x101010;
+		int bottom = Math.round(0xD0 * visibility) << 24 | 0x101010;
+		graphics.fillGradient(0, 0, this.width, this.height, top, bottom);
 	}
 
 	@Override
@@ -346,13 +357,13 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 
 	protected float getTransitionProgress(float partialTick) {
 		long elapsed = System.currentTimeMillis() - animationStartTime;
-		return Mth.clamp((elapsed + (partialTick * 50)) / (float) OPEN_ANIMATION_DURATION, 0.0f, 1.0f);
+		return Mth.clamp(elapsed / (float) OPEN_ANIMATION_DURATION, 0.0f, 1.0f);
 	}
 
 	protected float getPanelSwitchProgress(float partialTick) {
 		long elapsed = System.currentTimeMillis() - panelSwitchAnimationStartTime;
 		long duration = panelSwitchState == PanelSwitchState.EXITING ? PANEL_EXIT_ANIMATION_DURATION : PANEL_ENTER_ANIMATION_DURATION;
-		return Mth.clamp((elapsed + (partialTick * 50)) / (float) duration, 0.0f, 1.0f);
+		return Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
 	}
 
 	private float easeOutBack(float t) {

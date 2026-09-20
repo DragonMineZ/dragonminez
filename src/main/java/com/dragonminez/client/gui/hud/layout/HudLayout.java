@@ -168,19 +168,19 @@ public final class HudLayout {
 	}
 
 	public static HudPlacement placement(HudStyle style, HudElement element) {
-		Map<String, HudPlacement> styleLayout = ConfigManager.getUserConfig().getHudLayout().get(layoutKey(style, element));
+		Map<String, HudPlacement> styleLayout = ConfigManager.getHudLayoutConfig().getLayout().get(layoutKey(style, element));
 		HudPlacement stored = styleLayout != null ? styleLayout.get(element.id()) : null;
 		return stored != null ? stored : defaultPlacement(style, element);
 	}
 
 	public static void setPlacement(HudStyle style, HudElement element, HudPlacement placement) {
-		ConfigManager.getUserConfig().getHudLayout()
+		ConfigManager.getHudLayoutConfig().getLayout()
 				.computeIfAbsent(layoutKey(style, element), key -> new LinkedHashMap<>())
 				.put(element.id(), placement);
 	}
 
 	public static void resetPlacement(HudStyle style, HudElement element) {
-		Map<String, HudPlacement> styleLayout = ConfigManager.getUserConfig().getHudLayout().get(layoutKey(style, element));
+		Map<String, HudPlacement> styleLayout = ConfigManager.getHudLayoutConfig().getLayout().get(layoutKey(style, element));
 		if (styleLayout != null) styleLayout.remove(element.id());
 	}
 

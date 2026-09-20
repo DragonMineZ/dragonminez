@@ -5,6 +5,10 @@ import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.gui.tutorial.TutorialManager;
+import com.dragonminez.client.gui.tutorial.TutorialRect;
+import com.dragonminez.client.gui.tutorial.TutorialStep;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -58,6 +62,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private static final int TECHNIQUE_BIND_SLOT_COUNT = Techniques.SLOT_COUNT;
 	private static final String NEW_SKILL_ENTRY = "__new_skill__";
 	private static final String CLASS_PASSIVE_ENTRY = "__class_passive__";
+	private static final String SAMPLE_ENTRY = "__sample_skill__";
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
 
 	private enum SkillCategory {SKILLS, KI, FORMS, STRIKE, EVASION}
@@ -105,6 +110,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private float formsPanX = 0;
 	private float formsPanY = 0;
 	private float formsZoom = 1.0f;
+	private float targetFormsZoom = 1.0f;
+	private float leftFraction;
+	private float rightFraction;
+	private boolean tutorialRevealTabs;
 	private boolean isDraggingForms = false;
 	private double dragFormStartX, dragFormStartY;
 	private float dragFormStartPanX, dragFormStartPanY;
@@ -139,6 +148,134 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		updateStatsData();
 		initDynamicButtons();
 		if (currentCategory == SkillCategory.FORMS) buildFormsTree();
+		requestTutorial();
+	}
+
+	private void requestTutorial() {
+		if (statsData == null || TutorialManager.isActive()) return;
+		switch (currentCategory) {
+			case SKILLS -> {
+				if (TutorialManager.shouldRun(TutorialManager.SKILLS_GENERAL))
+					TutorialManager.request(this, TutorialManager.SKILLS_GENERAL, generalTutorial(), this::clearSampleSelection);
+			}
+			case KI, STRIKE, EVASION -> {
+				if (TutorialManager.shouldRun(TutorialManager.SKILLS_TECHNIQUES))
+					TutorialManager.request(this, TutorialManager.SKILLS_TECHNIQUES, techniqueTutorial(), this::clearSampleSelection);
+			}
+			case FORMS -> {
+				if (TutorialManager.shouldRun(TutorialManager.SKILLS_FORMS))
+					TutorialManager.request(this, TutorialManager.SKILLS_FORMS, formsTutorial());
+			}
+		}
+	}
+
+	private List<TutorialStep> generalTutorial() {
+		String prefix = "gui.dragonminez.tutorial.skills.";
+		List<TutorialStep> steps = new ArrayList<>();
+		steps.add(TutorialStep.of(prefix + "tabs").title(prefix + "tabs.title")
+				.highlightOne(() -> TutorialRect.of(currentLeftX + 138, getUiHeight() / 2.0f - 100, 32, 162))
+				.onEnter(() -> tutorialRevealTabs = true)
+				.onExit(() -> tutorialRevealTabs = false)
+				.build());
+		steps.add(TutorialStep.of(prefix + "list").title(prefix + "list.title")
+				.highlightOne(() -> TutorialRect.of(currentLeftX + 8, getUiHeight() / 2.0f - 92, 132, 180))
+				.onEnter(this::selectTutorialEntry)
+				.build());
+		steps.add(TutorialStep.of(prefix + "details").title(prefix + "details.title")
+				.highlightOne(() -> TutorialRect.of(currentRightX, getUiHeight() / 2.0f - 105, 141, 222))
+				.padding(1.0f)
+				.build());
+		return steps;
+	}
+
+	private List<TutorialStep> techniqueTutorial() {
+		String prefix = "gui.dragonminez.tutorial.skills.techniques.";
+		List<TutorialStep> steps = new ArrayList<>();
+		steps.add(TutorialStep.of(prefix + "list").title(prefix + "list.title")
+				.highlightOne(() -> TutorialRect.of(currentLeftX + 8, getUiHeight() / 2.0f - 92, 132, 180))
+				.onEnter(this::selectTutorialEntry)
+				.build());
+		steps.add(TutorialStep.of(prefix + "details").title(prefix + "details.title")
+				.highlightOne(() -> TutorialRect.of(currentRightX, getUiHeight() / 2.0f - 105, 141, 213))
+				.padding(1.0f)
+				.build());
+		return steps;
+	}
+
+	private List<TutorialStep> formsTutorial() {
+		String prefix = "gui.dragonminez.tutorial.skills.forms.";
+		List<TutorialStep> steps = new ArrayList<>();
+		steps.add(TutorialStep.of(prefix + "main").title(prefix + "main.title")
+				.when(() -> formRowRect("superforms") != null)
+				.highlightOne(() -> formRowRect("superforms"))
+				.onEnter(this::resetFormsCamera)
+				.padding(6.0f)
+				.build());
+		steps.add(TutorialStep.of(prefix + "legendary").title(prefix + "legendary.title")
+				.when(() -> formRowRect("legendaryforms") != null)
+				.highlightOne(() -> formRowRect("legendaryforms"))
+				.onEnter(this::resetFormsCamera)
+				.padding(6.0f)
+				.build());
+		return steps;
+	}
+
+	private void resetFormsCamera() {
+		int widestRow = 1;
+		int run = 0;
+		String group = null;
+		for (FormNode node : formNodes) {
+			run = node.group.equals(group) ? run + 1 : 1;
+			group = node.group;
+			widestRow = Math.max(widestRow, run);
+		}
+		formsPanX = 0.0f;
+		formsPanY = 0.0f;
+		targetFormsZoom = Mth.clamp((getUiWidth() - 60.0f) / (widestRow * 80.0f), 0.25f, 1.0f);
+	}
+
+	private TutorialRect formRowRect(String skillName) {
+		List<TutorialRect> rects = new ArrayList<>();
+		for (FormNode node : formNodes) {
+			if (!skillName.equals(TransformationsHelper.getSkillNameForType(node.formType))) continue;
+			if (ConfigManager.getSkillsConfig().getStackSkills().contains(node.formType.toLowerCase(Locale.ROOT))) continue;
+			rects.add(TutorialRect.of(nodeScreenX(node), nodeScreenY(node), 32 * formsZoom, 32 * formsZoom));
+		}
+		return TutorialRect.union(rects);
+	}
+
+	private float nodeScreenX(FormNode node) {
+		return getUiWidth() / 2f + formsPanX + node.x * formsZoom;
+	}
+
+	private float nodeScreenY(FormNode node) {
+		return getUiHeight() / 2f + formsPanY + node.y * formsZoom;
+	}
+
+	private boolean sampleTutorialActive() {
+		return TutorialManager.isActive(this) && (TutorialManager.isActive(TutorialManager.SKILLS_GENERAL) || TutorialManager.isActive(TutorialManager.SKILLS_TECHNIQUES));
+	}
+
+	private void selectTutorialEntry() {
+		List<String> names = getVisibleSkillNames();
+		String pick = null;
+		for (String name : names) {
+			if (NEW_SKILL_ENTRY.equals(name) || CLASS_PASSIVE_ENTRY.equals(name) || name.startsWith("racial_")) continue;
+			pick = name;
+			break;
+		}
+		if (pick == null && !names.isEmpty()) pick = names.get(0);
+		if (pick == null) return;
+		selectedSkill = pick;
+		targetScroll = 0;
+		targetDescScroll = 0;
+		refreshButtons();
+	}
+
+	private void clearSampleSelection() {
+		if (!SAMPLE_ENTRY.equals(selectedSkill)) return;
+		selectedSkill = null;
+		refreshButtons();
 	}
 
 	@Override
@@ -370,6 +507,13 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			}
 			skillNames.add(classPassiveIndex, CLASS_PASSIVE_ENTRY);
 		}
+		if (currentCategory != SkillCategory.FORMS && sampleTutorialActive()) {
+			boolean hasReal = false;
+			for (String name : skillNames) {
+				if (!NEW_SKILL_ENTRY.equals(name) && !CLASS_PASSIVE_ENTRY.equals(name) && !name.startsWith("racial_")) hasReal = true;
+			}
+			if (!hasReal) skillNames.add(SAMPLE_ENTRY);
+		}
 		return skillNames;
 	}
 
@@ -396,18 +540,22 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		initDynamicButtons();
 		initNavigationButtons();
 
-		if (currentCategory == SkillCategory.FORMS) return;
+		if (currentCategory == SkillCategory.FORMS) {
+			requestTutorial();
+			return;
+		}
 
 		initUpgradeButton();
 		initCreateSkillButton();
 		initBindButtons();
 		initTechniqueUpgradeButtons();
+		requestTutorial();
 	}
 
 	private void initTechniqueUpgradeButtons() {
 		if (selectedSkill == null || statsData == null
 				|| (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE && currentCategory != SkillCategory.EVASION)) return;
-		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
+		if (NEW_SKILL_ENTRY.equals(selectedSkill) || SAMPLE_ENTRY.equals(selectedSkill)) return;
 
 		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
 		if (tech == null) return;
@@ -499,7 +647,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private void initBindButtons() {
 		if (selectedSkill == null || statsData == null
 				|| (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE && currentCategory != SkillCategory.EVASION)) return;
-		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
+		if (NEW_SKILL_ENTRY.equals(selectedSkill) || SAMPLE_ENTRY.equals(selectedSkill)) return;
 
 		int rightPanelX = getUiWidth() - 158;
 		int centerY = getUiHeight() / 2;
@@ -758,7 +906,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		renderMenuBackground(graphics, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
@@ -766,24 +914,28 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		beginUiScale(graphics);
 		applyZoom(graphics, partialTick);
 
-		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
+		float step = frameDelta() / 0.24f;
 		formsTransitionProgress = approach01(formsTransitionProgress, currentCategory == SkillCategory.FORMS ? 1.0f : 0.0f, step);
+		formsZoom += (targetFormsZoom - formsZoom) * frameEase(0.08f);
+		if (Math.abs(targetFormsZoom - formsZoom) < 0.0005f) formsZoom = targetFormsZoom;
 
-		int baseLeftOffset = getLeftPanelSwitchOffset(partialTick);
+		float baseLeftOffset = getLeftPanelSwitchOffset(partialTick);
 
 		boolean nearLeftEdge = uiMouseX <= 36;
 		boolean overLeftPanel = uiMouseX >= currentLeftX && uiMouseX < currentLeftX + 141 + 42 && uiMouseY >= getUiHeight() / 2 - 105 && uiMouseY < getUiHeight() / 2 + 108;
-		float leftTarget = (nearLeftEdge || overLeftPanel) ? 1.0f : 0.0f;
+		float leftTarget = (nearLeftEdge || overLeftPanel || sampleTutorialActive()) ? 1.0f : 0.0f;
 		leftPanelHoverProgress = approach01(leftPanelHoverProgress, leftTarget, step);
 
 		int hiddenTravel = 141 - 24;
-		int extraLeftOffset = (int) (-hiddenTravel * (1.0f - easeInOutCubic(leftPanelHoverProgress)) * easeInOutCubic(formsTransitionProgress));
+		float extraLeftOffset = -hiddenTravel * (1.0f - easeInOutCubic(leftPanelHoverProgress)) * easeInOutCubic(formsTransitionProgress);
 
-		currentLeftX = 12 + baseLeftOffset + extraLeftOffset;
+		float leftPosition = 12 + baseLeftOffset + extraLeftOffset;
+		currentLeftX = Mth.floor(leftPosition);
+		leftFraction = leftPosition - currentLeftX;
 
-		int rightOffset = getRightPanelSwitchOffset(partialTick);
-		int extraRightOffset = (int) (200 * easeInOutCubic(formsTransitionProgress));
-		currentRightX = getUiWidth() - 158 + rightOffset + extraRightOffset;
+		float rightPosition = getUiWidth() - 158 + getRightPanelSwitchOffset(partialTick) + 200 * easeInOutCubic(formsTransitionProgress);
+		currentRightX = Mth.floor(rightPosition);
+		rightFraction = rightPosition - currentRightX;
 
 		updateButtonAnimations(uiMouseX, uiMouseY, partialTick);
 
@@ -794,11 +946,23 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		}
 
 		float currentModelX = Mth.lerp(easeInOutCubic(formsTransitionProgress), getUiWidth() / 2 + 5, getUiWidth() - 80);
-		renderPlayerModel(graphics, (int) currentModelX, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY, formsTransitionProgress > 0.5f);
+		int modelX = Mth.floor(currentModelX);
+		graphics.pose().pushPose();
+		graphics.pose().translate(currentModelX - modelX, 0.0f, 0.0f);
+		renderPlayerModel(graphics, modelX, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY, formsTransitionProgress > 0.5f);
+		graphics.pose().popPose();
 
+		graphics.pose().pushPose();
+		graphics.pose().translate(leftFraction, 0.0f, 0.0f);
 		renderLeftPanel(graphics, currentLeftX, getUiHeight() / 2 - 105, uiMouseX, uiMouseY);
+		graphics.pose().popPose();
 
-		if (formsTransitionProgress < 1.0f) renderRightPanel(graphics, currentRightX, getUiHeight() / 2 - 105, uiMouseX, uiMouseY);
+		if (formsTransitionProgress < 1.0f) {
+			graphics.pose().pushPose();
+			graphics.pose().translate(rightFraction, 0.0f, 0.0f);
+			renderRightPanel(graphics, currentRightX, getUiHeight() / 2 - 105, uiMouseX, uiMouseY);
+			graphics.pose().popPose();
+		}
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
@@ -808,12 +972,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int alpha = (int) (formsTransitionProgress * 255);
 		int gridColor = (alpha << 24) | 0x222244;
 
-		int spacing = 20;
-		int offsetX = ((int) formsPanX) % spacing;
-		int offsetY = ((int) formsPanY) % spacing;
+		float spacing = 20.0f;
+		float offsetX = ((formsPanX % spacing) + spacing) % spacing;
+		float offsetY = ((formsPanY % spacing) + spacing) % spacing;
 
-		for (int x = offsetX - spacing; x < getUiWidth(); x += spacing) graphics.fill(x, 0, x + 1, getUiHeight(), gridColor);
-		for (int y = offsetY - spacing; y < getUiHeight(); y += spacing) graphics.fill(0, y, getUiWidth(), y + 1, gridColor);
+		for (float x = offsetX - spacing; x < getUiWidth(); x += spacing) HudRender.rect(graphics, x, 0, 1, getUiHeight(), gridColor);
+		for (float y = offsetY - spacing; y < getUiHeight(); y += spacing) HudRender.rect(graphics, 0, y, getUiWidth(), 1, gridColor);
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(getUiWidth() / 2f + formsPanX, getUiHeight() / 2f + formsPanY, 0);
@@ -823,24 +987,24 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			FormNode next = formNodes.get(i + 1);
 
 			if (current.group.equals(next.group)) {
-				int cx = (int) ((current.x + 16) * formsZoom);
-				int cy = (int) ((current.y + 16) * formsZoom);
-				int nx = (int) ((next.x + 16) * formsZoom);
-				int ny = (int) ((next.y + 16) * formsZoom);
+				float cx = (current.x + 16) * formsZoom;
+				float cy = (current.y + 16) * formsZoom;
+				float nx = (next.x + 16) * formsZoom;
+				float ny = (next.y + 16) * formsZoom;
 
-				drawThickLine(graphics, cx, cy, nx, ny, Math.max(1, (int) (3 * formsZoom)), (alpha << 24) | 0x555555);
+				drawThickLine(graphics, cx, cy, nx, ny, Math.max(1.0f, 3 * formsZoom), (alpha << 24) | 0x555555);
 			}
 		}
 
 		FormNode hovered = null;
 
 		for (FormNode node : formNodes) {
-			int nx = (int) (node.x * formsZoom);
-			int ny = (int) (node.y * formsZoom);
-			int size = (int) (32 * formsZoom);
+			float nx = node.x * formsZoom;
+			float ny = node.y * formsZoom;
+			float size = 32 * formsZoom;
 
-			int screenNx = (int) (getUiWidth() / 2f + formsPanX + nx);
-			int screenNy = (int) (getUiHeight() / 2f + formsPanY + ny);
+			float screenNx = nodeScreenX(node);
+			float screenNy = nodeScreenY(node);
 
 			boolean isHovered = mouseX >= screenNx && mouseX <= screenNx + size && mouseY >= screenNy && mouseY <= screenNy + size;
 			if (isHovered) hovered = node;
@@ -857,8 +1021,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			int borderColor = selected ? ((alpha << 24) | 0xFFFF00) : (unlocked ? ((alpha << 24) | 0x00AA00) : ((alpha << 24) | 0x333333));
 			int bgColor = (alpha << 24) | 0x111111;
 
-			graphics.fill(nx - 2, ny - 2, nx + size + 2, ny + size + 2, borderColor);
-			graphics.fill(nx, ny, nx + size, ny + size, bgColor);
+			HudRender.rect(graphics, nx - 2, ny - 2, size + 4, size + 4, borderColor);
+			HudRender.rect(graphics, nx, ny, size, size, bgColor);
 
 			ResourceLocation icon = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/icons/" + node.formType.toLowerCase(Locale.ROOT) + ".png");
 
@@ -868,7 +1032,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				else RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, formsTransitionProgress);
 			} else RenderSystem.setShaderColor(0.4f, 0.4f, 0.4f, formsTransitionProgress);
 
-			graphics.blit(icon, nx + (int) (4 * formsZoom), ny + (int) (4 * formsZoom), 0, 0, (int) (24 * formsZoom), (int) (24 * formsZoom), (int) (24 * formsZoom), (int) (24 * formsZoom));
+			HudRender.blit(graphics, icon, nx + 4 * formsZoom, ny + 4 * formsZoom, 0, 0, 24 * formsZoom, 24 * formsZoom, 1, 1, 1, 1);
 			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 			int targetLevel = Math.max(0, requiredLevel - 1);
@@ -878,11 +1042,11 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			boolean isMasterOnly = isMasterOnlyFirstFormLevel(node.formType, targetLevel);
 
 			if (!unlocked && canPurchaseLevel && !isFirstStackLevel && !isMasterOnly && cost != -1 && cost != Integer.MAX_VALUE && statsData.getResources().getTrainingPoints() >= cost) {
-				int exX = nx + size - (int) (6 * formsZoom);
-				int exY = ny - (int) (10 * formsZoom);
+				float exX = nx + size - 6 * formsZoom;
+				float exY = ny - 10 * formsZoom;
 
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, formsTransitionProgress);
-				graphics.blit(EXCLAMATION_MARK, exX, exY, (int) (6 * formsZoom), (int) (15 * formsZoom), 0, 0, 97, 250, 97, 250);
+				HudRender.blit(graphics, EXCLAMATION_MARK, exX, exY, 0, 0, 6 * formsZoom, 15 * formsZoom, 97, 250, 97, 250);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 			}
 		}
@@ -936,41 +1100,30 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		}
 	}
 
-	private void drawThickLine(GuiGraphics graphics, int x1, int y1, int x2, int y2, int thickness, int color) {
-		int half = Math.max(0, thickness / 2);
+	private void drawThickLine(GuiGraphics graphics, float x1, float y1, float x2, float y2, float thickness, int color) {
+		float half = thickness / 2.0f;
 
-		if (y1 == y2) {
-			int left = Math.min(x1, x2);
-			int right = Math.max(x1, x2);
-			graphics.fill(left - half, y1 - half, right + half + 1, y1 + half + 1, color);
+		if (Math.abs(y1 - y2) < 0.001f) {
+			HudRender.rect(graphics, Math.min(x1, x2) - half, y1 - half, Math.abs(x2 - x1) + thickness, thickness, color);
 			return;
 		}
-		if (x1 == x2) {
-			int top = Math.min(y1, y2);
-			int bottom = Math.max(y1, y2);
-			graphics.fill(x1 - half, top - half, x1 + half + 1, bottom + half + 1, color);
+		if (Math.abs(x1 - x2) < 0.001f) {
+			HudRender.rect(graphics, x1 - half, Math.min(y1, y2) - half, thickness, Math.abs(y2 - y1) + thickness, color);
 			return;
 		}
 
-		int dx = Math.abs(x2 - x1);
-		int dy = Math.abs(y2 - y1);
-		int steps = Math.max(1, Math.max(dx, dy));
-
+		int steps = Math.max(1, (int) Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)));
 		for (int i = 0; i <= steps; i++) {
 			float t = i / (float) steps;
-			int x = Math.round(x1 + (x2 - x1) * t);
-			int y = Math.round(y1 + (y2 - y1) * t);
-			graphics.fill(x - half, y - half, x + half + 1, y + half + 1, color);
+			HudRender.rect(graphics, x1 + (x2 - x1) * t - half, y1 + (y2 - y1) * t - half, thickness, thickness, color);
 		}
 	}
 
 	private FormNode getHoveredFormNode(double uiMouseX, double uiMouseY) {
 		for (FormNode node : formNodes) {
-			int nx = (int) (node.x * formsZoom);
-			int ny = (int) (node.y * formsZoom);
-			int size = (int) (32 * formsZoom);
-			int screenNx = (int) (getUiWidth() / 2f + formsPanX + nx);
-			int screenNy = (int) (getUiHeight() / 2f + formsPanY + ny);
+			float size = 32 * formsZoom;
+			float screenNx = nodeScreenX(node);
+			float screenNy = nodeScreenY(node);
 
 			if (uiMouseX >= screenNx && uiMouseX <= screenNx + size && uiMouseY >= screenNy && uiMouseY <= screenNy + size) return node;
 		}
@@ -996,18 +1149,18 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				mouseY >= leftPanelY && mouseY < leftPanelY + panelHeight;
 		boolean overHotZone = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
 				mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
-		boolean shouldReveal = overPanel || overHotZone;
+		boolean shouldReveal = overPanel || overHotZone || tutorialRevealTabs;
 
-		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
+		float step = frameDelta() / 0.24f;
 		buttonRevealProgress = approach01(buttonRevealProgress, shouldReveal ? 1.0f : 0.0f, step);
 		float animProgress = easeInOutCubic(buttonRevealProgress);
 
-		int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
-		skillsButton.setX(newX);
-		kiButton.setX(newX);
-		formsButton.setX(newX);
-		stacksButton.setX(newX);
-		evasionButton.setX(newX);
+		float reveal = leftFraction + (visibleX - hiddenX) * animProgress;
+		slideX(skillsButton, hiddenX, reveal);
+		slideX(kiButton, hiddenX, reveal);
+		slideX(formsButton, hiddenX, reveal);
+		slideX(stacksButton, hiddenX, reveal);
+		slideX(evasionButton, hiddenX, reveal);
 
 		int scissorXScreen = toScreenCoord(currentLeftX + 141);
 		int scissorYScreen = toScreenCoord(0);
@@ -1034,8 +1187,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private void renderLeftPanel(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, panelX, panelY, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21, 256, 256);
+		blit(graphics, MENU_BIG, panelX, panelY, 0, 0, 141, 213);
+		blit(graphics, MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21);
 
 		renderSkillsList(graphics, panelX, panelY, mouseX, mouseY);
 	}
@@ -1049,8 +1202,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		maxScroll = Math.max(0, totalHeight - viewHeight);
 		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
+		currentScroll = Mth.lerp(frameEase(), currentScroll, targetScroll);
 
 		graphics.enableScissor(
 				toScreenCoord(panelX + 5),
@@ -1078,12 +1230,13 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION)
 					displayName = getDisplayNameForEntry(skillName);
 				else if (CLASS_PASSIVE_ENTRY.equals(skillName)) displayName = getClassPassiveTitle();
+				else if (SAMPLE_ENTRY.equals(skillName)) displayName = getDisplayNameForEntry(skillName);
 				else displayName = tr("skill.dragonminez." + skillName).getString();
 
 				TextUtil.drawStringWithBorder(graphics, this.font, txt(displayName), panelX + 15, itemY + 5, color);
 
 				if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION) {
-					TechniqueData technique = NEW_SKILL_ENTRY.equals(skillName) ? null : statsData.getTechniques().getUnlockedTechniques().get(skillName);
+					TechniqueData technique = NEW_SKILL_ENTRY.equals(skillName) || SAMPLE_ENTRY.equals(skillName) ? null : statsData.getTechniques().getUnlockedTechniques().get(skillName);
 					if (technique != null) {
 						String xpText = String.valueOf(technique.getExperience());
 						int xpX = panelX + 130 - TextUtil.width(this.font, xpText, DMZ_FONT);
@@ -1130,24 +1283,39 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION) {
-			graphics.blit(MENU_BIG, panelX, panelY, 0, 0, 141, 213, 256, 256);
-			graphics.blit(MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21, 256, 256);
+			blit(graphics, MENU_BIG, panelX, panelY, 0, 0, 141, 213);
+			blit(graphics, MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21);
 		} else {
-			graphics.blit(MENU_SMALL, panelX, panelY, 0, 0, 141, 94, 256, 256);
-			graphics.blit(MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21, 256, 256);
-			graphics.blit(MENU_SMALL, panelX, panelY + 96, 0, 0, 141, 94, 256, 256);
-			graphics.blit(MENU_SMALL, panelX, panelY + 190, 0, 154, 141, 32, 256, 256);
+			blit(graphics, MENU_SMALL, panelX, panelY, 0, 0, 141, 94);
+			blit(graphics, MENU_BIG, panelX + 17, panelY + 10, 142, 22, 107, 21);
+			blit(graphics, MENU_SMALL, panelX, panelY + 96, 0, 0, 141, 94);
+			blit(graphics, MENU_SMALL, panelX, panelY + 190, 0, 154, 141, 32);
 		}
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), panelX + 70, panelY + 16, 0xFFFFD700);
 
-		if (selectedSkill != null && statsData != null) {
+		if (SAMPLE_ENTRY.equals(selectedSkill) && !sampleTutorialActive()) selectedSkill = null;
+
+		if (SAMPLE_ENTRY.equals(selectedSkill)) {
+			renderSampleDetails(graphics, panelX, panelY);
+		} else if (selectedSkill != null && statsData != null) {
 			if (currentCategory == SkillCategory.KI && NEW_SKILL_ENTRY.equals(selectedSkill))
 				renderNewSkillPlaceholder(graphics, panelX, panelY);
 			else if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE || currentCategory == SkillCategory.EVASION)
 				renderTechniqueDetails(graphics, panelX, panelY, mouseX, mouseY);
 			else renderSkillDetails(graphics, panelX, panelY);
 		}
+	}
+
+	private void renderSampleDetails(GuiGraphics graphics, int panelX, int panelY) {
+		int startY = panelY + 40;
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.tutorial.skills.sample.name").withStyle(ChatFormatting.BOLD), panelX + 72, startY, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.tutorial.skills.sample.level"), panelX + 72, startY + 12, 0xFFFFAA00);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.tutorial.skills.sample.cost"), panelX + 72, startY + 24, 0xFFFFE593);
+
+		List<String> wrapped = wrapText(tr("gui.dragonminez.tutorial.skills.sample.desc").getString(), 120);
+		int lineHeight = this.font.lineHeight + 2;
+		TextUtil.renderScrollableText(graphics, this.font, wrapped, panelX + 13, startY + 70, 130, 6 * lineHeight, 0, 0, 0xFFCCCCCC);
 	}
 
 	private void renderNewSkillPlaceholder(GuiGraphics graphics, int panelX, int panelY) {
@@ -1350,8 +1518,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		maxDescScroll = Math.max(0, totalContentHeight - viewHeight);
 		targetDescScroll = Mth.clamp(targetDescScroll, 0, maxDescScroll);
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		currentDescScroll = Mth.lerp(tickDelta * 0.4f, currentDescScroll, targetDescScroll);
+		currentDescScroll = Mth.lerp(frameEase(), currentDescScroll, targetDescScroll);
 
 		TextUtil.renderScrollableText(graphics, this.font, wrappedDesc, boxX, descY, boxW, viewHeight, currentDescScroll, maxDescScroll, 0xFFCCCCCC);
 	}
@@ -1390,7 +1557,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		}
 
 		if (currentCategory == SkillCategory.FORMS) {
-			formsZoom = Math.max(0.25f, Math.min(2.0f, formsZoom + scrollAmount * 0.1f));
+			targetFormsZoom = Math.max(0.25f, Math.min(2.0f, targetFormsZoom + scrollAmount * 0.1f));
 			return true;
 		}
 
@@ -1572,6 +1739,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 	private String getDisplayNameForEntry(String entryId) {
 		if (NEW_SKILL_ENTRY.equals(entryId)) return tr("gui.dragonminez.skills.new_skill").getString();
+		if (SAMPLE_ENTRY.equals(entryId)) return tr("gui.dragonminez.tutorial.skills.sample.name").getString();
 		if (statsData == null) return entryId;
 		TechniqueData technique = statsData.getTechniques().getUnlockedTechniques().get(entryId);
 		if (technique == null || technique.getName() == null || technique.getName().isEmpty()) return entryId;

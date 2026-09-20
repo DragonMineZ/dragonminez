@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.character.minigames;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.character.MinigamesScreen;
 import com.dragonminez.client.util.TextUtil;
@@ -197,7 +198,7 @@ public abstract class BaseMinigameScreen extends Screen {
 		graphics.pose().pushPose();
 		graphics.pose().translate(drawX, drawY, 0);
 		graphics.pose().scale(scaleX, scaleY, 1f);
-		graphics.blit(MENU_NPC_TEXTURE, 0, 0, 0, 0, PANEL_TEX_W, PANEL_TEX_H, 512, 512);
+		HudRender.blit(graphics, MENU_NPC_TEXTURE, 0, 0, 0, 0, PANEL_TEX_W, PANEL_TEX_H, 512, 512);
 		graphics.pose().popPose();
 	}
 

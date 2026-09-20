@@ -103,7 +103,7 @@ public class ConfigCommand {
 	private static void syncSingleConfig(MinecraftServer server, String configFile) {
 		try {
 			ConfigManager.reloadSpecificConfig(configFile);
-			if (configFile.equals(ConfigManager.CLIENT_ONLY_CONFIG)) return;
+			if (ConfigManager.isClientOnlyConfig(configFile)) return;
 			String jsonPayload = ConfigManager.getSpecificConfigJson(configFile);
 			if (jsonPayload == null || jsonPayload.isBlank()) return;
 

@@ -4,6 +4,10 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.character.util.BaseMenuScreen;
+import com.dragonminez.client.gui.tutorial.TutorialButton;
+import com.dragonminez.client.gui.tutorial.TutorialManager;
+import com.dragonminez.client.gui.tutorial.TutorialRect;
+import com.dragonminez.client.gui.tutorial.TutorialStep;
 import com.dragonminez.client.render.shader.ClientGravityState;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.BonusNameFormatter;
@@ -85,6 +89,72 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		updateStatsData();
 		initStatButtons();
 		initViewSwitchButton();
+		if (statsData != null) TutorialManager.request(this, TutorialManager.STATS_MENU, tutorialSteps());
+	}
+
+	private List<TutorialStep> tutorialSteps() {
+		String prefix = "gui.dragonminez.tutorial.stats.";
+		List<TutorialStep> steps = new ArrayList<>();
+
+		steps.add(TutorialStep.of(prefix + "size")
+				.title(prefix + "size.title")
+				.args(() -> new Object[]{menuScalePercent()})
+				.highlight(() -> List.of(leftPanelRect(), rightPanelRect(), topPanelRect()))
+				.padding(0.0f)
+				.centered()
+				.button(TutorialButton.icon(TutorialButton.Icon.DECREASE, () -> adjustMenuScale(-1)))
+				.button(TutorialButton.icon(TutorialButton.Icon.INCREASE, () -> adjustMenuScale(1)))
+				.build());
+
+		steps.add(TutorialStep.of(prefix + "name").title(prefix + "name.title").highlightOne(this::topPanelRect).padding(0.0f).build());
+		steps.add(TutorialStep.of(prefix + "level").title(prefix + "level.title").highlightOne(() -> infoRowRect(0)).build());
+		steps.add(TutorialStep.of(prefix + "tps").title(prefix + "tps.title").highlightOne(() -> infoRowRect(1)).build());
+
+		String[] stats = {"str", "skp", "res", "vit", "pwr", "ene"};
+		int[][] affected = {{0, 0}, {1, 1}, {2, 3, 7, 7}, {4, 4}, {5, 5}, {6, 6}};
+		for (int i = 0; i < stats.length; i++) {
+			final int row = i;
+			final int[] ranges = affected[i];
+			steps.add(TutorialStep.of(prefix + stats[i])
+					.title("gui.dragonminez.character_stats." + stats[i])
+					.highlight(() -> {
+						List<TutorialRect> rects = new ArrayList<>();
+						rects.add(statRowRect(row));
+						for (int r = 0; r + 1 < ranges.length; r += 2) rects.add(statisticRowsRect(ranges[r], ranges[r + 1]));
+						return rects;
+					})
+					.build());
+		}
+
+		steps.add(TutorialStep.of(prefix + "tpc").title(prefix + "tpc.title")
+				.highlightOne(() -> TutorialRect.of(24, getUiHeight() / 2.0f + 70, 118, 24)).build());
+		steps.add(TutorialStep.of(prefix + "tp_multiplier").title("gui.dragonminez.character_stats.tp_multiplier")
+				.highlightOne(() -> TutorialRect.of(getUiWidth() - 140, getUiHeight() / 2.0f + 77, 112, 11)).build());
+		return steps;
+	}
+
+	private TutorialRect leftPanelRect() {
+		return TutorialRect.of(12, getUiHeight() / 2.0f - 105, 141, 213);
+	}
+
+	private TutorialRect rightPanelRect() {
+		return TutorialRect.of(getUiWidth() - 158, getUiHeight() / 2.0f - 105, 141, 213);
+	}
+
+	private TutorialRect topPanelRect() {
+		return TutorialRect.of(getUiWidth() / 2.0f - 70, 8, 145, 58);
+	}
+
+	private TutorialRect infoRowRect(int row) {
+		return TutorialRect.of(28, getUiHeight() / 2.0f - 73 + row * 11, 114, 11);
+	}
+
+	private TutorialRect statRowRect(int row) {
+		return TutorialRect.of(24, getUiHeight() / 2.0f - 4 + row * 12, 118, 11);
+	}
+
+	private TutorialRect statisticRowsRect(int firstRow, int lastRow) {
+		return TutorialRect.of(getUiWidth() - 140, getUiHeight() / 2.0f - 65 + firstRow * 12, 112, (lastRow - firstRow + 1) * 12 - 1);
 	}
 
 	@Override
@@ -108,30 +178,34 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (isNotAnimating()) this.renderBackground(graphics);
+		renderMenuBackground(graphics, partialTick);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
 		applyZoom(graphics, partialTick);
-		int leftOffset = getLeftPanelSwitchOffset(partialTick);
-		int rightOffset = getRightPanelSwitchOffset(partialTick);
-		int topOffset = getTopPanelSwitchOffset(partialTick);
+		float leftOffset = getLeftPanelSwitchOffset(partialTick);
+		float rightOffset = getRightPanelSwitchOffset(partialTick);
+		float topOffset = getTopPanelSwitchOffset(partialTick);
 		updatePanelWidgetOffsets(leftOffset, rightOffset);
 
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 		renderMenuPanels(graphics, leftOffset, rightOffset, topOffset);
-		renderPlayerInfo(graphics, uiMouseX, uiMouseY - topOffset, topOffset);
 
 		graphics.pose().pushPose();
-		graphics.pose().translate(leftOffset, 0, 0);
-		renderStatsInfo(graphics, uiMouseX - leftOffset, uiMouseY);
+		graphics.pose().translate(0.0f, topOffset, 0.0f);
+		renderPlayerInfo(graphics, uiMouseX, uiMouseY - Math.round(topOffset), 0);
 		graphics.pose().popPose();
 
 		graphics.pose().pushPose();
-		graphics.pose().translate(rightOffset, 0, 0);
-		renderStatisticsInfo(graphics, uiMouseX - rightOffset, uiMouseY);
+		graphics.pose().translate(leftOffset, 0.0f, 0.0f);
+		renderStatsInfo(graphics, uiMouseX - Math.round(leftOffset), uiMouseY);
+		graphics.pose().popPose();
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(rightOffset, 0.0f, 0.0f);
+		renderStatisticsInfo(graphics, uiMouseX - Math.round(rightOffset), uiMouseY);
 		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
@@ -288,21 +362,21 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		return new double[]{mitigationReductionPct, enchReduction * 100.0};
 	}
 
-	private void renderMenuPanels(GuiGraphics graphics, int leftOffset, int rightOffset, int topOffset) {
+	private void renderMenuPanels(GuiGraphics graphics, float leftOffset, float rightOffset, float topOffset) {
 		int centerX = getUiWidth() / 2;
 		int centerY = getUiHeight() / 2;
 
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		graphics.blit(MENU_BIG, 12 + leftOffset, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29 + leftOffset, centerY - 95, 142, 22, 107, 21, 256, 256);
-		graphics.blit(MENU_BIG, 43 + leftOffset, centerY - 28, 142, 0, 79, 21, 256, 256);
+		blit(graphics, MENU_BIG, 12 + leftOffset, centerY - 105, 0, 0, 141, 213);
+		blit(graphics, MENU_BIG, 29 + leftOffset, centerY - 95, 142, 22, 107, 21);
+		blit(graphics, MENU_BIG, 43 + leftOffset, centerY - 28, 142, 0, 79, 21);
 
-		graphics.blit(MENU_BIG, getUiWidth() - 158 + rightOffset, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141 + rightOffset, centerY - 95, 142, 22, 107, 21, 256, 256);
+		blit(graphics, MENU_BIG, getUiWidth() - 158 + rightOffset, centerY - 105, 0, 0, 141, 213);
+		blit(graphics, MENU_BIG, getUiWidth() - 141 + rightOffset, centerY - 95, 142, 22, 107, 21);
 
-		graphics.blit(MENU_SMALL, centerX - 70, 8 + topOffset, 0, 95, 145, 58, 256, 256);
+		blit(graphics, MENU_SMALL, centerX - 70, 8 + topOffset, 0, 95, 145, 58);
 
 		RenderSystem.disableBlend();
 	}
@@ -354,18 +428,15 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, raceComponent, centerX, 46 + topOffset, 0xFFFFFF, 0x000000);
 	}
 
-	private void updatePanelWidgetOffsets(int leftOffset, int rightOffset) {
-		int leftButtonX = 27 + leftOffset;
-		if (strButton != null) strButton.setX(leftButtonX);
-		if (skpButton != null) skpButton.setX(leftButtonX);
-		if (resButton != null) resButton.setX(leftButtonX);
-		if (vitButton != null) vitButton.setX(leftButtonX);
-		if (pwrButton != null) pwrButton.setX(leftButtonX);
-		if (eneButton != null) eneButton.setX(leftButtonX);
-		if (multiplierButton != null) multiplierButton.setX(leftButtonX);
-
-		int rightSwitchX = getUiWidth() - 45 + rightOffset;
-		if (viewSwitchButton != null) viewSwitchButton.setX(rightSwitchX);
+	private void updatePanelWidgetOffsets(float leftOffset, float rightOffset) {
+		slideX(strButton, 27, leftOffset);
+		slideX(skpButton, 27, leftOffset);
+		slideX(resButton, 27, leftOffset);
+		slideX(vitButton, 27, leftOffset);
+		slideX(pwrButton, 27, leftOffset);
+		slideX(eneButton, 27, leftOffset);
+		slideX(multiplierButton, 27, leftOffset);
+		slideX(viewSwitchButton, getUiWidth() - 45, rightOffset);
 	}
 
 	private void renderStatsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -696,7 +767,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	}
 
 	private void renderStatisticsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
-		if (useHexagonView) renderStatisticsInfoHexagon(graphics, mouseX, mouseY);
+		if (useHexagonView && !TutorialManager.isActive(this)) renderStatisticsInfoHexagon(graphics, mouseX, mouseY);
 		else renderStatisticsInfoList(graphics, mouseX, mouseY);
 		renderBattlePowerInfo(graphics, mouseX, mouseY);
 		renderGravityInfo(graphics, mouseX, mouseY);

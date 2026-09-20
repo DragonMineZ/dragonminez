@@ -7,6 +7,11 @@ import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
+import com.dragonminez.client.gui.hud.HudRender;
+import com.dragonminez.client.gui.tutorial.HudTutorialScreen;
+import com.dragonminez.client.gui.tutorial.TutorialManager;
+import com.dragonminez.client.gui.tutorial.TutorialRect;
+import com.dragonminez.client.gui.tutorial.TutorialStep;
 import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.hair.HairRenderContext;
@@ -77,7 +82,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private float displayedProgress = 0.0f;
 	private float displayedScale = 95.0f;
 	private float displayedBaseY = 0.0f;
+	private float displayedBaseX = 0.0f;
 	private boolean initializedAnimations = false;
+	private long lastFrameNanos;
+	private float frameEase;
+	private int passiveInfoBottom;
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("superforms", "androidforms", "legendaryforms", "godforms");
 	private final List<TabId> activeTabs = new ArrayList<>();
 
@@ -193,6 +202,28 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		initTabWidgets();
 		initNavigationButtons();
 		initColorPickerSliders();
+		if (activeTabs.get(currentTabIndex) == TabId.AURA_CLASS) TutorialManager.request(this, TutorialManager.CUSTOMIZATION_CLASS, tutorialSteps());
+	}
+
+	private List<TutorialStep> tutorialSteps() {
+		String prefix = "gui.dragonminez.tutorial.class.";
+		List<TutorialStep> steps = new ArrayList<>();
+		steps.add(TutorialStep.of(prefix + "stats")
+				.title(prefix + "stats.title")
+				.highlightOne(() -> {
+					float top = getUiHeight() / 2.0f - LEFT_PANEL_HEIGHT / 2.0f + LEFT_PANEL_PADDING;
+					return TutorialRect.of(LEFT_PANEL_X + 6, top - 6, LEFT_PANEL_WIDTH - 12, 140);
+				})
+				.passthrough()
+				.build());
+		steps.add(TutorialStep.of(prefix + "passive")
+				.title(prefix + "passive.title")
+				.highlightOne(() -> {
+					float top = getUiHeight() / 2.0f - 66;
+					return TutorialRect.of(getUiWidth() - 144, top, 138, Math.max(40, passiveInfoBottom - top + 2));
+				})
+				.build());
+		return steps;
 	}
 
 	private void initTabWidgets() {
@@ -466,6 +497,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		long now = System.nanoTime();
+		float dt = lastFrameNanos == 0L ? 0.0f : Math.min(0.1f, (now - lastFrameNanos) / 1_000_000_000.0f);
+		lastFrameNanos = now;
+		frameEase = dt <= 0.0f ? 0.0f : 1.0f - (float) Math.exp(-dt / 0.10f);
+
 		renderPanorama(partialTick);
 		renderCinematicBars(graphics);
 
@@ -501,7 +537,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void renderLeftPanel(GuiGraphics graphics) {
 		int panelY = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2;
 		RenderSystem.enableBlend();
-		graphics.blit(MENU_BIG, LEFT_PANEL_X, panelY, 0, 0, LEFT_PANEL_WIDTH, LEFT_PANEL_HEIGHT);
+		blit(graphics, MENU_BIG, LEFT_PANEL_X, panelY, 0, 0, LEFT_PANEL_WIDTH, LEFT_PANEL_HEIGHT);
 		RenderSystem.disableBlend();
 	}
 
@@ -512,8 +548,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int barH = 6;
 
 		float targetProgress = (currentTabIndex + 1) / (float) activeTabs.size();
-		displayedProgress = Mth.lerp(0.15f, displayedProgress, targetProgress);
-		int fillW = Mth.floor(barW * displayedProgress);
+		displayedProgress = Mth.lerp(frameEase, displayedProgress, targetProgress);
+		float fillW = barW * displayedProgress;
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 500.0D);
@@ -523,7 +559,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		graphics.fill(barX - 1, barY - 1, barX + barW + 1, barY + barH + 1, 0xFFFFFFFF);
 		graphics.fill(barX, barY, barX + barW, barY + barH, 0xFF111111);
-		graphics.fill(barX, barY, barX + fillW, barY + barH, 0xFF006400);
+		HudRender.rect(graphics, barX, barY, fillW, barH, 0xFF006400);
 
 		graphics.pose().popPose();
 	}
@@ -617,6 +653,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX, textY, 0xFFCCCCCC);
 			textY += 12;
 		}
+		passiveInfoBottom = textY;
 	}
 
 	private List<String> wrapText(String text, int maxWidth) {
@@ -767,15 +804,20 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		if (!initializedAnimations) {
 			displayedScale = targetScale;
 			displayedBaseY = targetBaseY;
+			displayedBaseX = baseX;
 			displayedProgress = (currentTabIndex + 1) / (float) activeTabs.size();
 			initializedAnimations = true;
 		}
 
-		displayedScale = Mth.lerp(0.15f, displayedScale, targetScale);
-		displayedBaseY = Mth.lerp(0.15f, displayedBaseY, targetBaseY);
+		displayedScale = Mth.lerp(frameEase, displayedScale, targetScale);
+		displayedBaseY = Mth.lerp(frameEase, displayedBaseY, targetBaseY);
+		displayedBaseX = Mth.lerp(frameEase, displayedBaseX, baseX);
 
 		int adjustedScale = getAdjustedModelScale(player, (int) displayedScale);
-		int currentBaseY = (int) displayedBaseY;
+		baseX = Mth.floor(displayedBaseX);
+		int currentBaseY = Mth.floor(displayedBaseY);
+		float fractionX = displayedBaseX - baseX;
+		float fractionY = displayedBaseY - currentBaseY;
 
 		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
 		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
@@ -805,7 +847,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		Matrix4f guiProjection = new Matrix4f().ortho(0, sw, sh, 0, -10000, 10000);
 
 		graphics.pose().pushPose();
-		graphics.pose().translate(0.0D, 0.0D, 320.0D);
+		graphics.pose().translate(fractionX, fractionY, 320.0f);
 
 		DMZSkinLayer.PREVIEW_MODE = previewApplied;
 		try {
@@ -1052,6 +1094,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			} else {
 				ForgeClientEvents.markCharacterCreatedLocally();
 				NetworkHandler.sendToServer(new CreateCharacterC2S(character));
+				if (TutorialManager.shouldRun(TutorialManager.HUD)) {
+					this.minecraft.setScreen(new HudTutorialScreen());
+					return;
+				}
 			}
 			this.minecraft.setScreen(null);
 		}

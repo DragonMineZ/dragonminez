@@ -5,7 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -28,8 +30,8 @@ public class GeneralUserConfig {
 	public static final String HUD_STYLE_DEFAULT = "default";
 	public static final String HUD_STYLE_MINECRAFT = "minecraft";
 
-	private String hudStyle = HUD_STYLE_DEFAULT;
-	private Map<String, Map<String, HudPlacement>> hudLayout = new LinkedHashMap<>();
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private String hudStyle = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Map<String, Map<String, HudPlacement>> hudLayout = null;
 
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean alternativeHud = null;
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean techniqueHotbarRightSide = null;
@@ -43,10 +45,13 @@ public class GeneralUserConfig {
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer staminaBarPosX = null;
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer staminaBarPosY = null;
 	private Boolean hexagonStatsDisplay = false;
-	private Float menuScaleMultiplier = 1.0f;
+	public static final float DEFAULT_MENU_SCALE = 0.75f;
+	private Float menuScaleMultiplier = DEFAULT_MENU_SCALE;
 	private Float utilityMenuScaleMultiplier = 1.0f;
 	private Boolean cameraMovementDuringFlight = true;
-	private Boolean liveCrowdinTranslations = true;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean liveCrowdinTranslations = null;
+	private Boolean tutorialsEnabled = true;
+	private List<String> tutorialsSeen = new ArrayList<>();
 	private Boolean showAccumulativeDamage = true;
 	private Boolean taiyokenInvertPalette = false;
 	private Boolean transformationOutlines = true;
@@ -74,29 +79,38 @@ public class GeneralUserConfig {
 	private Float overShoulderSide = 1.45f;
 	private Float overShoulderSmoothing = 0.4f;
 
-	public String getHudStyle() {
-		if (alternativeHud != null) {
-			if (alternativeHud && HUD_STYLE_DEFAULT.equals(hudStyle)) hudStyle = HUD_STYLE_MINECRAFT;
-			alternativeHud = null;
+	public boolean migrateLegacyHud(HudLayoutConfig target, boolean targetIsNew) {
+		boolean changed = false;
+		if (targetIsNew && (hudStyle != null || alternativeHud != null)) {
+			String legacyStyle = hudStyle != null ? HudLayoutConfig.normalizeStyle(hudStyle) : HUD_STYLE_DEFAULT;
+			if (Boolean.TRUE.equals(alternativeHud) && HUD_STYLE_DEFAULT.equals(legacyStyle)) legacyStyle = HUD_STYLE_MINECRAFT;
+			target.setStyle(legacyStyle);
+			changed = true;
 		}
+		if (hudLayout != null && !hudLayout.isEmpty() && target.getLayout().isEmpty()) {
+			target.getLayout().putAll(hudLayout);
+			changed = true;
+		}
+		if (hudStyle != null || hudLayout != null || alternativeHud != null) changed = true;
+		hudStyle = null;
+		hudLayout = null;
+		alternativeHud = null;
 		xenoverseHudPosX = xenoverseHudPosY = null;
 		xenoverseHudScale = null;
 		techniqueHotbarRightSide = null;
+		liveCrowdinTranslations = null;
 		healthBarPosX = healthBarPosY = energyBarPosX = energyBarPosY = staminaBarPosX = staminaBarPosY = null;
-		String normalized = hudStyle == null ? "" : hudStyle.trim().toLowerCase(Locale.ROOT).replace("_", " ").replaceAll("\\s+", " ");
-		switch (normalized) {
-			case "legacy1" -> normalized = HUD_STYLE_LEGACY_1;
-			case "legacy2" -> normalized = HUD_STYLE_LEGACY_2;
-			case HUD_STYLE_LEGACY_1, HUD_STYLE_LEGACY_2, HUD_STYLE_MINECRAFT -> {}
-			default -> normalized = HUD_STYLE_DEFAULT;
-		}
-		hudStyle = normalized;
-		return hudStyle;
+		return changed;
 	}
 
-	public Map<String, Map<String, HudPlacement>> getHudLayout() {
-		if (hudLayout == null) hudLayout = new LinkedHashMap<>();
-		return hudLayout;
+	public Boolean getTutorialsEnabled() {
+		if (tutorialsEnabled == null) tutorialsEnabled = true;
+		return tutorialsEnabled;
+	}
+
+	public List<String> getTutorialsSeen() {
+		if (tutorialsSeen == null) tutorialsSeen = new ArrayList<>();
+		return tutorialsSeen;
 	}
 
 	public Integer getOverShoulderMode() {
@@ -160,7 +174,7 @@ public class GeneralUserConfig {
 	}
 
 	public Float getMenuScaleMultiplier() {
-		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
+		if (menuScaleMultiplier == null || !Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = DEFAULT_MENU_SCALE;
 		return menuScaleMultiplier;
 	}
 
@@ -183,8 +197,8 @@ public class GeneralUserConfig {
 	}
 
 	public void setMenuScaleMultiplier(Float menuScaleMultiplier) {
-		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
-			this.menuScaleMultiplier = 1.0f;
+		if (menuScaleMultiplier == null || !Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
+			this.menuScaleMultiplier = DEFAULT_MENU_SCALE;
 			return;
 		}
 		this.menuScaleMultiplier = menuScaleMultiplier;

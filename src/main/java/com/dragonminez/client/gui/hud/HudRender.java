@@ -79,6 +79,25 @@ public final class HudRender {
 		BufferUploader.drawWithShader(builder.end());
 	}
 
+	public static void nineSlice(GuiGraphics graphics, ResourceLocation texture, float x, float y, float width, float height,
+								 float u, float v, float regionWidth, float regionHeight, float border, int textureWidth, int textureHeight) {
+		if (width <= 0.0f || height <= 0.0f) return;
+		float destBorder = Math.min(border, Math.min(width, height) / 2.0f);
+		float sourceBorder = Math.min(border, Math.min(regionWidth, regionHeight) / 2.0f);
+		float[] destX = {x, x + destBorder, x + width - destBorder, x + width};
+		float[] destY = {y, y + destBorder, y + height - destBorder, y + height};
+		float[] sourceX = {u, u + sourceBorder, u + regionWidth - sourceBorder, u + regionWidth};
+		float[] sourceY = {v, v + sourceBorder, v + regionHeight - sourceBorder, v + regionHeight};
+
+		for (int row = 0; row < 3; row++) {
+			for (int column = 0; column < 3; column++) {
+				blit(graphics, texture, destX[column], destY[row], sourceX[column], sourceY[row],
+						destX[column + 1] - destX[column], destY[row + 1] - destY[row],
+						sourceX[column + 1] - sourceX[column], sourceY[row + 1] - sourceY[row], textureWidth, textureHeight);
+			}
+		}
+	}
+
 	public static void rect(GuiGraphics graphics, float x, float y, float width, float height, int color) {
 		gradient(graphics, x, y, width, height, color, color, color, color);
 	}

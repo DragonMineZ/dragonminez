@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.character;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
@@ -588,7 +589,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 		beginUiScale(graphics);
 
-		graphics.blit(MENU_NPC, panelX, panelY, 0, 0, PANEL_W, PANEL_H, 512, 512);
+		HudRender.blit(graphics, MENU_NPC, panelX, panelY, 0, 0, PANEL_W, PANEL_H, 512, 512);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.title"), panelX + PANEL_W / 2, panelY + 12, 0xFFFFD700);
 
 		renderHeader(graphics);

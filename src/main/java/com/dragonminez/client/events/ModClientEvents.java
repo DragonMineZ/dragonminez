@@ -98,6 +98,7 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "rage_meter_hud", RageMeterHUD.HUD_RAGE_METER);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "party_hud", PartyHUD.HUD_PARTY);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "quest_notice_hud", QuestNoticeHUD.HUD_QUEST_NOTICE);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "tutorial_hint_hud", com.dragonminez.client.gui.tutorial.TutorialHintHUD.HUD_TUTORIAL_HINT);
 	}
 	@SubscribeEvent
 	public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {

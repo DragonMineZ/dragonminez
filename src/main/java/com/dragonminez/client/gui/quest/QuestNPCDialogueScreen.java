@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.quest;
 
+import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.MasterTextScreen;
 import com.dragonminez.client.gui.MastersSkillsScreen;
@@ -325,17 +326,17 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
-		dialogueScroll = Mth.lerp(tickDelta * 0.4f, dialogueScroll, dialogueTargetScroll);
-		listScroll = Mth.lerp(tickDelta * 0.4f, listScroll, listTargetScroll);
-		descScroll = Mth.lerp(tickDelta * 0.4f, descScroll, descTargetScroll);
-		objScroll = Mth.lerp(tickDelta * 0.4f, objScroll, objTargetScroll);
-		rewardScroll = Mth.lerp(tickDelta * 0.4f, rewardScroll, rewardTargetScroll);
+		float ease = frameEase();
+		dialogueScroll = Mth.lerp(ease, dialogueScroll, dialogueTargetScroll);
+		listScroll = Mth.lerp(ease, listScroll, listTargetScroll);
+		descScroll = Mth.lerp(ease, descScroll, descTargetScroll);
+		objScroll = Mth.lerp(ease, objScroll, objTargetScroll);
+		rewardScroll = Mth.lerp(ease, rewardScroll, rewardTargetScroll);
 
 		beginUiScale(guiGraphics);
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		guiGraphics.blit(DIALOGUE_BG, panelX, panelY, 0, 0, panelW, panelH, 512, 512);
+		HudRender.blit(guiGraphics, DIALOGUE_BG, panelX, panelY, 0, 0, panelW, panelH, 512, 512);
 
 		Component npcName = npcName().copy().withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
 		TextUtil.drawCenteredStringWithBorder(guiGraphics, this.font, npcName, panelX + panelW / 2, panelY + 12, 0xFFFFFF);

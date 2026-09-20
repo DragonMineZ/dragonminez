@@ -31,6 +31,6 @@ public enum HudStyle {
 	}
 
 	public static HudStyle current() {
-		return fromConfigName(ConfigManager.getUserConfig().getHudStyle());
+		return fromConfigName(ConfigManager.getHudLayoutConfig().getStyle());
 	}
 }
