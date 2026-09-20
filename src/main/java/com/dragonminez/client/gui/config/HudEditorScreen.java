@@ -10,6 +10,7 @@ import com.dragonminez.client.gui.hud.MinecraftHUD;
 import com.dragonminez.client.gui.hud.ModernHUD;
 import com.dragonminez.client.gui.hud.PartyHUD;
 import com.dragonminez.client.gui.hud.RageMeterHUD;
+import com.dragonminez.client.gui.hud.TechniqueHotbarHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.gui.hud.layout.HudElement;
 import com.dragonminez.client.gui.hud.layout.HudLayout;
@@ -30,6 +31,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -73,6 +75,8 @@ public class HudEditorScreen extends Screen {
 	private float grabX;
 	private float grabY;
 	private HudLayout.Box dragStart;
+	private final Map<HudElement, HudLayout.Box> groupStart = new EnumMap<>(HudElement.class);
+	private boolean groupDrag;
 	private final List<TexturedTextButton> buttons = new ArrayList<>();
 	private TexturedTextButton styleButton;
 	private TexturedTextButton toggleButton;
@@ -174,7 +178,8 @@ public class HudEditorScreen extends Screen {
 	}
 
 	private void reset() {
-		if (selected != null) HudLayout.resetPlacement(style, selected);
+		if (selected != null && selected.isSkill()) for (HudElement skill : HudElement.skills()) HudLayout.resetPlacement(style, skill);
+		else if (selected != null) HudLayout.resetPlacement(style, selected);
 		else for (HudElement element : HudLayout.elements(style)) HudLayout.resetPlacement(style, element);
 	}
 
@@ -196,6 +201,7 @@ public class HudEditorScreen extends Screen {
 		KiReserveHUD.render(graphics, partialTick, this.width, this.height);
 		RageMeterHUD.render(graphics, partialTick, this.width, this.height);
 		PartyHUD.render(graphics, partialTick, this.width, this.height);
+		TechniqueHotbarHUD.render(graphics, partialTick, this.width, this.height);
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0f, 0.0f, 400.0f);
@@ -217,6 +223,9 @@ public class HudEditorScreen extends Screen {
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hud_editor.title"), this.width / 2, TITLE_Y, 0xFFFFD700);
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hud_editor.hint"), this.width / 2, this.height - HINT_BOTTOM_OFFSET, 0xFFC8D0DC);
+		if ((selected != null && selected.isSkill()) || (hovered != null && hovered.isSkill())) {
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.hud_editor.hint_skills"), this.width / 2, this.height - HINT_BOTTOM_OFFSET + 11, 0xFFC8D0DC);
+		}
 		int labelAlpha = Math.round(alpha * 255.0f);
 		if (labelAlpha >= 8) {
 			TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.hud_editor.style"), styleRowLeft(), STYLE_ROW_Y + 6,
@@ -293,9 +302,12 @@ public class HudEditorScreen extends Screen {
 			HudElement target = elementAt(mouseX, mouseY);
 			if (target == null || !HudLayout.canMirror(style, target)) return false;
 			selected = target;
-			HudPlacement placement = HudLayout.placement(style, target).copy();
-			placement.setMirrored(!placement.getMirrored());
-			HudLayout.setPlacement(style, target, placement);
+			if (target.isSkill()) mirrorSkills();
+			else {
+				HudPlacement placement = HudLayout.placement(style, target).copy();
+				placement.setMirrored(!placement.getMirrored());
+				HudLayout.setPlacement(style, target, placement);
+			}
 			this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.PIP_MENU.get(), 1.0F));
 			return true;
 		}
@@ -306,12 +318,14 @@ public class HudEditorScreen extends Screen {
 			drag = Drag.RESIZE;
 			handle = grabbed;
 			dragStart = box(selected);
+			captureGroup(selected.isSkill());
 			return true;
 		}
 
 		selected = elementAt(mouseX, mouseY);
 		if (selected == null) return false;
 		dragStart = box(selected);
+		captureGroup(selected.isSkill() && hasShiftDown());
 		grabX = (float) mouseX - dragStart.x();
 		grabY = (float) mouseY - dragStart.y();
 		drag = Drag.MOVE;
@@ -322,6 +336,8 @@ public class HudEditorScreen extends Screen {
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		drag = Drag.NONE;
 		handle = -1;
+		groupDrag = false;
+		groupStart.clear();
 		guidesX.clear();
 		guidesY.clear();
 		return super.mouseReleased(mouseX, mouseY, button);
@@ -333,6 +349,42 @@ public class HudEditorScreen extends Screen {
 		if (drag == Drag.MOVE) move((float) mouseX - grabX, (float) mouseY - grabY);
 		else resize((float) mouseX, (float) mouseY);
 		return true;
+	}
+
+	private void captureGroup(boolean active) {
+		groupStart.clear();
+		groupDrag = active;
+		if (!active) return;
+		for (HudElement skill : HudElement.skills()) groupStart.put(skill, box(skill));
+	}
+
+	private void mirrorSkills() {
+		boolean mirrored = !HudLayout.placement(style, HudElement.SKILL_1).getMirrored();
+		Map<HudElement, HudLayout.Box> boxes = new EnumMap<>(HudElement.class);
+		float left = Float.MAX_VALUE;
+		float right = -Float.MAX_VALUE;
+		for (HudElement skill : HudElement.skills()) {
+			HudLayout.Box box = box(skill);
+			boxes.put(skill, box);
+			left = Math.min(left, box.x());
+			right = Math.max(right, box.right());
+		}
+		for (Map.Entry<HudElement, HudLayout.Box> entry : boxes.entrySet()) {
+			HudLayout.Box box = entry.getValue();
+			float x = Mth.clamp(left + right - box.right(), 0.0f, Math.max(0.0f, this.width - box.width()));
+			HudPlacement placement = HudLayout.toPlacement(entry.getKey(), x, box.y(), box.width(), box.height(), box.scale(), this.width, this.height, box.visible());
+			placement.setMirrored(mirrored);
+			HudLayout.setPlacement(style, entry.getKey(), placement);
+		}
+	}
+
+	private void storeSibling(HudElement element, float x, float y, float width, float height, float scale) {
+		x = Mth.clamp(x, 0.0f, Math.max(0.0f, this.width - width));
+		y = Mth.clamp(y, 0.0f, Math.max(0.0f, this.height - height));
+		HudPlacement current = HudLayout.placement(style, element);
+		HudPlacement placement = HudLayout.toPlacement(element, x, y, width, height, scale, this.width, this.height, current.getVisible());
+		placement.setMirrored(current.getMirrored());
+		HudLayout.setPlacement(style, element, placement);
 	}
 
 	private void move(float x, float y) {
@@ -353,6 +405,15 @@ public class HudEditorScreen extends Screen {
 		HudPlacement placement = HudLayout.toPlacement(selected, x, y, width, height, current.hotbar() ? 1.0f : current.scale(), this.width, this.height, visible);
 		if (isOnHotbar(x, y, width, height)) placement.hotbar();
 		store(placement);
+
+		if (!groupDrag) return;
+		float dx = x - dragStart.x();
+		float dy = y - dragStart.y();
+		for (Map.Entry<HudElement, HudLayout.Box> entry : groupStart.entrySet()) {
+			if (entry.getKey() == selected) continue;
+			HudLayout.Box start = entry.getValue();
+			storeSibling(entry.getKey(), start.x() + dx, start.y() + dy, start.width(), start.height(), start.scale());
+		}
 	}
 
 	private void store(HudPlacement placement) {
@@ -383,7 +444,7 @@ public class HudEditorScreen extends Screen {
 		candidates.add(new float[]{(screen - size) / 2.0f, 0.0f, screen / 2.0f});
 
 		for (HudElement element : HudLayout.elements(style)) {
-			if (element == selected) continue;
+			if (element == selected || (groupDrag && element.isSkill())) continue;
 			HudLayout.Box other = box(element);
 			if (!other.visible()) continue;
 			float near = horizontal ? other.x() : other.y();
@@ -441,6 +502,16 @@ public class HudEditorScreen extends Screen {
 
 		boolean visible = HudLayout.placement(style, selected).getVisible();
 		store(HudLayout.toPlacement(selected, x, y, width, height, scale, this.width, this.height, visible));
+
+		if (!groupDrag) return;
+		float ratio = scale / dragStart.scale();
+		float originX = x - dragStart.x() * ratio;
+		float originY = y - dragStart.y() * ratio;
+		for (Map.Entry<HudElement, HudLayout.Box> entry : groupStart.entrySet()) {
+			if (entry.getKey() == selected) continue;
+			HudLayout.Box start = entry.getValue();
+			storeSibling(entry.getKey(), originX + start.x() * ratio, originY + start.y() * ratio, size[0] * scale, size[1] * scale, scale);
+		}
 	}
 
 	@Override

@@ -19,7 +19,6 @@ public class GeneralUserConfig {
 
 	private Boolean firstPersonAnimated = true;
 	private boolean impactFramesEnabled = false;
-	private Boolean techniqueHotbarRightSide = false;
 	private Boolean alwaysVisibleHudValues = false;
 	private Boolean hideHudNumbers = false;
 	private Boolean advancedDescription = true;
@@ -33,6 +32,7 @@ public class GeneralUserConfig {
 	private Map<String, Map<String, HudPlacement>> hudLayout = new LinkedHashMap<>();
 
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean alternativeHud = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean techniqueHotbarRightSide = null;
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer xenoverseHudPosX = null;
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer xenoverseHudPosY = null;
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Float xenoverseHudScale = null;
@@ -81,6 +81,7 @@ public class GeneralUserConfig {
 		}
 		xenoverseHudPosX = xenoverseHudPosY = null;
 		xenoverseHudScale = null;
+		techniqueHotbarRightSide = null;
 		healthBarPosX = healthBarPosY = energyBarPosX = energyBarPosY = staminaBarPosX = staminaBarPosY = null;
 		String normalized = hudStyle == null ? "" : hudStyle.trim().toLowerCase(Locale.ROOT).replace("_", " ").replaceAll("\\s+", " ");
 		switch (normalized) {
@@ -174,11 +175,6 @@ public class GeneralUserConfig {
 			return;
 		}
 		this.utilityMenuScaleMultiplier = utilityMenuScaleMultiplier;
-	}
-
-	public Boolean getTechniqueHotbarRightSide() {
-		if (techniqueHotbarRightSide == null) techniqueHotbarRightSide = false;
-		return techniqueHotbarRightSide;
 	}
 
 	public Boolean getHideHudNumbers() {

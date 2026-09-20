@@ -39,6 +39,12 @@ public final class HudLayout {
 			HudSprites.RESERVE_CAPSULE.guiWidth(),
 			HudSprites.RESERVE_CAPSULE.guiHeight() + HudSprites.RESERVE_BAR.height() + BORDER + 7.0f};
 
+	private static final float[] SIZE_SKILL = {120.0f, 13.0f};
+	private static final float SKILL_SCALE = 1.25f;
+	private static final float SKILL_LADDER_STEP = 8.0f;
+	private static final float SKILL_MARGIN_X = 12.0f;
+	private static final float SKILL_MARGIN_BOTTOM = 66.0f;
+
 	private static final Map<HudElement, Float> METER_VISIBILITY = new EnumMap<>(HudElement.class);
 	private static boolean preview;
 
@@ -86,6 +92,7 @@ public final class HudLayout {
 		list.add(HudElement.RESERVE);
 		list.add(HudElement.RAGE);
 		list.add(HudElement.PARTY);
+		for (HudElement skill : HudElement.skills()) list.add(skill);
 		return list;
 	}
 
@@ -97,11 +104,12 @@ public final class HudLayout {
 			case MC_LEFT, MC_RIGHT -> SIZE_MINECRAFT_SIDE;
 			case PARTY -> SIZE_PARTY;
 			case RESERVE, RAGE -> SIZE_METER;
+			case SKILL_1, SKILL_2, SKILL_3, SKILL_4 -> SIZE_SKILL;
 		};
 	}
 
 	public static boolean canMirror(HudStyle style, HudElement element) {
-		return element == HudElement.PARTY || (element == HudElement.MAIN && (style == HudStyle.DEFAULT || style == HudStyle.LEGACY_1));
+		return element == HudElement.PARTY || element.isSkill() || (element == HudElement.MAIN && (style == HudStyle.DEFAULT || style == HudStyle.LEGACY_1));
 	}
 
 	public static float unit(HudElement element, int screenHeight) {
@@ -123,6 +131,9 @@ public final class HudLayout {
 			case RESERVE -> new HudPlacement(0.0f, 0.5f, 2.0f, 0.0f, 1.0f);
 			case RAGE -> new HudPlacement(0.0f, 0.5f, 2.0f + meterWidth + 2.0f, 0.0f, 1.0f);
 			case PARTY -> new HudPlacement(0.0f, 0.5f, 2.0f + (meterWidth + 2.0f) * 2.0f, 0.0f, 0.67f);
+			case SKILL_1, SKILL_2, SKILL_3, SKILL_4 -> new HudPlacement(0.0f, 1.0f,
+					SKILL_MARGIN_X + SKILL_LADDER_STEP * element.skillRow(),
+					-(SKILL_MARGIN_BOTTOM + (3 - element.skillRow()) * SIZE_SKILL[1] * SKILL_SCALE), SKILL_SCALE);
 		};
 	}
 
@@ -206,7 +217,7 @@ public final class HudLayout {
 		Map<HudElement, Box> boxes = new EnumMap<>(HudElement.class);
 		for (HudElement element : elements(style)) {
 			Box box = baseBox(style, element, screenWidth, screenHeight);
-			if (box.visible() && !box.hotbar()) boxes.put(element, box);
+			if (box.visible() && !box.hotbar() && !element.isSkill()) boxes.put(element, box);
 		}
 
 		for (Map.Entry<HudElement, Box> entry : boxes.entrySet()) {
