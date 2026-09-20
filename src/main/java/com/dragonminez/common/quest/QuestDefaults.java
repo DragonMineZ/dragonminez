@@ -1563,7 +1563,7 @@ final class QuestDefaults {
 				step("gt", 14, "14_super_baby_and_his_army.json",
 						earthReq(2780, condBiome("dragonminez:rocky")),
 						new JsonObject[]{
-								objKill("dragonminez:saga_super_baby_vegeta", 1, 974000, 40920, 37030),
+								objKill("dragonminez:saga_baby_vegeta", 1, 974000, 40920, 37030),
 								objKill("dragonminez:saga_gohan_gt_baby", 1, 433000, 18180, 16460),
 								objKill("dragonminez:saga_goten_gt_baby", 1, 433000, 18180, 16460),
 								objKill("dragonminez:saga_trunks_gt_baby", 1, 433000, 18180, 16460)

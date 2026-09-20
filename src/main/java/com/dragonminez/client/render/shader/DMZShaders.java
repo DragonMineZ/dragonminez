@@ -31,7 +31,6 @@ public class DMZShaders {
 	public static ShaderInstance clawSlashShader;
 	public static ShaderInstance impactBurstShader;
 	public static ShaderInstance chargeRaysShader;
-	public static ShaderInstance beamMuzzleShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -125,10 +124,5 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "charge_rays"),
 						DefaultVertexFormat.POSITION_TEX),
 				shaderInstance -> chargeRaysShader = shaderInstance);
-
-		event.registerShader(new ShaderInstance(event.getResourceProvider(),
-						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "beam_muzzle"),
-						DefaultVertexFormat.POSITION_TEX),
-				shaderInstance -> beamMuzzleShader = shaderInstance);
 	}
 }

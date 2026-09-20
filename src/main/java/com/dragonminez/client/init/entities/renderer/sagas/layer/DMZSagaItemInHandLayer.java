@@ -23,38 +23,41 @@ public class DMZSagaItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLa
     @Override
     public void renderForBone(PoseStack poseStack, DBSagasEntity animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
         if (bone.getName().equals("right_hand_item")) {
-            ItemStack mainHandItem = animatable.getItemBySlot(EquipmentSlot.MAINHAND);
-
-            if (!mainHandItem.isEmpty()) {
-                poseStack.pushPose();
-
-                poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
-
-                poseStack.mulPose(Axis.YP.rotationDegrees(0f));
-                poseStack.mulPose(Axis.ZP.rotationDegrees(0f));
-
-                poseStack.translate(0.4D, 0.1D, 0.73D);
-
-                Minecraft.getInstance().getItemRenderer().renderStatic(
-                        mainHandItem,
-                        ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
-                        packedLight,
-                        packedOverlay,
-                        poseStack,
-                        bufferSource,
-                        animatable.level(),
-                        animatable.getId()
-                );
-
-                // Rendering the item above switches the shared BufferBuilder to the item's
-                // render type and ends the entity's buffer mid-recursion. Re-fetch the entity
-                // buffer so GeckoLib's remaining bones keep writing into a valid, set-up buffer.
-                // Without this, strict GPU drivers (AMD/Intel) render the entity as garbage.
-                // This mirrors GeckoLib's own BlockAndItemGeoLayer / DMZPlayerItemInHandLayer.
-                bufferSource.getBuffer(renderType);
-
-                poseStack.popPose();
-            }
+            renderHeldItem(poseStack, animatable, animatable.getItemBySlot(EquipmentSlot.MAINHAND), false, renderType, bufferSource, packedLight, packedOverlay);
+        } else if (bone.getName().equals("left_hand_item")) {
+            renderHeldItem(poseStack, animatable, animatable.getItemBySlot(EquipmentSlot.OFFHAND), true, renderType, bufferSource, packedLight, packedOverlay);
         }
+    }
+
+    private void renderHeldItem(PoseStack poseStack, DBSagasEntity animatable, ItemStack stack, boolean leftHand, RenderType renderType, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        if (stack.isEmpty()) return;
+
+        poseStack.pushPose();
+
+        poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
+
+        poseStack.translate(leftHand ? -0.4D : 0.4D, 0.1D, 0.73D);
+
+        Minecraft.getInstance().getItemRenderer().renderStatic(
+                animatable,
+                stack,
+                leftHand ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
+                leftHand,
+                poseStack,
+                bufferSource,
+                animatable.level(),
+                packedLight,
+                packedOverlay,
+                animatable.getId()
+        );
+
+        // Rendering the item above switches the shared BufferBuilder to the item's
+        // render type and ends the entity's buffer mid-recursion. Re-fetch the entity
+        // buffer so GeckoLib's remaining bones keep writing into a valid, set-up buffer.
+        // Without this, strict GPU drivers (AMD/Intel) render the entity as garbage.
+        // This mirrors GeckoLib's own BlockAndItemGeoLayer / DMZPlayerItemInHandLayer.
+        bufferSource.getBuffer(renderType);
+
+        poseStack.popPose();
     }
 }

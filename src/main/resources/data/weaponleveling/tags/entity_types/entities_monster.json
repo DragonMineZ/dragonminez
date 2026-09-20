@@ -650,6 +650,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_vegeta_gt_ssj2",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_vegeta_gt_ssj4",
       "required": false
     },
@@ -734,6 +738,10 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_baby_vegeta",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_super_baby_vegeta",
       "required": false
     },
@@ -762,7 +770,15 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_wu_xing_long_transformed",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_liu_xing_long",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_liu_xing_long_transformed",
       "required": false
     },
     {
@@ -770,7 +786,15 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_qi_xing_long_transformed",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_neo_shenron",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_neo_shenron_transformed",
       "required": false
     },
     {

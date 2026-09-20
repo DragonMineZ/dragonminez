@@ -79,6 +79,11 @@ public class SagaGTEntity {
         }
 
         @Override
+        public String getGeckolibModelName() {
+            return "saga_kid_goku";
+        }
+
+        @Override
         protected boolean hasTransformation() {
             return true;
         }
@@ -106,6 +111,11 @@ public class SagaGTEntity {
 
             this.setWildSense(true, 120);
             this.setZanzoken(true, 300);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goten_ssj";
         }
 
         @Override
@@ -139,6 +149,11 @@ public class SagaGTEntity {
             this.setWildSense(true, 80);
             this.setZanzoken(true, 200);
         }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_gokugt_ssj3";
+        }
     }
 
     public static class GokuGTSSJ4Entity extends DBSagasEntity {
@@ -164,7 +179,7 @@ public class SagaGTEntity {
     }
 
     /*
-        VEGETA GT [ BASE - SSJ | SSJ4 ]
+        VEGETA GT [ BASE - SSJ - SSJ2 | SSJ4 ]
      */
 
     public static class VegetaGTBaseEntity extends DBSagasEntity {
@@ -212,6 +227,47 @@ public class SagaGTEntity {
 
             this.setWildSense(true, 120);
             this.setZanzoken(true, 250);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta_gt";
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_GT_SSJ2.get();
+        }
+    }
+
+    public static class VegetaGTSSJ2Entity extends DBSagasEntity {
+
+        public VegetaGTSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 45);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 190, 1.5F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.BIG_BANG, 290, 1.8F);
+            this.addKiSkill(KiSkillType.FINAL_FLASH, 400, 2.3F);
+
+            this.setWildSense(true, 100);
+            this.setZanzoken(true, 200);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta_gt";
         }
     }
 
@@ -412,6 +468,11 @@ public class SagaGTEntity {
         }
 
         @Override
+        public String getGeckolibModelName() {
+            return "saga_trunks";
+        }
+
+        @Override
         protected boolean hasTransformation() {
             return true;
         }
@@ -439,6 +500,11 @@ public class SagaGTEntity {
             this.setWildSense(true, 120);
             this.setZanzoken(true, 250);
         }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_trunks_ssj";
+        }
     }
 
     public static class TrunksGTBabyEntity extends DBSagasEntity {
@@ -461,7 +527,7 @@ public class SagaGTEntity {
 
         @Override
         public String getGeckolibModelName() {
-            return "saga_trunks_gt";
+            return "saga_trunks";
         }
     }
 
@@ -487,6 +553,11 @@ public class SagaGTEntity {
             this.setWildSense(true, 120);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_videl";
         }
     }
 
@@ -536,6 +607,11 @@ public class SagaGTEntity {
             this.setAllowedCombos(120, ComboType.BASIC, ComboType.RAPID_KICKS);
             this.addKiSkill(KiSkillType.KIENZAN, 400, 3.0F, 0xFF70F6, 0xFF70F6);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 2.3F, 0xFF70F6, 0xFF70F6);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_a18";
         }
     }
 }
