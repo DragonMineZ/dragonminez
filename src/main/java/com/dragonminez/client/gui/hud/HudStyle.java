@@ -1,13 +1,13 @@
 package com.dragonminez.client.gui.hud;
 
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.GeneralUserConfig;
+import com.dragonminez.common.config.HudLayoutConfig;
 
 public enum HudStyle {
-	LEGACY_1(GeneralUserConfig.HUD_STYLE_LEGACY_1),
-	LEGACY_2(GeneralUserConfig.HUD_STYLE_LEGACY_2),
-	DEFAULT(GeneralUserConfig.HUD_STYLE_DEFAULT),
-	MINECRAFT(GeneralUserConfig.HUD_STYLE_MINECRAFT);
+	XENOVERSE(HudLayoutConfig.STYLE_XENOVERSE),
+	COMPACT(HudLayoutConfig.STYLE_COMPACT),
+	MODERN(HudLayoutConfig.STYLE_MODERN),
+	VANILLA(HudLayoutConfig.STYLE_VANILLA);
 
 	private final String configName;
 
@@ -27,7 +27,7 @@ public enum HudStyle {
 		for (HudStyle style : values()) {
 			if (style.configName.equals(name)) return style;
 		}
-		return DEFAULT;
+		return XENOVERSE;
 	}
 
 	public static HudStyle current() {

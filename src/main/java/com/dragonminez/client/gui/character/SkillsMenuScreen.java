@@ -430,7 +430,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.position(hiddenX, buttonY + 128)
 				.size(26, 32)
 				.texture(MENU_BIG)
-				.textureCoords(254, 44, 254, 44)
+				.textureCoords(142, 77, 142, 77)
 				.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
 				.onPress(btn -> {
 					currentCategory = SkillCategory.EVASION;

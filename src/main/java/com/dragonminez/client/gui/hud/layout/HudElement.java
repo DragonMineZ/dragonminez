@@ -2,9 +2,9 @@ package com.dragonminez.client.gui.hud.layout;
 
 public enum HudElement {
 	MAIN("main", false),
-	L2_HEALTH("legacy2_health", false),
-	L2_KI("legacy2_ki", false),
-	L2_STAMINA("legacy2_stamina", false),
+	L2_HEALTH("compact_health", false),
+	L2_KI("compact_ki", false),
+	L2_STAMINA("compact_stamina", false),
 	MC_LEFT("minecraft_left", false),
 	MC_RIGHT("minecraft_right", false),
 	PARTY("party", false),

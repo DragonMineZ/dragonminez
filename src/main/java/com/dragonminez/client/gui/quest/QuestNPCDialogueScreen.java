@@ -645,15 +645,30 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 	private MutableComponent npcName() {
 		String questNpcKey = "entity.dragonminez.questnpc." + npcId;
-		if (I18n.exists(questNpcKey)) {
-			return tr(questNpcKey);
+		String masterKey = "entity.dragonminez.master_" + npcId;
+		String linesKey = "gui.dragonminez.lines." + npcId + ".name";
+
+		if (masterNpc) {
+			Minecraft mc = Minecraft.getInstance();
+			Entity entity = entityId >= 0 && mc.level != null ? mc.level.getEntity(entityId) : null;
+			if (entity != null && I18n.exists(entity.getType().getDescriptionId())) return tr(entity.getType().getDescriptionId());
+			if (I18n.exists(masterKey)) return tr(masterKey);
 		}
 
-		String masterKey = "gui.dragonminez.lines." + npcId + ".name";
-		if (I18n.exists(masterKey)) {
-			return tr(masterKey);
+		if (I18n.exists(questNpcKey)) return tr(questNpcKey);
+		if (I18n.exists(masterKey)) return tr(masterKey);
+		if (I18n.exists(linesKey)) return tr(linesKey);
+		return txt(readableId(npcId));
+	}
+
+	private static String readableId(String id) {
+		StringBuilder builder = new StringBuilder();
+		for (String word : id.split("[_ ]+")) {
+			if (word.isEmpty()) continue;
+			if (builder.length() > 0) builder.append(' ');
+			builder.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
 		}
-		return Component.literal(npcId).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+		return builder.toString();
 	}
 
 	private MutableComponent dialogueLine() {

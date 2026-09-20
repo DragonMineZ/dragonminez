@@ -39,7 +39,7 @@ public class ModernHUD {
 	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (HudStyle.current() != HudStyle.DEFAULT) return;
+		if (HudStyle.current() != HudStyle.MODERN) return;
 
 		HudLayout.Box box = HudLayout.resolve(HudElement.MAIN, width, height);
 		if (!box.visible() && !HudLayout.isPreview()) return;

@@ -152,7 +152,7 @@ public class ScouterHUD {
 	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (HudStyle.current() == HudStyle.LEGACY_2) return;
+		if (HudStyle.current() == HudStyle.COMPACT) return;
 
 		boolean preview = HudLayout.isPreview();
 		HudLayout.Box box = HudLayout.resolve(HudElement.SCOUTER, width, height);

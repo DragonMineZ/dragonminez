@@ -51,7 +51,7 @@ public class AlternativeHUD {
 	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (HudStyle.current() != HudStyle.LEGACY_2) return;
+		if (HudStyle.current() != HudStyle.COMPACT) return;
 		HudLayout.Box hpBox = HudLayout.resolve(HudElement.L2_HEALTH, width, height);
 		HudLayout.Box kiBox = HudLayout.resolve(HudElement.L2_KI, width, height);
 		HudLayout.Box stmBox = HudLayout.resolve(HudElement.L2_STAMINA, width, height);

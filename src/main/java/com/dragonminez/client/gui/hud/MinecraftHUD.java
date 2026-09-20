@@ -44,7 +44,7 @@ public class MinecraftHUD {
 	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (HudStyle.current() != HudStyle.MINECRAFT) return;
+		if (HudStyle.current() != HudStyle.VANILLA) return;
 		if (mc.player.isSpectator()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
