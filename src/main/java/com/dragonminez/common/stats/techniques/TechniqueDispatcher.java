@@ -326,7 +326,29 @@ public class TechniqueDispatcher {
                 }
                 break;
             case BARRAGE:
-                if (isInitialSpawn) {
+                if (isInitialSpawn && "assault_rain".equals(data.getId())) {
+                    KiBlastEntity rain = new KiBlastEntity(level, owner);
+
+                    rain.setupAssaultRainPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(), data.getColorOutline(),
+                            0.7F + castSize * 0.4F, Math.max(1, data.getBaseChargeTicks()));
+
+                    rain.setKiType(kiTypeOrdinal);
+                    rain.setTechniqueId(data.getId());
+                    rain.setArmorPenetration(data.getArmorPenetration());
+                    rain.setHeal(isHeal);
+                    rain.setVolleyTarget(homingTargetId);
+                } else if (isInitialSpawn && "blaster_meteor".equals(data.getId())) {
+                    KiBlastEntity meteor = new KiBlastEntity(level, owner);
+
+                    meteor.setupBlasterMeteor(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(), data.getColorOutline(),
+                            Math.max(1, data.getBaseChargeTicks()), 0);
+
+                    meteor.setKiType(kiTypeOrdinal);
+                    meteor.setTechniqueId(data.getId());
+                    meteor.setArmorPenetration(data.getArmorPenetration());
+                    meteor.setHeal(isHeal);
+                    meteor.setVolleyTarget(homingTargetId);
+                } else if (isInitialSpawn) {
                     KiBlastEntity volley = new KiBlastEntity(level, owner);
 
                     volley.setupKiVolleyPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), 40, castSize);

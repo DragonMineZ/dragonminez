@@ -897,6 +897,7 @@ public abstract class AbstractKiProjectile extends Projectile {
                 StatsProvider.get(StatsCapability.INSTANCE, sp).ifPresent(data -> {
                     TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techId);
                     if (tech instanceof KiAttackData kiData) {
+                        if ("_cast".equals(suffix) && kiData.getKiType() == KiAttackData.KiType.LASER) return;
                         String fullAnim = kiData.getAnimationPrefix() + suffix;
                         int hold = this.isMovementRestrictedType() ? 1 : 0;
                         NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, hold, -1, fullAnim), sp);

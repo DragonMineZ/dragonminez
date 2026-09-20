@@ -28,6 +28,11 @@ public class SkillManager {
         void execute(DBSagasEntity user, LivingEntity target, float damage);
     }
 
+    public static final int KAMEHAMEHA_CAST_TICKS = 37;
+    public static final int ASSAULT_RAIN_CAST_TICKS = 30;
+    public static final int ASSAULT_RAIN_FIRE_TICKS = 40;
+    public static final int BLASTER_METEOR_CAST_TICKS = 30;
+    public static final int BLASTER_METEOR_FIRE_TICKS = 50;
     public static final int DRAGON_FIST_WINDUP = 5;
     public static final int DRAGON_FIST_RUSH_TICKS = 20;
     private static final int KAMEHAMEHA_X10_MAIN = 0xFFE3E3;
@@ -45,7 +50,7 @@ public class SkillManager {
         // 1. KAMEHAMEHA
         REGISTRY.put(1, (user, target, dmg) -> {
             KiWaveEntity kame = new KiWaveEntity(user.level(), user);
-            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 37);
+            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), KAMEHAMEHA_CAST_TICKS);
             applyColors(user, kame);
         });
 
@@ -187,11 +192,46 @@ public class SkillManager {
             dragonFist.setupDragonFist(user, dmg, 1.0F, DRAGON_FIST_RUSH_TICKS);
         });
 
+        // 26. DODONPA
+        REGISTRY.put(26, (user, target, dmg) -> {
+            KiLaserEntity dodonpa = new KiLaserEntity(user.level(), user);
+            dodonpa.setupKiDodonpa(user, dmg, user.getKiBlastSpeed() * 3.0F, 0);
+            applyColors(user, dodonpa);
+        });
+
+        // 27. BURNING ATTACK
+        REGISTRY.put(27, (user, target, dmg) -> {
+            KiBlastEntity burning = new KiBlastEntity(user.level(), user);
+            burning.setupKiBlast(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 30);
+        });
+
+        // 28. SUPERNOVA (COOLER)
+        REGISTRY.put(28, (user, target, dmg) -> {
+            KiBlastEntity supernova = new KiBlastEntity(user.level(), user);
+            supernova.setupKiDeathBall(user, dmg, user.getKiBlastSpeed() * 0.7F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 60);
+            applyColors(user, supernova);
+        });
+
+        // 29. ASSAULT RAIN
+        REGISTRY.put(29, (user, target, dmg) -> {
+            KiBlastEntity rain = new KiBlastEntity(user.level(), user);
+            rain.setupAssaultRain(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), 0.8F * user.getCurrentPoolSkillSize(), ASSAULT_RAIN_CAST_TICKS, ASSAULT_RAIN_FIRE_TICKS);
+        });
+
+        // 30. BLASTER METEOR
+        REGISTRY.put(30, (user, target, dmg) -> {
+            KiBlastEntity meteor = new KiBlastEntity(user.level(), user);
+            meteor.setupBlasterMeteor(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), BLASTER_METEOR_CAST_TICKS, BLASTER_METEOR_FIRE_TICKS);
+        });
+
         // 24. KAMEHAMEHA X10
         REGISTRY.put(24, (user, target, dmg) -> {
             KiWaveEntity kame = new KiWaveEntity(user.level(), user);
             kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(),
-                    KAMEHAMEHA_X10_MAIN, KAMEHAMEHA_X10_BORDER, KAMEHAMEHA_X10_OUTLINE, 37);
+                    KAMEHAMEHA_X10_MAIN, KAMEHAMEHA_X10_BORDER, KAMEHAMEHA_X10_OUTLINE, KAMEHAMEHA_CAST_TICKS);
         });
     }
 
@@ -223,9 +263,22 @@ public class SkillManager {
             case 6, 25 -> 0.0F;                         // Ki Barrier / Taiyoken: no damage
             case 7, 12, 19, 22, 23 -> meleeDmg * mult;  // Oozaru Roar / Blue Hurricane / Majin Candy / Wolf Fang / Dragon Fist: melee-scaled
             case 13 -> kiDmg * mult / 3.0F;             // Triple Laser: 3 instances (ticks 10/20/30)
-            case 10, 20 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley: random spray, per-bullet
+            case 10, 20, 29, 30 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley / Assault Rain / Blaster Meteor: random spray, per-bullet
             case 11 -> kiDmg * mult / SINGLE_IMPACT_HIT_DIVISOR; // Basic ki blast: single concentrated impact
             default -> kiDmg * mult;                    // every other ki skill: single ki-scaled hit
+        };
+    }
+
+    public static int getFireTick(int id) {
+        return switch (id) {
+            case 14 -> 22;
+            case 17, 27 -> 24;
+            case 26 -> 0;
+            case 16, 18, 21 -> 32;
+            case 15, 28 -> 50;
+            case 29 -> ASSAULT_RAIN_CAST_TICKS;
+            case 30 -> BLASTER_METEOR_CAST_TICKS;
+            default -> KAMEHAMEHA_CAST_TICKS;
         };
     }
 
@@ -233,14 +286,17 @@ public class SkillManager {
         return switch (id) {
             case 4 -> 10;
             case 11 -> 12;
-            case 12, 14, 17 -> 30;
+            case 12, 14, 17, 27 -> 30;
+            case 26 -> 18;
             case 13, 16, 18, 21 -> 40;
             case 19 -> 35;
             case 22 -> WOLF_FANG_DURATION;
             case 23 -> DRAGON_FIST_WINDUP + DRAGON_FIST_RUSH_TICKS + 2;
             case 7 -> ROAR_DURATION;
             case 25 -> TAIYOKEN_DURATION;
-            case 15 -> 60;
+            case 15, 28 -> 60;
+            case 29 -> ASSAULT_RAIN_CAST_TICKS + ASSAULT_RAIN_FIRE_TICKS + KiBlastEntity.ASSAULT_RAIN_DELAY;
+            case 30 -> BLASTER_METEOR_CAST_TICKS + BLASTER_METEOR_FIRE_TICKS;
             default -> 60;
         };
     }

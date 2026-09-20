@@ -100,6 +100,13 @@ public class StrikeAttackHandler {
 	private static final int GOD_FIST_COLOR_SECONDARY = 0xFF4A12;
 	private static final float GOD_FIST_BURST_SCALE = 5.5F;
 	private static final int GOD_FIST_BURST_TICKS = 18;
+	private static final int GUM_PUNCH_IMPACT_TICK = 4;
+	private static final int GUM_PUNCH_END_TICK = 12;
+	private static final double GUM_PUNCH_KNOCKBACK = 5.0;
+	private static final int GUM_PUNCH_COLOR_PRIMARY = 0xFF82F3;
+	private static final int GUM_PUNCH_COLOR_SECONDARY = 0xFF1AEC;
+	private static final float GUM_PUNCH_BURST_SCALE = 4.0F;
+	private static final int GUM_PUNCH_BURST_TICKS = 14;
 	private static final int DEADLY_DANCE_COLOR_PRIMARY = 0xFFE23A;
 	private static final int DEADLY_DANCE_COLOR_SECONDARY = 0xFFA800;
 	private static final int DEADLY_DANCE_VEGETTO_COLOR_SECONDARY = 0x2FA8FF;
@@ -108,7 +115,7 @@ public class StrikeAttackHandler {
 	private static final float DEADLY_DANCE_FINAL_BURST_SCALE = 4.8F;
 	private static final int DEADLY_DANCE_FINAL_BURST_TICKS = 16;
 	private static final java.util.Set<String> TARGETLESS_STRIKES = java.util.Set.of(
-			"dragon_fist", "deadly_dance", "deadly_dance_vegetto", "super_god_fist", "wolf_fang");
+			"dragon_fist", "deadly_dance", "deadly_dance_vegetto", "super_god_fist", "wolf_fang", "gum_punch");
 
 	private static final Map<UUID, PendingStrike> PENDING = new HashMap<>();
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
@@ -489,6 +496,61 @@ public class StrikeAttackHandler {
 						: MomentumImpactHandler.CollisionImpactType.WALL;
 				MomentumImpactHandler.registerCollisionImpact(target, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
 
+				endStrike(player, target, active);
+				return;
+			}
+
+			ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+			return;
+		}
+
+		if ("gum_punch".equals(active.techniqueId())) {
+			int nextTick = active.ticksElapsed() + 1;
+
+			player.invulnerableTime = 20;
+			freezeEntity(player);
+
+			if (nextTick < GUM_PUNCH_IMPACT_TICK && target != null) {
+				faceStrikeTarget(player, target);
+				target.invulnerableTime = 20;
+				freezeEntity(target);
+			}
+
+			if (nextTick == GUM_PUNCH_IMPACT_TICK) {
+				LivingEntity victim = strikeVictim(player, target);
+				Vec3 impactPos = strikeImpactPoint(player, victim, 0.6);
+
+				if (victim != null) {
+					victim.invulnerableTime = 0;
+					applyStrikeDamage(player, victim, strikeHitDamage(player, target, victim, active.totalDamage()), active.techniqueId(), true);
+					grantKillXpIfNeeded(player, victim, active.techniqueId());
+				}
+
+				player.level().playSound(
+						null, impactPos.x, impactPos.y, impactPos.z,
+						MainSounds.CRITICO1.get(),
+						net.minecraft.sounds.SoundSource.PLAYERS,
+						2.0F,
+						0.7F
+				);
+
+				NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(impactPos, player.getLookAngle(),
+						GUM_PUNCH_BURST_SCALE, GUM_PUNCH_COLOR_PRIMARY, GUM_PUNCH_COLOR_SECONDARY, false, GUM_PUNCH_BURST_TICKS), player);
+
+				if (victim != null) {
+					Vec3 pushDir = Vec3.directionFromRotation(0.0F, player.getYRot()).normalize();
+					KnockbackHelper.apply(victim, new Vec3(pushDir.x * GUM_PUNCH_KNOCKBACK, 0.5, pushDir.z * GUM_PUNCH_KNOCKBACK));
+
+					playStrikeKnockbackAnimation(victim);
+
+					MomentumImpactHandler.CollisionImpactType impactType = victim.onGround()
+							? MomentumImpactHandler.CollisionImpactType.GROUND
+							: MomentumImpactHandler.CollisionImpactType.WALL;
+					MomentumImpactHandler.registerCollisionImpact(victim, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+				}
+			}
+
+			if (nextTick >= GUM_PUNCH_END_TICK) {
 				endStrike(player, target, active);
 				return;
 			}
@@ -1454,6 +1516,7 @@ public class StrikeAttackHandler {
 			case "deadly_dance_vegetto" -> DEADLY_DANCE_VEGETTO_COLOR_SECONDARY;
 			case "super_god_fist" -> 0xF5C527;
 			case "kaioken_attack" -> 0xFF5A3A;
+			case "gum_punch" -> 0xFF82F3;
 			default -> 0xFFF3D6;
 		};
 	}

@@ -23,6 +23,7 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
     private static final int MAX_VARIANT_PROBE = 16;
 
     private static final ResourceLocation[] PLAYER_ANIMATION_FALLBACKS = {
+            ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/ki.animation.json"),
             ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/skp.animation.json"),
             ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/evs.animation.json")
     };

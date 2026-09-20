@@ -148,7 +148,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         WOLF_FANG(22, SkillRole.GUARD_BREAK, Tier.MEDIUM),
         DRAGON_FIST(23, SkillRole.GUARD_BREAK, Tier.STRONG, 0xFFD700, 0xFF8C00, -1),
         KAMEHAMEHA_X10(24, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFE3E3, 0xFF2A2A, 0xB00020),
-        TAIYOKEN(25, SkillRole.BLIND, Tier.WEAK);
+        TAIYOKEN(25, SkillRole.BLIND, Tier.WEAK),
+        DODONPA(26, SkillRole.HITSCAN, Tier.WEAK, 0xFFEB7A, 0xFFE657, -1),
+        BURNING_ATTACK(27, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFF3D0, 0xFF7A1A, 0xC43A00),
+        SUPERNOVA_COOLER(28, SkillRole.GUARD_BREAK, Tier.STRONG, 0xFF3866, 0xA3143A, 0x4A0316),
+        ASSAULT_RAIN(29, SkillRole.ZONING, Tier.STRONG, 0xFFB8F4, 0x8A2BE2, 0xFF38D4),
+        BLASTER_METEOR(30, SkillRole.ZONING, Tier.STRONG, 0x9DFF8A, 0x3DF54A, 0x0FBF1B);
 
         private final int id;
         private final SkillRole role;
@@ -250,6 +255,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final double KI_HIT_FLY_SLOW_FACTOR = 0.2D;
 
     protected int castTimer = 0;
+    @Getter private int clientCastTicks = 0;
     protected int transformTick = 0;
     private int chargeSoundTimer = 0;
     private static final int AURA_LIGHT_LEVEL = 12;
@@ -810,6 +816,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             this.positionHitboxParts();
         }
 
+        if (this.level().isClientSide) {
+            this.clientCastTicks = this.isCasting() ? this.clientCastTicks + 1 : 0;
+        }
+
         if (!this.level().isClientSide) {
 
             if (!this.isAlive()) {
@@ -1137,12 +1147,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void startFirstAvailableSkill() {
+        KiSkill best = null;
         for (KiSkill skill : this.skillPool) {
-            if (skill.currentCooldown <= 0) {
-                this.startSkill(skill);
-                return;
-            }
+            if (skill.currentCooldown > 0) continue;
+            if (best == null || skill.cooldownMax > best.cooldownMax) best = skill;
         }
+        if (best != null) this.startSkill(best);
     }
 
     private void updateAuraLight() {

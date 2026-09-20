@@ -83,8 +83,7 @@ public class SagaBuuEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 120, 2.0F, 0xFF82F3, 0xFF1AEC, 0xDE0BCD);
 
-            this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300 //uff
-                    , 1.5F, 0xFF82F3, 0xFF1AEC);
+            this.addKiSkill(KiSkillType.ASSAULT_RAIN, 300, 1.5F, 0xFFB8F4, 0x8A2BE2, 0xFF38D4);
 
 
             this.setEvade(true, 60);

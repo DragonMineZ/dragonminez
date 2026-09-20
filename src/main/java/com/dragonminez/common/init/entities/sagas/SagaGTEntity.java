@@ -463,6 +463,7 @@ public class SagaGTEntity {
             // Burning Attack
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 300, 1.4F, 0xFFF3C4, 0xFFB300);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0xFFF3C4, 0xFFB300);
+            this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.setWildSense(true, 150);
         }
@@ -496,6 +497,7 @@ public class SagaGTEntity {
             this.setAllowedCombos(140, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 260, 1.8F, 0xFFF3C4, 0xFFE657);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.4F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.setWildSense(true, 120);
             this.setZanzoken(true, 250);

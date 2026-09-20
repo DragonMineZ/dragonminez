@@ -94,6 +94,7 @@ public class SagaTrunksEntity {
 
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x00C0FF, 0x00C0FF);
             this.addKiSkill(KiSkillType.GALICK_GUN, 400, 1.2F);
+            this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.BRAVE_SWORD.get()));
         }
@@ -138,6 +139,7 @@ public class SagaTrunksEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x00C0FF, 0x00C0FF);
             this.addKiSkill(KiSkillType.MASENKO, 100, 1.2F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.GALICK_GUN, 400, 1.2F);
+            this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.BRAVE_SWORD.get()));
         }
@@ -165,6 +167,7 @@ public class SagaTrunksEntity {
 
             this.addKiSkill(KiSkillType.BIG_BANG, 200, 1.5F, 0x00C0FF, 0x00C0FF);
             this.addKiSkill(KiSkillType.MASENKO, 100, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.14D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);

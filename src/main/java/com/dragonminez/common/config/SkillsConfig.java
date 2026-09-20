@@ -64,6 +64,8 @@ public class SkillsConfig {
 		kiSkills.add("soul_punisher");
 		kiSkills.add("fake_moon");
 		kiSkills.add("mouth_blast");
+		kiSkills.add("assault_rain");
+		kiSkills.add("blaster_meteor");
 		evasionSkills.add("taiyoken");
 		evasionSkills.add("rage_scream");
 		evasionSkills.add("afterimage");
@@ -83,6 +85,8 @@ public class SkillsConfig {
 		skills.put("burning_attack", new SkillCosts(List.of(3500)));
 		skills.put("big_bang", new SkillCosts(List.of(4000)));
 		skills.put("mouth_blast", new SkillCosts(List.of(4500)));
+		skills.put("assault_rain", new SkillCosts(List.of(4500)));
+		skills.put("blaster_meteor", new SkillCosts(List.of(5000)));
 		skills.put("sokidan", new SkillCosts(List.of(4000)));
 		skills.put("kienzan_doble", new SkillCosts(List.of(4000)));
 
@@ -104,6 +108,7 @@ public class SkillsConfig {
 		strikeSkills.add("oozaru_fist");
 		strikeSkills.add("super_god_fist");
 		strikeSkills.add("oozaru_slam");
+		strikeSkills.add("gum_punch");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -114,6 +119,7 @@ public class SkillsConfig {
 		skills.put("deadly_dance_vegetto", new SkillCosts(List.of(12000)));
 		skills.put("oozaru_fist",        new SkillCosts(List.of(15000)));
 		skills.put("oozaru_slam",        new SkillCosts(List.of(4000)));
+		skills.put("gum_punch",          new SkillCosts(List.of(4000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
@@ -433,6 +439,7 @@ public class SkillsConfig {
 		cellSkills.add("masenko");
 		cellSkills.add("death_beam");
 		cellSkills.add("ki_barrage");
+		cellSkills.add("afterimage");
 		cellSkills.add("deadly_dance");
 		cellSkills.add("meteor");
 		skillOfferings.put("cell", cellSkills);

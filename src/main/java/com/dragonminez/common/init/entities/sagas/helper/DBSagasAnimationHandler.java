@@ -7,6 +7,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class DBSagasAnimationHandler {
@@ -82,6 +83,10 @@ public class DBSagasAnimationHandler {
         return event.setAndContinue(DBSagasAnimations.ANIM_IDLE);
     }
 
+    private static RawAnimation kiClip(DBSagasEntity entity, int skill, RawAnimation cast, RawAnimation fire) {
+        return entity.getClientCastTicks() > SkillManager.getFireTick(skill) ? fire : cast;
+    }
+
     public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
@@ -106,30 +111,36 @@ public class DBSagasAnimationHandler {
         if (entity.isCasting()) {
             int skill = entity.getSkillType();
             switch (skill) {
-                case 1: return event.setAndContinue(DBSagasAnimations.ANIM_KI_KAME);
-                case 2: return event.setAndContinue(DBSagasAnimations.ANIM_KI_GALICK);
-                case 3: return event.setAndContinue(DBSagasAnimations.ANIM_KI_MAKKAKO);
-                case 4: return event.setAndContinue(DBSagasAnimations.ANIM_KI_LASER);
-                case 5: return event.setAndContinue(DBSagasAnimations.ANIM_KI_EXPLOSION);
-                case 6: return event.setAndContinue(DBSagasAnimations.ANIM_KI_BARRIER);
+                case 1: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_KAMEHA_CAST, DBSagasAnimations.ANIM_KAMEHA_FIRE));
+                case 2: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_GALICK_CAST, DBSagasAnimations.ANIM_GALICK_FIRE));
+                case 3: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_MAKKAKO_CAST, DBSagasAnimations.ANIM_MAKKAKO_FIRE));
+                case 4: return event.setAndContinue(DBSagasAnimations.ANIM_LASER_FIRE);
+                case 5: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_EXPLOSION_CAST, DBSagasAnimations.ANIM_EXPLOSION_FIRE));
+                case 6: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BARRIER_CAST, DBSagasAnimations.ANIM_BARRIER_FIRE));
                 case 7: return event.setAndContinue(DBSagasAnimations.ANIM_RAGE_SCREAM);
-                case 8: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
-                case 9: return event.setAndContinue(DBSagasAnimations.ANIM_KIOZARU);
-                case 10: return event.setAndContinue(DBSagasAnimations.ANIM_KI_BARRAGE);
+                case 8: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_FINALFLASH_CAST, DBSagasAnimations.ANIM_FINALFLASH_FIRE));
+                case 9: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_MOUTH_BLAST_CAST, DBSagasAnimations.ANIM_MOUTH_BLAST_FIRE));
+                case 10: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BARRAGE_CAST, DBSagasAnimations.ANIM_BARRAGE_FIRE));
                 case 11: return event.setAndContinue(DBSagasAnimations.ANIM_KIBLAST);
                 case 12: return event.setAndContinue(DBSagasAnimations.ANIM_KIATTACK);
-                case 13: return event.setAndContinue(DBSagasAnimations.ANIM_KI_LASER);
-                case 14: return event.setAndContinue(DBSagasAnimations.ANIM_KI_DISC);
-                case 15: return event.setAndContinue(DBSagasAnimations.ANIM_KIBALL);
-                case 16: return event.setAndContinue(DBSagasAnimations.ANIM_KI_MASENKO);
-                case 17: return event.setAndContinue(DBSagasAnimations.ANIM_KI_BIG_BANG);
-                case 18: return event.setAndContinue(DBSagasAnimations.ANIM_KI_FINALFLASH);
+                case 13: return event.setAndContinue(DBSagasAnimations.ANIM_LASER_FIRE_LOOP);
+                case 14: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_KIENZAN_CAST, DBSagasAnimations.ANIM_KIENZAN_FIRE));
+                case 15: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_LARGE_BALL_CAST, DBSagasAnimations.ANIM_LARGE_BALL_FIRE));
+                case 16: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_MASENKO_CAST, DBSagasAnimations.ANIM_MASENKO_FIRE));
+                case 17: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BIGBANG_CAST, DBSagasAnimations.ANIM_BIGBANG_FIRE));
+                case 18: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_FINALFLASH_CAST, DBSagasAnimations.ANIM_FINALFLASH_FIRE));
                 case 19: return event.setAndContinue(DBSagasAnimations.ANIM_KI_LASER);
                 case 20: return event.setAndContinue(DBSagasAnimations.ANIM_KI_EXPLOSION);
                 case 22: return event.setAndContinue(DBSagasAnimations.ANIM_WOLF_FANG);
                 case 23: return event.setAndContinue(DBSagasAnimations.ANIM_DRAGON_FIST);
-                case 24: return event.setAndContinue(DBSagasAnimations.ANIM_KI_KAME);
+                case 21: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_FINALFLASH_CAST, DBSagasAnimations.ANIM_FINALFLASH_FIRE));
+                case 24: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_KAMEHA_CAST, DBSagasAnimations.ANIM_KAMEHA_FIRE));
                 case 25: return event.setAndContinue(DBSagasAnimations.ANIM_TAIYOKEN);
+                case 26: return event.setAndContinue(DBSagasAnimations.ANIM_DODONPA_FIRE);
+                case 27: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BURNING_ATTACK_CAST, DBSagasAnimations.ANIM_BURNING_ATTACK_FIRE));
+                case 28: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_SUPERNOVA_COOLER_CAST, DBSagasAnimations.ANIM_SUPERNOVA_COOLER_FIRE));
+                case 29: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_ASSAULT_RAIN_CAST, DBSagasAnimations.ANIM_ASSAULT_RAIN_FIRE));
+                case 30: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BLASTER_METEOR_CAST, DBSagasAnimations.ANIM_BLASTER_METEOR_FIRE));
                 default: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
             }
         }

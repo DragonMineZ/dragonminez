@@ -6,6 +6,7 @@ import com.dragonminez.client.crowdin.CrowdinPackResources;
 import com.dragonminez.client.dragonball.DragonBallPackResources;
 import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.animation.EvasionAnimations;
+import com.dragonminez.client.animation.KiAnimations;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.hud.*;
 import com.dragonminez.client.gui.tooltip.*;
@@ -107,6 +108,7 @@ public class ModClientEvents {
 				ArmorTextureResolver.clearCache();
 				CombatAnimationResolver.reload(resourceManager);
 				EvasionAnimations.reload(resourceManager);
+				KiAnimations.reload(resourceManager);
 				SkinCacheManager.revalidate();
 			}
 		});
