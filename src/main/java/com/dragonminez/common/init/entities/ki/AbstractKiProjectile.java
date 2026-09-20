@@ -848,6 +848,9 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (SIZE.equals(pKey)) {
             this.refreshDimensions();
         }
+        if (COLOR_MAIN.equals(pKey)) this.cachedColorMainRgb = null;
+        if (COLOR_BORDER.equals(pKey)) this.cachedColorBorderRgb = null;
+        if (COLOR_OUTLINE.equals(pKey)) this.cachedColorOutlineRgb = null;
     }
 
 
@@ -894,6 +897,7 @@ public abstract class AbstractKiProjectile extends Projectile {
                 StatsProvider.get(StatsCapability.INSTANCE, sp).ifPresent(data -> {
                     TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techId);
                     if (tech instanceof KiAttackData kiData) {
+                        if ("_cast".equals(suffix) && kiData.getKiType() == KiAttackData.KiType.LASER) return;
                         String fullAnim = kiData.getAnimationPrefix() + suffix;
                         int hold = this.isMovementRestrictedType() ? 1 : 0;
                         NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, hold, -1, fullAnim), sp);

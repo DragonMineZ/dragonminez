@@ -183,12 +183,16 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     public void setupKiHame(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
+        this.setupKiHame(owner, damage, speed, size, 0x4FF7FF, 0x4FF7FF, colorOutline, castTime);
+    }
+
+    public void setupKiHame(LivingEntity owner, float damage, float speed, float size, int colorMain, int colorBorder, int colorOutline, int castTime) {
         this.setKiRenderType(1);
         this.setSize(size);
         this.setCastSize(size / 2);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0x4FF7FF, 0x4FF7FF, colorOutline);
+        this.setColors(colorMain, colorBorder, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime*2);

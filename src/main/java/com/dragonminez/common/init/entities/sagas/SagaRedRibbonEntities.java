@@ -95,7 +95,7 @@ public class SagaRedRibbonEntities {
             this.setDBZStyle(1);
             this.setEvade(true, 100);
 
-            this.addKiSkill(KiSkillType.KI_LASER, DODONPA_COOLDOWN, 1.0F, DODONPA_COLOR, DODONPA_COLOR);
+            this.addKiSkill(KiSkillType.DODONPA, DODONPA_COOLDOWN, 1.0F, DODONPA_COLOR, DODONPA_COLOR);
         }
 
         @Override

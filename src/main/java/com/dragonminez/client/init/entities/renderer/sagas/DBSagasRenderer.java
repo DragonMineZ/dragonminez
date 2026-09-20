@@ -73,7 +73,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         boolean showAura = entity.isTransforming() || entity.isCharge();
         boolean showLightning = entity.isLightning();
 
-        if (showAura || showLightning) {
+        if ((showAura || showLightning) && !com.dragonminez.client.render.effects.AfterimageEffect.isRendering()) {
             if (IrisCompat.isShaderPackInUse()) {
                 Matrix4f captured = new Matrix4f(poseStack.last().pose());
                 float pt = partialTick;

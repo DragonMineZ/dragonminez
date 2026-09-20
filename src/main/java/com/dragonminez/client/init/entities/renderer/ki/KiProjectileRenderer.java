@@ -116,6 +116,19 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                     drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, true, 1.0F);
                     KiEmberRenderer.render(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, 1.0F, KiEmberRenderer.LOCAL_BACK, KiEmberRenderer.CHARGE_BACKDRAFT, 1.0F);
                     break;
+                case KiBlastEntity.RENDER_ASSAULT_RAIN:
+                    float rainPulse = entity.isFiring() ? 0.5F + (float) Math.sin(ageInTicks * 1.2F) * 0.06F : 0.5F;
+                    stack.scale(rainPulse, rainPulse, rainPulse);
+                    drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, true, 1.0F);
+                    KiEmberRenderer.render(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, 1.0F, KiEmberRenderer.LOCAL_BACK, KiEmberRenderer.CHARGE_BACKDRAFT, 1.0F);
+                    break;
+                case KiBlastEntity.RENDER_BLASTER_METEOR:
+                    Minecraft meteorMc = Minecraft.getInstance();
+                    boolean meteorInside = meteorMc.player != null && entity.getOwner() == meteorMc.player && meteorMc.options.getCameraType().isFirstPerson();
+                    float meteorPulse = 0.5F + (float) Math.sin(ageInTicks * (entity.isFiring() ? 1.2F : 0.4F)) * 0.02F;
+                    stack.scale(meteorPulse, meteorPulse, meteorPulse);
+                    drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, meteorInside ? 0.3F : 0.85F, ageInTicks, true, null);
+                    break;
                 case 1:
                     stack.scale(0.5F, 0.5F, 0.5F);
                     drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, false, 1.0F);

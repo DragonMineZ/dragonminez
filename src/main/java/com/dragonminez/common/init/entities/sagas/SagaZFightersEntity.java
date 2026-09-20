@@ -70,6 +70,7 @@ public class SagaZFightersEntity {
             this.setEvade(true, 100);
             this.setisKid(true);
 
+            this.addKiSkill(KiSkillType.TAIYOKEN, 200);
             this.addKiSkill(KiSkillType.KIENZAN, 100, 1.4F, 0xFFFB73, 0xFFFB73);
             this.addKiSkill(KiSkillType.KAMEHAMEHA,200);
         }

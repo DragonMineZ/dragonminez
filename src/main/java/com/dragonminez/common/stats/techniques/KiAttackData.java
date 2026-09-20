@@ -97,20 +97,22 @@ public class KiAttackData extends TechniqueData {
 	}
 
 	public String getAnimationPrefix() {
-		if (this.animation != null && !this.animation.isEmpty()) return this.animation;
-
 		if (PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
 			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
 			if (predefined != null && predefined.getAnimation() != null && !predefined.getAnimation().isEmpty()) return predefined.getAnimation();
 		}
+
+		if (this.animation != null && !this.animation.isEmpty()) return this.animation;
 
 		return switch (kiType != null ? kiType : KiType.SMALL_BALL) {
 			case BARRAGE -> "ki.barrage";
 			case GIANT_BALL -> "ki.large_ball";
 			case WAVE -> "ki.kameha";
 			case DISK -> "ki.kienzan";
-			case EXPLOSION, SHIELD -> "ki.explosion";
-			case BEAM, LASER -> "ki.makkako";
+			case EXPLOSION -> "ki.explosion";
+			case SHIELD -> "ki.barrier";
+			case BEAM -> "ki.makkako";
+			case LASER -> "ki.laser";
 			case SMALL_BALL, MEDIUM_BALL -> "ki.bigbang";
 			default -> "ki.kameha";
 		};

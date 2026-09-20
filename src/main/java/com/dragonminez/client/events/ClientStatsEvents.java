@@ -432,7 +432,8 @@ public class ClientStatsEvents {
 						if (data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) continue;
 						techniques.selectSlot(i);
 						NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(i));
-						NetworkHandler.sendToServer(new EvasionCastC2S(id));
+						var lockedEvasionTarget = LockOnEvent.getLockedTarget();
+						NetworkHandler.sendToServer(new EvasionCastC2S(id, lockedEvasionTarget != null ? lockedEvasionTarget.getId() : -1));
 					} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) { if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(ki.getKiType())) continue; var lockedKiTarget = LockOnEvent.getLockedTarget(); int kiTargetId = lockedKiTarget != null ? lockedKiTarget.getId() : -1;
 					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i, kiTargetId));
 					else {

@@ -6,6 +6,7 @@ import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.AfterimageVfxS2C;
 import com.dragonminez.common.network.S2C.RageScreamVfxS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TaiyokenBlindS2C;
@@ -16,17 +17,28 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -47,6 +59,7 @@ public class EvasionAttackHandler {
 	private static final double TAIYOKEN_RANGE = 20.0;
 	private static final double TAIYOKEN_FULL_LOOK_DOT = 0.93;
 	private static final double TAIYOKEN_PARTIAL_LOOK_DOT = 0.5;
+	private static final double TAIYOKEN_NPC_DURATION_FACTOR = 0.5;
 
 	private static final int RAGE_SCREAM_PULSE_INTERVAL_TICKS = 5;
 	private static final double RAGE_SCREAM_BASE_RANGE = 5.0;
@@ -55,22 +68,43 @@ public class EvasionAttackHandler {
 	private static final double RAGE_SCREAM_VERTICAL_LIFT = 0.12;
 	private static final int SHARED_EVASION_COOLDOWN_TICKS = 60;
 
+	private static final int SLEEP_RECOVERY_PULSE_INTERVAL_TICKS = 10;
+	private static final float SLEEP_RECOVERY_TOTAL_HEAL = 0.20F;
+
+	private static final double AFTERIMAGE_RANGE = 24.0;
+	private static final double AFTERIMAGE_GAP = 0.9;
+	private static final double AFTERIMAGE_ILLUSION_GAP = 3.0;
+	private static final double AFTERIMAGE_DECOY_DISTANCE = 4.0;
+	private static final String AFTERIMAGE_LOST_UNTIL_TAG = "dmz_afterimage_lost_until";
+	private static final String AFTERIMAGE_LOST_BY_TAG = "dmz_afterimage_lost_by";
+	private static final double AFTERIMAGE_CONFUSE_RADIUS = 16.0;
+	private static final int AFTERIMAGE_LOCK_TICKS = 8;
+	private static final double[] AFTERIMAGE_DISTANCE_SCALES = {1.0, 0.6, 1.5};
+	private static final double[] AFTERIMAGE_HEIGHT_OFFSETS = {0.0, 0.1, 0.5, 1.0, -0.5};
+	private static final double[] AFTERIMAGE_DECOY_HEIGHT_OFFSETS = {0.0, 0.1, 0.6, 1.1, 1.6, -0.5, -1.0};
+
 	private static final Set<LivingEntity> BLINDED_MOBS = new HashSet<>();
 	private static final Map<UUID, ActiveEvasion> ACTIVE = new ConcurrentHashMap<>();
 
 	private static final class ActiveEvasion {
 		final String techniqueId;
+		final int totalTicks;
 		int ticksRemaining;
 		int ticksSincePulse;
 
 		ActiveEvasion(String techniqueId, int totalTicks) {
 			this.techniqueId = techniqueId;
+			this.totalTicks = totalTicks;
 			this.ticksRemaining = totalTicks;
 			this.ticksSincePulse = 0;
 		}
 	}
 
 	public static void cast(ServerPlayer player, String techniqueId) {
+		cast(player, techniqueId, -1);
+	}
+
+	public static void cast(ServerPlayer player, String techniqueId, int targetId) {
 		if (player.level().isClientSide || techniqueId == null || techniqueId.isEmpty()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
@@ -87,8 +121,20 @@ public class EvasionAttackHandler {
 			String cooldownKey = "TechniqueCooldown_" + techniqueId;
 			if (stats.getCooldowns().hasCooldown(cooldownKey)) return;
 
+			AfterimagePlan afterimage = null;
+			if ("afterimage".equals(techniqueId)) {
+				afterimage = planAfterimage(player, targetId);
+				if (afterimage == null) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.technique.afterimage.no_space").withStyle(ChatFormatting.RED), true);
+					return;
+				}
+			}
+
 			double cost = technique.getCalculatedCost(stats);
-			if (!player.isCreative() && stats.getResources().getCurrentEnergy() < cost) return;
+			if (!player.isCreative() && stats.getResources().getCurrentEnergy() < cost) {
+				player.displayClientMessage(Component.translatable("message.dragonminez.technique.no_ki", (int) Math.ceil(cost)).withStyle(ChatFormatting.RED), true);
+				return;
+			}
 			if (!player.isCreative() && cost > 0) stats.getResources().removeEnergy((int) Math.ceil(cost));
 			stats.getCooldowns().setCooldown(cooldownKey, technique.getActualCooldown());
 
@@ -96,18 +142,23 @@ public class EvasionAttackHandler {
 			if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 
 			int durationTicks = technique.getActualDurationTicks();
-			stats.getStatus().setEvasionLockTicks(durationTicks);
-			applySharedEvasionCooldown(stats, durationTicks + SHARED_EVASION_COOLDOWN_TICKS);
+			int lockTicks = afterimage != null ? Math.min(durationTicks, AFTERIMAGE_LOCK_TICKS) : durationTicks;
+			stats.getStatus().setEvasionLockTicks(lockTicks);
+			applySharedEvasionCooldown(stats, lockTicks + SHARED_EVASION_COOLDOWN_TICKS);
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-			NetworkHandler.sendToTrackingEntityAndSelf(
-					new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, technique.getAnimationId()), player);
+			if (afterimage == null) {
+				NetworkHandler.sendToTrackingEntityAndSelf(
+						new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, technique.getAnimationId()), player);
+			}
 
-			ACTIVE.put(player.getUUID(), new ActiveEvasion(techniqueId, durationTicks));
+			ACTIVE.put(player.getUUID(), new ActiveEvasion(techniqueId, lockTicks));
 
 			switch (techniqueId) {
+				case "afterimage" -> castAfterimage(player, afterimage, durationTicks);
 				case "taiyoken" -> castTaiyoken(player);
 				case "rage_scream" -> castRageScream(player, durationTicks);
+				case "sleep_recovery" -> castSleepRecovery(player);
 				default -> { }
 			}
 		});
@@ -121,18 +172,159 @@ public class EvasionAttackHandler {
 		}
 	}
 
+	private record AfterimagePlan(LivingEntity target, Vec3 destination, float casterYaw, Vec3[] positions, float[] yaws) {}
+
+	private static AfterimagePlan planAfterimage(ServerPlayer player, int targetId) {
+		Entity locked = targetId >= 0 ? TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(player.level(), targetId)) : null;
+		if (isValidAfterimageTarget(player, locked)) return planAfterimageBehind(player, (LivingEntity) locked);
+		return planAfterimageDecoy(player);
+	}
+
+	private static AfterimagePlan planAfterimageBehind(ServerPlayer player, LivingEntity target) {
+		Vec3 center = target.position();
+		Vec3 forward = Vec3.directionFromRotation(0.0F, target.getYRot());
+		Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
+		double behind = target.getBbWidth() * 0.5 + player.getBbWidth() * 0.5 + AFTERIMAGE_GAP;
+		double spread = target.getBbWidth() * 0.5 + AFTERIMAGE_ILLUSION_GAP;
+
+		Vec3[] positions = {
+				center.add(forward.scale(spread)),
+				center.add(side.scale(spread)),
+				center.subtract(side.scale(spread))
+		};
+		float[] yaws = new float[positions.length];
+		for (int i = 0; i < positions.length; i++) yaws[i] = yawTowards(positions[i], center);
+
+		for (double scale : AFTERIMAGE_DISTANCE_SCALES) {
+			Vec3 base = center.subtract(forward.scale(behind * scale));
+			for (double height : AFTERIMAGE_HEIGHT_OFFSETS) {
+				Vec3 candidate = base.add(0.0, height, 0.0);
+				if (isFreeSpot(player, candidate)) return new AfterimagePlan(target, candidate, yawTowards(candidate, center), positions, yaws);
+			}
+		}
+		return null;
+	}
+
+	private static AfterimagePlan planAfterimageDecoy(ServerPlayer player) {
+		Vec3 look = player.getViewVector(1.0F);
+		Vec3 direction = player.onGround() ? new Vec3(look.x, 0.0, look.z) : look;
+		if (direction.lengthSqr() < 1.0E-4) direction = Vec3.directionFromRotation(0.0F, player.getYRot());
+		direction = direction.normalize();
+
+		Vec3 origin = player.position();
+		Vec3 middle = origin.add(0.0, player.getBbHeight() * 0.5, 0.0);
+		double reach = AFTERIMAGE_DECOY_DISTANCE;
+		BlockHitResult wall = player.level().clip(new ClipContext(middle, middle.add(direction.scale(reach)),
+				ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+		if (wall.getType() != HitResult.Type.MISS) reach = Math.min(reach, wall.getLocation().distanceTo(middle) - 0.5);
+
+		for (double distance = reach; distance >= 1.0; distance -= 0.5) {
+			Vec3 base = origin.add(direction.scale(distance));
+			for (double height : AFTERIMAGE_DECOY_HEIGHT_OFFSETS) {
+				Vec3 candidate = base.add(0.0, height, 0.0);
+				if (isFreeSpot(player, candidate)) {
+					return new AfterimagePlan(null, candidate, player.getYRot(), new Vec3[]{origin}, new float[]{player.yBodyRot});
+				}
+			}
+		}
+		return null;
+	}
+
+	private static boolean isFreeSpot(ServerPlayer player, Vec3 position) {
+		return player.level().noCollision(player, player.getBoundingBox().move(position.subtract(player.position())));
+	}
+
+	private static boolean isValidAfterimageTarget(ServerPlayer player, Entity entity) {
+		if (!(entity instanceof LivingEntity living) || living == player) return false;
+		if (!living.isAlive() || living.isSpectator() || living.level() != player.level()) return false;
+		if (living == player.getVehicle() || living.getVehicle() == player) return false;
+		return living.distanceToSqr(player) <= AFTERIMAGE_RANGE * AFTERIMAGE_RANGE;
+	}
+
+	private static float yawTowards(Vec3 from, Vec3 to) {
+		return (float) (Mth.atan2(to.z - from.z, to.x - from.x) * (180.0 / Math.PI)) - 90.0F;
+	}
+
+	private static void castAfterimage(ServerPlayer caster, AfterimagePlan plan, int durationTicks) {
+		if (plan == null) return;
+
+		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				MainSounds.ZANZOKEN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+
+		AABB confuseBox = caster.getBoundingBox().inflate(AFTERIMAGE_CONFUSE_RADIUS);
+		for (Mob mob : caster.level().getEntitiesOfClass(Mob.class, confuseBox, m -> m.isAlive() && m.getTarget() == caster)) {
+			loseTrackOf(mob, caster, durationTicks);
+		}
+		if (plan.target() instanceof Mob targetMob) loseTrackOf(targetMob, caster, durationTicks);
+
+		Vec3 destination = plan.destination();
+		float pitch = plan.target() != null ? 0.0F : caster.getXRot();
+		if (caster.isPassenger()) caster.stopRiding();
+		caster.connection.teleport(destination.x, destination.y, destination.z, plan.casterYaw(), pitch);
+		caster.setYHeadRot(plan.casterYaw());
+		caster.setDeltaMovement(Vec3.ZERO);
+		caster.hurtMarked = true;
+		caster.fallDistance = 0.0F;
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(caster.getId(), durationTicks, plan.positions(), plan.yaws(), true), caster);
+	}
+
+	private static void loseTrackOf(Mob mob, ServerPlayer caster, int durationTicks) {
+		mob.getPersistentData().putLong(AFTERIMAGE_LOST_UNTIL_TAG, mob.level().getGameTime() + durationTicks);
+		mob.getPersistentData().putUUID(AFTERIMAGE_LOST_BY_TAG, caster.getUUID());
+		mob.setTarget(null);
+		if (mob.getLastHurtByMob() == caster) mob.setLastHurtByMob(null);
+		mob.getNavigation().stop();
+	}
+
+	private static boolean hasLostTrackOf(LivingEntity entity, Entity other) {
+		var data = entity.getPersistentData();
+		if (data.getLong(AFTERIMAGE_LOST_UNTIL_TAG) <= entity.level().getGameTime()) return false;
+		return data.hasUUID(AFTERIMAGE_LOST_BY_TAG) && data.getUUID(AFTERIMAGE_LOST_BY_TAG).equals(other.getUUID());
+	}
+
+	@SubscribeEvent
+	public static void onChangeTarget(LivingChangeTargetEvent event) {
+		LivingEntity newTarget = event.getNewTarget();
+		if (newTarget == null || event.getEntity().level().isClientSide()) return;
+		if (hasLostTrackOf(event.getEntity(), newTarget)) event.setCanceled(true);
+	}
+
+	private static void castSleepRecovery(ServerPlayer caster) {
+		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
+				SoundEvents.FOX_SLEEP, SoundSource.PLAYERS, 1.0F, 0.8F);
+	}
+
+	private static void sleepRecoveryPulse(ServerPlayer caster, int totalTicks) {
+		int pulses = Math.max(1, totalTicks / SLEEP_RECOVERY_PULSE_INTERVAL_TICKS);
+		caster.heal(caster.getMaxHealth() * SLEEP_RECOVERY_TOTAL_HEAL / pulses);
+		if (caster.level() instanceof ServerLevel serverLevel) {
+			serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, caster.getX(), caster.getY() + caster.getBbHeight(), caster.getZ(),
+					5, 0.5, 0.5, 0.5, 0.1);
+		}
+	}
+
 	private static void castTaiyoken(ServerPlayer caster) {
 		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
 				MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 1.2F, 1.6F);
 		applyTaiyokenBlind(caster);
 	}
 
-	private static void applyTaiyokenBlind(ServerPlayer caster) {
+	public static void applyTaiyokenBlind(LivingEntity caster) {
+		boolean npcCaster = !(caster instanceof Player);
 		Vec3 casterEye = caster.getEyePosition();
 		AABB box = caster.getBoundingBox().inflate(TAIYOKEN_RANGE);
 
 		for (LivingEntity victim : caster.level().getEntitiesOfClass(LivingEntity.class, box,
 				e -> e != caster && e.isAlive() && e.isPickable())) {
+
+			if (npcCaster) {
+				if (victim instanceof Player victimPlayer) {
+					if (victimPlayer.isCreative() || victimPlayer.isSpectator()) continue;
+				} else if (!(victim instanceof Mob mob && mob.getTarget() == caster)) {
+					continue;
+				}
+			}
 
 			double distance = caster.distanceTo(victim);
 			if (distance > TAIYOKEN_RANGE) continue;
@@ -148,7 +340,8 @@ public class EvasionAttackHandler {
 			double distanceFrac = Mth.clamp(distance / TAIYOKEN_RANGE, 0.0, 1.0);
 			double seconds = fullLook ? 12.0 - 3.0 * distanceFrac : 9.0 - 3.0 * distanceFrac;
 
-			if (TargetHelper.getRelation(caster, victim) == TargetHelper.Relation.FRIENDLY) seconds *= 0.5;
+			if (caster instanceof Player playerCaster && TargetHelper.getRelation(playerCaster, victim) == TargetHelper.Relation.FRIENDLY) seconds *= 0.5;
+			if (npcCaster) seconds *= TAIYOKEN_NPC_DURATION_FACTOR;
 
 			int durationTicks = Math.max(1, (int) Math.round(seconds * 20.0));
 
@@ -242,6 +435,14 @@ public class EvasionAttackHandler {
 				continue;
 			}
 
+			if ("sleep_recovery".equals(active.techniqueId)) {
+				active.ticksSincePulse++;
+				if (active.ticksSincePulse >= SLEEP_RECOVERY_PULSE_INTERVAL_TICKS) {
+					active.ticksSincePulse = 0;
+					sleepRecoveryPulse(caster, active.totalTicks);
+				}
+			}
+
 			if ("rage_scream".equals(active.techniqueId)) {
 				active.ticksSincePulse++;
 				if (active.ticksSincePulse >= RAGE_SCREAM_PULSE_INTERVAL_TICKS) {
@@ -272,9 +473,28 @@ public class EvasionAttackHandler {
 	public static void onLivingAttack(LivingAttackEvent event) {
 		if (event.getEntity().level().isClientSide()) return;
 		if (event.getSource().getEntity() == null) return;
-		if (ACTIVE.containsKey(event.getEntity().getUUID())) {
+		ActiveEvasion activeEvasion = ACTIVE.get(event.getEntity().getUUID());
+		if (activeEvasion != null && !"sleep_recovery".equals(activeEvasion.techniqueId)) {
 			event.setCanceled(true);
+		} else if (hasLostTrackOf(event.getEntity(), event.getSource().getEntity())) {
+			event.getEntity().getPersistentData().remove(AFTERIMAGE_LOST_UNTIL_TAG);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onLivingHurt(LivingHurtEvent event) {
+		if (event.getEntity().level().isClientSide() || event.getAmount() <= 0.0F) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		ActiveEvasion active = ACTIVE.get(player.getUUID());
+		if (active == null || !"sleep_recovery".equals(active.techniqueId)) return;
+
+		ACTIVE.remove(player.getUUID());
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			stats.getStatus().setEvasionLockTicks(0);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		});
+		NetworkHandler.sendToTrackingEntityAndSelf(
+				new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0), player);
 	}
 
 	@SubscribeEvent

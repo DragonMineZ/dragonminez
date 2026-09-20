@@ -1,6 +1,8 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.client.init.entities.model.ki.SPDragonFistModel;
+import com.dragonminez.client.render.effects.AuraTrailRenderer;
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -13,6 +15,12 @@ import software.bernie.geckolib.core.object.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class SPDragonFistRenderer<T extends SPDragonFistEntity> extends GeoEntityRenderer<T> {
+    private static final float[] TRAIL_COLOR = ColorUtils.rgbIntToFloat(0xFFC21A);
+    private static final float TRAIL_ALPHA = 0.70f;
+    private static final int TRAIL_SAMPLES = 28;
+    private static final float TRAIL_HALF_WIDTH = 1.80f;
+    private static final float TRAIL_ANCHOR_BACK = 0.50f;
+    private static final float TRAIL_ANCHOR_HEIGHT = 1.00f;
 
     public SPDragonFistRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new SPDragonFistModel<>());
@@ -24,6 +32,9 @@ public class SPDragonFistRenderer<T extends SPDragonFistEntity> extends GeoEntit
         if (!entity.isFiring()) {
             return;
         }
+
+        AuraTrailRenderer.submitEntityTrail(entity, poseStack.last().pose(), partialTick, TRAIL_COLOR, TRAIL_ALPHA,
+                TRAIL_SAMPLES, TRAIL_HALF_WIDTH, TRAIL_ANCHOR_BACK, TRAIL_ANCHOR_HEIGHT);
 
         poseStack.pushPose();
 

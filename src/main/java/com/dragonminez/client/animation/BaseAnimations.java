@@ -30,6 +30,7 @@ public class BaseAnimations {
 	public static final RawAnimation TAIL = RawAnimation.begin().thenLoop("base.tail");
 	public static final RawAnimation BLOCK = RawAnimation.begin().thenPlay("base.block");
 	public static final RawAnimation DRAIN = RawAnimation.begin().thenPlay("base.absorb");
+	public static final RawAnimation DRAIN_SEMIPERFECT = RawAnimation.begin().thenLoop("base.absorb2");
 	public static final RawAnimation MINING1 = RawAnimation.begin().thenPlay("base.mining1");
 	public static final RawAnimation MINING2 = RawAnimation.begin().thenPlay("base.mining2");
 	public static final RawAnimation KI_CHARGE = RawAnimation.begin().thenLoop("base.ki_charge");

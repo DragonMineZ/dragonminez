@@ -49,6 +49,11 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_ATTACK3_5 = RawAnimation.begin().thenPlay("attack3_4");
     public static final RawAnimation ANIM_TRANSFORMATION5 = RawAnimation.begin().thenPlay("transformation_1");
 
+    // DUAL SWORDS = DBZSTYLE 5
+    public static final RawAnimation ANIM_ATTACK1_6 = RawAnimation.begin().thenPlay("attack1_6");
+    public static final RawAnimation ANIM_ATTACK2_6 = RawAnimation.begin().thenPlay("attack2_6");
+    public static final RawAnimation ANIM_ATTACK3_6 = RawAnimation.begin().thenPlay("attack3_6");
+
     // DEFAULT
     public static final RawAnimation ANIM_FLY = RawAnimation.begin().thenLoop("fly");
     public static final RawAnimation ANIM_FLY_FAST = RawAnimation.begin().thenLoop("fly_fast");
@@ -78,7 +83,48 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_KI_DISC = RawAnimation.begin().thenPlay("ki_kienzan");
     public static final RawAnimation ANIM_KI_LASER = RawAnimation.begin().thenPlay("ki_laser");
     public static final RawAnimation ANIM_KIOZARU = RawAnimation.begin().thenPlay("ki_oozaru");
+
+    public static final RawAnimation ANIM_KAMEHA_CAST = RawAnimation.begin().thenPlay("ki.kameha_cast");
+    public static final RawAnimation ANIM_KAMEHA_FIRE = RawAnimation.begin().thenPlay("ki.kameha_fire");
+    public static final RawAnimation ANIM_GALICK_CAST = RawAnimation.begin().thenPlay("ki.galick_cast");
+    public static final RawAnimation ANIM_GALICK_FIRE = RawAnimation.begin().thenPlay("ki.galick_fire");
+    public static final RawAnimation ANIM_MAKKAKO_CAST = RawAnimation.begin().thenPlay("ki.makkako_cast");
+    public static final RawAnimation ANIM_MAKKAKO_FIRE = RawAnimation.begin().thenPlay("ki.makkako_fire");
+    public static final RawAnimation ANIM_EXPLOSION_CAST = RawAnimation.begin().thenPlay("ki.explosion_cast");
+    public static final RawAnimation ANIM_EXPLOSION_FIRE = RawAnimation.begin().thenPlay("ki.explosion_fire");
+    public static final RawAnimation ANIM_BARRIER_CAST = RawAnimation.begin().thenPlay("ki.barrier_cast");
+    public static final RawAnimation ANIM_BARRIER_FIRE = RawAnimation.begin().thenPlay("ki.barrier_fire");
+    public static final RawAnimation ANIM_BARRAGE_CAST = RawAnimation.begin().thenPlay("ki.barrage_cast");
+    public static final RawAnimation ANIM_BARRAGE_FIRE = RawAnimation.begin().thenPlay("ki.barrage_fire");
+    public static final RawAnimation ANIM_KIENZAN_CAST = RawAnimation.begin().thenPlay("ki.kienzan_cast");
+    public static final RawAnimation ANIM_KIENZAN_FIRE = RawAnimation.begin().thenPlay("ki.kienzan_fire");
+    public static final RawAnimation ANIM_LARGE_BALL_CAST = RawAnimation.begin().thenPlay("ki.large_ball_cast");
+    public static final RawAnimation ANIM_LARGE_BALL_FIRE = RawAnimation.begin().thenPlay("ki.large_ball_fire");
+    public static final RawAnimation ANIM_MASENKO_CAST = RawAnimation.begin().thenPlay("ki.masenko_cast");
+    public static final RawAnimation ANIM_MASENKO_FIRE = RawAnimation.begin().thenPlay("ki.masenko_fire");
+    public static final RawAnimation ANIM_BIGBANG_CAST = RawAnimation.begin().thenPlay("ki.bigbang_cast");
+    public static final RawAnimation ANIM_BIGBANG_FIRE = RawAnimation.begin().thenPlay("ki.bigbang_fire");
+    public static final RawAnimation ANIM_FINALFLASH_CAST = RawAnimation.begin().thenPlay("ki.finalflash_cast");
+    public static final RawAnimation ANIM_FINALFLASH_FIRE = RawAnimation.begin().thenPlay("ki.finalflash_fire");
+    public static final RawAnimation ANIM_MOUTH_BLAST_CAST = RawAnimation.begin().thenLoop("ki.mouth_blast_cast");
+    public static final RawAnimation ANIM_MOUTH_BLAST_FIRE = RawAnimation.begin().thenLoop("ki.mouth_blast_fire");
+    public static final RawAnimation ANIM_DODONPA_FIRE = RawAnimation.begin().thenPlay("ki.dodonpa_fire");
+    public static final RawAnimation ANIM_LASER_FIRE = RawAnimation.begin().thenPlay("ki.laser_fire");
+    public static final RawAnimation ANIM_LASER_FIRE_LOOP = RawAnimation.begin().thenLoop("ki.laser_fire");
+    public static final RawAnimation ANIM_BURNING_ATTACK_CAST = RawAnimation.begin().thenPlay("ki.burning_attack_cast");
+    public static final RawAnimation ANIM_BURNING_ATTACK_FIRE = RawAnimation.begin().thenPlay("ki.burning_attack_fire");
+    public static final RawAnimation ANIM_SUPERNOVA_COOLER_CAST = RawAnimation.begin().thenPlay("ki.supernova_cooler_cast");
+    public static final RawAnimation ANIM_SUPERNOVA_COOLER_FIRE = RawAnimation.begin().thenPlay("ki.supernova_cooler_fire");
+    public static final RawAnimation ANIM_ASSAULT_RAIN_CAST = RawAnimation.begin().thenPlay("ki.assault_rain_cast");
+    public static final RawAnimation ANIM_ASSAULT_RAIN_FIRE = RawAnimation.begin().thenPlay("ki.assault_rain_fire");
+    public static final RawAnimation ANIM_BLASTER_METEOR_CAST = RawAnimation.begin().thenLoop("ki.blaster_meteor_cast");
+    public static final RawAnimation ANIM_BLASTER_METEOR_FIRE = RawAnimation.begin().thenLoop("ki.blaster_meteor_fire");
     public static final RawAnimation ANIM_WOLF_FANG = RawAnimation.begin().thenPlay("skp.wolf_fang");
+    public static final RawAnimation ANIM_DRAGON_FIST = RawAnimation.begin().thenPlay("skp.dragon_fist");
+    public static final RawAnimation ANIM_GUM_PUNCH = RawAnimation.begin().thenPlay("skp.gum_punch");
+    public static final RawAnimation ANIM_SLEEP_RECOVERY = RawAnimation.begin().thenPlay("evs.sleep_recovery");
+    public static final RawAnimation ANIM_RAGE_SCREAM = RawAnimation.begin().thenLoop("evs.rage_scream");
+    public static final RawAnimation ANIM_TAIYOKEN = RawAnimation.begin().thenPlay("evs.taiyoken");
 
     public static final RawAnimation ANIM_COMBO1 = RawAnimation.begin().thenPlay("combo1");
     public static final RawAnimation ANIM_COMBO2 = RawAnimation.begin().thenPlay("combo2");

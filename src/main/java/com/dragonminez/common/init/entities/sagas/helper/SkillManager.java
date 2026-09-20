@@ -3,6 +3,8 @@ package com.dragonminez.common.init.entities.sagas.helper;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ClawSlashVfxS2C;
+import com.dragonminez.common.network.S2C.RageScreamVfxS2C;
+import com.dragonminez.server.events.players.combat.EvasionAttackHandler;
 import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
@@ -26,13 +28,29 @@ public class SkillManager {
         void execute(DBSagasEntity user, LivingEntity target, float damage);
     }
 
+    public static final int KAMEHAMEHA_CAST_TICKS = 37;
+    public static final int ASSAULT_RAIN_CAST_TICKS = 30;
+    public static final int ASSAULT_RAIN_FIRE_TICKS = 40;
+    public static final int BLASTER_METEOR_CAST_TICKS = 30;
+    public static final int BLASTER_METEOR_FIRE_TICKS = 50;
+    public static final int DRAGON_FIST_WINDUP = 5;
+    public static final int DRAGON_FIST_RUSH_TICKS = 20;
+    private static final int KAMEHAMEHA_X10_MAIN = 0xFFE3E3;
+    private static final int KAMEHAMEHA_X10_BORDER = 0xFF2A2A;
+    private static final int KAMEHAMEHA_X10_OUTLINE = 0xB00020;
+
     private static final Map<Integer, KiAction> REGISTRY = new HashMap<>();
+    private static boolean guardSafeHit = false;
+
+    public static boolean isGuardSafeHit() {
+        return guardSafeHit;
+    }
 
     static {
         // 1. KAMEHAMEHA
         REGISTRY.put(1, (user, target, dmg) -> {
             KiWaveEntity kame = new KiWaveEntity(user.level(), user);
-            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), 37);
+            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(), KAMEHAMEHA_CAST_TICKS);
             applyColors(user, kame);
         });
 
@@ -70,26 +88,6 @@ public class SkillManager {
             barrier.setupKiBarrier(user, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 37);
             applyColors(user, barrier);
             barrier.setKiDamage(dmg);
-        });
-
-        // 7. OOZARU ROAR
-        REGISTRY.put(7, (user, target, dmg) -> {
-            user.playSound(MainSounds.OOZARU_GROWL_PLAYER.get(), 2.0F, 0.8F + user.getRandom().nextFloat() * 0.4F);
-            if (!user.level().isClientSide && user.level() instanceof ServerLevel serverLevel) {
-                double range = 8.0D;
-                serverLevel.sendParticles(ParticleTypes.EXPLOSION, user.getX(), user.getY() + (user.getBbHeight() / 2.0), user.getZ(), 100, range / 1.5, range / 1.5, range / 1.5, 0.2D);
-                AABB roarBox = user.getBoundingBox().inflate(range);
-                for (LivingEntity entity : serverLevel.getEntitiesOfClass(LivingEntity.class, roarBox)) {
-                    if (entity != user && entity.isAlive()) {
-                        entity.invulnerableTime = 0;
-                        entity.hurt(user.damageSources().mobAttack(user), dmg);
-                        entity.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
-                        Vec3 push = new Vec3(entity.getX() - user.getX(), 0.5D, entity.getZ() - user.getZ()).normalize().scale(3.5D);
-                        entity.setDeltaMovement(push);
-                        entity.hasImpulse = true;
-                    }
-                }
-            }
         });
 
         // 8. GENERIC KI WAVE
@@ -187,6 +185,54 @@ public class SkillManager {
             doubleSunday.setupDoubleSunday(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 40);
             applyColors(user, doubleSunday);
         });
+
+        // 23. DRAGON FIST
+        REGISTRY.put(23, (user, target, dmg) -> {
+            SPDragonFistEntity dragonFist = new SPDragonFistEntity(user.level(), user);
+            dragonFist.setupDragonFist(user, dmg, 1.0F, DRAGON_FIST_RUSH_TICKS);
+        });
+
+        // 26. DODONPA
+        REGISTRY.put(26, (user, target, dmg) -> {
+            KiLaserEntity dodonpa = new KiLaserEntity(user.level(), user);
+            dodonpa.setupKiDodonpa(user, dmg, user.getKiBlastSpeed() * 3.0F, 0);
+            applyColors(user, dodonpa);
+        });
+
+        // 27. BURNING ATTACK
+        REGISTRY.put(27, (user, target, dmg) -> {
+            KiBlastEntity burning = new KiBlastEntity(user.level(), user);
+            burning.setupKiBlast(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 30);
+        });
+
+        // 28. SUPERNOVA (COOLER)
+        REGISTRY.put(28, (user, target, dmg) -> {
+            KiBlastEntity supernova = new KiBlastEntity(user.level(), user);
+            supernova.setupKiDeathBall(user, dmg, user.getKiBlastSpeed() * 0.7F, user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), 60);
+            applyColors(user, supernova);
+        });
+
+        // 29. ASSAULT RAIN
+        REGISTRY.put(29, (user, target, dmg) -> {
+            KiBlastEntity rain = new KiBlastEntity(user.level(), user);
+            rain.setupAssaultRain(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), 0.8F * user.getCurrentPoolSkillSize(), ASSAULT_RAIN_CAST_TICKS, ASSAULT_RAIN_FIRE_TICKS);
+        });
+
+        // 30. BLASTER METEOR
+        REGISTRY.put(30, (user, target, dmg) -> {
+            KiBlastEntity meteor = new KiBlastEntity(user.level(), user);
+            meteor.setupBlasterMeteor(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
+                    user.getCurrentPoolColorOutline(), BLASTER_METEOR_CAST_TICKS, BLASTER_METEOR_FIRE_TICKS);
+        });
+
+        // 24. KAMEHAMEHA X10
+        REGISTRY.put(24, (user, target, dmg) -> {
+            KiWaveEntity kame = new KiWaveEntity(user.level(), user);
+            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(),
+                    KAMEHAMEHA_X10_MAIN, KAMEHAMEHA_X10_BORDER, KAMEHAMEHA_X10_OUTLINE, KAMEHAMEHA_CAST_TICKS);
+        });
     }
 
     private static void applyColors(DBSagasEntity user, AbstractKiProjectile projectile) {
@@ -214,12 +260,25 @@ public class SkillManager {
         float mult = type != null ? type.getTier().getDamageMultiplier() : DBSagasEntity.Tier.MEDIUM.getDamageMultiplier();
 
         return switch (id) {
-            case 6 -> 0.0F;                             // Ki Barrier: defensive, no damage
-            case 7, 12, 19, 22 -> meleeDmg * mult;      // Oozaru Roar / Blue Hurricane / Majin Candy / Wolf Fang: melee-scaled
+            case 6, 25 -> 0.0F;                         // Ki Barrier / Taiyoken: no damage
+            case 7, 12, 19, 22, 23 -> meleeDmg * mult;  // Oozaru Roar / Blue Hurricane / Majin Candy / Wolf Fang / Dragon Fist: melee-scaled
             case 13 -> kiDmg * mult / 3.0F;             // Triple Laser: 3 instances (ticks 10/20/30)
-            case 10, 20 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley: random spray, per-bullet
+            case 10, 20, 29, 30 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley / Assault Rain / Blaster Meteor: random spray, per-bullet
             case 11 -> kiDmg * mult / SINGLE_IMPACT_HIT_DIVISOR; // Basic ki blast: single concentrated impact
             default -> kiDmg * mult;                    // every other ki skill: single ki-scaled hit
+        };
+    }
+
+    public static int getFireTick(int id) {
+        return switch (id) {
+            case 14 -> 22;
+            case 17, 27 -> 24;
+            case 26 -> 0;
+            case 16, 18, 21 -> 32;
+            case 15, 28 -> 50;
+            case 29 -> ASSAULT_RAIN_CAST_TICKS;
+            case 30 -> BLASTER_METEOR_CAST_TICKS;
+            default -> KAMEHAMEHA_CAST_TICKS;
         };
     }
 
@@ -227,11 +286,17 @@ public class SkillManager {
         return switch (id) {
             case 4 -> 10;
             case 11 -> 12;
-            case 12, 14, 17 -> 30;
+            case 12, 14, 17, 27 -> 30;
+            case 26 -> 18;
             case 13, 16, 18, 21 -> 40;
             case 19 -> 35;
             case 22 -> WOLF_FANG_DURATION;
-            case 15 -> 60;
+            case 23 -> DRAGON_FIST_WINDUP + DRAGON_FIST_RUSH_TICKS + 2;
+            case 7 -> ROAR_DURATION;
+            case 25 -> TAIYOKEN_DURATION;
+            case 15, 28 -> 60;
+            case 29 -> ASSAULT_RAIN_CAST_TICKS + ASSAULT_RAIN_FIRE_TICKS + KiBlastEntity.ASSAULT_RAIN_DELAY;
+            case 30 -> BLASTER_METEOR_CAST_TICKS + BLASTER_METEOR_FIRE_TICKS;
             default -> 60;
         };
     }
@@ -316,7 +381,12 @@ public class SkillManager {
         }
 
         target.invulnerableTime = 0;
-        target.hurt(user.damageSources().mobAttack(user), applied);
+        guardSafeHit = true;
+        try {
+            target.hurt(user.damageSources().mobAttack(user), applied);
+        } finally {
+            guardSafeHit = false;
+        }
     }
 
     private static void wolfFangJab(DBSagasEntity user, Vec3 impact, int beat) {
@@ -358,5 +428,68 @@ public class SkillManager {
         target.setDeltaMovement(push.x * WOLF_FANG_KNOCKBACK_FORCE, 0.5D, push.z * WOLF_FANG_KNOCKBACK_FORCE);
         target.hasImpulse = true;
         target.hurtMarked = true;
+    }
+
+    /* ---------------------------------------------------------------------
+     * ROAR (id 7) and TAIYOKEN (id 25)
+     *
+     * NPC versions of the player evasion techniques rage_scream / taiyoken:
+     * same animation clips (evs.*), same VFX packet and the same pulse
+     * rhythm, driven per cast tick from DBSagasEntity#tick.
+     * ------------------------------------------------------------------ */
+
+    public static final int ROAR_DURATION = 60;
+    public static final int TAIYOKEN_DURATION = 40;
+    public static final int TAIYOKEN_FLASH_TICK = 8;
+    private static final int ROAR_PULSE_INTERVAL = 5;
+    private static final double ROAR_BASE_RANGE = 5.0D;
+    private static final double ROAR_MIN_RANGE = 8.0D;
+    private static final double ROAR_MAX_RANGE = 16.0D;
+    private static final double ROAR_PULSE_KNOCKBACK = 0.35D;
+    private static final double ROAR_VERTICAL_LIFT = 0.12D;
+
+    public static void tickRoar(DBSagasEntity user, int timer) {
+        if (user.level().isClientSide) return;
+
+        if (timer == 1) {
+            user.playSound(MainSounds.OOZARU_GROWL_PLAYER.get(), 2.0F, 0.8F + user.getRandom().nextFloat() * 0.4F);
+            NetworkHandler.sendToTrackingEntity(new RageScreamVfxS2C(user.getId(), ROAR_DURATION), user);
+        }
+
+        if (timer % ROAR_PULSE_INTERVAL != 0 || timer > ROAR_DURATION) return;
+
+        int pulses = ROAR_DURATION / ROAR_PULSE_INTERVAL;
+        float pulseDamage = getCalculatedDamage(DBSagasEntity.KiSkillType.OOZARU_ROAR.getId(), user) / pulses;
+        float hitbox = Math.max(user.getBbWidth(), user.getBbHeight());
+        double range = Math.min(ROAR_MAX_RANGE, Math.max(ROAR_MIN_RANGE, ROAR_BASE_RANGE * (hitbox / 1.8F)));
+
+        AABB roarBox = user.getBoundingBox().inflate(range);
+        for (LivingEntity victim : user.level().getEntitiesOfClass(LivingEntity.class, roarBox)) {
+            if (victim == user || !victim.isAlive() || user.isAlliedTo(victim)) continue;
+            if (victim instanceof DBSagasEntity && victim != user.getTarget()) continue;
+
+            double distance = user.distanceTo(victim);
+            if (distance > range) continue;
+
+            if (pulseDamage > 0.0F) {
+                victim.invulnerableTime = 0;
+                victim.hurt(user.damageSources().mobAttack(user), pulseDamage);
+            }
+
+            Vec3 dir = victim.position().subtract(user.position());
+            if (dir.lengthSqr() < 1.0E-6) dir = new Vec3(1, 0, 0);
+            dir = dir.normalize();
+            double falloff = 1.0 - Math.min(1.0, distance / range) * 0.5;
+            victim.setDeltaMovement(victim.getDeltaMovement().add(dir.x * ROAR_PULSE_KNOCKBACK * falloff, ROAR_VERTICAL_LIFT, dir.z * ROAR_PULSE_KNOCKBACK * falloff));
+            victim.hasImpulse = true;
+            victim.hurtMarked = true;
+        }
+    }
+
+    public static void castTaiyoken(DBSagasEntity user) {
+        if (user.level().isClientSide) return;
+        user.level().playSound(null, user.getX(), user.getY(), user.getZ(),
+                MainSounds.KI_EXPLOSION_CHARGE.get(), net.minecraft.sounds.SoundSource.HOSTILE, 1.2F, 1.6F);
+        EvasionAttackHandler.applyTaiyokenBlind(user);
     }
 }

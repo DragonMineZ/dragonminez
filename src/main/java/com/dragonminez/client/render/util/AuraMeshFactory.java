@@ -15,11 +15,14 @@ public class AuraMeshFactory {
 	public static final int DROPLET_RESOLUTION = 96;
 	private static final int SPARKING_RINGS = 72;
 	private static final int SPARKING_SEGMENTS = 128;
+	private static final int TORNADO_RINGS = 48;
+	private static final int TORNADO_SEGMENTS = 64;
 
 	private static VertexBuffer billboardQuad;
 	private static VertexBuffer groundQuad;
 	private static VertexBuffer sparkingFlame;
 	private static VertexBuffer fullscreenQuad;
+	private static VertexBuffer tornado;
 	private static final Map<Integer, VertexBuffer> DROPLETS = new HashMap<>();
 
 	public static VertexBuffer getFullscreenQuad() {
@@ -171,6 +174,34 @@ public class AuraMeshFactory {
 	private static void emit(BufferBuilder builder, float x, float y, float z, float cos, float sin, float slope) {
 		Vector3f normal = new Vector3f(cos, -slope, sin).normalize();
 		builder.vertex(x, y, z).color(255, 255, 255, 255).normal(normal.x(), normal.y(), normal.z()).endVertex();
+	}
+
+	public static VertexBuffer getTornadoMesh() {
+		if (tornado == null) {
+			tornado = new VertexBuffer(VertexBuffer.Usage.STATIC);
+			BufferBuilder builder = Tesselator.getInstance().getBuilder();
+			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+
+			for (int i = 0; i < TORNADO_RINGS; i++) {
+				float v1 = (float) i / TORNADO_RINGS;
+				float v2 = (float) (i + 1) / TORNADO_RINGS;
+				for (int j = 0; j < TORNADO_SEGMENTS; j++) {
+					float u1 = (float) j / TORNADO_SEGMENTS;
+					float u2 = (float) (j + 1) / TORNADO_SEGMENTS;
+					float cos1 = (float) Math.cos(u1 * Math.PI * 2.0), sin1 = (float) Math.sin(u1 * Math.PI * 2.0);
+					float cos2 = (float) Math.cos(u2 * Math.PI * 2.0), sin2 = (float) Math.sin(u2 * Math.PI * 2.0);
+					builder.vertex(cos1, v1, sin1).uv(u1, v1).endVertex();
+					builder.vertex(cos2, v1, sin2).uv(u2, v1).endVertex();
+					builder.vertex(cos2, v2, sin2).uv(u2, v2).endVertex();
+					builder.vertex(cos1, v2, sin1).uv(u1, v2).endVertex();
+				}
+			}
+
+			tornado.bind();
+			tornado.upload(builder.end());
+			VertexBuffer.unbind();
+		}
+		return tornado;
 	}
 
 	public static VertexBuffer getSparkingFlameMesh() {

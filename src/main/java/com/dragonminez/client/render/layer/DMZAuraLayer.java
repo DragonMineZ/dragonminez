@@ -23,6 +23,7 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	@Override
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (animatable.isSpectator()) return;
+		if (com.dragonminez.client.render.effects.AfterimageEffect.isRendering()) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 		if (stats == null) return;
 

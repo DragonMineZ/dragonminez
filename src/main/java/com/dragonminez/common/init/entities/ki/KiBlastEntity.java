@@ -27,10 +27,13 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -41,6 +44,22 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     public static final int RENDER_SOUL_PUNISHER = 4;
     public static final int RENDER_FAKE_MOON = 11;
+    public static final int RENDER_ASSAULT_RAIN = 12;
+    public static final int RENDER_BLASTER_METEOR = 13;
+    private static final int BLASTER_METEOR_SHOTS = 8;
+    private static final int BLASTER_METEOR_AIMED_SHOTS = 2;
+    public static final int ASSAULT_RAIN_DELAY = 10;
+    private static final int ASSAULT_RAIN_RISE_LIFE = 12;
+    private static final int ASSAULT_RAIN_DROP_LIFE = 60;
+    private static final int ASSAULT_RAIN_RISERS = 3;
+    private static final int ASSAULT_RAIN_DROPS = 4;
+    private static final float ASSAULT_RAIN_RISE_SPEED = 1.8F;
+    private static final double ASSAULT_RAIN_RADIUS = 6.0D;
+    private static final double ASSAULT_RAIN_HEIGHT = 22.0D;
+    private static final double ASSAULT_RAIN_AIM_RANGE = 40.0D;
+    private static final double ASSAULT_RAIN_SLANT = 0.15D;
+    private transient int volleyTargetId = -1;
+    private transient boolean assaultRainRiser = false;
     private static final double FAKE_MOON_CLIMB_BLOCKS = 30.0D;
     private static final double FAKE_MOON_CLIMB_SPEED = 1.0D;
     private static final int FAKE_MOON_GLOW_TICKS = 20 * 20;
@@ -595,7 +614,70 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
     }
 
+    public void setupAssaultRain(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime, int fireTicks) {
+        this.setOwner(owner);
+        this.setKiRenderType(RENDER_ASSAULT_RAIN);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime + fireTicks);
+        this.setCastOffsets(-0.4F, 1.3F, 0.0F);
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
     //ACA TERMINAN LOS METODOS PARA NPCS
+
+    public void setupAssaultRainPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime) {
+        this.setOwner(owner);
+        this.setKiRenderType(RENDER_ASSAULT_RAIN);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setCastTime(castTime);
+        this.setMaxLife(99999);
+        this.setCastOffsets(-0.4F, 1.3F, 0.0F);
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
+    public void setupBlasterMeteor(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, int castTime, int fireTicks) {
+        float size = owner.getBbHeight() * 1.7F;
+        this.setOwner(owner);
+        this.setKiRenderType(RENDER_BLASTER_METEOR);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setCastTime(castTime);
+        this.setMaxLife(fireTicks <= 0 ? 99999 : castTime + fireTicks);
+        this.setCastOffsets(0.0F, -0.4F * size / ownerScaleOf(owner), 0.0F);
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
+    public void setVolleyTarget(int targetId) {
+        this.volleyTargetId = targetId;
+    }
+
+    private boolean isAnchoredVolley() {
+        int type = this.getKiRenderType();
+        return type == RENDER_ASSAULT_RAIN || type == RENDER_BLASTER_METEOR;
+    }
+
+    @Override
+    protected float castClearanceRadius() {
+        return this.isAnchoredVolley() ? 0.0F : super.castClearanceRadius();
+    }
 
     public void toggleSokidanControl() {
         if (this.isControllable()) {
@@ -624,6 +706,19 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setFireTick(this.tickCount);
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
+
+            if (this.getKiRenderType() == RENDER_BLASTER_METEOR) {
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.PLAYERS, 0.8F, 1.2F);
+                if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
+                return;
+            }
+
+            if (this.getKiRenderType() == RENDER_ASSAULT_RAIN) {
+                this.setMaxLife(this.tickCount + finalMaxLife + ASSAULT_RAIN_DELAY);
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.7F, 0.8F);
+                if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
+                return;
+            }
 
             if (this.getKiRenderType() == 9) {
                 // The barrage emitter stays anchored to the caster (it doesn't fly), so we skip the trajectory
@@ -712,7 +807,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         boolean isFiring = this.isFiring();
 
-        if ((!isFiring && this.getCastTime() > 0) || this.getKiRenderType() == 9 || this.getKiRenderType() == 10) {
+        if ((!isFiring && this.getCastTime() > 0) || this.getKiRenderType() == 9 || this.getKiRenderType() == 10 || this.isAnchoredVolley()) {
             var owner = this.getOwner();
             if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
                 updatePositionRelativeToOwner(livingOwner);
@@ -740,6 +835,24 @@ public class KiBlastEntity extends AbstractKiProjectile {
         boolean isCasting = !this.isFiring();
         int type = this.getKiRenderType();
         Entity ownerEntity = this.getOwner();
+
+        if (type == RENDER_BLASTER_METEOR) {
+            if (ownerEntity instanceof LivingEntity owner && owner.isAlive()) {
+                this.tickBlasterMeteor(owner, isCasting);
+            } else if (!this.level().isClientSide) {
+                this.discard();
+            }
+            return;
+        }
+
+        if (type == RENDER_ASSAULT_RAIN) {
+            if (ownerEntity instanceof LivingEntity owner && owner.isAlive()) {
+                this.tickAssaultRain(owner, isCasting);
+            } else if (!this.level().isClientSide) {
+                this.discard();
+            }
+            return;
+        }
 
         if (type == 9 || type == 10) {
             if (ownerEntity instanceof LivingEntity owner && owner.isAlive()) {
@@ -881,13 +994,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
                     }
                 }
 
-                if (!this.isSoulPunisher() && this.tickCount % 10 == 0) {
+                if (!this.isSoulPunisher() && !this.assaultRainRiser && this.tickCount % 10 == 0) {
                     pulseAreaDamage();
                 }
             }
 
             if (this.tickCount >= this.getMaxLife()) {
-                if (this.isSoulPunisher()) this.discard();
+                if (this.isSoulPunisher() || this.assaultRainRiser) this.discard();
                 else this.explodeAndDie();
                 return;
             }
@@ -997,6 +1110,156 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
 
 
+    private void tickAssaultRain(LivingEntity owner, boolean isCasting) {
+        owner.setDeltaMovement(0, 0, 0);
+        owner.fallDistance = 0.0F;
+        owner.hasImpulse = true;
+
+        if (this.level().isClientSide) return;
+
+        if (!isCasting && this.tickCount % 2 == 0) {
+            Vec3 center = this.resolveAssaultRainCenter(owner);
+            Vec3 source = new Vec3(this.getX(), this.getY() + (this.getBbHeight() / 2.0D), this.getZ());
+            Vec3 toward = new Vec3(center.x - source.x, 0.0D, center.z - source.z);
+            toward = toward.lengthSqr() < 1.0E-4D ? Vec3.ZERO : toward.normalize();
+
+            if (this.tickCount < this.getMaxLife() - ASSAULT_RAIN_DELAY) {
+                for (int i = 0; i < ASSAULT_RAIN_RISERS; i++) {
+                    Vec3 riseDir = new Vec3(
+                            toward.x * 0.25D + this.random.nextGaussian() * 0.22D,
+                            1.0D,
+                            toward.z * 0.25D + this.random.nextGaussian() * 0.22D).normalize();
+                    this.spawnVolleyShot(owner, source, riseDir.scale(ASSAULT_RAIN_RISE_SPEED), 0.0F, true);
+                }
+
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                        MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.15F, 1.4F + (this.random.nextFloat() * 0.5F));
+            }
+
+            if (this.tickCount - this.getFireTick() >= ASSAULT_RAIN_DELAY) {
+                float fallSpeed = Mth.clamp(this.getKiSpeed() * 1.6F, 2.0F, 3.0F);
+                Vec3 fallDir = new Vec3(toward.x * ASSAULT_RAIN_SLANT, -1.0D, toward.z * ASSAULT_RAIN_SLANT).normalize();
+                double height = this.assaultRainHeight(center);
+
+                for (int i = 0; i < ASSAULT_RAIN_DROPS; i++) {
+                    double angle = this.random.nextDouble() * Math.PI * 2.0D;
+                    double dist = ASSAULT_RAIN_RADIUS * Math.sqrt(this.random.nextDouble());
+                    Vec3 ground = center.add(Math.cos(angle) * dist, 0.0D, Math.sin(angle) * dist);
+                    Vec3 spawn = ground.subtract(fallDir.scale(height / -fallDir.y));
+                    this.spawnVolleyShot(owner, spawn, fallDir.scale(fallSpeed), this.getKiDamage(), false);
+                }
+            }
+        }
+
+        if (this.tickCount >= this.getMaxLife()) {
+            this.discard();
+        }
+    }
+
+    private void tickBlasterMeteor(LivingEntity owner, boolean isCasting) {
+        owner.setDeltaMovement(0, 0, 0);
+        owner.fallDistance = 0.0F;
+        owner.hasImpulse = true;
+
+        if (this.level().isClientSide) return;
+
+        if (!isCasting && this.tickCount % 2 == 0) {
+            Vec3 center = new Vec3(owner.getX(), owner.getY() + (owner.getBbHeight() / 2.0D), owner.getZ());
+            double radius = this.getSize() * 0.5D;
+            float shotSpeed = Math.max(1.0F, this.getKiSpeed() * 0.8F);
+            Vec3 aimDir = this.resolveBlasterMeteorAim(owner, center);
+
+            for (int i = 0; i < BLASTER_METEOR_SHOTS; i++) {
+                Vec3 dir;
+                if (i < BLASTER_METEOR_AIMED_SHOTS) {
+                    dir = aimDir.add(this.random.nextGaussian() * 0.12D, this.random.nextGaussian() * 0.12D, this.random.nextGaussian() * 0.12D).normalize();
+                } else {
+                    double y = this.random.nextDouble() * 2.0D - 1.0D;
+                    double theta = this.random.nextDouble() * Math.PI * 2.0D;
+                    double ring = Math.sqrt(1.0D - y * y);
+                    dir = new Vec3(ring * Math.cos(theta), y, ring * Math.sin(theta));
+                }
+                this.spawnVolleyShot(owner, center.add(dir.scale(radius)), dir.scale(shotSpeed), this.getKiDamage(), false);
+            }
+
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.15F, 1.0F + (this.random.nextFloat() * 0.4F));
+        }
+
+        if (this.tickCount >= this.getMaxLife()) {
+            this.discard();
+        }
+    }
+
+    private Vec3 resolveBlasterMeteorAim(LivingEntity owner, Vec3 center) {
+        LivingEntity aimed = null;
+        if (this.volleyTargetId >= 0 && this.level().getEntity(this.volleyTargetId) instanceof LivingEntity locked && locked.isAlive()) {
+            aimed = locked;
+        } else if (owner instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive()) {
+            aimed = mob.getTarget();
+        }
+        if (aimed == null) return owner.getLookAngle();
+
+        Vec3 toTarget = aimed.position().add(0.0D, aimed.getBbHeight() / 2.0D, 0.0D).subtract(center);
+        return toTarget.lengthSqr() < 1.0E-4D ? owner.getLookAngle() : toTarget.normalize();
+    }
+
+    private void spawnVolleyShot(LivingEntity owner, Vec3 pos, Vec3 velocity, float damage, boolean riser) {
+        KiBlastEntity shot = new KiBlastEntity(this.level(), owner);
+        shot.setKiRenderType(0);
+        shot.setSize(0.8F);
+        shot.setKiSpeed((float) velocity.length());
+        shot.setKiDamage(damage);
+        if (this.random.nextBoolean()) shot.setColors(this.getColor(), this.getColorBorder(), this.getColorOutline());
+        else shot.setColors(this.getColor(), this.getColorOutline(), this.getColorBorder());
+        shot.setFiring(true);
+        shot.setCastTime(0);
+        shot.setMaxLife(riser ? ASSAULT_RAIN_RISE_LIFE : ASSAULT_RAIN_DROP_LIFE);
+        shot.assaultRainRiser = riser;
+        if (!riser) {
+            shot.setArmorPenetration(this.getArmorPenetration());
+            shot.setTechniqueId(this.getTechniqueId());
+        }
+        shot.setPos(pos.x, pos.y, pos.z);
+        shot.setDeltaMovement(velocity);
+        shot.hasImpulse = true;
+        this.level().addFreshEntity(shot);
+    }
+
+    private double assaultRainHeight(Vec3 center) {
+        Vec3 from = center.add(0.0D, 1.5D, 0.0D);
+        Vec3 to = center.add(0.0D, ASSAULT_RAIN_HEIGHT, 0.0D);
+        BlockHitResult ceiling = this.level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        if (ceiling.getType() == HitResult.Type.MISS) return ASSAULT_RAIN_HEIGHT;
+        return Math.max(3.0D, ceiling.getLocation().y - center.y - 1.0D);
+    }
+
+    private Vec3 resolveAssaultRainCenter(LivingEntity owner) {
+        if (this.volleyTargetId >= 0 && this.level().getEntity(this.volleyTargetId) instanceof LivingEntity locked && locked.isAlive()) {
+            return locked.position();
+        }
+        if (owner instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive()) {
+            return mob.getTarget().position();
+        }
+
+        Vec3 eyePos = owner.getEyePosition();
+        Vec3 lookDir = owner.getLookAngle();
+        Vec3 endPos = eyePos.add(lookDir.scale(ASSAULT_RAIN_AIM_RANGE));
+
+        BlockHitResult blockHit = this.level().clip(new ClipContext(eyePos, endPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner));
+        boolean hitBlock = blockHit.getType() != HitResult.Type.MISS;
+        if (hitBlock) endPos = blockHit.getLocation();
+
+        AABB searchBox = owner.getBoundingBox().expandTowards(endPos.subtract(eyePos)).inflate(1.0D);
+        EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(this.level(), owner, eyePos, endPos, searchBox,
+                e -> e instanceof LivingEntity && e.isAlive() && !e.isSpectator() && e.isPickable(), 0.3F);
+        if (entityHit != null) return entityHit.getEntity().position();
+        if (hitBlock) return endPos;
+
+        BlockHitResult ground = this.level().clip(new ClipContext(endPos, endPos.subtract(0.0D, 64.0D, 0.0D), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner));
+        return ground.getType() != HitResult.Type.MISS ? ground.getLocation() : endPos;
+    }
+
     private void updatePositionRelativeToOwner(LivingEntity owner) {
         Vec3 look = owner.getLookAngle();
         Vec3 worldUp = new Vec3(0, 1, 0);
@@ -1042,7 +1305,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
             return;
         }
 
-        if (this.getKiRenderType() == RENDER_FAKE_MOON) {
+        if (this.getKiRenderType() == RENDER_FAKE_MOON || this.isAnchoredVolley()) {
+            return;
+        }
+
+        if (this.assaultRainRiser) {
             return;
         }
 
@@ -1120,11 +1387,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         int type = this.getKiRenderType();
-        if (type == RENDER_FAKE_MOON) {
+        if (type == RENDER_FAKE_MOON || this.isAnchoredVolley()) {
             return;
         }
 
-        if (this.isSoulPunisher()) {
+        if (this.isSoulPunisher() || this.assaultRainRiser) {
             if (!this.level().isClientSide) this.discard();
             return;
         }

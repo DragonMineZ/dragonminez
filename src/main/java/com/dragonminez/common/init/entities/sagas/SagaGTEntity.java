@@ -167,9 +167,9 @@ public class SagaGTEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 40);
             this.setAllowedCombos(120, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
-            // 10x Kamehameha
-            this.addKiSkill(KiSkillType.KAMEHAMEHA, 220, 3.0F, 0xFFE3E3, 0xFF4040, 0xB00020);
-            this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, 0xFFB3B3, 0xFF4040);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA_X10, 220, 3.0F);
+            this.addKiSkill(KiSkillType.DRAGON_FIST, 600);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 60);
             this.setZanzoken(true, 150);
@@ -463,6 +463,7 @@ public class SagaGTEntity {
             // Burning Attack
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 300, 1.4F, 0xFFF3C4, 0xFFB300);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0xFFF3C4, 0xFFB300);
+            this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.setWildSense(true, 150);
         }
@@ -496,6 +497,7 @@ public class SagaGTEntity {
             this.setAllowedCombos(140, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 260, 1.8F, 0xFFF3C4, 0xFFE657);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.4F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.setWildSense(true, 120);
             this.setZanzoken(true, 250);

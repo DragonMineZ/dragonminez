@@ -220,7 +220,7 @@ public class SagaMoviesEntity {
 
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xAA00FF, 0x6C00A3);
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xAA00FF, 0x6C00A3);
-            this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xEB1E1E, 0x9E1818);
+            this.addKiSkill(KiSkillType.SUPERNOVA_COOLER, 450, 1.1F);
 
 
             this.setWildSense(true, 100);
@@ -251,7 +251,7 @@ public class SagaMoviesEntity {
 
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xBF0F18, 0x991219);
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xBF0F18, 0x991219);
-            this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xBF0F18, 0x991219);
+            this.addKiSkill(KiSkillType.SUPERNOVA_COOLER, 450, 1.1F);
 
             this.setWildSense(true, 100);
             this.setZanzoken(true, 100);
@@ -288,7 +288,7 @@ public class SagaMoviesEntity {
 
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xAA00FF, 0x6C00A3);
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xAA00FF, 0x6C00A3);
-            this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xEB1E1E, 0x9E1818);
+            this.addKiSkill(KiSkillType.SUPERNOVA_COOLER, 450, 1.1F);
 
 
             this.setWildSense(true, 100);
@@ -324,7 +324,7 @@ public class SagaMoviesEntity {
 
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xAA00FF, 0x6C00A3);
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xAA00FF, 0x6C00A3);
-            this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.1F, 0xEB1E1E, 0x9E1818);
+            this.addKiSkill(KiSkillType.SUPERNOVA_COOLER, 450, 1.1F);
             this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 300 //uff
                     , 0.5F, 0xEB1E1E, 0x9E1818);
 
@@ -630,8 +630,7 @@ public class SagaMoviesEntity {
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0x3DF54A, 0x0FBF1B);
-            this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 400 //uff
-                    , 0.5F, 0x3DF54A, 0x0FBF1B);
+            this.addKiSkill(KiSkillType.BLASTER_METEOR, 400, 1.0F, 0x9DFF8A, 0x3DF54A, 0x0FBF1B);
             this.addKiSkill(KiSkillType.OOZARU_BEAM, 600, 1.5F, 0x3DF54A, 0x0FBF1B);
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 200, 15.5F);
 

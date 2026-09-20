@@ -649,6 +649,12 @@ public class NetworkHandler {
 				.consumerMainThread(ImpactBurstVfxS2C::handle)
 				.add();
 
+		net.messageBuilder(AfterimageVfxS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(AfterimageVfxS2C::new)
+				.encoder(AfterimageVfxS2C::encode)
+				.consumerMainThread(AfterimageVfxS2C::handle)
+				.add();
+
 		net.messageBuilder(PartyPackets.HudSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(PartyPackets.HudSyncS2C::decode)
 				.encoder(PartyPackets.HudSyncS2C::encode)

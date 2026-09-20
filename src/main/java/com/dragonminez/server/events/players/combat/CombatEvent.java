@@ -12,6 +12,7 @@ import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.entities.sagas.helper.SkillManager;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -388,7 +389,7 @@ public class CombatEvent {
 						float poiseDamage = (float) (estimatedPostMitigation * poiseDamageMultiplier * poiseMult);
 						float currentPoise = victimData.getResources().getCurrentPoise();
 
-						if (currentPoise - poiseDamage <= 0) {
+						if (currentPoise - poiseDamage <= 0 && !SkillManager.isGuardSafeHit()) {
 							doGuardBreak(victim, victimData);
 							cancelActiveTechnique(victim, victimData);
 						} else {
@@ -424,7 +425,12 @@ public class CombatEvent {
 								float currentStamina = victimData.getResources().getCurrentStamina();
 								int blockStaminaCost = (int) (estimatedPostMitigation * ConfigManager.getCombatConfig().getBlockStaminaCost());
 
-								if (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0) {
+								if (SkillManager.isGuardSafeHit()) {
+									poiseDamage = Math.min(poiseDamage, Math.max(0.0f, currentPoise - 1.0f));
+									blockStaminaCost = Math.min(blockStaminaCost, Math.max(0, (int) currentStamina - 1));
+								}
+
+								if (!SkillManager.isGuardSafeHit() && (currentPoise - poiseDamage <= 0 || currentStamina - blockStaminaCost <= 0)) {
 									doGuardBreak(victim, victimData);
 
 									if (victim.level() instanceof ServerLevel serverLevel) {

@@ -69,6 +69,11 @@ public final class SagasCombatBrain {
             if (!burst.isEmpty()) return Intent.cast(pick(burst, rnd));
         }
 
+        if (d <= MID_RANGE) {
+            List<KiSkill> blind = ctx.readyByRole(SkillRole.BLIND);
+            if (!blind.isEmpty() && roll(rnd, 0.5F)) return Intent.cast(pick(blind, rnd));
+        }
+
         if (ctx.targetBlocking) {
             List<KiSkill> guardBreak = ctx.readyByRole(SkillRole.GUARD_BREAK);
             if (!guardBreak.isEmpty() && d <= OUT_RANGE) return Intent.cast(pick(guardBreak, rnd));

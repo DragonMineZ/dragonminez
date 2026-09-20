@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
@@ -144,6 +145,11 @@ public class UpdateSkillC2S {
 		} else if (PredefinedTechniques.STRIKE_REGISTRY.containsKey(techId)) {
 			StrikeAttackData template = PredefinedTechniques.STRIKE_REGISTRY.get(techId);
 			StrikeAttackData clone = new StrikeAttackData();
+			clone.load(template.save());
+			data.getTechniques().unlockTechnique(clone);
+		} else if (PredefinedTechniques.EVASION_REGISTRY.containsKey(techId)) {
+			EvasionAttackData template = PredefinedTechniques.EVASION_REGISTRY.get(techId);
+			EvasionAttackData clone = new EvasionAttackData();
 			clone.load(template.save());
 			data.getTechniques().unlockTechnique(clone);
 		}
