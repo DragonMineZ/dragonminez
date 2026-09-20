@@ -57,57 +57,6 @@ public class BlackNimbusEntity extends Mob implements GeoEntity {
         this.goalSelector.addGoal(1, new FloatGoal(this));
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-
-        if (this.level().isClientSide) {
-            spawnAuraParticles(0x272d67);
-        }
-    }
-
-    private void spawnAuraParticles(int colorHex) {
-        int particleCount = 15;
-
-        for (int i = 0; i < particleCount; i++) {
-            double offsetX = (this.random.nextDouble() - 0.1D) * this.getBbWidth() * 0.01D;
-            double offsetY = (this.random.nextDouble() - 0.02D) * this.getBbHeight() * 0.01D;
-            double offsetZ = (this.random.nextDouble() - 0.1D) * this.getBbWidth() * 0.01D;
-
-            double spawnX = this.getX() + offsetX - 0.5;
-            double spawnY = this.getY() + offsetY + 1.0;
-            double spawnZ = this.getZ() + offsetZ;
-
-            this.level().addParticle(
-                    MainParticles.KINTON.get(),
-                    spawnX, spawnY, spawnZ,
-                    colorHex, 0, 0
-            );
-        }
-    }
-
-    private void spawnBoostTrail(int colorHex) {
-        Vec3 back = new Vec3(0, 0, 1).yRot((float) -Math.toRadians(this.getYRot())).scale(-1.0D);
-        int count = 18;
-        for (int i = 0; i < count; i++) {
-            double spread = 0.7D;
-            double ox = (this.random.nextDouble() - 0.5D) * spread;
-            double oy = (this.random.nextDouble() - 0.5D) * spread;
-            double oz = (this.random.nextDouble() - 0.5D) * spread;
-            double dist = 0.5D + this.random.nextDouble() * 1.2D;
-
-            double spawnX = this.getX() + back.x * dist + ox;
-            double spawnY = this.getY() + 1.0D + oy;
-            double spawnZ = this.getZ() + back.z * dist + oz;
-
-            this.level().addParticle(
-                    MainParticles.KINTON.get(),
-                    spawnX, spawnY, spawnZ,
-                    colorHex, 0, 0
-            );
-        }
-    }
-
     private void spawnBoostBurst(int colorHex) {
         Vec3 back = new Vec3(0, 0, 1).yRot((float) -Math.toRadians(this.getYRot())).scale(-1.0D);
         double centerX = this.getX() + back.x * 0.8D;
@@ -185,10 +134,6 @@ public class BlackNimbusEntity extends Mob implements GeoEntity {
                         // Desaceleración fluida de vuelta a la velocidad normal
                         this.boostStrength *= 0.88D;
                         if (this.boostStrength < 0.01D) this.boostStrength = 0.0D;
-                    }
-
-                    if (this.boostStrength > 0.05D) {
-                        spawnBoostTrail(0x272d67);
                     }
                 }
 

@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.KiEmberRenderer;
 import com.dragonminez.client.render.util.KiMeshFactory;
+import com.dragonminez.client.render.util.KiTrailRenderer;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.ColorUtils;
@@ -64,6 +65,11 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
             float[] coreColor = entity.getRgbColorMain();
             float[] borderColor = entity.getRgbColorBorder();
             float[] outlineColor = entity.getRgbColorOutline();
+
+            if (renderType == 0) {
+                KiTrailRenderer.update(entity);
+                KiTrailRenderer.render(entity, basePose, proj, coreColor, borderColor, outlineColor, scale, ageInTicks, partialTick);
+            }
 
             stack.pushPose();
 

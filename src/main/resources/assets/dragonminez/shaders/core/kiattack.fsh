@@ -23,6 +23,7 @@ in vec3 vNormal;
 in vec3 vViewDir;
 in vec3 vLocalPos;
 in vec2 vUv;
+in float vAlpha;
 out vec4 fragColor;
 
 const float CORE_LEVEL    = 0.58;
@@ -238,9 +239,9 @@ void main() {
         // Dark patches glow less, so the blotches stay readable out at the rim instead of
         // being washed flat by the halo.
         if (blotchMode > 0.5) bloomA *= mix(0.55, 1.15, blotchBand);
-        fragColor = vec4(finalColor, bloomA);
+        fragColor = vec4(finalColor, bloomA * vAlpha);
         return;
     }
 
-    fragColor = vec4(finalColor, finalAlpha * globalAlpha);
+    fragColor = vec4(finalColor, finalAlpha * globalAlpha * vAlpha);
 }

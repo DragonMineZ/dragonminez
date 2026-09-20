@@ -13,6 +13,7 @@ out vec3 vNormal;
 out vec3 vViewDir;
 out vec3 vLocalPos;
 out vec2 vUv;
+out float vAlpha;
 
 void main() {
     vec4 viewPos = ModelViewMat * vec4(Position, 1.0);
@@ -22,8 +23,10 @@ void main() {
     vViewDir = normalize(-viewPos.xyz);
     if (localPosMode > 0.5) {
         vLocalPos = vec3(Color.r * 2.0 - 1.0, Color.g * 2.0 - 1.0, Color.b);
+        vAlpha = Color.a;
     } else {
         vLocalPos = Position;
+        vAlpha = 1.0;
     }
     vUv = UV0;
 }
