@@ -678,7 +678,6 @@ public class SagaGTVillainsEntity {
             this.setScaleVal(2.5F);
             this.setEvade(true, 30);
             this.setAllowedCombos(100, ComboType.BASIC, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
-            // Minus Energy Power Ball, Dragon Thunder, Ice Slash, Dragon Typhoon, Nova Star
             this.addKiSkill(KiSkillType.DEATH_BALL, 420, 3.0F, 0x1A0033, 0x7B1FA2);
             this.addKiSkill(KiSkillType.KI_LASER, 150, 2.0F, 0xFFEBEE, 0xD50000);
             this.addKiSkill(KiSkillType.KI_BARRIER, 280, 2.3F, 0xE1F5FE, 0x4FC3F7);

@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
+import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 
 import java.util.*;
@@ -17,6 +18,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class TransformationsHelper {
+
+	private static final String FROST_DEMON_RACE = "frostdemon";
 
 	public static class OrderedFormEntry {
 		private final String groupName;
@@ -460,12 +463,63 @@ public class TransformationsHelper {
 		return meetsFreeTransformMasteryFor(statsData, getTransformTargetGroup(statsData), candidate, false);
 	}
 
-	public static void revertToBaseForm(ServerPlayer player, StatsData statsData) {
+	public static String getEvolutionFloorForm(StatsData statsData) {
+		var character = statsData.getCharacter();
+		if (!FROST_DEMON_RACE.equals(character.getRaceName())) return null;
+		if (!FrostDemonForms.GROUP_EVOLUTIONFORMS.equalsIgnoreCase(character.getActiveFormGroup())) return null;
+
+		FormConfig config = ConfigManager.getFormGroup(character.getRaceName(), FrostDemonForms.GROUP_EVOLUTIONFORMS);
+		if (config == null) return null;
+
+		int floorIndex = formIndex(config, FrostDemonForms.FINAL_FORM);
+		int activeIndex = formIndex(config, character.getActiveForm());
+		if (floorIndex < 0 || activeIndex < floorIndex) return null;
+		return FrostDemonForms.FINAL_FORM;
+	}
+
+	public static boolean isBelowEvolutionFloor(StatsData statsData, String group, String form) {
+		String floor = getEvolutionFloorForm(statsData);
+		if (floor == null) return false;
+		if (form == null || form.isEmpty()) return true;
+		if (group == null || !FrostDemonForms.GROUP_EVOLUTIONFORMS.equalsIgnoreCase(group)) return false;
+
+		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), group);
+		if (config == null) return false;
+		return formIndex(config, form) < formIndex(config, floor);
+	}
+
+	public static boolean clampToEvolutionFloor(StatsData statsData) {
+		String floor = getEvolutionFloorForm(statsData);
+		if (floor == null) return false;
+		if (!floor.equalsIgnoreCase(statsData.getCharacter().getActiveForm())) {
+			statsData.getCharacter().setActiveForm(FrostDemonForms.GROUP_EVOLUTIONFORMS, floor);
+		}
+		return true;
+	}
+
+	private static int formIndex(FormConfig config, String formName) {
+		if (formName == null || formName.isEmpty()) return -1;
+		int index = 0;
+		for (String name : config.getForms().keySet()) {
+			if (name.equalsIgnoreCase(formName)) return index;
+			index++;
+		}
+		return -1;
+	}
+
+	public static boolean revertToBaseForm(ServerPlayer player, StatsData statsData) {
+		return revertToBaseForm(player, statsData, true);
+	}
+
+	public static boolean revertToBaseForm(ServerPlayer player, StatsData statsData, boolean respectEvolutionFloor) {
+		if (respectEvolutionFloor && clampToEvolutionFloor(statsData)) return false;
+
 		if (statsData.getStatus().isAndroidUpgraded()) {
 			statsData.getCharacter().setActiveForm("androidforms", "androidbase");
 		} else {
 			statsData.getCharacter().clearActiveForm(player);
 		}
+		return true;
 	}
 
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {

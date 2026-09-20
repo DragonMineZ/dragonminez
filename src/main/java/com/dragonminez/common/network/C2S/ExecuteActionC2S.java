@@ -27,7 +27,8 @@ public class ExecuteActionC2S {
 		TOGGLE_TAIL,
 		TOGGLE_AURA,
 		TOGGLE_FRIENDLY_FIST,
-		INSTANT_RELEASE
+		INSTANT_RELEASE,
+		MENU_DESCEND
 	}
 
 	private final ActionType action;
@@ -61,10 +62,11 @@ public class ExecuteActionC2S {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					boolean needsSync = false;
 					switch (action) {
-						case FORCE_DESCEND -> {
+						case FORCE_DESCEND, MENU_DESCEND -> {
+							boolean menuDescend = action == ActionType.MENU_DESCEND;
 							if (rightClick) {
 								data.getCharacter().clearActiveStackForm(player);
-								TransformationsHelper.revertToBaseForm(player, data);
+								TransformationsHelper.revertToBaseForm(player, data, false);
 							} else {
 								boolean activeStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 								boolean activeForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
@@ -74,7 +76,7 @@ public class ExecuteActionC2S {
 								}
 
 								if (activeStackForm) descendStackForm(player, data);
-								else if (activeForm) descendForm(player, data);
+								else if (activeForm) descendForm(player, data, menuDescend);
 								needsSync = true;
 							}
 						}
@@ -245,27 +247,33 @@ public class ExecuteActionC2S {
 		return true;
 	}
 
-	private static void descendForm(ServerPlayer player, StatsData data) {
+	private static void descendForm(ServerPlayer player, StatsData data, boolean ignoreEvolutionFloor) {
 		if (data.getCharacter().isHasPreviousFormRecord()) {
 			String previousGroup = data.getCharacter().getPreviousFormGroup();
 			String previousForm = data.getCharacter().getPreviousForm();
 			data.getCharacter().clearPreviousFormRecord();
 			if (previousForm != null && !previousForm.isEmpty()) {
+				if (!ignoreEvolutionFloor && TransformationsHelper.isBelowEvolutionFloor(data, previousGroup, previousForm)) return;
 				data.getCharacter().setActiveForm(previousGroup, previousForm);
 				playFormSound(player, MainSounds.INSTA_FORM_OFF.get());
 				return;
 			}
-			TransformationsHelper.revertToBaseForm(player, data);
+			if (!ignoreEvolutionFloor && TransformationsHelper.clampToEvolutionFloor(data)) return;
+			TransformationsHelper.revertToBaseForm(player, data, false);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			return;
 		}
 
 		FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
+		String activeGroup = data.getCharacter().getActiveFormGroup();
+		String target = previousForm != null ? previousForm.getName() : null;
+		if (!ignoreEvolutionFloor && TransformationsHelper.isBelowEvolutionFloor(data, activeGroup, target)) return;
+
 		if (previousForm != null) {
-			data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+			data.getCharacter().setActiveForm(activeGroup, previousForm.getName());
 			playFormSound(player, MainSounds.INSTA_FORM_OFF.get());
 		} else {
-			TransformationsHelper.revertToBaseForm(player, data);
+			TransformationsHelper.revertToBaseForm(player, data, false);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 		}
 	}
