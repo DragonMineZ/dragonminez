@@ -67,7 +67,9 @@ public class FrostDemonReserve implements RacialAbility {
 			racialData.setEnergyReserve(Math.min(maxReserve, before + chargePerSecond));
 		}
 
-		if (racialData.getEnergyReserve() != before || racialData.isReserveActive() != wasActive) {
+		if (racialData.isReserveActive() != wasActive) {
+			NetworkHandler.sendToTrackingEntityAndSelf(new RacialDataSyncS2C(ctx.player()), ctx.player());
+		} else if (racialData.getEnergyReserve() != before) {
 			NetworkHandler.sendToPlayer(new RacialDataSyncS2C(ctx.player()), ctx.player());
 		}
 	}

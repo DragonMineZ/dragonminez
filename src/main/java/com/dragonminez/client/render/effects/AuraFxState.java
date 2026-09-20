@@ -12,6 +12,8 @@ import net.minecraft.world.entity.player.Player;
 
 public final class AuraFxState {
 
+	private static final String FROST_DEMON_RACE = "frostdemon";
+
 	private AuraFxState() {}
 
 	public static StatsData stats(Player player) {
@@ -40,9 +42,19 @@ public final class AuraFxState {
 		return config == null ? 1.0 : config.getSurgeAuraSpeedMultiplier();
 	}
 
+	public static boolean isReserveDischarging(StatsData stats) {
+		if (stats == null) return false;
+		if (!FROST_DEMON_RACE.equalsIgnoreCase(stats.getCharacter().getRaceName())) return false;
+		return stats.getRacialData().isReserveActive() && stats.getRacialData().getEnergyReserve() > 0.0f;
+	}
+
+	public static boolean isReserveDischarging(Player player) {
+		return isReserveDischarging(stats(player));
+	}
+
 	public static boolean hasLightning(StatsData stats) {
 		if (stats == null) return false;
-		return formLightning(stats) != null || isSurging(stats);
+		return formLightning(stats) != null || isSurging(stats) || isReserveDischarging(stats);
 	}
 
 	public static boolean hasLightning(Player player) {
@@ -76,7 +88,7 @@ public final class AuraFxState {
 	}
 
 	public static float lightningSpeedMultiplier(StatsData stats) {
-		if (!isSurging(stats)) return 1.0f;
+		if (!isSurging(stats) && !isReserveDischarging(stats)) return 1.0f;
 		CombatConfig config = ConfigManager.getCombatConfig();
 		return config == null ? 1.0f : config.getSurgeAuraSpeedMultiplier().floatValue();
 	}
