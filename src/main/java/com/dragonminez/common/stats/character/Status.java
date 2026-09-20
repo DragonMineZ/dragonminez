@@ -34,6 +34,7 @@ public class Status {
 	private boolean isChargingKi;
 	private boolean kiBurstArmed;
 	private boolean surgeActive;
+	private boolean rageActive;
 	private boolean isBlocking;
 	private long lastBlockTime;
 	private long lastHurtTime;
@@ -86,6 +87,7 @@ public class Status {
 		this.isChargingKi = false;
 		this.kiBurstArmed = false;
 		this.surgeActive = false;
+		this.rageActive = false;
 		this.isBlocking = false;
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
@@ -138,6 +140,7 @@ public class Status {
 		this.isChargingKi = false;
 		this.kiBurstArmed = false;
 		this.surgeActive = false;
+		this.rageActive = false;
 		this.isBlocking = false;
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
@@ -214,6 +217,7 @@ public class Status {
 		tag.putBoolean("IsChargingKi", isChargingKi);
 		tag.putBoolean("KiBurstArmed", kiBurstArmed);
 		tag.putBoolean("SurgeActive", surgeActive);
+		tag.putBoolean("RageActive", rageActive);
 		tag.putBoolean("IsBlocking", isBlocking);
 		tag.putLong("LastBlockTime", lastBlockTime);
 		tag.putLong("LastHurtTime", lastHurtTime);
@@ -271,6 +275,7 @@ public class Status {
 		this.isChargingKi = tag.getBoolean("IsChargingKi");
 		this.kiBurstArmed = tag.getBoolean("KiBurstArmed");
 		this.surgeActive = tag.getBoolean("SurgeActive");
+		this.rageActive = tag.getBoolean("RageActive");
 		this.isBlocking = tag.getBoolean("IsBlocking");
 		this.lastBlockTime = tag.getLong("LastBlockTime");
 		this.lastHurtTime = tag.getLong("LastHurtTime");
@@ -331,6 +336,7 @@ public class Status {
 		this.isChargingKi = other.isChargingKi;
 		this.kiBurstArmed = other.kiBurstArmed;
 		this.surgeActive = other.surgeActive;
+		this.rageActive = other.rageActive;
 		this.isBlocking = other.isBlocking;
 		this.lastBlockTime = other.lastBlockTime;
 		this.lastHurtTime = other.lastHurtTime;

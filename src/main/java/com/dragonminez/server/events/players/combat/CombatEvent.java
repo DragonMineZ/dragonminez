@@ -34,6 +34,7 @@ import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.RageEvents;
 import com.dragonminez.server.events.players.KiSurgeService;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
@@ -850,6 +851,7 @@ public class CombatEvent {
 				victim.getPersistentData().remove("dmz_defense_pen");
 			}
 		}
+		RageEvents.onFinalDamage(event);
 	}
 
 	private static final Map<java.util.UUID, Long> LAST_NEGATION_SOUND_TICK = new HashMap<>();

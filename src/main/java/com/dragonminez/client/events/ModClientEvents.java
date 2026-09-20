@@ -91,6 +91,11 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "beam_clash_hud", BeamClashOverlay.HUD_BEAM_CLASH);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "baba_return_timer_hud", BabaReturnTimerHUD.HUD_BABA_RETURN);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "saga_title_card_hud", SagaTitleCardHUD.HUD_SAGA_TITLE_CARD);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "modernhud", ModernHUD.HUD_MODERN);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "minecrafthud", MinecraftHUD.HUD_MINECRAFT);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "ki_reserve_hud", KiReserveHUD.HUD_KI_RESERVE);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "rage_meter_hud", RageMeterHUD.HUD_RAGE_METER);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "party_hud", PartyHUD.HUD_PARTY);
 	}
 	@SubscribeEvent
 	public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {

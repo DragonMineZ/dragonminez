@@ -128,7 +128,7 @@ public class ScouterHUD {
 	public static final IGuiOverlay HUD_SCOUTER = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
+		if (HudStyle.current() == HudStyle.LEGACY_2) return;
 
 		ItemStack scouterStack = getScouterStack(mc.player);
 		if (scouterStack.isEmpty()) return;

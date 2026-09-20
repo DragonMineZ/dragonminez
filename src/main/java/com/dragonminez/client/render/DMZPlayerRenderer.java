@@ -31,6 +31,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
@@ -39,6 +40,8 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import java.util.Objects;
 
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
+
+	private static final String HEAD_BONE = "head";
 
 	protected GeoRenderLayer<T> caller = null;
 
@@ -83,6 +86,13 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		HairRenderCapture.beginEntity(entity, poseStack);
 		((GeoModelAccessor) (Object) getGeoModel()).dmz$setLastRenderedInstance(-1L);
+
+		if (HeadPortraitRenderer.isActive()) {
+			float previousShadowRadius = this.shadowRadius;
+			super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+			this.shadowRadius = previousShadowRadius;
+			return;
+		}
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));
@@ -185,9 +195,88 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		boolean portrait = HeadPortraitRenderer.isActive();
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (portrait && !isPortraitLayer(renderLayer)) continue;
 			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 		}
+	}
+
+	@Override
+	public void preApplyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (!HeadPortraitRenderer.isActive()) {
+			super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			return;
+		}
+		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (isPortraitLayer(renderLayer)) renderLayer.preRender(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+		}
+	}
+
+	@Override
+	public void applyRenderLayersForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (!HeadPortraitRenderer.isActive()) {
+			super.applyRenderLayersForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			return;
+		}
+		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			if (isPortraitLayer(renderLayer)) renderLayer.renderForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+		}
+	}
+
+	private static boolean isPortraitLayer(GeoRenderLayer<?> renderLayer) {
+		return renderLayer instanceof DMZSkinLayer<?> || renderLayer instanceof DMZHairLayer<?> || renderLayer instanceof DMZRacePartsLayer;
+	}
+
+	@Override
+	public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+		if (!HeadPortraitRenderer.isActive()) {
+			super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+			return;
+		}
+
+		if (isHeadOrHeadChild(bone)) {
+			if (!HEAD_BONE.equals(bone.getName())) {
+				super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+				return;
+			}
+			float rotX = bone.getRotX(), rotY = bone.getRotY(), rotZ = bone.getRotZ();
+			float posX = bone.getPosX(), posY = bone.getPosY(), posZ = bone.getPosZ();
+			bone.setRotX(0.0f); bone.setRotY(0.0f); bone.setRotZ(0.0f);
+			bone.setPosX(0.0f); bone.setPosY(0.0f); bone.setPosZ(0.0f);
+			try {
+				super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+			} finally {
+				bone.setRotX(rotX); bone.setRotY(rotY); bone.setRotZ(rotZ);
+				bone.setPosX(posX); bone.setPosY(posY); bone.setPosZ(posZ);
+			}
+			return;
+		}
+
+		if (!containsHead(bone)) return;
+		for (GeoBone child : bone.getChildBones()) {
+			renderRecursively(poseStack, animatable, child, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+		}
+	}
+
+	private static boolean isHeadOrHeadChild(GeoBone bone) {
+		for (GeoBone current = bone; current != null; current = current.getParent()) {
+			if (HEAD_BONE.equals(current.getName())) return true;
+		}
+		return false;
+	}
+
+	private static boolean containsHead(GeoBone bone) {
+		for (GeoBone child : bone.getChildBones()) {
+			if (HEAD_BONE.equals(child.getName()) || containsHead(child)) return true;
+		}
+		return false;
+	}
+
+	@Override
+	protected void applyRotations(T animatable, PoseStack poseStack, float ageInTicks, float rotationYaw, float partialTick) {
+		if (HeadPortraitRenderer.isActive()) return;
+		super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
 	}
 
 	@Override
@@ -205,6 +294,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public boolean shouldShowName(T animatable) {
+		if (HeadPortraitRenderer.isActive()) return false;
 		if (animatable == Minecraft.getInstance().getCameraEntity()) return false;
 		return super.shouldShowName(animatable);
 	}

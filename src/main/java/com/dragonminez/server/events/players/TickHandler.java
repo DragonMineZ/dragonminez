@@ -14,6 +14,7 @@ import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.PartyPackets;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TechniqueChargeSyncS2C;
@@ -438,6 +439,7 @@ public class TickHandler {
 			}
 
 			if (shouldSync) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			if (shouldSync) PartyPackets.sendHudSync(serverPlayer);
 		});
 	}
 

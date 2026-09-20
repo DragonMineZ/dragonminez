@@ -809,7 +809,7 @@ public class StatsData {
 
 		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
 		double result = applyMasteryStatBonus(formData, baseMult, mastery);
-		result = applyMutantFormPowerModifier(currentFormGroup, result);
+		result = applyMutantFormPowerModifier(currentFormGroup, formData, result);
 		return applyRacialFormPowerModifier(currentFormGroup, result);
 	}
 
@@ -820,20 +820,18 @@ public class StatsData {
 				.orElse(multiplier);
 	}
 
-	private double applyMutantFormPowerModifier(String groupName, double multiplier) {
+	private double applyMutantFormPowerModifier(String groupName, FormConfig.FormData formData, double multiplier) {
 		if (multiplier <= 1.0) return multiplier;
 		if (!effects.hasEffect("mutant")) return multiplier;
 
 		var mutantConfig = ConfigManager.getServerConfig() != null ? ConfigManager.getServerConfig().getMutant() : null;
 		if (mutantConfig == null) return multiplier;
+		if (!TransformationsHelper.isMutantLegendaryGroup(groupName)) return multiplier;
 
-		String legendaryGroup = mutantConfig.getLegendaryGroupName();
-		if (groupName == null || !groupName.equalsIgnoreCase(legendaryGroup)) return multiplier;
-
-		boolean hasSkill = skills.getSkillLevel("legendaryforms") > 0;
-		double factor = hasSkill
-				? 1.0 + mutantConfig.getPowerBonusBoostWithSkill()
-				: 1.0 - mutantConfig.getPowerBonusReductionNoSkill();
+		double factor;
+		if (TransformationsHelper.isRageBorrowedForm(this, groupName, formData)) factor = 1.0 - mutantConfig.getPowerBonusReductionNoSkill();
+		else if (status.isRageActive()) factor = 1.0 + mutantConfig.getPowerBonusBoostWithSkill();
+		else return multiplier;
 
 		return 1.0 + (multiplier - 1.0) * factor;
 	}

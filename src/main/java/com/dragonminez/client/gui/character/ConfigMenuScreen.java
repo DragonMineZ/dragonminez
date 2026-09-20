@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui.character;
 
+import com.dragonminez.client.gui.config.HudEditorScreen;
 import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
@@ -126,18 +127,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.BOOLEAN, userConfig.getHideHudNumbers() ? 1 : 0, 0, 1,
 				v -> userConfig.setHideHudNumbers(v > 0)));
 
-		configOptions.add(new ConfigOption("config.xenoverseHudPosX",
-				ConfigType.INT, userConfig.getXenoverseHudPosX(), -1000, 2000,
-				v -> userConfig.setXenoverseHudPosX(v.intValue())));
-
-		configOptions.add(new ConfigOption("config.xenoverseHudPosY",
-				ConfigType.INT, userConfig.getXenoverseHudPosY(), -1000, 2000,
-				v -> userConfig.setXenoverseHudPosY(v.intValue())));
-
-		configOptions.add(new ConfigOption("config.xenoverseHudScale",
-				ConfigType.FLOAT, userConfig.getXenoverseHudScale(), 0.5f, 2.5f,
-				v -> userConfig.setXenoverseHudScale(v)));
-
 		configOptions.add(new ConfigOption("config.advancedDescription",
 				ConfigType.BOOLEAN, userConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
 				v -> userConfig.setAdvancedDescription(v > 0)));
@@ -145,10 +134,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.advancedDescriptionPercentage",
 				ConfigType.BOOLEAN, userConfig.getAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
 				v -> userConfig.setAdvancedDescriptionPercentage(v > 0)));
-
-		configOptions.add(new ConfigOption("config.alternativeHud",
-				ConfigType.BOOLEAN, userConfig.getAlternativeHud() ? 1 : 0, 0, 1,
-				v -> userConfig.setAlternativeHud(v > 0)));
 
 		configOptions.add(new ConfigOption("config.hexagonStatsDisplay",
 				ConfigType.BOOLEAN, userConfig.getHexagonStatsDisplay() ? 1 : 0, 0, 1,
@@ -162,30 +147,6 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.FLOAT, userConfig.getUtilityMenuScaleMultiplier(), 0.5f, 2.5f,
 				v -> userConfig.setUtilityMenuScaleMultiplier(v)));
 
-		configOptions.add(new ConfigOption("config.healthBarPosX",
-				ConfigType.INT, userConfig.getHealthBarPosX(), -1000, 2000,
-				v -> userConfig.setHealthBarPosX(v.intValue())));
-
-		configOptions.add(new ConfigOption("config.healthBarPosY",
-				ConfigType.INT, userConfig.getHealthBarPosY(), -1000, 2000,
-				v -> userConfig.setHealthBarPosY(v.intValue())));
-
-		configOptions.add(new ConfigOption("config.energyBarPosX",
-				ConfigType.INT, userConfig.getEnergyBarPosX(), -1000, 2000,
-				v -> userConfig.setEnergyBarPosX(v.intValue())));
-
-		configOptions.add(new ConfigOption("config.energyBarPosY",
-				ConfigType.INT, userConfig.getEnergyBarPosY(), -1000, 2000,
-				v -> userConfig.setEnergyBarPosY(v.intValue())));
-
-		configOptions.add(new ConfigOption("config.staminaBarPosX",
-				ConfigType.INT, userConfig.getStaminaBarPosX(), -1000, 2000,
-				v -> userConfig.setStaminaBarPosX(v.intValue())));
-
-		configOptions.add(new ConfigOption("config.staminaBarPosY",
-				ConfigType.INT, userConfig.getStaminaBarPosY(), -1000, 2000,
-				v -> userConfig.setStaminaBarPosY(v.intValue())));
-
 		configOptions.add(new ConfigOption("config.cameraMovementDuringFlight",
 				ConfigType.BOOLEAN, userConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
 				v -> userConfig.setCameraMovementDuringFlight(v > 0)));
@@ -195,6 +156,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				v -> userConfig.setLiveCrowdinTranslations(v > 0)));
 
 		initializeDynamicGrowthOptions();
+
+		configOptions.add(new ConfigOption("config.hudEditor",
+				() -> this.minecraft.setScreen(new HudEditorScreen(this))));
 
 		configOptions.add(new ConfigOption("config.overShoulderCamera",
 				() -> this.minecraft.setScreen(new OverShoulderCameraScreen(this))));
@@ -496,7 +460,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
 		} else if (option.type == ConfigType.FLOAT) {
 			float step;
-			if ("config.menuScaleMultiplier".equals(option.key) || "config.xenoverseHudScale".equals(option.key)
+			if ("config.menuScaleMultiplier".equals(option.key)
 					|| "config.utilityMenuScaleMultiplier".equals(option.key)) {
 				step = isShiftDown ? 0.25f : 0.05f;
 			} else {

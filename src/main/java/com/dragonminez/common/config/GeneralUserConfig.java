@@ -1,10 +1,13 @@
 package com.dragonminez.common.config;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -19,21 +22,29 @@ public class GeneralUserConfig {
 	private Boolean techniqueHotbarRightSide = false;
 	private Boolean alwaysVisibleHudValues = false;
 	private Boolean hideHudNumbers = false;
-	private Integer xenoverseHudPosX = 5;
-	private Integer xenoverseHudPosY = 5;
-	private Float xenoverseHudScale = 1.0f;
 	private Boolean advancedDescription = true;
 	private Boolean advancedDescriptionPercentage = true;
-	private Boolean alternativeHud = false;
+	public static final String HUD_STYLE_LEGACY_1 = "legacy 1";
+	public static final String HUD_STYLE_LEGACY_2 = "legacy 2";
+	public static final String HUD_STYLE_DEFAULT = "default";
+	public static final String HUD_STYLE_MINECRAFT = "minecraft";
+
+	private String hudStyle = HUD_STYLE_DEFAULT;
+	private Map<String, Map<String, HudPlacement>> hudLayout = new LinkedHashMap<>();
+
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Boolean alternativeHud = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer xenoverseHudPosX = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer xenoverseHudPosY = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Float xenoverseHudScale = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer healthBarPosX = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer healthBarPosY = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer energyBarPosX = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer energyBarPosY = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer staminaBarPosX = null;
+	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Integer staminaBarPosY = null;
 	private Boolean hexagonStatsDisplay = false;
 	private Float menuScaleMultiplier = 1.0f;
 	private Float utilityMenuScaleMultiplier = 1.0f;
-	private Integer healthBarPosX = 10;
-	private Integer healthBarPosY = 20;
-	private Integer energyBarPosX = 10;
-	private Integer energyBarPosY = 10;
-	private Integer staminaBarPosX = 10;
-	private Integer staminaBarPosY = 10;
 	private Boolean cameraMovementDuringFlight = true;
 	private Boolean liveCrowdinTranslations = true;
 	private Boolean showAccumulativeDamage = true;
@@ -62,6 +73,30 @@ public class GeneralUserConfig {
 	private Float overShoulderUp = 0.35f;
 	private Float overShoulderSide = 1.45f;
 	private Float overShoulderSmoothing = 0.4f;
+
+	public String getHudStyle() {
+		if (alternativeHud != null) {
+			if (alternativeHud && HUD_STYLE_DEFAULT.equals(hudStyle)) hudStyle = HUD_STYLE_MINECRAFT;
+			alternativeHud = null;
+		}
+		xenoverseHudPosX = xenoverseHudPosY = null;
+		xenoverseHudScale = null;
+		healthBarPosX = healthBarPosY = energyBarPosX = energyBarPosY = staminaBarPosX = staminaBarPosY = null;
+		String normalized = hudStyle == null ? "" : hudStyle.trim().toLowerCase(Locale.ROOT).replace("_", " ").replaceAll("\\s+", " ");
+		switch (normalized) {
+			case "legacy1" -> normalized = HUD_STYLE_LEGACY_1;
+			case "legacy2" -> normalized = HUD_STYLE_LEGACY_2;
+			case HUD_STYLE_LEGACY_1, HUD_STYLE_LEGACY_2, HUD_STYLE_MINECRAFT -> {}
+			default -> normalized = HUD_STYLE_DEFAULT;
+		}
+		hudStyle = normalized;
+		return hudStyle;
+	}
+
+	public Map<String, Map<String, HudPlacement>> getHudLayout() {
+		if (hudLayout == null) hudLayout = new LinkedHashMap<>();
+		return hudLayout;
+	}
 
 	public Integer getOverShoulderMode() {
 		if (overShoulderMode == null || overShoulderMode < 0 || overShoulderMode > 2) overShoulderMode = 2;
@@ -139,19 +174,6 @@ public class GeneralUserConfig {
 			return;
 		}
 		this.utilityMenuScaleMultiplier = utilityMenuScaleMultiplier;
-	}
-
-	public Float getXenoverseHudScale() {
-		if (xenoverseHudScale == null || !Float.isFinite(xenoverseHudScale) || xenoverseHudScale <= 0.0f) xenoverseHudScale = 1.0f;
-		return xenoverseHudScale;
-	}
-
-	public void setXenoverseHudScale(Float xenoverseHudScale) {
-		if (xenoverseHudScale == null || !Float.isFinite(xenoverseHudScale) || xenoverseHudScale <= 0.0f) {
-			this.xenoverseHudScale = 1.0f;
-			return;
-		}
-		this.xenoverseHudScale = xenoverseHudScale;
 	}
 
 	public Boolean getTechniqueHotbarRightSide() {

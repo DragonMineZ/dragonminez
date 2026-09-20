@@ -6,6 +6,7 @@ import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.model.KiWeaponModelLoader;
 import com.dragonminez.client.render.firstperson.DMZPOVPlayerRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
@@ -32,6 +33,7 @@ public final class DMZRendererCache {
 		context = ctx;
 		clear();
 		KiWeaponModelLoader.clear();
+		TransformationPostShaderManager.onResourceReload();
 		LogUtil.info(Env.CLIENT, "DMZRendererCache cleared on resource reload");
 	}
 

@@ -3,6 +3,7 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.HeadPortraitRenderer;
 import com.dragonminez.client.render.hair.HairColliders;
 import com.dragonminez.client.render.hair.HairEntityState;
 import com.dragonminez.client.render.hair.HairMeshBuilder;
@@ -211,8 +212,9 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private boolean shouldRenderHair(T animatable) {
 		if (animatable.isInvisible() && !animatable.isSpectator()) return false;
-		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return false;
 		if (animatable.hasEffect(MainEffects.CANDY.get())) return false;
+		if (HeadPortraitRenderer.isActive()) return true;
+		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return false;
 
 		ItemStack headItem = resolveHeadArmorStack(animatable);
 		if (!headItem.isEmpty()) {

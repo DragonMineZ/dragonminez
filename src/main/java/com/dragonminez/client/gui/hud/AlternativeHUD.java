@@ -1,6 +1,8 @@
 package com.dragonminez.client.gui.hud;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.hud.layout.HudElement;
+import com.dragonminez.client.gui.hud.layout.HudLayout;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -29,12 +31,12 @@ public class AlternativeHUD {
 	private static final HudBarAnimator HP_BAR = new HudBarAnimator();
 	private static final HudBarAnimator KI_BAR = new HudBarAnimator();
 	private static final HudBarAnimator STM_BAR = new HudBarAnimator();
-	private static volatile float displayPowerRelease = 0;
+	private static final HudSmoother POWER_RELEASE = new HudSmoother(0.10f, 0.05f);
 	private static volatile float lastSeenMaxHP = -1.0f;
 	private static volatile float lastSeenMaxKi = -1;
 	private static volatile float lastSeenMaxStm = -1;
-	private static final float LERP_SPEED = 0.25f;
 	private static final float BAR_MAX_WIDTH = 76.0f;
+	private static final float KI_BAR_OFFSET = 42.0f;
 	private static final float SURGE_TINT = 0.45f;
 	private static final HudStatNumberAnimator HP_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.HEALTH);
 	private static final HudStatNumberAnimator KI_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.KI);
@@ -43,9 +45,17 @@ public class AlternativeHUD {
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	public static final IGuiOverlay HUD_ALTERNATIVE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+		if (!HudLayout.isPreview()) render(guiGraphics, partialTicks, width, height);
+	};
+
+	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (!ConfigManager.getUserConfig().getAlternativeHud()) return;
+		if (HudStyle.current() != HudStyle.LEGACY_2) return;
+		HudLayout.Box hpBox = HudLayout.resolve(HudElement.L2_HEALTH, width, height);
+		HudLayout.Box kiBox = HudLayout.resolve(HudElement.L2_KI, width, height);
+		HudLayout.Box stmBox = HudLayout.resolve(HudElement.L2_STAMINA, width, height);
+		boolean preview = HudLayout.isPreview();
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			Character character = data.getCharacter();
@@ -85,7 +95,7 @@ public class AlternativeHUD {
 				HP_BAR.update(hpFraction);
 				KI_BAR.update(kiFraction);
 				STM_BAR.update(stmFraction);
-				displayPowerRelease = lerp(displayPowerRelease, powerRelease, partialTicks);
+				float displayPowerRelease = POWER_RELEASE.update(powerRelease);
 
 				float currentHPBarWidth = HP_BAR.frontFraction() * BAR_MAX_WIDTH;
 				float currentKiBarWidth = KI_BAR.frontFraction() * BAR_MAX_WIDTH;
@@ -94,50 +104,36 @@ public class AlternativeHUD {
 				RenderSystem.enableBlend();
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-				float hudScale = 1.25f;
-				int globalAnchorX = width / 2;
-				int globalAnchorY = height;
-
-				guiGraphics.pose().pushPose();
-				guiGraphics.pose().translate(globalAnchorX, globalAnchorY, 0);
-				guiGraphics.pose().scale(hudScale, hudScale, 1.0f);
-
-				float baseHpX = -95.0f; float baseHpY = -49.0f;
-				float baseKiX = -95.0f; float baseKiY = -50.0f;
-				float baseStmX = -5.0f; float baseStmY = -50.0f;
-
-				float hpOffX = ConfigManager.getUserConfig().getHealthBarPosX() / hudScale;
-				float hpOffY = ConfigManager.getUserConfig().getHealthBarPosY() / hudScale;
-				float kiOffX = ConfigManager.getUserConfig().getEnergyBarPosX() / hudScale;
-				float kiOffY = ConfigManager.getUserConfig().getEnergyBarPosY() / hudScale;
-				float stmOffX = ConfigManager.getUserConfig().getStaminaBarPosX() / hudScale;
-				float stmOffY = ConfigManager.getUserConfig().getStaminaBarPosY() / hudScale;
 				float tickTime = mc.player.tickCount + partialTicks;
 
+				if (hpBox.visible() || preview) {
 				guiGraphics.pose().pushPose();
-				guiGraphics.pose().translate(baseHpX + hpOffX, baseHpY + hpOffY, 0);
+				guiGraphics.pose().translate(hpBox.x(), hpBox.y(), 0);
+				guiGraphics.pose().scale(hpBox.scale(), hpBox.scale(), 1.0f);
 				guiGraphics.blit(hud, 0, 0, 0, 0, 83, 9, 128, 128);
 				int hpTextureV = (currentHP < maxHP * 0.33) ? 33 : (currentHP < maxHP * 0.66) ? 22 : 11;
 				drawHpChip(guiGraphics, 9, 3, 9, hpTextureV, currentHPBarWidth, HP_BAR.ghostFraction() * BAR_MAX_WIDTH, HP_BAR.gapType(), 5);
-				guiGraphics.blit(hud, 2, 3, 2, hpTextureV, 7 + (int) currentHPBarWidth, 5, 128, 128);
+				HudRender.blit(guiGraphics, hud, 2, 3, 2, hpTextureV, 7 + currentHPBarWidth, 5, 128, 128);
 				drawBarValues(guiGraphics, HP_NUMBER, currentHP, maxHP, 42, 3, tickTime);
 				guiGraphics.pose().popPose();
+				}
 
+				if (kiBox.visible() || preview) {
 				guiGraphics.pose().pushPose();
-				guiGraphics.pose().translate(baseKiX + kiOffX, baseKiY + kiOffY, 0);
+				guiGraphics.pose().translate(kiBox.x() + KI_BAR_OFFSET * kiBox.scale(), kiBox.y(), 0);
+				guiGraphics.pose().scale(kiBox.scale(), kiBox.scale(), 1.0f);
 				guiGraphics.blit(hud, 0, 0, 0, 44, 83, 9, 128, 128);
 				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
-				guiGraphics.blit(hud, 3, 3, 3, 61, 7 + (int) currentKiBarWidth, 4, 128, 128);
+				HudRender.blit(guiGraphics, hud, 3, 3, 3, 61, 7 + currentKiBarWidth, 4, 128, 128);
 
 				float surgeFraction = SurgeBarState.fraction(data);
 				if (surgeFraction > 0.0f) {
 					RenderSystem.setShaderColor(auraRgb[0] * SURGE_TINT, auraRgb[1] * SURGE_TINT, auraRgb[2] * SURGE_TINT, 1.0f);
-					guiGraphics.blit(hud, 3, 3, 3, 61, 7 + Math.round(surgeFraction * BAR_MAX_WIDTH), 4, 128, 128);
+					HudRender.blit(guiGraphics, hud, 3, 3, 3, 61, 7 + surgeFraction * BAR_MAX_WIDTH, 4, 128, 128);
 				}
 
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-				drawFrostDemonReserveOverlay(guiGraphics, data, raceName, maxKi, 3, 3);
 				drawBarValues(guiGraphics, KI_NUMBER, currentKi, maxKi, 42, 3, tickTime);
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().scale(1.5f, 1.5f, 1.5f);
@@ -145,41 +141,32 @@ public class AlternativeHUD {
 				drawFormIcon(guiGraphics, formRelease, -28, 0);
 				guiGraphics.pose().popPose();
 				guiGraphics.pose().popPose();
+				}
 
+				if (stmBox.visible() || preview) {
 				guiGraphics.pose().pushPose();
-				guiGraphics.pose().translate(baseStmX + stmOffX, baseStmY + stmOffY, 0);
+				guiGraphics.pose().translate(stmBox.x(), stmBox.y(), 0);
+				guiGraphics.pose().scale(stmBox.scale(), stmBox.scale(), 1.0f);
 				guiGraphics.blit(hud, 0, 0, 0, 72, 83, 9, 128, 128);
-				guiGraphics.blit(hud, 2, 3, 2, 90, -5 + (int) currentStmBarWidth, 4, 128, 128);
+				HudRender.blit(guiGraphics, hud, 2, 3, 2, 90, -5 + currentStmBarWidth, 4, 128, 128);
 				guiGraphics.blit(hud, 77, 3, 77, 90, 4, 4, 128, 128);
 				drawBarValues(guiGraphics, STM_NUMBER, currentStm, maxStm, 41, 3, tickTime);
 				guiGraphics.pose().popPose();
-
-				guiGraphics.pose().popPose();
+				}
 			}
 		});
-	};
+	}
 
 	private static void drawHpChip(GuiGraphics guiGraphics, int x, int y, int u, int v, float front, float ghost, HudBarAnimator.GapType gap, int height) {
 		if (gap == HudBarAnimator.GapType.NONE) return;
-		int start = Math.round(Math.min(front, ghost));
-		int end = Math.round(Math.max(front, ghost));
-		int chipWidth = end - start;
-		if (chipWidth <= 0) return;
+		float start = Math.min(front, ghost);
+		float chipWidth = Math.max(front, ghost) - start;
+		if (chipWidth <= 0.0f) return;
 
 		if (gap == HudBarAnimator.GapType.DAMAGE) RenderSystem.setShaderColor(1.0f, 0.24f, 0.24f, 1.0f);
 		else RenderSystem.setShaderColor(0.34f, 1.0f, 0.42f, 1.0f);
-		guiGraphics.blit(hud, x + start, y, u + start, v, chipWidth, height, 128, 128);
+		HudRender.blit(guiGraphics, hud, x + start, y, u + start, v, chipWidth, height, 128, 128);
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-	}
-
-	private static void drawFrostDemonReserveOverlay(GuiGraphics guiGraphics, com.dragonminez.common.stats.StatsData data, String raceName, float maxKi, int barX, int barY) {
-		if (!"frostdemon".equalsIgnoreCase(raceName)) return;
-		float reserve = data.getRacialData().getEnergyReserve();
-		if (reserve <= 0) return;
-
-		int reserveWidth = Math.round(Mth.clamp(reserve / maxKi, 0.0f, 1.0f) * BAR_MAX_WIDTH);
-		if (reserveWidth <= 0) return;
-		guiGraphics.fill(barX, barY, barX + reserveWidth, barY + 4, 0xFF14265E);
 	}
 
 	private static void drawBarValues(GuiGraphics guiGraphics, HudStatNumberAnimator animator, float current, float max, int x, int y, float tickTime) {
@@ -251,10 +238,5 @@ public class AlternativeHUD {
 	private static int withAlpha(int rgb, float alpha) {
 		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f);
 		return (alphaChannel << 24) | (rgb & 0xFFFFFF);
-	}
-
-	private static float lerp(float start, float end, float delta) {
-		float change = (end - start) * LERP_SPEED * delta;
-		return Math.abs(end - start) <= 1 ? end : start + change;
 	}
 }

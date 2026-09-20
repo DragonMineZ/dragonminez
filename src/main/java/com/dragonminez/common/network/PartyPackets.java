@@ -1,6 +1,7 @@
 package com.dragonminez.common.network;
 
 import com.dragonminez.client.gui.character.PartyStatsCache;
+import com.dragonminez.client.gui.hud.PartyHudCache;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -12,6 +13,7 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -126,6 +128,76 @@ public final class PartyPackets {
 		public static void handle(StatsS2C msg, Supplier<NetworkEvent.Context> ctx) {
 			ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
 					() -> () -> PartyStatsCache.accept(msg.getMembers())));
+			ctx.get().setPacketHandled(true);
+		}
+	}
+
+	public static final int HUD_MAX_MEMBERS = 3;
+
+	public record HudMember(UUID id, String name, float health, float maxHealth, float energy, float maxEnergy,
+							boolean sameDimension, float distance) {
+
+		public void encode(FriendlyByteBuf buf) {
+			buf.writeUUID(id);
+			buf.writeUtf(name);
+			buf.writeFloat(health);
+			buf.writeFloat(maxHealth);
+			buf.writeFloat(energy);
+			buf.writeFloat(maxEnergy);
+			buf.writeBoolean(sameDimension);
+			buf.writeFloat(distance);
+		}
+
+		public static HudMember decode(FriendlyByteBuf buf) {
+			return new HudMember(buf.readUUID(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
+					buf.readBoolean(), buf.readFloat());
+		}
+	}
+
+	public static void sendHudSync(ServerPlayer viewer) {
+		List<ServerPlayer> party = PartyManager.getAllPartyMembers(viewer);
+		if (party.size() <= 1) return;
+
+		List<HudMember> members = new ArrayList<>();
+		for (ServerPlayer member : party) {
+			if (member == viewer) continue;
+			StatsData data = StatsProvider.get(StatsCapability.INSTANCE, member).orElse(null);
+			boolean sameDimension = member.level() == viewer.level();
+			float distance = sameDimension ? member.distanceTo(viewer) : Float.MAX_VALUE;
+			float energy = data != null ? data.getResources().getCurrentEnergy() : 0.0f;
+			float maxEnergy = data != null ? data.getMaxEnergy() : 0.0f;
+			members.add(new HudMember(member.getUUID(), member.getGameProfile().getName(), member.getHealth(), member.getMaxHealth(),
+					energy, maxEnergy, sameDimension, distance));
+		}
+
+		members.sort(Comparator.comparingDouble(HudMember::distance));
+		if (members.size() > HUD_MAX_MEMBERS) members = new ArrayList<>(members.subList(0, HUD_MAX_MEMBERS));
+		NetworkHandler.sendToPlayer(new HudSyncS2C(members), viewer);
+	}
+
+	public static class HudSyncS2C {
+
+		private final List<HudMember> members;
+
+		public HudSyncS2C(List<HudMember> members) {
+			this.members = members == null ? new ArrayList<>() : members;
+		}
+
+		public static void encode(HudSyncS2C msg, FriendlyByteBuf buf) {
+			buf.writeVarInt(msg.members.size());
+			for (HudMember member : msg.members) member.encode(buf);
+		}
+
+		public static HudSyncS2C decode(FriendlyByteBuf buf) {
+			int size = Math.min(buf.readVarInt(), HUD_MAX_MEMBERS);
+			List<HudMember> members = new ArrayList<>(size);
+			for (int i = 0; i < size; i++) members.add(HudMember.decode(buf));
+			return new HudSyncS2C(members);
+		}
+
+		public static void handle(HudSyncS2C msg, Supplier<NetworkEvent.Context> ctx) {
+			ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+					() -> () -> PartyHudCache.accept(msg.members)));
 			ctx.get().setPacketHandled(true);
 		}
 	}

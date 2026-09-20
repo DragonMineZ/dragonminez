@@ -1206,9 +1206,10 @@ public class GeneralServerConfig {
 		private String legendaryGroupName = "legendaryforms";
 		private Double tpGainMultiplier = 1.25;
 		private Double masteryGainMultiplier = 1.50;
-		private Double powerBonusReductionNoSkill = 0.67;
+		private Double powerBonusReductionNoSkill = 0.34;
 		private Double powerBonusBoostWithSkill = 0.33;
 		private Boolean keepMutantOnDeath = false;
+		private RageConfig rage = new RageConfig();
 
 		public Boolean getEnabled() {
 			return enabled == null || enabled;
@@ -1244,7 +1245,7 @@ public class GeneralServerConfig {
 		}
 
 		public Double getPowerBonusReductionNoSkill() {
-			Double value = powerBonusReductionNoSkill != null ? powerBonusReductionNoSkill : 0.33;
+			Double value = powerBonusReductionNoSkill != null ? powerBonusReductionNoSkill : 0.34;
 			return Math.max(0.0, Math.min(value, 1.0));
 		}
 
@@ -1254,6 +1255,45 @@ public class GeneralServerConfig {
 
 		public Boolean getKeepMutantOnDeath() {
 			return keepMutantOnDeath != null && keepMutantOnDeath;
+		}
+
+		public RageConfig getRage() {
+			if (rage == null) rage = new RageConfig();
+			return rage;
+		}
+	}
+
+	public static class RageConfig {
+		private Double gainPerDealtHealthFraction = 60.0;
+		private Double gainPerReceivedHealthFraction = 150.0;
+		private Double maxGainPerHit = 25.0;
+		private Double significantTargetHealthRatio = 0.10;
+		private Double significantDamageTakenRatio = 0.01;
+		private Double varietyBonusPerStep = 0.25;
+		private Integer varietyMaxSteps = 4;
+		private Double varietyWindowSeconds = 4.0;
+		private Double activeDurationSeconds = 10.0;
+		private Double activeGainMultiplier = 0.35;
+		private Double fullIdleSeconds = 15.0;
+		private Double partialIdleSeconds = 8.0;
+		private Double idleDrainSeconds = 3.0;
+
+		public double getGainPerDealtHealthFraction() { return positive(gainPerDealtHealthFraction, 60.0); }
+		public double getGainPerReceivedHealthFraction() { return positive(gainPerReceivedHealthFraction, 150.0); }
+		public double getMaxGainPerHit() { return positive(maxGainPerHit, 25.0); }
+		public double getSignificantTargetHealthRatio() { return positive(significantTargetHealthRatio, 0.10); }
+		public double getSignificantDamageTakenRatio() { return positive(significantDamageTakenRatio, 0.01); }
+		public double getVarietyBonusPerStep() { return positive(varietyBonusPerStep, 0.25); }
+		public int getVarietyMaxSteps() { return Math.max(0, varietyMaxSteps != null ? varietyMaxSteps : 4); }
+		public double getVarietyWindowSeconds() { return positive(varietyWindowSeconds, 4.0); }
+		public double getActiveDurationSeconds() { return Math.max(0.5, positive(activeDurationSeconds, 10.0)); }
+		public double getActiveGainMultiplier() { return positive(activeGainMultiplier, 0.35); }
+		public double getFullIdleSeconds() { return positive(fullIdleSeconds, 15.0); }
+		public double getPartialIdleSeconds() { return positive(partialIdleSeconds, 8.0); }
+		public double getIdleDrainSeconds() { return Math.max(0.25, positive(idleDrainSeconds, 3.0)); }
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
 		}
 	}
 

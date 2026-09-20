@@ -60,7 +60,7 @@ public class TexturedTextButton extends Button {
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        graphics.setColor(1.0F, 1.0F, 1.0F, this.alpha);
         Minecraft minecraft = Minecraft.getInstance();
 
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -80,7 +80,11 @@ public class TexturedTextButton extends Button {
                          0xFF000000 | (backgroundColor & 0xFFFFFF));
         }
 
+        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         int textColor = this.active ? (this.isHoveredOrFocused() ? hoverTextColor : normalTextColor) : 0xA0A0A0;
+        int textAlpha = Math.round(this.alpha * 255.0F);
+        if (textAlpha < 4) return;
+        if (textAlpha < 255) textColor = (textColor & 0xFFFFFF) | (textAlpha << 24);
         graphics.drawCenteredString(minecraft.font, this.getMessage(),
                 this.getX() + this.width / 2,
                 this.getY() + (this.height - 8) / 2,

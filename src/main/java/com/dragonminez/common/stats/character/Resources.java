@@ -18,6 +18,7 @@ public class Resources {
     private float currentStamina;
     private float currentPoise;
     private float surgeCharge;
+    private float rage;
     private int release;
     private int releaseLimit;
     private int flightSpeedLimit;
@@ -34,6 +35,7 @@ public class Resources {
         this.currentStamina = 0;
         this.currentPoise = 0;
         this.surgeCharge = 0;
+        this.rage = 0;
         this.release = 5;
         this.releaseLimit = 0;
         this.flightSpeedLimit = 100;
@@ -49,6 +51,7 @@ public class Resources {
         this.currentStamina = 0;
         this.currentPoise = 0;
         this.surgeCharge = 0;
+        this.rage = 0;
         this.release = 5;
         this.releaseLimit = 0;
         this.flightSpeedLimit = 100;
@@ -87,6 +90,14 @@ public class Resources {
 
     public boolean isSurgeFull() {
         return surgeCharge >= 100.0f;
+    }
+
+    public void setRage(float rage) {
+        this.rage = Float.isFinite(rage) ? Math.min(100.0f, Math.max(0.0f, rage)) : 0.0f;
+    }
+
+    public boolean isRageFull() {
+        return rage >= 100.0f;
     }
 
     public void setPowerRelease(int release) {
@@ -210,6 +221,7 @@ public class Resources {
         tag.putFloat("CurrentStamina", currentStamina);
         tag.putFloat("CurrentPoise", currentPoise);
         tag.putFloat("SurgeCharge", surgeCharge);
+        tag.putFloat("Rage", rage);
         tag.putInt("Release", release);
         tag.putInt("ReleaseLimit", releaseLimit);
         tag.putInt("FlightSpeed", flightSpeedLimit);
@@ -232,6 +244,7 @@ public class Resources {
         else this.currentPoise = tag.getInt("CurrentPoise");
 
         this.surgeCharge = tag.getFloat("SurgeCharge");
+        setRage(tag.getFloat("Rage"));
 
         this.release = tag.getInt("Release");
         this.releaseLimit = tag.getInt("ReleaseLimit");
@@ -252,6 +265,7 @@ public class Resources {
         this.currentStamina = other.currentStamina;
         this.currentPoise = other.currentPoise;
         this.surgeCharge = other.surgeCharge;
+        this.rage = other.rage;
         this.release = other.release;
         this.releaseLimit = other.releaseLimit;
         this.flightSpeedLimit = other.flightSpeedLimit;
