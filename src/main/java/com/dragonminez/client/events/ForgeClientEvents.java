@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.client.gui.hud.PartyHudCache;
+import com.dragonminez.client.gui.hud.QuestNoticeHUD;
 import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
@@ -265,6 +266,7 @@ public class ForgeClientEvents {
 	public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
 		ConfigManager.clearServerSync();
 		PartyHudCache.clear();
+		QuestNoticeHUD.clear();
 		DMZRendererCache.clear();
 		TextureCounter.clearCache();
 		pendingCharacterCreationReopen = false;

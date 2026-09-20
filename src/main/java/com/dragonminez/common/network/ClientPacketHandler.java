@@ -11,6 +11,7 @@ import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
 import com.dragonminez.client.gui.quest.StoryToast;
+import com.dragonminez.client.gui.hud.QuestNoticeHUD;
 import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
@@ -112,11 +113,11 @@ public class ClientPacketHandler {
 
 	public static void handlePartyInviteToastPacket(String inviterName) {
 		Minecraft mc = Minecraft.getInstance();
-		mc.getToasts().addToast(new StoryToast(
+		QuestNoticeHUD.push(
 				Component.translatable("toast.dragonminez.party.invite.title"),
 				Component.translatable("toast.dragonminez.party.invite.desc", Component.literal(inviterName)),
 				StoryToast.Tone.INFO
-		));
+		);
 		if (mc.player != null) {
 			mc.player.playSound(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0F, 1.2F);
 		}

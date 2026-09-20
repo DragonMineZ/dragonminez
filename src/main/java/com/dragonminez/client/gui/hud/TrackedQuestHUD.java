@@ -1,6 +1,8 @@
 package com.dragonminez.client.gui.hud;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.hud.layout.HudElement;
+import com.dragonminez.client.gui.hud.layout.HudLayout;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
@@ -33,11 +35,27 @@ public class TrackedQuestHUD {
 
 	private static final int PANEL_WIDTH = 180;
 	private static final int MAX_TEXT_WIDTH = PANEL_WIDTH - 16;
+	private static final float HIDDEN_PREVIEW_ALPHA = 0.35f;
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	public static final IGuiOverlay HUD_TRACKED_QUEST = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+		if (!HudLayout.isPreview()) render(guiGraphics, partialTicks, width, height);
+	};
+
+	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
+
+		boolean preview = HudLayout.isPreview();
+		HudLayout.Box box = HudLayout.resolve(HudElement.TRACKED_QUEST, width, height);
+		if (!box.visible() && !preview) return;
+
+		if (preview) {
+			List<FormattedCharSequence> title = mc.font.split(styled(Component.translatable("gui.dragonminez.hud_editor.sample.quest_title")), MAX_TEXT_WIDTH);
+			List<FormattedCharSequence> objectives = new ArrayList<>(mc.font.split(styled(Component.translatable("gui.dragonminez.hud_editor.sample.quest_objective")), MAX_TEXT_WIDTH));
+			renderPanel(guiGraphics, mc.font, box, title, objectives, 95, box.visible() ? 1.0f : HIDDEN_PREVIEW_ALPHA);
+			return;
+		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();
@@ -48,45 +66,61 @@ public class TrackedQuestHUD {
 			Quest quest = QuestRegistry.getClientQuest(trackedQuestId);
 			if (quest == null) return;
 
-			renderPanel(guiGraphics, mc.font, pqd, trackedQuestId, quest, width);
+			List<FormattedCharSequence> objectiveLines = buildObjectiveLines(mc.font, pqd, trackedQuestId, quest);
+			List<FormattedCharSequence> wrappedTitle = mc.font.split(toComponent(quest.getTitle()), MAX_TEXT_WIDTH);
+			if (wrappedTitle.isEmpty()) wrappedTitle = List.of(FormattedCharSequence.forward(trackedQuestId, Style.EMPTY.withFont(DMZ_FONT)));
+			renderPanel(guiGraphics, mc.font, box, wrappedTitle, objectiveLines, remainingTimeSeconds(pqd, trackedQuestId, quest), 1.0f);
 		});
-	};
+	}
 
-	private static void renderPanel(GuiGraphics guiGraphics, Font font, PlayerQuestData pqd, String questId, Quest quest, int screenWidth) {
-		List<FormattedCharSequence> objectiveLines = buildObjectiveLines(font, pqd, questId, quest);
-		List<FormattedCharSequence> wrappedTitle = font.split(toComponent(quest.getTitle()), MAX_TEXT_WIDTH);
-		if (wrappedTitle.isEmpty()) wrappedTitle = List.of(FormattedCharSequence.forward(questId, net.minecraft.network.chat.Style.EMPTY.withFont(DMZ_FONT)));
+	private static Component styled(Component component) {
+		return component.copy().withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
 
-		int timeLeftSeconds = remainingTimeSeconds(pqd, questId, quest);
+	private static int fade(int argb, float alpha) {
+		int channel = Math.round(((argb >>> 24) & 0xFF) * Mth.clamp(alpha, 0.0f, 1.0f));
+		return (Math.max(4, channel) << 24) | (argb & 0xFFFFFF);
+	}
+
+	private static void renderPanel(GuiGraphics guiGraphics, Font font, HudLayout.Box box, List<FormattedCharSequence> wrappedTitle,
+									List<FormattedCharSequence> objectiveLines, int timeLeftSeconds, float alpha) {
 		int lineHeight = 10;
 		int lineCount = 1 + wrappedTitle.size() + objectiveLines.size() + (timeLeftSeconds >= 0 ? 1 : 0);
 		int panelHeight = 10 + (lineCount * lineHeight) + 6;
-		int x = screenWidth - PANEL_WIDTH - 10;
-		int y = 10;
+		float baseHeight = box.height() / box.scale();
+		float anchorY = HudLayout.anchorY(HudElement.TRACKED_QUEST);
+		float offsetY = anchorY >= 1.0f ? baseHeight - panelHeight : anchorY >= 0.5f ? (baseHeight - panelHeight) / 2.0f : 0.0f;
 
-		guiGraphics.fill(x, y, x + PANEL_WIDTH, y + panelHeight, 0xA02A2F40);
-		guiGraphics.fill(x, y, x + PANEL_WIDTH, y + 1, 0xCC6D8CFF);
-		guiGraphics.fill(x, y + panelHeight - 1, x + PANEL_WIDTH, y + panelHeight, 0x66000000);
+		guiGraphics.pose().pushPose();
+		guiGraphics.pose().translate(box.x(), box.y() + offsetY * box.scale(), 0.0f);
+		guiGraphics.pose().scale(box.scale(), box.scale(), 1.0f);
+
+		int x = 0;
+		int y = 0;
+		guiGraphics.fill(x, y, x + PANEL_WIDTH, y + panelHeight, fade(0xA02A2F40, alpha));
+		guiGraphics.fill(x, y, x + PANEL_WIDTH, y + 1, fade(0xCC6D8CFF, alpha));
+		guiGraphics.fill(x, y + panelHeight - 1, x + PANEL_WIDTH, y + panelHeight, fade(0x66000000, alpha));
 
 		int drawY = y + 5;
-		guiGraphics.drawString(font, Component.translatable("gui.dragonminez.story.hud.tracked").withStyle(Style.EMPTY.withFont(DMZ_FONT)), x + 6, drawY, 0xE8F0FF, false);
+		guiGraphics.drawString(font, Component.translatable("gui.dragonminez.story.hud.tracked").withStyle(Style.EMPTY.withFont(DMZ_FONT)), x + 6, drawY, fade(0xFFE8F0FF, alpha), false);
 		drawY += lineHeight;
 
 		for (FormattedCharSequence titleLine : wrappedTitle) {
-			guiGraphics.drawString(font, titleLine, x + 6, drawY, 0xFFFFFF, false);
+			guiGraphics.drawString(font, titleLine, x + 6, drawY, fade(0xFFFFFFFF, alpha), false);
 			drawY += lineHeight;
 		}
 
 		for (FormattedCharSequence line : objectiveLines) {
-			guiGraphics.drawString(font, line, x + 6, drawY, 0xCFE1FF, false);
+			guiGraphics.drawString(font, line, x + 6, drawY, fade(0xFFCFE1FF, alpha), false);
 			drawY += lineHeight;
 		}
 
 		if (timeLeftSeconds >= 0) {
 			Component timeLine = Component.translatable("gui.dragonminez.story.hud.time_left",
 					formatSeconds(timeLeftSeconds)).withStyle(Style.EMPTY.withFont(DMZ_FONT));
-			guiGraphics.drawString(font, timeLine, x + 6, drawY, timeLeftSeconds < 60 ? 0xFF5555 : 0xFFD700, false);
+			guiGraphics.drawString(font, timeLine, x + 6, drawY, fade(timeLeftSeconds < 60 ? 0xFFFF5555 : 0xFFFFD700, alpha), false);
 		}
+		guiGraphics.pose().popPose();
 	}
 
 	/** Remaining game-time seconds on a time-limited quest, or -1 when the quest has no limit. */

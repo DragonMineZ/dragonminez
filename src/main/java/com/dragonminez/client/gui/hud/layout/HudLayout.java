@@ -40,6 +40,11 @@ public final class HudLayout {
 			HudSprites.RESERVE_CAPSULE.guiHeight() + HudSprites.RESERVE_BAR.height() + BORDER + 7.0f};
 
 	private static final float[] SIZE_SKILL = {120.0f, 13.0f};
+	private static final float[] SIZE_TRACKED_QUEST = {180.0f, 56.0f};
+	private static final float[] SIZE_QUEST_NOTICE = {220.0f, 52.0f};
+	private static final float[] SIZE_SCOUTER = {70.0f, 41.0f};
+	private static final float[] SIZE_BABA_TIMER = {145.0f, 40.0f};
+	private static final String EXTRAS_KEY = "extras";
 	private static final float SKILL_SCALE = 1.25f;
 	private static final float SKILL_LADDER_STEP = 8.0f;
 	private static final float SKILL_MARGIN_X = 12.0f;
@@ -96,6 +101,23 @@ public final class HudLayout {
 		return list;
 	}
 
+	public static List<HudElement> extraElements(HudStyle style) {
+		List<HudElement> list = new ArrayList<>();
+		list.add(HudElement.TRACKED_QUEST);
+		list.add(HudElement.QUEST_NOTICE);
+		if (style != HudStyle.LEGACY_2) list.add(HudElement.SCOUTER);
+		list.add(HudElement.BABA_TIMER);
+		return list;
+	}
+
+	private static String layoutKey(HudStyle style, HudElement element) {
+		return element.isExtra() ? EXTRAS_KEY : style.configName();
+	}
+
+	public static float anchorY(HudElement element) {
+		return placement(HudStyle.current(), element).getAnchorY();
+	}
+
 	public static float[] baseSize(HudStyle style, HudElement element) {
 		return switch (element) {
 			case MAIN -> style == HudStyle.LEGACY_1 ? SIZE_LEGACY_1 : SIZE_DEFAULT_MAIN;
@@ -105,11 +127,15 @@ public final class HudLayout {
 			case PARTY -> SIZE_PARTY;
 			case RESERVE, RAGE -> SIZE_METER;
 			case SKILL_1, SKILL_2, SKILL_3, SKILL_4 -> SIZE_SKILL;
+			case TRACKED_QUEST -> SIZE_TRACKED_QUEST;
+			case QUEST_NOTICE -> SIZE_QUEST_NOTICE;
+			case SCOUTER -> SIZE_SCOUTER;
+			case BABA_TIMER -> SIZE_BABA_TIMER;
 		};
 	}
 
 	public static boolean canMirror(HudStyle style, HudElement element) {
-		return element == HudElement.PARTY || element.isSkill() || (element == HudElement.MAIN && (style == HudStyle.DEFAULT || style == HudStyle.LEGACY_1));
+		return element == HudElement.PARTY || element == HudElement.SCOUTER || element.isSkill() || (element == HudElement.MAIN && (style == HudStyle.DEFAULT || style == HudStyle.LEGACY_1));
 	}
 
 	public static float unit(HudElement element, int screenHeight) {
@@ -134,23 +160,27 @@ public final class HudLayout {
 			case SKILL_1, SKILL_2, SKILL_3, SKILL_4 -> new HudPlacement(0.0f, 1.0f,
 					SKILL_MARGIN_X + SKILL_LADDER_STEP * element.skillRow(),
 					-(SKILL_MARGIN_BOTTOM + (3 - element.skillRow()) * SIZE_SKILL[1] * SKILL_SCALE), SKILL_SCALE);
+			case TRACKED_QUEST -> new HudPlacement(1.0f, 0.0f, -6.0f, 6.0f, 1.0f);
+			case QUEST_NOTICE -> new HudPlacement(1.0f, 0.5f, -6.0f, -40.0f, 0.8f);
+			case SCOUTER -> new HudPlacement(0.0f, 0.5f, 0.0f, -82.0f, 2.0f);
+			case BABA_TIMER -> new HudPlacement(0.5f, 0.0f, 0.0f, 4.0f, 1.0f);
 		};
 	}
 
 	public static HudPlacement placement(HudStyle style, HudElement element) {
-		Map<String, HudPlacement> styleLayout = ConfigManager.getUserConfig().getHudLayout().get(style.configName());
+		Map<String, HudPlacement> styleLayout = ConfigManager.getUserConfig().getHudLayout().get(layoutKey(style, element));
 		HudPlacement stored = styleLayout != null ? styleLayout.get(element.id()) : null;
 		return stored != null ? stored : defaultPlacement(style, element);
 	}
 
 	public static void setPlacement(HudStyle style, HudElement element, HudPlacement placement) {
 		ConfigManager.getUserConfig().getHudLayout()
-				.computeIfAbsent(style.configName(), key -> new LinkedHashMap<>())
+				.computeIfAbsent(layoutKey(style, element), key -> new LinkedHashMap<>())
 				.put(element.id(), placement);
 	}
 
 	public static void resetPlacement(HudStyle style, HudElement element) {
-		Map<String, HudPlacement> styleLayout = ConfigManager.getUserConfig().getHudLayout().get(style.configName());
+		Map<String, HudPlacement> styleLayout = ConfigManager.getUserConfig().getHudLayout().get(layoutKey(style, element));
 		if (styleLayout != null) styleLayout.remove(element.id());
 	}
 

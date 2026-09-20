@@ -3,14 +3,18 @@ package com.dragonminez.client.gui.config;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.hud.AlternativeHUD;
+import com.dragonminez.client.gui.hud.BabaReturnTimerHUD;
 import com.dragonminez.client.gui.hud.HudSmoother;
 import com.dragonminez.client.gui.hud.HudStyle;
 import com.dragonminez.client.gui.hud.KiReserveHUD;
 import com.dragonminez.client.gui.hud.MinecraftHUD;
 import com.dragonminez.client.gui.hud.ModernHUD;
 import com.dragonminez.client.gui.hud.PartyHUD;
+import com.dragonminez.client.gui.hud.QuestNoticeHUD;
 import com.dragonminez.client.gui.hud.RageMeterHUD;
+import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.gui.hud.TechniqueHotbarHUD;
+import com.dragonminez.client.gui.hud.TrackedQuestHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.gui.hud.layout.HudElement;
 import com.dragonminez.client.gui.hud.layout.HudLayout;
@@ -80,6 +84,8 @@ public class HudEditorScreen extends Screen {
 	private final List<TexturedTextButton> buttons = new ArrayList<>();
 	private TexturedTextButton styleButton;
 	private TexturedTextButton toggleButton;
+	private TexturedTextButton extrasButton;
+	private boolean extras;
 	private boolean confirmed;
 
 	public HudEditorScreen(Screen parent) {
@@ -100,6 +106,7 @@ public class HudEditorScreen extends Screen {
 		HudLayout.setPreview(true);
 		buttons.clear();
 		this.styleButton = button(styleLabel(), b -> cycleStyle());
+		this.extrasButton = button(extrasLabel(), b -> toggleExtras());
 		button(tr("gui.dragonminez.hud_editor.done"), b -> confirm());
 		button(tr("gui.dragonminez.hud_editor.cancel"), b -> cancel());
 		button(tr("gui.dragonminez.hud_editor.reset"), b -> reset());
@@ -130,17 +137,32 @@ public class HudEditorScreen extends Screen {
 		return tr(style.translationKey());
 	}
 
+	private MutableComponent extrasLabel() {
+		return tr(extras ? "gui.dragonminez.hud_editor.main" : "gui.dragonminez.hud_editor.extras");
+	}
+
+	private void toggleExtras() {
+		extras = !extras;
+		selected = null;
+		extrasButton.setMessage(extrasLabel());
+	}
+
+	private List<HudElement> elements() {
+		return extras ? HudLayout.extraElements(style) : HudLayout.elements(style);
+	}
+
 	private int styleRowLeft() {
 		int labelWidth = this.font.width(tr("gui.dragonminez.hud_editor.style"));
-		return (this.width - (labelWidth + BUTTON_GAP + BUTTON_WIDTH)) / 2;
+		return (this.width - (labelWidth + BUTTON_GAP + BUTTON_WIDTH + BUTTON_GAP + BUTTON_WIDTH)) / 2;
 	}
 
 	private void layoutPanel() {
 		int labelWidth = this.font.width(tr("gui.dragonminez.hud_editor.style"));
 		styleButton.setPosition(styleRowLeft() + labelWidth + BUTTON_GAP, STYLE_ROW_Y);
+		extrasButton.setPosition(styleRowLeft() + labelWidth + BUTTON_GAP + BUTTON_WIDTH + BUTTON_GAP, STYLE_ROW_Y);
 		int x = (this.width - (BUTTON_WIDTH * 4 + BUTTON_GAP * 3)) / 2;
 		for (TexturedTextButton button : buttons) {
-			if (button == styleButton) continue;
+			if (button == styleButton || button == extrasButton) continue;
 			button.setPosition(x, ACTION_ROW_Y);
 			x += BUTTON_WIDTH + BUTTON_GAP;
 		}
@@ -180,7 +202,7 @@ public class HudEditorScreen extends Screen {
 	private void reset() {
 		if (selected != null && selected.isSkill()) for (HudElement skill : HudElement.skills()) HudLayout.resetPlacement(style, skill);
 		else if (selected != null) HudLayout.resetPlacement(style, selected);
-		else for (HudElement element : HudLayout.elements(style)) HudLayout.resetPlacement(style, element);
+		else for (HudElement element : elements()) HudLayout.resetPlacement(style, element);
 	}
 
 	private void toggleVisible() {
@@ -194,19 +216,26 @@ public class HudEditorScreen extends Screen {
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		graphics.fill(0, 0, this.width, this.height, DIM_COLOR);
 
-		XenoverseHUD.render(graphics, partialTick, this.width, this.height);
-		AlternativeHUD.render(graphics, partialTick, this.width, this.height);
-		ModernHUD.render(graphics, partialTick, this.width, this.height);
-		MinecraftHUD.render(graphics, partialTick, this.width, this.height);
-		KiReserveHUD.render(graphics, partialTick, this.width, this.height);
-		RageMeterHUD.render(graphics, partialTick, this.width, this.height);
-		PartyHUD.render(graphics, partialTick, this.width, this.height);
-		TechniqueHotbarHUD.render(graphics, partialTick, this.width, this.height);
+		if (extras) {
+			TrackedQuestHUD.render(graphics, partialTick, this.width, this.height);
+			QuestNoticeHUD.render(graphics, partialTick, this.width, this.height);
+			ScouterHUD.render(graphics, partialTick, this.width, this.height);
+			BabaReturnTimerHUD.render(graphics, partialTick, this.width, this.height);
+		} else {
+			XenoverseHUD.render(graphics, partialTick, this.width, this.height);
+			AlternativeHUD.render(graphics, partialTick, this.width, this.height);
+			ModernHUD.render(graphics, partialTick, this.width, this.height);
+			MinecraftHUD.render(graphics, partialTick, this.width, this.height);
+			KiReserveHUD.render(graphics, partialTick, this.width, this.height);
+			RageMeterHUD.render(graphics, partialTick, this.width, this.height);
+			PartyHUD.render(graphics, partialTick, this.width, this.height);
+			TechniqueHotbarHUD.render(graphics, partialTick, this.width, this.height);
+		}
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0f, 0.0f, 400.0f);
 		HudElement hovered = drag == Drag.NONE ? elementAt(mouseX, mouseY) : selected;
-		for (HudElement element : HudLayout.elements(style)) drawBox(graphics, element, element == hovered);
+		for (HudElement element : elements()) drawBox(graphics, element, element == hovered);
 		for (float x : guidesX) graphics.fill(Math.round(x), 0, Math.round(x) + 1, this.height, GUIDE_COLOR);
 		for (float y : guidesY) graphics.fill(0, Math.round(y), this.width, Math.round(y) + 1, GUIDE_COLOR);
 
@@ -273,7 +302,7 @@ public class HudEditorScreen extends Screen {
 	private HudElement elementAt(double mouseX, double mouseY) {
 		HudElement best = null;
 		float bestArea = Float.MAX_VALUE;
-		for (HudElement element : HudLayout.elements(style)) {
+		for (HudElement element : elements()) {
 			HudLayout.Box box = box(element);
 			if (!box.contains(mouseX, mouseY)) continue;
 			float area = box.width() * box.height();
@@ -443,7 +472,7 @@ public class HudEditorScreen extends Screen {
 		candidates.add(new float[]{screen - margin - size, 0.0f, screen - margin});
 		candidates.add(new float[]{(screen - size) / 2.0f, 0.0f, screen / 2.0f});
 
-		for (HudElement element : HudLayout.elements(style)) {
+		for (HudElement element : elements()) {
 			if (element == selected || (groupDrag && element.isSkill())) continue;
 			HudLayout.Box other = box(element);
 			if (!other.visible()) continue;

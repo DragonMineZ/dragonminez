@@ -97,6 +97,7 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "ki_reserve_hud", KiReserveHUD.HUD_KI_RESERVE);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "rage_meter_hud", RageMeterHUD.HUD_RAGE_METER);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "party_hud", PartyHUD.HUD_PARTY);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "quest_notice_hud", QuestNoticeHUD.HUD_QUEST_NOTICE);
 	}
 	@SubscribeEvent
 	public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
