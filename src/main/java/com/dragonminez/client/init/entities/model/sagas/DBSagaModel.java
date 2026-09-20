@@ -22,6 +22,11 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
 
     private static final int MAX_VARIANT_PROBE = 16;
 
+    private static final ResourceLocation[] PLAYER_ANIMATION_FALLBACKS = {
+            ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/skp.animation.json"),
+            ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/evs.animation.json")
+    };
+
     // Robot XV stands in for any saga enemy whose art is missing. No model: its model and texture.
     // Model but no texture: the entity's own model wearing the Robot XV texture.
     private static final ResourceLocation FALLBACK_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/robotxv.geo.json");
@@ -75,6 +80,11 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/sagas/saga_base.animation.json");
+    }
+
+    @Override
+    public ResourceLocation[] getAnimationResourceFallbacks(T animatable) {
+        return PLAYER_ANIMATION_FALLBACKS;
     }
 
     @Override

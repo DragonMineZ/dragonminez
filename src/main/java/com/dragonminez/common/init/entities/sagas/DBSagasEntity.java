@@ -144,7 +144,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         MAJIN_CANDY(19, SkillRole.ZONING, Tier.STRONG),
         KI_AIR_VOLLEY(20, SkillRole.ZONING, Tier.WEAK),
         DOUBLE_SUNDAY(21, SkillRole.RANGED_TRAVEL, Tier.STRONG),
-        WOLF_FANG(22, SkillRole.GUARD_BREAK, Tier.MEDIUM);
+        WOLF_FANG(22, SkillRole.GUARD_BREAK, Tier.MEDIUM),
+        DRAGON_FIST(23, SkillRole.GUARD_BREAK, Tier.STRONG, 0xFFD700, 0xFF8C00, -1),
+        KAMEHAMEHA_X10(24, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFE3E3, 0xFF2A2A, 0xB00020);
 
         private final int id;
         private final SkillRole role;
@@ -336,7 +338,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             KiSkillType type = KiSkillType.fromId(id);
             float tierFactor = type != null ? type.getTier().getCooldownFactor() : 1.0F;
             this.cooldownMax = Math.max(1, Math.round(cooldown * SKILL_COOLDOWN_MULTIPLIER * tierFactor));
-            this.currentCooldown = 0;
+            this.currentCooldown = id == 23 ? this.cooldownMax / 2 : 0;
             this.size = size;
             this.colorMain = colorMain;
             this.colorBorder = colorBorder;
@@ -880,18 +882,19 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 if (this.isCasting()) {
                     this.castTimer++;
 
-                    this.getNavigation().stop();
-                    this.setDeltaMovement(0, 0, 0);
+                    int skill = this.getSkillType();
+                    boolean dragonRush = skill == 23 && this.castTimer > SkillManager.DRAGON_FIST_WINDUP;
 
-                    if (this.getTarget() != null) {
+                    this.getNavigation().stop();
+                    if (!dragonRush) this.setDeltaMovement(0, 0, 0);
+
+                    if (this.getTarget() != null && !dragonRush) {
                         this.lookAt(this.getTarget(), 360, 360);
                     }
 
-                    int skill = this.getSkillType();
-
                     if (skill == 20) {
                         this.setDeltaMovement(0, 0.15D, 0);
-                    } else {
+                    } else if (!dragonRush) {
                         this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
                     }
 
@@ -916,9 +919,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     }
 
                     if (this.castTimer == 1) {
-                        if (skill != 7 && skill != 13 && skill != 22) {
+                        if (skill != 7 && skill != 13 && skill != 22 && skill != 23) {
                             executeSkillEffect(skill);
                         }
+                    }
+
+                    if (skill == 23 && this.castTimer == SkillManager.DRAGON_FIST_WINDUP) {
+                        executeSkillEffect(skill);
                     }
 
                     // Wolf Fang is a melee rush, not a one-shot projectile: it needs its own

@@ -167,9 +167,9 @@ public class SagaGTEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 40);
             this.setAllowedCombos(120, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
-            // 10x Kamehameha
-            this.addKiSkill(KiSkillType.KAMEHAMEHA, 220, 3.0F, 0xFFE3E3, 0xFF4040, 0xB00020);
-            this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, 0xFFB3B3, 0xFF4040);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA_X10, 220, 3.0F);
+            this.addKiSkill(KiSkillType.DRAGON_FIST, 600);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 60);
             this.setZanzoken(true, 150);

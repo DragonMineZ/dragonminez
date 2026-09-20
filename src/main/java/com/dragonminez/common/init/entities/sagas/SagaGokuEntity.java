@@ -305,6 +305,7 @@ public class SagaGokuEntity{
             this.setEvade(true, 40);
             this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
             this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 3.0F);
+            this.addKiSkill(KiSkillType.DRAGON_FIST, 600);
             this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.5F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 

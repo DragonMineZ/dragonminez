@@ -26,7 +26,18 @@ public class SkillManager {
         void execute(DBSagasEntity user, LivingEntity target, float damage);
     }
 
+    public static final int DRAGON_FIST_WINDUP = 5;
+    public static final int DRAGON_FIST_RUSH_TICKS = 20;
+    private static final int KAMEHAMEHA_X10_MAIN = 0xFFE3E3;
+    private static final int KAMEHAMEHA_X10_BORDER = 0xFF2A2A;
+    private static final int KAMEHAMEHA_X10_OUTLINE = 0xB00020;
+
     private static final Map<Integer, KiAction> REGISTRY = new HashMap<>();
+    private static boolean guardSafeHit = false;
+
+    public static boolean isGuardSafeHit() {
+        return guardSafeHit;
+    }
 
     static {
         // 1. KAMEHAMEHA
@@ -187,6 +198,19 @@ public class SkillManager {
             doubleSunday.setupDoubleSunday(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolColorOutline(), user.getCurrentPoolSkillSize(), 40);
             applyColors(user, doubleSunday);
         });
+
+        // 23. DRAGON FIST
+        REGISTRY.put(23, (user, target, dmg) -> {
+            SPDragonFistEntity dragonFist = new SPDragonFistEntity(user.level(), user);
+            dragonFist.setupDragonFist(user, dmg, 1.0F, DRAGON_FIST_RUSH_TICKS);
+        });
+
+        // 24. KAMEHAMEHA X10
+        REGISTRY.put(24, (user, target, dmg) -> {
+            KiWaveEntity kame = new KiWaveEntity(user.level(), user);
+            kame.setupKiHame(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolSkillSize(),
+                    KAMEHAMEHA_X10_MAIN, KAMEHAMEHA_X10_BORDER, KAMEHAMEHA_X10_OUTLINE, 37);
+        });
     }
 
     private static void applyColors(DBSagasEntity user, AbstractKiProjectile projectile) {
@@ -215,7 +239,7 @@ public class SkillManager {
 
         return switch (id) {
             case 6 -> 0.0F;                             // Ki Barrier: defensive, no damage
-            case 7, 12, 19, 22 -> meleeDmg * mult;      // Oozaru Roar / Blue Hurricane / Majin Candy / Wolf Fang: melee-scaled
+            case 7, 12, 19, 22, 23 -> meleeDmg * mult;  // Oozaru Roar / Blue Hurricane / Majin Candy / Wolf Fang / Dragon Fist: melee-scaled
             case 13 -> kiDmg * mult / 3.0F;             // Triple Laser: 3 instances (ticks 10/20/30)
             case 10, 20 -> kiDmg * mult / VOLLEY_HIT_DIVISOR; // Ki Volley / Air Volley: random spray, per-bullet
             case 11 -> kiDmg * mult / SINGLE_IMPACT_HIT_DIVISOR; // Basic ki blast: single concentrated impact
@@ -231,6 +255,7 @@ public class SkillManager {
             case 13, 16, 18, 21 -> 40;
             case 19 -> 35;
             case 22 -> WOLF_FANG_DURATION;
+            case 23 -> DRAGON_FIST_WINDUP + DRAGON_FIST_RUSH_TICKS + 2;
             case 15 -> 60;
             default -> 60;
         };
@@ -316,7 +341,12 @@ public class SkillManager {
         }
 
         target.invulnerableTime = 0;
-        target.hurt(user.damageSources().mobAttack(user), applied);
+        guardSafeHit = true;
+        try {
+            target.hurt(user.damageSources().mobAttack(user), applied);
+        } finally {
+            guardSafeHit = false;
+        }
     }
 
     private static void wolfFangJab(DBSagasEntity user, Vec3 impact, int beat) {

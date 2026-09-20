@@ -848,6 +848,9 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (SIZE.equals(pKey)) {
             this.refreshDimensions();
         }
+        if (COLOR_MAIN.equals(pKey)) this.cachedColorMainRgb = null;
+        if (COLOR_BORDER.equals(pKey)) this.cachedColorBorderRgb = null;
+        if (COLOR_OUTLINE.equals(pKey)) this.cachedColorOutlineRgb = null;
     }
 
 
