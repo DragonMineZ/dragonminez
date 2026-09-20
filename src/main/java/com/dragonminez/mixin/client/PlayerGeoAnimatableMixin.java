@@ -37,6 +37,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import com.dragonminez.common.util.lists.BioAndroidForms;
 import static com.dragonminez.client.animation.BaseAnimations.*;
 
 @Mixin(AbstractClientPlayer.class)
@@ -320,7 +321,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 		if (isKnockedDown) return state.setAndContinue(KNOCKBACK_HORIZONTAL);
 
-		if (isDraining) return state.setAndContinue(DRAIN);
+		if (isDraining) {
+			boolean semiPerfect = "bioandroid".equalsIgnoreCase(data.getCharacter().getRaceName())
+					&& BioAndroidForms.SEMI_PERFECT.equalsIgnoreCase(data.getCharacter().getActiveForm());
+			return state.setAndContinue(semiPerfect ? DRAIN_SEMIPERFECT : DRAIN);
+		}
 
 		if (player.isPassenger()) return state.setAndContinue(SIT);
 
