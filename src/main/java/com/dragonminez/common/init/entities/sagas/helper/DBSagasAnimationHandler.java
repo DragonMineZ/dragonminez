@@ -96,7 +96,7 @@ public class DBSagasAnimationHandler {
                 return event.setAndContinue(DBSagasAnimations.ANIM_COMBO3);
             }
             if (comboId == 4) return event.setAndContinue(DBSagasAnimations.ANIM_GRAB_KI);
-            if (comboId == 5) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO4);
+            if (comboId == 5) return event.setAndContinue(DBSagasAnimations.ANIM_GUM_PUNCH);
             if (comboId == 6) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO5);
             if (comboId == 7) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO6);
             if (comboId == 8) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO7);
