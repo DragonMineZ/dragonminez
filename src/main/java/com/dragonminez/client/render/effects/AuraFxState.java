@@ -63,10 +63,11 @@ public final class AuraFxState {
 
 	private static final String LIGHTNING_CYAN = "#5CD6FF";
 	private static final String LIGHTNING_DEEP_BLUE = "#12277A";
-	private static final String LIGHTNING_BLACK = "#111014";
+	private static final String LIGHTNING_WHITE = "#FFFFFF";
 
 	public static String lightningColor(StatsData stats) {
 		if (stats == null) return LIGHTNING_CYAN;
+		if (isReserveDischarging(stats)) return LIGHTNING_WHITE;
 
 		FormConfig.FormData form = formLightning(stats);
 		if (form != null) {
@@ -84,7 +85,7 @@ public final class AuraFxState {
 		if (saturation < 15.0f) return LIGHTNING_DEEP_BLUE;
 		if (hue >= 45.0f && hue < 170.0f) return LIGHTNING_CYAN;
 		if (hue >= 170.0f && hue < 260.0f) return LIGHTNING_DEEP_BLUE;
-		return LIGHTNING_BLACK;
+		return LIGHTNING_WHITE;
 	}
 
 	public static float lightningSpeedMultiplier(StatsData stats) {
