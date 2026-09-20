@@ -18,6 +18,8 @@ import java.util.List;
 public class OtherworldPlacedFeatures {
 	public static final ResourceKey<PlacedFeature> CANDY_ORB_PLACED = registerKey("otherworld_candy_orb_placed");
 	public static final ResourceKey<PlacedFeature> CRYSTAL_SPIKE_PLACED = registerKey("otherworld_crystal_spike_placed");
+	public static final ResourceKey<PlacedFeature> BONE_SPINE_PLACED = registerKey("otherworld_bone_spine_placed");
+	public static final ResourceKey<PlacedFeature> THORN_BALL_PLACED = registerKey("otherworld_thorn_ball_placed");
 
 	public static void bootstrap(BootstapContext<PlacedFeature> context) {
 		HolderGetter<ConfiguredFeature<?, ?>> configured = context.lookup(Registries.CONFIGURED_FEATURE);
@@ -33,6 +35,22 @@ public class OtherworldPlacedFeatures {
 		register(context, CRYSTAL_SPIKE_PLACED, configured.getOrThrow(OtherworldConfiguredFeatures.CRYSTAL_SPIKE),
 				List.of(
 						RarityFilter.onAverageOnceEvery(4),
+						InSquarePlacement.spread(),
+						HeightRangePlacement.uniform(VerticalAnchor.absolute(OtherworldGeneration.HELL_CEILING - 4), VerticalAnchor.absolute(OtherworldGeneration.HELL_CEILING - 2)),
+						BiomeFilter.biome()
+				));
+
+		register(context, BONE_SPINE_PLACED, configured.getOrThrow(OtherworldConfiguredFeatures.BONE_SPINE),
+				List.of(
+						RarityFilter.onAverageOnceEvery(28),
+						InSquarePlacement.spread(),
+						HeightRangePlacement.uniform(VerticalAnchor.absolute(OtherworldGeneration.HELL_CEILING - 4), VerticalAnchor.absolute(OtherworldGeneration.HELL_CEILING - 2)),
+						BiomeFilter.biome()
+				));
+
+		register(context, THORN_BALL_PLACED, configured.getOrThrow(OtherworldConfiguredFeatures.THORN_BALL),
+				List.of(
+						RarityFilter.onAverageOnceEvery(9),
 						InSquarePlacement.spread(),
 						HeightRangePlacement.uniform(VerticalAnchor.absolute(OtherworldGeneration.HELL_CEILING - 4), VerticalAnchor.absolute(OtherworldGeneration.HELL_CEILING - 2)),
 						BiomeFilter.biome()

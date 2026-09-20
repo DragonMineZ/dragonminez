@@ -23,6 +23,8 @@ public class OtherworldBiomes {
 
 		biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION, OtherworldPlacedFeatures.CRYSTAL_SPIKE_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.LOCAL_MODIFICATIONS, OtherworldPlacedFeatures.CANDY_ORB_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES, OtherworldPlacedFeatures.BONE_SPINE_PLACED);
+		biomeBuilder.addFeature(GenerationStep.Decoration.VEGETAL_DECORATION, OtherworldPlacedFeatures.THORN_BALL_PLACED);
 
 		return new Biome.BiomeBuilder()
 				.hasPrecipitation(false)

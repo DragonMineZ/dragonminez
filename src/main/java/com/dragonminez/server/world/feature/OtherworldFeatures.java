@@ -17,6 +17,12 @@ public class OtherworldFeatures {
 	public static final RegistryObject<Feature<NoneFeatureConfiguration>> CRYSTAL_SPIKE = FEATURES.register("crystal_spike",
 			() -> new CrystalSpikeFeature(NoneFeatureConfiguration.CODEC));
 
+	public static final RegistryObject<Feature<NoneFeatureConfiguration>> BONE_SPINE = FEATURES.register("bone_spine",
+			() -> new BoneSpineFeature(NoneFeatureConfiguration.CODEC));
+
+	public static final RegistryObject<Feature<NoneFeatureConfiguration>> THORN_BALL = FEATURES.register("thorn_ball",
+			() -> new ThornBallFeature(NoneFeatureConfiguration.CODEC));
+
 	public static void register(IEventBus eventBus) {
 		FEATURES.register(eventBus);
 	}
