@@ -80,7 +80,8 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
             stack.mulPose(Axis.YP.rotationDegrees(-lerpYaw));
             stack.mulPose(Axis.XP.rotationDegrees(lerpPitch));
 
-            stack.scale(scale, scale, scale);
+            float stretch = entity instanceof KiBlastEntity stretched ? stretched.getStretch() : 1.0F;
+            stack.scale(scale, scale, scale * stretch);
 
             MultiBufferSource.BufferSource immediateBuffer = Minecraft.getInstance().renderBuffers().bufferSource();
 

@@ -660,6 +660,36 @@ public class NetworkHandler {
 				.encoder(PartyPackets.HudSyncS2C::encode)
 				.consumerMainThread(PartyPackets.HudSyncS2C::handle)
 				.add();
+
+		net.messageBuilder(BossTelegraphS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(BossTelegraphS2C::new)
+				.encoder(BossTelegraphS2C::encode)
+				.consumerMainThread(BossTelegraphS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossStateS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(WorldBossStateS2C::new)
+				.encoder(WorldBossStateS2C::encode)
+				.consumerMainThread(WorldBossStateS2C::handle)
+				.add();
+
+		net.messageBuilder(DimensionalFistS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DimensionalFistS2C::new)
+				.encoder(DimensionalFistS2C::encode)
+				.consumerMainThread(DimensionalFistS2C::handle)
+				.add();
+
+		net.messageBuilder(DimensionalShatterS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(DimensionalShatterS2C::new)
+				.encoder(DimensionalShatterS2C::encode)
+				.consumerMainThread(DimensionalShatterS2C::handle)
+				.add();
+
+		net.messageBuilder(SwordSlashS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SwordSlashS2C::new)
+				.encoder(SwordSlashS2C::encode)
+				.consumerMainThread(SwordSlashS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

@@ -10,6 +10,9 @@ import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.S2C.BossTelegraphS2C;
+import com.dragonminez.common.network.S2C.DimensionalFistS2C;
+import net.minecraft.sounds.SoundSource;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiExplosionVisualEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
@@ -71,6 +74,21 @@ public class StrikeAttackHandler {
 	private static final String STRIKE_HIT_ANIM = "base.flyback";
 	private static final String STRIKE_KNOCKBACK_ANIM = "base.flyback";
 	private static final String OOZARU_SLAM_ID = "oozaru_slam";
+	private static final String DIM_PUNCH_ID = "dimensional_punch";
+	private static final int DIM_PUNCH_DURATION = 70;
+	private static final int[] DIM_PUNCH_MARK_TICKS = {3, 18, 33};
+	private static final int[] DIM_PUNCH_HIT_TICKS = {15, 30, 45};
+	private static final double DIM_PUNCH_RADIUS = 3.0;
+	private static final double DIM_PUNCH_RANGE = 26.0;
+	private static final int DIM_PUNCH_COLOR = 0xC451FF;
+	private static final String DIM_SLASH_ID = "dimensional_sword_attack";
+	private static final int DIM_SLASH_DURATION = 41;
+	private static final int[] DIM_SLASH_TICKS = {8, 20, 32};
+	private static final double DIM_SLASH_RANGE = 40.0;
+	private static final double DIM_SLASH_SPEED = 1.2;
+	private static final double DIM_SLASH_HIT_RADIUS = 2.2;
+	private static final float DIM_SLASH_SCALE = 2.8F;
+	private static final int DIM_SLASH_COLOR = 0xFF1E2D;
 	private static final int SLAM_IMPACT_TICK = 2;
 	private static final int SLAM_DURATION_TICKS = 15;
 	private static final float SLAM_SHAKE_RADIUS = 6.0F;
@@ -134,7 +152,7 @@ public class StrikeAttackHandler {
 			TechniqueData selected = stats.getTechniques().getSelectedTechnique();
 			if (!(selected instanceof StrikeAttackData strike)) return;
 
-			if (stats.getSkills().getSkillLevel("kicontrol") <= 0 || stats.getResources().getPowerRelease() < 5 || !player.getMainHandItem().isEmpty()) return;
+			if (stats.getSkills().getSkillLevel("kicontrol") <= 0 || stats.getResources().getPowerRelease() < 5 || (!player.getMainHandItem().isEmpty() && !DIM_SLASH_ID.equals(strike.getId()))) return;
 
 			String cooldownKey = getTechniqueCooldownKey(strike.getId());
 			if (stats.getCooldowns().hasCooldown(cooldownKey)) return;
@@ -150,6 +168,18 @@ public class StrikeAttackHandler {
 			if (OOZARU_SLAM_ID.equals(strike.getId())) {
 				MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
 				startSlam(player, stats, strike);
+				return;
+			}
+
+			if (DIM_PUNCH_ID.equals(strike.getId())) {
+				MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
+				startDimensionalPunch(player, stats, strike, preferredTargetId);
+				return;
+			}
+
+			if (DIM_SLASH_ID.equals(strike.getId())) {
+				MinecraftForge.EVENT_BUS.post(new DMZEvent.StrikeAttackCastEvent(player, stats, strike));
+				startDimensionalSlash(player, stats, strike, preferredTargetId);
 				return;
 			}
 
@@ -323,6 +353,16 @@ public class StrikeAttackHandler {
 
 		if (OOZARU_SLAM_ID.equals(active.techniqueId())) {
 			processSlam(player, active);
+			return;
+		}
+
+		if (DIM_PUNCH_ID.equals(active.techniqueId())) {
+			processDimensionalPunch(player, active);
+			return;
+		}
+
+		if (DIM_SLASH_ID.equals(active.techniqueId())) {
+			processDimensionalSlash(player, active);
 			return;
 		}
 
@@ -1127,6 +1167,189 @@ public class StrikeAttackHandler {
 		ACTIVE.put(player.getUUID(), active);
 		setStrikeLocked(player, true);
 		playStrikeAnimation(player, strike.getAnimationId());
+	}
+
+	private static final java.util.Map<UUID, Vec3> DIM_PUNCH_MARKS = new java.util.HashMap<>();
+
+	private static void markDimensionalPortal(ServerPlayer player, LivingEntity target, int punchIndex) {
+
+		double y = target.getY();
+		Vec3 mark = new Vec3(target.getX(), y, target.getZ());
+		DIM_PUNCH_MARKS.put(player.getUUID(), mark);
+
+		int openTicks = DIM_PUNCH_HIT_TICKS[punchIndex] - DIM_PUNCH_MARK_TICKS[punchIndex];
+		boolean fromAbove = player.getRandom().nextInt(3) == 0;
+		float fistYaw = player.getRandom().nextFloat() * 360.0F;
+		float fistPitch = fromAbove ? 90.0F : -5.0F + player.getRandom().nextFloat() * 25.0F;
+		double fistY = mark.y + (fromAbove ? 0.3D : target.getBbHeight() * 0.55D);
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new BossTelegraphS2C(mark.x, mark.y, mark.z,
+				(float) DIM_PUNCH_RADIUS, DIM_PUNCH_COLOR, openTicks, -1), player);
+		NetworkHandler.sendToTrackingEntityAndSelf(new DimensionalFistS2C(player.getId(),
+				mark.x, fistY, mark.z, fistYaw, fistPitch, punchIndex == 1, openTicks), player);
+	}
+
+	private static void fireDimensionalPunch(ServerPlayer player, ActiveStrike active) {
+		if (!(player.level() instanceof ServerLevel serverLevel)) return;
+
+		Vec3 mark = DIM_PUNCH_MARKS.get(player.getUUID());
+		if (mark == null) return;
+
+		AABB area = new AABB(mark.x - DIM_PUNCH_RADIUS, mark.y - 2.0, mark.z - DIM_PUNCH_RADIUS,
+				mark.x + DIM_PUNCH_RADIUS, mark.y + 4.0, mark.z + DIM_PUNCH_RADIUS);
+
+		for (LivingEntity victim : serverLevel.getEntitiesOfClass(LivingEntity.class, area)) {
+			if (victim == player || victim.isAlliedTo(player)) continue;
+
+			double dx = victim.getX() - mark.x;
+			double dz = victim.getZ() - mark.z;
+			if (Math.sqrt(dx * dx + dz * dz) > DIM_PUNCH_RADIUS) continue;
+
+			applyStrikeDamage(player, victim, active.perHitDamage(), active.techniqueId(), false);
+		}
+
+		Vec3 center = mark.add(0.0, 1.0, 0.0);
+		Vec3 dir = center.subtract(player.position()).normalize();
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(center, dir,
+				(float) DIM_PUNCH_RADIUS * 1.5F, DIM_PUNCH_COLOR, 0xFFD700, true, 14), player);
+
+		serverLevel.playSound(null, center.x, center.y, center.z,
+				MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.PLAYERS, 2.2F, 1.35F);
+	}
+
+	private static void startDimensionalPunch(ServerPlayer player, com.dragonminez.common.stats.StatsData stats,
+											  StrikeAttackData strike, int preferredTargetId) {
+		double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
+				ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
+		double perHit = totalDamage / DIM_PUNCH_HIT_TICKS.length;
+
+		LivingEntity target = findConeTarget(player, DIM_PUNCH_RANGE, preferredTargetId);
+
+		ActiveStrike active = new ActiveStrike(
+				player.getUUID(),
+				target != null ? target.getUUID() : null,
+				strike.getId(),
+				strike.getAnimationId(),
+				DIM_PUNCH_DURATION,
+				strike.getActualCooldown(),
+				totalDamage,
+				perHit,
+				perHit,
+				DIM_PUNCH_DURATION,
+				0
+		);
+		ACTIVE.put(player.getUUID(), active);
+		setStrikeLocked(player, true);
+		playStrikeAnimation(player, strike.getAnimationId());
+	}
+
+	private static void processDimensionalPunch(ServerPlayer player, ActiveStrike active) {
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(stats -> stats.getStatus().isKnockedDown())
+				.orElse(false);
+		if (!player.isAlive() || stunned) {
+			endStrike(player, null, active, stunned);
+			return;
+		}
+
+		freezeEntity(player);
+
+		int tick = active.ticksElapsed();
+		LivingEntity target = active.targetId() == null ? null : resolveLiving(player, active.targetId());
+
+		for (int i = 0; i < DIM_PUNCH_MARK_TICKS.length; i++) {
+			if (tick != DIM_PUNCH_MARK_TICKS[i] || target == null) continue;
+			markDimensionalPortal(player, target, i);
+		}
+		for (int hit : DIM_PUNCH_HIT_TICKS) {
+			if (tick != hit) continue;
+			fireDimensionalPunch(player, active);
+		}
+
+		if (tick + 1 >= active.durationTicks()) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(tick + 1));
+	}
+
+	private static void startDimensionalSlash(ServerPlayer player, com.dragonminez.common.stats.StatsData stats,
+											  StrikeAttackData strike, int preferredTargetId) {
+		double totalDamage = stats.getStrikeDamage() * strike.getDamageMultiplier() * Math.max(0.0,
+				ConfigManager.getTechniqueConfig().getStrikeConfig(strike.getId()).getDamageMultiplier());
+		double perCut = totalDamage / DIM_SLASH_TICKS.length;
+
+		LivingEntity target = findConeTarget(player, DIM_SLASH_RANGE, preferredTargetId);
+
+		ActiveStrike active = new ActiveStrike(
+				player.getUUID(),
+				target != null ? target.getUUID() : null,
+				strike.getId(),
+				strike.getAnimationId(),
+				DIM_SLASH_DURATION,
+				strike.getActualCooldown(),
+				totalDamage,
+				perCut,
+				perCut,
+				DIM_SLASH_DURATION,
+				0
+		);
+		ACTIVE.put(player.getUUID(), active);
+		setStrikeLocked(player, true);
+		playStrikeAnimation(player, strike.getAnimationId());
+	}
+
+	private static void processDimensionalSlash(ServerPlayer player, ActiveStrike active) {
+		boolean stunned = player.hasEffect(MainEffects.STUN.get())
+				|| StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(stats -> stats.getStatus().isKnockedDown())
+				.orElse(false);
+		if (!player.isAlive() || stunned) {
+			endStrike(player, null, active, stunned);
+			return;
+		}
+
+		freezeEntity(player);
+
+		int tick = active.ticksElapsed();
+		LivingEntity target = active.targetId() == null ? null : resolveLiving(player, active.targetId());
+
+		for (int i = 0; i < DIM_SLASH_TICKS.length; i++) {
+			if (tick != DIM_SLASH_TICKS[i]) continue;
+			launchDimensionalSlash(player, target, active, i);
+		}
+
+		if (tick + 1 >= active.durationTicks()) {
+			endStrike(player, target, active);
+			return;
+		}
+		ACTIVE.put(player.getUUID(), active.withTicksElapsed(tick + 1));
+	}
+
+	private static void launchDimensionalSlash(ServerPlayer player, LivingEntity target, ActiveStrike active, int index) {
+		if (!(player.level() instanceof ServerLevel serverLevel)) return;
+
+		Vec3 look = player.getLookAngle();
+		Vec3 origin = player.getEyePosition().add(0.0, -0.35, 0.0).add(look.scale(1.2));
+		Vec3 aim = target != null && target.isAlive()
+				? target.getBoundingBox().getCenter().subtract(origin)
+				: look;
+
+		double damage = active.perHitDamage();
+		String techniqueId = active.techniqueId();
+
+		com.dragonminez.common.combat.util.SwordSlashManager.launch(serverLevel, player, origin, aim,
+				com.dragonminez.common.combat.util.SwordSlashManager.rollFor(index), DIM_SLASH_SCALE, DIM_SLASH_COLOR,
+				DIM_SLASH_SPEED, DIM_SLASH_RANGE, DIM_SLASH_HIT_RADIUS, victim -> {
+					if (victim.isAlliedTo(player) || !TargetHelper.canAttack(player, victim, DIM_SLASH_RANGE + 8.0)) return false;
+					applyStrikeDamage(player, victim, damage, techniqueId, false);
+					return true;
+				});
+
+		serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
+				MainSounds.KI_BEAM_FIRE.get(), SoundSource.PLAYERS, 1.4F, 1.7F);
 	}
 
 	private static void processSlam(ServerPlayer player, ActiveStrike active) {

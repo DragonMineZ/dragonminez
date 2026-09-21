@@ -15,6 +15,7 @@ public class DataSyncHandler {
 		if (event.getEntity().level().isClientSide) return;
 		if (event.getEntity() instanceof ServerPlayer player) {
 			StorageManager.loadPlayer(player);
+			com.dragonminez.server.world.worldboss.WorldBossManager.syncTo(player);
 		}
 	}
 

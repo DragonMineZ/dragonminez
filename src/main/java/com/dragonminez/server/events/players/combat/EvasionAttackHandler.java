@@ -72,6 +72,7 @@ public class EvasionAttackHandler {
 	private static final float SLEEP_RECOVERY_TOTAL_HEAL = 0.20F;
 
 	private static final double AFTERIMAGE_RANGE = 24.0;
+	private static final double DIMENSIONAL_WARP_RANGE = 64.0;
 	private static final double AFTERIMAGE_GAP = 0.9;
 	private static final double AFTERIMAGE_ILLUSION_GAP = 3.0;
 	private static final double AFTERIMAGE_DECOY_DISTANCE = 4.0;
@@ -122,8 +123,10 @@ public class EvasionAttackHandler {
 			if (stats.getCooldowns().hasCooldown(cooldownKey)) return;
 
 			AfterimagePlan afterimage = null;
-			if ("afterimage".equals(techniqueId)) {
-				afterimage = planAfterimage(player, targetId);
+			if ("afterimage".equals(techniqueId) || "dimensional_teleport".equals(techniqueId)) {
+				afterimage = "dimensional_teleport".equals(techniqueId)
+						? planDimensionalWarp(player, targetId)
+						: planAfterimage(player, targetId);
 				if (afterimage == null) {
 					player.displayClientMessage(Component.translatable("message.dragonminez.technique.afterimage.no_space").withStyle(ChatFormatting.RED), true);
 					return;
@@ -156,6 +159,7 @@ public class EvasionAttackHandler {
 
 			switch (techniqueId) {
 				case "afterimage" -> castAfterimage(player, afterimage, durationTicks);
+				case "dimensional_teleport" -> castDimensionalTeleport(player, afterimage, durationTicks, technique.getAnimationId());
 				case "taiyoken" -> castTaiyoken(player);
 				case "rage_scream" -> castRageScream(player, durationTicks);
 				case "sleep_recovery" -> castSleepRecovery(player);
@@ -173,6 +177,17 @@ public class EvasionAttackHandler {
 	}
 
 	private record AfterimagePlan(LivingEntity target, Vec3 destination, float casterYaw, Vec3[] positions, float[] yaws) {}
+
+	private static AfterimagePlan planDimensionalWarp(ServerPlayer player, int targetId) {
+		Entity locked = targetId >= 0 ? TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(player.level(), targetId)) : null;
+		if (locked instanceof LivingEntity living && living != player && living.isAlive() && !living.isSpectator()
+				&& living.level() == player.level()
+				&& living.distanceToSqr(player) <= DIMENSIONAL_WARP_RANGE * DIMENSIONAL_WARP_RANGE) {
+			AfterimagePlan behind = planAfterimageBehind(player, living);
+			if (behind != null) return behind;
+		}
+		return planAfterimageDecoy(player);
+	}
 
 	private static AfterimagePlan planAfterimage(ServerPlayer player, int targetId) {
 		Entity locked = targetId >= 0 ? TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(player.level(), targetId)) : null;
@@ -243,6 +258,33 @@ public class EvasionAttackHandler {
 
 	private static float yawTowards(Vec3 from, Vec3 to) {
 		return (float) (Mth.atan2(to.z - from.z, to.x - from.x) * (180.0 / Math.PI)) - 90.0F;
+	}
+
+	private static void castDimensionalTeleport(ServerPlayer caster, AfterimagePlan plan, int durationTicks, String animationId) {
+		if (plan == null) return;
+
+		Vec3 from = caster.position();
+		Vec3 destination = plan.destination();
+
+		caster.level().playSound(null, from.x, from.y, from.z,
+				MainSounds.ZANZOKEN.get(), SoundSource.PLAYERS, 1.0F, 0.85F);
+
+		if (caster.isPassenger()) caster.stopRiding();
+		caster.connection.teleport(destination.x, destination.y, destination.z, plan.casterYaw(), 0.0F);
+		caster.setYHeadRot(plan.casterYaw());
+		caster.setDeltaMovement(Vec3.ZERO);
+		caster.hurtMarked = true;
+		caster.fallDistance = 0.0F;
+
+		if (caster.level() instanceof ServerLevel serverLevel) {
+			NetworkHandler.sendToTrackingEntityAndSelf(new com.dragonminez.common.network.S2C.DimensionalShatterS2C(-1,
+					from.x, from.y, from.z, caster.getBbWidth(), caster.getBbHeight(), false), caster);
+			NetworkHandler.sendToTrackingEntityAndSelf(new com.dragonminez.common.network.S2C.DimensionalShatterS2C(caster.getId(),
+					destination.x, destination.y, destination.z, caster.getBbWidth(), caster.getBbHeight(), true), caster);
+		}
+
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(caster.getUUID(),
+				TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, animationId), caster);
 	}
 
 	private static void castAfterimage(ServerPlayer caster, AfterimagePlan plan, int durationTicks) {

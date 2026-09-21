@@ -54,6 +54,18 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_ATTACK2_6 = RawAnimation.begin().thenPlay("attack2_6");
     public static final RawAnimation ANIM_ATTACK3_6 = RawAnimation.begin().thenPlay("attack3_6");
 
+    // WORLD BOSS = DBZSTYLE 6
+    public static final RawAnimation ANIM_IDLE_7 = RawAnimation.begin().thenLoop("idle7");
+    public static final RawAnimation ANIM_WALK_7 = RawAnimation.begin().thenLoop("walk7");
+    public static final RawAnimation ANIM_RUN_7 = RawAnimation.begin().thenLoop("run7");
+    public static final RawAnimation ANIM_TRANSFORMATION7 = RawAnimation.begin().thenPlay("transformation_7");
+    public static final RawAnimation ANIM_BOSS_SLEEP = RawAnimation.begin().thenLoop("boss1.sleep");
+    public static final RawAnimation ANIM_BOSS_SPECIAL2 = RawAnimation.begin().thenPlay("boss1.special2");
+    public static final RawAnimation ANIM_BOSS_SPECIAL3 = RawAnimation.begin().thenLoop("boss1.special3");
+    public static final RawAnimation ANIM_BOSS_SPECIAL1 = RawAnimation.begin().thenPlay("skp.dimensional_punch");
+    public static final RawAnimation ANIM_BOSS_DESTRUCTION = RawAnimation.begin().thenPlay("ki.destruction_balls_fire");
+    public static final RawAnimation ANIM_BOSS_CUTS = RawAnimation.begin().thenLoop("skp.dimensional_sword_attack");
+
     // DEFAULT
     public static final RawAnimation ANIM_FLY = RawAnimation.begin().thenLoop("fly");
     public static final RawAnimation ANIM_FLY_FAST = RawAnimation.begin().thenLoop("fly_fast");

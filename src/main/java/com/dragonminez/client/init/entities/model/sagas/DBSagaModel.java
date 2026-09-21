@@ -50,7 +50,7 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
             return FALLBACK_TEXTURE;
         }
 
-        String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
+        String name = animatable.getGeckolibTextureName();
         int variant = animatable.getTextureVariant();
 
         // Variant 0 means "nothing assigned it a look"; entities that opt in roll their own here.

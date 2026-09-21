@@ -139,6 +139,13 @@ public class FlySkillEvent {
 		}
 	}
 
+	private static boolean isStationaryStrike(StatsData data) {
+		if (!data.getStatus().isStrikeLocked()) return false;
+		var selected = data.getTechniques().getSelectedTechnique();
+		if (selected == null) return false;
+		return "dimensional_punch".equals(selected.getId()) || "dimensional_sword_attack".equals(selected.getId());
+	}
+
 	public static void toggleFlightFromMenu() {
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer player = mc.player;
@@ -247,7 +254,7 @@ public class FlySkillEvent {
 			boolean movementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStunned() || data.getStatus().isActionCharging() || data.getStatus().isChargingKi();
 
 			if (isFlying) {
-				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data)) {
+				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || isStationaryStrike(data)) {
 					flightVector = Vec3.ZERO;
 					player.setDeltaMovement(0.0D, 0.0D, 0.0D);
 					player.fallDistance = 0F;

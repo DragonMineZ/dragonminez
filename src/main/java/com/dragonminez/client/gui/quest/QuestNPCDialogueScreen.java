@@ -27,6 +27,8 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import com.dragonminez.common.util.DMZTextPlaceholders;
+import com.dragonminez.client.systems.worldboss.ClientWorldBossState;
+import net.minecraft.core.BlockPos;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
@@ -85,6 +87,8 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 	private boolean isTrainingMode = false;
 	/** Replaces the NPC's stage line until the screen closes, e.g. after pressing a service button. */
+	private static final String HELL_OGRE_ID = "hell_ogre";
+
 	private MutableComponent overrideLine = null;
 
 	public QuestNPCDialogueScreen(String npcId, List<String> offerableQuestIds,
@@ -173,6 +177,24 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 					}
 				})
 				.build());
+
+		if (isHellOgre() && ClientWorldBossState.isLairKnown()) {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(panelX + 8, btnY)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.npc.show_location"))
+					.onPress(btn -> {
+						BlockPos lair = ClientWorldBossState.getLair();
+						overrideLine = tr("dialogue.dragonminez.story.sidequest." + npcId + ".location",
+								lair.getX(), lair.getZ());
+						dialogueScroll = 0.0F;
+						dialogueTargetScroll = 0.0F;
+					})
+					.build());
+		}
 
 		if (masterNpc) {
 			String minigameId = getMinigameForNpc(npcId);
@@ -674,10 +696,23 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	private MutableComponent dialogueLine() {
 		if (overrideLine != null) return ph(overrideLine.copy());
 		String stage = getDialogueStage();
+		if (isHellOgre() && "boss_respawning".equals(stage)) {
+			return ph(tr("dialogue.dragonminez.story.sidequest." + npcId + ".boss_respawning",
+					formatRespawn(ClientWorldBossState.getRespawnTicksRemaining())));
+		}
 		String npcLine = "dialogue.dragonminez.story.sidequest." + npcId + "." + stage;
 		MutableComponent line = I18n.exists(npcLine) ? tr(npcLine)
 				: tr("dialogue.dragonminez.story.sidequest.generic_npc." + stage);
 		return ph(line);
+	}
+
+	private static String formatRespawn(long ticks) {
+		long totalSeconds = Math.max(0L, ticks / 20L);
+		long minutes = totalSeconds / 60L;
+		long seconds = totalSeconds % 60L;
+		if (minutes >= 60L) return (minutes / 60L) + "h " + (minutes % 60L) + "m";
+		if (minutes > 0L) return minutes + "m " + seconds + "s";
+		return seconds + "s";
 	}
 
 	private MutableComponent ph(MutableComponent component) {
@@ -686,7 +721,14 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		return DMZTextPlaceholders.apply(component, mc.player).copy();
 	}
 
+	private boolean isHellOgre() {
+		return HELL_OGRE_ID.equals(npcId);
+	}
+
 	private String getDialogueStage() {
+		if (isHellOgre()) {
+			return ClientWorldBossState.getRespawnTicksRemaining() > 0L ? "boss_respawning" : "boss_alive";
+		}
 		if (!turnInQuestIds.isEmpty()) return "complete";
 		if (!offerableQuestIds.isEmpty()) return "offer";
 		if (!inProgressQuestIds.isEmpty()) return "in_progress";

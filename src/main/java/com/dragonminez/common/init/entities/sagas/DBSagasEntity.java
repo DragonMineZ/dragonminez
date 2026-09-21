@@ -153,7 +153,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         BURNING_ATTACK(27, SkillRole.RANGED_TRAVEL, Tier.MEDIUM, 0xFFF3D0, 0xFF7A1A, 0xC43A00),
         SUPERNOVA_COOLER(28, SkillRole.GUARD_BREAK, Tier.STRONG, 0xFF3866, 0xA3143A, 0x4A0316),
         ASSAULT_RAIN(29, SkillRole.ZONING, Tier.STRONG, 0xFFB8F4, 0x8A2BE2, 0xFF38D4),
-        BLASTER_METEOR(30, SkillRole.ZONING, Tier.STRONG, 0x9DFF8A, 0x3DF54A, 0x0FBF1B);
+        BLASTER_METEOR(30, SkillRole.ZONING, Tier.STRONG, 0x9DFF8A, 0x3DF54A, 0x0FBF1B),
+        DIMENSIONAL_PUNCH(31, SkillRole.ZONING, Tier.STRONG, 0xC451FF, 0xC451FF, -1),
+        DESTRUCTION_BALLS(32, SkillRole.RANGED_TRAVEL, Tier.STRONG, 0xC77DFF, 0x5A189A, 0x0B0014);
 
         private final int id;
         private final SkillRole role;
@@ -478,6 +480,67 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return this.level().noCollision(this, targetBox);
     }
 
+    private int blasterMeteorCastTicks = SkillManager.BLASTER_METEOR_CAST_TICKS;
+
+    public void setBlasterMeteorCastTicks(int ticks) {
+        this.blasterMeteorCastTicks = Math.max(1, ticks);
+    }
+
+    public int getBlasterMeteorCastTicks() {
+        return this.blasterMeteorCastTicks;
+    }
+
+    private boolean dimensionalZanzoken = false;
+
+    public void setDimensionalZanzoken(boolean active, int cooldown) {
+        this.setZanzoken(active, cooldown);
+        this.dimensionalZanzoken = active;
+    }
+
+    public boolean usesDimensionalZanzoken() {
+        return this.dimensionalZanzoken;
+    }
+
+    protected boolean repeatsZanzoken() {
+        return !this.dimensionalZanzoken;
+    }
+
+    private boolean executeDimensionalWarp() {
+        LivingEntity target = this.getTarget();
+        if (target == null) return false;
+
+        Vec3 center = target.position();
+        Vec3 forward = Vec3.directionFromRotation(0.0F, target.getYRot());
+        double gap = target.getBbWidth() * 0.5D + this.getBbWidth() * 0.5D + 0.6D;
+        Vec3 destination = null;
+
+        search:
+        for (double scale : new double[]{1.0D, 0.7D, 1.4D}) {
+            Vec3 base = center.subtract(forward.scale(gap * scale));
+            for (double height : new double[]{0.0D, 0.5D, 1.0D, -0.5D}) {
+                Vec3 candidate = base.add(0.0D, height, 0.0D);
+                if (this.level().noCollision(this, this.getBoundingBox().move(candidate.subtract(this.position())))) {
+                    destination = candidate;
+                    break search;
+                }
+            }
+        }
+        if (destination == null) return false;
+
+        Vec3 from = this.position();
+        this.playSound(MainSounds.ZANZOKEN.get(), 1.0F, 0.85F);
+        this.teleportTo(destination.x, destination.y, destination.z);
+        this.lookAt(target, 360.0F, 360.0F);
+
+        if (!this.level().isClientSide) {
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.DimensionalShatterS2C(-1,
+                    from.x, from.y, from.z, this.getBbWidth(), this.getBbHeight(), false), this);
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.DimensionalShatterS2C(this.getId(),
+                    destination.x, destination.y, destination.z, this.getBbWidth(), this.getBbHeight(), true), this);
+        }
+        return true;
+    }
+
     public void performZanzoken() {
         this.setZanzokenState(true);
         this.zanzokenTicks = 0;
@@ -485,7 +548,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         executeZanzokenJump();
     }
 
-    private void executeZanzokenJump() {
+    protected void executeZanzokenJump() {
+        if (this.dimensionalZanzoken && this.executeDimensionalWarp()) return;
+
         this.playSound(MainSounds.ZANZOKEN.get(), 1.0F, 1.0F);
         boolean teleported = false;
         Vec3 afterimagePos = this.position();
@@ -882,7 +947,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
                 if (this.isZanzoken()) {
                     this.zanzokenTicks++;
-                    if (this.zanzokenTicks % 5 == 0) {
+                    if (this.zanzokenTicks % 5 == 0 && this.repeatsZanzoken()) {
                         executeZanzokenJump();
                     }
                     if (this.zanzokenTicks >= 40) {
@@ -915,7 +980,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     }
 
                     if (this.castTimer == 1) {
-                        if (skill != 7 && skill != 13 && skill != 22 && skill != 23 && skill != 25) {
+                        if (skill != 7 && skill != 13 && skill != 22 && skill != 23 && skill != 25 && skill != 31 && skill != 32) {
                             executeSkillEffect(skill);
                         }
                     }
@@ -930,6 +995,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                         SkillManager.tickWolfFang(this, this.getTarget(), this.castTimer);
                     }
 
+                    if (skill == 31) {
+                        SkillManager.tickDimensionalPunch(this, this.getTarget(), this.castTimer);
+                    }
+
+                    if (skill == 32) {
+                        SkillManager.tickDestructionBalls(this, this.getTarget(), this.castTimer);
+                    }
+
                     if (skill == 25 && this.castTimer == SkillManager.TAIYOKEN_FLASH_TICK) {
                         SkillManager.castTaiyoken(this);
                     }
@@ -940,7 +1013,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                         }
                     }
 
-                    int maxCastDuration = SkillManager.getCastDuration(skill);
+                    int maxCastDuration = SkillManager.getCastDuration(this, skill);
 
                     if (this.castTimer >= maxCastDuration) {
                         this.stopCasting();
@@ -1549,6 +1622,22 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return this.hasEffect(MainEffects.STUN.get());
     }
 
+    public boolean isBossAsleep() {
+        return false;
+    }
+
+    public boolean isInSleepPose() {
+        return this.isBossAsleep();
+    }
+
+    public int getBossAbility() {
+        return -1;
+    }
+
+    public int getBossAbilityTicks() {
+        return 0;
+    }
+
     public String getQuestTeam() {
         return this.getPersistentData().getString(QuestService.QUEST_TEAM_TAG);
     }
@@ -1970,6 +2059,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);}
 
     public String getGeckolibModelName() {return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();}
+
+    public String getGeckolibTextureName() {return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();}
 
     public boolean usesRandomTextureVariant() {return false;}
 }

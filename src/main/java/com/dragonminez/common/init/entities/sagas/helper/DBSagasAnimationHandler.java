@@ -15,6 +15,16 @@ public class DBSagasAnimationHandler {
     public static <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
+        if (entity.isInSleepPose()) {
+            event.getController().setAnimationSpeed(1.0D);
+            return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SLEEP);
+        }
+
+        if (entity.getBossAbility() >= 0) {
+            event.getController().setAnimationSpeed(1.0D);
+            return PlayState.STOP;
+        }
+
         if (entity.isEvading() || entity.isComboing()) {
             event.getController().setAnimationSpeed(1.0D);
             return PlayState.STOP;
@@ -65,12 +75,14 @@ public class DBSagasAnimationHandler {
                 if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_3);
                 if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_4);
                 if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_5);
+                if (style == 6) return event.setAndContinue(DBSagasAnimations.ANIM_RUN_7);
                 return event.setAndContinue(DBSagasAnimations.ANIM_RUN);
             } else {
                 if (style == 1) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_2);
                 if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_3);
                 if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_4);
                 if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_5);
+                if (style == 6) return event.setAndContinue(DBSagasAnimations.ANIM_WALK_7);
                 return event.setAndContinue(DBSagasAnimations.ANIM_WALK);
             }
         }
@@ -80,11 +92,12 @@ public class DBSagasAnimationHandler {
         if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_3);
         if (style == 3) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_4);
         if (style == 4) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_5);
+        if (style == 6) return event.setAndContinue(DBSagasAnimations.ANIM_IDLE_7);
         return event.setAndContinue(DBSagasAnimations.ANIM_IDLE);
     }
 
     private static RawAnimation kiClip(DBSagasEntity entity, int skill, RawAnimation cast, RawAnimation fire) {
-        return entity.getClientCastTicks() > SkillManager.getFireTick(skill) ? fire : cast;
+        return entity.getClientCastTicks() > SkillManager.getFireTick(entity, skill) ? fire : cast;
     }
 
     public static <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
@@ -141,6 +154,8 @@ public class DBSagasAnimationHandler {
                 case 28: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_SUPERNOVA_COOLER_CAST, DBSagasAnimations.ANIM_SUPERNOVA_COOLER_FIRE));
                 case 29: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_ASSAULT_RAIN_CAST, DBSagasAnimations.ANIM_ASSAULT_RAIN_FIRE));
                 case 30: return event.setAndContinue(kiClip(entity, skill, DBSagasAnimations.ANIM_BLASTER_METEOR_CAST, DBSagasAnimations.ANIM_BLASTER_METEOR_FIRE));
+                case 31: return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL1);
+                case 32: return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_DESTRUCTION);
                 default: return event.setAndContinue(DBSagasAnimations.ANIM_KIWAVE);
             }
         }
@@ -149,6 +164,7 @@ public class DBSagasAnimationHandler {
             int style = entity.getDBZStyle();
             if (style == 1) return event.setAndContinue(DBSagasAnimations.ANIM_TRANSFORMATION2);
             if (style == 2) return event.setAndContinue(DBSagasAnimations.ANIM_TRANSFORMATION3);
+            if (style == 6) return event.setAndContinue(DBSagasAnimations.ANIM_TRANSFORMATION7);
             return event.setAndContinue(DBSagasAnimations.ANIM_TRANSFORMATION1);
         }
 
@@ -222,6 +238,18 @@ public class DBSagasAnimationHandler {
         if (entity.isEvading()) {
             return event.setAndContinue(DBSagasAnimations.ANIM_EVADE);
         }
+
+        event.getController().forceAnimationReset();
+        return PlayState.STOP;
+    }
+
+    public static <T extends GeoAnimatable> PlayState bossAbilityPredicate(AnimationState<T> event) {
+        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+        int ability = entity.getBossAbility();
+
+        if (ability == 2) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL2);
+        if (ability == 3) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_SPECIAL3);
+        if (ability == 5) return event.setAndContinue(DBSagasAnimations.ANIM_BOSS_CUTS);
 
         event.getController().forceAnimationReset();
         return PlayState.STOP;

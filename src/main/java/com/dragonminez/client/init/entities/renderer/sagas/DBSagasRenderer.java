@@ -356,4 +356,18 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
                 animatable.tickCount + partialTick, height * 1.05f, radius, ColorUtils.rgbIntToFloat(animatable.getLightningColor()),
                 charged, 1.0f, 1.0f);
     }
+
+    @Override
+    public void renderRecursively(com.mojang.blaze3d.vertex.PoseStack poseStack, T animatable, software.bernie.geckolib.cache.object.GeoBone bone,
+                                  net.minecraft.client.renderer.RenderType renderType, net.minecraft.client.renderer.MultiBufferSource bufferSource,
+                                  com.mojang.blaze3d.vertex.VertexConsumer buffer, boolean isReRender, float partialTick,
+                                  int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        float[] fistPose = com.dragonminez.client.render.effects.DimensionalFistEffect.beginBonePose(bone);
+        try {
+            super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick,
+                    packedLight, packedOverlay, red, green, blue, alpha);
+        } finally {
+            com.dragonminez.client.render.effects.DimensionalFistEffect.endBonePose(bone, fistPose);
+        }
+    }
 }

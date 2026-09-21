@@ -48,6 +48,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public static final int RENDER_BLASTER_METEOR = 13;
     private static final int BLASTER_METEOR_SHOTS = 8;
     private static final int BLASTER_METEOR_AIMED_SHOTS = 2;
+    private static final double BLASTER_METEOR_RISE_SPEED = 0.11D;
+    private static final double BLASTER_METEOR_MAX_RISE = 4.0D;
+    private double blasterMeteorRisen;
     public static final int ASSAULT_RAIN_DELAY = 10;
     private static final int ASSAULT_RAIN_RISE_LIFE = 12;
     private static final int ASSAULT_RAIN_DROP_LIFE = 60;
@@ -81,6 +84,19 @@ public class KiBlastEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Float> PARKED_DISTANCE = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
 
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Float> STRETCH = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+
+    private static final int DESTRUCTION_STRETCH_START = 14;
+    private static final int DESTRUCTION_SPREAD_START = 26;
+    private static final int DESTRUCTION_GROW_END = 50;
+    private static final float DESTRUCTION_MAX_STRETCH = 1.9F;
+    private static final double DESTRUCTION_SPREAD_ACCEL = 0.012D;
+
+    private boolean destructionBall;
+    private int destructionAge;
+    private float destructionStartSize;
+    private float destructionEndSize;
+    private Vec3 destructionSpread = Vec3.ZERO;
 
     public KiBlastEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -414,6 +430,58 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
+    public float getStretch() {
+        return this.entityData.get(STRETCH);
+    }
+
+    public void configureDestructionGrowth(float endSize, Vec3 spreadDirection) {
+        this.destructionBall = true;
+        this.destructionAge = 0;
+        this.destructionStartSize = this.getSize();
+        this.destructionEndSize = endSize;
+        this.destructionSpread = spreadDirection == null ? Vec3.ZERO : spreadDirection;
+    }
+
+    private void tickDestructionBall() {
+        this.destructionAge++;
+        int age = this.destructionAge;
+
+        Vec3 motion = this.getDeltaMovement();
+        if (motion.lengthSqr() > 1.0E-5D) {
+            this.setYRot((float) Math.toDegrees(Math.atan2(-motion.x, motion.z)));
+            this.setXRot((float) -Math.toDegrees(Math.atan2(motion.y, motion.horizontalDistance())));
+        }
+
+        if (age < DESTRUCTION_STRETCH_START) return;
+
+        if (age < DESTRUCTION_SPREAD_START) {
+            float t = (float) (age - DESTRUCTION_STRETCH_START) / (DESTRUCTION_SPREAD_START - DESTRUCTION_STRETCH_START);
+            this.entityData.set(STRETCH, 1.0F + (DESTRUCTION_MAX_STRETCH - 1.0F) * t);
+            return;
+        }
+
+        if (age <= DESTRUCTION_GROW_END) {
+            float t = (float) (age - DESTRUCTION_SPREAD_START) / (DESTRUCTION_GROW_END - DESTRUCTION_SPREAD_START);
+            float eased = t * t * (3.0F - 2.0F * t);
+            this.setSize(this.destructionStartSize + (this.destructionEndSize - this.destructionStartSize) * eased);
+            this.entityData.set(STRETCH, DESTRUCTION_MAX_STRETCH - (DESTRUCTION_MAX_STRETCH - 1.0F) * eased);
+            this.setDeltaMovement(motion.add(this.destructionSpread.scale(DESTRUCTION_SPREAD_ACCEL)));
+            this.hasImpulse = true;
+        }
+    }
+
+    public void setupDestructionBall(LivingEntity owner, float damage, float speed, float size, int color, int colorBorder, int colorOutline) {
+        this.setOwner(owner);
+        this.setKiRenderType(6);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setCastTime(0);
+        this.setMaxLife(220);
+        this.setFiring(true);
+    }
+
     public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
         this.setupKiBlast(owner, damage, speed, color, colorBorder, 0xFFFFFF, size, castTime);
     }
@@ -648,8 +716,26 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
+    private static AABB effectiveBounds(LivingEntity owner) {
+        AABB box = owner.getBoundingBox();
+        if (owner.isMultipartEntity() && owner.getParts() != null) {
+            for (net.minecraftforge.entity.PartEntity<?> part : owner.getParts()) {
+                if (part != null) box = box.minmax(part.getBoundingBox());
+            }
+        }
+        return box;
+    }
+
+    private static float blasterMeteorSizeFor(LivingEntity owner) {
+        AABB bounds = effectiveBounds(owner);
+        float height = (float) bounds.getYsize();
+        float width = (float) Math.max(bounds.getXsize(), bounds.getZsize());
+        float diagonal = (float) Math.sqrt(height * height + width * width);
+        return Math.max(height * 1.7F, diagonal * 1.25F);
+    }
+
     public void setupBlasterMeteor(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, int castTime, int fireTicks) {
-        float size = owner.getBbHeight() * 1.7F;
+        float size = blasterMeteorSizeFor(owner);
         this.setOwner(owner);
         this.setKiRenderType(RENDER_BLASTER_METEOR);
         this.setSize(size);
@@ -982,6 +1068,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
                     return;
                 }
 
+                if (this.destructionBall) this.tickDestructionBall();
+
                 if (type == 5 || type == 6) { // Genkidama o Supernova
                     if (this.tickCount % 20 == 0) {
                         if (this.destroyBlocksInPath()) {
@@ -1081,6 +1169,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CAST_TIME, 0);
+        this.entityData.define(STRETCH, 1.0F);
         this.entityData.define(OFFSET_X, 0.0F);
         this.entityData.define(OFFSET_Y, 0.0F);
         this.entityData.define(OFFSET_Z, 0.0F);
@@ -1157,14 +1246,19 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
 
     private void tickBlasterMeteor(LivingEntity owner, boolean isCasting) {
-        owner.setDeltaMovement(0, 0, 0);
+        double rise = 0.0D;
+        if (isCasting && this.blasterMeteorRisen < BLASTER_METEOR_MAX_RISE) {
+            rise = Math.min(BLASTER_METEOR_RISE_SPEED, BLASTER_METEOR_MAX_RISE - this.blasterMeteorRisen);
+            this.blasterMeteorRisen += rise;
+        }
+        owner.setDeltaMovement(0, rise, 0);
         owner.fallDistance = 0.0F;
         owner.hasImpulse = true;
 
         if (this.level().isClientSide) return;
 
         if (!isCasting && this.tickCount % 2 == 0) {
-            Vec3 center = new Vec3(owner.getX(), owner.getY() + (owner.getBbHeight() / 2.0D), owner.getZ());
+            Vec3 center = new Vec3(owner.getX(), effectiveBounds(owner).getCenter().y, owner.getZ());
             double radius = this.getSize() * 0.5D;
             float shotSpeed = Math.max(1.0F, this.getKiSpeed() * 0.8F);
             Vec3 aimDir = this.resolveBlasterMeteorAim(owner, center);
@@ -1270,7 +1364,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 this.entityData.get(OFFSET_X), this.entityData.get(OFFSET_Y), this.entityData.get(OFFSET_Z));  // <-- cambio aquí
 
         double centerX = owner.getX();
-        double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerY = this.getKiRenderType() == RENDER_BLASTER_METEOR
+                ? effectiveBounds(owner).getCenter().y
+                : owner.getY() + (owner.getBbHeight() / 2.0D);
         double centerZ = owner.getZ();
 
         Vec3 newPos = new Vec3(centerX, centerY, centerZ).add(offset);

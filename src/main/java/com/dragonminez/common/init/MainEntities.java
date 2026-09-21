@@ -8,6 +8,7 @@ import com.dragonminez.common.init.entities.bioandroid.CellJrEntity;
 import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.*;
+import com.dragonminez.common.init.entities.worldboss.*;
 import com.dragonminez.common.init.entities.namek.CCNamekianEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -124,7 +125,10 @@ public class MainEntities {
                 SAGA_NEO_SHENRON, SAGA_NEO_SHENRON_TRANSFORMED, SAGA_EIS_SHENRON, SAGA_SYN_SHENRON, SAGA_OMEGA_SHENRON,
 
                 // EXTRA
-                SHADOW_DUMMY, MINI_BUU
+                SHADOW_DUMMY, MINI_BUU,
+
+                // WORLD BOSSES
+                WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA
         );
     }
 
@@ -1364,6 +1368,29 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaMoviesEntity.SuperJanembaEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_super_janemba").toString()));
+
+    // World bosses
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.JanembaFat>> WORLDBOSS_JANEMBA_FAT =
+            ENTITY_TYPES.register("worldboss_janemba_fat",
+                    () -> EntityType.Builder.of(AllWorldBossesEntity.JanembaFat::new, MobCategory.MONSTER)
+                            .sized(7.5f, 12.0f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_janemba_fat").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.SuperJanemba>> WORLDBOSS_SUPER_JANEMBA =
+            ENTITY_TYPES.register("worldboss_super_janemba",
+                    () -> EntityType.Builder.of(AllWorldBossesEntity.SuperJanemba::new, MobCategory.MONSTER)
+                            .sized(0.6f, 2.0f)
+                            .clientTrackingRange(16)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_super_janemba").toString()));
+    public static final RegistryObject<EntityType<AllWorldBossesEntity.MiniJanemba>> WORLDBOSS_MINI_JANEMBA =
+            ENTITY_TYPES.register("worldboss_mini_janemba",
+                    () -> EntityType.Builder.of(AllWorldBossesEntity.MiniJanemba::new, MobCategory.MONSTER)
+                            .sized(0.7f, 1.5f)
+                            .clientTrackingRange(10)
+                            .fireImmune()
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_mini_janemba").toString()));
 
     // Hirudegarn
     public static final RegistryObject<EntityType<SagaMoviesEntity.HirudegarnEntity>> SAGA_HIRUDEGARN =

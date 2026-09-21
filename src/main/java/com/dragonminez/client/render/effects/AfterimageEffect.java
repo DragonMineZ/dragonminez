@@ -77,7 +77,7 @@ public final class AfterimageEffect {
 	private AfterimageEffect() {}
 
 	public static boolean isRendering() {
-		return rendering;
+		return rendering || DimensionalFistEffect.isRenderingArm();
 	}
 
 	public static void start(int entityId, int durationTicks, Vec3[] positions, float[] yaws, boolean breakLockOn) {

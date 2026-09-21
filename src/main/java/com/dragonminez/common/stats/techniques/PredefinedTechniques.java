@@ -20,13 +20,16 @@ public class PredefinedTechniques {
 			"super_god_fist",
 			"oozaru_slam",
 			"gum_punch",
-			"blue_hurricane"
+			"blue_hurricane",
+			"dimensional_punch",
+			"dimensional_sword_attack"
 	);
 	public static final List<String> EVASION_IDS = java.util.List.of(
 			"taiyoken",
 			"rage_scream",
 			"afterimage",
-			"sleep_recovery"
+			"sleep_recovery",
+			"dimensional_teleport"
 	);
 
 	public void init() {
@@ -56,6 +59,7 @@ public class PredefinedTechniques {
 		registerEvasion("rage_scream", 1.2F, 60, 80, true);
 		registerEvasion("afterimage", 0.00F, 60, 200, false);
 		registerEvasion("sleep_recovery", 0.00F, 100, 2400, false);
+		registerEvasion("dimensional_teleport", 0.00F, 30, 320, false);
 		registerStrike("skp.meteor", 1.25f, 40);
 		registerStrike("skp.dragon_fist", 2.5f, 50);
 		registerStrike("skp.deadly_dance_vegetto", 1.5f, 40);
@@ -67,6 +71,8 @@ public class PredefinedTechniques {
 		registerStrike("skp.oozaru_slam", 1.5f, 15);
 		registerStrike("skp.gum_punch", 1.5f, 20);
 		registerStrike("skp.blue_hurricane", 1.75f, 95);
+		registerStrike("skp.dimensional_punch", 2.4f, 70);
+		registerStrike("skp.dimensional_sword_attack", 2.6f, 41);
 	}
 
 	public static boolean isPredefinedTechniqueId(String techniqueId) {

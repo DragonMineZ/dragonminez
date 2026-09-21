@@ -224,7 +224,7 @@ public class SkillManager {
         REGISTRY.put(30, (user, target, dmg) -> {
             KiBlastEntity meteor = new KiBlastEntity(user.level(), user);
             meteor.setupBlasterMeteor(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(),
-                    user.getCurrentPoolColorOutline(), BLASTER_METEOR_CAST_TICKS, BLASTER_METEOR_FIRE_TICKS);
+                    user.getCurrentPoolColorOutline(), user.getBlasterMeteorCastTicks(), BLASTER_METEOR_FIRE_TICKS);
         });
 
         // 24. KAMEHAMEHA X10
@@ -269,6 +269,16 @@ public class SkillManager {
         };
     }
 
+    public static int getFireTick(DBSagasEntity user, int id) {
+        if (id == 30) return user.getBlasterMeteorCastTicks();
+        return getFireTick(id);
+    }
+
+    public static int getCastDuration(DBSagasEntity user, int id) {
+        if (id == 30) return user.getBlasterMeteorCastTicks() + BLASTER_METEOR_FIRE_TICKS;
+        return getCastDuration(id);
+    }
+
     public static int getFireTick(int id) {
         return switch (id) {
             case 14 -> 22;
@@ -297,6 +307,8 @@ public class SkillManager {
             case 15, 28 -> 60;
             case 29 -> ASSAULT_RAIN_CAST_TICKS + ASSAULT_RAIN_FIRE_TICKS + KiBlastEntity.ASSAULT_RAIN_DELAY;
             case 30 -> BLASTER_METEOR_CAST_TICKS + BLASTER_METEOR_FIRE_TICKS;
+            case 31 -> DIM_PUNCH_DURATION;
+            case 32 -> DESTRUCTION_DURATION;
             default -> 60;
         };
     }
@@ -491,5 +503,121 @@ public class SkillManager {
         user.level().playSound(null, user.getX(), user.getY(), user.getZ(),
                 MainSounds.KI_EXPLOSION_CHARGE.get(), net.minecraft.sounds.SoundSource.HOSTILE, 1.2F, 1.6F);
         EvasionAttackHandler.applyTaiyokenBlind(user);
+    }
+
+    public static final int DIM_PUNCH_DURATION = 70;
+    private static final int[] DIM_PUNCH_MARK_TICKS = {3, 18, 33};
+    private static final int[] DIM_PUNCH_HIT_TICKS = {15, 30, 45};
+    private static final float DIM_PUNCH_DEFAULT_RADIUS = 3.5F;
+    private static final float DIM_PUNCH_DAMAGE_RATIO = 0.8F;
+    private static final int DIM_PUNCH_COLOR = 0xC451FF;
+
+    public static final int DESTRUCTION_DURATION = 55;
+    private static final int DESTRUCTION_FIRE_TICK = 8;
+    private static final int DESTRUCTION_COUNT = 3;
+    private static final float DESTRUCTION_START_RATIO = 1.0F / 3.0F;
+    private static final float DESTRUCTION_SPEED = 0.34F;
+    private static final float DESTRUCTION_SPREAD = 4.0F;
+
+    private static final Map<DBSagasEntity, Vec3> DIM_PUNCH_MARKS = new java.util.WeakHashMap<>();
+
+    public static void tickDimensionalPunch(DBSagasEntity user, LivingEntity target, int timer) {
+        if (!(user.level() instanceof ServerLevel serverLevel)) return;
+
+        float radius = user.getCurrentPoolSkillSize() > 1.5F ? user.getCurrentPoolSkillSize() : DIM_PUNCH_DEFAULT_RADIUS;
+
+        for (int i = 0; i < DIM_PUNCH_MARK_TICKS.length; i++) {
+            if (timer != DIM_PUNCH_MARK_TICKS[i] || target == null) continue;
+
+            Vec3 mark = target.position();
+            DIM_PUNCH_MARKS.put(user, mark);
+
+            int openTicks = DIM_PUNCH_HIT_TICKS[i] - DIM_PUNCH_MARK_TICKS[i];
+            boolean fromAbove = user.getRandom().nextInt(3) == 0;
+            float fistYaw = user.getRandom().nextFloat() * 360.0F;
+            float fistPitch = fromAbove ? 90.0F : -5.0F + user.getRandom().nextFloat() * 25.0F;
+            double reach = Math.max(target.getBbHeight() * 0.55D, 0.19D * user.getScale());
+            double fistY = mark.y + (fromAbove ? 0.4D : reach);
+
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.BossTelegraphS2C(
+                    mark.x, mark.y, mark.z, radius, DIM_PUNCH_COLOR, openTicks, -1), user);
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.DimensionalFistS2C(
+                    user.getId(), mark.x, fistY, mark.z, fistYaw, fistPitch, i == 1, openTicks), user);
+            return;
+        }
+
+        for (int hit : DIM_PUNCH_HIT_TICKS) {
+            if (timer != hit) continue;
+
+            Vec3 mark = DIM_PUNCH_MARKS.get(user);
+            if (mark == null) return;
+
+            float damage = (float) user.getAttributeValue(Attributes.ATTACK_DAMAGE) * DIM_PUNCH_DAMAGE_RATIO;
+            AABB area = new AABB(mark.x - radius, mark.y - 2.0D, mark.z - radius,
+                    mark.x + radius, mark.y + 4.0D, mark.z + radius);
+
+            for (LivingEntity victim : serverLevel.getEntitiesOfClass(LivingEntity.class, area)) {
+                if (victim == user || victim.isAlliedTo(user)) continue;
+                if (victim instanceof DBSagasEntity && victim != user.getTarget()) continue;
+
+                double dx = victim.getX() - mark.x;
+                double dz = victim.getZ() - mark.z;
+                if (Math.sqrt(dx * dx + dz * dz) > radius) continue;
+
+                victim.invulnerableTime = 0;
+                victim.hurt(user.damageSources().mobAttack(user), damage);
+                victim.setDeltaMovement(victim.getDeltaMovement().add(0.0D, 0.45D, 0.0D));
+                victim.hasImpulse = true;
+                victim.hurtMarked = true;
+            }
+
+            Vec3 center = mark.add(0.0D, 1.0D, 0.0D);
+            Vec3 dir = center.subtract(user.position()).normalize();
+
+            NetworkHandler.sendToTrackingEntity(new com.dragonminez.common.network.S2C.ImpactBurstVfxS2C(
+                    center, dir, radius * 1.5F, DIM_PUNCH_COLOR, 0xFFD700, true, 14), user);
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(center.x, center.y, center.z,
+                    radius * 1.2F, DIM_PUNCH_COLOR, 12), user);
+            serverLevel.playSound(null, center.x, center.y, center.z,
+                    MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, 1.3F);
+            return;
+        }
+    }
+
+    public static void tickDestructionBalls(DBSagasEntity user, LivingEntity target, int timer) {
+        if (timer != DESTRUCTION_FIRE_TICK || target == null) return;
+        if (!(user.level() instanceof ServerLevel serverLevel)) return;
+
+        Vec3 origin = new Vec3(user.getX(), user.getY() + user.getBbHeight() * 0.6D, user.getZ());
+        Vec3 aim = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ())
+                .subtract(origin).normalize();
+        Vec3 right = new Vec3(-aim.z, 0.0D, aim.x);
+        if (right.lengthSqr() < 1.0E-4D) right = new Vec3(1.0D, 0.0D, 0.0D);
+        right = right.normalize();
+
+        float finalSize = Math.max(1.0F, user.getCurrentPoolSkillSize());
+        float damage = user.getKiBlastDamage() * 0.9F;
+
+        for (int i = 0; i < DESTRUCTION_COUNT; i++) {
+            float side = i - (DESTRUCTION_COUNT - 1) * 0.5F;
+            double rad = Math.toRadians(side * DESTRUCTION_SPREAD);
+            Vec3 dir = new Vec3(aim.x * Math.cos(rad) - aim.z * Math.sin(rad), aim.y,
+                    aim.x * Math.sin(rad) + aim.z * Math.cos(rad)).normalize();
+
+            KiBlastEntity ball = new KiBlastEntity(com.dragonminez.common.init.MainEntities.KI_BLAST.get(), serverLevel);
+            ball.setupDestructionBall(user, damage, DESTRUCTION_SPEED, finalSize * DESTRUCTION_START_RATIO,
+                    user.getCurrentPoolColorMain(), user.getCurrentPoolColorBorder(), user.getCurrentPoolColorOutline());
+
+            Vec3 spread = side == 0.0F ? new Vec3(0.0D, 1.0D, 0.0D) : right.scale(side).add(0.0D, 0.25D, 0.0D).normalize();
+            ball.configureDestructionGrowth(finalSize, spread);
+
+            Vec3 spawn = origin.add(dir.scale(user.getBbWidth() * 0.6D + 1.5D));
+            ball.moveTo(spawn.x, spawn.y, spawn.z, user.getYRot(), 0.0F);
+            ball.setDeltaMovement(dir.scale(DESTRUCTION_SPEED));
+            serverLevel.addFreshEntity(ball);
+        }
+
+        serverLevel.playSound(null, user.getX(), user.getY(), user.getZ(),
+                MainSounds.KI_EXPLOSION_CHARGE.get(), net.minecraft.sounds.SoundSource.HOSTILE, 2.5F, 0.6F);
     }
 }

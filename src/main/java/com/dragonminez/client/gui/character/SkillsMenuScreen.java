@@ -463,6 +463,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				skills.getAllSkills().forEach((name, skill) -> {
 					if (!skillsConfig.getKiSkills().contains(name)
 							&& !skillsConfig.getStrikeSkills().contains(name)
+							&& !skillsConfig.getEvasionSkills().contains(name)
 							&& !skillsConfig.getStackSkills().contains(name)
 							&& !skillsConfig.getFormSkills().contains(name)
 							&& skillsConfig.isSkillAllowedForRace(name, race)) {

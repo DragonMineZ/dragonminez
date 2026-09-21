@@ -70,6 +70,7 @@ public class SkillsConfig {
 		evasionSkills.add("rage_scream");
 		evasionSkills.add("afterimage");
 		evasionSkills.add("sleep_recovery");
+		evasionSkills.add("dimensional_teleport");
 
 		skills.put("ki_barrage", new SkillCosts(List.of(1000)));
 		skills.put("masenko", new SkillCosts(List.of(1500)));
@@ -77,6 +78,7 @@ public class SkillsConfig {
 		skills.put("galick_gun", new SkillCosts(List.of(2000)));
 		skills.put("taiyoken", new SkillCosts(List.of(2000)));
 		skills.put("afterimage", new SkillCosts(List.of(2500)));
+		skills.put("dimensional_teleport", new SkillCosts(List.of(12000)));
 		skills.put("sleep_recovery", new SkillCosts(List.of(3000)));
 		skills.put("death_beam", new SkillCosts(List.of(2500)));
 		skills.put("fake_moon", new SkillCosts(List.of(3000)));
@@ -110,6 +112,8 @@ public class SkillsConfig {
 		strikeSkills.add("oozaru_slam");
 		strikeSkills.add("gum_punch");
 		strikeSkills.add("blue_hurricane");
+		strikeSkills.add("dimensional_punch");
+		strikeSkills.add("dimensional_sword_attack");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -122,6 +126,8 @@ public class SkillsConfig {
 		skills.put("oozaru_slam",        new SkillCosts(List.of(4000)));
 		skills.put("gum_punch",          new SkillCosts(List.of(4000)));
 		skills.put("blue_hurricane",     new SkillCosts(List.of(5000)));
+		skills.put("dimensional_punch",  new SkillCosts(List.of(18000)));
+		skills.put("dimensional_sword_attack", new SkillCosts(List.of(22000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
