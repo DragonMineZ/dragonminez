@@ -48,6 +48,7 @@ public class DMZWorldGenProvider extends DatapackBuiltinEntriesProvider {
 				OverworldBiomes.bootstrap(context);
 				SacredKaiBiomes.bootstrap(context);
 			})
+			.add(Registries.NOISE, OtherworldGeneration::bootstrapNoiseParameters)
 			.add(Registries.NOISE_SETTINGS, context -> {
 				NamekGeneration.bootstrapNoise(context);
 				HTCGeneration.bootstrapNoise(context);

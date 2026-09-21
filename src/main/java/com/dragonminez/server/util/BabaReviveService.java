@@ -92,10 +92,7 @@ public class BabaReviveService {
 	private static void endTempReturn(ServerPlayer player, StatsData data) {
 		data.getStatus().setTempReturnTimer(0);
 		player.sendSystemMessage(Component.translatable("message.dragonminez.baba_return.expired"));
-		if (!player.isSpectator() && !player.isCreative()) {
-			ServerLevel otherworld = player.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
-			if (otherworld != null) player.teleportTo(otherworld, 0, 41, 10, 0, 0);
-		}
+		if (!player.isSpectator() && !player.isCreative()) OtherworldDimension.teleportToSpiritArrival(player);
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 	}
 

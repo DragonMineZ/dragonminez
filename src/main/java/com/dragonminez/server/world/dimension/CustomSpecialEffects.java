@@ -213,8 +213,6 @@ public class CustomSpecialEffects extends DimensionSpecialEffects {
 
 		@Override
 		public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
-			Vec3 namekGreen = new Vec3(0.929D, 0.929D, 0.157D);
-			this.cloudRenderer.render(poseStack, projectionMatrix, partialTick, camX, camY, camZ, namekGreen);
 			return true;
 		}
 
