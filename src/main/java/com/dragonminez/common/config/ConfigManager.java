@@ -1242,10 +1242,10 @@ public class ConfigManager {
 		Path path = CONFIG_DIR.resolve(HudLayoutConfig.FILE_NAME + ".json");
 		boolean isNew = !Files.exists(path);
 		hudLayoutConfig = loadAndValidate(path, HudLayoutConfig.class, HudLayoutConfig::new, HudLayoutConfig::getConfigVersion, HudLayoutConfig::setConfigVersion, HudLayoutConfig.CURRENT_VERSION, null);
-		if (userConfig != null && userConfig.migrateLegacyHud(hudLayoutConfig, isNew)) {
-			saveHudLayoutConfig();
-			saveGeneralUserConfig();
-		}
+		boolean movedFromUserConfig = userConfig != null && userConfig.migrateLegacyHud(hudLayoutConfig, isNew);
+		boolean renamed = hudLayoutConfig.migrateLegacyNames();
+		if (movedFromUserConfig || renamed) saveHudLayoutConfig();
+		if (movedFromUserConfig) saveGeneralUserConfig();
 	}
 
 	public static HudLayoutConfig getHudLayoutConfig() {
@@ -1263,7 +1263,9 @@ public class ConfigManager {
 		if (!Files.exists(path)) return;
 		try {
 			HudLayoutConfig loaded = LOADER.loadConfig(path, HudLayoutConfig.class);
-			if (loaded != null) hudLayoutConfig = loaded;
+			if (loaded == null) return;
+			hudLayoutConfig = loaded;
+			if (loaded.migrateLegacyNames()) saveHudLayoutConfig();
 		} catch (Exception e) {
 			LogUtil.warn(Env.COMMON, "Could not reload {}.json, keeping the layout in memory: {}", HudLayoutConfig.FILE_NAME, e.getMessage());
 		}

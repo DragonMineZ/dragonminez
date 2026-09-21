@@ -564,7 +564,7 @@ public class HudEditorScreen extends Screen {
 			candidates.add(new float[]{(near + far - size) / 2.0f, 0.0f, (near + far) / 2.0f});
 		}
 
-		if (style == HudStyle.MINECRAFT && (selected == HudElement.MC_LEFT || selected == HudElement.MC_RIGHT)) {
+		if (style == HudStyle.VANILLA && (selected == HudElement.MC_LEFT || selected == HudElement.MC_RIGHT)) {
 			if (horizontal) {
 				float centerX = this.width / 2.0f;
 				candidates.add(new float[]{centerX - HudLayout.HOTBAR_HALF_WIDTH - size, 0.0f, centerX - HudLayout.HOTBAR_HALF_WIDTH});

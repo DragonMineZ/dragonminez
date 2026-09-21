@@ -462,8 +462,7 @@ public class TickHandler {
 		}
 
 		otherworldTpGraceByPlayer.remove(playerId);
-		ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
-		if (otherworld != null) serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);
+		OtherworldDimension.teleportToSpiritArrival(serverPlayer);
 	}
 
     @SubscribeEvent

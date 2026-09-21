@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.server.world.biome.OtherworldBiomes;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
@@ -38,9 +39,24 @@ public class OtherworldGeneration {
 	public static final int PALACE_LEVEL = 112;
 	public static final int UPPER_CLOUD_DECK = 267;
 	public static final int TOURNAMENT_LEVEL = 271;
-	public static final int DECK_THICKNESS = 4;
 
-	private static final double DECK_GAP_THRESHOLD = 0.52;
+	public static final ResourceKey<NormalNoise.NoiseParameters> CLOUD_BILLOW = noiseKey("otherworld_cloud_billow");
+	public static final ResourceKey<NormalNoise.NoiseParameters> CLOUD_PUFF = noiseKey("otherworld_cloud_puff");
+
+	// Alturas relativas al nivel de estructuras del manto (PALACE_LEVEL / TOURNAMENT_LEVEL).
+	// El techo nunca baja de CLOUD_TOP_MIN ni supera el nivel de estructuras, y el vientre nunca sube de
+	// CLOUD_BELLY_MAX ni baja de CLOUD_BAND_BOTTOM: el manto no tiene agujeros y no invade el Infierno.
+	private static final int CLOUD_TOP_MIN = -9;
+	private static final int CLOUD_BELLY_MAX = -11;
+	private static final int CLOUD_BAND_BOTTOM = -16;
+	private static final double CLOUD_BILLOW_HEIGHT = 6.0;
+	private static final double CLOUD_PUFF_HEIGHT = 3.0;
+	private static final double CLOUD_BELLY_BILLOW_DEPTH = 3.5;
+	private static final double CLOUD_BELLY_PUFF_DEPTH = 1.5;
+	private static final double CLOUD_BILLOW_GAIN = 2.0;
+	private static final double CLOUD_PUFF_GAIN = 2.5;
+	private static final double CLOUD_LUMP_THRESHOLD = 0.35;
+
 	private static final double MOUNTAIN_HEIGHT = 70.0;
 	private static final double NEEDLE_HEIGHT = 34.0;
 
@@ -179,8 +195,8 @@ public class OtherworldGeneration {
 		DensityFunction hellTerrain = DensityFunctions.add(hellHeight, scaled(-1.0, blockY));
 
 		DensityFunction decks = DensityFunctions.max(
-				deck(blockY, LOWER_CLOUD_DECK, DensityFunctions.noise(noiseParams.getOrThrow(Noises.EROSION), 0.5, 0.0)),
-				deck(blockY, UPPER_CLOUD_DECK, DensityFunctions.noise(noiseParams.getOrThrow(Noises.SURFACE), 0.35, 0.0))
+				cloudDeck(blockY, PALACE_LEVEL, 0.0, noiseParams),
+				cloudDeck(blockY, TOURNAMENT_LEVEL, 4096.0, noiseParams)
 		);
 
 		DensityFunction terrain = DensityFunctions.max(hellTerrain, decks);
@@ -208,9 +224,60 @@ public class OtherworldGeneration {
 		return DensityFunctions.add(DensityFunctions.constant(1.0), scaled(-1.0, noise.abs()));
 	}
 
-	private static DensityFunction deck(DensityFunction blockY, int bottom, DensityFunction gapNoise) {
-		DensityFunction closed = DensityFunctions.add(DensityFunctions.constant(DECK_GAP_THRESHOLD), scaled(-1.0, gapNoise));
-		return DensityFunctions.rangeChoice(blockY, bottom, bottom + DECK_THICKNESS, closed, DensityFunctions.constant(-1.0));
+	public static void bootstrapNoiseParameters(BootstapContext<NormalNoise.NoiseParameters> context) {
+		context.register(CLOUD_BILLOW, new NormalNoise.NoiseParameters(-5, 1.0, 0.5));
+		context.register(CLOUD_PUFF, new NormalNoise.NoiseParameters(-4, 1.0, 0.5));
+	}
+
+	private static DensityFunction cloudDeck(DensityFunction blockY, int surface, double offset, HolderGetter<NormalNoise.NoiseParameters> noiseParams) {
+		Holder<NormalNoise.NoiseParameters> billowNoise = noiseParams.getOrThrow(CLOUD_BILLOW);
+		Holder<NormalNoise.NoiseParameters> puffNoise = noiseParams.getOrThrow(CLOUD_PUFF);
+
+		DensityFunction top = DensityFunctions.add(
+				DensityFunctions.constant(surface + CLOUD_TOP_MIN),
+				DensityFunctions.add(
+						scaled(CLOUD_BILLOW_HEIGHT, dome(billowNoise, CLOUD_BILLOW_GAIN, offset)),
+						scaled(CLOUD_PUFF_HEIGHT, dome(puffNoise, CLOUD_PUFF_GAIN, offset))
+				)
+		);
+		DensityFunction belly = DensityFunctions.add(
+				DensityFunctions.constant(surface + CLOUD_BELLY_MAX),
+				DensityFunctions.add(
+						scaled(-CLOUD_BELLY_BILLOW_DEPTH, dome(billowNoise, CLOUD_BILLOW_GAIN, offset + 1777.0)),
+						scaled(-CLOUD_BELLY_PUFF_DEPTH, dome(puffNoise, CLOUD_PUFF_GAIN, offset + 1777.0))
+				)
+		);
+		DensityFunction body = DensityFunctions.min(
+				DensityFunctions.add(top, scaled(-1.0, blockY)),
+				DensityFunctions.add(blockY, scaled(-1.0, belly))
+		);
+
+		int bandBottom = surface + CLOUD_BAND_BOTTOM;
+		int bellyMax = surface + CLOUD_BELLY_MAX;
+		DensityFunction lumpFade = DensityFunctions.max(
+				DensityFunctions.yClampedGradient(bandBottom, bandBottom + 4, 1.0, 0.0),
+				DensityFunctions.yClampedGradient(bellyMax, bellyMax + 2, 0.0, 2.0)
+		);
+		DensityFunction lumps = DensityFunctions.add(
+				DensityFunctions.add(
+						DensityFunctions.noise(puffNoise, 1.0, 4.0),
+						DensityFunctions.constant(-CLOUD_LUMP_THRESHOLD)
+				),
+				scaled(-1.0, lumpFade)
+		);
+
+		return DensityFunctions.rangeChoice(blockY, bandBottom, surface, DensityFunctions.max(body, lumps), DensityFunctions.constant(-1.0));
+	}
+
+	// Cúpula de cúmulo: |ruido| deja pliegues finos entre masas y 1-(1-a)^2 redondea y acota la cima.
+	private static DensityFunction dome(Holder<NormalNoise.NoiseParameters> noise, double gain, double offset) {
+		DensityFunction billow = scaled(gain, DensityFunctions.shiftedNoise2d(DensityFunctions.constant(offset), DensityFunctions.constant(-offset), 1.0, noise).abs()).clamp(0.0, 1.0);
+		DensityFunction hollow = DensityFunctions.add(DensityFunctions.constant(1.0), scaled(-1.0, billow)).square();
+		return DensityFunctions.add(DensityFunctions.constant(1.0), scaled(-1.0, hollow));
+	}
+
+	private static ResourceKey<NormalNoise.NoiseParameters> noiseKey(String name) {
+		return ResourceKey.create(Registries.NOISE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 	}
 
 	private static DensityFunction scaled(double factor, DensityFunction function) {

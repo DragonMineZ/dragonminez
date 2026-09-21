@@ -53,7 +53,7 @@ public class XenoverseHUD {
 	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (HudStyle.current() != HudStyle.LEGACY_1) return;
+		if (HudStyle.current() != HudStyle.XENOVERSE) return;
 		HudLayout.Box box = HudLayout.resolve(HudElement.MAIN, width, height);
 		if (!box.visible() && !HudLayout.isPreview()) return;
 

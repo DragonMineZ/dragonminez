@@ -84,10 +84,10 @@ public final class HudLayout {
 
 	public static List<HudElement> elements(HudStyle style) {
 		List<HudElement> list = new ArrayList<>();
-		if (style == HudStyle.MINECRAFT) {
+		if (style == HudStyle.VANILLA) {
 			list.add(HudElement.MC_LEFT);
 			list.add(HudElement.MC_RIGHT);
-		} else if (style == HudStyle.LEGACY_2) {
+		} else if (style == HudStyle.COMPACT) {
 			list.add(HudElement.L2_HEALTH);
 			list.add(HudElement.L2_KI);
 			list.add(HudElement.L2_STAMINA);
@@ -105,7 +105,7 @@ public final class HudLayout {
 		List<HudElement> list = new ArrayList<>();
 		list.add(HudElement.TRACKED_QUEST);
 		list.add(HudElement.QUEST_NOTICE);
-		if (style != HudStyle.LEGACY_2) list.add(HudElement.SCOUTER);
+		if (style != HudStyle.COMPACT) list.add(HudElement.SCOUTER);
 		list.add(HudElement.BABA_TIMER);
 		return list;
 	}
@@ -120,7 +120,7 @@ public final class HudLayout {
 
 	public static float[] baseSize(HudStyle style, HudElement element) {
 		return switch (element) {
-			case MAIN -> style == HudStyle.LEGACY_1 ? SIZE_LEGACY_1 : SIZE_DEFAULT_MAIN;
+			case MAIN -> style == HudStyle.XENOVERSE ? SIZE_LEGACY_1 : SIZE_DEFAULT_MAIN;
 			case L2_HEALTH, L2_STAMINA -> SIZE_LEGACY_2_BAR;
 			case L2_KI -> SIZE_LEGACY_2_KI;
 			case MC_LEFT, MC_RIGHT -> SIZE_MINECRAFT_SIDE;
@@ -135,7 +135,7 @@ public final class HudLayout {
 	}
 
 	public static boolean canMirror(HudStyle style, HudElement element) {
-		return element == HudElement.PARTY || element == HudElement.SCOUTER || element.isSkill() || (element == HudElement.MAIN && (style == HudStyle.DEFAULT || style == HudStyle.LEGACY_1));
+		return element == HudElement.PARTY || element == HudElement.SCOUTER || element.isSkill() || (element == HudElement.MAIN && (style == HudStyle.MODERN || style == HudStyle.XENOVERSE));
 	}
 
 	public static float unit(HudElement element, int screenHeight) {
@@ -147,7 +147,7 @@ public final class HudLayout {
 	public static HudPlacement defaultPlacement(HudStyle style, HudElement element) {
 		float meterWidth = SIZE_METER[0];
 		return switch (element) {
-			case MAIN -> style == HudStyle.LEGACY_1 ? new HudPlacement(0.0f, 0.0f, 3.0f, 3.0f, 1.2f)
+			case MAIN -> style == HudStyle.XENOVERSE ? new HudPlacement(0.0f, 0.0f, 3.0f, 3.0f, 1.2f)
 					: new HudPlacement(0.0f, 0.0f, 3.0f, 3.0f, 1.0f);
 			case L2_HEALTH -> new HudPlacement(0.5f, 1.0f, -56.875f, -30.0f, 1.25f);
 			case L2_KI -> new HudPlacement(0.5f, 1.0f, -83.125f, -2.5f, 1.25f);

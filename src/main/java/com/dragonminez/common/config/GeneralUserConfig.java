@@ -25,11 +25,6 @@ public class GeneralUserConfig {
 	private Boolean hideHudNumbers = false;
 	private Boolean advancedDescription = true;
 	private Boolean advancedDescriptionPercentage = true;
-	public static final String HUD_STYLE_LEGACY_1 = "legacy 1";
-	public static final String HUD_STYLE_LEGACY_2 = "legacy 2";
-	public static final String HUD_STYLE_DEFAULT = "default";
-	public static final String HUD_STYLE_MINECRAFT = "minecraft";
-
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private String hudStyle = null;
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private Map<String, Map<String, HudPlacement>> hudLayout = null;
 
@@ -82,9 +77,8 @@ public class GeneralUserConfig {
 	public boolean migrateLegacyHud(HudLayoutConfig target, boolean targetIsNew) {
 		boolean changed = false;
 		if (targetIsNew && (hudStyle != null || alternativeHud != null)) {
-			String legacyStyle = hudStyle != null ? HudLayoutConfig.normalizeStyle(hudStyle) : HUD_STYLE_DEFAULT;
-			if (Boolean.TRUE.equals(alternativeHud) && HUD_STYLE_DEFAULT.equals(legacyStyle)) legacyStyle = HUD_STYLE_MINECRAFT;
-			target.setStyle(legacyStyle);
+			if (hudStyle != null) target.setStyle(HudLayoutConfig.normalizeStyle(hudStyle));
+			else target.setStyle(Boolean.TRUE.equals(alternativeHud) ? HudLayoutConfig.STYLE_VANILLA : HudLayoutConfig.STYLE_XENOVERSE);
 			changed = true;
 		}
 		if (hudLayout != null && !hudLayout.isEmpty() && target.getLayout().isEmpty()) {
