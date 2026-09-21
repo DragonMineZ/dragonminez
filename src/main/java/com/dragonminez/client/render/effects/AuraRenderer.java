@@ -425,7 +425,7 @@ public class AuraRenderer {
 		if (isFirstPerson && localPlayer != null && !currentFramePlayers.contains(localPlayer.getId())) {
 			var stats = StatsProvider.get(StatsCapability.INSTANCE, localPlayer).orElse(null);
 			if (stats != null) {
-				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 				boolean hasLightning = AuraFxState.hasLightning(stats);
 
 				if (isAuraActive || hasLightning) {
@@ -468,7 +468,7 @@ public class AuraRenderer {
 				}
 
 				var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-				boolean isAuraActive = stats != null && (stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura());
+				boolean isAuraActive = stats != null && (stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura());
 
 				if (isAuraActive) continue;
 
@@ -1560,7 +1560,7 @@ public class AuraRenderer {
 
 		if (!AuraFxState.hasLightning(stats)) return;
 
-		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 		float[] colorRgb = ColorUtils.hexToRgb(AuraFxState.lightningColor(stats));
 		float alpha = isFirstPersonLocal ? LIGHTNING_FIRST_PERSON_ALPHA : 1.0f;
 

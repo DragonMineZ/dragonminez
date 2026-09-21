@@ -22,6 +22,7 @@ public class GeneralServerConfig {
 	private DynamicGrowthConfig dynamicGrowth = new DynamicGrowthConfig();
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
+	private FalseSuperSaiyanConfig falseSuperSaiyan = new FalseSuperSaiyanConfig();
 	private CraftingConfig crafting = new CraftingConfig();
 	private StorageConfig storage = new StorageConfig();
 	private DeveloperConfig developer = new DeveloperConfig();
@@ -30,6 +31,11 @@ public class GeneralServerConfig {
 	public HairConfig getHair() {
 		if (hair == null) hair = new HairConfig();
 		return hair;
+	}
+
+	public FalseSuperSaiyanConfig getFalseSuperSaiyan() {
+		if (falseSuperSaiyan == null) falseSuperSaiyan = new FalseSuperSaiyanConfig();
+		return falseSuperSaiyan;
 	}
 
 	public static class HairConfig {
@@ -1260,6 +1266,54 @@ public class GeneralServerConfig {
 		public RageConfig getRage() {
 			if (rage == null) rage = new RageConfig();
 			return rage;
+		}
+	}
+
+	@NoArgsConstructor
+	public static class FalseSuperSaiyanConfig {
+		private Boolean enabled = true;
+		private String groupName = "falseform";
+		private String formName = "falsesupersaiyan";
+		private Integer minLevel = 100;
+		private Integer maxLevel = 200;
+		private Double healthThreshold = 0.25;
+		private Boolean requireZenkaiSpent = false;
+		private Double gainPerDealtHealthFraction = 60.0;
+		private Double gainPerReceivedHealthFraction = 150.0;
+		private Double maxGainPerHit = 25.0;
+		private Double significantTargetHealthRatio = 0.10;
+		private Double significantDamageTakenRatio = 0.01;
+		private Double activeGainMultiplier = 0.5;
+		private Double idleGainPerSecond = 4.0;
+		private Double combatGraceSeconds = 2.0;
+		private Double drainSeconds = 8.0;
+		private Double activeDrainSeconds = 12.0;
+
+		public boolean getEnabled() { return enabled == null || enabled; }
+		public String getGroupName() { return groupName != null && !groupName.isEmpty() ? groupName : "falseform"; }
+		public String getFormName() { return formName != null && !formName.isEmpty() ? formName : "falsesupersaiyan"; }
+		public int getMinLevel() { return Math.max(1, minLevel != null ? minLevel : 100); }
+		public int getMaxLevel() { return Math.max(getMinLevel() + 1, maxLevel != null ? maxLevel : 200); }
+		public double getHealthThreshold() { return clamp01(healthThreshold, 0.20); }
+		public boolean getRequireZenkaiSpent() { return requireZenkaiSpent != null && requireZenkaiSpent; }
+		public double getGainPerDealtHealthFraction() { return positive(gainPerDealtHealthFraction, 60.0); }
+		public double getGainPerReceivedHealthFraction() { return positive(gainPerReceivedHealthFraction, 150.0); }
+		public double getMaxGainPerHit() { return positive(maxGainPerHit, 25.0); }
+		public double getSignificantTargetHealthRatio() { return positive(significantTargetHealthRatio, 0.10); }
+		public double getSignificantDamageTakenRatio() { return positive(significantDamageTakenRatio, 0.01); }
+		public double getActiveGainMultiplier() { return positive(activeGainMultiplier, 0.5); }
+		public double getIdleGainPerSecond() { return positive(idleGainPerSecond, 4.0); }
+		public double getCombatGraceSeconds() { return positive(combatGraceSeconds, 2.0); }
+		public double getDrainSeconds() { return Math.max(0.25, positive(drainSeconds, 8.0)); }
+		public double getActiveDrainSeconds() { return Math.max(0.25, positive(activeDrainSeconds, 12.0)); }
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
+		}
+
+		private static double clamp01(Double value, double fallback) {
+			double resolved = positive(value, fallback);
+			return Math.max(0.0, Math.min(1.0, resolved));
 		}
 	}
 

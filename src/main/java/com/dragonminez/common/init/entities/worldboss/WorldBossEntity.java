@@ -38,6 +38,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
     protected static final int WAKE_RADIUS = 32;
     protected static final int LEASH_RADIUS = 64;
+    private static final double RENDER_RANGE = 512.0D;
 
     private static final int SLEEP_SCAN_INTERVAL = 20;
     private static final int LEASH_CHECK_INTERVAL = 20;
@@ -103,6 +104,12 @@ public abstract class WorldBossEntity extends DBSagasEntity {
     @Override
     public boolean isMeleeAllowed() {
         return !this.isInSleepPose() && super.isMeleeAllowed();
+    }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        double range = RENDER_RANGE * getViewScale();
+        return distance < range * range;
     }
 
     @Override

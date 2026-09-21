@@ -64,6 +64,8 @@ public class Status {
 	private String scouterItem;
 	private String pothalaColor;
 	private boolean isPermanentAura;
+	private boolean forcedAura;
+	private boolean forcedCharge;
 	private boolean isStrikeLocked;
 	private int flightMode;
 	private final Set<String> visitedDimensions;
@@ -117,6 +119,8 @@ public class Status {
 		this.scouterItem = "";
 		this.pothalaColor = "";
 		this.isPermanentAura = false;
+		this.forcedAura = false;
+		this.forcedCharge = false;
 		this.isStrikeLocked = false;
 		this.flightMode = FLIGHT_SEARCH;
 		this.visitedDimensions = new LinkedHashSet<>();
@@ -170,6 +174,8 @@ public class Status {
 		this.scouterItem = "";
 		this.pothalaColor = "";
 		this.isPermanentAura = false;
+		this.forcedAura = false;
+		this.forcedCharge = false;
 		this.isStrikeLocked = false;
 		this.flightMode = FLIGHT_SEARCH;
 		this.visitedDimensions.clear();
@@ -247,6 +253,8 @@ public class Status {
 		tag.putString("ScouterItem", scouterItem);
 		tag.putString("PothalaColor", pothalaColor);
 		tag.putBoolean("IsPermanentAura", isPermanentAura);
+		tag.putBoolean("ForcedAura", forcedAura);
+		tag.putBoolean("ForcedCharge", forcedCharge);
 		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
 		tag.putInt("FlightMode", flightMode);
 
@@ -308,6 +316,8 @@ public class Status {
 		this.scouterItem = tag.getString("ScouterItem");
 		this.pothalaColor = tag.getString("PothalaColor");
 		this.isPermanentAura = tag.getBoolean("IsPermanentAura");
+		this.forcedAura = tag.getBoolean("ForcedAura");
+		this.forcedCharge = tag.getBoolean("ForcedCharge");
 		this.isStrikeLocked = tag.getBoolean("IsStrikeLocked");
 		this.flightMode = tag.getInt("FlightMode");
 		this.visitedDimensions.clear();
@@ -366,6 +376,8 @@ public class Status {
 		this.pothalaColor = other.pothalaColor;
 		this.scouterItem = other.scouterItem;
 		this.isPermanentAura = other.isPermanentAura;
+		this.forcedAura = other.forcedAura;
+		this.forcedCharge = other.forcedCharge;
 		this.isStrikeLocked = other.isStrikeLocked;
 		this.flightMode = other.flightMode;
 		this.visitedDimensions.clear();

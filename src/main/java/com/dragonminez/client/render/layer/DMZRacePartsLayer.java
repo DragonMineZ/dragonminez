@@ -73,7 +73,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		long gameTime = animatable.level().getGameTime();
 		boolean shouldFadeIn = stats.getStatus().isChargingKi()
 				|| stats.getStatus().isAuraActive()
-				|| stats.getStatus().isPermanentAura();
+				|| stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 		AuraTintTracker.update(playerId, gameTime, shouldFadeIn);
 	}
 

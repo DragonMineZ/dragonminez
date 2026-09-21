@@ -12,6 +12,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.FalseSuperSaiyanHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.MutantManager;
 import net.minecraft.network.chat.Component;
@@ -122,6 +123,7 @@ public class RageEvents {
 			var status = data.getStatus();
 
 			if (!MutantManager.isMutant(data)) {
+				if (FalseSuperSaiyanHelper.ownsRageBar(data)) return;
 				if (resources.getRage() > 0.0f || status.isRageActive()) {
 					resources.setRage(0.0f);
 					status.setRageActive(false);

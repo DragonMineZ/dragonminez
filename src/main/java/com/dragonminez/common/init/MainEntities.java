@@ -1374,7 +1374,7 @@ public class MainEntities {
             ENTITY_TYPES.register("worldboss_janemba_fat",
                     () -> EntityType.Builder.of(AllWorldBossesEntity.JanembaFat::new, MobCategory.MONSTER)
                             .sized(7.5f, 12.0f)
-                            .clientTrackingRange(16)
+                            .clientTrackingRange(32)
                             .fireImmune()
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "worldboss_janemba_fat").toString()));
     public static final RegistryObject<EntityType<AllWorldBossesEntity.SuperJanemba>> WORLDBOSS_SUPER_JANEMBA =

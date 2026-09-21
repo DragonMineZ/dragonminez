@@ -45,7 +45,7 @@ public class EffectsEvents {
 		} else isBioAndroidDrainingCache = false;
 
 		isChargingFormCache = StatsProvider.get(StatsCapability.INSTANCE, player)
-				.map(data -> (data.getStatus().isAuraActive() && !data.getStatus().isPermanentAura())).orElse(false);
+				.map(data -> (data.getStatus().isAuraActive() && !data.getStatus().isPermanentAura() && !data.getStatus().isForcedAura())).orElse(false);
 	}
 
 	private static final double BIO_SHAKE_RANGE_MULT = 1.5D;

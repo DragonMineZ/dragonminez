@@ -191,7 +191,7 @@ public class TickHandler {
 
 			if (shouldRegen) {
 				double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
-				boolean activeCharging = isChargingKi && !isDescending;
+				boolean activeCharging = (isChargingKi || data.getStatus().isForcedCharge()) && !isDescending;
 				double foodRegenMod = getFoodRegenMultiplier(serverPlayer);
 
 				regenerateHealth(serverPlayer, data, foodRegenMod);
@@ -555,7 +555,7 @@ public class TickHandler {
 
 
 	private static void updateAuraLight(ServerPlayer player, StatsData data) {
-		boolean auraActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura();
+		boolean auraActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura() || data.getStatus().isForcedAura();
 		ServerLevel level = player.serverLevel();
 		UUID playerId = player.getUUID();
 		int currentLevel = auraLightLevels.getOrDefault(playerId, 0);

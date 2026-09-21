@@ -63,6 +63,7 @@ public class ExecuteActionC2S {
 					boolean needsSync = false;
 					switch (action) {
 						case FORCE_DESCEND, MENU_DESCEND -> {
+							if (TransformationsHelper.isInFalseForm(data)) return;
 							boolean menuDescend = action == ActionType.MENU_DESCEND;
 							if (rightClick) {
 								data.getCharacter().clearActiveStackForm(player);

@@ -62,6 +62,7 @@ public class DefaultFormsFactory {
 	}
 
 	private static final String LEGENDARY_FORM_TYPE = "legendaryforms";
+	private static final String FALSE_FORM_TYPE = "falseform";
 
 	private static void forceGroupAura3D(Map<String, FormConfig> forms, String formType, String auraType) {
 		for (FormConfig config : forms.values()) {
@@ -889,6 +890,43 @@ public class DefaultFormsFactory {
 		forms.put(SaiyanForms.GROUP_SSGRADES, ssGrades);
 		forms.put(SaiyanForms.SUPER_SAIYAN, superSaiyan);
 		LogUtil.info(Env.COMMON, "Default Super Saiyan forms created");
+
+		FormConfig falseForms = new FormConfig();
+		falseForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		falseForms.setGroupName(SaiyanForms.GROUP_FALSEFORM);
+		falseForms.setFormType(FALSE_FORM_TYPE);
+
+		FormConfig.FormData falseSuperSaiyan = new FormConfig.FormData();
+		falseSuperSaiyan.setName(SaiyanForms.FALSE_SUPER_SAIYAN);
+		falseSuperSaiyan.setUnlockOnSkillLevel(99);
+		falseSuperSaiyan.setTransformationAnimation("transf.berserker");
+		falseSuperSaiyan.setHairType("ssj");
+		falseSuperSaiyan.setHairColor("#6B1208");
+		falseSuperSaiyan.setBodyColor2("#6B1208");
+		falseSuperSaiyan.setEye1Color("#FFFFFF");
+		falseSuperSaiyan.setEye2Color("#FFFFFF");
+		falseSuperSaiyan.setAuraColor("#FFD84D");
+		falseSuperSaiyan.setTintColor("#FFD21F");
+		falseSuperSaiyan.setTintIntensity(0.55);
+		falseSuperSaiyan.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
+		falseSuperSaiyan.setStrMultiplier(1.4);
+		falseSuperSaiyan.setSkpMultiplier(1.4);
+		falseSuperSaiyan.setDefMultiplier(1.25);
+		falseSuperSaiyan.setPwrMultiplier(1.4);
+		falseSuperSaiyan.setVitMultiplier(1.0);
+		falseSuperSaiyan.setEnergyDrain(0.0);
+		setDefaultMasteryValues(falseSuperSaiyan);
+		falseSuperSaiyan.setAura3DStyle(aura3D().waves(2.1f, 5.2f, 0.82f).turbulence(0.22f, 0.55f).colors("", "", "#FFF0A0"));
+		falseSuperSaiyan.setFormStackable(false);
+		falseSuperSaiyan.setStackDrainMultiplier(2.0);
+		falseSuperSaiyan.setAllowFreeTransformOnMastery(0.0);
+		falseSuperSaiyan.setIncompatibleWith(List.of(""));
+
+		Map<String, FormConfig.FormData> falseFormData = new LinkedHashMap<>();
+		falseFormData.put(SaiyanForms.FALSE_SUPER_SAIYAN, falseSuperSaiyan);
+		falseForms.setForms(falseFormData);
+
+		forms.put(SaiyanForms.GROUP_FALSEFORM, falseForms);
 
 		FormConfig saiyanLegendaryForms = new FormConfig();
 		saiyanLegendaryForms.setConfigVersion(FormConfig.CURRENT_VERSION);

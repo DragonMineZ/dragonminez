@@ -20,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 public class TransformationsHelper {
 
 	private static final String FROST_DEMON_RACE = "frostdemon";
+	public static final String FALSE_FORM_TYPE = "falseform";
 
 	public static class OrderedFormEntry {
 		private final String groupName;
@@ -64,6 +65,7 @@ public class TransformationsHelper {
 
 			String formType = formConfig.getFormType() != null ? formConfig.getFormType().toLowerCase(Locale.ROOT) : "";
 			if (formType.equalsIgnoreCase("android")) continue;
+			if (isFalseFormType(formType)) continue;
 
 			for (FormConfig.FormData formData : formConfig.getForms().values()) {
 				if (formData == null) continue;
@@ -83,6 +85,9 @@ public class TransformationsHelper {
 		List<FormConfig.FormData> unlockedForms = new ArrayList<>();
 		FormConfig formConfig = ConfigManager.getFormGroup(raceName, groupName);
 		if (formConfig == null) {
+			return unlockedForms;
+		}
+		if (isFalseFormType(formConfig.getFormType())) {
 			return unlockedForms;
 		}
 
@@ -147,6 +152,21 @@ public class TransformationsHelper {
 			legendaryGroup = ConfigManager.getServerConfig().getMutant().getLegendaryGroupName();
 		}
 		return groupName.equalsIgnoreCase(legendaryGroup);
+	}
+
+	public static boolean isFalseFormType(String formType) {
+		return formType != null && formType.equalsIgnoreCase(FALSE_FORM_TYPE);
+	}
+
+	public static boolean isFalseFormGroup(String raceName, String groupName) {
+		if (raceName == null || groupName == null || groupName.isEmpty()) return false;
+		FormConfig config = ConfigManager.getFormGroup(raceName, groupName);
+		return config != null && isFalseFormType(config.getFormType());
+	}
+
+	public static boolean isInFalseForm(StatsData statsData) {
+		if (statsData == null || !statsData.getCharacter().hasActiveForm()) return false;
+		return isFalseFormGroup(statsData.getCharacter().getRaceName(), statsData.getCharacter().getActiveFormGroup());
 	}
 
 	public static boolean hasMutantLegendaryAccess(StatsData statsData, String groupName) {
@@ -538,6 +558,7 @@ public class TransformationsHelper {
 		String race = statsData.getCharacter().getRaceName();
 		String group = getTransformTargetGroup(statsData);
 		if (group == null || group.isEmpty()) return null;
+		if (isInFalseForm(statsData) || isFalseFormGroup(race, group)) return null;
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return null;
 

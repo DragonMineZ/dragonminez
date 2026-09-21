@@ -122,7 +122,7 @@ public final class HairStyleResolver {
 		float[] formTint = tintForm != null ? tintForm.getRgbTintColor() : null;
 		float formTintIntensity = tintForm != null ? (float) tintForm.getTintIntensity() : 0.0f;
 		boolean hasFormTint = formTintIntensity > 0.0f && formTint != null;
-		boolean auraFadeIn = stats.getStatus().isChargingKi() || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		boolean auraFadeIn = stats.getStatus().isChargingKi() || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 		float auraTint = AuraTintTracker.update(entityId, gameTime, auraFadeIn);
 
 		if (hasFormTint || auraTint > 0.0f) {
@@ -139,7 +139,7 @@ public final class HairStyleResolver {
 			if (rgbTo != rgbFrom) applyAuraTint(rgbTo, auraRgb, AURA_TINT_INTENSITY * auraTint);
 		}
 
-		boolean kiCharging = stats.getStatus().isChargingKi() || stats.getStatus().isPermanentAura() || stats.getStatus().isActionCharging();
+		boolean kiCharging = stats.getStatus().isChargingKi() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura() || stats.getStatus().isForcedCharge() || stats.getStatus().isActionCharging();
 		track.kiCharge = kiCharging
 				? Math.min(1.0f, track.kiCharge + deltaTicks * KI_CHARGE_RISE)
 				: Math.max(0.0f, track.kiCharge - deltaTicks * KI_CHARGE_FALL);

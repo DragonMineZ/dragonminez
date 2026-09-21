@@ -140,7 +140,7 @@ public class ClientStatsEvents {
 					if (player.onGround()) spawnFloatingRubble(player, 0.6f + bioSwell * 1.4f);
 				}
 
-				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 				if (!isAuraActive) continue;
 
 				float totalScale = getBodyScale(stats)[0];

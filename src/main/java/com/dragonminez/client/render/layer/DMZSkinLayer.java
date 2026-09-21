@@ -89,7 +89,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		long gameTime = player.level().getGameTime();
 		boolean shouldFadeIn = stats.getStatus().isChargingKi()
 				|| stats.getStatus().isAuraActive()
-				|| stats.getStatus().isPermanentAura();
+				|| stats.getStatus().isPermanentAura() || stats.getStatus().isForcedAura();
 		float tintProgress = AuraTintTracker.update(playerId, gameTime, shouldFadeIn);
 
 		this.currentTintProgress = tintProgress;
