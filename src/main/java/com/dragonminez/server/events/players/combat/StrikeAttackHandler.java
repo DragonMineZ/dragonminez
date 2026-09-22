@@ -79,7 +79,7 @@ public class StrikeAttackHandler {
 	private static final String HURT_RIGHT_ANIM = "base.hurt_right";
 	private static final java.util.Set<String> FLINCH_STRIKES = java.util.Set.of(
 			"meteor", "wolf_fang", "kaioken_attack", "deadly_dance", "deadly_dance_vegetto",
-			"shining_sword_attack");
+			"shining_sword_attack", "dimensional_punch", "dimensional_sword_attack");
 	private static final String HURT_TOP_ANIM = "base.hurt_top";
 	private static final String HURT_TOP2_ANIM = "base.hurt_top2";
 	private static final String HURT_DOWN_ANIM = "base.hurt_down";
@@ -92,6 +92,7 @@ public class StrikeAttackHandler {
 	private static final int SPIRIT_CANNON_END_TICK = 47;
 	private static final int SPIRIT_CANNON_LIFT_TICKS = 12;
 	private static final double SPIRIT_CANNON_LIFT_SPEED = 0.45;
+	private static final double SPIRIT_CANNON_CASTER_LIFT_BONUS = 0.15;
 	private static final double SPIRIT_CANNON_SLAM_POWER = 2.8;
 	private static final int SPIRIT_CANNON_COLOR_PRIMARY = 0xF3E4FF;
 	private static final int SPIRIT_CANNON_COLOR_SECONDARY = 0xA63EF0;
@@ -922,7 +923,7 @@ public class StrikeAttackHandler {
 
 				if (lifting) {
 					KnockbackHelper.apply(target, new Vec3(0.0, SPIRIT_CANNON_LIFT_SPEED, 0.0));
-					player.setDeltaMovement(0.0, SPIRIT_CANNON_LIFT_SPEED, 0.0);
+					player.setDeltaMovement(0.0, SPIRIT_CANNON_LIFT_SPEED + SPIRIT_CANNON_CASTER_LIFT_BONUS, 0.0);
 				} else {
 					KnockbackHelper.apply(target, new Vec3(0.0, 0.04, 0.0));
 					player.setDeltaMovement(0.0, 0.04, 0.0);
