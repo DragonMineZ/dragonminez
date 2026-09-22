@@ -2,6 +2,7 @@ package com.dragonminez.server.world.worldboss;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.client.util.NumberFormattingUtil;
 import com.dragonminez.common.combat.HealContext;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
@@ -54,6 +55,7 @@ public final class WorldBossSession {
 	private static final double CAST_MOVE_TOLERANCE_SQR = 1.0 * 1.0;
 	private static final double CAST_TARGET_RANGE_SLACK = 1.5;
 	private static final double LOOK_TARGET_HALO = 0.6;
+	private static final int RESULT_TITLE_SECONDS = 6;
 
 	private static final class Participant {
 		private final UUID id;
@@ -87,6 +89,7 @@ public final class WorldBossSession {
 	private final Map<UUID, Participant> participants = new LinkedHashMap<>();
 	private final Set<UUID> audience = new HashSet<>();
 	private final Map<UUID, ReviveCast> casts = new HashMap<>();
+	private final Map<UUID, Integer> reviveProgress = new HashMap<>();
 	private String bossNameKey = "";
 	private UUID bossId;
 	private long lastAudienceRefresh = -1_000_000L;
@@ -133,15 +136,25 @@ public final class WorldBossSession {
 	}
 
 	WorldBossEntity resolveBoss(ServerLevel level) {
-		WorldBossSavedData.Entry entry = WorldBossSavedData.get(level.getServer()).peek(bossKey);
-		UUID id = entry != null && entry.bossId != null ? entry.bossId : bossId;
-		if (id == null) return null;
-		Entity entity = level.getEntity(id);
+		if (bossId == null) return null;
+		Entity entity = level.getEntity(bossId);
 		if (entity instanceof WorldBossEntity boss && boss.isAlive()) {
-			attachBoss(boss);
+			bossMissingTicks = 0;
 			return boss;
 		}
 		return null;
+	}
+
+	boolean hasEngagedParticipant(ServerLevel level, WorldBossEntity boss, double leashRadius) {
+		double fightRangeSqr = (double) config().getContributionRange() * config().getContributionRange();
+		double leashSqr = leashRadius * leashRadius;
+		for (Participant participant : participants.values()) {
+			if (participant.knockedOut) continue;
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(participant.id);
+			if (player == null || player.level() != level || !player.isAlive() || player.isSpectator() || player.isCreative()) continue;
+			if (player.distanceToSqr(boss) <= leashSqr || player.distanceToSqr(boss.getAnchor().getCenter()) <= fightRangeSqr) return true;
+		}
+		return false;
 	}
 
 	int noteBossMissing() {
@@ -194,7 +207,7 @@ public final class WorldBossSession {
 		Participant participant = new Participant(player.getUUID(), player.getGameProfile().getName(), config.getLives());
 		participants.put(player.getUUID(), participant);
 		installRevive(player, data, config);
-		sendPlayerState(player, participant, null);
+		sendPlayerState(player, participant);
 		LogUtil.debug(Env.SERVER, "{} joined the {} world boss fight", participant.name, bossKey);
 	}
 
@@ -234,14 +247,34 @@ public final class WorldBossSession {
 		}
 	}
 
-	private void sendPlayerState(ServerPlayer player, Participant participant, ReviveCast cast) {
-		boolean casting = cast != null && cast.caster.equals(player.getUUID());
-		boolean beingRevived = cast != null && cast.target.equals(player.getUUID());
-		String castTargetName = casting ? nameOf(cast.target) : "";
-		String reviverName = beingRevived ? nameOf(cast.caster) : "";
-		float progress = cast != null ? Math.min(1.0f, cast.ticks / (float) castTicks()) : 0.0f;
+	private void sendPlayerState(ServerPlayer player, Participant participant) {
+		ReviveCast own = casts.get(player.getUUID());
+		List<String> revivers = reviverNames(player.getUUID());
+		boolean casting = own != null;
+		boolean beingRevived = !revivers.isEmpty();
+		String castTargetName = casting ? nameOf(own.target) : "";
+		String reviverName = String.join(", ", revivers);
+		float progress = casting ? castProgress(own.target) : beingRevived ? castProgress(player.getUUID()) : 0.0f;
 		NetworkHandler.sendToPlayer(new WorldBossPlayerStateS2C(true, participant.knockedOut, participant.livesLeft,
 				casting, progress, castTargetName, beingRevived, reviverName), player);
+	}
+
+	private List<String> reviverNames(UUID target) {
+		List<String> names = new ArrayList<>();
+		for (ReviveCast cast : casts.values()) {
+			if (cast.target.equals(target)) names.add(nameOf(cast.caster));
+		}
+		return names;
+	}
+
+	private float castProgress(UUID target) {
+		return Math.min(1.0f, reviveProgress.getOrDefault(target, 0) / (float) castTicks());
+	}
+
+	private static void sendTitle(ServerPlayer player, Component title, Component subtitle, int seconds) {
+		player.connection.send(new ClientboundSetTitlesAnimationPacket(10, Math.max(1, seconds * 20 - 20), 10));
+		player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
+		player.connection.send(new ClientboundSetTitleTextPacket(title));
 	}
 
 	private void sendClearedState(ServerPlayer player) {
@@ -263,17 +296,14 @@ public final class WorldBossSession {
 		applyKnockoutState(victim, stats);
 		interruptCast(victim, false);
 
-		int titleTicks = config().getKnockoutTitleSeconds() * 20;
-		victim.connection.send(new ClientboundSetTitlesAnimationPacket(5, Math.max(1, titleTicks - 10), 5));
-		victim.connection.send(new ClientboundSetSubtitleTextPacket(
-				Component.translatable("worldboss.dragonminez.knockout.subtitle", participant.livesLeft).withStyle(ChatFormatting.GRAY)));
-		victim.connection.send(new ClientboundSetTitleTextPacket(
-				Component.translatable("worldboss.dragonminez.knockout.title").withStyle(ChatFormatting.RED)));
+		sendTitle(victim, Component.translatable("worldboss.dragonminez.knockout.title").withStyle(ChatFormatting.RED),
+				Component.translatable("worldboss.dragonminez.knockout.subtitle", participant.livesLeft).withStyle(ChatFormatting.GRAY),
+				config().getKnockoutTitleSeconds());
 		level.playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.KNOCKBACK_CHARACTER.get(),
 				SoundSource.PLAYERS, 1.0F, 0.7F);
 
 		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(victim), victim);
-		sendPlayerState(victim, participant, null);
+		sendPlayerState(victim, participant);
 		WorldBossContribution.touch(bossKey, victim);
 		LogUtil.info(Env.SERVER, "{} was knocked out in the {} fight ({} revives left)", participant.name, bossKey, participant.livesLeft);
 
@@ -334,7 +364,7 @@ public final class WorldBossSession {
 		}
 		level.playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.TRANSFORM_ON.get(),
 				SoundSource.PLAYERS, 0.8F, 1.3F);
-		sendPlayerState(target, participant, null);
+		sendPlayerState(target, participant);
 		WorldBossContribution.touch(bossKey, target);
 	}
 
@@ -362,18 +392,13 @@ public final class WorldBossSession {
 			caster.displayClientMessage(Component.translatable("worldboss.dragonminez.revive.no_lives", targetEntry.name).withStyle(ChatFormatting.RED), true);
 			return;
 		}
-		for (ReviveCast other : casts.values()) {
-			if (other.target.equals(target.getUUID())) {
-				caster.displayClientMessage(Component.translatable("worldboss.dragonminez.revive.already", targetEntry.name).withStyle(ChatFormatting.RED), true);
-				return;
-			}
-		}
 
 		ReviveCast cast = new ReviveCast(caster.getUUID(), target.getUUID(), caster.position());
 		casts.put(caster.getUUID(), cast);
+		reviveProgress.putIfAbsent(target.getUUID(), 0);
 		casterStats.getTechniques().selectSlot(casterStats.getTechniques().getReviveSlot());
-		sendPlayerState(caster, casterEntry, cast);
-		sendPlayerState(target, targetEntry, cast);
+		sendPlayerState(caster, casterEntry);
+		sendPlayerState(target, targetEntry);
 		level.playSound(null, caster.getX(), caster.getY(), caster.getZ(), MainSounds.KI_CHARGE_LOOP.get(),
 				SoundSource.PLAYERS, 0.6F, 1.2F);
 	}
@@ -438,26 +463,65 @@ public final class WorldBossSession {
 				cancelCast(cast, caster, target, true);
 				continue;
 			}
-
 			cast.ticks++;
-			if (cast.ticks >= castTicks) {
-				casts.remove(cast.caster);
-				casterStats.getCooldowns().setCooldown(cooldownKey(), config.getReviveCooldownSeconds() * 20);
-				revive(level, target, targetEntry, true);
-				sendPlayerState(caster, casterEntry, null);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(caster), caster);
-				caster.displayClientMessage(Component.translatable("worldboss.dragonminez.revive.done", targetEntry.name).withStyle(ChatFormatting.GREEN), true);
-				target.displayClientMessage(Component.translatable("worldboss.dragonminez.revive.revived", casterEntry.name).withStyle(ChatFormatting.GREEN), true);
-				LogUtil.info(Env.SERVER, "{} revived {} in the {} fight ({} revives left)", casterEntry.name, targetEntry.name, bossKey, targetEntry.livesLeft);
-				continue;
-			}
-			sendPlayerState(caster, casterEntry, cast);
-			sendPlayerState(target, targetEntry, cast);
+			reviveProgress.merge(cast.target, 1, Integer::sum);
 		}
+
+		for (UUID targetId : new ArrayList<>(reviveProgress.keySet())) {
+			if (reviveProgress.getOrDefault(targetId, 0) < castTicks) continue;
+			completeRevive(level, targetId, config);
+		}
+
+		for (ReviveCast cast : casts.values()) {
+			ServerPlayer caster = level.getServer().getPlayerList().getPlayer(cast.caster);
+			Participant casterEntry = participants.get(cast.caster);
+			if (caster != null && casterEntry != null) sendPlayerState(caster, casterEntry);
+		}
+		for (UUID targetId : reviveProgress.keySet()) {
+			ServerPlayer target = level.getServer().getPlayerList().getPlayer(targetId);
+			Participant targetEntry = participants.get(targetId);
+			if (target != null && targetEntry != null) sendPlayerState(target, targetEntry);
+		}
+	}
+
+	private void completeRevive(ServerLevel level, UUID targetId, GeneralServerConfig.WorldBossConfig config) {
+		ServerPlayer target = level.getServer().getPlayerList().getPlayer(targetId);
+		Participant targetEntry = participants.get(targetId);
+		reviveProgress.remove(targetId);
+		List<ReviveCast> finished = new ArrayList<>();
+		for (ReviveCast cast : casts.values()) {
+			if (cast.target.equals(targetId)) finished.add(cast);
+		}
+		for (ReviveCast cast : finished) casts.remove(cast.caster);
+		if (target == null || targetEntry == null || !targetEntry.knockedOut) {
+			for (ReviveCast cast : finished) {
+				ServerPlayer caster = level.getServer().getPlayerList().getPlayer(cast.caster);
+				Participant casterEntry = participants.get(cast.caster);
+				if (caster != null && casterEntry != null) sendPlayerState(caster, casterEntry);
+			}
+			return;
+		}
+
+		List<String> casterNames = new ArrayList<>();
+		for (ReviveCast cast : finished) {
+			ServerPlayer caster = level.getServer().getPlayerList().getPlayer(cast.caster);
+			Participant casterEntry = participants.get(cast.caster);
+			if (caster == null || casterEntry == null) continue;
+			casterNames.add(casterEntry.name);
+			StatsProvider.get(StatsCapability.INSTANCE, caster).ifPresent(stats ->
+					stats.getCooldowns().setCooldown(cooldownKey(), config.getReviveCooldownSeconds() * 20));
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(caster), caster);
+			caster.displayClientMessage(Component.translatable("worldboss.dragonminez.revive.done", targetEntry.name).withStyle(ChatFormatting.GREEN), true);
+			sendPlayerState(caster, casterEntry);
+		}
+		revive(level, target, targetEntry, true);
+		target.displayClientMessage(Component.translatable("worldboss.dragonminez.revive.revived", String.join(", ", casterNames)).withStyle(ChatFormatting.GREEN), true);
+		LogUtil.info(Env.SERVER, "{} revived {} in the {} fight ({} revives left)", String.join(", ", casterNames), targetEntry.name, bossKey, targetEntry.livesLeft);
 	}
 
 	private void cancelCast(ReviveCast cast, ServerPlayer caster, ServerPlayer target, boolean penalize) {
 		casts.remove(cast.caster);
+		if (reviverNames(cast.target).isEmpty()) reviveProgress.remove(cast.target);
 		if (caster != null) {
 			Participant casterEntry = participants.get(cast.caster);
 			if (penalize) {
@@ -467,11 +531,11 @@ public final class WorldBossSession {
 				});
 				caster.displayClientMessage(Component.translatable("worldboss.dragonminez.revive.interrupted").withStyle(ChatFormatting.RED), true);
 			}
-			if (casterEntry != null) sendPlayerState(caster, casterEntry, null);
+			if (casterEntry != null) sendPlayerState(caster, casterEntry);
 		}
 		if (target != null) {
 			Participant targetEntry = participants.get(cast.target);
-			if (targetEntry != null) sendPlayerState(target, targetEntry, null);
+			if (targetEntry != null) sendPlayerState(target, targetEntry);
 		}
 	}
 
@@ -500,8 +564,42 @@ public final class WorldBossSession {
 		LogUtil.info(Env.SERVER, "Every fighter is down: the {} world boss fight is lost", bossKey);
 		killKnockedOut(level);
 		broadcastContribution(level, false, true);
+		announceDefeat(level, "worldboss.dragonminez.defeat.wipe");
 		endSession(level);
 		if (boss.isAlive() && !boss.isBossAsleep()) boss.returnToSleep();
+	}
+
+	private void announceDefeat(ServerLevel level, String subtitleKey) {
+		Component bossName = Component.translatable(bossNameKey);
+		for (Participant participant : participants.values()) {
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(participant.id);
+			if (player == null) continue;
+			sendTitle(player, Component.translatable("worldboss.dragonminez.defeat.title").withStyle(ChatFormatting.RED),
+					Component.translatable(subtitleKey, bossName).withStyle(ChatFormatting.GRAY), RESULT_TITLE_SECONDS);
+		}
+	}
+
+	private void announceVictory(ServerLevel level, WorldBossResults results) {
+		Component bossName = Component.translatable(bossNameKey);
+		Set<UUID> notified = new HashSet<>(participants.keySet());
+		notified.addAll(audience);
+		for (UUID id : notified) {
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+			if (player == null) continue;
+			WorldBossResults.PlayerEntry entry = results.find(id);
+			Component subtitle;
+			if (entry == null) {
+				subtitle = Component.translatable("worldboss.dragonminez.victory.subtitle_none").withStyle(ChatFormatting.GRAY);
+			} else if (entry.rank() == 0) {
+				subtitle = Component.translatable("worldboss.dragonminez.victory.subtitle_mvp",
+						NumberFormattingUtil.formatUpToOneDecimal(entry.share() * 100.0f)).withStyle(ChatFormatting.GOLD);
+			} else {
+				subtitle = Component.translatable("worldboss.dragonminez.victory.subtitle", entry.rank() + 1,
+						NumberFormattingUtil.formatUpToOneDecimal(entry.share() * 100.0f)).withStyle(ChatFormatting.YELLOW);
+			}
+			sendTitle(player, Component.translatable("worldboss.dragonminez.victory.title", bossName).withStyle(ChatFormatting.GOLD),
+					subtitle, RESULT_TITLE_SECONDS);
+		}
 	}
 
 	private void killKnockedOut(ServerLevel level) {
@@ -533,6 +631,7 @@ public final class WorldBossSession {
 		WorldBossResults results = WorldBossRewards.grantAndBuild(level, bossKey, bossNameKey, level.getGameTime() - startTick);
 		WorldBossResultsCache.store(results);
 		broadcastContribution(level, true, false);
+		announceVictory(level, results);
 		endSession(level);
 		LogUtil.info(Env.SERVER, "World boss {} defeated after {} ticks by {} contributors", bossKey,
 				level.getGameTime() - startTick, results.players().size());
@@ -542,15 +641,31 @@ public final class WorldBossSession {
 		if (ended) return;
 		wiping = true;
 		casts.clear();
-		killKnockedOut(level);
+		reviveProgress.clear();
+		releaseKnockedOut(level);
 		broadcastContribution(level, false, true);
+		announceDefeat(level, "worldboss.dragonminez.defeat.reset");
 		endSession(level);
 		LogUtil.info(Env.SERVER, "World boss {} fight ended without a kill", bossKey);
+	}
+
+	private void releaseKnockedOut(ServerLevel level) {
+		for (Participant participant : participants.values()) {
+			if (!participant.knockedOut) continue;
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(participant.id);
+			if (player == null) {
+				participant.knockedOut = false;
+				continue;
+			}
+			revive(level, player, participant, false);
+			player.sendSystemMessage(Component.translatable("worldboss.dragonminez.reset_release").withStyle(ChatFormatting.GRAY));
+		}
 	}
 
 	private void endSession(ServerLevel level) {
 		ended = true;
 		casts.clear();
+		reviveProgress.clear();
 		for (Participant participant : participants.values()) {
 			ServerPlayer player = level.getServer().getPlayerList().getPlayer(participant.id);
 			if (player == null) continue;
@@ -582,7 +697,7 @@ public final class WorldBossSession {
 		}
 		installRevive(player, data, config());
 		if (participant.knockedOut) applyKnockoutState(player, data);
-		sendPlayerState(player, participant, null);
+		sendPlayerState(player, participant);
 		return true;
 	}
 

@@ -134,6 +134,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		action(Category.INTERFACE, "config.hudEditor", "gui.dragonminez.config.open", () -> this.minecraft.setScreen(new HudEditorScreen(this)));
 		toggle(Category.INTERFACE, "config.alwaysVisibleHudValues", userConfig.getAlwaysVisibleHudValues(), userConfig::setAlwaysVisibleHudValues);
 		toggle(Category.INTERFACE, "config.hideHudNumbers", userConfig.getHideHudNumbers(), userConfig::setHideHudNumbers);
+		toggle(Category.INTERFACE, "config.partyMarkers", userConfig.getPartyMarkers(), userConfig::setPartyMarkers);
 		toggle(Category.INTERFACE, "config.showAccumulativeDamage", userConfig.getShowAccumulativeDamage(), userConfig::setShowAccumulativeDamage);
 		toggle(Category.INTERFACE, "config.advancedDescription", userConfig.getAdvancedDescription(), userConfig::setAdvancedDescription);
 		toggle(Category.INTERFACE, "config.advancedDescriptionPercentage", userConfig.getAdvancedDescriptionPercentage(), userConfig::setAdvancedDescriptionPercentage);

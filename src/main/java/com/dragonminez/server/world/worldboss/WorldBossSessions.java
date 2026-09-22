@@ -49,6 +49,24 @@ public final class WorldBossSessions {
 		ACTIVE.remove(boss.getWorldBossKey());
 	}
 
+	public static void onBossTransformed(WorldBossEntity next) {
+		WorldBossSession session = ACTIVE.get(next.getWorldBossKey());
+		if (session == null || session.isEnded() || next.isBossAsleep()) return;
+		session.attachBoss(next);
+	}
+
+	public static void endFight(String bossKey, ServerLevel level) {
+		WorldBossSession session = ACTIVE.remove(bossKey);
+		if (session == null || level == null) return;
+		session.finishDefeat(level);
+	}
+
+	public static boolean isFightEngaged(WorldBossEntity boss, double leashRadius) {
+		WorldBossSession session = ACTIVE.get(boss.getWorldBossKey());
+		if (session == null || session.isEnded() || !(boss.level() instanceof ServerLevel level)) return false;
+		return session.hasEngagedParticipant(level, boss, leashRadius);
+	}
+
 	public static void onBossDefeated(WorldBossEntity boss) {
 		if (!(boss.level() instanceof ServerLevel level)) return;
 		WorldBossSession session = onBossEngaged(boss);
@@ -71,6 +89,11 @@ public final class WorldBossSessions {
 					session.finishDefeat(level);
 					ended.add(session.bossKey());
 				}
+				continue;
+			}
+			if (boss.isBossAsleep()) {
+				session.finishDefeat(level);
+				ended.add(session.bossKey());
 				continue;
 			}
 			session.tick(level, boss);

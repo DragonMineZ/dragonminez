@@ -154,6 +154,7 @@ public final class WorldBossManager {
 
         entry.bossId = next.getUUID();
         data.markDirty();
+        WorldBossSessions.onBossTransformed(next);
     }
 
     public static void onBossDefeated(WorldBossEntity boss) {

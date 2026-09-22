@@ -2,10 +2,12 @@ package com.dragonminez.common.network;
 
 import com.dragonminez.client.gui.character.PartyStatsCache;
 import com.dragonminez.client.gui.hud.PartyHudCache;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -133,9 +135,10 @@ public final class PartyPackets {
 	}
 
 	public static final int HUD_MAX_MEMBERS = 3;
+	public static final int SYNC_MAX_MEMBERS = 16;
 
 	public record HudMember(UUID id, String name, float health, float maxHealth, float energy, float maxEnergy,
-							boolean sameDimension, float distance) {
+							boolean sameDimension, float distance, double x, double y, double z, boolean marker, int auraRgb) {
 
 		public void encode(FriendlyByteBuf buf) {
 			buf.writeUUID(id);
@@ -146,11 +149,16 @@ public final class PartyPackets {
 			buf.writeFloat(maxEnergy);
 			buf.writeBoolean(sameDimension);
 			buf.writeFloat(distance);
+			buf.writeDouble(x);
+			buf.writeDouble(y);
+			buf.writeDouble(z);
+			buf.writeBoolean(marker);
+			buf.writeInt(auraRgb);
 		}
 
 		public static HudMember decode(FriendlyByteBuf buf) {
 			return new HudMember(buf.readUUID(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
-					buf.readBoolean(), buf.readFloat());
+					buf.readBoolean(), buf.readFloat(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readBoolean(), buf.readInt());
 		}
 	}
 
@@ -158,6 +166,8 @@ public final class PartyPackets {
 		List<ServerPlayer> party = PartyManager.getAllPartyMembers(viewer);
 		if (party.size() <= 1) return;
 
+		StatsData viewerData = StatsProvider.get(StatsCapability.INSTANCE, viewer).orElse(null);
+		double markerRange = ConfigManager.getServerConfig().getGameplay().getPartyMarkerRange();
 		List<HudMember> members = new ArrayList<>();
 		for (ServerPlayer member : party) {
 			if (member == viewer) continue;
@@ -166,13 +176,34 @@ public final class PartyPackets {
 			float distance = sameDimension ? member.distanceTo(viewer) : Float.MAX_VALUE;
 			float energy = data != null ? data.getResources().getCurrentEnergy() : 0.0f;
 			float maxEnergy = data != null ? data.getMaxEnergy() : 0.0f;
+			boolean marker = sameDimension && distance <= markerRange && isMarkerVisible(viewer, viewerData, member, data);
+			int auraRgb = data != null ? parseAuraRgb(data.getCharacter().getAuraColor()) : 0x4FC3FF;
 			members.add(new HudMember(member.getUUID(), member.getGameProfile().getName(), member.getHealth(), member.getMaxHealth(),
-					energy, maxEnergy, sameDimension, distance));
+					energy, maxEnergy, sameDimension, distance,
+					marker ? member.getX() : 0.0D, marker ? member.getY() : 0.0D, marker ? member.getZ() : 0.0D, marker, auraRgb));
 		}
 
 		members.sort(Comparator.comparingDouble(HudMember::distance));
-		if (members.size() > HUD_MAX_MEMBERS) members = new ArrayList<>(members.subList(0, HUD_MAX_MEMBERS));
+		if (members.size() > SYNC_MAX_MEMBERS) members = new ArrayList<>(members.subList(0, SYNC_MAX_MEMBERS));
 		NetworkHandler.sendToPlayer(new HudSyncS2C(members), viewer);
+	}
+
+	private static boolean isMarkerVisible(ServerPlayer viewer, StatsData viewerData, ServerPlayer member, StatsData memberData) {
+		if (memberData == null || viewerData == null || !memberData.getStatus().isHasCreatedCharacter()) return false;
+		if (member.isSpectator() || !member.isAlive()) return false;
+		if (TransformationsHelper.hasAntiKiCloak(member)) return false;
+		if (TransformationsHelper.isInstantTransmissionBlocked(viewerData, memberData)) return false;
+		return memberData.getResources().getPowerRelease() > 0;
+	}
+
+	private static int parseAuraRgb(String hex) {
+		if (hex == null || hex.isEmpty()) return 0x4FC3FF;
+		try {
+			String value = hex.startsWith("#") ? hex.substring(1) : hex;
+			return (int) (Long.parseLong(value, 16) & 0xFFFFFF);
+		} catch (NumberFormatException e) {
+			return 0x4FC3FF;
+		}
 	}
 
 	public static class HudSyncS2C {
@@ -189,7 +220,7 @@ public final class PartyPackets {
 		}
 
 		public static HudSyncS2C decode(FriendlyByteBuf buf) {
-			int size = Math.min(buf.readVarInt(), HUD_MAX_MEMBERS);
+			int size = Math.min(buf.readVarInt(), SYNC_MAX_MEMBERS);
 			List<HudMember> members = new ArrayList<>(size);
 			for (int i = 0; i < size; i++) members.add(HudMember.decode(buf));
 			return new HudSyncS2C(members);

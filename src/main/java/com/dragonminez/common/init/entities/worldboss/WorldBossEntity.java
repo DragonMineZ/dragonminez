@@ -247,6 +247,8 @@ public abstract class WorldBossEntity extends DBSagasEntity {
     }
 
     private boolean hasEngagedPlayer() {
+        if (this.level() instanceof ServerLevel
+                && com.dragonminez.server.world.worldboss.WorldBossSessions.isFightEngaged(this, LEASH_RADIUS)) return true;
         BlockPos center = this.getAnchor();
         for (Player player : this.level().players()) {
             if (!isEligible(player)) continue;
