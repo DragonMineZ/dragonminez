@@ -185,7 +185,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.GALICK_GUN, 320, 1.5F);
 
             this.setWildSense(true, 140);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
         }
 
         @Override
@@ -215,7 +215,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.BIG_BANG, 380, 1.7F);
 
             this.setWildSense(true, 120);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
         }
 
         @Override
@@ -242,7 +242,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.DEATH_BALL, 450, 2.0F, 0xFFB3B3, 0xFF2E2E);
 
             this.setWildSense(true, 80);
-            this.setZanzoken(true, 180);
+            this.setZanzoken(3, 180);
         }
 
         @Override
@@ -287,7 +287,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.DEATH_BALL, 450, 1.6F, 0xE9D2FF, 0x6A1B9A);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
         }
     }
 
@@ -313,7 +313,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, 0xE8F5E9, 0x00C853);
 
             this.setWildSense(true, 80);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
         }
     }
 
@@ -431,7 +431,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.KI_AIR_VOLLEY, 260, 0.8F, 0xE0F7FA, 0x26C6DA);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
         }
 
         @Override
@@ -462,7 +462,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 300, 1.7F, 0xE0F7FA, 0x26C6DA);
 
             this.setWildSense(true, 90);
-            this.setZanzoken(true, 220);
+            this.setZanzoken(3, 220);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.5D);
         }
     }
@@ -574,7 +574,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.DEATH_BALL, 480, 1.8F, 0xFFF3E0, 0xFF9100);
 
             this.setWildSense(true, 80);
-            this.setZanzoken(true, 220);
+            this.setZanzoken(3, 220);
         }
 
         @Override
@@ -604,7 +604,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.DEATH_BALL, 450, 2.2F, 0xFFF8E1, 0xFFB300);
 
             this.setWildSense(true, 60);
-            this.setZanzoken(true, 180);
+            this.setZanzoken(3, 180);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32D);
             this.setDefaultMovementSpeed(0.32D);
         }
@@ -632,7 +632,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.KI_BARRIER, 260, 2.3F, 0xE1F5FE, 0x4FC3F7);
 
             this.setWildSense(true, 80);
-            this.setZanzoken(true, 220);
+            this.setZanzoken(3, 220);
         }
 
         @Override
@@ -660,7 +660,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.DEATH_BALL, 460, 2.0F, 0x311B92, 0xB71C1C);
 
             this.setWildSense(true, 60);
-            this.setZanzoken(true, 180);
+            this.setZanzoken(3, 180);
         }
     }
 
@@ -684,7 +684,7 @@ public class SagaGTVillainsEntity {
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 260, 2.0F, 0xFFE0B2, 0xFF6D00);
 
             this.setWildSense(true, 40);
-            this.setZanzoken(true, 120);
+            this.setZanzoken(3, 120);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.8D);
         }
 

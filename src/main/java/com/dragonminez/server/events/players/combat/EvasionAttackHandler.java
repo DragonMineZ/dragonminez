@@ -363,7 +363,7 @@ public class EvasionAttackHandler {
 		caster.hurtMarked = true;
 		caster.fallDistance = 0.0F;
 
-		NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(caster.getId(), durationTicks, new Vec3[]{from}, new float[]{fromYaw}, true), caster);
+		NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(caster.getId(), durationTicks, new Vec3[]{from}, new float[]{fromYaw}, false), caster);
 		if (caster.level() instanceof ServerLevel serverLevel) {
 			serverLevel.sendParticles(ParticleTypes.CLOUD, destination.x, destination.y + 1.0, destination.z, 5, 0.2, 0.5, 0.2, 0.0);
 		}

@@ -52,7 +52,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.MAJIN_CANDY, 400, 1.0F, 0xFF82F3, 0xFF1AEC);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
         }
     }
 
@@ -110,7 +110,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.4F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 120);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
         }
 
         @Override
@@ -147,7 +147,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 80);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
         }
 
         @Override
@@ -172,7 +172,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 60);
-            this.setZanzoken(true, 150);
+            this.setZanzoken(3, 150);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32D);
             this.setDefaultMovementSpeed(0.32D);
         }
@@ -226,7 +226,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.FINAL_FLASH, 420, 2.0F);
 
             this.setWildSense(true, 120);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
         }
 
         @Override
@@ -262,7 +262,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.FINAL_FLASH, 400, 2.3F);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
         }
 
         @Override
@@ -288,7 +288,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 180, 1.6F, 0xFFB3B3, 0xFF4040);
 
             this.setWildSense(true, 60);
-            this.setZanzoken(true, 150);
+            this.setZanzoken(3, 150);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.32D);
             this.setDefaultMovementSpeed(0.32D);
         }
@@ -342,7 +342,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.4F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 120);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
         }
     }
 
@@ -361,7 +361,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.3F, BABY_KI_MAIN, BABY_KI_BORDER);
 
             this.setWildSense(true, 130);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
         }
 
         @Override
@@ -417,7 +417,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.4F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 130);
-            this.setZanzoken(true, 280);
+            this.setZanzoken(3, 280);
         }
     }
 
@@ -436,7 +436,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.3F, BABY_KI_MAIN, BABY_KI_BORDER);
 
             this.setWildSense(true, 140);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
         }
 
         @Override
@@ -500,7 +500,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.BURNING_ATTACK, 300, 1.5F);
 
             this.setWildSense(true, 120);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
         }
 
         @Override
@@ -524,7 +524,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.3F, BABY_KI_MAIN, BABY_KI_BORDER);
 
             this.setWildSense(true, 130);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
         }
 
         @Override
@@ -584,7 +584,7 @@ public class SagaGTEntity {
             this.addKiSkill(KiSkillType.KI_VOLLEY, 160, 1.8F, 0xFFB3B3, 0xFF4040);
 
             this.setWildSense(true, 40);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(3, 100);
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.34D);
             this.setDefaultMovementSpeed(0.34D);
         }

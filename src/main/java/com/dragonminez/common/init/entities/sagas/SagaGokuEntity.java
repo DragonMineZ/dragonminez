@@ -226,7 +226,7 @@ public class SagaGokuEntity{
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 150);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
 
         }
 
@@ -267,7 +267,7 @@ public class SagaGokuEntity{
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 150);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
 
         }
 
@@ -310,7 +310,7 @@ public class SagaGokuEntity{
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 70);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
         }
 

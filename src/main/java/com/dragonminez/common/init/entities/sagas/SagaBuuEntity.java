@@ -58,7 +58,7 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.30D);
@@ -88,7 +88,7 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
@@ -130,7 +130,7 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
@@ -170,7 +170,7 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 250);
+            this.setZanzoken(3, 250);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
@@ -214,7 +214,7 @@ public class SagaBuuEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
@@ -251,7 +251,7 @@ public class SagaBuuEntity {
 
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
             this.setisKid(true);
 

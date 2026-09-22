@@ -276,6 +276,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Getter @Setter private int zanzokenCooldownMax = 0;
     @Getter @Setter private int currentZanzokenCooldown = 0;
     @Getter @Setter private int zanzokenTicks = 0;
+    @Getter private int zanzokenTier = ZANZOKEN_TIER_NONE;
+    private int zanzokenHopsLeft = 0;
+    private int zanzokenAfterimagesLeft = 0;
+    private int zanzokenDurationTicks = 0;
 
     private boolean canUseWildSense = false;
     private int wildSenseCooldownMax = 0;
@@ -482,7 +486,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.set(IS_ZANZOKEN, active);
     }
 
+    public static final int ZANZOKEN_TIER_NONE = 0;
+    public static final int ZANZOKEN_TIER_BASIC = 1;
+    public static final int ZANZOKEN_TIER_MEDIUM = 2;
+    public static final int ZANZOKEN_TIER_ADVANCED = 3;
+    private static final int[] ZANZOKEN_HOPS = {0, 2, 4, 6};
+    private static final int[] ZANZOKEN_AFTERIMAGES = {0, 1, 3, 5};
+    private static final int ZANZOKEN_HOP_INTERVAL = 5;
+    private static final int ZANZOKEN_RECOVERY_TICKS = 5;
+    private static final int ZANZOKEN_DIMENSIONAL_TICKS = 40;
     private static final int ZANZOKEN_AFTERIMAGE_TICKS = 60;
+    private static final double ZANZOKEN_HOP_MIN_DISTANCE = 4.0D;
+    private static final double ZANZOKEN_HOP_DISTANCE_SPREAD = 2.0D;
 
     private boolean isSafeTeleportLocation(double targetX, double targetY, double targetZ) {
         AABB targetBox = this.getBoundingBox().move(targetX - this.getX(), targetY - this.getY(), targetZ - this.getZ());
@@ -502,16 +517,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private boolean dimensionalZanzoken = false;
 
     public void setDimensionalZanzoken(boolean active, int cooldown) {
-        this.setZanzoken(active, cooldown);
+        this.setZanzoken(active ? ZANZOKEN_TIER_BASIC : ZANZOKEN_TIER_NONE, cooldown);
         this.dimensionalZanzoken = active;
     }
 
     public boolean usesDimensionalZanzoken() {
         return this.dimensionalZanzoken;
-    }
-
-    protected boolean repeatsZanzoken() {
-        return !this.dimensionalZanzoken;
     }
 
     private boolean executeDimensionalWarp() {
@@ -551,10 +562,36 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void performZanzoken() {
+        int tier = this.zanzokenTier > ZANZOKEN_TIER_NONE ? this.zanzokenTier : ZANZOKEN_TIER_BASIC;
+        int hops = this.dimensionalZanzoken ? 1 : ZANZOKEN_HOPS[tier];
+
         this.setZanzokenState(true);
         this.zanzokenTicks = 0;
         this.currentZanzokenCooldown = this.zanzokenCooldownMax;
-        executeZanzokenJump();
+        this.zanzokenHopsLeft = hops;
+        this.zanzokenAfterimagesLeft = this.dimensionalZanzoken ? 0 : ZANZOKEN_AFTERIMAGES[tier];
+        this.zanzokenDurationTicks = this.dimensionalZanzoken
+                ? ZANZOKEN_DIMENSIONAL_TICKS
+                : (hops - 1) * ZANZOKEN_HOP_INTERVAL + ZANZOKEN_RECOVERY_TICKS;
+        this.zanzokenHop();
+    }
+
+    private void zanzokenHop() {
+        this.zanzokenHopsLeft--;
+        this.executeZanzokenJump();
+    }
+
+    private void tickZanzoken() {
+        this.zanzokenTicks++;
+        if (this.zanzokenHopsLeft > 0 && this.zanzokenTicks % ZANZOKEN_HOP_INTERVAL == 0) {
+            this.zanzokenHop();
+        }
+        if (this.zanzokenTicks >= this.zanzokenDurationTicks) {
+            this.setZanzokenState(false);
+            this.zanzokenTicks = 0;
+            this.zanzokenHopsLeft = 0;
+            this.zanzokenAfterimagesLeft = 0;
+        }
     }
 
     protected void executeZanzokenJump() {
@@ -566,9 +603,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         float afterimageYaw = this.yBodyRot;
 
         if (this.getTarget() != null) {
+            double minDistance = this.getTarget().getBbWidth() * 0.5D + ZANZOKEN_HOP_MIN_DISTANCE;
             for (int i = 0; i < 10; i++) {
                 double angle = this.random.nextDouble() * Math.PI * 2.0D;
-                double distance = 4.0D + this.random.nextDouble() * 2.0D;
+                double distance = minDistance + this.random.nextDouble() * ZANZOKEN_HOP_DISTANCE_SPREAD;
                 double newX = this.getTarget().getX() + Math.cos(angle) * distance;
                 double newZ = this.getTarget().getZ() + Math.sin(angle) * distance;
                 double newY = this.getTarget().getY();
@@ -590,7 +628,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
             if (teleported) {
                 this.lookAt(this.getTarget(), 360, 360);
-                if (!this.level().isClientSide) {
+                if (!this.level().isClientSide && this.zanzokenAfterimagesLeft > 0) {
+                    this.zanzokenAfterimagesLeft--;
                     NetworkHandler.sendToTrackingEntity(new AfterimageVfxS2C(this.getId(), ZANZOKEN_AFTERIMAGE_TICKS,
                             new Vec3[]{afterimagePos}, new float[]{afterimageYaw}, false), this);
                 }
@@ -675,8 +714,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.currentWildSenseCooldown = cooldown;
     }
 
-    public void setZanzoken(boolean active, int cooldown) {
-        this.canUseZanzoken = active;
+    public void setZanzoken(int tier, int cooldown) {
+        this.zanzokenTier = Mth.clamp(tier, ZANZOKEN_TIER_NONE, ZANZOKEN_TIER_ADVANCED);
+        this.canUseZanzoken = this.zanzokenTier > ZANZOKEN_TIER_NONE;
         this.zanzokenCooldownMax = cooldown;
         this.currentZanzokenCooldown = cooldown;
     }
@@ -955,14 +995,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 }
 
                 if (this.isZanzoken()) {
-                    this.zanzokenTicks++;
-                    if (this.zanzokenTicks % 5 == 0 && this.repeatsZanzoken()) {
-                        executeZanzokenJump();
-                    }
-                    if (this.zanzokenTicks >= 40) {
-                        this.setZanzokenState(false);
-                        this.zanzokenTicks = 0;
-                    }
+                    this.tickZanzoken();
                 }
 
                 if (this.isCasting()) {

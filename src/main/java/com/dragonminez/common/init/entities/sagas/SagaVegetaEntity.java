@@ -291,7 +291,7 @@ public class SagaVegetaEntity{
             this.setKiBlastSpeed(1.6F);
             this.setDBZStyle(0);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
             this.setLightning(true);
 
             this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
@@ -321,7 +321,7 @@ public class SagaVegetaEntity{
             this.setKiBlastSpeed(1.6F);
             this.setDBZStyle(0);
             this.setWildSense(true, 600);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
             this.setLightning(true);
 
             this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
@@ -397,7 +397,7 @@ public class SagaVegetaEntity{
             this.setKiBlastSpeed(1.6F);
             this.setDBZStyle(0);
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
             this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
 
