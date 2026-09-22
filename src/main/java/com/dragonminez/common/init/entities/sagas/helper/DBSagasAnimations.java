@@ -151,5 +151,6 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_COMBO5 = RawAnimation.begin().thenPlay("combo5");
     public static final RawAnimation ANIM_COMBO6 = RawAnimation.begin().thenPlay("combo6");
     public static final RawAnimation ANIM_COMBO7 = RawAnimation.begin().thenPlay("combo7");
+    public static final RawAnimation ANIM_SPIRIT_BREAKING_CANNON = RawAnimation.begin().thenPlay("skp.spirit_breaking_cannon");
 
 }

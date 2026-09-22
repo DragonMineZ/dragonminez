@@ -178,7 +178,7 @@ public class SagaVegetaEntity{
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
 
-            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.SPIRIT_BREAKING_CANNON);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.2F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.BIG_BANG, 200, 1.5F, 0xE3FFFF, 0xE3FFFF);

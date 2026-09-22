@@ -3,17 +3,46 @@ package com.dragonminez.common.init.entities.sagas.helper;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ImpactBurstVfxS2C;
+import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.combat.KnockbackHelper;
+import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 
 public class ComboManager {
+
+    private static final int SPIRIT_CANNON_KNEE_TICK = 6;
+    private static final int SPIRIT_CANNON_UPPERCUT_TICK = 13;
+    private static final int SPIRIT_CANNON_LAUNCH_TICK = 24;
+    private static final int SPIRIT_CANNON_ELBOW_TICK = 40;
+    private static final int SPIRIT_CANNON_END_TICK = 47;
+    private static final int SPIRIT_CANNON_LIFT_TICKS = 12;
+    private static final double SPIRIT_CANNON_LIFT_SPEED = 0.45D;
+    private static final double SPIRIT_CANNON_CASTER_LIFT_BONUS = 0.15D;
+    private static final double SPIRIT_CANNON_SLAM_POWER = 2.8D;
+    private static final float SPIRIT_CANNON_FINAL_HIT_RATIO = 0.35F;
+    private static final float SPIRIT_CANNON_IMPACT_DAMAGE_RATIO = 0.20F;
+    private static final int SPIRIT_CANNON_COLOR_PRIMARY = 0xF3E4FF;
+    private static final int SPIRIT_CANNON_COLOR_SECONDARY = 0xA63EF0;
+    private static final int SPIRIT_CANNON_BURST_TICKS = 14;
+    private static final float SPIRIT_CANNON_HIT_BURST_SCALE = 3.2F;
+    private static final float SPIRIT_CANNON_LAUNCH_BURST_SCALE = 4.0F;
+    private static final float SPIRIT_CANNON_ELBOW_BURST_SCALE = 5.0F;
+    private static final float SPIRIT_CANNON_GROUND_BURST_SCALE = 6.0F;
 
     public static void handleCombo(DBSagasEntity user, LivingEntity target, int comboId, int timer) {
         if (target == null || !target.isAlive() || !user.isAlive() || user.isTransforming()) {
@@ -34,8 +63,125 @@ public class ComboManager {
             case 6 -> handleGumExpand(user, target, timer);
             case 7 -> handleSleepRecovery(user, timer);
             case 8 -> handleRapidKicks(user, target, timer);
+            case 9 -> handleSpiritBreakingCannon(user, target, timer);
 
         }
+    }
+
+    public static void onComboStopped(DBSagasEntity user, int comboId, LivingEntity target) {
+        if (user.level().isClientSide || comboId != DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId()) return;
+
+        if (!user.isFlying()) user.setNoGravity(false);
+        if (target == null) return;
+
+        if (target instanceof ServerPlayer victim) {
+            NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victim.getUUID(),
+                    TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), victim);
+        } else if (target instanceof DBSagasEntity saga) {
+            saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP2);
+            saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP);
+            saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_DOWN);
+        }
+    }
+
+    private static void handleSpiritBreakingCannon(DBSagasEntity user, LivingEntity target, int timer) {
+        if (user.level().isClientSide) return;
+
+        float total = comboHitDamage(user, DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON, 1);
+        float hitDamage = total * (1.0F - SPIRIT_CANNON_FINAL_HIT_RATIO) / 3.0F;
+
+        user.invulnerableTime = 20;
+        user.fallDistance = 0.0F;
+
+        if (timer <= SPIRIT_CANNON_LAUNCH_TICK) faceTowards(target, user);
+
+        if (timer < SPIRIT_CANNON_KNEE_TICK) {
+            target.invulnerableTime = 20;
+            if (user.distanceTo(target) > 1.6D) {
+                Vec3 dir = target.position().subtract(user.position()).normalize();
+                user.move(MoverType.SELF, new Vec3(dir.x * 1.4D, 0.0D, dir.z * 1.4D));
+            }
+            freeze(target);
+        } else if (timer == SPIRIT_CANNON_KNEE_TICK) {
+            spiritCannonHit(user, target, hitDamage, false, 0.45D, SPIRIT_CANNON_HIT_BURST_SCALE, MainSounds.GOLPE4.get(), 1.0F);
+            playVictimHurtPose(target, "base.hurt_top2", DBSagasEntity.HURT_ANIM_TOP2);
+            freeze(target);
+        } else if (timer == SPIRIT_CANNON_UPPERCUT_TICK) {
+            spiritCannonHit(user, target, hitDamage, false, 0.8D, SPIRIT_CANNON_HIT_BURST_SCALE, MainSounds.GOLPE5.get(), 1.15F);
+            playVictimHurtPose(target, "base.hurt_top2", DBSagasEntity.HURT_ANIM_TOP2);
+            freeze(target);
+        } else if (timer == SPIRIT_CANNON_LAUNCH_TICK) {
+            spiritCannonHit(user, target, hitDamage, false, 0.55D, SPIRIT_CANNON_LAUNCH_BURST_SCALE, MainSounds.CRITICO2.get(), 1.25F);
+            playVictimHurtPose(target, "base.hurt_top", DBSagasEntity.HURT_ANIM_TOP);
+            KnockbackHelper.apply(target, new Vec3(0.0D, 1.2D, 0.0D));
+            user.setNoGravity(true);
+            user.setDeltaMovement(Vec3.ZERO);
+        } else if (timer == SPIRIT_CANNON_ELBOW_TICK) {
+            spiritCannonHit(user, target, total * SPIRIT_CANNON_FINAL_HIT_RATIO, true, 0.9D, SPIRIT_CANNON_ELBOW_BURST_SCALE, MainSounds.CRITICO1.get(), 0.8F);
+            playVictimHurtPose(target, "base.hurt_down", DBSagasEntity.HURT_ANIM_DOWN);
+            KnockbackHelper.apply(target, new Vec3(0.0D, -SPIRIT_CANNON_SLAM_POWER, 0.0D));
+            MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND,
+                    total * SPIRIT_CANNON_IMPACT_DAMAGE_RATIO, new Vec3(0.0D, -1.0D, 0.0D),
+                    SPIRIT_CANNON_COLOR_PRIMARY, SPIRIT_CANNON_COLOR_SECONDARY, SPIRIT_CANNON_GROUND_BURST_SCALE);
+            user.setDeltaMovement(Vec3.ZERO);
+        } else if (timer < SPIRIT_CANNON_LAUNCH_TICK) {
+            target.invulnerableTime = 20;
+            freeze(target);
+        } else if (timer < SPIRIT_CANNON_ELBOW_TICK) {
+            target.invulnerableTime = 20;
+            boolean lifting = timer <= SPIRIT_CANNON_LAUNCH_TICK + SPIRIT_CANNON_LIFT_TICKS;
+            KnockbackHelper.apply(target, new Vec3(0.0D, lifting ? SPIRIT_CANNON_LIFT_SPEED : 0.04D, 0.0D));
+            target.fallDistance = 0.0F;
+
+            int risen = Math.min(timer - SPIRIT_CANNON_LAUNCH_TICK, SPIRIT_CANNON_LIFT_TICKS);
+            user.setPos(user.getX(), target.getY() + risen * SPIRIT_CANNON_CASTER_LIFT_BONUS, user.getZ());
+            user.setDeltaMovement(Vec3.ZERO);
+        } else {
+            user.setDeltaMovement(Vec3.ZERO);
+        }
+
+        if (timer >= SPIRIT_CANNON_END_TICK) user.stopCombo();
+    }
+
+    private static void spiritCannonHit(DBSagasEntity user, LivingEntity target, float damage, boolean finalHit,
+                                        double heightRatio, float burstScale, SoundEvent sound, float pitch) {
+        float applied = damage;
+        if (!finalHit && target.getHealth() - applied <= 1.0F) applied = Math.max(0.01F, target.getHealth() - 1.0F);
+
+        float sizeFactor = Math.max(1.0F, target.getBbHeight() / 1.8F);
+        Vec3 waveCenter = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.6D, target.getZ());
+        Vec3 toAttacker = new Vec3(user.getX() - target.getX(), 0.0D, user.getZ() - target.getZ());
+        if (toAttacker.lengthSqr() > 1.0E-4D) waveCenter = waveCenter.add(toAttacker.normalize().scale(target.getBbWidth() * 0.5D));
+        NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(waveCenter.x, waveCenter.y, waveCenter.z,
+                (finalHit ? 4.5F : 1.8F) * sizeFactor, SPIRIT_CANNON_COLOR_SECONDARY, finalHit ? 13 : 7), user);
+
+        target.invulnerableTime = 0;
+        target.hurt(user.damageSources().mobAttack(user), applied);
+
+        Vec3 impactPos = new Vec3(target.getX(), target.getY() + target.getBbHeight() * heightRatio, target.getZ());
+        user.level().playSound(null, impactPos.x, impactPos.y, impactPos.z, sound, SoundSource.HOSTILE, 2.0F, pitch);
+        NetworkHandler.sendToTrackingEntity(new ImpactBurstVfxS2C(impactPos, user.getLookAngle(), burstScale,
+                SPIRIT_CANNON_COLOR_PRIMARY, SPIRIT_CANNON_COLOR_SECONDARY, false, SPIRIT_CANNON_BURST_TICKS), user);
+    }
+
+    private static void playVictimHurtPose(LivingEntity victim, String playerAnim, String sagaAnim) {
+        if (victim == null || victim.isDeadOrDying()) return;
+        if (victim instanceof ServerPlayer victimPlayer) {
+            NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victimPlayer.getUUID(),
+                    TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, playerAnim), victimPlayer);
+        } else if (victim instanceof DBSagasEntity saga) {
+            saga.triggerAnim(DBSagasEntity.HURT_CONTROLLER, sagaAnim);
+        }
+    }
+
+    private static void faceTowards(LivingEntity source, LivingEntity target) {
+        source.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+        source.setYHeadRot(source.getYRot());
+    }
+
+    private static void freeze(LivingEntity entity) {
+        entity.setDeltaMovement(Vec3.ZERO);
+        entity.hurtMarked = true;
     }
 
     /**

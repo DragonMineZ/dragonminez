@@ -192,7 +192,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         BASIC(0, Tier.MEDIUM), AIR(1, Tier.MEDIUM), KI_CHARGE_ATTACK(2, Tier.STRONG),
         METEOR_COMBINATION(3, Tier.STRONG), ANDROID_ABSORPTION(4, Tier.STRONG),
         GUM_PUNCH(5, Tier.MEDIUM), GUM_EXPAND(6, Tier.WEAK), SLEEP_RECOVERY(7, Tier.WEAK),
-        RAPID_KICKS(8, Tier.WEAK);
+        RAPID_KICKS(8, Tier.WEAK), SPIRIT_BREAKING_CANNON(9, Tier.STRONG);
 
         private final int id;
         private final Tier tier;
@@ -1337,6 +1337,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public void remove(RemovalReason reason) {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
             removeAuraLight(serverLevel);
+            if (this.isComboing()) ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
         }
         super.remove(reason);
     }
@@ -1466,6 +1467,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void stopCombo() {
+        ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
         this.setComboing(false);
         this.entityData.set(CURRENT_COMBO_ID, -1);
         this.comboTimer = 0;
