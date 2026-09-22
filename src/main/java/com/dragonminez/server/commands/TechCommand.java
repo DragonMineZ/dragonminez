@@ -1,6 +1,7 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.SkillsConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -8,6 +9,8 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.EvasionAttackData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
+import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -19,28 +22,47 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TechCommand {
 
+	private static final String ALL_TECHNIQUES = "all";
+
 	private static final SuggestionProvider<CommandSourceStack> TECH_SUGGESTIONS = (ctx, builder) -> {
-		var config = ConfigManager.getSkillsConfig();
-		var validTechs = config.getKiSkills().stream()
-				.filter(PredefinedTechniques.REGISTRY::containsKey)
-				.toList();
-		var validStrike = config.getStrikeSkills().stream()
-				.filter(PredefinedTechniques.STRIKE_REGISTRY::containsKey)
-				.toList();
-		var validEvasion = config.getEvasionSkills().stream()
-				.filter(PredefinedTechniques.EVASION_REGISTRY::containsKey)
-				.toList();
-		java.util.List<String> all = new java.util.ArrayList<>(validTechs);
-		all.addAll(validStrike);
-		all.addAll(validEvasion);
-		return SharedSuggestionProvider.suggest(all, builder);
+		List<String> suggestions = new ArrayList<>(getAllTechniqueIds(ConfigManager.getSkillsConfig()));
+		suggestions.add(0, ALL_TECHNIQUES);
+		return SharedSuggestionProvider.suggest(suggestions, builder);
 	};
+
+	private static List<String> getAllTechniqueIds(SkillsConfig config) {
+		List<String> ids = new ArrayList<>();
+		config.getKiSkills().stream().filter(PredefinedTechniques.REGISTRY::containsKey).forEach(ids::add);
+		config.getStrikeSkills().stream().filter(PredefinedTechniques.STRIKE_REGISTRY::containsKey).forEach(ids::add);
+		config.getEvasionSkills().stream().filter(PredefinedTechniques.EVASION_REGISTRY::containsKey).forEach(ids::add);
+		return ids;
+	}
+
+	private static TechniqueData createTechnique(String id) {
+		if (PredefinedTechniques.REGISTRY.containsKey(id)) {
+			KiAttackData clone = new KiAttackData();
+			clone.load(PredefinedTechniques.REGISTRY.get(id).save());
+			return clone;
+		}
+		if (PredefinedTechniques.STRIKE_REGISTRY.containsKey(id)) {
+			StrikeAttackData clone = new StrikeAttackData();
+			clone.load(PredefinedTechniques.STRIKE_REGISTRY.get(id).save());
+			return clone;
+		}
+		if (PredefinedTechniques.EVASION_REGISTRY.containsKey(id)) {
+			EvasionAttackData clone = new EvasionAttackData();
+			clone.load(PredefinedTechniques.EVASION_REGISTRY.get(id).save());
+			return clone;
+		}
+		return null;
+	}
 
 	private static final SuggestionProvider<CommandSourceStack> UNLOCKED_TECH_SUGGESTIONS = (ctx, builder) -> {
 		ServerPlayer player = ctx.getSource().getPlayer();
@@ -97,6 +119,8 @@ public class TechCommand {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String id = techniqueId.toLowerCase();
 
+		if (id.equals(ALL_TECHNIQUES)) return addAllTechniques(source, targets, log);
+
 		if (isUnknownTechnique(id)) {
 			source.sendFailure(Component.translatable("command.dragonminez.tech.unknown_technique", techniqueId));
 			return 0;
@@ -104,22 +128,8 @@ public class TechCommand {
 
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (PredefinedTechniques.REGISTRY.containsKey(id)) {
-					KiAttackData template = PredefinedTechniques.REGISTRY.get(id);
-					KiAttackData clone = new KiAttackData();
-					clone.load(template.save());
-					data.getTechniques().unlockTechnique(clone);
-				} else if (PredefinedTechniques.STRIKE_REGISTRY.containsKey(id)) {
-					var template = PredefinedTechniques.STRIKE_REGISTRY.get(id);
-					var clone = new com.dragonminez.common.stats.techniques.StrikeAttackData();
-					clone.load(template.save());
-					data.getTechniques().unlockTechnique(clone);
-				} else if (PredefinedTechniques.EVASION_REGISTRY.containsKey(id)) {
-					EvasionAttackData template = PredefinedTechniques.EVASION_REGISTRY.get(id);
-					EvasionAttackData clone = new EvasionAttackData();
-					clone.load(template.save());
-					data.getTechniques().unlockTechnique(clone);
-				}
+				TechniqueData technique = createTechnique(id);
+				if (technique != null) data.getTechniques().unlockTechnique(technique);
 				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
@@ -132,9 +142,61 @@ public class TechCommand {
 		return targets.size();
 	}
 
+	private static int addAllTechniques(CommandSourceStack source, Collection<ServerPlayer> targets, boolean log) {
+		List<String> ids = getAllTechniqueIds(ConfigManager.getSkillsConfig());
+		if (ids.isEmpty()) {
+			source.sendFailure(Component.translatable("command.dragonminez.tech.unknown_technique", ALL_TECHNIQUES));
+			return 0;
+		}
+
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				var techniques = data.getTechniques();
+				for (String id : ids) {
+					if (techniques.getUnlockedTechniques().containsKey(id)) continue;
+					TechniqueData technique = createTechnique(id);
+					if (technique != null) techniques.unlockTechnique(technique);
+				}
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+			});
+		}
+
+		if (targets.size() == 1) {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.tech.add_all_success", ids.size(), targets.iterator().next().getName().getString()), log);
+		} else {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.tech.add_all_multiple", ids.size(), targets.size()), log);
+		}
+		return targets.size();
+	}
+
+	private static int removeAllTechniques(CommandSourceStack source, Collection<ServerPlayer> targets, boolean log) {
+		List<String> ids = getAllTechniqueIds(ConfigManager.getSkillsConfig());
+		if (ids.isEmpty()) {
+			source.sendFailure(Component.translatable("command.dragonminez.tech.unknown_technique", ALL_TECHNIQUES));
+			return 0;
+		}
+
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				var techniques = data.getTechniques();
+				for (String id : ids) techniques.removeTechnique(id);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+			});
+		}
+
+		if (targets.size() == 1) {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.tech.remove_all_success", ids.size(), targets.iterator().next().getName().getString()), log);
+		} else {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.tech.remove_all_multiple", ids.size(), targets.size()), log);
+		}
+		return targets.size();
+	}
+
 	private static int removeTechnique(CommandSourceStack source, Collection<ServerPlayer> targets, String techniqueId) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String id = techniqueId.toLowerCase();
+
+		if (id.equals(ALL_TECHNIQUES)) return removeAllTechniques(source, targets, log);
 
 		if (isUnknownTechnique(id)) {
 			source.sendFailure(Component.translatable("command.dragonminez.tech.unknown_technique", techniqueId));
