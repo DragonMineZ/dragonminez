@@ -1,6 +1,7 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.SkillsConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -16,18 +17,26 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class SkillsCommand {
 
+	private static final String ALL_SKILLS = "all";
+
 	private static final SuggestionProvider<CommandSourceStack> SKILL_SUGGESTIONS = (ctx, builder) -> {
-		var config = ConfigManager.getSkillsConfig();
-		var validSkills = config.getSkills().keySet().stream()
-				.filter(s -> !config.getKiSkills().contains(s) && !config.getStackSkills().contains(s) && !config.getFormSkills().contains(s) && !config.getStrikeSkills().contains(s) && !config.getEvasionSkills().contains(s))
-				.toList();
-		return SharedSuggestionProvider.suggest(validSkills, builder);
+		List<String> suggestions = new ArrayList<>(getGenericSkills(ConfigManager.getSkillsConfig()));
+		suggestions.add(0, ALL_SKILLS);
+		return SharedSuggestionProvider.suggest(suggestions, builder);
 	};
+
+	private static List<String> getGenericSkills(SkillsConfig config) {
+		return config.getSkills().keySet().stream()
+				.filter(s -> !config.getKiSkills().contains(s) && !config.getStackSkills().contains(s) && !config.getFormSkills().contains(s) && !config.getStrikeSkills().contains(s) && !config.getEvasionSkills().contains(s))
+				.sorted()
+				.toList();
+	}
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzskill")
@@ -68,6 +77,8 @@ public class SkillsCommand {
 		String lowerName = skillName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 
+		if (lowerName.equals(ALL_SKILLS)) return setAllSkills(source, targets, level, log);
+
 		if (config.getKiSkills().contains(lowerName) || config.getStackSkills().contains(lowerName) || config.getFormSkills().contains(lowerName) || config.getStrikeSkills().contains(lowerName) || config.getEvasionSkills().contains(lowerName) || !config.getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
@@ -88,10 +99,34 @@ public class SkillsCommand {
 		return targets.size();
 	}
 
+	private static int setAllSkills(CommandSourceStack source, Collection<ServerPlayer> targets, int level, boolean log) {
+		List<String> skills = getGenericSkills(ConfigManager.getSkillsConfig());
+		if (skills.isEmpty()) {
+			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", ALL_SKILLS));
+			return 0;
+		}
+
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				for (String skill : skills) data.getSkills().setSkillLevel(skill, level);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+			});
+		}
+
+		if (targets.size() == 1) {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_all_success", skills.size(), level, targets.iterator().next().getName().getString()), log);
+		} else {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_all_multiple", skills.size(), level, targets.size()), log);
+		}
+		return targets.size();
+	}
+
 	private static int removeSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String lowerName = skillName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
+
+		if (lowerName.equals(ALL_SKILLS)) return removeAllSkills(source, targets, log);
 
 		if (config.getKiSkills().contains(lowerName) || config.getStackSkills().contains(lowerName) || config.getFormSkills().contains(lowerName) || config.getStrikeSkills().contains(lowerName) || config.getEvasionSkills().contains(lowerName) || !config.getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
@@ -111,6 +146,28 @@ public class SkillsCommand {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_success", skillName, targets.iterator().next().getName().getString()), log);
 		} else {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_multiple", skillName, targets.size()), log);
+		}
+		return targets.size();
+	}
+
+	private static int removeAllSkills(CommandSourceStack source, Collection<ServerPlayer> targets, boolean log) {
+		List<String> skills = getGenericSkills(ConfigManager.getSkillsConfig());
+		if (skills.isEmpty()) {
+			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", ALL_SKILLS));
+			return 0;
+		}
+
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				for (String skill : skills) if (data.getSkills().hasSkill(skill)) data.getSkills().removeSkill(skill);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+			});
+		}
+
+		if (targets.size() == 1) {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_all_success", skills.size(), targets.iterator().next().getName().getString()), log);
+		} else {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_all_multiple", skills.size(), targets.size()), log);
 		}
 		return targets.size();
 	}
