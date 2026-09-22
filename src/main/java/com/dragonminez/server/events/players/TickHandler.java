@@ -1112,7 +1112,8 @@ public class TickHandler {
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()
-				&& !SaiyanForms.SUPER_SAIYAN_4.equals(data.getCharacter().getActiveForm())) {
+				&& !SaiyanForms.SUPER_SAIYAN_4.equals(data.getCharacter().getActiveForm())
+				&& !TransformationsHelper.isInFalseForm(data)) {
 			if (TransformationsHelper.revertToBaseForm(player, data)) {
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 			}

@@ -1284,7 +1284,7 @@ public class GeneralServerConfig {
 		private Double significantTargetHealthRatio = 0.10;
 		private Double significantDamageTakenRatio = 0.01;
 		private Double activeGainMultiplier = 0.5;
-		private Double idleGainPerSecond = 4.0;
+		private Double idleGainPerSecond = 10.0;
 		private Double combatGraceSeconds = 2.0;
 		private Double drainSeconds = 8.0;
 		private Double activeDrainSeconds = 12.0;
@@ -1302,7 +1302,7 @@ public class GeneralServerConfig {
 		public double getSignificantTargetHealthRatio() { return positive(significantTargetHealthRatio, 0.10); }
 		public double getSignificantDamageTakenRatio() { return positive(significantDamageTakenRatio, 0.01); }
 		public double getActiveGainMultiplier() { return positive(activeGainMultiplier, 0.5); }
-		public double getIdleGainPerSecond() { return positive(idleGainPerSecond, 4.0); }
+		public double getIdleGainPerSecond() { return positive(idleGainPerSecond, 10.0); }
 		public double getCombatGraceSeconds() { return positive(combatGraceSeconds, 2.0); }
 		public double getDrainSeconds() { return Math.max(0.25, positive(drainSeconds, 8.0)); }
 		public double getActiveDrainSeconds() { return Math.max(0.25, positive(activeDrainSeconds, 12.0)); }
