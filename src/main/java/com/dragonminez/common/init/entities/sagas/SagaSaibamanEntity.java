@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -116,6 +117,14 @@ public class SagaSaibamanEntity extends DBSagasEntity{
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "base_controller", 5, this::walkPredicate));
         controllers.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
+        controllers.add(new AnimationController<>(this, HURT_CONTROLLER, 0, DBSagasAnimationHandler::hurtPredicate)
+                .triggerableAnim(HURT_ANIM_LEFT, DBSagasAnimations.ANIM_HURT_LEFT)
+                .triggerableAnim(HURT_ANIM_RIGHT, DBSagasAnimations.ANIM_HURT_RIGHT)
+                .triggerableAnim(HURT_ANIM_GODFIST, DBSagasAnimations.ANIM_HURT_GODFIST)
+                .triggerableAnim(HURT_ANIM_TOP, DBSagasAnimations.ANIM_HURT_TOP)
+                .triggerableAnim(HURT_ANIM_TOP2, DBSagasAnimations.ANIM_HURT_TOP2)
+                .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
+                .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "explode_controller", 0, this::explodePredicate));
     }
 

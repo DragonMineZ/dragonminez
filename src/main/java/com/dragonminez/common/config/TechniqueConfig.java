@@ -61,7 +61,7 @@ public class TechniqueConfig {
 		return switch (strikeId) {
 			case "dragon_fist" -> 320;
 			case "oozaru_fist" -> 280;
-			case "super_god_fist", "kaioken_attack" -> 240;
+			case "super_god_fist", "kaioken_attack", "spirit_breaking_cannon" -> 240;
 			case "deadly_dance_vegetto" -> 200;
 			case "blue_hurricane" -> 260;
 			case "wolf_fang", "gum_punch" -> 140;

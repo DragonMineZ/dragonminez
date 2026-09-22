@@ -114,6 +114,7 @@ public class SkillsConfig {
 		strikeSkills.add("blue_hurricane");
 		strikeSkills.add("dimensional_punch");
 		strikeSkills.add("dimensional_sword_attack");
+		strikeSkills.add("spirit_breaking_cannon");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -128,6 +129,7 @@ public class SkillsConfig {
 		skills.put("blue_hurricane",     new SkillCosts(List.of(5000)));
 		skills.put("dimensional_punch",  new SkillCosts(List.of(18000)));
 		skills.put("dimensional_sword_attack", new SkillCosts(List.of(22000)));
+		skills.put("spirit_breaking_cannon", new SkillCosts(List.of(12000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
@@ -365,6 +367,7 @@ public class SkillsConfig {
 		vegetaSkills.add("final_explosion");
 		vegetaSkills.add("fake_moon");
 		vegetaSkills.add("deadly_dance_vegetto");
+		vegetaSkills.add("spirit_breaking_cannon");
 		skillOfferings.put("vegeta", vegetaSkills);
 
 		List<String> oldKaiSkills = new ArrayList<>();

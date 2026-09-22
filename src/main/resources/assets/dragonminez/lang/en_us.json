@@ -1439,6 +1439,7 @@
   "technique.dragonminez.gum_punch": "Gum Punch",
   "technique.dragonminez.blue_hurricane": "Blue Hurricane",
   "technique.dragonminez.oozaru_slam": "Oozaru Slam",
+  "technique.dragonminez.spirit_breaking_cannon": "Spirit Breaking Cannon",
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
   "effect.dragonminez.ki_slow": "Ki Slow",
@@ -4005,5 +4006,6 @@
   "death.attack.strike_attack.super_god_fist": "%1$s was obliterated by %2$s's Super God Fist",
   "death.attack.strike_attack.gum_punch": "%1$s was sent flying by %2$s's Gum Punch",
   "death.attack.strike_attack.blue_hurricane": "%1$s was swept away by %2$s's Blue Hurricane",
-  "death.attack.strike_attack.oozaru_slam": "%1$s was crushed by %2$s's Oozaru Slam"
+  "death.attack.strike_attack.oozaru_slam": "%1$s was crushed by %2$s's Oozaru Slam",
+  "death.attack.strike_attack.spirit_breaking_cannon": "%1$s was broken by %2$s's Spirit Breaking Cannon"
 }

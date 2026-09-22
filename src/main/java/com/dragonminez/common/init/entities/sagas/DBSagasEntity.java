@@ -18,6 +18,7 @@ import com.dragonminez.common.init.entities.sagas.ai.SagasCombatBrain;
 import com.dragonminez.common.init.entities.sagas.ai.CombatContext;
 import com.dragonminez.common.init.entities.sagas.helper.ComboManager;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import com.dragonminez.common.init.entities.sagas.helper.SkillManager;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
@@ -314,6 +315,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final int DASH_DURATION = 7;
     private static final int DASH_COOLDOWN = 80;
     private static final double DASH_SPEED_MULTIPLIER = 2.6D;
+
+    public static final String HURT_CONTROLLER = "hurt_controller";
+    public static final String HURT_ANIM_LEFT = "hurt_left";
+    public static final String HURT_ANIM_RIGHT = "hurt_right";
+    public static final String HURT_ANIM_GODFIST = "hurt_godfist";
+    public static final String HURT_ANIM_TOP = "hurt_top";
+    public static final String HURT_ANIM_TOP2 = "hurt_top2";
+    public static final String HURT_ANIM_DOWN = "hurt_down";
 
     private boolean wasTargetCasting = false;
 
@@ -1305,6 +1314,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         controllers.add(new AnimationController<>(this, "skill_controller", 5, DBSagasAnimationHandler::skillPredicate));
         controllers.add(new AnimationController<>(this, "evasion_controller", 5, DBSagasAnimationHandler::evasionPredicate));
         controllers.add(new AnimationController<>(this, "attack_controller", 0, DBSagasAnimationHandler::attackPredicate));
+        controllers.add(new AnimationController<>(this, HURT_CONTROLLER, 0, DBSagasAnimationHandler::hurtPredicate)
+                .triggerableAnim(HURT_ANIM_LEFT, DBSagasAnimations.ANIM_HURT_LEFT)
+                .triggerableAnim(HURT_ANIM_RIGHT, DBSagasAnimations.ANIM_HURT_RIGHT)
+                .triggerableAnim(HURT_ANIM_GODFIST, DBSagasAnimations.ANIM_HURT_GODFIST)
+                .triggerableAnim(HURT_ANIM_TOP, DBSagasAnimations.ANIM_HURT_TOP)
+                .triggerableAnim(HURT_ANIM_TOP2, DBSagasAnimations.ANIM_HURT_TOP2)
+                .triggerableAnim(HURT_ANIM_DOWN, DBSagasAnimations.ANIM_HURT_DOWN)
+                .receiveTriggeredAnimations());
         controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
         controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
     }
@@ -1725,9 +1742,28 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                     if (this.getTarget() != livingAttacker) this.setTarget(livingAttacker);
                 }
             }
+
+            this.playHurtAnimation(pSource);
         }
 
         return actuallyHurt;
+    }
+
+    protected void playHurtAnimation(DamageSource pSource) {
+        if (this.getHealth() <= 0.0F || this.isDeadOrDying()) return;
+        if (this.isInSleepPose() || this.getBossAbility() >= 0) return;
+        if (this.isCasting() || this.isComboing() || this.isTransforming()
+                || this.isEvading() || this.isZanzoken()) return;
+
+        Entity from = pSource.getDirectEntity() != null ? pSource.getDirectEntity() : pSource.getEntity();
+        if (from == null) return;
+
+        double dx = from.getX() - this.getX();
+        double dz = from.getZ() - this.getZ();
+        float hitYaw = (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+        boolean fromLeft = Mth.wrapDegrees(hitYaw - this.yBodyRot) < 0.0F;
+
+        this.triggerAnim(HURT_CONTROLLER, fromLeft ? HURT_ANIM_LEFT : HURT_ANIM_RIGHT);
     }
 
     protected boolean hasTransformation() {

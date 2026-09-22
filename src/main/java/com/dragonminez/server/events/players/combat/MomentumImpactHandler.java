@@ -5,6 +5,7 @@ import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ImpactBurstVfxS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -39,6 +40,7 @@ public class MomentumImpactHandler {
 	public static final double MOMENTUM_MAX_SPEED = 1.5;
 	private static final String IMPACT_WALL_ANIM = "base.faint_horizontal";
 	private static final String IMPACT_GROUND_ANIM = "base.faint_vertical";
+	private static final int IMPACT_BURST_TICKS = 16;
 
 	public enum CollisionImpactType {
 		WALL,
@@ -50,7 +52,10 @@ public class MomentumImpactHandler {
 			long expiryMs,
 			double startY,
 			float extraDamage,
-			Vec3 momentumDirection
+			Vec3 momentumDirection,
+			int burstColor1,
+			int burstColor2,
+			float burstScale
 	) {}
 
 	@SubscribeEvent
@@ -132,6 +137,12 @@ public class MomentumImpactHandler {
 			spawnRockImpactCircle(serverLevel, living.position(), impact.type() == CollisionImpactType.GROUND ? 2.75 : 1.9);
 			createCrater(serverLevel, living.blockPosition(), 1.5, living);
 			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6f, 0.05f, 2, true), living);
+
+			if (impact.burstScale() > 0.0F) {
+				Vec3 burstPos = new Vec3(living.getX(), living.getY() + 0.2, living.getZ());
+				NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(burstPos, new Vec3(0.0, 1.0, 0.0),
+						impact.burstScale(), impact.burstColor1(), impact.burstColor2(), false, IMPACT_BURST_TICKS), living);
+			}
 		}
 	}
 
@@ -143,8 +154,14 @@ public class MomentumImpactHandler {
 	}
 
 	public static void registerCollisionImpact(LivingEntity victim, CollisionImpactType type, float extraDamage, Vec3 momentumDir) {
+		registerCollisionImpact(victim, type, extraDamage, momentumDir, 0, 0, 0.0F);
+	}
+
+	public static void registerCollisionImpact(LivingEntity victim, CollisionImpactType type, float extraDamage, Vec3 momentumDir,
+			int burstColor1, int burstColor2, float burstScale) {
 		long expiryMs = System.currentTimeMillis() + 1200L;
-		COLLISION_IMPACTS.put(victim.getUUID(), new CollisionImpactContext(type, expiryMs, victim.getY(), extraDamage, momentumDir));
+		COLLISION_IMPACTS.put(victim.getUUID(), new CollisionImpactContext(type, expiryMs, victim.getY(), extraDamage, momentumDir,
+				burstColor1, burstColor2, burstScale));
 	}
 
 	private static void createCrater(ServerLevel level, BlockPos center, double radius, LivingEntity source) {

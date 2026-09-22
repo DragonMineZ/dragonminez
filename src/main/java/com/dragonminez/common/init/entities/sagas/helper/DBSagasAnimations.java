@@ -74,6 +74,12 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_FLY_FAST4 = RawAnimation.begin().thenLoop("fly_fast4");
 
     public static final RawAnimation ANIM_EVADE = RawAnimation.begin().thenPlay("evasion1");
+    public static final RawAnimation ANIM_HURT_LEFT = RawAnimation.begin().thenPlay("base.hurt_left");
+    public static final RawAnimation ANIM_HURT_RIGHT = RawAnimation.begin().thenPlay("base.hurt_right");
+    public static final RawAnimation ANIM_HURT_GODFIST = RawAnimation.begin().thenPlayAndHold("base.hurt_supergodfist");
+    public static final RawAnimation ANIM_HURT_TOP = RawAnimation.begin().thenPlayAndHold("base.hurt_top");
+    public static final RawAnimation ANIM_HURT_TOP2 = RawAnimation.begin().thenPlayAndHold("base.hurt_top2");
+    public static final RawAnimation ANIM_HURT_DOWN = RawAnimation.begin().thenPlayAndHold("base.hurt_down");
     public static final RawAnimation ANIM_KIWAVE = RawAnimation.begin().thenPlay("ki_finalflash");
     public static final RawAnimation ANIM_KIATTACK = RawAnimation.begin().thenPlay("kiattack");
     public static final RawAnimation ANIM_KIBALL = RawAnimation.begin().thenPlay("ki_ball");

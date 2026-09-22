@@ -255,6 +255,18 @@ public class DBSagasAnimationHandler {
         return PlayState.STOP;
     }
 
+    public static <T extends GeoAnimatable> PlayState hurtPredicate(AnimationState<T> event) {
+        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+
+        if (entity.isDeadOrDying() || entity.isInSleepPose() || entity.getBossAbility() >= 0
+                || entity.isCasting() || entity.isComboing() || entity.isTransforming()
+                || entity.isEvading() || entity.isZanzoken()) {
+            return PlayState.STOP;
+        }
+
+        return event.getController().isPlayingTriggeredAnimation() ? PlayState.CONTINUE : PlayState.STOP;
+    }
+
     public static <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
         return event.setAndContinue(DBSagasAnimations.ANIM_TAIL);
     }

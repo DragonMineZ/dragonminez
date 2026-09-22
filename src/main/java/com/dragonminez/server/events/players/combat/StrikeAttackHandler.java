@@ -19,6 +19,7 @@ import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.ki.OzaruFistEntity;
 import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.ki.SPDragonFistEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ClawSlashVfxS2C;
@@ -73,6 +74,32 @@ public class StrikeAttackHandler {
 	private static final long RECENT_HIT_WINDOW_MS = 10_000L;
 	private static final String STRIKE_HIT_ANIM = "base.flyback";
 	private static final String STRIKE_KNOCKBACK_ANIM = "base.flyback";
+	private static final String GOD_FIST_HURT_ANIM = "base.hurt_supergodfist";
+	private static final String HURT_LEFT_ANIM = "base.hurt_left";
+	private static final String HURT_RIGHT_ANIM = "base.hurt_right";
+	private static final java.util.Set<String> FLINCH_STRIKES = java.util.Set.of(
+			"meteor", "wolf_fang", "kaioken_attack", "deadly_dance", "deadly_dance_vegetto",
+			"shining_sword_attack");
+	private static final String HURT_TOP_ANIM = "base.hurt_top";
+	private static final String HURT_TOP2_ANIM = "base.hurt_top2";
+	private static final String HURT_DOWN_ANIM = "base.hurt_down";
+	private static final String SPIRIT_CANNON_ID = "spirit_breaking_cannon";
+	private static final java.util.Set<String> POSE_DRIVEN_STRIKES = java.util.Set.of(SPIRIT_CANNON_ID);
+	private static final int SPIRIT_CANNON_KNEE_TICK = 6;
+	private static final int SPIRIT_CANNON_UPPERCUT_TICK = 13;
+	private static final int SPIRIT_CANNON_LAUNCH_TICK = 24;
+	private static final int SPIRIT_CANNON_ELBOW_TICK = 40;
+	private static final int SPIRIT_CANNON_END_TICK = 47;
+	private static final int SPIRIT_CANNON_LIFT_TICKS = 12;
+	private static final double SPIRIT_CANNON_LIFT_SPEED = 0.45;
+	private static final double SPIRIT_CANNON_SLAM_POWER = 2.8;
+	private static final int SPIRIT_CANNON_COLOR_PRIMARY = 0xF3E4FF;
+	private static final int SPIRIT_CANNON_COLOR_SECONDARY = 0xA63EF0;
+	private static final int SPIRIT_CANNON_BURST_TICKS = 14;
+	private static final float SPIRIT_CANNON_HIT_BURST_SCALE = 3.2F;
+	private static final float SPIRIT_CANNON_LAUNCH_BURST_SCALE = 4.0F;
+	private static final float SPIRIT_CANNON_ELBOW_BURST_SCALE = 5.0F;
+	private static final float SPIRIT_CANNON_GROUND_BURST_SCALE = 6.0F;
 	private static final String OOZARU_SLAM_ID = "oozaru_slam";
 	private static final String DIM_PUNCH_ID = "dimensional_punch";
 	private static final int DIM_PUNCH_DURATION = 70;
@@ -141,6 +168,8 @@ public class StrikeAttackHandler {
 	private static final Map<UUID, ActiveStrike> ACTIVE = new HashMap<>();
 	private static final Map<UUID, RecentHit> RECENTLY_DAMAGED = new HashMap<>();
 	private static final Map<UUID, Integer> STRIKE_ANCHOR_PART = new HashMap<>();
+	private static final Map<UUID, HurtPose> STRIKE_HURT_VICTIM = new HashMap<>();
+	private static final Map<UUID, Boolean> FLINCH_SIDE = new HashMap<>();
 
 	public static void requestStrike(ServerPlayer player, int preferredTargetId) {
 		if (player.level().isClientSide) return;
@@ -277,7 +306,10 @@ public class StrikeAttackHandler {
 		if (active != null && event.getEntity() instanceof ServerPlayer attacker) {
 			clearVictimStrikeLock(attacker, null, active.targetId());
 			stopVictimAnimation(attacker, null, active.targetId());
+			stopStrikeHurtAnimation(attacker);
 		}
+		STRIKE_HURT_VICTIM.remove(id);
+		FLINCH_SIDE.remove(id);
 	}
 
 	@SubscribeEvent
@@ -700,6 +732,8 @@ public class StrikeAttackHandler {
 							? MomentumImpactHandler.CollisionImpactType.GROUND
 							: MomentumImpactHandler.CollisionImpactType.WALL;
 					MomentumImpactHandler.registerCollisionImpact(victim, impactType, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), pushDir);
+
+					playVictimHurtPose(player, victim, GOD_FIST_HURT_ANIM, DBSagasEntity.HURT_ANIM_GODFIST);
 				}
 
 				freezeEntity(player);
@@ -812,6 +846,97 @@ public class StrikeAttackHandler {
 					MomentumImpactHandler.registerCollisionImpact(victim, MomentumImpactHandler.CollisionImpactType.GROUND, (float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0, 1, 0));
 				}
 
+				endStrike(player, target, active);
+				return;
+			}
+
+			ACTIVE.put(player.getUUID(), active.withTicksElapsed(nextTick));
+			return;
+		}
+
+		if (SPIRIT_CANNON_ID.equals(active.techniqueId())) {
+
+			int nextTick = active.ticksElapsed() + 1;
+			double hitDamage = active.totalDamage() * (1.0 - FINAL_HIT_RATIO) / 3.0;
+
+			player.invulnerableTime = 20;
+			player.fallDistance = 0.0F;
+
+			if (nextTick <= SPIRIT_CANNON_LAUNCH_TICK) {
+				faceStrikeTarget(player, target);
+				faceEntity(target, player);
+			}
+
+			if (nextTick < SPIRIT_CANNON_KNEE_TICK) {
+				target.invulnerableTime = 20;
+				double dist = player.distanceTo(target);
+				if (dist > 1.6) {
+					Vec3 dir = target.position().subtract(player.position()).normalize();
+					player.setDeltaMovement(dir.x * 1.4, player.getDeltaMovement().y, dir.z * 1.4);
+					player.hurtMarked = true;
+				} else {
+					freezeEntity(player);
+				}
+				freezeEntity(target);
+			}
+			else if (nextTick == SPIRIT_CANNON_KNEE_TICK) {
+				spiritCannonHit(player, target, hitDamage, false, 0.45, SPIRIT_CANNON_HIT_BURST_SCALE,
+						MainSounds.GOLPE4.get(), 1.0F);
+				playVictimHurtPose(player, target, HURT_TOP2_ANIM, DBSagasEntity.HURT_ANIM_TOP2);
+				freezeEntity(player);
+				freezeEntity(target);
+			}
+			else if (nextTick == SPIRIT_CANNON_UPPERCUT_TICK) {
+				spiritCannonHit(player, target, hitDamage, false, 0.8, SPIRIT_CANNON_HIT_BURST_SCALE,
+						MainSounds.GOLPE5.get(), 1.15F);
+				playVictimHurtPose(player, target, HURT_TOP2_ANIM, DBSagasEntity.HURT_ANIM_TOP2);
+				freezeEntity(player);
+				freezeEntity(target);
+			}
+			else if (nextTick == SPIRIT_CANNON_LAUNCH_TICK) {
+				spiritCannonHit(player, target, hitDamage, false, 0.55, SPIRIT_CANNON_LAUNCH_BURST_SCALE,
+						MainSounds.CRITICO2.get(), 1.25F);
+				playVictimHurtPose(player, target, HURT_TOP_ANIM, DBSagasEntity.HURT_ANIM_TOP);
+				KnockbackHelper.apply(target, new Vec3(0.0, 1.2, 0.0));
+				freezeEntity(player);
+			}
+			else if (nextTick == SPIRIT_CANNON_ELBOW_TICK) {
+				spiritCannonHit(player, target, active.totalDamage() * FINAL_HIT_RATIO, true, 0.9,
+						SPIRIT_CANNON_ELBOW_BURST_SCALE, MainSounds.CRITICO1.get(), 0.8F);
+				grantKillXpIfNeeded(player, target, active.techniqueId());
+				playVictimHurtPose(player, target, HURT_DOWN_ANIM, DBSagasEntity.HURT_ANIM_DOWN);
+				KnockbackHelper.apply(target, new Vec3(0.0, -SPIRIT_CANNON_SLAM_POWER, 0.0));
+				MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND,
+						(float) (active.totalDamage() * IMPACT_DAMAGE_RATIO), new Vec3(0.0, -1.0, 0.0),
+						SPIRIT_CANNON_COLOR_PRIMARY, SPIRIT_CANNON_COLOR_SECONDARY, SPIRIT_CANNON_GROUND_BURST_SCALE);
+				freezeEntity(player);
+			}
+			else if (nextTick < SPIRIT_CANNON_LAUNCH_TICK) {
+				target.invulnerableTime = 20;
+				freezeEntity(player);
+				freezeEntity(target);
+			}
+			else if (nextTick < SPIRIT_CANNON_ELBOW_TICK) {
+				target.invulnerableTime = 20;
+				boolean lifting = nextTick <= SPIRIT_CANNON_LAUNCH_TICK + SPIRIT_CANNON_LIFT_TICKS;
+
+				if (lifting) {
+					KnockbackHelper.apply(target, new Vec3(0.0, SPIRIT_CANNON_LIFT_SPEED, 0.0));
+					player.setDeltaMovement(0.0, SPIRIT_CANNON_LIFT_SPEED, 0.0);
+				} else {
+					KnockbackHelper.apply(target, new Vec3(0.0, 0.04, 0.0));
+					player.setDeltaMovement(0.0, 0.04, 0.0);
+				}
+
+				target.fallDistance = 0.0F;
+				player.hurtMarked = true;
+			}
+			else if (nextTick < SPIRIT_CANNON_END_TICK) {
+				player.setDeltaMovement(0.0, 0.04, 0.0);
+				player.hurtMarked = true;
+			}
+
+			if (nextTick >= SPIRIT_CANNON_END_TICK) {
 				endStrike(player, target, active);
 				return;
 			}
@@ -1502,6 +1627,8 @@ public class StrikeAttackHandler {
 		clearVictimStrikeLock(player, target, active.targetId());
 		stopStrikeAnimation(player);
 		stopVictimAnimation(player, target, active.targetId());
+		stopStrikeHurtAnimation(player);
+		FLINCH_SIDE.remove(player.getUUID());
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			String cooldownKey = getTechniqueCooldownKey(active.techniqueId());
@@ -1722,7 +1849,7 @@ public class StrikeAttackHandler {
 		if (damage <= 0) return;
 		if (!isFinalHit) if (target.getHealth() - damage <= 1.0F) damage = Math.max(0.01F, target.getHealth() - 1.0F);
 
-		playStrikeHitAnimation(target);
+		playStrikeHitAnimation(player, target, techniqueId);
 		spawnHitShockwave(player, target, techniqueId, isFinalHit);
 		target.hurt(MainDamageTypes.strikeAttack(player.level(), player, techniqueId), (float) damage);
 		RECENTLY_DAMAGED.put(player.getUUID(), new RecentHit(target.getUUID(), System.currentTimeMillis()));
@@ -1761,6 +1888,7 @@ public class StrikeAttackHandler {
 			case "deadly_dance_vegetto" -> DEADLY_DANCE_VEGETTO_COLOR_SECONDARY;
 			case "super_god_fist" -> 0xF5C527;
 			case "kaioken_attack" -> 0xFF5A3A;
+			case SPIRIT_CANNON_ID -> SPIRIT_CANNON_COLOR_SECONDARY;
 			case "gum_punch" -> 0xFF82F3;
 			default -> 0xFFF3D6;
 		};
@@ -1850,12 +1978,67 @@ public class StrikeAttackHandler {
 		faceEntity(player, target);
 	}
 
-	private static void playStrikeHitAnimation(LivingEntity target) {
+	private static void spiritCannonHit(ServerPlayer player, LivingEntity target, double damage, boolean finalHit,
+			double heightRatio, float burstScale, SoundEvent sound, float pitch) {
+		target.invulnerableTime = 0;
+		applyStrikeDamage(player, target, damage, SPIRIT_CANNON_ID, finalHit);
+
+		Vec3 impactPos = new Vec3(target.getX(), target.getY() + target.getBbHeight() * heightRatio, target.getZ());
+		player.level().playSound(null, impactPos.x, impactPos.y, impactPos.z, sound, SoundSource.PLAYERS, 2.0F, pitch);
+		NetworkHandler.sendToTrackingEntityAndSelf(new ImpactBurstVfxS2C(impactPos, player.getLookAngle(),
+				burstScale, SPIRIT_CANNON_COLOR_PRIMARY, SPIRIT_CANNON_COLOR_SECONDARY, false, SPIRIT_CANNON_BURST_TICKS), player);
+	}
+
+	private static void playStrikeHitAnimation(ServerPlayer player, LivingEntity target, String techniqueId) {
+		if (POSE_DRIVEN_STRIKES.contains(techniqueId)) return;
 		if (!(target instanceof ServerPlayer serverPlayer)) return;
+
+		String anim = STRIKE_HIT_ANIM;
+
+		if (FLINCH_STRIKES.contains(techniqueId)) {
+			boolean fromLeft = !Boolean.TRUE.equals(FLINCH_SIDE.get(player.getUUID()));
+			FLINCH_SIDE.put(player.getUUID(), fromLeft);
+			anim = fromLeft ? HURT_LEFT_ANIM : HURT_RIGHT_ANIM;
+			STRIKE_HURT_VICTIM.put(player.getUUID(), new HurtPose(serverPlayer.getId(), null));
+		}
+
 		NetworkHandler.sendToTrackingEntityAndSelf(
-				new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, STRIKE_HIT_ANIM),
+				new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, anim),
 				serverPlayer
 		);
+	}
+
+	private static void playVictimHurtPose(ServerPlayer player, LivingEntity victim, String playerAnim, String sagaAnim) {
+		if (victim == null || victim.isDeadOrDying()) return;
+
+		if (victim instanceof ServerPlayer victimPlayer) {
+			NetworkHandler.sendToTrackingEntityAndSelf(
+					new TriggerAnimationS2C(victimPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, playerAnim),
+					victimPlayer
+			);
+		} else if (victim instanceof DBSagasEntity saga) {
+			saga.triggerAnim(DBSagasEntity.HURT_CONTROLLER, sagaAnim);
+		} else {
+			return;
+		}
+
+		STRIKE_HURT_VICTIM.put(player.getUUID(), new HurtPose(victim.getId(), sagaAnim));
+	}
+
+	private static void stopStrikeHurtAnimation(ServerPlayer player) {
+		HurtPose pose = STRIKE_HURT_VICTIM.remove(player.getUUID());
+		if (pose == null) return;
+
+		if (!(player.level().getEntity(pose.victimId()) instanceof LivingEntity victim)) return;
+
+		if (victim instanceof ServerPlayer victimPlayer) {
+			NetworkHandler.sendToTrackingEntityAndSelf(
+					new TriggerAnimationS2C(victimPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""),
+					victimPlayer
+			);
+		} else if (victim instanceof DBSagasEntity saga && pose.sagaAnim() != null) {
+			saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, pose.sagaAnim());
+		}
 	}
 
 	private static void playStrikeKnockbackAnimation(LivingEntity target) {
@@ -1893,6 +2076,8 @@ public class StrikeAttackHandler {
 			return new ActiveStrike(playerId, targetId, techniqueId, animationId, durationTicks, cooldownTicks, totalDamage, perHitDamage, finalDamage, hitIntervalTicks, ticksElapsed);
 		}
 	}
+
+	private record HurtPose(int victimId, String sagaAnim) {}
 
 	private record RecentHit(UUID targetId, long timestamp) {}
 
