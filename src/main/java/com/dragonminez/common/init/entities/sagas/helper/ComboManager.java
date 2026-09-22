@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
@@ -43,6 +44,17 @@ public class ComboManager {
     private static final float SPIRIT_CANNON_LAUNCH_BURST_SCALE = 4.0F;
     private static final float SPIRIT_CANNON_ELBOW_BURST_SCALE = 5.0F;
     private static final float SPIRIT_CANNON_GROUND_BURST_SCALE = 6.0F;
+    private static final int GOD_FIST_DASH_END_TICK = 12;
+    private static final int GOD_FIST_IMPACT_TICK = 14;
+    private static final int GOD_FIST_END_TICK = 35;
+    private static final double GOD_FIST_DASH_SPEED = 1.5D;
+    private static final double GOD_FIST_KNOCKBACK = 4.0D;
+    private static final float GOD_FIST_IMPACT_DAMAGE_RATIO = 0.20F;
+    private static final int GOD_FIST_COLOR_PRIMARY = 0xFFD23A;
+    private static final int GOD_FIST_COLOR_SECONDARY = 0xFF4A12;
+    private static final int GOD_FIST_SHOCKWAVE_COLOR = 0xF5C527;
+    private static final float GOD_FIST_BURST_SCALE = 5.5F;
+    private static final int GOD_FIST_BURST_TICKS = 18;
 
     public static void handleCombo(DBSagasEntity user, LivingEntity target, int comboId, int timer) {
         if (target == null || !target.isAlive() || !user.isAlive() || user.isTransforming()) {
@@ -64,24 +76,92 @@ public class ComboManager {
             case 7 -> handleSleepRecovery(user, timer);
             case 8 -> handleRapidKicks(user, target, timer);
             case 9 -> handleSpiritBreakingCannon(user, target, timer);
+            case 11 -> handleSuperGodFist(user, target, timer);
 
         }
     }
 
     public static void onComboStopped(DBSagasEntity user, int comboId, LivingEntity target) {
-        if (user.level().isClientSide || comboId != DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId()) return;
+        if (user.level().isClientSide) return;
+        boolean spiritCannon = comboId == DBSagasEntity.ComboType.SPIRIT_BREAKING_CANNON.getId();
+        boolean godFist = comboId == DBSagasEntity.ComboType.SUPER_GOD_FIST.getId();
+        if (!spiritCannon && !godFist) return;
 
-        if (!user.isFlying()) user.setNoGravity(false);
+        if (spiritCannon && !user.isFlying()) user.setNoGravity(false);
         if (target == null) return;
 
         if (target instanceof ServerPlayer victim) {
             NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(victim.getUUID(),
                     TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), victim);
         } else if (target instanceof DBSagasEntity saga) {
+            if (godFist) {
+                saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_GODFIST);
+                return;
+            }
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP2);
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_TOP);
             saga.stopTriggeredAnimation(DBSagasEntity.HURT_CONTROLLER, DBSagasEntity.HURT_ANIM_DOWN);
         }
+    }
+
+    private static void handleSuperGodFist(DBSagasEntity user, LivingEntity target, int timer) {
+        if (user.level().isClientSide) return;
+
+        user.invulnerableTime = 20;
+        if (timer < GOD_FIST_IMPACT_TICK) faceTowards(target, user);
+
+        if (timer <= GOD_FIST_DASH_END_TICK) {
+            target.invulnerableTime = 20;
+            if (user.distanceTo(target) > 1.5D) {
+                Vec3 dir = target.position().subtract(user.position()).normalize();
+                Vec3 step = new Vec3(dir.x * GOD_FIST_DASH_SPEED, 0.0D, dir.z * GOD_FIST_DASH_SPEED);
+                user.move(MoverType.SELF, step);
+                spawnSuperGodFistTrail(user, step);
+            }
+            freeze(target);
+        } else if (timer < GOD_FIST_IMPACT_TICK) {
+            target.invulnerableTime = 20;
+            freeze(target);
+        } else if (timer == GOD_FIST_IMPACT_TICK) {
+            float damage = comboHitDamage(user, DBSagasEntity.ComboType.SUPER_GOD_FIST, 1);
+            Vec3 impactPos = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ());
+
+            float sizeFactor = Math.max(1.0F, target.getBbHeight() / 1.8F);
+            Vec3 waveCenter = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.6D, target.getZ());
+            Vec3 toAttacker = new Vec3(user.getX() - target.getX(), 0.0D, user.getZ() - target.getZ());
+            if (toAttacker.lengthSqr() > 1.0E-4D) waveCenter = waveCenter.add(toAttacker.normalize().scale(target.getBbWidth() * 0.5D));
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(waveCenter.x, waveCenter.y, waveCenter.z,
+                    4.5F * sizeFactor, GOD_FIST_SHOCKWAVE_COLOR, 13), user);
+
+            target.invulnerableTime = 0;
+            target.hurt(user.damageSources().mobAttack(user), damage);
+
+            user.level().playSound(null, impactPos.x, impactPos.y, impactPos.z, MainSounds.CRITICO2.get(), SoundSource.HOSTILE, 2.5F, 0.7F);
+            NetworkHandler.sendToTrackingEntity(new ImpactBurstVfxS2C(impactPos, user.getLookAngle(), GOD_FIST_BURST_SCALE,
+                    GOD_FIST_COLOR_PRIMARY, GOD_FIST_COLOR_SECONDARY, false, GOD_FIST_BURST_TICKS), user);
+
+            Vec3 pushDir = user.getLookAngle().normalize();
+            KnockbackHelper.apply(target, new Vec3(pushDir.x * GOD_FIST_KNOCKBACK, 0.6D, pushDir.z * GOD_FIST_KNOCKBACK));
+            MomentumImpactHandler.CollisionImpactType impactType = target.onGround() || pushDir.y < -0.5D
+                    ? MomentumImpactHandler.CollisionImpactType.GROUND
+                    : MomentumImpactHandler.CollisionImpactType.WALL;
+            MomentumImpactHandler.registerCollisionImpact(target, impactType, damage * GOD_FIST_IMPACT_DAMAGE_RATIO, pushDir);
+            playVictimHurtPose(target, "base.hurt_supergodfist", DBSagasEntity.HURT_ANIM_GODFIST);
+        }
+
+        user.setDeltaMovement(0.0D, user.getDeltaMovement().y, 0.0D);
+
+        if (timer >= GOD_FIST_END_TICK) user.stopCombo();
+    }
+
+    private static void spawnSuperGodFistTrail(DBSagasEntity user, Vec3 motion) {
+        if (!(user.level() instanceof ServerLevel level)) return;
+        Vec3 center = user.position().add(0.0D, user.getBbHeight() * 0.5D, 0.0D);
+        for (int i = 0; i < 4; i++) {
+            Vec3 point = center.subtract(motion.scale(i / 4.0D));
+            level.sendParticles(MainParticles.SPARKS.get(), point.x, point.y, point.z, 0, 0.96D, 0.77D, 0.15D, 1.0D);
+        }
+        level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 2, 0.15D, 0.3D, 0.15D, 0.0D);
     }
 
     private static void handleSpiritBreakingCannon(DBSagasEntity user, LivingEntity target, int timer) {
