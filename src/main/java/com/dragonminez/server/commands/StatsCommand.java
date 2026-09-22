@@ -29,7 +29,7 @@ public class StatsCommand {
 			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE", "ALL"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> VALUE_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(List.of("100", "500", "1000", "5000", "10000", "min"), builder);
+			SharedSuggestionProvider.suggest(List.of("100", "500", "1000", "5000", "10000", "min", "max"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> PERCENTAGE_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(List.of("10", "25", "50", "75"), builder);
@@ -102,6 +102,7 @@ public class StatsCommand {
 		int maxValue = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		try {
 			if (amountStr.equalsIgnoreCase("min")) value = 0;
+			else if (amountStr.equalsIgnoreCase("max")) value = maxValue;
 			else value = Integer.parseInt(amountStr);
 		} catch (NumberFormatException e) {
 			source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_number", amountStr));
