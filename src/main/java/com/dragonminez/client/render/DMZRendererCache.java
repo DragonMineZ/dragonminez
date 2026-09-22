@@ -34,6 +34,7 @@ public final class DMZRendererCache {
 		clear();
 		KiWeaponModelLoader.clear();
 		TransformationPostShaderManager.onResourceReload();
+		com.dragonminez.client.render.shader.KnockoutShaderManager.onResourceReload();
 		LogUtil.info(Env.CLIENT, "DMZRendererCache cleared on resource reload");
 	}
 

@@ -67,7 +67,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 		boolean[] isDmzBlocking = {false};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> isDmzBlocking[0] = data.getStatus().isBlocking());
-		if (player.isBlocking() || isDmzBlocking[0] || PlayerAttackHelper.isChargingTechnique(player)) {
+		if (player.isBlocking() || isDmzBlocking[0] || PlayerAttackHelper.isChargingTechnique(player) || !PlayerAttackHelper.canAttack(player)) {
 			cir.cancel();
 			cir.setReturnValue(false);
 			return;
@@ -144,7 +144,7 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 	private void dragonminez$continueAttack(boolean leftClick, CallbackInfo ci) {
 		if (!leftClick || player == null) return;
 
-		if (PlayerAttackHelper.isChargingTechnique(player)) {
+		if (PlayerAttackHelper.isChargingTechnique(player) || !PlayerAttackHelper.canAttack(player)) {
 			ci.cancel();
 			return;
 		}

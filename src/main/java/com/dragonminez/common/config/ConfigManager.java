@@ -1057,6 +1057,7 @@ public class ConfigManager {
 	}
 
 	private static final double DEFAULT_VIT_SCALING_MAX_RATIO = 4.0;
+	private static final double DEFAULT_DEF_SCALING_MAX_RATIO = 4.0;
 
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
@@ -1165,6 +1166,7 @@ public class ConfigManager {
 		scaling.setStrengthScaling(strScale);
 		scaling.setStrikePowerScaling(skpScale);
 		scaling.setDefenseScaling(defScale);
+		scaling.setDefenseScalingMax(defScale * DEFAULT_DEF_SCALING_MAX_RATIO);
 		scaling.setStaminaScaling(stmScale);
 		scaling.setVitalityScaling(vitScale);
 		scaling.setVitalityScalingMax(vitScale * DEFAULT_VIT_SCALING_MAX_RATIO);

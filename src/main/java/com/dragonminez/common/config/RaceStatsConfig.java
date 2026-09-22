@@ -91,6 +91,8 @@ public class RaceStatsConfig {
 		private Double staminaScaling = 1.0;
 		@SerializedName("DEF_scaling")
 		private Double defenseScaling = 1.0;
+		@SerializedName("DEF_scaling_max")
+		private Double defenseScalingMax;
 		@SerializedName("VIT_scaling")
 		private Double vitalityScaling = 1.0;
 		@SerializedName("VIT_scaling_max")

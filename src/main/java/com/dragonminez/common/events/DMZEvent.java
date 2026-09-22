@@ -14,6 +14,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Cancelable;
@@ -144,6 +146,55 @@ public abstract class DMZEvent extends Event {
 			this.poiseDamage = poiseDamage;
 		}
 
+	}
+
+	/**
+	 * Notification fired on the server once DMZ finished mitigating a hit on a player
+	 * (end of {@code CombatEvent.overrideVanillaArmorReduction}, before the vanilla armor pass is replaced).
+	 * <p>
+	 * {@code rawDamage} is the incoming damage after the attacker's modifiers; {@code defenseMitigated}
+	 * is what the defense stat, ki protection and racial reductions removed, {@code blockMitigated} what the
+	 * manual block or parry removed, and {@code finalDamage} what the player actually takes.
+	 * Not cancelable; listeners must not alter the damage.
+	 */
+	@Getter
+	public static class PlayerDamageMitigatedEvent extends Event {
+		private final ServerPlayer victim;
+		private final DamageSource source;
+		private final double rawDamage;
+		private final double defenseMitigated;
+		private final double blockMitigated;
+		private final double finalDamage;
+
+		public PlayerDamageMitigatedEvent(ServerPlayer victim, DamageSource source, double rawDamage,
+										  double defenseMitigated, double blockMitigated, double finalDamage) {
+			this.victim = victim;
+			this.source = source;
+			this.rawDamage = rawDamage;
+			this.defenseMitigated = defenseMitigated;
+			this.blockMitigated = blockMitigated;
+			this.finalDamage = finalDamage;
+		}
+	}
+
+	/**
+	 * Notification fired on the server when a barrier (ki barrier technique, Android barrier) absorbs a hit
+	 * before it reaches the protected entity. {@code owner} is who created the barrier and gets the credit;
+	 * {@code protectedEntity} is who would have been hit. Not cancelable.
+	 */
+	@Getter
+	public static class BarrierAbsorbEvent extends Event {
+		private final Entity owner;
+		private final LivingEntity protectedEntity;
+		private final Entity attacker;
+		private final float amount;
+
+		public BarrierAbsorbEvent(Entity owner, LivingEntity protectedEntity, Entity attacker, float amount) {
+			this.owner = owner;
+			this.protectedEntity = protectedEntity;
+			this.attacker = attacker;
+			this.amount = amount;
+		}
 	}
 
 	/**

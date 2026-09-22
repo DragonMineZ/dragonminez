@@ -98,6 +98,8 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "rage_meter_hud", RageMeterHUD.HUD_RAGE_METER);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "party_hud", PartyHUD.HUD_PARTY);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "quest_notice_hud", QuestNoticeHUD.HUD_QUEST_NOTICE);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "boss_contribution_hud", com.dragonminez.client.gui.hud.WorldBossContributionHUD.HUD_BOSS_CONTRIBUTION);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "worldboss_revive_hud", com.dragonminez.client.gui.hud.WorldBossReviveOverlay.HUD_WORLDBOSS_REVIVE);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "tutorial_hint_hud", com.dragonminez.client.gui.tutorial.TutorialHintHUD.HUD_TUTORIAL_HINT);
 	}
 	@SubscribeEvent

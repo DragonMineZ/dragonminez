@@ -29,6 +29,7 @@ public class NamekRegenC2S {
 			if (!PacketRateLimiter.allow(player.getUUID(), "namek_regen", player.level().getGameTime(), 20L)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isStunned()) return;
 				if (!"namekian".equals(data.getCharacter().getRaceName())) return;
 				NamekAssimilation.startRegen(player, data);
 			});

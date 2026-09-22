@@ -78,7 +78,7 @@ public final class AndroidBarrier {
 		if (!isRangedKiAttack(source)) return null;
 		if (rawDamage <= 0.0) return 0.0;
 
-		absorb(ctx, rawDamage);
+		absorb(ctx, rawDamage, source.getEntity());
 		return 0.0;
 	}
 
@@ -87,10 +87,12 @@ public final class AndroidBarrier {
 		return source.getDirectEntity() instanceof AbstractKiProjectile;
 	}
 
-	private static void absorb(RacialContext ctx, double rawDamage) {
+	private static void absorb(RacialContext ctx, double rawDamage, net.minecraft.world.entity.Entity attacker) {
 		ServerPlayer player = ctx.player();
 		StatsData data = ctx.data();
 		GeneralServerConfig.HumanRacialConfig config = ctx.config().getHuman();
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+				new com.dragonminez.common.events.DMZEvent.BarrierAbsorbEvent(player, player, attacker, (float) rawDamage));
 
 		float maxEnergy = data.getMaxEnergy();
 		float gained = (float) (rawDamage * config.getAndroidBarrierKiConversion());

@@ -25,6 +25,10 @@ public final class HudRender {
 		alphaScale = Mth.clamp(alpha, 0.0f, 1.0f);
 	}
 
+	public static float currentAlphaScale() {
+		return alphaScale;
+	}
+
 	public static void sprite(GuiGraphics graphics, HudSprites.Sprite sprite, float x, float y, float width, float height, int rgb, float alpha) {
 		spritePart(graphics, sprite, x, y, width, height, 0.0f, 0.0f, 1.0f, 1.0f, rgb, alpha);
 	}
@@ -104,6 +108,10 @@ public final class HudRender {
 
 	public static void rectHorizontal(GuiGraphics graphics, float x, float y, float width, float height, int colorLeft, int colorRight) {
 		gradient(graphics, x, y, width, height, colorLeft, colorLeft, colorRight, colorRight);
+	}
+
+	public static void rectVertical(GuiGraphics graphics, float x, float y, float width, float height, int colorTop, int colorBottom) {
+		gradient(graphics, x, y, width, height, colorTop, colorBottom, colorBottom, colorTop);
 	}
 
 	private static void gradient(GuiGraphics graphics, float x, float y, float width, float height, int topLeft, int bottomLeft, int bottomRight, int topRight) {

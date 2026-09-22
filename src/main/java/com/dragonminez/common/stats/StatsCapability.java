@@ -113,6 +113,7 @@ public class StatsCapability {
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				com.dragonminez.server.world.worldboss.WorldBossSessions.onPlayerLogin(serverPlayer, data);
 
 				Map<String, String> repairedSkills = data.getSkills().repairSkillNames();
 				if (!repairedSkills.isEmpty()) {
@@ -160,6 +161,7 @@ public class StatsCapability {
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
+				com.dragonminez.server.world.worldboss.WorldBossSessions.onPlayerChangedDimension(serverPlayer, data);
 				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onDimensionChange(new RacialContext(serverPlayer, data)));
 
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);

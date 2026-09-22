@@ -15,6 +15,7 @@ import com.dragonminez.client.gui.hud.RageMeterHUD;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.gui.hud.TechniqueHotbarHUD;
 import com.dragonminez.client.gui.hud.TrackedQuestHUD;
+import com.dragonminez.client.gui.hud.WorldBossContributionHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.gui.hud.layout.HudElement;
 import com.dragonminez.client.gui.hud.layout.HudLayout;
@@ -287,6 +288,7 @@ public class HudEditorScreen extends Screen {
 			QuestNoticeHUD.render(graphics, partialTick, this.width, this.height);
 			ScouterHUD.render(graphics, partialTick, this.width, this.height);
 			BabaReturnTimerHUD.render(graphics, partialTick, this.width, this.height);
+			WorldBossContributionHUD.render(graphics, partialTick, this.width, this.height);
 		} else {
 			XenoverseHUD.render(graphics, partialTick, this.width, this.height);
 			AlternativeHUD.render(graphics, partialTick, this.width, this.height);

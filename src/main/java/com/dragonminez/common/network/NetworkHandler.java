@@ -690,6 +690,30 @@ public class NetworkHandler {
 				.encoder(SwordSlashS2C::encode)
 				.consumerMainThread(SwordSlashS2C::handle)
 				.add();
+
+		net.messageBuilder(WorldBossContributionS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(WorldBossContributionS2C::new)
+				.encoder(WorldBossContributionS2C::encode)
+				.consumerMainThread(WorldBossContributionS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossPlayerStateS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(WorldBossPlayerStateS2C::new)
+				.encoder(WorldBossPlayerStateS2C::encode)
+				.consumerMainThread(WorldBossPlayerStateS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossResultsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(WorldBossResultsS2C::new)
+				.encoder(WorldBossResultsS2C::encode)
+				.consumerMainThread(WorldBossResultsS2C::handle)
+				.add();
+
+		net.messageBuilder(WorldBossReviveC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(WorldBossReviveC2S::new)
+				.encoder(WorldBossReviveC2S::encode)
+				.consumerMainThread(WorldBossReviveC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

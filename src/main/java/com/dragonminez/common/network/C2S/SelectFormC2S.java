@@ -47,6 +47,7 @@ public class SelectFormC2S {
 			if (group.isEmpty() || form.isEmpty()) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isKnockedDown()) return;
 				if (stack) {
 					if (!TransformationsHelper.isSelectableStackForm(data, group, form)) return;
 					data.getStatus().setSelectedAction(ActionMode.STACK);

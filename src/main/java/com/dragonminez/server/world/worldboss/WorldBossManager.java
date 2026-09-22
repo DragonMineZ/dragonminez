@@ -4,9 +4,6 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
-import net.minecraft.network.chat.Component;
 import com.dragonminez.common.network.S2C.WorldBossStateS2C;
 import com.dragonminez.common.init.entities.worldboss.AllWorldBossesEntity;
 import com.dragonminez.common.init.entities.worldboss.WorldBossEntity;
@@ -22,8 +19,6 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-
-import java.util.Map;
 
 public final class WorldBossManager {
 
@@ -45,6 +40,7 @@ public final class WorldBossManager {
 
     public static void tick(ServerLevel level) {
         if (!level.dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) return;
+        WorldBossSessions.tick(level);
         if (level.getGameTime() % TICK_INTERVAL != 0) return;
 
         WorldBossSavedData data = WorldBossSavedData.get(level.getServer());
@@ -160,12 +156,10 @@ public final class WorldBossManager {
         data.markDirty();
     }
 
-    public static final float REWARD_TRAINING_POINTS = 10000000.0F;
-
     public static void onBossDefeated(WorldBossEntity boss) {
         if (!(boss.level() instanceof ServerLevel level)) return;
 
-        payout(level, boss.getWorldBossKey());
+        WorldBossSessions.onBossDefeated(boss);
 
         WorldBossSavedData data = WorldBossSavedData.get(level.getServer());
         WorldBossSavedData.Entry entry = data.peek(JANEMBA);
@@ -178,28 +172,6 @@ public final class WorldBossManager {
         syncToAll(level);
         WorldBossContribution.clear(boss.getWorldBossKey());
         LogUtil.info(Env.SERVER, "World boss {} defeated, respawning in {} ticks", JANEMBA, RESPAWN_TICKS);
-    }
-
-    private static void payout(ServerLevel level, String bossKey) {
-        Map<ServerPlayer, Double> payouts =
-                WorldBossContribution.resolvePayouts(level, bossKey, REWARD_TRAINING_POINTS);
-
-        if (payouts.isEmpty()) {
-            LogUtil.info(Env.SERVER, "World boss {} defeated with no tracked contributors", bossKey);
-            return;
-        }
-
-        for (Map.Entry<ServerPlayer, Double> entry : payouts.entrySet()) {
-            ServerPlayer player = entry.getKey();
-            float amount = entry.getValue().floatValue();
-
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(
-                    data -> data.getResources().addTrainingPoints(amount, false));
-
-            player.sendSystemMessage(Component.translatable("worldboss.dragonminez.reward", (int) amount));
-        }
-
-        LogUtil.info(Env.SERVER, "World boss {} rewards paid to {} players", bossKey, payouts.size());
     }
 
     public static void syncToAll(ServerLevel level) {

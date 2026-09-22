@@ -1,6 +1,10 @@
 package com.dragonminez.server.commands;
 
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.WorldBossResultsS2C;
+import com.dragonminez.common.worldboss.WorldBossResults;
 import com.dragonminez.server.world.worldboss.WorldBossManager;
+import com.dragonminez.server.world.worldboss.WorldBossResultsCache;
 import com.dragonminez.server.world.worldboss.WorldBossSavedData;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
@@ -16,15 +20,31 @@ public class WorldBossCommand {
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzworldboss")
-				.requires(source -> source.hasPermission(2))
+				.then(Commands.literal("results")
+						.executes(WorldBossCommand::results))
 				.then(Commands.literal("locate")
+						.requires(source -> source.hasPermission(2))
 						.executes(WorldBossCommand::locate))
 				.then(Commands.literal("tp")
+						.requires(source -> source.hasPermission(2))
 						.executes(WorldBossCommand::teleport))
 				.then(Commands.literal("reset")
+						.requires(source -> source.hasPermission(2))
 						.executes(WorldBossCommand::reset))
 				.then(Commands.literal("ready")
+						.requires(source -> source.hasPermission(2))
 						.executes(WorldBossCommand::ready)));
+	}
+
+	private static int results(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		WorldBossResults results = WorldBossResultsCache.get(player.getUUID());
+		if (results == null) {
+			ctx.getSource().sendFailure(Component.translatable("worldboss.dragonminez.results.none"));
+			return 0;
+		}
+		NetworkHandler.sendToPlayer(new WorldBossResultsS2C(results), player);
+		return 1;
 	}
 
 	private static int locate(CommandContext<CommandSourceStack> ctx) {

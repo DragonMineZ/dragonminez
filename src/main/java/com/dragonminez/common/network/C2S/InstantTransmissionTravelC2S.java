@@ -42,6 +42,7 @@ public class InstantTransmissionTravelC2S {
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isStunned()) return;
 				int skillLevel = data.getSkills().getSkillLevel("instant_transmission");
 				if (skillLevel < 5) return;
 

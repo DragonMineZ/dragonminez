@@ -217,6 +217,7 @@ public class ForgeCommonEvents {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			TrainingSessionTracker.end(player.getUUID());
 			PacketRateLimiter.clear(player.getUUID());
+			com.dragonminez.server.world.worldboss.WorldBossSessions.onPlayerLogout(player);
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout()) {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
@@ -632,6 +633,8 @@ public class ForgeCommonEvents {
 			if (barrier.isActive() && barrier.protects(victim)) {
 				event.setCanceled(true);
 				barrier.absorbDamage(event.getAmount(), event.getSource().getEntity());
+				MinecraftForge.EVENT_BUS.post(new DMZEvent.BarrierAbsorbEvent(barrier.getOwner(), victim,
+						event.getSource().getEntity(), event.getAmount()));
 				return;
 			}
 		}

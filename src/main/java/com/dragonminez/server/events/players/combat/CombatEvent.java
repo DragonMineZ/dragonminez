@@ -752,12 +752,14 @@ public class CombatEvent {
 				StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(stats -> {
 					boolean isGuardBroken = stats.getStatus().isStunEffect() && stats.getResources().getCurrentPoise() <= 0;
 					double postMitigation = stats.calculatePostMitigationDamage(rawDamage, isGuardBroken, defensePenetration);
-						boolean defenseFullyNegated = postMitigation <= 0.0;
+					boolean defenseFullyNegated = postMitigation <= 0.0;
+					double afterDefense = postMitigation;
 
 					if (victim.getPersistentData().contains("dmz_block_multiplier")) {
 						postMitigation *= victim.getPersistentData().getDouble("dmz_block_multiplier");
 						victim.getPersistentData().remove("dmz_block_multiplier");
 					}
+					double afterBlock = postMitigation;
 
 					int kiProtectionLevel = stats.getSkills().getSkillLevel("kiprotection");
 					if (kiProtectionLevel > 0 && stats.getSkills().isSkillActive("kiprotection")) {
@@ -788,6 +790,7 @@ public class CombatEvent {
 
 					float finalDamage = (float) postMitigation;
 					if (!Float.isFinite(finalDamage) || finalDamage < 0.0f) finalDamage = 0.0f;
+					float mitigatedFinal = finalDamage;
 
 					if (victim instanceof ServerPlayer serverVictim) {
 						float damageTaken = finalDamage;
@@ -806,7 +809,10 @@ public class CombatEvent {
 									.orElse(false);
 						}
 
-						if (racialCancelled) {
+						boolean worldBossKnockout = !racialCancelled && victim instanceof ServerPlayer bossVictim
+								&& com.dragonminez.server.world.worldboss.WorldBossSessions.tryKnockOut(bossVictim, stats, event.getSource());
+
+						if (racialCancelled || worldBossKnockout) {
 							finalDamage = Math.max(0.0F, victim.getHealth() - 1.0F);
 						} else {
 							boolean shadowKnockdown = damageSource instanceof ShadowDummyEntity dummy
@@ -841,6 +847,13 @@ public class CombatEvent {
 								}
 							}
 						}
+					}
+
+					if (victim instanceof ServerPlayer mitigatedVictim) {
+						double blockMitigated = Math.max(0.0, afterDefense - afterBlock);
+						double defenseMitigated = Math.max(0.0, rawDamage - mitigatedFinal - blockMitigated);
+						MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDamageMitigatedEvent(mitigatedVictim, event.getSource(),
+								rawDamage, defenseMitigated, blockMitigated, mitigatedFinal));
 					}
 
 					if (defenseFullyNegated && rawDamage > 0.0

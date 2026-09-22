@@ -135,7 +135,7 @@ public class PartyHUD {
 		}
 		view.health.update(health, maxHealth);
 		view.energy.update(energy, maxEnergy);
-		boolean down = health <= 0.0f;
+		boolean down = health <= 0.0f || (data != null && data.getStatus().isKnockedDown());
 
 		float rowWidth = HudLayout.baseSize(HudStyle.current(), HudElement.PARTY)[0] - BORDER * 2.0f;
 		float headX = mirrored ? rowWidth - HEAD : 0.0f;

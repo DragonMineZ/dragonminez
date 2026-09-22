@@ -40,6 +40,9 @@ public class Techniques {
 	private final String[] formLoadoutBackup = new String[FORM_LOADOUT_SIZE];
 	private final Set<String> formLoadoutGranted = new HashSet<>();
 
+	@Getter
+	private String reviveDisplacedTechnique = "";
+
 	public Techniques() {
 		for (int i = 0; i < SLOT_COUNT; i++) equippedSlots[i] = "";
 		for (int i = 0; i < FORM_LOADOUT_SIZE; i++) formLoadoutBackup[i] = "";
@@ -100,12 +103,59 @@ public class Techniques {
 	}
 
 	public void equipTechnique(int slotIndex, String techniqueId) {
-		if (slotIndex >= 0 && slotIndex < SLOT_COUNT && unlockedTechniques.containsKey(techniqueId)) {
+		if (ReviveTechniqueData.isRevive(techniqueId)) return;
+		if (slotIndex >= 0 && slotIndex < SLOT_COUNT && unlockedTechniques.containsKey(techniqueId)
+				&& !ReviveTechniqueData.isRevive(equippedSlots[slotIndex])) {
 			equippedSlots[slotIndex] = techniqueId;
 		}
 	}
 
+	public boolean hasRevive() {
+		return unlockedTechniques.containsKey(ReviveTechniqueData.ID);
+	}
+
+	public int getReviveSlot() {
+		for (int i = 0; i < SLOT_COUNT; i++) {
+			if (ReviveTechniqueData.isRevive(equippedSlots[i])) return i;
+		}
+		return -1;
+	}
+
+	public boolean installRevive(int slotIndex) {
+		if (slotIndex < 0 || slotIndex >= SLOT_COUNT) return false;
+		boolean changed = false;
+		if (!unlockedTechniques.containsKey(ReviveTechniqueData.ID)) {
+			unlockedTechniques.put(ReviveTechniqueData.ID, new ReviveTechniqueData());
+			changed = true;
+		}
+		if (ReviveTechniqueData.isRevive(equippedSlots[slotIndex])) return changed;
+		for (int i = 0; i < SLOT_COUNT; i++) {
+			if (ReviveTechniqueData.isRevive(equippedSlots[i])) equippedSlots[i] = "";
+		}
+		reviveDisplacedTechnique = equippedSlots[slotIndex] == null ? "" : equippedSlots[slotIndex];
+		equippedSlots[slotIndex] = ReviveTechniqueData.ID;
+		return true;
+	}
+
+	public boolean uninstallRevive() {
+		boolean changed = unlockedTechniques.remove(ReviveTechniqueData.ID) != null;
+		for (int i = 0; i < SLOT_COUNT; i++) {
+			if (!ReviveTechniqueData.isRevive(equippedSlots[i])) continue;
+			String restored = reviveDisplacedTechnique;
+			boolean restorable = restored != null && !restored.isEmpty() && unlockedTechniques.containsKey(restored);
+			for (int j = 0; restorable && j < SLOT_COUNT; j++) {
+				if (j != i && restored.equals(equippedSlots[j])) restorable = false;
+			}
+			equippedSlots[i] = restorable ? restored : "";
+			changed = true;
+		}
+		reviveDisplacedTechnique = "";
+		if (ReviveTechniqueData.isRevive(chargingTechniqueId)) clearTechniqueCharge();
+		return changed;
+	}
+
 	public void removeTechnique(String techniqueId) {
+		if (ReviveTechniqueData.isRevive(techniqueId)) return;
 		unlockedTechniques.remove(techniqueId);
 		for (int i = 0; i < SLOT_COUNT; i++) {
 			if (equippedSlots[i].equals(techniqueId)) {
@@ -188,6 +238,7 @@ public class Techniques {
 
 	public void equipOrSwapTechnique(int slotIndex, String techniqueId) {
 		if (slotIndex < 0 || slotIndex >= SLOT_COUNT) return;
+		if (ReviveTechniqueData.isRevive(techniqueId) || ReviveTechniqueData.isRevive(equippedSlots[slotIndex])) return;
 
 		boolean isEmpty = techniqueId == null || techniqueId.isEmpty();
 		if (!isEmpty && !unlockedTechniques.containsKey(techniqueId)) return;
@@ -246,7 +297,8 @@ public class Techniques {
 		for (TechniqueData tech : unlockedTechniques.values()) {
 			CompoundTag techTag = tech.save();
 			techTag.putString("TechClassType", tech instanceof KiAttackData ? "KI"
-					: tech instanceof EvasionAttackData ? "EVASION" : "STRIKE");
+					: tech instanceof EvasionAttackData ? "EVASION"
+					: tech instanceof ReviveTechniqueData ? ReviveTechniqueData.TECH_CLASS_TYPE : "STRIKE");
 			unlockedTag.add(techTag);
 		}
 		tag.put("UnlockedTechniques", unlockedTag);
@@ -258,6 +310,7 @@ public class Techniques {
 		ListTag grantedTag = new ListTag();
 		for (String id : formLoadoutGranted) grantedTag.add(StringTag.valueOf(id));
 		tag.put("FormLoadoutGranted", grantedTag);
+		tag.putString("ReviveDisplacedTechnique", reviveDisplacedTechnique == null ? "" : reviveDisplacedTechnique);
 
 		return tag;
 	}
@@ -291,10 +344,12 @@ public class Techniques {
 			}
 
 			TechniqueData tech = type.equals("KI") ? new KiAttackData()
-					: type.equals("EVASION") ? new EvasionAttackData() : new StrikeAttackData();
+					: type.equals("EVASION") ? new EvasionAttackData()
+					: type.equals(ReviveTechniqueData.TECH_CLASS_TYPE) ? new ReviveTechniqueData() : new StrikeAttackData();
 			tech.load(techTag);
 			this.unlockedTechniques.put(tech.getId(), tech);
 		}
+		this.reviveDisplacedTechnique = tag.getString("ReviveDisplacedTechnique");
 
 		this.formLoadoutActive = tag.getBoolean("FormLoadoutActive");
 		CompoundTag backupTag = tag.getCompound("FormLoadoutBackup");
@@ -315,10 +370,12 @@ public class Techniques {
 		for (Map.Entry<String, TechniqueData> entry : other.unlockedTechniques.entrySet()) {
 			TechniqueData source = entry.getValue();
 			TechniqueData clone = source instanceof KiAttackData ? new KiAttackData()
-					: source instanceof EvasionAttackData ? new EvasionAttackData() : new StrikeAttackData();
+					: source instanceof EvasionAttackData ? new EvasionAttackData()
+					: source instanceof ReviveTechniqueData ? new ReviveTechniqueData() : new StrikeAttackData();
 			clone.load(source.save());
 			this.unlockedTechniques.put(entry.getKey(), clone);
 		}
+		this.reviveDisplacedTechnique = other.reviveDisplacedTechnique;
 		this.formLoadoutActive = other.formLoadoutActive;
 		System.arraycopy(other.formLoadoutBackup, 0, this.formLoadoutBackup, 0, FORM_LOADOUT_SIZE);
 		this.formLoadoutGranted.clear();

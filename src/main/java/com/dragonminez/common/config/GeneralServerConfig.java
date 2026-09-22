@@ -23,6 +23,7 @@ public class GeneralServerConfig {
 	private GravityConfig gravity = new GravityConfig();
 	private MutantConfig mutant = new MutantConfig();
 	private FalseSuperSaiyanConfig falseSuperSaiyan = new FalseSuperSaiyanConfig();
+	private WorldBossConfig worldBoss = new WorldBossConfig();
 	private CraftingConfig crafting = new CraftingConfig();
 	private StorageConfig storage = new StorageConfig();
 	private DeveloperConfig developer = new DeveloperConfig();
@@ -36,6 +37,137 @@ public class GeneralServerConfig {
 	public FalseSuperSaiyanConfig getFalseSuperSaiyan() {
 		if (falseSuperSaiyan == null) falseSuperSaiyan = new FalseSuperSaiyanConfig();
 		return falseSuperSaiyan;
+	}
+
+	public WorldBossConfig getWorldBoss() {
+		if (worldBoss == null) worldBoss = new WorldBossConfig();
+		return worldBoss;
+	}
+
+	public static class WorldBossConfig {
+		private Integer contributionRange = 150;
+		private Integer audienceRefreshSeconds = 5;
+		private Integer meterLingerSeconds = 15;
+		private Double damageWeight = 1.0;
+		private Double mitigatedWeight = 1.0;
+		private Double receivedWeight = 1.0;
+		private Double healedWeight = 1.0;
+		private Integer lives = 3;
+		private Integer reviveSlot = 4;
+		private Integer reviveCastSeconds = 15;
+		private Integer reviveCooldownSeconds = 90;
+		private Integer reviveInterruptCooldownSeconds = 15;
+		private Double reviveRange = 6.0;
+		private Double reviveRestoreRatio = 0.25;
+		private Integer knockoutTitleSeconds = 5;
+		private List<Double> rankChanceBonus = new ArrayList<>(List.of(0.25, 0.15, 0.10));
+		private Double guaranteedRewardMinRatio = 0.5;
+		private Double minContributionShare = 0.0;
+		private Map<String, List<WorldBossRewardEntry>> rewards = defaultWorldBossRewards();
+
+		public int getContributionRange() { return Math.max(16, positiveInt(contributionRange, 150)); }
+		public int getAudienceRefreshSeconds() { return Math.max(1, positiveInt(audienceRefreshSeconds, 5)); }
+		public int getMeterLingerSeconds() { return positiveInt(meterLingerSeconds, 15); }
+		public double getDamageWeight() { return positive(damageWeight, 1.0); }
+		public double getMitigatedWeight() { return positive(mitigatedWeight, 1.0); }
+		public double getReceivedWeight() { return positive(receivedWeight, 1.0); }
+		public double getHealedWeight() { return positive(healedWeight, 1.0); }
+		public int getLives() { return positiveInt(lives, 3); }
+		public int getReviveSlotIndex() { return Math.max(0, Math.min(7, positiveInt(reviveSlot, 4) - 1)); }
+		public int getReviveCastSeconds() { return Math.max(1, positiveInt(reviveCastSeconds, 15)); }
+		public int getReviveCooldownSeconds() { return positiveInt(reviveCooldownSeconds, 90); }
+		public int getReviveInterruptCooldownSeconds() { return positiveInt(reviveInterruptCooldownSeconds, 15); }
+		public double getReviveRange() { return Math.max(1.0, positive(reviveRange, 6.0)); }
+		public double getReviveRestoreRatio() { return clamp01(reviveRestoreRatio, 0.25); }
+		public int getKnockoutTitleSeconds() { return Math.max(1, positiveInt(knockoutTitleSeconds, 5)); }
+		public double getGuaranteedRewardMinRatio() { return clamp01(guaranteedRewardMinRatio, 0.5); }
+		public double getMinContributionShare() { return clamp01(minContributionShare, 0.0); }
+
+		public double getRankChanceBonus(int rank) {
+			if (rankChanceBonus == null || rank < 0 || rank >= rankChanceBonus.size()) return 0.0;
+			return positive(rankChanceBonus.get(rank), 0.0);
+		}
+
+		public List<WorldBossRewardEntry> getRewards(String bossKey) {
+			if (rewards == null || bossKey == null) return List.of();
+			List<WorldBossRewardEntry> list = rewards.get(bossKey);
+			return list != null ? list : List.of();
+		}
+
+		private static Map<String, List<WorldBossRewardEntry>> defaultWorldBossRewards() {
+			Map<String, List<WorldBossRewardEntry>> map = new LinkedHashMap<>();
+			List<WorldBossRewardEntry> janemba = new ArrayList<>();
+			janemba.add(WorldBossRewardEntry.tps(1_350_000, 1.0));
+			janemba.add(WorldBossRewardEntry.item("dragonminez:dimensional_sword", 1, 0.5));
+			janemba.add(WorldBossRewardEntry.skill("dimensional_teleport", 1, 0.2));
+			map.put("janemba", janemba);
+			return map;
+		}
+
+		private static int positiveInt(Integer value, int fallback) {
+			return value != null && value >= 0 ? value : fallback;
+		}
+
+		private static double positive(Double value, double fallback) {
+			return value != null && Double.isFinite(value) && value >= 0.0 ? value : fallback;
+		}
+
+		private static double clamp01(Double value, double fallback) {
+			return Math.max(0.0, Math.min(1.0, positive(value, fallback)));
+		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class WorldBossRewardEntry {
+		private String type = "ITEM";
+		private String item;
+		private Integer count;
+		private Integer amount;
+		private String skill;
+		private Integer level;
+		private String command;
+		private String translationKey;
+		private String formGroup;
+		private String formName;
+		private Double mastery;
+		private Boolean stack;
+		private String code;
+		private Double chance = 1.0;
+
+		public static WorldBossRewardEntry tps(int amount, double chance) {
+			WorldBossRewardEntry entry = new WorldBossRewardEntry();
+			entry.type = "TPS";
+			entry.amount = amount;
+			entry.chance = chance;
+			return entry;
+		}
+
+		public static WorldBossRewardEntry item(String item, int count, double chance) {
+			WorldBossRewardEntry entry = new WorldBossRewardEntry();
+			entry.type = "ITEM";
+			entry.item = item;
+			entry.count = count;
+			entry.chance = chance;
+			return entry;
+		}
+
+		public static WorldBossRewardEntry skill(String skill, int level, double chance) {
+			WorldBossRewardEntry entry = new WorldBossRewardEntry();
+			entry.type = "SKILL";
+			entry.skill = skill;
+			entry.level = level;
+			entry.chance = chance;
+			return entry;
+		}
+
+		public double getChance() {
+			return chance != null && Double.isFinite(chance) ? Math.max(0.0, Math.min(1.0, chance)) : 1.0;
+		}
+
+		public boolean isGuaranteed() {
+			return getChance() >= 1.0;
+		}
 	}
 
 	public static class HairConfig {
@@ -168,8 +300,10 @@ public class GeneralServerConfig {
 		private Double otherworldDeadTpMultiplier = 2.0;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
-		private Double vitCurveKneeLevelMode = 0.45;
-		private Double vitCurveKneeStatMode = 0.9;
+		private Double vitCurveKneeLevelMode = 0.225;
+		private Double vitCurveKneeStatMode = 0.45;
+		private Double defCurveKneeLevelMode = 0.225;
+		private Double defCurveKneeStatMode = 0.45;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
@@ -320,11 +454,19 @@ public class GeneralServerConfig {
 		}
 
 		public Double getVitCurveKneeLevelMode() {
-			return Math.max(0.01, Math.min(vitCurveKneeLevelMode != null ? vitCurveKneeLevelMode : 0.45, 1.0));
+			return Math.max(0.01, Math.min(vitCurveKneeLevelMode != null ? vitCurveKneeLevelMode : 0.225, 1.0));
 		}
 
 		public Double getVitCurveKneeStatMode() {
-			return Math.max(0.01, Math.min(vitCurveKneeStatMode != null ? vitCurveKneeStatMode : 0.9, 1.0));
+			return Math.max(0.01, Math.min(vitCurveKneeStatMode != null ? vitCurveKneeStatMode : 0.45, 1.0));
+		}
+
+		public Double getDefCurveKneeLevelMode() {
+			return Math.max(0.01, Math.min(defCurveKneeLevelMode != null ? defCurveKneeLevelMode : 0.225, 1.0));
+		}
+
+		public Double getDefCurveKneeStatMode() {
+			return Math.max(0.01, Math.min(defCurveKneeStatMode != null ? defCurveKneeStatMode : 0.45, 1.0));
 		}
 
 		public Integer getSenzuCooldownTicks() {
