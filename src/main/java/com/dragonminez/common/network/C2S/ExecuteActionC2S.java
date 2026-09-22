@@ -60,6 +60,7 @@ public class ExecuteActionC2S {
 			if (player != null) {
 				if (player.hasEffect(MainEffects.STUN.get())) return;
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					if (data.getStatus().isKnockedDown()) return;
 					boolean needsSync = false;
 					switch (action) {
 						case FORCE_DESCEND, MENU_DESCEND -> {

@@ -434,6 +434,11 @@ public class ClientStatsEvents {
 						NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(i));
 						var lockedEvasionTarget = LockOnEvent.getLockedTarget();
 						NetworkHandler.sendToServer(new EvasionCastC2S(id, lockedEvasionTarget != null ? lockedEvasionTarget.getId() : -1));
+					} else if (t instanceof ReviveTechniqueData) {
+						if (data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) continue;
+						techniques.selectSlot(i);
+						var lockedReviveTarget = LockOnEvent.getLockedTarget();
+						NetworkHandler.sendToServer(new WorldBossReviveC2S(lockedReviveTarget != null ? lockedReviveTarget.getId() : -1));
 					} else if (t instanceof KiAttackData ki && !data.getCooldowns().hasCooldown("TechniqueCooldown_" + id)) { if (player.isPassenger() && TechniqueDispatcher.restrictsMovementWhileCharging(ki.getKiType())) continue; var lockedKiTarget = LockOnEvent.getLockedTarget(); int kiTargetId = lockedKiTarget != null ? lockedKiTarget.getId() : -1;
 					if (ki.isInstantCast()) NetworkHandler.sendToServer(TechniqueChargeC2S.start(i, kiTargetId));
 					else {
@@ -596,6 +601,7 @@ public class ClientStatsEvents {
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
+					|| com.dragonminez.client.systems.worldboss.ClientWorldBossPlayerState.isCasting()
 					|| data.getStatus().isActionCharging() || data.getStatus().isChargingKi()
 					|| data.getStatus().getPotaraPoseTimer() > 0
 					|| data.getStatus().getEvasionLockTicks() > 0) {

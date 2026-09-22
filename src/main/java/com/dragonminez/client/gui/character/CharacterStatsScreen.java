@@ -827,7 +827,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		double strScaling = statsData.getStatScaling("STR");
 		double skpScaling = statsData.getStatScaling("SKP");
-		double resScaling = statsData.getStatScaling("DEF");
+		double resScaling = statsData.getDefenseScalingAt(statsData.getStats().getResistance());
 		double vitScaling = statsData.getVitalityScalingAt(statsData.getStats().getVitality());
 		double pwrScaling = statsData.getStatScaling("PWR");
 		double eneScaling = statsData.getStatScaling("ENE");
@@ -901,6 +901,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 					case 3 -> {
 						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip1"));
 						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip2", NumberFormattingUtil.formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
+						appendDefenseCurveInfo(desc);
 						desc.add(tr("gui.dragonminez.character_stats.max_value", NumberFormattingUtil.formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN));
 
 						double flatMitigation = defense * ConfigManager.getCombatConfig().getFlatMitigationFactor() * Math.max(1.0, statsData.getTotalMultiplier("DEF"));
@@ -1014,6 +1015,14 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		desc.add(tr("gui.dragonminez.character_stats.health.scaling_curve",
 				NumberFormattingUtil.formatUpToOneDecimal(maxScaling),
 				NumberFormattingUtil.formatLargeNumber(statsData.getVitalityCurveKnee())).withStyle(ChatFormatting.GOLD));
+	}
+
+	private void appendDefenseCurveInfo(List<Component> desc) {
+		double maxScaling = statsData.getDefenseScalingMax();
+		if (Math.abs(maxScaling - statsData.getStatScaling("DEF")) < 0.001) return;
+		desc.add(tr("gui.dragonminez.character_stats.defense.scaling_curve",
+				NumberFormattingUtil.formatUpToTwoDecimals(maxScaling),
+				NumberFormattingUtil.formatLargeNumber(statsData.getDefenseCurveKnee())).withStyle(ChatFormatting.GOLD));
 	}
 
 	private void appendSpeedTooltip(List<Component> desc, List<Component> extras) {
@@ -1227,6 +1236,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			desc.add(tr("gui.dragonminez.character_stats.stamina.tooltip1"));
 			desc.add(tr("gui.dragonminez.character_stats.stamina.tooltip2",
 					NumberFormattingUtil.formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
+			appendDefenseCurveInfo(desc);
 
 			List<Component> extras = new ArrayList<>();
 

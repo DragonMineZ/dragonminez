@@ -642,16 +642,22 @@ public class StatsEvents {
 		}
 	}
 
+	private static boolean isStunnedOrDowned(LivingEntity entity) {
+		if (entity.hasEffect(MainEffects.STUN.get())) return true;
+		if (!(entity instanceof Player player)) return false;
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> data.getStatus().isKnockedDown()).orElse(false);
+	}
+
 	@SubscribeEvent
 	public static void onPlayerAttack(AttackEntityEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
+		if (isStunnedOrDowned(event.getEntity())) event.setCanceled(true);
 	}
 
 	@SubscribeEvent
 	public static void onLivingAttack(LivingAttackEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (event.getSource().getEntity() instanceof LivingEntity attacker && attacker.hasEffect(MainEffects.STUN.get()))
+		if (event.getSource().getEntity() instanceof LivingEntity attacker && isStunnedOrDowned(attacker))
 			event.setCanceled(true);
 	}
 
@@ -659,14 +665,14 @@ public class StatsEvents {
 	public static void onPlayerInteract(PlayerInteractEvent event) {
 		if (event.getLevel().isClientSide) return;
 		if (event.getEntity() == null) return;
-		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
+		if (isStunnedOrDowned(event.getEntity())) event.setCanceled(true);
 	}
 
 	@SubscribeEvent
 	public static void onLivingJump(LivingEvent.LivingJumpEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		if (event.getEntity().hasEffect(MainEffects.STUN.get()))
+		if (isStunnedOrDowned(event.getEntity()))
 			event.getEntity().setDeltaMovement(event.getEntity().getDeltaMovement().multiply(1, 0, 1));
 	}
 

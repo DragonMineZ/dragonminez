@@ -48,6 +48,14 @@ public abstract class LivingEntityMixin implements IBattlePower, IHealthFixable,
 		}
 	}
 
+	@Inject(method = "canBeSeenAsEnemy()Z", at = @At("HEAD"), cancellable = true)
+	private void dragonminez$hideKnockedDownPlayers(CallbackInfoReturnable<Boolean> cir) {
+		if (!((Object) this instanceof Player player)) return;
+		com.dragonminez.common.stats.StatsProvider.get(com.dragonminez.common.stats.StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (data.getStatus().isKnockedDown()) cir.setReturnValue(false);
+		});
+	}
+
 	@Inject(method = "tick()V", at = @At("TAIL"))
 	private void dragonminez$restoreStoredHealth(CallbackInfo callback) {
 		if (this.dragonminez$actualHealth != null) {

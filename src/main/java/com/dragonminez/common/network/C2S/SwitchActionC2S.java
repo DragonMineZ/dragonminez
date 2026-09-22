@@ -35,6 +35,7 @@ public class SwitchActionC2S {
 			if (player != null) {
 				if (player.hasEffect(MainEffects.STUN.get())) return;
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+					if (data.getStatus().isKnockedDown()) return;
 					ActionMode newMode;
 					if (data.getStatus().getSelectedAction() != mode) {
 						newMode = mode;

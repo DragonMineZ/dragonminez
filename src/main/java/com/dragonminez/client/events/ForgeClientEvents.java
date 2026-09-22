@@ -267,6 +267,10 @@ public class ForgeClientEvents {
 		ConfigManager.clearServerSync();
 		PartyHudCache.clear();
 		QuestNoticeHUD.clear();
+		com.dragonminez.client.systems.worldboss.ClientWorldBossContribution.clear();
+		com.dragonminez.client.systems.worldboss.ClientWorldBossPlayerState.clear();
+		com.dragonminez.client.systems.worldboss.ClientWorldBossState.clear();
+		com.dragonminez.client.render.shader.KnockoutShaderManager.reset();
 		DMZRendererCache.clear();
 		TextureCounter.clearCache();
 		pendingCharacterCreationReopen = false;

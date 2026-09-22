@@ -1665,6 +1665,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Override
     public void setTarget(LivingEntity pTarget) {
         if (pTarget != null && this.isQuestTeammate(pTarget)) return;
+        if (pTarget instanceof Player downedPlayer && StatsProvider.get(StatsCapability.INSTANCE, downedPlayer)
+                .map(data -> data.getStatus().isKnockedDown()).orElse(false)) return;
         if (pTarget != null && this.getPersistentData().getLong("dmz_taiyoken_blind_until") > this.level().getGameTime()) return;
         // Raid mobs answer to the raid's participants and nobody else.
         if (pTarget != null && !this.isValidRaidTarget(pTarget)) return;

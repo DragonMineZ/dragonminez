@@ -29,8 +29,10 @@ public class RacialSecondaryActionC2S {
 			if (player == null) return;
 			if (!PacketRateLimiter.allow(player.getUUID(), "racial_secondary_action", player.level().getGameTime(), 20L)) return;
 
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data ->
-					RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onSecondaryActivate(new RacialContext(player, data))));
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isStunned()) return;
+				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onSecondaryActivate(new RacialContext(player, data)));
+			});
 		});
 		context.setPacketHandled(true);
 	}

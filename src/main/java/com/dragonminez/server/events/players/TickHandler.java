@@ -123,20 +123,22 @@ public class TickHandler {
 			if (serverPlayer.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight(serverPlayer, data);
 
 			boolean isStunned = serverPlayer.hasEffect(MainEffects.STUN.get()) || data.getStatus().isStrikeLocked();
+			boolean isDowned = data.getStatus().isKnockedDown();
 
-			if (isStunned) {
+			if (isStunned || isDowned) {
 				data.getStatus().setChargingKi(false);
 				data.getStatus().setActionCharging(false);
 				data.getTechniques().clearTechniqueCharge();
 				data.getResources().setActionCharge(0);
 				KiSurgeService.breakSurge(serverPlayer, data);
-				if (!data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
+				if (isStunned && !data.getStatus().isStunEffect()) data.getStatus().setStunEffect(true);
+				if (!isStunned && data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 			} else if (data.getStatus().isStunEffect()) data.getStatus().setStunEffect(false);
 
 			data.getCooldowns().tick();
 			data.getEffects().tick();
 			data.getSecondaryStatEffects().tick();
-			clearExpiredKnockdown(data);
+			clearExpiredKnockdown(serverPlayer, data);
 
 			for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
 				handler.onPlayerTick(serverPlayer, data);
@@ -156,7 +158,7 @@ public class TickHandler {
                 serverPlayer.hasImpulse = true;
             }
 
-			if (!isStunned) handleTechniqueCharge(serverPlayer, data);
+			if (!isStunned && !isDowned) handleTechniqueCharge(serverPlayer, data);
 
 			boolean shouldRegen = tickCounter >= REGEN_INTERVAL && !serverPlayer.isDeadOrDying();
 			boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
@@ -533,9 +535,10 @@ public class TickHandler {
 		}
 	}
 
-	private static void clearExpiredKnockdown(StatsData data) {
+	private static void clearExpiredKnockdown(ServerPlayer serverPlayer, StatsData data) {
 		if (data.getStatus().isKnockedDown() && !data.getCooldowns().hasCooldown(Cooldowns.KNOCKDOWN_DURATION)) {
 			data.getStatus().setKnockedDown(false);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 		}
 	}
 

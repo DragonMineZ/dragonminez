@@ -36,7 +36,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -141,7 +143,9 @@ public final class NPCPlacementManager {
 		JsonLoadReport.clear("npcs");
 		JsonKeys.checkObject("npcs", PLACEMENTS_LABEL, "", root, ROOT_KEYS);
 
-		List<NPCPlacement> parsed = new ArrayList<>();
+		// Keyed by id: two placements sharing an id would fight over the same tagged entity every
+		// spawn pass (each one moves it to its own coordinates), so the last entry wins.
+		Map<String, NPCPlacement> parsed = new LinkedHashMap<>();
 		int index = 0;
 		for (JsonElement element : root.getAsJsonArray("placements")) {
 			if (!element.isJsonObject()) {
@@ -150,11 +154,11 @@ public final class NPCPlacementManager {
 
 			JsonKeys.checkObject("npcs", PLACEMENTS_LABEL, "placements[" + index++ + "]", element.getAsJsonObject(), PLACEMENT_KEYS);
 			NPCPlacement placement = parsePlacement(element.getAsJsonObject());
-			if (placement != null) {
-				parsed.add(placement);
+			if (placement != null && parsed.put(placement.id(), placement) != null) {
+				LogUtil.warn(Env.SERVER, "NPCPlacementManager: duplicate placement id '{}' in {}, keeping the last entry", placement.id(), PLACEMENTS_LABEL);
 			}
 		}
-		return List.copyOf(parsed);
+		return List.copyOf(parsed.values());
 	}
 
 	@Nullable
@@ -378,15 +382,11 @@ public final class NPCPlacementManager {
 		addMasterInStructure(placements, "master_popo", "dragonminez:master_popo", "minecraft:overworld", "kamilookout", 0.0, 0.0, 0.0, true, 135);
 		addMasterInStructure(placements, "master_gero", "dragonminez:master_gero", "minecraft:overworld", "gero_lab", 0.0, 0.0, 0.0, true, 315);
 		addMasterInStructure(placements, "master_guru", "dragonminez:master_guru", "dragonminez:namek", "elder_guru", 0.0, 0.0, 0.0, true, 180);
-		addManualMaster(placements, "master_kaiosama", "dragonminez:master_kaiosama", "dragonminez:otherworld", false, 54.5, 190, 1082.5, false, 180);
-		addManualMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 41, 66.5, false, 180);
-		addManualMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 6.5, 41, 53.5, false, 180);
-		addManualMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 190, 1079.5, false, 180);
-		addManualQuestNPC(placements, "npc_hell_ogre", "hell_ogre", "dragonminez:otherworld", 4.5, 41, 63.5, 200);
 		addManualMaster(placements, "master_kaiosama", "dragonminez:master_kaiosama", "dragonminez:otherworld", false, 54.5, 299, 1031.5, false, 180);
 		addManualMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 150, 17.5, false, 180);
 		addManualMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 9.5, 150, 3.5, false, 180);
 		addManualMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 298, 1030.5, false, 180);
+		addManualQuestNPC(placements, "npc_hell_ogre", "hell_ogre", "dragonminez:otherworld", 4.5, -17, 63.5, 200);
 
 		// Quest NPCs (TALK_TO / quest-giver / turn-in targets) are no longer spawned at runtime here:
 		// they are baked directly into structure NBT via structure blocks (mirroring the namek_trader

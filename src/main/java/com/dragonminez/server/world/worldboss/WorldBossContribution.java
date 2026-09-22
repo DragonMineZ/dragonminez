@@ -1,64 +1,142 @@
 package com.dragonminez.server.world.worldboss;
 
-import net.minecraft.server.level.ServerLevel;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class WorldBossContribution {
 
-	public static final double WEIGHT_DAMAGE = 0.40D;
-	public static final double WEIGHT_BLOCKED = 0.25D;
-	public static final double WEIGHT_HEALED = 0.20D;
-	public static final double WEIGHT_TANK = 0.15D;
+	public enum DamageKind { MELEE, STRIKE, KI, OTHER }
 
-	public static final double MIN_PAYOUT_RATIO = 0.5D;
+	public enum MitigationKind { DEFENSE, BLOCK, SHIELD }
+
+	public enum HealKind { SELF, ALLY }
+
+	public static final class Score {
+		private final UUID id;
+		private String name = "";
+		private int auraRgb = 0xFFFFFF;
+		private final double[] damage = new double[DamageKind.values().length];
+		private final double[] mitigated = new double[MitigationKind.values().length];
+		private final Map<String, Double> received = new LinkedHashMap<>();
+		private final double[] healed = new double[HealKind.values().length];
+
+		private Score(UUID id) {
+			this.id = id;
+		}
+
+		public UUID id() { return id; }
+		public String name() { return name; }
+		public int auraRgb() { return auraRgb; }
+		public double damage(DamageKind kind) { return damage[kind.ordinal()]; }
+		public double mitigated(MitigationKind kind) { return mitigated[kind.ordinal()]; }
+		public double healed(HealKind kind) { return healed[kind.ordinal()]; }
+		public Map<String, Double> received() { return received; }
+
+		public double damageTotal() {
+			double total = 0.0;
+			for (double value : damage) total += value;
+			return total;
+		}
+
+		public double mitigatedTotal() {
+			double total = 0.0;
+			for (double value : mitigated) total += value;
+			return total;
+		}
+
+		public double receivedTotal() {
+			double total = 0.0;
+			for (double value : received.values()) total += value;
+			return total;
+		}
+
+		public double healedTotal() {
+			double total = 0.0;
+			for (double value : healed) total += value;
+			return total;
+		}
+
+		public double points() {
+			GeneralServerConfig.WorldBossConfig config = ConfigManager.getServerConfig().getWorldBoss();
+			return damageTotal() * config.getDamageWeight()
+					+ mitigatedTotal() * config.getMitigatedWeight()
+					+ receivedTotal() * config.getReceivedWeight()
+					+ healedTotal() * config.getHealedWeight();
+		}
+
+		private Score copy() {
+			Score copy = new Score(id);
+			copy.name = name;
+			copy.auraRgb = auraRgb;
+			System.arraycopy(damage, 0, copy.damage, 0, damage.length);
+			System.arraycopy(mitigated, 0, copy.mitigated, 0, mitigated.length);
+			copy.received.putAll(received);
+			System.arraycopy(healed, 0, copy.healed, 0, healed.length);
+			return copy;
+		}
+	}
 
 	private static final Map<String, Map<UUID, Score>> SESSIONS = new HashMap<>();
-
-	private static final class Score {
-		double damage;
-		double blocked;
-		double healed;
-		double tankTicks;
-	}
+	private static final Set<String> DIRTY = new HashSet<>();
 
 	private WorldBossContribution() {}
 
-	private static Score score(String bossKey, Player player) {
+	private static Score score(String bossKey, ServerPlayer player) {
 		if (bossKey == null || bossKey.isEmpty() || player == null) return null;
-		return SESSIONS.computeIfAbsent(bossKey, k -> new HashMap<>())
-				.computeIfAbsent(player.getUUID(), k -> new Score());
+		Score score = SESSIONS.computeIfAbsent(bossKey, k -> new LinkedHashMap<>())
+				.computeIfAbsent(player.getUUID(), Score::new);
+		score.name = player.getGameProfile().getName();
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		if (data != null && data.getStatus().isHasCreatedCharacter()) score.auraRgb = parseHex(data.getCharacter().getAuraColor());
+		DIRTY.add(bossKey);
+		return score;
 	}
 
-	public static void addDamage(String bossKey, Player player, double amount) {
-		if (amount <= 0.0D) return;
-		Score s = score(bossKey, player);
-		if (s != null) s.damage += amount;
+	public static void addDamage(String bossKey, ServerPlayer player, double amount, DamageKind kind) {
+		if (amount <= 0.0 || !Double.isFinite(amount)) return;
+		Score score = score(bossKey, player);
+		if (score != null) score.damage[kind.ordinal()] += amount;
 	}
 
-	public static void addBlocked(String bossKey, Player player, double amount) {
-		if (amount <= 0.0D) return;
-		Score s = score(bossKey, player);
-		if (s != null) s.blocked += amount;
+	public static void addMitigated(String bossKey, ServerPlayer player, double amount, MitigationKind kind) {
+		if (amount <= 0.0 || !Double.isFinite(amount)) return;
+		Score score = score(bossKey, player);
+		if (score != null) score.mitigated[kind.ordinal()] += amount;
 	}
 
-	public static void addHealed(String bossKey, Player player, double amount) {
-		if (amount <= 0.0D) return;
-		Score s = score(bossKey, player);
-		if (s != null) s.healed += amount;
+	public static void addReceived(String bossKey, ServerPlayer player, double amount, String attackerNameKey) {
+		if (amount <= 0.0 || !Double.isFinite(amount)) return;
+		Score score = score(bossKey, player);
+		if (score != null) score.received.merge(attackerNameKey == null ? "" : attackerNameKey, amount, Double::sum);
 	}
 
-	public static void addTankTick(String bossKey, Player player) {
-		Score s = score(bossKey, player);
-		if (s != null) s.tankTicks += 1.0D;
+	public static void addHealed(String bossKey, ServerPlayer player, double amount, HealKind kind) {
+		if (amount <= 0.0 || !Double.isFinite(amount)) return;
+		Score score = score(bossKey, player);
+		if (score != null) score.healed[kind.ordinal()] += amount;
+	}
+
+	public static void touch(String bossKey, ServerPlayer player) {
+		score(bossKey, player);
 	}
 
 	public static void clear(String bossKey) {
 		SESSIONS.remove(bossKey);
+		DIRTY.remove(bossKey);
 	}
 
 	public static boolean hasContributors(String bossKey) {
@@ -66,62 +144,37 @@ public final class WorldBossContribution {
 		return session != null && !session.isEmpty();
 	}
 
-	public static Map<UUID, Double> computeShares(String bossKey) {
-		Map<UUID, Double> result = new HashMap<>();
+	public static boolean consumeDirty(String bossKey) {
+		return DIRTY.remove(bossKey);
+	}
+
+	public static Score peek(String bossKey, UUID id) {
 		Map<UUID, Score> session = SESSIONS.get(bossKey);
-		if (session == null || session.isEmpty()) return result;
+		return session == null ? null : session.get(id);
+	}
 
-		double totalDamage = 0.0D;
-		double totalBlocked = 0.0D;
-		double totalHealed = 0.0D;
-		double totalTank = 0.0D;
-
-		for (Score s : session.values()) {
-			totalDamage += s.damage;
-			totalBlocked += s.blocked;
-			totalHealed += s.healed;
-			totalTank += s.tankTicks;
-		}
-
-		double activeWeight = 0.0D;
-		if (totalDamage > 0.0D) activeWeight += WEIGHT_DAMAGE;
-		if (totalBlocked > 0.0D) activeWeight += WEIGHT_BLOCKED;
-		if (totalHealed > 0.0D) activeWeight += WEIGHT_HEALED;
-		if (totalTank > 0.0D) activeWeight += WEIGHT_TANK;
-		if (activeWeight <= 0.0D) return result;
-
-		double normalize = 1.0D / activeWeight;
-
-		for (Map.Entry<UUID, Score> entry : session.entrySet()) {
-			Score s = entry.getValue();
-			double points = 0.0D;
-
-			if (totalDamage > 0.0D) points += WEIGHT_DAMAGE * normalize * (s.damage / totalDamage);
-			if (totalBlocked > 0.0D) points += WEIGHT_BLOCKED * normalize * (s.blocked / totalBlocked);
-			if (totalHealed > 0.0D) points += WEIGHT_HEALED * normalize * (s.healed / totalHealed);
-			if (totalTank > 0.0D) points += WEIGHT_TANK * normalize * (s.tankTicks / totalTank);
-
-			result.put(entry.getKey(), points);
-		}
+	public static List<Score> snapshot(String bossKey) {
+		Map<UUID, Score> session = SESSIONS.get(bossKey);
+		List<Score> result = new ArrayList<>();
+		if (session == null) return result;
+		for (Score score : session.values()) result.add(score.copy());
+		result.sort(Comparator.comparingDouble(Score::points).reversed());
 		return result;
 	}
 
-	public static Map<ServerPlayer, Double> resolvePayouts(ServerLevel level, String bossKey, double baseReward) {
-		Map<ServerPlayer, Double> payouts = new HashMap<>();
-		Map<UUID, Double> shares = computeShares(bossKey);
-		if (shares.isEmpty()) return payouts;
+	public static double totalPoints(List<Score> scores) {
+		double total = 0.0;
+		for (Score score : scores) total += score.points();
+		return total;
+	}
 
-		double best = 0.0D;
-		for (double value : shares.values()) best = Math.max(best, value);
-		if (best <= 0.0D) return payouts;
-
-		for (Map.Entry<UUID, Double> entry : shares.entrySet()) {
-			ServerPlayer player = level.getServer().getPlayerList().getPlayer(entry.getKey());
-			if (player == null) continue;
-
-			double ratio = MIN_PAYOUT_RATIO + (1.0D - MIN_PAYOUT_RATIO) * (entry.getValue() / best);
-			payouts.put(player, baseReward * ratio);
+	private static int parseHex(String hex) {
+		if (hex == null || hex.isEmpty()) return 0xFFFFFF;
+		try {
+			String value = hex.startsWith("#") ? hex.substring(1) : hex;
+			return (int) (Long.parseLong(value, 16) & 0xFFFFFF);
+		} catch (NumberFormatException e) {
+			return 0xFFFFFF;
 		}
-		return payouts;
 	}
 }

@@ -48,6 +48,7 @@ public class RacialSlotActionC2S {
 			if (!PacketRateLimiter.allow(player.getUUID(), "racial_slot_action", player.level().getGameTime(), 20L)) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isStunned()) return;
 				String race = data.getCharacter().getRaceName();
 				switch (action) {
 					case EJECT -> {

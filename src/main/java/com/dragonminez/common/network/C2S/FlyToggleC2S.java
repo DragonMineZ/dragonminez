@@ -38,6 +38,7 @@ public class FlyToggleC2S {
             if (player == null) return;
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                if (data.getStatus().isStunned()) return;
                 Skill flySkill = data.getSkills().getSkill("fly");
                 if (flySkill == null || flySkill.getLevel() <= 0) return;
 

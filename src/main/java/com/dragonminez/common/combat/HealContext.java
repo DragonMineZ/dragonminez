@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Player;
 public final class HealContext {
 	private static boolean allyTechniqueHeal;
 	private static Entity allyHealer;
+	private static boolean systemHeal;
 
 	private HealContext() {
 	}
@@ -23,11 +24,25 @@ public final class HealContext {
 		}
 	}
 
+	public static void asSystemHeal(Runnable heal) {
+		boolean previous = systemHeal;
+		systemHeal = true;
+		try {
+			heal.run();
+		} finally {
+			systemHeal = previous;
+		}
+	}
+
 	public static Entity getAllyHealer() {
 		return allyHealer;
 	}
 
 	public static boolean isAllyTechniqueHeal() {
 		return allyTechniqueHeal;
+	}
+
+	public static boolean isSystemHeal() {
+		return systemHeal;
 	}
 }

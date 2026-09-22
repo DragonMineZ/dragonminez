@@ -234,7 +234,8 @@ public class PlayerAttackHelper {
     }
 
     public static boolean canAttack(Player player) {
-        return true;
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
+        return stats == null || !stats.getStatus().isKnockedDown();
     }
 
     public static boolean isChargingTechnique(Player player) {

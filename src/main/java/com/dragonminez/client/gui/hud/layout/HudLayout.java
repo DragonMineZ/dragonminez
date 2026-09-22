@@ -44,6 +44,9 @@ public final class HudLayout {
 	private static final float[] SIZE_QUEST_NOTICE = {220.0f, 52.0f};
 	private static final float[] SIZE_SCOUTER = {70.0f, 41.0f};
 	private static final float[] SIZE_BABA_TIMER = {145.0f, 40.0f};
+	private static final float[] SIZE_BOSS_CONTRIBUTION = {
+			com.dragonminez.client.gui.hud.WorldBossContributionHUD.WIDTH,
+			com.dragonminez.client.gui.hud.WorldBossContributionHUD.HEIGHT};
 	private static final String EXTRAS_KEY = "extras";
 	private static final float SKILL_SCALE = 1.25f;
 	private static final float SKILL_LADDER_STEP = 8.0f;
@@ -107,6 +110,7 @@ public final class HudLayout {
 		list.add(HudElement.QUEST_NOTICE);
 		if (style != HudStyle.COMPACT) list.add(HudElement.SCOUTER);
 		list.add(HudElement.BABA_TIMER);
+		list.add(HudElement.BOSS_CONTRIBUTION);
 		return list;
 	}
 
@@ -131,6 +135,7 @@ public final class HudLayout {
 			case QUEST_NOTICE -> SIZE_QUEST_NOTICE;
 			case SCOUTER -> SIZE_SCOUTER;
 			case BABA_TIMER -> SIZE_BABA_TIMER;
+			case BOSS_CONTRIBUTION -> SIZE_BOSS_CONTRIBUTION;
 		};
 	}
 
@@ -164,6 +169,7 @@ public final class HudLayout {
 			case QUEST_NOTICE -> new HudPlacement(1.0f, 0.5f, -6.0f, -40.0f, 0.8f);
 			case SCOUTER -> new HudPlacement(0.0f, 0.5f, 0.0f, -82.0f, 2.0f);
 			case BABA_TIMER -> new HudPlacement(0.5f, 0.0f, 0.0f, 4.0f, 1.0f);
+			case BOSS_CONTRIBUTION -> new HudPlacement(1.0f, 1.0f, -6.0f, -70.0f, 0.8f);
 		};
 	}
 

@@ -250,13 +250,13 @@ public class StatsData {
 		double minScaling = getStatScaling("VIT");
 		double maxScaling = getVitalityScalingMax();
 		double knee = getVitalityCurveKnee();
-		double health = (vitalityCurveHealth(vitality + multBonusVit, minScaling, maxScaling, knee) * vitMult)
-				+ (flatBonusVit * vitalityScalingAt(vitality, minScaling, maxScaling, knee));
+		double health = (curveValue(vitality + multBonusVit, minScaling, maxScaling, knee) * vitMult)
+				+ (flatBonusVit * curveScalingAt(vitality, minScaling, maxScaling, knee));
 		return (float) Math.min(health, Float.MAX_VALUE - 1);
 	}
 
 	public double getVitalityScalingAt(double vitality) {
-		return vitalityScalingAt(vitality, getStatScaling("VIT"), getVitalityScalingMax(), getVitalityCurveKnee());
+		return curveScalingAt(vitality, getStatScaling("VIT"), getVitalityScalingMax(), getVitalityCurveKnee());
 	}
 
 	public double getVitalityScalingMax() {
@@ -274,17 +274,36 @@ public class StatsData {
 		return Math.max(1.0, maxPossibleVit * kneeFraction);
 	}
 
-	private static double vitalityScalingAt(double vitality, double minScaling, double maxScaling, double knee) {
-		double t = Math.max(0.0, Math.min(1.0, vitality / knee));
+	public double getDefenseScalingAt(double resistance) {
+		return curveScalingAt(resistance, getStatScaling("DEF"), getDefenseScalingMax(), getDefenseCurveKnee());
+	}
+
+	public double getDefenseScalingMax() {
+		double minScaling = getStatScaling("DEF");
+		RaceStatsConfig.StatScaling scaling = getClassStats(ConfigManager.getRaceStats(character.getRaceName()), character.getCharacterClass()).getStatScaling();
+		Double maxScaling = scaling != null ? scaling.getDefenseScalingMax() : null;
+		return maxScaling != null ? Math.max(0.0, maxScaling) : minScaling;
+	}
+
+	public double getDefenseCurveKnee() {
+		var gameplay = ConfigManager.getServerConfig().getGameplay();
+		boolean levelMode = isMaxLevelValueInsteadOfStats();
+		double maxPossibleRes = levelMode ? getConfiguredMaxTotalStatsRaw() : getConfiguredMaxValue();
+		double kneeFraction = levelMode ? gameplay.getDefCurveKneeLevelMode() : gameplay.getDefCurveKneeStatMode();
+		return Math.max(1.0, maxPossibleRes * kneeFraction);
+	}
+
+	private static double curveScalingAt(double value, double minScaling, double maxScaling, double knee) {
+		double t = Math.max(0.0, Math.min(1.0, value / knee));
 		return minScaling + (maxScaling - minScaling) * t * t;
 	}
 
-	private static double vitalityCurveHealth(double vitality, double minScaling, double maxScaling, double knee) {
-		if (vitality <= 0) return vitality * minScaling;
-		double ramp = Math.min(vitality, knee);
-		double health = (minScaling * ramp) + ((maxScaling - minScaling) * ramp * ramp * ramp / (3.0 * knee * knee));
-		if (vitality > knee) health += maxScaling * (vitality - knee);
-		return health;
+	private static double curveValue(double value, double minScaling, double maxScaling, double knee) {
+		if (value <= 0) return value * minScaling;
+		double ramp = Math.min(value, knee);
+		double result = (minScaling * ramp) + ((maxScaling - minScaling) * ramp * ramp * ramp / (3.0 * knee * knee));
+		if (value > knee) result += maxScaling * (value - knee);
+		return result;
 	}
 
 	public float getMaxHealth() {
@@ -586,14 +605,45 @@ public class StatsData {
 		return (secondaryDefense + statDef + armorComponent) * releaseMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);
 	}
 
+	private double curvedStatDefense(double resistance) {
+		double minScaling = getStatScaling("DEF");
+		double maxScaling = getDefenseScalingMax();
+		double knee = getDefenseCurveKnee();
+		double flatBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), false);
+		double multBonusDef = bonusStats.calculateBonus("DEF", (int) Math.round(resistance), true);
+		return curveValue(resistance + multBonusDef, minScaling, maxScaling, knee)
+				+ (flatBonusDef * curveScalingAt(resistance, minScaling, maxScaling, knee));
+	}
+
+	public double getFlatDefense() {
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		double armorComponent = (player.getArmorValue() * 0.50) + (getArmorToughnessValue() * 0.70);
+		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
+		return (secondaryDefense + curvedStatDefense(stats.getResistance()) + armorComponent)
+				* releaseMultiplier * secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);
+	}
+
+	public double getMaxFlatDefense() {
+		double armorComponent = (player.getArmorValue() * 0.50) + (getArmorToughnessValue() * 0.70);
+		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
+		return (secondaryDefense + curvedStatDefense(stats.getResistance()) + armorComponent)
+				* secondaryStatEffects.getMultiplier(SecondaryStatEffects.DEF);
+	}
+
 	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken, double armorPenetration) {
 		double defMult = getTotalMultiplier("DEF");
 		double baseDefense = getDefense() * Math.max(1.0, defMult);
+		double flatDefense = getFlatDefense() * Math.max(1.0, defMult);
 
-		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
+		if (isGuardBroken) {
+			double decay = 1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak();
+			baseDefense *= decay;
+			flatDefense *= decay;
+		}
 		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
+		if (flatDefense > 0) flatDefense *= (1.0 - armorPenetration);
 
-		double rawFlatMitigation = baseDefense;
+		double rawFlatMitigation = flatDefense;
 
 		if (ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()
 				&& incomingDamage > 0.0
@@ -667,12 +717,12 @@ public class StatsData {
 
 	public double getFlatMitigation() {
 		double defMult = getTotalMultiplier("DEF");
-		return getDefense() * Math.max(1.0, defMult);
+		return getFlatDefense() * Math.max(1.0, defMult);
 	}
 
 	public double getMaxFlatMitigation() {
 		double defMult = getTotalMultiplier("DEF");
-		return getMaxDefense() * Math.max(1.0, defMult);
+		return getMaxFlatDefense() * Math.max(1.0, defMult);
 	}
 
 	public double getDefenseLegacyUnits() {

@@ -4,6 +4,8 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -143,6 +145,9 @@ public abstract class WorldBossEntity extends DBSagasEntity {
         if (!this.isBossAsleep()) return;
         applyAsleep(false);
         if (trigger != null) this.setTarget(trigger);
+        if (this.level() instanceof ServerLevel) {
+            com.dragonminez.server.world.worldboss.WorldBossSessions.onBossEngaged(this);
+        }
         this.onWakeUp(trigger);
     }
 
@@ -225,10 +230,6 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
         updateBossBar();
 
-        if (this.getTarget() instanceof ServerPlayer tank) {
-            com.dragonminez.server.world.worldboss.WorldBossContribution.addTankTick(getWorldBossKey(), tank);
-        }
-
         if (this.tickCount % LEASH_CHECK_INTERVAL == 0 && !hasEngagedPlayer()) {
             returnToSleep();
         }
@@ -255,10 +256,14 @@ public abstract class WorldBossEntity extends DBSagasEntity {
     }
 
     private boolean isEligible(Player player) {
-        return player.isAlive() && !player.isSpectator() && !player.isCreative();
+        if (!player.isAlive() || player.isSpectator() || player.isCreative()) return false;
+        return !StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> data.getStatus().isKnockedDown()).orElse(false);
     }
 
     public void returnToSleep() {
+        if (this.level() instanceof ServerLevel) {
+            com.dragonminez.server.world.worldboss.WorldBossSessions.onBossReset(this);
+        }
         this.setTarget(null);
         this.stopBossAbility();
         this.clearBossEvent();
