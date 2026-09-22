@@ -9,11 +9,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public final class TournamentPackets {
@@ -226,6 +228,40 @@ public final class TournamentPackets {
 			ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
 					() -> () -> TournamentOverlay.startCountdown(msg.getSeconds())));
 			ctx.get().setPacketHandled(true);
+		}
+	}
+
+	public static class RivalS2C {
+
+		private static volatile UUID clientRival;
+
+		@Nullable
+		private final UUID rival;
+
+		public RivalS2C(@Nullable UUID rival) {
+			this.rival = rival;
+		}
+
+		public static void encode(RivalS2C msg, FriendlyByteBuf buf) {
+			buf.writeBoolean(msg.rival != null);
+			if (msg.rival != null) buf.writeUUID(msg.rival);
+		}
+
+		public static RivalS2C decode(FriendlyByteBuf buf) {
+			return new RivalS2C(buf.readBoolean() ? buf.readUUID() : null);
+		}
+
+		public static void handle(RivalS2C msg, Supplier<NetworkEvent.Context> ctx) {
+			ctx.get().enqueueWork(() -> clientRival = msg.rival);
+			ctx.get().setPacketHandled(true);
+		}
+
+		public static boolean isClientRival(UUID id) {
+			return id != null && id.equals(clientRival);
+		}
+
+		public static void clearClient() {
+			clientRival = null;
 		}
 	}
 

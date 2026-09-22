@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.init.entities.AllMastersEntity;
 import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.network.TournamentPackets;
 import com.dragonminez.common.quest.PartyManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -51,8 +52,7 @@ public class TargetHelper {
         }
 
         if (target instanceof Player targetPlayer) {
-            if (com.dragonminez.server.world.tournament.Tournament.Manager
-                    .arePvpRivals(attacker.getUUID(), targetPlayer.getUUID())) {
+            if (isTournamentRival(attacker, targetPlayer)) {
                 return Relation.HOSTILE;
             }
             if (PartyManager.areInSameParty(attacker, targetPlayer)) {
@@ -82,6 +82,13 @@ public class TargetHelper {
             if (target instanceof Monster) return Relation.coalesce(config.getPlayerRelationToHostiles(), Relation.HOSTILE);
             return Relation.coalesce(config.getPlayerRelationToOther(), Relation.HOSTILE);
         } else return attacker.isAlliedTo(target) ? Relation.FRIENDLY : Relation.HOSTILE;
+    }
+
+    public static boolean isTournamentRival(Player attacker, Entity target) {
+        if (!(resolveHittable(target) instanceof Player targetPlayer)) return false;
+        if (attacker.level().isClientSide()) return TournamentPackets.RivalS2C.isClientRival(targetPlayer.getUUID());
+        return com.dragonminez.server.world.tournament.Tournament.Manager
+                .arePvpRivals(attacker.getUUID(), targetPlayer.getUUID());
     }
 
     public static boolean isAttackableMount(Entity entity) {

@@ -103,6 +103,7 @@ public class ClientStatsEvents {
 
 		if (localPlayer == null) {
 			com.dragonminez.client.gui.tournament.TournamentOverlay.clear();
+			com.dragonminez.common.network.TournamentPackets.RivalS2C.clearClient();
 			return;
 		}
 		if (!mc.isPaused()) com.dragonminez.client.gui.tournament.TournamentOverlay.tick();

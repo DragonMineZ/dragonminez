@@ -1325,7 +1325,7 @@ public class StrikeAttackHandler {
 				mark.x + DIM_PUNCH_RADIUS, mark.y + 4.0, mark.z + DIM_PUNCH_RADIUS);
 
 		for (LivingEntity victim : serverLevel.getEntitiesOfClass(LivingEntity.class, area)) {
-			if (victim == player || victim.isAlliedTo(player)) continue;
+			if (victim == player || (victim.isAlliedTo(player) && !TargetHelper.isTournamentRival(player, victim))) continue;
 
 			double dx = victim.getX() - mark.x;
 			double dz = victim.getZ() - mark.z;
@@ -1469,7 +1469,7 @@ public class StrikeAttackHandler {
 		com.dragonminez.common.combat.util.SwordSlashManager.launch(serverLevel, player, origin, aim,
 				com.dragonminez.common.combat.util.SwordSlashManager.rollFor(index), DIM_SLASH_SCALE, DIM_SLASH_COLOR,
 				DIM_SLASH_SPEED, DIM_SLASH_RANGE, DIM_SLASH_HIT_RADIUS, victim -> {
-					if (victim.isAlliedTo(player) || !TargetHelper.canAttack(player, victim, DIM_SLASH_RANGE + 8.0)) return false;
+					if ((victim.isAlliedTo(player) && !TargetHelper.isTournamentRival(player, victim)) || !TargetHelper.canAttack(player, victim, DIM_SLASH_RANGE + 8.0)) return false;
 					applyStrikeDamage(player, victim, damage, techniqueId, false);
 					return true;
 				});

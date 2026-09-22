@@ -714,6 +714,12 @@ public class NetworkHandler {
 				.encoder(WorldBossReviveC2S::encode)
 				.consumerMainThread(WorldBossReviveC2S::handle)
 				.add();
+
+		net.messageBuilder(TournamentPackets.RivalS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TournamentPackets.RivalS2C::decode)
+				.encoder(TournamentPackets.RivalS2C::encode)
+				.consumerMainThread(TournamentPackets.RivalS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

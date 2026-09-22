@@ -1101,6 +1101,7 @@ public final class Tournament {
 			data.setDirty();
 
 			NetworkHandler.sendToPlayer(new TournamentPackets.CountdownS2C(COUNTDOWN_SECONDS), player);
+			if (rival != null) NetworkHandler.sendToPlayer(new TournamentPackets.RivalS2C(rival.getUUID()), player);
 			Service.pushBracket(level, run);
 		}
 
@@ -1345,7 +1346,7 @@ public final class Tournament {
 
 		public static boolean isInNonLethalMatch(ServerPlayer player) {
 			ActiveMatch match = ACTIVE.get(player.getUUID());
-			if (match == null) return false;
+			if (match == null || match.pvp()) return false;
 
 			Bracket bracket = bracketOf(player);
 			if (bracket == null) return false;
@@ -1365,6 +1366,17 @@ public final class Tournament {
 
 			if (match.pvp()) resolvePvp(player.serverLevel(), player, match, false);
 			else loseMatch(player, match);
+		}
+
+		public static void onKnockedDown(ServerPlayer player, @Nullable Entity attacker) {
+			if (attacker == null || !arePvpRivals(player.getUUID(), attacker.getUUID())) return;
+
+			ActiveMatch match = ACTIVE.remove(player.getUUID());
+			if (match == null) return;
+
+			player.sendSystemMessage(Component.translatable("tournament.dragonminez.knockout")
+					.withStyle(ChatFormatting.RED));
+			resolvePvp(player.serverLevel(), player, match, false);
 		}
 
 		public static void onPlayerDeath(ServerPlayer player) {
@@ -1472,6 +1484,8 @@ public final class Tournament {
 			ACTIVE.remove(player.getUUID());
 			ACTIVE.remove(match.opponentId());
 			PartyManager.setTournamentFriendlyFire(level.getServer(), run.getPartyId(), false);
+			clearRival(level, player.getUUID());
+			clearRival(level, match.opponentId());
 
 			ServerPlayer rival = level.getServer().getPlayerList().getPlayer(match.opponentId());
 			ServerPlayer winner = won ? player : rival;
@@ -1508,6 +1522,8 @@ public final class Tournament {
 			if (run == null) return;
 
 			PartyManager.setTournamentFriendlyFire(level.getServer(), run.getPartyId(), false);
+			clearRival(level, player.getUUID());
+			clearRival(level, match.opponentId());
 			player.displayClientMessage(Component.translatable("tournament.dragonminez.timeout"), false);
 
 			ServerPlayer rival = level.getServer().getPlayerList().getPlayer(match.opponentId());
@@ -1534,6 +1550,8 @@ public final class Tournament {
 				if (active.pvp()) {
 					ACTIVE.remove(active.opponentId());
 					PartyManager.setTournamentFriendlyFire(level.getServer(), run.getPartyId(), false);
+					clearRival(level, id);
+					clearRival(level, active.opponentId());
 				}
 			}
 
@@ -1578,7 +1596,9 @@ public final class Tournament {
 		}
 
 		private static void finishRun(ServerLevel level, Progress data, Run run) {
-			for (UUID id : run.getParticipants()) ACTIVE.remove(id);
+			for (UUID id : run.getParticipants()) {
+				if (ACTIVE.remove(id) != null) clearRival(level, id);
+			}
 			PartyManager.setTournamentFriendlyFire(level.getServer(), run.getPartyId(), false);
 			despawnOpponent(level, run.getStandingOpponent());
 			run.setStandingOpponent(null);
@@ -1588,6 +1608,11 @@ public final class Tournament {
 					.withStyle(ChatFormatting.GRAY));
 			Service.pushBracket(level, run);
 			data.removeRun(run.getTournamentId());
+		}
+
+		private static void clearRival(ServerLevel level, UUID id) {
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+			if (player != null) NetworkHandler.sendToPlayer(new TournamentPackets.RivalS2C(null), player);
 		}
 
 		private static void broadcast(ServerLevel level, Run run, Component message) {

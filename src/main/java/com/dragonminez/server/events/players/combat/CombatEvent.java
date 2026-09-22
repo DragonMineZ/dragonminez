@@ -40,6 +40,7 @@ import com.dragonminez.server.events.players.RageEvents;
 import com.dragonminez.server.events.players.KiSurgeService;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.tournament.Tournament;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -820,7 +821,8 @@ public class CombatEvent {
 							boolean friendlyKnockdown = false;
 							boolean captureKnockdown = false;
 							if (damageSource instanceof Player attacker) {
-								boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim) && PartyManager.isPartyPvpEnabled(attacker);
+								boolean isSamePartyPvp = PartyManager.areInSameParty(attacker, victim)
+										&& (PartyManager.isPartyPvpEnabled(attacker) || Tournament.Manager.arePvpRivals(attacker.getUUID(), victim.getUUID()));
 								boolean isFriendlyFist = StatsProvider.get(StatsCapability.INSTANCE, attacker)
 										.map(data -> data.getStatus().isFriendlyFistEnabled())
 										.orElse(false);
@@ -846,6 +848,10 @@ public class CombatEvent {
 									SummonPlayerShadowDummyC2S.dismissByDummy((ShadowDummyEntity) damageSource);
 								}
 							}
+						}
+
+						if (victim instanceof ServerPlayer knockedPlayer && stats.getStatus().isKnockedDown()) {
+							Tournament.Manager.onKnockedDown(knockedPlayer, damageSource);
 						}
 					}
 
