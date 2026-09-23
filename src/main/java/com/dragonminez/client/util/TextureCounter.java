@@ -152,6 +152,15 @@ public class TextureCounter {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
         int count = 0;
 
+        if (race.equals("bioandroid") && type.equals("eye")) {
+            for (int i = 1; i <= 100; i++) {
+                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/bioandroid/faces/base_eye_" + i + "_layer0.png");
+                if (resourceManager.getResource(location).isPresent()) count++;
+                else break;
+            }
+            return count;
+        }
+
         boolean isHumanoid = race.equals("human") || race.equals("saiyan");
         String raceFolder = isHumanoid ? "humansaiyan" : race;
         String prefix = raceFolder + "_";

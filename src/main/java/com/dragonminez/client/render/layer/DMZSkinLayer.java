@@ -504,10 +504,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			phase = (character.hasActiveForm() && currentForm.equals(BioAndroidForms.SEMI_PERFECT)) ? "semiperfect" : (character.hasActiveForm() ? "perfect" : "base");
 		else phase = "base";
 
-		String textureBase = folder + phase + "_eye_layer";
+		int eyeType = character.getEyesType();
 
-		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer0.png")).getPath(), eye2, pt, pl, po, alpha);
-		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer1.png")).getPath(), eye1, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getBioEyeTexture(folder, phase, eyeType, 0).getPath(), eye2, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getBioEyeTexture(folder, phase, eyeType, 1).getPath(), eye1, pt, pl, po, alpha);
+	}
+
+	private ResourceLocation getBioEyeTexture(String folder, String phase, int eyeType, int layer) {
+		ResourceLocation legacy = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + phase + "_eye_layer" + layer + ".png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer" + layer + ".png"));
+		if (eyeType <= 0) return legacy;
+		ResourceLocation baseType = getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_" + eyeType + "_layer" + layer + ".png"), legacy);
+		return getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + phase + "_eye_" + eyeType + "_layer" + layer + ".png"), baseType);
 	}
 
 	private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float[] b2, float pt, int pl, int po, float alpha) {
