@@ -173,7 +173,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		activeTabs.add(TabId.PRESET);
 		if (getMaxHairForCurrentState() > 0) activeTabs.add(TabId.HAIR);
 		activeTabs.add(TabId.EYES);
-		activeTabs.add(TabId.FACE);
+		if (!character.getRace().equalsIgnoreCase("bioandroid")) activeTabs.add(TabId.FACE);
 		activeTabs.add(TabId.BODY);
 		activeTabs.add(TabId.AURA_CLASS);
 
