@@ -233,6 +233,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Integer> LIGHTNING_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> TEXTURE_VARIANT = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_SUPERVILLAIN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_CHARACTER_ALIVE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -1426,6 +1427,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public boolean isSupervillain() {return this.entityData.get(IS_SUPERVILLAIN);}
     public void setSupervillain(boolean supervillain) {this.entityData.set(IS_SUPERVILLAIN, supervillain);}
 
+    public boolean isCharacterAlive() {return this.entityData.get(IS_CHARACTER_ALIVE);}
+    public void setCharacterAlive(boolean alive) {this.entityData.set(IS_CHARACTER_ALIVE, alive);}
+
     private java.util.Set<java.util.UUID> raidTargets = null;
     public void setRaidTargets(java.util.Set<java.util.UUID> targets) {this.raidTargets = targets;}
 
@@ -1579,6 +1583,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
         pCompound.putBoolean("Supervillain", this.isSupervillain());
+        pCompound.putBoolean("isCharacterAlive", this.isCharacterAlive());
         pCompound.putBoolean("TransformationDisabled", this.transformationDisabled);
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
@@ -1614,6 +1619,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         }
         if (pCompound.contains("Supervillain")) {
             this.setSupervillain(pCompound.getBoolean("Supervillain"));
+        }
+        if (pCompound.contains("isCharacterAlive")) {
+            this.setCharacterAlive(pCompound.getBoolean("isCharacterAlive"));
         }
         if (pCompound.contains("TransformationDisabled")) {
             this.transformationDisabled = pCompound.getBoolean("TransformationDisabled");
@@ -1660,6 +1668,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
         this.entityData.define(IS_SUPERVILLAIN, false);
+        this.entityData.define(IS_CHARACTER_ALIVE, true);
         this.entityData.define(IS_ZANZOKEN, false);
         this.entityData.define(IS_KID, false);
         this.entityData.define(SCALE_VAL, 1.0F);
@@ -2050,6 +2059,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             }
 
             newEntity.setAiTier(this.getAiTier());
+            newEntity.setCharacterAlive(this.isCharacterAlive());
             newEntity.getPersistentData().putBoolean("dmz_stats_configured", true);
 
 			if (this.getPersistentData().contains("dmz_difficulty")) {
