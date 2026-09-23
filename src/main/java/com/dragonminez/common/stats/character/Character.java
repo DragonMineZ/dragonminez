@@ -369,14 +369,6 @@ public class Character {
 	}
 
 	public Float[] getResolvedModelScaling() {
-		if (isOozaruCached()) {
-			FormConfig.FormData form = getActiveFormData();
-			if (form != null) return safeModelScaling(form.getModelScaling());
-			FormConfig.FormData stack = getActiveStackFormData();
-			if (stack != null) return safeModelScaling(stack.getModelScaling());
-			return safeModelScaling(getModelScaling());
-		}
-
 		FormConfig.FormData form = getActiveFormData();
 		FormConfig.FormData stack = getActiveStackFormData();
 

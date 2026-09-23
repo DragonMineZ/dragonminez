@@ -24,28 +24,16 @@ public class FirstPersonManager {
 
 	public static Vector3f offsetFirstPersonView(Player player) {
 		final float BASE_OFFSET_Y = 0.1F;
-		final float[] BASE_OFFSET_Z = {0.3F};
+		final float BASE_OFFSET_Z = 0.3F;
 		final float BASE_SCALE = 0.9375f;
 
 		final float[][] scaling = {{BASE_SCALE, BASE_SCALE, BASE_SCALE}};
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			var character = data.getCharacter();
-
-			Float[] modelScaling = character.getModelScaling();
-			if (modelScaling != null && modelScaling.length >= 2) {
-				scaling[0][0] = modelScaling[0];
-				scaling[0][1] = modelScaling[1];
-			}
-
-			if (character.isOozaruCached()) {
-				BASE_OFFSET_Z[0] = 1.3F;
-			} else {
-				Float[] resolved = character.getResolvedModelScaling();
-				if (resolved != null && resolved.length >= 2) {
-					scaling[0][0] = resolved[0];
-					scaling[0][1] = resolved[1];
-				}
+			Float[] resolved = data.getCharacter().getResolvedModelScaling();
+			if (resolved != null && resolved.length >= 2) {
+				scaling[0][0] = resolved[0];
+				scaling[0][1] = resolved[1];
 			}
 		});
 
@@ -58,6 +46,6 @@ public class FirstPersonManager {
 		float defaultEyeHeight = 1.42f;
 		float adjustedOffsetY = BASE_OFFSET_Y + (eyeHeightInBlocks - defaultEyeHeight);
 
-		return new Vector3f(0, adjustedOffsetY, BASE_OFFSET_Z[0]);
+		return new Vector3f(0, adjustedOffsetY, BASE_OFFSET_Z);
 	}
 }

@@ -632,19 +632,8 @@ public class ClientStatsEvents {
 	}
 
 	private static float[] getBodyScale(StatsData stats) {
-		var character = stats.getCharacter();
-
-		Float[] resolved = character.getResolvedModelScaling();
-		float sX = resolved[0], sY = resolved[1], sZ = resolved[2];
-
-		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
-		if (currentForm.contains("ozaru")) {
-			sX = Math.max(0.1f, sX - 2.8f);
-			sY = Math.max(0.1f, sY - 2.8f);
-			sZ = Math.max(0.1f, sZ - 2.8f);
-		}
-
-		return new float[]{sX, sY, sZ};
+		Float[] resolved = stats.getCharacter().getResolvedModelScaling();
+		return new float[]{resolved[0], resolved[1], resolved[2]};
 	}
 
 	private static boolean characterHasAuraColor(Character character) {
