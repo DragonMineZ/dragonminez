@@ -386,7 +386,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData buffed = new FormConfig.FormData();
 		buffed.setName(HumanForms.BUFFED);
 		buffed.setUnlockOnSkillLevel(1);
-		buffed.setCustomModel("buffed");
+		buffed.setCustomModel("buffedg3");
 		buffed.setModelScaling(new Float[]{1.2f, 1.1f, 1.2f});
 		buffed.setStrMultiplier(1.6);
 		buffed.setSkpMultiplier(1.75);
@@ -567,7 +567,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData superAndroid = new FormConfig.FormData();
 		superAndroid.setName(HumanForms.SUPER_ANDROID);
 		superAndroid.setUnlockOnSkillLevel(1);
-		superAndroid.setCustomModel("");
+		superAndroid.setCustomModel("buffed");
 		superAndroid.setModelScaling(new Float[]{1.05f, 1.05f, 1.05f});
 		superAndroid.setStrMultiplier(2.9);
 		superAndroid.setSkpMultiplier(2.9);
@@ -581,7 +581,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fusedAndroid = new FormConfig.FormData();
 		fusedAndroid.setName(HumanForms.FUSED_ANDROID);
 		fusedAndroid.setUnlockOnSkillLevel(2);
-		fusedAndroid.setCustomModel("buffed");
+		fusedAndroid.setCustomModel("buffedg3");
 		fusedAndroid.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
 		fusedAndroid.setStrMultiplier(3.7);
 		fusedAndroid.setSkpMultiplier(3.7);
@@ -672,7 +672,7 @@ public class DefaultFormsFactory {
 		ssj4gt.setEye1Color("#FFD700");
 		ssj4gt.setEye2Color("#FFD700");
 		ssj4gt.setAuraColor("#FFD700");
-		ssj4gt.setModelScaling(new Float[]{0.96f, 0.96f, 0.96f});
+		ssj4gt.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		ssj4gt.setStrMultiplier(3.75);
 		ssj4gt.setSkpMultiplier(3.75);
 		ssj4gt.setDefMultiplier(2.875);
@@ -746,13 +746,13 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssg3 = new FormConfig.FormData();
 		ssg3.setName(SaiyanForms.SUPER_SAIYAN_GRADE_3);
 		ssg3.setUnlockOnSkillLevel(3);
-		ssg3.setCustomModel("buffed");
+		ssg3.setCustomModel("buffedg3");
 		ssg3.setHairColor("#FFEDB3");
 		ssg3.setBodyColor2("#FFEDB3");
 		ssg3.setEye1Color("#00FFFF");
 		ssg3.setEye2Color("#00FFFF");
 		ssg3.setAuraColor("#FFD700");
-		ssg3.setModelScaling(new Float[]{1.2f, 1.2f, 1.2f});
+		ssg3.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		ssg3.setStrMultiplier(2.75);
 		ssg3.setSkpMultiplier(2.75);
 		ssg3.setDefMultiplier(2.0);
@@ -986,7 +986,7 @@ public class DefaultFormsFactory {
 		ssjFullPower.setName(SaiyanForms.SSJ_FULL_POWER);
 		ssjFullPower.setUnlockOnSkillLevel(3);
 		ssjFullPower.setTransformationAnimation("transf.berserker");
-		ssjFullPower.setCustomModel("buffed");
+		ssjFullPower.setCustomModel("buffedg3");
 		ssjFullPower.setBodyColor2("#9EFE53");
 		ssjFullPower.setHairColor("#9EFE53");
 		ssjFullPower.setEye1Color("#FFFFFF");

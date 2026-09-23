@@ -57,6 +57,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slim.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffedg3.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_SLIM_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_slimg3.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED_G3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_femg3.geo.json");
 
     private static final ResourceLocation HUMAN_SAIYAN_4ARMS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4arms.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_4ARMS_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/h4armsslim.geo.json");
@@ -194,17 +197,15 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 return BASE_DEFAULT;
             case "oozaru": return OOZARU;
             case "ssj4gt":
-                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                if (!isMale) return MAJIN_SLIM;
-                return BASE_DEFAULT;
-            case "ssj4d":
-                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED : HUMAN_SAIYAN_BUFFED;
-                if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
-                return HUMAN_SAIYAN_BUFFED;
             case "buffed":
                 if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED : HUMAN_SAIYAN_BUFFED;
                 if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
                 return HUMAN_SAIYAN_BUFFED;
+            case "ssj4d":
+            case "buffedg3":
+                if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_SLIM_BUFFED_G3 : HUMAN_SAIYAN_BUFFED_G3;
+                if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED_G3;
+                return HUMAN_SAIYAN_BUFFED_G3;
             case "4arms":
                 if (bodyType == 0) return isSlimSkin ? HUMAN_SAIYAN_4ARMS_SLIM : HUMAN_SAIYAN_4ARMS;
                 if (!isMale) return HUMAN_SAIYAN_4ARMS_FEM;

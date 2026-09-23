@@ -333,6 +333,28 @@
 					]
 				},
 				{
+					"name": "boobas",
+					"parent": "body",
+					"pivot": [0, 20, -1.75],
+					"cubes": [
+						{
+							"origin": [-3.99, 19.25, -3.75],
+							"size": [7.9, 3, 3],
+							"inflate": 0.1,
+							"pivot": [0, 20.25, -1.75],
+							"rotation": [42.5, 0, 0],
+							"uv": {
+								"north": {"uv": [20, 23], "uv_size": [8, 2]},
+								"east": {"uv": [18, 22], "uv_size": [2, 2]},
+								"south": {"uv": [20, 23], "uv_size": [8, 2]},
+								"west": {"uv": [27, 22], "uv_size": [2, 2]},
+								"up": {"uv": [20, 21], "uv_size": [8, 2]},
+								"down": {"uv": [20, 25], "uv_size": [8, -2]}
+							}
+						}
+					]
+				},
+				{
 					"name": "right_arm",
 					"parent": "waist",
 					"pivot": [-5.5, 22, 0],
