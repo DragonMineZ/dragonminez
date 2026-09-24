@@ -521,18 +521,7 @@ public class AuraRenderer {
 	}
 
 	private static float[] getBodyScale(StatsData stats) {
-		float[] modelScale = getModelScale(stats);
-		float sX = modelScale[0], sY = modelScale[1], sZ = modelScale[2];
-		var character = stats.getCharacter();
-
-		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
-		if (currentForm.contains("ozaru")) {
-			sX = Math.max(0.1f, sX - 2.8f);
-			sY = Math.max(0.1f, sY - 2.8f);
-			sZ = Math.max(0.1f, sZ - 2.8f);
-		}
-
-		return new float[]{sX, sY, sZ};
+		return getModelScale(stats);
 	}
 
 	private static float[] getAuraScale(Player player, StatsData stats) {
@@ -543,7 +532,6 @@ public class AuraRenderer {
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) baseScale += 0.1f;
 		if (character.hasActiveForm() && character.getActiveFormData() != null) baseScale += 0.1f;
-		if (currentForm.contains("oozaru")) baseScale = 1.2f;
 		if (currentForm.contains("supersaiyan2") || currentForm.contains("supersaiyan3") || currentForm.contains("ultra") || currentForm.contains("superperfect")) {
 			baseScale += 0.2f;
 		}

@@ -180,7 +180,7 @@ public class SagaGokuEntity{
             this.setKiBlastSpeed(1.4F);
             this.setDBZStyle(0);
             this.setEvade(true, 40);
-            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR);
+            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.SUPER_GOD_FIST);
             this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
             this.addKiSkill(KiSkillType.KI_SMALL, 50, 1.5F, 0x75FFFF, 0x75FFFF);
 
@@ -226,7 +226,7 @@ public class SagaGokuEntity{
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 150);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
 
         }
 
@@ -267,7 +267,7 @@ public class SagaGokuEntity{
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 150);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
 
         }
 
@@ -310,7 +310,7 @@ public class SagaGokuEntity{
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
 
             this.setWildSense(true, 70);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
         }
 

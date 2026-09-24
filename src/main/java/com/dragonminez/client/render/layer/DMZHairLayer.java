@@ -114,7 +114,6 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (stats == null) return false;
 		Character character = stats.getCharacter();
 		if (!HairManager.canUseHair(character)) return false;
-		if (character.hasActiveForm() && character.isOozaruCached()) return false;
 		preparedStats = stats;
 		if (editorPreview(animatable) == null) resolver.resolve(animatable, stats, resolved);
 		return true;

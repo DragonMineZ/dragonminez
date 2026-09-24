@@ -118,6 +118,8 @@ public class DBSagasAnimationHandler {
             if (comboId == 6) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO5);
             if (comboId == 7) return event.setAndContinue(DBSagasAnimations.ANIM_SLEEP_RECOVERY);
             if (comboId == 8) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO7);
+            if (comboId == 9) return event.setAndContinue(DBSagasAnimations.ANIM_SPIRIT_BREAKING_CANNON);
+            if (comboId == 11) return event.setAndContinue(DBSagasAnimations.ANIM_SUPER_GOD_FIST);
 
         }
 

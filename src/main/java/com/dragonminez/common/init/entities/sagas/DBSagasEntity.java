@@ -192,7 +192,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         BASIC(0, Tier.MEDIUM), AIR(1, Tier.MEDIUM), KI_CHARGE_ATTACK(2, Tier.STRONG),
         METEOR_COMBINATION(3, Tier.STRONG), ANDROID_ABSORPTION(4, Tier.STRONG),
         GUM_PUNCH(5, Tier.MEDIUM), GUM_EXPAND(6, Tier.WEAK), SLEEP_RECOVERY(7, Tier.WEAK),
-        RAPID_KICKS(8, Tier.WEAK);
+        RAPID_KICKS(8, Tier.WEAK), SPIRIT_BREAKING_CANNON(9, Tier.STRONG), SUPER_GOD_FIST(11, Tier.STRONG);
 
         private final int id;
         private final Tier tier;
@@ -233,6 +233,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private static final EntityDataAccessor<Integer> LIGHTNING_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> TEXTURE_VARIANT = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_SUPERVILLAIN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_CHARACTER_ALIVE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -276,6 +277,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     @Getter @Setter private int zanzokenCooldownMax = 0;
     @Getter @Setter private int currentZanzokenCooldown = 0;
     @Getter @Setter private int zanzokenTicks = 0;
+    @Getter private int zanzokenTier = ZANZOKEN_TIER_NONE;
+    private int zanzokenHopsLeft = 0;
+    private int zanzokenAfterimagesLeft = 0;
+    private int zanzokenDurationTicks = 0;
 
     private boolean canUseWildSense = false;
     private int wildSenseCooldownMax = 0;
@@ -482,7 +487,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.set(IS_ZANZOKEN, active);
     }
 
+    public static final int ZANZOKEN_TIER_NONE = 0;
+    public static final int ZANZOKEN_TIER_BASIC = 1;
+    public static final int ZANZOKEN_TIER_MEDIUM = 2;
+    public static final int ZANZOKEN_TIER_ADVANCED = 3;
+    private static final int[] ZANZOKEN_HOPS = {0, 2, 4, 6};
+    private static final int[] ZANZOKEN_AFTERIMAGES = {0, 1, 3, 5};
+    private static final int ZANZOKEN_HOP_INTERVAL = 5;
+    private static final int ZANZOKEN_RECOVERY_TICKS = 5;
+    private static final int ZANZOKEN_DIMENSIONAL_TICKS = 40;
     private static final int ZANZOKEN_AFTERIMAGE_TICKS = 60;
+    private static final double ZANZOKEN_HOP_MIN_DISTANCE = 4.0D;
+    private static final double ZANZOKEN_HOP_DISTANCE_SPREAD = 2.0D;
 
     private boolean isSafeTeleportLocation(double targetX, double targetY, double targetZ) {
         AABB targetBox = this.getBoundingBox().move(targetX - this.getX(), targetY - this.getY(), targetZ - this.getZ());
@@ -502,16 +518,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     private boolean dimensionalZanzoken = false;
 
     public void setDimensionalZanzoken(boolean active, int cooldown) {
-        this.setZanzoken(active, cooldown);
+        this.setZanzoken(active ? ZANZOKEN_TIER_BASIC : ZANZOKEN_TIER_NONE, cooldown);
         this.dimensionalZanzoken = active;
     }
 
     public boolean usesDimensionalZanzoken() {
         return this.dimensionalZanzoken;
-    }
-
-    protected boolean repeatsZanzoken() {
-        return !this.dimensionalZanzoken;
     }
 
     private boolean executeDimensionalWarp() {
@@ -551,10 +563,36 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void performZanzoken() {
+        int tier = this.zanzokenTier > ZANZOKEN_TIER_NONE ? this.zanzokenTier : ZANZOKEN_TIER_BASIC;
+        int hops = this.dimensionalZanzoken ? 1 : ZANZOKEN_HOPS[tier];
+
         this.setZanzokenState(true);
         this.zanzokenTicks = 0;
         this.currentZanzokenCooldown = this.zanzokenCooldownMax;
-        executeZanzokenJump();
+        this.zanzokenHopsLeft = hops;
+        this.zanzokenAfterimagesLeft = this.dimensionalZanzoken ? 0 : ZANZOKEN_AFTERIMAGES[tier];
+        this.zanzokenDurationTicks = this.dimensionalZanzoken
+                ? ZANZOKEN_DIMENSIONAL_TICKS
+                : (hops - 1) * ZANZOKEN_HOP_INTERVAL + ZANZOKEN_RECOVERY_TICKS;
+        this.zanzokenHop();
+    }
+
+    private void zanzokenHop() {
+        this.zanzokenHopsLeft--;
+        this.executeZanzokenJump();
+    }
+
+    private void tickZanzoken() {
+        this.zanzokenTicks++;
+        if (this.zanzokenHopsLeft > 0 && this.zanzokenTicks % ZANZOKEN_HOP_INTERVAL == 0) {
+            this.zanzokenHop();
+        }
+        if (this.zanzokenTicks >= this.zanzokenDurationTicks) {
+            this.setZanzokenState(false);
+            this.zanzokenTicks = 0;
+            this.zanzokenHopsLeft = 0;
+            this.zanzokenAfterimagesLeft = 0;
+        }
     }
 
     protected void executeZanzokenJump() {
@@ -566,9 +604,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         float afterimageYaw = this.yBodyRot;
 
         if (this.getTarget() != null) {
+            double minDistance = this.getTarget().getBbWidth() * 0.5D + ZANZOKEN_HOP_MIN_DISTANCE;
             for (int i = 0; i < 10; i++) {
                 double angle = this.random.nextDouble() * Math.PI * 2.0D;
-                double distance = 4.0D + this.random.nextDouble() * 2.0D;
+                double distance = minDistance + this.random.nextDouble() * ZANZOKEN_HOP_DISTANCE_SPREAD;
                 double newX = this.getTarget().getX() + Math.cos(angle) * distance;
                 double newZ = this.getTarget().getZ() + Math.sin(angle) * distance;
                 double newY = this.getTarget().getY();
@@ -590,7 +629,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
             if (teleported) {
                 this.lookAt(this.getTarget(), 360, 360);
-                if (!this.level().isClientSide) {
+                if (!this.level().isClientSide && this.zanzokenAfterimagesLeft > 0) {
+                    this.zanzokenAfterimagesLeft--;
                     NetworkHandler.sendToTrackingEntity(new AfterimageVfxS2C(this.getId(), ZANZOKEN_AFTERIMAGE_TICKS,
                             new Vec3[]{afterimagePos}, new float[]{afterimageYaw}, false), this);
                 }
@@ -675,8 +715,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.currentWildSenseCooldown = cooldown;
     }
 
-    public void setZanzoken(boolean active, int cooldown) {
-        this.canUseZanzoken = active;
+    public void setZanzoken(int tier, int cooldown) {
+        this.zanzokenTier = Mth.clamp(tier, ZANZOKEN_TIER_NONE, ZANZOKEN_TIER_ADVANCED);
+        this.canUseZanzoken = this.zanzokenTier > ZANZOKEN_TIER_NONE;
         this.zanzokenCooldownMax = cooldown;
         this.currentZanzokenCooldown = cooldown;
     }
@@ -955,14 +996,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
                 }
 
                 if (this.isZanzoken()) {
-                    this.zanzokenTicks++;
-                    if (this.zanzokenTicks % 5 == 0 && this.repeatsZanzoken()) {
-                        executeZanzokenJump();
-                    }
-                    if (this.zanzokenTicks >= 40) {
-                        this.setZanzokenState(false);
-                        this.zanzokenTicks = 0;
-                    }
+                    this.tickZanzoken();
                 }
 
                 if (this.isCasting()) {
@@ -1304,6 +1338,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public void remove(RemovalReason reason) {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
             removeAuraLight(serverLevel);
+            if (this.isComboing()) ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
         }
         super.remove(reason);
     }
@@ -1392,6 +1427,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public boolean isSupervillain() {return this.entityData.get(IS_SUPERVILLAIN);}
     public void setSupervillain(boolean supervillain) {this.entityData.set(IS_SUPERVILLAIN, supervillain);}
 
+    public boolean isCharacterAlive() {return this.entityData.get(IS_CHARACTER_ALIVE);}
+    public void setCharacterAlive(boolean alive) {this.entityData.set(IS_CHARACTER_ALIVE, alive);}
+
     private java.util.Set<java.util.UUID> raidTargets = null;
     public void setRaidTargets(java.util.Set<java.util.UUID> targets) {this.raidTargets = targets;}
 
@@ -1433,6 +1471,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     }
 
     public void stopCombo() {
+        ComboManager.onComboStopped(this, this.getComboId(), this.comboTarget);
         this.setComboing(false);
         this.entityData.set(CURRENT_COMBO_ID, -1);
         this.comboTimer = 0;
@@ -1544,6 +1583,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
         pCompound.putBoolean("Supervillain", this.isSupervillain());
+        pCompound.putBoolean("isCharacterAlive", this.isCharacterAlive());
         pCompound.putBoolean("TransformationDisabled", this.transformationDisabled);
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
@@ -1579,6 +1619,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         }
         if (pCompound.contains("Supervillain")) {
             this.setSupervillain(pCompound.getBoolean("Supervillain"));
+        }
+        if (pCompound.contains("isCharacterAlive")) {
+            this.setCharacterAlive(pCompound.getBoolean("isCharacterAlive"));
         }
         if (pCompound.contains("TransformationDisabled")) {
             this.transformationDisabled = pCompound.getBoolean("TransformationDisabled");
@@ -1625,6 +1668,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
         this.entityData.define(IS_SUPERVILLAIN, false);
+        this.entityData.define(IS_CHARACTER_ALIVE, true);
         this.entityData.define(IS_ZANZOKEN, false);
         this.entityData.define(IS_KID, false);
         this.entityData.define(SCALE_VAL, 1.0F);
@@ -2015,6 +2059,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             }
 
             newEntity.setAiTier(this.getAiTier());
+            newEntity.setCharacterAlive(this.isCharacterAlive());
             newEntity.getPersistentData().putBoolean("dmz_stats_configured", true);
 
 			if (this.getPersistentData().contains("dmz_difficulty")) {

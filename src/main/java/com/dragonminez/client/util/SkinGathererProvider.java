@@ -72,7 +72,7 @@ public class SkinGathererProvider {
 	private static final float[] WHITE_COLOR = {1.0f, 1.0f, 1.0f};
 	private static final float[] DEFAULT_TAIL_COLOR = ColorUtils.hexToRgb("#572117");
 	private static final float[] DEFAULT_ORANGE_COLOR = ColorUtils.hexToRgb("#e67d40");
-	private static final float[] DEFAULT_STINGER_COLOR = ColorUtils.hexToRgb("#D9B28D");
+	private static final float[] DEFAULT_STINGER_COLOR = ColorUtils.hexToRgb("#EDD747");
 
 	public static ResourceLocation getCachedTexture(String path) {
 		return TEXTURE_CACHE.computeIfAbsent(path, p -> ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, p));
@@ -184,7 +184,7 @@ public class SkinGathererProvider {
 		boolean renderSaiyanTail = (isSaiyanLogic || hasSaiyanTail) && (isSSJ4Active || (stats.getStatus().isTailVisible() && character.isHasSaiyanTail()));
 
 		boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.contains("ssj4d")
-				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("4arms");
+				|| logicKey.contains("ssj4gt") || logicKey.equals("buffed") || logicKey.equals("buffedg3") || logicKey.equals("4arms");
 
 		if (isHumanoid && bodyType == 0) {
 			consumer.accept(player.getSkinTextureLocation(), WHITE_COLOR);

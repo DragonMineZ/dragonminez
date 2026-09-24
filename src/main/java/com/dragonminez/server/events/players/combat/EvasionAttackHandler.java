@@ -74,8 +74,12 @@ public class EvasionAttackHandler {
 	private static final double AFTERIMAGE_RANGE = 24.0;
 	private static final double DIMENSIONAL_WARP_RANGE = 64.0;
 	private static final double AFTERIMAGE_GAP = 0.9;
-	private static final double AFTERIMAGE_ILLUSION_GAP = 3.0;
 	private static final double AFTERIMAGE_DECOY_DISTANCE = 4.0;
+	private static final int AFTERIMAGE_HOPS = 4;
+	private static final int AFTERIMAGE_HOP_INTERVAL = 5;
+	private static final double AFTERIMAGE_HOP_MIN_DISTANCE = 4.0;
+	private static final double AFTERIMAGE_HOP_DISTANCE_SPREAD = 2.0;
+	private static final int AFTERIMAGE_HOP_ATTEMPTS = 10;
 	private static final String AFTERIMAGE_LOST_UNTIL_TAG = "dmz_afterimage_lost_until";
 	private static final String AFTERIMAGE_LOST_BY_TAG = "dmz_afterimage_lost_by";
 	private static final double AFTERIMAGE_CONFUSE_RADIUS = 16.0;
@@ -92,6 +96,9 @@ public class EvasionAttackHandler {
 		final int totalTicks;
 		int ticksRemaining;
 		int ticksSincePulse;
+		LivingEntity hopTarget;
+		int hopsLeft;
+		int hopDurationTicks;
 
 		ActiveEvasion(String techniqueId, int totalTicks) {
 			this.techniqueId = techniqueId;
@@ -145,7 +152,11 @@ public class EvasionAttackHandler {
 			if (xpGain > 0) stats.getTechniques().addExperienceToTechnique(techniqueId, xpGain);
 
 			int durationTicks = technique.getActualDurationTicks();
-			int lockTicks = afterimage != null ? Math.min(durationTicks, AFTERIMAGE_LOCK_TICKS) : durationTicks;
+			int lockTicks = durationTicks;
+			if (afterimage != null) {
+				int hopTicks = "afterimage".equals(techniqueId) && afterimage.target() != null ? (AFTERIMAGE_HOPS - 1) * AFTERIMAGE_HOP_INTERVAL : 0;
+				lockTicks = Math.min(durationTicks, hopTicks + AFTERIMAGE_LOCK_TICKS);
+			}
 			stats.getStatus().setEvasionLockTicks(lockTicks);
 			applySharedEvasionCooldown(stats, lockTicks + SHARED_EVASION_COOLDOWN_TICKS);
 
@@ -155,10 +166,11 @@ public class EvasionAttackHandler {
 						new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, technique.getAnimationId()), player);
 			}
 
-			ACTIVE.put(player.getUUID(), new ActiveEvasion(techniqueId, lockTicks));
+			ActiveEvasion active = new ActiveEvasion(techniqueId, lockTicks);
+			ACTIVE.put(player.getUUID(), active);
 
 			switch (techniqueId) {
-				case "afterimage" -> castAfterimage(player, afterimage, durationTicks);
+				case "afterimage" -> castAfterimage(player, afterimage, durationTicks, active);
 				case "dimensional_teleport" -> castDimensionalTeleport(player, afterimage, durationTicks, technique.getAnimationId());
 				case "taiyoken" -> castTaiyoken(player);
 				case "rage_scream" -> castRageScream(player, durationTicks);
@@ -176,7 +188,7 @@ public class EvasionAttackHandler {
 		}
 	}
 
-	private record AfterimagePlan(LivingEntity target, Vec3 destination, float casterYaw, Vec3[] positions, float[] yaws) {}
+	private record AfterimagePlan(LivingEntity target, Vec3 destination, float casterYaw) {}
 
 	private static AfterimagePlan planDimensionalWarp(ServerPlayer player, int targetId) {
 		Entity locked = targetId >= 0 ? TargetHelper.resolveHittable(TargetHelper.getEntityOrPart(player.level(), targetId)) : null;
@@ -198,23 +210,28 @@ public class EvasionAttackHandler {
 	private static AfterimagePlan planAfterimageBehind(ServerPlayer player, LivingEntity target) {
 		Vec3 center = target.position();
 		Vec3 forward = Vec3.directionFromRotation(0.0F, target.getYRot());
-		Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
 		double behind = target.getBbWidth() * 0.5 + player.getBbWidth() * 0.5 + AFTERIMAGE_GAP;
-		double spread = target.getBbWidth() * 0.5 + AFTERIMAGE_ILLUSION_GAP;
-
-		Vec3[] positions = {
-				center.add(forward.scale(spread)),
-				center.add(side.scale(spread)),
-				center.subtract(side.scale(spread))
-		};
-		float[] yaws = new float[positions.length];
-		for (int i = 0; i < positions.length; i++) yaws[i] = yawTowards(positions[i], center);
 
 		for (double scale : AFTERIMAGE_DISTANCE_SCALES) {
 			Vec3 base = center.subtract(forward.scale(behind * scale));
 			for (double height : AFTERIMAGE_HEIGHT_OFFSETS) {
 				Vec3 candidate = base.add(0.0, height, 0.0);
-				if (isFreeSpot(player, candidate)) return new AfterimagePlan(target, candidate, yawTowards(candidate, center), positions, yaws);
+				if (isFreeSpot(player, candidate)) return new AfterimagePlan(target, candidate, yawTowards(candidate, center));
+			}
+		}
+		return null;
+	}
+
+	private static Vec3 findHopAround(ServerPlayer player, LivingEntity target) {
+		Vec3 center = target.position();
+		double minDistance = target.getBbWidth() * 0.5 + AFTERIMAGE_HOP_MIN_DISTANCE;
+		for (int attempt = 0; attempt < AFTERIMAGE_HOP_ATTEMPTS; attempt++) {
+			double angle = player.getRandom().nextDouble() * Math.PI * 2.0;
+			double distance = minDistance + player.getRandom().nextDouble() * AFTERIMAGE_HOP_DISTANCE_SPREAD;
+			Vec3 base = center.add(Math.cos(angle) * distance, 0.0, Math.sin(angle) * distance);
+			for (double height : AFTERIMAGE_HEIGHT_OFFSETS) {
+				Vec3 candidate = base.add(0.0, height, 0.0);
+				if (isFreeSpot(player, candidate)) return candidate;
 			}
 		}
 		return null;
@@ -238,7 +255,7 @@ public class EvasionAttackHandler {
 			for (double height : AFTERIMAGE_DECOY_HEIGHT_OFFSETS) {
 				Vec3 candidate = base.add(0.0, height, 0.0);
 				if (isFreeSpot(player, candidate)) {
-					return new AfterimagePlan(null, candidate, player.getYRot(), new Vec3[]{origin}, new float[]{player.yBodyRot});
+					return new AfterimagePlan(null, candidate, player.getYRot());
 				}
 			}
 		}
@@ -287,11 +304,8 @@ public class EvasionAttackHandler {
 				TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, animationId), caster);
 	}
 
-	private static void castAfterimage(ServerPlayer caster, AfterimagePlan plan, int durationTicks) {
+	private static void castAfterimage(ServerPlayer caster, AfterimagePlan plan, int durationTicks, ActiveEvasion active) {
 		if (plan == null) return;
-
-		caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(),
-				MainSounds.ZANZOKEN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
 		AABB confuseBox = caster.getBoundingBox().inflate(AFTERIMAGE_CONFUSE_RADIUS);
 		for (Mob mob : caster.level().getEntitiesOfClass(Mob.class, confuseBox, m -> m.isAlive() && m.getTarget() == caster)) {
@@ -299,16 +313,60 @@ public class EvasionAttackHandler {
 		}
 		if (plan.target() instanceof Mob targetMob) loseTrackOf(targetMob, caster, durationTicks);
 
-		Vec3 destination = plan.destination();
-		float pitch = plan.target() != null ? 0.0F : caster.getXRot();
+		LivingEntity target = plan.target();
+		if (target == null || AFTERIMAGE_HOPS <= 1) {
+			afterimageHop(caster, plan.destination(), plan.casterYaw(), target != null ? 0.0F : caster.getXRot(), durationTicks);
+			return;
+		}
+
+		active.hopTarget = target;
+		active.hopsLeft = AFTERIMAGE_HOPS - 1;
+		active.hopDurationTicks = durationTicks;
+
+		Vec3 hop = findHopAround(caster, target);
+		if (hop == null) hop = plan.destination();
+		afterimageHop(caster, hop, yawTowards(hop, target.position()), 0.0F, durationTicks);
+	}
+
+	private static void afterimageHopTick(ServerPlayer caster, ActiveEvasion active) {
+		LivingEntity target = active.hopTarget;
+		if (!isValidAfterimageTarget(caster, target)) {
+			active.hopsLeft = 0;
+			return;
+		}
+		if (++active.ticksSincePulse < AFTERIMAGE_HOP_INTERVAL) return;
+		active.ticksSincePulse = 0;
+		active.hopsLeft--;
+
+		Vec3 destination = null;
+		if (active.hopsLeft <= 0) {
+			AfterimagePlan behind = planAfterimageBehind(caster, target);
+			if (behind != null) destination = behind.destination();
+		}
+		if (destination == null) destination = findHopAround(caster, target);
+		if (destination == null) return;
+
+		afterimageHop(caster, destination, yawTowards(destination, target.position()), 0.0F, active.hopDurationTicks);
+	}
+
+	private static void afterimageHop(ServerPlayer caster, Vec3 destination, float yaw, float pitch, int durationTicks) {
+		Vec3 from = caster.position();
+		float fromYaw = caster.yBodyRot;
+
+		caster.level().playSound(null, from.x, from.y, from.z,
+				MainSounds.ZANZOKEN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+
 		if (caster.isPassenger()) caster.stopRiding();
-		caster.connection.teleport(destination.x, destination.y, destination.z, plan.casterYaw(), pitch);
-		caster.setYHeadRot(plan.casterYaw());
+		caster.connection.teleport(destination.x, destination.y, destination.z, yaw, pitch);
+		caster.setYHeadRot(yaw);
 		caster.setDeltaMovement(Vec3.ZERO);
 		caster.hurtMarked = true;
 		caster.fallDistance = 0.0F;
 
-		NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(caster.getId(), durationTicks, plan.positions(), plan.yaws(), true), caster);
+		NetworkHandler.sendToTrackingEntityAndSelf(new AfterimageVfxS2C(caster.getId(), durationTicks, new Vec3[]{from}, new float[]{fromYaw}, false), caster);
+		if (caster.level() instanceof ServerLevel serverLevel) {
+			serverLevel.sendParticles(ParticleTypes.CLOUD, destination.x, destination.y + 1.0, destination.z, 5, 0.2, 0.5, 0.2, 0.0);
+		}
 	}
 
 	private static void loseTrackOf(Mob mob, ServerPlayer caster, int durationTicks) {
@@ -483,6 +541,10 @@ public class EvasionAttackHandler {
 					active.ticksSincePulse = 0;
 					sleepRecoveryPulse(caster, active.totalTicks);
 				}
+			}
+
+			if ("afterimage".equals(active.techniqueId) && active.hopsLeft > 0) {
+				afterimageHopTick(caster, active);
 			}
 
 			if ("rage_scream".equals(active.techniqueId)) {

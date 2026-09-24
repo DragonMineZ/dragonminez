@@ -406,7 +406,8 @@ public class BioAndroidEvolution implements RacialAbility {
 
 		for (LivingEntity victim : new ArrayList<>(victims)) {
 			if (victim == player) continue;
-			if (victim instanceof Player victimPlayer && PartyManager.areInSameParty(player, victimPlayer) && !partyPvpEnabled) continue;
+			if (victim instanceof Player victimPlayer && PartyManager.areInSameParty(player, victimPlayer) && !partyPvpEnabled
+					&& !TargetHelper.isTournamentRival(player, victimPlayer)) continue;
 
 			double distance = victim.distanceTo(player);
 			double falloff = Math.max(0.0, 1.0 - (distance / radius));

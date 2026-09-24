@@ -35,7 +35,6 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.SecondaryStatEffects;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
-import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
@@ -919,34 +918,9 @@ public class StatsEvents {
         if (!(entity instanceof Player)) return;
 
         StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
-            var character = data.getCharacter();
-            String currentForm = character.getActiveForm();
-            String race = character.getRaceName().toLowerCase();
-
-            String logicKey = character.getRenderLogicKey();
-
-            Float[] resolved = character.getResolvedModelScaling();
-            float configScaleX = resolved[0];
-            float configScaleY = resolved[1];
-
-            float scalingX = configScaleX;
-            float scalingY = configScaleY;
-
-            boolean isOozaru = logicKey.startsWith("oozaru") ||
-                    (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
-
-            if (isOozaru) {
-                float baseOozaruSize = 3.8f;
-
-                float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
-                float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
-
-                scalingX = visualScaleX * baseOozaruSize;
-                scalingY = visualScaleY * baseOozaruSize;
-            } else {
-                scalingX = configScaleX;
-                scalingY = configScaleY;
-            }
+            Float[] resolved = data.getCharacter().getResolvedModelScaling();
+            float scalingX = resolved[0];
+            float scalingY = resolved[1];
 
             Pose pose = event.getPose();
 

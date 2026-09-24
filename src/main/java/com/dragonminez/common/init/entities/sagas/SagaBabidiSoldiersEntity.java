@@ -112,7 +112,7 @@ public class SagaBabidiSoldiersEntity {
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 450, 1.0F, 0xF52727, 0xBA1414);
 
             this.setWildSense(true, 100);
-            this.setZanzoken(true, 100);
+            this.setZanzoken(3, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
             this.setDefaultMovementSpeed(0.3D);

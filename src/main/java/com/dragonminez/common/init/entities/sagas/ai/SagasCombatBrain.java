@@ -18,7 +18,7 @@ public final class SagasCombatBrain {
     public static final int COMBO_RECOVERY = 7;
     private static final int[] STUN_COMBOS = {1, 3, 8};
     private static final int[] PRESSURE_COMBOS = {0, 8};
-    private static final int[] HEAVY_COMBOS = {3, 1};
+    private static final int[] HEAVY_COMBOS = {9, 11, 3, 1};
 
     public enum Type { MELEE, APPROACH, TELEPORT, CAST, COMBO, HOLD }
 

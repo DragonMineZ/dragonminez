@@ -3545,7 +3545,7 @@
 						"vector": [10, 0, 0]
 					},
 					"position": {
-						"vector": [0, "-6.2+math.sin(query.anim_time *180) *0.2", -6]
+						"vector": [0, "-1.2+math.sin(query.anim_time *180) *0.2", -2]
 					}
 				},
 				"left_forearm": {
@@ -3619,7 +3619,7 @@
 						"vector": [10, 0, 0]
 					},
 					"position": {
-						"vector": [0, "-6.2+math.sin(query.anim_time *620) *0.3", -6]
+						"vector": [0, "-0.2+math.sin(query.anim_time *620) *0.3", -2]
 					}
 				},
 				"left_forearm": {

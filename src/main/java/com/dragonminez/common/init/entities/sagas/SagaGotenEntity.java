@@ -132,7 +132,7 @@ public class SagaGotenEntity {
             this.setisKid(true);
 
             this.setWildSense(true, 150);
-            this.setZanzoken(true, 300);
+            this.setZanzoken(3, 300);
 
         }
 
@@ -174,7 +174,7 @@ public class SagaGotenEntity {
             this.setisKid(true);
 
             this.setWildSense(true, 70);
-            this.setZanzoken(true, 200);
+            this.setZanzoken(3, 200);
 
         }
 

@@ -17,7 +17,6 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -38,7 +37,6 @@ import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-import java.util.Objects;
 
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
@@ -98,29 +96,10 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
 		var stats = statsCap.orElse(new StatsData(entity));
 		var character = stats.getCharacter();
-		String race = character.getRaceName().toLowerCase();
-		String currentForm = character.getActiveForm();
-
-		String logicKey = character.getRenderLogicKey();
-
 		Float[] resolved = character.getResolvedModelScaling();
-		float configScaleX = resolved[0];
-		float configScaleY = resolved[1];
-		float configScaleZ = resolved[2];
-
-		float scalingX, scalingY, scalingZ;
-
-		boolean isOozaru = logicKey.startsWith("oozaru") || (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
-
-		if (isOozaru) {
-			scalingX = Math.max(0.1f, configScaleX - 2.8f);
-			scalingY = Math.max(0.1f, configScaleY - 2.8f);
-			scalingZ = Math.max(0.1f, configScaleZ - 2.8f);
-		} else {
-			scalingX = configScaleX;
-			scalingY = configScaleY;
-			scalingZ = configScaleZ;
-		}
+		float scalingX = resolved[0];
+		float scalingY = resolved[1];
+		float scalingZ = resolved[2];
 
 		poseStack.pushPose();
 
