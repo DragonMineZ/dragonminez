@@ -2075,7 +2075,7 @@ public final class Tournament {
 			mob.setPersistenceRequired();
 
 			if (mob instanceof DBSagasEntity saga) {
-				saga.setAiTierById(fighter.aiTierOr(1));
+				saga.setAiTierById(fighter.aiTierOr(2));
 				saga.setTransformationDisabled(true);
 			}
 			mob.setTarget(target);

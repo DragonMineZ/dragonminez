@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.worldboss;
 
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ai.AiTier;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -55,6 +56,12 @@ public abstract class WorldBossEntity extends DBSagasEntity {
     protected WorldBossEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setPersistenceRequired();
+        this.setAiTier(AiTier.EXPERT);
+    }
+
+    @Override
+    protected boolean brainMovementAllowed() {
+        return !this.isInSleepPose() && this.getBossAbility() < 0 && super.brainMovementAllowed();
     }
 
     @Override

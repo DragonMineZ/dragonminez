@@ -3,6 +3,7 @@ package com.dragonminez.common.init.entities.worldboss;
 import com.dragonminez.common.combat.util.SwordSlashManager;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.entities.ai.AiTier;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
@@ -635,6 +636,7 @@ public class AllWorldBossesEntity {
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.0D);
             this.setKiBlastDamage(JanembaFat.BASE_KI * STAT_RATIO);
             this.setHealth(this.getMaxHealth());
+            this.setAiTier(AiTier.ELITE);
 
             this.getPersistentData().putBoolean("dmz_stats_configured", true);
         }
@@ -658,6 +660,11 @@ public class AllWorldBossesEntity {
         @Override
         public boolean isMeleeAllowed() {
             return this.retreatTicks <= 0 && super.isMeleeAllowed();
+        }
+
+        @Override
+        protected boolean brainMovementAllowed() {
+            return this.retreatTicks <= 0 && super.brainMovementAllowed();
         }
 
         @Override

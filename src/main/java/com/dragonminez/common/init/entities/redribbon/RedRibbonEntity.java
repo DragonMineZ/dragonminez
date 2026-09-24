@@ -8,6 +8,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import com.dragonminez.common.init.entities.ai.EnemyMeleeBrainGoal;
+import com.dragonminez.common.init.entities.ai.PartyAwareTargetGoal;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -51,15 +53,15 @@ public class RedRibbonEntity extends Monster implements GeoEntity {
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.6D, false));
+        this.goalSelector.addGoal(2, new EnemyMeleeBrainGoal(this, 1.6D, true, false, false));
 
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
 
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 15.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers(RedRibbonEntity.class));
+        this.targetSelector.addGoal(2, new PartyAwareTargetGoal(this, true));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
 
     }

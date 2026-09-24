@@ -3,6 +3,7 @@ package com.dragonminez.common.quest;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.entities.ai.AiTierResolver;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.SagaTitleCardS2C;
@@ -688,7 +689,7 @@ public final class QuestService {
 				}
 				int aiTier = killObjective.getAiTier() > 0
 						? killObjective.getAiTier()
-						: (difficulty != null ? difficulty.aiTierId() : Difficulty.NORMAL.aiTierId());
+						: AiTierResolver.storyTier(difficulty, entityType);
 				entity.getPersistentData().putInt("dmz_quest_ai_tier", aiTier);
 				if (!killObjective.isCanTransform()) {
 					entity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
