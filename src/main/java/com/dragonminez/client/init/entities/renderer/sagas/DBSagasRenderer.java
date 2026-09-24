@@ -9,6 +9,7 @@ import com.dragonminez.client.render.effects.AuraModeState;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.LightningBoltRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLayer;
+import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaDragonBallLayer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaHaloLayer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaSupervillainLayer;
 import com.dragonminez.client.render.shader.DMZShaders;
@@ -49,6 +50,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
         this.addRenderLayer(new DMZSagaArmorLayer<>(this));
         this.addRenderLayer(new SagaSupervillainLayer<>(this));
         this.addRenderLayer(new SagaHaloLayer<>(this));
+        this.addRenderLayer(new SagaDragonBallLayer<>(this));
     }
 
     @Override

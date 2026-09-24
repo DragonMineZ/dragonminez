@@ -2291,5 +2291,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public OutlineStyle getOutlineStyle() {return null;}
 
+    public int getNamekDragonBallStars() {return 0;}
+
     public record OutlineStyle(int primaryColor, int secondaryColor, float thickness) {}
 }

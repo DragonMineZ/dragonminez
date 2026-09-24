@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -767,14 +768,48 @@ public class SagaDaimaEntity {
         TAMAGAMI [ 1 - 2 - 3 ]
      */
 
-    public static class Tamagami1Entity extends DBSagasEntity {
+    public abstract static class TamagamiEntity extends DBSagasEntity {
 
-        public Tamagami1Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+        private final int dragonBallStars;
+
+        protected TamagamiEntity(EntityType<? extends Monster> pEntityType, Level pLevel, int dragonBallStars) {
             super(pEntityType, pLevel);
+            this.dragonBallStars = dragonBallStars;
+            this.applyTamagamiScale();
+        }
 
-            this.setCanFly(true);
+        private void applyTamagamiScale() {
             this.setScaleVal(TAMAGAMI_SCALE);
             this.refreshDimensions();
+        }
+
+        @Override
+        public int getNamekDragonBallStars() {
+            return this.dragonBallStars;
+        }
+
+        @Override
+        public void readAdditionalSaveData(CompoundTag pCompound) {
+            super.readAdditionalSaveData(pCompound);
+            this.applyTamagamiScale();
+        }
+
+        @Override
+        protected void finishTransformationSpawn(DBSagasEntity newEntity, boolean fullHealth) {
+            float healthFraction = this.getHealth() / this.getMaxHealth();
+            super.finishTransformationSpawn(newEntity, fullHealth);
+            if (newEntity != null && !this.level().isClientSide) {
+                newEntity.setHealth(Math.max(1.0F, newEntity.getMaxHealth() * healthFraction));
+            }
+        }
+    }
+
+    public static class Tamagami1Entity extends TamagamiEntity {
+
+        public Tamagami1Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel, 1);
+
+            this.setCanFly(true);
             this.setAuraColor(0xFFFFFF);
             this.setKiBlastSpeed(1.5F);
             this.setDBZStyle(0);
@@ -797,25 +832,14 @@ public class SagaDaimaEntity {
         public EntityType<? extends DBSagasEntity> getNextTransform() {
             return MainEntities.SAGA_TAMAGAMI_1_POWERED.get();
         }
-
-        @Override
-        protected void finishTransformationSpawn(DBSagasEntity newEntity, boolean fullHealth) {
-            float healthFraction = this.getHealth() / this.getMaxHealth();
-            super.finishTransformationSpawn(newEntity, fullHealth);
-            if (newEntity != null && !this.level().isClientSide) {
-                newEntity.setHealth(Math.max(1.0F, newEntity.getMaxHealth() * healthFraction));
-            }
-        }
     }
 
-    public static class Tamagami1PoweredEntity extends DBSagasEntity {
+    public static class Tamagami1PoweredEntity extends TamagamiEntity {
 
         public Tamagami1PoweredEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
-            super(pEntityType, pLevel);
+            super(pEntityType, pLevel, 1);
 
             this.setCanFly(true);
-            this.setScaleVal(TAMAGAMI_SCALE);
-            this.refreshDimensions();
             this.setAuraColor(0xFF8C1A);
             this.setKiBlastSpeed(1.9F);
             this.setDBZStyle(0);
@@ -843,14 +867,12 @@ public class SagaDaimaEntity {
         }
     }
 
-    public static class Tamagami2Entity extends DBSagasEntity {
+    public static class Tamagami2Entity extends TamagamiEntity {
 
         public Tamagami2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
-            super(pEntityType, pLevel);
+            super(pEntityType, pLevel, 2);
 
             this.setCanFly(true);
-            this.setScaleVal(TAMAGAMI_SCALE);
-            this.refreshDimensions();
             this.setAuraColor(0xFFFFFF);
             this.setKiBlastSpeed(1.5F);
             this.setDBZStyle(0);
@@ -873,25 +895,14 @@ public class SagaDaimaEntity {
         public EntityType<? extends DBSagasEntity> getNextTransform() {
             return MainEntities.SAGA_TAMAGAMI_2_POWERED.get();
         }
-
-        @Override
-        protected void finishTransformationSpawn(DBSagasEntity newEntity, boolean fullHealth) {
-            float healthFraction = this.getHealth() / this.getMaxHealth();
-            super.finishTransformationSpawn(newEntity, fullHealth);
-            if (newEntity != null && !this.level().isClientSide) {
-                newEntity.setHealth(Math.max(1.0F, newEntity.getMaxHealth() * healthFraction));
-            }
-        }
     }
 
-    public static class Tamagami2PoweredEntity extends DBSagasEntity {
+    public static class Tamagami2PoweredEntity extends TamagamiEntity {
 
         public Tamagami2PoweredEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
-            super(pEntityType, pLevel);
+            super(pEntityType, pLevel, 2);
 
             this.setCanFly(true);
-            this.setScaleVal(TAMAGAMI_SCALE);
-            this.refreshDimensions();
             this.setAuraColor(0xFF8C1A);
             this.setKiBlastSpeed(1.9F);
             this.setDBZStyle(0);
@@ -919,14 +930,12 @@ public class SagaDaimaEntity {
         }
     }
 
-    public static class Tamagami3Entity extends DBSagasEntity {
+    public static class Tamagami3Entity extends TamagamiEntity {
 
         public Tamagami3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
-            super(pEntityType, pLevel);
+            super(pEntityType, pLevel, 3);
 
             this.setCanFly(true);
-            this.setScaleVal(TAMAGAMI_SCALE);
-            this.refreshDimensions();
             this.setAuraColor(0xFFFFFF);
             this.setKiBlastSpeed(1.5F);
             this.setDBZStyle(0);
@@ -951,25 +960,14 @@ public class SagaDaimaEntity {
         public EntityType<? extends DBSagasEntity> getNextTransform() {
             return MainEntities.SAGA_TAMAGAMI_3_POWERED.get();
         }
-
-        @Override
-        protected void finishTransformationSpawn(DBSagasEntity newEntity, boolean fullHealth) {
-            float healthFraction = this.getHealth() / this.getMaxHealth();
-            super.finishTransformationSpawn(newEntity, fullHealth);
-            if (newEntity != null && !this.level().isClientSide) {
-                newEntity.setHealth(Math.max(1.0F, newEntity.getMaxHealth() * healthFraction));
-            }
-        }
     }
 
-    public static class Tamagami3PoweredEntity extends DBSagasEntity {
+    public static class Tamagami3PoweredEntity extends TamagamiEntity {
 
         public Tamagami3PoweredEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
-            super(pEntityType, pLevel);
+            super(pEntityType, pLevel, 3);
 
             this.setCanFly(true);
-            this.setScaleVal(TAMAGAMI_SCALE);
-            this.refreshDimensions();
             this.setAuraColor(0xFF8C1A);
             this.setKiBlastSpeed(1.9F);
             this.setDBZStyle(0);
