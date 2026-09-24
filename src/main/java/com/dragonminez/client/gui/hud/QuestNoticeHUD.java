@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class QuestNoticeHUD {
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
@@ -35,9 +36,12 @@ public class QuestNoticeHUD {
 	private static final Deque<Notice> QUEUE = new ArrayDeque<>();
 	private static final List<Notice> PREVIEW = List.of(
 			new Notice(Component.translatable("toast.dragonminez.story.quest_complete.title"),
-					Component.translatable("gui.dragonminez.hud_editor.sample.quest_title"), StoryToast.Tone.SUCCESS),
+					() -> Component.translatable("gui.dragonminez.hud_editor.sample.quest_title"), () -> 0.35f, StoryToast.Tone.SUCCESS),
 			new Notice(Component.translatable("toast.dragonminez.story.objective_complete.title"),
-					Component.translatable("gui.dragonminez.hud_editor.sample.quest_objective"), StoryToast.Tone.PROGRESS));
+					() -> Component.translatable("gui.dragonminez.hud_editor.sample.quest_objective"), () -> 0.35f, StoryToast.Tone.PROGRESS));
+
+	private static Notice live;
+	private static final HudSmoother LIVE_APPEAR = new HudSmoother(0.12f, 0.01f);
 
 	public static final IGuiOverlay HUD_QUEST_NOTICE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		if (!HudLayout.isPreview()) render(guiGraphics, partialTicks, width, height);
@@ -46,13 +50,25 @@ public class QuestNoticeHUD {
 	public static void push(Component title, Component description, StoryToast.Tone tone) {
 		Minecraft.getInstance().execute(() -> {
 			if (QUEUE.size() >= MAX_QUEUED) QUEUE.pollFirst();
-			QUEUE.addLast(new Notice(title, description, tone));
+			QUEUE.addLast(new Notice(title, () -> description, () -> 1.0f, tone));
 		});
+	}
+
+	public static void setLive(Component title, Supplier<Component> description, Supplier<Float> progress, StoryToast.Tone tone) {
+		Minecraft.getInstance().execute(() -> {
+			if (live == null) LIVE_APPEAR.snap(0.0f);
+			live = new Notice(title, description, progress, tone);
+		});
+	}
+
+	public static void clearLive() {
+		Minecraft.getInstance().execute(() -> live = null);
 	}
 
 	public static void clear() {
 		ACTIVE.clear();
 		QUEUE.clear();
+		live = null;
 	}
 
 	public static void render(GuiGraphics guiGraphics, float partialTicks, int width, int height) {
@@ -76,15 +92,21 @@ public class QuestNoticeHUD {
 		}
 
 		long now = System.currentTimeMillis();
+		int index = 0;
+		if (live != null) {
+			float appear = LIVE_APPEAR.update(1.0f);
+			draw(guiGraphics, mc.font, box, live, index++, upward, (1.0f - appear) * SLIDE_DISTANCE * direction, appear,
+					Mth.clamp(live.progress.get(), 0.0f, 1.0f));
+		}
+
 		while (ACTIVE.size() < MAX_VISIBLE && !QUEUE.isEmpty()) {
 			Notice notice = QUEUE.pollFirst();
 			notice.startMs = now;
 			notice.appear.snap(0.0f);
-			notice.slot.snap(ACTIVE.size());
+			notice.slot.snap(ACTIVE.size() + index);
 			ACTIVE.add(notice);
 		}
 
-		int index = 0;
 		for (Iterator<Notice> it = ACTIVE.iterator(); it.hasNext(); ) {
 			Notice notice = it.next();
 			long elapsed = now - notice.startMs;
@@ -125,7 +147,7 @@ public class QuestNoticeHUD {
 
 		int textWidth = WIDTH - 16;
 		List<FormattedCharSequence> titleLines = font.split(styled(notice.title), textWidth);
-		List<FormattedCharSequence> descriptionLines = font.split(styled(notice.description), textWidth);
+		List<FormattedCharSequence> descriptionLines = font.split(styled(notice.description.get()), textWidth);
 		int textY = 6;
 		int titleHeight = drawLines(guiGraphics, font, titleLines, textY, fade(0xFFFFFFFF, alpha), 2);
 		textY += titleHeight;
@@ -151,15 +173,17 @@ public class QuestNoticeHUD {
 
 	private static final class Notice {
 		private final Component title;
-		private final Component description;
+		private final Supplier<Component> description;
+		private final Supplier<Float> progress;
 		private final StoryToast.Tone tone;
 		private final HudSmoother appear = new HudSmoother(0.12f, 0.01f);
 		private final HudSmoother slot = new HudSmoother(0.12f, 0.01f);
 		private long startMs;
 
-		private Notice(Component title, Component description, StoryToast.Tone tone) {
+		private Notice(Component title, Supplier<Component> description, Supplier<Float> progress, StoryToast.Tone tone) {
 			this.title = title;
 			this.description = description;
+			this.progress = progress;
 			this.tone = tone;
 		}
 	}

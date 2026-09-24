@@ -14,7 +14,9 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.eventbus.api.Event;
@@ -146,6 +148,19 @@ public class ArenaProtectionHandler {
 		if (!(newTarget instanceof ServerPlayer player) || !player.getUUID().equals(owner)) {
 			event.setCanceled(true);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onInteract(PlayerInteractEvent event) {
+		if (!event.isCancelable() || event.getLevel().isClientSide()) return;
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		if (Tournament.Manager.isInGrace(player.getUUID(), event.getLevel().getGameTime())) event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	public static void onUseItem(LivingEntityUseItemEvent.Start event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+		if (Tournament.Manager.isInGrace(player.getUUID(), player.level().getGameTime())) event.setCanceled(true);
 	}
 
 	private static void notifyDenied(Player player) {

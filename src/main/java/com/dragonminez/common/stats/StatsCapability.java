@@ -112,6 +112,7 @@ public class StatsCapability {
 				data.getStatus().setStrikeLocked(false);
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
+				data.getStatus().setMatchFrozen(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
 				com.dragonminez.server.world.worldboss.WorldBossSessions.onPlayerLogin(serverPlayer, data);
 
@@ -143,6 +144,7 @@ public class StatsCapability {
 				data.getStatus().setStrikeLocked(false);
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
+				data.getStatus().setMatchFrozen(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
 				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onRespawn(new RacialContext(serverPlayer, data)));
 				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);
@@ -160,6 +162,7 @@ public class StatsCapability {
 				data.getStatus().setStrikeLocked(false);
 				data.getStatus().setStunEffect(false);
 				data.getStatus().setKnockedDown(false);
+				data.getStatus().setMatchFrozen(false);
 				data.getCooldowns().removeCooldown(Cooldowns.KNOCKDOWN_DURATION);
 				com.dragonminez.server.world.worldboss.WorldBossSessions.onPlayerChangedDimension(serverPlayer, data);
 				RacialRegistry.forPlayer(data).ifPresent(ability -> ability.onDimensionChange(new RacialContext(serverPlayer, data)));

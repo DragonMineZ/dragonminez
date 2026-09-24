@@ -40,6 +40,7 @@ public class TournamentDefinition {
 	private Integer victoryCooldownSeconds;
 	private Integer matchTimeoutSeconds;
 	private Integer nextRoundSeconds;
+	private Integer rulesAcceptSeconds;
 	private Integer returnSeconds;
 	private Integer arrivalSeconds;
 
@@ -89,6 +90,10 @@ public class TournamentDefinition {
 
 	public int nextRoundSecondsOr(int fallback) {
 		return nextRoundSeconds != null ? Math.max(5, nextRoundSeconds) : fallback;
+	}
+
+	public int rulesAcceptSecondsOr(int fallback) {
+		return rulesAcceptSeconds != null ? Math.max(10, rulesAcceptSeconds) : fallback;
 	}
 
 	public int returnSecondsOr(int fallback) {
@@ -199,6 +204,7 @@ public class TournamentDefinition {
 			def.setReentryCooldownSeconds(60 * 60);
 			def.setMatchTimeoutSeconds(420);
 			def.setNextRoundSeconds(30);
+			def.setRulesAcceptSeconds(60);
 			def.setReturnSeconds(15);
 			def.setArrivalSeconds(60);
 
@@ -214,7 +220,6 @@ public class TournamentDefinition {
 			def.setSemifinalist(fighter("dragonminez:saga_gohan_mid_ssj", "entity.dragonminez.saga_gohan_mid_ssj",
 					245000.0D, 10200.0D, 9180.0D, 3, 1.0D));
 
-			// Nine names for seven qualifier seats, so the draw is different every time.
 			def.setContenders(List.of(
 					fighter("dragonminez:saga_yamcha", "entity.dragonminez.saga_yamcha",
 							66500.0D, 2700.0D, 2420.0D, 1, 1.08D),
@@ -254,6 +259,7 @@ public class TournamentDefinition {
 			def.setReentryCooldownSeconds(20 * 60);
 			def.setMatchTimeoutSeconds(300);
 			def.setNextRoundSeconds(30);
+			def.setRulesAcceptSeconds(60);
 			def.setReturnSeconds(15);
 			def.setArrivalSeconds(60);
 

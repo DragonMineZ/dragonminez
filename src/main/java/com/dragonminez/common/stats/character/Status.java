@@ -67,6 +67,7 @@ public class Status {
 	private boolean forcedAura;
 	private boolean forcedCharge;
 	private boolean isStrikeLocked;
+	private boolean matchFrozen;
 	private int flightMode;
 	private final Set<String> visitedDimensions;
 
@@ -122,6 +123,7 @@ public class Status {
 		this.forcedAura = false;
 		this.forcedCharge = false;
 		this.isStrikeLocked = false;
+		this.matchFrozen = false;
 		this.flightMode = FLIGHT_SEARCH;
 		this.visitedDimensions = new LinkedHashSet<>();
 		this.activeShadowDummyUUID = null;
@@ -177,6 +179,7 @@ public class Status {
 		this.forcedAura = false;
 		this.forcedCharge = false;
 		this.isStrikeLocked = false;
+		this.matchFrozen = false;
 		this.flightMode = FLIGHT_SEARCH;
 		this.visitedDimensions.clear();
 		this.activeShadowDummyUUID = null;
@@ -185,7 +188,7 @@ public class Status {
 	}
 
 	public boolean isStunned() {
-		return stunEffect || isKnockedDown || isStrikeLocked;
+		return stunEffect || isKnockedDown || isStrikeLocked || matchFrozen;
 	}
 
 	public void validateKiWeaponType() {
@@ -256,6 +259,7 @@ public class Status {
 		tag.putBoolean("ForcedAura", forcedAura);
 		tag.putBoolean("ForcedCharge", forcedCharge);
 		tag.putBoolean("IsStrikeLocked", isStrikeLocked);
+		tag.putBoolean("MatchFrozen", matchFrozen);
 		tag.putInt("FlightMode", flightMode);
 
 		ListTag visitedDimensionsTag = new ListTag();
@@ -319,6 +323,7 @@ public class Status {
 		this.forcedAura = tag.getBoolean("ForcedAura");
 		this.forcedCharge = tag.getBoolean("ForcedCharge");
 		this.isStrikeLocked = tag.getBoolean("IsStrikeLocked");
+		this.matchFrozen = tag.getBoolean("MatchFrozen");
 		this.flightMode = tag.getInt("FlightMode");
 		this.visitedDimensions.clear();
 		if (tag.contains("VisitedDimensions", Tag.TAG_LIST)) {
@@ -379,6 +384,7 @@ public class Status {
 		this.forcedAura = other.forcedAura;
 		this.forcedCharge = other.forcedCharge;
 		this.isStrikeLocked = other.isStrikeLocked;
+		this.matchFrozen = other.matchFrozen;
 		this.flightMode = other.flightMode;
 		this.visitedDimensions.clear();
 		this.visitedDimensions.addAll(other.visitedDimensions);
