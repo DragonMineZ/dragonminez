@@ -6,6 +6,7 @@ import com.dragonminez.common.hair.HairPresets;
 import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
+import com.dragonminez.client.render.util.BoneRenderState;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.SkinGathererProvider;
@@ -227,16 +228,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		final float[] hairTint = publishedHair != null ? publishedHair : applyColorTint(finalTint, stats);
 
 		model.getBone("head").ifPresent(headBone -> {
-			float originalZ = headBone.getPosZ();
-			float originalSX = headBone.getScaleX();
-			float originalSY = headBone.getScaleY();
-			float originalSZ = headBone.getScaleZ();
+			BoneRenderState saved = BoneRenderState.capture(headBone);
 
 			float inflation = 0.006f;
-			headBone.setPosZ(originalZ - inflation);
-			headBone.setScaleX(originalSX + inflation);
-			headBone.setScaleY(originalSY + inflation);
-			headBone.setScaleZ(originalSZ + inflation);
+			headBone.setPosZ(headBone.getPosZ() - inflation);
+			headBone.setScaleX(headBone.getScaleX() + inflation);
+			headBone.setScaleY(headBone.getScaleY() + inflation);
+			headBone.setScaleZ(headBone.getScaleZ() + inflation);
 
 			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
 			try {
@@ -246,10 +244,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				}
 			} finally {
 				restoreHiddenBones(hiddenBones);
-				headBone.setPosZ(originalZ);
-				headBone.setScaleX(originalSX);
-				headBone.setScaleY(originalSY);
-				headBone.setScaleZ(originalSZ);
+				saved.restore();
 			}
 		});
 	}
@@ -289,26 +284,20 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (raceConfig != null && Boolean.TRUE.equals(raceConfig.getUseVanillaSkin()) && bodyType == 0) return;
 
 		model.getBone("head").ifPresent(headBone -> {
-			float originalZ = headBone.getPosZ();
-			float originalSX = headBone.getScaleX();
-			float originalSY = headBone.getScaleY();
-			float originalSZ = headBone.getScaleZ();
+			BoneRenderState saved = BoneRenderState.capture(headBone);
 
 			float faceInflation = 0.002f;
-			headBone.setPosZ(originalZ - faceInflation);
-			headBone.setScaleX(originalSX + faceInflation);
-			headBone.setScaleY(originalSY + faceInflation);
-			headBone.setScaleZ(originalSZ + faceInflation);
+			headBone.setPosZ(headBone.getPosZ() - faceInflation);
+			headBone.setScaleX(headBone.getScaleX() + faceInflation);
+			headBone.setScaleY(headBone.getScaleY() + faceInflation);
+			headBone.setScaleZ(headBone.getScaleZ() + faceInflation);
 
 			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
 			try {
 				dispatchFaceRender(model, poseStack, animatable, bufferSource, stats, character, finalFaceKey, isModelEmpty, raceName, partialTick, packedLight, packedOverlay, alpha);
 			} finally {
 				restoreHiddenBones(hiddenBones);
-				headBone.setPosZ(originalZ);
-				headBone.setScaleX(originalSX);
-				headBone.setScaleY(originalSY);
-				headBone.setScaleZ(originalSZ);
+				saved.restore();
 			}
 		});
 	}

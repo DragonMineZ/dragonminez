@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.client.render.util.ArmorPieceInflation;
+import com.dragonminez.client.render.util.BoneRenderState;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -83,14 +84,12 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (armorLeggingsBody != null) armorLeggingsBody.setHidden(true);
             if (bodyLayer != null) bodyLayer.setHidden(true);
 
-            float bX = 1f, bY = 1f, bZ = 1f;
+            BoneRenderState savedBoobas = null;
             if (boobasBone != null) {
-                bX = boobasBone.getScaleX();
-                bY = boobasBone.getScaleY();
-                bZ = boobasBone.getScaleZ();
-                boobasBone.setScaleX(bX * 1.03f);
-                boobasBone.setScaleY(bY * 1.06f);
-                boobasBone.setScaleZ(bZ * 1.15f);
+                savedBoobas = BoneRenderState.capture(boobasBone);
+                boobasBone.setScaleX(boobasBone.getScaleX() * 1.03f);
+                boobasBone.setScaleY(boobasBone.getScaleY() * 1.06f);
+                boobasBone.setScaleZ(boobasBone.getScaleZ() * 1.15f);
             }
 
             renderRootBoneInflated(playerBone, poseStack, bufferSource, animatable, texture, partialTick, packedLight, inflation);
@@ -98,11 +97,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (armorBody != null) armorBody.setHidden(ob1);
             if (armorLeggingsBody != null) armorLeggingsBody.setHidden(ob2);
             if (bodyLayer != null) bodyLayer.setHidden(ob3);
-            if (boobasBone != null) {
-                boobasBone.setScaleX(bX);
-                boobasBone.setScaleY(bY);
-                boobasBone.setScaleZ(bZ);
-            }
+            if (savedBoobas != null) savedBoobas.restore();
 
             poseStack.popPose();
             bufferSource.getBuffer(renderType);
@@ -123,16 +118,14 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
         GeoBone armorBoobas = findBoneDeep(armorBodyBone, "boobas");
         float boobFactor = resolveBoobScale(stats);
-        float savedBoobX = 1f, savedBoobY = 1f, savedBoobZ = 1f;
+        BoneRenderState savedArmorBoobas = null;
         if (armorBoobas != null) {
-            savedBoobX = armorBoobas.getScaleX();
-            savedBoobY = armorBoobas.getScaleY();
-            savedBoobZ = armorBoobas.getScaleZ();
+            savedArmorBoobas = BoneRenderState.capture(armorBoobas);
 
             float[] axis = DMZPlayerModel.computeBoobAxisScale(boobFactor);
-            armorBoobas.setScaleX(savedBoobX * axis[0] * 1.03f);
-            armorBoobas.setScaleY(savedBoobY * axis[1] * 1.06f);
-            armorBoobas.setScaleZ(savedBoobZ * axis[2] * 1.15f);
+            armorBoobas.setScaleX(armorBoobas.getScaleX() * axis[0] * 1.03f);
+            armorBoobas.setScaleY(armorBoobas.getScaleY() * axis[1] * 1.06f);
+            armorBoobas.setScaleZ(armorBoobas.getScaleZ() * axis[2] * 1.15f);
         }
 
         float translateY = resolveCustomArmorTranslateY(ctx);
@@ -150,11 +143,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             poseStack.popPose();
         }
 
-        if (armorBoobas != null) {
-            armorBoobas.setScaleX(savedBoobX);
-            armorBoobas.setScaleY(savedBoobY);
-            armorBoobas.setScaleZ(savedBoobZ);
-        }
+        if (savedArmorBoobas != null) savedArmorBoobas.restore();
 
         bufferSource.getBuffer(renderType);
     }
@@ -286,15 +275,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
     private static final Set<String> EXCLUDED_BONES = Set.of("tail1", "tail1m", "arm", "arm2", "arm3");
 
     private void renderRootBoneInflated(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float partialTick, int packedLight, float inflation) {
-        float rotX = targetBone.getRotX();
-        float rotY = targetBone.getRotY();
-        float rotZ = targetBone.getRotZ();
-        float posX = targetBone.getPosX();
-        float posY = targetBone.getPosY();
-        float posZ = targetBone.getPosZ();
-        float scaleX = targetBone.getScaleX();
-        float scaleY = targetBone.getScaleY();
-        float scaleZ = targetBone.getScaleZ();
+        BoneRenderState saved = BoneRenderState.capture(targetBone);
 
         targetBone.setRotX(0);
         targetBone.setRotY(0);
@@ -332,15 +313,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             excludedFound.get(i).setHidden(excludedHidden.get(i));
         }
 
-        targetBone.setRotX(rotX);
-        targetBone.setRotY(rotY);
-        targetBone.setRotZ(rotZ);
-        targetBone.setPosX(posX);
-        targetBone.setPosY(posY);
-        targetBone.setPosZ(posZ);
-        targetBone.setScaleX(scaleX);
-        targetBone.setScaleY(scaleY);
-        targetBone.setScaleZ(scaleZ);
+        saved.restore();
     }
 
     private GeoBone findBoneDeep(GeoBone parent, String name) {
@@ -353,20 +326,16 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
     }
 
     private void renderChildBoneInflated(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float partialTick, int packedLight, float inflation) {
-        float scaleX = targetBone.getScaleX();
-        float scaleY = targetBone.getScaleY();
-        float scaleZ = targetBone.getScaleZ();
+        BoneRenderState saved = BoneRenderState.capture(targetBone);
 
-        targetBone.setScaleX(scaleX * inflation);
-        targetBone.setScaleY(scaleY * inflation);
-        targetBone.setScaleZ(scaleZ * inflation);
+        targetBone.setScaleX(targetBone.getScaleX() * inflation);
+        targetBone.setScaleY(targetBone.getScaleY() * inflation);
+        targetBone.setScaleZ(targetBone.getScaleZ() * inflation);
 
         RenderType armorRenderType = RenderType.armorCutoutNoCull(texture);
         getRenderer().renderRecursively(poseStack, animatable, targetBone, armorRenderType, bufferSource, bufferSource.getBuffer(armorRenderType), true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
 
-        targetBone.setScaleX(scaleX);
-        targetBone.setScaleY(scaleY);
-        targetBone.setScaleZ(scaleZ);
+        saved.restore();
     }
 
     private ResourceLocation getDbzArmorTexture(DbzArmorTextured item, ItemStack stack) {
