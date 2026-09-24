@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.hair.HairEditorScreen;
 import com.dragonminez.client.gui.character.minigames.RythmGameScreen;
 import com.dragonminez.client.gui.character.minigames.UltimateChallenge;
 import com.dragonminez.client.util.TextUtil;
+import com.dragonminez.common.alignment.AlignmentBand;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainItems;
@@ -163,8 +164,16 @@ public class MasterTextScreen extends Screen {
 			return;
 		}
 
+		boolean canBless = AlignmentBand.fromValue(stats.getResources().getAlignment()) == AlignmentBand.GOOD;
+		boolean hasTailOption = ConfigManager.getRaceCharacter(stats.getCharacter().getRace()).getHasSaiyanTail();
+		boolean fullRow = canBless && hasTailOption;
+		int healX = fullRow ? x - 30 : x;
+		int tailX = fullRow ? x + 50 : x + 90;
+		int blessX = fullRow ? x + 130 : x + 90;
+		int resetX = fullRow ? x + 210 : x + 180;
+
 		this.addRenderableWidget(new TexturedTextButton.Builder()
-				.position(x, y)
+				.position(healX, y)
 				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -176,9 +185,30 @@ public class MasterTextScreen extends Screen {
 				})
 				.build());
 
-		if (ConfigManager.getRaceCharacter(stats.getCharacter().getRace()).getHasSaiyanTail()) {
+		if (canBless) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 90, y)
+					.position(blessX, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.button.dende.bless"))
+					.onPress(b -> StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(currentStats -> {
+						int remaining = currentStats.getCooldowns().getCooldown(Cooldowns.KAMI_BLESS) / 20;
+						if (remaining > 0) {
+							this.currentDialogue = tr("gui.dragonminez.lines.dende.bless_cooldown", Minecraft.getInstance().player.getName(),
+									String.format("%d:%02d", remaining / 60, remaining % 60));
+						} else {
+							NetworkHandler.sendToServer(new NPCActionC2S("dende", 4));
+							this.onClose();
+						}
+					}))
+					.build());
+		}
+
+		if (hasTailOption) {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(tailX, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -192,7 +222,7 @@ public class MasterTextScreen extends Screen {
 		}
 
 		this.addRenderableWidget(new TexturedTextButton.Builder()
-				.position(x + 180, y)
+				.position(resetX, y)
 				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)

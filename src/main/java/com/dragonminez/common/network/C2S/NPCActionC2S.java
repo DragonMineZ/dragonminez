@@ -3,7 +3,9 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.alignment.AlignmentBand;
 import com.dragonminez.common.alignment.NpcDispositionService;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.item.WeightItem;
@@ -20,6 +22,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -164,6 +167,13 @@ public class NPCActionC2S {
 			data.resetPlayerProgress(player, null, false, true);
 		} else if (action == 3) {
 			data.getCharacter().setHasSaiyanTail(!data.getCharacter().isHasSaiyanTail());
+		} else if (action == 4) {
+			if (AlignmentBand.fromValue(data.getResources().getAlignment()) != AlignmentBand.GOOD) return;
+			if (data.getCooldowns().hasCooldown(Cooldowns.KAMI_BLESS)) return;
+			var gameplay = ConfigManager.getServerConfig().getGameplay();
+			player.addEffect(new MobEffectInstance(MainEffects.KAMI_BLESS.get(), gameplay.getKamiBlessDurationSeconds() * 20, 0, false, false, true));
+			data.getCooldowns().setCooldown(Cooldowns.KAMI_BLESS, gameplay.getKamiBlessCooldownSeconds() * 20);
+			player.sendSystemMessage(Component.translatable("message.dragonminez.dende.bless_given"));
 		}
 	}
 

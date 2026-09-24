@@ -82,6 +82,10 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.replace(false)
 				.add(OverworldBiomes.ROCKY);
 
+		this.tag(BiomeTags.IS_OVERWORLD)
+				.replace(false)
+				.add(OverworldBiomes.ROCKY);
+
 		this.tag(MainTags.Biomes.HAS_SAIBAMANS)
 				.replace(false)
 				.add(OverworldBiomes.ROCKY);

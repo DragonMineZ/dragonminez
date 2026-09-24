@@ -314,6 +314,9 @@ public class GeneralServerConfig {
 		private Integer senzuCooldownTicks = 240;
 		private Integer senzuGiftCooldownTicks = 18000;
 		private Integer senzuGiftAmount = 5;
+		private Double kamiBlessTpMultiplier = 1.2;
+		private Integer kamiBlessDurationSeconds = 300;
+		private Integer kamiBlessCooldownSeconds = 1800;
 		private FoodConfig food = new FoodConfig();
 		private Double mightFruitPower = 1.2;
 		private Double majinPower = 1.3;
@@ -495,6 +498,21 @@ public class GeneralServerConfig {
 
 		public Integer getFusionCooldownSeconds() {
 			return Math.max(0, Math.min(fusionCooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		public Double getKamiBlessTpMultiplier() {
+			if (kamiBlessTpMultiplier == null) return 1.2;
+			return Math.max(1.0, kamiBlessTpMultiplier);
+		}
+
+		public Integer getKamiBlessDurationSeconds() {
+			if (kamiBlessDurationSeconds == null) return 300;
+			return Math.max(1, Math.min(kamiBlessDurationSeconds, Integer.MAX_VALUE / 20));
+		}
+
+		public Integer getKamiBlessCooldownSeconds() {
+			if (kamiBlessCooldownSeconds == null) return 1800;
+			return Math.max(0, Math.min(kamiBlessCooldownSeconds, Integer.MAX_VALUE / 20));
 		}
 
 		public Integer getPartyMaxMembers() {

@@ -1539,7 +1539,7 @@ public class StatsData {
 		if (player == null) return 1.0;
 		double base = PotionEffectHelper.getMultiplierFromEffect(player, MainEffects.TP_GAIN.get(), "tp_gain");
 		double hero = PotionEffectHelper.getMultiplierFromEffect(player, MainEffects.WORLD_HERO.get(), "world_hero");
-		return base * hero;
+		return base * hero * PotionEffectHelper.getKamiBlessMultiplier(player);
 	}
 
 	public double getMutantTpMultiplier() {

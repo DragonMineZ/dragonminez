@@ -39,7 +39,9 @@ public final class StructureRepairManager {
 		if (level.players().isEmpty()) return;
 		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) return;
 
-		Map<Integer, ChunkPos> positions = StructureSpawnPlanner.publishedPositions(level);
+		Map<Integer, ChunkPos> nearSpawn = nearSpawnPositions(level);
+		Map<Integer, ChunkPos> positions = new HashMap<>(StructureSpawnPlanner.publishedPositions(level));
+		positions.putAll(nearSpawn);
 		if (positions.isEmpty()) return;
 
 		StructurePlanSavedData plan = StructurePlanSavedData.get(level);
@@ -79,6 +81,10 @@ public final class StructureRepairManager {
 				plan.markBuilt(salt);
 				LogUtil.info(Env.SERVER, "[DMZ] Materialized missing structure " + name
 						+ " at chunk " + pos.x + ", " + pos.z + " in " + level.dimension().location());
+			} else if (nearSpawn.containsKey(salt)) {
+				HANDLED.add(key);
+				LogUtil.error(Env.SERVER, "[DMZ] Could not materialize " + name
+						+ " at chunk " + pos.x + ", " + pos.z + " in " + level.dimension().location() + ".");
 			} else {
 				HANDLED.add(key);
 				int attempts = RELOCATIONS.merge(saltKey, 1, Integer::sum);
@@ -98,9 +104,24 @@ public final class StructureRepairManager {
 		Map<Integer, Holder<Structure>> result = new HashMap<>();
 		for (Holder<StructureSet> holder : level.getChunkSource().getGeneratorState().possibleStructureSets()) {
 			StructureSet set = holder.value();
-			if (!(set.placement() instanceof BiomeAwareUniquePlacement placement)) continue;
 			if (set.structures().isEmpty()) continue;
-			result.put(placement.placementSalt(), set.structures().get(0).structure());
+			if (set.placement() instanceof BiomeAwareUniquePlacement placement) {
+				result.put(placement.placementSalt(), set.structures().get(0).structure());
+			} else if (set.placement() instanceof UniqueNearSpawnPlacement placement) {
+				result.put(placement.placementSalt(), set.structures().get(0).structure());
+			}
+		}
+		return result;
+	}
+
+	private static Map<Integer, ChunkPos> nearSpawnPositions(ServerLevel level) {
+		Map<Integer, ChunkPos> result = new HashMap<>();
+		for (Holder<StructureSet> holder : level.getChunkSource().getGeneratorState().possibleStructureSets()) {
+			StructureSet set = holder.value();
+			if (set.structures().isEmpty()) continue;
+			if (set.placement() instanceof UniqueNearSpawnPlacement placement) {
+				result.put(placement.placementSalt(), placement.getStructureChunk(level.getSeed()));
+			}
 		}
 		return result;
 	}
