@@ -332,6 +332,7 @@ public class GeneralServerConfig {
 		private Double enemyHealthPerPartyPlayer = 1.25;
 		private Double enemyDamagePerPartyPlayer = 1.1;
 		private Integer instantTransmissionPlayerRangePerLevel = 200;
+		private Integer partyMarkerRange = 2000;
 
 		private Double easyModeHPMultiplier = 0.75;
 		private Double easyModeDamageMultiplier = 0.5;
@@ -541,6 +542,10 @@ public class GeneralServerConfig {
 		public Integer getInstantTransmissionPlayerRangePerLevel() {
 			if (instantTransmissionPlayerRangePerLevel == null) return 200;
 			return Math.max(0, Math.min(instantTransmissionPlayerRangePerLevel, Integer.MAX_VALUE));
+		}
+
+		public int getPartyMarkerRange() {
+			return partyMarkerRange != null ? Math.max(0, partyMarkerRange) : 2000;
 		}
 
 		public Boolean getUltimateFormFixedValue() {

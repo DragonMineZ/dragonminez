@@ -9,14 +9,22 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class BeamClashInputC2S {
+	private final float pressTime;
+	private final float marker;
 
-	public BeamClashInputC2S() {
+	public BeamClashInputC2S(float pressTime, float marker) {
+		this.pressTime = pressTime;
+		this.marker = marker;
 	}
 
 	public BeamClashInputC2S(FriendlyByteBuf buf) {
+		this.pressTime = buf.readFloat();
+		this.marker = buf.readFloat();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
+		buf.writeFloat(pressTime);
+		buf.writeFloat(marker);
 	}
 
 	public static void handle(BeamClashInputC2S msg, Supplier<NetworkEvent.Context> ctx) {
@@ -24,7 +32,7 @@ public class BeamClashInputC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
 			if (!PacketRateLimiter.allow(player.getUUID(), "beam_clash_press", player.level().getGameTime(), 1L)) return;
-			BeamClashManager.handlePlayerPress(player);
+			BeamClashManager.handlePlayerPress(player, msg.pressTime, msg.marker);
 		});
 		ctx.get().setPacketHandled(true);
 	}

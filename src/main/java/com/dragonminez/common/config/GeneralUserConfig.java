@@ -23,6 +23,7 @@ public class GeneralUserConfig {
 	private boolean impactFramesEnabled = false;
 	private Boolean alwaysVisibleHudValues = false;
 	private Boolean hideHudNumbers = false;
+	private Boolean partyMarkers = true;
 	private Boolean advancedDescription = true;
 	private Boolean advancedDescriptionPercentage = true;
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private String hudStyle = null;
@@ -188,6 +189,11 @@ public class GeneralUserConfig {
 	public Boolean getHideHudNumbers() {
 		if (hideHudNumbers == null) hideHudNumbers = false;
 		return hideHudNumbers;
+	}
+
+	public Boolean getPartyMarkers() {
+		if (partyMarkers == null) partyMarkers = true;
+		return partyMarkers;
 	}
 
 	public void setMenuScaleMultiplier(Float menuScaleMultiplier) {

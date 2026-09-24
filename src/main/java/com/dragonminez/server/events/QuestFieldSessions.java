@@ -6,7 +6,11 @@ import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.init.entities.ai.AiTierResolver;
+import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.common.quest.QuestService;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.quest.objectives.EscortObjective;
 import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import net.minecraft.network.chat.Component;
@@ -103,6 +107,8 @@ public final class QuestFieldSessions {
 								  SurviveWavesObjective objective, WaveSession session) {
 		EntityType<?> entityType = objective.resolveEntityType();
 		if (entityType == null) return;
+		Difficulty waveDifficulty = StatsProvider.get(StatsCapability.INSTANCE, player).resolve()
+				.map(d -> d.getPlayerQuestData().getDifficulty()).orElse(Difficulty.NORMAL);
 
 		for (int i = 0; i < objective.getMobsPerWave(); i++) {
 			Entity entity = entityType.create(player.level());
@@ -120,7 +126,8 @@ public final class QuestFieldSessions {
 			if (objective.getMeleeDamage() > 0) entity.getPersistentData().putDouble("dmz_quest_melee", objective.getMeleeDamage());
 			if (objective.getKiDamage() > 0) entity.getPersistentData().putDouble("dmz_quest_ki", objective.getKiDamage());
 			if (objective.getTextureVariant() >= 0) entity.getPersistentData().putInt("dmz_quest_texture_variant", objective.getTextureVariant());
-			if (objective.getAiTier() > 0) entity.getPersistentData().putInt("dmz_quest_ai_tier", objective.getAiTier());
+			int waveTier = objective.getAiTier() > 0 ? objective.getAiTier() : AiTierResolver.storyTier(waveDifficulty, entityType);
+			entity.getPersistentData().putInt("dmz_quest_ai_tier", waveTier);
 			if (!objective.isCanTransform()) entity.getPersistentData().putBoolean("dmz_quest_no_transform", true);
 
 			if (entity instanceof Mob mob) {

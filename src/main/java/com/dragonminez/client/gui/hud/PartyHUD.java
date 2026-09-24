@@ -35,9 +35,9 @@ public class PartyHUD {
 	private static final int DEFAULT_KI_COLOR = 0x4FC3FF;
 
 	private static final List<PartyPackets.HudMember> PREVIEW_MEMBERS = List.of(
-			new PartyPackets.HudMember(new UUID(0L, 1L), "Goku", 1800.0f, 2000.0f, 900.0f, 1500.0f, true, 12.0f),
-			new PartyPackets.HudMember(new UUID(0L, 2L), "Vegeta", 450.0f, 2000.0f, 1300.0f, 1500.0f, true, 148.0f),
-			new PartyPackets.HudMember(new UUID(0L, 3L), "Piccolo", 1200.0f, 2000.0f, 400.0f, 1500.0f, false, Float.MAX_VALUE));
+			new PartyPackets.HudMember(new UUID(0L, 1L), "Goku", 1800.0f, 2000.0f, 900.0f, 1500.0f, true, 12.0f, 0.0D, 0.0D, 0.0D, false, 0xFF8A65),
+			new PartyPackets.HudMember(new UUID(0L, 2L), "Vegeta", 450.0f, 2000.0f, 1300.0f, 1500.0f, true, 148.0f, 0.0D, 0.0D, 0.0D, false, 0x4FC3FF),
+			new PartyPackets.HudMember(new UUID(0L, 3L), "Piccolo", 1200.0f, 2000.0f, 400.0f, 1500.0f, false, Float.MAX_VALUE, 0.0D, 0.0D, 0.0D, false, 0x7CFDD6));
 
 	private static final Map<UUID, MemberView> VIEWS = new HashMap<>();
 	private static final HudSmoother ROWS = new HudSmoother(0.12f, 0.01f);

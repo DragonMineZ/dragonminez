@@ -14,6 +14,7 @@ import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.C2S.SummonPlayerShadowDummyC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.PartyPackets;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -124,8 +125,13 @@ public class TickHandler {
 
 			boolean isStunned = serverPlayer.hasEffect(MainEffects.STUN.get()) || data.getStatus().isStrikeLocked();
 			boolean isDowned = data.getStatus().isKnockedDown();
+			boolean isFrozen = com.dragonminez.server.world.tournament.Tournament.Manager.isInGrace(serverPlayer.getUUID(), serverPlayer.level().getGameTime());
+			if (data.getStatus().isMatchFrozen() != isFrozen) {
+				data.getStatus().setMatchFrozen(isFrozen);
+				NetworkHandler.sendToPlayer(new ResourceSyncS2C(serverPlayer), serverPlayer);
+			}
 
-			if (isStunned || isDowned) {
+			if (isStunned || isDowned || isFrozen) {
 				data.getStatus().setChargingKi(false);
 				data.getStatus().setActionCharging(false);
 				data.getTechniques().clearTechniqueCharge();
@@ -158,7 +164,7 @@ public class TickHandler {
                 serverPlayer.hasImpulse = true;
             }
 
-			if (!isStunned && !isDowned) handleTechniqueCharge(serverPlayer, data);
+			if (!isStunned && !isDowned && !isFrozen) handleTechniqueCharge(serverPlayer, data);
 
 			boolean shouldRegen = tickCounter >= REGEN_INTERVAL && !serverPlayer.isDeadOrDying();
 			boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;

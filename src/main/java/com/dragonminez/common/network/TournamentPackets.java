@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.tournament.TournamentOverlay;
 import com.dragonminez.server.world.tournament.Tournament;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -25,9 +26,26 @@ public final class TournamentPackets {
 	@Getter
 	public static class OpenBracketS2C {
 
+		public enum Phase { NONE, RULES, INTERMISSION, PREVIEW, BOUT }
+
+		public enum MemberState { PENDING, ACCEPTED, DECLINED, OUT, ALIVE }
+
+		public record Member(String name, MemberState state, boolean leader, boolean active, boolean ready) {}
+
+		public record FighterStats(int health, int melee, int ki) {}
+
+		public record Rules(int seedCount, int matchTimeoutSeconds, int reentryCooldownSeconds, int returnSeconds,
+							int rulesAcceptSeconds, int nextRoundSeconds, int rewardTrainingPoints, int rewardAlignment,
+							int exclusionRadius, int forfeitDistance) {}
+
 		private final String tournamentId;
 		private final String displayName;
 		private final int difficultyStars;
+		private final boolean gauntlet;
+		private final boolean lethal;
+		private final Phase phase;
+		private final int phaseSeconds;
+		private final boolean revealed;
 		private final List<String> seeds;
 		private final List<List<String>> winners;
 		private final String semifinalist;
@@ -35,51 +53,37 @@ public final class TournamentPackets {
 		private final int round;
 		private final boolean eliminated;
 		private final boolean completed;
-		private final boolean gauntlet;
-		private final boolean lethal;
 		private final boolean signUp;
+		private final boolean lockedByOther;
+		private final boolean partyLeader;
 		private final int cooldownSeconds;
 		private final int npcEntityId;
-		private final Map<String, FighterStats> stats;
-
-		private final boolean lockedByOther;
-		private final boolean yourTurn;
-		private final int turnSeconds;
-		private final List<String> queue;
-		private final List<Boolean> queueOut;
-		private final int activeIndex;
 		private final boolean push;
+		private final Map<String, FighterStats> stats;
+		private final List<Member> members;
 		private final Map<String, String> slotNames;
 		private final String activeSlot;
-		private final int leaderIndex;
-		private final boolean partyLeader;
+		private final String rivalSlot;
+		private final MemberState myState;
+		private final boolean myReady;
+		private final Rules rules;
 
-		public record FighterStats(int health, int melee, int ki) {}
-
-		public OpenBracketS2C(String tournamentId, String displayName, int difficultyStars,
+		public OpenBracketS2C(String tournamentId, String displayName, int difficultyStars, boolean gauntlet, boolean lethal,
+							  Phase phase, int phaseSeconds, boolean revealed,
 							  List<String> seeds, List<List<String>> winners, String semifinalist, String champion,
 							  int round, boolean eliminated, boolean completed,
-							  boolean gauntlet, boolean lethal, boolean signUp, int cooldownSeconds, int npcEntityId,
-							  Map<String, FighterStats> stats,
-							  boolean lockedByOther, boolean yourTurn, int turnSeconds,
-							  List<String> queue, List<Boolean> queueOut, int activeIndex, boolean push,
-							  Map<String, String> slotNames, String activeSlot,
-							  int leaderIndex, boolean partyLeader) {
-			this.leaderIndex = leaderIndex;
-			this.partyLeader = partyLeader;
-			this.slotNames = slotNames == null ? new HashMap<>() : slotNames;
-			this.activeSlot = activeSlot == null ? "" : activeSlot;
-			this.lockedByOther = lockedByOther;
-			this.yourTurn = yourTurn;
-			this.turnSeconds = turnSeconds;
-			this.queue = queue == null ? new ArrayList<>() : queue;
-			this.queueOut = queueOut == null ? new ArrayList<>() : queueOut;
-			this.activeIndex = activeIndex;
-			this.push = push;
-			this.stats = stats == null ? new HashMap<>() : stats;
+							  boolean signUp, boolean lockedByOther, boolean partyLeader, int cooldownSeconds,
+							  int npcEntityId, boolean push, Map<String, FighterStats> stats, List<Member> members,
+							  Map<String, String> slotNames, String activeSlot, String rivalSlot, MemberState myState,
+							  boolean myReady, Rules rules) {
 			this.tournamentId = tournamentId == null ? "" : tournamentId;
 			this.displayName = displayName == null ? "" : displayName;
 			this.difficultyStars = difficultyStars;
+			this.gauntlet = gauntlet;
+			this.lethal = lethal;
+			this.phase = phase == null ? Phase.NONE : phase;
+			this.phaseSeconds = phaseSeconds;
+			this.revealed = revealed;
 			this.seeds = seeds == null ? new ArrayList<>() : seeds;
 			this.winners = winners == null ? new ArrayList<>() : winners;
 			this.semifinalist = semifinalist == null ? "" : semifinalist;
@@ -87,17 +91,31 @@ public final class TournamentPackets {
 			this.round = round;
 			this.eliminated = eliminated;
 			this.completed = completed;
-			this.gauntlet = gauntlet;
-			this.lethal = lethal;
 			this.signUp = signUp;
+			this.lockedByOther = lockedByOther;
+			this.partyLeader = partyLeader;
 			this.cooldownSeconds = cooldownSeconds;
 			this.npcEntityId = npcEntityId;
+			this.push = push;
+			this.stats = stats == null ? new HashMap<>() : stats;
+			this.members = members == null ? new ArrayList<>() : members;
+			this.slotNames = slotNames == null ? new HashMap<>() : slotNames;
+			this.activeSlot = activeSlot == null ? "" : activeSlot;
+			this.rivalSlot = rivalSlot == null ? "" : rivalSlot;
+			this.myState = myState == null ? MemberState.PENDING : myState;
+			this.myReady = myReady;
+			this.rules = rules == null ? new Rules(0, 0, 0, 0, 0, 0, 0, 0, 0, 0) : rules;
 		}
 
 		public static void encode(OpenBracketS2C msg, FriendlyByteBuf buf) {
 			buf.writeUtf(msg.tournamentId);
 			buf.writeUtf(msg.displayName);
 			buf.writeVarInt(msg.difficultyStars);
+			buf.writeBoolean(msg.gauntlet);
+			buf.writeBoolean(msg.lethal);
+			buf.writeEnum(msg.phase);
+			buf.writeVarInt(msg.phaseSeconds);
+			buf.writeBoolean(msg.revealed);
 			buf.writeVarInt(msg.seeds.size());
 			for (String id : msg.seeds) buf.writeUtf(id);
 			buf.writeVarInt(msg.winners.size());
@@ -110,11 +128,12 @@ public final class TournamentPackets {
 			buf.writeVarInt(msg.round);
 			buf.writeBoolean(msg.eliminated);
 			buf.writeBoolean(msg.completed);
-			buf.writeBoolean(msg.gauntlet);
-			buf.writeBoolean(msg.lethal);
 			buf.writeBoolean(msg.signUp);
+			buf.writeBoolean(msg.lockedByOther);
+			buf.writeBoolean(msg.partyLeader);
 			buf.writeVarInt(msg.cooldownSeconds);
 			buf.writeInt(msg.npcEntityId);
+			buf.writeBoolean(msg.push);
 			buf.writeVarInt(msg.stats.size());
 			for (Map.Entry<String, FighterStats> entry : msg.stats.entrySet()) {
 				buf.writeUtf(entry.getKey());
@@ -122,30 +141,44 @@ public final class TournamentPackets {
 				buf.writeVarInt(entry.getValue().melee());
 				buf.writeVarInt(entry.getValue().ki());
 			}
-			buf.writeBoolean(msg.lockedByOther);
-			buf.writeBoolean(msg.yourTurn);
-			buf.writeVarInt(msg.turnSeconds);
-			buf.writeVarInt(msg.queue.size());
-			for (int i = 0; i < msg.queue.size(); i++) {
-				buf.writeUtf(msg.queue.get(i));
-				buf.writeBoolean(i < msg.queueOut.size() && msg.queueOut.get(i));
+			buf.writeVarInt(msg.members.size());
+			for (Member member : msg.members) {
+				buf.writeUtf(member.name());
+				buf.writeEnum(member.state());
+				buf.writeBoolean(member.leader());
+				buf.writeBoolean(member.active());
+				buf.writeBoolean(member.ready());
 			}
-			buf.writeInt(msg.activeIndex);
-			buf.writeBoolean(msg.push);
 			buf.writeVarInt(msg.slotNames.size());
 			for (Map.Entry<String, String> entry : msg.slotNames.entrySet()) {
 				buf.writeUtf(entry.getKey());
 				buf.writeUtf(entry.getValue());
 			}
 			buf.writeUtf(msg.activeSlot);
-			buf.writeInt(msg.leaderIndex);
-			buf.writeBoolean(msg.partyLeader);
+			buf.writeUtf(msg.rivalSlot);
+			buf.writeEnum(msg.myState);
+			buf.writeBoolean(msg.myReady);
+			buf.writeVarInt(msg.rules.seedCount());
+			buf.writeVarInt(msg.rules.matchTimeoutSeconds());
+			buf.writeVarInt(msg.rules.reentryCooldownSeconds());
+			buf.writeVarInt(msg.rules.returnSeconds());
+			buf.writeVarInt(msg.rules.rulesAcceptSeconds());
+			buf.writeVarInt(msg.rules.nextRoundSeconds());
+			buf.writeVarInt(msg.rules.rewardTrainingPoints());
+			buf.writeInt(msg.rules.rewardAlignment());
+			buf.writeVarInt(msg.rules.exclusionRadius());
+			buf.writeVarInt(msg.rules.forfeitDistance());
 		}
 
 		public static OpenBracketS2C decode(FriendlyByteBuf buf) {
 			String tournamentId = buf.readUtf();
 			String displayName = buf.readUtf();
 			int stars = buf.readVarInt();
+			boolean gauntlet = buf.readBoolean();
+			boolean lethal = buf.readBoolean();
+			Phase phase = buf.readEnum(Phase.class);
+			int phaseSeconds = buf.readVarInt();
+			boolean revealed = buf.readBoolean();
 			int seedCount = buf.readVarInt();
 			List<String> seeds = new ArrayList<>(seedCount);
 			for (int i = 0; i < seedCount; i++) seeds.add(buf.readUtf());
@@ -162,11 +195,12 @@ public final class TournamentPackets {
 			int round = buf.readVarInt();
 			boolean eliminated = buf.readBoolean();
 			boolean completed = buf.readBoolean();
-			boolean gauntlet = buf.readBoolean();
-			boolean lethal = buf.readBoolean();
 			boolean signUp = buf.readBoolean();
+			boolean lockedByOther = buf.readBoolean();
+			boolean partyLeader = buf.readBoolean();
 			int cooldown = buf.readVarInt();
 			int npcId = buf.readInt();
+			boolean push = buf.readBoolean();
 
 			int statCount = buf.readVarInt();
 			Map<String, FighterStats> stats = new HashMap<>(statCount);
@@ -174,30 +208,25 @@ public final class TournamentPackets {
 				stats.put(buf.readUtf(), new FighterStats(buf.readVarInt(), buf.readVarInt(), buf.readVarInt()));
 			}
 
-			boolean lockedByOther = buf.readBoolean();
-			boolean yourTurn = buf.readBoolean();
-			int turnSeconds = buf.readVarInt();
-			int queueSize = buf.readVarInt();
-			List<String> queue = new ArrayList<>(queueSize);
-			List<Boolean> queueOut = new ArrayList<>(queueSize);
-			for (int i = 0; i < queueSize; i++) {
-				queue.add(buf.readUtf());
-				queueOut.add(buf.readBoolean());
+			int memberCount = buf.readVarInt();
+			List<Member> members = new ArrayList<>(memberCount);
+			for (int i = 0; i < memberCount; i++) {
+				members.add(new Member(buf.readUtf(), buf.readEnum(MemberState.class), buf.readBoolean(), buf.readBoolean(), buf.readBoolean()));
 			}
-			int activeIndex = buf.readInt();
-			boolean push = buf.readBoolean();
 
 			int nameCount = buf.readVarInt();
 			Map<String, String> slotNames = new HashMap<>(nameCount);
 			for (int i = 0; i < nameCount; i++) slotNames.put(buf.readUtf(), buf.readUtf());
 			String activeSlot = buf.readUtf();
-			int leaderIndex = buf.readInt();
-			boolean partyLeader = buf.readBoolean();
+			String rivalSlot = buf.readUtf();
+			MemberState myState = buf.readEnum(MemberState.class);
+			boolean myReady = buf.readBoolean();
+			Rules rules = new Rules(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readInt(), buf.readVarInt(), buf.readVarInt());
 
-			return new OpenBracketS2C(tournamentId, displayName, stars, seeds, winners,
-					semifinalist, champion, round, eliminated, completed, gauntlet, lethal, signUp, cooldown, npcId,
-					stats, lockedByOther, yourTurn, turnSeconds, queue, queueOut, activeIndex, push, slotNames,
-					activeSlot, leaderIndex, partyLeader);
+			return new OpenBracketS2C(tournamentId, displayName, stars, gauntlet, lethal, phase, phaseSeconds, revealed,
+					seeds, winners, semifinalist, champion, round, eliminated, completed, signUp, lockedByOther,
+					partyLeader, cooldown, npcId, push, stats, members, slotNames, activeSlot, rivalSlot, myState, myReady, rules);
 		}
 
 		public static void handle(OpenBracketS2C msg, Supplier<NetworkEvent.Context> ctx) {
@@ -208,25 +237,40 @@ public final class TournamentPackets {
 	}
 
 	@Getter
-	public static class CountdownS2C {
+	public static class PhaseS2C {
 
+		public enum Phase { NEXT_ROUND, PREVIEW, COUNTDOWN, CLEAR }
+
+		private final Phase phase;
 		private final int seconds;
+		private final boolean fighter;
+		private final Component left;
+		private final Component right;
 
-		public CountdownS2C(int seconds) {
+		public PhaseS2C(Phase phase, int seconds, boolean fighter, Component left, Component right) {
+			this.phase = phase;
 			this.seconds = seconds;
+			this.fighter = fighter;
+			this.left = left == null ? Component.empty() : left;
+			this.right = right == null ? Component.empty() : right;
 		}
 
-		public static void encode(CountdownS2C msg, FriendlyByteBuf buf) {
+		public static void encode(PhaseS2C msg, FriendlyByteBuf buf) {
+			buf.writeEnum(msg.phase);
 			buf.writeVarInt(msg.seconds);
+			buf.writeBoolean(msg.fighter);
+			buf.writeComponent(msg.left);
+			buf.writeComponent(msg.right);
 		}
 
-		public static CountdownS2C decode(FriendlyByteBuf buf) {
-			return new CountdownS2C(buf.readVarInt());
+		public static PhaseS2C decode(FriendlyByteBuf buf) {
+			return new PhaseS2C(buf.readEnum(Phase.class), buf.readVarInt(), buf.readBoolean(),
+					buf.readComponent(), buf.readComponent());
 		}
 
-		public static void handle(CountdownS2C msg, Supplier<NetworkEvent.Context> ctx) {
+		public static void handle(PhaseS2C msg, Supplier<NetworkEvent.Context> ctx) {
 			ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-					() -> () -> TournamentOverlay.startCountdown(msg.getSeconds())));
+					() -> () -> TournamentOverlay.onPhase(msg)));
 			ctx.get().setPacketHandled(true);
 		}
 	}
@@ -270,7 +314,9 @@ public final class TournamentPackets {
 		public enum Action {
 			OPEN_BRACKET,
 			SIGN_UP,
-			START_MATCH
+			ACCEPT_RULES,
+			DECLINE_RULES,
+			READY
 		}
 
 		private final Action action;

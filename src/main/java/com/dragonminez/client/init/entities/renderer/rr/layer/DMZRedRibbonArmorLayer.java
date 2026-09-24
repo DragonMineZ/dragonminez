@@ -1,5 +1,6 @@
 package com.dragonminez.client.init.entities.renderer.rr.layer;
 
+import com.dragonminez.client.render.util.ArmorPieceInflation;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -29,6 +30,12 @@ public class DMZRedRibbonArmorLayer<T extends RedRibbonEntity> extends ItemArmor
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel bakedModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (animatable.isSpectator()) return;
 		super.render(poseStack, animatable, bakedModel, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+	}
+
+	@Override
+	protected void prepModelPartForRender(PoseStack poseStack, GeoBone bone, ModelPart sourcePart) {
+		super.prepModelPartForRender(poseStack, bone, sourcePart);
+		ArmorPieceInflation.inflateFittedPart(poseStack, bone, sourcePart, getReferenceCubeForModel(bone, sourcePart));
 	}
 
     @Override

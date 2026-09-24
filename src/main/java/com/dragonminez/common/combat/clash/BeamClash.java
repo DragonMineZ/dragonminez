@@ -1,42 +1,53 @@
 package com.dragonminez.common.combat.clash;
 
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public class BeamClash {
+    public static final float BURST_PER_PERFECT_PRESS = 1.0f;
+    public static final float MOMENTUM_DECAY = 0.94f;
 
-    public static final float SWEEP_RATE = 0.010f;
-    public static final float SWEET_LOW = 0.78f;
-    public static final float SWEET_HIGH = 0.96f;
-    public static final float OFF_SPOT_EFFICIENCY = 0.18f;
-    public static final float BURST_PER_PERFECT_PRESS = 0.6f;
-    public static final float MOMENTUM_DECAY = 0.96f;
-
-    private static final float DRIFT_PER_TICK = 0.005f;
+    private static final float DRIFT_PER_TICK = 0.010f;
     private static final float STR_FLOOR = 0.6f;
     private static final float STR_SPAN = 0.95f;
     private static final float MIN_TRACTION = 0.35f;
     private static final float WIN_THRESHOLD = 0.8f;
-    private static final int IDLE_DISSOLVE_TICKS = 100;
+    private static final int IDLE_DISSOLVE_TICKS = 140;
     private static final int MAX_DURATION = 600;
     private static final int WINNER_BREAKTHROUGH_TICKS = 60;
+    public static final int LOSER_EXHAUST_TICKS = 70;
 
     public enum Result { ONGOING, A_WINS, B_WINS, DISSOLVED }
 
     private final ClashParticipant a;
     private final ClashParticipant b;
+    private final long startGameTime;
+    private final Level level;
+    private final long startNanos = System.nanoTime();
     private float biasT;
     private int age = 0;
+    private Vec3 clashPoint;
     @Getter
     private boolean ended = false;
 
-    public BeamClash(ClashParticipant a, ClashParticipant b) {
+    public BeamClash(ClashParticipant a, ClashParticipant b, long startGameTime) {
         this.a = a;
         this.b = b;
+        this.startGameTime = startGameTime;
+        this.level = a.beam().level();
         this.biasT = 0.5f;
+        this.clashPoint = midpointOfTips(a.beam().getClashBeamLength(), b.beam().getClashBeamLength());
     }
 
     public ClashParticipant a() {
@@ -45,6 +56,22 @@ public class BeamClash {
 
     public ClashParticipant b() {
         return b;
+    }
+
+    public long startGameTime() {
+        return startGameTime;
+    }
+
+    public float realElapsedTicks() {
+        return (System.nanoTime() - startNanos) / 50_000_000.0f;
+    }
+
+    public Level level() {
+        return level;
+    }
+
+    public Vec3 clashPoint() {
+        return clashPoint;
     }
 
     public boolean involves(AbstractKiProjectile beam) {
@@ -61,9 +88,6 @@ public class BeamClash {
         return null;
     }
 
-    /**
-     * Advances the clash one tick: keeps the beams alive and locked at the clash point,
-     */
     public Result tick() {
         if (ended) return Result.DISSOLVED;
         if (!a.isStillFiring() || !b.isStillFiring()) {
@@ -71,12 +95,11 @@ public class BeamClash {
         }
         age++;
 
-        // Keep both fighters rooted in place for the cinematic momento papu.
         a.freezeOwner();
         b.freezeOwner();
 
-        a.tickMeter();
-        b.tickMeter();
+        a.tickMeter(age);
+        b.tickMeter(age);
 
         double pa = a.statPower();
         double pb = b.statPower();
@@ -105,31 +128,38 @@ public class BeamClash {
         return Result.ONGOING;
     }
 
+    public static float visualBias(float bias) {
+        return Mth.clamp((bias - (1.0f - WIN_THRESHOLD)) / (2.0f * WIN_THRESHOLD - 1.0f), 0.0f, 1.0f);
+    }
+
     private void applyLock() {
         Vec3 originA = a.origin();
         Vec3 originB = b.origin();
         double gap = originA.distanceTo(originB);
 
-        float lockA = (float) (gap * biasT);
-        float lockB = (float) (gap * (1.0f - biasT));
+        float visual = visualBias(biasT);
+        float lockA = (float) (gap * visual);
+        float lockB = (float) (gap * (1.0f - visual));
 
         a.beam().setClashLock(lockA, b.owner().getUUID());
         b.beam().setClashLock(lockB, a.owner().getUUID());
 
         keepAlive(a.beam());
         keepAlive(b.beam());
+
+        clashPoint = midpointOfTips(lockA, lockB);
+    }
+
+    private Vec3 midpointOfTips(float lengthA, float lengthB) {
+        Vec3 tipA = a.origin().add(a.direction().scale(Math.max(0.0f, lengthA)));
+        Vec3 tipB = b.origin().add(b.direction().scale(Math.max(0.0f, lengthB)));
+        return tipA.add(tipB).scale(0.5);
     }
 
     private static void keepAlive(AbstractKiProjectile beam) {
-        // Push the death tick forward so a locked beam never auto-expires mid-clash.
         beam.setMaxLife(beam.tickCount + 40);
     }
 
-    /**
-     * Releases both beams. The loser's beam is discarded and the winner's beam is
-     * unlocked and given fresh life to surge forward and connect (using its own normal
-     * damage/explosion logic against the now-vulnerable loser).
-     */
     public void resolve(Result result) {
         if (ended) return;
         ended = true;
@@ -145,12 +175,24 @@ public class BeamClash {
             loser.beam().discard();
         }
 
-        // Hand AI control back to the NPCs.
         winner.unfreezeOwner();
         loser.unfreezeOwner();
+        exhaust(loser);
     }
 
-    /** Cleanly ends a clash with no winner (a beam stopped firing or an owner left). */
+    private static void exhaust(ClashParticipant loser) {
+        var owner = loser.owner();
+        owner.removeEffect(MainEffects.STUN.get());
+        owner.addEffect(new MobEffectInstance(MainEffects.STUN.get(), LOSER_EXHAUST_TICKS, 0, false, false, true));
+        if (owner instanceof ServerPlayer player) {
+            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                data.getStatus().setStunEffect(true);
+                data.getStatus().setBlocking(false);
+            });
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+        }
+    }
+
     public void dissolve() {
         if (ended) return;
         ended = true;
@@ -160,9 +202,9 @@ public class BeamClash {
         b.unfreezeOwner();
     }
 
-	/** Advantage of the given owner in [0,1]; > 0.5 means winning. */
     public float advantageFor(LivingEntity owner) {
-        if (owner.getUUID().equals(a.owner().getUUID())) return biasT;
-        return 1.0f - biasT;
+        float visual = visualBias(biasT);
+        if (owner.getUUID().equals(a.owner().getUUID())) return visual;
+        return 1.0f - visual;
     }
 }

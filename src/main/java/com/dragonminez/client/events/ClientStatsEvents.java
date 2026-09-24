@@ -272,7 +272,7 @@ public class ClientStatsEvents {
 			}
 
 			if (ClientBeamClashState.isActive() && isRightClickDown && !wasRightClickDown) {
-				NetworkHandler.sendToServer(new BeamClashInputC2S());
+				ClientBeamClashState.onLocalPress();
 			}
 
 			wasRightClickDown = isRightClickDown;

@@ -32,6 +32,7 @@ public final class HudSprites {
 	public static final BarSkin PARTY_KI = new BarSkin(party(0, 64, 146, 15), null, party(0, 80, 140, 9), party(0, 90, 140, 9));
 	public static final Sprite PARTY_HEAD_BACK = party(150, 0, 46, 46);
 	public static final Sprite PARTY_HEAD_TINT = party(150, 47, 46, 46);
+	public static final Sprite PARTY_MARKER = party(200, 0, 32, 32);
 
 	public static final BarSkin RESERVE_BAR = new BarSkin(reserve(0, 0, 23, 150), null, reserve(25, 0, 17, 144), reserve(44, 0, 17, 144));
 	public static final Sprite RESERVE_CAPSULE = reserve(63, 0, 23, 23);

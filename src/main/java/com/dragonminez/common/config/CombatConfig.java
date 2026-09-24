@@ -49,6 +49,12 @@ public class CombatConfig {
 	private Boolean cancelDamageEventIfMitigationTooHigh = true;
 	private Double cancelDamageMitigationThreshold = 2.5;
 
+	private Boolean enableDamageScaledKnockback = true;
+	private Double knockbackMinMultiplier = 0.15;
+	private Double knockbackHeavyHitHealthFraction = 0.15;
+	private Double knockbackHeavyHitGain = 3.0;
+	private Double knockbackMaxMultiplier = 2.5;
+
 	private Boolean accurateMobBattlePower = true;
 
 	private Boolean enableBlocking = true;
@@ -309,6 +315,26 @@ public class CombatConfig {
 
 	public double getCancelDamageMitigationThreshold() {
 		return cancelDamageMitigationThreshold != null ? Math.max(1.0, cancelDamageMitigationThreshold) : 3.0;
+	}
+
+	public boolean getEnableDamageScaledKnockback() {
+		return enableDamageScaledKnockback == null || enableDamageScaledKnockback;
+	}
+
+	public double getKnockbackMinMultiplier() {
+		return knockbackMinMultiplier != null ? Math.max(0.0, Math.min(1.0, knockbackMinMultiplier)) : 0.15;
+	}
+
+	public double getKnockbackHeavyHitHealthFraction() {
+		return knockbackHeavyHitHealthFraction != null ? Math.max(0.01, Math.min(1.0, knockbackHeavyHitHealthFraction)) : 0.15;
+	}
+
+	public double getKnockbackHeavyHitGain() {
+		return knockbackHeavyHitGain != null ? Math.max(0.0, knockbackHeavyHitGain) : 3.0;
+	}
+
+	public double getKnockbackMaxMultiplier() {
+		return knockbackMaxMultiplier != null ? Math.max(1.0, knockbackMaxMultiplier) : 2.5;
 	}
 
 	public boolean getAccurateMobBattlePower() {

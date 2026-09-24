@@ -10,6 +10,7 @@ import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.RaidMusicS2C;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.TournamentPackets;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
@@ -21,6 +22,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -33,6 +35,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -45,6 +48,7 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +57,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -66,15 +71,13 @@ public final class Tournament {
 
 	private Tournament() {}
 
-	/**
-	 * The ladder of a single run. A GAUNTLET is a straight line of opponents that the whole party
-	 * shares, so it keeps one anonymous player seat; a BRACKET is a real draw where every entrant —
-	 * player or NPC — owns a seed, which means two party members can and will meet each other.
-	 */
 	public static class Bracket {
 
-		/** The gauntlet's single seat: it belongs to whoever is holding the ladder. */
 		public static final String PLAYER_SLOT = "@player";
+		public static final String HIDDEN_SLOT = "?";
+		public static final int SOURCE_SEMIFINALIST = -1;
+		public static final int SOURCE_CHAMPION = -2;
+		public static final int SOURCE_UNKNOWN = Integer.MIN_VALUE;
 		private static final String PLAYER_PREFIX = "@player:";
 
 		public static String slotFor(UUID player) {
@@ -106,20 +109,65 @@ public final class Tournament {
 
 		private String semifinalist = "";
 		private String champion = "";
+		private final Map<String, Integer> sources = new HashMap<>();
 
 		public Bracket() {
+		}
+
+		public int sourceOf(String slot) {
+			return slot == null ? SOURCE_UNKNOWN : sources.getOrDefault(slot, SOURCE_UNKNOWN);
+		}
+
+		public void setSource(String slot, int source) {
+			if (slot != null && !slot.isEmpty()) sources.put(slot, source);
+		}
+
+		public static String resolveFighter(String entityId, Set<String> used, Random random) {
+			if (entityId == null || entityId.isBlank()) return "";
+			if (!entityId.startsWith("#")) {
+				used.add(entityId);
+				return entityId;
+			}
+			ResourceLocation tagId = ResourceLocation.tryParse(entityId.substring(1));
+			if (tagId == null) return "";
+			List<String> members = new ArrayList<>();
+			ForgeRegistries.ENTITY_TYPES.tags().getTag(TagKey.create(Registries.ENTITY_TYPE, tagId)).forEach(type -> {
+				ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(type);
+				if (key != null) members.add(key.toString());
+			});
+			if (members.isEmpty()) {
+				LogUtil.warn(Env.SERVER, "Tournament fighter tag '{}' is empty or unknown", entityId);
+				return "";
+			}
+			List<String> fresh = new ArrayList<>(members);
+			fresh.removeAll(used);
+			List<String> pool = fresh.isEmpty() ? members : fresh;
+			String picked = pool.get(random.nextInt(pool.size()));
+			used.add(picked);
+			return picked;
 		}
 
 		public static Bracket draw(String tournamentId, TournamentDefinition def, List<UUID> players,
 								   Random random) {
 			Bracket bracket = new Bracket();
 			bracket.tournamentId = tournamentId;
-			bracket.semifinalist = def.getSemifinalist().getEntityId();
-			bracket.champion = def.getChampion().getEntityId();
+
+			Set<String> used = new HashSet<>();
+			bracket.semifinalist = resolveFighter(def.getSemifinalist().getEntityId(), used, random);
+			bracket.setSource(bracket.semifinalist, SOURCE_SEMIFINALIST);
+			bracket.champion = resolveFighter(def.getChampion().getEntityId(), used, random);
+			bracket.setSource(bracket.champion, SOURCE_CHAMPION);
 
 			List<String> pool = new ArrayList<>();
-			for (TournamentDefinition.Fighter fighter : def.getContenders()) {
-				if (fighter.isUsable()) pool.add(fighter.getEntityId());
+			for (int pass = 0; pass < 2; pass++) {
+				for (int i = 0; i < def.getContenders().size(); i++) {
+					TournamentDefinition.Fighter fighter = def.getContenders().get(i);
+					if (!fighter.isUsable() || fighter.isTag() != (pass == 1)) continue;
+					String resolved = resolveFighter(fighter.getEntityId(), used, random);
+					if (resolved.isEmpty() || bracket.sources.containsKey(resolved)) continue;
+					bracket.setSource(resolved, i);
+					pool.add(resolved);
+				}
 			}
 			Collections.shuffle(pool, random);
 
@@ -132,13 +180,11 @@ public final class Tournament {
 			int entrants = Math.max(1, players.size());
 			int slots = def.qualifierSlotsOr(4);
 			while (slots < entrants && slots < 16) slots *= 2;
-			// Shrink an over-sized draw only while there are still seats to spare for every player.
 			while (slots > 2 && slots > entrants && pool.size() < slots - entrants) slots /= 2;
 
 			String[] board = new String[slots];
 			int block = Math.max(1, slots / entrants);
 			for (int i = 0; i < entrants && i < slots; i++) {
-				// One player per block keeps them as far apart in the draw as the seats allow.
 				int offset = block > 1 ? random.nextInt(block) : 0;
 				int position = Math.min(slots - 1, i * block + offset);
 				board[position] = slotFor(players.get(i));
@@ -194,9 +240,7 @@ public final class Tournament {
 		public void eliminate() { eliminated = true; }
 		public void complete() { completed = true; }
 
-		// ------------------------------------------------------------ gauntlet ladder
 
-		/** Gauntlet only: the opponent the party is facing right now. */
 		public String currentOpponent() {
 			if (round == semiRound()) return semifinalist;
 			if (round == finalRound()) return champion;
@@ -204,7 +248,6 @@ public final class Tournament {
 			return round < seeds.size() ? seeds.get(round) : "";
 		}
 
-		/** Gauntlet only: the party beat the current opponent. */
 		public void advance() {
 			if (!isActive()) return;
 			round++;
@@ -214,7 +257,6 @@ public final class Tournament {
 			}
 		}
 
-		// ------------------------------------------------------------ bracket draw
 
 		public int pairCount(int r) {
 			if (r < qualifierRounds()) return Math.max(1, (seeds.size() >> r) / 2);
@@ -242,7 +284,6 @@ public final class Tournament {
 			return nextMatchIndex(r) >= pairCount(r);
 		}
 
-		/** The two seats meeting in match {@code m} of round {@code r}. */
 		public String[] matchSlots(int r, int m) {
 			if (r < qualifierRounds()) {
 				return new String[]{slotAt(r, m * 2), slotAt(r, m * 2 + 1)};
@@ -264,13 +305,25 @@ public final class Tournament {
 			if (round <= finalRound()) round++;
 		}
 
+		public boolean replaceSeed(String slot, String replacement) {
+			int index = seeds.indexOf(slot);
+			if (index < 0) return false;
+			seeds.set(index, replacement == null ? "" : replacement);
+			return true;
+		}
+
+		public List<String> hiddenSeeds() {
+			List<String> hidden = new ArrayList<>(seeds.size());
+			for (int i = 0; i < seeds.size(); i++) hidden.add(HIDDEN_SLOT);
+			return hidden;
+		}
+
 		@Nullable
 		public String finalWinner() {
 			List<String> last = winnersOf(finalRound());
 			return last.isEmpty() ? null : last.get(0);
 		}
 
-		// ------------------------------------------------------------ persistence
 
 		public CompoundTag save() {
 			CompoundTag tag = new CompoundTag();
@@ -281,6 +334,15 @@ public final class Tournament {
 			tag.putBoolean("completed", completed);
 			tag.putString("semifinalist", semifinalist);
 			tag.putString("champion", champion);
+
+			ListTag sourceList = new ListTag();
+			for (Map.Entry<String, Integer> entry : sources.entrySet()) {
+				CompoundTag stored = new CompoundTag();
+				stored.putString("id", entry.getKey());
+				stored.putInt("source", entry.getValue());
+				sourceList.add(stored);
+			}
+			tag.put("sources", sourceList);
 
 			ListTag seedList = new ListTag();
 			for (String id : seeds) {
@@ -313,13 +375,18 @@ public final class Tournament {
 				String stored = tag.getString("format");
 				if (!stored.isEmpty()) bracket.format = TournamentDefinition.Format.valueOf(stored);
 			} catch (IllegalArgumentException ignored) {
-				// Unknown format from a newer or edited save: fall back to the bracket.
 			}
 			bracket.round = tag.getInt("round");
 			bracket.eliminated = tag.getBoolean("eliminated");
 			bracket.completed = tag.getBoolean("completed");
 			bracket.semifinalist = tag.getString("semifinalist");
 			bracket.champion = tag.getString("champion");
+
+			ListTag sourceList = tag.getList("sources", Tag.TAG_COMPOUND);
+			for (int i = 0; i < sourceList.size(); i++) {
+				CompoundTag stored = sourceList.getCompound(i);
+				bracket.sources.put(stored.getString("id"), stored.getInt("source"));
+			}
 
 			ListTag seedList = tag.getList("seeds", Tag.TAG_COMPOUND);
 			for (int i = 0; i < seedList.size(); i++) {
@@ -339,27 +406,32 @@ public final class Tournament {
 
 	public static final class Run {
 
+		public enum Phase { RULES, INTERMISSION, PREVIEW, BOUT }
+
 		private String tournamentId = "";
 		private UUID partyId;
 
 		private final List<UUID> participants = new ArrayList<>();
 		private final Set<UUID> eliminated = new LinkedHashSet<>();
+		private final Set<UUID> accepted = new LinkedHashSet<>();
+		private final Set<UUID> declined = new LinkedHashSet<>();
+		private final Set<UUID> ready = new LinkedHashSet<>();
 
 		private Bracket bracket = new Bracket();
 
+		private Phase phase = Phase.RULES;
+		private long phaseDeadline;
+		private boolean revealed;
+
 		private UUID activeFighter;
 		private UUID activeRival;
-		private long turnDeadline;
-		private boolean auto;
 		private boolean finished;
 
 		private BlockPos ringCentre = BlockPos.ZERO;
 		private ResourceKey<Level> dimension = Level.OVERWORLD;
 		private UUID standingOpponent;
 
-		// Walk-away timers are game-time based and only matter while the server is up.
 		private final Map<UUID, Long> awayDeadline = new HashMap<>();
-		/** Members who have stood at the ring at least once; the rest are still travelling. */
 		private final Set<UUID> arrived = new LinkedHashSet<>();
 
 		public Run() {
@@ -370,15 +442,18 @@ public final class Tournament {
 		public List<UUID> getParticipants() { return Collections.unmodifiableList(participants); }
 		public boolean isFinished() { return finished; }
 		public void finish() { finished = true; }
-		public boolean isAuto() { return auto; }
 		public BlockPos getRingCentre() { return ringCentre; }
 		public ResourceKey<Level> getDimension() { return dimension; }
 		public UUID getActiveFighter() { return activeFighter; }
 		public void setActiveFighter(UUID id) { activeFighter = id; }
 		public UUID getActiveRival() { return activeRival; }
 		public void setActiveRival(UUID id) { activeRival = id; }
-		public long getTurnDeadline() { return turnDeadline; }
-		public void setTurnDeadline(long deadline) { turnDeadline = deadline; }
+		public Phase getPhase() { return phase; }
+		public void setPhase(Phase phase) { this.phase = phase; }
+		public long getPhaseDeadline() { return phaseDeadline; }
+		public void setPhaseDeadline(long deadline) { phaseDeadline = deadline; }
+		public boolean isRevealed() { return revealed; }
+		public void setRevealed(boolean revealed) { this.revealed = revealed; }
 		public UUID getStandingOpponent() { return standingOpponent; }
 		public void setStandingOpponent(UUID id) { standingOpponent = id; }
 
@@ -389,6 +464,30 @@ public final class Tournament {
 		public boolean isEliminated(UUID player) { return eliminated.contains(player); }
 		public boolean isAlive(UUID player) { return participants.contains(player) && !eliminated.contains(player); }
 		public Set<UUID> getEliminated() { return Collections.unmodifiableSet(eliminated); }
+
+		public boolean isAccepted(UUID player) { return accepted.contains(player); }
+		public boolean isDeclined(UUID player) { return declined.contains(player); }
+		public boolean hasAnswered(UUID player) { return accepted.contains(player) || declined.contains(player); }
+
+		public void accept(UUID player) {
+			declined.remove(player);
+			accepted.add(player);
+		}
+
+		public void decline(UUID player) {
+			accepted.remove(player);
+			declined.add(player);
+		}
+
+		public List<UUID> unanswered() {
+			List<UUID> pending = new ArrayList<>();
+			for (UUID id : aliveParticipants()) if (!hasAnswered(id)) pending.add(id);
+			return pending;
+		}
+
+		public boolean isReady(UUID player) { return ready.contains(player); }
+		public void markReady(UUID player) { ready.add(player); }
+		public void clearReady() { ready.clear(); }
 
 		public List<UUID> aliveParticipants() {
 			List<UUID> alive = new ArrayList<>();
@@ -411,14 +510,15 @@ public final class Tournament {
 
 		public static Run create(String tournamentId, TournamentDefinition def, List<UUID> members,
 								 @Nullable UUID partyId, BlockPos ringCentre, ResourceKey<Level> dimension,
-								 Random random) {
+								 long rulesDeadline, Random random) {
 			Run run = new Run();
 			run.tournamentId = tournamentId;
 			run.partyId = partyId;
 			run.participants.addAll(members);
 			run.ringCentre = ringCentre;
 			run.dimension = dimension;
-			run.auto = members.size() > 1;
+			run.phase = Phase.RULES;
+			run.phaseDeadline = rulesDeadline;
 			run.bracket = Bracket.draw(tournamentId, def, members, random);
 			run.activeFighter = members.isEmpty() ? null : members.get(0);
 			return run;
@@ -429,28 +529,19 @@ public final class Tournament {
 			tag.putString("tournament", tournamentId);
 			if (partyId != null) tag.putUUID("party", partyId);
 
-			ListTag members = new ListTag();
-			for (UUID id : participants) {
-				CompoundTag entry = new CompoundTag();
-				entry.putUUID("id", id);
-				members.add(entry);
-			}
-			tag.put("participants", members);
-
-			ListTag out = new ListTag();
-			for (UUID id : eliminated) {
-				CompoundTag entry = new CompoundTag();
-				entry.putUUID("id", id);
-				out.add(entry);
-			}
-			tag.put("eliminated", out);
+			tag.put("participants", uuidList(participants));
+			tag.put("eliminated", uuidList(eliminated));
+			tag.put("accepted", uuidList(accepted));
+			tag.put("declined", uuidList(declined));
+			tag.put("ready", uuidList(ready));
 			tag.put("bracket", bracket.save());
 
 			if (activeFighter != null) tag.putUUID("active", activeFighter);
 			if (activeRival != null) tag.putUUID("rival", activeRival);
 			if (standingOpponent != null) tag.putUUID("standing", standingOpponent);
-			tag.putLong("turnDeadline", turnDeadline);
-			tag.putBoolean("auto", auto);
+			tag.putString("phase", phase.name());
+			tag.putLong("phaseDeadline", phaseDeadline);
+			tag.putBoolean("revealed", revealed);
 			tag.putBoolean("finished", finished);
 			tag.putInt("ringX", ringCentre.getX());
 			tag.putInt("ringY", ringCentre.getY());
@@ -464,31 +555,50 @@ public final class Tournament {
 			run.tournamentId = tag.getString("tournament");
 			if (tag.hasUUID("party")) run.partyId = tag.getUUID("party");
 
-			ListTag members = tag.getList("participants", Tag.TAG_COMPOUND);
-			for (int i = 0; i < members.size(); i++) {
-				CompoundTag entry = members.getCompound(i);
-				if (entry.hasUUID("id")) run.participants.add(entry.getUUID("id"));
-			}
-
-			ListTag out = tag.getList("eliminated", Tag.TAG_COMPOUND);
-			for (int i = 0; i < out.size(); i++) {
-				CompoundTag entry = out.getCompound(i);
-				if (entry.hasUUID("id")) run.eliminated.add(entry.getUUID("id"));
-			}
+			run.participants.addAll(uuids(tag, "participants"));
+			run.eliminated.addAll(uuids(tag, "eliminated"));
+			run.accepted.addAll(uuids(tag, "accepted"));
+			run.declined.addAll(uuids(tag, "declined"));
+			run.ready.addAll(uuids(tag, "ready"));
 
 			if (tag.contains("bracket", Tag.TAG_COMPOUND)) run.bracket = Bracket.load(tag.getCompound("bracket"));
 
 			if (tag.hasUUID("active")) run.activeFighter = tag.getUUID("active");
 			if (tag.hasUUID("rival")) run.activeRival = tag.getUUID("rival");
 			if (tag.hasUUID("standing")) run.standingOpponent = tag.getUUID("standing");
-			run.turnDeadline = tag.getLong("turnDeadline");
-			run.auto = tag.getBoolean("auto");
+			try {
+				String stored = tag.getString("phase");
+				if (!stored.isEmpty()) run.phase = Phase.valueOf(stored);
+			} catch (IllegalArgumentException ignored) {
+			}
+			run.phaseDeadline = tag.getLong("phaseDeadline");
+			run.revealed = tag.getBoolean("revealed");
 			run.finished = tag.getBoolean("finished");
 			run.ringCentre = new BlockPos(tag.getInt("ringX"), tag.getInt("ringY"), tag.getInt("ringZ"));
 
 			ResourceLocation dim = ResourceLocation.tryParse(tag.getString("dimension"));
 			if (dim != null) run.dimension = ResourceKey.create(Registries.DIMENSION, dim);
 			return run;
+		}
+
+		private static ListTag uuidList(Iterable<UUID> ids) {
+			ListTag list = new ListTag();
+			for (UUID id : ids) {
+				CompoundTag entry = new CompoundTag();
+				entry.putUUID("id", id);
+				list.add(entry);
+			}
+			return list;
+		}
+
+		private static List<UUID> uuids(CompoundTag tag, String key) {
+			List<UUID> ids = new ArrayList<>();
+			ListTag list = tag.getList(key, Tag.TAG_COMPOUND);
+			for (int i = 0; i < list.size(); i++) {
+				CompoundTag entry = list.getCompound(i);
+				if (entry.hasUUID("id")) ids.add(entry.getUUID("id"));
+			}
+			return ids;
 		}
 	}
 
@@ -699,18 +809,17 @@ public final class Tournament {
 			return new BlockPos(box.minX() + wx, box.minY() + ty, box.minZ() + wz);
 		}
 	}
-
 	public static final class Manager {
 
 		public static final String MATCH_TAG = "dmz_tournament_match";
 		private static final String STATS_CONFIGURED_TAG = "dmz_stats_configured";
 
-		private static final int COUNTDOWN_SECONDS = 3;
+		public static final int COUNTDOWN_SECONDS = 3;
+		public static final int PREVIEW_SECONDS = 5;
+		public static final double EXCLUSION_RADIUS = 15.0D;
 		private static final double DEFAULT_HEALTH = 100.0D;
 		private static final double FORFEIT_DISTANCE_SQR = 60.0D * 60.0D;
-
-		/** Party runs chain themselves; this is only the breather between bouts. */
-		private static final long AUTO_START_DELAY = 60L;
+		private static final double PUSH_SPEED = 0.6D;
 
 		private static final Map<UUID, ActiveMatch> ACTIVE = new HashMap<>();
 		private static final Random RANDOM = new Random();
@@ -753,12 +862,27 @@ public final class Tournament {
 		public static boolean canDamageFighter(ServerPlayer target, @Nullable Entity attacker, long gameTime) {
 			ActiveMatch match = ACTIVE.get(target.getUUID());
 			if (match == null) return true;
-			if (attacker == null) return true; // fall damage, the ring itself, and so on
+			if (attacker == null) return true;
 			if (match.inGrace(gameTime)) return false;
 			return attacker.getUUID().equals(match.opponentId());
 		}
 
-		// ------------------------------------------------------------------ sign-up
+		public static boolean isInGrace(UUID playerId, long gameTime) {
+			ActiveMatch match = ACTIVE.get(playerId);
+			return match != null && match.inGrace(gameTime);
+		}
+
+		@Nullable
+		public static UUID ownerOf(Entity entity) {
+			if (entity == null) return null;
+			String owner = entity.getPersistentData().getString(MATCH_TAG);
+			if (owner.isEmpty()) return null;
+			try {
+				return UUID.fromString(owner);
+			} catch (IllegalArgumentException e) {
+				return null;
+			}
+		}
 
 		@Nullable
 		public static Component signUp(ServerPlayer player, String tournamentId, BlockPos ringCentre) {
@@ -770,7 +894,6 @@ public final class Tournament {
 
 			Run running = data.getRun(tournamentId);
 			if (running != null) {
-				// Already entered: nothing to refuse, just let the bracket open.
 				return running.isAlive(player.getUUID()) ? null
 						: Component.translatable("tournament.dragonminez.in_progress");
 			}
@@ -793,8 +916,6 @@ public final class Tournament {
 			members.add(player.getUUID());
 
 			if (inParty) {
-				// The party enters as one: a single member on cooldown holds everybody back, and
-				// distance is no excuse — whoever is away has to run back to the arena.
 				for (ServerPlayer member : PartyManager.getAllPartyMembers(player)) {
 					if (member.getUUID().equals(player.getUUID())) continue;
 
@@ -811,28 +932,126 @@ public final class Tournament {
 				}
 			}
 
+			long rulesDeadline = level.getGameTime() + def.rulesAcceptSecondsOr(60) * 20L;
 			Run run = Run.create(tournamentId, def, members, inParty ? PartyManager.getPartyId(player) : null,
-					ringCentre, level.dimension(), RANDOM);
+					ringCentre, level.dimension(), rulesDeadline, RANDOM);
 			data.putRun(run);
 
 			Component name = Component.translatable(def.displayNameOr("tournament.dragonminez." + tournamentId));
 			broadcast(level, run, Component.translatable("tournament.dragonminez.entered", name)
 					.withStyle(ChatFormatting.GOLD));
 
-			syncTurn(level, data, run);
+			Service.openForAll(level, run);
 			return null;
+		}
+
+		public static void answerRules(ServerPlayer player, boolean accept) {
+			ServerLevel level = player.serverLevel();
+			Progress data = Progress.get(level);
+			Run run = data.runOf(player.getUUID());
+			if (run == null || !run.isAlive(player.getUUID())) {
+				player.displayClientMessage(Component.translatable("tournament.dragonminez.not_entered"), true);
+				return;
+			}
+			if (run.getPhase() != Run.Phase.RULES || run.hasAnswered(player.getUUID())) return;
+
+			if (accept) {
+				run.accept(player.getUUID());
+				player.sendSystemMessage(Component.translatable("tournament.dragonminez.rules_accepted")
+						.withStyle(ChatFormatting.GREEN));
+				broadcast(level, run, Component.translatable("tournament.dragonminez.member_accepted",
+						player.getName()).withStyle(ChatFormatting.GRAY));
+			} else {
+				run.decline(player.getUUID());
+				dropOut(level, data, run, player);
+			}
+			data.setDirty();
+
+			if (run.unanswered().isEmpty()) settleRules(level, data, run);
+			else Service.pushBracket(level, run);
+		}
+
+		private static void dropOut(ServerLevel level, Progress data, Run run, ServerPlayer player) {
+			UUID id = player.getUUID();
+			run.eliminate(id);
+
+			String replacement = "";
+			if (!run.isGauntlet()) {
+				TournamentDefinition def = ConfigManager.getTournament(run.getTournamentId());
+				replacement = replacementFighter(def, run.getBracket());
+				run.getBracket().replaceSeed(Bracket.slotFor(id), replacement);
+			}
+
+			player.sendSystemMessage(Component.translatable("tournament.dragonminez.rules_declined")
+					.withStyle(ChatFormatting.RED));
+			broadcast(level, run, Component.translatable("tournament.dragonminez.member_declined",
+					player.getName()).withStyle(ChatFormatting.RED));
+			data.setDirty();
+		}
+
+		private static String replacementFighter(@Nullable TournamentDefinition def, Bracket bracket) {
+			if (def == null) return "";
+			Set<String> taken = new HashSet<>(bracket.getSeeds());
+			taken.add(bracket.getSemifinalist());
+			taken.add(bracket.getChampion());
+			Set<Integer> drawn = new HashSet<>();
+			for (String seed : bracket.getSeeds()) {
+				int source = bracket.sourceOf(seed);
+				if (source >= 0) drawn.add(source);
+			}
+			List<Integer> unused = new ArrayList<>();
+			List<Integer> usable = new ArrayList<>();
+			for (int i = 0; i < def.getContenders().size(); i++) {
+				if (!def.getContenders().get(i).isUsable()) continue;
+				usable.add(i);
+				if (!drawn.contains(i)) unused.add(i);
+			}
+			List<Integer> pool = unused.isEmpty() ? usable : unused;
+			if (pool.isEmpty()) return "";
+			for (int attempt = 0; attempt < pool.size() * 2; attempt++) {
+				int index = pool.get(RANDOM.nextInt(pool.size()));
+				Set<String> used = new HashSet<>(taken);
+				String resolved = Bracket.resolveFighter(def.getContenders().get(index).getEntityId(), used, RANDOM);
+				if (resolved.isEmpty()) continue;
+				if (taken.contains(resolved) && attempt < pool.size()) continue;
+				bracket.setSource(resolved, index);
+				return resolved;
+			}
+			return "";
+		}
+
+		private static void settleRules(ServerLevel level, Progress data, Run run) {
+			for (UUID id : run.unanswered()) {
+				run.decline(id);
+				ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+				if (player != null) {
+					dropOut(level, data, run, player);
+				} else {
+					run.eliminate(id);
+				}
+			}
+
+			if (run.aliveParticipants().isEmpty()) {
+				cancelRun(level, data, run);
+				return;
+			}
+
+			run.setRevealed(true);
+			data.setDirty();
+			broadcast(level, run, Component.translatable("tournament.dragonminez.rules_settled")
+					.withStyle(ChatFormatting.GOLD));
+			syncTurn(level, data, run);
+		}
+
+		private static void cancelRun(ServerLevel level, Progress data, Run run) {
+			broadcast(level, run, Component.translatable("tournament.dragonminez.cancelled")
+					.withStyle(ChatFormatting.RED));
+			finishRun(level, data, run);
 		}
 
 		private static Vec3 centre(BlockPos pos) {
 			return new Vec3(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D);
 		}
-
-		private static int turnTicks(Run run, @Nullable TournamentDefinition def) {
-			if (run.isAuto()) return (int) AUTO_START_DELAY;
-			return (def != null ? def.nextRoundSecondsOr(30) : 30) * 20;
-		}
-
-		// ------------------------------------------------------------------ turn order
 
 		private record Bout(int round, int match, String left, String right,
 							@Nullable UUID leftPlayer, @Nullable UUID rightPlayer) {
@@ -868,7 +1087,6 @@ public final class Tournament {
 					bracket.recordWinner(r, roll(pair[0], pair[1]));
 					continue;
 				}
-				// A seat whose player is already out is a walkover for the other side.
 				if (left == null && Bracket.isPlayerSlot(pair[0])) {
 					bracket.recordWinner(r, pair[1]);
 					continue;
@@ -894,7 +1112,6 @@ public final class Tournament {
 			return RANDOM.nextBoolean() ? left : right;
 		}
 
-		/** Works out who is up next and arms the clock, or closes the run when nobody is left. */
 		private static void syncTurn(ServerLevel level, Progress data, Run run) {
 			if (run.isFinished()) return;
 
@@ -905,7 +1122,7 @@ public final class Tournament {
 			}
 
 			if (run.isGauntlet()) {
-				syncGauntletTurn(level, data, run, false);
+				syncGauntletTurn(level, data, run);
 				return;
 			}
 
@@ -921,18 +1138,12 @@ public final class Tournament {
 				return;
 			}
 
-			UUID previous = run.getActiveFighter();
 			run.setActiveFighter(bout.pvp() ? bout.leftPlayer() : bout.fighter());
 			run.setActiveRival(bout.pvp() ? bout.rightPlayer() : null);
-			run.setTurnDeadline(level.getGameTime()
-					+ turnTicks(run, ConfigManager.getTournament(run.getTournamentId())));
-			data.setDirty();
-
-			if (!run.getActiveFighter().equals(previous) || bout.pvp()) announceTurn(level, run, bout.pvp());
-			else Service.pushBracket(level, run);
+			startIntermission(level, data, run, bout.pvp());
 		}
 
-		private static void syncGauntletTurn(ServerLevel level, Progress data, Run run, boolean keepFighter) {
+		private static void syncGauntletTurn(ServerLevel level, Progress data, Run run) {
 			List<UUID> alive = run.aliveParticipants();
 			if (alive.isEmpty()) {
 				finishRun(level, data, run);
@@ -941,9 +1152,7 @@ public final class Tournament {
 
 			UUID current = run.getActiveFighter();
 			UUID next;
-			if (keepFighter && current != null && alive.contains(current)) {
-				next = current;
-			} else if (current != null && alive.contains(current)) {
+			if (current != null && alive.contains(current)) {
 				next = current;
 			} else {
 				List<UUID> pool = new ArrayList<>(alive);
@@ -951,65 +1160,95 @@ public final class Tournament {
 				next = pool.isEmpty() ? alive.get(0) : pool.get(RANDOM.nextInt(pool.size()));
 			}
 
-			boolean changed = !next.equals(current);
 			run.setActiveFighter(next);
 			run.setActiveRival(null);
-			run.setTurnDeadline(level.getGameTime()
-					+ turnTicks(run, ConfigManager.getTournament(run.getTournamentId())));
-			data.setDirty();
-
-			if (changed) announceTurn(level, run, false);
-			else Service.pushBracket(level, run);
+			startIntermission(level, data, run, false);
 		}
 
-		private static void announceTurn(ServerLevel level, Run run, boolean pvp) {
-			UUID activeId = run.getActiveFighter();
-			if (activeId == null) return;
+		private static void startIntermission(ServerLevel level, Progress data, Run run, boolean pvp) {
+			TournamentDefinition def = ConfigManager.getTournament(run.getTournamentId());
+			int seconds = def != null ? def.nextRoundSecondsOr(30) : 30;
+			run.setPhase(Run.Phase.INTERMISSION);
+			run.setPhaseDeadline(level.getGameTime() + seconds * 20L);
+			run.clearReady();
+			data.setDirty();
 
-			ServerPlayer active = level.getServer().getPlayerList().getPlayer(activeId);
+			UUID activeId = run.getActiveFighter();
+			ServerPlayer active = activeId != null ? level.getServer().getPlayerList().getPlayer(activeId) : null;
 			ServerPlayer rival = run.getActiveRival() != null
 					? level.getServer().getPlayerList().getPlayer(run.getActiveRival()) : null;
 
 			if (pvp && active != null && rival != null) {
 				broadcast(level, run, Component.translatable("tournament.dragonminez.pvp_bout",
 						active.getName(), rival.getName()).withStyle(ChatFormatting.LIGHT_PURPLE));
-			} else if (active != null) {
-				active.sendSystemMessage(Component.translatable("tournament.dragonminez.your_turn")
-						.withStyle(ChatFormatting.GOLD));
-				for (UUID id : run.getParticipants()) {
-					if (id.equals(activeId)) continue;
-					ServerPlayer other = level.getServer().getPlayerList().getPlayer(id);
-					if (other == null) continue;
-					other.sendSystemMessage(Component.translatable("tournament.dragonminez.turn_of",
-							active.getName()).withStyle(ChatFormatting.YELLOW));
+			}
+			for (UUID id : run.getParticipants()) {
+				ServerPlayer participant = level.getServer().getPlayerList().getPlayer(id);
+				if (participant == null || run.isEliminated(id)) continue;
+				if (id.equals(activeId) || id.equals(run.getActiveRival())) {
+					participant.sendSystemMessage(Component.translatable("tournament.dragonminez.your_turn", seconds)
+							.withStyle(ChatFormatting.GOLD));
+				} else if (active != null) {
+					participant.sendSystemMessage(Component.translatable("tournament.dragonminez.turn_of",
+							active.getName(), seconds).withStyle(ChatFormatting.YELLOW));
 				}
 			}
-			Service.pushBracket(level, run);
+
+			Service.openForAll(level, run);
+			Service.sendPhase(level, run, TournamentPackets.PhaseS2C.Phase.NEXT_ROUND, seconds);
 		}
 
-		// ------------------------------------------------------------------ matches
+		public static void ready(ServerPlayer player) {
+			ServerLevel level = player.serverLevel();
+			Progress data = Progress.get(level);
+			Run run = data.runOf(player.getUUID());
+			UUID id = player.getUUID();
+			if (run == null || run.getPhase() != Run.Phase.INTERMISSION || !run.isAlive(id)) return;
+			if (!id.equals(run.getActiveFighter()) && !id.equals(run.getActiveRival())) return;
+			if (run.isReady(id)) return;
+
+			run.markReady(id);
+			data.setDirty();
+			broadcast(level, run, Component.translatable("tournament.dragonminez.member_ready", player.getName())
+					.withStyle(ChatFormatting.GREEN));
+
+			boolean rivalReady = run.getActiveRival() == null || run.isReady(run.getActiveRival());
+			if (run.isReady(run.getActiveFighter()) && rivalReady) startPreview(level, data, run);
+			else Service.pushBracket(level, run);
+		}
+
+		private static void startPreview(ServerLevel level, Progress data, Run run) {
+			run.setPhase(Run.Phase.PREVIEW);
+			run.setPhaseDeadline(level.getGameTime() + PREVIEW_SECONDS * 20L);
+			data.setDirty();
+			Service.openForAll(level, run);
+			Service.sendPhase(level, run, TournamentPackets.PhaseS2C.Phase.PREVIEW, PREVIEW_SECONDS);
+		}
 
 		@Nullable
-		public static Component beginMatch(ServerPlayer player, String tournamentId) {
+		private static Component beginMatch(ServerPlayer player, Run run, Progress data) {
 			if (isFighting(player)) return Component.translatable("tournament.dragonminez.already_fighting");
 
 			ServerLevel level = player.serverLevel();
-			Progress data = Progress.get(level);
-
-			Run run = data.getRun(tournamentId);
-			if (run == null || !run.isAlive(player.getUUID())) {
-				return Component.translatable("tournament.dragonminez.not_entered");
-			}
+			if (!run.isAlive(player.getUUID())) return Component.translatable("tournament.dragonminez.not_entered");
 			if (!player.getUUID().equals(run.getActiveFighter())) {
 				return Component.translatable("tournament.dragonminez.not_your_turn");
 			}
 
-			TournamentDefinition def = ConfigManager.getTournament(tournamentId);
+			TournamentDefinition def = ConfigManager.getTournament(run.getTournamentId());
 			if (def == null) return Component.translatable("tournament.dragonminez.unavailable");
 
-			return run.isGauntlet()
+			Component refusal = run.isGauntlet()
 					? beginGauntletMatch(level, data, run, def, player)
 					: beginBracketMatch(level, data, run, def, player);
+			if (refusal != null) return refusal;
+
+			run.setPhase(Run.Phase.BOUT);
+			run.setPhaseDeadline(0L);
+			data.setDirty();
+			Service.pushBracket(level, run);
+			Service.sendPhase(level, run, TournamentPackets.PhaseS2C.Phase.COUNTDOWN, COUNTDOWN_SECONDS);
+			return null;
 		}
 
 		@Nullable
@@ -1018,13 +1257,14 @@ public final class Tournament {
 			Bracket bracket = run.getBracket();
 			if (!bracket.isActive()) return Component.translatable("tournament.dragonminez.not_entered");
 
-			TournamentDefinition.Fighter fighter = fighterFor(def, bracket.currentOpponent());
+			String opponentId = bracket.currentOpponent();
+			TournamentDefinition.Fighter fighter = fighterFor(def, bracket, opponentId);
 			if (fighter == null) return Component.translatable("tournament.dragonminez.unavailable");
 
 			int radius = ringRadius(def);
-			Mob opponent = reuseStandingOpponent(level, run, fighter);
+			Mob opponent = reuseStandingOpponent(level, run, opponentId);
 			if (opponent == null) {
-				opponent = spawnOpponent(level, fighter, run.getRingCentre(), radius, bracket.getRound(), player);
+				opponent = spawnOpponent(level, fighter, opponentId, run.getRingCentre(), radius, bracket.getRound(), player);
 			} else {
 				opponent.getPersistentData().putString(MATCH_TAG, player.getUUID().toString());
 				opponent.setTarget(player);
@@ -1033,7 +1273,7 @@ public final class Tournament {
 
 			run.setStandingOpponent(opponent.getUUID());
 			startBout(level, data, run, def, player, opponent, null,
-					bracket.getRound(), 0, Bracket.PLAYER_SLOT, fighter.getEntityId(), radius);
+					bracket.getRound(), 0, Bracket.PLAYER_SLOT, opponentId, radius);
 			return null;
 		}
 
@@ -1042,7 +1282,6 @@ public final class Tournament {
 												   TournamentDefinition def, ServerPlayer player) {
 			Bout bout = nextBout(run);
 			if (bout == null || !player.getUUID().equals(bout.pvp() ? bout.leftPlayer() : bout.fighter())) {
-				syncTurn(level, data, run);
 				return Component.translatable("tournament.dragonminez.not_your_turn");
 			}
 
@@ -1062,10 +1301,10 @@ public final class Tournament {
 				return null;
 			}
 
-			TournamentDefinition.Fighter fighter = fighterFor(def, bout.opponentSlot());
+			TournamentDefinition.Fighter fighter = fighterFor(def, run.getBracket(), bout.opponentSlot());
 			if (fighter == null) return Component.translatable("tournament.dragonminez.unavailable");
 
-			Mob opponent = spawnOpponent(level, fighter, run.getRingCentre(), radius, bout.round(), player);
+			Mob opponent = spawnOpponent(level, fighter, bout.opponentSlot(), run.getRingCentre(), radius, bout.round(), player);
 			if (opponent == null) return Component.translatable("tournament.dragonminez.unavailable");
 
 			run.setStandingOpponent(opponent.getUUID());
@@ -1084,6 +1323,7 @@ public final class Tournament {
 			BlockPos ring = run.getRingCentre();
 			player.teleportTo(level, ring.getX() + 0.5D - offset, ring.getY(), ring.getZ() + 0.5D,
 					offset >= 0 ? 90.0F : 270.0F, 0.0F);
+			player.setDeltaMovement(Vec3.ZERO);
 
 			if (opponent != null) {
 				opponent.setNoAi(true);
@@ -1097,17 +1337,21 @@ public final class Tournament {
 					selfSlot, rivalSlot, fightAt + def.matchTimeoutSecondsOr(300) * 20L, ring,
 					level.dimension(), fightAt));
 
-			run.setTurnDeadline(0L);
-			data.setDirty();
-
-			NetworkHandler.sendToPlayer(new TournamentPackets.CountdownS2C(COUNTDOWN_SECONDS), player);
+			setFrozen(player, true);
 			if (rival != null) NetworkHandler.sendToPlayer(new TournamentPackets.RivalS2C(rival.getUUID()), player);
-			Service.pushBracket(level, run);
+			clearBystanders(level, player, ACTIVE.get(player.getUUID()));
 		}
 
-		/** A gauntlet opponent left standing by the previous fighter keeps the damage it took. */
+		public static void setFrozen(ServerPlayer player, boolean frozen) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+				if (stats.getStatus().isMatchFrozen() == frozen) return;
+				stats.getStatus().setMatchFrozen(frozen);
+				NetworkHandler.sendToPlayer(new ResourceSyncS2C(player), player);
+			});
+		}
+
 		@Nullable
-		private static Mob reuseStandingOpponent(ServerLevel level, Run run, TournamentDefinition.Fighter fighter) {
+		private static Mob reuseStandingOpponent(ServerLevel level, Run run, String entityId) {
 			if (!run.isGauntlet() || run.getStandingOpponent() == null) return null;
 
 			Entity entity = level.getEntity(run.getStandingOpponent());
@@ -1116,7 +1360,7 @@ public final class Tournament {
 				return null;
 			}
 
-			ResourceLocation wanted = ResourceLocation.tryParse(fighter.getEntityId());
+			ResourceLocation wanted = ResourceLocation.tryParse(entityId);
 			ResourceLocation actual = ForgeRegistries.ENTITY_TYPES.getKey(mob.getType());
 			if (wanted == null || !wanted.equals(actual)) {
 				mob.discard();
@@ -1124,23 +1368,6 @@ public final class Tournament {
 				return null;
 			}
 			return mob;
-		}
-
-		@Nullable
-		public static UUID ownerOf(Entity entity) {
-			if (entity == null) return null;
-			String owner = entity.getPersistentData().getString(MATCH_TAG);
-			if (owner.isEmpty()) return null;
-			try {
-				return UUID.fromString(owner);
-			} catch (IllegalArgumentException e) {
-				return null;
-			}
-		}
-
-		public static boolean isInGrace(UUID playerId, long gameTime) {
-			ActiveMatch match = ACTIVE.get(playerId);
-			return match != null && match.inGrace(gameTime);
 		}
 
 		public static void tick(ServerLevel level) {
@@ -1161,6 +1388,8 @@ public final class Tournament {
 
 				if (player == null) continue;
 				if (!level.dimension().equals(match.dimension())) continue;
+
+				clearBystanders(level, player, match);
 
 				boolean timedOut = level.getGameTime() > match.deadline();
 
@@ -1206,6 +1435,41 @@ public final class Tournament {
 			for (Runnable outcome : outcomes) outcome.run();
 		}
 
+		private static void clearBystanders(ServerLevel level, ServerPlayer fighter, ActiveMatch match) {
+			Vec3 centre = fighter.position();
+			AABB box = fighter.getBoundingBox().inflate(EXCLUSION_RADIUS);
+
+			for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box)) {
+				if (entity == fighter || entity.getUUID().equals(match.opponentId())) continue;
+				if (entity instanceof ServerPlayer other && other.isSpectator()) continue;
+				if (ACTIVE.containsKey(entity.getUUID()) || ownerOf(entity) != null) continue;
+
+				Vec3 delta = entity.position().subtract(centre);
+				double distance = delta.length();
+				if (distance >= EXCLUSION_RADIUS) continue;
+
+				Vec3 flat = new Vec3(delta.x, 0.0D, delta.z);
+				Vec3 direction = flat.lengthSqr() < 1.0E-4D
+						? new Vec3(Math.cos(entity.getId()), 0.0D, Math.sin(entity.getId()))
+						: flat.normalize();
+				Vec3 target = centre.add(direction.scale(EXCLUSION_RADIUS + 0.5D));
+
+				if (entity instanceof ServerPlayer other) {
+					other.teleportTo(level, target.x, entity.getY(), target.z, other.getYRot(), other.getXRot());
+					other.setDeltaMovement(direction.scale(PUSH_SPEED));
+					other.hurtMarked = true;
+					if (level.getGameTime() % 20L == 0L) {
+						other.displayClientMessage(Component.translatable("tournament.dragonminez.keep_away",
+								(int) EXCLUSION_RADIUS).withStyle(ChatFormatting.RED), true);
+					}
+				} else {
+					entity.teleportTo(target.x, entity.getY(), target.z);
+					entity.setDeltaMovement(direction.scale(PUSH_SPEED));
+					entity.hurtMarked = true;
+				}
+			}
+		}
+
 		private static void tickRuns(ServerLevel level) {
 			Progress data = Progress.get(level);
 			List<Run> runs = data.activeRuns();
@@ -1225,7 +1489,7 @@ public final class Tournament {
 
 			for (UUID id : run.aliveParticipants()) {
 				ServerPlayer participant = level.getServer().getPlayerList().getPlayer(id);
-				if (participant == null) continue; // logging out is handled by onPlayerLogout
+				if (participant == null) continue;
 
 				boolean away = !participant.level().dimension().equals(run.getDimension())
 						|| participant.distanceToSqr(centre(run.getRingCentre())) > FORFEIT_DISTANCE_SQR;
@@ -1243,7 +1507,6 @@ public final class Tournament {
 				}
 
 				if (deadline == null) {
-					// Somebody the leader signed up from across the world gets time to run over.
 					int grace = run.hasArrived(id) ? returnSeconds : arrivalSeconds;
 					run.setAwayDeadline(id, gameTime + grace * 20L);
 					broadcast(level, run, Component.translatable(run.hasArrived(id)
@@ -1267,6 +1530,22 @@ public final class Tournament {
 
 			if (run.isFinished()) return;
 
+			switch (run.getPhase()) {
+				case RULES -> {
+					if (gameTime >= run.getPhaseDeadline()) settleRules(level, data, run);
+				}
+				case INTERMISSION -> tickIntermission(level, data, run, gameTime);
+				case PREVIEW -> tickPreview(level, data, run, gameTime);
+				case BOUT -> {
+					UUID activeId = run.getActiveFighter();
+					boolean fighting = activeId != null && isFighting(activeId)
+							|| run.getActiveRival() != null && isFighting(run.getActiveRival());
+					if (!fighting) syncTurn(level, data, run);
+				}
+			}
+		}
+
+		private static void tickIntermission(ServerLevel level, Progress data, Run run, long gameTime) {
 			UUID activeId = run.getActiveFighter();
 			if (activeId == null || run.isEliminated(activeId)) {
 				syncTurn(level, data, run);
@@ -1274,43 +1553,52 @@ public final class Tournament {
 			}
 			if (isFighting(activeId)) return;
 
-			ServerPlayer active = level.getServer().getPlayerList().getPlayer(activeId);
-			if (active == null) return;
-
-			if (run.getTurnDeadline() <= 0L) {
-				run.setTurnDeadline(gameTime + turnTicks(run, def));
-				return;
-			}
-
-			long left = run.getTurnDeadline() - gameTime;
-
-			if (run.isAuto()) {
-				// Nobody has to press anything in a party run; wait for the fighters to be in place.
-				if (run.getAwayDeadline(activeId) != null
-						|| (run.getActiveRival() != null && run.getAwayDeadline(run.getActiveRival()) != null)) {
-					run.setTurnDeadline(gameTime + AUTO_START_DELAY);
-					return;
-				}
-				if (left <= 0L) {
-					Component refusal = beginMatch(active, run.getTournamentId());
-					if (refusal != null) {
-						active.displayClientMessage(refusal, true);
-						run.setTurnDeadline(gameTime + AUTO_START_DELAY);
-					}
+			long left = run.getPhaseDeadline() - gameTime;
+			if (left > 0L) {
+				if (left % 20L == 0L) {
+					Service.sendPhase(level, run, TournamentPackets.PhaseS2C.Phase.NEXT_ROUND, (int) (left / 20L));
 				}
 				return;
 			}
 
-			if (left <= 0L) {
-				active.sendSystemMessage(Component.translatable("tournament.dragonminez.next_round_expired")
+			List<UUID> late = new ArrayList<>();
+			if (!run.isReady(activeId)) late.add(activeId);
+			if (run.getActiveRival() != null && !run.isReady(run.getActiveRival())) late.add(run.getActiveRival());
+			if (late.isEmpty()) {
+				startPreview(level, data, run);
+				return;
+			}
+			for (UUID id : late) {
+				if (run.isFinished() || !run.isAlive(id)) continue;
+				ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+				if (player == null) continue;
+				player.sendSystemMessage(Component.translatable("tournament.dragonminez.next_round_expired")
 						.withStyle(ChatFormatting.RED));
-				eliminate(level, data, run, active, null);
+				eliminate(level, data, run, player, null);
+			}
+		}
+
+		private static void tickPreview(ServerLevel level, Progress data, Run run, long gameTime) {
+			long left = run.getPhaseDeadline() - gameTime;
+			if (left > 0L) {
+				if (left % 20L == 0L) {
+					Service.sendPhase(level, run, TournamentPackets.PhaseS2C.Phase.PREVIEW, (int) (left / 20L));
+				}
 				return;
 			}
 
-			active.displayClientMessage(Component.translatable("tournament.dragonminez.next_round_timer",
-					(int) ((left + 19) / 20)).withStyle(ChatFormatting.GOLD), true);
-			if (left % 20L == 0L) pling(active, 1.2F);
+			UUID activeId = run.getActiveFighter();
+			ServerPlayer active = activeId != null ? level.getServer().getPlayerList().getPlayer(activeId) : null;
+			if (active == null || run.isEliminated(activeId)) {
+				syncTurn(level, data, run);
+				return;
+			}
+
+			Component refusal = beginMatch(active, run, data);
+			if (refusal != null) {
+				active.displayClientMessage(refusal, true);
+				syncTurn(level, data, run);
+			}
 		}
 
 		public static boolean isNonLethalOpponent(Entity mob) {
@@ -1387,7 +1675,6 @@ public final class Tournament {
 			else loseMatch(player, match);
 		}
 
-		/** Logging out mid-run is treated exactly like walking away: the seat is gone. */
 		public static void onPlayerLogout(ServerPlayer player) {
 			ServerLevel level = player.serverLevel();
 			Progress data = Progress.get(level);
@@ -1397,12 +1684,19 @@ public final class Tournament {
 				return;
 			}
 
+			if (run.getPhase() == Run.Phase.RULES) {
+				run.decline(player.getUUID());
+				dropOut(level, data, run, player);
+				if (run.unanswered().isEmpty()) settleRules(level, data, run);
+				else Service.pushBracket(level, run);
+				return;
+			}
+
 			broadcast(level, run, Component.translatable("tournament.dragonminez.withdrew", player.getName())
 					.withStyle(ChatFormatting.RED));
 			eliminate(level, data, run, player, null);
 		}
 
-		/** Leaving the party mid-run costs the seat, but the tournament carries on without them. */
 		public static void onPartyLeave(ServerPlayer player) {
 			ServerLevel level = player.serverLevel();
 			Progress data = Progress.get(level);
@@ -1417,6 +1711,7 @@ public final class Tournament {
 		private static void winMatch(ServerPlayer player, ActiveMatch match) {
 			ServerLevel level = player.serverLevel();
 			Progress data = Progress.get(level);
+			setFrozen(player, false);
 
 			Run run = data.runOf(player.getUUID());
 			if (run == null) return;
@@ -1437,7 +1732,7 @@ public final class Tournament {
 					crown(level, data, run, player.getUUID());
 					return;
 				}
-				syncGauntletTurn(level, data, run, true);
+				syncGauntletTurn(level, data, run);
 				return;
 			}
 
@@ -1457,6 +1752,7 @@ public final class Tournament {
 		private static void loseMatch(ServerPlayer player, ActiveMatch match) {
 			ServerLevel level = player.serverLevel();
 			Progress data = Progress.get(level);
+			setFrozen(player, false);
 
 			Run run = data.runOf(player.getUUID());
 			if (run == null) return;
@@ -1478,7 +1774,6 @@ public final class Tournament {
 			if (run == null) return;
 
 			Bracket bracket = run.getBracket();
-			// The mirrored entry may already have settled this bout.
 			if (bracket.nextMatchIndex(match.round()) != match.match()) return;
 
 			ACTIVE.remove(player.getUUID());
@@ -1540,11 +1835,11 @@ public final class Tournament {
 
 			ActiveMatch active = match != null ? match : ACTIVE.get(id);
 			ACTIVE.remove(id);
+			setFrozen(player, false);
 
 			Bracket bracket = run.getBracket();
 			boolean gauntlet = run.isGauntlet();
 
-			// A bout they were in the middle of goes to the other side.
 			if (!gauntlet && active != null && bracket.nextMatchIndex(active.round()) == active.match()) {
 				bracket.recordWinner(active.round(), active.rivalSlot());
 				if (active.pvp()) {
@@ -1580,7 +1875,13 @@ public final class Tournament {
 				return;
 			}
 
-			if (gauntlet) syncGauntletTurn(level, data, run, false);
+			if (run.getPhase() == Run.Phase.RULES) {
+				if (run.unanswered().isEmpty()) settleRules(level, data, run);
+				else Service.pushBracket(level, run);
+				return;
+			}
+
+			if (gauntlet) syncGauntletTurn(level, data, run);
 			else syncTurn(level, data, run);
 		}
 
@@ -1598,6 +1899,8 @@ public final class Tournament {
 		private static void finishRun(ServerLevel level, Progress data, Run run) {
 			for (UUID id : run.getParticipants()) {
 				if (ACTIVE.remove(id) != null) clearRival(level, id);
+				ServerPlayer participant = level.getServer().getPlayerList().getPlayer(id);
+				if (participant != null) setFrozen(participant, false);
 			}
 			PartyManager.setTournamentFriendlyFire(level.getServer(), run.getPartyId(), false);
 			despawnOpponent(level, run.getStandingOpponent());
@@ -1606,6 +1909,7 @@ public final class Tournament {
 
 			broadcast(level, run, Component.translatable("tournament.dragonminez.run_over")
 					.withStyle(ChatFormatting.GRAY));
+			Service.sendPhase(level, run, TournamentPackets.PhaseS2C.Phase.CLEAR, 0);
 			Service.pushBracket(level, run);
 			data.removeRun(run.getTournamentId());
 		}
@@ -1626,12 +1930,6 @@ public final class Tournament {
 			player.playNotifySound(SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.PLAYERS, 1.0F, pitch);
 		}
 
-		// ------------------------------------------------------------------ rewards
-
-		/**
-		 * Crowns the winner and pays out. Baba's ladder is beaten by the party as a whole, so everybody
-		 * who entered is paid; the Cell Games pay the champion alone.
-		 */
 		private static void crown(ServerLevel level, Progress data, Run run, UUID championId) {
 			TournamentDefinition def = ConfigManager.getTournament(run.getTournamentId());
 			ServerPlayer champion = level.getServer().getPlayerList().getPlayer(championId);
@@ -1646,6 +1944,7 @@ public final class Tournament {
 
 			if (run.isGauntlet()) {
 				for (UUID id : run.getParticipants()) {
+					if (run.isDeclined(id)) continue;
 					ServerPlayer participant = level.getServer().getPlayerList().getPlayer(id);
 					if (participant != null) grantRewards(participant, def);
 					data.startCooldown(id, run.getTournamentId(), victoryCooldown);
@@ -1678,6 +1977,7 @@ public final class Tournament {
 
 			int trainingPoints = rewards.trainingPointsOr(0);
 			int alignment = rewards.alignmentOr(0);
+
 			if (trainingPoints > 0 || alignment != 0) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (trainingPoints > 0) data.getResources().addTrainingPoints(trainingPoints, false);
@@ -1704,6 +2004,7 @@ public final class Tournament {
 		private static void voidMatch(ServerPlayer player, ActiveMatch match, Entity opponent) {
 			if (opponent != null) opponent.discard();
 			player.displayClientMessage(Component.translatable("tournament.dragonminez.timeout"), false);
+			setFrozen(player, false);
 
 			ServerLevel level = player.serverLevel();
 			Progress data = Progress.get(level);
@@ -1711,7 +2012,7 @@ public final class Tournament {
 			if (run == null) return;
 
 			run.setStandingOpponent(null);
-			if (run.isGauntlet()) syncGauntletTurn(level, data, run, true);
+			if (run.isGauntlet()) syncGauntletTurn(level, data, run);
 			else syncTurn(level, data, run);
 		}
 
@@ -1723,8 +2024,6 @@ public final class Tournament {
 			mob.setNoAi(true);
 			mob.setTarget(null);
 			if (mob instanceof DBSagasEntity saga) saga.setCombatFrozen(true);
-			// The match tag is left alone on purpose: it keeps bystanders from finishing it off
-			// while it waits, wounded, for the next party member to step up.
 		}
 
 		private static void despawnOpponent(ServerLevel level, @Nullable UUID opponentId) {
@@ -1734,8 +2033,13 @@ public final class Tournament {
 		}
 
 		@Nullable
-		private static TournamentDefinition.Fighter fighterFor(TournamentDefinition def, String slot) {
+		private static TournamentDefinition.Fighter fighterFor(TournamentDefinition def, Bracket bracket, String slot) {
 			if (slot == null || slot.isBlank() || Bracket.isPlayerSlot(slot)) return null;
+
+			int source = bracket != null ? bracket.sourceOf(slot) : Bracket.SOURCE_UNKNOWN;
+			if (source == Bracket.SOURCE_CHAMPION) return def.getChampion();
+			if (source == Bracket.SOURCE_SEMIFINALIST) return def.getSemifinalist();
+			if (source >= 0 && source < def.getContenders().size()) return def.getContenders().get(source);
 
 			if (slot.equals(def.getChampion().getEntityId())) return def.getChampion();
 			if (slot.equals(def.getSemifinalist().getEntityId())) return def.getSemifinalist();
@@ -1746,14 +2050,14 @@ public final class Tournament {
 		}
 
 		@Nullable
-		private static Mob spawnOpponent(ServerLevel level, TournamentDefinition.Fighter fighter,
+		private static Mob spawnOpponent(ServerLevel level, TournamentDefinition.Fighter fighter, String entityId,
 										 BlockPos ringCentre, int radius, int round, ServerPlayer target) {
-			ResourceLocation id = ResourceLocation.tryParse(fighter.getEntityId());
+			ResourceLocation id = ResourceLocation.tryParse(entityId);
 			if (id == null) return null;
 
 			EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(id);
 			if (type == null) {
-				LogUtil.warn(Env.SERVER, "Tournament fighter '{}' is not a registered entity", fighter.getEntityId());
+				LogUtil.warn(Env.SERVER, "Tournament fighter '{}' is not a registered entity", entityId);
 				return null;
 			}
 
@@ -1771,7 +2075,7 @@ public final class Tournament {
 			mob.setPersistenceRequired();
 
 			if (mob instanceof DBSagasEntity saga) {
-				saga.setAiTierById(fighter.aiTierOr(1));
+				saga.setAiTierById(fighter.aiTierOr(2));
 				saga.setTransformationDisabled(true);
 			}
 			mob.setTarget(target);
@@ -1820,15 +2124,22 @@ public final class Tournament {
 		private Service() {}
 
 		public static void handleAction(ServerPlayer player, TournamentPackets.ActionC2S.Action action, int npcEntityId) {
-			MastersEntity npc = resolveNpc(player, npcEntityId);
-			if (npc == null) return;
-
-			String tournamentId = TournamentDefinition.HOST_NPCS.get(npc.getMasterName());
-			if (tournamentId == null) return;
-
 			switch (action) {
-				case OPEN_BRACKET -> sendBracket(player, tournamentId, npcEntityId, false);
-				case SIGN_UP -> {
+				case ACCEPT_RULES -> Manager.answerRules(player, true);
+				case DECLINE_RULES -> Manager.answerRules(player, false);
+				case READY -> Manager.ready(player);
+				case OPEN_BRACKET, SIGN_UP -> {
+					MastersEntity npc = resolveNpc(player, npcEntityId);
+					if (npc == null) return;
+
+					String tournamentId = TournamentDefinition.HOST_NPCS.get(npc.getMasterName());
+					if (tournamentId == null) return;
+
+					if (action == TournamentPackets.ActionC2S.Action.OPEN_BRACKET) {
+						sendBracket(player, tournamentId, npcEntityId, false);
+						return;
+					}
+
 					BlockPos ring = resolveRing(player, npc, tournamentId);
 					if (ring == null) {
 						player.displayClientMessage(Component.translatable("tournament.dragonminez.no_ring"), true);
@@ -1841,10 +2152,6 @@ public final class Tournament {
 					}
 					sendBracket(player, tournamentId, npcEntityId, false);
 				}
-				case START_MATCH -> {
-					Component refusal = Manager.beginMatch(player, tournamentId);
-					if (refusal != null) player.displayClientMessage(refusal, true);
-				}
 			}
 		}
 
@@ -1856,13 +2163,57 @@ public final class Tournament {
 			return master;
 		}
 
-		/** Refreshes the ladder for every participant that currently has it open. */
 		public static void pushBracket(ServerLevel level, Run run) {
 			for (UUID id : run.getParticipants()) {
 				ServerPlayer participant = level.getServer().getPlayerList().getPlayer(id);
 				if (participant == null) continue;
 				sendBracket(participant, run.getTournamentId(), -1, true);
 			}
+		}
+
+		public static void openForAll(ServerLevel level, Run run) {
+			for (UUID id : run.aliveParticipants()) {
+				ServerPlayer participant = level.getServer().getPlayerList().getPlayer(id);
+				if (participant == null) continue;
+				sendBracket(participant, run.getTournamentId(), -1, false);
+			}
+		}
+
+		public static void sendPhase(ServerLevel level, Run run, TournamentPackets.PhaseS2C.Phase phase, int seconds) {
+			Component left = nameOf(level, run, run.getActiveFighter());
+			Component right = run.getActiveRival() != null
+					? nameOf(level, run, run.getActiveRival())
+					: opponentName(run);
+
+			for (UUID id : run.getParticipants()) {
+				ServerPlayer participant = level.getServer().getPlayerList().getPlayer(id);
+				if (participant == null) continue;
+				boolean fighter = phase != TournamentPackets.PhaseS2C.Phase.CLEAR && !run.isEliminated(id)
+						&& (id.equals(run.getActiveFighter()) || id.equals(run.getActiveRival()));
+				NetworkHandler.sendToPlayer(new TournamentPackets.PhaseS2C(phase, seconds, fighter, left, right), participant);
+			}
+		}
+
+		private static Component nameOf(ServerLevel level, Run run, @Nullable UUID id) {
+			if (id == null) return Component.empty();
+			ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+			return player != null ? player.getName().copy() : Component.literal("???");
+		}
+
+		private static Component opponentName(Run run) {
+			Bracket bracket = run.getBracket();
+			String slot;
+			if (run.isGauntlet()) {
+				slot = bracket.currentOpponent();
+			} else {
+				Manager.Bout bout = Manager.nextBout(run);
+				slot = bout != null ? bout.opponentSlot() : "";
+			}
+			if (slot == null || slot.isEmpty() || Bracket.isPlayerSlot(slot)) return Component.empty();
+
+			ResourceLocation location = ResourceLocation.tryParse(slot);
+			EntityType<?> type = location != null ? ForgeRegistries.ENTITY_TYPES.getValue(location) : null;
+			return type != null ? type.getDescription().copy() : Component.literal(slot);
 		}
 
 		private static void sendBracket(ServerPlayer player, String tournamentId, int npcEntityId, boolean push) {
@@ -1881,103 +2232,179 @@ public final class Tournament {
 			boolean participant = run != null && run.isParticipant(player.getUUID());
 			Bracket bracket = participant ? run.getBracket() : null;
 			boolean eliminated = participant && run.isEliminated(player.getUUID());
+			boolean revealed = participant && run.isRevealed();
+			boolean gauntlet = bracket != null ? bracket.isGauntlet()
+					: def.formatOr(TournamentDefinition.Format.BRACKET) == TournamentDefinition.Format.GAUNTLET;
 
 			boolean signUp = run == null || !participant;
 			boolean lockedByOther = run != null && !participant;
-			boolean yourTurn = participant && !eliminated && !run.isAuto()
-					&& player.getUUID().equals(run.getActiveFighter())
-					&& !Manager.isFighting(player);
 
-			int turnSeconds = 0;
-			if (participant && run.getTurnDeadline() > 0L) {
-				long left = run.getTurnDeadline() - level.getGameTime();
-				turnSeconds = left <= 0L ? 0 : (int) ((left + 19) / 20);
+			TournamentPackets.OpenBracketS2C.Phase phase = TournamentPackets.OpenBracketS2C.Phase.NONE;
+			int phaseSeconds = 0;
+			if (participant) {
+				phase = switch (run.getPhase()) {
+					case RULES -> TournamentPackets.OpenBracketS2C.Phase.RULES;
+					case INTERMISSION -> TournamentPackets.OpenBracketS2C.Phase.INTERMISSION;
+					case PREVIEW -> TournamentPackets.OpenBracketS2C.Phase.PREVIEW;
+					case BOUT -> TournamentPackets.OpenBracketS2C.Phase.BOUT;
+				};
+				if (run.getPhaseDeadline() > 0L) {
+					long left = run.getPhaseDeadline() - level.getGameTime();
+					phaseSeconds = left <= 0L ? 0 : (int) ((left + 19) / 20);
+				}
 			}
 
-			List<String> queue = new ArrayList<>();
-			List<Boolean> queueOut = new ArrayList<>();
+			List<String> seeds;
+			List<List<String>> winners;
+			if (bracket == null) {
+				seeds = new ArrayList<>();
+				int hidden = gauntlet ? usableContenders(def) : def.qualifierSlotsOr(4);
+				for (int i = 0; i < hidden; i++) seeds.add(Bracket.HIDDEN_SLOT);
+				winners = List.of();
+			} else if (!revealed) {
+				seeds = bracket.hiddenSeeds();
+				winners = List.of();
+			} else {
+				seeds = bracket.getSeeds();
+				winners = bracket.getWinners();
+			}
+
+			List<TournamentPackets.OpenBracketS2C.Member> members = new ArrayList<>();
 			Map<String, String> slotNames = new HashMap<>();
-			int activeIndex = -1;
-			int leaderIndex = -1;
+			TournamentPackets.OpenBracketS2C.MemberState myState = TournamentPackets.OpenBracketS2C.MemberState.PENDING;
 
 			if (run != null) {
-				UUID leaderId = run.getPartyId() != null && !run.getParticipants().isEmpty()
-						? run.getParticipants().get(0) : null;
+				UUID leaderId = run.getParticipants().isEmpty() ? null : run.getParticipants().get(0);
 				for (UUID id : run.getParticipants()) {
 					ServerPlayer member = level.getServer().getPlayerList().getPlayer(id);
 					String name = member != null ? member.getGameProfile().getName() : "???";
-					queue.add(name);
-					queueOut.add(run.isEliminated(id));
+					TournamentPackets.OpenBracketS2C.MemberState state = memberState(run, id);
+					members.add(new TournamentPackets.OpenBracketS2C.Member(name, state, id.equals(leaderId),
+							id.equals(run.getActiveFighter()) || id.equals(run.getActiveRival()), run.isReady(id)));
 					slotNames.put(Bracket.slotFor(id), name);
-					if (id.equals(run.getActiveFighter())) activeIndex = queue.size() - 1;
-					if (id.equals(leaderId)) leaderIndex = queue.size() - 1;
+					if (id.equals(player.getUUID())) myState = state;
 				}
 			} else if (PartyManager.isInParty(player)) {
-				// No run yet: show the party that would enter together and who may start it.
 				ServerPlayer leader = PartyManager.getPartyLeader(player);
 				for (ServerPlayer member : PartyManager.getAllPartyMembers(player)) {
-					queue.add(member.getGameProfile().getName());
-					queueOut.add(data.remainingCooldownSeconds(member.getUUID(), tournamentId) > 0L);
-					if (leader != null && member.getUUID().equals(leader.getUUID())) {
-						leaderIndex = queue.size() - 1;
-					}
+					boolean cooling = data.remainingCooldownSeconds(member.getUUID(), tournamentId) > 0L;
+					members.add(new TournamentPackets.OpenBracketS2C.Member(member.getGameProfile().getName(),
+							cooling ? TournamentPackets.OpenBracketS2C.MemberState.OUT
+									: TournamentPackets.OpenBracketS2C.MemberState.PENDING,
+							leader != null && member.getUUID().equals(leader.getUUID()), false, false));
 				}
+			} else {
+				members.add(new TournamentPackets.OpenBracketS2C.Member(player.getGameProfile().getName(),
+						TournamentPackets.OpenBracketS2C.MemberState.PENDING, true, false, false));
 			}
 
 			boolean partyLeader = !PartyManager.isInParty(player) || PartyManager.isPartyLeader(player);
+			boolean myReady = run != null && run.isReady(player.getUUID());
+
+			String activeSlot = "";
+			String rivalSlot = "";
+			if (run != null && revealed && !run.isGauntlet() && run.getActiveFighter() != null) {
+				activeSlot = Bracket.slotFor(run.getActiveFighter());
+				if (run.getActiveRival() != null) {
+					rivalSlot = Bracket.slotFor(run.getActiveRival());
+				} else {
+					Manager.Bout bout = Manager.nextBout(run);
+					if (bout != null) rivalSlot = bout.opponentSlot();
+				}
+			}
+
+			TournamentDefinition.Rewards rewards = def.getRewards();
+			TournamentPackets.OpenBracketS2C.Rules rules = new TournamentPackets.OpenBracketS2C.Rules(
+					seeds.size(),
+					def.matchTimeoutSecondsOr(300),
+					def.reentryCooldownSecondsOr(20 * 60),
+					def.returnSecondsOr(15),
+					def.rulesAcceptSecondsOr(60),
+					def.nextRoundSecondsOr(10),
+					rewards != null ? rewards.trainingPointsOr(0) : 0,
+					rewards != null ? rewards.alignmentOr(0) : 0,
+					(int) Manager.EXCLUSION_RADIUS,
+					(int) Math.sqrt(Manager.FORFEIT_DISTANCE_SQR));
 
 			NetworkHandler.sendToPlayer(new TournamentPackets.OpenBracketS2C(
 					tournamentId,
 					def.displayNameOr("tournament.dragonminez." + tournamentId),
 					def.difficultyStarsOr(1),
-					bracket != null ? bracket.getSeeds() : List.of(),
-					bracket != null ? bracket.getWinners() : List.of(),
-					bracket != null ? bracket.getSemifinalist() : def.getSemifinalist().getEntityId(),
-					bracket != null ? bracket.getChampion() : def.getChampion().getEntityId(),
+					gauntlet,
+					def.isLethal(),
+					phase,
+					phaseSeconds,
+					revealed,
+					seeds,
+					winners,
+					bracket != null ? bracket.getSemifinalist() : previewId(def.getSemifinalist()),
+					bracket != null ? bracket.getChampion() : previewId(def.getChampion()),
 					bracket != null ? bracket.getRound() : 0,
 					eliminated || (bracket != null && bracket.isEliminated()),
 					bracket != null && bracket.isCompleted(),
-					bracket != null ? bracket.isGauntlet()
-							: def.formatOr(TournamentDefinition.Format.BRACKET) == TournamentDefinition.Format.GAUNTLET,
-					def.isLethal(),
 					signUp,
+					lockedByOther,
+					partyLeader,
 					(int) data.remainingCooldownSeconds(player.getUUID(), tournamentId),
 					npcEntityId,
-					collectStats(def, bracket),
-					lockedByOther,
-					yourTurn,
-					turnSeconds,
-					queue,
-					queueOut,
-					activeIndex,
 					push,
+					collectStats(def, bracket),
+					members,
 					slotNames,
-					run != null && run.getActiveFighter() != null && !run.isGauntlet()
-							? Bracket.slotFor(run.getActiveFighter()) : Bracket.PLAYER_SLOT,
-					leaderIndex,
-					partyLeader
+					activeSlot,
+					rivalSlot,
+					myState,
+					myReady,
+					rules
 			), player);
+		}
+
+		private static TournamentPackets.OpenBracketS2C.MemberState memberState(Run run, UUID id) {
+			if (run.isDeclined(id)) return TournamentPackets.OpenBracketS2C.MemberState.DECLINED;
+			if (run.isEliminated(id)) return TournamentPackets.OpenBracketS2C.MemberState.OUT;
+			if (run.getPhase() == Run.Phase.RULES) {
+				return run.isAccepted(id) ? TournamentPackets.OpenBracketS2C.MemberState.ACCEPTED
+						: TournamentPackets.OpenBracketS2C.MemberState.PENDING;
+			}
+			return TournamentPackets.OpenBracketS2C.MemberState.ALIVE;
+		}
+
+		private static int usableContenders(TournamentDefinition def) {
+			int count = 0;
+			for (TournamentDefinition.Fighter fighter : def.getContenders()) if (fighter.isUsable()) count++;
+			return Math.max(1, count);
+		}
+
+		private static String previewId(TournamentDefinition.Fighter fighter) {
+			if (fighter == null || !fighter.isUsable()) return "";
+			return fighter.isTag() ? Bracket.HIDDEN_SLOT : fighter.getEntityId();
 		}
 
 		private static Map<String, TournamentPackets.OpenBracketS2C.FighterStats> collectStats(
 				TournamentDefinition def, @Nullable Bracket bracket) {
 			Map<String, TournamentPackets.OpenBracketS2C.FighterStats> stats = new HashMap<>();
 
-			int round = bracket != null ? bracket.getRound() : 0;
-			for (TournamentDefinition.Fighter fighter : def.getContenders()) {
-				putStats(stats, fighter, round);
+			if (bracket == null) {
+				for (TournamentDefinition.Fighter fighter : def.getContenders()) putStats(stats, previewId(fighter), fighter, 0);
+				putStats(stats, previewId(def.getSemifinalist()), def.getSemifinalist(), 1);
+				putStats(stats, previewId(def.getChampion()), def.getChampion(), 2);
+				return stats;
 			}
-			int semiRound = bracket != null ? bracket.semiRound() : 1;
-			putStats(stats, def.getSemifinalist(), semiRound);
-			putStats(stats, def.getChampion(), semiRound + 1);
+
+			for (String seed : bracket.getSeeds()) {
+				if (seed.isEmpty() || Bracket.isPlayerSlot(seed)) continue;
+				putStats(stats, seed, Manager.fighterFor(def, bracket, seed), bracket.getRound());
+			}
+			putStats(stats, bracket.getSemifinalist(), Manager.fighterFor(def, bracket, bracket.getSemifinalist()), bracket.semiRound());
+			putStats(stats, bracket.getChampion(), Manager.fighterFor(def, bracket, bracket.getChampion()), bracket.finalRound());
 			return stats;
 		}
 
-		private static void putStats(Map<String, TournamentPackets.OpenBracketS2C.FighterStats> stats,
-									 TournamentDefinition.Fighter fighter, int round) {
-			if (fighter == null || !fighter.isUsable()) return;
+		private static void putStats(Map<String, TournamentPackets.OpenBracketS2C.FighterStats> stats, String id,
+									 @Nullable TournamentDefinition.Fighter fighter, int round) {
+			if (fighter == null || !fighter.isUsable() || id == null || id.isEmpty() || Bracket.HIDDEN_SLOT.equals(id)) return;
 			double scaling = Math.pow(fighter.perRoundScalingOr(1.0D), round);
-			stats.put(fighter.getEntityId(), new TournamentPackets.OpenBracketS2C.FighterStats(
+			stats.put(id, new TournamentPackets.OpenBracketS2C.FighterStats(
 					(int) Math.round(fighter.healthOr(100.0D) * scaling),
 					(int) Math.round(fighter.meleeDamageOr(5.0D) * scaling),
 					(int) Math.round(fighter.kiDamageOr(5.0D) * scaling)));
@@ -2019,6 +2446,5 @@ public final class Tournament {
 			}
 			return new BlockPos(x, (int) Math.round(npc.getY()), z);
 		}
-
 	}
 }

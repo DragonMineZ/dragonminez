@@ -80,11 +80,11 @@ public class ClientPacketHandler {
 
 	public static void handleBeamClashState(BeamClashStateS2C msg) {
 		if (msg.isActive()) {
-			ClientBeamClashState.update(true, msg.getMeterPhase(), msg.getSweetLow(),
-					msg.getSweetHigh(), msg.getAdvantage(), msg.getBeamColor(), msg.getOpponentEntityId());
+			ClientBeamClashState.update(msg.getStartGameTime(), msg.getMeterSeed(), msg.getAdvantage(),
+					msg.getSelfColor(), msg.getFoeColor(), msg.getOpponentEntityId(), msg.clashPoint());
 			com.dragonminez.client.clash.BeamClashCinematicCamera.activate();
 		} else {
-			ClientBeamClashState.clear();
+			ClientBeamClashState.clear(msg.getExhaustTicks());
 			com.dragonminez.client.clash.BeamClashCinematicCamera.deactivate();
 		}
 	}

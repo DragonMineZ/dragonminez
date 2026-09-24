@@ -25,6 +25,33 @@ public class MainTags {
 		public static final TagKey<EntityType<?>> FRIEZA_SOLDIERS = create("frieza_soldiers");
 		public static final TagKey<EntityType<?>> SAIBAMEN = create("saibamen");
 		public static final TagKey<EntityType<?>> RED_RIBBON_ROBOTS = create("red_ribbon_robots");
+		public static final TagKey<EntityType<?>> NPC_SUPERSAIYAN = create("npc_supersaiyan");
+		public static final TagKey<EntityType<?>> NPC_SUPERSAIYAN2 = create("npc_supersaiyan2");
+		public static final TagKey<EntityType<?>> NPC_SUPERSAIYAN3 = create("npc_supersaiyan3");
+		public static final TagKey<EntityType<?>> NPC_SUPERSAIYAN4 = create("npc_supersaiyan4");
+		public static final TagKey<EntityType<?>> NPC_GINYUFORCE = create("npc_ginyuforce");
+		public static final TagKey<EntityType<?>> NPC_CELLSAGA = create("npc_cellsaga");
+		public static final TagKey<EntityType<?>> NPC_SAIYANSAGA = create("npc_saiyansaga");
+		public static final TagKey<EntityType<?>> NPC_FRIEZASAGA = create("npc_friezasaga");
+		public static final TagKey<EntityType<?>> NPC_FRIEZAFORMS = create("npc_friezaforms");
+		public static final TagKey<EntityType<?>> NPC_ANDROIDS = create("npc_androids");
+		public static final TagKey<EntityType<?>> NPC_BUUSAGA = create("npc_buusaga");
+		public static final TagKey<EntityType<?>> NPC_MAJINBUU = create("npc_majinbuu");
+		public static final TagKey<EntityType<?>> NPC_REDRIBBON = create("npc_redribbon");
+		public static final TagKey<EntityType<?>> NPC_PILAFGANG = create("npc_pilafgang");
+		public static final TagKey<EntityType<?>> NPC_KINGPICCOLO = create("npc_kingpiccolo");
+		public static final TagKey<EntityType<?>> NPC_BABAFIGHTERS = create("npc_babafighters");
+		public static final TagKey<EntityType<?>> NPC_WORLDTOURNAMENT = create("npc_worldtournament");
+		public static final TagKey<EntityType<?>> NPC_ZFIGHTERS = create("npc_zfighters");
+		public static final TagKey<EntityType<?>> NPC_COOLERFORCE = create("npc_coolerforce");
+		public static final TagKey<EntityType<?>> NPC_BOJACKCREW = create("npc_bojackcrew");
+		public static final TagKey<EntityType<?>> NPC_BROLY = create("npc_broly");
+		public static final TagKey<EntityType<?>> NPC_MOVIEVILLAINS = create("npc_movievillains");
+		public static final TagKey<EntityType<?>> NPC_GTVILLAINS = create("npc_gtvillains");
+		public static final TagKey<EntityType<?>> NPC_SHADOWDRAGONS = create("npc_shadowdragons");
+		public static final TagKey<EntityType<?>> NPC_FUSIONS = create("npc_fusions");
+		public static final TagKey<EntityType<?>> NPC_GIANTS = create("npc_giants");
+		public static final TagKey<EntityType<?>> NPC_FINALBOSSES = create("npc_finalbosses");
 
 		private static TagKey<EntityType<?>> create(String name) {
 			return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));

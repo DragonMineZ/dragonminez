@@ -6,6 +6,7 @@ import com.dragonminez.common.worldboss.WorldBossResults;
 import com.dragonminez.server.world.worldboss.WorldBossManager;
 import com.dragonminez.server.world.worldboss.WorldBossResultsCache;
 import com.dragonminez.server.world.worldboss.WorldBossSavedData;
+import com.dragonminez.server.world.worldboss.WorldBossSessions;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -92,6 +93,7 @@ public class WorldBossCommand {
 		WorldBossSavedData.Entry entry = data.entry(WorldBossManager.JANEMBA);
 
 		ServerLevel otherworld = WorldBossManager.otherworld(ctx.getSource().getServer());
+		WorldBossSessions.endFight(WorldBossManager.JANEMBA, otherworld);
 		if (otherworld != null && entry.bossId != null && otherworld.getEntity(entry.bossId) != null) {
 			otherworld.getEntity(entry.bossId).discard();
 		}

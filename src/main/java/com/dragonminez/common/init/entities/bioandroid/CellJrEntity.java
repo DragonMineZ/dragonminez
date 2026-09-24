@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.bioandroid;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.ai.AiTier;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.racial.impl.BioAndroidEvolution;
@@ -41,7 +42,13 @@ public class CellJrEntity extends DBSagasEntity {
 		this.setCanFly(true);
 		this.setAuraColor(0xFFFC42);
 		this.setTextureVariant(0);
+		this.setAiTier(AiTier.ELITE);
 		this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
+	}
+
+	@Override
+	public boolean brainCanTarget(LivingEntity candidate) {
+		return this.isValidTarget(candidate);
 	}
 
 	public void applyOwnerScaling(ServerPlayer owner, StatsData ownerData, double ratio) {

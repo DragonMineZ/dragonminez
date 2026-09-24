@@ -383,6 +383,7 @@ public class ComboManager {
             float drain = target.getMaxHealth() * 0.05F;
             target.hurt(user.damageSources().mobAttack(user), drain);
             user.heal(drain);
+            user.getCombatBrain().onAbsorb(drain);
             if (target instanceof ServerPlayer sp) {
                 StatsProvider.get(StatsCapability.INSTANCE, sp).ifPresent(data -> {
                     double currentEnergy = data.getResources().getCurrentEnergy();

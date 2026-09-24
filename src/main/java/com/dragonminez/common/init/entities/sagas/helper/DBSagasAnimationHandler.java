@@ -1,7 +1,6 @@
 package com.dragonminez.common.init.entities.sagas.helper;
 
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity.AiTier;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity.LocomotionMode;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -59,15 +58,11 @@ public class DBSagasAnimationHandler {
 
         //MOVING
         if (event.isMoving()) {
-            boolean runAnim;
-            if (entity.getAiTier() != AiTier.SIMPLE) {
-                LocomotionMode mode = entity.getLocomotionMode();
-                runAnim = mode == LocomotionMode.RUN || mode == LocomotionMode.DASH || mode == LocomotionMode.WALK_SLOW;
-                if (mode == LocomotionMode.WALK_SLOW) {
-                    event.getController().setAnimationSpeed(1.0D);
-                }
-            } else {
-                runAnim = entity.isAggressive() || entity.getTarget() != null;
+            LocomotionMode mode = entity.getLocomotionMode();
+            boolean runAnim = mode == LocomotionMode.RUN || mode == LocomotionMode.DASH || mode == LocomotionMode.WALK_SLOW
+                    || (mode == LocomotionMode.IDLE && (entity.isAggressive() || entity.getTarget() != null));
+            if (mode == LocomotionMode.WALK_SLOW) {
+                event.getController().setAnimationSpeed(1.0D);
             }
 
             if (runAnim) {

@@ -271,6 +271,8 @@ public class ForgeClientEvents {
 		com.dragonminez.client.systems.worldboss.ClientWorldBossPlayerState.clear();
 		com.dragonminez.client.systems.worldboss.ClientWorldBossState.clear();
 		com.dragonminez.client.render.shader.KnockoutShaderManager.reset();
+		com.dragonminez.client.render.effects.BeamClashScreenRenderer.reset();
+		com.dragonminez.client.clash.ClientBeamClashState.clear();
 		DMZRendererCache.clear();
 		TextureCounter.clearCache();
 		pendingCharacterCreationReopen = false;

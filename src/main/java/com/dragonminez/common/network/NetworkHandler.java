@@ -594,10 +594,10 @@ public class NetworkHandler {
 				.consumerMainThread(TournamentPackets.OpenBracketS2C::handle)
 				.add();
 
-		net.messageBuilder(TournamentPackets.CountdownS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-				.decoder(TournamentPackets.CountdownS2C::decode)
-				.encoder(TournamentPackets.CountdownS2C::encode)
-				.consumerMainThread(TournamentPackets.CountdownS2C::handle)
+		net.messageBuilder(TournamentPackets.PhaseS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TournamentPackets.PhaseS2C::decode)
+				.encoder(TournamentPackets.PhaseS2C::encode)
+				.consumerMainThread(TournamentPackets.PhaseS2C::handle)
 				.add();
 
 		net.messageBuilder(com.dragonminez.common.network.TournamentPackets.ActionC2S.class, id(),
