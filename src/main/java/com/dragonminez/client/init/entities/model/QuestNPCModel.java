@@ -41,7 +41,8 @@ public class QuestNPCModel extends GeoModel<QuestNPCEntity> {
 			Map.entry("trunks", saga("saga_trunks", "saga_ftrunks_base")),
 			Map.entry("videl", saga("saga_videl", "saga_videl")),
 			Map.entry("shin", saga("saga_shin", "saga_shin")),
-			Map.entry("namek_elder", master("master_guru"))
+			Map.entry("namek_elder", master("master_guru")),
+			Map.entry("hell_ogre", saga("saga_ogre", "saga_ogre_blue"))
 	);
 
 	/** Cache which resource keys have been confirmed to have assets, to avoid repeated resource lookups. */

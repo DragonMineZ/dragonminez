@@ -816,6 +816,9 @@ public class ConfigManager {
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT2, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.MINI_BUU, 60.0, 8.0, 6.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_OGRE_RED, 200.0, 20.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_OGRE_BLUE, 200.0, 20.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.MINI_JANEMBA_STAMPEDE, 20.0, 2.0, 0.0);
 
 		EntitiesConfig.TransformSettings transform = config.getTransformDefaults();
 		transform.setHealthMultiplier(1.5D);

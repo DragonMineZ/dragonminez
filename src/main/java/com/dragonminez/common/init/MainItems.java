@@ -603,6 +603,10 @@ public final class MainItems {
 			new ForgeSpawnEggItem(MainEntities.RED_RIBBON_ROBOT3, 0xe6975e, 0xe63c29, new Item.Properties()));
 	public static final RegistryObject<Item> BANDIT_SE = ITEM_REGISTER.register("bandit_spawn_egg", () ->
 			new ForgeSpawnEggItem(MainEntities.BANDIT, 0x8B4513, 0xFFFF00, new Item.Properties()));
+	public static final RegistryObject<Item> OGRE_RED_SE = ITEM_REGISTER.register("ogre_red_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_OGRE_RED, 0xC62828, 0xE3F2FD, new Item.Properties()));
+	public static final RegistryObject<Item> OGRE_BLUE_SE = ITEM_REGISTER.register("ogre_blue_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_OGRE_BLUE, 0x42A5F5, 0xE3F2FD, new Item.Properties()));
 
 
 	public static RegistryObject<Item> regItem(String name) {

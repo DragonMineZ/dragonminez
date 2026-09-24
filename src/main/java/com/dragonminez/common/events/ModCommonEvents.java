@@ -94,12 +94,15 @@ public class ModCommonEvents {
         for (var saibaman : saibamans) event.put((EntityType<? extends LivingEntity>) saibaman.get(), SagaSaibamanEntity.createAttributes().build());
         for (var soldier : soldiers) event.put((EntityType<? extends LivingEntity>) soldier.get(), SagaFriezaSoldier01Entity.createAttributes().build());
         for (var ozaru : ozarus) event.put((EntityType<? extends LivingEntity>) ozaru.get(), SagaOzaruEntity.createAttributes().build());
+        var ogres = List.of(MainEntities.SAGA_OGRE_RED, MainEntities.SAGA_OGRE_BLUE);
+        for (var ogre : ogres) event.put(ogre.get(), SagaOgreEntity.createAttributes().build());
+        event.put(MainEntities.MINI_JANEMBA_STAMPEDE.get(), MiniJanembaStampedeEntity.createAttributes().build());
 
 
         AttributeSupplier defaultSagaAttributes = DBSagasEntity.createAttributes().build();
 
         for (var sagaEntity : MainEntities.getSagaEntities()) {
-            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity)) {
+            if (saibamans.contains(sagaEntity) || soldiers.contains(sagaEntity) || ozarus.contains(sagaEntity) || ogres.contains(sagaEntity) || sagaEntity == MainEntities.MINI_JANEMBA_STAMPEDE) {
                 continue;
             }
             event.put((EntityType<? extends LivingEntity>) sagaEntity.get(), defaultSagaAttributes);

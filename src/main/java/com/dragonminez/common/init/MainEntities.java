@@ -125,7 +125,7 @@ public class MainEntities {
                 SAGA_NEO_SHENRON, SAGA_NEO_SHENRON_TRANSFORMED, SAGA_EIS_SHENRON, SAGA_SYN_SHENRON, SAGA_OMEGA_SHENRON,
 
                 // EXTRA
-                SHADOW_DUMMY, MINI_BUU,
+                SHADOW_DUMMY, MINI_BUU, SAGA_OGRE_RED, SAGA_OGRE_BLUE, MINI_JANEMBA_STAMPEDE,
 
                 // WORLD BOSSES
                 WORLDBOSS_JANEMBA_FAT, WORLDBOSS_SUPER_JANEMBA, WORLDBOSS_MINI_JANEMBA
@@ -1690,6 +1690,22 @@ public class MainEntities {
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shadow_dummy").toString()));
 
+    public static final RegistryObject<EntityType<SagaOgreEntity>> SAGA_OGRE_RED =
+            ENTITY_TYPES.register("saga_ogre_red",
+                    () -> EntityType.Builder.of(SagaOgreEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.95f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ogre_red").toString()));
+    public static final RegistryObject<EntityType<SagaOgreEntity>> SAGA_OGRE_BLUE =
+            ENTITY_TYPES.register("saga_ogre_blue",
+                    () -> EntityType.Builder.of(SagaOgreEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.95f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ogre_blue").toString()));
+    public static final RegistryObject<EntityType<MiniJanembaStampedeEntity>> MINI_JANEMBA_STAMPEDE =
+            ENTITY_TYPES.register("mini_janemba_stampede",
+                    () -> EntityType.Builder.of(MiniJanembaStampedeEntity::new, MobCategory.MONSTER)
+                            .sized(0.45f, 0.95f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "mini_janemba_stampede").toString()));
+
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)
                     .sized(0.8F, 0.8F)
@@ -1826,6 +1842,13 @@ public class MainEntities {
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 GiantTurtleEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
+
+        for (RegistryObject<EntityType<SagaOgreEntity>> ogre : List.of(SAGA_OGRE_RED, SAGA_OGRE_BLUE)) {
+            event.register(ogre.get(), SpawnPlacements.Type.ON_GROUND,
+                    Heightmap.Types.MOTION_BLOCKING,
+                    SagaOgreEntity::canSpawnInHell,
+                    SpawnPlacementRegisterEvent.Operation.REPLACE);
+        }
     }
 
     private static <T extends Mob> void registerSagaSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
