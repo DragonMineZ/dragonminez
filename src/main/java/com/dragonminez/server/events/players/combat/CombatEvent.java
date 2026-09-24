@@ -6,6 +6,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
+import com.dragonminez.common.config.CombatConfig;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.*;
@@ -62,6 +63,7 @@ import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -74,6 +76,8 @@ public class CombatEvent {
 	private static final Map<String, Long> LAST_PLAYER_HIT_GUARD_MS = new HashMap<>();
 	public static final String DMZ_LAST_ATTACKER_ID_TAG = "dmz_last_attacker_id";
 	private static final String CAPTURE_KNOCKDOWN_UNTIL_TAG = "dmz_capture_knockdown_until";
+	private static final String HIT_KNOCKBACK_MULT_TAG = "dmz_hit_knockback_mult";
+	private static final String HIT_KNOCKBACK_TICK_TAG = "dmz_hit_knockback_tick";
 	public static final String DMZ_LAST_HIT_TARGET_ID_TAG = "dmz_last_hit_target_id";
 	public static final String DMZ_LAST_HIT_TARGET_TIME_TAG = "dmz_last_hit_target_time";
 
@@ -865,9 +869,14 @@ public class CombatEvent {
 					if (defenseFullyNegated && rawDamage > 0.0
 							&& ConfigManager.getCombatConfig().getCancelDamageEventIfMitigationTooHigh()) {
 						applyFullNegation(victim);
+						if (ConfigManager.getCombatConfig().getEnableDamageScaledKnockback()) markHitKnockback(victim, 0.0);
 						event.setAmount(0.0f);
 						event.setCanceled(true);
 						return;
+					}
+
+					if (rawDamage > 0.0 && ConfigManager.getCombatConfig().getEnableDamageScaledKnockback()) {
+						markHitKnockback(victim, computeDamageScaledKnockback(rawDamage, mitigatedFinal, victim.getMaxHealth()));
 					}
 
 					event.setAmount(finalDamage);
@@ -879,6 +888,45 @@ public class CombatEvent {
 		}
 		RageEvents.onFinalDamage(event);
 		FalseSuperSaiyanEvents.onFinalDamage(event);
+	}
+
+	private static double computeDamageScaledKnockback(double rawDamage, double finalDamage, float maxHealth) {
+		CombatConfig cfg = ConfigManager.getCombatConfig();
+		double passThrough = Mth.clamp(finalDamage / rawDamage, 0.0, 1.0);
+		double healthFraction = maxHealth > 0.0f ? Math.max(0.0, finalDamage) / maxHealth : 0.0;
+		double heavyThreshold = cfg.getKnockbackHeavyHitHealthFraction();
+
+		if (healthFraction >= heavyThreshold) {
+			return Math.min(cfg.getKnockbackMaxMultiplier(), 1.0 + (healthFraction - heavyThreshold) * cfg.getKnockbackHeavyHitGain());
+		}
+
+		double mitigatedMult = Mth.lerp(passThrough, cfg.getKnockbackMinMultiplier(), 1.0);
+		return Mth.lerp(healthFraction / heavyThreshold, mitigatedMult, 1.0);
+	}
+
+	private static void markHitKnockback(LivingEntity victim, double multiplier) {
+		victim.getPersistentData().putDouble(HIT_KNOCKBACK_MULT_TAG, multiplier);
+		victim.getPersistentData().putLong(HIT_KNOCKBACK_TICK_TAG, victim.level().getGameTime());
+	}
+
+	@SubscribeEvent
+	public static void scaleKnockbackByDamage(LivingKnockBackEvent event) {
+		LivingEntity target = event.getEntity();
+		if (target.level().isClientSide) return;
+		if (!target.getPersistentData().contains(HIT_KNOCKBACK_MULT_TAG)) return;
+
+		if (target.getPersistentData().getLong(HIT_KNOCKBACK_TICK_TAG) != target.level().getGameTime()) {
+			target.getPersistentData().remove(HIT_KNOCKBACK_MULT_TAG);
+			target.getPersistentData().remove(HIT_KNOCKBACK_TICK_TAG);
+			return;
+		}
+
+		double multiplier = target.getPersistentData().getDouble(HIT_KNOCKBACK_MULT_TAG);
+		if (multiplier <= 0.0) {
+			event.setCanceled(true);
+			return;
+		}
+		event.setStrength((float) (event.getStrength() * multiplier));
 	}
 
 	private static final Map<java.util.UUID, Long> LAST_NEGATION_SOUND_TICK = new HashMap<>();
