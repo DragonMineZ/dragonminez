@@ -22,6 +22,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -56,6 +57,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -73,6 +75,9 @@ public final class Tournament {
 
 		public static final String PLAYER_SLOT = "@player";
 		public static final String HIDDEN_SLOT = "?";
+		public static final int SOURCE_SEMIFINALIST = -1;
+		public static final int SOURCE_CHAMPION = -2;
+		public static final int SOURCE_UNKNOWN = Integer.MIN_VALUE;
 		private static final String PLAYER_PREFIX = "@player:";
 
 		public static String slotFor(UUID player) {
@@ -104,20 +109,65 @@ public final class Tournament {
 
 		private String semifinalist = "";
 		private String champion = "";
+		private final Map<String, Integer> sources = new HashMap<>();
 
 		public Bracket() {
+		}
+
+		public int sourceOf(String slot) {
+			return slot == null ? SOURCE_UNKNOWN : sources.getOrDefault(slot, SOURCE_UNKNOWN);
+		}
+
+		public void setSource(String slot, int source) {
+			if (slot != null && !slot.isEmpty()) sources.put(slot, source);
+		}
+
+		public static String resolveFighter(String entityId, Set<String> used, Random random) {
+			if (entityId == null || entityId.isBlank()) return "";
+			if (!entityId.startsWith("#")) {
+				used.add(entityId);
+				return entityId;
+			}
+			ResourceLocation tagId = ResourceLocation.tryParse(entityId.substring(1));
+			if (tagId == null) return "";
+			List<String> members = new ArrayList<>();
+			ForgeRegistries.ENTITY_TYPES.tags().getTag(TagKey.create(Registries.ENTITY_TYPE, tagId)).forEach(type -> {
+				ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(type);
+				if (key != null) members.add(key.toString());
+			});
+			if (members.isEmpty()) {
+				LogUtil.warn(Env.SERVER, "Tournament fighter tag '{}' is empty or unknown", entityId);
+				return "";
+			}
+			List<String> fresh = new ArrayList<>(members);
+			fresh.removeAll(used);
+			List<String> pool = fresh.isEmpty() ? members : fresh;
+			String picked = pool.get(random.nextInt(pool.size()));
+			used.add(picked);
+			return picked;
 		}
 
 		public static Bracket draw(String tournamentId, TournamentDefinition def, List<UUID> players,
 								   Random random) {
 			Bracket bracket = new Bracket();
 			bracket.tournamentId = tournamentId;
-			bracket.semifinalist = def.getSemifinalist().getEntityId();
-			bracket.champion = def.getChampion().getEntityId();
+
+			Set<String> used = new HashSet<>();
+			bracket.semifinalist = resolveFighter(def.getSemifinalist().getEntityId(), used, random);
+			bracket.setSource(bracket.semifinalist, SOURCE_SEMIFINALIST);
+			bracket.champion = resolveFighter(def.getChampion().getEntityId(), used, random);
+			bracket.setSource(bracket.champion, SOURCE_CHAMPION);
 
 			List<String> pool = new ArrayList<>();
-			for (TournamentDefinition.Fighter fighter : def.getContenders()) {
-				if (fighter.isUsable()) pool.add(fighter.getEntityId());
+			for (int pass = 0; pass < 2; pass++) {
+				for (int i = 0; i < def.getContenders().size(); i++) {
+					TournamentDefinition.Fighter fighter = def.getContenders().get(i);
+					if (!fighter.isUsable() || fighter.isTag() != (pass == 1)) continue;
+					String resolved = resolveFighter(fighter.getEntityId(), used, random);
+					if (resolved.isEmpty() || bracket.sources.containsKey(resolved)) continue;
+					bracket.setSource(resolved, i);
+					pool.add(resolved);
+				}
 			}
 			Collections.shuffle(pool, random);
 
@@ -285,6 +335,15 @@ public final class Tournament {
 			tag.putString("semifinalist", semifinalist);
 			tag.putString("champion", champion);
 
+			ListTag sourceList = new ListTag();
+			for (Map.Entry<String, Integer> entry : sources.entrySet()) {
+				CompoundTag stored = new CompoundTag();
+				stored.putString("id", entry.getKey());
+				stored.putInt("source", entry.getValue());
+				sourceList.add(stored);
+			}
+			tag.put("sources", sourceList);
+
 			ListTag seedList = new ListTag();
 			for (String id : seeds) {
 				CompoundTag entry = new CompoundTag();
@@ -322,6 +381,12 @@ public final class Tournament {
 			bracket.completed = tag.getBoolean("completed");
 			bracket.semifinalist = tag.getString("semifinalist");
 			bracket.champion = tag.getString("champion");
+
+			ListTag sourceList = tag.getList("sources", Tag.TAG_COMPOUND);
+			for (int i = 0; i < sourceList.size(); i++) {
+				CompoundTag stored = sourceList.getCompound(i);
+				bracket.sources.put(stored.getString("id"), stored.getInt("source"));
+			}
 
 			ListTag seedList = tag.getList("seeds", Tag.TAG_COMPOUND);
 			for (int i = 0; i < seedList.size(); i++) {
@@ -926,15 +991,33 @@ public final class Tournament {
 
 		private static String replacementFighter(@Nullable TournamentDefinition def, Bracket bracket) {
 			if (def == null) return "";
-			List<String> unused = new ArrayList<>();
-			List<String> usable = new ArrayList<>();
-			for (TournamentDefinition.Fighter fighter : def.getContenders()) {
-				if (!fighter.isUsable()) continue;
-				usable.add(fighter.getEntityId());
-				if (!bracket.getSeeds().contains(fighter.getEntityId())) unused.add(fighter.getEntityId());
+			Set<String> taken = new HashSet<>(bracket.getSeeds());
+			taken.add(bracket.getSemifinalist());
+			taken.add(bracket.getChampion());
+			Set<Integer> drawn = new HashSet<>();
+			for (String seed : bracket.getSeeds()) {
+				int source = bracket.sourceOf(seed);
+				if (source >= 0) drawn.add(source);
 			}
-			List<String> pool = unused.isEmpty() ? usable : unused;
-			return pool.isEmpty() ? "" : pool.get(RANDOM.nextInt(pool.size()));
+			List<Integer> unused = new ArrayList<>();
+			List<Integer> usable = new ArrayList<>();
+			for (int i = 0; i < def.getContenders().size(); i++) {
+				if (!def.getContenders().get(i).isUsable()) continue;
+				usable.add(i);
+				if (!drawn.contains(i)) unused.add(i);
+			}
+			List<Integer> pool = unused.isEmpty() ? usable : unused;
+			if (pool.isEmpty()) return "";
+			for (int attempt = 0; attempt < pool.size() * 2; attempt++) {
+				int index = pool.get(RANDOM.nextInt(pool.size()));
+				Set<String> used = new HashSet<>(taken);
+				String resolved = Bracket.resolveFighter(def.getContenders().get(index).getEntityId(), used, RANDOM);
+				if (resolved.isEmpty()) continue;
+				if (taken.contains(resolved) && attempt < pool.size()) continue;
+				bracket.setSource(resolved, index);
+				return resolved;
+			}
+			return "";
 		}
 
 		private static void settleRules(ServerLevel level, Progress data, Run run) {
@@ -1174,13 +1257,14 @@ public final class Tournament {
 			Bracket bracket = run.getBracket();
 			if (!bracket.isActive()) return Component.translatable("tournament.dragonminez.not_entered");
 
-			TournamentDefinition.Fighter fighter = fighterFor(def, bracket.currentOpponent());
+			String opponentId = bracket.currentOpponent();
+			TournamentDefinition.Fighter fighter = fighterFor(def, bracket, opponentId);
 			if (fighter == null) return Component.translatable("tournament.dragonminez.unavailable");
 
 			int radius = ringRadius(def);
-			Mob opponent = reuseStandingOpponent(level, run, fighter);
+			Mob opponent = reuseStandingOpponent(level, run, opponentId);
 			if (opponent == null) {
-				opponent = spawnOpponent(level, fighter, run.getRingCentre(), radius, bracket.getRound(), player);
+				opponent = spawnOpponent(level, fighter, opponentId, run.getRingCentre(), radius, bracket.getRound(), player);
 			} else {
 				opponent.getPersistentData().putString(MATCH_TAG, player.getUUID().toString());
 				opponent.setTarget(player);
@@ -1189,7 +1273,7 @@ public final class Tournament {
 
 			run.setStandingOpponent(opponent.getUUID());
 			startBout(level, data, run, def, player, opponent, null,
-					bracket.getRound(), 0, Bracket.PLAYER_SLOT, fighter.getEntityId(), radius);
+					bracket.getRound(), 0, Bracket.PLAYER_SLOT, opponentId, radius);
 			return null;
 		}
 
@@ -1217,10 +1301,10 @@ public final class Tournament {
 				return null;
 			}
 
-			TournamentDefinition.Fighter fighter = fighterFor(def, bout.opponentSlot());
+			TournamentDefinition.Fighter fighter = fighterFor(def, run.getBracket(), bout.opponentSlot());
 			if (fighter == null) return Component.translatable("tournament.dragonminez.unavailable");
 
-			Mob opponent = spawnOpponent(level, fighter, run.getRingCentre(), radius, bout.round(), player);
+			Mob opponent = spawnOpponent(level, fighter, bout.opponentSlot(), run.getRingCentre(), radius, bout.round(), player);
 			if (opponent == null) return Component.translatable("tournament.dragonminez.unavailable");
 
 			run.setStandingOpponent(opponent.getUUID());
@@ -1267,7 +1351,7 @@ public final class Tournament {
 		}
 
 		@Nullable
-		private static Mob reuseStandingOpponent(ServerLevel level, Run run, TournamentDefinition.Fighter fighter) {
+		private static Mob reuseStandingOpponent(ServerLevel level, Run run, String entityId) {
 			if (!run.isGauntlet() || run.getStandingOpponent() == null) return null;
 
 			Entity entity = level.getEntity(run.getStandingOpponent());
@@ -1276,7 +1360,7 @@ public final class Tournament {
 				return null;
 			}
 
-			ResourceLocation wanted = ResourceLocation.tryParse(fighter.getEntityId());
+			ResourceLocation wanted = ResourceLocation.tryParse(entityId);
 			ResourceLocation actual = ForgeRegistries.ENTITY_TYPES.getKey(mob.getType());
 			if (wanted == null || !wanted.equals(actual)) {
 				mob.discard();
@@ -1949,8 +2033,13 @@ public final class Tournament {
 		}
 
 		@Nullable
-		private static TournamentDefinition.Fighter fighterFor(TournamentDefinition def, String slot) {
+		private static TournamentDefinition.Fighter fighterFor(TournamentDefinition def, Bracket bracket, String slot) {
 			if (slot == null || slot.isBlank() || Bracket.isPlayerSlot(slot)) return null;
+
+			int source = bracket != null ? bracket.sourceOf(slot) : Bracket.SOURCE_UNKNOWN;
+			if (source == Bracket.SOURCE_CHAMPION) return def.getChampion();
+			if (source == Bracket.SOURCE_SEMIFINALIST) return def.getSemifinalist();
+			if (source >= 0 && source < def.getContenders().size()) return def.getContenders().get(source);
 
 			if (slot.equals(def.getChampion().getEntityId())) return def.getChampion();
 			if (slot.equals(def.getSemifinalist().getEntityId())) return def.getSemifinalist();
@@ -1961,14 +2050,14 @@ public final class Tournament {
 		}
 
 		@Nullable
-		private static Mob spawnOpponent(ServerLevel level, TournamentDefinition.Fighter fighter,
+		private static Mob spawnOpponent(ServerLevel level, TournamentDefinition.Fighter fighter, String entityId,
 										 BlockPos ringCentre, int radius, int round, ServerPlayer target) {
-			ResourceLocation id = ResourceLocation.tryParse(fighter.getEntityId());
+			ResourceLocation id = ResourceLocation.tryParse(entityId);
 			if (id == null) return null;
 
 			EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(id);
 			if (type == null) {
-				LogUtil.warn(Env.SERVER, "Tournament fighter '{}' is not a registered entity", fighter.getEntityId());
+				LogUtil.warn(Env.SERVER, "Tournament fighter '{}' is not a registered entity", entityId);
 				return null;
 			}
 
@@ -2248,8 +2337,8 @@ public final class Tournament {
 					revealed,
 					seeds,
 					winners,
-					bracket != null ? bracket.getSemifinalist() : def.getSemifinalist().getEntityId(),
-					bracket != null ? bracket.getChampion() : def.getChampion().getEntityId(),
+					bracket != null ? bracket.getSemifinalist() : previewId(def.getSemifinalist()),
+					bracket != null ? bracket.getChampion() : previewId(def.getChampion()),
 					bracket != null ? bracket.getRound() : 0,
 					eliminated || (bracket != null && bracket.isEliminated()),
 					bracket != null && bracket.isCompleted(),
@@ -2286,25 +2375,36 @@ public final class Tournament {
 			return Math.max(1, count);
 		}
 
+		private static String previewId(TournamentDefinition.Fighter fighter) {
+			if (fighter == null || !fighter.isUsable()) return "";
+			return fighter.isTag() ? Bracket.HIDDEN_SLOT : fighter.getEntityId();
+		}
+
 		private static Map<String, TournamentPackets.OpenBracketS2C.FighterStats> collectStats(
 				TournamentDefinition def, @Nullable Bracket bracket) {
 			Map<String, TournamentPackets.OpenBracketS2C.FighterStats> stats = new HashMap<>();
 
-			int round = bracket != null ? bracket.getRound() : 0;
-			for (TournamentDefinition.Fighter fighter : def.getContenders()) {
-				putStats(stats, fighter, round);
+			if (bracket == null) {
+				for (TournamentDefinition.Fighter fighter : def.getContenders()) putStats(stats, previewId(fighter), fighter, 0);
+				putStats(stats, previewId(def.getSemifinalist()), def.getSemifinalist(), 1);
+				putStats(stats, previewId(def.getChampion()), def.getChampion(), 2);
+				return stats;
 			}
-			int semiRound = bracket != null ? bracket.semiRound() : 1;
-			putStats(stats, def.getSemifinalist(), semiRound);
-			putStats(stats, def.getChampion(), semiRound + 1);
+
+			for (String seed : bracket.getSeeds()) {
+				if (seed.isEmpty() || Bracket.isPlayerSlot(seed)) continue;
+				putStats(stats, seed, Manager.fighterFor(def, bracket, seed), bracket.getRound());
+			}
+			putStats(stats, bracket.getSemifinalist(), Manager.fighterFor(def, bracket, bracket.getSemifinalist()), bracket.semiRound());
+			putStats(stats, bracket.getChampion(), Manager.fighterFor(def, bracket, bracket.getChampion()), bracket.finalRound());
 			return stats;
 		}
 
-		private static void putStats(Map<String, TournamentPackets.OpenBracketS2C.FighterStats> stats,
-									 TournamentDefinition.Fighter fighter, int round) {
-			if (fighter == null || !fighter.isUsable()) return;
+		private static void putStats(Map<String, TournamentPackets.OpenBracketS2C.FighterStats> stats, String id,
+									 @Nullable TournamentDefinition.Fighter fighter, int round) {
+			if (fighter == null || !fighter.isUsable() || id == null || id.isEmpty() || Bracket.HIDDEN_SLOT.equals(id)) return;
 			double scaling = Math.pow(fighter.perRoundScalingOr(1.0D), round);
-			stats.put(fighter.getEntityId(), new TournamentPackets.OpenBracketS2C.FighterStats(
+			stats.put(id, new TournamentPackets.OpenBracketS2C.FighterStats(
 					(int) Math.round(fighter.healthOr(100.0D) * scaling),
 					(int) Math.round(fighter.meleeDamageOr(5.0D) * scaling),
 					(int) Math.round(fighter.kiDamageOr(5.0D) * scaling)));

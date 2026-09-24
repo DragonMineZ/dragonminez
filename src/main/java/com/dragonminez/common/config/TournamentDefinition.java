@@ -151,6 +151,10 @@ public class TournamentDefinition {
 			return entityId != null && !entityId.isBlank();
 		}
 
+		public boolean isTag() {
+			return entityId != null && entityId.startsWith("#");
+		}
+
 		public double healthOr(double fallback) { return health != null ? Math.max(1.0D, health) : fallback; }
 		public double meleeDamageOr(double fallback) { return meleeDamage != null ? Math.max(0.0D, meleeDamage) : fallback; }
 		public double kiDamageOr(double fallback) { return kiDamage != null ? Math.max(0.0D, kiDamage) : fallback; }
@@ -182,6 +186,7 @@ public class TournamentDefinition {
 
 		public static final String BABA = "baba";
 		public static final String CELL = "cell";
+		public static final String CELL_POOL = "#dragonminez:npc_cellsaga";
 
 		private Defaults() {}
 
@@ -221,24 +226,15 @@ public class TournamentDefinition {
 					245000.0D, 10200.0D, 9180.0D, 3, 1.0D));
 
 			def.setContenders(List.of(
-					fighter("dragonminez:saga_yamcha", "entity.dragonminez.saga_yamcha",
-							66500.0D, 2700.0D, 2420.0D, 1, 1.08D),
-					fighter("dragonminez:saga_krillin", "entity.dragonminez.saga_krillin",
-							70000.0D, 2850.0D, 2550.0D, 1, 1.08D),
-					fighter("dragonminez:saga_tien_early", "entity.dragonminez.saga_tien_early",
-							84000.0D, 3400.0D, 3060.0D, 2, 1.08D),
-					fighter("dragonminez:saga_cell_jr", "entity.dragonminez.saga_cell_jr",
-							150500.0D, 5940.0D, 6545.0D, 2, 1.08D),
-					fighter("dragonminez:saga_a16", "entity.dragonminez.saga_a16",
-							168000.0D, 6600.0D, 5950.0D, 2, 1.08D),
-					fighter("dragonminez:saga_piccolo_kami", "entity.dragonminez.saga_piccolo_kami",
-							189000.0D, 7500.0D, 6800.0D, 3, 1.08D),
-					fighter("dragonminez:saga_ftrunks_ssj", "entity.dragonminez.saga_ftrunks_ssj",
-							196000.0D, 8100.0D, 7310.0D, 3, 1.08D),
-					fighter("dragonminez:saga_vegeta_mid_ssj", "entity.dragonminez.saga_vegeta_mid_ssj",
-							203000.0D, 8400.0D, 7650.0D, 3, 1.08D),
-					fighter("dragonminez:saga_goku_mid_ssj", "entity.dragonminez.saga_goku_mid_ssj",
-							210000.0D, 8700.0D, 7820.0D, 3, 1.08D)
+					fighter(CELL_POOL, CELL_POOL, 66500.0D, 2700.0D, 2420.0D, 1, 1.08D),
+					fighter(CELL_POOL, CELL_POOL, 70000.0D, 2850.0D, 2550.0D, 1, 1.08D),
+					fighter(CELL_POOL, CELL_POOL, 84000.0D, 3400.0D, 3060.0D, 2, 1.08D),
+					fighter(CELL_POOL, CELL_POOL, 150500.0D, 5940.0D, 6545.0D, 2, 1.08D),
+					fighter(CELL_POOL, CELL_POOL, 168000.0D, 6600.0D, 5950.0D, 2, 1.08D),
+					fighter(CELL_POOL, CELL_POOL, 189000.0D, 7500.0D, 6800.0D, 3, 1.08D),
+					fighter(CELL_POOL, CELL_POOL, 196000.0D, 8100.0D, 7310.0D, 3, 1.08D),
+					fighter(CELL_POOL, CELL_POOL, 203000.0D, 8400.0D, 7650.0D, 3, 1.08D),
+					fighter(CELL_POOL, CELL_POOL, 210000.0D, 8700.0D, 7820.0D, 3, 1.08D)
 			));
 
 			TournamentDefinition.Rewards rewards = new TournamentDefinition.Rewards();
