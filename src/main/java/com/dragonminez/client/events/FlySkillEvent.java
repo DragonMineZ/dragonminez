@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.clash.ClientBeamClashState;
 import com.dragonminez.client.flight.CombatFlightHandler;
 import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.flight.FlightRollHandler;
@@ -254,7 +255,7 @@ public class FlySkillEvent {
 			boolean movementRestricted = TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || data.getStatus().isStunned() || data.getStatus().isActionCharging() || data.getStatus().isChargingKi();
 
 			if (isFlying) {
-				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || isStationaryStrike(data)) {
+				if (TechniqueDispatcher.isMovementRestrictedKiAttack(player, data) || isStationaryStrike(data) || ClientBeamClashState.isExhausted()) {
 					flightVector = Vec3.ZERO;
 					player.setDeltaMovement(0.0D, 0.0D, 0.0D);
 					player.fallDistance = 0F;

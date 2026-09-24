@@ -110,6 +110,28 @@ Use this schema for each memory entry:
 
 Add durable memories below this line, newest first.
 
+### 2026-09-23 - LevelTickEvent Fires Once Per Loaded Dimension
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: repo-wide (`TickEvent.LevelTickEvent` subscribers)
+- Summary: `LevelTickEvent` fires for every loaded `ServerLevel` each server tick; global per-tick state advanced inside it runs N times per tick (6+ with DMZ's dimensions). The beam clash tug-of-war and meter ran 6× too fast this way until 2026-09-23.
+- Guidance: In a `LevelTickEvent` handler only advance state that belongs to `event.level` (compare the entity/level reference), or move per-tick global work to `TickEvent.ServerTickEvent`.
+- Do Not: Do not keep a static list of world objects and tick all of it from a level tick handler.
+- Related: `BeamClashManager.advanceActiveClashes(ServerLevel)`, `BeamClash.level()`
+
+### 2026-09-23 - ClashMeter Is A Shared Deterministic Simulation
+
+- Type: durable-fact
+- Status: active
+- Source: implementation
+- Scope: `common/combat/clash/ClashMeter.java`, `ClashParticipant`, `client/clash/ClientBeamClashState`
+- Summary: The beam clash timing meter is simulated identically on client and server from `(seed, ticks since clash start)`; the client stamps presses with the meter time it rendered and the server re-simulates that instant and checks plausibility (latency window bounded by real time, marker consistency, monotonic claims, one press per cycle).
+- Guidance: Any change to `ClashMeter` (cycle lengths, window placement, grading) changes both sides at once; keep it free of `Random`, side effects and platform-dependent math. Tune feel in `BeamClash` (`DRIFT_PER_TICK`, `MOMENTUM_DECAY`, `BURST_PER_PERFECT_PRESS`) rather than by sending meter state over the network.
+- Do Not: Do not reintroduce a server-ticked meter phase in `BeamClashStateS2C`, and do not score from the client's claimed marker — it is only a consistency check against the re-simulation.
+- Related: `AI/Context.md` (Beam Clash section)
+
 ### 2026-07-12 - Post Shaders Must Output Alpha 1.0 Before The Vanilla Blit Pass
 
 - Type: pitfall

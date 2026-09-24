@@ -14,31 +14,30 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-/**
- * Client-side cinematic camera for beam clashes. On clash start it forces a third-person
- * view (so both fighters' models render) and frames a side-profile shot of the two beam
- * origins, layered with a struggle shake and a FOV push-in. Everything is restored when
- * the clash ends.
- */
 @OnlyIn(Dist.CLIENT)
 public final class BeamClashCinematicCamera {
-
-	// --- framing ---
-	private static final double SIDE_DISTANCE_BASE = 5.0;   // base side offset (blocks)
-	private static final double SIDE_DISTANCE_SPAN = 0.55;  // extra per block of fighter separation
-	private static final double SIDE_DISTANCE_MAX = 16.0;
-	private static final double CAMERA_HEIGHT = 1.6;        // raise above the beam line
+	private static final double ORBIT_DISTANCE_BASE = 7.5;
+	private static final double ORBIT_DISTANCE_SPAN = 0.825;
+	private static final double ORBIT_DISTANCE_MAX = 24.0;
+	private static final double CAMERA_HEIGHT_BASE = 1.2;
+	private static final double CAMERA_HEIGHT_PER_DIST = 0.12;
+	private static final double ORBIT_DEGREES_PER_SECOND = 14.0;
+	private static final double FOCUS_SMOOTH_TAU = 0.15;
 	private static final double WALL_MARGIN = 0.5;
 
-	// --- effects ---
-	private static final float FOV_TARGET = 0.84f;          // multiplier when fully zoomed in
+	private static final float FOV_TARGET = 0.84f;
 	private static final float FOV_EASE = 0.18f;
-	private static final double SHAKE_POS = 0.16;           // blocks
-	private static final float SHAKE_ANGLE = 0.9f;          // degrees
+	private static final double SHAKE_POS = 0.16;
+	private static final float SHAKE_ANGLE = 0.9f;
 
 	private static volatile boolean active = false;
 	private static CameraType previousType = null;
 	private static float fovFactor = 1.0f;
+
+	private static double orbitStartAngle = Double.NaN;
+	private static float orbitStartTime = 0.0f;
+	private static Vec3 focus = null;
+	private static long focusNanos = 0L;
 
 	private BeamClashCinematicCamera() {
 	}
@@ -52,6 +51,8 @@ public final class BeamClashCinematicCamera {
 		Minecraft mc = Minecraft.getInstance();
 		previousType = mc.options.getCameraType();
 		mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+		orbitStartAngle = Double.NaN;
+		focus = null;
 		active = true;
 	}
 
@@ -61,10 +62,11 @@ public final class BeamClashCinematicCamera {
 		if (previousType != null) mc.options.setCameraType(previousType);
 		previousType = null;
 		active = false;
+		orbitStartAngle = Double.NaN;
+		focus = null;
 		DMZCameraBuffer.reset();
 	}
 
-	/** Eases the FOV factor toward its target; call once per client tick. */
 	public static void tickFov() {
 		float target = active ? FOV_TARGET : 1.0f;
 		fovFactor += (target - fovFactor) * FOV_EASE;
@@ -75,17 +77,13 @@ public final class BeamClashCinematicCamera {
 		return baseFov * fovFactor;
 	}
 
-	/** A computed cinematic camera placement. */
 	public record Shot(Vec3 pos, float yaw, float pitch) {
 	}
 
-	/**
-	 * Builds the side-profile shot framing both fighters, or null if it can't be framed
-	 * (no opponent yet) — in which case the vanilla camera is left untouched.
-	 */
 	public static Shot computeShot(BlockGetter level, LocalPlayer player, float partialTick) {
 		if (!active) return null;
 
+		float t = player.tickCount + partialTick;
 		Vec3 selfPos = player.getEyePosition(partialTick);
 
 		Vec3 oppPos = null;
@@ -94,15 +92,15 @@ public final class BeamClashCinematicCamera {
 			Entity opp = player.level().getEntity(oppId);
 			if (opp != null) oppPos = opp.getEyePosition(partialTick);
 		}
-		// Fallback: aim down the player's beam if the opponent isn't available.
-		if (oppPos == null) {
-			oppPos = selfPos.add(player.getViewVector(partialTick).scale(8.0));
+
+		Vec3 target = ClientBeamClashState.clashPoint();
+		if (target == null) {
+			Vec3 far = oppPos != null ? oppPos : selfPos.add(player.getViewVector(partialTick).scale(8.0));
+			target = selfPos.add(far).scale(0.5);
 		}
+		Vec3 centre = smoothFocus(target);
 
-		Vec3 mid = selfPos.add(oppPos).scale(0.5);
-
-		// Horizontal axis between fighters (fall back to look direction if degenerate).
-		Vec3 axis = oppPos.subtract(selfPos);
+		Vec3 axis = (oppPos != null ? oppPos : target).subtract(selfPos);
 		Vec3 axisHoriz = new Vec3(axis.x, 0, axis.z);
 		double separation = axisHoriz.length();
 		if (separation < 0.1) {
@@ -112,25 +110,31 @@ public final class BeamClashCinematicCamera {
 		}
 		axisHoriz = axisHoriz.normalize();
 
-		Vec3 side = new Vec3(0, 1, 0).cross(axisHoriz).normalize();
+		if (Double.isNaN(orbitStartAngle)) {
+			Vec3 side = new Vec3(0, 1, 0).cross(axisHoriz).normalize();
+			orbitStartAngle = Math.atan2(side.z, side.x);
+			orbitStartTime = t;
+		}
+		double angle = orbitStartAngle + Math.toRadians(ORBIT_DEGREES_PER_SECOND) * (t - orbitStartTime) / 20.0;
+		Vec3 radial = new Vec3(Math.cos(angle), 0, Math.sin(angle));
+		Vec3 tangent = new Vec3(-radial.z, 0, radial.x);
 
-		double dist = Math.min(SIDE_DISTANCE_MAX, SIDE_DISTANCE_BASE + separation * SIDE_DISTANCE_SPAN);
+		double dist = Math.min(ORBIT_DISTANCE_MAX, ORBIT_DISTANCE_BASE + separation * ORBIT_DISTANCE_SPAN);
+		double height = CAMERA_HEIGHT_BASE + CAMERA_HEIGHT_PER_DIST * dist;
 
-		// Shake intensity ramps up as the struggle becomes decisive.
 		float decisiveness = Math.abs(ClientBeamClashState.advantage() - 0.5f) * 2.0f;
 		double shake = SHAKE_POS * (0.5 + decisiveness);
 		float angleShake = SHAKE_ANGLE * (0.5f + decisiveness);
-		float t = player.tickCount + partialTick;
 
-		Vec3 camPos = mid
-				.add(side.scale(dist))
-				.add(0, CAMERA_HEIGHT, 0)
-				.add(side.scale(Math.sin(t * 1.7) * shake))
+		Vec3 camPos = centre
+				.add(radial.scale(dist))
+				.add(0, height, 0)
+				.add(tangent.scale(Math.sin(t * 1.7) * shake))
 				.add(0, Math.cos(t * 2.3) * shake * 0.6, 0);
 
-		camPos = clampToLineOfSight(level, player, mid, camPos);
+		camPos = clampToLineOfSight(level, player, centre, camPos);
 
-		Vec3 dir = mid.subtract(camPos);
+		Vec3 dir = centre.subtract(camPos);
 		double horiz = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
 		float pitch = (float) (-(Mth.atan2(dir.y, horiz) * (180.0 / Math.PI)));
 		float yaw = (float) (Mth.atan2(dir.z, dir.x) * (180.0 / Math.PI) - 90.0);
@@ -139,6 +143,20 @@ public final class BeamClashCinematicCamera {
 		pitch += (float) (Math.cos(t * 2.7) * angleShake * 0.7);
 
 		return new Shot(camPos, yaw, pitch);
+	}
+
+	private static Vec3 smoothFocus(Vec3 target) {
+		long now = System.nanoTime();
+		if (focus == null) {
+			focus = target;
+			focusNanos = now;
+			return focus;
+		}
+		double dt = Math.min(0.25, Math.max(0.0, (now - focusNanos) / 1.0e9));
+		focusNanos = now;
+		double k = 1.0 - Math.exp(-dt / FOCUS_SMOOTH_TAU);
+		focus = focus.add(target.subtract(focus).scale(k));
+		return focus;
 	}
 
 	private static Vec3 clampToLineOfSight(BlockGetter level, Entity viewer, Vec3 from, Vec3 to) {
