@@ -8,6 +8,7 @@ import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -23,6 +24,7 @@ import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
@@ -44,6 +46,7 @@ public final class TransformationPostShaderManager {
 
 	private static final float FIXED_GLOW_STRENGTH = 1.35f;
 	private static final float FIXED_BLOOM_STRENGTH = 0.95f;
+	private static final double SAGA_OUTLINE_RANGE_SQR = 96.0 * 96.0;
 
 	private static final Map<UUID, TrackedShaderState> TRACKED_PLAYERS = new HashMap<>();
 	private static final Set<UUID> ACTIVE_MASK_PLAYERS = new HashSet<>();
@@ -97,7 +100,7 @@ public final class TransformationPostShaderManager {
 	}
 
 	@Nullable
-	public static MaskData getEntityMaskData(Player player) {
+	public static MaskData getEntityMaskData(Entity player) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null || player == null) return null;
 		UUID playerId = player.getUUID();
@@ -247,6 +250,21 @@ public final class TransformationPostShaderManager {
 			ACTIVE_MASK_PLAYERS.add(playerId);
 			if (fallbackUniform == null) fallbackUniform = tracked.uniformState;
 			if (playerId.equals(localPlayerId)) activeUniformState = tracked.uniformState;
+		}
+
+		for (Entity entity : mc.level.entitiesForRendering()) {
+			if (!(entity instanceof DBSagasEntity saga) || saga.isInvisible()) continue;
+			if (saga.distanceToSqr(mc.player) > SAGA_OUTLINE_RANGE_SQR) continue;
+			DBSagasEntity.OutlineStyle style = saga.getOutlineStyle();
+			if (style == null) continue;
+
+			UUID sagaId = saga.getUUID();
+			TrackedShaderState tracked = TRACKED_PLAYERS.computeIfAbsent(sagaId, id -> new TrackedShaderState());
+			tracked.uniformState = ShaderUniformState.fromStyle(style);
+			tracked.lastSeenFrame = frameId;
+
+			ACTIVE_MASK_PLAYERS.add(sagaId);
+			if (fallbackUniform == null) fallbackUniform = tracked.uniformState;
 		}
 
 		TRACKED_PLAYERS.entrySet().removeIf(entry -> entry.getValue().lastSeenFrame != frameId);
@@ -402,6 +420,21 @@ public final class TransformationPostShaderManager {
 					secondary[1],
 					secondary[2],
 					(float) config.getOutlineThickness()
+			);
+		}
+
+		private static ShaderUniformState fromStyle(DBSagasEntity.OutlineStyle style) {
+			float[] primary = ColorUtils.rgbIntToFloat(style.primaryColor());
+			float[] secondary = ColorUtils.rgbIntToFloat(style.secondaryColor());
+
+			return new ShaderUniformState(
+					primary[0],
+					primary[1],
+					primary[2],
+					secondary[0],
+					secondary[1],
+					secondary[2],
+					Math.max(0.0f, style.thickness())
 			);
 		}
 	}

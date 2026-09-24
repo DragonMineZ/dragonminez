@@ -1,5 +1,6 @@
 package com.dragonminez.client.init.entities.renderer.sagas.layer;
 
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -16,6 +17,9 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class DMZSagaItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> {
 
+    private static final float STANDARD_HAND_PIVOT_X = 6.5F;
+    private static final float STANDARD_HAND_PIVOT_Y = 14.0F;
+
     public DMZSagaItemInHandLayer(GeoEntityRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
@@ -23,16 +27,20 @@ public class DMZSagaItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLa
     @Override
     public void renderForBone(PoseStack poseStack, DBSagasEntity animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
         if (bone.getName().equals("right_hand_item")) {
-            renderHeldItem(poseStack, animatable, animatable.getItemBySlot(EquipmentSlot.MAINHAND), false, renderType, bufferSource, packedLight, packedOverlay);
+            renderHeldItem(poseStack, animatable, bone, animatable.getItemBySlot(EquipmentSlot.MAINHAND), false, renderType, bufferSource, packedLight, packedOverlay);
         } else if (bone.getName().equals("left_hand_item")) {
-            renderHeldItem(poseStack, animatable, animatable.getItemBySlot(EquipmentSlot.OFFHAND), true, renderType, bufferSource, packedLight, packedOverlay);
+            renderHeldItem(poseStack, animatable, bone, animatable.getItemBySlot(EquipmentSlot.OFFHAND), true, renderType, bufferSource, packedLight, packedOverlay);
         }
     }
 
-    private void renderHeldItem(PoseStack poseStack, DBSagasEntity animatable, ItemStack stack, boolean leftHand, RenderType renderType, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    private void renderHeldItem(PoseStack poseStack, DBSagasEntity animatable, GeoBone bone, ItemStack stack, boolean leftHand, RenderType renderType, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         if (stack.isEmpty()) return;
+        if (animatable.isCasting() && stack.is(MainItems.POWER_POLE.get())) return;
 
         poseStack.pushPose();
+
+        float standardPivotX = leftHand ? -STANDARD_HAND_PIVOT_X : STANDARD_HAND_PIVOT_X;
+        poseStack.translate((bone.getPivotX() - standardPivotX) / 16F, (bone.getPivotY() - STANDARD_HAND_PIVOT_Y) / 16F, bone.getPivotZ() / 16F);
 
         poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
 
@@ -50,12 +58,6 @@ public class DMZSagaItemInHandLayer<T extends DBSagasEntity> extends GeoRenderLa
                 packedOverlay,
                 animatable.getId()
         );
-
-        // Rendering the item above switches the shared BufferBuilder to the item's
-        // render type and ends the entity's buffer mid-recursion. Re-fetch the entity
-        // buffer so GeckoLib's remaining bones keep writing into a valid, set-up buffer.
-        // Without this, strict GPU drivers (AMD/Intel) render the entity as garbage.
-        // This mirrors GeckoLib's own BlockAndItemGeoLayer / DMZPlayerItemInHandLayer.
         bufferSource.getBuffer(renderType);
 
         poseStack.popPose();

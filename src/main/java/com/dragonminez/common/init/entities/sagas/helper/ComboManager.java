@@ -55,6 +55,21 @@ public class ComboManager {
     private static final int GOD_FIST_SHOCKWAVE_COLOR = 0xF5C527;
     private static final float GOD_FIST_BURST_SCALE = 5.5F;
     private static final int GOD_FIST_BURST_TICKS = 18;
+    private static final int DEADLY_DANCE_DASH_END_TICK = 8;
+    private static final int DEADLY_DANCE_HIT_INTERVAL = 10;
+    private static final int DEADLY_DANCE_FINAL_TICK = DEADLY_DANCE_DASH_END_TICK + 30;
+    private static final int DEADLY_DANCE_END_TICK = 40;
+    private static final double DEADLY_DANCE_DASH_SPEED = 1.5D;
+    private static final double DEADLY_DANCE_REACH = 1.5D;
+    private static final double DEADLY_DANCE_ADVANCE_SPEED = 0.25D;
+    private static final float DEADLY_DANCE_FINAL_HIT_RATIO = 0.35F;
+    private static final float DEADLY_DANCE_IMPACT_DAMAGE_RATIO = 0.20F;
+    private static final int DEADLY_DANCE_COLOR_PRIMARY = 0xFFE23A;
+    private static final int DEADLY_DANCE_VEGETTO_COLOR_SECONDARY = 0x2FA8FF;
+    private static final float DEADLY_DANCE_HIT_BURST_SCALE = 1.7F;
+    private static final int DEADLY_DANCE_HIT_BURST_TICKS = 7;
+    private static final float DEADLY_DANCE_FINAL_BURST_SCALE = 4.8F;
+    private static final int DEADLY_DANCE_FINAL_BURST_TICKS = 16;
 
     public static void handleCombo(DBSagasEntity user, LivingEntity target, int comboId, int timer) {
         if (target == null || !target.isAlive() || !user.isAlive() || user.isTransforming()) {
@@ -77,6 +92,7 @@ public class ComboManager {
             case 8 -> handleRapidKicks(user, target, timer);
             case 9 -> handleSpiritBreakingCannon(user, target, timer);
             case 11 -> handleSuperGodFist(user, target, timer);
+            case 12 -> handleDeadlyDanceVegetto(user, target, timer);
 
         }
     }
@@ -152,6 +168,68 @@ public class ComboManager {
         user.setDeltaMovement(0.0D, user.getDeltaMovement().y, 0.0D);
 
         if (timer >= GOD_FIST_END_TICK) user.stopCombo();
+    }
+
+    private static void handleDeadlyDanceVegetto(DBSagasEntity user, LivingEntity target, int timer) {
+        if (user.level().isClientSide) return;
+
+        float total = comboHitDamage(user, DBSagasEntity.ComboType.DEADLY_DANCE_VEGETTO, 1);
+        int hitCount = (DEADLY_DANCE_FINAL_TICK - DEADLY_DANCE_DASH_END_TICK) / DEADLY_DANCE_HIT_INTERVAL - 1;
+        float hitDamage = total * (1.0F - DEADLY_DANCE_FINAL_HIT_RATIO) / Math.max(1, hitCount);
+
+        user.invulnerableTime = 20;
+        if (timer <= DEADLY_DANCE_FINAL_TICK) faceTowards(target, user);
+
+        if (timer <= DEADLY_DANCE_DASH_END_TICK) {
+            target.invulnerableTime = 20;
+            if (user.distanceTo(target) > DEADLY_DANCE_REACH) {
+                Vec3 dir = target.position().subtract(user.position()).normalize();
+                user.move(MoverType.SELF, new Vec3(dir.x * DEADLY_DANCE_DASH_SPEED, 0.0D, dir.z * DEADLY_DANCE_DASH_SPEED));
+            }
+            freeze(target);
+        } else if (timer < DEADLY_DANCE_FINAL_TICK) {
+            target.invulnerableTime = 20;
+            Vec3 look = Vec3.directionFromRotation(0.0F, user.getYRot()).normalize();
+            Vec3 advance = new Vec3(look.x * DEADLY_DANCE_ADVANCE_SPEED, 0.0D, look.z * DEADLY_DANCE_ADVANCE_SPEED);
+            Vec3 pinned = user.position().add(advance).add(look.x * DEADLY_DANCE_REACH, 0.0D, look.z * DEADLY_DANCE_REACH);
+            Vec3 shift = pinned.subtract(target.position());
+
+            if (!user.horizontalCollision && user.level().noCollision(target, target.getBoundingBox().move(shift))) {
+                user.move(MoverType.SELF, advance);
+                target.setPos(pinned.x, pinned.y, pinned.z);
+            }
+            freeze(target);
+
+            int danceTick = timer - DEADLY_DANCE_DASH_END_TICK;
+            if (danceTick % DEADLY_DANCE_HIT_INTERVAL == 0) {
+                deadlyDanceHit(user, target, hitDamage, 0.6D, DEADLY_DANCE_HIT_BURST_SCALE, DEADLY_DANCE_HIT_BURST_TICKS,
+                        look, MainSounds.GOLPE1.get(), 1.0F, 0.8F + user.getRandom().nextFloat() * 0.4F);
+            }
+        } else if (timer == DEADLY_DANCE_FINAL_TICK) {
+            Vec3 look = Vec3.directionFromRotation(0.0F, user.getYRot()).normalize();
+            float finalDamage = total * DEADLY_DANCE_FINAL_HIT_RATIO;
+            deadlyDanceHit(user, target, finalDamage, 0.5D, DEADLY_DANCE_FINAL_BURST_SCALE, DEADLY_DANCE_FINAL_BURST_TICKS,
+                    new Vec3(look.x * 0.35D, 1.0D, look.z * 0.35D), MainSounds.CRITICO2.get(), 2.0F, 1.0F);
+
+            KnockbackHelper.apply(target, new Vec3(look.x * 0.5D, 1.5D, look.z * 0.5D));
+            MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.GROUND,
+                    total * DEADLY_DANCE_IMPACT_DAMAGE_RATIO, new Vec3(0.0D, 1.0D, 0.0D));
+        }
+
+        user.setDeltaMovement(0.0D, user.getDeltaMovement().y, 0.0D);
+
+        if (timer >= DEADLY_DANCE_END_TICK) user.stopCombo();
+    }
+
+    private static void deadlyDanceHit(DBSagasEntity user, LivingEntity target, float damage, double heightRatio, float burstScale,
+                                       int burstTicks, Vec3 burstDir, SoundEvent sound, float volume, float pitch) {
+        target.invulnerableTime = 0;
+        target.hurt(user.damageSources().mobAttack(user), damage);
+
+        Vec3 impactPos = new Vec3(target.getX(), target.getY() + target.getBbHeight() * heightRatio, target.getZ());
+        user.level().playSound(null, impactPos.x, impactPos.y, impactPos.z, sound, SoundSource.HOSTILE, volume, pitch);
+        NetworkHandler.sendToTrackingEntity(new ImpactBurstVfxS2C(impactPos, burstDir, burstScale,
+                DEADLY_DANCE_COLOR_PRIMARY, DEADLY_DANCE_VEGETTO_COLOR_SECONDARY, true, burstTicks), user);
     }
 
     private static void spawnSuperGodFistTrail(DBSagasEntity user, Vec3 motion) {

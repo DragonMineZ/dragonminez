@@ -983,7 +983,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                                     bullet.setTechniqueId(this.getTechniqueId());
 
                                     double spawnX = owner.getX();
-                                    double spawnY = owner.getY() + (owner.getBbHeight() / 2.0D);
+                                    double spawnY = ownerCastCenterY(owner);
                                     double spawnZ = owner.getZ();
                                     bullet.setPos(spawnX, spawnY, spawnZ);
 
@@ -1366,7 +1366,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         double centerX = owner.getX();
         double centerY = this.getKiRenderType() == RENDER_BLASTER_METEOR
                 ? effectiveBounds(owner).getCenter().y
-                : owner.getY() + (owner.getBbHeight() / 2.0D);
+                : ownerCastCenterY(owner);
         double centerZ = owner.getZ();
 
         Vec3 newPos = new Vec3(centerX, centerY, centerZ).add(offset);

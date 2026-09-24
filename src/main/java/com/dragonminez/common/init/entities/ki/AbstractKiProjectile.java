@@ -393,6 +393,11 @@ public abstract class AbstractKiProjectile extends Projectile {
         return ownerScaleOf(this.getOwner() instanceof LivingEntity living ? living : null);
     }
 
+    public static double ownerCastCenterY(LivingEntity owner) {
+        if (owner.isMultipartEntity()) return owner.getEyeY();
+        return owner.getY() + (owner.getBbHeight() / 2.0D);
+    }
+
     public static float ownerScaleOf(LivingEntity owner) {
         if (owner == null) return 1.0F;
         return Mth.clamp(owner.getBbHeight() / VANILLA_PLAYER_HEIGHT, 1.0F, MAX_OWNER_SCALE);

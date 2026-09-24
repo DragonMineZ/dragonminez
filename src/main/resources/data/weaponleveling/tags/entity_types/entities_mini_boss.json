@@ -618,6 +618,122 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_goku_daima",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_daima_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_daima_ssj2",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_daima_ssj3",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_daima_ssj4",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_mini",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_mini_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_mini_ssj2",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_mini_ssj3",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_goku_mini_ssj4",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_daima",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_daima_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_daima_ssj2",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_daima_ssj3",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_mini",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_mini_ssj",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_mini_ssj2",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_vegeta_mini_ssj3",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_glorio",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_gomah_mini",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_gomah_third_eye",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_majin_duu",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_majin_kuu",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_tamagami_1",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_tamagami_1_powered",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_tamagami_2",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_tamagami_2_powered",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_tamagami_3",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_tamagami_3_powered",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_ledgic",
       "required": false
     },

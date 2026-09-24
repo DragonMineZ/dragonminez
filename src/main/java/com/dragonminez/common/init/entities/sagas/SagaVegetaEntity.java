@@ -377,7 +377,7 @@ public class SagaVegetaEntity{
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
 
-            this.setAllowedCombos(120, ComboType.AIR);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.DEADLY_DANCE_VEGETTO);
 
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x00C0FF, 0x00C0FF);
             this.addKiSkill(KiSkillType.BIG_BANG, 340, 1.7F, 0xE3FFFF, 0xE3FFFF);
@@ -399,7 +399,7 @@ public class SagaVegetaEntity{
             this.setWildSense(true, 100);
             this.setZanzoken(3, 200);
 
-            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK, ComboType.DEADLY_DANCE_VEGETTO);
 
             this.addKiSkill(KiSkillType.KI_VOLLEY, 260, 1.2F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.BIG_BANG, 340, 1.7F, 0xE3FFFF, 0xE3FFFF);

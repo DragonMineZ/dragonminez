@@ -1621,7 +1621,7 @@
 					]
 				},
 				{
-					"name": "right_item_hand",
+					"name": "right_hand_item",
 					"parent": "right_forearm",
 					"pivot": [-4.5, 9, 0],
 					"locators": {

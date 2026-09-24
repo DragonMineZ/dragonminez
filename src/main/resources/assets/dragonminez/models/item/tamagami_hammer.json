@@ -1,0 +1,18 @@
+{
+  "parent": "minecraft:item/handheld",
+  "loader": "forge:separate_transforms",
+  "base": {
+    "parent": "dragonminez:item/tamagami_hammer_3d"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "dragonminez:item/tamagami_hammer_2d"
+    },
+    "ground": {
+      "parent": "dragonminez:item/tamagami_hammer_2d"
+    },
+    "fixed": {
+      "parent": "dragonminez:item/tamagami_hammer_2d"
+    }
+  }
+}

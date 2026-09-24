@@ -186,7 +186,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         BASIC(0, Tier.MEDIUM), AIR(1, Tier.MEDIUM), KI_CHARGE_ATTACK(2, Tier.STRONG),
         METEOR_COMBINATION(3, Tier.STRONG), ANDROID_ABSORPTION(4, Tier.STRONG),
         GUM_PUNCH(5, Tier.MEDIUM), GUM_EXPAND(6, Tier.WEAK), SLEEP_RECOVERY(7, Tier.WEAK),
-        RAPID_KICKS(8, Tier.WEAK), SPIRIT_BREAKING_CANNON(9, Tier.STRONG), SUPER_GOD_FIST(11, Tier.STRONG);
+        RAPID_KICKS(8, Tier.WEAK), SPIRIT_BREAKING_CANNON(9, Tier.STRONG), SUPER_GOD_FIST(11, Tier.STRONG),
+        DEADLY_DANCE_VEGETTO(12, Tier.STRONG);
 
         private final int id;
         private final Tier tier;
@@ -400,6 +401,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return null;
     }
 
+    private static final double GIANT_RENDER_RANGE = 512.0D;
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        if (!this.hasHitboxParts() && this.getScale() <= 2.0F) return super.shouldRenderAtSqrDistance(distance);
+        double range = GIANT_RENDER_RANGE * getViewScale();
+        return distance < range * range;
+    }
+
     @Override
     public boolean isMultipartEntity() {
         return this.hitboxParts != null;
@@ -427,6 +437,22 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
             if (core != null) return core;
         }
         return super.getDimensions(pPose);
+    }
+
+    @Override
+    protected float getStandingEyeHeight(Pose pPose, EntityDimensions pDimensions) {
+        if (this.hitboxParts != null) {
+            for (PartEntity<?> generic : this.hitboxParts) {
+                if (generic instanceof DBSagasPart part && "head".equals(part.partName)) return part.yOffset;
+            }
+        }
+        return super.getStandingEyeHeight(pPose, pDimensions);
+    }
+
+    @Override
+    public boolean isInWall() {
+        if (this.hitboxParts != null) return false;
+        return super.isInWall();
     }
 
     private void positionHitboxParts() {
@@ -2262,4 +2288,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
     public String getGeckolibTextureName() {return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();}
 
     public boolean usesRandomTextureVariant() {return false;}
+
+    public OutlineStyle getOutlineStyle() {return null;}
+
+    public record OutlineStyle(int primaryColor, int secondaryColor, float thickness) {}
 }

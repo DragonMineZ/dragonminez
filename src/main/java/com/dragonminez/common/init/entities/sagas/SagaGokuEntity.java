@@ -1,10 +1,13 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -19,9 +22,11 @@ public class SagaGokuEntity{
             this.setCanFly(false);
             this.setKiBlastSpeed(1.0F);
             this.setEvade(true, 300);
-            this.setDBZStyle(0);
+            this.setDBZStyle(7);
             this.addKiSkill(KiSkillType.KAMEHAMEHA, 350, 0.5F);
             this.setisKid(true);
+            this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.POWER_POLE.get()));
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
 
         }
         @Override

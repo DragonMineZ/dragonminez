@@ -66,6 +66,11 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_BOSS_DESTRUCTION = RawAnimation.begin().thenPlay("ki.destruction_balls_fire");
     public static final RawAnimation ANIM_BOSS_CUTS = RawAnimation.begin().thenLoop("skp.dimensional_sword_attack");
 
+    // POWER POLE = DBZSTYLE 7
+    public static final RawAnimation ANIM_ATTACK1_8 = RawAnimation.begin().thenPlay("attack1_8");
+    public static final RawAnimation ANIM_ATTACK2_8 = RawAnimation.begin().thenPlay("attack2_8");
+    public static final RawAnimation ANIM_ATTACK3_8 = RawAnimation.begin().thenPlay("attack3_8");
+
     // DEFAULT
     public static final RawAnimation ANIM_FLY = RawAnimation.begin().thenLoop("fly");
     public static final RawAnimation ANIM_FLY_FAST = RawAnimation.begin().thenLoop("fly_fast");
@@ -153,5 +158,6 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_COMBO7 = RawAnimation.begin().thenPlay("combo7");
     public static final RawAnimation ANIM_SPIRIT_BREAKING_CANNON = RawAnimation.begin().thenPlay("skp.spirit_breaking_cannon");
     public static final RawAnimation ANIM_SUPER_GOD_FIST = RawAnimation.begin().thenPlay("skp.super_god_fist");
+    public static final RawAnimation ANIM_DEADLY_DANCE_VEGETTO = RawAnimation.begin().thenPlay("skp.deadly_dance_vegetto");
 
 }

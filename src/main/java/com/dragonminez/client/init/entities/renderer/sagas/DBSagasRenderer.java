@@ -12,6 +12,8 @@ import com.dragonminez.client.init.entities.renderer.sagas.layer.DMZSagaArmorLay
 import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaHaloLayer;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.SagaSupervillainLayer;
 import com.dragonminez.client.render.shader.DMZShaders;
+import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
+import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
@@ -64,11 +66,28 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         poseStack.scale(sc,sc,sc);
 
-        MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, bufferSource, SagaSupervillainLayer.borderColor(entity), partialTick);
+        boolean captureMask = !IrisCompat.isShaderPackInUse() || TransformationPostShaderManager.isShaderpackMainPass();
+        TransformationPostShaderManager.MaskData maskData = captureMask ? TransformationPostShaderManager.getEntityMaskData(entity) : null;
+        TransformationMaskBufferSource maskBufferSource = null;
+        MultiBufferSource renderSource = bufferSource;
+        if (maskData != null) {
+            maskBufferSource = TransformationPostShaderManager.getMaskBufferSource();
+            maskBufferSource.setEntityColors(maskData.primaryR(), maskData.primaryG(), maskData.primaryB(),
+                    maskData.secondaryR(), maskData.secondaryG(), maskData.secondaryB());
+            maskBufferSource.wrap(bufferSource);
+            maskBufferSource.setForceCaptureAll(true);
+            renderSource = maskBufferSource;
+        }
+
+        MultiBufferSource borderSource = AuraBorderRenderer.begin(entity, renderSource, SagaSupervillainLayer.borderColor(entity), partialTick);
         try {
             super.render(entity, entityYaw, partialTick, poseStack, borderSource, packedLight);
         } finally {
             AuraBorderRenderer.end(borderSource);
+            if (maskBufferSource != null) {
+                maskBufferSource.setForceCaptureAll(false);
+                maskBufferSource.setMaskCaptureEnabled(true);
+            }
         }
 
 

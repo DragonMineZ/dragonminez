@@ -373,7 +373,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 up = right.cross(look).normalize();
 
         double centerX = owner.getX();
-        double centerY = owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerY = ownerCastCenterY(owner);
         double centerZ = owner.getZ();
         Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
 

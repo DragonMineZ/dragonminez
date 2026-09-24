@@ -19,6 +19,9 @@ import com.dragonminez.common.init.item.tools.ToolTiers;
 import com.dragonminez.common.init.item.WeightItem;
 import com.dragonminez.common.init.item.weapons.*;
 import com.dragonminez.common.init.item.weapons.DimensionalSwordItem;
+import com.dragonminez.common.init.item.weapons.TamagamiHammerItem;
+import com.dragonminez.common.init.item.weapons.TamagamiSwordItem;
+import com.dragonminez.common.init.item.weapons.TamagamiTridentItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.*;
@@ -171,6 +174,12 @@ public final class MainItems {
             ITEM_REGISTER.register("dimensional_sword", () -> new DimensionalSwordItem());
 	public static final RegistryObject<SwordItem> POWER_POLE =
 			ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
+	public static final RegistryObject<SwordItem> TAMAGAMI_SWORD =
+			ITEM_REGISTER.register("tamagami_sword", () -> new TamagamiSwordItem());
+	public static final RegistryObject<SwordItem> TAMAGAMI_TRIDENT =
+			ITEM_REGISTER.register("tamagami_trident", () -> new TamagamiTridentItem());
+	public static final RegistryObject<SwordItem> TAMAGAMI_HAMMER =
+			ITEM_REGISTER.register("tamagami_hammer", () -> new TamagamiHammerItem());
 
 	//ARMAS A RANGO/PISTOLAS
 	public static final RegistryObject<Item> MERUS_LASER =

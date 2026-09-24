@@ -115,6 +115,7 @@ public class DBSagasAnimationHandler {
             if (comboId == 8) return event.setAndContinue(DBSagasAnimations.ANIM_COMBO7);
             if (comboId == 9) return event.setAndContinue(DBSagasAnimations.ANIM_SPIRIT_BREAKING_CANNON);
             if (comboId == 11) return event.setAndContinue(DBSagasAnimations.ANIM_SUPER_GOD_FIST);
+            if (comboId == 12) return event.setAndContinue(DBSagasAnimations.ANIM_DEADLY_DANCE_VEGETTO);
 
         }
 
@@ -205,6 +206,10 @@ public class DBSagasAnimationHandler {
                 if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_6);
                 else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_6);
                 else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_6);
+            } else if (style == 7) {
+                if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1_8);
+                else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2_8);
+                else event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK3_8);
             } else {
                 if (randAttack == 0) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK1);
                 else if (randAttack == 1) event.getController().setAnimation(DBSagasAnimations.ANIM_ATTACK2);

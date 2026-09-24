@@ -1,0 +1,18 @@
+{
+  "parent": "minecraft:item/handheld",
+  "loader": "forge:separate_transforms",
+  "base": {
+    "parent": "dragonminez:item/tamagami_trident_3d"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "dragonminez:item/tamagami_trident_2d"
+    },
+    "ground": {
+      "parent": "dragonminez:item/tamagami_trident_2d"
+    },
+    "fixed": {
+      "parent": "dragonminez:item/tamagami_trident_2d"
+    }
+  }
+}

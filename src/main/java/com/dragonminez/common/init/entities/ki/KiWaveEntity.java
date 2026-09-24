@@ -445,7 +445,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         Vec3 newPos;
 
         double centerX = owner.getX();
-        double centerY = this.isContinuousFollow() ? owner.getEyeY() : owner.getY() + (owner.getBbHeight() / 2.0D);
+        double centerY = this.isContinuousFollow() ? owner.getEyeY() : ownerCastCenterY(owner);
         double centerZ = owner.getZ();
         Vec3 hitboxCenter = new Vec3(centerX, centerY, centerZ);
 
