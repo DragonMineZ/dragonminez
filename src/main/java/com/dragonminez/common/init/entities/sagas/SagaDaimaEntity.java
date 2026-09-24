@@ -715,6 +715,27 @@ public class SagaDaimaEntity {
     }
 
     /*
+        GOMAH SOLDIERS [ 1 - 2 ]
+     */
+
+    public static class GomahSoldierEntity extends DBSagasEntity {
+
+        public GomahSoldierEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xE0245E);
+            this.setKiBlastSpeed(1.3F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 80);
+            this.setAllowedCombos(200, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFFD6E0, 0xE0245E);
+
+            this.setWildSense(true, 200);
+        }
+    }
+
+    /*
         MAJIN DUU
      */
 

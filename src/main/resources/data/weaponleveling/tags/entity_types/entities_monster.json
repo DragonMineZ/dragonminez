@@ -790,6 +790,14 @@
       "required": false
     },
     {
+      "id": "dragonminez:saga_gomah_soldier_1",
+      "required": false
+    },
+    {
+      "id": "dragonminez:saga_gomah_soldier_2",
+      "required": false
+    },
+    {
       "id": "dragonminez:saga_majin_duu",
       "required": false
     },

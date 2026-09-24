@@ -129,7 +129,7 @@ public class MainEntities {
                 SAGA_GOKU_MINI, SAGA_GOKU_MINI_SSJ, SAGA_GOKU_MINI_SSJ2, SAGA_GOKU_MINI_SSJ3, SAGA_GOKU_MINI_SSJ4,
                 SAGA_VEGETA_DAIMA, SAGA_VEGETA_DAIMA_SSJ, SAGA_VEGETA_DAIMA_SSJ2, SAGA_VEGETA_DAIMA_SSJ3,
                 SAGA_VEGETA_MINI, SAGA_VEGETA_MINI_SSJ, SAGA_VEGETA_MINI_SSJ2, SAGA_VEGETA_MINI_SSJ3,
-                SAGA_GLORIO, SAGA_GOMAH_MINI, SAGA_GOMAH_THIRD_EYE, SAGA_MAJIN_DUU, SAGA_MAJIN_KUU,
+                SAGA_GLORIO, SAGA_GOMAH_MINI, SAGA_GOMAH_THIRD_EYE, SAGA_GOMAH_SOLDIER_1, SAGA_GOMAH_SOLDIER_2, SAGA_MAJIN_DUU, SAGA_MAJIN_KUU,
                 SAGA_TAMAGAMI_1, SAGA_TAMAGAMI_1_POWERED, SAGA_TAMAGAMI_2, SAGA_TAMAGAMI_2_POWERED, SAGA_TAMAGAMI_3, SAGA_TAMAGAMI_3_POWERED,
 
                 // EXTRA
@@ -1667,6 +1667,16 @@ public class MainEntities {
                             .sized(4.1f, 11.0f)
                             .clientTrackingRange(32)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gomah_third_eye").toString()));
+    public static final RegistryObject<EntityType<SagaDaimaEntity.GomahSoldierEntity>> SAGA_GOMAH_SOLDIER_1 =
+            ENTITY_TYPES.register("saga_gomah_soldier_1",
+                    () -> EntityType.Builder.of(SagaDaimaEntity.GomahSoldierEntity::new, MobCategory.MONSTER)
+                            .sized(0.7f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gomah_soldier_1").toString()));
+    public static final RegistryObject<EntityType<SagaDaimaEntity.GomahSoldierEntity>> SAGA_GOMAH_SOLDIER_2 =
+            ENTITY_TYPES.register("saga_gomah_soldier_2",
+                    () -> EntityType.Builder.of(SagaDaimaEntity.GomahSoldierEntity::new, MobCategory.MONSTER)
+                            .sized(0.7f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gomah_soldier_2").toString()));
 
     // Majin Duu / Kuu
     public static final RegistryObject<EntityType<SagaDaimaEntity.MajinDuuEntity>> SAGA_MAJIN_DUU =
