@@ -8,6 +8,7 @@ import com.dragonminez.mixin.client.CompositeStateAccessor;
 import com.dragonminez.mixin.client.TextureStateShardInvoker;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.GameRenderer;
@@ -108,6 +109,7 @@ public class ModRenderTypes extends RenderType {
 
     private static final Map<ResourceLocation, RenderType> TEXTURED_MASK_CACHE = new HashMap<>();
     private static final Map<ResourceLocation, RenderType> TEXTURED_MASK_VIEW_OFFSET_CACHE = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> TEXTURED_MASK_SKIN_OVERLAY_CACHE = new HashMap<>();
 
     private static final RenderStateShard.OutputStateShard TRANSFORMATION_MASK_TARGET = new RenderStateShard.OutputStateShard(
             "transformation_mask_target",
@@ -116,6 +118,43 @@ public class ModRenderTypes extends RenderType {
     );
 
     private static final String VIEW_OFFSET_LAYERING_TOKEN = "view_offset_z_layering";
+    private static final String SKIN_OVERLAY_LAYERING_TOKEN = "dmz_skin_overlay_layering";
+    private static final float SKIN_OVERLAY_VIEW_SCALE = 0.99987793F;
+    private static final float SKIN_OVERLAY_ORTHO_DEPTH_UNITS = -10.0F;
+    private static boolean skinOverlayLayeringUsesPolygonOffset;
+
+    private static boolean isOrthographicProjection() {
+        return RenderSystem.getProjectionMatrix().m33() != 0.0F;
+    }
+
+    public static final RenderStateShard.LayeringStateShard SKIN_OVERLAY_LAYERING = new RenderStateShard.LayeringStateShard(SKIN_OVERLAY_LAYERING_TOKEN, () -> {
+        skinOverlayLayeringUsesPolygonOffset = isOrthographicProjection();
+        if (skinOverlayLayeringUsesPolygonOffset) {
+            RenderSystem.polygonOffset(0.0F, SKIN_OVERLAY_ORTHO_DEPTH_UNITS);
+            RenderSystem.enablePolygonOffset();
+            return;
+        }
+        PoseStack modelView = RenderSystem.getModelViewStack();
+        modelView.pushPose();
+        modelView.scale(SKIN_OVERLAY_VIEW_SCALE, SKIN_OVERLAY_VIEW_SCALE, SKIN_OVERLAY_VIEW_SCALE);
+        RenderSystem.applyModelViewMatrix();
+    }, () -> {
+        if (skinOverlayLayeringUsesPolygonOffset) {
+            RenderSystem.polygonOffset(0.0F, 0.0F);
+            RenderSystem.disablePolygonOffset();
+            return;
+        }
+        PoseStack modelView = RenderSystem.getModelViewStack();
+        modelView.popPose();
+        RenderSystem.applyModelViewMatrix();
+    });
+
+    private static RenderStateShard.LayeringStateShard layeringOf(@Nullable RenderType sourceRenderType) {
+        String name = sourceRenderType != null ? sourceRenderType.toString() : "";
+        if (name.contains(VIEW_OFFSET_LAYERING_TOKEN)) return VIEW_OFFSET_Z_LAYERING;
+        if (name.contains(SKIN_OVERLAY_LAYERING_TOKEN)) return SKIN_OVERLAY_LAYERING;
+        return POLYGON_OFFSET_LAYERING;
+    }
 
     private static final RenderType TRANSFORMATION_MASK = create(
             "transformation_mask",
@@ -154,6 +193,27 @@ public class ModRenderTypes extends RenderType {
                     .setLightmapState(NO_LIGHTMAP)
                     .setOverlayState(NO_OVERLAY)
                     .setLayeringState(VIEW_OFFSET_Z_LAYERING)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setOutputState(TRANSFORMATION_MASK_TARGET)
+                    .createCompositeState(false)
+    );
+
+    private static final RenderType TRANSFORMATION_MASK_SKIN_OVERLAY = create(
+            "transformation_mask_skin_overlay",
+            DefaultVertexFormat.NEW_ENTITY,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(TRANSFORMATION_MASK_SHADER)
+                    .setTextureState(NO_TEXTURE)
+                    .setTransparencyState(NO_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                    .setLightmapState(NO_LIGHTMAP)
+                    .setOverlayState(NO_OVERLAY)
+                    .setLayeringState(SKIN_OVERLAY_LAYERING)
                     .setWriteMaskState(COLOR_WRITE)
                     .setOutputState(TRANSFORMATION_MASK_TARGET)
                     .createCompositeState(false)
@@ -238,7 +298,7 @@ public class ModRenderTypes extends RenderType {
                     .setCullState(NO_CULL)
                     .setLightmapState(LIGHTMAP)
                     .setOverlayState(OVERLAY)
-                    .setLayeringState(POLYGON_OFFSET_LAYERING)
+                    .setLayeringState(SKIN_OVERLAY_LAYERING)
                     .createCompositeState(true)));
 
     private static final Function<ResourceLocation, RenderType> SKIN_OVERLAY_TRANSLUCENT = Util.memoize((pLocation) ->
@@ -249,7 +309,7 @@ public class ModRenderTypes extends RenderType {
                     .setCullState(NO_CULL)
                     .setLightmapState(LIGHTMAP)
                     .setOverlayState(OVERLAY)
-                    .setLayeringState(POLYGON_OFFSET_LAYERING)
+                    .setLayeringState(SKIN_OVERLAY_LAYERING)
                     .createCompositeState(true)));
 
     private static final Function<ResourceLocation, RenderType> SCOUTER_LENS = Util.memoize((pLocation) ->
@@ -326,14 +386,15 @@ public class ModRenderTypes extends RenderType {
 
     public static RenderType transformationMask(RenderType sourceRenderType) {
         ResourceLocation texture = resolveSourceTexture(sourceRenderType);
-        boolean viewOffset = sourceRenderType != null && sourceRenderType.toString().contains(VIEW_OFFSET_LAYERING_TOKEN);
+        RenderStateShard.LayeringStateShard layering = layeringOf(sourceRenderType);
         if (texture != null) {
-            Map<ResourceLocation, RenderType> cache = viewOffset ? TEXTURED_MASK_VIEW_OFFSET_CACHE : TEXTURED_MASK_CACHE;
-            return cache.computeIfAbsent(texture, t -> buildTexturedMask(t, viewOffset));
+            Map<ResourceLocation, RenderType> cache = layering == VIEW_OFFSET_Z_LAYERING ? TEXTURED_MASK_VIEW_OFFSET_CACHE
+                    : layering == SKIN_OVERLAY_LAYERING ? TEXTURED_MASK_SKIN_OVERLAY_CACHE
+                    : TEXTURED_MASK_CACHE;
+            return cache.computeIfAbsent(texture, t -> buildTexturedMask(t, layering));
         }
-        if (viewOffset) {
-            return TRANSFORMATION_MASK_VIEW_OFFSET;
-        }
+        if (layering == VIEW_OFFSET_Z_LAYERING) return TRANSFORMATION_MASK_VIEW_OFFSET;
+        if (layering == SKIN_OVERLAY_LAYERING) return TRANSFORMATION_MASK_SKIN_OVERLAY;
         return TRANSFORMATION_MASK;
     }
 
@@ -347,7 +408,7 @@ public class ModRenderTypes extends RenderType {
         return ((TextureStateShardInvoker) (Object) textureState).dmz$cutoutTexture().orElse(null);
     }
 
-    private static RenderType buildTexturedMask(ResourceLocation texture, boolean viewOffset) {
+    private static RenderType buildTexturedMask(ResourceLocation texture, RenderStateShard.LayeringStateShard layering) {
         CompositeState.CompositeStateBuilder builder = CompositeState.builder()
                 .setShaderState(TRANSFORMATION_MASK_TEX_SHADER)
                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
@@ -357,9 +418,8 @@ public class ModRenderTypes extends RenderType {
                 .setLightmapState(NO_LIGHTMAP)
                 .setOverlayState(NO_OVERLAY)
                 .setWriteMaskState(COLOR_WRITE)
-                .setOutputState(TRANSFORMATION_MASK_TARGET);
-        if (viewOffset) builder.setLayeringState(VIEW_OFFSET_Z_LAYERING);
-        else builder.setLayeringState(POLYGON_OFFSET_LAYERING);
+                .setOutputState(TRANSFORMATION_MASK_TARGET)
+                .setLayeringState(layering);
 
         return create(
                 "transformation_mask_tex",
@@ -376,10 +436,11 @@ public class ModRenderTypes extends RenderType {
 
     private static final RenderStateShard.ShaderStateShard AFTERIMAGE_SHADER = new RenderStateShard.ShaderStateShard(() -> DMZShaders.afterimageShader);
 
-    private static final Function<ResourceLocation, RenderType> AFTERIMAGE = Util.memoize((pLocation) -> buildAfterimage(pLocation, false));
-    private static final Function<ResourceLocation, RenderType> AFTERIMAGE_OFFSET = Util.memoize((pLocation) -> buildAfterimage(pLocation, true));
+    private static final Function<ResourceLocation, RenderType> AFTERIMAGE = Util.memoize((pLocation) -> buildAfterimage(pLocation, null, "dmz_afterimage"));
+    private static final Function<ResourceLocation, RenderType> AFTERIMAGE_OFFSET = Util.memoize((pLocation) -> buildAfterimage(pLocation, POLYGON_OFFSET_LAYERING, "dmz_afterimage_offset"));
+    private static final Function<ResourceLocation, RenderType> AFTERIMAGE_SKIN_OVERLAY = Util.memoize((pLocation) -> buildAfterimage(pLocation, SKIN_OVERLAY_LAYERING, "dmz_afterimage_skin_overlay"));
 
-    private static RenderType buildAfterimage(ResourceLocation texture, boolean polygonOffset) {
+    private static RenderType buildAfterimage(ResourceLocation texture, @Nullable RenderStateShard.LayeringStateShard layering, String name) {
         CompositeState.CompositeStateBuilder builder = CompositeState.builder()
                 .setShaderState(AFTERIMAGE_SHADER)
                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
@@ -388,10 +449,10 @@ public class ModRenderTypes extends RenderType {
                 .setDepthTestState(LEQUAL_DEPTH_TEST)
                 .setLightmapState(LIGHTMAP)
                 .setWriteMaskState(COLOR_DEPTH_WRITE);
-        if (polygonOffset) builder.setLayeringState(POLYGON_OFFSET_LAYERING);
+        if (layering != null) builder.setLayeringState(layering);
 
         return create(
-                polygonOffset ? "dmz_afterimage_offset" : "dmz_afterimage",
+                name,
                 DefaultVertexFormat.NEW_ENTITY,
                 VertexFormat.Mode.QUADS,
                 1536,
@@ -408,8 +469,10 @@ public class ModRenderTypes extends RenderType {
         ResourceLocation texture = resolveSourceTexture(sourceRenderType);
         if (texture == null) return null;
         if (!customShader) return RenderType.entityTranslucent(texture);
-        boolean polygonOffset = sourceRenderType.toString().contains(POLYGON_OFFSET_LAYERING_TOKEN);
-        return polygonOffset ? AFTERIMAGE_OFFSET.apply(texture) : AFTERIMAGE.apply(texture);
+        String sourceName = sourceRenderType.toString();
+        if (sourceName.contains(SKIN_OVERLAY_LAYERING_TOKEN)) return AFTERIMAGE_SKIN_OVERLAY.apply(texture);
+        if (sourceName.contains(POLYGON_OFFSET_LAYERING_TOKEN)) return AFTERIMAGE_OFFSET.apply(texture);
+        return AFTERIMAGE.apply(texture);
     }
 
     public static RenderType transformationMask() {

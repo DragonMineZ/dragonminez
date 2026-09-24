@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.util.ArmorPieceInflation;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -107,6 +108,12 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
         return stack;
     }
+
+	@Override
+	protected void prepModelPartForRender(PoseStack poseStack, GeoBone bone, ModelPart sourcePart) {
+		super.prepModelPartForRender(poseStack, bone, sourcePart);
+		ArmorPieceInflation.inflateFittedPart(poseStack, bone, sourcePart, getReferenceCubeForModel(bone, sourcePart));
+	}
 
 	@Override
 	protected @NotNull EquipmentSlot getEquipmentSlotForBone(GeoBone bone, ItemStack stack, T animatable) {

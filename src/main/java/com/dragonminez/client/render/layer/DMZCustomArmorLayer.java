@@ -3,6 +3,7 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.Reference;
 import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.compat.CosmeticArmorCompat;
+import com.dragonminez.client.render.util.ArmorPieceInflation;
 import com.dragonminez.client.util.ArmorTextureResolver;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -25,6 +26,7 @@ import net.minecraft.world.item.DyeableArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.joml.Vector3f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -303,6 +305,14 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         targetBone.setScaleX(inflation);
         targetBone.setScaleY(inflation);
         targetBone.setScaleZ(inflation);
+
+        Vector3f centre = ArmorPieceInflation.cubeCentreFromPivot(targetBone);
+        if (centre != null) {
+            float k = 1f - inflation;
+            targetBone.setPosX(-k * centre.x);
+            targetBone.setPosY(k * centre.y);
+            targetBone.setPosZ(k * centre.z);
+        }
 
         java.util.List<GeoBone> excludedFound = new java.util.ArrayList<>();
         java.util.List<Boolean> excludedHidden = new java.util.ArrayList<>();
