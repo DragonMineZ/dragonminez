@@ -131,7 +131,9 @@ public final class Tournament {
 			ResourceLocation tagId = ResourceLocation.tryParse(entityId.substring(1));
 			if (tagId == null) return "";
 			List<String> members = new ArrayList<>();
-			ForgeRegistries.ENTITY_TYPES.tags().getTag(TagKey.create(Registries.ENTITY_TYPE, tagId)).forEach(type -> {
+			var tags = ForgeRegistries.ENTITY_TYPES.tags();
+			if (tags == null) return "";
+			tags.getTag(TagKey.create(Registries.ENTITY_TYPE, tagId)).forEach(type -> {
 				ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(type);
 				if (key != null) members.add(key.toString());
 			});
@@ -170,6 +172,9 @@ public final class Tournament {
 				}
 			}
 			Collections.shuffle(pool, random);
+			if (pool.isEmpty()) {
+				LogUtil.warn(Env.SERVER, "Tournament '{}' drew no contenders; check the entity ids and tags in its config", tournamentId);
+			}
 
 			bracket.format = def.formatOr(TournamentDefinition.Format.BRACKET);
 			if (bracket.format == TournamentDefinition.Format.GAUNTLET) {
@@ -217,6 +222,11 @@ public final class Tournament {
 
 		public boolean isGauntlet() {
 			return format == TournamentDefinition.Format.GAUNTLET;
+		}
+
+		public boolean hasContenders() {
+			for (String seed : seeds) if (!seed.isEmpty() && !isPlayerSlot(seed)) return true;
+			return false;
 		}
 
 		public int qualifierRounds() {
@@ -935,6 +945,10 @@ public final class Tournament {
 			long rulesDeadline = level.getGameTime() + def.rulesAcceptSecondsOr(60) * 20L;
 			Run run = Run.create(tournamentId, def, members, inParty ? PartyManager.getPartyId(player) : null,
 					ringCentre, level.dimension(), rulesDeadline, RANDOM);
+			if (!run.getBracket().hasContenders()) {
+				LogUtil.warn(Env.SERVER, "Tournament '{}' refused a sign-up: no contender could be resolved from its config", tournamentId);
+				return Component.translatable("tournament.dragonminez.unavailable");
+			}
 			data.putRun(run);
 
 			Component name = Component.translatable(def.displayNameOr("tournament.dragonminez." + tournamentId));
@@ -1093,6 +1107,10 @@ public final class Tournament {
 				}
 				if (right == null && Bracket.isPlayerSlot(pair[1])) {
 					bracket.recordWinner(r, pair[0]);
+					continue;
+				}
+				if (pair[0].isEmpty() || pair[1].isEmpty()) {
+					bracket.recordWinner(r, pair[0].isEmpty() ? pair[1] : pair[0]);
 					continue;
 				}
 				return new Bout(r, m, pair[0], pair[1], left, right);
@@ -1597,8 +1615,33 @@ public final class Tournament {
 			Component refusal = beginMatch(active, run, data);
 			if (refusal != null) {
 				active.displayClientMessage(refusal, true);
-				syncTurn(level, data, run);
+				skipUnplayableBout(level, data, run, active);
 			}
+		}
+
+		private static void skipUnplayableBout(ServerLevel level, Progress data, Run run, ServerPlayer active) {
+			Bracket bracket = run.getBracket();
+			if (run.isGauntlet()) {
+				LogUtil.warn(Env.SERVER, "Tournament '{}': opponent '{}' could not be fielded, skipping it",
+						run.getTournamentId(), bracket.currentOpponent());
+				bracket.advance();
+				data.setDirty();
+				if (bracket.isCompleted()) {
+					crown(level, data, run, active.getUUID());
+					return;
+				}
+				syncGauntletTurn(level, data, run);
+				return;
+			}
+
+			Bout bout = nextBout(run);
+			if (bout != null && !bout.pvp() && bracket.nextMatchIndex(bout.round()) == bout.match()) {
+				LogUtil.warn(Env.SERVER, "Tournament '{}': opponent '{}' could not be fielded, {} advances by walkover",
+						run.getTournamentId(), bout.opponentSlot(), active.getName().getString());
+				bracket.recordWinner(bout.round(), bout.fighterSlot());
+				data.setDirty();
+			}
+			syncTurn(level, data, run);
 		}
 
 		public static boolean isNonLethalOpponent(Entity mob) {
