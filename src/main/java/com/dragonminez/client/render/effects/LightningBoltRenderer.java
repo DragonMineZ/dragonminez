@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.effects;
 
 import com.dragonminez.client.render.shader.DMZShaders;
+import com.dragonminez.client.render.shader.EffectBloomRenderer;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -48,6 +49,15 @@ public final class LightningBoltRenderer {
 	private static final float FIRST_PERSON_WIDTH = 0.026f;
 	private static final float FIRST_PERSON_TANGENT_JITTER = 1.2f;
 
+	private static final float COLUMN_SEGMENT_RADII = 4.0f;
+	private static final float COLUMN_MIN_SEGMENT = 1.5f;
+	private static final int COLUMN_MAX_SEGMENTS = 24;
+	private static final int COLUMN_SEED_STEP = 0x632BE5AB;
+
+	private static final int SPHERE_TRACKS = 4;
+	private static final int SPHERE_TRACK_BOLTS = 3;
+	private static final float SPHERE_SPIKE_CHANCE = 0.6f;
+
 	private static final Matrix4f IDENTITY = new Matrix4f();
 	private static final BufferBuilder BUILDER = new BufferBuilder(8192);
 	private static VertexBuffer mesh;
@@ -71,26 +81,60 @@ public final class LightningBoltRenderer {
 				new float[]{halfWidth, halfHeight});
 	}
 
+	public static void drawColumn(Matrix4f pose, Matrix4f projection, int seed, float ageTicks, float length, float radius,
+								  float[] color, boolean charged, float speed, float alpha) {
+		int segments = columnSegments(length, radius);
+		draw(pose, projection, seed, ageTicks, length / segments, radius, color, charged, speed, alpha, null, segments);
+	}
+
+	public static void drawSphereKiPass(Matrix4f pose, Matrix4f projection, int seed, float ageTicks, float radius,
+										float[] color, float speed, float alpha) {
+		if (!isAvailable() || alpha <= 0.01f) return;
+
+		render(pose, projection, seed, ageTicks, 0.0f, radius, color, true, speed, alpha, null,
+				EffectBloomRenderer.bloomPass, 1, true);
+
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		RenderSystem.depthMask(false);
+		RenderSystem.disableCull();
+	}
+
+	private static int columnSegments(float length, float radius) {
+		float segment = Math.max(radius * COLUMN_SEGMENT_RADII, COLUMN_MIN_SEGMENT);
+		return Mth.clamp(Mth.ceil(length / segment), 1, COLUMN_MAX_SEGMENTS);
+	}
+
 	private static void draw(Matrix4f pose, Matrix4f projection, int seed, float ageTicks, float height, float radius,
 							 float[] color, boolean charged, float speed, float alpha, float[] screen) {
+		draw(pose, projection, seed, ageTicks, height, radius, color, charged, speed, alpha, screen, 1);
+	}
+
+	private static void draw(Matrix4f pose, Matrix4f projection, int seed, float ageTicks, float height, float radius,
+							 float[] color, boolean charged, float speed, float alpha, float[] screen, int segments) {
 		if (!isAvailable() || alpha <= 0.01f) return;
 
 		Matrix4f poseCopy = new Matrix4f(pose);
 		Matrix4f projectionCopy = new Matrix4f(projection);
 		float[] colorCopy = color.clone();
 
-		render(poseCopy, projectionCopy, seed, ageTicks, height, radius, colorCopy, charged, speed, alpha, screen, false);
-		AuraRenderer.captureBloom(() -> render(poseCopy, projectionCopy, seed, ageTicks, height, radius, colorCopy, charged, speed, alpha, screen, true));
+		render(poseCopy, projectionCopy, seed, ageTicks, height, radius, colorCopy, charged, speed, alpha, screen, false, segments, false);
+		AuraRenderer.captureBloom(() -> render(poseCopy, projectionCopy, seed, ageTicks, height, radius, colorCopy, charged, speed, alpha, screen, true, segments, false));
 	}
 
 	private static void render(Matrix4f pose, Matrix4f projection, int seed, float ageTicks, float height, float radius,
-							   float[] color, boolean charged, float speed, float alpha, float[] screen, boolean bloom) {
+							   float[] color, boolean charged, float speed, float alpha, float[] screen, boolean bloom, int segments, boolean sphere) {
 		ShaderInstance shader = DMZShaders.lightningBoltShader;
 		if (shader == null) return;
 
 		BUILDER.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-		for (int track = 0; track < TRACKS; track++) {
-			emitBurst(pose, seed, track, ageTicks * speed, height, radius, charged, screen);
+		int tracks = sphere ? SPHERE_TRACKS : TRACKS;
+		for (int segment = 0; segment < segments; segment++) {
+			Matrix4f segmentPose = segment == 0 ? pose : new Matrix4f(pose).translate(0.0f, height * segment, 0.0f);
+			int segmentSeed = seed + segment * COLUMN_SEED_STEP;
+			for (int track = 0; track < tracks; track++) {
+				emitBurst(segmentPose, segmentSeed, track, tracks, ageTicks * speed, height, radius, charged, screen, sphere);
+			}
 		}
 		BufferBuilder.RenderedBuffer rendered = BUILDER.endOrDiscardIfEmpty();
 		if (rendered == null) return;
@@ -124,18 +168,18 @@ public final class LightningBoltRenderer {
 		RenderSystem.disableBlend();
 	}
 
-	private static void emitBurst(Matrix4f pose, int seed, int track, float clockTicks, float height, float radius,
-								  boolean charged, float[] screen) {
+	private static void emitBurst(Matrix4f pose, int seed, int track, int tracks, float clockTicks, float height, float radius,
+								  boolean charged, float[] screen, boolean sphere) {
 		float period = charged ? CHARGED_PERIOD : IDLE_PERIOD;
 		float window = charged ? CHARGED_WINDOW : IDLE_WINDOW;
-		float clock = clockTicks / period + (float) track / TRACKS;
+		float clock = clockTicks / period + (float) track / tracks;
 		long current = (long) Math.floor(clock);
 
 		for (long cycle = current - 1; cycle <= current; cycle++) {
 			float elapsed = (clock - cycle) * period;
 			long burstSeed = mix(seed, track, cycle);
 			Random pick = new Random(burstSeed);
-			int limit = screen != null ? FIRST_PERSON_TRACK_BOLTS : TRACK_BOLTS;
+			int limit = screen != null ? FIRST_PERSON_TRACK_BOLTS : sphere ? SPHERE_TRACK_BOLTS : TRACK_BOLTS;
 			int count = 1 + pick.nextInt(limit);
 			float baseAngle = pick.nextFloat() * Mth.TWO_PI;
 			float baseLevel = pick.nextFloat();
@@ -152,13 +196,13 @@ public final class LightningBoltRenderer {
 				float fade = age < hold ? 1.0f : 1.0f - (age - hold) / FADE_TICKS;
 				float angle = baseAngle + sector * (i + angleJitter);
 				float level = (baseLevel + (float) i / count) % 1.0f;
-				emitBolt(pose, mix((int) burstSeed, i, cycle), life, fade, angle, level, height, radius, charged, screen);
+				emitBolt(pose, mix((int) burstSeed, i, cycle), life, fade, angle, level, height, radius, charged, screen, sphere);
 			}
 		}
 	}
 
 	private static void emitBolt(Matrix4f pose, long shapeSeed, float life, float fade, float centreAngle, float level, float height,
-								 float radius, boolean charged, float[] screen) {
+								 float radius, boolean charged, float[] screen, boolean sphere) {
 		int strike = Math.min(STRIKES_PER_LIFE - 1, (int) (life * STRIKES_PER_LIFE));
 		Random shape = new Random(shapeSeed);
 		Random jitter = new Random(shapeSeed * 31L + strike);
@@ -178,6 +222,8 @@ public final class LightningBoltRenderer {
 
 		Vector3f[] points = screen != null
 				? screenPath(shape, jitter, stops, radius, screen)
+				: sphere
+				? spherePath(shape, jitter, stops, centreAngle, level, radius)
 				: orbitPath(shape, jitter, stops, centreAngle, level, height, radius);
 
 		float[] widths = new float[segments + 1];
@@ -223,6 +269,40 @@ public final class LightningBoltRenderer {
 				r += amplitude * (jitter.nextFloat() - 0.5f) * 1.4f;
 			}
 			points[k] = new Vector3f(Mth.cos(angle) * r, y, Mth.sin(angle) * r);
+		}
+		return points;
+	}
+
+	private static Vector3f[] spherePath(Random shape, Random jitter, float[] stops, float centreAngle, float level, float radius) {
+		float y = Mth.clamp(level * 2.0f - 1.0f, -0.97f, 0.97f);
+		float ring = Mth.sqrt(1.0f - y * y);
+		Vector3f normal = new Vector3f(Mth.cos(centreAngle) * ring, y, Mth.sin(centreAngle) * ring);
+		Vector3f axisA = new Vector3f(normal).cross(Math.abs(y) < 0.9f ? 0.0f : 1.0f, Math.abs(y) < 0.9f ? 1.0f : 0.0f, 0.0f).normalize();
+		Vector3f axisB = new Vector3f(normal).cross(axisA).normalize();
+		float heading = shape.nextFloat() * Mth.TWO_PI;
+		Vector3f tangent = new Vector3f(axisA).mul(Mth.cos(heading)).add(new Vector3f(axisB).mul(Mth.sin(heading)));
+		Vector3f side = new Vector3f(normal).cross(tangent);
+
+		boolean spike = shape.nextFloat() < SPHERE_SPIKE_CHANCE;
+		float inner = radius * (0.8f + 0.2f * shape.nextFloat());
+		float outer = spike ? radius * (1.5f + 0.9f * shape.nextFloat()) : radius * (1.08f + 0.22f * shape.nextFloat());
+		float sweep = spike ? (shape.nextFloat() - 0.5f) * 0.5f : (0.6f + 0.7f * shape.nextFloat()) * (shape.nextBoolean() ? 1.0f : -1.0f);
+
+		Vector3f[] points = new Vector3f[stops.length];
+		float flip = jitter.nextBoolean() ? 1.0f : -1.0f;
+		for (int k = 0; k < stops.length; k++) {
+			float s = stops[k];
+			float angle = (s - 0.5f) * sweep;
+			float r = spike ? Mth.lerp(s, inner, outer) : inner + (outer - inner) * Mth.sin(Mth.PI * s);
+			Vector3f point = new Vector3f(normal).mul(Mth.cos(angle)).add(new Vector3f(tangent).mul(Mth.sin(angle))).mul(r);
+
+			if (k != 0 && k != stops.length - 1) {
+				float amplitude = kink(jitter, radius);
+				if (jitter.nextFloat() < 0.7f) flip = -flip;
+				point.add(new Vector3f(side).mul(amplitude * flip * (0.5f + 0.5f * jitter.nextFloat())));
+				point.add(new Vector3f(normal).mul(amplitude * (jitter.nextFloat() - 0.5f)));
+			}
+			points[k] = point;
 		}
 		return points;
 	}
