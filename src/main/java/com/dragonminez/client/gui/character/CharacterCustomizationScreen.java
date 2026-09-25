@@ -1270,7 +1270,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		if (character.getGender().equals(newGender) && character.getBodyType() == newBodyType) return;
 		character.setGender(newGender);
 		character.setBodyType(newBodyType);
-		if (getEffectiveModelBase().equals("majin") && character.getHairId() != 0) character.setHairId(0);
 		syncCharacter();
 		refreshScreenWidgets();
 	}
