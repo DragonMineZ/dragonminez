@@ -1188,7 +1188,7 @@ public class DefaultFormsFactory {
 		second.setName(FrostDemonForms.SECOND_FORM);
 		second.setUnlockOnSkillLevel(1);
 		second.setTransformationAnimation("transf.freezer");
-		second.setCustomModel("");
+		second.setCustomModel("frostdemon_second");
 		second.setKeepBaseFormHeadBones(true);
 		second.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 		second.setStrMultiplier(1.65);
@@ -1307,7 +1307,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData metal = new FormConfig.FormData();
 		metal.setName(FrostDemonForms.METAL);
 		metal.setUnlockOnSkillLevel(2);
-		metal.setCustomModel("frostdemon_fp");
+		metal.setCustomModel("frostdemon_final");
 		metal.setStrMultiplier(4.4);
 		metal.setSkpMultiplier(4.4);
 		metal.setDefMultiplier(3.3125);
