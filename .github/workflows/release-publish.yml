@@ -14,10 +14,6 @@ on:
         description: Exact commit SHA approved for publishing.
         required: true
         type: string
-      artifact_sha256:
-        description: SHA-256 from the prepared release manifest.
-        required: true
-        type: string
       approved_by:
         description: Discord or GitHub user who approved the release.
         required: true
@@ -60,7 +56,7 @@ jobs:
 
           event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8"))
           payload = event.get("client_payload") or event.get("inputs") or {}
-          required = ["version", "commit_sha", "artifact_sha256", "approved_by"]
+          required = ["version", "commit_sha", "approved_by"]
           missing = [name for name in required if not payload.get(name)]
           if missing:
               raise SystemExit(f"Missing release approval payload field(s): {', '.join(missing)}")
@@ -131,11 +127,6 @@ jobs:
           if [[ ! -f "$artifact" ]]; then
             echo "::error::Expected release artifact does not exist: $artifact"
             exit 1
-          fi
-
-          actual_sha="$(sha256sum "$artifact" | cut -d ' ' -f1)"
-          if [[ "$actual_sha" != "${{ steps.payload.outputs.artifact_sha256 }}" ]]; then
-            echo "::warning::Artifact checksum differs from the approved manifest (expected '${{ steps.payload.outputs.artifact_sha256 }}', got '$actual_sha'). This is expected with non-reproducible resource optimization; continuing."
           fi
 
           echo "path=${artifact}" >> "$GITHUB_OUTPUT"

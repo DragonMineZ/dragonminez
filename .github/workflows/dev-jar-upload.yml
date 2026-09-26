@@ -204,6 +204,7 @@ jobs:
           ARTIFACT_PATH: ${{ steps.artifact.outputs.path }}
           REMOTE_NAME: ${{ steps.artifact.outputs.remote_name }}
           EXPECTED_SHA256: ${{ steps.artifact.outputs.sha256 }}
+          RELEASE_WEBHOOK_SECRET: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_SECRET }}
         run: |
           set -euo pipefail
 
@@ -239,9 +240,10 @@ jobs:
           fi
 
           cleanup_report="$(
-            ssh "${ssh_opts[@]}" "$remote" "python3 - '$DMZ_VPS_UPLOAD_DIR'" <<'PY'
+            ssh "${ssh_opts[@]}" "$remote" "DMZ_PROTECTED_SECRET='$RELEASE_WEBHOOK_SECRET' python3 - '$DMZ_VPS_UPLOAD_DIR'" <<'PY'
           from pathlib import Path
           import json
+          import os
           import sys
           import urllib.request
 
@@ -252,7 +254,11 @@ jobs:
           # pushes to land. Ask it which files are still in play before pruning anything,
           # and skip cleanup entirely rather than risk deleting a file still in use.
           try:
-              with urllib.request.urlopen("http://127.0.0.1:8088/dmz-dev-jar/protected", timeout=5) as response:
+              request = urllib.request.Request(
+                  "http://127.0.0.1:8088/dmz-dev-jar/protected",
+                  headers={"X-DMZ-Release-Bot-Secret": os.environ.get("DMZ_PROTECTED_SECRET", "")},
+              )
+              with urllib.request.urlopen(request, timeout=5) as response:
                   protected = set(json.load(response).get("protected", []))
           except Exception as error:
               print(f"::warning::Could not reach dev jar protected-artifacts endpoint ({error}); skipping cleanup this run.")
