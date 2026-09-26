@@ -1,6 +1,7 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.effects.LightningBoltRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.KiEmberRenderer;
 import com.dragonminez.client.render.util.KiMeshFactory;
@@ -10,6 +11,7 @@ import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
@@ -24,6 +26,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
@@ -33,6 +36,11 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     /** Giant balls carry a heavier body of fire and shed correspondingly heavier debris. */
     private static final float GIANT_FLAME_GAIN = 1.65F;
     private static final float GIANT_EMBER_SCALE = 1.90F;
+    private static final float[] TRI_BEAM_GLOW_SCALES = {1.0F, 1.14F, 1.3F};
+    private static final float[] TRI_BEAM_GLOW_ALPHAS = {1.0F, 0.35F, 0.14F};
+    private static final float TRI_BEAM_LIGHTNING_SPEED = 1.5F;
+    private static final float[] TRI_BEAM_LIGHTNING = ColorUtils.rgbIntToFloat(KiTechniqueHandler.TriBeam.LIGHTNING_COLOR);
+    private static final float[] TRI_BEAM_LIGHTNING_DEEP = ColorUtils.rgbIntToFloat(KiTechniqueHandler.TriBeam.LIGHTNING_COLOR_DEEP);
 
     public KiProjectileRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -75,6 +83,14 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
             float lerpYaw = Mth.lerp(partialTick, entity.yRotO, entity.getYRot());
             float lerpPitch = Mth.lerp(partialTick, entity.xRotO, entity.getXRot());
+            if (renderType == KiBlastEntity.RENDER_TRI_BEAM && entity.isFiring()) {
+                Vec3 motion = entity.getDeltaMovement();
+                if (motion.lengthSqr() > 1.0E-6D) {
+                    double horizontal = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
+                    lerpYaw = (float) (Mth.atan2(-motion.x, motion.z) * Mth.RAD_TO_DEG);
+                    lerpPitch = (float) (-Mth.atan2(motion.y, horizontal) * Mth.RAD_TO_DEG);
+                }
+            }
 
             stack.translate(0.0D, entity.getBbHeight() / 2.0D, 0.0D);
             stack.mulPose(Axis.YP.rotationDegrees(-lerpYaw));
@@ -123,9 +139,12 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                     drawKiBall(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, true, 1.0F);
                     KiEmberRenderer.render(stack, proj, coreColor, borderColor, outlineColor, ageInTicks, 1.0F, KiEmberRenderer.LOCAL_BACK, KiEmberRenderer.CHARGE_BACKDRAFT, 1.0F);
                     break;
+                case KiBlastEntity.RENDER_TRI_BEAM:
+                    renderTriBeam(entity, stack, proj, coreColor, borderColor, outlineColor, ageInTicks);
+                    break;
                 case KiBlastEntity.RENDER_BLASTER_METEOR:
                     Minecraft meteorMc = Minecraft.getInstance();
-                    boolean meteorInside = meteorMc.player != null && entity.getOwner() == meteorMc.player && meteorMc.options.getCameraType().isFirstPerson();
+                    boolean meteorInside = meteorMc.player != null && entity.getOwner() == meteorMc.player && meteorMc.options.getCameraType().isFirstPerson() && meteorMc.getCameraEntity() == meteorMc.player;
                     float meteorPulse = 0.5F + (float) Math.sin(ageInTicks * (entity.isFiring() ? 1.2F : 0.4F)) * 0.02F;
                     stack.scale(meteorPulse, meteorPulse, meteorPulse);
                     drawMesh(KiMeshFactory.getSphereMesh(), stack, proj, coreColor, borderColor, outlineColor, meteorInside ? 0.3F : 0.85F, ageInTicks, true, null);
@@ -185,6 +204,51 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         });
     }
 
+
+    private void renderTriBeam(AbstractKiProjectile entity, PoseStack stack, Matrix4f proj,
+                               float[] core, float[] border, float[] outline, float age) {
+        float size = Math.max(entity.getSize(), 0.01F);
+
+        if (!entity.isFiring()) {
+            if (!KiTechniqueHandler.TriBeam.isNeo(entity.getTechniqueId())) return;
+
+            float ballScale = KiTechniqueHandler.TriBeam.CHARGE_BALL_RADIUS / size;
+            stack.pushPose();
+            stack.scale(ballScale, ballScale, ballScale);
+            drawKiBall(stack, proj, core, border, outline, age, true, 1.0F);
+            KiEmberRenderer.render(stack, proj, core, border, outline, age, 1.0F, KiEmberRenderer.LOCAL_BACK, KiEmberRenderer.CHARGE_BACKDRAFT, 1.0F);
+            stack.popPose();
+
+            float lightningRadius = KiTechniqueHandler.TriBeam.CHARGE_LIGHTNING_RADIUS / size;
+            int seed = entity.getId() * 4;
+            LightningBoltRenderer.drawSphereKiPass(stack.last().pose(), proj, seed, age, lightningRadius, TRI_BEAM_LIGHTNING, TRI_BEAM_LIGHTNING_SPEED, 1.0F);
+            LightningBoltRenderer.drawSphereKiPass(stack.last().pose(), proj, seed + 1, age, lightningRadius, TRI_BEAM_LIGHTNING_DEEP, TRI_BEAM_LIGHTNING_SPEED, 1.0F);
+            return;
+        }
+
+        ShaderInstance shader = DMZShaders.ki3dShader;
+        if (shader == null) return;
+        shader.safeGetUniform("zCut").set(-1.0f);
+        shader.safeGetUniform("zCutFar").set(2.0f);
+        shader.safeGetUniform("shapeMode").set(1.0f);
+
+        VertexBuffer triangle = KiMeshFactory.getTriangleBeamMesh();
+        for (int i = TRI_BEAM_GLOW_SCALES.length - 1; i >= 0; i--) {
+            float glow = TRI_BEAM_GLOW_SCALES[i];
+            stack.pushPose();
+            stack.scale(glow, glow, KiTechniqueHandler.TriBeam.TRIANGLE_DEPTH * glow);
+            stack.translate(0.0D, 0.0D, -0.5D);
+            drawMesh(triangle, stack, proj, core, border, outline, TRI_BEAM_GLOW_ALPHAS[i], age, true, null);
+            stack.popPose();
+        }
+
+        shader.safeGetUniform("shapeMode").set(0.0f);
+
+        stack.pushPose();
+        stack.scale(0.5F, 0.5F, 0.5F);
+        KiEmberRenderer.render(stack, proj, core, border, outline, age, 1.0F, KiEmberRenderer.LOCAL_BACK, 1.0F, GIANT_EMBER_SCALE);
+        stack.popPose();
+    }
 
     private void renderGiantBall(AbstractKiProjectile entity, PoseStack stack, Matrix4f proj,
                                  float[] core, float[] border, float[] outline, float age, float scale) {

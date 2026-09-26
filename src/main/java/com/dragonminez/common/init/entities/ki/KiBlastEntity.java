@@ -11,6 +11,7 @@ import com.dragonminez.common.init.particles.KiSheddingParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
@@ -20,6 +21,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.sounds.SoundEvents;
@@ -46,6 +48,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public static final int RENDER_FAKE_MOON = 11;
     public static final int RENDER_ASSAULT_RAIN = 12;
     public static final int RENDER_BLASTER_METEOR = 13;
+    public static final int RENDER_TRI_BEAM = 14;
     private static final int BLASTER_METEOR_SHOTS = 8;
     private static final int BLASTER_METEOR_AIMED_SHOTS = 2;
     private static final double BLASTER_METEOR_RISE_SPEED = 0.11D;
@@ -181,6 +184,33 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0F, 0.5F, 0.5F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
+    public void setupTriBeamPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, boolean charged) {
+        this.setOwner(owner);
+        this.setKiRenderType(RENDER_TRI_BEAM);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder, colorOutline);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(charged ? KiTechniqueHandler.TriBeam.NEO_CHARGE_TICKS : 1);
+        this.setCastOffsets(0.0F, -this.getBbHeight() / 2.0F, KiTechniqueHandler.TriBeam.CHARGE_FORWARD_OFFSET);
+        updatePositionRelativeToOwner(owner);
+    }
+
+    private boolean isNeoTriBeam() {
+        return this.getKiRenderType() == RENDER_TRI_BEAM && KiTechniqueHandler.TriBeam.isNeo(this.getTechniqueId());
+    }
+
+    private void growTriBeam(LivingEntity owner) {
+        double centerY = this.getVisualCenterY();
+        float triangleSize = this.getSize() * KiTechniqueHandler.TriBeam.TRIANGLE_SCALE;
+        this.setSize(triangleSize);
+
+        Vec3 forward = owner.getLookAngle().scale(triangleSize * KiTechniqueHandler.TriBeam.TRIANGLE_DEPTH * 0.5F + 0.5F);
+        this.setPos(this.getX() + forward.x, centerY - triangleSize / 2.0D + forward.y, this.getZ() + forward.z);
     }
 
     private boolean isSoulPunisher() {
@@ -762,6 +792,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     protected float castClearanceRadius() {
+        if (this.getKiRenderType() == RENDER_TRI_BEAM && !this.isFiring()) return 0.0F;
         return this.isAnchoredVolley() ? 0.0F : super.castClearanceRadius();
     }
 
@@ -811,6 +842,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 // logic below — but still fire the "_fire" animation (ki.barrage_fire) the same as every other ki.
                 if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
                 return;
+            }
+
+            if (this.getKiRenderType() == RENDER_TRI_BEAM) {
+                if (livingOwner instanceof ServerPlayer serverPlayer && KiTechniqueHandler.TriBeam.isNeo(this.getTechniqueId())) {
+                    KiTechniqueHandler.TriBeam.onNeoFired(serverPlayer, this, finalMaxLife);
+                }
+                this.growTriBeam(livingOwner);
             }
 
             Vec3 eyePos = livingOwner.getEyePosition();
@@ -1069,6 +1107,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 }
 
                 if (this.destructionBall) this.tickDestructionBall();
+
+                if (this.isNeoTriBeam() && this.tickCount % 2 == 0) {
+                    this.eatKiSphere(BlockPos.containing(this.getX(), this.getVisualCenterY(), this.getZ()),
+                            this.scaledDestructionRadius(this.getSize() * KiTechniqueHandler.TriBeam.BLOCK_BREAK_RADIUS));
+                }
 
                 if (type == 5 || type == 6) { // Genkidama o Supernova
                     if (this.tickCount % 20 == 0) {
@@ -1491,6 +1534,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
             if (!this.level().isClientSide) this.discard();
             return;
         }
+
+        if (this.isNeoTriBeam()) return;
 
         if (type == 5 || type == 6) {
         } else {

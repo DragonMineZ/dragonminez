@@ -61,14 +61,21 @@ public final class SwordSlashManager {
 		return ROLL_SEQUENCE[Math.floorMod(index, ROLL_SEQUENCE.length)];
 	}
 
+	public static final int DEFAULT_CORE_COLOR = 0xFFFFFF;
+
 	public static void launch(ServerLevel level, Entity owner, Vec3 origin, Vec3 direction, float roll, float radius,
 							  int color, double speed, double maxDistance, double hitRadius, HitHandler handler) {
+		launch(level, owner, origin, direction, roll, radius, color, DEFAULT_CORE_COLOR, speed, maxDistance, hitRadius, handler);
+	}
+
+	public static void launch(ServerLevel level, Entity owner, Vec3 origin, Vec3 direction, float roll, float radius,
+							  int color, int coreColor, double speed, double maxDistance, double hitRadius, HitHandler handler) {
 		if (direction.lengthSqr() < 1.0E-6) return;
 		Vec3 dir = direction.normalize();
 		int lifetime = (int) Math.ceil(maxDistance / speed);
 
 		SwordSlashS2C packet = new SwordSlashS2C(origin.x, origin.y, origin.z,
-				(float) dir.x, (float) dir.y, (float) dir.z, (float) speed, roll, radius, color, lifetime);
+				(float) dir.x, (float) dir.y, (float) dir.z, (float) speed, roll, radius, color, coreColor, lifetime);
 		if (owner instanceof ServerPlayer) NetworkHandler.sendToTrackingEntityAndSelf(packet, owner);
 		else NetworkHandler.sendToTrackingEntity(packet, owner);
 

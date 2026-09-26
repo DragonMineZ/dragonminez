@@ -16,6 +16,7 @@ import com.dragonminez.common.init.particles.DivineParticle;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.TriBeamPackets;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -25,6 +26,8 @@ import com.dragonminez.common.stats.techniques.*;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.StatsEvents;
+import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
+import com.dragonminez.common.init.item.weapons.BraveSwordItem;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -72,6 +75,7 @@ public class ClientStatsEvents {
 	private static boolean wasITKeyDown = false;
 	private static boolean itMenuOpened = false;
 	private static boolean wasRightClickDown = false;
+	private static long triBeamFollowUpUntil = 0L;
 	private static boolean wasInstantTransformKeyDown = false;
 	private static final long TAP_ACTION_COOLDOWN_MS = 500;
 	private static long lastInstantTransformSent = 0;
@@ -84,6 +88,20 @@ public class ClientStatsEvents {
 	private static final boolean[] wasSlotKeyDown = new boolean[TECHNIQUE_VISIBLE_SLOTS];
 
 	private static ActionMode lastActionMode = null;
+
+	public static void setTriBeamFollowUpWindow(int windowTicks) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return;
+		if (windowTicks <= 0) {
+			if (triBeamFollowUpUntil > 0L) mc.gui.clear();
+			triBeamFollowUpUntil = 0L;
+			return;
+		}
+		triBeamFollowUpUntil = mc.level.getGameTime() + windowTicks;
+		mc.gui.setTimes(0, windowTicks, 6);
+		mc.gui.setSubtitle(Component.translatable("message.dragonminez.tri_beam.follow_up"));
+		mc.gui.setTitle(Component.empty());
+	}
 
 	@SubscribeEvent
 	public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
@@ -275,6 +293,11 @@ public class ClientStatsEvents {
 				ClientBeamClashState.onLocalPress();
 			}
 
+			if (triBeamFollowUpUntil > 0L && isRightClickDown && !wasRightClickDown) {
+				if (mc.level.getGameTime() <= triBeamFollowUpUntil) NetworkHandler.sendToServer(new TriBeamPackets.FollowUpC2S());
+				else triBeamFollowUpUntil = 0L;
+			}
+
 			wasRightClickDown = isRightClickDown;
 
 			handleTechniqueSlotInput(data, isStunned);
@@ -420,7 +443,7 @@ public class ClientStatsEvents {
 				String id = techniques.getEquippedSlots()[i];
 				TechniqueData t = (id == null || id.isEmpty()) ? null : techniques.getUnlockedTechniques().get(id);
 				if (t == null) continue;
-				if (!canActivateTechnique(data, player)) continue;
+				if (!canActivateTechnique(data, player, t)) continue;
 
 				if (t instanceof StrikeAttackData) {
 					techniques.selectSlot(i);
@@ -488,7 +511,7 @@ public class ClientStatsEvents {
 		}
 	}
 
-	private static boolean canActivateTechnique(StatsData data, LocalPlayer player) {
+	private static boolean canActivateTechnique(StatsData data, LocalPlayer player, TechniqueData technique) {
 		if (player.isSpectator()) return false;
 		if (data.getStatus().isFused() && !data.getStatus().isFusionLeader()) return false;
 		if (data.getSkills().getSkillLevel("kicontrol") <= 0) {
@@ -497,6 +520,9 @@ public class ClientStatsEvents {
 			return false;
 		}
 		if (data.getResources().getPowerRelease() < 5) return false;
+		if (technique instanceof StrikeAttackData && StrikeAttackHandler.requiresBraveSword(technique.getId())) {
+			return player.getMainHandItem().getItem() instanceof BraveSwordItem;
+		}
 		if (!player.getMainHandItem().isEmpty()) return false;
 		return true;
 	}

@@ -720,6 +720,18 @@ public class NetworkHandler {
 				.encoder(TournamentPackets.RivalS2C::encode)
 				.consumerMainThread(TournamentPackets.RivalS2C::handle)
 				.add();
+
+		net.messageBuilder(TriBeamPackets.FollowUpWindowS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TriBeamPackets.FollowUpWindowS2C::decode)
+				.encoder(TriBeamPackets.FollowUpWindowS2C::encode)
+				.consumerMainThread(TriBeamPackets.FollowUpWindowS2C::handle)
+				.add();
+
+		net.messageBuilder(TriBeamPackets.FollowUpC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TriBeamPackets.FollowUpC2S::decode)
+				.encoder(TriBeamPackets.FollowUpC2S::encode)
+				.consumerMainThread(TriBeamPackets.FollowUpC2S::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {

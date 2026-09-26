@@ -459,10 +459,11 @@ public class AllWorldBossesEntity {
         private static final double CUTS_MIN_RANGE = 5.0D;
         private static final double CUT_SPEED = 1.1D;
         private static final double CUT_MAX_DISTANCE = 48.0D;
-        private static final double CUT_HIT_RADIUS = 2.6D;
+        private static final double CUT_HIT_RADIUS = 7.8D;
         private static final float CUT_DAMAGE_RATIO = 0.6F;
-        private static final float CUT_SCALE = 3.4F;
-        private static final int CUT_COLOR = 0xFF1E2D;
+        private static final float CUT_SCALE = 10.2F;
+        private static final int CUT_COLOR = 0x7A0000;
+        private static final int CUT_CORE_COLOR = 0xFF5A4A;
 
         private static final int MOUTH_BLAST_SKILL = 9;
         private static final int MOUTH_BLAST_FIRE_TICK = 37;
@@ -553,7 +554,7 @@ public class AllWorldBossesEntity {
             int index = elapsed / CUTS_INTERVAL;
             float damage = this.getKiBlastDamage() * CUT_DAMAGE_RATIO;
             SwordSlashManager.launch(serverLevel, this, origin, aim, SwordSlashManager.rollFor(index), CUT_SCALE,
-                    CUT_COLOR, CUT_SPEED, CUT_MAX_DISTANCE, CUT_HIT_RADIUS, victim -> {
+                    CUT_COLOR, CUT_CORE_COLOR, CUT_SPEED, CUT_MAX_DISTANCE, CUT_HIT_RADIUS, victim -> {
                         if (victim.isAlliedTo(this) || victim instanceof WorldBossEntity || victim instanceof MiniJanemba) return false;
                         victim.invulnerableTime = 0;
                         victim.hurt(this.damageSources().mobAttack(this), damage);

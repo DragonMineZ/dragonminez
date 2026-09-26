@@ -51,6 +51,9 @@ public class SkillsConfig {
 		kiSkills.add("burning_attack");
 		kiSkills.add("sokidan");
 		kiSkills.add("final_flash");
+		kiSkills.add("heat_dome");
+		kiSkills.add("kikoho");
+		kiSkills.add("neo_kikoho");
 		kiSkills.add("kamehameha");
 		kiSkills.add("galick_gun");
 		kiSkills.add("masenko");
@@ -59,6 +62,7 @@ public class SkillsConfig {
 		kiSkills.add("death_beam");
 		kiSkills.add("makkanko");
 		kiSkills.add("emperor_death_beam");
+		kiSkills.add("dodonpa");
 		kiSkills.add("ki_barrage");
 		kiSkills.add("final_explosion");
 		kiSkills.add("soul_punisher");
@@ -81,6 +85,7 @@ public class SkillsConfig {
 		skills.put("dimensional_teleport", new SkillCosts(List.of(12000)));
 		skills.put("sleep_recovery", new SkillCosts(List.of(3000)));
 		skills.put("death_beam", new SkillCosts(List.of(2500)));
+		skills.put("dodonpa", new SkillCosts(List.of(3000)));
 		skills.put("fake_moon", new SkillCosts(List.of(3000)));
 		skills.put("kienzan", new SkillCosts(List.of(3000)));
 		skills.put("makkanko", new SkillCosts(List.of(3500)));
@@ -94,6 +99,9 @@ public class SkillsConfig {
 
 		skills.put("emperor_death_beam", new SkillCosts(List.of(5000)));
 		skills.put("final_flash", new SkillCosts(List.of(5000)));
+		skills.put("heat_dome", new SkillCosts(List.of(6000)));
+		skills.put("kikoho", new SkillCosts(List.of(5000)));
+		skills.put("neo_kikoho", new SkillCosts(List.of(8000)));
 		skills.put("spiritbomb", new SkillCosts(List.of(10000)));
 		skills.put("supernova", new SkillCosts(List.of(12000)));
 
@@ -115,6 +123,9 @@ public class SkillsConfig {
 		strikeSkills.add("dimensional_punch");
 		strikeSkills.add("dimensional_sword_attack");
 		strikeSkills.add("spirit_breaking_cannon");
+		strikeSkills.add("grab");
+		strikeSkills.add("shining_sword_attack");
+		strikeSkills.add("combo_meteor");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -130,6 +141,9 @@ public class SkillsConfig {
 		skills.put("dimensional_punch",  new SkillCosts(List.of(18000)));
 		skills.put("dimensional_sword_attack", new SkillCosts(List.of(22000)));
 		skills.put("spirit_breaking_cannon", new SkillCosts(List.of(12000)));
+		skills.put("grab", new SkillCosts(List.of(3500)));
+		skills.put("shining_sword_attack", new SkillCosts(List.of(9000)));
+		skills.put("combo_meteor", new SkillCosts(List.of(7000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);
@@ -430,6 +444,8 @@ public class SkillsConfig {
 		trunksSkills.add("kiboost");
 		trunksSkills.add("kiprotection");
 		trunksSkills.add("burning_attack");
+		trunksSkills.add("heat_dome");
+		trunksSkills.add("shining_sword_attack");
 		trunksSkills.add("galick_gun");
 		trunksSkills.add("ki_barrage");
 		trunksSkills.add("meteor");

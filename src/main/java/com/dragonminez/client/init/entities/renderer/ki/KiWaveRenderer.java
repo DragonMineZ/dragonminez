@@ -9,6 +9,7 @@ import com.dragonminez.client.render.util.KiEmberRenderer;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.math.Axis;
@@ -38,6 +39,8 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
     private static final float CHARGE_RAYS_FIRST_PERSON = 0.3F;
     private static final float BALL_LIGHTNING_RADIUS = 0.9F;
     private static final float BALL_LIGHTNING_SPEED = 1.5F;
+    private static final float HEAT_DOME_SPHERE_ALPHA = 0.85F;
+    private static final float HEAT_DOME_SPHERE_ALPHA_FIRST_PERSON = 0.35F;
 
     public KiWaveRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -58,7 +61,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             float fadeAlpha = 1.0F;
 
             int maxLife = entity.getMaxLife();
-            int fadeTicks = 20;
+            int fireTick = entity.getFireTick();
+            int firingWindow = fireTick >= 0 ? maxLife - fireTick : maxLife;
+            int fadeTicks = Math.max(1, Math.min(20, firingWindow / 2));
 
             if (entity.tickCount >= maxLife - fadeTicks) {
                 fadeAlpha = (maxLife - exactAge) / (float) fadeTicks;
@@ -66,6 +71,12 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             }
 
             int renderType = entity.getKiRenderType();
+
+            if (!entity.isFiring() && KiTechniqueHandler.HeatDome.is(entity.getTechniqueId())) {
+                renderHeatDomeSphere(entity, exactAge, stack, proj, auraColor, borderColor, fadeAlpha);
+                stack.popPose();
+                return;
+            }
 
             switch (renderType) {
                 case 1:
@@ -91,6 +102,43 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float ramp = castTime > 0.1F ? castTime : CHARGE_GROW_TICKS;
         float t = Mth.clamp(ageInTicks / ramp, 0.0F, 1.0F);
         return t * t * (3.0F - 2.0F * t);
+    }
+
+    private void renderHeatDomeSphere(KiWaveEntity entity, float ageInTicks, PoseStack poseStack, Matrix4f proj, float[] auraColor, float[] borderColor, float fadeAlpha) {
+        ShaderInstance shader = DMZShaders.ki3dShader;
+        if (shader == null) return;
+
+        float scale = entity.getCastSize() * 1.5F * chargeScale(entity, ageInTicks);
+        if (scale <= 0.01F) return;
+
+        float alpha = HEAT_DOME_SPHERE_ALPHA;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() == mc.player && entity.getOwner() == mc.player) alpha = HEAT_DOME_SPHERE_ALPHA_FIRST_PERSON;
+
+        float[] outlineColor = entity.getRgbColorOutline();
+        shader.safeGetUniform("colorCore").set(auraColor[0], auraColor[1], auraColor[2]);
+        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
+        shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
+        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
+        shader.safeGetUniform("ProjMat").set(proj);
+        shader.safeGetUniform("blotchMode").set(0.0f);
+        shader.safeGetUniform("flameMode").set(0.0f);
+        shader.safeGetUniform("orbMode").set(0.0f);
+        shader.safeGetUniform("zCut").set(-1.0f);
+
+        VertexBuffer mesh = KiMeshFactory.getSphereMesh();
+        mesh.bind();
+
+        poseStack.pushPose();
+        poseStack.scale(scale, scale, scale);
+        shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+        shader.safeGetUniform("alphaMult").set(alpha * fadeAlpha);
+        shader.apply();
+        mesh.drawWithShader(poseStack.last().pose(), proj, shader);
+        poseStack.popPose();
+
+        VertexBuffer.unbind();
+        shader.clear();
     }
 
     private void KiRenderWave(KiWaveEntity entity, float ageInTicks, PoseStack poseStack, Matrix4f proj, float[] auraColor, float[] borderColor, float fadeAlpha) {
@@ -394,7 +442,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float pulse = 0.85F + 0.15F * (float) Math.sin(ageInTicks * 0.9F);
         float intensity = CHARGE_RAYS_INTENSITY * charge * pulse * alphaMultiplier;
         if (EffectBloomRenderer.bloomPass) intensity *= CHARGE_RAYS_BLOOM;
-        if (mc.options.getCameraType().isFirstPerson() && entity.getOwner() == mc.player) intensity *= CHARGE_RAYS_FIRST_PERSON;
+        if (mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() == mc.player && entity.getOwner() == mc.player) intensity *= CHARGE_RAYS_FIRST_PERSON;
         if (intensity <= 0.004F) return;
 
         float rayScale = Math.max(ballRadius * CHARGE_RAYS_REACH, CHARGE_RAYS_MIN_REACH);

@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 public class KiMeshFactory {
 	private static VertexBuffer cachedSphereMesh;
 	private static VertexBuffer cachedCylinderMesh;
+	private static VertexBuffer cachedTriangleBeamMesh;
 	private static VertexBuffer cachedQuadMesh;
 
 	public static VertexBuffer getQuadMesh() {
@@ -90,47 +91,58 @@ public class KiMeshFactory {
 
 	public static VertexBuffer getCylinderMesh() {
 		if (cachedCylinderMesh == null) {
-			cachedCylinderMesh = new VertexBuffer(VertexBuffer.Usage.STATIC);
-			Tesselator tesselator = Tesselator.getInstance();
-			BufferBuilder builder = tesselator.getBuilder();
-
-			builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
-
-			int segments = 32;
-			for (int i = 0; i < segments; i++) {
-				float theta1 = (float) (2.0 * Math.PI * i / segments);
-				float theta2 = (float) (2.0 * Math.PI * (i + 1) / segments);
-
-				float x1 = (float) Math.cos(theta1);
-				float y1 = (float) Math.sin(theta1);
-				float x2 = (float) Math.cos(theta2);
-				float y2 = (float) Math.sin(theta2);
-
-				float u1 = (float) i / segments;
-				float u2 = (float) (i + 1) / segments;
-				float v1 = 0.0f;
-				float v2 = 1.0f;
-
-				builder.vertex(x1, y1, 0).color(255, 255, 255, 255).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(x1, y1, 0).endVertex();
-				builder.vertex(x2, y2, 0).color(255, 255, 255, 255).uv(u2, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(x2, y2, 0).endVertex();
-				builder.vertex(x2, y2, 1).color(255, 255, 255, 255).uv(u2, v2).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(x2, y2, 0).endVertex();
-				builder.vertex(x1, y1, 1).color(255, 255, 255, 255).uv(u1, v2).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(x1, y1, 0).endVertex();
-
-				builder.vertex(0, 0, 0).color(255, 255, 255, 255).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, -1).endVertex();
-				builder.vertex(x1, y1, 0).color(255, 255, 255, 255).uv(x1 * 0.5f + 0.5f, y1 * 0.5f + 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, -1).endVertex();
-				builder.vertex(x2, y2, 0).color(255, 255, 255, 255).uv(x2 * 0.5f + 0.5f, y2 * 0.5f + 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, -1).endVertex();
-				builder.vertex(0, 0, 0).color(255, 255, 255, 255).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, -1).endVertex();
-
-				builder.vertex(0, 0, 1).color(255, 255, 255, 255).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, 1).endVertex();
-				builder.vertex(x2, y2, 1).color(255, 255, 255, 255).uv(x2 * 0.5f + 0.5f, y2 * 0.5f + 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, 1).endVertex();
-				builder.vertex(x1, y1, 1).color(255, 255, 255, 255).uv(x1 * 0.5f + 0.5f, y1 * 0.5f + 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, 1).endVertex();
-				builder.vertex(0, 0, 1).color(255, 255, 255, 255).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, 1).endVertex();
-			}
-
-			cachedCylinderMesh.bind();
-			cachedCylinderMesh.upload(builder.end());
-			VertexBuffer.unbind();
+			cachedCylinderMesh = buildTubeMesh(32, 0.0);
 		}
 		return cachedCylinderMesh;
+	}
+
+	public static VertexBuffer getTriangleBeamMesh() {
+		if (cachedTriangleBeamMesh == null) {
+			cachedTriangleBeamMesh = buildTubeMesh(3, Math.PI / 2.0);
+		}
+		return cachedTriangleBeamMesh;
+	}
+
+	private static VertexBuffer buildTubeMesh(int segments, double angleOffset) {
+		VertexBuffer mesh = new VertexBuffer(VertexBuffer.Usage.STATIC);
+		Tesselator tesselator = Tesselator.getInstance();
+		BufferBuilder builder = tesselator.getBuilder();
+
+		builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
+
+		for (int i = 0; i < segments; i++) {
+			float theta1 = (float) (angleOffset + 2.0 * Math.PI * i / segments);
+			float theta2 = (float) (angleOffset + 2.0 * Math.PI * (i + 1) / segments);
+
+			float x1 = (float) Math.cos(theta1);
+			float y1 = (float) Math.sin(theta1);
+			float x2 = (float) Math.cos(theta2);
+			float y2 = (float) Math.sin(theta2);
+
+			float u1 = (float) i / segments;
+			float u2 = (float) (i + 1) / segments;
+			float v1 = 0.0f;
+			float v2 = 1.0f;
+
+			builder.vertex(x1, y1, 0).color(255, 255, 255, 255).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(x1, y1, 0).endVertex();
+			builder.vertex(x2, y2, 0).color(255, 255, 255, 255).uv(u2, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(x2, y2, 0).endVertex();
+			builder.vertex(x2, y2, 1).color(255, 255, 255, 255).uv(u2, v2).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(x2, y2, 0).endVertex();
+			builder.vertex(x1, y1, 1).color(255, 255, 255, 255).uv(u1, v2).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(x1, y1, 0).endVertex();
+
+			builder.vertex(0, 0, 0).color(255, 255, 255, 255).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, -1).endVertex();
+			builder.vertex(x1, y1, 0).color(255, 255, 255, 255).uv(x1 * 0.5f + 0.5f, y1 * 0.5f + 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, -1).endVertex();
+			builder.vertex(x2, y2, 0).color(255, 255, 255, 255).uv(x2 * 0.5f + 0.5f, y2 * 0.5f + 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, -1).endVertex();
+			builder.vertex(0, 0, 0).color(255, 255, 255, 255).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, -1).endVertex();
+
+			builder.vertex(0, 0, 1).color(255, 255, 255, 255).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, 1).endVertex();
+			builder.vertex(x2, y2, 1).color(255, 255, 255, 255).uv(x2 * 0.5f + 0.5f, y2 * 0.5f + 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, 1).endVertex();
+			builder.vertex(x1, y1, 1).color(255, 255, 255, 255).uv(x1 * 0.5f + 0.5f, y1 * 0.5f + 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, 1).endVertex();
+			builder.vertex(0, 0, 1).color(255, 255, 255, 255).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(0, 0, 1).endVertex();
+		}
+
+		mesh.bind();
+		mesh.upload(builder.end());
+		VertexBuffer.unbind();
+		return mesh;
 	}
 }

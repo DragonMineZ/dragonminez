@@ -14,10 +14,15 @@ out vec3 vViewDir;
 out vec3 vLocalPos;
 out vec2 vUv;
 out float vAlpha;
+out float vInside;
 
 void main() {
     vec4 viewPos = ModelViewMat * vec4(Position, 1.0);
     gl_Position = ProjMat * viewPos;
+
+    float meshRadius = length(ModelViewMat[0].xyz);
+    float centreDist = length(ModelViewMat[3].xyz);
+    vInside = 1.0 - smoothstep(meshRadius * 0.8, meshRadius * 1.05, centreDist);
 
     vNormal = normalize(mat3(ModelViewMat) * Normal);
     vViewDir = normalize(-viewPos.xyz);

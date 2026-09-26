@@ -39,6 +39,7 @@ import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
+import com.dragonminez.server.events.players.combat.KiTechniqueHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.BabaReviveService;
 import com.dragonminez.server.util.FusionLogic;
@@ -313,7 +314,8 @@ public class TickHandler {
 				}
 			}
 
-			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+			boolean kiAnimShouldBeActive = playerOwnsKiProjectile(serverPlayer) || data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive()
+					|| KiTechniqueHandler.isFireAnimationHeld(serverPlayer);
 			boolean kiAnimWasActive = serverPlayer.getPersistentData().getBoolean("dmz_ki_anim_active");
 			if (kiAnimShouldBeActive) serverPlayer.getPersistentData().putBoolean("dmz_ki_anim_active", true);
 			else if (kiAnimWasActive) {
@@ -1240,6 +1242,7 @@ public class TickHandler {
 
 	private static void applyHumanKiPassiveDuringCharge(ServerPlayer player, StatsData data, int originalKiCost) {
 		if (!data.isHumanRacialActive() || data.isAndroidRacialActive() || originalKiCost <= 0) return;
+		if (KiTechniqueHandler.TriBeam.isNeo(data.getTechniques().getChargingTechniqueId())) return;
 
 		float hpAccum = player.getPersistentData().getFloat("dmz_human_hp_drain_accum") + originalKiCost * 0.125f;
 		int hpWhole = (int) hpAccum;
