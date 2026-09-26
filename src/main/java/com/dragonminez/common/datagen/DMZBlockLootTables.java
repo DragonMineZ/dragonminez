@@ -95,6 +95,7 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		this.dropSelf(MainBlocks.HELL_GROUND.get());
 		this.dropSelf(MainBlocks.HELL_STONE.get());
 		this.dropSelf(MainBlocks.HELL_DEEPSTONE.get());
+		this.dropOther(MainBlocks.MIGHT_TREE_FRUIT_BLOCK.get(), MainItems.MIGHT_TREE_FRUIT.get());
 		//this.dropSelf(MainBlocks.GETE_FURNACE.get());
 		this.dropSelf(MainBlocks.GETE_ORE.get());
 		this.dropSelf(MainBlocks.TIME_CHAMBER_BLOCK.get());

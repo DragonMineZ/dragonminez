@@ -65,6 +65,12 @@ public class DBSagasAnimations {
     public static final RawAnimation ANIM_BOSS_SPECIAL1 = RawAnimation.begin().thenPlay("skp.dimensional_punch");
     public static final RawAnimation ANIM_BOSS_DESTRUCTION = RawAnimation.begin().thenPlay("ki.destruction_balls_fire");
     public static final RawAnimation ANIM_BOSS_CUTS = RawAnimation.begin().thenLoop("skp.dimensional_sword_attack");
+    public static final RawAnimation ANIM_BOSS2_SLEEP = RawAnimation.begin().thenLoop("boss2.sleep");
+    public static final RawAnimation ANIM_BOSS2_SPECIAL1 = RawAnimation.begin().thenPlayAndHold("boss2.special1");
+    public static final RawAnimation ANIM_KILL_DRIVER_CAST = RawAnimation.begin().thenPlayAndHold("ki.kill_driver_cast");
+    public static final RawAnimation ANIM_KILL_DRIVER_FIRE = RawAnimation.begin().thenPlayAndHold("ki.kill_driver_fire");
+    public static final RawAnimation ANIM_METEOR_BURST = RawAnimation.begin().thenPlayAndHold("skp.meteor_burst");
+    public static final RawAnimation ANIM_BOSS_GRAB = RawAnimation.begin().thenPlayAndHold("skp.grab");
 
     // POWER POLE = DBZSTYLE 7
     public static final RawAnimation ANIM_ATTACK1_8 = RawAnimation.begin().thenPlay("attack1_8");

@@ -2,7 +2,7 @@ package com.dragonminez.client.gui.hud;
 
 import com.dragonminez.client.gui.hud.layout.HudElement;
 import com.dragonminez.client.gui.hud.layout.HudLayout;
-import com.dragonminez.client.systems.worldboss.ClientWorldBossContribution;
+import com.dragonminez.client.systems.worldboss.ClientWorldBossState;
 import com.dragonminez.client.util.NumberFormattingUtil;
 import com.dragonminez.common.network.S2C.WorldBossContributionS2C;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -68,18 +68,18 @@ public class WorldBossContributionHUD {
 		HudLayout.Box box = HudLayout.resolve(HudElement.BOSS_CONTRIBUTION, width, height);
 		if (!box.visible() && !preview) return;
 
-		boolean active = preview || ClientWorldBossContribution.isActive();
+		boolean active = preview || ClientWorldBossState.Contribution.isActive();
 		float panelAlpha = preview ? 1.0f : PANEL_ALPHA.update(active ? 1.0f : 0.0f);
 		if (panelAlpha <= 0.01f && !active) {
 			VIEWS.clear();
 			return;
 		}
-		if (!preview && ClientWorldBossContribution.isFinished()) {
-			panelAlpha *= 1.0f - Mth.clamp((ClientWorldBossContribution.lingerFraction() - 0.85f) / 0.15f, 0.0f, 1.0f);
+		if (!preview && ClientWorldBossState.Contribution.isFinished()) {
+			panelAlpha *= 1.0f - Mth.clamp((ClientWorldBossState.Contribution.lingerFraction() - 0.85f) / 0.15f, 0.0f, 1.0f);
 		}
 
-		List<WorldBossContributionS2C.Entry> entries = preview && ClientWorldBossContribution.entries().isEmpty()
-				? PREVIEW_ENTRIES : ClientWorldBossContribution.entries();
+		List<WorldBossContributionS2C.Entry> entries = preview && ClientWorldBossState.Contribution.entries().isEmpty()
+				? PREVIEW_ENTRIES : ClientWorldBossState.Contribution.entries();
 		List<WorldBossContributionS2C.Entry> visible = pickVisible(entries, mc.player.getUUID());
 		float best = entries.isEmpty() ? 1.0f : Math.max(1.0e-6f, entries.get(0).points());
 		boolean showPercent = (System.currentTimeMillis() / ALTERNATE_MILLIS) % 2L == 0L;
@@ -156,12 +156,12 @@ public class WorldBossContributionHUD {
 	}
 
 	private static void drawHeader(GuiGraphics guiGraphics, boolean preview) {
-		String bossKey = ClientWorldBossContribution.bossNameKey();
+		String bossKey = ClientWorldBossState.Contribution.bossNameKey();
 		Component bossName = preview && bossKey.isEmpty()
 				? Component.translatable("gui.dragonminez.hud_editor.sample.boss_name")
 				: Component.translatable(bossKey);
 		HudRender.text(guiGraphics, bossName.getString(), PADDING, 3.5f, TEXT_SCALE, 0.0f, HEADER_COLOR, 1.0f);
-		long elapsedTicks = preview && bossKey.isEmpty() ? 20L * 330L : ClientWorldBossContribution.elapsedTicks();
+		long elapsedTicks = preview && bossKey.isEmpty() ? 20L * 330L : ClientWorldBossState.Contribution.elapsedTicks();
 		HudRender.text(guiGraphics, formatTicks(elapsedTicks), WIDTH - PADDING, 3.5f, TEXT_SCALE, 1.0f, TIMER_COLOR, 1.0f);
 	}
 

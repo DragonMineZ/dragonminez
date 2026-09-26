@@ -32,6 +32,9 @@ import java.util.List;
 
 public abstract class WorldBossEntity extends DBSagasEntity {
 
+    public static final String JANEMBA = "janemba";
+    public static final String TURLES = "turles";
+
     private static final EntityDataAccessor<Boolean> BOSS_ASLEEP =
             SynchedEntityData.defineId(WorldBossEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> BOSS_ABILITY =
@@ -153,7 +156,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
         applyAsleep(false);
         if (trigger != null) this.setTarget(trigger);
         if (this.level() instanceof ServerLevel) {
-            com.dragonminez.server.world.worldboss.WorldBossSessions.onBossEngaged(this);
+            com.dragonminez.server.world.worldboss.WorldBossManager.onBossEngaged(this);
         }
         this.onWakeUp(trigger);
     }
@@ -166,6 +169,10 @@ public abstract class WorldBossEntity extends DBSagasEntity {
     }
 
     protected void applyFixedStats() {
+    }
+
+    protected BossEvent.BossBarColor getBossBarColor() {
+        return BossEvent.BossBarColor.PURPLE;
     }
 
     public boolean startBossAbility(int ability) {
@@ -255,7 +262,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
     private boolean hasEngagedPlayer() {
         if (this.level() instanceof ServerLevel
-                && com.dragonminez.server.world.worldboss.WorldBossSessions.isFightEngaged(this, LEASH_RADIUS)) return true;
+                && com.dragonminez.server.world.worldboss.WorldBossManager.isFightEngaged(this, LEASH_RADIUS)) return true;
         BlockPos center = this.getAnchor();
         for (Player player : this.level().players()) {
             if (!isEligible(player)) continue;
@@ -271,7 +278,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
     public void returnToSleep() {
         if (this.level() instanceof ServerLevel) {
-            com.dragonminez.server.world.worldboss.WorldBossSessions.onBossReset(this);
+            com.dragonminez.server.world.worldboss.WorldBossManager.onBossReset(this);
         }
         this.setTarget(null);
         this.stopBossAbility();
@@ -289,7 +296,7 @@ public abstract class WorldBossEntity extends DBSagasEntity {
 
         if (this.bossEvent == null) {
             this.bossEvent = new ServerBossEvent(this.getDisplayName(),
-                    BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.NOTCHED_10);
+                    this.getBossBarColor(), BossEvent.BossBarOverlay.NOTCHED_10);
         }
 
         this.bossEvent.setName(this.getDisplayName());

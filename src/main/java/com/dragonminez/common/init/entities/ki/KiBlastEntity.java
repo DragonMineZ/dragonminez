@@ -96,6 +96,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     private static final double DESTRUCTION_SPREAD_ACCEL = 0.012D;
 
     private boolean destructionBall;
+    private boolean volleyFullPalette;
     private int destructionAge;
     private float destructionStartSize;
     private float destructionEndSize;
@@ -694,6 +695,10 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setupKiVolley(owner, damage, speed, color, 0xFFFFFF, castTime);
     }
 
+    public void setVolleyFullPalette(boolean fullPalette) {
+        this.volleyFullPalette = fullPalette;
+    }
+
     public void setupKiAirVolley(LivingEntity owner, float damage, float speed, int color, int colorOutline, int castTime) {
         this.setOwner(owner);
         this.setKiRenderType(10);
@@ -1005,6 +1010,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                                     KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
                                     bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
                                     bullet.setTechniqueId(this.getTechniqueId());
+                                    if (this.volleyFullPalette) bullet.setColors(this.getColor(), this.getColorBorder(), this.getColorOutline());
 
                                     bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 6.0F);
                                     this.level().addFreshEntity(bullet);

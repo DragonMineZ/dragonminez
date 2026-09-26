@@ -282,6 +282,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.KI_WAVE.get(), KiWaveRenderer::new);
         event.registerEntityRenderer(MainEntities.MAJIN_SKILL.get(), MajinSkillRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_DISC.get(), KiDiskRenderer::new);
+        event.registerEntityRenderer(MainEntities.KILL_DRIVER.get(), KillDriverRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_BARRIER.get(), KiBarrierRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_EXPLOSION_VISUAL.get(), KiExplosionVisualRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_AREA.get(), KiProjectileRenderer::new);

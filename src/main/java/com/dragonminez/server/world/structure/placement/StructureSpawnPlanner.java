@@ -372,7 +372,7 @@ public final class StructureSpawnPlanner {
 				continue;
 			}
 			ChunkPos reconciled = searchNearest(placement, structureBiomes.get(salt), cache,
-					minRing, maxRing, accepted, spacingSqr, state, avoid,
+					minRingFor(placement, minRing, maxRing), maxRing, accepted, spacingSqr, state, avoid,
 					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1,
 					new AtomicLong(sampleBudget(maxRing)));
 			if (reconciled != null) {
@@ -395,10 +395,9 @@ public final class StructureSpawnPlanner {
 		}
 
 		if (!notFound.isEmpty() && !isStale(epoch)) {
-			final int tailStart = Math.min(maxRing, minRing + ABSOLUTE_SCAN_CAP_RINGS);
 			Runnable tailWork = () -> {
 				resolveTail(holder, notFound, structureBiomes, structureMinHeights, structureNames, cache,
-						tailStart, maxRing, spacingSqr, accepted, state, avoid, epoch);
+						minRing, maxRing, spacingSqr, accepted, state, avoid, epoch);
 				persistPlan(holder, epoch);
 			};
 
@@ -447,7 +446,7 @@ public final class StructureSpawnPlanner {
 			if (isStale(epoch)) return;
 			int salt = placement.placementSalt();
 			ChunkPos found = searchNearest(placement, structureBiomes.get(salt), cache,
-					minRing, maxRing, reservedBaseline, spacingSqr, state, avoid,
+					minRingFor(placement, minRing, maxRing), maxRing, reservedBaseline, spacingSqr, state, avoid,
 					structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1,
 					new AtomicLong(sampleBudget(maxRing)));
 			if (found != null) out.put(salt, found);
@@ -461,7 +460,7 @@ public final class StructureSpawnPlanner {
 				if (isStale(epoch)) return;
 				int salt = placement.placementSalt();
 				ChunkPos found = searchNearest(placement, structureBiomes.get(salt), cache,
-						minRing, maxRing, reservedBaseline, spacingSqr, state, avoid,
+						minRingFor(placement, minRing, maxRing), maxRing, reservedBaseline, spacingSqr, state, avoid,
 						structureMinHeights.getOrDefault(salt, Integer.MIN_VALUE), epoch, 1,
 						new AtomicLong(sampleBudget(maxRing)));
 				if (found != null) out.put(salt, found);
@@ -473,7 +472,7 @@ public final class StructureSpawnPlanner {
 	                                Map<Integer, HolderSet<Biome>> structureBiomes,
 	                                Map<Integer, Integer> structureMinHeights, Map<Integer, String> structureNames,
 	                                SampleCache cache,
-	                                int startRing, int maxRing, double spacingSqr, List<ChunkPos> accepted,
+	                                int minRing, int maxRing, double spacingSqr, List<ChunkPos> accepted,
 	                                ChunkGeneratorStructureState state, List<Holder<StructureSet>> avoid, int epoch) {
 		int absoluteCap = maxRing + TAIL_EXTRA_RINGS;
 
@@ -486,7 +485,7 @@ public final class StructureSpawnPlanner {
 
 			AtomicLong budget = new AtomicLong(sampleBudget(maxRing));
 			ChunkPos found = null;
-			int from = startRing + 1;
+			int from = Math.min(maxRing, minRingFor(placement, minRing, maxRing) + ABSOLUTE_SCAN_CAP_RINGS) + 1;
 			while (found == null && from <= absoluteCap && budget.get() > 0) {
 				if (isStale(epoch)) return;
 				int to = Math.min(from + RING_STEP - 1, absoluteCap);
@@ -573,6 +572,11 @@ public final class StructureSpawnPlanner {
 		}
 		if (bestNonOverlap != null) return bestNonOverlap;
 		return overlapFallback;
+	}
+
+	static int minRingFor(BiomeAwareUniquePlacement placement, int minRing, int maxRing) {
+		int own = (int) Math.ceil(placement.getMinDistanceFromSpawn() / 16.0D);
+		return Math.min(maxRing, Math.max(minRing, own));
 	}
 
 	static List<ChunkPos> ringChunks(int ring) {

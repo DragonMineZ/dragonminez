@@ -70,10 +70,28 @@ public class TechniqueDispatcher {
                     } else if (activeKi instanceof KiAreaEntity area) {
                         area.setKiDamage(realDamage);
                         area.fireHability(maxLife);
+                    } else if (activeKi instanceof KillDriverEntity ring) {
+                        ring.setKiDamage(realDamage);
+                        ring.fireHability(maxLife);
                     }
                 }
                 return true;
             }
+        }
+
+        if (KiTechniqueHandler.KillDriver.is(data.getId())) {
+            if (!isInitialSpawn) return true;
+
+            KillDriverEntity ring = new KillDriverEntity(level, owner);
+            ring.setupPlayer(owner, realDamage, kiSpeed, data.getColorInterior(), data.getColorExterior(),
+                    data.getColorOutline(), KiTechniqueHandler.KillDriver.radiusScale(castSize));
+            ring.setTechniqueId(data.getId());
+            ring.setArmorPenetration(data.getArmorPenetration());
+            ring.setHeal(isHeal);
+            ring.setLockTarget(homingTargetId);
+
+            if (!level.isClientSide) level.addFreshEntity(ring);
+            return true;
         }
 
         if (KiTechniqueHandler.TriBeam.is(data.getId())) {

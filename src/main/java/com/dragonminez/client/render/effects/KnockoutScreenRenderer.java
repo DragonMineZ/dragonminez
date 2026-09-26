@@ -5,7 +5,7 @@ import com.dragonminez.client.gui.hud.HudRender;
 import com.dragonminez.client.gui.hud.HudSmoother;
 import com.dragonminez.client.render.shader.KnockoutShaderManager;
 import com.dragonminez.client.render.util.IrisCompat;
-import com.dragonminez.client.systems.worldboss.ClientWorldBossPlayerState;
+import com.dragonminez.client.systems.worldboss.ClientWorldBossState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.Dist;
@@ -38,7 +38,7 @@ public final class KnockoutScreenRenderer {
 		RenderLevelStageEvent.Stage targetStage = iris ? RenderLevelStageEvent.Stage.AFTER_LEVEL : RenderLevelStageEvent.Stage.AFTER_WEATHER;
 		if (event.getStage() != targetStage) return;
 
-		float intensity = INTENSITY.update(ClientWorldBossPlayerState.isKnockedOut() ? 1.0f : 0.0f);
+		float intensity = INTENSITY.update(ClientWorldBossState.Player.isKnockedOut() ? 1.0f : 0.0f);
 		if (intensity <= 0.004f) {
 			KnockoutShaderManager.reset();
 			return;

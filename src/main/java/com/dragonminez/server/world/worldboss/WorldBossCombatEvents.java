@@ -64,7 +64,7 @@ public final class WorldBossCombatEvents {
 		if (!(event.getEntity() instanceof ServerPlayer target)) return;
 		if (HealContext.isSystemHeal() || PassiveEventHandler.suppressHealingBonus) return;
 
-		WorldBossSession session = WorldBossSessions.activeFor(target);
+		WorldBossSession session = WorldBossManager.activeFor(target);
 		if (session == null) return;
 
 		ServerPlayer healer = HealContext.getAllyHealer() instanceof ServerPlayer ally ? ally : target;
@@ -78,7 +78,7 @@ public final class WorldBossCombatEvents {
 		if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide) return;
 		if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
 		StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		if (stats == null || !WorldBossSessions.tryKnockOut(player, stats, event.getSource())) return;
+		if (stats == null || !WorldBossManager.tryKnockOut(player, stats, event.getSource())) return;
 		event.setCanceled(true);
 		player.setHealth(1.0F);
 	}
@@ -86,12 +86,12 @@ public final class WorldBossCombatEvents {
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public static void onCasterHurt(LivingHurtEvent event) {
 		if (event.getAmount() <= 0.0F || !(event.getEntity() instanceof ServerPlayer player)) return;
-		if (WorldBossSessions.isCastingRevive(player)) WorldBossSessions.interruptRevive(player);
+		if (WorldBossManager.isCastingRevive(player)) WorldBossManager.interruptRevive(player);
 	}
 
 	public static String resolveBossKey(Entity entity) {
 		if (entity instanceof WorldBossEntity boss) return boss.getWorldBossKey();
-		if (entity instanceof AllWorldBossesEntity.MiniJanemba) return WorldBossManager.JANEMBA;
+		if (entity instanceof AllWorldBossesEntity.MiniJanemba) return WorldBossEntity.JANEMBA;
 		return null;
 	}
 

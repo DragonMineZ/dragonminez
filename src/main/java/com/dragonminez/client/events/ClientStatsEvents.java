@@ -628,7 +628,7 @@ public class ClientStatsEvents {
 	public static void onMovementInput(MovementInputUpdateEvent event) {
 		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
 			if (TechniqueDispatcher.isMovementRestrictedKiAttack(event.getEntity(), data) || data.getStatus().isStunned()
-					|| com.dragonminez.client.systems.worldboss.ClientWorldBossPlayerState.isCasting()
+					|| com.dragonminez.client.systems.worldboss.ClientWorldBossState.Player.isCasting()
 					|| data.getStatus().isActionCharging() || data.getStatus().isChargingKi()
 					|| data.getStatus().getPotaraPoseTimer() > 0
 					|| data.getStatus().getEvasionLockTicks() > 0) {

@@ -5,9 +5,11 @@ import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetAssetDefinition;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
+import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.*;
+import net.minecraftforge.client.model.generators.BlockModelBuilder;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.client.model.generators.ConfiguredModel;
 import net.minecraftforge.client.model.generators.ModelFile;
@@ -40,6 +42,10 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		blockWithItem(MainBlocks.HELL_GROUND);
 		blockWithItem(MainBlocks.HELL_STONE);
 		blockWithItem(MainBlocks.HELL_DEEPSTONE);
+		blockWithItem(MainBlocks.MIGHT_TREE_WOOD);
+		blockWithItem(MainBlocks.MIGHT_TREE_LEAVES);
+		rootBlock(MainBlocks.MIGHT_TREE_ROOT);
+		fruitBlock(MainBlocks.MIGHT_TREE_FRUIT_BLOCK);
 
 		//Madera de Namek
 		blockWithItem(MainBlocks.NAMEK_AJISSA_PLANKS);
@@ -164,6 +170,48 @@ public class DMZBlockStateProvider extends BlockStateProvider {
 		simpleBlockWithItem(blockRegistryObject.get(), models().singleTexture(ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath(),
 				ResourceLocation.parse("minecraft:block/leaves"), "all", blockTexture(blockRegistryObject.get())).renderType("cutout"));
 	}
+	private void rootBlock(RegistryObject<Block> blockRegistryObject) {
+		String path = ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath();
+		ResourceLocation side = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path);
+		ResourceLocation end = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_top");
+		ModelFile model = models().withExistingParent(path, ResourceLocation.parse("minecraft:block/block"))
+				.texture("particle", side)
+				.texture("side", side)
+				.texture("end", end)
+				.element().from(4, 0, 4).to(12, 16, 12)
+				.face(Direction.NORTH).uvs(4, 0, 12, 16).texture("#side").end()
+				.face(Direction.SOUTH).uvs(4, 0, 12, 16).texture("#side").end()
+				.face(Direction.EAST).uvs(4, 0, 12, 16).texture("#side").end()
+				.face(Direction.WEST).uvs(4, 0, 12, 16).texture("#side").end()
+				.face(Direction.UP).uvs(4, 4, 12, 12).texture("#end").cullface(Direction.UP).end()
+				.face(Direction.DOWN).uvs(4, 4, 12, 12).texture("#end").cullface(Direction.DOWN).end()
+				.end();
+		simpleBlockWithItem(blockRegistryObject.get(), model);
+	}
+
+	private void fruitBlock(RegistryObject<Block> blockRegistryObject) {
+		String path = ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath();
+		ResourceLocation skin = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path);
+		ResourceLocation top = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_top");
+		ResourceLocation stem = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/might_tree_root");
+		BlockModelBuilder model = models().withExistingParent(path, ResourceLocation.parse("minecraft:block/block"))
+				.texture("particle", skin)
+				.texture("skin", skin)
+				.texture("top", top)
+				.texture("stem", stem);
+		int[][] boxes = {{2, 3, 3, 14, 13, 13}, {3, 3, 2, 13, 13, 14}, {3, 2, 3, 13, 14, 13}};
+		for (int[] box : boxes) {
+			model.element().from(box[0], box[1], box[2]).to(box[3], box[4], box[5])
+					.allFaces((direction, face) -> face.texture(direction.getAxis() == Direction.Axis.Y ? "#top" : "#skin")
+							.emissivity(12, 12))
+					.end();
+		}
+		model.element().from(7, 14, 7).to(9, 16, 9)
+				.allFaces((direction, face) -> face.texture("#stem"))
+				.end();
+		simpleBlock(blockRegistryObject.get(), model);
+	}
+
 	private void saplingBlock(RegistryObject<Block> blockRegistryObject) {
 		simpleBlock(blockRegistryObject.get(),
 				models().cross(ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath(), blockTexture(blockRegistryObject.get())).renderType("cutout"));

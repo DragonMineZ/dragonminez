@@ -1,6 +1,6 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.systems.worldboss.ClientWorldBossPlayerState;
+import com.dragonminez.client.systems.worldboss.ClientWorldBossState;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -58,7 +58,7 @@ public class WorldBossPlayerStateS2C {
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-				() -> () -> ClientWorldBossPlayerState.accept(inFight, knockedOut, livesLeft, casting, castProgress,
+				() -> () -> ClientWorldBossState.Player.accept(inFight, knockedOut, livesLeft, casting, castProgress,
 						castTargetName, beingRevived, reviverName)));
 		ctx.get().setPacketHandled(true);
 	}

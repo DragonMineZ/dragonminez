@@ -70,6 +70,7 @@ public class SkillsConfig {
 		kiSkills.add("mouth_blast");
 		kiSkills.add("assault_rain");
 		kiSkills.add("blaster_meteor");
+		kiSkills.add("kill_driver");
 		evasionSkills.add("taiyoken");
 		evasionSkills.add("rage_scream");
 		evasionSkills.add("afterimage");
@@ -108,6 +109,7 @@ public class SkillsConfig {
 		skills.put("supernova_cooler", new SkillCosts(List.of(15000)));
 		skills.put("final_explosion", new SkillCosts(List.of(20000)));
 		skills.put("soul_punisher", new SkillCosts(List.of(25000)));
+		skills.put("kill_driver", new SkillCosts(List.of(16000)));
 
 		strikeSkills.add("meteor");
 		strikeSkills.add("dragon_fist");
@@ -126,6 +128,7 @@ public class SkillsConfig {
 		strikeSkills.add("grab");
 		strikeSkills.add("shining_sword_attack");
 		strikeSkills.add("combo_meteor");
+		strikeSkills.add("meteor_burst");
 
 		skills.put("meteor",             new SkillCosts(List.of(3000)));
 		skills.put("wolf_fang",          new SkillCosts(List.of(3500)));
@@ -144,6 +147,7 @@ public class SkillsConfig {
 		skills.put("grab", new SkillCosts(List.of(3500)));
 		skills.put("shining_sword_attack", new SkillCosts(List.of(9000)));
 		skills.put("combo_meteor", new SkillCosts(List.of(7000)));
+		skills.put("meteor_burst", new SkillCosts(List.of(24000)));
 
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(300);

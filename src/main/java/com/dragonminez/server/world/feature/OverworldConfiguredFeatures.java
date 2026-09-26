@@ -13,12 +13,14 @@ public class OverworldConfiguredFeatures {
     public static final ResourceKey<ConfiguredFeature<?, ?>> ROCKY_PEAK_KEY = createKey("rocky_peak");
     public static final ResourceKey<ConfiguredFeature<?, ?>> KARST_PILLAR_KEY = createKey("karst_pillar");
     public static final ResourceKey<ConfiguredFeature<?, ?>> ROCKY_CLIFF_KEY = createKey("rocky_cliff");
+    public static final ResourceKey<ConfiguredFeature<?, ?>> TREE_OF_MIGHT_CANOPY_KEY = createKey("tree_of_might_canopy");
 
 	public static void bootstrap(BootstapContext<ConfiguredFeature<?, ?>> context) {
 		context.register(STONE_SPIKE_KEY, new ConfiguredFeature<>(OverworldFeatures.STONE_SPIKE.get(), NoneFeatureConfiguration.INSTANCE));
         context.register(ROCKY_PEAK_KEY, new ConfiguredFeature<>(OverworldFeatures.ROCKY_PEAK.get(), NoneFeatureConfiguration.INSTANCE));
         context.register(KARST_PILLAR_KEY, new ConfiguredFeature<>(OverworldFeatures.KARST_PILLAR.get(), NoneFeatureConfiguration.INSTANCE));
         context.register(ROCKY_CLIFF_KEY, new ConfiguredFeature<>(OverworldFeatures.ROCKY_CLIFF.get(), NoneFeatureConfiguration.INSTANCE));
+        context.register(TREE_OF_MIGHT_CANOPY_KEY, new ConfiguredFeature<>(OverworldFeatures.TREE_OF_MIGHT_CANOPY.get(), NoneFeatureConfiguration.INSTANCE));
 	}
 
 	private static ResourceKey<ConfiguredFeature<?, ?>> createKey(String name) {

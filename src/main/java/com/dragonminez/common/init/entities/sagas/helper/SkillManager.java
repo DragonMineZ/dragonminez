@@ -108,6 +108,7 @@ public class SkillManager {
             KiBlastEntity volley = new KiBlastEntity(user.level(), user);
             volley.setupKiVolley(user, dmg, user.getKiBlastSpeed(), user.getCurrentPoolColorMain(), 37);
             applyColors(user, volley);
+            volley.setVolleyFullPalette(user.usesFullVolleyPalette());
         });
 
         // 11. KI SMALL

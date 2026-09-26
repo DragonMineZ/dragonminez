@@ -32,6 +32,18 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.LOTUS_FLOWER.get());
 		this.tag(BlockTags.CLIMBABLE)
 				.add(MainBlocks.INVISIBLE_LADDER_BLOCK.get());
+		this.tag(BlockTags.MINEABLE_WITH_HOE)
+				.add(MainBlocks.MIGHT_TREE_LEAVES.get());
+		this.tag(BlockTags.WITHER_IMMUNE)
+				.add(MainBlocks.MIGHT_TREE_WOOD.get())
+				.add(MainBlocks.MIGHT_TREE_ROOT.get());
+		this.tag(BlockTags.DRAGON_IMMUNE)
+				.add(MainBlocks.MIGHT_TREE_WOOD.get())
+				.add(MainBlocks.MIGHT_TREE_ROOT.get());
+		this.tag(BlockTags.FEATURES_CANNOT_REPLACE)
+				.add(MainBlocks.MIGHT_TREE_WOOD.get())
+				.add(MainBlocks.MIGHT_TREE_ROOT.get())
+				.add(MainBlocks.MIGHT_TREE_LEAVES.get());
 
 		//Tags para los Bloques
 		this.tag(BlockTags.NEEDS_STONE_TOOL)

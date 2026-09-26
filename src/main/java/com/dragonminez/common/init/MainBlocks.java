@@ -14,8 +14,10 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.block.state.properties.WoodType;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -53,6 +55,22 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> HELL_DEEPSTONE = registerBlock("hell_deepstone",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).mapColor(MapColor.NETHER)
 					.requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE)));
+	public static final RegistryObject<Block> MIGHT_TREE_WOOD = registerBlock("might_tree_wood",
+			() -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_PURPLE).instrument(NoteBlockInstrument.BASS)
+					.strength(-1.0F, 3600000.0F).noLootTable().sound(SoundType.CHERRY_WOOD)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.BLOCK)));
+	public static final RegistryObject<Block> MIGHT_TREE_ROOT = registerBlock("might_tree_root",
+			() -> new MightTreeRootBlock(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_PURPLE)
+					.strength(-1.0F, 3600000.0F).noLootTable().noOcclusion().sound(SoundType.MANGROVE_ROOTS)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.BLOCK)));
+	public static final RegistryObject<Block> MIGHT_TREE_LEAVES = registerBlock("might_tree_leaves",
+			() -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_CYAN).strength(0.3F)
+					.noLootTable().sound(SoundType.AZALEA_LEAVES)
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false)));
+	public static final RegistryObject<Block> MIGHT_TREE_FRUIT_BLOCK = registerBlockOnly("might_tree_fruit_block",
+			() -> new MightTreeFruitBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(0.3F)
+					.sound(SoundType.SHROOMLIGHT).lightLevel(pState -> 6).noOcclusion()
+					.isValidSpawn((pState, pLevel, pPos, pType) -> false).pushReaction(PushReaction.DESTROY)));
 	public static final RegistryObject<Block> NAMEK_BLOCK = registerBlock("namek_block",
 			() -> new Block(BlockBehaviour.Properties.copy(Blocks.QUARTZ_BLOCK).sound(SoundType.BONE_BLOCK)));
 	public static final RegistryObject<Block> NAMEK_GRASS_BLOCK = registerBlock("namek_grass_block",

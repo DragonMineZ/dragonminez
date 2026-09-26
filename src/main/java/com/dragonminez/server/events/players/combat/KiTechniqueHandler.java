@@ -5,12 +5,14 @@ import com.dragonminez.common.combat.util.MultipartTargeting;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
+import com.dragonminez.common.init.entities.ki.KillDriverEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.TriBeamPackets;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -364,6 +366,24 @@ public class KiTechniqueHandler {
 
 		public static void holdFireAnimation(Player player) {
 			KiTechniqueHandler.holdFireAnimation(player, FIRE_ANIMATION_HOLD_TICKS);
+		}
+	}
+
+	public static final class KillDriver {
+
+		public static final String TECHNIQUE_ID = KillDriverEntity.TECHNIQUE_ID;
+
+		private static final float MIN_RADIUS_SCALE = 0.75F;
+		private static final float MAX_RADIUS_SCALE = 1.5F;
+
+		private KillDriver() {}
+
+		public static boolean is(String techniqueId) {
+			return TECHNIQUE_ID.equals(techniqueId);
+		}
+
+		public static float radiusScale(float castSize) {
+			return Mth.clamp(castSize, MIN_RADIUS_SCALE, MAX_RADIUS_SCALE);
 		}
 	}
 }

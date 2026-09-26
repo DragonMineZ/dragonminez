@@ -79,6 +79,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.phys.AABB;
@@ -91,6 +92,7 @@ import net.minecraftforge.event.entity.player.CriticalHitEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -217,7 +219,7 @@ public class ForgeCommonEvents {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			TrainingSessionTracker.end(player.getUUID());
 			PacketRateLimiter.clear(player.getUUID());
-			com.dragonminez.server.world.worldboss.WorldBossSessions.onPlayerLogout(player);
+			com.dragonminez.server.world.worldboss.WorldBossManager.onPlayerLogout(player);
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout()) {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
@@ -513,6 +515,25 @@ public class ForgeCommonEvents {
 			com.dragonminez.server.world.structure.placement.StructureRepairManager.tick(serverLevel);
 			com.dragonminez.server.world.tournament.Tournament.Manager.tick(serverLevel);
 			com.dragonminez.server.world.worldboss.WorldBossManager.tick(serverLevel);
+		} catch (Throwable ignored) {
+		}
+	}
+
+	@SubscribeEvent
+	public static void onLevelUnload(LevelEvent.Unload event) {
+		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+		try {
+			com.dragonminez.server.world.structure.placement.StructureRepairManager.onLevelUnload(serverLevel);
+		} catch (Throwable ignored) {
+		}
+	}
+
+	@SubscribeEvent
+	public static void onChunkLoad(ChunkEvent.Load event) {
+		if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+		if (!(event.getChunk() instanceof LevelChunk chunk)) return;
+		try {
+			com.dragonminez.server.world.structure.placement.StructureRepairManager.onChunkLoad(serverLevel, chunk);
 		} catch (Throwable ignored) {
 		}
 	}

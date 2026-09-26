@@ -17,6 +17,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
@@ -32,7 +33,7 @@ public class DMZStructureSets {
 			PICCOLO_HOUSE = createKey("piccolo_house"), OLDKAI_PILLAR = createKey("oldkai_pillar"),
 			YAMCHA_HOUSE = createKey("yamcha_house"), TRUNKS_SHIP = createKey("trunks_ship"),
 			VEGETA_POD = createKey("vegeta_pod"),
-			BABA_PALACE = createKey("baba_palace");
+			BABA_PALACE = createKey("baba_palace"), TREE_OF_MIGHT = createKey("tree_of_might");
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -89,10 +90,20 @@ public class DMZStructureSets {
 				66332211, biomes.getOrThrow(MainTags.Biomes.IS_LAND));
 		unique(context, VEGETA_POD, structures.getOrThrow(DMZStructures.VEGETA_POD),
 				77889900, biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME));
+		unique(context, TREE_OF_MIGHT, structures.getOrThrow(DMZStructures.TREE_OF_MIGHT),
+				TREE_OF_MIGHT_SALT, biomes.getOrThrow(MainTags.Biomes.IS_SWAMPLIKE), TREE_OF_MIGHT_MIN_DISTANCE);
 	}
+
+	public static final int TREE_OF_MIGHT_SALT = 28475016;
+	private static final int TREE_OF_MIGHT_MIN_DISTANCE = 1000;
 
 	private static void unique(BootstapContext<StructureSet> context, ResourceKey<StructureSet> key,
 							   Holder<Structure> structure, int salt, HolderSet<Biome> validBiomes) {
+		unique(context, key, structure, salt, validBiomes, 0);
+	}
+
+	private static void unique(BootstapContext<StructureSet> context, ResourceKey<StructureSet> key,
+							   Holder<Structure> structure, int salt, HolderSet<Biome> validBiomes, int minDistanceFromSpawn) {
 		context.register(key, new StructureSet(
 				structure,
 				new BiomeAwareUniquePlacement(
@@ -101,7 +112,9 @@ public class DMZStructureSets {
 						1.0f,
 						salt,
 						Optional.empty(),
-						validBiomes
+						validBiomes,
+						Rotation.NONE,
+						minDistanceFromSpawn
 				)
 		));
 	}

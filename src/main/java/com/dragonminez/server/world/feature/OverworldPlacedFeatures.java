@@ -20,6 +20,7 @@ public class OverworldPlacedFeatures {
     public static final ResourceKey<PlacedFeature> ROCKY_PEAK_PLACED_KEY = createKey("rocky_peak_placed");
     public static final ResourceKey<PlacedFeature> KARST_PILLAR_PLACED_KEY = createKey("karst_pillar_placed");
     public static final ResourceKey<PlacedFeature> ROCKY_CLIFF_PLACED_KEY = createKey("rocky_cliff_placed");
+    public static final ResourceKey<PlacedFeature> TREE_OF_MIGHT_CANOPY_PLACED_KEY = createKey("tree_of_might_canopy_placed");
 
 	public static void bootstrap(BootstapContext<PlacedFeature> context) {
 		HolderGetter<ConfiguredFeature<?, ?>> configuredFeatures = context.lookup(Registries.CONFIGURED_FEATURE);
@@ -71,6 +72,9 @@ public class OverworldPlacedFeatures {
 						.add(BiomeFilter.biome())
 						.build()
         ));
+
+        context.register(TREE_OF_MIGHT_CANOPY_PLACED_KEY, new PlacedFeature(
+				configuredFeatures.getOrThrow(OverworldConfiguredFeatures.TREE_OF_MIGHT_CANOPY_KEY), List.of()));
 	}
 
 	private static ResourceKey<PlacedFeature> createKey(String name) {

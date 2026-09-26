@@ -2,26 +2,43 @@ package com.dragonminez.common.init.entities.worldboss;
 
 import com.dragonminez.common.combat.util.SwordSlashManager;
 import com.dragonminez.common.init.EntityAttributes;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ai.AiTier;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ki.KillDriverEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasPart;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.BossTelegraphS2C;
 import com.dragonminez.common.network.S2C.KiBurstVfxS2C;
 import com.dragonminez.common.network.S2C.ShockwaveVfxS2C;
+import com.dragonminez.server.events.players.combat.HeldVictim;
+import com.dragonminez.server.events.players.combat.KnockbackHelper;
+import com.dragonminez.server.events.players.combat.MeteorBurstCombo;
+import com.dragonminez.server.events.players.combat.MomentumImpactHandler;
+import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import com.dragonminez.server.world.worldboss.WorldBossContribution;
 import com.dragonminez.server.world.worldboss.WorldBossManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -30,6 +47,8 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.Monster;
@@ -38,6 +57,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.RegistryObject;
+import org.joml.Vector3f;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -128,7 +149,7 @@ public class AllWorldBossesEntity {
 
         @Override
         public String getWorldBossKey() {
-            return WorldBossManager.JANEMBA;
+            return WorldBossEntity.JANEMBA;
         }
 
         @Override
@@ -493,7 +514,7 @@ public class AllWorldBossesEntity {
 
         @Override
         public String getWorldBossKey() {
-            return WorldBossManager.JANEMBA;
+            return WorldBossEntity.JANEMBA;
         }
 
         @Override
@@ -737,6 +758,600 @@ public class AllWorldBossesEntity {
                 MiniJanemba.this.getNavigation().moveTo(goal.x, goal.y, goal.z, RETREAT_SPEED);
                 MiniJanemba.this.lookAt(target, 30.0F, 30.0F);
             }
+        }
+    }
+
+    public static class Turles extends WorldBossEntity {
+
+        public static final float BASE_HEALTH = 15600.0F;
+        public static final float BASE_MELEE = 655.2F;
+        public static final float BASE_KI = 655.2F;
+
+        public static final int ABILITY_MIGHT_FRUIT = 6;
+        public static final int ABILITY_KILL_DRIVER = 7;
+        public static final int ABILITY_METEOR_BURST = 8;
+        public static final int ABILITY_GRAB = 9;
+        public static final int KILL_DRIVER_THROW_TICK = 43;
+
+        private static final SupervillainPalette MIGHT_PALETTE = new SupervillainPalette(0xB00000, 0.45F, 0xE01010, 0x0A0000);
+        private static final EntityDataAccessor<Boolean> MIGHT_EMPOWERED =
+                SynchedEntityData.defineId(Turles.class, EntityDataSerializers.BOOLEAN);
+
+        private static final UUID MIGHT_DAMAGE_ID = UUID.fromString("5f0b7a54-2c1e-4f5b-9a57-7d1c1f2a9e11");
+        private static final double MIGHT_DAMAGE_BONUS = 0.5D;
+        private static final int MIGHT_DURATION = 600;
+        private static final int MIGHT_FIRST_DELAY = 900;
+        private static final int MIGHT_COOLDOWN = 1800;
+        private static final int MIGHT_MELEE_INTERVAL = 6;
+        private static final Vector3f MIGHT_DUST = new Vector3f(0.55F, 0.0F, 0.0F);
+        private static final Vector3f MIGHT_BURST_DUST = new Vector3f(0.85F, 0.05F, 0.05F);
+
+        private static final int FRUIT_DURATION = 20;
+        private static final int FRUIT_EAT_START = 4;
+        private static final int FRUIT_EAT_END = 11;
+        private static final int FRUIT_GONE_TICK = 12;
+        private static final int FRUIT_BURST_TICK = 15;
+
+        private static final int VOLLEY_COOLDOWN = 120;
+        private static final int ZANZOKEN_COOLDOWN = 100;
+        private static final int ABILITY_GAP = 50;
+
+        private static final int GRAB_DURATION = 35;
+        private static final int GRAB_COOLDOWN = 260;
+        private static final int GRAB_FIRST_DELAY = 60;
+        private static final double GRAB_RANGE = 3.0D;
+        private static final double GRAB_DASH_RANGE = 8.0D;
+        private static final double GRAB_GAP = 0.35D;
+        private static final float GRAB_DAMAGE_RATIO = 1.6F;
+
+        private static final int KILL_DRIVER_DURATION = 60;
+        private static final int KILL_DRIVER_COOLDOWN = 380;
+        private static final int KILL_DRIVER_FIRST_DELAY = 100;
+        private static final int KILL_DRIVER_FORM_TICK = 17;
+        private static final int KILL_DRIVER_RAISE_START = 32;
+        private static final int KILL_DRIVER_RAISE_END = 40;
+        private static final double KILL_DRIVER_MIN_RANGE = 6.0D;
+        private static final double KILL_DRIVER_MAX_RANGE = 40.0D;
+        private static final float KILL_DRIVER_SPEED = 1.15F;
+        private static final float KILL_DRIVER_DAMAGE_RATIO = 1.75F;
+
+        private static final int METEOR_COOLDOWN = 900;
+        private static final int METEOR_FIRST_DELAY = 400;
+        private static final float METEOR_STRIKE_BUDGET = 3.05F;
+        private static final float METEOR_KI_BUDGET = 1.6F;
+
+        private int mightTicks;
+        private int mightCooldown = MIGHT_FIRST_DELAY;
+        private int mightMeleeTimer;
+        private int grabCooldown = GRAB_FIRST_DELAY;
+        private int killDriverCooldown = KILL_DRIVER_FIRST_DELAY;
+        private int meteorCooldown = METEOR_FIRST_DELAY;
+        private int abilityGap;
+
+        private float lockedYaw;
+        private HeldVictim grabVictim;
+        private KillDriverEntity heldRing;
+        private final MeteorBurstCombo.State meteorState = new MeteorBurstCombo.State();
+        private final MeteorBurstCombo.Performer meteorPerformer = new MeteorBurstCombo.Performer() {
+            @Override
+            public LivingEntity self() {
+                return Turles.this;
+            }
+
+            @Override
+            public LivingEntity target() {
+                return Turles.this.getTarget();
+            }
+
+            @Override
+            public void place(Vec3 position, float yaw) {
+                Turles.this.lockedYaw = yaw;
+                Turles.this.setPos(position.x, position.y, position.z);
+                Turles.this.faceLocked();
+            }
+
+            @Override
+            public boolean isInterrupted() {
+                return Turles.this.isStunned();
+            }
+
+            @Override
+            public float strikeBudget() {
+                return (float) Turles.this.getAttributeValue(Attributes.ATTACK_DAMAGE) * METEOR_STRIKE_BUDGET;
+            }
+
+            @Override
+            public float kiBudget() {
+                return Turles.this.getKiBlastDamage() * METEOR_KI_BUDGET;
+            }
+
+            @Override
+            public void strikeHit(LivingEntity victim, float amount, boolean lethal) {
+                victim.hurt(MainDamageTypes.strikeAttack(Turles.this.level(), Turles.this, MeteorBurstCombo.TECHNIQUE_ID), amount);
+            }
+
+            @Override
+            public void kiHit(LivingEntity victim, float amount, boolean lethal) {
+                victim.hurt(MainDamageTypes.kiblast(Turles.this.level(), Turles.this, Turles.this), amount);
+            }
+
+            @Override
+            public boolean canHitArea(LivingEntity entity) {
+                return !entity.isAlliedTo(Turles.this) && !(entity instanceof WorldBossEntity);
+            }
+        };
+
+        public Turles(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(0xF52727);
+            this.setKiBlastSpeed(2.0F);
+            this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, VOLLEY_COOLDOWN, 1.0F,
+                    MeteorBurstCombo.COLOR_MAIN, MeteorBurstCombo.COLOR_BORDER, MeteorBurstCombo.COLOR_OUTLINE);
+            this.setWildSense(true, 100);
+            this.setZanzoken(3, ZANZOKEN_COOLDOWN);
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+
+            this.applyFixedStats();
+            this.getPersistentData().putBoolean("dmz_stats_configured", true);
+            this.fallAsleep();
+        }
+
+        @Override
+        protected void defineSynchedData() {
+            super.defineSynchedData();
+            this.entityData.define(MIGHT_EMPOWERED, false);
+        }
+
+        @Override
+        public String getWorldBossKey() {
+            return WorldBossEntity.TURLES;
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_turles";
+        }
+
+        @Override
+        public String getGeckolibTextureName() {
+            return "saga_turles";
+        }
+
+        @Override
+        public RawAnimation getSleepAnimation() {
+            return DBSagasAnimations.ANIM_BOSS2_SLEEP;
+        }
+
+        @Override
+        public boolean usesFullVolleyPalette() {
+            return true;
+        }
+
+        public boolean isMightEmpowered() {
+            return this.entityData.get(MIGHT_EMPOWERED);
+        }
+
+        @Override
+        public boolean showsSupervillainAura() {
+            return super.showsSupervillainAura() || this.isMightEmpowered();
+        }
+
+        @Override
+        public SupervillainPalette getSupervillainPalette() {
+            return this.isMightEmpowered() ? MIGHT_PALETTE : super.getSupervillainPalette();
+        }
+
+        @Override
+        protected BossEvent.BossBarColor getBossBarColor() {
+            return BossEvent.BossBarColor.RED;
+        }
+
+        @Override
+        public boolean isMeleeAllowed() {
+            return this.getBossAbility() < 0 && super.isMeleeAllowed();
+        }
+
+        @Override
+        public boolean isZanzokenReady() {
+            return this.getBossAbility() < 0 && super.isZanzokenReady();
+        }
+
+        @Override
+        public boolean isWildSenseReady() {
+            return this.getBossAbility() < 0 && super.isWildSenseReady();
+        }
+
+        @Override
+        protected void applyFixedStats() {
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(BASE_HEALTH);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(BASE_MELEE);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
+            this.setDefaultMovementSpeed(0.3D);
+            this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(6.0D);
+            this.setDefaultAttackSpeed(6.0D);
+            this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.5D);
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(BASE_KI);
+            this.setKiBlastDamage(BASE_KI);
+            this.setHealth(BASE_HEALTH);
+        }
+
+        @Override
+        protected int getBossAbilityDuration(int ability) {
+            return switch (ability) {
+                case ABILITY_MIGHT_FRUIT -> FRUIT_DURATION;
+                case ABILITY_KILL_DRIVER -> KILL_DRIVER_DURATION;
+                case ABILITY_METEOR_BURST -> MeteorBurstCombo.DURATION;
+                case ABILITY_GRAB -> GRAB_DURATION;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
+            if (this.level().isClientSide || !this.isAlive()) return;
+
+            this.tickMight();
+            if (this.isBossAsleep()) return;
+
+            LivingEntity target = this.getTarget();
+            boolean fighting = target != null && target.isAlive();
+            if (fighting) {
+                if (this.mightTicks <= 0 && this.mightCooldown > 0) this.mightCooldown--;
+                if (this.grabCooldown > 0) this.grabCooldown--;
+                if (this.killDriverCooldown > 0) this.killDriverCooldown--;
+                if (this.meteorCooldown > 0) this.meteorCooldown--;
+            }
+            if (this.abilityGap > 0) this.abilityGap--;
+
+            if (!fighting || this.getBossAbility() >= 0 || this.abilityGap > 0) return;
+            if (this.isStunned() || this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken()) return;
+
+            if (this.mightTicks <= 0 && this.mightCooldown <= 0 && this.startBossAbility(ABILITY_MIGHT_FRUIT)) return;
+
+            double distance = this.distanceTo(target);
+            boolean inSight = this.hasLineOfSight(target);
+
+            if (this.meteorCooldown <= 0 && distance <= MeteorBurstCombo.RANGE && inSight && HeldVictim.canHold(this, target)
+                    && this.startBossAbility(ABILITY_METEOR_BURST)) {
+                this.meteorCooldown = METEOR_COOLDOWN;
+                return;
+            }
+            if (this.grabCooldown <= 0 && distance <= GRAB_DASH_RANGE + target.getBbWidth() * 0.5D
+                    && HeldVictim.canHold(this, target) && this.startBossAbility(ABILITY_GRAB)) {
+                this.grabCooldown = GRAB_COOLDOWN;
+                return;
+            }
+            if (this.killDriverCooldown <= 0 && distance >= KILL_DRIVER_MIN_RANGE && distance <= KILL_DRIVER_MAX_RANGE
+                    && inSight && this.startBossAbility(ABILITY_KILL_DRIVER)) {
+                this.killDriverCooldown = KILL_DRIVER_COOLDOWN;
+            }
+        }
+
+        @Override
+        public void stopBossAbility() {
+            int ability = this.getBossAbility();
+            super.stopBossAbility();
+            if (ability < 0) return;
+
+            this.abilityGap = ABILITY_GAP;
+            if (ability == ABILITY_MIGHT_FRUIT) this.clearHeldFruit();
+            this.discardHeldRing();
+            this.releaseGrab();
+            MeteorBurstCombo.release(this.meteorState);
+        }
+
+        @Override
+        protected void tickBossAbility(int ability, int tick) {
+            if (!(this.level() instanceof ServerLevel serverLevel)) return;
+
+            switch (ability) {
+                case ABILITY_MIGHT_FRUIT -> this.tickMightFruit(serverLevel, tick);
+                case ABILITY_KILL_DRIVER -> this.tickKillDriver(serverLevel, tick);
+                case ABILITY_METEOR_BURST -> this.tickMeteorBurst(serverLevel, tick);
+                case ABILITY_GRAB -> this.tickGrab(serverLevel, tick);
+                default -> {
+                }
+            }
+        }
+
+        private void tickMightFruit(ServerLevel level, int tick) {
+            LivingEntity target = this.getTarget();
+            if (target != null) this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+
+            if (tick == 1) {
+                this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(MainItems.MIGHT_TREE_FRUIT.get()));
+                Vec3 hand = this.handPosition();
+                level.sendParticles(ParticleTypes.GLOW, hand.x, hand.y, hand.z, 10, 0.15D, 0.15D, 0.15D, 0.02D);
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.HOSTILE, 1.4F, 0.6F);
+            }
+
+            if (tick >= FRUIT_EAT_START && tick <= FRUIT_EAT_END && (tick - FRUIT_EAT_START) % 3 == 0) {
+                Vec3 mouth = this.getEyePosition().add(this.getLookAngle().scale(0.35D)).subtract(0.0D, 0.15D, 0.0D);
+                level.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(MainItems.MIGHT_TREE_FRUIT.get())),
+                        mouth.x, mouth.y, mouth.z, 6, 0.1D, 0.1D, 0.1D, 0.05D);
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EAT, SoundSource.HOSTILE,
+                        1.0F, 0.8F + this.random.nextFloat() * 0.2F);
+            }
+
+            if (tick == FRUIT_GONE_TICK) this.clearHeldFruit();
+            if (tick == FRUIT_BURST_TICK) this.empower(level);
+        }
+
+        private Vec3 handPosition() {
+            Vec3 forward = Vec3.directionFromRotation(0.0F, this.yBodyRot);
+            Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
+            return this.position().add(0.0D, this.getBbHeight() * 0.55D, 0.0D).add(forward.scale(0.35D)).add(right.scale(0.4D));
+        }
+
+        private void empower(ServerLevel level) {
+            this.mightTicks = MIGHT_DURATION;
+            this.mightMeleeTimer = 0;
+            this.entityData.set(MIGHT_EMPOWERED, true);
+            this.applyMightModifier(true);
+
+            double cy = this.getY() + this.getBbHeight() * 0.5D;
+            level.sendParticles(new DustParticleOptions(MIGHT_BURST_DUST, 2.0F), this.getX(), cy, this.getZ(), 60, 0.7D, 0.9D, 0.7D, 0.05D);
+            level.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), cy, this.getZ(), 40, 0.6D, 0.9D, 0.6D, 0.04D);
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.AURA_START.get(), SoundSource.HOSTILE, 2.0F, 0.7F);
+            level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 1.5F, 0.6F);
+            NetworkHandler.sendToTrackingEntity(new ShockwaveVfxS2C(this.getX(), this.getY() + 0.2D, this.getZ(), 9.0F, 0xC00000, 16), this);
+            NetworkHandler.sendToTrackingEntity(new KiBurstVfxS2C(this.getId(), true, 6.0F), this);
+        }
+
+        private void tickMight() {
+            if (this.mightTicks <= 0) return;
+            if (--this.mightTicks <= 0) {
+                this.endMight(true);
+                return;
+            }
+            if (this.mightMeleeTimer > 0) this.mightMeleeTimer--;
+
+            if (this.level() instanceof ServerLevel level && this.tickCount % 4 == 0) {
+                level.sendParticles(new DustParticleOptions(MIGHT_DUST, 1.2F), this.getX(), this.getY() + this.getBbHeight() * 0.5D,
+                        this.getZ(), 3, 0.35D, 0.6D, 0.35D, 0.0D);
+            }
+
+            if (this.mightMeleeTimer > 0 || this.isBossAsleep() || this.getBossAbility() >= 0) return;
+            if (this.isCasting() || this.isComboing() || this.isStunned() || this.isTransforming() || this.isZanzoken()) return;
+            if (!this.isMeleeAllowed() || this.isCombatFrozen()) return;
+
+            LivingEntity target = this.getTarget();
+            if (target == null || !target.isAlive()) return;
+            double reach = this.getMeleeReach() + target.getBbWidth() * 0.5D;
+            if (this.distanceToSqr(target) > reach * reach || !this.hasLineOfSight(target)) return;
+
+            this.mightMeleeTimer = MIGHT_MELEE_INTERVAL;
+            this.lookAt(target, 30.0F, 30.0F);
+            this.swing(InteractionHand.MAIN_HAND);
+            target.invulnerableTime = 0;
+            this.doHurtTarget(target);
+        }
+
+        private void endMight(boolean startCooldown) {
+            this.mightTicks = 0;
+            this.entityData.set(MIGHT_EMPOWERED, false);
+            this.applyMightModifier(false);
+            if (startCooldown) this.mightCooldown = MIGHT_COOLDOWN;
+            if (this.level() instanceof ServerLevel level) {
+                level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + this.getBbHeight() * 0.5D, this.getZ(),
+                        30, 0.4D, 0.7D, 0.4D, 0.02D);
+            }
+        }
+
+        private void applyMightModifier(boolean active) {
+            AttributeInstance damage = this.getAttribute(Attributes.ATTACK_DAMAGE);
+            if (damage == null) return;
+            damage.removeModifier(MIGHT_DAMAGE_ID);
+            if (active) {
+                damage.addTransientModifier(new AttributeModifier(MIGHT_DAMAGE_ID, "Fruit of Might", MIGHT_DAMAGE_BONUS,
+                        AttributeModifier.Operation.MULTIPLY_TOTAL));
+            }
+        }
+
+        private void clearHeldFruit() {
+            if (this.getItemBySlot(EquipmentSlot.MAINHAND).is(MainItems.MIGHT_TREE_FRUIT.get())) {
+                this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            }
+        }
+
+        private void tickGrab(ServerLevel level, int tick) {
+            if (tick == 1) {
+                LivingEntity target = this.getTarget();
+                if (!HeldVictim.canHold(this, target) || this.distanceTo(target) > GRAB_DASH_RANGE + target.getBbWidth() * 0.5D) {
+                    this.stopBossAbility();
+                    return;
+                }
+                if (this.distanceTo(target) > GRAB_RANGE + target.getBbWidth() * 0.5D) {
+                    double gap = this.getBbWidth() * 0.5D + target.getBbWidth() * 0.5D + GRAB_GAP;
+                    HeldVictim.Approach approach = HeldVictim.approach(level, this, target, gap);
+                    this.teleportTo(approach.destination().x, approach.destination().y, approach.destination().z);
+                    this.lockedYaw = approach.yaw();
+                } else {
+                    this.lockedYaw = this.yawTowards(target);
+                }
+                this.faceLocked();
+                this.grabVictim = HeldVictim.capture(target, GRAB_DURATION + 10);
+                level.playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.GOLPE2.get(), SoundSource.HOSTILE, 1.0F, 0.8F);
+            }
+
+            if (this.grabVictim == null) return;
+            this.faceLocked();
+            if (!this.grabVictim.isValid(this, 48.0D) || this.isStunned()) {
+                this.stopBossAbility();
+                return;
+            }
+
+            LivingEntity victim = this.grabVictim.entity();
+            if (tick < StrikeAttackHandler.GRAB_HOLD_TICK) {
+                double gap = this.getBbWidth() * 0.5D + victim.getBbWidth() * 0.5D + GRAB_GAP;
+                this.grabVictim.hold(this.position().add(this.facing().scale(gap)), this.lockedYaw + 180.0F);
+                return;
+            }
+            if (tick < StrikeAttackHandler.GRAB_RELEASE_TICK) {
+                if (tick == StrikeAttackHandler.GRAB_HOLD_TICK) this.grabVictim.grabbed();
+                victim.invulnerableTime = 20;
+                victim.fallDistance = 0.0F;
+                StrikeAttackHandler.holdGrabVictim(this, victim, tick);
+                return;
+            }
+            if (tick == StrikeAttackHandler.GRAB_RELEASE_TICK) this.throwVictim(level);
+        }
+
+        private void throwVictim(ServerLevel level) {
+            LivingEntity target = this.grabVictim.entity();
+            Vec3 dir = this.facing();
+            this.releaseGrab();
+
+            float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * GRAB_DAMAGE_RATIO;
+            target.invulnerableTime = 0;
+            target.hurt(MainDamageTypes.strikeAttack(level, this, null), damage);
+            level.playSound(null, target.getX(), target.getY(), target.getZ(), MainSounds.CRITICO1.get(), SoundSource.HOSTILE, 2.0F, 1.0F);
+            if (!target.isAlive()) return;
+
+            KnockbackHelper.apply(target, new Vec3(dir.x * StrikeAttackHandler.GRAB_THROW_FORCE, StrikeAttackHandler.GRAB_THROW_LIFT,
+                    dir.z * StrikeAttackHandler.GRAB_THROW_FORCE));
+            MomentumImpactHandler.registerCollisionImpact(target, MomentumImpactHandler.CollisionImpactType.WALL, damage * 0.2F, dir);
+        }
+
+        private void releaseGrab() {
+            if (this.grabVictim == null) return;
+            this.grabVictim.release();
+            this.grabVictim = null;
+        }
+
+        private void tickKillDriver(ServerLevel level, int tick) {
+            LivingEntity target = this.getTarget();
+            if (tick < KILL_DRIVER_THROW_TICK) {
+                if (target != null) this.lockedYaw = this.yawTowards(target);
+                else if (tick == 1) this.lockedYaw = this.getYRot();
+                this.faceLocked();
+            }
+
+            if (tick == 1) {
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 1.6F, 0.8F);
+            }
+
+            if (tick == KILL_DRIVER_FORM_TICK) {
+                KillDriverEntity ring = new KillDriverEntity(level, this);
+                ring.setup(this, this.getKiBlastDamage() * KILL_DRIVER_DAMAGE_RATIO,
+                        KillDriverEntity.COLOR_MAIN, KillDriverEntity.COLOR_BORDER, KillDriverEntity.COLOR_OUTLINE);
+                ring.setRadius(KillDriverEntity.RADIUS * KillDriverEntity.FORM_SCALE);
+                ring.hold(this.ringHoldPoint(tick, ring.getSize()), this.facing());
+                ring.setTechniqueId(KillDriverEntity.TECHNIQUE_ID);
+                if (level.addFreshEntity(ring)) this.heldRing = ring;
+                level.playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_CHARGE_LOOP.get(), SoundSource.HOSTILE, 1.4F, 1.3F);
+            }
+
+            KillDriverEntity ring = this.heldRing;
+            if (ring == null) return;
+            if (!ring.isAlive()) {
+                this.heldRing = null;
+                return;
+            }
+
+            if (tick < KILL_DRIVER_THROW_TICK) {
+                ring.setRadius(KillDriverEntity.RADIUS * Mth.lerp(this.ringRaise(tick), KillDriverEntity.FORM_SCALE, 1.0F));
+                ring.hold(this.ringHoldPoint(tick, ring.getSize()), this.facing());
+                return;
+            }
+
+            if (tick == KILL_DRIVER_THROW_TICK) {
+                ring.setRadius(KillDriverEntity.RADIUS);
+                Vec3 aim = target != null && target.isAlive()
+                        ? target.getBoundingBox().getCenter().subtract(ring.position())
+                        : this.facing();
+                ring.launch(aim, KILL_DRIVER_SPEED);
+                this.heldRing = null;
+            }
+        }
+
+        private float ringRaise(int tick) {
+            return Mth.clamp((tick - KILL_DRIVER_RAISE_START) / (float) (KILL_DRIVER_RAISE_END - KILL_DRIVER_RAISE_START), 0.0F, 1.0F);
+        }
+
+        private Vec3 ringHoldPoint(int tick, float radius) {
+            return KillDriverEntity.holdPoint(this, this.facing(), this.ringRaise(tick), radius);
+        }
+
+        private void discardHeldRing() {
+            if (this.heldRing != null && !this.heldRing.isFiring()) this.heldRing.discard();
+            this.heldRing = null;
+        }
+
+        private void tickMeteorBurst(ServerLevel level, int tick) {
+            this.setNoGravity(true);
+            this.setDeltaMovement(Vec3.ZERO);
+            if (!MeteorBurstCombo.tick(level, this.meteorPerformer, this.meteorState, tick)) this.stopBossAbility();
+        }
+
+        private Vec3 facing() {
+            return Vec3.directionFromRotation(0.0F, this.lockedYaw);
+        }
+
+        private float yawTowards(Entity target) {
+            double dx = target.getX() - this.getX();
+            double dz = target.getZ() - this.getZ();
+            if (dx * dx + dz * dz < 1.0E-6D) return this.getYRot();
+            return (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+        }
+
+        private void faceLocked() {
+            this.setYRot(this.lockedYaw);
+            this.setYBodyRot(this.lockedYaw);
+            this.setYHeadRot(this.lockedYaw);
+        }
+
+        @Override
+        protected boolean onReturnToSleep() {
+            if (this.mightTicks > 0) this.endMight(false);
+            this.mightCooldown = MIGHT_FIRST_DELAY;
+            this.grabCooldown = GRAB_FIRST_DELAY;
+            this.killDriverCooldown = KILL_DRIVER_FIRST_DELAY;
+            this.meteorCooldown = METEOR_FIRST_DELAY;
+            this.abilityGap = 0;
+            this.clearHeldFruit();
+            this.releaseGrab();
+            MeteorBurstCombo.release(this.meteorState);
+            WorldBossContribution.clear(getWorldBossKey());
+            return false;
+        }
+
+        @Override
+        public void die(DamageSource pCause) {
+            this.releaseGrab();
+            MeteorBurstCombo.release(this.meteorState);
+            this.clearHeldFruit();
+            super.die(pCause);
+        }
+
+        @Override
+        public void remove(RemovalReason pReason) {
+            this.releaseGrab();
+            MeteorBurstCombo.release(this.meteorState);
+            this.discardHeldRing();
+            super.remove(pReason);
+        }
+
+        @Override
+        public void addAdditionalSaveData(CompoundTag pCompound) {
+            super.addAdditionalSaveData(pCompound);
+            pCompound.putInt("MightTicks", this.mightTicks);
+            pCompound.putInt("MightCooldown", this.mightCooldown);
+        }
+
+        @Override
+        public void readAdditionalSaveData(CompoundTag pCompound) {
+            super.readAdditionalSaveData(pCompound);
+            this.mightTicks = Math.max(0, pCompound.getInt("MightTicks"));
+            if (pCompound.contains("MightCooldown")) this.mightCooldown = pCompound.getInt("MightCooldown");
+            boolean empowered = this.mightTicks > 0;
+            this.entityData.set(MIGHT_EMPOWERED, empowered);
+            this.applyMightModifier(empowered);
+            this.clearHeldFruit();
         }
     }
 }

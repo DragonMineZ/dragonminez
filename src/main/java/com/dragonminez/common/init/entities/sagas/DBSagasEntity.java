@@ -67,6 +67,7 @@ import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1835,6 +1836,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
         return 0;
     }
 
+    public RawAnimation getSleepAnimation() {
+        return DBSagasAnimations.ANIM_BOSS_SLEEP;
+    }
+
+    public boolean usesFullVolleyPalette() {
+        return false;
+    }
+
     public String getQuestTeam() {
         return this.getPersistentData().getString(QuestService.QUEST_TEAM_TAG);
     }
@@ -2293,7 +2302,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity, ITextu
 
     public OutlineStyle getOutlineStyle() {return null;}
 
+    public boolean showsSupervillainAura() {return this.isSupervillain();}
+
+    public SupervillainPalette getSupervillainPalette() {return null;}
+
     public int getNamekDragonBallStars() {return 0;}
 
     public record OutlineStyle(int primaryColor, int secondaryColor, float thickness) {}
+
+    public record SupervillainPalette(int tint, float tintAlpha, int flameInner, int flameOuter) {}
 }

@@ -1,6 +1,7 @@
 package com.dragonminez.server.world.feature;
 
 import com.dragonminez.Reference;
+import com.dragonminez.server.world.structure.tree.TreeOfMightCanopyFeature;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
@@ -22,6 +23,9 @@ public class OverworldFeatures {
 
     public static final RegistryObject<Feature<NoneFeatureConfiguration>> ROCKY_CLIFF = FEATURES.register("rocky_cliff",
             () -> new RockyCliffFeature(NoneFeatureConfiguration.CODEC));
+
+    public static final RegistryObject<Feature<NoneFeatureConfiguration>> TREE_OF_MIGHT_CANOPY = FEATURES.register("tree_of_might_canopy",
+            () -> new TreeOfMightCanopyFeature(NoneFeatureConfiguration.CODEC));
 
     public static void register(IEventBus eventBus) {
 		FEATURES.register(eventBus);

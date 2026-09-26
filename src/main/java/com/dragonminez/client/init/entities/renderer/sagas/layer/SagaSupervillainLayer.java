@@ -24,15 +24,26 @@ public class SagaSupervillainLayer<T extends DBSagasEntity> extends GeoRenderLay
 	}
 
 	public static float[] borderColor(DBSagasEntity entity) {
-		if (!entity.isSupervillain() || entity.isSpectator() || entity.isInvisible()) return null;
-		return BORDER_COLOR;
+		if (!entity.showsSupervillainAura() || entity.isSpectator() || entity.isInvisible()) return null;
+		DBSagasEntity.SupervillainPalette palette = entity.getSupervillainPalette();
+		return palette != null ? ColorUtils.rgbIntToFloat(palette.flameOuter()) : BORDER_COLOR;
+	}
+
+	public static float[] borderInnerColor(DBSagasEntity entity) {
+		if (!entity.showsSupervillainAura() || entity.isSpectator() || entity.isInvisible()) return null;
+		DBSagasEntity.SupervillainPalette palette = entity.getSupervillainPalette();
+		return palette != null ? ColorUtils.rgbIntToFloat(palette.flameInner()) : null;
 	}
 
 	@Override
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel bakedModel, RenderType renderType,
 					   MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick,
 					   int packedLight, int packedOverlay) {
-		if (!animatable.isSupervillain() || animatable.isSpectator()) return;
+		if (!animatable.showsSupervillainAura() || animatable.isSpectator()) return;
+
+		DBSagasEntity.SupervillainPalette palette = animatable.getSupervillainPalette();
+		float[] tint = palette != null ? ColorUtils.rgbIntToFloat(palette.tint()) : TINT;
+		float tintAlpha = palette != null ? palette.tintAlpha() : TINT_ALPHA;
 
 		ResourceLocation texture = getRenderer().getTextureLocation(animatable);
 		RenderType tinted = ModRenderTypes.skinOverlayTranslucent(texture);
@@ -42,7 +53,7 @@ public class SagaSupervillainLayer<T extends DBSagasEntity> extends GeoRenderLay
 		try {
 			getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, tinted,
 					bufferSource.getBuffer(tinted), partialTick, packedLight, packedOverlay,
-					TINT[0], TINT[1], TINT[2], TINT_ALPHA);
+					tint[0], tint[1], tint[2], tintAlpha);
 		} finally {
 			if (maskBuffer != null) maskBuffer.setMaskCaptureBlocked(false);
 		}

@@ -89,8 +89,9 @@ public class GeneralServerConfig {
 		}
 
 		public List<WorldBossRewardEntry> getRewards(String bossKey) {
-			if (rewards == null || bossKey == null) return List.of();
-			List<WorldBossRewardEntry> list = rewards.get(bossKey);
+			if (bossKey == null) return List.of();
+			List<WorldBossRewardEntry> list = rewards != null ? rewards.get(bossKey) : null;
+			if (list == null) list = defaultWorldBossRewards().get(bossKey);
 			return list != null ? list : List.of();
 		}
 
@@ -101,6 +102,12 @@ public class GeneralServerConfig {
 			janemba.add(WorldBossRewardEntry.item("dragonminez:dimensional_sword", 1, 0.5));
 			janemba.add(WorldBossRewardEntry.skill("dimensional_teleport", 1, 0.2));
 			map.put("janemba", janemba);
+			List<WorldBossRewardEntry> turles = new ArrayList<>();
+			turles.add(WorldBossRewardEntry.tps(50_000, 1.0));
+			turles.add(WorldBossRewardEntry.item("dragonminez:might_tree_fruit", 1, 0.5));
+			turles.add(WorldBossRewardEntry.skill("kill_driver", 1, 0.25));
+			turles.add(WorldBossRewardEntry.skill("meteor_burst", 1, 0.15));
+			map.put("turles", turles);
 			return map;
 		}
 

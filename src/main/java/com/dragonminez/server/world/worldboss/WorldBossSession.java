@@ -629,7 +629,7 @@ public final class WorldBossSession {
 		}
 
 		WorldBossResults results = WorldBossRewards.grantAndBuild(level, bossKey, bossNameKey, level.getGameTime() - startTick);
-		WorldBossResultsCache.store(results);
+		WorldBossRewards.storeResults(results);
 		broadcastContribution(level, true, false);
 		announceVictory(level, results);
 		endSession(level);

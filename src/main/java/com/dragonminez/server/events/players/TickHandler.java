@@ -1100,6 +1100,7 @@ public class TickHandler {
 		if (ki instanceof KiExplosionEntity explosion) return explosion.isFiring();
 		if (ki instanceof KiBarrierEntity barrier) return barrier.isFiring();
         if (ki instanceof KiAreaEntity area) return area.isFiring();
+		if (ki instanceof KillDriverEntity ring) return ring.isFiring();
 		return false;
 	}
 
