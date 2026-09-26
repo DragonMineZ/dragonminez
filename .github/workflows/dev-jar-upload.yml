@@ -239,8 +239,9 @@ jobs:
             exit 1
           fi
 
+          protected_secret_b64="$(printf '%s' "$RELEASE_WEBHOOK_SECRET" | base64 -w0)"
           cleanup_report="$(
-            ssh "${ssh_opts[@]}" "$remote" "DMZ_PROTECTED_SECRET='$RELEASE_WEBHOOK_SECRET' python3 - '$DMZ_VPS_UPLOAD_DIR'" <<'PY'
+            ssh "${ssh_opts[@]}" "$remote" "DMZ_PROTECTED_SECRET=\$(printf '%s' '$protected_secret_b64' | base64 -d) python3 - '$DMZ_VPS_UPLOAD_DIR'" <<'PY'
           from pathlib import Path
           import json
           import os

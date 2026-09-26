@@ -97,16 +97,70 @@ jobs:
       - name: Notify Discord bot
         if: steps.metadata.outputs.stable == 'true'
         env:
+          DMZ_VPS_HOST: ${{ vars.DMZ_VPS_HOST }}
+          DMZ_VPS_PORT: ${{ vars.DMZ_VPS_PORT }}
+          DMZ_VPS_USER: ${{ secrets.DMZ_VPS_USER }}
+          DMZ_VPS_SSH_KEY: ${{ secrets.DMZ_VPS_SSH_KEY }}
+          DMZ_VPS_KNOWN_HOSTS: ${{ secrets.DMZ_VPS_KNOWN_HOSTS }}
           RELEASE_WEBHOOK_SECRET: ${{ secrets.DMZ_RELEASE_BOT_WEBHOOK_SECRET }}
         shell: bash
         run: |
           set -euo pipefail
-          webhook_url="https://release-bot.dragonminez.com/dmz-release"
+
+          : "${DMZ_VPS_HOST:?DMZ_VPS_HOST repository variable is required}"
+          : "${DMZ_VPS_USER:?DMZ_VPS_USER secret is required}"
+          : "${DMZ_VPS_SSH_KEY:?DMZ_VPS_SSH_KEY secret is required}"
+          : "${DMZ_VPS_KNOWN_HOSTS:?DMZ_VPS_KNOWN_HOSTS secret is required}"
           : "${RELEASE_WEBHOOK_SECRET:?DMZ_RELEASE_BOT_WEBHOOK_SECRET secret is required}"
 
-          curl --fail-with-body \
-            --request POST \
-            --header 'Content-Type: application/json' \
-            --header "X-DMZ-Release-Bot-Secret: ${RELEASE_WEBHOOK_SECRET}" \
-            --data @release-bot-payload.json \
-            "$webhook_url"
+          port="${DMZ_VPS_PORT:-22}"
+          if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+            echo "::error::DMZ_VPS_PORT must be numeric."
+            exit 1
+          fi
+          if [[ ! "$DMZ_VPS_HOST" =~ ^[A-Za-z0-9.-]+$ ]]; then
+            echo "::error::DMZ_VPS_HOST must be a DNS name or IPv4 address without a protocol."
+            exit 1
+          fi
+          if [[ ! "$DMZ_VPS_USER" =~ ^[A-Za-z_][A-Za-z0-9_.-]*[$]?$ ]]; then
+            echo "::error::DMZ_VPS_USER contains unsupported characters."
+            exit 1
+          fi
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DMZ_VPS_SSH_KEY" > ~/.ssh/dmz_deploy_key
+          chmod 600 ~/.ssh/dmz_deploy_key
+          printf '%s\n' "$DMZ_VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh-keygen -l -f ~/.ssh/known_hosts >/dev/null
+
+          lookup_host="$DMZ_VPS_HOST"
+          if [[ "$port" != "22" ]]; then
+            lookup_host="[$DMZ_VPS_HOST]:$port"
+          fi
+          if ! ssh-keygen -F "$lookup_host" -f ~/.ssh/known_hosts >/dev/null; then
+            echo "::error::DMZ_VPS_KNOWN_HOSTS does not contain an entry for ${lookup_host}."
+            exit 1
+          fi
+
+          ssh_opts=(
+            -4
+            -i "$HOME/.ssh/dmz_deploy_key"
+            -p "$port"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+          remote="${DMZ_VPS_USER}@${DMZ_VPS_HOST}"
+          secret_b64="$(printf '%s' "$RELEASE_WEBHOOK_SECRET" | base64 -w0)"
+
+          # Delivered over SSH to the bot's local port: the public hostname sits behind
+          # a Cloudflare managed challenge that answers curl with a 403 interstitial.
+          cat release-bot-payload.json | ssh "${ssh_opts[@]}" "$remote" \
+            "secret=\$(printf '%s' '$secret_b64' | base64 -d); \
+             curl --fail-with-body --show-error --silent \
+               -X POST \
+               -H 'Content-Type: application/json' \
+               -H \"X-DMZ-Release-Bot-Secret: \${secret}\" \
+               --data-binary @- \
+               http://127.0.0.1:8088/dmz-release"
