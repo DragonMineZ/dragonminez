@@ -6,10 +6,6 @@ on:
       - main
     paths:
       - gradle.properties
-      - CHANGELOG.md
-      - release-notes/**
-      - scripts/release/**
-      - .github/workflows/release-prepare.yml
   workflow_dispatch: {}
 
 permissions:
