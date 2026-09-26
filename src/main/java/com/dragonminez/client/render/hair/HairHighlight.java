@@ -35,15 +35,7 @@ public final class HairHighlight {
 		return LightTexture.pack(Math.round(block + (15 - block) * intensity), Math.round(sky + (15 - sky) * intensity));
 	}
 
-	public static int applyColor(int rgb, float intensity) {
-		if (intensity <= 0.0f) return rgb;
-		float white = intensity * PEAK_WHITE;
-		int r = (rgb >> 16) & 0xFF;
-		int g = (rgb >> 8) & 0xFF;
-		int b = rgb & 0xFF;
-		r = Math.round(r + (255 - r) * white);
-		g = Math.round(g + (255 - g) * white);
-		b = Math.round(b + (255 - b) * white);
-		return (r << 16) | (g << 8) | b;
+	public static float applyColor(float channel, float intensity) {
+		return channel + (1.0f - channel) * intensity * PEAK_WHITE;
 	}
 }

@@ -28,6 +28,9 @@ public final class HairEntityState {
 	private final StrandPose[] poses = new StrandPose[STRAND_COUNT];
 	private final StrandChain[] chains = new StrandChain[STRAND_COUNT];
 	private final boolean[] present = new boolean[STRAND_COUNT];
+	private final float[][] ringParams = new float[STRAND_COUNT][];
+	private final float[][] ringOcclusion = new float[STRAND_COUNT][];
+	private final float[] occlusionScratch = new float[HairOcclusion.CORNERS];
 	private final HairStrand scratchStrand = new HairStrand();
 	private final HairColliders colliders = new HairColliders();
 
@@ -90,6 +93,14 @@ public final class HairEntityState {
 		return present[flat];
 	}
 
+	public float[] ringParams(int flat) {
+		return ringParams[flat];
+	}
+
+	public float[] ringOcclusion(int flat) {
+		return ringOcclusion[flat];
+	}
+
 	public HairColliders colliders() {
 		return colliders;
 	}
@@ -119,6 +130,8 @@ public final class HairEntityState {
 		boolean fromOnly = factor <= 0.0001f;
 		boolean toOnly = factor >= 0.9999f;
 		float blend = fromOnly || toOnly ? factor : HairMath.smoothstep(factor);
+		HairOcclusion.Shading fromShading = toOnly ? null : HairOcclusion.of(from);
+		HairOcclusion.Shading toShading = fromOnly ? null : (to == from && fromShading != null ? fromShading : HairOcclusion.of(to));
 
 		for (CustomHair.HairFace face : CustomHair.HairFace.values()) {
 			for (int index = 0; index < face.maxStrands; index++) {
@@ -144,7 +157,42 @@ public final class HairEntityState {
 				} else {
 					HairPoseBuilder.buildBlend(fromStrand, fromVisible, toStrand, toVisible, blend, face, index, fromSlot, toSlot, pose, scratchStrand);
 				}
+				updateShading(flat, pose, fromOnly || !toVisible ? fromShading : null, toOnly || !fromVisible ? toShading : null, fromShading, toShading, blend);
 			}
+		}
+	}
+
+	private void updateShading(int flat, StrandPose pose, HairOcclusion.Shading onlyFrom, HairOcclusion.Shading onlyTo,
+							   HairOcclusion.Shading fromShading, HairOcclusion.Shading toShading, float blend) {
+		int rings = pose.segments + 1;
+		float[] params = ringParams[flat];
+		if (params == null || params.length < rings) params = ringParams[flat] = new float[Math.max(rings, 8)];
+		float[] occlusion = ringOcclusion[flat];
+		if (occlusion == null || occlusion.length < rings * HairOcclusion.CORNERS) {
+			occlusion = ringOcclusion[flat] = new float[Math.max(rings, 8) * HairOcclusion.CORNERS];
+		}
+		HairOcclusion.ringParams(pose, params);
+
+		HairOcclusion.Shading single = onlyFrom != null ? onlyFrom : onlyTo;
+		for (int ring = 0; ring < rings; ring++) {
+			int offset = ring * HairOcclusion.CORNERS;
+			if (single != null) {
+				sampleShading(single, flat, params[ring], occlusion, offset);
+				continue;
+			}
+			sampleShading(fromShading, flat, params[ring], occlusion, offset);
+			sampleShading(toShading, flat, params[ring], occlusionScratch, 0);
+			for (int corner = 0; corner < HairOcclusion.CORNERS; corner++) {
+				occlusion[offset + corner] = HairMath.lerp(blend, occlusion[offset + corner], occlusionScratch[corner]);
+			}
+		}
+	}
+
+	private static void sampleShading(HairOcclusion.Shading shading, int flat, float param, float[] out, int offset) {
+		if (shading != null && shading.has(flat)) {
+			shading.sample(flat, param, out, offset);
+		} else {
+			for (int corner = 0; corner < HairOcclusion.CORNERS; corner++) out[offset + corner] = 0.0f;
 		}
 	}
 

@@ -12,6 +12,7 @@ import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.client.render.hair.HairSimulation;
 import com.dragonminez.client.render.hair.HairStyleResolver;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
+import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.hair.HairManager;
@@ -49,6 +50,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private static final ResourceLocation HAIR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/hair.png");
 	private static final double FULL_PHYSICS_DISTANCE_SQR = 24.0 * 24.0;
 	private static final double REDUCED_PHYSICS_DISTANCE_SQR = 48.0 * 48.0;
+	private static final double PIXEL_DETAIL_DISTANCE_SQR = 32.0 * 32.0;
 	private static final float SPECTATOR_ALPHA = 0.15f;
 
 	private final HairStyleResolver resolver = new HairStyleResolver();
@@ -168,7 +170,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		RenderType hairType = alpha < 1.0f ? RenderType.entityTranslucent(HAIR_TEXTURE) : RenderType.entityCutoutNoCull(HAIR_TEXTURE);
 		VertexConsumer hairBuffer = bufferSource.getBuffer(hairType);
 		meshBuilder.emit(hairBuffer, headPose, headNormal, state, useSimulation, globalFrom, globalTo, forceFrom, forceTo,
-				packedLight, packedOverlay, alpha,
+				packedLight, packedOverlay, alpha, wantsPixelDetail(animatable),
 				preview != null ? preview::highlight : null,
 				preview != null ? preview::isHidden : null,
 				preview != null ? preview.pickRecorder() : null);
@@ -234,6 +236,13 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (distanceSqr > REDUCED_PHYSICS_DISTANCE_SQR) return 0;
 		if (GeneralUserConfig.HAIR_PHYSICS_LOW.equals(quality) || distanceSqr > FULL_PHYSICS_DISTANCE_SQR) return HairSimulation.REDUCED_SUBSTEPS;
 		return HairSimulation.FULL_SUBSTEPS;
+	}
+
+	private static boolean wantsPixelDetail(Entity animatable) {
+		if (HairRenderContext.mode() != HairRenderContext.Mode.WORLD) return true;
+		if (IrisCompat.isRenderingShadowPass()) return false;
+		Entity camera = Minecraft.getInstance().getCameraEntity();
+		return camera == null || !isPerspectivePass() || animatable.distanceToSqr(camera) <= PIXEL_DETAIL_DISTANCE_SQR;
 	}
 
 	private static boolean isPerspectivePass() {
