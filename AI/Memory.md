@@ -110,6 +110,27 @@ Use this schema for each memory entry:
 
 Add durable memories below this line, newest first.
 
+### 2026-09-26 - Never Cache Framebuffer Attachments By Texture Id
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: `client/render/shader/BloomPipeline.java`, and any raw framebuffer built on another `RenderTarget`'s textures
+- Summary: `RenderTarget.resize` deletes and recreates its textures and NVIDIA returns the same texture names, so a raw framebuffer whose attachments were cached by id kept pointing at the deleted textures, still reported `GL_FRAMEBUFFER_COMPLETE`, and drew nowhere. Every bloom (ki attacks and auras) vanished after the first maximise or fullscreen switch until a restart.
+- Guidance: Re-attach such framebuffers once per frame. To verify, make the effect render once, then resize the window (GLFW maximise/restore, `Window.toggleFullScreen`) and read the target texture back.
+- Do Not: Do not treat an unchanged texture id or a complete framebuffer status as proof that an attachment is still the live texture.
+- Related: `AI/Context.md` (Bloom)
+
+### 2026-09-26 - RenderType Clear State Leaks Into Manual Draw Passes
+
+- Type: pitfall
+- Status: active
+- Source: debugging
+- Scope: effects drawn manually in `PlayerEffectsRenderHandler` / `EffectBloomRenderer` (ki tasks)
+- Summary: `RenderType.clearRenderState()` (and `BufferSource.endBatch()`, which calls it) leaves blending and the depth test off, depth writes on and culling on. Inside the ki pass this made everything drawn after the Final Flash/Galick Gun lightning opaque, visible through walls, and written at full strength into the bloom mask.
+- Guidance: After flushing a RenderType in the middle of a manual pass, put the pass state back (`EffectBloomRenderer.restoreKiState` for ki tasks).
+- Related: `KiWaveRenderer#renderGalickLightning`, `KiProjectileRenderer`
+
 ### 2026-09-23 - LevelTickEvent Fires Once Per Loaded Dimension
 
 - Type: pitfall

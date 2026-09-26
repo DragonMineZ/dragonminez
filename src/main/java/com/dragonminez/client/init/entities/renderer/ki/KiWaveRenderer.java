@@ -25,6 +25,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
 import java.util.Random;
 
@@ -33,7 +34,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     private static final float MUZZLE_FLAME_SCALE = 1.55F;
     private static final float DOUBLE_WAVE_BALL_SCALE = 0.82F;
-    /** Ticks of offset between the two orbs of a double wave, so they do not shed in mirror. */
     private static final float EMBER_PAIR_OFFSET = 6.5F;
     private static final float CHARGE_GROW_TICKS = 12.0F;
     private static final float CHARGE_RAYS_REACH = 11.0F;
@@ -371,6 +371,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
         if (shader == null || mesh == null) return;
 
+        boolean depthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         shader.safeGetUniform("time").set(ageInTicks / 20.0f);
         shader.safeGetUniform("speedModifier").set(isFiring ? 2.5f : 1.5f);
         shader.safeGetUniform("color1").set(1.0f, 1.0f, 1.0f);
@@ -410,6 +411,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         VertexBuffer.unbind();
         shader.clear();
         lightningType.clearRenderState();
+        EffectBloomRenderer.restoreKiState(depthTest);
     }
 
     private void renderChargeRays(KiWaveEntity entity, PoseStack poseStack, Matrix4f proj, float[] coreColor, float[] borderColor, float ageInTicks, float ballRadius, float alphaMultiplier) {

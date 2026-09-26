@@ -61,4 +61,12 @@ public final class EffectBloomRenderer {
 	public static void reset() {
 		BloomPipeline.reset();
 	}
+
+	public static void restoreKiState(boolean depthTest) {
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		RenderSystem.depthMask(false);
+		RenderSystem.disableCull();
+		if (depthTest) RenderSystem.enableDepthTest();
+	}
 }

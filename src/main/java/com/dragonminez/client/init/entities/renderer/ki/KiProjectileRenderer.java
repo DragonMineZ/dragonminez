@@ -2,6 +2,7 @@ package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
+import com.dragonminez.client.render.shader.EffectBloomRenderer;
 import com.dragonminez.client.render.util.KiEmberRenderer;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.KiTrailRenderer;
@@ -25,12 +26,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
 public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
     private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
     private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
-    /** Giant balls carry a heavier body of fire and shed correspondingly heavier debris. */
     private static final float GIANT_FLAME_GAIN = 1.65F;
     private static final float GIANT_EMBER_SCALE = 1.90F;
 
@@ -168,6 +169,7 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                     break;
             }
 
+            boolean depthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
             PoseStack modelViewStack = RenderSystem.getModelViewStack();
             modelViewStack.pushPose();
             modelViewStack.setIdentity();
@@ -175,6 +177,7 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
             immediateBuffer.endBatch();
             modelViewStack.popPose();
             RenderSystem.applyModelViewMatrix();
+            EffectBloomRenderer.restoreKiState(depthTest);
 
             ShaderInstance shader = DMZShaders.ki3dShader;
             if (shader != null) shader.clear();

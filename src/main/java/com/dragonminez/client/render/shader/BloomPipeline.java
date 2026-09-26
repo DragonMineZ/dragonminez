@@ -28,7 +28,8 @@ public final class BloomPipeline {
 	private static final TextureTarget[] levels = new TextureTarget[LEVELS];
 	private static final TextureTarget[] scratch = new TextureTarget[LEVELS];
 
-	private static final Attachment redraw = new Attachment();
+	private static int redrawFramebuffer = -1;
+	private static boolean redrawAttached;
 	private static boolean redrawUnsupported;
 	private static int redrawFailures;
 
@@ -41,6 +42,7 @@ public final class BloomPipeline {
 	public static void resetFrame() {
 		pending = false;
 		maskCleared = false;
+		redrawAttached = false;
 	}
 
 	public static boolean hasPendingBloom() {
@@ -61,23 +63,39 @@ public final class BloomPipeline {
 
 	private static boolean bindRedraw(RenderTarget main) {
 		int bound = GlStateManager.getBoundFramebuffer();
-		ensureTargets(main, bound);
-		int maskTexture = mask.getColorTextureId();
-		if (!bindComplete(redraw, maskTexture, -1, main.getDepthTextureId(), main.isStencilEnabled(), REDRAW_BUFFERS)) {
-			if (++redrawFailures >= MAX_FAILURES) {
-				redrawUnsupported = true;
-				LogUtil.warn(Env.CLIENT, "Bloom redraw framebuffer is not supported by this driver; effects draw without bloom");
+		if (ensureTargets(main, bound)) redrawAttached = false;
+		if (!redrawAttached) {
+			if (!attachRedraw(main)) {
+				if (++redrawFailures >= MAX_FAILURES) {
+					redrawUnsupported = true;
+					LogUtil.warn(Env.CLIENT, "Bloom redraw framebuffer is not supported by this driver; effects draw without bloom");
+				}
+				GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, bound);
+				return false;
 			}
-			GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, bound);
-			return false;
+			redrawAttached = true;
+			redrawFailures = 0;
 		}
-		redrawFailures = 0;
 
 		restoreFramebuffer = bound;
-		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, redraw.framebuffer);
+		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, redrawFramebuffer);
 		clearMaskOnce(0);
 		pending = true;
 		return true;
+	}
+
+	private static boolean attachRedraw(RenderTarget main) {
+		if (redrawFramebuffer < 0) redrawFramebuffer = GlStateManager.glGenFramebuffers();
+		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, redrawFramebuffer);
+		GlStateManager._glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, mask.getColorTextureId(), 0);
+		GlStateManager._glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_STENCIL_ATTACHMENT, GL11.GL_TEXTURE_2D, 0, 0);
+		int depth = main.getDepthTextureId();
+		if (depth > 0) {
+			int point = main.isStencilEnabled() ? GL30.GL_DEPTH_STENCIL_ATTACHMENT : GL30.GL_DEPTH_ATTACHMENT;
+			GlStateManager._glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, point, GL11.GL_TEXTURE_2D, depth, 0);
+		}
+		GL20.glDrawBuffers(REDRAW_BUFFERS);
+		return GlStateManager.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_COMPLETE;
 	}
 
 	public static void endRedraw() {
@@ -161,7 +179,9 @@ public final class BloomPipeline {
 			levels[i] = null;
 			scratch[i] = null;
 		}
-		redraw.release();
+		if (redrawFramebuffer >= 0) GlStateManager._glDeleteFramebuffers(redrawFramebuffer);
+		redrawFramebuffer = -1;
+		redrawAttached = false;
 		pending = false;
 		maskCleared = false;
 		redrawFailures = 0;
@@ -212,8 +232,8 @@ public final class BloomPipeline {
 		return target != null && target.frameBufferId == bound && target.width == main.width && target.height == main.height;
 	}
 
-	private static void ensureTargets(RenderTarget main, int bound) {
-		if (mask != null && mask.width == main.width && mask.height == main.height) return;
+	private static boolean ensureTargets(RenderTarget main, int bound) {
+		if (mask != null && mask.width == main.width && mask.height == main.height) return false;
 
 		mask = resize(mask, main.width, main.height);
 		for (int i = 0; i < LEVELS; i++) {
@@ -224,6 +244,7 @@ public final class BloomPipeline {
 		}
 		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, bound);
 		GlStateManager._viewport(0, 0, main.viewWidth, main.viewHeight);
+		return true;
 	}
 
 	private static TextureTarget resize(TextureTarget target, int width, int height) {
@@ -233,57 +254,5 @@ public final class BloomPipeline {
 		target.clear(Minecraft.ON_OSX);
 		target.setFilterMode(GL11.GL_LINEAR);
 		return target;
-	}
-
-	private static boolean bindComplete(Attachment target, int color0, int color1, int depth, boolean stencil, int[] drawBuffers) {
-		if (target.matches(color0, color1, depth, stencil)) {
-			GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, target.framebuffer);
-			if (GlStateManager.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_COMPLETE) return true;
-			target.color0 = -1;
-		}
-		return attach(target, color0, color1, depth, stencil, drawBuffers);
-	}
-
-	private static boolean attach(Attachment target, int color0, int color1, int depth, boolean stencil, int[] drawBuffers) {
-		if (target.framebuffer < 0) target.framebuffer = GlStateManager.glGenFramebuffers();
-		GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, target.framebuffer);
-		GlStateManager._glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, color0, 0);
-		GlStateManager._glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT1, GL11.GL_TEXTURE_2D, Math.max(color1, 0), 0);
-		GlStateManager._glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_STENCIL_ATTACHMENT, GL11.GL_TEXTURE_2D, 0, 0);
-		if (depth > 0) {
-			int point = stencil ? GL30.GL_DEPTH_STENCIL_ATTACHMENT : GL30.GL_DEPTH_ATTACHMENT;
-			GlStateManager._glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, point, GL11.GL_TEXTURE_2D, depth, 0);
-		}
-		GL20.glDrawBuffers(drawBuffers);
-
-		if (GlStateManager.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE) {
-			target.color0 = -1;
-			return false;
-		}
-		target.color0 = color0;
-		target.color1 = color1;
-		target.depth = depth;
-		target.stencil = stencil;
-		return true;
-	}
-
-	private static final class Attachment {
-		int framebuffer = -1;
-		int color0 = -1;
-		int color1 = -1;
-		int depth = -1;
-		boolean stencil;
-
-		boolean matches(int color0, int color1, int depth, boolean stencil) {
-			return framebuffer >= 0 && this.color0 == color0 && this.color1 == color1 && this.depth == depth && this.stencil == stencil;
-		}
-
-		void release() {
-			if (framebuffer >= 0) GlStateManager._glDeleteFramebuffers(framebuffer);
-			framebuffer = -1;
-			color0 = -1;
-			color1 = -1;
-			depth = -1;
-		}
 	}
 }
