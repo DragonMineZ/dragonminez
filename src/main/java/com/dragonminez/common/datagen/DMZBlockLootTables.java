@@ -5,6 +5,7 @@ import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.block.custom.KikonoStationBlock;
+import com.dragonminez.common.init.block.custom.PatternStationBlock;
 import net.minecraft.advancements.critereon.StatePropertiesPredicate;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
@@ -102,7 +103,8 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 				block -> createSinglePropConditionTable(block, KikonoStationBlock.HALF, DoubleBlockHalf.LOWER));
 		this.dropSelf(MainBlocks.ENERGY_CABLE.get());
 		this.dropSelf(MainBlocks.FUEL_GENERATOR.get());
-		this.dropSelf(MainBlocks.PATTERN_STATION.get());
+		this.add(MainBlocks.PATTERN_STATION.get(),
+				block -> createSinglePropConditionTable(block, PatternStationBlock.HALF, DoubleBlockHalf.LOWER));
 		this.dropSelf(MainBlocks.GRAVITY_DEVICE.get());
 
 

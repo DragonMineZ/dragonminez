@@ -243,13 +243,20 @@ public final class MainBlocks {
 	public static final RegistryObject<Block> FUEL_GENERATOR = registerBlock("fuel_generator",
 			() -> new FuelGeneratorBlock(BlockBehaviour.Properties.copy(Blocks.FURNACE)
 					.mapColor(MapColor.STONE).requiresCorrectToolForDrops().noOcclusion()));
-	public static final RegistryObject<Block> PATTERN_STATION = registerBlock("pattern_station",
-			() -> new PatternStationBlock(BlockBehaviour.Properties.copy(Blocks.CRAFTING_TABLE)
-					.mapColor(MapColor.QUARTZ).noOcclusion()));
+	public static final RegistryObject<Block> PATTERN_STATION = registerPatternStation();
 	public static final RegistryObject<Block> ENERGY_CABLE = registerBlock("energy_cable",
 			() -> new EnergyCableBlock(BlockBehaviour.Properties.copy(Blocks.WHITE_WOOL)
 					.mapColor(MapColor.STONE).noOcclusion()));
 	public static final RegistryObject<Block> GRAVITY_DEVICE = registerGravityDevice();
+
+	private static RegistryObject<Block> registerPatternStation() {
+		RegistryObject<Block> block = BLOCK_REGISTER.register("pattern_station",
+				() -> new PatternStationBlock(BlockBehaviour.Properties.copy(Blocks.CRAFTING_TABLE)
+						.mapColor(MapColor.QUARTZ).noOcclusion()));
+		MainItems.ITEM_REGISTER.register("pattern_station",
+				() -> new com.dragonminez.common.init.item.PatternStationItem(block.get(), new Item.Properties()));
+		return block;
+	}
 
 	private static RegistryObject<Block> registerGravityDevice() {
 		RegistryObject<Block> block = BLOCK_REGISTER.register("gravity_device",
