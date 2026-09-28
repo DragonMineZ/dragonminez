@@ -14,6 +14,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.hair.HairRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.Mth;
@@ -237,18 +238,31 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
-		registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
-		registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
-		registrar.add(new AnimationController<>(this, "mining_controller", 0, this::miningPredicate));
-		registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
-		registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
-		registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
-		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
-		registrar.add(new AnimationController<>(this, "pose_controller", POSE_TRANSITION_TICKS, this::posePredicate));
-		registrar.add(new AnimationController<>(this, "eat_controller", 3, this::eatPredicate));
+		registrar.add(new AnimationController<>(this, "controller", 4, dragonminez$gated(this::predicate)));
+		registrar.add(new AnimationController<>(this, "attack_controller", 0, dragonminez$gated(this::attackPredicate)));
+		registrar.add(new AnimationController<>(this, "mining_controller", 0, dragonminez$gated(this::miningPredicate)));
+		registrar.add(new AnimationController<>(this, "block_controller", 3, dragonminez$gated(this::blockPredicate)));
+		registrar.add(new AnimationController<>(this, "shield_controller", 3, dragonminez$gated(this::shieldPredicate)));
+		registrar.add(new AnimationController<>(this, "tailcontroller", 0, dragonminez$gated(this::tailpredicate)));
+		registrar.add(new AnimationController<>(this, "dash_controller", 0, dragonminez$gated(this::dashPredicate)));
+		registrar.add(new AnimationController<>(this, "pose_controller", POSE_TRANSITION_TICKS, dragonminez$gated(this::posePredicate)));
+		registrar.add(new AnimationController<>(this, "eat_controller", 3, dragonminez$gated(this::eatPredicate)));
 		// Registered last so its bone changes (root/waist) are applied after every other
 		// controller and always win — evasion techniques must always show their pose.
-		registrar.add(new AnimationController<>(this, "ki_controller", 4, this::kiPredicate));
+		registrar.add(new AnimationController<>(this, "ki_controller", 4, dragonminez$gated(this::kiPredicate)));
+	}
+
+	// Hair editor preview: with physics off the model also stops animating (client-side preview only).
+	@Unique
+	private <T extends GeoAnimatable> AnimationController.AnimationStateHandler<T> dragonminez$gated(AnimationController.AnimationStateHandler<T> handler) {
+		return state -> dragonminez$previewAnimationsPaused() ? PlayState.STOP : handler.handle(state);
+	}
+
+	@Unique
+	private static boolean dragonminez$previewAnimationsPaused() {
+		if (HairRenderContext.mode() != HairRenderContext.Mode.EDITOR_PREVIEW) return false;
+		HairRenderContext.Preview preview = HairRenderContext.preview();
+		return preview != null && !preview.physicsEnabled();
 	}
 
 	@Unique

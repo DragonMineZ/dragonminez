@@ -25,6 +25,10 @@ final class HairEditorTextures {
 	static final Sprite BUTTON_ACCENT = new Sprite(BUTTONS, 0, 88, 150, 20, 3);
 	static final Sprite FIELD = new Sprite(BUTTONS, 0, 108, 107, 18, 3);
 	static final Sprite FIELD_EDITING = new Sprite(BUTTONS, 0, 126, 107, 18, 3);
+	static final Sprite IMPORT = new Sprite(BUTTONS, 162, 0, 20, 20, 0);
+	static final Sprite IMPORT_HOVER = new Sprite(BUTTONS, 162, 20, 20, 20, 0);
+	static final Sprite EXPORT = new Sprite(BUTTONS, 182, 0, 20, 20, 0);
+	static final Sprite EXPORT_HOVER = new Sprite(BUTTONS, 182, 20, 20, 20, 0);
 
 	private static final float ATLAS_SIZE = 256.0f;
 

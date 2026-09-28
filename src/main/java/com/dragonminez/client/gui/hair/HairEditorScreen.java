@@ -101,7 +101,7 @@ public class HairEditorScreen extends ScaledScreen {
 			if (character.getHairColor() != null) copy.setGlobalColor(character.getHairColor());
 			styles.put(slot, copy);
 		}
-		this.state = new HairEditorState(styles, character.isRenderHairBase(), fromPreset);
+		this.state = new HairEditorState(styles, character.isRenderHairBase(), character.getHairId());
 		this.inspector = new HairInspectorPanel(state, Minecraft.getInstance().font, this::openColorPicker);
 		this.outliner = new HairOutlinerPanel(state, Minecraft.getInstance().font, new HairOutlinerPanel.Listener() {
 			public void onSelectionChanged() {
@@ -181,6 +181,7 @@ public class HairEditorScreen extends ScaledScreen {
 
 		colorPicker.render(graphics, font, uiMouseX, uiMouseY);
 		if (confirmClose) renderConfirmClose(graphics, uiMouseX, uiMouseY);
+		else if (!colorPicker.isOpen()) renderOutlinerTooltip(graphics, uiMouseX, uiMouseY);
 		endUiScale(graphics);
 	}
 
@@ -269,7 +270,7 @@ public class HairEditorScreen extends ScaledScreen {
 		inspector.mouseReleased();
 
 		if (pressingViewport && !orbiting) pickSelection(mouseX, mouseY);
-		if (pressingSecondary) editSegmentCount(mouseX, mouseY);
+		if (pressingSecondary) secondaryClick(mouseX, mouseY);
 		pressingViewport = false;
 		pressingSecondary = false;
 		pendingTool = null;
@@ -443,10 +444,16 @@ public class HairEditorScreen extends ScaledScreen {
 		if (viewportTool.begin(recorder, state.selectedFace(), state.selectedIndex(), mode, rawMouseX, rawMouseY)) inspector.requestRebuild();
 	}
 
-	private void editSegmentCount(double rawMouseX, double rawMouseY) {
-		if (!insideViewport(toUiX(rawMouseX), toUiY(rawMouseY)) || !state.hasSelection()) return;
-		HairPickRecorder.Hit hit = state.pickRecorder().pick(rawMouseX, rawMouseY, (face, index) -> !state.isLocked(face, index));
-		if (hit == null || hit.face() != state.selectedFace() || hit.index() != state.selectedIndex()) return;
+	private void secondaryClick(double rawMouseX, double rawMouseY) {
+		if (!insideViewport(toUiX(rawMouseX), toUiY(rawMouseY))) return;
+		HairPickRecorder.Hit hit = state.pickRecorder().pick(rawMouseX, rawMouseY, (face, index) -> true);
+		if (hit == null) {
+			state.setBodyHidden(!state.bodyHidden());
+			HairEditorSounds.toggle(!state.bodyHidden());
+			return;
+		}
+		if (!state.hasSelection() || hit.face() != state.selectedFace() || hit.index() != state.selectedIndex()) return;
+		if (state.isLocked(hit.face(), hit.index())) return;
 		HairStrand strand = state.selectedStrand();
 		if (strand == null || !strand.isVisible()) return;
 		HairStrand preview = strand.copy();
@@ -575,40 +582,56 @@ public class HairEditorScreen extends ScaledScreen {
 		colorPicker.open(anchorX, anchorY, getUiWidth(), getUiHeight(), row.currentHex(), row.fallbackHex(), row::set);
 	}
 
+	private void renderOutlinerTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+		Component tooltip = outliner.tooltip(mouseX, mouseY);
+		if (tooltip != null) graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+	}
+
 	private void handleCodeAction(HairOutlinerPanel.CodeAction action) {
 		Minecraft mc = Minecraft.getInstance();
+		Component styleName = HairEditorUi.tr("gui.dragonminez.hair_editor.style." + state.slot().index());
 		switch (action) {
 			case COPY_STYLE -> {
-				mc.keyboardHandler.setClipboard(HairCodec.toCode(state.style()));
-				showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.copied"), HairEditorUi.SUCCESS);
+				String code = HairCodec.toCode(state.style());
+				if (code == null || code.isEmpty()) {
+					showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.error"), HairEditorUi.WARNING);
+					return;
+				}
+				mc.keyboardHandler.setClipboard(code);
+				showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.copied_style", styleName), HairEditorUi.SUCCESS);
 			}
 			case COPY_FULL -> {
-				mc.keyboardHandler.setClipboard(HairCodec.toFullSetCode(state.styles()));
-				showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.copied"), HairEditorUi.SUCCESS);
+				String code = HairCodec.toFullSetCode(state.styles());
+				if (code == null || code.isEmpty()) {
+					showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.error"), HairEditorUi.WARNING);
+					return;
+				}
+				mc.keyboardHandler.setClipboard(code);
+				showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.copied_full"), HairEditorUi.SUCCESS);
 			}
 			case PASTE_STYLE -> {
 				String code = mc.keyboardHandler.getClipboard();
 				CustomHair imported = HairCodec.isFullSetCode(code) ? fullSetSlot(code) : HairCodec.fromCode(code);
 				if (imported == null) {
-					showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.invalid"), HairEditorUi.WARNING);
+					showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.error"), HairEditorUi.WARNING);
 					return;
 				}
 				HairSanitizer.sanitize(imported, state.slot(), state.limits());
 				state.replaceCurrentStyle(imported);
 				inspector.requestRebuild();
-				showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.imported"), HairEditorUi.SUCCESS);
+				showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.imported_style", styleName), HairEditorUi.SUCCESS);
 			}
 			case PASTE_FULL -> {
 				String code = mc.keyboardHandler.getClipboard();
 				EnumMap<HairStyleSlot, CustomHair> imported = HairCodec.fromFullSetCode(code);
 				if (imported == null) {
-					showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.invalid"), HairEditorUi.WARNING);
+					showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.error"), HairEditorUi.WARNING);
 					return;
 				}
 				for (HairStyleSlot slot : HairStyleSlot.values()) HairSanitizer.sanitize(imported.get(slot), slot, state.limits());
 				state.replaceStyles(imported);
 				inspector.requestRebuild();
-				showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.imported"), HairEditorUi.SUCCESS);
+				showStatus(HairEditorUi.tr("gui.dragonminez.hair_editor.status.imported_full"), HairEditorUi.SUCCESS);
 			}
 		}
 	}
@@ -628,8 +651,9 @@ public class HairEditorScreen extends ScaledScreen {
 		inspector.commitTextEdit();
 		character.setHairId(0);
 		for (HairStyleSlot slot : HairStyleSlot.values()) character.setHairStyle(slot, state.styles().get(slot).copy());
-		if (state.hairBaseChanged()) {
+		if (state.hairBaseChanged() || state.globalColorChanged()) {
 			character.setRenderHairBase(state.isHairBase());
+			character.setHairColor(state.globalColor());
 			NetworkHandler.sendToServer(new StatsSyncC2S(character));
 		}
 		for (HairStyleSlot slot : HairStyleSlot.values()) {

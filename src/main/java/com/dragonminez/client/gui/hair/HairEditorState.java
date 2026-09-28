@@ -5,7 +5,9 @@ import com.dragonminez.client.render.hair.HairHighlight;
 import com.dragonminez.client.render.hair.HairPickRecorder;
 import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.common.hair.CustomHair;
+import com.dragonminez.common.hair.HairColors;
 import com.dragonminez.common.hair.HairLimits;
+import com.dragonminez.common.hair.HairPresets;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.hair.HairStyleSlot;
 import net.minecraft.Util;
@@ -26,6 +28,7 @@ final class HairEditorState implements HairRenderContext.Preview {
 	private final Set<Integer> locked = new HashSet<>();
 	private final HairLimits limits = HairLimits.current();
 	private final boolean initialHairBase;
+	private final String initialGlobalColor;
 
 	private HairStyleSlot slot = HairStyleSlot.BASE;
 	private CustomHair.HairFace face = CustomHair.HairFace.FRONT;
@@ -37,6 +40,8 @@ final class HairEditorState implements HairRenderContext.Preview {
 	private boolean mirror;
 	private boolean physics = true;
 	private boolean hairBase;
+	private int presetId;
+	private boolean bodyHidden;
 	private boolean gestureActive;
 	private long selectionStartMs = Util.getMillis();
 	private HairStrand strandClipboard;
@@ -44,12 +49,14 @@ final class HairEditorState implements HairRenderContext.Preview {
 	private long dirtyCacheKey = Long.MIN_VALUE;
 	private boolean dirtyCache;
 
-	HairEditorState(EnumMap<HairStyleSlot, CustomHair> styles, boolean hairBase, boolean forceDirty) {
+	HairEditorState(EnumMap<HairStyleSlot, CustomHair> styles, boolean hairBase, int presetId) {
 		this.styles = styles;
 		this.hairBase = hairBase;
 		this.initialHairBase = hairBase;
-		this.forceDirty = forceDirty;
-		for (HairStyleSlot styleSlot : HairStyleSlot.values()) initialTags.put(styleSlot, styles.get(styleSlot).save());
+		this.presetId = presetId;
+		this.forceDirty = presetId > 0;
+		this.initialGlobalColor = styles.get(HairStyleSlot.BASE).getGlobalColor();
+		for (HairStyleSlot styleSlot : HairStyleSlot.values()) initialTags.put(styleSlot, colorlessTag(styles.get(styleSlot)));
 	}
 
 	public CustomHair style() {
@@ -62,6 +69,18 @@ final class HairEditorState implements HairRenderContext.Preview {
 
 	public boolean physicsEnabled() {
 		return physics;
+	}
+
+	public String globalColor() {
+		return styles.get(HairStyleSlot.BASE).getGlobalColor();
+	}
+
+	public boolean bodyHidden() {
+		return bodyHidden;
+	}
+
+	void setBodyHidden(boolean value) {
+		bodyHidden = value;
 	}
 
 	public HairEntityState simulationState() {
@@ -193,6 +212,40 @@ final class HairEditorState implements HairRenderContext.Preview {
 		return hairBase != initialHairBase;
 	}
 
+	void setGlobalColor(String hex) {
+		String normalized = HairColors.normalize(hex);
+		String color = normalized != null ? normalized : initialGlobalColor;
+		for (HairStyleSlot styleSlot : HairStyleSlot.values()) {
+			CustomHair style = styles.get(styleSlot);
+			style.setGlobalColor(color);
+			style.markChanged();
+		}
+	}
+
+	boolean globalColorChanged() {
+		return !globalColor().equals(initialGlobalColor);
+	}
+
+	int presetId() {
+		return presetId;
+	}
+
+	boolean applyPreset(int newPresetId) {
+		if (!HairPresets.exists(newPresetId)) return false;
+		recordStep();
+		String color = globalColor();
+		for (HairStyleSlot styleSlot : HairStyleSlot.values()) {
+			CustomHair source = HairPresets.get(newPresetId, styleSlot);
+			CustomHair target = styles.get(styleSlot);
+			if (source != null) target.copyFrom(source);
+			else target.clear();
+			target.setGlobalColor(color);
+		}
+		presetId = newPresetId;
+		clampSegmentSelection();
+		return true;
+	}
+
 	void beginGesture() {
 		if (gestureActive) return;
 		history.record(styles);
@@ -315,7 +368,7 @@ final class HairEditorState implements HairRenderContext.Preview {
 	}
 
 	boolean isDirty() {
-		if (forceDirty || hairBaseChanged()) return true;
+		if (forceDirty || hairBaseChanged() || globalColorChanged()) return true;
 		long key = 0L;
 		for (HairStyleSlot styleSlot : HairStyleSlot.values()) key = key * 31L + styles.get(styleSlot).getRevision();
 		if (key != dirtyCacheKey) {
@@ -332,7 +385,13 @@ final class HairEditorState implements HairRenderContext.Preview {
 	}
 
 	boolean isSlotDirty(HairStyleSlot styleSlot) {
-		return forceDirty || !styles.get(styleSlot).save().equals(initialTags.get(styleSlot));
+		return forceDirty || !colorlessTag(styles.get(styleSlot)).equals(initialTags.get(styleSlot));
+	}
+
+	private static CompoundTag colorlessTag(CustomHair style) {
+		CompoundTag tag = style.save();
+		tag.remove("gc");
+		return tag;
 	}
 
 	private void clampSegmentSelection() {

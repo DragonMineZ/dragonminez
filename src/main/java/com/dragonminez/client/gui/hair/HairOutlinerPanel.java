@@ -17,7 +17,9 @@ final class HairOutlinerPanel {
 	private static final int CELL_GAP = 3;
 	private static final int ROW_HEIGHT = 12;
 	private static final int BUTTON_HEIGHT = 14;
-	private static final int CODE_AREA_HEIGHT = 2 * BUTTON_HEIGHT + 6;
+	private static final int CODE_HEADER_HEIGHT = 11;
+	private static final int CODE_BUTTON = 20;
+	private static final int CODE_AREA_HEIGHT = CODE_HEADER_HEIGHT + 2 * CODE_BUTTON + TAB_GAP;
 
 	interface Listener {
 		void onSelectionChanged();
@@ -26,10 +28,18 @@ final class HairOutlinerPanel {
 	}
 
 	enum CodeAction {
-		COPY_STYLE,
-		PASTE_STYLE,
-		COPY_FULL,
-		PASTE_FULL
+		PASTE_STYLE(0, false),
+		COPY_STYLE(0, true),
+		PASTE_FULL(1, false),
+		COPY_FULL(1, true);
+
+		final int column;
+		final boolean export;
+
+		CodeAction(int column, boolean export) {
+			this.column = column;
+			this.export = export;
+		}
 	}
 
 	private final HairEditorState state;
@@ -151,19 +161,17 @@ final class HairOutlinerPanel {
 			}
 		}
 
-		int codeTop = codeAreaTop();
-		int buttonWidth = (width - INSET * 2 - TAB_GAP) / 2;
-		CodeAction[] actions = CodeAction.values();
-		for (int i = 0; i < actions.length; i++) {
-			int buttonX = x + INSET + (i % 2) * (buttonWidth + TAB_GAP);
-			int buttonY = codeTop + (i / 2) * (BUTTON_HEIGHT + TAB_GAP);
-			if (HairEditorUi.inside(mouseX, mouseY, buttonX, buttonY, buttonWidth, BUTTON_HEIGHT)) {
-				HairEditorSounds.click();
-				listener.onCodeAction(actions[i]);
-				return true;
-			}
+		CodeAction action = codeActionAt(mouseX, mouseY);
+		if (action != null) {
+			HairEditorSounds.click();
+			listener.onCodeAction(action);
 		}
 		return true;
+	}
+
+	Component tooltip(double mouseX, double mouseY) {
+		CodeAction action = codeActionAt(mouseX, mouseY);
+		return action != null ? HairEditorUi.tr("gui.dragonminez.hair_editor.code.tooltip." + action.name().toLowerCase()) : null;
 	}
 
 	boolean mouseScrolled(double mouseX, double mouseY, double delta) {
@@ -267,14 +275,41 @@ final class HairOutlinerPanel {
 	private void renderCodeButtons(GuiGraphics graphics, int mouseX, int mouseY) {
 		int top = codeAreaTop();
 		HairEditorUi.divider(graphics, x + INSET, x + width - INSET, top - 3);
-		int buttonWidth = (width - INSET * 2 - TAB_GAP) / 2;
-		CodeAction[] actions = CodeAction.values();
-		for (int i = 0; i < actions.length; i++) {
-			int buttonX = x + INSET + (i % 2) * (buttonWidth + TAB_GAP);
-			int buttonY = top + (i / 2) * (BUTTON_HEIGHT + TAB_GAP);
-			Component label = HairEditorUi.tr("gui.dragonminez.hair_editor.code." + actions[i].name().toLowerCase());
-			HairEditorUi.button(graphics, font, label, buttonX, buttonY, buttonWidth, BUTTON_HEIGHT, HairEditorUi.inside(mouseX, mouseY, buttonX, buttonY, buttonWidth, BUTTON_HEIGHT), false, true);
+		int columnWidth = codeColumnWidth();
+		for (int column = 0; column < 2; column++) {
+			int columnX = x + INSET + column * (columnWidth + TAB_GAP);
+			Component header = HairEditorUi.tr(column == 0 ? "gui.dragonminez.hair_editor.code.style" : "gui.dragonminez.hair_editor.code.full");
+			TextUtil.drawStringWithBorder(graphics, font, header, columnX + (columnWidth - font.width(header)) / 2, top + 1, HairEditorUi.SECTION);
 		}
+		for (CodeAction action : CodeAction.values()) {
+			int buttonX = codeButtonX(action);
+			int buttonY = codeButtonY(action);
+			boolean hovered = HairEditorUi.inside(mouseX, mouseY, buttonX, buttonY, CODE_BUTTON, CODE_BUTTON);
+			HairEditorTextures.Sprite sprite = action.export
+					? (hovered ? HairEditorTextures.EXPORT_HOVER : HairEditorTextures.EXPORT)
+					: (hovered ? HairEditorTextures.IMPORT_HOVER : HairEditorTextures.IMPORT);
+			HairEditorTextures.draw(graphics, sprite, buttonX, buttonY, CODE_BUTTON, CODE_BUTTON);
+		}
+	}
+
+	private CodeAction codeActionAt(double mouseX, double mouseY) {
+		for (CodeAction action : CodeAction.values()) {
+			if (HairEditorUi.inside(mouseX, mouseY, codeButtonX(action), codeButtonY(action), CODE_BUTTON, CODE_BUTTON)) return action;
+		}
+		return null;
+	}
+
+	private int codeColumnWidth() {
+		return (width - INSET * 2 - TAB_GAP) / 2;
+	}
+
+	private int codeButtonX(CodeAction action) {
+		int columnWidth = codeColumnWidth();
+		return x + INSET + action.column * (columnWidth + TAB_GAP) + (columnWidth - CODE_BUTTON) / 2;
+	}
+
+	private int codeButtonY(CodeAction action) {
+		return codeAreaTop() + CODE_HEADER_HEIGHT + (action.export ? CODE_BUTTON + TAB_GAP : 0);
 	}
 
 	private int tabHit(double mouseX, double mouseY, int top, int count) {
