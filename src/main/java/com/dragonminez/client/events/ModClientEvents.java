@@ -87,7 +87,6 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "alternativehud", AlternativeHUD.HUD_ALTERNATIVE);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "technique_charge_hud", TechniqueChargeOverlay.HUD_TECHNIQUE_CHARGE);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "scouterhud", ScouterHUD.HUD_SCOUTER);
-		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "tracked_quest_hud", TrackedQuestHUD.HUD_TRACKED_QUEST);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "tournament_countdown", com.dragonminez.client.gui.tournament.TournamentOverlay.OVERLAY);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "techniquehud", TechniqueHotbarHUD.HUD_TECHNIQUES);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "beam_clash_hud", BeamClashOverlay.HUD_BEAM_CLASH);
@@ -98,10 +97,10 @@ public class ModClientEvents {
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "ki_reserve_hud", KiReserveHUD.HUD_KI_RESERVE);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "rage_meter_hud", RageMeterHUD.HUD_RAGE_METER);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "party_hud", PartyHUD.HUD_PARTY);
-		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "quest_notice_hud", QuestNoticeHUD.HUD_QUEST_NOTICE);
+		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "notifications_hud", com.dragonminez.client.gui.hud.NotificationHUD.HUD_NOTIFICATIONS);
+		com.dragonminez.client.gui.hud.NotificationFeeds.registerDefaults();
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "boss_contribution_hud", com.dragonminez.client.gui.hud.WorldBossContributionHUD.HUD_BOSS_CONTRIBUTION);
 		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "worldboss_revive_hud", com.dragonminez.client.gui.hud.WorldBossReviveOverlay.HUD_WORLDBOSS_REVIVE);
-		e.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "tutorial_hint_hud", com.dragonminez.client.gui.tutorial.TutorialHintHUD.HUD_TUTORIAL_HINT);
 	}
 	@SubscribeEvent
 	public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {

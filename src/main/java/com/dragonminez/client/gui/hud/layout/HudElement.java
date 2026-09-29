@@ -14,8 +14,7 @@ public enum HudElement {
 	SKILL_2("skill_2", false),
 	SKILL_3("skill_3", false),
 	SKILL_4("skill_4", false),
-	TRACKED_QUEST("tracked_quest", false),
-	QUEST_NOTICE("quest_notice", false),
+	NOTIFICATIONS("notifications", false),
 	SCOUTER("scouter", false),
 	BABA_TIMER("baba_timer", false),
 	BOSS_CONTRIBUTION("boss_contribution", false);
@@ -43,7 +42,7 @@ public enum HudElement {
 	}
 
 	public boolean isExtra() {
-		return this == TRACKED_QUEST || this == QUEST_NOTICE || this == SCOUTER || this == BABA_TIMER || this == BOSS_CONTRIBUTION;
+		return this == NOTIFICATIONS || this == SCOUTER || this == BABA_TIMER || this == BOSS_CONTRIBUTION;
 	}
 
 	public int skillRow() {

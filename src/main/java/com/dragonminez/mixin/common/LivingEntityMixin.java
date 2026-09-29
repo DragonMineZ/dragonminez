@@ -52,7 +52,7 @@ public abstract class LivingEntityMixin implements IBattlePower, IHealthFixable,
 	private void dragonminez$hideKnockedDownPlayers(CallbackInfoReturnable<Boolean> cir) {
 		if (!((Object) this instanceof Player player)) return;
 		com.dragonminez.common.stats.StatsProvider.get(com.dragonminez.common.stats.StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (data.getStatus().isKnockedDown()) cir.setReturnValue(false);
+			if (data.getStatus().isKnockedDown() || com.dragonminez.server.util.BabaReviveService.isHiddenFromMobs(data)) cir.setReturnValue(false);
 		});
 	}
 

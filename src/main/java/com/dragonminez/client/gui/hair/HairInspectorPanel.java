@@ -2,6 +2,7 @@ package com.dragonminez.client.gui.hair;
 
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairJointStyle;
+import com.dragonminez.common.hair.HairPresets;
 import com.dragonminez.common.hair.HairSegmentOverride;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.hair.HairStrandSizing;
@@ -303,6 +304,9 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 
 	private void buildStyleRows() {
 		HairStyleSlot slot = state.slot();
+		rows.add(section(HairEditorUi.tr("gui.dragonminez.hair_editor.section.hair")));
+		rows.add(new HairInspectorRows.PresetRow(HairEditorUi.tr("gui.dragonminez.hair_editor.preset"), this::presetLabel, this::stepPreset));
+		rows.add(new HairInspectorRows.ColorRow(HairEditorUi.tr("gui.dragonminez.hair_editor.global_color"), state::globalColor, state::globalColor, state::setGlobalColor));
 		rows.add(section(HairEditorUi.tr("gui.dragonminez.hair_editor.style." + slot.index())));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.info.strands", state.style().getVisibleStrandCount()), HairEditorUi.TEXT));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.info.segments", state.style().getTotalSegmentCount(), state.limits().getMaxTotalSegments()),
@@ -322,7 +326,23 @@ final class HairInspectorPanel implements HairInspectorRows.Context {
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.segments"), HairEditorUi.MUTED));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.remove_segment"), HairEditorUi.MUTED));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.orbit"), HairEditorUi.MUTED));
+		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.body"), HairEditorUi.MUTED));
 		rows.add(new HairInspectorRows.InfoRow(() -> HairEditorUi.tr("gui.dragonminez.hair_editor.help.reset"), HairEditorUi.MUTED));
+	}
+
+	private Component presetLabel() {
+		int presetId = state.presetId();
+		if (presetId <= 0) return HairEditorUi.tr("gui.dragonminez.hair_editor.preset.custom");
+		if (presetId == HairPresets.BALD_PRESET_ID) return HairEditorUi.tr("gui.dragonminez.hair_editor.preset.bald");
+		return HairEditorUi.tr("gui.dragonminez.hair_editor.preset.named", presetId);
+	}
+
+	private void stepPreset(int direction) {
+		List<Integer> ids = HairPresets.ids();
+		if (ids.isEmpty()) return;
+		int index = ids.indexOf(state.presetId());
+		int next = index < 0 ? (direction > 0 ? 0 : ids.size() - 1) : Math.floorMod(index + direction, ids.size());
+		state.applyPreset(ids.get(next));
 	}
 
 	private void buildEmptySlotRows() {

@@ -6,6 +6,7 @@ import com.dragonminez.LogUtil;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class HairPresets {
@@ -56,6 +57,10 @@ public final class HairPresets {
 
 	public static int count() {
 		return CODES.size();
+	}
+
+	public static List<Integer> ids() {
+		return List.copyOf(CODES.keySet());
 	}
 
 	public static boolean exists(int presetId) {

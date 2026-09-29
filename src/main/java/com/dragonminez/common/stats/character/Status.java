@@ -24,6 +24,7 @@ public class Status {
 	private boolean forceHalo;
 	private int tempReturnTimer;
 	private int tempReturnsUsed;
+	private long tempReturnReadyAt;
 	private int deathCount;
 	private boolean isHasCreatedCharacter;
 	private boolean isAuraActive;
@@ -80,6 +81,7 @@ public class Status {
 		this.forceHalo = false;
 		this.tempReturnTimer = 0;
 		this.tempReturnsUsed = 0;
+		this.tempReturnReadyAt = 0L;
 		this.deathCount = 0;
 		this.isHasCreatedCharacter = false;
 		this.isAuraActive = false;
@@ -136,6 +138,7 @@ public class Status {
 		this.forceHalo = false;
 		this.tempReturnTimer = 0;
 		this.tempReturnsUsed = 0;
+		this.tempReturnReadyAt = 0L;
 		this.deathCount = 0;
 		this.isHasCreatedCharacter = false;
 		this.isAuraActive = false;
@@ -216,6 +219,7 @@ public class Status {
 		tag.putBoolean("ForceHalo", forceHalo);
 		tag.putInt("TempReturnTimer", tempReturnTimer);
 		tag.putInt("TempReturnsUsed", tempReturnsUsed);
+		tag.putLong("TempReturnReadyAt", tempReturnReadyAt);
 		tag.putInt("DeathCount", deathCount);
 		tag.putBoolean("HasCreatedChar", isHasCreatedCharacter);
 		tag.putBoolean("AuraActive", isAuraActive);
@@ -277,6 +281,7 @@ public class Status {
 		this.forceHalo = tag.getBoolean("ForceHalo");
 		this.tempReturnTimer = tag.getInt("TempReturnTimer");
 		this.tempReturnsUsed = tag.getInt("TempReturnsUsed");
+		this.tempReturnReadyAt = tag.getLong("TempReturnReadyAt");
 		this.deathCount = tag.getInt("DeathCount");
 		this.isHasCreatedCharacter = tag.getBoolean("HasCreatedChar");
 		this.isAuraActive = tag.getBoolean("AuraActive");
@@ -341,6 +346,7 @@ public class Status {
 		this.forceHalo = other.forceHalo;
 		this.tempReturnTimer = other.tempReturnTimer;
 		this.tempReturnsUsed = other.tempReturnsUsed;
+		this.tempReturnReadyAt = other.tempReturnReadyAt;
 		this.deathCount = other.deathCount;
 		this.isHasCreatedCharacter = other.isHasCreatedCharacter;
 		this.isAuraActive = other.isAuraActive;

@@ -44,6 +44,7 @@ public class SaiyanZenkai implements RacialAbility {
 		GeneralServerConfig.SaiyanRacialConfig config = ctx.config().getSaiyan();
 
 		if (!ctx.config().getEnableRacialSkills() || !config.getEnabled()) return false;
+		if (!data.getStatus().isAlive()) return false;
 		if (lc.attacker() == null) return false;
 		if (lc.source().is(DamageTypes.FELL_OUT_OF_WORLD) || lc.source().is(DamageTypes.GENERIC_KILL)) return false;
 

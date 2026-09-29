@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.hair.HairEditSession;
 import com.dragonminez.client.render.hair.HairStyleResolver;
+import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairPresets;
 import com.dragonminez.common.hair.HairStyleSlot;
 import com.dragonminez.Reference;
@@ -189,8 +190,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (!HairManager.canUseHair(character)) return;
 		if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
-		if (hairId == HairPresets.BALD_PRESET_ID) return;
-		if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
+		CustomHair editingBase = HairEditSession.resolve(player.getUUID(), HairStyleSlot.BASE);
+		if (editingBase != null) {
+			if (editingBase.getVisibleStrandCount() == 0) return;
+		} else {
+			if (hairId == HairPresets.BALD_PRESET_ID) return;
+			if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
+		}
 
 		float[] currentTint = character.getRgbHairColor();
 

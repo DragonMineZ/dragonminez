@@ -15,6 +15,7 @@ import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.util.IrisCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
+import com.dragonminez.common.hair.HairColors;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
@@ -117,7 +118,9 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		Character character = stats.getCharacter();
 		if (!HairManager.canUseHair(character)) return false;
 		preparedStats = stats;
-		if (editorPreview(animatable) == null) resolver.resolve(animatable, stats, resolved);
+		HairRenderContext.Preview preview = editorPreview(animatable);
+		if (preview == null) resolver.resolve(animatable, stats, resolved);
+		else HairStyleResolver.publishPreviewColor(animatable.getId(), animatable.level().getGameTime(), previewRgb(preview, character));
 		return true;
 	}
 
@@ -144,7 +147,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (preview != null) {
 			state = preview.simulationState();
 			state.updatePoses(preview.style(), preview.style(), 0.0f, preview.slot(), preview.slot());
-			globalFrom = toRgb(character.getRgbHairColor());
+			globalFrom = toRgb(previewRgb(preview, character));
 			globalTo = globalFrom;
 			simulate = preview.physicsEnabled();
 			useSimulation = simulate;
@@ -248,6 +251,12 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private static boolean isPerspectivePass() {
 		Matrix4f projection = RenderSystem.getProjectionMatrix();
 		return projection.m23() != 0.0f && projection.m33() == 0.0f;
+	}
+
+	private static float[] previewRgb(HairRenderContext.Preview preview, Character character) {
+		int rgb = HairColors.parse(preview.globalColor());
+		if (rgb == HairColors.INHERIT) return character.getRgbHairColor();
+		return new float[]{((rgb >> 16) & 0xFF) / 255.0f, ((rgb >> 8) & 0xFF) / 255.0f, (rgb & 0xFF) / 255.0f};
 	}
 
 	private static int toRgb(float[] rgb) {

@@ -37,6 +37,20 @@ public class DefaultFormsFactory {
 		form.setAuraLayer(0);
 	}
 
+	private static final double[] TIER_1 = {1.5, 1.1};
+	private static final double[] GRADE_2 = {1.75, 1.2};
+	private static final double[] GRADE_3 = {2.75, 2.0};
+	private static final double[] TIER_2 = {2.0, 1.25};
+	private static final double[] TIER_3 = {3.0, 2.5};
+	private static final double[] TIER_4 = {3.0, 1.5};
+	private static final double[] MASTERED_SSJ = {1.3, 1.0};
+	private static final double[] FALSE_SSJ = {1.25, 1.1};
+
+	private static void otherworldDrain(FormConfig.FormData form, double[] drain) {
+		form.setOtherworldTimeDrain(drain[0]);
+		form.setOtherworldTimeDrainMastered(drain[1]);
+	}
+
 	private static FormConfig.Aura3DStyle aura3D() {
 		return new FormConfig.Aura3DStyle();
 	}
@@ -449,6 +463,10 @@ public class DefaultFormsFactory {
 		solaris.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> humanFormData = new LinkedHashMap<>();
+		otherworldDrain(buffed, TIER_1);
+		otherworldDrain(fullPower, TIER_2);
+		otherworldDrain(overdrive, TIER_3);
+		otherworldDrain(solaris, TIER_4);
 		humanFormData.put(HumanForms.BUFFED, buffed);
 		humanFormData.put(HumanForms.FULLPOWER, fullPower);
 		humanFormData.put(HumanForms.OVERDRIVE, overdrive);
@@ -532,6 +550,9 @@ public class DefaultFormsFactory {
         chou_shiyoken.setModelScaling(new Float[]{1.5f, 1.5f, 1.5f});
 
 		Map<String, FormConfig.FormData> humanLegendaryData = new LinkedHashMap<>();
+		otherworldDrain(shiyoken, TIER_1);
+		otherworldDrain(shin_shiyoken, TIER_2);
+		otherworldDrain(chou_shiyoken, TIER_3);
 		humanLegendaryData.put(HumanForms.SHIYOKEN, shiyoken);
 		humanLegendaryData.put(HumanForms.SHIN_SHIYOKEN, shin_shiyoken);
         humanLegendaryData.put(HumanForms.CHOU_SHIYOKEN, chou_shiyoken);
@@ -602,6 +623,8 @@ public class DefaultFormsFactory {
 		fusedAndroid.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> androidFormData = new LinkedHashMap<>();
+		otherworldDrain(superAndroid, TIER_1);
+		otherworldDrain(fusedAndroid, TIER_2);
 		androidFormData.put(HumanForms.ANDROID_BASE, androidBase);
 		androidFormData.put(HumanForms.SUPER_ANDROID, superAndroid);
 		androidFormData.put(HumanForms.FUSED_ANDROID, fusedAndroid);
@@ -687,6 +710,9 @@ public class DefaultFormsFactory {
 		ssj4gt.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
+		otherworldDrain(oozaru, TIER_1);
+		otherworldDrain(goldenOozaru, TIER_3);
+		otherworldDrain(ssj4gt, TIER_4);
 		oozaruFormData.put(SaiyanForms.OOZARU, oozaru);
 		oozaruFormData.put(SaiyanForms.GOLDEN_OOZARU, goldenOozaru);
 		oozaruFormData.put(SaiyanForms.SUPER_SAIYAN_4, ssj4gt);
@@ -768,6 +794,9 @@ public class DefaultFormsFactory {
 		ssg3.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> ssGradeForms = new LinkedHashMap<>();
+		otherworldDrain(ssj1, TIER_1);
+		otherworldDrain(ssg2, GRADE_2);
+		otherworldDrain(ssg3, GRADE_3);
 		ssGradeForms.put(SaiyanForms.SUPER_SAIYAN, ssj1);
 		ssGradeForms.put(SaiyanForms.SUPER_SAIYAN_GRADE_2, ssg2);
 		ssGradeForms.put(SaiyanForms.SUPER_SAIYAN_GRADE_3, ssg3);
@@ -839,7 +868,6 @@ public class DefaultFormsFactory {
 		ssj3.setDefMultiplier(2.4375);
 		ssj3.setPwrMultiplier(3.0);
 		ssj3.setEnergyDrain(0.34);
-		ssj3.setOtherworldTimeDrain(6.0);
 		ssj3.setHairType("ssj3");
 		setDefaultMasteryValues(ssj3);
 		ssj3.setAura3DStyle(aura3D().size(1.12f, 1.24f, 1.05f).waves(2.1f, 5.4f, 0.84f).turbulence(0.2f, 0.56f).colors("", "", "#FFF6C8"));
@@ -868,8 +896,8 @@ public class DefaultFormsFactory {
 		ssj4d.setDefMultiplier(2.875);
 		ssj4d.setPwrMultiplier(3.75);
 		ssj4d.setEnergyDrain(0.24);
-		ssj4d.setHairType("base");
-		ssj4d.setForcedHairCode("DMZ1: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");
+		ssj4d.setHairType("ssj4");
+		ssj4d.setForcedHairCode("");
         ssj4d.setLightningColor("#82C9FF");
         ssj4d.setHasLightnings(true);
         ssj4d.setStackDrainMultiplier(2.0);
@@ -879,6 +907,10 @@ public class DefaultFormsFactory {
 		ssj4d.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
+		otherworldDrain(ssj1Mastered, MASTERED_SSJ);
+		otherworldDrain(ssj2, TIER_2);
+		otherworldDrain(ssj3, TIER_3);
+		otherworldDrain(ssj4d, TIER_4);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_2, ssj2);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
@@ -923,6 +955,7 @@ public class DefaultFormsFactory {
 		falseSuperSaiyan.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> falseFormData = new LinkedHashMap<>();
+		otherworldDrain(falseSuperSaiyan, FALSE_SSJ);
 		falseFormData.put(SaiyanForms.FALSE_SUPER_SAIYAN, falseSuperSaiyan);
 		falseForms.setForms(falseFormData);
 
@@ -1006,6 +1039,9 @@ public class DefaultFormsFactory {
 		ssjFullPower.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> saiyanLegendaryData = new LinkedHashMap<>();
+		otherworldDrain(ikari, TIER_1);
+		otherworldDrain(ssjHybrid, TIER_2);
+		otherworldDrain(ssjFullPower, TIER_3);
 		saiyanLegendaryData.put(SaiyanForms.IKARI, ikari);
 		saiyanLegendaryData.put(SaiyanForms.SSJ_HYBRID, ssjHybrid);
 		saiyanLegendaryData.put(SaiyanForms.SSJ_FULL_POWER, ssjFullPower);
@@ -1077,6 +1113,9 @@ public class DefaultFormsFactory {
 		superNamekian.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> namekianFormData = new LinkedHashMap<>();
+		otherworldDrain(giantForm, TIER_1);
+		otherworldDrain(fullPower, TIER_2);
+		otherworldDrain(superNamekian, TIER_3);
 		namekianFormData.put(NamekianForms.GIANT, giantForm);
 		namekianFormData.put(NamekianForms.FULLPOWER, fullPower);
 		namekianFormData.put(NamekianForms.SUPER_NAMEKIAN, superNamekian);
@@ -1168,6 +1207,9 @@ public class DefaultFormsFactory {
 		buffedNamek.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> namekianLegendaryData = new LinkedHashMap<>();
+		otherworldDrain(evilNamek, TIER_1);
+		otherworldDrain(evilGiant, TIER_2);
+		otherworldDrain(buffedNamek, TIER_3);
 		namekianLegendaryData.put(NamekianForms.EVIL_NAMEK, evilNamek);
 		namekianLegendaryData.put(NamekianForms.EVIL_GIANT_NAMEK, evilGiant);
 		namekianLegendaryData.put(NamekianForms.BUFFED_NAMEK, buffedNamek);
@@ -1272,6 +1314,11 @@ public class DefaultFormsFactory {
 		fifthForm.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> frostFormData = new LinkedHashMap<>();
+		otherworldDrain(second, TIER_1);
+		otherworldDrain(third, GRADE_2);
+		otherworldDrain(finalForm, TIER_2);
+		otherworldDrain(fullPower, TIER_3);
+		otherworldDrain(fifthForm, TIER_4);
 		frostFormData.put(FrostDemonForms.SECOND_FORM, second);
 		frostFormData.put(FrostDemonForms.THIRD_FORM, third);
 		frostFormData.put(FrostDemonForms.FINAL_FORM, finalForm);
@@ -1343,6 +1390,9 @@ public class DefaultFormsFactory {
 		metalCore.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> frostLegendaryData = new LinkedHashMap<>();
+		otherworldDrain(mecha, TIER_1);
+		otherworldDrain(metal, TIER_2);
+		otherworldDrain(metalCore, TIER_3);
 		frostLegendaryData.put(FrostDemonForms.MECHA, mecha);
 		frostLegendaryData.put(FrostDemonForms.METAL, metal);
 		frostLegendaryData.put(FrostDemonForms.METAL_CORE, metalCore);
@@ -1434,6 +1484,10 @@ public class DefaultFormsFactory {
 		ultra.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> majinFormData = new LinkedHashMap<>();
+		otherworldDrain(kid, TIER_1);
+		otherworldDrain(evil, TIER_2);
+		otherworldDrain(superForm, TIER_3);
+		otherworldDrain(ultra, TIER_4);
 		majinFormData.put(MajinForms.KID, kid);
 		majinFormData.put(MajinForms.EVIL, evil);
 		majinFormData.put(MajinForms.SUPER, superForm);
@@ -1507,6 +1561,9 @@ public class DefaultFormsFactory {
 		superDemon.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> majinLegendaryData = new LinkedHashMap<>();
+		otherworldDrain(innocence, TIER_1);
+		otherworldDrain(giant_innocence_demon, TIER_2);
+		otherworldDrain(superDemon, TIER_3);
 		majinLegendaryData.put(MajinForms.INNOCENCE_DEMON, innocence);
         majinLegendaryData.put(MajinForms.GIANT_INNOCENCE_DEMON, giant_innocence_demon);
         majinLegendaryData.put(MajinForms.SUPER_DEMON, superDemon);
@@ -1619,6 +1676,10 @@ public class DefaultFormsFactory {
 		ultraperfect.setIncompatibleWith(List.of(""));
 
 		Map<String, FormConfig.FormData> bioFormData = new LinkedHashMap<>();
+		otherworldDrain(semiPerfect, TIER_1);
+		otherworldDrain(perfect, TIER_2);
+		otherworldDrain(superPerfect, TIER_3);
+		otherworldDrain(ultraperfect, TIER_4);
 		bioFormData.put(BioAndroidForms.SEMI_PERFECT, semiPerfect);
 		bioFormData.put(BioAndroidForms.PERFECT, perfect);
 		bioFormData.put(BioAndroidForms.SUPER_PERFECT, superPerfect);
@@ -1705,6 +1766,9 @@ public class DefaultFormsFactory {
         xenoMax.setStackDrainMultiplier(2.0);
 
 		Map<String, FormConfig.FormData> bioLegendaryData = new LinkedHashMap<>();
+		otherworldDrain(xeno, TIER_1);
+		otherworldDrain(xenoFP, TIER_2);
+		otherworldDrain(xenoMax, TIER_3);
 		bioLegendaryData.put(BioAndroidForms.XENO, xeno);
 		bioLegendaryData.put(BioAndroidForms.XENO_FP, xenoFP);
 		bioLegendaryData.put(BioAndroidForms.XENO_MAX, xenoMax);

@@ -9,7 +9,6 @@ import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.dialogue.DialogueService;
-import com.dragonminez.server.util.BabaReviveService;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -180,10 +179,6 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 				if (!data.getStatus().isHasCreatedCharacter()) {
 					serverPlayer.displayClientMessage(
 							Component.translatable("gui.dragonminez.lines.generic.createcharacter"), true);
-					return;
-				}
-				if ("baba".equals(masterName) && !data.getStatus().isAlive() && BabaReviveService.isEnabled()) {
-					BabaReviveService.handleDeadInteract(serverPlayer, data);
 					return;
 				}
 				Component blocker = NpcDispositionService.getDialogueBlocker(serverPlayer, this);

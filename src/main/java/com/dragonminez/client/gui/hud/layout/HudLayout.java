@@ -40,10 +40,13 @@ public final class HudLayout {
 			HudSprites.RESERVE_CAPSULE.guiHeight() + HudSprites.RESERVE_BAR.height() + BORDER + 7.0f};
 
 	private static final float[] SIZE_SKILL = {120.0f, 13.0f};
-	private static final float[] SIZE_TRACKED_QUEST = {180.0f, 56.0f};
-	private static final float[] SIZE_QUEST_NOTICE = {220.0f, 52.0f};
+	private static final float[] SIZE_NOTIFICATIONS = {
+			com.dragonminez.client.gui.hud.NotificationHUD.WIDTH,
+			com.dragonminez.client.gui.hud.NotificationHUD.HEIGHT};
 	private static final float[] SIZE_SCOUTER = {70.0f, 41.0f};
-	private static final float[] SIZE_BABA_TIMER = {145.0f, 40.0f};
+	private static final float[] SIZE_BABA_TIMER = {
+			com.dragonminez.client.gui.hud.BabaReturnTimerHUD.WIDTH,
+			com.dragonminez.client.gui.hud.BabaReturnTimerHUD.HEIGHT};
 	private static final float[] SIZE_BOSS_CONTRIBUTION = {
 			com.dragonminez.client.gui.hud.WorldBossContributionHUD.WIDTH,
 			com.dragonminez.client.gui.hud.WorldBossContributionHUD.HEIGHT};
@@ -106,8 +109,7 @@ public final class HudLayout {
 
 	public static List<HudElement> extraElements(HudStyle style) {
 		List<HudElement> list = new ArrayList<>();
-		list.add(HudElement.TRACKED_QUEST);
-		list.add(HudElement.QUEST_NOTICE);
+		list.add(HudElement.NOTIFICATIONS);
 		if (style != HudStyle.COMPACT) list.add(HudElement.SCOUTER);
 		list.add(HudElement.BABA_TIMER);
 		list.add(HudElement.BOSS_CONTRIBUTION);
@@ -131,8 +133,7 @@ public final class HudLayout {
 			case PARTY -> SIZE_PARTY;
 			case RESERVE, RAGE -> SIZE_METER;
 			case SKILL_1, SKILL_2, SKILL_3, SKILL_4 -> SIZE_SKILL;
-			case TRACKED_QUEST -> SIZE_TRACKED_QUEST;
-			case QUEST_NOTICE -> SIZE_QUEST_NOTICE;
+			case NOTIFICATIONS -> SIZE_NOTIFICATIONS;
 			case SCOUTER -> SIZE_SCOUTER;
 			case BABA_TIMER -> SIZE_BABA_TIMER;
 			case BOSS_CONTRIBUTION -> SIZE_BOSS_CONTRIBUTION;
@@ -165,11 +166,10 @@ public final class HudLayout {
 			case SKILL_1, SKILL_2, SKILL_3, SKILL_4 -> new HudPlacement(0.0f, 1.0f,
 					SKILL_MARGIN_X + SKILL_LADDER_STEP * element.skillRow(),
 					-(SKILL_MARGIN_BOTTOM + (3 - element.skillRow()) * SIZE_SKILL[1] * SKILL_SCALE), SKILL_SCALE);
-			case TRACKED_QUEST -> new HudPlacement(1.0f, 0.0f, -6.0f, 6.0f, 1.0f);
-			case QUEST_NOTICE -> new HudPlacement(1.0f, 0.5f, -6.0f, -40.0f, 0.8f);
-			case SCOUTER -> new HudPlacement(0.0f, 0.5f, 0.0f, -82.0f, 2.0f);
-			case BABA_TIMER -> new HudPlacement(0.5f, 0.0f, 0.0f, 4.0f, 1.0f);
-			case BOSS_CONTRIBUTION -> new HudPlacement(1.0f, 1.0f, -6.0f, -70.0f, 0.8f);
+			case NOTIFICATIONS -> new HudPlacement(1.0f, 0.0f, -6.0f, 6.0f, 0.9f);
+			case SCOUTER -> new HudPlacement(0.0f, 0.5f, 0.0f, -37.0f, 2.0f);
+			case BABA_TIMER -> new HudPlacement(1.0f, 1.0f, -6.0f, -2.0f, 0.8f);
+			case BOSS_CONTRIBUTION -> new HudPlacement(1.0f, 0.5f, -6.0f, 0.0f, 0.8f);
 		};
 	}
 

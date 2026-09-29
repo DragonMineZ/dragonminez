@@ -10,6 +10,7 @@ import com.dragonminez.common.wish.wishes.PassiveResetWish;
 import com.dragonminez.common.wish.wishes.ReCustomizeWish;
 import com.dragonminez.common.wish.wishes.RelocateStatsWish;
 import com.dragonminez.common.wish.wishes.ResetStoryWish;
+import com.dragonminez.common.wish.wishes.ReviveWish;
 import com.dragonminez.common.wish.wishes.SkillWish;
 import com.dragonminez.common.wish.wishes.TPSWish;
 import com.google.gson.Gson;
@@ -96,6 +97,7 @@ public final class WishTypeAdapterFactory implements TypeAdapterFactory {
 			case "relocatestats" -> RelocateStatsWish.class;
 			case "changedifficulty" -> ChangeDifficultyWish.class;
 			case "resetstory" -> ResetStoryWish.class;
+			case ReviveWish.WISH_TYPE -> ReviveWish.class;
 			default -> null;
 		};
 	}

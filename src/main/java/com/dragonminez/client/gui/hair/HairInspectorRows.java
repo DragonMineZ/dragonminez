@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
+import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 final class HairInspectorRows {
@@ -275,6 +276,51 @@ final class HairInspectorRows {
 			HairEditorSounds.click();
 			context.requestRebuild();
 			return true;
+		}
+	}
+
+	static final class PresetRow extends Row {
+		private static final int ARROW_WIDTH = 12;
+		private final Component label;
+		private final Supplier<Component> value;
+		private final IntConsumer step;
+
+		PresetRow(Component label, Supplier<Component> value, IntConsumer step) {
+			this.label = label;
+			this.value = value;
+			this.step = step;
+		}
+
+		void render(GuiGraphics graphics, Font font, int x, int y, int width, int mouseX, int mouseY, Context context) {
+			TextUtil.drawStringWithBorder(graphics, font, HairEditorUi.txt(HairEditorUi.trimToWidth(font, label.getString(), LABEL_WIDTH - 8)), x + 6, y + 3, HairEditorUi.MUTED);
+			int prevX = prevX(x);
+			int nextX = nextX(x, width);
+			HairEditorUi.button(graphics, font, HairEditorUi.txt("<"), prevX, y + 1, ARROW_WIDTH, ROW_HEIGHT - 2, HairEditorUi.inside(mouseX, mouseY, prevX, y + 1, ARROW_WIDTH, ROW_HEIGHT - 2), false, true);
+			HairEditorUi.button(graphics, font, HairEditorUi.txt(">"), nextX, y + 1, ARROW_WIDTH, ROW_HEIGHT - 2, HairEditorUi.inside(mouseX, mouseY, nextX, y + 1, ARROW_WIDTH, ROW_HEIGHT - 2), false, true);
+			int textAreaX = prevX + ARROW_WIDTH;
+			int textAreaWidth = nextX - textAreaX;
+			String text = HairEditorUi.trimToWidth(font, value.get().getString(), textAreaWidth - 4);
+			TextUtil.drawStringWithBorder(graphics, font, HairEditorUi.txt(text), textAreaX + (textAreaWidth - font.width(text)) / 2, y + 3, HairEditorUi.TEXT);
+		}
+
+		boolean mouseClicked(double mouseX, double mouseY, int button, int x, int y, int width, Context context) {
+			if (button != 0) return false;
+			int direction = 0;
+			if (HairEditorUi.inside(mouseX, mouseY, prevX(x), y + 1, ARROW_WIDTH, ROW_HEIGHT - 2)) direction = -1;
+			else if (HairEditorUi.inside(mouseX, mouseY, nextX(x, width), y + 1, ARROW_WIDTH, ROW_HEIGHT - 2)) direction = 1;
+			if (direction == 0) return false;
+			step.accept(direction);
+			HairEditorSounds.click();
+			context.requestRebuild();
+			return true;
+		}
+
+		private static int prevX(int x) {
+			return x + LABEL_WIDTH;
+		}
+
+		private static int nextX(int x, int width) {
+			return x + width - 3 - ARROW_WIDTH;
 		}
 	}
 

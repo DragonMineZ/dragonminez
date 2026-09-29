@@ -1,8 +1,7 @@
 package com.dragonminez.client.gui.tournament;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.gui.hud.QuestNoticeHUD;
-import com.dragonminez.client.gui.quest.StoryToast;
+import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.common.network.TournamentPackets;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -52,14 +51,16 @@ public final class TournamentOverlay {
 		if (changed || ticksRemaining > totalTicks) totalTicks = Math.max(1, ticksRemaining);
 		lastSecond = secondsLeft();
 		if (changed) fightTicks = 0;
+	}
 
-		if (fighter && phase != TournamentPackets.PhaseS2C.Phase.NEXT_ROUND) {
-			QuestNoticeHUD.clearLive();
-		} else {
-			QuestNoticeHUD.setLive(Component.translatable("tournament.dragonminez.title"),
-					TournamentOverlay::noticeText, TournamentOverlay::progress,
-					fighter ? StoryToast.Tone.FAILURE : StoryToast.Tone.PROGRESS);
-		}
+	public static NotificationHUD.Content notification() {
+		if (phase == null) return null;
+		if (fighter && phase != TournamentPackets.PhaseS2C.Phase.NEXT_ROUND) return null;
+		boolean versus = phase != TournamentPackets.PhaseS2C.Phase.NEXT_ROUND || fightTicks > 0;
+		Component subtitle = versus ? Component.translatable("tournament.dragonminez.title.versus", left, right) : null;
+		return NotificationHUD.Content.of(Component.translatable("tournament.dragonminez.title"), subtitle, noticeText(),
+				fightTicks > 0 || phase == TournamentPackets.PhaseS2C.Phase.NEXT_ROUND ? null
+						: Component.translatable("tournament.dragonminez.notice.seconds_left", Math.max(1, secondsLeft())));
 	}
 
 	public static boolean isActive() {
@@ -70,7 +71,6 @@ public final class TournamentOverlay {
 		phase = null;
 		ticksRemaining = 0;
 		fightTicks = 0;
-		QuestNoticeHUD.clearLive();
 	}
 
 	public static void tick() {
@@ -101,20 +101,16 @@ public final class TournamentOverlay {
 		return (ticksRemaining + 19) / 20;
 	}
 
-	private static float progress() {
-		return totalTicks <= 0 ? 0.0f : ticksRemaining / (float) totalTicks;
-	}
-
 	private static Component noticeText() {
 		if (phase == null) return Component.empty();
-		if (fightTicks > 0) return Component.translatable("tournament.dragonminez.notice.fight", left, right);
+		if (fightTicks > 0) return Component.translatable("tournament.dragonminez.fight");
 		int seconds = Math.max(1, secondsLeft());
 		return switch (phase) {
 			case NEXT_ROUND -> fighter
 					? Component.translatable("tournament.dragonminez.notice.accept", seconds)
 					: Component.translatable("tournament.dragonminez.notice.waiting_accept", left, seconds);
-			case PREVIEW -> Component.translatable("tournament.dragonminez.notice.preview", left, right, seconds);
-			case COUNTDOWN -> Component.translatable("tournament.dragonminez.notice.countdown", left, right, seconds);
+			case PREVIEW -> Component.translatable("tournament.dragonminez.title.preview", seconds);
+			case COUNTDOWN -> Component.translatable("tournament.dragonminez.notice.countdown_short");
 			default -> Component.empty();
 		};
 	}

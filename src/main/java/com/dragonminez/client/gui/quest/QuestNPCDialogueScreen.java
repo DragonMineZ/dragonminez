@@ -5,7 +5,8 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.MasterTextScreen;
 import com.dragonminez.client.gui.MastersSkillsScreen;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.gui.character.minigames.*;
+import com.dragonminez.client.gui.character.minigames.BaseMinigameScreen;
+import com.dragonminez.common.training.MinigameOrigin;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
@@ -149,13 +150,7 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 	}
 
 	private void openMinigameScreen(String minigameId) {
-		switch (minigameId) {
-			case "rhythm" -> Minecraft.getInstance().setScreen(new RythmGameScreen());
-			case "control" -> Minecraft.getInstance().setScreen(new ControlGameScreen());
-			case "memory" -> Minecraft.getInstance().setScreen(new MemoryGameScreen());
-			case "precision" -> Minecraft.getInstance().setScreen(new PrecisionGameScreen());
-			case "gravity" -> Minecraft.getInstance().setScreen(new GravityGameScreen());
-		}
+		Minecraft.getInstance().setScreen(BaseMinigameScreen.create(minigameId, MinigameOrigin.MASTER));
 	}
 
 	private void initButtons() {
@@ -199,9 +194,10 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 
 		if (masterNpc) {
 			String minigameId = getMinigameForNpc(npcId);
+			boolean popoTrains = isPopoInTimeChamber();
 			boolean isSkillMaster = !TEXT_MASTERS.contains(npcId);
 
-			if (isTrainingMode && isSkillMaster) {
+			if (isTrainingMode && (isSkillMaster || popoTrains)) {
 				if (minigameId != null) {
 					this.addRenderableWidget(new TexturedTextButton.Builder()
 							.position(panelX + 8, btnY)
@@ -288,6 +284,19 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 								})
 								.build());
 					}
+				} else if (popoTrains) {
+					this.addRenderableWidget(new TexturedTextButton.Builder()
+							.position(panelX + 8, btnY)
+							.size(74, 20)
+							.texture(BUTTONS_TEXTURE)
+							.textureCoords(0, 28, 0, 48)
+							.textureSize(74, 20)
+							.message(tr("gui.dragonminez.npc.train"))
+							.onPress(btn -> {
+								isTrainingMode = true;
+								initButtons();
+							})
+							.build());
 				} else {
 					this.addRenderableWidget(new TexturedTextButton.Builder()
 							.position(panelX + 8, btnY)
@@ -658,6 +667,12 @@ public class QuestNPCDialogueScreen extends ScaledScreen {
 		Entity entity = entityId >= 0 ? mc.level.getEntity(entityId) : null;
 		LivingEntity livingEntity = entity instanceof LivingEntity living ? living : null;
 		mc.setScreen(new MastersSkillsScreen(npcId, livingEntity));
+	}
+
+	private boolean isPopoInTimeChamber() {
+		Minecraft mc = Minecraft.getInstance();
+		return "popo".equals(npcId) && mc.player != null
+				&& mc.player.level().dimension().equals(com.dragonminez.server.world.dimension.HTCDimension.HTC_KEY);
 	}
 
 	private void openServicesScreen() {

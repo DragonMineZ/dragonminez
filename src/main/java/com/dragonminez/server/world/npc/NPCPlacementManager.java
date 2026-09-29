@@ -386,7 +386,7 @@ public final class NPCPlacementManager {
 		addManualMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 150, 17.5, false, 180);
 		addManualMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 9.5, 150, 3.5, false, 180);
 		addManualMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 298, 1030.5, false, 180);
-		addManualQuestNPC(placements, "npc_hell_ogre", "hell_ogre", "dragonminez:otherworld", 4.5, -17, 63.5, 200);
+		addManualQuestNPC(placements, "npc_hell_ogre", "hell_ogre", "dragonminez:otherworld", 9.5, 150, 16.5, 200);
 
 		// Quest NPCs (TALK_TO / quest-giver / turn-in targets) are no longer spawned at runtime here:
 		// they are baked directly into structure NBT via structure blocks (mirroring the namek_trader

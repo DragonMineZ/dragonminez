@@ -10,6 +10,8 @@ public class Cooldowns {
 
     public static final String SENZU_KARIN = "SenzuKarin";
     public static final String REVIVE_BABA = "Revive";
+    public static final String BABA_KNOCKOUT = "BabaKnockout";
+    public static final String BABA_AGGRO_GRACE = "BabaAggroGrace";
     public static final String ZENKAI = "Zenkai";
 	public static final String DRAIN = "Drain";
 	public static final String COMBAT = "CombatTimer";

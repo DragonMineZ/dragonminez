@@ -96,6 +96,7 @@ public class BioAndroidEvolution implements RacialAbility {
 
 	private static boolean canArmExplosion(RacialContext ctx, StatsData data) {
 		if (!ctx.config().getBioandroid().getEnabled()) return false;
+		if (!data.getStatus().isAlive()) return false;
 		if (data.getCooldowns().hasCooldown(Cooldowns.BIO_EXPLODE_CD)) return false;
 		return !data.getRacialData().isBioSwellLocked();
 	}

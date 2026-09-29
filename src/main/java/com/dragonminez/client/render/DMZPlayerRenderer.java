@@ -4,6 +4,7 @@ import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.hair.HairRenderCapture;
+import com.dragonminez.client.render.hair.HairRenderContext;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.systems.BioSwellRenderState;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
@@ -36,6 +37,7 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import software.bernie.geckolib.util.RenderUtils;
 
 
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
@@ -175,7 +177,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-		boolean portrait = HeadPortraitRenderer.isActive();
+		boolean portrait = HeadPortraitRenderer.isActive() || editorHeadOnly();
 		boolean armOnly = DimensionalFistEffect.isRenderingArm();
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
 			if (armOnly && !(renderLayer instanceof DMZSkinLayer<?>)) continue;
@@ -192,7 +194,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			}
 			return;
 		}
-		if (!HeadPortraitRenderer.isActive()) {
+		if (!HeadPortraitRenderer.isActive() && !editorHeadOnly()) {
 			super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 			return;
 		}
@@ -204,7 +206,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public void applyRenderLayersForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (DimensionalFistEffect.isRenderingArm()) return;
-		if (!HeadPortraitRenderer.isActive()) {
+		if (!HeadPortraitRenderer.isActive() && !editorHeadOnly()) {
 			super.applyRenderLayersForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 			return;
 		}
@@ -217,9 +219,25 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		return renderLayer instanceof DMZSkinLayer<?> || renderLayer instanceof DMZHairLayer<?> || renderLayer instanceof DMZRacePartsLayer;
 	}
 
+	private static boolean editorHeadOnly() {
+		if (HairRenderContext.mode() != HairRenderContext.Mode.EDITOR_PREVIEW) return false;
+		HairRenderContext.Preview preview = HairRenderContext.preview();
+		return preview != null && preview.bodyHidden();
+	}
+
 	@Override
 	public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
 		if (!HeadPortraitRenderer.isActive()) {
+			if (editorHeadOnly() && !isHeadOrHeadChild(bone)) {
+				if (!containsHead(bone)) return;
+				poseStack.pushPose();
+				RenderUtils.prepMatrixForBone(poseStack, bone);
+				for (GeoBone child : bone.getChildBones()) {
+					renderRecursively(poseStack, animatable, child, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+				}
+				poseStack.popPose();
+				return;
+			}
 			float[] fistPose = DimensionalFistEffect.beginBonePose(bone);
 			try {
 				super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);

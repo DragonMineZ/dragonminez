@@ -37,7 +37,7 @@ public final class FalseSuperSaiyanHelper {
 		GeneralServerConfig.FalseSuperSaiyanConfig cfg = config();
 		if (cfg == null || !cfg.getEnabled() || data == null) return false;
 		if (!RACE.equalsIgnoreCase(data.getCharacter().getRaceName())) return false;
-		if (!data.getStatus().isHasCreatedCharacter() || !data.getStatus().isAlive()) return false;
+		if (!data.getStatus().isHasCreatedCharacter()) return false;
 		if (data.getEffects().hasEffect(MUTANT_EFFECT)) return false;
 		if (data.getSkills().getSkillLevel(SUPER_FORMS_SKILL) > 0) return false;
 		int level = data.getLevel();

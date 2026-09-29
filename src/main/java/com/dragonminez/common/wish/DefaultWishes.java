@@ -3,7 +3,7 @@ package com.dragonminez.common.wish;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.util.types.items.GenericItemDTO;
 import com.dragonminez.common.wish.wishes.ChangeDifficultyWish;
-import com.dragonminez.common.wish.wishes.CommandWish;
+import com.dragonminez.common.wish.wishes.ReviveWish;
 import com.dragonminez.common.wish.wishes.ItemListWish;
 import com.dragonminez.common.wish.wishes.PassiveResetWish;
 import com.dragonminez.common.wish.wishes.ReCustomizeWish;
@@ -46,7 +46,7 @@ public final class DefaultWishes {
 		wishes.add(new ReCustomizeWish("wish.shenron.customization.name", "wish.shenron.customization.desc"));
 		wishes.add(new ChangeDifficultyWish("wish.shenron.changedifficulty.name", "wish.shenron.changedifficulty.desc"));
 		wishes.add(new ResetStoryWish("wish.shenron.resetstory.name", "wish.shenron.resetstory.desc"));
-		wishes.add(new CommandWish("wish.shenron.revive.name", "wish.shenron.revive.desc", "dmzrevive %player%"));
+		wishes.add(new ReviveWish("wish.shenron.revive.name", "wish.shenron.revive.desc", 3));
 
 		List<GenericItemDTO> materials = new ArrayList<>();
 		materials.add(new GenericItemDTO(MainItems.KIKONO_SHARD.getId(), 32));
@@ -73,7 +73,7 @@ public final class DefaultWishes {
 		wishes.add(new RelocateStatsWish("wish.porunga.relocatestats.name", "wish.porunga.relocatestats.desc"));
 		wishes.add(new ChangeDifficultyWish("wish.porunga.changedifficulty.name", "wish.porunga.changedifficulty.desc"));
 		wishes.add(new ResetStoryWish("wish.porunga.resetstory.name", "wish.porunga.resetstory.desc"));
-		wishes.add(new CommandWish("wish.porunga.revive.name", "wish.porunga.revive.desc", "dmzrevive %player%"));
+		wishes.add(new ReviveWish("wish.porunga.revive.name", "wish.porunga.revive.desc", 1));
 
 		List<GenericItemDTO> materials = new ArrayList<>();
 		materials.add(new GenericItemDTO(MainItems.KIKONO_SHARD.getId(), 64));

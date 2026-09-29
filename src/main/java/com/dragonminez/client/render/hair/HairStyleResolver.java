@@ -167,6 +167,11 @@ public final class HairStyleResolver {
 		return out;
 	}
 
+	public static void publishPreviewColor(int entityId, long gameTime, float[] rgb) {
+		PUBLISHED_BASE_COLOR.put(entityId, rgb.clone());
+		PUBLISHED_BASE_TIME.put(entityId, gameTime);
+	}
+
 	public static float[] getPublishedBaseColor(int entityId, long gameTime) {
 		Long time = PUBLISHED_BASE_TIME.get(entityId);
 		if (time == null || gameTime - time > 2L) return null;

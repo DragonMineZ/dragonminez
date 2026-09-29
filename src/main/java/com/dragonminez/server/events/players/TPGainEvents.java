@@ -312,10 +312,9 @@ public class TPGainEvents {
 			if (member.getUUID().equals(earner.getUUID())) continue;
 
 			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(pData -> {
-				if (pData.getStatus().isAlive()) {
-					pData.getResources().addTrainingPoints(sharedTP);
-					NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(member), member);
-				}
+				if (!com.dragonminez.server.util.BabaReviveService.canReceiveSharedTp(earner, data, member, pData)) return;
+				pData.getResources().addTrainingPoints(sharedTP);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(member), member);
 			});
 		}
 	}

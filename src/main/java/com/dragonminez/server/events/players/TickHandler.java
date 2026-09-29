@@ -454,14 +454,16 @@ public class TickHandler {
 	}
 
 	private static void handleOtherworldTransfer(ServerPlayer serverPlayer, StatsData data, UUID playerId) {
+		boolean inOtherworld = serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY);
 		boolean shouldTransfer = ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()
 				&& !data.getStatus().isAlive()
 				&& data.getStatus().getTempReturnTimer() <= 0
 				&& !serverPlayer.isSpectator() && !serverPlayer.isCreative()
-				&& !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY);
+				&& (!inOtherworld || BabaReviveService.isSpiritArrivalPending(playerId));
 
 		if (!shouldTransfer) {
 			otherworldTpGraceByPlayer.remove(playerId);
+			if (data.getStatus().isAlive() || data.getStatus().getTempReturnTimer() > 0) BabaReviveService.clearSpiritArrival(playerId);
 			return;
 		}
 
@@ -472,6 +474,7 @@ public class TickHandler {
 		}
 
 		otherworldTpGraceByPlayer.remove(playerId);
+		BabaReviveService.clearSpiritArrival(playerId);
 		OtherworldDimension.teleportToSpiritArrival(serverPlayer);
 	}
 
@@ -1163,7 +1166,7 @@ public class TickHandler {
 				if (staminaDrain > 0) data.getResources().removeStamina(staminaDrain);
 				else if (staminaDrain < 0) data.getResources().addStamina(-staminaDrain);
 				if (healthDrain > 0) player.setHealth((float) (player.getHealth() - healthDrain));
-				else if (healthDrain < 0 && !BioAndroidEvolution.isExplosionRecovering(data))
+				else if (healthDrain < 0 && !BioAndroidEvolution.isExplosionRecovering(data) && !BabaReviveService.isHealingBlocked(data))
 					player.setHealth((float) Math.min(player.getMaxHealth(), player.getHealth() - healthDrain));
 			} else {
 				data.getCharacter().clearActiveStackForm(player);

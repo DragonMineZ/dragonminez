@@ -17,6 +17,10 @@ public final class HairRenderContext {
 
 		boolean physicsEnabled();
 
+		String globalColor();
+
+		boolean bodyHidden();
+
 		HairEntityState simulationState();
 
 		float highlight(CustomHair.HairFace face, int index, int segment);

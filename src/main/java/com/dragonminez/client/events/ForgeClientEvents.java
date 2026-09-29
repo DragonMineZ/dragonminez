@@ -1,7 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.client.gui.hud.PartyHudCache;
-import com.dragonminez.client.gui.hud.QuestNoticeHUD;
+import com.dragonminez.client.gui.hud.NotificationHUD;
 import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
@@ -274,6 +274,9 @@ public class ForgeClientEvents {
 		ConfigManager.clearServerSync();
 		PartyHudCache.clear();
 		QuestNoticeHUD.clear();
+		NotificationHUD.clear();
+		com.dragonminez.client.systems.worldboss.ClientWorldBossContribution.clear();
+		com.dragonminez.client.systems.worldboss.ClientWorldBossPlayerState.clear();
 		com.dragonminez.client.systems.worldboss.ClientWorldBossState.clear();
 		com.dragonminez.client.render.shader.KnockoutShaderManager.reset();
 		com.dragonminez.client.render.effects.BeamClashScreenRenderer.reset();

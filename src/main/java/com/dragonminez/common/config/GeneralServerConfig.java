@@ -286,9 +286,10 @@ public class GeneralServerConfig {
 		private Boolean forceCharacterCreation = true;
 		private Boolean commandOutputOnConsole = true;
 		private Integer reviveCooldownSeconds = 180;
-		private Boolean babaTempReturnEnabled = true;
+		private Boolean babaTemporaryRevive = true;
 		private Integer babaTempReturnSeconds = 3600;
-		private Integer babaTempReturnLimit = 3;
+		private Map<String, Double> babaTimeMultiplierPerWorld = defaultBabaTimeMultiplierPerWorld();
+		private Double defaultBabaTimeMultiplier = 1.0;
 		private Boolean babaHardcoreEnabled = false;
 		private Double babaHardcoreCooldownGrowth = 0.5;
 		private Double tpGainMultiplier = 1.0;
@@ -376,6 +377,7 @@ public class GeneralServerConfig {
 		public List<TpBoost> getTpGainBoosts(TpSource source) {
 			if (tpGainBoosts == null) return Arrays.asList(TpBoost.values());
 			List<TpBoost> boosts = tpGainBoosts.get(source);
+			if (boosts == null) boosts = tpGainBoosts.containsKey(source) ? List.of() : defaultTpGainBoosts().get(source);
 			if (boosts == null) return List.of();
 			return boosts.stream().filter(Objects::nonNull).toList();
 		}
@@ -384,16 +386,30 @@ public class GeneralServerConfig {
 			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
 		}
 
-		public Boolean getBabaTempReturnEnabled() {
-			return babaTempReturnEnabled != null ? babaTempReturnEnabled : true;
+		private static Map<String, Double> defaultBabaTimeMultiplierPerWorld() {
+			Map<String, Double> map = new LinkedHashMap<>();
+			map.put("minecraft:overworld", 1.0);
+			map.put("minecraft:the_nether", 2.0);
+			map.put("minecraft:the_end", 3.0);
+			map.put("dragonminez:namek", 1.0);
+			map.put("dragonminez:time_chamber", 5.0);
+			map.put("dragonminez:sacredkaiplanet", 1.0);
+			return map;
+		}
+
+		public Boolean getBabaTemporaryRevive() {
+			return babaTemporaryRevive != null ? babaTemporaryRevive : true;
 		}
 
 		public Integer getBabaTempReturnSeconds() {
 			return babaTempReturnSeconds != null ? Math.max(1, babaTempReturnSeconds) : 3600;
 		}
 
-		public Integer getBabaTempReturnLimit() {
-			return babaTempReturnLimit != null ? Math.max(0, babaTempReturnLimit) : 3;
+		public Double getBabaTimeMultiplier(String dimensionId) {
+			double fallback = defaultBabaTimeMultiplier != null ? Math.max(0.0, defaultBabaTimeMultiplier) : 1.0;
+			if (babaTimeMultiplierPerWorld == null) return fallback;
+			Double value = babaTimeMultiplierPerWorld.get(dimensionId);
+			return value != null ? Math.max(0.0, value) : fallback;
 		}
 
 		public Boolean getBabaHardcoreEnabled() {
